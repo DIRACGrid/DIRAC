@@ -90,7 +90,7 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 #
 #...............................................................................
 
-function installSite(){
+installSite() {
   echo "==> [installSite]"
 
   prepareForServer
@@ -182,7 +182,7 @@ function installSite(){
 #
 #...............................................................................
 
-function fullInstallDIRAC(){
+fullInstallDIRAC() {
   echo "==> [fullInstallDIRAC]"
 
   finalCleanup
@@ -372,7 +372,7 @@ function fullInstallDIRAC(){
 #
 #...............................................................................
 
-function miniInstallDIRAC(){
+miniInstallDIRAC(){
   echo "==> [miniInstallDIRAC]"
 
   finalCleanup
@@ -412,7 +412,7 @@ function miniInstallDIRAC(){
 
 
 
-function clean(){
+clean(){
 
   echo "==> [clean]"
 

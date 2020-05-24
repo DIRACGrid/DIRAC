@@ -19,7 +19,7 @@ fi
 
 # default: this function fixes some default values
 
-function default(){
+default() {
 
   if [[ -z "${JENKINS_SITE}" ]]; then
     JENKINS_SITE='DIRAC.Jenkins.ch'
@@ -48,13 +48,13 @@ function default(){
 #.............................................................................
 
 # FIXME: use diraccfg
-function findRelease(){
+findRelease() {
   echo '==> [findRelease]'
 
 
-  if [[ -n "$DIRAC_RELEASE" ]]; then
+  if [[ -n "${DIRAC_RELEASE}" ]]; then
     echo '==> Specified release'
-    echo "$DIRAC_RELEASE"
+    echo "${DIRAC_RELEASE}"
     projectVersion=$DIRAC_RELEASE
     echo DIRAC:"${projectVersion}" && echo "${projectVersion}" > "${SERVERINSTALLDIR}/dirac.version"
   else
@@ -132,7 +132,7 @@ function findRelease(){
 #   named systems.
 #
 #.............................................................................
-function findSystems(){
+findSystems() {
   echo '==> [findSystems]'
 
   if ! cd "${TESTCODE}"; then
@@ -154,7 +154,7 @@ function findSystems(){
 #
 #.............................................................................
 
-function findDatabases(){
+findDatabases() {
   echo '==> [findDatabases]'
 
   if [[ -n "$1" ]]; then
@@ -288,7 +288,7 @@ finalCleanup(){
 }
 
 
-function getCFGFile(){
+getCFGFile() {
   echo '==> [getCFGFile]'
 
   cp "$INSTALL_CFG_FILE" "${SERVERINSTALLDIR}/"
@@ -306,7 +306,7 @@ function getCFGFile(){
 #  (e.g. useful for extensions or for using the certificates:
 #   --UseServerCertificate -o /DIRAC/Security/CertFile=some/location.pem -o /DIRAC/Security/KeyFile=some/location.pem
 
-function installDIRAC(){
+installDIRAC() {
   echo -n > "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
 
   echo '==> Installing DIRAC client'
@@ -374,7 +374,7 @@ function installDIRAC(){
 # ${DIRACUSERROLE} for the role of the proxy of the user used to submit the job
 # $DIRACSETUP for the setup
 
-function submitJob(){
+submitJob() {
   echo -e "==> Submitting a simple job"
   #This has to be executed from the ${CLIENTINSTALLDIR}
   if ! "cd ${CLIENTINSTALLDIR}"; then
@@ -393,7 +393,7 @@ function submitJob(){
   echo '==> Done submitJob'
 }
 
-function getUserProxy(){
+getUserProxy() {
 
   echo '==> Started getUserProxy'
 
@@ -421,7 +421,7 @@ function getUserProxy(){
 #
 #.............................................................................
 
-function prepareForServer(){
+prepareForServer() {
   echo '==> [prepareForServer]'
 
   #get the necessary scripts: dirac-install.py file
@@ -439,7 +439,7 @@ function prepareForServer(){
 #
 # This generates the CA that will be used to sign the server and client certificates
 
-function generateCA(){
+generateCA() {
    echo '==> [generateCA]'
 
    mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/certificates"
@@ -499,7 +499,7 @@ function generateCA(){
 #
 #.............................................................................
 
-function generateCertificates(){
+generateCertificates() {
   echo '==> [generateCertificates]'
   nDays=${1:-7}
 
@@ -560,7 +560,7 @@ function generateCertificates(){
 #
 #.............................................................................
 
-function generateUserCredentials(){
+generateUserCredentials() {
   echo '==> [generateUserCredentials]'
 
   # validity of the certificate
@@ -611,7 +611,7 @@ function generateUserCredentials(){
 #
 #.............................................................................
 
-function diracCredentials(){
+diracCredentials() {
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
@@ -632,7 +632,7 @@ function diracCredentials(){
 #
 #.............................................................................
 
-function diracUserAndGroup(){
+diracUserAndGroup() {
   echo '==> [diracUserAndGroup]'
 
   if ! dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
@@ -690,7 +690,7 @@ function diracUserAndGroup(){
 #
 #.............................................................................
 
-function diracProxies(){
+diracProxies() {
   echo '==> [diracProxies]'
   # User proxy, should be uploaded anyway
   if ! dirac-proxy-init -U -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
@@ -712,7 +712,7 @@ function diracProxies(){
 #
 #.............................................................................
 
-function diracRefreshCS(){
+diracRefreshCS() {
   echo '==> [diracRefreshCS]'
   if ! python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-refresh-cs.py" "${DEBUG}"; then
     echo 'ERROR: dirac-refresh-cs failed'
@@ -731,7 +731,7 @@ function diracRefreshCS(){
 #
 #.............................................................................
 
-function diracAddSite(){
+diracAddSite() {
   echo '==> [diracAddSite]'
 
   if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch "${DEBUG}"; then
@@ -912,7 +912,7 @@ dropDBs(){
 #
 #.............................................................................
 
-function killRunsv(){
+killRunsv() {
   echo '==> [killRunsv]'
 
   # Bear in mind that we may run with 'errexit' mode. This call, if finds nothing
@@ -945,7 +945,7 @@ function killRunsv(){
 #
 #.............................................................................
 
-function killES(){
+killES() {
   echo '==> [killES]'
   pkill -u lhcbci elasticsearch
   echo '==> [Done killES]'
@@ -959,7 +959,7 @@ function killES(){
 #
 #.............................................................................
 
-function stopRunsv(){
+stopRunsv() {
   echo '==> [stopRunsv]'
 
   # Let's try to be a bit more delicate than the function above
@@ -983,7 +983,7 @@ function stopRunsv(){
 #
 #.............................................................................
 
-function startRunsv(){
+startRunsv(){
   echo '==> [startRunsv]'
 
   # Let's try to be a bit more delicate than the function above
@@ -1017,7 +1017,7 @@ function startRunsv(){
 #
 #.............................................................................
 
-function downloadProxy(){
+downloadProxy() {
   echo '==> [downloadProxy]'
 
   cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-proxy-download.py" .
@@ -1053,7 +1053,7 @@ function downloadProxy(){
 #
 #.............................................................................
 
-function installES(){
+installES() {
   echo '==> [installES]'
 
   curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.6.0.tar.gz

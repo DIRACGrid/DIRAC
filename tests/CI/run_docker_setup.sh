@@ -18,7 +18,7 @@ export DOCKER_USER=dirac
 export USER_HOME=/home/${DOCKER_USER}
 export WORKSPACE=$USER_HOME
 
-function copyLocalSource() {
+copyLocalSource() {
   # Copies local source and test code to docker containers, if they are directories
   CONTAINER_NAME=$1
   CONFIG_PATH=$2
@@ -46,7 +46,7 @@ function copyLocalSource() {
 }
 cd "$SCRIPT_DIR"
 
-function prepareEnvironment() {
+prepareEnvironment() {
   if [[ -z "$TMP" ]]; then
       TMP=/tmp/DIRAC_CI_$(date +"%Y%m%d%I%M%p")
       mkdir -p "$TMP"
@@ -197,7 +197,7 @@ function prepareEnvironment() {
   fi
 }
 
-function installServer() {
+installServer() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" server bash ./install_server.sh |& tee "${BUILD_DIR}/log_server_install.txt"
 
   echo -e "\n**** $(date -u) Copying credentials and certificates ****"
@@ -213,25 +213,25 @@ function installServer() {
   docker exec client bash -c "chown -R dirac:dirac /tmp/x509up_u${client_uid}"
 }
 
-function installClient() {
+installClient() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" client bash ./install_client.sh |& tee "${BUILD_DIR}/log_client_install.txt"
 }
 
-function testServer() {
+testServer() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" -e INSTALLROOT="$WORKSPACE" -e INSTALLTYPE=server server \
       bash TestCode/DIRAC/tests/CI/run_tests.sh || SERVER_CODE=$?
   echo ${SERVER_CODE:-0} > "${BUILD_DIR}/server_test_status"
   docker cp server:/home/dirac/serverTestOutputs.txt "${BUILD_DIR}/log_server_tests.txt"
 }
 
-function testClient() {
+testClient() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" -e INSTALLROOT="$WORKSPACE" -e INSTALLTYPE=client client \
       bash TestCode/DIRAC/tests/CI/run_tests.sh || CLIENT_CODE=$?
   echo ${CLIENT_CODE:-0} > "${BUILD_DIR}/client_test_status"
   docker cp client:/home/dirac/clientTestOutputs.txt "${BUILD_DIR}/log_client_tests.txt"
 }
 
-function checkErrors() {
+checkErrors() {
   set +x
   EXIT_CODE=0
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-function usage {
+usage() {
   echo Usage:
   echo "    install_site.sh [Options] ... CFG_file"
   echo
