@@ -585,7 +585,7 @@ function generateUserCredentials(){
     set -e
   fi
 
-  openssl genrsa -out client.key 2048 2>&1 /dev/null
+  openssl genrsa -out client.key 2048 &> /dev/null
   chmod 400 client.key
 
   openssl req -config "${USERCERTDIR}/openssl_config_user.cnf" \

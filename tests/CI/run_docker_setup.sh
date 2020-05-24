@@ -6,7 +6,7 @@ set -x
 
 BUILD_DIR=$PWD/integration_test_results
 mkdir -p "${BUILD_DIR}"
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 DIRAC_BASE_DIR=$(realpath "${SCRIPT_DIR}/../..")
 
 export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE:-diracgrid}
@@ -191,14 +191,14 @@ function prepareEnvironment() {
   docker cp "$CLIENTCONFIG" client:"$WORKSPACE/CONFIG"
 
   # Copy DIRACOS_TARBALL_PATH if it is a local directory containing a DIRACOS tarball
-  if ls "${DIRACOS_TARBALL_PATH}"/diracos-*.tar.gz 1> /dev/null 2>&1; then
+  if ls "${DIRACOS_TARBALL_PATH}"/diracos-*.tar.gz &> /dev/null; then
     docker cp "${DIRACOS_TARBALL_PATH}" server:"${DIRACOS_TARBALL_PATH}"
     docker cp "${DIRACOS_TARBALL_PATH}" client:"${DIRACOS_TARBALL_PATH}"
   fi
 }
 
 function installServer() {
-  docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" server bash ./install_server.sh 2>&1 | tee "${BUILD_DIR}/log_server_install.txt"
+  docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" server bash ./install_server.sh |& tee "${BUILD_DIR}/log_server_install.txt"
 
   echo -e "\n**** $(date -u) Copying credentials and certificates ****"
   docker exec client bash -c "mkdir -p $WORKSPACE/ServerInstallDIR/user $WORKSPACE/ClientInstallDIR/etc /home/dirac/.globus"
@@ -214,7 +214,7 @@ function installServer() {
 }
 
 function installClient() {
-  docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" client bash ./install_client.sh 2>&1 | tee "${BUILD_DIR}/log_client_install.txt"
+  docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" client bash ./install_client.sh |& tee "${BUILD_DIR}/log_client_install.txt"
 }
 
 function testServer() {
