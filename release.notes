@@ -1,3 +1,11 @@
+[v7r1p3]
+
+Includes fixes from v6r22p29, v7r0p25
+
+*Framework
+FIX: (#4611) ProxyManager, dirac-admin-get-proxy - allow bool type for vomsAttribute parameter
+     on service side. Fixes #4608
+
 [v7r1p2]
 
 Changes from v7r0p24 patch
