@@ -223,7 +223,7 @@ class ProxyManagerHandler(RequestHandler):
       return retVal
     return S_OK(retVal['Value'])
 
-  types_getVOMSProxy = [basestring, basestring, basestring, six.integer_types, [basestring, type(None)]]
+  types_getVOMSProxy = [basestring, basestring, basestring, six.integer_types, [basestring, type(None), bool]]
 
   def export_getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup
