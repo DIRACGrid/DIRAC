@@ -23,6 +23,7 @@ import os
 import re
 import time
 import resource
+import errno
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
@@ -393,13 +394,18 @@ class Watchdog(object):
 
   #############################################################################
   def __getCPU(self):
-    """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
+    """Uses the profiler to get CPU time for current process, its child, and the terminated child,
+       and returns HH:MM:SS after conversion.
     """
     try:
-      result = self.profiler.getAllProcessData(withChildren=True)
+      result = self.profiler.getAllProcessData(withChildren=True,
+                                               withTerminatedChildren=True)
       if not result['OK']:
-        self.log.warn('Problem while checking consumed CPU')
+        self.log.warn("Issue while checking consumed CPU")
+        if result['Errno'] == errno.ESRCH:
+          self.log.warn("The main process does not exist (anymore). This might be correct.")
         return result
+
       cpuTime = result['Value']
       if cpuTime:
         cpuTimeTotal = cpuTime['stats']['cpuUsageSystem'] + cpuTime['stats']['cpuUsageUser']
