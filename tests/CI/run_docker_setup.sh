@@ -48,14 +48,14 @@ cd "$SCRIPT_DIR"
 
 prepareEnvironment() {
   if [[ -z "$TMP" ]]; then
-      TMP=/tmp/DIRAC_CI_$(date +"%Y%m%d%I%M%p")
-      mkdir -p "$TMP"
+    TMP=/tmp/DIRAC_CI_$(date +"%Y%m%d%I%M%p")
+    mkdir -p "$TMP"
   fi
   if [[ -z "$CLIENTCONFIG" ]]; then
-      CLIENTCONFIG=${BUILD_DIR}/CLIENTCONFIG
+    CLIENTCONFIG=${BUILD_DIR}/CLIENTCONFIG
   fi
   if [[ -z "$SERVERCONFIG" ]]; then
-      SERVERCONFIG=${BUILD_DIR}/SERVERCONFIG
+    SERVERCONFIG=${BUILD_DIR}/SERVERCONFIG
   fi
 
   # GitLab variables
@@ -128,20 +128,20 @@ prepareEnvironment() {
 
   # find the latest version, unless it's integration
   if [[ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]]; then
-      {
-        echo "export DIRAC_RELEASE=integration"
-      } >> "${SERVERCONFIG}"
+    {
+      echo "export DIRAC_RELEASE=integration"
+    } >> "${SERVERCONFIG}"
 
   elif [[ "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" = 'integration' ]]; then
-      {
-        echo "export DIRAC_RELEASE=integration"
-      } >> "${SERVERCONFIG}"
+    {
+      echo "export DIRAC_RELEASE=integration"
+    } >> "${SERVERCONFIG}"
   else
-      majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
-      minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
-      {
-        echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
-      } >> "${SERVERCONFIG}"
+    majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
+    minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
+    {
+      echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
+    } >> "${SERVERCONFIG}"
   fi
 
   if [[ -n "${EXTRA_ENVIRONMENT_CONFIG+x}" ]]; then
@@ -233,7 +233,7 @@ testClient() {
 
 checkErrors() {
   set +x
-  EXIT_CODE=0
+  local EXIT_CODE=0
 
   # Server
   if [[ ! -f "${BUILD_DIR}/server_test_status" ]]; then

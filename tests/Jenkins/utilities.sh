@@ -324,7 +324,7 @@ installDIRAC() {
 
   if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
     echo "Installing from non-release code"
-    option="--module="
+    local option="--module="
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
       if [[ -d "${module_path}" ]]; then
         option+="${module_path}:::$(basename "${module_path}"):::local,"
@@ -440,47 +440,47 @@ prepareForServer() {
 # This generates the CA that will be used to sign the server and client certificates
 
 generateCA() {
-   echo '==> [generateCA]'
+  echo '==> [generateCA]'
 
-   mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/certificates"
-   mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/ca/"
-   if ! cd "${SERVERINSTALLDIR}/etc/grid-security/ca"; then
-     echo "ERROR: cannot change to ${SERVERINSTALLDIR}/etc/grid-security/ca"
-     exit 1
-   fi
+  mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/certificates"
+  mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/ca/"
+  if ! cd "${SERVERINSTALLDIR}/etc/grid-security/ca"; then
+    echo "ERROR: cannot change to ${SERVERINSTALLDIR}/etc/grid-security/ca"
+    exit 1
+  fi
 
-   # Initialize the ca
-   mkdir -p newcerts certs crl
-   touch index.txt
-   echo 1000 > serial
-   echo 1000 > crlnumber
+  # Initialize the ca
+  mkdir -p newcerts certs crl
+  touch index.txt
+  echo 1000 > serial
+  echo 1000 > crlnumber
 
-   # Create the CA key
-   openssl genrsa -out ca.key.pem 2048            # for unencrypted key
-   chmod 400 ca.key.pem
-
-
-   # Prepare OpenSSL config file, it contains extensions to put into place,
-   # DN configuration, etc..
-   cp "${CI_CONFIG}/openssl_config_ca.cnf" "openssl_config_ca.cnf"
-   sed -i "s|#GRIDSECURITY#|${SERVERINSTALLDIR}/etc/grid-security|g" openssl_config_ca.cnf
+  # Create the CA key
+  openssl genrsa -out ca.key.pem 2048            # for unencrypted key
+  chmod 400 ca.key.pem
 
 
-   # Generate the CA certificate
-   openssl req -config openssl_config_ca.cnf \
-               -key ca.key.pem \
-               -new -x509 \
-               -days 7300 \
-               -sha256 \
-               -extensions v3_ca \
-               -out ca.cert.pem
+  # Prepare OpenSSL config file, it contains extensions to put into place,
+  # DN configuration, etc..
+  cp "${CI_CONFIG}/openssl_config_ca.cnf" "openssl_config_ca.cnf"
+  sed -i "s|#GRIDSECURITY#|${SERVERINSTALLDIR}/etc/grid-security|g" openssl_config_ca.cnf
 
-   # Copy the CA to the list of trusted CA
-   cp ca.cert.pem "${SERVERINSTALLDIR}/etc/grid-security/certificates/"
 
-   # Generate the hash link file required by openSSL to index CA certificates
-   caHash=$(openssl x509 -in ca.cert.pem -noout -hash)
-   ln -s "${SERVERINSTALLDIR}/etc/grid-security/certificates/ca.cert.pem" "${SERVERINSTALLDIR}/etc/grid-security/certificates/$caHash.0"
+  # Generate the CA certificate
+  openssl req -config openssl_config_ca.cnf \
+	      -key ca.key.pem \
+	      -new -x509 \
+	      -days 7300 \
+	      -sha256 \
+	      -extensions v3_ca \
+	      -out ca.cert.pem
+
+  # Copy the CA to the list of trusted CA
+  cp ca.cert.pem "${SERVERINSTALLDIR}/etc/grid-security/certificates/"
+
+  # Generate the hash link file required by openSSL to index CA certificates
+  caHash=$(openssl x509 -in ca.cert.pem -noout -hash)
+  ln -s "${SERVERINSTALLDIR}/etc/grid-security/certificates/ca.cert.pem" "${SERVERINSTALLDIR}/etc/grid-security/certificates/$caHash.0"
 }
 
 #.............................................................................
@@ -750,7 +750,7 @@ diracAddSite() {
 diracServices(){
   echo '==> [diracServices]'
 
-  services=$(cut -d '.' -f 1 < services | grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 < services | grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -800,14 +800,14 @@ diracUninstallServices(){
 
   findServices
 
-  services=$(cut -d '.' -f 1 <services | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 <services | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
   #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key --rfc "${DEBUG}"
 
   # check if errexit mode is set and disabling as the component may not exist
-  save=$-
+  local save=$-
   if [[ $save =~ e ]]; then
     set +e
   fi
@@ -834,7 +834,7 @@ diracUninstallServices(){
 diracAgents(){
   echo '==> [diracAgents]'
 
-  agents=$(cut -d '.' -f 1 < agents | grep -v MyProxy | grep -v CAUpdate |  grep -v CE2CSAgent | grep -v GOCDB2CS | grep -v Bdii2CS | grep -v CacheFeeder | grep -v NetworkAgent | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g')
+  local agents=$(cut -d '.' -f 1 < agents | grep -v MyProxy | grep -v CAUpdate |  grep -v CE2CSAgent | grep -v GOCDB2CS | grep -v Bdii2CS | grep -v CacheFeeder | grep -v NetworkAgent | grep -v FrameworkSystem | grep -v DiracSiteAgent | grep -v StatesMonitoringAgent | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g')
 
   for agent in $agents; do
     if [[ $agent == *" JobAgent"* ]]; then
@@ -862,7 +862,7 @@ diracAgents(){
 diracDBs(){
   echo '==> [diracDBs]'
 
-  dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB)
+  local dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB)
   for db in $dbs; do
     if ! dirac-install-db "$db" "${DEBUG}"; then
       echo 'ERROR: dirac-install-db failed'
@@ -921,7 +921,7 @@ killRunsv() {
   # other runs. So, we disable 'errexit' mode for this call.
 
   # check if errexit mode is set
-  save=$-
+  local save=$-
   if [[ "${save}" =~ e ]]; then
     set +e
   fi
@@ -994,7 +994,7 @@ startRunsv(){
   # Gives some time to the components to start
   sleep 10
   # Just in case 10 secs are not enough, we disable exit on error for this call.
-  save=$-
+  local save=$-
   if [[ $save =~ e ]]; then
     set +e
   fi
@@ -1023,15 +1023,13 @@ downloadProxy() {
   cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-proxy-download.py" .
 
   if [[ "${PILOTCFG}" ]]; then
-    if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]] # called from the client directory
-    then
+    if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]]; then # called from the client directory
       python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
     else # assuming it's the pilot
       python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
     fi
   else
-    if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]] # called from the client directory
-    then
+    if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]]; then # called from the client directory
       python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
     else # assuming it's the pilot
       python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"

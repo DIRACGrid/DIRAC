@@ -66,11 +66,11 @@ fi
 
 # Creating default structure
 mkdir -p "$WORKSPACE/TestCode" # Where the test code resides
-TESTCODE=${_}
+readonly TESTCODE=${_}
 mkdir -p "$WORKSPACE/ServerInstallDIR" # Where servers are installed
-SERVERINSTALLDIR=${_}
+readonly SERVERINSTALLDIR=${_}
 mkdir -p "$WORKSPACE/ClientInstallDIR" # Where clients are installed
-CLIENTINSTALLDIR=${_}
+readonly CLIENTINSTALLDIR=${_}
 
 # Location of the CFG file to be used (this can be replaced by the extensions)
 INSTALL_CFG_FILE="${TESTCODE}/DIRAC/tests/Jenkins/install.cfg"
@@ -191,13 +191,13 @@ fullInstallDIRAC() {
 
   # install ElasticSearch locally
   if [[ -z $NoSQLDB_HOST || $NoSQLDB_HOST == "localhost" ]]; then
-      echo "Installing ElasticSearch locally"
-      installES
+    echo "Installing ElasticSearch locally"
+    installES
   else
-      echo "NoSQLDB_HOST != localhost, skipping local ElasticSearch install"
+    echo "NoSQLDB_HOST != localhost, skipping local ElasticSearch install"
   fi
 
-  #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
+  # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   if ! installSite; then
     echo "ERROR: installSite failed"
     exit 1
