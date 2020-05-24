@@ -13,7 +13,7 @@ M2Crypto
 
 We aim at replacing the home made wrapper of openssl pyGSI with the standard M2Crypto library. It is by default disabled.
 You can enable it by setting the environment variable ``DIRAC_USE_M2CRYPTO`` to ``Yes``.
-There is also a change of behavior in the way sockets connections are handled server side. The current (new) behavior is to perform the SSL handshake in the main thread and only delegate the execution of the method to another thread. The pyGSI behavior was to delegate the SSL handshake to the new thread, which is probably a better thing to do. You can revert back this behavior by setting `DIRAC_M2CRYPTO_SPLIT_HANDSHAKE` to `Yes`, but this has not been heavily tested yet. 
+When answering a call, the service main thread delegates the work and the SSL handshake to a task thread. This is how it should be for high performance. However, this behavior was added a bit late with respect to testing, so if you want to SSL handshake to happen in the main thread, you can set `DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=No`. Note that this possibility will disappear soon.
 
 Possible issues
 ---------------
@@ -24,4 +24,3 @@ M2Crypto (or any standard tool that respects TLS..) will be stricter than PyGSI.
 * FQDN in the configuration: SAN normally contains only FQDN, so make sure you use the FQDN in the CS as well (e.g. ``mymachine.cern.ch`` and not ``mymachine``)
 * ComponentInstaller screwed: like any change you do on your hosts, the ComponentInstaller will duplicate the entry. So if you change the CS to put FQDN, the machine will appear twice. 
 
-In case your services are not fast enough, and the socket backlog is full (``ss -pnl``), try setting ``DIRAC_M2CRYPTO_SPLIT_HANDSHAKE`` to ``Yes``.
