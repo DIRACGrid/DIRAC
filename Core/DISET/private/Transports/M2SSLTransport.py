@@ -91,7 +91,10 @@ class SSLTransport(BaseTransport):
         self.remoteAddress = self.oSocket.getpeername()
 
         return S_OK()
-      except (socket.error, SSLVerificationError, SSL.SSLError) as e:
+      # warning: do NOT catch SSL related error here
+      # They should be propagated upwards and caught by the BaseClient
+      # not to enter the retry loop
+      except socket.error as e:
         error = "%s:%s" % (e, repr(e))
 
         if self.oSocket is not None:
@@ -138,10 +141,28 @@ class SSLTransport(BaseTransport):
   def renewServerContext(self):
     """ Renews the server context.
         This reloads the certificates and re-initialises the SSL context.
-    """
+
+        NOTE: Chris 15.05.20
+        I noticed python segfault on a regular time interval. The stack trace always looks like that::
+
+          #0  0x00007fdb5bbe2388 in ?? () from /opt/dirac/pro/diracos/usr/lib64/python2.7/lib-dynload/../../libcrypto.so.10
+          #1  0x00007fdb5bbd8742 in X509_STORE_load_locations () from /opt/dirac/pro/diracos/usr/lib64/python2.7/lib-dynload/../../libcrypto.so.10
+          #2  0x00007fdb57edcc9d in _wrap_ssl_ctx_load_verify_locations (self=<optimized out>, args=<optimized out>) at SWIG/_m2crypto_wrap.c:20602
+          #3  0x00007fdb644ec484 in PyEval_EvalFrameEx () from /opt/dirac/versions/v10r0_1587978031/diracos/usr/bin/../lib64/libpython2.7.so.1.0
+
+        I could not find anything fundamentaly wrong, and the context renewal is the only place I could think of.
+
+        GSI based SSLTransport did the following: renew the context, and renew the Connection object using the same raw socket
+        This still seems very fishy to me though, especially that the ServiceReactor still has the old object in self.__listeningConnections[svcName]['socket']]
+
+        Here, we were are refreshing the CA store. What was missing was the call to the parent class, thus entering some sort of infinite loop.
+        The parent's call seems to have fixed it.
+    """  # noqa # pylint: disable=line-too-long
     if not self.serverMode():
       raise RuntimeError("SSLTransport is in client mode.")
+    super(SSLTransport, self).renewServerContext()
     self.__ctx = getM2SSLContext(self.__ctx, **self.__kwargs)
+
     return S_OK()
 
   def handshake_singleStep(self):
@@ -254,7 +275,7 @@ class SSLTransport(BaseTransport):
 
   # Depending on the DIRAC_M2CRYPTO_SPLIT_HANDSHAKE we either do the
   # handshake separately or not
-  if os.getenv('DIRAC_M2CRYPTO_SPLIT_HANDSHAKE', 'NO').lower() in ('yes', 'true'):
+  if os.getenv('DIRAC_M2CRYPTO_SPLIT_HANDSHAKE', 'Yes').lower() in ('yes', 'true'):
     acceptConnection = acceptConnection_multipleSteps
     handshake = handshake_multipleSteps
     setClientSocket = setClientSocket_multipleSteps
