@@ -15,6 +15,7 @@ Operations / DataManagement
 * ThirdPartyProtocols (['srm']): list of the possible protocols to be used in replications
 * AccessProtocols (['srm', 'dips']): list of the possible protocols to be used to perform the read operations and to get the space occupancy. Overwritten at the level of a StorageElement configuration.
 * WriteProtocols (['srm', 'dips']): list of the possible protocols to be used to perform the write and remove operations. Overwritten at the level of a StorageElement configuration.
+* AllowUserReplicaManagement (False): if set to True, clients without the FileCatalogManagement property can use the dirac-dms-remove-catalog-* commands to manipulate the file catalog.
 * FTSVersion (FTS2): version of FTS to use. Possibilities: FTS3 or FTS2 (deprecated)
 * FTSPlacement section:
 
