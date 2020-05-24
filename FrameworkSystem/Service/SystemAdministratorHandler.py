@@ -695,7 +695,7 @@ class SystemAdministratorHandler(RequestHandler):
           if pid not in gProfilers:
             gProfilers[pid] = Profiler.Profiler(pid)
           profiler = gProfilers[pid]
-          result = profiler.getAllProcessData()
+          result = profiler.getAllProcessData(withChildren=True)
           if result['OK']:
             log = result['Value']['stats']
             log['host'] = socket.getfqdn()

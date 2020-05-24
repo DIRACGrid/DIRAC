@@ -127,50 +127,54 @@ class Profiler(object):
     return S_OK(cpuPercentage)
 
   @checkInvocation
-  def cpuUsageUser(self, withChildren=False):
+  def cpuUsageUser(self, withChildren=False, withTerminatedChildren=False):
     """
     Returns the percentage of cpu used by the process
     """
     cpuUsageUser = self.process.cpu_times().user
     childrenUser = 0
     oldChildrenUser = 0
-    if withChildren:
-      # This is the CPU consumed by all terminated children of the root process
-      oldChildrenUser += self.process.cpu_times().children_user
-      # Now look at the active children
+    if withChildren:  # active children
       for child in self.process.children(recursive=True):
-        # Sum up the child CPU as well as the CPU of its terminated children
-        childrenUser += child.cpu_times().user + child.cpu_times().children_user
+        childrenUser += child.cpu_times().user
       gLogger.debug(
-          "CPU user (process, old children, alive children)", "(%.1fs, %.1fs, %.1fs)" %
-          (cpuUsageUser, oldChildrenUser, childrenUser))
+          "CPU user (process, children)", "(%.1fs, %.1fs)" %
+          (cpuUsageUser, childrenUser))
+    if withTerminatedChildren:  # all terminated children of the root process
+      for child in self.process.children(recursive=True):
+        oldChildrenUser += child.cpu_times().children_user
+      gLogger.debug(
+          "CPU user (process, old children)", "(%.1fs, %.1fs)" %
+          (cpuUsageUser, oldChildrenUser))
     else:
       gLogger.debug("CPU user", "%.1fs" % cpuUsageUser)
     return S_OK(cpuUsageUser + childrenUser + oldChildrenUser)
 
   @checkInvocation
-  def cpuUsageSystem(self, withChildren=False):
+  def cpuUsageSystem(self, withChildren=False, withTerminatedChildren=False):
     """
     Returns the percentage of cpu used by the process
     """
     cpuUsageSystem = self.process.cpu_times().system
     childrenSystem = 0
     oldChildrenSystem = 0
-    if withChildren:
-      # This is the CPU consumed by all terminated children of the root process
-      oldChildrenSystem += self.process.cpu_times().children_system
-      # Sum up the child CPU as well as the CPU of its terminated children
+    if withChildren:  # active children
       for child in self.process.children(recursive=True):
-        # Sum up the child CPU as well as the CPU of its terminated children
-        childrenSystem += child.cpu_times().system + child.cpu_times().children_system
+        childrenSystem += child.cpu_times().system
       gLogger.debug(
-          "CPU system (process, old children, alive children)", "(%.1fs, %.1fs, %.1fs)" %
-          (cpuUsageSystem, oldChildrenSystem, childrenSystem))
+          "CPU user (process, children)", "(%.1fs, %.1fs)" %
+          (cpuUsageSystem, childrenSystem))
+    if withTerminatedChildren:  # all terminated children of the root process
+      for child in self.process.children(recursive=True):
+        oldChildrenSystem += child.cpu_times().children_system
+      gLogger.debug(
+          "CPU user (process, old children)", "(%.1fs, %.1fs)" %
+          (cpuUsageSystem, oldChildrenSystem))
     else:
-      gLogger.debug("CPU system", "%.1fs" % cpuUsageSystem)
+      gLogger.debug("CPU user", "%.1fs" % cpuUsageSystem)
     return S_OK(cpuUsageSystem + childrenSystem + oldChildrenSystem)
 
-  def getAllProcessData(self, withChildren=False):
+  def getAllProcessData(self, withChildren=False, withTerminatedChildren=False):
     """
     Returns data available about a process
     """
@@ -207,11 +211,11 @@ class Profiler(object):
     if result['OK']:
       data['stats']['cpuPercentage'] = result['Value']
 
-    result = self.cpuUsageUser(withChildren)
+    result = self.cpuUsageUser(withChildren, withTerminatedChildren)
     if result['OK']:
       data['stats']['cpuUsageUser'] = result['Value']
 
-    result = self.cpuUsageSystem(withChildren)
+    result = self.cpuUsageSystem(withChildren, withTerminatedChildren)
     if result['OK']:
       data['stats']['cpuUsageSystem'] = result['Value']
 

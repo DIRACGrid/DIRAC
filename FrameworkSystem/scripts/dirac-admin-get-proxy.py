@@ -24,7 +24,7 @@ class Params(object):
   proxyPath = False
   proxyLifeTime = 86400
   enableVOMS = False
-  vomsAttr = False
+  vomsAttr = None
 
   def setLimited(self, args):
     """ Set limited

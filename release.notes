@@ -17,6 +17,14 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
+[v7r1p3]
+
+Includes fixes from v6r22p29, v7r0p25
+
+*Framework
+FIX: (#4611) ProxyManager, dirac-admin-get-proxy - allow bool type for vomsAttribute parameter
+     on service side. Fixes #4608
+
 [v7r1p2]
 
 Changes from v7r0p24 patch
@@ -142,6 +150,19 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p25]
+
+Fixes from v6r22p29 patch
+
+*Core
+FIX: (#4615) M2SSLTransport does not catch all the exceptions
+FIX: (#4615) M2SSLTransport calls parent class when renewing context
+CHANGE: (#4615) default to split handshake
+NEW: (#4617) Added test for profiler.py
+
+*WMS
+FIX: (#4617) Watchdog - use 2 flags for profiler: withChildren and withTerminatedChildren
 
 [v7r0p24]
 
@@ -604,10 +625,20 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p29]
+
+*WorkloadManagementSystem
+CHANGE: (#4603) Updated to customize the JobType of user jobs in JobDescription and JobManifest
+
+*DataManagementSystem
+CHANGE: (#4618) dirac-dms-remove-catalog-files and dirac-dms-remove-catalog-files use
+        Operations/.../DataManagement/AllowUserReplicaManagement to allow users perform
+        direct File Catalog operations
+
 [v6r22p28]
 
 *TS
-FIX: (#4569) TransformationClient - allow "LFN" cindition as a string to be compatible with the service
+FIX: (#4569) TransformationClient - allow "LFN" condition as a string to be compatible with the service
 
 [v6r22p27]
 

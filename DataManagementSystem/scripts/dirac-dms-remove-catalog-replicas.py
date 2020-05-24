@@ -20,15 +20,21 @@ Usage:
 
 Script.parseCommandLine()
 
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)
+
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 res = getProxyInfo()
 if not res['OK']:
   gLogger.fatal("Can't get proxy info", res['Message'])
   dexit(1)
 properties = res['Value'].get('groupProperties', [])
-if 'FileCatalogManagement' not in properties:
-  gLogger.error("You need to use a proxy from a group with FileCatalogManagement")
-  dexit(5)
+
+if not allowUsers:
+  if 'FileCatalogManagement' not in properties:
+    gLogger.error("You need to use a proxy from a group with FileCatalogManagement")
+    dexit(5)
+
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 dm = DataManager()
 import os
