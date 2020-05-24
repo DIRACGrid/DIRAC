@@ -1,3 +1,4 @@
 FROM cern/cc7-base:20170113
 
 COPY ["./resources/setupDIRACClient.sh", "./resources/install.cfg", "./resources/runsvdir-start", "./resources/runsvdir.conf", "./resources/setupDIRAC.sh", "./resources/setupCA.sh", "/resources/"]
+HEALTHCHECK --interval=400s
