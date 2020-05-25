@@ -34,7 +34,7 @@ while [[ "${nar}" -lt "${narg}" ]]; do
       shift
       ;;
     *)
-      echo 'Supply a valid option'
+      echo 'Supply a valid option' >&2
       exit 1
       ;;
   esac

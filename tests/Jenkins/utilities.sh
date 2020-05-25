@@ -107,7 +107,7 @@ findRelease() {
 
     # TODO: This should be made to fail to due set -u and -o pipefail
     if [[ ! "${projectVersion}" ]]; then
-      echo "Failed to set projectVersion"
+      echo "Failed to set projectVersion" >&2
       exit 1
     fi
 
@@ -136,7 +136,7 @@ findSystems() {
   echo '==> [findSystems]'
 
   if ! cd "${TESTCODE}"; then
-    echo "ERROR: cannot change to ${TESTCODE}"
+    echo "ERROR: cannot change to ${TESTCODE}" >&2
     exit 1
   fi
   find ./*DIRAC/ -name "*System"  | cut -d '/' -f 2 | sort | uniq > systems
@@ -169,7 +169,7 @@ findDatabases() {
   fi
 
   if ! cd "${SERVERINSTALLDIR}"; then
-    echo "ERROR: cannot change to ${SERVERINSTALLDIR}"
+    echo "ERROR: cannot change to ${SERVERINSTALLDIR}" >&2
     exit 1
   fi
 
@@ -213,7 +213,7 @@ findServices(){
   fi
 
   if ! cd "${SERVERINSTALLDIR}" -ne 0; then
-    echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}"
+    echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}" >&2
     exit 1
   fi
   if [[ -n "${ServicestoExclude}" ]]; then
@@ -240,7 +240,7 @@ findAgents(){
   fi
 
   if ! cd "${SERVERINSTALLDIR}"; then
-    echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}"
+    echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}" >&2
     exit 1
   fi
   if [[ -n "${AgentstoExclude}" ]]; then
@@ -311,7 +311,7 @@ installDIRAC() {
 
   echo '==> Installing DIRAC client'
   if ! cd "${CLIENTINSTALLDIR}"; then
-    echo "ERROR: cannot change to ${CLIENTINSTALLDIR}"
+    echo "ERROR: cannot change to ${CLIENTINSTALLDIR}" >&2
     exit 1
   fi
 
@@ -347,7 +347,7 @@ installDIRAC() {
   fi
 
   if ! ./dirac-install -r "${DIRAC_RELEASE}" -t client "${INSTALLOPTIONS[@]}" "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"; then
-    echo 'ERROR: DIRAC client installation failed'
+    echo 'ERROR: DIRAC client installation failed' >&2
     exit 1
   fi
 
@@ -357,7 +357,7 @@ installDIRAC() {
 
   # now configuring
   if ! dirac-configure -S "${DIRACSETUP}" -C "${CSURL}" --SkipCAChecks "${CONFIGUREOPTIONS}" "${DEBUG}"; then
-    echo 'ERROR: dirac-configure failed'
+    echo 'ERROR: dirac-configure failed' >&2
     exit 1
   fi
 
@@ -378,7 +378,7 @@ submitJob() {
   echo -e "==> Submitting a simple job"
   #This has to be executed from the ${CLIENTINSTALLDIR}
   if ! "cd ${CLIENTINSTALLDIR}"; then
-    echo "ERROR: cannot change to ${CLIENTINSTALLDIR}"
+    echo "ERROR: cannot change to ${CLIENTINSTALLDIR}" >&2
     exit 1
   fi
 
@@ -399,13 +399,13 @@ getUserProxy() {
 
   cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update.py" "."
   if ! python dirac-cfg-update.py -S "${DIRACSETUP}" "${CLIENTINSTALLDIR}/etc/dirac.cfg" -F "${CLIENTINSTALLDIR}/etc/dirac.cfg" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem "${DEBUG}"; then
-    echo 'ERROR: dirac-cfg-update failed'
+    echo 'ERROR: dirac-cfg-update failed' >&2
     exit 1
   fi
 
   #Getting a user proxy, so that we can run jobs
   if ! downloadProxy; then
-    echo 'ERROR: downloadProxy failed'
+    echo 'ERROR: downloadProxy failed' >&2
     exit 1
   fi
 
@@ -445,7 +445,7 @@ generateCA() {
   mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/certificates"
   mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/ca/"
   if ! cd "${SERVERINSTALLDIR}/etc/grid-security/ca"; then
-    echo "ERROR: cannot change to ${SERVERINSTALLDIR}/etc/grid-security/ca"
+    echo "ERROR: cannot change to ${SERVERINSTALLDIR}/etc/grid-security/ca" >&2
     exit 1
   fi
 
@@ -505,7 +505,7 @@ generateCertificates() {
 
   mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/"
   if ! cd "${SERVERINSTALLDIR}/etc/grid-security/"; then
-    echo "ERROR: cannot change to ${SERVERINSTALLDIR}/etc/grid-security/"
+    echo "ERROR: cannot change to ${SERVERINSTALLDIR}/etc/grid-security/" >&2
     exit 1
   fi
 
@@ -570,7 +570,7 @@ generateUserCredentials() {
   # Generate directory where to store credentials
   mkdir -p "${USERCERTDIR}"
   if ! cd "${USERCERTDIR}"; then
-    echo "ERROR: cannot change to ${USERCERTDIR}"
+    echo "ERROR: cannot change to ${USERCERTDIR}" >&2
     exit 1
   fi
 
@@ -616,7 +616,7 @@ diracCredentials() {
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
   if ! dirac-proxy-init -g dirac_admin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" --rfc; then
-    echo 'ERROR: dirac-proxy-init failed'
+    echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
   sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
@@ -636,47 +636,47 @@ diracUserAndGroup() {
   echo '==> [diracUserAndGroup]'
 
   if ! dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-user failed'
+    echo 'ERROR: dirac-admin-add-user failed' >&2
     exit 1
   fi
 
   if ! dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-user failed'
+    echo 'ERROR: dirac-admin-add-user failed' >&2
     exit 1
   fi
 
   if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-group failed'
+    echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
 
   if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-group failed'
+    echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
 
   if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-group failed'
+    echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
 
   if ! dirac-admin-add-shifter DataManager adminusername prod "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-shifter failed'
+    echo 'ERROR: dirac-admin-add-shifter failed' >&2
     exit 1
   fi
 
   if ! dirac-admin-add-shifter TestManager adminusername prod "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-shifter failed'
+    echo 'ERROR: dirac-admin-add-shifter failed' >&2
     exit 1
   fi
 
   if ! dirac-admin-add-shifter ProductionManager adminusername prod "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-shifter failed'
+    echo 'ERROR: dirac-admin-add-shifter failed' >&2
     exit 1
   fi
 
   if ! dirac-admin-add-shifter LHCbPR adminusername prod "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-shifter failed'
+    echo 'ERROR: dirac-admin-add-shifter failed' >&2
     exit 1
   fi
 }
@@ -694,12 +694,12 @@ diracProxies() {
   echo '==> [diracProxies]'
   # User proxy, should be uploaded anyway
   if ! dirac-proxy-init -U -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
-    echo 'ERROR: dirac-proxy-init failed'
+    echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
   # group proxy, will be uploaded explicitly
   if ! dirac-proxy-init -U -g prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
-    echo 'ERROR: dirac-proxy-init failed'
+    echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
 }
@@ -715,7 +715,7 @@ diracProxies() {
 diracRefreshCS() {
   echo '==> [diracRefreshCS]'
   if ! python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-refresh-cs.py" "${DEBUG}"; then
-    echo 'ERROR: dirac-refresh-cs failed'
+    echo 'ERROR: dirac-refresh-cs failed' >&2
     exit 1
   fi
 }
@@ -735,7 +735,7 @@ diracAddSite() {
   echo '==> [diracAddSite]'
 
   if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch "${DEBUG}"; then
-    echo 'ERROR: dirac-admin-add-site failed'
+    echo 'ERROR: dirac-admin-add-site failed' >&2
     exit 1
   fi
 }
@@ -759,7 +759,7 @@ diracServices(){
   for serv in $services; do
     echo "==> calling dirac-install-component $serv ${DEBUG}"
     if ! dirac-install-component "$serv" "${DEBUG}"; then
-      echo 'ERROR: dirac-install-component failed'
+      echo 'ERROR: dirac-install-component failed' >&2
       exit 1
     fi
   done
@@ -773,7 +773,7 @@ diracSEs(){
   seDir=${SERVERINSTALLDIR}/Storage/SE-1
   mkdir -p "${seDir}"
   if ! dirac-install-component DataManagement SE-1 -m StorageElement -p BasePath="${seDir}" -p Port=9148 "${DEBUG}"; then
-    echo 'ERROR: dirac-install-component failed'
+    echo 'ERROR: dirac-install-component failed' >&2
     exit 1
   fi
 
@@ -781,7 +781,7 @@ diracSEs(){
   seDir=${SERVERINSTALLDIR}/Storage/SE-2
   mkdir -p "${seDir}"
   if ! dirac-install-component DataManagement SE-2 -m StorageElement -p BasePath="${seDir}" -p Port=9147 "${DEBUG}"; then
-    echo 'ERROR: dirac-install-component failed'
+    echo 'ERROR: dirac-install-component failed' >&2
     exit 1
   fi
 
@@ -844,7 +844,7 @@ diracAgents(){
       python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-add-option.py" "agent" "$agent"
       echo "==> calling dirac-agent $agent -o MaxCycles=1 ${DEBUG}"
       if ! dirac-agent "$agent"  -o MaxCycles=1 "${DEBUG}"; then
-        echo 'ERROR: dirac-agent failed'
+	echo 'ERROR: dirac-agent failed' >&2
         exit 1
       fi
     fi
@@ -865,7 +865,7 @@ diracDBs(){
   local dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB)
   for db in $dbs; do
     if ! dirac-install-db "$db" "${DEBUG}"; then
-      echo 'ERROR: dirac-install-db failed'
+      echo 'ERROR: dirac-install-db failed' >&2
       exit 1
     fi
   done
@@ -1037,7 +1037,7 @@ downloadProxy() {
   fi
 
   if [[ "${?}" -ne 0 ]]; then
-    echo 'ERROR: cannot download proxy'
+    echo 'ERROR: cannot download proxy' >&2
     exit 1
   fi
 }

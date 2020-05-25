@@ -114,7 +114,7 @@ pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/DataManagementSystem/Test_Da
 # need the dirac_admin user, so we can make a change in the CS
 echo -e "*** $(date -u)  Getting a dirac_admin user in order to modify the configuration \n" |& tee -a clientTestOutputs.txt
 if ! dirac-proxy-init -g dirac_admin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" --rfc; then
-  echo 'ERROR: dirac-proxy-init for dirac_admin failed'
+  echo 'ERROR: dirac-proxy-init for dirac_admin failed' >&2
   exit 1
 fi
 python "${CLIENTINSTALLDIR}/DIRAC/tests/Jenkins/dirac-cfg-update-filecatalog.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
