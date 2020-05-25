@@ -1451,6 +1451,7 @@ class SiteDirector(AgentModule):
       if (self.maxRetryGetPilotOutput - self.failedPilotOutput[pRefStamp]) <= 0:
         output = 'Output is no longer available'
         error = 'Error is no longer available'
+        self.failedPilotOutput.pop(pRefStamp)
       else:
         return
     else:
