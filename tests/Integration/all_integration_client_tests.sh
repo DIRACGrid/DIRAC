@@ -80,13 +80,8 @@ userVO=$(python -c "from DIRAC.Core.Base.Script import parseCommandLine; parseCo
 userVO="${userVO:-Jenkins}"
 echo -e "*** $(date -u) VO is "${userVO}"\n" |& tee -a clientTestOutputs.txt
 
-<<<<<<< HEAD
 echo -e "*** $(date -u)  Getting a privileged user\n" |& tee -a clientTestOutputs.txt
 dirac-proxy-init -g jenkins_fcadmin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
-=======
-echo -e "*** $(date -u)  Getting a privileged user\n" |& tee -a clientTestOutputs.txt
-dirac-proxy-init -g jenkins_fcadmin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG |& tee -a clientTestOutputs.txt
->>>>>>> 7ed1a8820... use shortcut for piping stdout and stderr
 
 cat >> dataManager_create_folders <<EOF
 
