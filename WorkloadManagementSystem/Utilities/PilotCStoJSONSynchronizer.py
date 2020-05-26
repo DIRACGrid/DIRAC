@@ -336,7 +336,7 @@ class PilotCStoJSONSynchronizer(object):
                                          "dirac-install.py")):
         self._upload(filename='dirac-install.py',
                      pilotScript=os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
-        tarFiles.append('dirac-install.py')
+        tarFiles.append(os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
 
       tarPath = os.path.join(self.workDir, 'pilot.tar')
       with tarfile.TarFile(name=tarPath, mode='w') as tf:
