@@ -10,6 +10,7 @@ futures
 matplotlib
 mock
 mysql-python
+numpy
 psutil
 pyasn1>0.4.1
 pyasn1_modules
