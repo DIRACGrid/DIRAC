@@ -3,6 +3,7 @@
 #-e git+https://github.com/DIRACGrid/DIRAC/@integration#egg=diracdoctools&subdirectory=docs
 M2Crypto==0.32
 Sphinx>=1.8.0
+docutils>=0.15
 boto3
 elasticsearch_dsl
 future
