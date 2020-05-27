@@ -46,11 +46,10 @@ on `PyPi <https://pypi.python.org/pypi>`_.
 *git*: DIRAC's version control system of choice is git, so install it.
 
 *basic packages*: you will need at least gcc, python-devel (python all-dev),
-openssl-devel (libssl-dev), mysql-client, libmysqlclient-dev,
-libfreetype6-dev, libncurses5-dev, libjpeg-dev.
+openssl-devel (libssl-dev), mysql-client, libmysqlclient-dev, libfreetype6-dev, libncurses5-dev, libjpeg-dev, libcurl4-gnutls-dev, libgcrypt20-dev, libnghttp2-dev, libpsl-dev, libldap2-dev.
 The names above are OS-dependent, distribution dependent, and version dependent,
 so you'll need to figure it out by yourself how to install them.
-Some equivalent packages for Fedora/CentOS: python-devel, openssl-devel, mysql, ncurses-libs freetype, libjpeg-devel, MySQL-python.
+Some equivalent packages for Fedora/CentOS: python-devel, openssl-devel, mysql, ncurses-libs freetype, libjpeg-devel, MySQL-python, libcurl-devel, libgcrypt-devel, libnghttp2-devel, libpsl, ldap2pg.
 If you are using a OSX machine, then you may end up in more problems than using a linux box.
 
 *editor*: get your favorite one.
@@ -170,6 +169,14 @@ Some useful commands::
 and specifically `miniconda <https://conda.io/en/latest/miniconda.html>`_.
 Use it if you like, if you understand virtualenv you can understand conda environments.
 
+Some useful conda commands::
+
+     "conda create --name DIRAC" will create a conda environment named DIRAC.
+     "conda activate DIRAC" or "source activate DIRAC" on conda versions prior to 4.6 will get you in the DIRAC environment
+     "conda deactivate" or "source deactivate" on conda versions prior to 4.6 will exit from the conda environment
+
+for other useful conda commands for managing environments, you can check this `link <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
+
 
 Adding to the PYTHONPATH
 ========================
@@ -180,7 +187,7 @@ You may either add the PATH to the global PYTHONPATH, as following::
 
 And repeat for the extension development root,
 or use virtualenv for managing the path,
-using `add2virtualenv <http://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html#add2virtualenv>`
+using `add2virtualenv <http://virtualenvwrapper.readthedocs.io/en/latest/command_ref.html#add2virtualenv>`_.
 
 
 Ready!
