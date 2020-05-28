@@ -573,8 +573,9 @@ class Watchdog(object):
       self.log.info("CPU/Wallclock ratio is %.2f%%" % ratio)
       # in case of error cpuTime might be 0, exclude this
       if ratio < self.minCPUWallClockRatio:
-        if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK'):
-          self.log.info('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
+	if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK') or \
+	   'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' in os.environ:
+	  self.log.warn('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
           return S_OK()
         self.log.info("Job is stalled!")
         return S_ERROR('Watchdog identified this job as stalled')

@@ -5,7 +5,7 @@ Environment Variables to Configure DIRAC Behaviour
 ==================================================
 
 There is a small number of environment variables that can be set to control the behaviour of some DIRAC
-components. These variables can either be set in the ``bashrc`` file of a *client or server* installation or set manually
+components. These variables can either be set in the ``bashrc`` file of a **client or server** installation or set manually
 when desired.
 
 DIRAC_VOMSES
@@ -14,6 +14,9 @@ DIRAC_VOMSES
 DIRACSYSCONFIG
   If set, its value should be (the full location on the file system of) a DIRAC cfg file, whose content will be used for the DIRAC configuration
   (see :ref:`<dirac-cs-structure>`)
+
+DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK
+  This variable only makes sense for DIRAC pilots. When set, the wallclock check done within the watchdog is disabled.
 
 DIRAC_DEBUG_DENCODE_CALLSTACK
   If set, debug information for the encoding and decoding will be printed out
