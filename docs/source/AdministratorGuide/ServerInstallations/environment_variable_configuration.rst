@@ -5,8 +5,15 @@ Environment Variables to Configure DIRAC Behaviour
 ==================================================
 
 There is a small number of environment variables that can be set to control the behaviour of some DIRAC
-components. These variables can either be set in the ``bashrc`` file of a client or server installation or set manually
+components. These variables can either be set in the ``bashrc`` file of a *client or server* installation or set manually
 when desired.
+
+DIRAC_VOMSES
+  Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
+
+DIRACSYSCONFIG
+  If set, its value should be (the full location on the file system of) a DIRAC cfg file, whose content will be used for the DIRAC configuration
+  (see :ref:`<dirac-cs-structure>`)
 
 DIRAC_DEBUG_DENCODE_CALLSTACK
   If set, debug information for the encoding and decoding will be printed out
@@ -27,6 +34,3 @@ DIRAC_USE_M2CRYPTO
 
 DIRAC_M2CRYPTO_SPLIT_HANDSHAKE
   If ``true`` or ``yes`` the SSL handshake is done in a new thread (default Yes)
-
-DIRAC_VOMSES
-  Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
