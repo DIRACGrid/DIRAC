@@ -13,7 +13,7 @@ DIRAC_VOMSES
 
 DIRACSYSCONFIG
   If set, its value should be (the full location on the file system of) a DIRAC cfg file, whose content will be used for the DIRAC configuration
-  (see :ref:`<dirac-cs-structure>`)
+  (see :ref:`dirac-cs-structure`)
 
 DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK
   This variable only makes sense for DIRAC pilots. When set, the wallclock check done within the watchdog is disabled.
