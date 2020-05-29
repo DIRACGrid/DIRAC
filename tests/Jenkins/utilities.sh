@@ -139,7 +139,7 @@ findSystems() {
     echo "ERROR: cannot change to ${TESTCODE}" >&2
     exit 1
   fi
-  find ./*DIRAC/ -name "*System"  | cut -d '/' -f 2 | sort | uniq > systems
+  find ./*DIRAC/ -name "*System" | cut -d '/' -f 2 | sort -u  > systems
 
   echo "found $(wc -l systems)"
 }
@@ -157,11 +157,11 @@ findSystems() {
 findDatabases() {
   echo '==> [findDatabases]'
 
-  if [[ -n "$1" ]]; then
-    DBstoSearch=$1
+  if [[ -n "${1}" ]]; then
+    DBstoSearch=${1}
     if [[ "${DBstoSearch}" = "exclude" ]]; then
-      echo "==> excluding $2"
-      DBstoExclude=$2
+      echo "==> excluding ${2}"
+      DBstoExclude=${2}
       DBstoSearch=' '
     fi
   else
@@ -180,9 +180,9 @@ findDatabases() {
   #  and InstalledComponentsDB which is installed at the beginning
   #
   if [[ -n "${DBstoExclude}" ]]; then
-    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "${DBstoExclude}" | grep -v 'DIRAC' | sort | uniq > databases
+    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "${DBstoExclude}" | grep -v 'DIRAC' | sort -u > databases
   else
-    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "${DBstoSearch}" | grep -v 'DIRAC' | sort | uniq > databases
+    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "${DBstoSearch}" | grep -v 'DIRAC' | sort -u > databases
   fi
 
   echo "found $(wc -l databases)"
@@ -201,11 +201,11 @@ findServices(){
   echo '==> [findServices]'
 
 
-  if [[ -n "$1" ]]; then
-    ServicestoSearch=$1
+  if [[ -n "${1}" ]]; then
+    ServicestoSearch=${1}
     if [[ "${ServicestoSearch}" = "exclude" ]]; then
-      echo "==> excluding $2"
-      ServicestoExclude=$2
+      echo "==> excluding ${2}"
+      ServicestoExclude=${2}
       ServicestoSearch=' '
     fi
   else
@@ -217,9 +217,9 @@ findServices(){
     exit 1
   fi
   if [[ -n "${ServicestoExclude}" ]]; then
-    find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "${ServicestoExclude}" | sort | uniq > services
+    find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "${ServicestoExclude}" | sort -u  > services
   else
-    find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "${ServicestoSearch}" | sort | uniq > services
+    find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "${ServicestoSearch}" | sort -u > services
   fi
 
   echo "found $(wc -l services)"
@@ -228,11 +228,11 @@ findServices(){
 findAgents(){
   echo '==> [findAgents]'
 
-  if [[ -n "$1" ]]; then
+  if [[ -n "${1}" ]]; then
     AgentstoSearch=$1
     if [[ "${AgentstoSearch}" = "exclude" ]]; then
-      echo "==> excluding $2"
-      AgentstoExclude=$2
+      echo "==> excluding ${2}"
+      AgentstoExclude=${2}
       AgentstoSearch=' '
     fi
   else
@@ -244,9 +244,9 @@ findAgents(){
     exit 1
   fi
   if [[ -n "${AgentstoExclude}" ]]; then
-    find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "${AgentstoExclude}" | sort | uniq > agents
+    find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "${AgentstoExclude}" | sort -u > agents
   else
-    find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "${AgentstoSearch}" | sort | uniq > agents
+    find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "${AgentstoSearch}" | sort -u > agents
   fi
 
   echo "found $(wc -l agents)"
@@ -264,7 +264,7 @@ findAgents(){
 findExecutors(){
   echo '==> [findExecutors]'
 
-  find ./*DIRAC/*/Executor/ -name "*.py" | awk -F "/" '{print $3,$5}' | sort | uniq > executors
+  find ./*DIRAC/*/Executor/ -name "*.py" | awk -F "/" '{print $3,$5}' | sort -u  > executors
 
   echo "found $(wc -l executors)"
 }
