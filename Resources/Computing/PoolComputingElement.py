@@ -104,9 +104,6 @@ class PoolComputingElement(ComputingElement):
     self.pPool.processResults()
 
     processorsForJob = self._getProcessorsForJobs(kwargs)
-
-    print "****** processorsForJob", processorsForJob, executableFile
-
     if not processorsForJob:
       return S_ERROR('Not enough processors for the job')
 
