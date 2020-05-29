@@ -104,10 +104,13 @@ class PoolComputingElement(ComputingElement):
     self.pPool.processResults()
 
     processorsForJob = self._getProcessorsForJobs(kwargs)
+
+    print "****** processorsForJob", processorsForJob, executableFile
+
     if not processorsForJob:
       return S_ERROR('Not enough processors for the job')
 
-    # Now persisiting the job limits for later use in pilot.cfg file (pilot 3 default)
+    # Now persisting the job limits for later use in pilot.cfg file (pilot 3 default)
     cd = ConfigurationData(loadDefaultCFG=False)
     res = cd.loadFile('pilot.cfg')
     if not res['OK']:
@@ -168,7 +171,7 @@ class PoolComputingElement(ComputingElement):
       if processorsInUse > 0:
         return 0
       else:
-        requestedProcessors = self.processors
+        return self.processors
 
     if "numberOfProcessors" in kwargs:
       requestedProcessors = int(kwargs['numberOfProcessors'])
@@ -181,11 +184,9 @@ class PoolComputingElement(ComputingElement):
     # If there's a maximum number of processors allowed for the job, use that as maximum,
     # otherwise it will use all the remaining processors
     if 'maxNumberOfProcessors' in kwargs and kwargs['maxNumberOfProcessors']:
-      maxNumberOfProcessors = min(int(kwargs['maxNumberOfProcessors']), availableProcessors)
-    else:
-      maxNumberOfProcessors = availableProcessors
+      requestedProcessors = min(int(kwargs['maxNumberOfProcessors']), availableProcessors)
 
-    return maxNumberOfProcessors
+    return requestedProcessors
 
   def finalizeJob(self, taskID, result):
     """ Finalize the job by updating the process utilisation counters
