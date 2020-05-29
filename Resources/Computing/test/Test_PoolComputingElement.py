@@ -102,7 +102,7 @@ def test_executeJob():
   result = ce.getCEStatus()
   assert result['UsedProcessors'] == 2
   # Allow job to start
-  time.sleep(15)
+  time.sleep(20)
 
   for i in range(8):
     _stopJob(i)
