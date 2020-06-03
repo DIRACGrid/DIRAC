@@ -167,8 +167,7 @@ Complete path of packages are not on the diagram for readability:
 
 
 You can see that the client sends a proposalTuple, proposalTuple contain (service, setup, ClientVO) then (typeOfCall, method) and finaly extra-credentials.
-e.g::
-
+e.g.::
   (('Framework/serviceName', 'DeveloperSetup', 'unknown'), ('RPC', 'methodName'), '')
 
 

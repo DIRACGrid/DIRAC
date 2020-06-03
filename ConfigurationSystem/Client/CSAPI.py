@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import six
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security import Locations
@@ -90,7 +90,7 @@ class CSAPI(object):
     if not retVal['OK']:
       self.__initialized = S_ERROR("Master server is not known. Is everything initialized?")
       return self.__initialized
-    self.__rpcClient = RPCClient(gConfig.getValue("/DIRAC/Configuration/MasterServer", ""))
+    self.__rpcClient = ConfigurationClient(url=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""))
     self.__csMod = Modificator(self.__rpcClient, "%s - %s - %s" %
                                (self.__userGroup, self.__userDN, Time.dateTime().strftime("%Y-%m-%d %H:%M:%S")))
     retVal = self.downloadCSData()

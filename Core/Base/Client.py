@@ -11,7 +11,8 @@ __RCSID__ = "$Id$"
 import ast
 import os
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Tornado.Client.RPCClientSelector import RPCClientSelector
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
 
@@ -25,13 +26,16 @@ class Client(object):
       - The self.serverURL member should be set by the inheriting class
   """
 
+  # Default https (RPC)Client
+  httpsClient = TornadoClient
+
   def __init__(self, **kwargs):
     """ C'tor.
 
         :param kwargs: just stored as an attribute and passed when creating
                       the RPCClient
     """
-    self.serverURL = None
+    self.serverURL = kwargs.pop('url', None)
     self.call = None  # I suppose it is initialized here to make pylint happy
     self.__kwargs = kwargs
     self.timeout = DEFAULT_RPC_TIMEOUT
@@ -103,7 +107,7 @@ class Client(object):
         timeout = self.timeout
 
       self.__kwargs['timeout'] = timeout
-      rpc = RPCClient(url, **self.__kwargs)
+      rpc = RPCClientSelector(url, httpsClient=self.httpsClient, **self.__kwargs)
     return rpc
 
 

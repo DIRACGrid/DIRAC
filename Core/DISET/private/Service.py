@@ -381,7 +381,7 @@ class Service(object):
     - Receive arguments/file/something else (depending on action) in the RequestHandler
     - Executing the action asked by the client
 
-    :param clientTransport: Object who describe the opened connection (SSLTransport or PlainTransport)
+    :param clientTransport: Object which describe the opened connection (SSLTransport or PlainTransport)
 
     :return: S_OK with "closeTransport" a boolean to indicate if th connection have to be closed
             e.g. after RPC, closeTransport=True

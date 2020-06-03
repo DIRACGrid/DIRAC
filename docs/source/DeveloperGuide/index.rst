@@ -41,3 +41,4 @@ group.
    Internals/index
    WorkloadManagementSystem/index
    Externals/index
+   TornadoServices/index
