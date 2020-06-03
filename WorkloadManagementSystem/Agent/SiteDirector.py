@@ -1184,8 +1184,6 @@ class SiteDirector(AgentModule):
     pilotOptions.append('-Q %s' % self.queueDict[queue]['QueueName'])
     # SiteName
     pilotOptions.append('-n %s' % queueDict['Site'])
-    if 'ClientPlatform' in queueDict:
-      pilotOptions.append("-p '%s'" % queueDict['ClientPlatform'])
 
     if 'SharedArea' in queueDict:
       pilotOptions.append("-o '/LocalSite/SharedArea=%s'" % queueDict['SharedArea'])

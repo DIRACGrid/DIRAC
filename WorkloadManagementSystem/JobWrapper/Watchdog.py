@@ -406,20 +406,20 @@ class Watchdog(object):
        and returns HH:MM:SS after conversion.
     """
     result = self.profiler.cpuUsageUser(withChildren=True,
-					withTerminatedChildren=True)
+                                        withTerminatedChildren=True)
     if not result['OK']:
       self.log.warn("Issue while checking consumed CPU for user", result['Message'])
       if result['Errno'] == errno.ESRCH:
-	self.log.warn("The main process does not exist (anymore). This might be correct.")
+        self.log.warn("The main process does not exist (anymore). This might be correct.")
       return result
     cpuUsageUser = result['Value']
 
     result = self.profiler.cpuUsageSystem(withChildren=True,
-					  withTerminatedChildren=True)
+                                          withTerminatedChildren=True)
     if not result['OK']:
       self.log.warn("Issue while checking consumed CPU for system", result['Message'])
       if result['Errno'] == errno.ESRCH:
-	self.log.warn("The main process does not exist (anymore). This might be correct.")
+        self.log.warn("The main process does not exist (anymore). This might be correct.")
       return result
     cpuUsageSystem = result['Value']
 
@@ -573,9 +573,9 @@ class Watchdog(object):
       self.log.info("CPU/Wallclock ratio is %.2f%%" % ratio)
       # in case of error cpuTime might be 0, exclude this
       if ratio < self.minCPUWallClockRatio:
-	if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK') or \
-	   'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' in os.environ:
-	  self.log.warn('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
+        if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK') or \
+           'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' in os.environ:
+          self.log.warn('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
           return S_OK()
         self.log.info("Job is stalled!")
         return S_ERROR('Watchdog identified this job as stalled')
