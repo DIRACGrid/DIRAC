@@ -138,6 +138,10 @@ First, make sure that `setuptools` and `pip` are at the latest versions::
    [sudo] pip install --upgrade setuptools
    [sudo] pip install --upgrade pip
 
+But consider that ``setuptools`` v45.0.0 `removed support for python 2 <https://setuptools.readthedocs.io/en/latest/history.html#v45-0-0>`_
+and v47.0.0 actively `crashes <https://setuptools.readthedocs.io/en/latest/history.html#v47-0-0>`_
+under python 2.
+
 We'll use `virtualenv <https://virtualenv.readthedocs.org/en/latest/>`_.
 and `virtualenvwrapper <https://virtualenvwrapper.readthedocs.org/en/latest/>`_.
 for working in a separate virtual python environment,
