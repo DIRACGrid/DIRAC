@@ -15,9 +15,8 @@ class ServiceInterfaceTornado(ServiceInterfaceBase):
 
   def __init__(self, sURL):
     ServiceInterfaceBase.__init__(self, sURL)
-    self.__launchCheckSlaves()
 
-  def __launchCheckSlaves(self):
+  def _launchCheckSlaves(self):
     """
       Start loop to check if slaves are alive
     """
@@ -31,3 +30,15 @@ class ServiceInterfaceTornado(ServiceInterfaceBase):
     while True:
       yield gen.sleep(gConfigurationData.getSlavesGraceTime())
       self._checkSlavesStatus()
+
+  def _updateServiceConfiguration(self, urlSet, fromMaster=False):
+    """
+    Update configuration in a set of service in parallel
+
+    :param set urlSet: a set of service URLs
+    :param fromMaster: flag to force updating from the master CS
+    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    """
+
+    for url in urlSet:
+      IOLoop.current().spawn_callback(self._forceServiceUpdate, [url, fromMaster])

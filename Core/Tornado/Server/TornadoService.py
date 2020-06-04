@@ -34,7 +34,7 @@ from tornado.ioloop import IOLoop
 
 
 import DIRAC
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.JEncode import decode, encode

@@ -1,31 +1,27 @@
-""" Threaded implementation of services
-"""
+"""Service interface is the service which provide config for client and synchronize Master/Slave servers"""
 
 __RCSID__ = "$Id$"
 
 import os
 import time
 import re
-import threading
 import zipfile
 import zlib
-import requests
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData, ConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
+from DIRAC.Core.Base.Client import Client
 
 
-class ServiceInterface(threading.Thread):
+class ServiceInterfaceBase(object):
+  """Service interface is the service which provide config for client and synchronize Master/Slave servers"""
 
   def __init__(self, sURL):
-    threading.Thread.__init__(self)
     self.sURL = sURL
     gLogger.info("Initializing Configuration Service", "URL is %s" % sURL)
     self.__modificationsIgnoreMask = ['/DIRAC/Configuration/Servers', '/DIRAC/Configuration/Version']
@@ -38,19 +34,19 @@ class ServiceInterface(threading.Thread):
       gRefresher.disable()
       self.__loadConfigurationData()
       self.dAliveSlaveServers = {}
-      self.__launchCheckSlaves()
-
-    self.__updateResultDict = {"Successful": {}, "Failed": {}}
+      self._launchCheckSlaves()
 
   def isMaster(self):
     return gConfigurationData.isMaster()
 
-  def __launchCheckSlaves(self):
-    gLogger.info("Starting purge slaves thread")
-    self.setDaemon(1)
-    self.start()
+  def _launchCheckSlaves(self):
+    raise NotImplementedError("Should be implemented by the children class")
 
   def __loadConfigurationData(self):
+    """
+      As the name said, it just load the configuration
+    """
+
     mkDir(os.path.join(DIRAC.rootPath, "etc", "csbackup"))
     gConfigurationData.loadConfigurationData()
     if gConfigurationData.isMaster():
@@ -74,15 +70,24 @@ class ServiceInterface(threading.Thread):
         gConfigurationData.writeRemoteConfigurationToDisk()
 
   def __generateNewVersion(self):
+    """
+      After changing configuration, we use this method to save them
+    """
     if gConfigurationData.isMaster():
       gConfigurationData.generateNewVersion()
       gConfigurationData.writeRemoteConfigurationToDisk()
 
   def publishSlaveServer(self, sSlaveURL):
+    """
+      Called by the slave server via service, it register a new slave server
+
+      :param sSlaveURL: url of slave server
+    """
+
     if not gConfigurationData.isMaster():
       return S_ERROR("Configuration modification is not allowed in this server")
     gLogger.info("Pinging slave %s" % sSlaveURL)
-    rpcClient = RPCClient(sSlaveURL, timeout=10, useCertificates=True)
+    rpcClient = ConfigurationClient(url=sSlaveURL, timeout=10, useCertificates=True)
     retVal = rpcClient.ping()
     if not retVal['OK']:
       gLogger.info("Slave %s didn't reply" % sSlaveURL)
@@ -100,7 +105,13 @@ class ServiceInterface(threading.Thread):
                                                 ", ".join(self.dAliveSlaveServers.keys())))
       self.__generateNewVersion()
 
-  def __checkSlavesStatus(self, forceWriteConfiguration=False):
+  def _checkSlavesStatus(self, forceWriteConfiguration=False):
+    """
+      Check if Slaves server are still availlable
+
+      :param forceWriteConfiguration=False: Force rewriting configuration after checking slaves
+    """
+
     gLogger.info("Checking status of slave servers")
     iGraceTime = gConfigurationData.getSlavesGraceTime()
     bModifiedSlaveServers = False
@@ -115,38 +126,22 @@ class ServiceInterface(threading.Thread):
       self.__generateNewVersion()
 
   @staticmethod
-  def __forceServiceUpdate(url, fromMaster):
+  def _forceServiceUpdate(url, fromMaster):
     """
     Force updating configuration on a given service
+    This should be called by _updateServiceConfiguration
 
     :param str url: service URL
     :param bool fromMaster: flag to force updating from the master CS
     :return: S_OK/S_ERROR
     """
     gLogger.info('Updating service configuration on', url)
-    if url.startswith('dip'):
-      rpc = RPCClient(url)
-      result = rpc.refreshConfiguration(fromMaster)
-    elif url.startswith('http'):
-      hostCertTuple = getHostCertificateAndKeyLocation()
-      resultRequest = requests.get(url,
-                                   headers={'X-RefreshConfiguration': "True"},
-                                   cert=hostCertTuple,
-                                   verify=False)
-      result = S_OK()
-      if resultRequest.status_code != 200:
-        result = S_ERROR("Status code returned %d" % resultRequest.status_code)
+
+    result = Client(url=url).refreshConfiguration(fromMaster)
     result['URL'] = url
     return result
 
-  def __processResults(self, id_, result):
-    if result['OK']:
-      self.__updateResultDict['Successful'][result['URL']] = True
-    else:
-      gLogger.warn("Failed to update configuration on", result['URL'] + ':' + result['Message'])
-      self.__updateResultDict['Failed'][result['URL']] = result['Message']
-
-  def __updateServiceConfiguration(self, urlSet, fromMaster=False):
+  def _updateServiceConfiguration(self, urlSet, fromMaster=False):
     """
     Update configuration in a set of service in parallel
 
@@ -154,14 +149,7 @@ class ServiceInterface(threading.Thread):
     :param fromMaster: flag to force updating from the master CS
     :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
     """
-    pool = ThreadPool(len(urlSet))
-    for url in urlSet:
-      pool.generateJobAndQueueIt(self.__forceServiceUpdate,
-                                 args=[url, fromMaster],
-                                 kwargs={},
-                                 oCallback=self.__processResults)
-    pool.processAllResults()
-    return S_OK(self.__updateResultDict)
+    raise NotImplementedError("Should be implemented by the children class")
 
   def forceSlavesUpdate(self):
     """
@@ -171,12 +159,11 @@ class ServiceInterface(threading.Thread):
     """
     gLogger.info("Updating configuration on slave servers")
     iGraceTime = gConfigurationData.getSlavesGraceTime()
-    self.__updateResultDict = {"Successful": {}, "Failed": {}}
     urlSet = set()
     for slaveURL in self.dAliveSlaveServers:
       if time.time() - self.dAliveSlaveServers[slaveURL] <= iGraceTime:
         urlSet.add(slaveURL)
-    return self.__updateServiceConfiguration(urlSet, fromMaster=True)
+    return self._updateServiceConfiguration(urlSet, fromMaster=True)
 
   def forceGlobalUpdate(self):
     """
@@ -193,7 +180,7 @@ class ServiceInterface(threading.Thread):
         for url in cfg[system_][instance]['URLs']:
           urlSet = urlSet.union(set([u.strip() for u in cfg[system_][instance]['URLs'][url].split(',')
                                      if 'Configuration/Server' not in u]))
-    return self.__updateServiceConfiguration(urlSet)
+    return self._updateServiceConfiguration(urlSet)
 
   def updateConfiguration(self, sBuffer, committer="", updateVersionOption=False):
     """
@@ -265,12 +252,6 @@ class ServiceInterface(threading.Thread):
     files = self.__getCfgBackups(gConfigurationData.getBackupDir())
     backups = [".".join(fileName.split(".")[1:-1]).split("@") for fileName in files]
     return backups
-
-  def run(self):
-    while True:
-      iWaitTime = gConfigurationData.getSlavesGraceTime()
-      time.sleep(iWaitTime)
-      self.__checkSlavesStatus()
 
   def getVersionContents(self, date):
     backupDir = gConfigurationData.getBackupDir()

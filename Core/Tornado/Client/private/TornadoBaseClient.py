@@ -26,9 +26,11 @@ import DIRAC
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities import List, Network
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import findDefaultGroupForDN
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
 from DIRAC.Core.Utilities.JEncode import decode, encode
-from DIRAC.Core.Security import CS
+
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 
@@ -184,7 +186,7 @@ class TornadoBaseClient(object):
         * Certification Authorities check:
            -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates,
                 set KW_SKIP_CA_CHECK to false in kwargs
-           -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the CS.skipCACheck
+           -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the skipCACheck
         * Proxy Chain
 
         WARNING: MOSTLY COPY/PASTE FROM Core/Diset/private/BaseClient
@@ -200,7 +202,7 @@ class TornadoBaseClient(object):
       if self.__useCertificates:
         self.kwargs[self.KW_SKIP_CA_CHECK] = False
       else:
-        self.kwargs[self.KW_SKIP_CA_CHECK] = CS.skipCACheck()
+        self.kwargs[self.KW_SKIP_CA_CHECK] = skipCACheck()
 
     # Rewrite a little bit from here: don't need the proxy string, we use the file
     if self.KW_PROXY_CHAIN in self.kwargs:
@@ -263,7 +265,7 @@ class TornadoBaseClient(object):
       self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
     if delegatedDN:
       if not delegatedGroup:
-        result = CS.findDefaultGroupForDN(self.kwargs[self.KW_DELEGATED_DN])
+        result = findDefaultGroupForDN(self.kwargs[self.KW_DELEGATED_DN])
         if not result['OK']:
           return result
       self.__extraCredentials = (delegatedDN, delegatedGroup)
