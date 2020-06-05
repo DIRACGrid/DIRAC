@@ -2172,16 +2172,21 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       extensions = CSGlobals.getCSExtensions()
 
     res = self.getAvailableSQLDatabases(extensions)
+    gLogger.debug("Available SQL databases", res)
     if not res['OK']:
       return res
     sqlDBs = res['Value']
 
     res = self.getAvailableESDatabases(extensions)
+    gLogger.debug("Available ES databases", res)
     if not res['OK']:
       return res
     esDBs = res['Value']
 
-    return S_OK(sqlDBs.update(esDBs))
+    allDBs = sqlDBs.copy()
+    allDBs.update(esDBs)
+
+    return S_OK(allDBs)
 
   def getAvailableSQLDatabases(self, extensions):
     """
