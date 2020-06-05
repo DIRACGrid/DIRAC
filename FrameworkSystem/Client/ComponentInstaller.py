@@ -1725,11 +1725,13 @@ class ComponentInstaller(object):
         return result
       installedDatabases = result['Value']
       result = self.getAvailableDatabases(CSGlobals.getCSExtensions())
+      gLogger.debug("Available databases", result)
       if not result['OK']:
         return result
       dbDict = result['Value']
 
       for dbName in setupDatabases:
+        gLogger.verbose("Setting up database", dbName)
         if dbName not in installedDatabases:
           result = self.installDatabase(dbName)
           if not result['OK']:
