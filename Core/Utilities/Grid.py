@@ -460,9 +460,10 @@ def getBdiiCEInfo(vo, host=None, glue2=False):
 def getBdiiSEInfo(vo, host=None):
   """ Get information for all the SEs for a given VO
 
-:param vo: BDII VO name
-:return result structure: result['Value'][siteID]['SEs'][seID]. For
-               each siteID, seIDall the BDII/Glue SE/SA parameters are retrieved
+    :param vo: BDII VO name
+
+    :return result structure: result['Value'][siteID]['SEs'][seID]. For
+     each siteID, seIDall the BDII/Glue SE/SA parameters are retrieved
   """
   result = ldapSE('*', vo, host=host)
   if not result['OK']:

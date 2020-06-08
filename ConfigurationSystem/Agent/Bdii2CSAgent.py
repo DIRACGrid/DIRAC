@@ -159,7 +159,7 @@ class Bdii2CSAgent(AgentModule):
 
       body = ''
       for site in siteDict:
-        newCEs = set(siteDict[site].keys())  # pylint: disable=no-member
+	newCEs = set(siteDict[site])  # pylint: disable=no-member
         if not newCEs:
           continue
 
@@ -390,7 +390,7 @@ class Bdii2CSAgent(AgentModule):
       siteDict = result['Value']
       body = ''
       for site in siteDict:
-        newSEs = set(siteDict[site].keys())  # pylint: disable=no-member
+	newSEs = set(siteDict[site])  # pylint: disable=no-member
         if not newSEs:
           continue
         for se in newSEs:
