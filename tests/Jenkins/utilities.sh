@@ -178,11 +178,12 @@ findDatabases() {
   #
   # We are avoiding, FileCatalogDB FileCatalogWithFkAndPsDB that is installed in other ways
   #  and InstalledComponentsDB which is installed at the beginning
+  # We also ignore all the DBs in tests directory
   #
   if [[ -n "${DBstoExclude}" ]]; then
-    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "${DBstoExclude}" | grep -v 'DIRAC' | sort -u > databases
+    find ./*DIRAC/ -path "*/tests/*" -prune -o -name "*DB.sql" -print  | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "${DBstoExclude}" | grep -v 'DIRAC' | sort | uniq > databases
   else
-    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "${DBstoSearch}" | grep -v 'DIRAC' | sort -u > databases
+    find ./*DIRAC/ -path "*/tests/*" -prune -o -name "*DB.sql" -print  | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "${DBstoSearch}" | grep -v 'DIRAC' | sort | uniq > databases
   fi
 
   echo "found $(wc -l databases)"
