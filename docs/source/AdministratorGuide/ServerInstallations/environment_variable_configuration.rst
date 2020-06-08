@@ -5,7 +5,7 @@ Environment Variables to Configure DIRAC Behaviour
 ==================================================
 
 There is a small number of environment variables that can be set to control the behaviour of some DIRAC
-components. These variables can either be set in the ``bashrc`` file of a client or server installation or set manually
+components. These variables can either be set in the ``bashrc`` file of a **client or server** installation or set manually
 when desired.
 
 DIRAC_DEBUG_DENCODE_CALLSTACK
@@ -35,8 +35,18 @@ DIRAC_USE_M2CRYPTO
 DIRAC_M2CRYPTO_SPLIT_HANDSHAKE
   If ``true`` or ``yes`` the SSL handshake is done in a new thread (default Yes)
 
+DIRAC_USE_M2CRYPTO
+  If ``true`` or ``yes`` DIRAC uses m2crypto instead of pyGSI for handling certificates, proxies, etc.
+
 DIRAC_VOMSES
   Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
 
 DIRAC_USE_NEWTHREADPOOL
   If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used.
+
+DIRACSYSCONFIG
+  If set, its value should be (the full location on the file system of) a DIRAC cfg file, whose content will be used for the DIRAC configuration
+  (see :ref:`dirac-cs-structure`)
+
+DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK
+  This variable only makes sense for DIRAC pilots. When set, the wallclock check done within the watchdog is disabled.

@@ -11,7 +11,7 @@
 #.........................................................................
 
 if [[ -z $INSTALLROOT || -z $INSTALLTYPE ]]; then
-    echo "Arguments missing. "
+    echo "Arguments missing. " >&2
     exit 1
 fi
 
@@ -54,7 +54,7 @@ if [[ -z "$ERR" ]]; then
     echo "WARN: Variable \$ERR not defined, check the test logs for possible failed tests"
     exit 0
 elif [[ "$ERR" != "0" ]]; then
-   echo "ERROR: At least one unit test in ${INSTALLTYPE} failed !!!"
+   echo "ERROR: At least one unit test in ${INSTALLTYPE} failed !!!" >&2
    exit "$ERR"
 else
    echo "SUCCESS: All tests succeded"

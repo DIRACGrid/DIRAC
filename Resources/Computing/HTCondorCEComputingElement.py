@@ -405,31 +405,40 @@ Queue %(nJobs)s
 
     if not self.useLocalSchedd:
       iwd = None
-      if pathToResult:
-        iwd = os.path.join(self.workingDirectory, pathToResult)
-      else:
-        status, stdout_q = commands.getstatusoutput('condor_q %s %s -af SUBMIT_Iwd' % (self.remoteScheddOptions,
-                                                                                       condorID))
-        self.log.verbose('condor_q:', stdout_q)
-        if status != 0:
-          return S_ERROR(stdout_q)
-        if self.workingDirectory in stdout_q:
-          iwd = stdout_q
 
+      # TOREMOVE: once v7r0 will mainly be used, remove the following block that was only useful
+      # when path to output was not deterministic
+      status, stdout_q = commands.getstatusoutput('condor_q %s %s -af SUBMIT_Iwd' % (self.remoteScheddOptions,
+                                                                                     condorID))
+      self.log.verbose('condor_q:', stdout_q)
+      if status == 0 and self.workingDirectory in stdout_q:
+        iwd = stdout_q
+        pathToResult = iwd
+
+      # Use the path extracted from the pilotID
       if iwd is None:
-        return S_ERROR("Failed to find condor job %s" % condorID)
+        iwd = os.path.join(self.workingDirectory, pathToResult)
 
       try:
-        os.makedirs(iwd)
+        mkDir(iwd)
       except OSError as e:
-        self.log.verbose(str(e))
+        errorMessage = "Failed to create the pilot output directory"
+        self.log.exception(errorMessage, iwd)
+        return S_ERROR(e.errno, '%s (%s)' % (errorMessage, iwd))
 
       cmd = ['condor_transfer_data', '-pool', '%s:9619' % self.ceName, '-name', self.ceName, condorID]
       result = executeGridCommand(self.proxy, cmd, self.gridEnv)
       self.log.verbose(result)
+
+      errorMessage = "Failed to get job output from htcondor"
       if not result['OK']:
-        self.log.error("Failed to get job output from htcondor", result['Message'])
+        self.log.error(errorMessage, result['Message'])
         return result
+      # Even if result is OK, the actual exit code of cmd can still be an error
+      if result['OK'] and result['Value'][0] != 0:
+        varMessage = result['Value'][1].strip()
+        self.log.error(errorMessage, varMessage)
+        return S_ERROR('%s: %s' % (errorMessage, varMessage))
 
     output = ''
     error = ''

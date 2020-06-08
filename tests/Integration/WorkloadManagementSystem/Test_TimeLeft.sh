@@ -24,7 +24,7 @@ $DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/Worklo
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
-  echo -e "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
 
@@ -40,7 +40,7 @@ $DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/Worklo
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
-  echo -e "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
 
@@ -56,7 +56,7 @@ $DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/Worklo
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
-  echo -e "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
 

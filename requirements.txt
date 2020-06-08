@@ -41,6 +41,7 @@ requests>=2.9.1
 simplejson>=3.8.1
 six>=1.10
 sqlalchemy>=1.0.9
+xmltodict
 # more recent version are python 3 only
 stomp.py==4.1.22
 suds-jurko>=0.6

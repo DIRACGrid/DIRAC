@@ -292,26 +292,34 @@ class Watchdog(object):
       self.parameters['MemoryUsed'] = []
     self.parameters['MemoryUsed'].append(memoryUsed)
 
-    result = self.profiler.getAllProcessData(withChildren=True)
-    if result['OK']:
-      vsize = result['Value']['stats']['vSizeUsage'] * 1024.
-      rss = result['Value']['stats']['memoryUsage'] * 1024.
+    result = self.profiler.vSizeUsage(withChildren=True)
+    if not result['OK']:
+      self.log.warn("Could not get vSize info from profiler", result['Message'])
+    else:
+      vsize = result['Value'] * 1024.
       heartBeatDict['Vsize'] = vsize
-      heartBeatDict['RSS'] = rss
       self.parameters.setdefault('Vsize', [])
       self.parameters['Vsize'].append(vsize)
+      msg += "Job Vsize: %.1f kb " % vsize
+
+    result = self.profiler.memoryUsage(withChildren=True)
+    if not result['OK']:
+      self.log.warn("Could not get rss info from profiler", result['Message'])
+    else:
+      rss = result['Value'] * 1024.
+      heartBeatDict['RSS'] = rss
       self.parameters.setdefault('RSS', [])
       self.parameters['RSS'].append(rss)
-      msg += "Job Vsize: %.1f kb " % vsize
       msg += "Job RSS: %.1f kb " % rss
+
+    if 'DiskSpace' not in self.parameters:
+      self.parameters['DiskSpace'] = []
+
     result = self.getDiskSpace()
     if not result['OK']:
       self.log.warn("Could not establish DiskSpace", result['Message'])
     else:
       msg += 'DiskSpace: %.1f MB ' % (result['Value'])
-    if 'DiskSpace' not in self.parameters:
-      self.parameters['DiskSpace'] = []
-    if result['OK']:
       self.parameters['DiskSpace'].append(result['Value'])
       heartBeatDict['AvailableDiskSpace'] = result['Value']
 
@@ -397,28 +405,30 @@ class Watchdog(object):
     """Uses the profiler to get CPU time for current process, its child, and the terminated child,
        and returns HH:MM:SS after conversion.
     """
-    try:
-      result = self.profiler.getAllProcessData(withChildren=True,
-                                               withTerminatedChildren=True)
-      if not result['OK']:
-        self.log.warn("Issue while checking consumed CPU")
-        if result['Errno'] == errno.ESRCH:
-          self.log.warn("The main process does not exist (anymore). This might be correct.")
-        return result
+    result = self.profiler.cpuUsageUser(withChildren=True,
+                                        withTerminatedChildren=True)
+    if not result['OK']:
+      self.log.warn("Issue while checking consumed CPU for user", result['Message'])
+      if result['Errno'] == errno.ESRCH:
+        self.log.warn("The main process does not exist (anymore). This might be correct.")
+      return result
+    cpuUsageUser = result['Value']
 
-      cpuTime = result['Value']
-      if cpuTime:
-        cpuTimeTotal = cpuTime['stats']['cpuUsageSystem'] + cpuTime['stats']['cpuUsageUser']
-        self.log.verbose("Raw CPU time consumed (s) = %s" % (cpuTimeTotal))
-        return self.__getCPUHMS(cpuTimeTotal)
-      else:
-        self.log.error("CPU time consumed found to be 0")
-        return S_ERROR()
+    result = self.profiler.cpuUsageSystem(withChildren=True,
+                                          withTerminatedChildren=True)
+    if not result['OK']:
+      self.log.warn("Issue while checking consumed CPU for system", result['Message'])
+      if result['Errno'] == errno.ESRCH:
+        self.log.warn("The main process does not exist (anymore). This might be correct.")
+      return result
+    cpuUsageSystem = result['Value']
 
-    except Exception as e:
-      self.log.warn('Could not determine CPU time consumed with exception')
-      self.log.exception(e)
-      return S_ERROR("Could not determine CPU time consumed with exception")
+    cpuTimeTotal = cpuUsageUser + cpuUsageSystem
+    if cpuTimeTotal:
+      self.log.verbose("Raw CPU time consumed (s) =", cpuTimeTotal)
+      return self.__getCPUHMS(cpuTimeTotal)
+    self.log.error("CPU time consumed found to be 0")
+    return S_ERROR()
 
   #############################################################################
   def __getCPUHMS(self, cpuTime):
@@ -563,8 +573,9 @@ class Watchdog(object):
       self.log.info("CPU/Wallclock ratio is %.2f%%" % ratio)
       # in case of error cpuTime might be 0, exclude this
       if ratio < self.minCPUWallClockRatio:
-        if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK'):
-          self.log.info('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
+        if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK') or \
+           'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' in os.environ:
+          self.log.warn('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
           return S_OK()
         self.log.info("Job is stalled!")
         return S_ERROR('Watchdog identified this job as stalled')
@@ -637,6 +648,7 @@ class Watchdog(object):
   def __checkMemoryLimit(self):
     """ Checks that the job memory consumption is within a limit
     """
+    vsize = 0
     if 'Vsize' in self.parameters:
       vsize = self.parameters['Vsize'][-1]
 
@@ -729,26 +741,34 @@ class Watchdog(object):
     self.initialValues['MemoryUsed'] = memUsed
     self.parameters['MemoryUsed'] = []
 
-    result = self.profiler.getAllProcessData(withChildren=True)
-    self.log.verbose('Job Memory: %s' % (result['Value']))
+    result = self.profiler.vSizeUsage(withChildren=True)
     if not result['OK']:
-      self.log.warn('Could not get job memory usage')
-
-    self.initialValues['Vsize'] = result['Value']['stats']['vSizeUsage'] * 1024.
-    self.initialValues['RSS'] = result['Value']['stats']['memoryUsage'] * 1024.
+      self.log.warn("Could not get vSize info from profiler", result['Message'])
+    else:
+      vsize = result['Value'] * 1024.
+      self.initialValues['Vsize'] = vsize
+      self.log.verbose("Vsize(kb)", "%.1f" % vsize)
     self.parameters['Vsize'] = []
+
+    result = self.profiler.memoryUsage(withChildren=True)
+    if not result['OK']:
+      self.log.warn("Could not get rss info from profiler", result['Message'])
+    else:
+      rss = result['Value'] * 1024.
+      self.initialValues['RSS'] = rss
+      self.log.verbose("RSS(kb)", "%.1f" % rss)
     self.parameters['RSS'] = []
 
     result = self.getDiskSpace()
-    self.log.verbose('DiskSpace: %s' % (result))
+    self.log.verbose('DiskSpace', result)
     if not result['OK']:
       self.log.warn("Could not establish DiskSpace")
-
-    self.initialValues['DiskSpace'] = result['Value']
+    else:
+      self.initialValues['DiskSpace'] = result['Value']
     self.parameters['DiskSpace'] = []
 
     result = self.getNodeInformation()
-    self.log.verbose('NodeInfo: %s' % (result))
+    self.log.verbose('NodeInfo', result)
     if not result['OK']:
       self.log.warn("Could not establish static system information")
 

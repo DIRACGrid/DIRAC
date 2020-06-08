@@ -25,6 +25,16 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
+[v7r1p4]
+
+Includes fixes from v6r22p30, v7r0p26
+
+*Framework
+CHANGE: (#4632) dirac-sysadmin - handle installation possible also for ES DBs
+
+*tests
+NEW: (#4633) added xmltodict module - makes working with XML feel like working with JSON.
+
 [v7r1p3]
 
 Includes fixes from v6r22p29, v7r0p25
@@ -158,6 +168,31 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p26]
+
+*Resources
+CHANGE: (#4626) Test_PoolComputingElement - increase delays for job submission
+CHANGE: (#4626) PoolComputingElement - fix the logic of number of processors evaluation
+FIX: (#4634) Add pilot.cfg symlink in SingularityCE for Pilot3 compatibility.
+FIX: (#4620) in getPilotOutput, returns errors when the HTCondor working directory is
+     not available and condor_transfer_data fails
+
+*WMS
+NEW: (#4614) uploadToWebApp flag to disable the json upload for the CSToJson
+FIX: (#4614) Fix an absolute path in the CSToJSON
+NEW: (#4620) pop the pilot reference from the failedPilotOutput dictionary when
+     maxRetryGetPilotOutput is reached
+NEW: (#4619) Watchdog - added DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK env variable
+FIX: (#4619) Watchdog - Split check methods for better control
+
+*Docs:
+CHANGE: (#4614) allow to generate only header/footer in the release notes if no PR were merged
+FIX: (#4635) add missing packages for the UBUNTU Linux Distribution that need to be installed
+     before installing DIRAC
+NEW: (#4635) add useful commands for working with conda environments
+CHANGE: (#4622) diracdoctools - No longer mock numpy and matplotlib
+FIX: (#4619) added doc about DIRACSYSCONFIG environment variable
 
 [v7r0p25]
 
@@ -632,6 +667,11 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p30]
+
+*DataManagementSystem
+FIX: (#4627) Throw an error if LFN contains '//'
 
 [v6r22p29]
 

@@ -119,7 +119,7 @@ fi
 
 echo ""
 echo "Checking if the files have been added to the transformation"
-dirac-transformation-get-files $transID | sort > ./transLFNs.txt
+dirac-transformation-get-files ${transID} | sort > ./transLFNs.txt
 diff --ignore-space-change LFNstoTS.txt transLFNs.txt
 if [[ "${?}" -ne 0 ]
 then

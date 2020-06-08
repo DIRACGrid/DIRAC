@@ -70,16 +70,12 @@ the SiteDirector matches "TaskQueues" to Computing Element capabilities.
 
 Other subsections are instead used to describe specific types of computing elements:
 
-  /Resources/Computing/CEDefaults
-   For all computing elements
-  /Resources/Computing/<CEType>
-   For CEs of a given type, e.g., HTCondorCE or ARC
-  /Resources/Sites/<grid>/<site>/CEs
-   For all CEs at a given site
-  /Resources/Sites/<grid>/<site>/CEs/<CEName>
-   For the specific CE
+- */Resources/Computing/CEDefaults* for all computing elements
+- */Resources/Computing/<CEType>* for CEs of a given type, e.g., HTCondorCE or ARC
+- */Resources/Sites/<grid>/<site>/CEs* for all CEs at a given site
+- */Resources/Sites/<grid>/<site>/CEs/<CEName>* for a specific CE
 
-Values are overwritten.
+Values are overwritten by the most specialized option.
 
 
 General Parameters
@@ -87,12 +83,20 @@ General Parameters
 
 These parameters are valid for all types of computing elements
 
-+---------------------------------+------------------------------------------------+-----------------------------------+
-| **Name**                        | **Description**                                | **Example**                       |
-+---------------------------------+------------------------------------------------+-----------------------------------+
-| GridEnv                         |Default environment file sourced before calling | /opt/dirac/gridenv                |
-|                                 |grid commands, without extension '.sh'.         | (when the file is gridenv.sh)     |
-+---------------------------------+------------------------------------------------+-----------------------------------+
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
+| **Name**                        | **Description**                                 | **Example**                                   |
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
+| GridEnv                         | Default environment file sourced before calling | /opt/dirac/gridenv                            |
+|                                 | grid commands, without extension '.sh'.         | (when the file is gridenv.sh)                 |
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
+| SharedArea                      | Will be added to the pilot configuration        | /cvmfs/lhcb.cern.ch/lib                       |
+|                                 | as /LocalSite/SharedArea                        |                                               |
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
+| ExtraPilotOptions               | For adding some generic pilot options.          | --userEnvVariables DIRACSYSCONFIG:::pilot.cfg |
+|                                 | (only for pilots submitted by SiteDirectors)    | will add the environment variable             |
+|                                 |                                                 | DIRACSYSCONFIG                                |
+|                                 |                                                 | (see :ref:`bashrc_variables`)                 |
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
 
 
 
@@ -145,7 +149,9 @@ Options for the HTCondorCEs
 |                     | file. Separate entries with "\\n".                  |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+
 | WorkingDirectory    | Directory where the pilot log files are stored      | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT    |
-|                     | locally. Also temproray files like condor submit    |                                                           |
+|                     | locally. It should exist on the server and          |                                                           |
+|                     | be accessible (both readable and writeable).        |                                                           |
+|                     | Also temporary files like condor submit             |                                                           |
 |                     | files are kept here. This option is only read from  |                                                           |
 |                     | the global Resources/Computing/HTCondorCE location. |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+

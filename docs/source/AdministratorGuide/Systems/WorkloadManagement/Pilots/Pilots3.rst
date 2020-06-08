@@ -62,6 +62,9 @@ Other options that can be set also in the Operations part of the CS include:
 | *pilotVORepoBranch*                | Branch to use, inside the Git repository,  | pilotVORepoBranch = master                                              |
 |                                    | of the pilot code extension to be used     | The value above is the default                                          |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
+| *uploadToWebApp*                   | Whether to try to upload the files to the  | uploadToWebApp = True                                                   |
+|                                    | list of server specified                   | The value above is the default                                          |
++------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *workDir*                          | Local directory of the master CS where the | workDir = /tmp/pilotSyncDir                                             |
 |                                    | files will be downloaded before the upload | There is no default (so /opt/dirac/runit/Configuration/Server)          |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+

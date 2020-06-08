@@ -66,11 +66,11 @@ fi
 
 # Creating default structure
 mkdir -p "$WORKSPACE/TestCode" # Where the test code resides
-TESTCODE=${_}
+readonly TESTCODE=${_}
 mkdir -p "$WORKSPACE/ServerInstallDIR" # Where servers are installed
-SERVERINSTALLDIR=${_}
+readonly SERVERINSTALLDIR=${_}
 mkdir -p "$WORKSPACE/ClientInstallDIR" # Where clients are installed
-CLIENTINSTALLDIR=${_}
+readonly CLIENTINSTALLDIR=${_}
 
 # Location of the CFG file to be used (this can be replaced by the extensions)
 INSTALL_CFG_FILE="${TESTCODE}/DIRAC/tests/Jenkins/install.cfg"
@@ -90,7 +90,7 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 #
 #...............................................................................
 
-function installSite(){
+installSite() {
   echo "==> [installSite]"
 
   prepareForServer
@@ -147,25 +147,25 @@ function installSite(){
   fi
 
   if ! "${SERVERINSTALLDIR}/dirac-install.py" "${INSTALLOPTIONS[@]}" "${SERVERINSTALLDIR}/install.cfg" "${SERVERINSTALLDIR}/dirac-ci-install.cfg"; then
-    echo "ERROR: dirac-install.py failed"
+    echo "ERROR: dirac-install.py failed" >&2
     exit 1
   fi
 
   echo "==> Done installing, now configuring"
   source "${SERVERINSTALLDIR}/bashrc"
   if ! dirac-configure "${SERVERINSTALLDIR}/install.cfg" "${DEBUG}"; then
-    echo "ERROR: dirac-configure failed"
+    echo "ERROR: dirac-configure failed" >&2
     exit 1
   fi
 
   echo "=> The pilot flag should be False"
   if ! dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH "${DEBUG}"; then
-    echo "ERROR: dirac-configure failed"
+    echo "ERROR: dirac-configure failed" >&2
     exit 1
   fi
 
   if ! dirac-setup-site "${DEBUG}"; then
-    echo "ERROR: dirac-setup-site failed"
+    echo "ERROR: dirac-setup-site failed" >&2
     exit 1
   fi
 
@@ -182,7 +182,7 @@ function installSite(){
 #
 #...............................................................................
 
-function fullInstallDIRAC(){
+fullInstallDIRAC() {
   echo "==> [fullInstallDIRAC]"
 
   finalCleanup
@@ -191,15 +191,15 @@ function fullInstallDIRAC(){
 
   # install ElasticSearch locally
   if [[ -z $NoSQLDB_HOST || $NoSQLDB_HOST == "localhost" ]]; then
-      echo "Installing ElasticSearch locally"
-      installES
+    echo "Installing ElasticSearch locally"
+    installES
   else
-      echo "NoSQLDB_HOST != localhost, skipping local ElasticSearch install"
+    echo "NoSQLDB_HOST != localhost, skipping local ElasticSearch install"
   fi
 
-  #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
+  # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   if ! installSite; then
-    echo "ERROR: installSite failed"
+    echo "ERROR: installSite failed" >&2
     exit 1
   fi
 
@@ -212,18 +212,18 @@ function fullInstallDIRAC(){
   # Dealing with security stuff
   # generateCertificates
   if ! generateUserCredentials; then
-    echo "ERROR: generateUserCredentials failed"
+    echo "ERROR: generateUserCredentials failed" >&2
     exit 1
   fi
 
   if ! diracCredentials; then
-    echo "ERROR: diracCredentials failed"
+    echo "ERROR: diracCredentials failed" >&2
     exit 1
   fi
 
   #just add a site
   if ! diracAddSite; then
-    echo "ERROR: diracAddSite failed"
+    echo "ERROR: diracAddSite failed" >&2
     exit 1
   fi
 
@@ -234,25 +234,25 @@ function fullInstallDIRAC(){
   findDatabases 'FrameworkSystem'
   dropDBs
   if ! diracDBs; then
-    echo "ERROR: diracDBs failed"
+    echo "ERROR: diracDBs failed" >&2
     exit 1
   fi
 
   findServices 'FrameworkSystem'
   if ! diracServices; then
-    echo "ERROR: diracServices failed"
+    echo "ERROR: diracServices failed" >&2
     exit 1
   fi
 
   #create groups
   if ! diracUserAndGroup; then
-    echo "ERROR: diracUserAndGroup failed"
+    echo "ERROR: diracUserAndGroup failed" >&2
     exit 1
   fi
 
   # add 2 storageelements
   if ! diracSEs; then
-    echo "ERROR: diracSEs failed"
+    echo "ERROR: diracSEs failed" >&2
     exit 1
   fi
 
@@ -271,13 +271,13 @@ function fullInstallDIRAC(){
   findDatabases 'exclude' 'FrameworkSystem'
   dropDBs
   if ! diracDBs; then
-    echo "ERROR: diracDBs failed"
+    echo "ERROR: diracDBs failed" >&2
     exit 1
   fi
 
   #upload proxies
   if ! diracProxies; then
-    echo "ERROR: diracProxies failed"
+    echo "ERROR: diracProxies failed" >&2
     exit 1
   fi
 
@@ -289,14 +289,14 @@ function fullInstallDIRAC(){
   #services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
   if ! diracServices; then
-    echo "ERROR: diracServices failed"
+    echo "ERROR: diracServices failed" >&2
     exit 1
   fi
 
   # install an additional FileCatalog service for multi VO metadata tests
   echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
   if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
-      echo 'ERROR: dirac-install-component failed'
+      echo 'ERROR: dirac-install-component failed' >&2
       exit 1
   fi
   #fix the DFC services options
@@ -372,7 +372,7 @@ function fullInstallDIRAC(){
 #
 #...............................................................................
 
-function miniInstallDIRAC(){
+miniInstallDIRAC(){
   echo "==> [miniInstallDIRAC]"
 
   finalCleanup
@@ -381,25 +381,25 @@ function miniInstallDIRAC(){
 
   # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   if ! installSite; then
-    echo "ERROR: installSite failed"
+    echo "ERROR: installSite failed" >&2
     exit 1
   fi
 
   # Dealing with security stuff
   # generateCertificates
   if ! generateUserCredentials; then
-    echo "ERROR: generateUserCredentials failed"
+    echo "ERROR: generateUserCredentials failed" >&2
     exit 1
   fi
 
   if ! diracCredentials; then
-    echo "ERROR: diracCredentials failed"
+    echo "ERROR: diracCredentials failed" >&2
     exit 1
   fi
 
   # just add a site
   if ! diracAddSite; then
-    echo "ERROR: diracAddSite failed"
+    echo "ERROR: diracAddSite failed" >&2
     exit 1
   fi
 
@@ -412,17 +412,17 @@ function miniInstallDIRAC(){
 
 
 
-function clean(){
+clean(){
 
   echo "==> [clean]"
 
   #### make sure we're using the server
   if ! cd "${SERVERINSTALLDIR}"; then
-    echo "ERROR: cannot change to ${SERVERINSTALLDIR}"
+    echo "ERROR: cannot change to ${SERVERINSTALLDIR}" >&2
     exit 1
   fi
   if ! source bashrc; then
-    echo "ERROR: cannot source bashrc"
+    echo "ERROR: cannot source bashrc" >&2
     exit 1
   fi
   ####

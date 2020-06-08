@@ -6,7 +6,7 @@ set -x
 
 BUILD_DIR=$PWD/integration_test_results
 mkdir -p "${BUILD_DIR}"
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 DIRAC_BASE_DIR=$(realpath "${SCRIPT_DIR}/../..")
 
 export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE:-diracgrid}
@@ -18,7 +18,7 @@ export DOCKER_USER=dirac
 export USER_HOME=/home/${DOCKER_USER}
 export WORKSPACE=$USER_HOME
 
-function copyLocalSource() {
+copyLocalSource() {
   # Copies local source and test code to docker containers, if they are directories
   CONTAINER_NAME=$1
   CONFIG_PATH=$2
@@ -46,16 +46,16 @@ function copyLocalSource() {
 }
 cd "$SCRIPT_DIR"
 
-function prepareEnvironment() {
+prepareEnvironment() {
   if [[ -z "$TMP" ]]; then
-      TMP=/tmp/DIRAC_CI_$(date +"%Y%m%d%I%M%p")
-      mkdir -p "$TMP"
+    TMP=/tmp/DIRAC_CI_$(date +"%Y%m%d%I%M%p")
+    mkdir -p "$TMP"
   fi
   if [[ -z "$CLIENTCONFIG" ]]; then
-      CLIENTCONFIG=${BUILD_DIR}/CLIENTCONFIG
+    CLIENTCONFIG=${BUILD_DIR}/CLIENTCONFIG
   fi
   if [[ -z "$SERVERCONFIG" ]]; then
-      SERVERCONFIG=${BUILD_DIR}/SERVERCONFIG
+    SERVERCONFIG=${BUILD_DIR}/SERVERCONFIG
   fi
 
   # GitLab variables
@@ -128,26 +128,20 @@ function prepareEnvironment() {
 
   # find the latest version, unless it's integration
   if [[ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]]; then
-      {
-        echo "export DIRAC_RELEASE=integration"
-      } >> "${SERVERCONFIG}"
+    {
+      echo "export DIRAC_RELEASE=integration"
+    } >> "${SERVERCONFIG}"
 
   elif [[ "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" = 'integration' ]]; then
-      {
-        echo "export DIRAC_RELEASE=integration"
-      } >> "${SERVERCONFIG}"
+    {
+      echo "export DIRAC_RELEASE=integration"
+    } >> "${SERVERCONFIG}"
   else
-      majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2 | cut -d " " -f 2 | cut -d "'" -f 2)
-      if [[ "$majorVersion" = "integration" ]]; then
-        {
-          echo "export DIRAC_RELEASE=integration"
-        } >> "${SERVERCONFIG}"
-      else
-        minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2 | cut -d " " -f 2 | cut -d "'" -f 2)
-        {
-          echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
-        } >> "${SERVERCONFIG}"
-      fi
+    majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d '=' -f 2)
+    minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d '=' -f 2)
+    {
+      echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
+    } >> "${SERVERCONFIG}"
   fi
 
   if [[ -n "${EXTRA_ENVIRONMENT_CONFIG+x}" ]]; then
@@ -197,14 +191,14 @@ function prepareEnvironment() {
   docker cp "$CLIENTCONFIG" client:"$WORKSPACE/CONFIG"
 
   # Copy DIRACOS_TARBALL_PATH if it is a local directory containing a DIRACOS tarball
-  if ls "${DIRACOS_TARBALL_PATH}"/diracos-*.tar.gz 1> /dev/null 2>&1; then
+  if ls "${DIRACOS_TARBALL_PATH}"/diracos-*.tar.gz &> /dev/null; then
     docker cp "${DIRACOS_TARBALL_PATH}" server:"${DIRACOS_TARBALL_PATH}"
     docker cp "${DIRACOS_TARBALL_PATH}" client:"${DIRACOS_TARBALL_PATH}"
   fi
 }
 
-function installServer() {
-  docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" server bash ./install_server.sh 2>&1 | tee "${BUILD_DIR}/log_server_install.txt"
+installServer() {
+  docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" server bash ./install_server.sh |& tee "${BUILD_DIR}/log_server_install.txt"
 
   echo -e "\n**** $(date -u) Copying credentials and certificates ****"
   docker exec client bash -c "mkdir -p $WORKSPACE/ServerInstallDIR/user $WORKSPACE/ClientInstallDIR/etc /home/dirac/.globus"
@@ -219,27 +213,27 @@ function installServer() {
   docker exec client bash -c "chown -R dirac:dirac /tmp/x509up_u${client_uid}"
 }
 
-function installClient() {
-  docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" client bash ./install_client.sh 2>&1 | tee "${BUILD_DIR}/log_client_install.txt"
+installClient() {
+  docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" client bash ./install_client.sh |& tee "${BUILD_DIR}/log_client_install.txt"
 }
 
-function testServer() {
+testServer() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" -e INSTALLROOT="$WORKSPACE" -e INSTALLTYPE=server server \
       bash TestCode/DIRAC/tests/CI/run_tests.sh || SERVER_CODE=$?
   echo ${SERVER_CODE:-0} > "${BUILD_DIR}/server_test_status"
   docker cp server:/home/dirac/serverTestOutputs.txt "${BUILD_DIR}/log_server_tests.txt"
 }
 
-function testClient() {
+testClient() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" -e INSTALLROOT="$WORKSPACE" -e INSTALLTYPE=client client \
       bash TestCode/DIRAC/tests/CI/run_tests.sh || CLIENT_CODE=$?
   echo ${CLIENT_CODE:-0} > "${BUILD_DIR}/client_test_status"
   docker cp client:/home/dirac/clientTestOutputs.txt "${BUILD_DIR}/log_client_tests.txt"
 }
 
-function checkErrors() {
+checkErrors() {
   set +x
-  EXIT_CODE=0
+  local EXIT_CODE=0
 
   # Server
   if [[ ! -f "${BUILD_DIR}/server_test_status" ]]; then

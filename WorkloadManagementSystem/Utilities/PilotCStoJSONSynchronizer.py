@@ -61,6 +61,11 @@ class PilotCStoJSONSynchronizer(object):
     self.casLocation = getCAsLocation()
     self._checksumDict = {}
 
+    # If this is set to True, we will attempt to upload the files
+    # to all the servers in the list. Obviously, it will only work
+    # for the DIRAC web servers (see _upload)
+    self.uploadToWebApp = True
+
     self.log = gLogger.getSubLogger(__name__)
 
   def sync(self):
@@ -92,6 +97,7 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVOScriptPath = ops.getValue("Pilot/pilotVOScriptsPath", self.pilotVOScriptPath)
     self.pilotRepoBranch = ops.getValue("Pilot/pilotRepoBranch", self.pilotRepoBranch)
     self.pilotVORepoBranch = ops.getValue("Pilot/pilotVORepoBranch", self.pilotVORepoBranch)
+    self.uploadToWebApp = ops.getValue("Pilot/uploadToWebApp", True)
 
     res = self._syncJSONFile()
     if not res['OK']:
@@ -330,13 +336,15 @@ class PilotCStoJSONSynchronizer(object):
                                          "dirac-install.py")):
         self._upload(filename='dirac-install.py',
                      pilotScript=os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
-        tarFiles.append('dirac-install.py')
+        tarFiles.append(os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
 
       tarPath = os.path.join(self.workDir, 'pilot.tar')
       with tarfile.TarFile(name=tarPath, mode='w') as tf:
         for ptf in tarFiles:
+          # This copy makes sure that all the files in the tarball are accessible
+          # in the work directory. It should be kept
           shutil.copyfile(ptf, os.path.join(self.workDir, os.path.basename(ptf)))
-          tf.add(os.path.basename(ptf), recursive=False)
+          tf.add(ptf, arcname=os.path.basename(ptf), recursive=False)
 
       self._upload(filename='pilot.tar', pilotScript=tarPath)
 
@@ -357,6 +365,10 @@ class PilotCStoJSONSynchronizer(object):
     # http://docs.python-requests.org/en/master/user/advanced/#post-multiple-multipart-encoded-files
     # But well, maybe too much optimization :-)
 
+    if not self.uploadToWebApp:
+      self.log.verbose("Skipping upload")
+      return
+
     if not self.pilotFileServer:
       self.log.warn("No pilotFileServer, nowhere to upload")
       if pilotDict:
@@ -376,7 +388,7 @@ class PilotCStoJSONSynchronizer(object):
 
       for pfServer in self.pilotFileServer.replace(' ', '').split(','):
         try:
-          data = {'filename': filename, 'data': script}
+          data = {'filename': os.path.basename(filename), 'data': script}
           resp = requests.post('https://%s/DIRAC/upload' % pfServer,
                                data=data,
                                verify=self.casLocation,
