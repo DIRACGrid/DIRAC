@@ -1,3 +1,8 @@
+[v6r22p30]
+
+*DataManagementSystem
+FIX: (#4627) Throw an error if LFN contains '//'
+
 [v6r22p29]
 
 *WorkloadManagementSystem
