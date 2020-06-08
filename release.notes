@@ -486,6 +486,11 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p30]
+
+*DataManagementSystem
+FIX: (#4627) Throw an error if LFN contains '//'
+
 [v6r22p29]
 
 *WorkloadManagementSystem
