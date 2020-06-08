@@ -145,7 +145,9 @@ Options for the HTCondorCEs
 |                     | file. Separate entries with "\\n".                  |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+
 | WorkingDirectory    | Directory where the pilot log files are stored      | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT    |
-|                     | locally. Also temproray files like condor submit    |                                                           |
+|                     | locally. It should exist on the server and          |                                                           |
+|                     | be accessible (both readable and writeable).        |                                                           |
+|                     | Also temporary files like condor submit             |                                                           |
 |                     | files are kept here. This option is only read from  |                                                           |
 |                     | the global Resources/Computing/HTCondorCE location. |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+
