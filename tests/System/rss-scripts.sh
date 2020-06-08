@@ -68,14 +68,14 @@ fi
 echo -e "\n\n TESTING: dirac-rss-query-db --name=test123 --status=Banned --statusType=ReadAccess --elementType=StorageElement --reason=test add resource status"
 dirac-rss-query-db --name=test123 --status=Banned --statusType=ReadAccess --elementType=StorageElement --reason=test add resource status -dd
 if [[ "${?}" -ne 0 ]]; then
-  echo -e "Script dirac-rss-query-db did not get executed successfully \n"
+  echo -e "Script dirac-rss-query-db did not get executed successfully \n" >&2
   exit 1
 fi
 
 echo -e "\n\n TESTING: dirac-rss-list-status --name=test123 --element=Resource"
 dirac-rss-list-status --name=test123 --element=Resource -dd
 if [[ "${?}" -ne 0 ]]; then
-  echo -e "Script dirac-rss-list-status did not get executed successfully \n"
+  echo -e "Script dirac-rss-list-status did not get executed successfully \n" >&2
   exit 1
 fi
 
@@ -89,7 +89,7 @@ fi
 echo -e "\n\n TESTING: dirac-rss-list-status --name=test123 --element=Resource -dd"
 TEST_OUT=$( dirac-rss-list-status --name=test123 --element=Resource -dd )
 if [[ $TEST_OUT != *"rs_svc"* ]]; then
-  echo -e "Script dirac-rss-set-token did not get executed successfully \n"
+  echo -e "Script dirac-rss-set-token did not get executed successfully \n" >&2
   exit 1
 fi
 
@@ -100,7 +100,7 @@ fi
 echo -e "\n\n TESTING: dirac-rss-query-db --name=test123 delete resource status -dd"
 TEST_OUT=$( dirac-rss-query-db --name=test123 delete resource status -dd )
 if [[ $TEST_OUT != *"successfully executed"* ]]; then
-  echo -e "Script dirac-rss-query-db did not get executed successfully \n"
+  echo -e "Script dirac-rss-query-db did not get executed successfully \n" >&2
   exit 1
 fi
 
@@ -111,7 +111,7 @@ fi
 echo -e "\n\n TESTING: dirac-rss-list-status --name=test123 --element=Resource -dd"
 TEST_OUT=$( dirac-rss-list-status --name=test123 --element=Resource -dd )
 if [[ $TEST_OUT != *"No output"* ]]; then
-  echo -e "Script dirac-rss-query-db did not get executed successfully \n"
+  echo -e "Script dirac-rss-query-db did not get executed successfully \n" >&2
   exit 1
 fi
 
@@ -131,7 +131,7 @@ echo -e "\n\n TESTING: dirac-rss-query-dtcache --name=dtest123 --element=Site --
 TEST_OUT=$( dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 --severity=OUTAGE --description='just a test DT' add --startDate='2019-06-12 15:00:00' --endDate='2020-06-12 15:00:00' -dd )
 
 if [[ $TEST_OUT != *"successfully executed"* ]]; then
-  echo -e "Script dirac-rss-query-dtcache did not get executed successfully \n"
+  echo -e "Script dirac-rss-query-dtcache did not get executed successfully \n" >&2
   exit 1
 fi
 
@@ -142,20 +142,20 @@ fi
 echo -e "\n\n TESTING: dirac-rss-query-dtcache --name=dtest123 select"
 TEST_OUT=$( dirac-rss-query-dtcache --name=dtest123 select )
 if [[ $TEST_OUT != *"4354354789"* ]]; then
-  echo -e "Script dirac-rss-query-dtcache did not get executed successfully \n"
+  echo -e "Script dirac-rss-query-dtcache did not get executed successfully \n" >&2
   exit 1
 fi
 
 echo -e "\n\n TESTING: dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 delete -dd"
 TEST_OUT=$( dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 delete -dd )
 if [[ $TEST_OUT != *"successfully executed"* ]]; then
-  echo -e "\n\nScript dirac-rss-query-dtcache did not get executed successfully \n"
+  echo -e "\n\nScript dirac-rss-query-dtcache did not get executed successfully \n" >&2
   exit 1
 fi
 
 echo -e "\n\n TESTING: dirac-rss-query-dtcache --name=dtest123 select"
 TEST_OUT=$( dirac-rss-query-dtcache --name=dtest123 select )
 if [[ $TEST_OUT != *"number: 0"* ]]; then
-  echo -e "\n\nScript dirac-rss-query-dtcache did not get executed successfully \n"
+  echo -e "\n\nScript dirac-rss-query-dtcache did not get executed successfully \n" >&2
   exit 1
 fi

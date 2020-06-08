@@ -4,10 +4,10 @@ gsCerts="/etc/grid-security/certificates"
 
 allF="/opt/dirac/etc/grid-security/cas.pem"
  
-narg=$#
+narg="${#}"
 nar=0
 while [[ ${nar} -lt "${narg}" ]]; do
-  case "$1" in
+  case "${1}" in
     -h )
       echo "Usage : $0 [-h] [-i] [-o] "
       echo "      -h : provide this help"
@@ -17,7 +17,7 @@ while [[ ${nar} -lt "${narg}" ]]; do
       ;;
     -i )
       shift
-      gsCerts=$1
+      gsCerts=${1}
       if [[ ! -d "${gsCerts}" ]]; then
         echo "${gsCerts} does not exist"
         exit
@@ -26,12 +26,16 @@ while [[ ${nar} -lt "${narg}" ]]; do
       ;;
     -o )
       shift
-      allF=$1
+      allF=${1}
       if [[ ! -d "${allF}" ]]; then
         mkdir "${allF}"
       fi
       allF=${allF}/cas.pem
       shift
+      ;;
+    *)
+      echo 'Supply a valid option' >&2
+      exit 1
       ;;
   esac
   if [[ $nar -lt "${narg}" ]]; then

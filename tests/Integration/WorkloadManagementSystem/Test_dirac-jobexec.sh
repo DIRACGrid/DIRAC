@@ -25,7 +25,7 @@ $DIRACSCRIPTS/dirac-jobexec jobDescription-OK.xml $DIRAC/DIRAC/tests/Integration
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
-  echo -e "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
 
@@ -34,7 +34,7 @@ $DIRACSCRIPTS/dirac-jobexec jobDescription-OK-multiSteps.xml $DIRAC/DIRAC/tests/
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
-  echo -e "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
 
@@ -44,7 +44,7 @@ $DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL.xml $DIRAC/DIRAC/tests/Integrati
 if [[ "${?}" -eq 111 ]]; then
   echo -e "\nSuccess\n\n"
 else
-  echo -e "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
 
@@ -53,7 +53,7 @@ $DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL-multiSteps.xml $DIRAC/DIRAC/test
 if [[ "${?}" -eq 111 ]]; then
   echo -e "\nSuccess\n\n"
 else
-  echo -e "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
 
@@ -63,7 +63,7 @@ $DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL1502.xml $DIRAC/DIRAC/tests/Integ
 if [[ "${?}" -eq 222 ]]; then # This is 1502 & 255 (0xDE)
   echo -e "\nSuccess\n\n"
 else
-  echo -e "\nSomething wrong!\n\n"
+  echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
 

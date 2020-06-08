@@ -11,7 +11,7 @@
 #
 ##################################################################################
 
-function usage {
+usage() {
   echo Usage:
   echo "    " dirac-cert-convert.sh CERT_FILE_NAME.p12
   exit 1
