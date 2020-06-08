@@ -531,6 +531,10 @@ class DirectoryTreeBase(object):
           pDir = os.path.dirname(path)
           if not pDir:
             return S_ERROR('Illegal Path')
+          if pDir == path:
+            # If pDir == path, then we're stuck in a loop
+            # There is probably a "//" in the path
+            return S_ERROR('Bad Path (double /?)')
           result = self.getDirectoryPermissions(pDir, credDict)
           return result
       else:

@@ -73,7 +73,7 @@ class WatchdogLinux(Watchdog):
     if diskSpace == -1:
       result = S_ERROR('Could not obtain disk usage')
       self.log.warn(' Could not obtain disk usage')
-      result['Value'] = -1
+    else:
+      result['Value'] = float(diskSpace)
 
-    result['Value'] = float(diskSpace)
     return result

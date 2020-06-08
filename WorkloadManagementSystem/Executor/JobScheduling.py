@@ -91,7 +91,7 @@ class JobScheduling(OptimizerExecutor):
     # Get banned sites from DIRAC
     result = self.siteClient.getSites('Banned')
     if not result['OK']:
-      self.jobLog.error("Cannot retrieve banned sites from JobDB", result['Message'])
+      self.jobLog.error("Cannot retrieve banned sites", result['Message'])
       return result
     wmsBannedSites = result['Value']
 

@@ -50,6 +50,7 @@ openssl-devel (libssl-dev), mysql-client, libmysqlclient-dev,
 libfreetype6-dev, libncurses5-dev, libjpeg-dev.
 The names above are OS-dependent, distribution dependent, and version dependent,
 so you'll need to figure it out by yourself how to install them.
+Some packages you may need to add for Ubuntu: libcurl4-gnutls-dev, libgcrypt20-dev, libnghttp2-dev, libpsl-dev, libldap2-dev.
 Some equivalent packages for Fedora/CentOS: python-devel, openssl-devel, mysql, ncurses-libs freetype, libjpeg-devel, MySQL-python.
 If you are using a OSX machine, then you may end up in more problems than using a linux box.
 
@@ -138,6 +139,10 @@ First, make sure that `setuptools` and `pip` are at the latest versions::
    [sudo] pip install --upgrade setuptools
    [sudo] pip install --upgrade pip
 
+But consider that ``setuptools`` v45.0.0 `removed support for python 2 <https://setuptools.readthedocs.io/en/latest/history.html#v45-0-0>`_
+and v47.0.0 actively `crashes <https://setuptools.readthedocs.io/en/latest/history.html#v47-0-0>`_
+under python 2.
+
 We'll use `virtualenv <https://virtualenv.readthedocs.org/en/latest/>`_.
 and `virtualenvwrapper <https://virtualenvwrapper.readthedocs.org/en/latest/>`_.
 for working in a separate virtual python environment,
@@ -169,6 +174,22 @@ Some useful commands::
 **NOTE**: A (maybe better) *alternative* to virtualenv is conda,
 and specifically `miniconda <https://conda.io/en/latest/miniconda.html>`_.
 Use it if you like, if you understand virtualenv you can understand conda environments.
+
+Some useful conda commands::
+
+  conda env create $DEVROOT/DIRAC/environment.yml  # will create a conda environment named
+                                                   # dirac-development and install the
+						   # prerequiste packages
+
+  conda activate dirac-development #  will get you in the dirac-development environment
+  # or on conda versions prior to 4.6
+  source activate dirac-development
+
+  conda deactivate  # will exit from the conda environment
+  # or on conda versions prior to 4.6 
+  source deactivate
+     
+for other useful conda commands for managing environments, you can check this `link <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
 
 
 Adding to the PYTHONPATH
