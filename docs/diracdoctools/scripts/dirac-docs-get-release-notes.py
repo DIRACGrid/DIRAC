@@ -526,6 +526,16 @@ class GithubInterface(object):
       with open(self.footerMessage, 'r') as hmf:
         footerMessage = hmf.read()
 
+    # If there are no CHANGELOGS, which can happen
+    # just add the header/footer
+    # CAUTION: no [tag] will be written
+    if not prs:
+      if headerMessage:
+        releaseNotes += '%s\n\n' % headerMessage
+      if footerMessage:
+        releaseNotes += '%s\n' % footerMessage
+      return releaseNotes
+
     prMarker = '#' if self.useGithub else '!'
     for baseBranch, pr in prs.iteritems():
       releaseNotes += '[%s]\n\n' % baseBranch
