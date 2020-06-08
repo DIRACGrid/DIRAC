@@ -1,9 +1,14 @@
 """
 It used used to create different plots.
 """
-import cStringIO
+
+try:
+  from StringIO import StringIO
+except ImportError:
+  from io import BytesIO as StringIO
+
 import errno
-from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph
+from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph, histogram
 
 from DIRAC import S_OK, S_ERROR
 
@@ -46,7 +51,7 @@ def generateErrorMessagePlot(msgText):
   :param str msgText: the text which will appear on the plot.
   :return: the plot.
   """
-  fn = cStringIO.StringIO()
+  fn = StringIO()
   textGraph(msgText, fn, {})
   data = fn.getvalue()
   fn.close()
@@ -146,6 +151,23 @@ def generatePiePlot(fileName, data, metadata):
     with open(fileName, "wb") as fn:
       checkMetadata(metadata)
       pieGraph(data, fn, **metadata)
+  except IOError as e:
+    return S_ERROR(errno.EIO, e)
+  return S_OK()
+
+
+def generateHistogram(filename, data, metadata):
+  """
+  It is used to create histograms.
+
+  :param str fileName: the nanme of the file
+  :param list data: the data which is used to create the plot
+  :param dict metadata: extra information used to create the plot.
+  """
+  try:
+    with open(filename, "wb") as fn:
+      checkMetadata(metadata)
+      histogram(data, fn, **metadata)
   except IOError as e:
     return S_ERROR(errno.EIO, e)
   return S_OK()

@@ -33,7 +33,7 @@ class Legend(object):
       for label, ddict in data.items():
         # self.labels[label] = pretty_float(max([ float(x) for x in ddict.values() if x ]) )
         self.labels[label] = "%.1f" % max([float(x) for x in ddict.values() if x])
-    elif isinstance(data, types.InstanceType) and data.__class__ == GraphData:
+    elif isinstance(data, GraphData):
       self.labels = data.getLabels()
     else:
       self.labels = data
@@ -88,17 +88,15 @@ class Legend(object):
       maxRows = self.prefs['legend_max_rows']
       nRows_ax = int(legend_height / 1.6 / self.prefs['text_size'])
       nRows_label = nLabels / nColumns + (nLabels % nColumns != 0)
-      nRows = max(1, min(min(nRows_label, maxRows), nRows_ax))
+      nRows = int(max(1, min(min(nRows_label, maxRows), nRows_ax)))
       text_padding = self.prefs['text_padding']
       text_padding = pixelToPoint(text_padding, self.prefs['dpi'])
-      legend_height = min(legend_height, (nRows * (self.text_size + text_padding) + text_padding))
-      legend_max_height = nLabels * (self.text_size + text_padding)
-
+      legend_height = int(min(legend_height, (nRows * (self.text_size + text_padding) + text_padding)))
+      legend_max_height = int(nLabels * (self.text_size + text_padding))
     return legend_width, legend_height, legend_max_height
 
   def __get_legend_text_size(self):
 
-    dpi = self.prefs['dpi']
     text_size = self.prefs['text_size']
     text_padding = self.prefs['text_padding']
     legend_text_size = self.prefs.get('legend_text_size', text_size)
@@ -157,7 +155,6 @@ class Legend(object):
     nRows_ax = int(ax_ysize / 1.6 / self.prefs['text_size'])
     nRows_label = nLabels / nColumns + (nLabels % nColumns != 0)
     nRows = max(1, min(min(nRows_label, maxRows), nRows_ax))
-    maxLabels = nColumns * nRows - 1
     self.ax.set_xlim(0., float(ax_xsize))
     self.ax.set_ylim(-float(ax_ysize), 0.)
 
@@ -182,7 +179,7 @@ class Legend(object):
         num = None
       color = self.palette.getColor(label)
       row = nc % nRows
-      column = nc / nRows
+      column = int(nc / nRows)
       if row == nRows - 1 and column == nColumns - 1 and nc != nLabels - 1:
         last_text = '... plus %d more' % (nLabels - nc)
         self.ax.text(float(column * self.column_width) + legend_offset, -float(row * 1.6 * box_width),

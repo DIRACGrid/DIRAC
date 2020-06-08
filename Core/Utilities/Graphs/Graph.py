@@ -33,7 +33,7 @@ class Graph(object):
     prefs = self.prefs
 
     # Get the main Figure object
-    #self.figure = Figure()
+    # self.figure = Figure()
     figure = self.figure
     self.canvas = FigureCanvasAgg(figure)
 
@@ -118,8 +118,8 @@ class Graph(object):
     column_width = legend.column_width
     if legend_flag:
       legend_position = prefs['legend_position']
-      #legend_width = float(prefs['legend_width'])
-      #legend_height = float(prefs['legend_height'])
+      # legend_width = float(prefs['legend_width'])
+      # legend_height = float(prefs['legend_height'])
       legend_width, legend_height, legend_max_height = legend.getLegendSize()
       legend_padding = float(prefs['legend_padding'])
       if legend_position in ['right', 'left']:
@@ -276,10 +276,15 @@ class Graph(object):
     for i in range(nPlots):
       plot_type = plot_prefs[i]['plot_type']
       try:
+        # TODO: Remove when we moved to python3
         exec("import %s" % plot_type)
-      except ImportError as x:
-        print("Failed to import graph type %s: %s" % (plot_type, str(x)))
-        return None
+      except ImportError:
+        print("Trying to use python like import")
+        try:
+          exec("from . import  %s" % plot_type)
+        except ImportError as x:
+          print("Failed to import graph type %s: %s" % (plot_type, str(x)))
+          return None
 
       ax = plot_axes[i]
       plot = eval("%s.%s(graphData[i],ax,plot_prefs[i])" % (plot_type, plot_type))

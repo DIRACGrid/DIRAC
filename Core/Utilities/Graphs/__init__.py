@@ -5,12 +5,14 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 # Make sure the the Agg backend is used despite arbitrary configuration
 import matplotlib
 matplotlib.use('agg')
+
+from matplotlib.pyplot import hist
 
 import DIRAC
 
@@ -23,7 +25,7 @@ common_prefs = {
     'plot_grid': '1:1',
     'plot_padding': 0,
     'frame': 'On',
-    'font': 'Lucida Grande',
+    'font': 'DejaVu Sans',
     'font_family': 'sans-serif',
     'dpi': 100,
     'legend': True,
@@ -174,15 +176,36 @@ def textGraph(text, fileName, *args, **kw):
   graph({}, fileName, prefs, *args, **kw)
 
 
-def histogram(data, fileName, bins, *args, **kw):
-  try:
-    from pylab import hist
-  except BaseException:
-    print("No pylab module available")
-    return
+def histogram(data, fileName, bins=None, *args, **kw):
   kw = __checkKW(kw)
-  values, vbins, _patches = hist(data, bins)
-  histo = dict(zip(vbins, values))
-  span = (max(data) - min(data)) / float(bins) * 0.95
+  if bins is None:
+    bins = 'auto'
+  histograms = None
+  spans = []
+  if isinstance(data, list):
+    if isinstance(data[0], dict):
+      for plots in data:
+        for plot in plots:
+          values, vbins, _patches = hist(plots[plot], bins)
+          # we can have multiple plots in a figure, although we
+          # are not using it, but still it is good to have in histograms as well.
+          if 'plot_grid' in kw and kw['plot_grid'] not in '1:1':
+            if not histograms:
+              histograms = []
+            histograms.append({plot: dict(zip(vbins, values))})
+          else:
+            if not histograms:
+              histograms = {}
+            histograms[plot] = dict(zip(vbins, values))
+          if vbins.size:
+            bins = len(vbins)
+            spans.append((max(plots[plot]) - min(plots[plot]) + 0.1) / float(bins) * 0.95)
+    else:
+      values, vbins, _patches = hist(data, bins)
+      histograms = dict(zip(vbins, values))
+      if vbins.size:
+        bins = len(vbins)
+      spans = [(max(data) - min(data)) / float(bins) * 0.95]
   kw = __checkKW(kw)
-  graph(histo, fileName, plot_type='BarGraph', span=span, statistics_line=True, *args, **kw)
+  span = max(spans)
+  graph(histograms, fileName, plot_type='BarGraph', span=span, statistics_line=True, *args, **kw)
