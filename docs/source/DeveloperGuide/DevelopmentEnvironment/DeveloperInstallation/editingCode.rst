@@ -173,6 +173,18 @@ Use it if you like, if you understand virtualenv you can understand conda enviro
 
 Some useful conda commands::
 
+  conda env create $DEVROOT/DIRAC/environment.yml  # will create a conda environment named
+                                                   # dirac-development and install the
+						   # prerequiste packages
+
+  conda activate dirac-development #  will get you in the dirac-development environment
+  # or on conda versions prior to 4.6
+  source activate dirac-development
+
+  conda deactivate  # will exit from the conda environment
+  # or on conda versions prior to 4.6 
+  source deactivate
+
      "conda env create $DEVROOT/DIRAC/environment.yml" will create a conda environment named dirac-development and install the prerequiste packages
      "conda activate dirac-development" or "source activate dirac-development" on conda versions prior to 4.6 will get you in the dirac-development environment
      "conda deactivate" or "source deactivate" on conda versions prior to 4.6 will exit from the conda environment
