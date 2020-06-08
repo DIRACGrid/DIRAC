@@ -371,8 +371,8 @@ class SystemAdministratorClientCLI(CLI):
         try:
           if argDict['-s']:
             size = int(argDict['-s'])
-        except ValueError as _ve:
-          self._errMsg('Argument \'size\' must be an integer')
+        except ValueError:
+          self._errMsg("Argument 'size' must be an integer")
           return
         host = argDict['-h']
         initialDate = argDict['-id']
@@ -594,8 +594,7 @@ class SystemAdministratorClientCLI(CLI):
 
         usage:
 
-          install mysql
-          install db <database>
+          install db <databaseName>
           install service <system> <service> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
           install agent <system> <agent> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
           install executor <system> <executor> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
@@ -607,6 +606,8 @@ class SystemAdministratorClientCLI(CLI):
 
     option = argss[0]
     del argss[0]
+
+    # Databases
     if option == "db":
       if not argss:
         gLogger.notice(self.do_install.__doc__)
@@ -622,6 +623,7 @@ class SystemAdministratorClientCLI(CLI):
         self._errMsg("Unknown database %s: " % database)
         return
       system = result['Value'][database]['System']
+      dbType = result['Value'][database]['Type']
       setup = gConfig.getValue('/DIRAC/Setup', '')
       if not setup:
         self._errMsg("Unknown current setup")
@@ -632,43 +634,47 @@ class SystemAdministratorClientCLI(CLI):
         self._errMsg("\tAdd new instance with 'add instance %s <instance_name>'" % system)
         return
 
-      if not gComponentInstaller.mysqlPassword:
-        gComponentInstaller.mysqlPassword = 'LocalConfig'
-      gComponentInstaller.getMySQLPasswords()
-      result = client.installDatabase(database, gComponentInstaller.mysqlRootPwd)
-      if not result['OK']:
-        self._errMsg(result['Message'])
-        return
-      extension, system = result['Value']
-
-      result = client.getHostInfo()
-      if not result['OK']:
-        self._errMsg(result['Message'])
-        return
-      else:
-        cpu = result['Value']['CPUModel']
-      hostname = self.host
-      if not result['OK']:
-        self._errMsg(result['Message'])
-        return
-
-      if database != 'InstalledComponentsDB':
-        result = MonitoringUtilities.monitorInstallation(
-            'DB', system.replace('System', ''), database, cpu=cpu, hostname=hostname)
+      if dbType == 'MySQL':
+        if not gComponentInstaller.mysqlPassword:
+          gComponentInstaller.mysqlPassword = 'LocalConfig'
+        gComponentInstaller.getMySQLPasswords()
+        result = client.installDatabase(database, gComponentInstaller.mysqlRootPwd)
         if not result['OK']:
           self._errMsg(result['Message'])
           return
-      # result = client.addDatabaseOptionsToCS( system, database )
-      gComponentInstaller.mysqlHost = self.host
-      result = client.getInfo()
-      if not result['OK']:
-        self._errMsg(result['Message'])
-      hostSetup = result['Value']['Setup']
+        extension, system = result['Value']
+
+        result = client.getHostInfo()
+        if not result['OK']:
+          self._errMsg(result['Message'])
+          return
+        else:
+          cpu = result['Value']['CPUModel']
+        hostname = self.host
+        if not result['OK']:
+          self._errMsg(result['Message'])
+          return
+
+        if database != 'InstalledComponentsDB':
+          result = MonitoringUtilities.monitorInstallation(
+              'DB', system.replace('System', ''), database, cpu=cpu, hostname=hostname)
+          if not result['OK']:
+            self._errMsg(result['Message'])
+            return
+
+        gComponentInstaller.mysqlHost = self.host
+        result = client.getInfo()
+        if not result['OK']:
+          self._errMsg(result['Message'])
+        hostSetup = result['Value']['Setup']
+
       result = gComponentInstaller.addDatabaseOptionsToCS(gConfig, system, database, hostSetup, overwrite=True)
       if not result['OK']:
         self._errMsg(result['Message'])
         return
       gLogger.notice("Database %s from %s/%s installed successfully" % (database, extension, system))
+
+    # DIRAC components
     elif option in self.runitComponents:
       if len(argss) < 2:
         gLogger.notice(self.do_install.__doc__)

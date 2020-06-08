@@ -64,6 +64,8 @@ import stat
 import time
 import subprocess32 as subprocess
 import shutil
+import inspect
+import importlib
 
 import DIRAC
 from DIRAC import rootPath
@@ -1723,11 +1725,13 @@ class ComponentInstaller(object):
         return result
       installedDatabases = result['Value']
       result = self.getAvailableDatabases(CSGlobals.getCSExtensions())
+      gLogger.debug("Available databases", result)
       if not result['OK']:
         return result
       dbDict = result['Value']
 
       for dbName in setupDatabases:
+        gLogger.verbose("Setting up database", dbName)
         if dbName not in installedDatabases:
           result = self.installDatabase(dbName)
           if not result['OK']:
@@ -2161,8 +2165,33 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     resDict['QueriesPerSecond'] = nqpersec.strip().split()[0]
     return S_OK(resDict)
 
-  def getAvailableDatabases(self, extensions):
+  def getAvailableDatabases(self, extensions=[]):
+    """ Find all databases defined
+    """
+    if not extensions:
+      extensions = CSGlobals.getCSExtensions()
 
+    res = self.getAvailableSQLDatabases(extensions)
+    gLogger.debug("Available SQL databases", res)
+    if not res['OK']:
+      return res
+    sqlDBs = res['Value']
+
+    res = self.getAvailableESDatabases(extensions)
+    gLogger.debug("Available ES databases", res)
+    if not res['OK']:
+      return res
+    esDBs = res['Value']
+
+    allDBs = sqlDBs.copy()
+    allDBs.update(esDBs)
+
+    return S_OK(allDBs)
+
+  def getAvailableSQLDatabases(self, extensions):
+    """
+    Find the sql files
+    """
     dbDict = {}
     for extension in extensions + ['']:
       databases = glob.glob(os.path.join(rootPath,
@@ -2171,6 +2200,47 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       for dbPath in databases:
         dbName = os.path.basename(dbPath).replace('.sql', '')
         dbDict[dbName] = {}
+        dbDict[dbName]['Type'] = 'MySQL'
+        dbDict[dbName]['Extension'] = extension
+        dbDict[dbName]['System'] = dbPath.split('/')[-3].replace('System', '')
+
+    return S_OK(dbDict)
+
+  def getAvailableESDatabases(self, extensions):
+    """
+    Find the ES DBs definitions, by introspection.
+    Result should be something like::
+
+       {'MonitoringDB': {'Type': 'ES', 'System': 'Monitoring', 'Extension': ''},
+        'ElasticJobDB': {'Type': 'ES', 'System': 'WorkloadManagement', 'Extension': ''}}
+
+    """
+    dbDict = {}
+    for extension in extensions + ['']:
+
+      pyDBs = glob.glob(os.path.join(rootPath,
+                                     ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
+                                     '*', 'DB', '*.py'))
+      pyDBs = [x.replace('.py', '') for x in pyDBs if '__init__' not in x]
+
+      sqlDBs = glob.glob(os.path.join(rootPath,
+                                      ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
+                                      '*', 'DB', '*.sql'))
+      sqlDBs = [x.replace('.sql', '') for x in sqlDBs]
+
+      possible = set(pyDBs) - set(sqlDBs)
+      databases = []
+      for p in possible:
+        p_mod = p.replace(rootPath, '').lstrip('/').replace('/', '.')
+        mdb_mod = importlib.import_module(p_mod, p_mod.split('.')[-1])
+        cl = getattr(mdb_mod, p_mod.split('.')[-1])
+        if 'ElasticDB' in str(inspect.getmro(cl)):
+          databases.append(p)
+
+      for dbPath in databases:
+        dbName = os.path.basename(dbPath)
+        dbDict[dbName] = {}
+        dbDict[dbName]['Type'] = 'ES'
         dbDict[dbName]['Extension'] = extension
         dbDict[dbName]['System'] = dbPath.split('/')[-3].replace('System', '')
 
