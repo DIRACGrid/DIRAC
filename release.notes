@@ -2,7 +2,11 @@
 
 Includes fixes from v6r22p30, v7r0p26
 
+*Framework
+CHANGE: (#4632) dirac-sysadmin - handle installation possible also for ES DBs
 
+*tests
+NEW: (#4633) added xmltodict module - makes working with XML feel like working with JSON.
 
 [v7r1p3]
 
