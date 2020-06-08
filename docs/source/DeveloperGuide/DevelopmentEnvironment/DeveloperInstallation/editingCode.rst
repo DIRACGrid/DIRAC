@@ -184,10 +184,6 @@ Some useful conda commands::
   conda deactivate  # will exit from the conda environment
   # or on conda versions prior to 4.6 
   source deactivate
-
-     "conda env create $DEVROOT/DIRAC/environment.yml" will create a conda environment named dirac-development and install the prerequiste packages
-     "conda activate dirac-development" or "source activate dirac-development" on conda versions prior to 4.6 will get you in the dirac-development environment
-     "conda deactivate" or "source deactivate" on conda versions prior to 4.6 will exit from the conda environment
      
 for other useful conda commands for managing environments, you can check this `link <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_.
 
