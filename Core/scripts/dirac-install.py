@@ -2033,6 +2033,7 @@ def createPermanentDirLinks():
   """
   if cliParams.useVersionsDir:
     try:
+      # Directories
       for directory in ['startup', 'runit', 'data', 'work', 'control', 'sbin', 'etc', 'webRoot']:
         fake = os.path.join(cliParams.targetPath, directory)
         real = os.path.join(cliParams.basePath, directory)
@@ -2046,6 +2047,12 @@ def createPermanentDirLinks():
               if not os.path.exists(os.path.join(real, fd)):
                 os.makedirs(os.path.join(real, fd))
           os.rename(fake, fake + '.bak')
+        os.symlink(real, fake)
+
+      # Files
+      for filename in ['bashrc']:
+        fake = os.path.join(cliParams.targetPath, filename)
+        real = os.path.join(cliParams.basePath, filename)
         os.symlink(real, fake)
     except Exception as x:
       logERROR(str(x))
