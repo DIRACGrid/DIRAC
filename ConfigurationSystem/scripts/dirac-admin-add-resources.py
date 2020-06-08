@@ -18,11 +18,11 @@ from urlparse import urlparse
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit, S_OK
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, \
-    getGridSRMs, getSRMUpdates
+    getGridSEs, getSEUpdates
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getDIRACSiteName
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getDIRACSiteName, getStorageElements
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 
 
@@ -39,7 +39,6 @@ def processScriptSwitches():
   Script.registerSwitch("g", "glue1", "query GLUE1 information schema")
 
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'WARNING: StorageElements only for SRM-style'
                                     'Usage:',
                                     '  %s [option|cfgfile]' % Script.scriptName]))
   Script.parseCommandLine(ignoreErrors=True)
@@ -271,10 +270,18 @@ def checkUnusedSEs():
 
   global vo, dry
 
-  result = getGridSRMs(vo, unUsed=True)
+  gLogger.notice('looking for new SEs in the BDII database...')
+
+  res = getStorageElements(vo=vo)
+  if not res['OK']:
+    gLogger.error('ERROR: failed to get CEs from CS', res['Message'])
+    DIRACExit(-1)
+  knownSEs = set(res['Value'])
+
+  result = getGridSEs(vo, seBlackList=knownSEs)
   if not result['OK']:
-    gLogger.error('Failed to look up SRMs in BDII', result['Message'])
-  siteSRMDict = result['Value']
+    gLogger.error('Failed to look up SEs in BDII', result['Message'])
+  siteSEDict = result['Value']
 
   # Evaluate VOs
   result = getVOs()
@@ -285,16 +292,10 @@ def checkUnusedSEs():
 
   changeSetFull = set()
 
-  for site in siteSRMDict:
-    for gridSE in siteSRMDict[site]:
+  for site in siteSEDict:
+    for gridSE in siteSEDict[site]:
       changeSet = set()
-      seDict = siteSRMDict[site][gridSE]['SE']
-      srmDict = siteSRMDict[site][gridSE]['SRM']
-      # Check the SRM version
-      version = srmDict.get('GlueServiceVersion', '')
-      if not (version and version.startswith('2')):
-        gLogger.debug('Skipping SRM service with version %s' % version)
-        continue
+      seDict = siteSEDict[site][gridSE]['SE']
       result = getDIRACSiteName(site)
       if not result['OK']:
         gLogger.notice('Unused se %s is detected at unused site %s' % (gridSE, site))
@@ -302,7 +303,7 @@ def checkUnusedSEs():
         continue
       diracSites = result['Value']
       yn = raw_input(
-          '\nDo you want to add new SRM SE %s at site(s) %s ? default yes [yes|no]: ' %
+	  '\nDo you want to add new SE %s at site(s) %s ? default yes [yes|no]: ' %
           (gridSE, str(diracSites)))
       if not yn or yn.lower().startswith('y'):
         if len(diracSites) > 1:
@@ -331,13 +332,11 @@ def checkUnusedSEs():
         seSection = cfgPath('/Resources/StorageElements', diracSEName)
         changeSet.add((seSection, 'BackendType', seDict.get('GlueSEImplementationName', 'Unknown')))
         changeSet.add((seSection, 'Description', seDict.get('GlueSEName', 'Unknown')))
-        bdiiVOs = set([re.sub('^VO:', '', rule) for rule in srmDict.get('GlueServiceAccessControlBaseRule', [])])
+	bdiiVOs = set([re.sub('^VO:', '', rule) for rule in seDict.get('GlueServiceAccessControlBaseRule', [])])
         seVOs = csVOs.intersection(bdiiVOs)
         changeSet.add((seSection, 'VO', ','.join(seVOs)))
         accessSection = cfgPath(seSection, 'AccessProtocol.1')
-        changeSet.add((accessSection, 'Protocol', 'srm'))
-        changeSet.add((accessSection, 'PluginName', 'SRM2'))
-        endPoint = srmDict.get('GlueServiceEndpoint', '')
+	endPoint = seDict.get('GlueServiceEndpoint', '')
         host = urlparse(endPoint).hostname
         port = urlparse(endPoint).port
         changeSet.add((accessSection, 'Host', host))
@@ -357,7 +356,6 @@ def checkUnusedSEs():
           path = '/dpm/%s/home' % domain
         changeSet.add((accessSection, 'Path', path))
         changeSet.add((accessSection, 'SpaceToken', ''))
-        changeSet.add((accessSection, 'WSUrl', '/srm/managerv2?SFN='))
 
         gLogger.notice('SE %s will be added with the following parameters' % diracSEName)
         changeList = sorted(changeSet)
@@ -402,9 +400,9 @@ def updateSEs():
 
   global vo, dry
 
-  result = getSRMUpdates(vo)
+  result = getSEUpdates(vo)
   if not result['OK']:
-    gLogger.error('Failed to get SRM updates', result['Message'])
+    gLogger.error('Failed to get SE updates', result['Message'])
     DIRACExit(-1)
   changeSet = result['Value']
 

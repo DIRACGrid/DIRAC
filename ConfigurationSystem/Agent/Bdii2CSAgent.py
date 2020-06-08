@@ -20,10 +20,10 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getCESiteMapping
-from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, getSRMUpdates, \
-    getSEsFromCS, getGridSRMs
+from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, getSEUpdates, getBDIISEs
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
@@ -373,18 +373,15 @@ class Bdii2CSAgent(AgentModule):
     """
 
     bannedSEs = self.am_getOption('BannedSEs', [])
-    result = getSEsFromCS()
-    if not result['OK']:
-      return result
-    knownSEs = set(result['Value'])
-    knownSEs.update(bannedSEs)
+    knownSEs = set(DMSHelpers().getStorageElements()).union(set(bannedSEs))
+    # knownSEs is a list of pure DIRAC SEs names
 
     for vo in self.voName:
       result = self.__getBdiiSEInfo(vo)
       if not result['OK']:
         continue
       bdiiInfo = result['Value']
-      result = getGridSRMs(vo, bdiiInfo=bdiiInfo, srmBlackList=knownSEs)
+      result = getBDIISEs(vo, bdiiInfo=bdiiInfo, sesBlackList=knownSEs)
       if not result['OK']:
         continue
       siteDict = result['Value']
@@ -424,7 +421,7 @@ class Bdii2CSAgent(AgentModule):
       if not result['OK']:
         continue
       seBdiiDict = result['Value']
-      result = getSRMUpdates(vo, bdiiInfo=seBdiiDict)
+      result = getSEUpdates(vo, bdiiInfo=seBdiiDict)
       if not result['OK']:
         continue
       bdiiChangeSet = bdiiChangeSet.union(result['Value'])

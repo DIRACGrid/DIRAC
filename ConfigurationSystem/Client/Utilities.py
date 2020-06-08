@@ -59,6 +59,7 @@ def getGridVOs():
   return S_OK(voNames)
 
 
+@deprecated("Will disappear (see https://github.com/DIRACGrid/DIRAC/issues/3908)")
 def getSEsFromCS(protocol='srm'):
   """ Get all the SEs defined in the CS
 
@@ -413,6 +414,7 @@ def getDIRACSesForHostName(hostName):
   return S_OK(resultDIRACSEs)
 
 
+@deprecated("Will disappear (see https://github.com/DIRACGrid/DIRAC/issues/3908)")
 def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):
   """ Get all the SRMs available for a given VO
 
@@ -478,6 +480,71 @@ def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):
   return S_OK(srmSeDict)
 
 
+def getBDIISEs(vo, bdiiInfo=None, sesBlackList=None, unUsed=False):
+  """ Get all the SEs available for a given VO
+
+      :param str vo: VO name
+      :param dict bdiiInfo: information from BDII
+      :param list sesBlackList: SEs from black list
+      :param bool unUsed: unused
+
+      :return: S_OK(dict)/S_ERROR()
+  """
+  result = ldapService(serviceType='???', vo=vo)
+  if not result['OK']:
+    return result
+  sesBdiiDict = result['Value']
+
+  knownSEs = set()
+  if sesBlackList is not None:
+    knownSEs = knownSEs.union(set(sesBlackList))
+
+  siteSEDict = {}
+  for se in sesBdiiDict:
+    se = dict(se)
+    endPoint = se.get('GlueServiceEndpoint', '')
+    seHost = ''
+    if endPoint:
+      seHost = urlparse(endPoint).hostname
+    if not seHost:
+      continue
+
+    if seHost in knownSEs:
+      continue
+
+    if unUsed:
+      result = getDIRACSesForHostName(seHost)
+      if not result['OK']:
+	return result
+      diracSEs = result['Value']
+      if diracSEs:
+	# If it is a known SE and only new SEs are requested, continue
+	continue
+    site = se.get('GlueForeignKey', '').replace('GlueSiteUniqueID=', '')
+    siteSEDict.setdefault(site, {})
+    siteSEDict[site][seHost] = se
+
+  if bdiiInfo is None:
+    result = getBdiiSEInfo(vo)
+    if not result['OK']:
+      return result
+    seBdiiDict = dict(result['Value'])
+  else:
+    seBdiiDict = dict(bdiiInfo)
+
+  seSeDict = {}
+  for site in siteSEDict:
+    for se in siteSEDict[site]:
+      if seBdiiDict.get(site, {}).get('SEs', {}).get(se, {}):
+	seSeDict.setdefault(site, {})
+	seSeDict[site].setdefault(se, {})
+	seSeDict[site][se]['SRM'] = siteSEDict[site][se]
+	seSeDict[site][se]['SE'] = seBdiiDict[site]['SEs'][se]
+
+  return S_OK(seSeDict)
+
+
+@deprecated("Will disappear (see https://github.com/DIRACGrid/DIRAC/issues/3908)")
 def getSRMUpdates(vo, bdiiInfo=None):
   """ Get SRM updates
 
@@ -549,6 +616,19 @@ def getSRMUpdates(vo, bdiiInfo=None):
       newVOs = ','.join(seVOs)
       addToChangeSet((seSection, 'VO', vos, newVOs), changeSet)
 
+  return S_OK(changeSet)
+
+
+def getSEUpdates(vo, bdiiInfo=None):
+  """ Get SE updates
+
+      :param str vo: VO name
+      :param dict bdiiInfo: information from BDII
+
+      :return: S_OK(set)/S_ERROR()
+  """
+  # FIXME: to be implemented
+  changeSet = set()
   return S_OK(changeSet)
 
 
