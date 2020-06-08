@@ -628,7 +628,7 @@ class MySQL(object):
 
     return retDict
 
-  def _update(self, cmd, conn=None, debug=False):
+  def _update(self, cmd, conn=None, debug=False, commit=False):
     """ execute MySQL update command
 
         :param debug: unused
@@ -647,8 +647,9 @@ class MySQL(object):
     try:
       cursor = connection.cursor()
       res = cursor.execute(cmd)
-      # connection.commit()
-      # self.log.debug('_update:', res)
+      if commit:
+	connection.commit()
+	self.log.debug('_update:', res)
       retDict = S_OK(res)
       if cursor.lastrowid:
         retDict['lastRowId'] = cursor.lastrowid
@@ -884,7 +885,7 @@ class MySQL(object):
         charset = thisTable.get('Charset', 'latin1')
 
         cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % (table, ',\n'.join(cmdList), engine, charset)
-        retDict = self._update(cmd)
+	retDict = self._update(cmd, commit=True)
         if not retDict['OK']:
           return retDict
         # self.log.debug('Table %s created' % table)
