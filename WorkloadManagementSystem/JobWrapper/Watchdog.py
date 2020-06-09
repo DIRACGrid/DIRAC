@@ -764,8 +764,6 @@ class Watchdog(object):
 
     result = self.getNodeInformation()
     self.log.verbose('NodeInfo', result)
-    if not result['OK']:
-      self.log.warn("Could not establish static system information")
 
     if 'LSB_JOBID' in os.environ:
       result['LocalJobID'] = os.environ['LSB_JOBID']
