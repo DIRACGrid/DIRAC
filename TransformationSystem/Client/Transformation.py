@@ -187,7 +187,7 @@ class Transformation(API):
 
   def __getParam(self):
     if self.item_called == 'Available':
-      return S_OK(self.paramTypes.keys())
+      return S_OK(list(self.paramTypes))
     if self.item_called == 'Parameters':
       return S_OK(self.paramValues)
     if self.item_called in self.paramValues:

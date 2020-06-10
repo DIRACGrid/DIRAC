@@ -197,7 +197,7 @@ class ValidateOutputDataAgent(AgentModule):
     if res['Value']['Failed']:
       return S_ERROR("Failed to determine the existance of directories")
     directoryExists = res['Value']['Successful']
-    for directory in sorted(directoryExists.keys()):
+    for directory in sorted(list(directoryExists)):
       if not directoryExists[directory]:
         continue
       iRes = self.consistencyInspector.catalogDirectoryToSE(directory)

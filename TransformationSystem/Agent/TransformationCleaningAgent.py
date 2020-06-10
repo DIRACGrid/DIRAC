@@ -348,7 +348,7 @@ class TransformationCleaningAgent(AgentModule):
         activeDirs.extend(dirContents['SubDirs'])
         allFiles.update(dirContents['Files'])
     self.log.info("Found %d files" % len(allFiles))
-    return S_OK(allFiles.keys())
+    return S_OK(list(allFiles))
 
   def cleanTransformationLogFiles(self, directory):
     """ clean up transformation logs from directory :directory:

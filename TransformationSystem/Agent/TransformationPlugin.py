@@ -177,11 +177,11 @@ class TransformationPlugin(PluginBase):
       return res
     cpuShares = res['Value']
     self.util.logInfo("Obtained the following target shares (%):")
-    for site in sorted(cpuShares.keys()):
+    for site in sorted(list(cpuShares)):
       self.util.logInfo("%s: %.1f" % (site.ljust(15), cpuShares[site]))
 
     # Get the existing destinations from the transformationDB
-    res = self.util.getExistingCounters(requestedSites=cpuShares.keys())
+    res = self.util.getExistingCounters(requestedSites=list(cpuShares))
     if not res['OK']:
       self.util.logError("Failed to get existing file share", res['Message'])
       return res
@@ -189,7 +189,7 @@ class TransformationPlugin(PluginBase):
     if existingCount:
       self.util.logInfo("Existing site utilization (%):")
       normalisedExistingCount = self.util._normaliseShares(existingCount.copy())  # pylint: disable=protected-access
-      for se in sorted(normalisedExistingCount.keys()):
+      for se in sorted(list(normalisedExistingCount)):
         self.util.logInfo("%s: %.1f" % (se.ljust(15), normalisedExistingCount[se]))
 
     # Group the input files by their existing replicas
