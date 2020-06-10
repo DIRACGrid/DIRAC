@@ -2191,6 +2191,9 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
   def getAvailableSQLDatabases(self, extensions):
     """
     Find the sql files
+
+    :param list extensions: list of DIRAC extensions
+    :return: dict of MySQL DBs
     """
     dbDict = {}
     for extension in extensions + ['']:
@@ -2211,8 +2214,8 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     Find the ES DBs definitions, by introspection.
 
     This method makes a few assumptions:
-    - the files defining modules interacting with ES DBs are found in the *System/DB/ directories
-    - the files defining modules interacting with ES DBs are named *DB.py (e.g. MonitoringDB.py)
+    - the files defining modules interacting with ES DBs are found in the xyzSystem/DB/ directories
+    - the files defining modules interacting with ES DBs are named xyzDB.py (e.g. MonitoringDB.py)
     - the modules define ES DBs classes with the same name of the module (e.g. class MonitoringDB())
     - the classes are inheriting from the ElasticDB module (e.g. class MonitoringDB(ElasticDB))
 
