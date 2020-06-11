@@ -26,7 +26,7 @@
 # pylint: disable=protected-access,wrong-import-position,invalid-name
 
 from __future__ import print_function
-from past.builtins import long
+
 import unittest
 import sys
 import datetime
@@ -365,6 +365,15 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobGroups()
     self.assertTrue(res['OK'], res.get('Message'))
+    resJG_empty = res['Value']
+    res = jobMonitor.getJobGroups(None, datetime.datetime.utcnow())
+    self.assertTrue(res['OK'], res.get('Message'))
+    resJG_olderThanNow = res['Value']
+    self.assertEqual(resJG_empty, resJG_olderThanNow)
+    res = jobMonitor.getJobGroups(None, datetime.datetime.utcnow() - datetime.timedelta(days=365))
+    self.assertTrue(res['OK'], res.get('Message'))
+    resJG_olderThanOneYear = res['Value']
+    self.assertTrue(set(resJG_olderThanOneYear).issubset(set(resJG_olderThanNow)))
     res = jobMonitor.getStates()
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertTrue(sorted(res['Value']) in [['Received'], sorted(['Received', 'Waiting'])])
@@ -382,9 +391,7 @@ class JobMonitoringMore(TestWMSTestCase):
     try:
       self.assertTrue(
           res['Value'].get('Received') +
-          res['Value'].get('Waiting') >= long(
-              len(lfnss) *
-              len(types)))
+	  res['Value'].get('Waiting') >= int(len(lfnss) * len(types)))
     except TypeError:
       pass
     res = jobMonitor.getJobsSummary(jobIDs)
