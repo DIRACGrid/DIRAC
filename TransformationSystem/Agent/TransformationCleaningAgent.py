@@ -23,16 +23,17 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.Core.Utilities.DErrno import cmpError
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 
 # # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
@@ -83,7 +84,7 @@ class TransformationCleaningAgent(AgentModule):
   def initialize(self):
     """ agent initialisation
 
-    reading and setting confing opts
+    reading and setting config opts
 
     :param self: self reference
     """
@@ -123,6 +124,49 @@ class TransformationCleaningAgent(AgentModule):
     self.reqClient = ReqClient()
     # # file catalog client
     self.metadataClient = FileCatalogClient()
+
+    # Only at (re)start: will clean ancient transformations (remnants)
+    # 1) get the transformation IDs of jobs that are older than 1 year
+    # 2) find the status of those transformations. Those "Cleaned" and "Archived" will be
+    # cleaned and archived (again)
+    res = JobMonitoringClient().getJobGroups(None, datetime.utcnow() - timedelta(days=365))
+    if not res['OK']:
+      self.log.error("Failed to get job groups", res['Message'])
+      return res
+    transformationIDs = res['Value']
+    if transformationIDs:
+      res = TransformationClient().getTransformations({'TransformationID': list(transformationIDs)})
+      if not res['OK']:
+	self.log.error("Failed to get transformations", res['Message'])
+	return res
+      transformations = res['Value']
+      toClean = []
+      toArchive = []
+      for transDict in transformations:
+	if transDict['Status'] == 'Cleaned':
+	  toClean.append(transDict)
+	if transDict['Status'] == 'Archived':
+	  toArchive.append(transDict)
+
+      for transDict in toClean:
+	if self.shifterProxy:
+	  self._executeClean(transDict)
+	else:
+	  self.log.info("Cleaning transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+			transDict)
+	  executeWithUserProxy(self._executeClean)(transDict,
+						   proxyUserDN=transDict['AuthorDN'],
+						   proxyUserGroup=transDict['AuthorGroup'])
+
+      for transDict in toArchive:
+	if self.shifterProxy:
+	  self._executeArchive(transDict)
+	else:
+	  self.log.info("Archiving files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+			transDict)
+	  executeWithUserProxy(self._executeArchive)(transDict,
+						     proxyUserDN=transDict['AuthorDN'],
+						     proxyUserGroup=transDict['AuthorGroup'])
 
     return S_OK()
 
