@@ -2191,6 +2191,9 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
   def getAvailableSQLDatabases(self, extensions):
     """
     Find the sql files
+
+    :param list extensions: list of DIRAC extensions
+    :return: dict of MySQL DBs
     """
     dbDict = {}
     for extension in extensions + ['']:
@@ -2209,33 +2212,49 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
   def getAvailableESDatabases(self, extensions):
     """
     Find the ES DBs definitions, by introspection.
+
+    This method makes a few assumptions:
+    - the files defining modules interacting with ES DBs are found in the xyzSystem/DB/ directories
+    - the files defining modules interacting with ES DBs are named xyzDB.py (e.g. MonitoringDB.py)
+    - the modules define ES DBs classes with the same name of the module (e.g. class MonitoringDB())
+    - the classes are inheriting from the ElasticDB module (e.g. class MonitoringDB(ElasticDB))
+
     Result should be something like::
 
        {'MonitoringDB': {'Type': 'ES', 'System': 'Monitoring', 'Extension': ''},
         'ElasticJobDB': {'Type': 'ES', 'System': 'WorkloadManagement', 'Extension': ''}}
 
+    :param list extensions: list of DIRAC extensions
+    :return: dict of ES DBs
     """
     dbDict = {}
     for extension in extensions + ['']:
 
+      # Find *DB.py definitions
       pyDBs = glob.glob(os.path.join(rootPath,
                                      ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
-                                     '*', 'DB', '*.py'))
+                                     '*', 'DB', '*DB.py'))
       pyDBs = [x.replace('.py', '') for x in pyDBs if '__init__' not in x]
 
+      # Find sql files
       sqlDBs = glob.glob(os.path.join(rootPath,
                                       ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
                                       '*', 'DB', '*.sql'))
       sqlDBs = [x.replace('.sql', '') for x in sqlDBs]
 
+      # Find *DB.py files that do not have a sql part
       possible = set(pyDBs) - set(sqlDBs)
       databases = []
       for p in possible:
-        p_mod = p.replace(rootPath, '').lstrip('/').replace('/', '.')
-        mdb_mod = importlib.import_module(p_mod, p_mod.split('.')[-1])
-        cl = getattr(mdb_mod, p_mod.split('.')[-1])
-        if 'ElasticDB' in str(inspect.getmro(cl)):
-          databases.append(p)
+        # Introspect all possible ones
+        try:
+          p_mod = p.replace(rootPath, '').lstrip('/').replace('/', '.')
+          mdb_mod = importlib.import_module(p_mod, p_mod.split('.')[-1])
+          cl = getattr(mdb_mod, p_mod.split('.')[-1])
+          if 'ElasticDB' in str(inspect.getmro(cl)):
+            databases.append(p)
+        except (AttributeError, ImportError):
+          pass
 
       for dbPath in databases:
         dbName = os.path.basename(dbPath)

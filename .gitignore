@@ -64,6 +64,7 @@ nosetests.xml
 coverage.xml
 Local_*
 .hypothesis
+virtualmachine/.vagrant/
 
 integration_test_results/
 tests/CI/CLIENTCONFIG
