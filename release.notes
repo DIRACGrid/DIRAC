@@ -147,6 +147,11 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p27]
+
+*Framework
+FIX: (#4639) MySQL - commit transaction when creating tables
+
 [v7r0p26]
 
 *Resources

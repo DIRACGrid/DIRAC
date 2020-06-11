@@ -77,8 +77,12 @@ def getGridJobOutput(pilotReference):
   """
 
   result = pilotAgentsDB.getPilotInfo(pilotReference)
-  if not result['OK'] or not result['Value']:
-    return S_ERROR('Failed to get info for pilot ' + pilotReference)
+  if not result['OK']:
+    gLogger.error("Failed to get info for pilot", result['Message'])
+    return S_ERROR('Failed to get info for pilot')
+  if not result['Value']:
+    gLogger.warn("The pilot info is empty", pilotReference)
+    return S_ERROR('Pilot info is empty')
 
   pilotDict = result['Value'][pilotReference]
   owner = pilotDict['OwnerDN']
