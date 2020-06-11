@@ -1,3 +1,8 @@
+[v7r1p5]
+
+*Framework
+FIX: (#4640) Install of ES DBs: only search in *DB.py files
+
 [v7r1p4]
 
 Includes fixes from v6r22p30, v7r0p26
