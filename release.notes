@@ -27,6 +27,11 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
+[v7r1p5]
+
+*Framework
+FIX: (#4640) Install of ES DBs: only search in *DB.py files
+
 [v7r1p4]
 
 Includes fixes from v6r22p30, v7r0p26
@@ -170,6 +175,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p27]
+
+*Framework
+FIX: (#4639) MySQL - commit transaction when creating tables
 
 [v7r0p26]
 
