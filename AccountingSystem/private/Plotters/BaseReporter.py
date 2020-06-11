@@ -296,6 +296,36 @@ class BaseReporter(DBUtils):
       dataDict[key] = float(dataDict[key])
     return S_OK(dataDict)
 
+  def _getBucketData(self, startTime, endTime, selectFields, preCondDict):
+    """
+    It retrieves data for histogram.
+
+    :param int startTime: epoch time
+    :param int endTime: epoch time
+    :param list selectFields: the value being plotted
+    :param dict preCondDict: plot attributes (conditions)
+
+    """
+
+    condDict = {}
+    # Make safe selections
+    for keyword in self._typeKeyFields:
+      if keyword in preCondDict:
+        condDict[keyword] = preCondDict[keyword]
+    retVal = self._retrieveBucketedData(self._typeName,
+                                        startTime,
+                                        endTime,
+                                        selectFields,
+                                        condDict)
+    if not retVal['OK']:
+      return retVal
+    dataDict = self._groupByField(0, retVal['Value'])
+    data = {}
+    # convert values to the correct format
+    for key, values in dataDict.items():
+      data[key] = [float(i[0]) for i in values]
+    return S_OK(data)
+
   def _getSelectStringForGrouping(self, groupingFields):
     if len(groupingFields) == 3:
       return groupingFields[2]

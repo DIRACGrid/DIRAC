@@ -700,3 +700,24 @@ class JobPlotter(BaseReporter):
                 'span': plotInfo['granularity'],
                 'ylabel': plotInfo['unit']}
     return self._generateStackedLinePlot(filename, plotInfo['graphDataDict'], metadata)
+
+  _reportHistogramCPUUsedName = "Histogram CPU time"
+
+  def _reportHistogramCPUUsed(self, reportRequest):
+    selectFields = (self._getSelectStringForGrouping(reportRequest['groupingFields']) + ", %s",
+                    reportRequest['groupingFields'][1] + ['CPUTime'])
+
+    retVal = self._getBucketData(reportRequest['startTime'],
+                                 reportRequest['endTime'],
+                                 selectFields,
+                                 reportRequest['condDict'])
+    if not retVal['OK']:
+      return retVal
+    dataDict = retVal['Value']
+    return S_OK({'data': dataDict})
+
+  def _plotHistogramCPUUsed(self, reportRequest, plotInfo, filename):
+    metadata = {'title': 'CPU usage by %s' % reportRequest['grouping'],
+                'starttime': reportRequest['startTime'],
+                'endtime': reportRequest['endTime']}
+    return self._generateHistogram(filename, [plotInfo['data']], metadata)
