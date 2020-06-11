@@ -6,8 +6,13 @@ __RCSID__ = "$Id$"
 
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 
+#: Global gConfig object of type :class:`~DIRAC.ConfigurationSystem.private.ConfigurationClient.ConfigurationClient`
 gConfig = ConfigurationClient()
 
 
 def getConfig():
+  """
+  :returns: gConfig
+  :rtype: ~DIRAC.ConfigurationSystem.private.ConfigurationClient.ConfigurationClient
+  """
   return gConfig
