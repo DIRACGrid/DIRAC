@@ -73,8 +73,9 @@
 import six
 import thread
 import os
+from diraccfg import CFG
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import CFG, LockRing
+from DIRAC.Core.Utilities import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
@@ -139,7 +140,7 @@ class Operations(object):
       if cacheKey in Operations.__cache:
         return Operations.__cache[cacheKey]
 
-      mergedCFG = CFG.CFG()
+      mergedCFG = CFG()
 
       for path in self.__getSearchPaths():
         pathCFG = gConfigurationData.mergedCFG[path]

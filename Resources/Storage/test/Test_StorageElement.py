@@ -7,6 +7,7 @@ import mock
 import unittest
 import itertools
 
+from diraccfg import CFG
 
 from DIRAC import S_OK
 from DIRAC.Resources.Storage.StorageElement import StorageElementItem
@@ -14,7 +15,6 @@ from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 
 

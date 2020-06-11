@@ -3,10 +3,11 @@
 
 import os
 import unittest
+from diraccfg import CFG
 from DIRAC.ConfigurationSystem.Client.PathFinder import getComponentSection, getServiceFailoverURL, getServiceURL
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Utilities.CFG import CFG
+
 
 class TestPathFinder( unittest.TestCase ):
   def setUp( self ):

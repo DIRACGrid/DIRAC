@@ -16,10 +16,11 @@ from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 import psutil
+from diraccfg import CFG
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import CFG, Os
+from DIRAC.Core.Utilities import Os
 from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
@@ -47,7 +48,7 @@ def loadDIRACCFG():
     installPath = rootPath
   cfgPath = os.path.join(installPath, 'etc', 'dirac.cfg')
   try:
-    diracCFG = CFG.CFG().loadFromFile(cfgPath)
+    diracCFG = CFG().loadFromFile(cfgPath)
   except BaseException as excp:
     return S_ERROR("Could not load dirac.cfg: %s" % repr(excp))
 

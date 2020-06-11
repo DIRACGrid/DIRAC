@@ -4,8 +4,8 @@
 import zlib
 import difflib
 
+from diraccfg import CFG
 from DIRAC.Core.Utilities import List, Time
-from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 

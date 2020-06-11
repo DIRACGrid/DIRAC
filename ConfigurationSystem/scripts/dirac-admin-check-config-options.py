@@ -16,9 +16,9 @@ __RCSID__ = "$Id$"
 import os
 from pprint import pformat
 
+from diraccfg import CFG
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.List import fromChar
 
 LOG = gLogger

@@ -64,3 +64,4 @@ dependencies:
   - openssl <1.1
   - pip:
     - MySQL-python
+    - diraccfg
