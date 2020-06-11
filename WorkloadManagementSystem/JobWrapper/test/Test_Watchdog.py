@@ -11,7 +11,6 @@ from mock import MagicMock
 
 # sut
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinux
 
 mock_exeThread = MagicMock()
 mock_spObject = MagicMock()
@@ -26,7 +25,7 @@ def test_calibrate():
 
 def test__performChecks():
   pid = os.getpid()
-  wd = WatchdogLinux(pid, mock_exeThread, mock_spObject, 5000)
+  wd = Watchdog(pid, mock_exeThread, mock_spObject, 5000)
 
   res = wd.calibrate()
   assert res['OK'] is True
@@ -36,7 +35,7 @@ def test__performChecks():
 
 def test__performChecksFull():
   pid = os.getpid()
-  wd = WatchdogLinux(pid, mock_exeThread, mock_spObject, 5000)
+  wd = Watchdog(pid, mock_exeThread, mock_spObject, 5000)
   wd.testCPULimit = 1
   wd.testMemoryLimit = 1
 

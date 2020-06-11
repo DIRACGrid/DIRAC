@@ -51,7 +51,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory import WatchdogFactory
+from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
@@ -371,20 +371,13 @@ class JobWrapper(object):
 
     self.__setJobParam('PayloadPID', payloadPID)
 
-    watchdogInstance = WatchdogFactory().getWatchdog(pid=self.currentPID,
-                                                     exeThread=exeThread,
-                                                     spObject=spObject,
-                                                     jobCPUTime=jobCPUTime,
-                                                     memoryLimit=jobMemory,
-                                                     processors=processors,
-                                                     jobArgs=self.jobArgs)
-
-    if not watchdogInstance['OK']:
-      self.log.error('Could not create Watchdog instance', watchdogInstance['Message'])
-      return S_ERROR('Could not create Watchdog instance')
-
-    self.log.verbose('WatchdogInstance %s' % (watchdogInstance))
-    watchdog = watchdogInstance['Value']
+    watchdog = Watchdog(pid=self.currentPID,
+                        exeThread=exeThread,
+                        spObject=spObject,
+                        jobCPUTime=jobCPUTime,
+                        memoryLimit=jobMemory,
+                        processors=processors,
+                        jobArgs=self.jobArgs)
 
     self.log.verbose('Initializing Watchdog instance')
     watchdog.initialize()
