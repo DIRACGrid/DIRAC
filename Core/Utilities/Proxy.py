@@ -38,10 +38,10 @@ Utilities to execute one or more functions with a given proxy.
 import os
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Core.Utilities.LockRing import LockRing
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 __RCSID__ = "$Id$"
 
@@ -101,30 +101,32 @@ def executeWithUserProxy(fcn):
   return wrapped_fcn
 
 
-def getProxy(userDNs, userGroup, vomsAttr, proxyFilePath):
-  """ do the actual download of the proxy, trying the different DNs
+def getProxy(user, userGroup, vomsAttr, proxyFilePath):
+  """ Do the actual download of the proxy, trying the different DNs
+
+  :param str user: user name
+  :param str userGroup: group name
+  :param bool vomsAttr: if need VOMSproxy
+  :param str proxyPathFile: path to proxy file
+
+  :return: S_OK(object)/S_ERROR() -- return proxy as chain
   """
-  for userDN in userDNs:
-    if vomsAttr:
-      result = gProxyManager.downloadVOMSProxyToFile(userDN, userGroup,
-                                                     requiredVOMSAttribute=vomsAttr,
-                                                     filePath=proxyFilePath,
-                                                     requiredTimeLeft=3600,
-                                                     cacheTime=3600)
-    else:
-      result = gProxyManager.downloadProxyToFile(userDN, userGroup,
-                                                 filePath=proxyFilePath,
-                                                 requiredTimeLeft=3600,
-                                                 cacheTime=3600)
+  if vomsAttr:
+    result = gProxyManager.downloadVOMSProxyToFile(user, userGroup,
+                                                   filePath=proxyFilePath,
+                                                   requiredTimeLeft=3600,
+                                                   cacheTime=3600)
+  else:
+    result = gProxyManager.downloadProxyToFile(user, userGroup,
+                                               filePath=proxyFilePath,
+                                               requiredTimeLeft=3600,
+                                               cacheTime=3600)
 
-    if not result['OK']:
-      gLogger.error("Can't download %sproxy " % ('VOMS' if vomsAttr else ''),
-                    "of '%s', group %s to file: " % (userDN, userGroup) + result['Message'])
-    else:
-      return result
-
-  # If proxy not found for any DN, return an error
-  return S_ERROR("Can't download proxy")
+  if not result['OK']:
+    gLogger.error("Can't download %sproxy " % ('VOMS' if vomsAttr else ''),
+                  "of '%s', group %s to file: " % (user, userGroup) + result['Message'])
+    return S_ERROR("Can't download proxy")
+  return result
 
 
 def executeWithoutServerCertificate(fcn):
@@ -148,7 +150,8 @@ def executeWithoutServerCertificate(fcn):
   """
 
   def wrapped_fcn(*args, **kwargs):
-
+    """Wraped fuction
+    """
     # Get the lock and acquire it
     executionLock = LockRing().getLock('_UseUserProxy_', recursive=True)
     executionLock.acquire()
@@ -222,20 +225,13 @@ def _putProxy(userDN=None, userName=None, userGroup=None, vomsFlag=None, proxyFi
   :returns: Tuple of originalUserProxy, useServerCertificate, executionLock
   """
   # Setup user proxy
-  if userDN:
-    userDNs = [userDN]
-  else:
-    result = getDNForUsername(userName)
+  if not userName:
+    result = getUsernameForDN(userDN)
     if not result['OK']:
       return result
-    userDNs = result['Value']  # a same user may have more than one DN
+    userName = result['Value']
 
-  vomsAttr = ''
-  if vomsFlag:
-    vomsAttr = getVOMSAttributeForGroup(userGroup)
-
-  result = getProxy(userDNs, userGroup, vomsAttr, proxyFilePath)
-
+  result = getProxy(userName, userGroup, vomsFlag, proxyFilePath)
   if not result['OK']:
     return result
 
