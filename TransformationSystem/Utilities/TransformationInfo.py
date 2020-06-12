@@ -152,10 +152,10 @@ class TransformationInfo(object):
         if not result['OK']:
           self.log.error("Failed to remove LFNs", result['Message'])
           raise RuntimeError("Failed to remove LFNs: %s" % result['Message'])
-        for lfn, err in result['Value']['Failed'].items():
-          reason = str(err)
-          errorReasons[reason].append(lfn)
-	successfullyRemoved += len(list(result['Value']['Successful']))
+	for lfn, err in result['Value']['Failed'].items():
+	  reason = str(err)
+	  errorReasons[reason].append(lfn)
+	successfullyRemoved += len(result['Value']['Successful'])
     for reason, lfns in errorReasons.items():
       self.log.error("Failed to remove %d files with error: %s" % (len(lfns), reason))
     self.log.notice("Successfully removed %d files" % successfullyRemoved)

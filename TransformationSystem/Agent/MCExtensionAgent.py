@@ -80,7 +80,7 @@ class MCExtensionAgent(AgentModule):
     else:
       statusDict = res['Value']
     gLogger.verbose("Current task count for transformation %d" % transID)
-    for status in sorted(list(statusDict)):
+    for status in sorted(statusDict):
       statusCount = statusDict[status]
       gLogger.verbose("%s : %s" % (status.ljust(20), str(statusCount).rjust(8)))
     # Determine the number of tasks to be created
