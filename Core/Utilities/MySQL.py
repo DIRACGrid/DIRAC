@@ -582,7 +582,7 @@ class MySQL(object):
     self._connected = True
     return S_OK()
 
-  def _query(self, cmd, conn=None, debug=False):
+  def _query(self, cmd, debug=False):
     """
     execute MySQL query command
 
@@ -1065,7 +1065,7 @@ class MySQL(object):
 #############################################################################
   def buildCondition(self, condDict=None, older=None, newer=None,
                      timeStamp=None, orderAttribute=None, limit=False,
-                     greater=None, smaller=None, offset=None):
+                     greater=None, smaller=None, offset=None, conn=None):
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
@@ -1184,6 +1184,9 @@ class MySQL(object):
                                           escapeInValue)
           conjunction = "AND"
 
+    if isinstance(conn, six.string_types):
+      condition = ' %s %s %s ' % (condition, conjunction, conn)
+
     orderList = []
     orderAttrList = orderAttribute
     if not isinstance(orderAttrList, list):
@@ -1267,12 +1270,11 @@ class MySQL(object):
         myoffset = None
       condition = self.buildCondition(condDict=condDict, older=older, newer=newer,
                                       timeStamp=timeStamp, orderAttribute=orderAttribute, limit=mylimit,
-                                      greater=greater, smaller=smaller, offset=myoffset)
+                                      greater=greater, smaller=smaller, offset=myoffset, conn=conn)
     except Exception as x:
       return S_ERROR(DErrno.EMYSQL, x)
 
-    return self._query('SELECT %s FROM %s %s' %
-                       (quotedOutFields, table, condition), conn)
+    return self._query('SELECT %s FROM %s %s' % (quotedOutFields, table, condition))
 
 #############################################################################
   def deleteEntries(self, tableName,
