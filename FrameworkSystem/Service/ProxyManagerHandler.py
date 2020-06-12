@@ -404,11 +404,12 @@ class ProxyManagerHandler(RequestHandler):
     for _id in idList:
       if len(_id) != 2:
         errorInDelete.append("%s doesn't have two fields" % str(_id))
-      retVal = self.export_deleteProxy(_id[0], _id[1])
-      if not retVal['OK']:
-        errorInDelete.append("%s : %s" % (str(_id), retVal['Message']))
-      else:
-        deleted += 1
+      if _id[0]:
+        retVal = self.export_deleteProxy(_id[0], _id[1])
+        if not retVal['OK']:
+          errorInDelete.append("%s : %s" % (str(_id), retVal['Message']))
+        else:
+          deleted += 1
     if errorInDelete:
       return S_ERROR("Could not delete some proxies: %s" % ",".join(errorInDelete))
     return S_OK(deleted)
