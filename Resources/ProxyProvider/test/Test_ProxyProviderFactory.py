@@ -11,24 +11,23 @@ from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFact
 certsPath = os.path.join(rootPath, 'DIRAC/Core/Security/test/certs')
 
 
-def sf_getInfoAboutProviders(of, providerName, option, section):
-  if of == 'Proxy' and option == 'all' and section == 'all':
-    if providerName == 'MY_DIRACCA':
-      return S_OK({'ProviderType': 'DIRACCA',
-                   'CertFile': os.path.join(certsPath, 'ca/ca.cert.pem'),
-                   'KeyFile': os.path.join(certsPath, 'ca/ca.key.pem'),
-                   'Supplied': ['O', 'OU', 'CN'],
-                   'Optional': ['emailAddress'],
-                   'DNOrder': ['O', 'OU', 'CN', 'emailAddress'],
-                   'OU': 'CA',
-                   'C': 'DN',
-                   'O': 'DIRACCA'})
-    if providerName == 'MY_PUSP':
-      return S_OK({'ProviderType': 'PUSP', 'ServiceURL': 'https://somedomain'})
+def sf_getProviderInfo(provider):
+  if providerName == 'MY_DIRACCA':
+    return S_OK({'ProviderType': 'DIRACCA',
+                 'CertFile': os.path.join(certsPath, 'ca/ca.cert.pem'),
+                 'KeyFile': os.path.join(certsPath, 'ca/ca.key.pem'),
+                 'Supplied': ['O', 'OU', 'CN'],
+                 'Optional': ['emailAddress'],
+                 'DNOrder': ['O', 'OU', 'CN', 'emailAddress'],
+                 'OU': 'CA',
+                 'C': 'DN',
+                 'O': 'DIRACCA'})
+  if providerName == 'MY_PUSP':
+    return S_OK({'ProviderType': 'PUSP', 'ServiceURL': 'https://somedomain'})
   return S_ERROR('No proxy provider found')
 
-@mock.patch('DIRAC.Resources.ProxyProvider.ProxyProviderFactory.getInfoAboutProviders',
-            new=sf_getInfoAboutProviders)
+@mock.patch('DIRAC.Resources.ProxyProvider.ProxyProviderFactory.getProviderInfo',
+            new=sf_getProviderInfo)
 class ProxyProviderFactoryTest(unittest.TestCase):
   """ Base class for the ProxyProviderFactory test cases
   """
