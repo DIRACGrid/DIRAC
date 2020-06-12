@@ -1,13 +1,53 @@
 """ Basic unit tests for AuthManager
 """
-
+import os
+import pickle
 import unittest
 
 from diraccfg import CFG
-from DIRAC import gConfig
+from DIRAC import gConfig, rootPath
 from DIRAC.Core.DISET.AuthManager import AuthManager
 
 __RCSID__ = "$Id$"
+
+workDir = os.path.join(gConfig.getValue('/LocalSite/InstancePath', rootPath), 'work/ProxyManager')
+
+voDict = {
+    'testVO': {
+        '/User/test/DN/CN=userS': {
+            'Roles': [u'/testVO'],
+            'certSuspended': True,
+            'certSuspensionReason': None,
+            u'emailAddress': u'test.user@test.ua',
+            'mail': u'test.user@test.ua',
+            u'name': u'Test',
+            u'surname': u'User',
+            u'suspended': True
+        },
+        '/User/test/DN/CN=userA': {
+            'Roles': [u'/testVO'],
+            'certSuspended': False,
+            'certSuspensionReason': None,
+            u'emailAddress': u'test.user@test.ua',
+            'mail': u'test.user@test.ua',
+            u'name': u'Test',
+            u'surname': u'User',
+            u'suspended': False
+        }
+    },
+    'testVOOther': {
+        '/User/test/DN/CN=userS': {
+            'Roles': [u'/testVOOther'],
+            'certSuspended': False,
+            'certSuspensionReason': None,
+            u'emailAddress': u'test.user@test.ua',
+            'mail': u'test.user@test.ua',
+            u'name': u'Test',
+            u'surname': u'User',
+            u'suspended': False
+        }
+    }
+}
 
 testSystemsCFG = """
 Systems
@@ -88,6 +128,7 @@ Registry
     {
       Users = userA, userS
       VO = testVO
+      VOMSRole = /testVO
       Properties = NormalUser
     }
     group_test_other
@@ -110,6 +151,19 @@ Registry
 class AuthManagerTest(unittest.TestCase):
   """ Base class for the Modules test cases
   """
+  @classmethod
+  def setUpClass(cls):
+    if not os.path.exists(workDir):
+      os.makedirs(workDir)
+    for vo, infoDict in voDict.items():
+      with open(os.path.join(workDir, vo + '.pkl'), 'wb+') as f:
+        pickle.dump(infoDict, f, pickle.HIGHEST_PROTOCOL)
+
+  @classmethod
+  def tearDownClass(cls):
+    for vo in voDict.keys():
+      if os.path.exists(os.path.join(workDir, vo + '.pkl')):
+        os.remove(os.path.join(workDir, vo + '.pkl'))
 
   def setUp(self):
     self.authMgr = AuthManager('/Systems/Service/Authorization')
