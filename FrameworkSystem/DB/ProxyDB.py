@@ -580,20 +580,15 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
     """
-    tables = ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies']
+    tables = ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies', 'ProxyDB_CleanProxies']
     try:
       userDN = self._escapeString(userDN)['Value']
-      if userGroup:
-        userGroup = self._escapeString(userGroup)['Value']
-      else:
-        tables.append('ProxyDB_CleanProxies')
     except KeyError:
       return S_ERROR("Invalid DN or group")
     errMsgs = []
     req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
     for table in tables:
-      result = self._update('%s %s' % (req % table,
-                                       'AND UserGroup=%s' % userGroup if userGroup else ''))
+      result = self._update(req % table)
       if not result['OK']:
         if result['Message'] not in errMsgs:
           errMsgs.append(result['Message'])
