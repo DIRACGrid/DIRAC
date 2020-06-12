@@ -7,7 +7,7 @@ import sys
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNsForUsername
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 
 __RCSID__ = '$Id$'
@@ -139,9 +139,11 @@ class API(object):
     gLogger.debug(formatProxyInfoAsString(proxyInfo))
     if 'group' not in proxyInfo:
       return self._errorReport('Proxy information does not contain the group', res['Message'])
-    res = getDNForUsername(proxyInfo['username'])
-    if not res['OK']:
-      return self._errorReport('Failed to get proxies for user', res['Message'])
+    result = getDNsForUsername(proxyInfo['username'])
+    if not result['OK']:
+      return self._errorReport('Failed to get proxies for user', result['Message'])
+    if not result['Value']:
+      return self._errorReport('Failed to get proxies for user', "No DNs found for %s" % proxyInfo['username'])
     return S_OK(proxyInfo['username'])
 
   #############################################################################
