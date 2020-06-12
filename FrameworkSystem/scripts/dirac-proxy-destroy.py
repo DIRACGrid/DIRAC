@@ -3,18 +3,16 @@
 command line tool to remove local and remote proxies
 """
 
-
 import os
 
 import DIRAC
-from DIRAC import gLogger, S_OK
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.Base import Script
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security import ProxyInfo
+from DIRAC import gLogger, S_OK
+from DIRAC.Core.Base import Script
+from DIRAC.Core.Security import Locations, ProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+
 
 __RCSID__ = "$Id$"
 
@@ -98,10 +96,7 @@ def deleteRemoteProxy(userdn, vogroup):
   Deletes proxy for a vogroup for the user envoking this function.
   Returns a list of all deleted proxies (if any).
   """
-  rpcClient = RPCClient("Framework/ProxyManager")
-  retVal = rpcClient.deleteProxyBundle([(userdn, vogroup)])
-
-  if retVal['OK']:
+  if gProxyManager.deleteProxy(userdn, vogroup)['OK']:
     gLogger.notice('Deleted proxy for %s.' % vogroup)
   else:
     gLogger.error('Failed to delete proxy for %s.' % vogroup)

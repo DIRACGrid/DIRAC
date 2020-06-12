@@ -49,26 +49,18 @@ if not userName:
   gLogger.notice("Your proxy don`t have username extension")
   sys.exit(1)
 
-if userName in Registry.getAllUsers():
-  if Properties.PROXY_MANAGEMENT not in proxyProps['groupProperties']:
-    if userName != proxyProps['username'] and userName != proxyProps['issuer']:
-      gLogger.notice("You can only query info about yourself!")
-      sys.exit(1)
-  result = Registry.getDNForUsername(userName)
-  if not result['OK']:
-    gLogger.notice("Oops %s" % result['Message'])
-  dnList = result['Value']
-  if not dnList:
-    gLogger.notice("User %s has no DN defined!" % userName)
+if userName not in Registry.getAllUsers():
+  gLogger.notice("%s user is not found.")
+  sys.exit(1)
+
+if Properties.PROXY_MANAGEMENT not in proxyProps['groupProperties']:
+  if userName != proxyProps['username'] and userName != proxyProps['issuer']:
+    gLogger.notice("You can only query info about yourself!")
     sys.exit(1)
-  userDNs = dnList
-else:
-  userDNs = [userName]
 
-
-gLogger.notice("Checking for DNs %s" % " | ".join(userDNs))
+gLogger.notice("Checking for user", userName)
 pmc = ProxyManagerClient()
-result = pmc.getDBContents({'UserDN': userDNs})
+result = pmc.getUploadedProxiesDetails(userName)
 if not result['OK']:
   gLogger.notice("Could not retrieve the proxy list: %s" % result['Value'])
   sys.exit(1)
