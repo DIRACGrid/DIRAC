@@ -142,7 +142,7 @@ class ConfigurationHandler(RequestHandler):
     if not retVal['OK']:
       return S_ERROR("Can't get contents for version %s: %s" % (version, retVal['Message']))
     credDict = self.getRemoteCredentials()
-    if credDict.get('username', 'anonymous') == 'anonymous') or credDict.get('group', 'visitor') == 'visitor'):
+    if credDict.get('username', 'anonymous') == 'anonymous' or credDict.get('group', 'visitor') == 'visitor':
       return S_ERROR("You must be authenticated!")
     return gServiceInterface.updateConfiguration(retVal['Value'],
                                                  credDict['username'],
