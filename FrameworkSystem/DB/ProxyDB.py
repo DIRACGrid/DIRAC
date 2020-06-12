@@ -382,13 +382,13 @@ class ProxyDB(DB):
       retVal = self.__storeProxyOld(userDN, userGroup, chain)
       # WARN: End of compatibility block
     else:
-      retVal = self.__storeProxy(userDN, chain)
+      retVal = self._storeProxy(userDN, chain)
 
     if not retVal['OK']:
       return retVal
     return self.deleteRequest(requestId)
 
-  def __storeProxy(self, userDN, chain):
+  def _storeProxy(self, userDN, chain):
     """ Store user proxy into the Proxy repository for a user specified by his
         DN and group or proxy provider.
 
@@ -539,7 +539,7 @@ class ProxyDB(DB):
     # remainingSecs = result['Value']
 
     # # Store proxy
-    # result = self.__storeProxy(userDN, chain)
+    # result = self._storeProxy(userDN, chain)
     # if not result['OK']:
     #   return result
     # #################
