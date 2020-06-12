@@ -28,7 +28,7 @@ class ProxyProvider(object):
 
         :param object proxyManager: proxy manager
     """
-    self.sessionManager = sessionManager
+    self.proxyManager = proxyManager
 
   def isProxyManagerAble(self):
     """ Check if proxy manager able
