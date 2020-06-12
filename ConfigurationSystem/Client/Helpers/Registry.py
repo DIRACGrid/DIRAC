@@ -43,7 +43,8 @@ def getUsernameForDN(dn, usersList=None):
   for username in usersList:
     if dn in gConfig.getValue("%s/Users/%s/DN" % (gBaseRegistrySection, username), []):
       return S_OK(username)
-  
+
+  # Get users profiles from session manager cache
   result = gOAuthManagerData.getIDsForDN(dn)
   if result['OK']:
     for uid in result['Value']:
@@ -55,10 +56,9 @@ def getUsernameForDN(dn, usersList=None):
 
 
 def getDNsForUsernameFromSC(username):
-  """ Find all DNs for DIRAC user
+  """ Find DNs for DIRAC user from CS
 
       :param str username: DIRAC user
-      :param bool active: if need to search only DNs with active sessions
 
       :return: list -- contain DNs
   """
@@ -96,6 +96,7 @@ def getGroupsForDN(dn, groupsList=None):
     return result
   user = result['Value']
 
+  # Get VOMS information cache
   result = getVOMSInfo(dn=dn)
   if not result['OK']:
     return result
@@ -109,13 +110,14 @@ def getGroupsForDN(dn, groupsList=None):
   for group in groupsList:
     if user in getGroupOption(group, 'Users', []):
       vo = getGroupOption(group, 'VO')
+      # Is VOMS VO?
       if vo in vomsVOs and vomsData[vo]['OK'] and vomsData[vo]['Value']:
         voData = vomsData[vo]['Value']
         role = getGroupOption(group, 'VOMSRole')
         if not role or role in voData[dn]['VOMSRoles']:
           groups.append(group)
       else:
-        # What we know more about VO?
+        # If it's not VOMS VO or cannot get information from VOMS
         groups.append(group)
 
   groups.sort()
@@ -290,7 +292,7 @@ def getUsersInVO(vo, defaultValue=None):
       users += getUsersInGroup(group)
 
   users.sort()
-  return users or [] if defaultValue is None else defaultValue
+  return list(set(users)) or [] if defaultValue is None else defaultValue
 
 
 def getDNsInGroup(group, checkStatus=False):
@@ -301,17 +303,18 @@ def getDNsInGroup(group, checkStatus=False):
 
       :return: list
   """
+  vomsData = {}
   vo = getGroupOption(group, 'VO')
   
-  result = getVOMSInfo(vo=vo)
-  if not result['OK']:
-    return result
-  vomsData = result['Value']
-
+  # Get VOMS information for VO, if it's VOMS VO
   result = getVOsWithVOMS()
   if not result['OK']:
     return result
-  vomsVOs = result['Value']
+  if vo in result['Value']:
+    result = getVOMSInfo(vo=vo)
+    if not result['OK']:
+      return result
+    vomsData = result['Value']
 
   DNs = []
   for username in getGroupOption(group, 'Users', []):
@@ -319,7 +322,7 @@ def getDNsInGroup(group, checkStatus=False):
     if not result['OK']:
       return result
     userDNs = result['Value']
-    if vo in vomsVOs and vomsData[vo]['OK']:
+    if vo in vomsData and vomsData[vo]['OK']:
       voData = vomsData[vo]['Value']
       role = getGroupOption(group, 'VOMSRole')
       for dn in userDNs:
