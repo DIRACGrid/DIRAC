@@ -18,7 +18,7 @@ from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
 from DIRAC.Core.Utilities.Time import fromEpoch
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getVOMSAttributeForGroup, \
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNsForUsername, getVOMSAttributeForGroup, \
     getVOForGroup, getVOOption
 from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
 
@@ -57,7 +57,7 @@ def getClientCertInfo():
     proxyInfo['VOMS'] = getVOMSAttributeForGroup(proxyInfo['group'])
     errStr = "getClientCertInfo: Proxy information does not contain the VOMs information."
     gLogger.warn(errStr)
-  res = getDNForUsername(proxyInfo['username'])
+  res = getDNsForUsername(proxyInfo['username'])
   if not res['OK']:
     errStr = "getClientCertInfo: Error getting known proxies for user."
     gLogger.error(errStr, res['Message'])
