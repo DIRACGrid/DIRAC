@@ -15,6 +15,7 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR
+from DIRAC.Core.DISET.AuthManager import initializationOfCertificate, initializationOfGroup, forwardingCredentials, initializationOfSession
 
 
 def getServiceOption(serviceInfo, optionName, defaultValue):
@@ -95,7 +96,14 @@ class RequestHandler(object):
 
     :return: Credentials dictionary of remote peer.
     """
-    return self.__trPool.get(self.__trid).getConnectingCredentials()
+    credDict = self.__trPool.get(self.__trid).getConnectingCredentials()
+    forwardingCredentials(credDict, logObj=self.log)
+    if credDict.get('ID'):
+      initializationOfSession(credDict, logObj=self.log)
+    else:
+      initializationOfCertificate(credDict, logObj=self.log)
+    initializationOfGroup(credDict, logObj=self.log)
+    return credDict
 
   @classmethod
   def getCSOption(cls, optionName, defaultValue=False):
