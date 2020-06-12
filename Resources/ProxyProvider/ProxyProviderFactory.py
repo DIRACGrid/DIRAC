@@ -22,11 +22,12 @@ class ProxyProviderFactory(object):
     self.log = gLogger.getSubLogger(__name__)
 
   #############################################################################
-  def getProxyProvider(self, proxyProvider):
+  def getProxyProvider(self, proxyProvider, proxyManager=None):
     """ This method returns a ProxyProvider instance corresponding to the supplied
         name.
 
         :param str proxyProvider: the name of the Proxy Provider
+        :param object proxyManager: proxy manager
 
         :return: S_OK(ProxyProvider)/S_ERROR()
     """
@@ -53,6 +54,7 @@ class ProxyProviderFactory(object):
     try:
       pProvider = ppClass()
       pProvider.setParameters(ppDict)
+      provider.setManager(proxyManager)
     except BaseException as x:
       msg = 'ProxyProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
       self.log.exception()

@@ -30,7 +30,8 @@ class IdProviderFactory(object):
     """ This method returns a IdProvider instance corresponding to the supplied
         name.
 
-        :param basestring idProvider: the name of the Identity Provider
+        :param str idProvider: the name of the Identity Provider
+        :param object sessionManager: session manager
 
         :return: S_OK(IdProvider)/S_ERROR()
     """

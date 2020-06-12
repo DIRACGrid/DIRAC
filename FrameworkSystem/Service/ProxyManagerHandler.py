@@ -577,6 +577,7 @@ class ProxyManagerHandler(RequestHandler):
 
     provDict = {}
     groupDict = {}
+    # Sort user DNs for groups and proxy providers
     for group in groups:
       result = Registry.getDNsForUsernameInGroup(username, group)
       if not result['OK']:
@@ -671,6 +672,7 @@ class ProxyManagerHandler(RequestHandler):
     for prov, dns in provDict.items():
       dns = list(set(dns))
 
+      # Cut off existed DNs in DB
       result = self.__proxyDB.getValidDNs(dns)
       if not result['OK']:
         return result
@@ -686,7 +688,8 @@ class ProxyManagerHandler(RequestHandler):
             if dn in _dns:
               statusDict[_group].append(st)
       
-      if prov == 'Certificate':
+      # If for DN not found proxy provider
+      if not prov or prov == 'Certificate':
         for dn in dns:
           st = {'Status': 'not ready', 'DN': dn, "Action": ['upload proxy'],
                 "Comment": 'You have no proxy with(%s) uploaded to DIRAC.' % dn}
@@ -697,6 +700,7 @@ class ProxyManagerHandler(RequestHandler):
               statusDict[group].append(st)
         continue
       
+      # If proxy provider exist for DN
       result = ProxyProviderFactory().getProxyProvider(prov)
       if not result['OK']:
         return result

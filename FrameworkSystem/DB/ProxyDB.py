@@ -515,29 +515,34 @@ class ProxyDB(DB):
       return result
     if result['Value'] == 'Certificate':
       return S_ERROR('No proxy provider found for this DN, need to upload proxy')
+    
     result = ProxyProviderFactory().getProxyProvider(result['Value'])
     if not result['OK']:
       return result
     providerObj = result['Value']
+
+    # Generate the proxy and store in the DB
     result = providerObj.getProxy(userDN)
     if not result['OK']:
       return result
-    proxyStr = result['Value']['proxy']
+    chain = result['Value']
+    # proxyStr = result['Value']['proxy']
 
-    # Research proxy
-    chain = X509Chain()
-    result = chain.loadProxyFromString(proxyStr)
-    if not result['OK']:
-      return result
-    result = chain.getRemainingSecs()
-    if not result['OK']:
-      return result
-    remainingSecs = result['Value']
+    # # Research proxy
+    # chain = X509Chain()
+    # result = chain.loadProxyFromString(proxyStr)
+    # if not result['OK']:
+    #   return result
+    # result = chain.getRemainingSecs()
+    # if not result['OK']:
+    #   return result
+    # remainingSecs = result['Value']
 
-    # Store proxy
-    result = self.__storeProxy(userDN, chain)
-    if not result['OK']:
-      return result
+    # # Store proxy
+    # result = self.__storeProxy(userDN, chain)
+    # if not result['OK']:
+    #   return result
+    # #################
 
     # Add group
     result = chain.generateProxyToString(requiredLifeTime, diracGroup=userGroup, rfc=True)
