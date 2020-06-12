@@ -6,7 +6,9 @@ from contextlib import contextmanager
 import pytest
 from mock import MagicMock as Mock, patch
 
-from DIRAC import S_OK, S_ERROR
+from diraccfg import CFG
+
+from DIRAC import S_OK, S_ERROR, gConfig
 import DIRAC
 import DIRAC.TransformationSystem.Client.TransformationClient
 import DIRAC.Resources.Catalog.FileCatalogClient
@@ -19,6 +21,23 @@ from DIRAC.tests.Utilities.utils import MatchStringWith
 __RCSID__ = "$Id$"
 
 # pylint: disable=W0212, redefined-outer-name
+
+testRegistryCFG = """
+Registry
+{
+  Users
+  {
+    someUser
+    {
+      DN = /some/cert/owner
+    }
+  }
+}
+"""
+
+cfg = CFG()
+cfg.loadFromBuffer(testRegistryCFG)
+gConfig.loadCFG(cfg)
 
 
 @pytest.fixture
