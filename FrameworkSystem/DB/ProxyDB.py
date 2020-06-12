@@ -949,7 +949,7 @@ class ProxyDB(DB):
           for group in groups:
             result = Registry.getDNsForUsernameInGroup(user, group)
             if result['OK']:
-              DNs.append(result['Value'])
+              DNs += result['Value']
       elif users:
         for user in users:
           result = Registry.getDNsForUsername(user)
