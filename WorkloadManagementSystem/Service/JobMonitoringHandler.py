@@ -55,11 +55,11 @@ class JobMonitoringHandler(RequestHandler):
     """
 
     credDict = self.getRemoteCredentials()
-    self.ownerDN = credDict['DN']
+    self.owner = credDict['username']
     self.ownerGroup = credDict['group']
     operations = Operations(group=self.ownerGroup)
     self.globalJobsInfo = operations.getValue('/Services/JobMonitoring/GlobalJobsInfo', True)
-    self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.globalJobsInfo)
+    self.jobPolicy = JobPolicy(self.owner, self.ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = gJobDB
 
     useESForJobParametersFlag = operations.getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)

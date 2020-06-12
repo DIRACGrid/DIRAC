@@ -123,7 +123,7 @@ class Matcher(object):
     if resOpt['OK']:
       for key, value in resOpt['Value'].items():
         resultDict[key] = value
-    resAtt = self.jobDB.getJobAttributes(jobID, ['OwnerDN', 'OwnerGroup'])
+    resAtt = self.jobDB.getJobAttributes(jobID, ['Owner', 'OwnerDN', 'OwnerGroup'])
     if not resAtt['OK']:
       raise RuntimeError('Could not retrieve job attributes')
     if not resAtt['Value']:
@@ -138,6 +138,7 @@ class Matcher(object):
     self._updatePilotJobMapping(resourceDict, jobID)
 
     resultDict['DN'] = resAtt['Value']['OwnerDN']
+    resultDict['User'] = resAtt['Value']['Owner']
     resultDict['Group'] = resAtt['Value']['OwnerGroup']
     resultDict['PilotInfoReportedFlag'] = True
 
@@ -329,14 +330,13 @@ class Matcher(object):
         resourceDict['OwnerGroup'] = credDict['group']
         self.log.notice("Setting the resource group to the credentials group")
         if 'OwnerDN' in resourceDict and resourceDict['OwnerDN'] != credDict['DN']:
-          ownerDN = resourceDict['OwnerDN']
-          result = Registry.getGroupsForDN(resourceDict['OwnerDN'])
+          result = Registry.getGroupsForDN(resourceDict['OwnerDN'], researchedGroup=credDict['group'])
           if not result['OK']:
             raise RuntimeError(result['Message'])
           if credDict['group'] not in result['Value']:
             # DN is not in the same group! bad boy.
             self.log.warn("You cannot request jobs from this DN, as it does not belong to your group!",
-                          "(%s)" % ownerDN)
+                          "(%s)" % resourceDict['OwnerDN'])
             resourceDict['OwnerDN'] = credDict['DN']
       # Nothing special, group and DN have to be the same
       else:

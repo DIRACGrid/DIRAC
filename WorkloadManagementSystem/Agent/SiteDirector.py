@@ -110,6 +110,7 @@ class SiteDirector(AgentModule):
     # self.voGroups contain all the eligible user groups for pilots submitted by this SiteDirector
     self.voGroups = []
     self.pilotDN = ''
+    self.pilotUser = ''
     self.pilotGroup = ''
     self.platforms = []
     self.sites = []
@@ -206,11 +207,15 @@ class SiteDirector(AgentModule):
     # Which credentials to use?
     # are they specific to the SD? (if not, get the generic ones)
     self.pilotDN = self.am_getOption("PilotDN", self.pilotDN)
+    self.pilotUser = self.am_getOption("PilotUser", self.pilotUser)
     self.pilotGroup = self.am_getOption("PilotGroup", self.pilotGroup)
-    result = findGenericPilotCredentials(vo=self.vo, pilotDN=self.pilotDN, pilotGroup=self.pilotGroup)
+    result = findGenericPilotCredentials(vo=self.vo,
+                                         pilotUser=self.pilotUser,
+                                         pilotDN=self.pilotDN,
+                                         pilotGroup=self.pilotGroup)
     if not result['OK']:
       return result
-    self.pilotDN, self.pilotGroup = result['Value']
+    self.pilotUser, self.pilotGroup, self.pilotDN = result['Value']
 
     # Parameters
     self.defaultSubmitPools = getSubmitPools(self.group, self.vo)
@@ -258,6 +263,7 @@ class SiteDirector(AgentModule):
     self.log.always('CETypes:', ceTypes)
     self.log.always('CEs:', ces)
     self.log.always('PilotDN:', self.pilotDN)
+    self.log.always('PilotUser:', self.pilotUser)
     self.log.always('PilotGroup:', self.pilotGroup)
 
     result = self.resourcesModule.getQueues(community=self.vo,
@@ -574,9 +580,9 @@ class SiteDirector(AgentModule):
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
-      self.log.verbose("Getting pilot proxy",
-                       "for %s/%s %d long" % (self.pilotDN, self.pilotGroup, cpuTime))
-      result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, cpuTime)
+      self.log.verbose("Getting pilot proxy for",
+                       "%s@%s (%s) %d long" % (self.pilotUser, self.pilotGroup, self.pilotDN, cpuTime))
+      result = gProxyManager.downloadCorrectProxy(self.pilotUser, self.pilotGroup, cpuTime)
       if not result['OK']:
         return result
       proxy = result['Value']
@@ -1052,17 +1058,14 @@ class SiteDirector(AgentModule):
                     **kwargs):
     """ Prepare the full executable for queue
 
-    :param queue: queue name
-    :type queue: basestring
-    :param pilotsToSubmit: number of pilots to submit
-    :type pilotsToSubmit: int
-    :param bundleProxy: flag that say if to bundle or not the proxy
-    :type bundleProxy: bool
-    :param queue: pilot execution dir (normally an empty string)
-    :type queue: basestring
+    :param str queue: queue name
+    :param int pilotsToSubmit: number of pilots to submit
+    :param bool proxy: flag that say if to bundle or not the proxy
+    :param str jobExecDir: pilot execution dir (normally an empty string)
+    :param envVariables: env variables
 
     :returns: a string the options for the pilot
-    :rtype: basestring
+    :rtype: str
     """
 
     pilotOptions, pilotsSubmitted = self._getPilotOptions(queue, pilotsToSubmit, **kwargs)
@@ -1140,10 +1143,8 @@ class SiteDirector(AgentModule):
             "(version in CS: %s)" % lcgBundleVersion)
         pilotOptions.append('-g %s' % lcgBundleVersion)
 
-    ownerDN = self.pilotDN
-    ownerGroup = self.pilotGroup
     # Request token for maximum pilot efficiency
-    result = gProxyManager.requestToken(ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode)
+    result = gProxyManager.requestToken(self.pilotUser, self.pilotGroup, pilotsToSubmit * self.maxJobsInFillMode)
     if not result['OK']:
       self.log.error('Invalid proxy token request', result['Message'])
       return [None, None]
@@ -1245,7 +1246,7 @@ class SiteDirector(AgentModule):
     """
 
     # Generate a proxy before feeding the threads to renew the ones of the CEs to perform actions
-    result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, 23400)
+    result = gProxyManager.downloadCorrectProxy(self.pilotUser, self.pilotGroup, 23400)
     if not result['OK']:
       return result
     proxy = result['Value']
@@ -1262,7 +1263,7 @@ class SiteDirector(AgentModule):
       ce = self.queueDict[queue]['CE']
 
       if not ce.isProxyValid(120)['OK']:
-        result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, 1000)
+        result = gProxyManager.downloadCorrectProxy(self.pilotUser, self.pilotGroup, 1000)
         if not result['OK']:
           return result
         proxy = result['Value']

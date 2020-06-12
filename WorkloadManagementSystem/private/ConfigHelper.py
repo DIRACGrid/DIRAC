@@ -8,7 +8,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Operations
 
 
-def findGenericPilotCredentials(vo=False, group=False, pilotDN='', pilotGroup=''):
+def findGenericPilotCredentials(vo=None, group=None, pilotDN=None, pilotGroup=None, pilotUser=None):
   """ Looks into the Operations/<>/Pilot section of CS to find the pilot credentials.
       Then check if the user has a registered proxy in ProxyManager.
 
@@ -18,33 +18,34 @@ def findGenericPilotCredentials(vo=False, group=False, pilotDN='', pilotGroup=''
       :param str group: group name
       :param str pilotDN: pilot DN
       :param str pilotGroup: pilot group
+      :param str pilotUser: pilot user
 
       :return: S_OK(tuple)/S_ERROR()
   """
   if not group and not vo:
     return S_ERROR("Need a group or a VO to determine the Generic pilot credentials")
+  vo = vo or Registry.getVOForGroup(group)
   if not vo:
-    vo = Registry.getVOForGroup(group)
-    if not vo:
-      return S_ERROR("Group %s does not have a VO associated" % group)
+    return S_ERROR("Group %s does not have a VO associated" % group)
   opsHelper = Operations.Operations(vo=vo)
+  pilotDN = pilotDN or opsHelper.getValue("Pilot/GenericPilotDN", "")
+  pilotUser = pilotUser or opsHelper.getValue("Pilot/GenericPilotUser", "")
+  pilotGroup = pilotGroup or opsHelper.getValue("Pilot/GenericPilotGroup", "")
   if not pilotGroup:
-    pilotGroup = opsHelper.getValue("Pilot/GenericPilotGroup", "")
-  if not pilotDN:
-    pilotDN = opsHelper.getValue("Pilot/GenericPilotDN", "")
-  if not pilotDN:
-    pilotUser = opsHelper.getValue("Pilot/GenericPilotUser", "")
-    if pilotUser:
-      result = Registry.getDNForUsername(pilotUser)
-      if result['OK']:
-        pilotDN = result['Value'][0]
-  if pilotDN and pilotGroup:
-    gLogger.verbose("Pilot credentials: %s@%s" % (pilotDN, pilotGroup))
-    result = gProxyManager.userHasProxy(pilotDN, pilotGroup, 86400)
+    return S_ERROR("%s does not have group" % pilotDN or pilotUser)
+  if pilotUser and not pilotDN:
+    result = Registry.getDNForUsernameInGroup(pilotUser, pilotGroup)
     if not result['OK']:
-      return S_ERROR("%s@%s has no proxy in ProxyManager")
-    return S_OK((pilotDN, pilotGroup))
+      return result
+    pilotDN = result['Value']
+  if pilotDN and not pilotUser:
+    result = Registry.getUsernameForDN(pilotDN)
+    if not result['OK']:
+      return result
+    pilotUser = result['Value']
 
-  if pilotDN:
-    return S_ERROR("DN %s does not have group %s" % (pilotDN, pilotGroup))
-  return S_ERROR("No generic proxy in the Proxy Manager with groups %s" % pilotGroup)
+  gLogger.verbose("Pilot credentials: %s@%s (%s)" % (pilotUser, pilotGroup, pilotDN))
+  result = gProxyManager.userHasProxy(pilotUser, pilotGroup, 86400)
+  if not result['OK']:
+    return S_ERROR("%s@%s has no proxy in ProxyManager" % (pilotUser, pilotGroup))
+  return S_OK((pilotUser, pilotGroup, pilotDN))
