@@ -1,11 +1,13 @@
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
-import six
+from past.builtins import long
 import os
+import six
 import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getUsernameForDN
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
@@ -17,25 +19,22 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 
 __RCSID__ = "$Id$"
 
-gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
-gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
 
 class ProxyManagerClient(object):
+  """ Proxy manager client
+  """
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__(self):
-    self.__usersCache = DictCache()
     self.__proxiesCache = DictCache()
-    self.__vomsProxiesCache = DictCache()
-    self.__pilotProxiesCache = DictCache()
     self.__filesCache = DictCache(self.__deleteTemporalFile)
 
   def __deleteTemporalFile(self, filename):
     """ Delete temporal file
 
-        :param basestring filename: path to file
+        :param str filename: path to file
     """
     try:
       os.unlink(filename)
@@ -45,141 +44,38 @@ class ProxyManagerClient(object):
   def clearCaches(self):
     """ Clear caches
     """
-    self.__usersCache.purgeAll()
     self.__proxiesCache.purgeAll()
-    self.__vomsProxiesCache.purgeAll()
-    self.__pilotProxiesCache.purgeAll()
 
-  def __getSecondsLeftToExpiration(self, expiration, utc=True):
-    """ Get time left to expiration in a seconds
-
-        :param datetime expiration:
-        :param boolean utc: time in utc
-
-        :return: datetime
-    """
-    if utc:
-      td = expiration - datetime.datetime.utcnow()
-    else:
-      td = expiration - datetime.datetime.now()
-    return td.days * 86400 + td.seconds
-
-  def __refreshUserCache(self, validSeconds=0):
-    """ Refresh user cache
-
-        :param int validSeconds: required seconds the proxy is valid for
-
-        :return: S_OK()/S_ERROR()
-    """
-    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    retVal = rpcClient.getRegisteredUsers(validSeconds)
-    if not retVal['OK']:
-      return retVal
-    data = retVal['Value']
-    # Update the cache
-    for record in data:
-      cacheKey = (record['DN'], record['group'])
-      self.__usersCache.add(cacheKey,
-                            self.__getSecondsLeftToExpiration(record['expirationtime']),
-                            record)
-    return S_OK()
-
-  @gUsersSync
-  def userHasProxy(self, userDN, userGroup, validSeconds=0):
-    """ Check if a user(DN-group) has a proxy in the proxy management
+  def userHasProxy(self, user, group, validSeconds=0):
+    """ Check if a user-group has a proxy in the proxy management
         Updates internal cache if needed to minimize queries to the service
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
+        :param str user: user name
+        :param str group: user group
         :param int validSeconds: proxy valid time in a seconds
 
         :return: S_OK()/S_ERROR()
     """
-    cacheKey = (userDN, userGroup)
-    if self.__usersCache.exists(cacheKey, validSeconds):
-      return S_OK(True)
-    # Get list of users from the DB with proxys at least 300 seconds
-    gLogger.verbose("Updating list of users in proxy management")
-    retVal = self.__refreshUserCache(validSeconds)
-    if not retVal['OK']:
-      return retVal
-    return S_OK(self.__usersCache.exists(cacheKey, validSeconds))
-
-  @gUsersSync
-  def getUserPersistence(self, userDN, userGroup, validSeconds=0):
-    """ Check if a user(DN-group) has a proxy in the proxy management
-        Updates internal cache if needed to minimize queries to the service
-
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
-        :param int validSeconds: proxy valid time in a seconds
-
-        :return: S_OK()/S_ERROR()
-    """
-    cacheKey = (userDN, userGroup)
-    userData = self.__usersCache.get(cacheKey, validSeconds)
-    if userData:
-      if userData['persistent']:
-        return S_OK(True)
-    # Get list of users from the DB with proxys at least 300 seconds
-    gLogger.verbose("Updating list of users in proxy management")
-    retVal = self.__refreshUserCache(validSeconds)
-    if not retVal['OK']:
-      return retVal
-    userData = self.__usersCache.get(cacheKey, validSeconds)
-    if userData:
-      return S_OK(userData['persistent'])
-    return S_OK(False)
-
-  def setPersistency(self, userDN, userGroup, persistent):
-    """ Set the persistency for user/group
-
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
-        :param boolean persistent: presistent flag
-
-        :return: S_OK()/S_ERROR()
-    """
-    # Hack to ensure bool in the rpc call
-    persistentFlag = True
-    if not persistent:
-      persistentFlag = False
-    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    retVal = rpcClient.setPersistency(userDN, userGroup, persistentFlag)
-    if not retVal['OK']:
-      return retVal
-    # Update internal persistency cache
-    cacheKey = (userDN, userGroup)
-    record = self.__usersCache.get(cacheKey, 0)
-    if record:
-      record['persistent'] = persistentFlag
-      self.__usersCache.add(cacheKey,
-                            self.__getSecondsLeftToExpiration(record['expirationtime']),
-                            record)
-    return retVal
+    return gProxyManagerData.userHasProxy(user, group, validSeconds)
 
   def uploadProxy(self, proxy=None, restrictLifeTime=0, rfcIfPossible=False):
     """ Upload a proxy to the proxy management service using delegation
 
         :param X509Chain proxy: proxy as a chain
         :param int restrictLifeTime: proxy live time in a seconds
-        :param boolean rfcIfPossible: make rfc proxy if possible
+        :param bool rfcIfPossible: make rfc proxy if possible
 
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies
     """
     # Discover proxy location
+    proxyLocation = proxy if isinstance(proxy, six.string_types) else ""
     if isinstance(proxy, X509Chain):
       chain = proxy
-      proxyLocation = ""
     else:
-      if not proxy:
+      if not proxyLocation:
         proxyLocation = Locations.getProxyLocation()
         if not proxyLocation:
           return S_ERROR("Can't find a valid proxy")
-      elif isinstance(proxy, six.string_types):
-        proxyLocation = proxy
-      else:
-        return S_ERROR("Can't find a valid proxy")
       chain = X509Chain()
       result = chain.loadProxyFromFile(proxyLocation)
       if not result['OK']:
@@ -193,59 +89,56 @@ class ProxyManagerClient(object):
 
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
-    # WARN: Since v7r1 requestDelegationUpload method use only first argument!
-    # WARN:   Second argument for compatibility with older versions
-    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'], None)
+    result = rpcClient.requestDelegationUpload()
     if not result['OK']:
       return result
     reqDict = result['Value']
     # Generate delegated chain
     chainLifeTime = chain.getRemainingSecs()['Value'] - 60
-    if restrictLifeTime and restrictLifeTime < chainLifeTime:
-      chainLifeTime = restrictLifeTime
-    retVal = chain.generateChainFromRequestString(reqDict['request'],
-                                                  lifetime=chainLifeTime,
+    chainLifeTime = min(restrictLifeTime, chainLifeTime) if restrictLifeTime else chainLifeTime
+    retVal = chain.generateChainFromRequestString(reqDict['request'], lifetime=chainLifeTime,
                                                   rfc=rfcIfPossible)
     if not retVal['OK']:
       return retVal
     # Upload!
-    result = rpcClient.completeDelegationUpload(reqDict['id'], retVal['Value'])
-    if not result['OK']:
-      return result
-    return S_OK(result.get('proxies') or result['Value'])
+    return rpcClient.completeDelegationUpload(reqDict['id'], retVal['Value'])
 
   @gProxiesSync
-  def downloadProxy(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
-                    cacheTime=14400, proxyToConnect=None, token=None):
-    """ Get a proxy Chain from the proxy management
+  def __getProxy(self, user, userGroup, limited=False, requiredTimeLeft=1200, cacheTime=14400,
+                 proxyToConnect=None, token=None, voms=None, personal=False):
+    """ Get a proxy Chain from the proxy manager
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
-        :param boolean limited: if need limited proxy
+        :param str user: user name
+        :param str group: user group
+        :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
         :param int cacheTime: store in a cache time in a seconds
         :param X509Chain proxyToConnect: proxy as a chain
-        :param basestring token: valid token to get a proxy
+        :param str token: valid token to get a proxy
+        :param bool voms: for VOMS proxy
+        :param bool personal: get personal proxy
 
         :return: S_OK(X509Chain)/S_ERROR()
     """
-    cacheKey = (userDN, userGroup)
+    if voms and not getVOMSAttributeForGroup(userGroup):
+      return S_ERROR("No mapping defined for group %s in the CS" % userGroup)
+
+    cacheKey = (user, userGroup, voms, limited)
     if self.__proxiesCache.exists(cacheKey, requiredTimeLeft):
       return S_OK(self.__proxiesCache.get(cacheKey))
+
     req = X509Request()
     req.generateProxyRequest(limited=limited)
     if proxyToConnect:
       rpcClient = RPCClient("Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
     else:
       rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    if token:
-      retVal = rpcClient.getProxyWithToken(userDN, userGroup, req.dumpRequest()['Value'],
-                                           int(cacheTime + requiredTimeLeft), token)
-    else:
-      retVal = rpcClient.getProxy(userDN, userGroup, req.dumpRequest()['Value'],
-                                  int(cacheTime + requiredTimeLeft))
+
+    retVal = rpcClient.getProxy(user, userGroup, req.dumpRequest()['Value'],
+                                int(cacheTime + requiredTimeLeft), token, voms, personal)
     if not retVal['OK']:
       return retVal
+
     chain = X509Chain(keyObj=req.getPKey())
     retVal = chain.loadChainFromString(retVal['Value'])
     if not retVal['OK']:
@@ -253,199 +146,133 @@ class ProxyManagerClient(object):
     self.__proxiesCache.add(cacheKey, chain.getRemainingSecs()['Value'], chain)
     return S_OK(chain)
 
-  def downloadProxyToFile(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
-                          cacheTime=14400, filePath=None, proxyToConnect=None, token=None):
+  def downloadPersonalProxy(self, user, group, requiredTimeLeft=1200, voms=False):
+    """ Get a proxy Chain from the proxy management
+
+        :param str user: user name
+        :param str group: user group
+        :param int requiredTimeLeft: required proxy live time in a seconds
+        :param bool voms: for VOMS proxy
+
+        :return: S_OK(X509Chain)/S_ERROR()
+    """
+    return self.__getProxy(user, group, requiredTimeLeft=requiredTimeLeft,
+                           voms=voms, personal=True)
+
+  def downloadProxy(self, user, group, limited=False, requiredTimeLeft=1200, cacheTime=14400,
+                    proxyToConnect=None, token=None, personal=False):
+    """ Get a proxy Chain from the proxy management
+
+        :param str user: user name
+        :param str group: user group
+        :param bool limited: if need limited proxy
+        :param int requiredTimeLeft: required proxy live time in a seconds
+        :param int cacheTime: store in a cache time in a seconds
+        :param X509Chain proxyToConnect: proxy as a chain
+        :param str token: valid token to get a proxy
+        :param bool personal: get personal proxy
+
+        :return: S_OK(X509Chain)/S_ERROR()
+    """
+    return self.__getProxy(user, group, limited=limited, requiredTimeLeft=requiredTimeLeft,
+                           cacheTime=cacheTime, proxyToConnect=proxyToConnect, token=token, personal=personal)
+
+  def downloadProxyToFile(self, user, group, limited=False, requiredTimeLeft=1200, cacheTime=14400,
+                          filePath=None, proxyToConnect=None, token=None, personal=False):
     """ Get a proxy Chain from the proxy management and write it to file
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
-        :param boolean limited: if need limited proxy
+        :param str user: user name
+        :param str group: user group
+        :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
         :param int cacheTime: store in a cache time in a seconds
-        :param basestring filePath: path to save proxy
+        :param str filePath: path to save proxy
         :param X509Chain proxyToConnect: proxy as a chain
-        :param basestring token: valid token to get a proxy
+        :param str token: valid token to get a proxy
+        :param bool personal: get personal proxy
 
         :return: S_OK(X509Chain)/S_ERROR()
     """
-    retVal = self.downloadProxy(userDN, userGroup, limited, requiredTimeLeft, cacheTime, proxyToConnect, token)
-    if not retVal['OK']:
-      return retVal
-    chain = retVal['Value']
-    retVal = self.dumpProxyToFile(chain, filePath)
-    if not retVal['OK']:
-      return retVal
-    retVal['chain'] = chain
+    retVal = self.downloadProxy(user, group, limited, requiredTimeLeft, cacheTime, proxyToConnect, token, personal)
+    if retVal['OK']:
+      chain = retVal['Value']
+      retVal = self.dumpProxyToFile(chain, filePath)
+      if retVal['OK']:
+        retVal['chain'] = chain
     return retVal
 
-  @gVOMSProxiesSync
-  def downloadVOMSProxy(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
-                        cacheTime=14400, requiredVOMSAttribute=None,
-                        proxyToConnect=None, token=None):
+  def downloadVOMSProxy(self, user, group, limited=False, requiredTimeLeft=1200,
+                        cacheTime=14400, proxyToConnect=None, token=None, personal=False):
     """ Download a proxy if needed and transform it into a VOMS one
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
-        :param boolean limited: if need limited proxy
+        :param str user: user name
+        :param str group: user group
+        :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
         :param int cacheTime: store in a cache time in a seconds
-        :param basestring requiredVOMSAttribute: VOMS attr to add to the proxy
         :param X509Chain proxyToConnect: proxy as a chain
-        :param basestring token: valid token to get a proxy
+        :param str token: valid token to get a proxy
+        :param bool personal: get personal proxy
 
         :return: S_OK(X509Chain)/S_ERROR()
     """
-    cacheKey = (userDN, userGroup, requiredVOMSAttribute, limited)
-    if self.__vomsProxiesCache.exists(cacheKey, requiredTimeLeft):
-      return S_OK(self.__vomsProxiesCache.get(cacheKey))
-    req = X509Request()
-    req.generateProxyRequest(limited=limited)
-    if proxyToConnect:
-      rpcClient = RPCClient("Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
-    else:
-      rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    if token:
-      retVal = rpcClient.getVOMSProxyWithToken(userDN, userGroup, req.dumpRequest()['Value'],
-                                               int(cacheTime + requiredTimeLeft), token, requiredVOMSAttribute)
+    return self.__getProxy(user, group, limited=limited, requiredTimeLeft=requiredTimeLeft, voms=True,
+                           cacheTime=cacheTime, proxyToConnect=proxyToConnect, token=token, personal=personal)
 
-    else:
-      retVal = rpcClient.getVOMSProxy(userDN, userGroup, req.dumpRequest()['Value'],
-                                      int(cacheTime + requiredTimeLeft), requiredVOMSAttribute)
-    if not retVal['OK']:
-      return retVal
-    chain = X509Chain(keyObj=req.getPKey())
-    retVal = chain.loadChainFromString(retVal['Value'])
-    if not retVal['OK']:
-      return retVal
-    self.__vomsProxiesCache.add(cacheKey, chain.getRemainingSecs()['Value'], chain)
-    return S_OK(chain)
-
-  def downloadVOMSProxyToFile(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
-                              cacheTime=14400, requiredVOMSAttribute=None, filePath=None,
-                              proxyToConnect=None, token=None):
+  def downloadVOMSProxyToFile(self, user, group, limited=False, requiredTimeLeft=1200,
+                              cacheTime=14400, filePath=None, proxyToConnect=None, token=None, personal=False):
     """ Download a proxy if needed, transform it into a VOMS one and write it to file
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
-        :param boolean limited: if need limited proxy
+        :param str user: user name
+        :param str group: user group
+        :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
         :param int cacheTime: store in a cache time in a seconds
-        :param basestring requiredVOMSAttribute: VOMS attr to add to the proxy
-        :param basestring filePath: path to save proxy
+        :param str filePath: path to save proxy
         :param X509Chain proxyToConnect: proxy as a chain
-        :param basestring token: valid token to get a proxy
+        :param str token: valid token to get a proxy
+        :param bool personal: get personal proxy
 
         :return: S_OK(X509Chain)/S_ERROR()
     """
-    retVal = self.downloadVOMSProxy(userDN, userGroup, limited, requiredTimeLeft, cacheTime,
-                                    requiredVOMSAttribute, proxyToConnect, token)
-    if not retVal['OK']:
-      return retVal
-    chain = retVal['Value']
-    retVal = self.dumpProxyToFile(chain, filePath)
-    if not retVal['OK']:
-      return retVal
-    retVal['chain'] = chain
+    retVal = self.downloadVOMSProxy(user, group, limited, requiredTimeLeft, cacheTime,
+                                    proxyToConnect, token, personal)
+    if retVal['OK']:
+      chain = retVal['Value']
+      retVal = self.dumpProxyToFile(chain, filePath)
+      if retVal['OK']:
+        retVal['chain'] = chain
     return retVal
 
-  def getPilotProxyFromDIRACGroup(self, userDN, userGroup, requiredTimeLeft=43200, proxyToConnect=None):
-    """ Download a pilot proxy with VOMS extensions depending on the group
+  def downloadCorrectProxy(self, user, group, requiredTimeLeft=43200, proxyToConnect=None,
+                           token=None, personal=False):
+    """ Download a proxy with VOMS extensions depending on the group or simple proxy
+        if group without VOMS extensions
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
+        :param str user: user name
+        :param str group: user group
         :param int requiredTimeLeft: required proxy live time in a seconds
         :param X509Chain proxyToConnect: proxy as a chain
+        :param str token: valid token to get a proxy
+        :param bool personal: get personal proxy
 
         :return: S_OK(X509Chain)/S_ERROR()
     """
-    # Assign VOMS attribute
-    vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
-    if not vomsAttr:
-      gLogger.verbose("No voms attribute assigned to group %s when requested pilot proxy" % userGroup)
-      return self.downloadProxy(userDN, userGroup, limited=False, requiredTimeLeft=requiredTimeLeft,
-                                proxyToConnect=proxyToConnect)
-    else:
-      return self.downloadVOMSProxy(userDN, userGroup, limited=False, requiredTimeLeft=requiredTimeLeft,
-                                    requiredVOMSAttribute=vomsAttr, proxyToConnect=proxyToConnect)
-
-  def getPilotProxyFromVOMSGroup(self, userDN, vomsAttr, requiredTimeLeft=43200, proxyToConnect=None):
-    """ Download a pilot proxy with VOMS extensions depending on the group
-
-        :param basestring userDN: user DN
-        :param basestring vomsAttr: VOMS attribute
-        :param int requiredTimeLeft: required proxy live time in a seconds
-        :param X509Chain proxyToConnect: proxy as a chain
-
-        :return: S_OK(X509Chain)/S_ERROR()
-    """
-    groups = Registry.getGroupsWithVOMSAttribute(vomsAttr)
-    if not groups:
-      return S_ERROR("No group found that has %s as voms attrs" % vomsAttr)
-
-    for userGroup in groups:
-      result = self.downloadVOMSProxy(userDN, userGroup,
-                                      limited=False,
-                                      requiredTimeLeft=requiredTimeLeft,
-                                      requiredVOMSAttribute=vomsAttr,
-                                      proxyToConnect=proxyToConnect)
-      if result['OK']:
-        return result
-    return result
-
-  def getPayloadProxyFromDIRACGroup(self, userDN, userGroup, requiredTimeLeft, token=None, proxyToConnect=None):
-    """ Download a payload proxy with VOMS extensions depending on the group
-
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
-        :param int requiredTimeLeft: required proxy live time in a seconds
-        :param basestring token: valid token to get a proxy
-        :param X509Chain proxyToConnect: proxy as a chain
-
-        :return: S_OK(X509Chain)/S_ERROR()
-    """
-    # Assign VOMS attribute
-    vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
-    if not vomsAttr:
-      gLogger.verbose("No voms attribute assigned to group %s when requested payload proxy" % userGroup)
-      return self.downloadProxy(userDN, userGroup, limited=True, requiredTimeLeft=requiredTimeLeft,
-                                proxyToConnect=proxyToConnect, token=token)
-    else:
-      return self.downloadVOMSProxy(userDN, userGroup, limited=True, requiredTimeLeft=requiredTimeLeft,
-                                    requiredVOMSAttribute=vomsAttr, proxyToConnect=proxyToConnect,
-                                    token=token)
-
-  def getPayloadProxyFromVOMSGroup(self, userDN, vomsAttr, token, requiredTimeLeft, proxyToConnect=None):
-    """ Download a payload proxy with VOMS extensions depending on the VOMS attr
-
-        :param basestring userDN: user DN
-        :param basestring vomsAttr: VOMS attribute
-        :param basestring token: valid token to get a proxy
-        :param int requiredTimeLeft: required proxy live time in a seconds
-        :param X509Chain proxyToConnect: proxy as a chain
-
-        :return: S_OK(X509Chain)/S_ERROR()
-    """
-    groups = Registry.getGroupsWithVOMSAttribute(vomsAttr)
-    if not groups:
-      return S_ERROR("No group found that has %s as voms attrs" % vomsAttr)
-    userGroup = groups[0]
-
-    return self.downloadVOMSProxy(userDN,
-                                  userGroup,
-                                  limited=True,
-                                  requiredTimeLeft=requiredTimeLeft,
-                                  requiredVOMSAttribute=vomsAttr,
-                                  proxyToConnect=proxyToConnect,
-                                  token=token)
+    if not getVOMSAttributeForGroup(group):
+      gLogger.verbose("No voms attribute assigned to group %s when requested proxy" % group)
+      return self.downloadProxy(user, group, limited=False, requiredTimeLeft=requiredTimeLeft,
+                                proxyToConnect=proxyToConnect, personal=personal)
+    return self.downloadVOMSProxy(user, group, limited=False, requiredTimeLeft=requiredTimeLeft,
+                                  proxyToConnect=proxyToConnect, personal=personal)
 
   def dumpProxyToFile(self, chain, destinationFile=None, requiredTimeLeft=600):
     """ Dump a proxy to a file. It's cached so multiple calls won't generate extra files
 
         :param X509Chain chain: proxy as a chain
-        :param basestring destinationFile: path to store proxy
+        :param str destinationFile: path to store proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     result = chain.hash()
     if not result['OK']:
@@ -473,18 +300,17 @@ class ProxyManagerClient(object):
     self.__filesCache.delete(chain)
     return S_OK()
 
-  def requestToken(self, requesterDN, requesterGroup, numUses=1):
+  def requestToken(self, requester, requesterGroup, numUses=1):
     """ Request a number of tokens. usesList must be a list of integers and each integer is the number of uses a token
         must have
 
-        :param basestring requesterDN: user DN
-        :param basestring requesterGroup: user group
+        :param str requester: user name
+        :param str requesterGroup: user group
         :param int numUses: number of uses
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain token, number uses
     """
-    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    return rpcClient.generateToken(requesterDN, requesterGroup, numUses)
+    return RPCClient("Framework/ProxyManager", timeout=120).generateToken(requester, requesterGroup, numUses)
 
   def renewProxy(self, proxyToBeRenewed=None, minLifeTime=3600, newProxyLifeTime=43200, proxyToConnect=None):
     """ Renew a proxy using the ProxyManager
@@ -522,6 +348,10 @@ class ProxyManagerClient(object):
       deleteMultiProxy(proxyToConnectDict)
       return retVal
     userGroup = retVal['Value']
+    result = getUsernameForDN(userDN)
+    if not result['OK']:
+      return result
+    userName = result['Value']
     limited = proxyToRenewDict['chain'].isLimitedProxy()['Value']
 
     voms = VOMS()
@@ -530,18 +360,13 @@ class ProxyManagerClient(object):
       deleteMultiProxy(proxyToRenewDict)
       deleteMultiProxy(proxyToConnectDict)
       return retVal
-    vomsAttrs = retVal['Value']
-    if vomsAttrs:
-      retVal = self.downloadVOMSProxy(userDN,
-                                      userGroup,
-                                      limited=limited,
+
+    if retVal['Value']:
+      retVal = self.downloadVOMSProxy(userName, userGroup, limited=limited,
                                       requiredTimeLeft=newProxyLifeTime,
-                                      requiredVOMSAttribute=vomsAttrs[0],
                                       proxyToConnect=proxyToConnectDict['chain'])
     else:
-      retVal = self.downloadProxy(userDN,
-                                  userGroup,
-                                  limited=limited,
+      retVal = self.downloadProxy(userName, userGroup, limited=limited,
                                   requiredTimeLeft=newProxyLifeTime,
                                   proxyToConnect=proxyToConnectDict['chain'])
 
@@ -550,7 +375,6 @@ class ProxyManagerClient(object):
 
     if not retVal['OK']:
       return retVal
-
     chain = retVal['Value']
 
     if not proxyToRenewDict['tempFile']:
@@ -558,46 +382,43 @@ class ProxyManagerClient(object):
 
     return S_OK(chain)
 
-  def getDBContents(self, condDict={}):
-    """ Get the contents of the db
-
-        :param dict condDict: search condition
-
-        :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
-    """
-    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    return rpcClient.getContents(condDict, [['UserDN', 'DESC']], 0, 0)
-
   def getVOMSAttributes(self, chain):
     """ Get the voms attributes for a chain
 
         :param X509Chain chain: proxy as a chain
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     return VOMS().getVOMSAttributes(chain)
 
-  def getUploadedProxyLifeTime(self, DN, group):
+  def getUploadedProxiesDetails(self, user=None, group=None, sqlDict={}, start=0, limit=0):
+    """ Get the details about an uploaded proxy
+
+        :param str user: user name
+        :param str group: group name
+        :param dict selDict: selection fields
+        :param int start: search limit start
+        :param int start: search limit amount
+
+        :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
+    """
+    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+    return rpcClient.getContents(sqlDict, (user, group), start, limit)
+
+  def getUploadedProxyLifeTime(self, user, group):
     """ Get the remaining seconds for an uploaded proxy
 
-        :param basestring DN: user DN
-        :param basestring group: group
+        :param str user: user name
+        :param str group: group name
 
         :return: S_OK(int)/S_ERROR()
     """
-    result = self.getDBContents({'UserDN': [DN], 'UserGroup': [group]})
+    result = self.getUploadedProxiesDetails(user, group)
     if not result['OK']:
       return result
-    data = result['Value']
-    if len(data['Records']) == 0:
-      return S_OK(0)
-    pNames = list(data['ParameterNames'])
-    dnPos = pNames.index('UserDN')
-    groupPos = pNames.index('UserGroup')
-    expiryPos = pNames.index('ExpirationTime')
-    for row in data['Records']:
-      if DN == row[dnPos] and group == row[groupPos]:
-        td = row[expiryPos] - datetime.datetime.utcnow()
+    for proxyDict in result['Value']['Dictionaries']:
+      if user == proxyDict['user'] and group == proxyDict['group']:
+        td = proxyDict['expirationtime'] - datetime.datetime.utcnow()
         secondsLeft = td.days * 86400 + td.seconds
         return S_OK(max(0, secondsLeft))
     return S_OK(0)
@@ -612,5 +433,42 @@ class ProxyManagerClient(object):
       result.pop('rpcStub')
     return result
 
+  def deleteProxy(self, userDN, userGroup=None, listIDs=None):
+    """ Delete proxy
+
+        :param str userDN: user DN
+        :param str userGroup: group name
+        :param list listIDs: list of (DN, group)
+
+        :return: S_OK()/S_ERROR()
+    """
+    listIDs = listIDs or []
+    listIDs.append((userDN, userGroup))
+    return RPCClient("Framework/ProxyManager", timeout=120).deleteProxyBundle(listIDs)
+  
+  def getGroupsStatusByUsername(self, username, groups=None):
+    """ Get status of every group for DIRAC user:
+          {
+            <user>: {
+              <group>: [
+                {
+                  Status: ..,
+                  Comment: ..,
+                  DN: ..,
+                  Action: {
+                    <fn>: { <opns> }
+                  }
+                },
+                { ... }
+              ],
+              <group2>: [ ... ]
+            }
+          }
+
+        :param str username: user name
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    return RPCClient("Framework/ProxyManager", timeout=120).getGroupsStatusByUsername(username, groups)
 
 gProxyManager = ProxyManagerClient()
