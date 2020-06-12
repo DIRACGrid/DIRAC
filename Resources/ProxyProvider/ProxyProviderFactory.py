@@ -54,7 +54,7 @@ class ProxyProviderFactory(object):
     try:
       pProvider = ppClass()
       pProvider.setParameters(ppDict)
-      provider.setManager(proxyManager)
+      pProvider.setManager(proxyManager)
     except BaseException as x:
       msg = 'ProxyProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
       self.log.exception()
