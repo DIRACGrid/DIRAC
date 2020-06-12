@@ -15,7 +15,7 @@ import six
 
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNsForUsernameInGroup
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION, TRUSTED_HOST
 from DIRAC.Core.Utilities import DErrno
@@ -67,10 +67,10 @@ class FTS3ManagerHandler(RequestHandler):
     credProperties = remoteCredentials['properties']
 
     # First, get the DN matching the username
-    res = getDNForUsername(opObj.username)
+    res = getDNsForUsernameInGroup(opObj.username, opObj.userGroup)
     # if we have an error, do not allow
     if not res['OK']:
-      gLogger.error("Error retrieving DN for username", res)
+      gLogger.error("Error retrieving DN for username/group", res)
       return False
 
     # List of DN matching the username
