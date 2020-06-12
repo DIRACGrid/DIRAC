@@ -338,13 +338,6 @@ def generateProxy(params):
       return S_ERROR("Can't contact DIRAC CS: %s" % retVal['Message'])
     userDN = chain.getCertInChain(-1)['Value'].getSubjectDN()['Value']
 
-    if not params.diracGroup:
-      result = Registry.findDefaultGroupForDN(userDN)
-      if not result['OK']:
-        gLogger.warn("Could not get a default group for DN %s: %s" % (userDN, result['Message']))
-      else:
-        params.diracGroup = result['Value']
-        gLogger.info("Default discovered group is %s" % params.diracGroup)
     gLogger.info("Checking DN %s" % userDN)
     retVal = Registry.getUsernameForDN(userDN)
     if not retVal['OK']:
@@ -352,13 +345,21 @@ def generateProxy(params):
       return S_ERROR("DN %s is not registered" % userDN)
     username = retVal['Value']
     gLogger.info("Username is %s" % username)
+
+    if not params.diracGroup:
+      result = Registry.findDefaultGroupForUser(username)
+      if not result['OK']:
+        gLogger.warn(retVal['Message'])
+        return S_ERROR("Cannot found group for %s user. %s" % (username, result['Message']))
+      params.diracGroup = result['Value']
+
     retVal = Registry.getGroupsForUser(username)
     if not retVal['OK']:
       gLogger.warn(retVal['Message'])
       return S_ERROR("User %s has no groups defined" % username)
     groups = retVal['Value']
     if params.diracGroup not in groups:
-      return S_ERROR("Requested group %s is not valid for DN %s" % (params.diracGroup, userDN))
+      return S_ERROR("Requested group %s is not valid for %s user" % (params.diracGroup, username))
     gLogger.info("Creating proxy for %s@%s (%s)" % (username, params.diracGroup, userDN))
   if params.summary:
     h = int(params.proxyLifeTime / 3600)
