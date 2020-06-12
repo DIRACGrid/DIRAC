@@ -69,7 +69,7 @@ class ConfigurationHandler(RequestHandler):
   def export_commitNewData(self, sData):
     global gPilotSynchronizer
     credDict = self.getRemoteCredentials()
-    if 'DN' not in credDict or 'username' not in credDict:
+    if credDict.get('username', 'anonymous') == 'anonymous') or credDict.get('group', 'visitor') == 'visitor'):
       return S_ERROR("You must be authenticated!")
     res = gServiceInterface.updateConfiguration(sData, credDict['username'])
     if not res['OK']:
@@ -142,7 +142,7 @@ class ConfigurationHandler(RequestHandler):
     if not retVal['OK']:
       return S_ERROR("Can't get contents for version %s: %s" % (version, retVal['Message']))
     credDict = self.getRemoteCredentials()
-    if 'DN' not in credDict or 'username' not in credDict:
+    if credDict.get('username', 'anonymous') == 'anonymous') or credDict.get('group', 'visitor') == 'visitor'):
       return S_ERROR("You must be authenticated!")
     return gServiceInterface.updateConfiguration(retVal['Value'],
                                                  credDict['username'],
