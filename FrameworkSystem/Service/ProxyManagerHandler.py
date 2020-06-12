@@ -701,7 +701,7 @@ class ProxyManagerHandler(RequestHandler):
         continue
       
       # If proxy provider exist for DN
-      result = ProxyProviderFactory().getProxyProvider(prov)
+      result = ProxyProviderFactory().getProxyProvider(prov, proxyManager=self.__proxyDB)
       if not result['OK']:
         return result
       pProvObj = result['Value']
