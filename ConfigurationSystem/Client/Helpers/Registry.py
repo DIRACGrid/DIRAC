@@ -111,7 +111,7 @@ def getGroupsForDN(dn, groupsList=None):
     if user in getGroupOption(group, 'Users', []):
       vo = getGroupOption(group, 'VO')
       # Is VOMS VO?
-      if vo in vomsVOs and vomsData[vo]['OK'] and vomsData[vo]['Value']:
+      if vo in vomsVOs and vomsData.get(vo) and vomsData[vo]['OK'] and vomsData[vo]['Value']:
         voData = vomsData[vo]['Value']
         role = getGroupOption(group, 'VOMSRole')
         if not role or role in voData[dn]['VOMSRoles']:
@@ -322,7 +322,7 @@ def getDNsInGroup(group, checkStatus=False):
     if not result['OK']:
       return result
     userDNs = result['Value']
-    if vo in vomsData and vomsData[vo]['OK']:
+    if vomsData.get(vo) and vomsData[vo]['OK']:
       voData = vomsData[vo]['Value']
       role = getGroupOption(group, 'VOMSRole')
       for dn in userDNs:
@@ -791,7 +791,7 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
     if not result['OK']:
       return result
     vomsData = result['Value']
-    if vomsData[vo]['OK']:
+    if vomsData.get(vo) and vomsData[vo]['OK']:
       voData = vomsData[vo]['Value']
       role = getGroupOption(group, 'VOMSRole')
       for dn in userDNs:
