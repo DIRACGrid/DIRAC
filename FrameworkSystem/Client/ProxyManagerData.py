@@ -73,7 +73,7 @@ class ProxyManagerData(object):
         :param int time: lifetime
     """
     for oid, info in data.items():
-      self.__cacheProfiles.add(oid, time, value=info)
+      self.__usersCache.add(oid, time, value=info)
 
   def __getSecondsLeftToExpiration(self, expiration, utc=True):
     """ Get time left to expiration in a seconds

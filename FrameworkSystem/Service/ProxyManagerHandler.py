@@ -24,8 +24,6 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-# from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOsWithVOMS, getVOOption, getGroupsForVO,\
-#     getVOs, getPropertiesForGroup, isDownloadableGroup, getUsernameForDN
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
