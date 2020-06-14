@@ -203,7 +203,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :param str userDN: user DN
 
-        :return: S_OK(str)/S_ERROR() -- contain a proxy string
+        :return: S_OK(object)/S_ERROR() -- contain a X509Chain() object
     """
     self.__X509Name = X509.X509_Name()
     result = self.checkStatus(userDN)
@@ -218,8 +218,15 @@ class DIRACCAProxyProvider(ProxyProvider):
           result = chain.loadKeyFromString(keyStr)
           if result['OK']:
             result = chain.generateProxyToString(365 * 24 * 3600, rfc=True)
+            if result['OK']:
+              chain = X509Chain()
+              result = chain.loadProxyFromString(result['Value'])
+              if result['OK']:
+                
+                # Store proxy in proxy manager
+                result = self.proxyManager._storeProxy(userDN, chain)
 
-    return result
+    return S_OK(chain) if result['OK'] else result
 
   def generateDN(self, **kwargs):
     """ Get DN of the user certificate that will be created
