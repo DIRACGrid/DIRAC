@@ -449,7 +449,7 @@ class testDB(ProxyDBTestCase):
                       table + ' must ' + (count and 'contain proxy' or 'be empty'))
 
     gLogger.info('* Check that DB is clean..')
-    result = db.deleteProxy('user_ca')
+    result = db.deleteProxy(usersDNs['user_ca'])
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     result = db.getProxiesContent({'UserName': usersDNs.keys()}, {})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
@@ -531,7 +531,7 @@ class testDB(ProxyDBTestCase):
         gLogger.info('Msg: %s' % (result['Message']))
 
     gLogger.info('* Check that DB is clean..')
-    result = db.deleteProxy('user')
+    result = db.deleteProxy(usersDNs['user'])
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     result = db.getProxiesContent({'UserName': usersDNs.keys()}, {})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
@@ -558,7 +558,7 @@ class testDB(ProxyDBTestCase):
     self.assertEqual('group_1', result['Value'], 'Group must be group_1, not ' + result['Value'])
 
     gLogger.info('* Check that DB is clean..')
-    result = db.deleteProxy('user')
+    result = db.deleteProxy(usersDNs['user'])
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     result = db.getProxiesContent({'UserName': usersDNs.keys()}, {})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
@@ -600,7 +600,7 @@ class testDB(ProxyDBTestCase):
     gLogger.info('* Delete proxies..')
     for user, table in [('user', 'ProxyDB_Proxies'),
                         ('user_ca', 'ProxyDB_CleanProxies')]:
-      result = db.deleteProxy(user)
+      result = db.deleteProxy(usersDNs[user])
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       cmd = 'SELECT COUNT( * ) FROM %s WHERE UserDN="%s"' % (table, usersDNs[user])
       self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0))
