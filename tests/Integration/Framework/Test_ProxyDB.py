@@ -373,8 +373,8 @@ class testDB(ProxyDBTestCase):
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       usersList = []
       for line in result['Value']:
-        if line['Name'] in ['user', 'user_2', 'user_3']:
-          usersList.append(line['Name'])
+        if line['UserName'] in ['user', 'user_2', 'user_3']:
+          usersList.append(line['UserName'])
       self.assertEqual(set(expect), set(usersList), str(usersList) + ', when expected ' + str(expect))
 
   def test_purgeExpiredProxies(self):
