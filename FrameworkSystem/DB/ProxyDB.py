@@ -708,21 +708,16 @@ class ProxyDB(DB):
     self.logAction("myproxy renewal", hostDN, "host", userDN, userGroup)
     return S_OK(mpChain)
 
-  def getProxy(self, userName, userGroup, requiredLifeTime=None, voms=False):
-    """ Get proxy string from the Proxy Repository for use with userName in the userGroup
+  def getProxy(self, userDN, userGroup, requiredLifeTime=None, voms=False):
+    """ Get proxy string from the Proxy Repository for use with userDN in the userGroup
 
-        :param str userName: user DN
+        :param str userDN: user DN
         :param str userGroup: required DIRAC group
         :param int requiredLifeTime: required proxy live time in a seconds
         :param bool voms: if need VOMS attribute
 
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
     """
-    # Found DN
-    result = Registry.getDNForUsernameInGroup(userName, userGroup)
-    if not result['OK']:
-      return result
-    userDN = result['Value']
     vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
     if not vomsAttr and voms:
       return S_ERROR("No mapping defined for group %s in the CS" % userGroup)

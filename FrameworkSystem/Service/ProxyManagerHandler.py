@@ -209,7 +209,10 @@ class ProxyManagerHandler(RequestHandler):
     """
     proxiesInfo = {}
     credDict = self.getRemoteCredentials()
-    result = self.__proxyDB.getProxiesContent({'UserName': credDict['username']})
+    result = Registry.getDNsForUsername(credDict['username'])
+    if not result['OK']:
+      return result
+    result = self.__proxyDB.getProxiesContent({'UserDN': result['Value']})
     if not result['OK']:
       return result
     contents = result['Value']
@@ -328,11 +331,11 @@ class ProxyManagerHandler(RequestHandler):
 
   types_getProxy = [basestring, basestring, basestring, six.integer_types]
 
-  def export_getProxy(self, user, group, requestPem, requiredLifetime,
+  def export_getProxy(self, userOrDN, group, requestPem, requiredLifetime,
                       token=None, vomsAttribute=None, personal=False):
     """ Get a proxy for a user/group
 
-        :param str user: user name
+        :param str userOrDN: user name or DN
         :param str group: DIRAC group
         :param str requestPem: PEM encoded request object for delegation
         :param int requiredLifetime: Argument for length of proxy
@@ -354,12 +357,19 @@ class ProxyManagerHandler(RequestHandler):
     if not Registry.isDownloadableGroup(group):
       return S_ERROR('"%s" group is disable to download.' % group)
 
-    # WARN: Next block for compatability
-    if not user.find("/"):  # Is it DN?
-      result = Registry.getUsernameForDN(user)
+    # Is first argument user DN?
+    if userOrDN.startswith('/'):
+      dn = userOrDN
+      result = Registry.getUsernameForDN(dn)
       if not result['OK']:
         return result
       user = result['Value']
+    else:
+      user = userOrDN
+      result = Registry.getDNForUsernameInGroup(user, group)
+      if not result['OK']:
+        return result
+      dn = result['Value']
 
     credDict = self.getRemoteCredentials()
 
@@ -378,7 +388,7 @@ class ProxyManagerHandler(RequestHandler):
     log = "download %sproxy%s" % ('VOMS ' if vomsAttribute else '', 'with token' if token else '')
     self.__proxyDB.logAction(log, credDict['username'], credDict['group'], user, group)
 
-    retVal = self.__proxyDB.getProxy(user, group, requiredLifeTime=requiredLifetime, voms=vomsAttribute)
+    retVal = self.__proxyDB.getProxy(dn, group, requiredLifeTime=requiredLifetime, voms=vomsAttribute)
     if not retVal['OK']:
       return retVal
     chain, secsLeft = retVal['Value']
@@ -412,7 +422,7 @@ class ProxyManagerHandler(RequestHandler):
       return S_ERROR("Could not delete some proxies: %s" % ",".join(errorInDelete))
     return S_OK(deleted)
 
-  types_deleteProxy = [(list, tuple)]
+  types_deleteProxy = [str, str]
 
   def export_deleteProxy(self, userDN, userGroup):
     """ Delete a proxy from the DB
@@ -495,16 +505,12 @@ class ProxyManagerHandler(RequestHandler):
       requesterUsername = result['Value']
 
     credDict = self.getRemoteCredentials()
-    self.__proxyDB.logAction(
-        "generate tokens",
-        credDict['username'],
-        credDict['group'],
-        requesterUsername,
-        requesterGroup)
+    self.__proxyDB.logAction("generate tokens", credDict['username'], credDict['group'],
+                             requesterUsername, requesterGroup)
     return self.__proxyDB.generateToken(requesterUsername, requesterGroup, numUses=tokenUses)
 
   types_getVOMSProxyWithToken = [basestring, basestring, basestring, six.integer_types, [basestring, type(None)]]
-
+  @deprecated("This method is deprecated, you can use export_getProxy with token and vomsAttribute parameter")
   def export_getVOMSProxyWithToken(self, user, userGroup, requestPem, requiredLifetime, token, vomsAttribute=None):
     """ Get a proxy with VOMS extension for a user/userGroup by using token
 
@@ -519,7 +525,7 @@ class ProxyManagerHandler(RequestHandler):
     return self.export_getProxy(user, userGroup, requestPem, requiredLifetime, token=token, vomsAttribute=vomsAttribute)
 
   types_getProxyWithToken = [basestring, basestring, basestring, six.integer_types, basestring]
-
+  @deprecated("This method is deprecated, you can use export_getProxy with token parameter")
   def export_getProxyWithToken(self, user, userGroup, requestPem, requiredLifetime, token):
     """ Get a proxy for a user/userGroup by using token
 
@@ -534,7 +540,7 @@ class ProxyManagerHandler(RequestHandler):
     return self.export_getProxy(user, userGroup, requestPem, requiredLifetime, token=token)
 
   types_getVOMSProxy = [basestring, basestring, basestring, six.integer_types, [basestring, type(None)]]
-
+  @deprecated("This method is deprecated, you can use export_getProxy with vomsAttribute parameter")
   def export_getVOMSProxy(self, user, userGroup, requestPem, requiredLifetime, vomsAttribute=None):
     """ Get a proxy with VOMS extension for a user/userGroup
 
@@ -731,7 +737,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK(resD)
 
 
-  types_setPersistency = [basestring, basestring, bool]
+  types_setPersistency = []
   @deprecated("Unuse")
   def export_setPersistency(self, user, userGroup, persistentFlag):
     """ Set the persistency for a given DN/group """
