@@ -516,7 +516,7 @@ class ProxyDB(DB):
     if result['Value'] == 'Certificate':
       return S_ERROR('No proxy provider found for this DN, need to upload proxy')
     
-    result = ProxyProviderFactory().getProxyProvider(result['Value'])
+    result = ProxyProviderFactory().getProxyProvider(result['Value'], proxyManager=self)
     if not result['OK']:
       return result
     providerObj = result['Value']
