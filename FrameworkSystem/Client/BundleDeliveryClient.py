@@ -10,6 +10,8 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Security import Locations, Utilities
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
+
+
 __RCSID__ = "$Id$"
 
 
