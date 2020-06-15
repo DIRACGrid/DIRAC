@@ -1823,12 +1823,11 @@ class ComponentInstaller(object):
     with io.open(logRunFile, 'w') as fd:
       fd.write(
 	  u"""#!/bin/bash
-  #
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec svlogd .
 
+rcfile=%(bashrc)s
+[[ -e $rcfile ]] && source ${rcfile}
+#
+exec svlogd .
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
 
     os.chmod(logRunFile, self.gDefaultPerms)
@@ -1902,15 +1901,16 @@ class ComponentInstaller(object):
       with io.open(runFile, 'w') as fd:
 	fd.write(
 	    u"""#!/bin/bash
-    rcfile=%(bashrc)s
-    [ -e $rcfile ] && source $rcfile
-    #
-    exec 2>&1
-    #
-    [ "%(componentType)s" = "agent" ] && renice 20 -p $$
-    #%(bashVariables)s
-    #
-    exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
+
+rcfile=%(bashrc)s
+[[ -e $rcfile ]] && source ${rcfile}
+#
+exec 2>&1
+#
+[[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
+#%(bashVariables)s
+#
+exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
     """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
 		'bashVariables': bashVars,
 		'componentType': componentType,
@@ -1925,9 +1925,10 @@ class ComponentInstaller(object):
         # This is, e.g., /opt/dirac/runit/WorkfloadManagementSystem/Matcher/control/t
         stopFile = os.path.join(runitCompDir, 'control', 't')
         # This is, e.g., /opt/dirac/control/WorkfloadManagementSystem/Matcher/
-        controlDir = self.runitDir.replace('runit', 'control')
+	controlDir = self.runitDir.replace('runit', 'control')
 	with io.open(stopFile, 'w') as fd:
 	  fd.write(u"""#!/bin/bash
+
 echo %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 """ % {'controlDir': controlDir,
@@ -2090,16 +2091,17 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
         self._createRunitLog(runitWebAppDir)
         runFile = os.path.join(runitWebAppDir, 'run')
 	with io.open(runFile, 'w') as fd:
-          fd.write(
+	  fd.write(
 	      u"""#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
+
+rcfile=%(bashrc)s
+[[ -e $rcfile ]] && source $rcfile
+#
+exec 2>&1
+#
+exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
-                  'DIRAC': self.linkedRootPath})
+		  'DIRAC': self.linkedRootPath})
 
         os.chmod(runFile, self.gDefaultPerms)
       except Exception:
