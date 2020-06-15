@@ -6,27 +6,23 @@ import tarfile
 import cStringIO
 
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Security import Locations, Utilities
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 
 
 __RCSID__ = "$Id$"
 
 
-class BundleDeliveryClient(object):
+@createClient('Framework/BundleDelivery')
+class BundleDeliveryClient(Client):
 
-  def __init__(self, rpcClient=False, transferClient=False):
-    self.rpcClient = rpcClient
+  def __init__(self, transferClient=False, **kwargs):
+    Client.__init__(self, **kwargs)
     self.transferClient = transferClient
     self.log = gLogger.getSubLogger("BundleDelivery")
-
-  def __getRPCClient(self):
-    if self.rpcClient:
-      return self.rpcClient
-    return RPCClient("Framework/BundleDelivery",
-                     skipCACheck=skipCACheck())
 
   def __getTransferClient(self):
     if self.transferClient:
@@ -54,7 +50,7 @@ class BundleDeliveryClient(object):
     dirCreated = False
     if not os.path.isdir(dirToSyncTo):
       self.log.info("Creating dir %s" % dirToSyncTo)
-      os.makedirs(dirToSyncTo)
+      mkDir(dirToSyncTo)
       dirCreated = True
     currentHash = self.__getHash(bundleID, dirToSyncTo)
     self.log.info("Current hash for bundle %s in dir %s is '%s'" % (bundleID, dirToSyncTo, currentHash))
