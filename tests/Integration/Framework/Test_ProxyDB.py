@@ -516,7 +516,7 @@ class testDB(ProxyDBTestCase):
     gLogger.info('* Get proxy that store only in ProxyDB_CleanProxies..')
     # Try to get proxy that was stored to ProxyDB_CleanProxies in previous step
     for res, group, reqtime, log in [(False, 'group_1', 24 * 3600, 'Request time more that in stored proxy'),
-                                     (False, 'group_2', 0, 'Request group not contain user'),
+                                     (True, 'group_2', 0, 'Request group not contain user(this check on service side)'),
                                      (True, 'group_1', 0, 'Request time less that in stored proxy')]:
       gLogger.info('== > %s:' % log)
       result = db.getProxy(usersDNs['user'], group, reqtime)
