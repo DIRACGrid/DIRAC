@@ -250,7 +250,7 @@ class ProxyManagerHandler(RequestHandler):
       # WARN: Since v7r1, DIRAC has implemented the ability to store only one proxy and
       # WARN:   dynamically add a group at the request of a proxy. This means that group extensions
       # WARN:   doesn't need for storing proxies.
-      self.log.warn("Proxy with DIRAC group or VOMS extensions must be not allowed to be uploaded.")
+      return S_ERROR("Proxy with DIRAC group or VOMS extensions not allowed to be uploaded.")
 
     credDict = self.getRemoteCredentials()
     result = self.__proxyDB.generateDelegationRequest(credDict)
@@ -267,8 +267,9 @@ class ProxyManagerHandler(RequestHandler):
   def export_completeDelegationUpload(self, requestId, pemChain):
     """ Upload result of delegation
 
-        :param int,long requestId: identity number
-        :param basestring pemChain: certificate as string
+        :param requestId: identity number
+        :type requestId: int or long
+        :param str pemChain: certificate as string
 
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies
     """
@@ -331,11 +332,11 @@ class ProxyManagerHandler(RequestHandler):
 
   types_getProxy = [basestring, basestring, basestring, six.integer_types]
 
-  def export_getProxy(self, userOrDN, group, requestPem, requiredLifetime,
+  def export_getProxy(self, instance, group, requestPem, requiredLifetime,
                       token=None, vomsAttribute=None, personal=False):
     """ Get a proxy for a user/group
 
-        :param str userOrDN: user name or DN
+        :param str instance: user name or DN
         :param str group: DIRAC group
         :param str requestPem: PEM encoded request object for delegation
         :param int requiredLifetime: Argument for length of proxy
@@ -357,19 +358,11 @@ class ProxyManagerHandler(RequestHandler):
     if not Registry.isDownloadableGroup(group):
       return S_ERROR('"%s" group is disable to download.' % group)
 
-    # Is first argument user DN?
-    if userOrDN.startswith('/'):
-      dn = userOrDN
-      result = Registry.getUsernameForDN(dn)
-      if not result['OK']:
-        return result
-      user = result['Value']
-    else:
-      user = userOrDN
-      result = Registry.getDNForUsernameInGroup(user, group)
-      if not result['OK']:
-        return result
-      dn = result['Value']
+    # Read arguments
+    result = self.__getDNAndUsername(instance, group)
+    if not result['OK']:
+      return result
+    user, userDN = result['Value']
 
     credDict = self.getRemoteCredentials()
 
@@ -388,7 +381,7 @@ class ProxyManagerHandler(RequestHandler):
     log = "download %sproxy%s" % ('VOMS ' if vomsAttribute else '', 'with token' if token else '')
     self.__proxyDB.logAction(log, credDict['username'], credDict['group'], user, group)
 
-    retVal = self.__proxyDB.getProxy(dn, group, requiredLifeTime=requiredLifetime, voms=vomsAttribute)
+    retVal = self.__proxyDB.getProxy(userDN, group, requiredLifeTime=requiredLifetime, voms=vomsAttribute)
     if not retVal['OK']:
       return retVal
     chain, secsLeft = retVal['Value']
@@ -422,26 +415,28 @@ class ProxyManagerHandler(RequestHandler):
       return S_ERROR("Could not delete some proxies: %s" % ",".join(errorInDelete))
     return S_OK(deleted)
 
-  types_deleteProxy = [str, str]
+  types_deleteProxy = [str]
 
-  def export_deleteProxy(self, userDN, userGroup):
+  def export_deleteProxy(self, instance, userGroup=None):
     """ Delete a proxy from the DB
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: DIRAC group
+        :param str instance: user name or DN
+        :param str userGroup: DIRAC group
 
         :return: S_OK()/S_ERROR()
     """
-    result = Registry.getUsernameForDN(userDN)
+    result = self.__getDNAndUsername(instance, userGroup)
     if not result['OK']:
       return result
-    username = result['Value']
+    username, userDN = result['Value']
+    if not userDN:
+      return S_ERROR('Not DN found for %s user in %s group' % (username, userGroup))
 
     credDict = self.getRemoteCredentials()
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       if username != credDict['username']:
         return S_ERROR("You aren't allowed!")
-    retVal = self.__proxyDB.deleteProxy(userDN, userGroup)
+    retVal = self.__proxyDB.deleteProxy(userDN)
     if not retVal['OK']:
       return retVal
     self.__proxyDB.logAction("delete proxy", credDict['username'], credDict['group'], username, userGroup)
@@ -449,28 +444,21 @@ class ProxyManagerHandler(RequestHandler):
 
   types_getContents = [dict, (list, tuple), six.integer_types, six.integer_types]
 
-  def export_getContents(self, selDict, userNameAndGroup, start=0, limit=0):
+  def export_getContents(self, selDict, conn, start=0, limit=0):
     """ Retrieve the contents of the DB
 
         :param dict selDict: selection fields
-        :param str userNameAndGroup: user name
+        :param list conn: filters
         :param int start: search limit start
         :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
     credDict = self.getRemoteCredentials()
-
-    if len(userNameAndGroup) == 2:
-      user, group = userNameAndGroup
-      if user and isinstance(user, str):
-        selDict['UserName'] = user
-      if group and isinstance(group, str):
-        selDict['UserGroup'] = group
-
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       selDict['UserName'] = credDict['username']
-    return self.__proxyDB.getProxiesContent(selDict, start=start, limit=limit)
+
+    return self.__proxyDB.getProxiesContent(selDict, conn, start=start, limit=limit)
 
   types_getLogContents = [dict, (list, tuple), six.integer_types, six.integer_types]
 
@@ -488,21 +476,19 @@ class ProxyManagerHandler(RequestHandler):
 
   types_generateToken = [basestring, basestring, six.integer_types]
 
-  def export_generateToken(self, requesterUsername, requesterGroup, tokenUses):
+  def export_generateToken(self, requester, requesterGroup, tokenUses):
     """ Generate tokens for proxy retrieval
 
-        :param basestring requesterUsername: user name
+        :param basestring requester: user name or DN
         :param basestring requesterGroup: DIRAC group
         :param int,long tokenUses: number of uses
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain token, number uses
     """
-    # WARN: Next block for compatability
-    if not requesterUsername.find("/"):  # Is it DN?
-      result = Registry.getUsernameForDN(requesterUsername)
-      if not result['OK']:
-        return result
-      requesterUsername = result['Value']
+    result = self.__getDNAndUsername(instance)
+    if not result['OK']:
+      return result
+    requesterUsername, _ = result['Value']
 
     credDict = self.getRemoteCredentials()
     self.__proxyDB.logAction("generate tokens", credDict['username'], credDict['group'],
@@ -736,6 +722,25 @@ class ProxyManagerHandler(RequestHandler):
 
     return S_OK(resD)
 
+  def __getDNAndUsername(self, instance, group=None):
+    """ Parse instance to understand if it's DN and find username
+
+        :param str instance: user name or DN
+        :param str group: user group
+
+        :return S_OK(tuple)/S_ERROR() -- tuple contain username and userDN
+    """
+    # Is instance user DN?
+    if instance.startswith('/'):
+      result = Registry.getUsernameForDN(instance)
+      if not result['OK']:
+        return result
+      return S_OK((result['Value'], instance))
+    # Is instance user name?
+    result = Registry.getDNForUsernameInGroup(instance, group) if group else S_OK()
+    if not result['OK']:
+      return result
+    return S_OK((instance, result['Value']))
 
   types_setPersistency = []
   @deprecated("Unuse")

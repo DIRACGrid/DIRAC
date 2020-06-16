@@ -295,22 +295,21 @@ class ProxyDB(DB):
 
         :return: S_OK(str)/S_ERROR()
     """
-    try:
-      sUserDN = self._escapeString(userDN)['Value']
-    except KeyError:
+    result = self._escapeString(userDN)
+    if not result['OK']:
       return S_ERROR("Cannot escape DN")
+    sUserDN = result['Value']
+    
     cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = %s" % (requestId, sUserDN)
-    retVal = self._query(cmd)
-    if not retVal['OK']:
-      return retVal
-    data = retVal['Value']
-    if len(data) == 0:
-      return S_ERROR("No requests with id %s" % requestId)
-    request = X509Request()
-    retVal = request.loadAllFromString(data[0][0])
-    if not retVal['OK']:
-      return retVal
-    return S_OK(request)
+    result = self._query(cmd)
+    if result['OK']:
+      data = result['Value']
+      if len(data) == 0:
+        return S_ERROR("No requests with id %s" % requestId)
+      request = X509Request()
+      result = request.loadAllFromString(data[0][0])
+
+    return S_OK(request) if result['OK'] else result
 
   def purgeExpiredRequests(self):
     """ Purge expired requests from the db
@@ -362,31 +361,12 @@ class ProxyDB(DB):
       # WARN: Since v7r1, DIRAC has implemented proxyProviders and ProxyDB_CleanProxies,
       # WARN:   which has helped implement the ability to store only one proxy and
       # WARN:   dynamically add a group at the request of a proxy. This means that group extensions
-      # WARN:   doesn't need for storing proxies, but for compatibility with older versions,
-      # WARN:   the following block has been added to store proxies with group extensions.
-      self.log.warn("Proxies with DIRAC group extensions must be not allowed to be uploaded:", retVal['Value'])
-      retVal = chain.getDIRACGroup()
-      if not retVal['OK']:
-        return retVal
-      userGroup = retVal['Value'] or Registry.getDefaultUserGroup()
-      result = Registry.getGroupsForDN(userDN, researchedGroup=userGroup)
-      if not result['OK']:
-        return result
-      if not result['Value']:
-        return S_ERROR("%s group is not valid for %s" % (userGroup, userDN))
-      retVal = chain.isValidProxy(ignoreDefault=True)
-      if not retVal['OK'] and DErrno.cmpError(retVal, DErrno.ENOGROUP):
-        retVal = self.deleteProxy(userDN)
-        if not retVal['OK']:
-          return retVal
-      retVal = self.__storeProxyOld(userDN, userGroup, chain)
-      # WARN: End of compatibility block
-    else:
-      retVal = self._storeProxy(userDN, chain)
+      # WARN:   doesn't need for storing proxies.
+      return S_ERROR("Proxies with DIRAC group extensions not allowed to be uploaded.")
+      
+    result = self._storeProxy(userDN, chain)
 
-    if not retVal['OK']:
-      return retVal
-    return self.deleteRequest(requestId)
+    return self.deleteRequest(requestId) if result['OK'] else result
 
   def _storeProxy(self, userDN, chain):
     """ Store user proxy into the Proxy repository for a user specified by his
@@ -526,23 +506,6 @@ class ProxyDB(DB):
     if not result['OK']:
       return result
     chain = result['Value']
-    # proxyStr = result['Value']['proxy']
-
-    # # Research proxy
-    # chain = X509Chain()
-    # result = chain.loadProxyFromString(proxyStr)
-    # if not result['OK']:
-    #   return result
-    # result = chain.getRemainingSecs()
-    # if not result['OK']:
-    #   return result
-    # remainingSecs = result['Value']
-
-    # # Store proxy
-    # result = self._storeProxy(userDN, chain)
-    # if not result['OK']:
-    #   return result
-    # #################
 
     # Add group
     result = chain.generateProxyToString(requiredLifeTime, diracGroup=userGroup, rfc=True)
@@ -571,20 +534,18 @@ class ProxyDB(DB):
         return result
     return S_OK(purged)
 
-  # WARN: Here userGroup for compatibility
-  def deleteProxy(self, userDN, userGroup=None):
+  def deleteProxy(self, userDN):
     """ Remove proxy of the given user from the repository
 
         :param str userDN: user DN
-        :param str userGroup: DIRAC group
 
         :return: S_OK()/S_ERROR()
     """
     tables = ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies', 'ProxyDB_CleanProxies']
-    try:
-      userDN = self._escapeString(userDN)['Value']
-    except KeyError:
-      return S_ERROR("Invalid DN or group")
+    result = self._escapeString(userDN)
+    if not result['OK']:
+      return S_ERROR("Invalid DN: %s" % result['Message'])
+    userDN = result['Value']
     errMsgs = []
     req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
     for table in tables:
@@ -592,9 +553,8 @@ class ProxyDB(DB):
       if not result['OK']:
         if result['Message'] not in errMsgs:
           errMsgs.append(result['Message'])
-    if errMsgs:
-      return S_ERROR(', '.join(errMsgs))
-    return result
+
+    return S_ERROR(', '.join(errMsgs)) if errMsgs else result
 
   # WARN: Old method for compatibility with older versions v7r0-
   @deprecated("Only for DIRAC v6")
@@ -913,12 +873,14 @@ class ProxyDB(DB):
     """ Get the contents of the db, parameters are a filter to the db.
 
         :param dict selDict: selection dict that contain fields and their possible values
+        :param sqlCond: filters
+        :type sqlCond: str or list
         :param int start: search limit start
         :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
-    paramNames = ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag", "ProxyProvider")
+    paramNames = ("UserName", "UserDN", "UserGroup", "ExpirationTime", "ProxyProvider")
 
     users = []
     groups = []
@@ -972,7 +934,7 @@ class ProxyDB(DB):
     if sqlCond:
       sqlWhere += (list(sqlCond) if isinstance(sqlCond, (list, tuple)) else [sqlCond])
     for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
-                          ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
+                          ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
       for field in selDict:
         if field not in fields:
@@ -998,9 +960,6 @@ class ProxyDB(DB):
 
       for record in retVal['Value']:
         record = list(record)
-        if table == 'ProxyDB_CleanProxies':
-          record.insert(1, '')
-          record.insert(3, False)
         result = Registry.getUsernameForDN(record[0])
         if not result['OK']:
           gLogger.error(result['Message'])
@@ -1017,12 +976,14 @@ class ProxyDB(DB):
           continue
         provider = result['Value']
 
-        #record[3] = record[3] == 'True'
+        if table == 'ProxyDB_CleanProxies':
+          record.insert(1, groups)
+          record.append(provider)
+        
         listData.append({'DN': record[0],
                          'user': user,
-                         'groups': [record[1]] if record[1] else groups,
+                         'groups': [record[1]] if table == 'ProxyDB_Proxies' else groups,
                          'expirationtime': record[2],
-                         #'persistent': record[3],
                          'provider': provider})
 
         record.insert(0, user)
