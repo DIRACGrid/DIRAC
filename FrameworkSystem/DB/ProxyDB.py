@@ -701,12 +701,12 @@ class ProxyDB(DB):
     chain = X509Chain()
     result = chain.loadProxyFromString(pemData)
     if not result['OK']:
-      self.deleteProxy(userDN, userGroup)
+      self.deleteProxy(userDN)
       return S_ERROR("Checking %s@%s proxy failed: %s" % (userDN, userGroup, result['Message']))
 
     # Proxy is invalid for some reason, let's delete it
     if not chain.isValidProxy()['OK']:
-      self.deleteProxy(userDN, userGroup)
+      self.deleteProxy(userDN)
       return S_ERROR("%s@%s has no proxy registered" % (userDN, userGroup))
 
     if voms:
