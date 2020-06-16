@@ -66,7 +66,7 @@ class ConfigurationHandler(RequestHandler):
 
   types_commitNewData = [basestring]
   auth_commitNewData = ['authenticated']
-  
+
   def export_commitNewData(self, sData):
     global gPilotSynchronizer
     credDict = self.getRemoteCredentials()

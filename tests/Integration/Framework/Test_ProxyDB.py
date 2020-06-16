@@ -423,7 +423,7 @@ class testDB(ProxyDBTestCase):
                                       ('user_4', 'group_2', 0,
                                        'Group has option enableToDownload = False in CS')]:
       gLogger.info('== > %s:' % log)
-      result = db.getProxy(user, group, reqtime)
+      result = db.getProxy(usersDNs[user], group, reqtime)
       self.assertFalse(result['OK'], 'Must be fail.')
       gLogger.info('Msg: %s' % result['Message'])
     # In the last case method found proxy and must to delete it as not valid
@@ -436,7 +436,7 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
     gLogger.info('* Generate proxy on the fly..')
-    result = db.getProxy('user_ca', 'group_1', 1800)
+    result = db.getProxy(usersDNs['user_ca'], 'group_1', 1800)
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
 
     gLogger.info('* Check that ProxyDB_CleanProxy contain generated proxy..')
@@ -517,7 +517,7 @@ class testDB(ProxyDBTestCase):
                                      (False, 'group_2', 0, 'Request group not contain user'),
                                      (True, 'group_1', 0, 'Request time less that in stored proxy')]:
       gLogger.info('== > %s:' % log)
-      result = db.getProxy('user', group, reqtime)
+      result = db.getProxy(usersDNs['user'], group, reqtime)
       text = 'Must be ended %s%s' % (res and 'successful' or 'with error',
                                      ': %s' % result.get('Message', 'Error message is absent.'))
       self.assertEqual(result['OK'], res, text)
@@ -548,7 +548,7 @@ class testDB(ProxyDBTestCase):
     result = db._update(cmd)
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     # Try to get it
-    result = db.getProxy(user, group, 1800)
+    result = db.getProxy(usersDNs[user], group, 1800)
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     # Check that proxy contain group
     chain = result['Value'][0]
