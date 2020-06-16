@@ -459,7 +459,7 @@ class testDB(ProxyDBTestCase):
 
     gLogger.info('* Upload proxy..')
     for user, dn, group, vo, time, res, log in [("user", usersDNs['user'], "group_1", False, 12,
-                                                 True, 'With group extension'),
+                                                 False, 'With group extension'),
                                                 ("user", usersDNs['user'], False, "vo_1", 12,
                                                  False, 'With voms extension'),
                                                 ("user_1", usersDNs['user_1'], False, "vo_1", 12,
