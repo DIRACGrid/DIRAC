@@ -487,15 +487,17 @@ class ProxyManagerHandler(RequestHandler):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain token, number uses
     """
-    result = self.__getDNAndUsername(instance)
-    if not result['OK']:
-      return result
-    requesterUsername, _ = result['Value']
+    # Is instance user DN?
+    if requester.startswith('/'):
+      result = Registry.getUsernameForDN(requester)
+      if not result['OK']:
+        return result
+      requester = result['Value']
 
     credDict = self.getRemoteCredentials()
     self.__proxyDB.logAction("generate tokens", credDict['username'], credDict['group'],
-                             requesterUsername, requesterGroup)
-    return self.__proxyDB.generateToken(requesterUsername, requesterGroup, numUses=tokenUses)
+                             requester, requesterGroup)
+    return self.__proxyDB.generateToken(requester, requesterGroup, numUses=tokenUses)
 
   types_getVOMSProxyWithToken = [basestring, basestring, basestring, six.integer_types, [basestring, type(None)]]
   @deprecated("This method is deprecated, you can use export_getProxy with token and vomsAttribute parameter")
@@ -732,17 +734,25 @@ class ProxyManagerHandler(RequestHandler):
 
         :return S_OK(tuple)/S_ERROR() -- tuple contain username and userDN
     """
+    dn = None
+    user = instance
+
     # Is instance user DN?
     if instance.startswith('/'):
+      dn = instance
       result = Registry.getUsernameForDN(instance)
       if not result['OK']:
         return result
-      return S_OK((result['Value'], instance))
-    # Is instance user name?
-    result = Registry.getDNForUsernameInGroup(instance, group) if group else S_OK()
-    if not result['OK']:
-      return result
-    return S_OK((instance, result['Value']))
+      user = result['Value']
+
+    if group:
+      result = Registry.getDNsForUsernameInGroup(instance, group)
+      if not result['OK']:
+        return result
+      if dn and dn not in result['Value']:
+        return S_ERROR('Requested %s DN not match with %s user, %s group' % (dn, user, group))
+      dn = result['Value'][0]
+    return S_OK((user, dn))
 
   types_setPersistency = []
   @deprecated("Unuse")
