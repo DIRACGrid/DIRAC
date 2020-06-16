@@ -65,12 +65,11 @@ class ConfigurationHandler(RequestHandler):
     return S_OK()
 
   types_commitNewData = [basestring]
-
+  auth_commitNewData = ['authenticated']
+  
   def export_commitNewData(self, sData):
     global gPilotSynchronizer
     credDict = self.getRemoteCredentials()
-    if credDict.get('username', 'anonymous') == 'anonymous' or credDict.get('group', 'visitor') == 'visitor':
-      return S_ERROR("You must be authenticated!")
     res = gServiceInterface.updateConfiguration(sData, credDict['username'])
     if not res['OK']:
       return res
@@ -136,14 +135,13 @@ class ConfigurationHandler(RequestHandler):
     return S_OK(contentsList)
 
   types_rollbackToVersion = [basestring]
+  auth_rollbackToVersion = ['authenticated']
 
   def export_rollbackToVersion(self, version):
     retVal = gServiceInterface.getVersionContents(version)
     if not retVal['OK']:
       return S_ERROR("Can't get contents for version %s: %s" % (version, retVal['Message']))
     credDict = self.getRemoteCredentials()
-    if credDict.get('username', 'anonymous') == 'anonymous' or credDict.get('group', 'visitor') == 'visitor':
-      return S_ERROR("You must be authenticated!")
     return gServiceInterface.updateConfiguration(retVal['Value'],
                                                  credDict['username'],
                                                  updateVersionOption=True)
