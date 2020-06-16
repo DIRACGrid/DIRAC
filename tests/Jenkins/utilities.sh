@@ -892,8 +892,9 @@ diracMVDFCDB(){
 dropDBs(){
   echo '==> [dropDBs]'
 
-  dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
-  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-drop-db.py" "$dbs" "${DEBUG}"
+  # make dbs a real array to avoid future mistake with escaping
+  mapfile -t dbs < <(cut -d ' ' -f 2 < /tmp/databases.txt | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-drop-db.py" "${dbs[@]}" "${DEBUG}"
 }
 
 #-------------------------------------------------------------------------------
