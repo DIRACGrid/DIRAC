@@ -104,7 +104,7 @@ def executeWithUserProxy(fcn):
 def getProxy(user, userGroup, vomsAttr, proxyFilePath):
   """ Do the actual download of the proxy, trying the different DNs
 
-  :param str user: user name
+  :param str user: user name or DN
   :param str userGroup: group name
   :param bool vomsAttr: if need VOMSproxy
   :param str proxyPathFile: path to proxy file
@@ -225,13 +225,7 @@ def _putProxy(userDN=None, userName=None, userGroup=None, vomsFlag=None, proxyFi
   :returns: Tuple of originalUserProxy, useServerCertificate, executionLock
   """
   # Setup user proxy
-  if not userName:
-    result = getUsernameForDN(userDN)
-    if not result['OK']:
-      return result
-    userName = result['Value']
-
-  result = getProxy(userName, userGroup, vomsFlag, proxyFilePath)
+  result = getProxy(userDN or userName, userGroup, vomsFlag, proxyFilePath)
   if not result['OK']:
     return result
 

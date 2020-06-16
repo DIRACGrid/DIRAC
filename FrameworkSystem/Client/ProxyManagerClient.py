@@ -7,7 +7,7 @@ import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getUsernameForDN, getDNsForUsernameInGroup
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
@@ -108,7 +108,7 @@ class ProxyManagerClient(object):
                  proxyToConnect=None, token=None, voms=None, personal=False):
     """ Get a proxy Chain from the proxy manager
 
-        :param str user: user name
+        :param str user: user name or DN
         :param str group: user group
         :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
@@ -122,8 +122,20 @@ class ProxyManagerClient(object):
     """
     if voms and not getVOMSAttributeForGroup(userGroup):
       return S_ERROR("No mapping defined for group %s in the CS" % userGroup)
+    
+    dn = None
+    if user.startswith('/'):
+      dn = user
+      result = getUsernameForDN(dn)
+      if result['OK']:
+        user = result['Value']
+        result = getDNsForUsernameInGroup(user, userGroup)
+      if not result['OK']:
+        return result
+      if dn not in result['Value']:
+        return S_ERROR('"%s" DN not match with %s user, %s group.' % (dn, user, userGroup))
 
-    cacheKey = (user, userGroup, voms, limited)
+    cacheKey = (dn or user, userGroup, voms, limited)
     if self.__proxiesCache.exists(cacheKey, requiredTimeLeft):
       return S_OK(self.__proxiesCache.get(cacheKey))
 
@@ -134,7 +146,7 @@ class ProxyManagerClient(object):
     else:
       rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
 
-    retVal = rpcClient.getProxy(user, userGroup, req.dumpRequest()['Value'],
+    retVal = rpcClient.getProxy(dn or user, userGroup, req.dumpRequest()['Value'],
                                 int(cacheTime + requiredTimeLeft), token, voms, personal)
     if not retVal['OK']:
       return retVal
@@ -149,7 +161,7 @@ class ProxyManagerClient(object):
   def downloadPersonalProxy(self, user, group, requiredTimeLeft=1200, voms=False):
     """ Get a proxy Chain from the proxy management
 
-        :param str user: user name
+        :param str user: user name or DN
         :param str group: user group
         :param int requiredTimeLeft: required proxy live time in a seconds
         :param bool voms: for VOMS proxy
@@ -163,7 +175,7 @@ class ProxyManagerClient(object):
                     proxyToConnect=None, token=None, personal=False):
     """ Get a proxy Chain from the proxy management
 
-        :param str user: user name
+        :param str user: user name or DN
         :param str group: user group
         :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
@@ -181,7 +193,7 @@ class ProxyManagerClient(object):
                           filePath=None, proxyToConnect=None, token=None, personal=False):
     """ Get a proxy Chain from the proxy management and write it to file
 
-        :param str user: user name
+        :param str user: user name or DN
         :param str group: user group
         :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
@@ -205,7 +217,7 @@ class ProxyManagerClient(object):
                         cacheTime=14400, proxyToConnect=None, token=None, personal=False):
     """ Download a proxy if needed and transform it into a VOMS one
 
-        :param str user: user name
+        :param str user: user name or DN
         :param str group: user group
         :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
@@ -223,7 +235,7 @@ class ProxyManagerClient(object):
                               cacheTime=14400, filePath=None, proxyToConnect=None, token=None, personal=False):
     """ Download a proxy if needed, transform it into a VOMS one and write it to file
 
-        :param str user: user name
+        :param str user: user name or DN
         :param str group: user group
         :param bool limited: if need limited proxy
         :param int requiredTimeLeft: required proxy live time in a seconds
@@ -249,7 +261,7 @@ class ProxyManagerClient(object):
     """ Download a proxy with VOMS extensions depending on the group or simple proxy
         if group without VOMS extensions
 
-        :param str user: user name
+        :param str user: user name or DN
         :param str group: user group
         :param int requiredTimeLeft: required proxy live time in a seconds
         :param X509Chain proxyToConnect: proxy as a chain
@@ -391,19 +403,27 @@ class ProxyManagerClient(object):
     """
     return VOMS().getVOMSAttributes(chain)
 
-  def getUploadedProxiesDetails(self, user=None, group=None, sqlDict={}, start=0, limit=0):
-    """ Get the details about an uploaded proxy
+  def getDBContents(self, condDict={}, start=0, limit=0):
+    """ Get the contents of the db
 
-        :param str user: user name
-        :param str group: group name
-        :param dict selDict: selection fields
+        :param dict condDict: search condition
         :param int start: search limit start
         :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    return rpcClient.getContents(sqlDict, (user, group), start, limit)
+    return rpcClient.getContents(condDict, [['UserDN', 'DESC']], 0, 0)
+
+  def getUploadedProxiesDetails(self, user=None, group=None):
+    """ Get the details about an uploaded proxy
+
+        :param str user: user name
+        :param str group: group name
+
+        :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
+    """
+    return self.getDBContents({'UserName': user, 'UserGroup': group})
 
   def getUploadedProxyLifeTime(self, user, group):
     """ Get the remaining seconds for an uploaded proxy

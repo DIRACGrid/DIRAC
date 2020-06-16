@@ -85,9 +85,9 @@ class FileCatalogProxyHandler(RequestHandler):
       clientGroup = credDict['group']
       gLogger.debug("Getting proxy for %s@%s (%s)" % (clientUsername, clientGroup, clientDN))
       if vomsFlag:
-        result = gProxyManager.downloadVOMSProxyToFile(clientDN, clientGroup)
+        result = gProxyManager.downloadVOMSProxyToFile(clientDN or clientUsername, clientGroup)
       else:
-        result = gProxyManager.downloadProxyToFile(clientDN, clientGroup)
+        result = gProxyManager.downloadProxyToFile(clientDN or clientUsername, clientGroup)
       if not result['OK']:
         return result
       gLogger.debug("Updating environment.")

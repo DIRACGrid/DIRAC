@@ -83,8 +83,9 @@ params.registerCLISwitches()
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s [option|cfgfile] ... user group' % Script.scriptName,
+                                  '  %s [option|cfgfile] ... <DN|user> group' % Script.scriptName,
                                   'Arguments:',
+                                  '  DN:       DN of the user',
                                   '  user:     DIRAC user name',
                                   '  group:    DIRAC group name']))
 
@@ -97,14 +98,9 @@ if len(args) != 2:
 userGroup = str(args[1])
 
 # First argument is user name
-if str(args[0]).find("/"):
+if not str(args[0]).startswith("/"):
   userName = str(args[0])
-  result = Registry.getDNForUsernameInGroup(userName, userGroup)
-  if not result['OK']:
-    gLogger.notice("Cannot discover DN for %s@%s" % (userName, userGroup))
-    DIRAC.exit(2)
-  userDN = result['Value']
-# Or DN
+  userDN = None
 else:
   userDN = str(args[0])
   result = Registry.getUsernameForDN(userDN)
@@ -114,19 +110,13 @@ else:
   userName = result['Value']
 
 if not params.proxyPath:
-  if not userName:
-    result = Registry.getUsernameForDN(userDN)
-    if not result['OK']:
-      gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
-      DIRAC.exit(2)
-    userName = result['Value']
   params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
 
 if params.enableVOMS:
-  result = gProxyManager.downloadVOMSProxy(userName, userGroup, limited=params.limited,
+  result = gProxyManager.downloadVOMSProxy(userDN or userName, userGroup, limited=params.limited,
                                            requiredTimeLeft=params.proxyLifeTime)
 else:
-  result = gProxyManager.downloadProxy(userName, userGroup, limited=params.limited,
+  result = gProxyManager.downloadProxy(userDN or userName, userGroup, limited=params.limited,
                                        requiredTimeLeft=params.proxyLifeTime)
 if not result['OK']:
   gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
