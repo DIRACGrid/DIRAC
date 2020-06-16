@@ -50,9 +50,11 @@ Resources
 
 usersDNs = {'user_ca': '/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
             'user': '/C=CC/O=DN/O=DIRAC/CN=user',
+            'no_user': '/C=CC/O=DN/O=DIRAC/CN=no_user',
             'user_1': '/C=CC/O=DN/O=DIRAC/CN=user_1',
             'user_2': '/C=CC/O=DN/O=DIRAC/CN=user_2',
-            'user_3': '/C=CC/O=DN/O=DIRAC/CN=user_3'}
+            'user_3': '/C=CC/O=DN/O=DIRAC/CN=user_3',
+            'user_4': '/C=CC/O=DN/O=DIRAC/CN=user_4'}
 
 userCFG = """
 Registry
@@ -411,15 +413,15 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     # Try to no correct getProxy requests
     for user, group, reqtime, log in [('user', 'group_1', 9999,
-                                       'No proxy provider, set request time, not valid proxy in ProxyDB_Proxies'),
+                                       'Not valid proxy, without proxy provider, with less lifetime in ProxyDB_Proxies'),
                                       ('user', 'group_1', 0,
-                                       'Not valid proxy in ProxyDB_Proxies'),
+                                       'Not valid proxy, without proxy provider, with good lifetime in ProxyDB_Proxies'),
                                       ('no_user', 'no_valid_group', 0,
                                        'User not exist, proxy not in DB tables'),
                                       ('user', 'no_valid_group', 0,
                                        'Group not valid, proxy not in DB tables'),
                                       ('user', 'group_1', 0,
-                                       'No proxy provider for user, proxy not in DB tables'),
+                                       'Proxy removed from DB and not have a proxy provider'),
                                       ('user_4', 'group_2', 0,
                                        'Group has option enableToDownload = False in CS')]:
       gLogger.info('== > %s:' % log)
@@ -464,7 +466,7 @@ class testDB(ProxyDBTestCase):
                                                  False, 'With voms extension'),
                                                 ("user", usersDNs['user'], False, False, 0,
                                                  False, 'Expired proxy'),
-                                                ("no_user", '/C=CC/O=DN/O=DIRAC/CN=no_user', False, False, 12,
+                                                ("no_user", usersDNs['no_user'], False, False, 12,
                                                  False, 'Not exist user'),
                                                 ("user", usersDNs['user'], False, False, 12,
                                                  True, 'Valid proxy')]:
