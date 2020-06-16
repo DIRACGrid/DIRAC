@@ -471,7 +471,7 @@ class testDB(ProxyDBTestCase):
                                                 ("user", usersDNs['user'], False, False, 12,
                                                  True, 'Valid proxy')]:
       for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies']:
-        for dn in [usersDNs['user'], usersDNs['user_1']]:
+        for _dn in [usersDNs['user'], usersDNs['user_1']]:
           result = db._update('DELETE FROM %s WHERE UserDN = "%s"' % (table, dn))
           self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       
