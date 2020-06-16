@@ -591,7 +591,7 @@ class testDB(ProxyDBTestCase):
                                     'Stored proxy already have different VOMS extension'),
                                    ('user_ca', 'group_1', 9999, 'Not correct VO configuration')]:
       gLogger.info('== > %s(DN: %s):' % (log, usersDNs[user]))
-      result = db.getProxy(dn, group, time, voms=True)
+      result = db.getProxy(usersDNs[user], group, time, voms=True)
       self.assertFalse(result['OK'], 'Must be fail.')
       gLogger.info('Msg: %s' % result['Message'])
     # Check stored proxies
