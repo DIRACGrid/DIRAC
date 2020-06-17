@@ -15,36 +15,24 @@ workDir = os.path.join(gConfig.getValue('/LocalSite/InstancePath', rootPath), 'w
 voDict = {
     'testVO': {
         '/User/test/DN/CN=userS': {
-            'Roles': [u'/testVO'],
-            'certSuspended': True,
-            'certSuspensionReason': None,
-            u'emailAddress': u'test.user@test.ua',
-            'mail': u'test.user@test.ua',
-            u'name': u'Test',
-            u'surname': u'User',
-            u'suspended': True
+            'Suspended': True,
+            'VOMSRoles': [u'/testVO'],
+            'ActuelRoles': [],
+            'SuspendedRoles': []
         },
         '/User/test/DN/CN=userA': {
-            'Roles': [u'/testVO'],
-            'certSuspended': False,
-            'certSuspensionReason': None,
-            u'emailAddress': u'test.user@test.ua',
-            'mail': u'test.user@test.ua',
-            u'name': u'Test',
-            u'surname': u'User',
-            u'suspended': False
+            'Suspended': False,
+            'VOMSRoles': [u'/testVO'],
+            'ActuelRoles': [],
+            'SuspendedRoles': []
         }
     },
     'testVOOther': {
         '/User/test/DN/CN=userS': {
-            'Roles': [u'/testVOOther'],
-            'certSuspended': False,
-            'certSuspensionReason': None,
-            u'emailAddress': u'test.user@test.ua',
-            'mail': u'test.user@test.ua',
-            u'name': u'Test',
-            u'surname': u'User',
-            u'suspended': False
+            'Suspended': False,
+            'VOMSRoles': [u'/testVOOther'],
+            'ActuelRoles': [],
+            'SuspendedRoles': []
         }
     }
 }
