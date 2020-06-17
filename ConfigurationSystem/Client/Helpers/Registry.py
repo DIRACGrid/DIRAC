@@ -327,8 +327,9 @@ def getDNsInGroup(group, checkStatus=False):
       role = getGroupOption(group, 'VOMSRole')
       for dn in userDNs:
         if dn in voData:
-          if not role or role in voData[dn]['ActuelRoles' if checkStatus else 'VOMSRoles']:
-            DNs.append(dn)
+          if not checkStatus or not voData[dn]['Suspended']:
+            if not role or role in voData[dn]['ActuelRoles' if checkStatus else 'VOMSRoles']:
+              DNs.append(dn)
     else:
       DNs += userDNs
 
@@ -781,6 +782,9 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   userDNs = result['Value']
 
   vo = getGroupOption(group, 'VO')
+  if checkStatus and vo in getUserOption(username, 'Suspended', []):
+    return S_ERROR('%s marked as suspended for %s VO.' % (username, vo))
+
   result = getVOsWithVOMS(vo)
   if not result['OK']:
     return result
