@@ -305,6 +305,8 @@ def getDNsInGroup(group, checkStatus=False):
   """
   vomsData = {}
   vo = getGroupOption(group, 'VO')
+  if checkStatus and vo in getUserOption(username, 'Suspended', []):
+    return S_ERROR('%s marked as suspended for %s VO.' % (username, vo))
   
   # Get VOMS information for VO, if it's VOMS VO
   result = getVOsWithVOMS(vo)
