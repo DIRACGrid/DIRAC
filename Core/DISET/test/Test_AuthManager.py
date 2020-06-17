@@ -71,6 +71,7 @@ Registry
     testVO
     {
       VOAdmin = userA
+      VOMSName = testVO
     }
     testVOBad
     {
@@ -79,6 +80,7 @@ Registry
     testVOOther
     {
       VOAdmin = userA
+      VOMSName = testVOOther
     }
   }
   Users

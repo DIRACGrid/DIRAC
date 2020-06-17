@@ -307,10 +307,10 @@ def getDNsInGroup(group, checkStatus=False):
   vo = getGroupOption(group, 'VO')
   
   # Get VOMS information for VO, if it's VOMS VO
-  result = getVOsWithVOMS()
+  result = getVOsWithVOMS(vo)
   if not result['OK']:
     return result
-  if vo in result['Value']:
+  if result['Value']:
     result = getVOMSInfo(vo=vo)
     if not result['OK']:
       return result
@@ -774,11 +774,6 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   if username not in getGroupOption(group, 'Users', []):
     return S_ERROR('%s group not have %s user.' % (group, username))
 
-  result = getVOsWithVOMS()
-  if not result['OK']:
-    return result
-  vomsVOs = result['Value']
-
   DNs = []
   result = getDNsForUsername(username)
   if not result['OK']:
@@ -786,7 +781,10 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   userDNs = result['Value']
 
   vo = getGroupOption(group, 'VO')
-  if vo in vomsVOs:
+  result = getVOsWithVOMS(vo)
+  if not result['OK']:
+    return result
+  if result['Value']:
     result = getVOMSInfo(vo=vo)
     if not result['OK']:
       return result
