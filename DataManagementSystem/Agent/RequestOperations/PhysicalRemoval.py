@@ -52,17 +52,6 @@ class PhysicalRemoval(DMSRequestOperationsBase):
     :param str csPath: cs config path
     """
     DMSRequestOperationsBase.__init__(self, operation, csPath)
-<<<<<<< HEAD
-    # # gMonitor stuff
-    gMonitor.registerActivity("PhysicalRemovalAtt", "Physical file removals attempted",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("PhysicalRemovalOK", "Successful file physical removals",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("PhysicalRemovalFail", "Failed file physical removals",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("PhysicalRemovalSize", "Physically removed size",
-                              "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM)
-=======
 
   def __call__(self):
     """ perform physical removal operation """
@@ -81,14 +70,9 @@ class PhysicalRemoval(DMSRequestOperationsBase):
                                 "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
       gMonitor.registerActivity("PhysicalRemovalSize", "Physically removed size",
                                 "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM)
->>>>>>> Migrate DMS/Agent/RequestOperations to ES.
 
     bannedTargets = self.checkSEsRSS(access='RemoveAccess')
     if not bannedTargets['OK']:
-<<<<<<< HEAD
-      gMonitor.addMark("PhysicalRemovalAtt")
-      gMonitor.addMark("PhysicalRemovalFail")
-=======
       if self.rmsMonitoring:
         for status in ["Attempted", "Failed"]:
           self.rmsMonitoringReporter.addRecord(
@@ -98,7 +82,6 @@ class PhysicalRemoval(DMSRequestOperationsBase):
       else:
         gMonitor.addMark("PhysicalRemovalAtt")
         gMonitor.addMark("PhysicalRemovalFail")
->>>>>>> Migrate DMS/Agent/RequestOperations to ES.
       return bannedTargets
 
     if bannedTargets['Value']:
@@ -110,9 +93,6 @@ class PhysicalRemoval(DMSRequestOperationsBase):
     toRemoveDict = dict((opFile.LFN, opFile) for opFile in waitingFiles)
 
     targetSEs = self.operation.targetSEList
-<<<<<<< HEAD
-    gMonitor.addMark("PhysicalRemovalAtt", len(toRemoveDict) * len(targetSEs))
-=======
 
     if self.rmsMonitoring:
       self.rmsMonitoringReporter.addRecord(
@@ -121,7 +101,6 @@ class PhysicalRemoval(DMSRequestOperationsBase):
       self.rmsMonitoringReporter.commit()
     else:
       gMonitor.addMark("PhysicalRemovalAtt", len(toRemoveDict) * len(targetSEs))
->>>>>>> Migrate DMS/Agent/RequestOperations to ES.
 
     # # keep errors dict
     removalStatus = dict.fromkeys(toRemoveDict.keys(), None)
@@ -152,16 +131,12 @@ class PhysicalRemoval(DMSRequestOperationsBase):
         if not opFile.Error:
           removalStatus[lfn][targetSE] = ""
         else:
-<<<<<<< HEAD
-          gMonitor.addMark("PhysicalRemovalFail", 1)
-=======
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(
                 self.createRMSRecord("Failed", 1)
             )
           else:
             gMonitor.addMark("PhysicalRemovalFail", 1)
->>>>>>> Migrate DMS/Agent/RequestOperations to ES.
           removalStatus[lfn][targetSE] = opFile.Error
 
     # # update file status for waiting files
@@ -174,12 +149,6 @@ class PhysicalRemoval(DMSRequestOperationsBase):
           opFile.Error = ",".join(errors)
           if "Write access not permitted for this credential" in opFile.Error:
             opFile.Status = "Failed"
-<<<<<<< HEAD
-            gMonitor.addMark("PhysicalRemovalFail", len(errors))
-          continue
-        gMonitor.addMark("PhysicalRemovalOK", len(targetSEs))
-        gMonitor.addMark("PhysicalRemovalSize", opFile.Size * len(targetSEs))
-=======
 
             if self.rmsMonitoring:
               self.rmsMonitoringReporter.addRecord(
@@ -197,7 +166,6 @@ class PhysicalRemoval(DMSRequestOperationsBase):
         else:
           gMonitor.addMark("PhysicalRemovalOK", len(targetSEs))
           gMonitor.addMark("PhysicalRemovalSize", opFile.Size * len(targetSEs))
->>>>>>> Migrate DMS/Agent/RequestOperations to ES.
         opFile.Status = "Done"
 
     if failed:
