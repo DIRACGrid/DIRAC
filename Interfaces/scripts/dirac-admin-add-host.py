@@ -81,7 +81,7 @@ if exitCode == 0:
   cmc = ComponentMonitoringClient()
   ret = cmc.hostExists(dict(HostName=hostName))
   if not ret['OK']:
-    Script.gLogger.error('Cannot check if host is registered in ComponentMoniroting', ret['Message'])
+    Script.gLogger.error('Cannot check if host is registered in ComponentMonitoring', ret['Message'])
   elif ret['Value']:
     Script.gLogger.info('Host already registered in ComponentMonitoring')
   else:
