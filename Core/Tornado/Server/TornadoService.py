@@ -196,7 +196,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       self.finish()
 
     try:
-      self.credDict = self.gatherPeerCredentials()
+      self.credDict = self._gatherPeerCredentials()
     except Exception:  # pylint: disable=broad-except
       # If an error occur when reading certificates we close connection
       # It can be strange but the RFC, for HTTP, say's that when error happend
@@ -254,6 +254,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       self.initializeRequest()
       retVal = method(*args)
     except Exception as e:  # pylint: disable=broad-except
+      gLogger.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
       retVal = S_ERROR(repr(e))
       self._httpError = HTTPErrorCodes.HTTP_INTERNAL_SERVER_ERROR
 
@@ -284,7 +285,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     gLogger.error(
         "Unauthorized access to %s: %s(%s) from %s" %
         (self.request.path,
-         self.credDict['CN'],
          self.credDict['DN'],
          self.request.remote_ip))
 
@@ -299,7 +299,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     requestDuration = time.time() - self.requestStartTime
     gLogger.notice("Ending request to %s after %fs" % (self.srv_getURL(), requestDuration))
 
-  def gatherPeerCredentials(self):
+  def _gatherPeerCredentials(self):
     """
       Load client certchain in DIRAC and extract informations.
 
@@ -320,23 +320,12 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     # Following lines just get the right info, at the right place
     peerChain.loadChainFromString(chainAsText)
 
-    isProxyChain = peerChain.isProxy()['Value']
-    isLimitedProxyChain = peerChain.isLimitedProxy()['Value']
-    if isProxyChain:
-      if peerChain.isPUSP()['Value']:
-        identitySubject = peerChain.getCertInChain(-2)['Value'].getSubjectNameObject()['Value']
-      else:
-        identitySubject = peerChain.getIssuerCert()['Value'].getSubjectNameObject()['Value']
-    else:
-      identitySubject = peerChain.getCertInChain(0)['Value'].getSubjectNameObject()['Value']
-    credDict = {'DN': identitySubject.one_line(),
-                'CN': identitySubject.commonName,
-                'x509Chain': peerChain,
-                'isProxy': isProxyChain,
-                'isLimitedProxy': isLimitedProxyChain}
-    diracGroup = peerChain.getDIRACGroup()
-    if diracGroup['OK'] and diracGroup['Value']:
-      credDict['group'] = diracGroup['Value']
+    # Retrieve the credentials
+    res = peerChain.getCredentials(withRegistryInfo=False)
+    if not res['OK']:
+      raise Exception(res['Message'])
+
+    credDict = res['Value']
 
     # We check if client sends extra credentials...
     if "extraCredentials" in self.request.arguments:
