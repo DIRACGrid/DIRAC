@@ -964,6 +964,7 @@ class X509Chain(object):
                   * isLimitedProxy: boolean (see :py:meth:`.isLimitedProxy`)
                   * validDN: boolean if the DN is known to DIRAC
                   * validGroup: False (see further definition)
+                  * DN: either the DN of the host, or the DN of the user corresponding to the proxy
 
 
                 Only for proxy:
@@ -994,8 +995,14 @@ class X509Chain(object):
                 'isLimitedProxy': self.__isProxy and self.__isLimitedProxy,
                 'validDN': False,
                 'validGroup': False}
+
+    # Add the DN entry as the subject.
+    credDict['DN'] = credDict['subject']
     if self.__isProxy:
       credDict['identity'] = str(self._certList[self.__firstProxyStep + 1].getSubjectDN()['Value'])  # ['Value'] :(
+      # if the chain is a proxy, then the DN we want to work with is the real one of the
+      # user, not the one of his proxy
+      credDict['DN'] = credDict['identity']
 
       # Check if we have the PUSP case
       result = self.isPUSP()
