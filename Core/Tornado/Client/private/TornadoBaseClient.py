@@ -492,15 +492,29 @@ class TornadoBaseClient(object):
 
     # Do the request
     try:
+
       call = requests.post(url, data=postArguments, timeout=self.timeout, verify=verify,
                            cert=cert)
-      return decode(call.text)[0]
+      # raising the exception for status here
+      # means essentialy that we are losing here the information of what is returned by the server
+      # as error message, since it is not passed to the exception
+      # However, we can store the text and return it raw as an error,
+      # since there is no guarantee that it is any JEncoded text
+      # Note that we would get an exception only if there is an exception on the server side which
+      # is not handled.
+      # Any standard S_ERROR will be transfered as an S_ERROR with a correct code.
+      rawText = call.text
+      call.raise_for_status()
+      return decode(rawText)[0]
     except Exception as e:
       if url not in self.__bannedUrls:
         self.__bannedUrls += [url]
       if retry < self.__nbOfUrls - 1:
         self._request(postArguments, retry + 1)
-      return S_ERROR(str(e))
+
+      errStr = "%s: %s" % (str(e), rawText)
+      return S_ERROR(errStr)
+
 
 
 # --- TODO ----
