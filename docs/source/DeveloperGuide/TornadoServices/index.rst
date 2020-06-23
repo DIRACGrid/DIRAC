@@ -77,12 +77,20 @@ Based on DISET request handler, you still have access to some getters in your ha
 
 How to start server
 *******************
-The easy way, use ``DIRAC/TornadoService/script/tornado-start-all.py`` it will start all services registered in configuration ! To register a service you just have to add the service in the CS and ``Protocol = https``. It may look like this::
+The easy way, use ``DIRAC/Core/Tornado/script/tornado-start-all.py`` it will start all services registered in configuration ! To register a service you just have to add the service in the CS and ``Protocol = https``. It may look like this::
+  
+  DIRAC
+  {
+    Setups
+    {
+      Tornado = DevInstance
+    }
+  }
 
   Systems {
-    DevInstance
+    Tornado
     {
-      Tornado
+      DevInstance
       {
         Port = 443
       }
