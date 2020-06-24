@@ -12,8 +12,8 @@ jobs:
       fail-fast: False
       matrix:
         command:
-          - pytest --no-cov
-          - DIRAC_USE_M2CRYPTO=Yes DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes pytest --no-cov
+          - pytest
+          - DIRAC_USE_M2CRYPTO=Yes DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes pytest
           - pytest --no-cov Core/Security/test
           - DIRAC_USE_M2CRYPTO=Yes DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes pytest --no-cov Core/Security/test
           - tests/checkDocs.sh
