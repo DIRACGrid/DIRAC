@@ -29,4 +29,4 @@ def test_commandBase():
   pp = PilotParams()
   cb = CommandBase( pp )
   returnCode, _outputData = cb.executeAndGetOutput( "ls" )
-  assert returnCode== 0
+  assert returnCode == 0
