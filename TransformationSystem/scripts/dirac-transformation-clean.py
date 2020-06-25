@@ -11,7 +11,7 @@ parseCommandLine()
 from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent     import TransformationCleaningAgent
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 
-if len( sys.argv ) < 2:
+if not getPositionalArgs():
   print('Usage: dirac-transformation-clean transID [transID] [transID]')
   sys.exit()
 else:
