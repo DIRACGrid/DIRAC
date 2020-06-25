@@ -550,7 +550,7 @@ class TransformationDB(DB):
         if not res['OK']:
           return res
         originalFileIDs = res['Value'][0]
-	condDict['FileID'] = list(originalFileIDs)
+        condDict['FileID'] = list(originalFileIDs)
 
       for val in condDict.itervalues():
         if not val:

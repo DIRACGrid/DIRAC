@@ -195,20 +195,22 @@ class TransformationCleaningAgent(AgentModule):
 
   def finalize(self):
     """ Only at finalization: will clean ancient transformations (remnants)
-	1) get the transformation IDs of jobs that are older than 1 year
-	2) find the status of those transformations. Those "Cleaned" and "Archived" will be
-	cleaned and archived (again)
+
+        1) get the transformation IDs of jobs that are older than 1 year
+        2) find the status of those transformations. Those "Cleaned" and "Archived" will be
+           cleaned and archived (again)
 
     Why doing this here? Basically, it's a race:
+
     1) the production manager submits a transformation
     2) the TransformationAgent, and a bit later the WorkflowTaskAgent, put such transformation in their internal queue,
-    so eventually during their (long-ish) cycle they'll work on it.
+       so eventually during their (long-ish) cycle they'll work on it.
     3) 1 minute after creating the transformation, the production manager cleans it (by hand, for whatever reason).
-    So, the status is changed to "Cleaning"
+       So, the status is changed to "Cleaning"
     4) the TransformationCleaningAgent cleans what has been created (maybe, nothing),
-    then sets the transformation status to "Cleaned" or "Archived"
+       then sets the transformation status to "Cleaned" or "Archived"
     5) a bit later the TransformationAgent, and later the WorkflowTaskAgent, kick in,
-    creating tasks and jobs for a production that's effectively cleaned (but these 2 agents don't know yet).
+       creating tasks and jobs for a production that's effectively cleaned (but these 2 agents don't know yet).
 
     Of course, one could make one final check in TransformationAgent or WorkflowTaskAgent,
     but these 2 agents are already doing a lot of stuff, and are pretty heavy.
@@ -223,46 +225,46 @@ class TransformationCleaningAgent(AgentModule):
     if transformationIDs:
       res = self.transClient.getTransformations({'TransformationID': transformationIDs})
       if not res['OK']:
-	self.log.error("Failed to get transformations", res['Message'])
-	return res
+        self.log.error("Failed to get transformations", res['Message'])
+        return res
       transformations = res['Value']
       toClean = []
       toArchive = []
       for transDict in transformations:
-	if transDict['Status'] == 'Cleaned':
-	  toClean.append(transDict)
-	if transDict['Status'] == 'Archived':
-	  toArchive.append(transDict)
+        if transDict['Status'] == 'Cleaned':
+          toClean.append(transDict)
+        if transDict['Status'] == 'Archived':
+          toArchive.append(transDict)
 
       for transDict in toClean:
-	if self.shifterProxy:
-	  self._executeClean(transDict)
-	else:
-	  self.log.info("Cleaning transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
-			transDict)
-	  executeWithUserProxy(self._executeClean)(transDict,
-						   proxyUserDN=transDict['AuthorDN'],
-						   proxyUserGroup=transDict['AuthorGroup'])
+        if self.shifterProxy:
+          self._executeClean(transDict)
+        else:
+          self.log.info("Cleaning transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+                        transDict)
+          executeWithUserProxy(self._executeClean)(transDict,
+                                                   proxyUserDN=transDict['AuthorDN'],
+                                                   proxyUserGroup=transDict['AuthorGroup'])
 
       for transDict in toArchive:
-	if self.shifterProxy:
-	  self._executeArchive(transDict)
-	else:
-	  self.log.info("Archiving files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
-			transDict)
-	  executeWithUserProxy(self._executeArchive)(transDict,
-						     proxyUserDN=transDict['AuthorDN'],
-						     proxyUserGroup=transDict['AuthorGroup'])
+        if self.shifterProxy:
+          self._executeArchive(transDict)
+        else:
+          self.log.info("Archiving files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+                        transDict)
+          executeWithUserProxy(self._executeArchive)(transDict,
+                                                     proxyUserDN=transDict['AuthorDN'],
+                                                     proxyUserGroup=transDict['AuthorGroup'])
 
       # Remove JobIDs that were unknown to the TransformationSystem
       jobGroupsToCheck = [str(transDict['TransformationID']).zfill(8) for transDict in toClean + toArchive]
       res = self.jobMonitoringClient.getJobs({'JobGroup': jobGroupsToCheck})
       if not res['OK']:
-	return res
+        return res
       jobIDsToRemove = [int(jobID) for jobID in res['Value']]
       res = self.__removeWMSTasks(jobIDsToRemove)
       if not res['OK']:
-	return res
+        return res
 
     return S_OK()
 

@@ -285,7 +285,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         # Queue was cleared, nothing to do
         continue
       try:
-	transID = list(transIDOPBody)[0]
+        transID = list(transIDOPBody)[0]
         operations = transIDOPBody[transID]['Operations']
         if transID not in self.transInQueue:
           self._logWarn("Got a transf not in transInQueue...?",
