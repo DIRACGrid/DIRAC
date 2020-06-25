@@ -198,6 +198,22 @@ class TransformationCleaningAgent(AgentModule):
 	1) get the transformation IDs of jobs that are older than 1 year
 	2) find the status of those transformations. Those "Cleaned" and "Archived" will be
 	cleaned and archived (again)
+
+    Why doing this here? Basically, it's a race:
+    1) the production manager submits a transformation
+    2) the TransformationAgent, and a bit later the WorkflowTaskAgent, put such transformation in their internal queue,
+    so eventually during their (long-ish) cycle they'll work on it.
+    3) 1 minute after creating the transformation, the production manager cleans it (by hand, for whatever reason).
+    So, the status is changed to "Cleaning"
+    4) the TransformationCleaningAgent cleans what has been created (maybe, nothing),
+    then sets the transformation status to "Cleaned" or "Archived"
+    5) a bit later the TransformationAgent, and later the WorkflowTaskAgent, kick in,
+    creating tasks and jobs for a production that's effectively cleaned (but these 2 agents don't know yet).
+
+    Of course, one could make one final check in TransformationAgent or WorkflowTaskAgent,
+    but these 2 agents are already doing a lot of stuff, and are pretty heavy.
+    So, we should just clean from time to time.
+    What I added here is done only when the agent finalize, and it's quite light-ish operation anyway.
     """
     res = self.jobMonitoringClient.getJobGroups(None, datetime.utcnow() - timedelta(days=365))
     if not res['OK']:
