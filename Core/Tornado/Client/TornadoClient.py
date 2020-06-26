@@ -5,11 +5,12 @@
   you can use all method defined in your service, your call will be automatically transformed
   in RPC.
 
+  It also exposes the same interface for receiving file than the TransferClient.
+
   Main changes:
     - KeepAliveLapse is removed, requests library manage it itself.
     - nbOfRetry (defined as private attribute) is removed, requests library manage it hitself.
     - Underneath it use HTTP POST protocol and JSON
-
 
   Example::
 
@@ -18,6 +19,8 @@
     myService.doSomething() #Returns S_OK/S_ERROR
 
 """
+
+# pylint: disable=broad-except
 
 from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Tornado.Client.private.TornadoBaseClient import TornadoBaseClient
@@ -54,8 +57,24 @@ class TornadoClient(TornadoBaseClient):
     """
     rpcCall = {'method': method, 'args': encode(args)}
     # Start request
-    retVal = self._request(rpcCall)
+    retVal = self._request(**rpcCall)
+    # Should this line bellow go ? I guess yes
     retVal['rpcStub'] = (self._getBaseStub(), method, args)
+    return retVal
+
+  def receiveFile(self, destFile, *args):
+    """
+      Equivalent of the :py:meth`~DIRAC.Core.DISET.TransferClient.TransferClient.receiveFile
+
+      In practice, it calls the remote method `streamToClient` and stores the raw result in a file
+
+      :param str destFile: path where to store the result
+      :param args: list of arguments
+      :returns: S_OK/S_ERROR
+    """
+    rpcCall = {'method': 'streamToClient', 'args': encode(args), 'rawContent': True}
+    # Start request
+    retVal = self._request(stream=True, outputFile=destFile, **rpcCall)
     return retVal
 
 

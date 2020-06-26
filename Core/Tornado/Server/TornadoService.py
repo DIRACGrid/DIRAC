@@ -186,6 +186,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       prepare the request, it read certificates and check authorizations.
     """
     self.method = self.get_argument("method")
+    self.rawContent = self.get_argument('rawContent', default=False)
     self.log.notice("Incoming request on /%s: %s" % (self._serviceName, self.method))
 
     # Init of service must be checked here, because if it have crashed we are
@@ -225,8 +226,41 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     retVal = yield IOLoop.current().run_in_executor(None, self.__executeMethod)
 
     # Tornado recommend to write in main thread
+    # TODO CHRIS READ THAT https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
     self.__write_return(retVal.result())
     self.finish()
+
+  # This nice idea of streaming to the client cannot work because we are ran in an eecutor
+  # and we should not write back to the client in a different thread.
+  # See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
+  # def export_streamToClient(self, filename):
+  #   # https://bhch.github.io/posts/2017/12/serving-large-files-with-tornado-safely-without-blocking/
+  #   #import ipdb; ipdb.set_trace()
+  #   # chunk size to read
+  #   chunk_size = 1024 * 1024 * 1  # 1 MiB
+
+  #   with open(filename, 'rb') as f:
+  #     while True:
+  #       chunk = f.read(chunk_size)
+  #       if not chunk:
+  #         break
+  #       try:
+  #         self.write(chunk)  # write the chunk to response
+  #         self.flush()  # send the chunk to client
+  #       except StreamClosedError:
+  #         # this means the client has closed the connection
+  #         # so break the loop
+  #         break
+  #       finally:
+  #         # deleting the chunk is very important because
+  #         # if many clients are downloading files at the
+  #         # same time, the chunks in memory will keep
+  #         # increasing and will eat up the RAM
+  #         del chunk
+  #         # pause the coroutine so other handlers can run
+  #         yield gen.sleep(0.000000001)  # 1 nanosecond
+
+  #   return S_OK()
 
   @gen.coroutine
   def __executeMethod(self):
@@ -272,7 +306,11 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
     # Write status code before writing, by default error code is "200 OK"
     self.set_status(self._httpError)
-    self.write(encode(dictionnary))
+
+    # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
+    self.set_header("Content-Type", "application/octet-stream")
+    returnedData = dictionnary if self.rawContent else encode(dictionnary)
+    self.write(returnedData)
 
   def reportUnauthorizedAccess(self, errorCode=401):
     """
@@ -283,7 +321,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     """
     error = S_ERROR(ENOAUTH, "Unauthorized query")
     gLogger.error(
-        "Unauthorized access to %s: %s(%s) from %s" %
+        "Unauthorized access to %s: %s from %s" %
         (self.request.path,
          self.credDict['DN'],
          self.request.remote_ip))

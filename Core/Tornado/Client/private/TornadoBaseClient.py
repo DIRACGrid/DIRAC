@@ -20,6 +20,10 @@
 
 
 """
+
+# pylint: disable=broad-except
+
+import cStringIO
 import requests
 import DIRAC
 
@@ -459,19 +463,34 @@ class TornadoBaseClient(object):
       del newKwargs['useCertificates']
     return (self._destinationSrv, newKwargs)
 
-  def _request(self, postArguments, retry=0):
+  def _request(self, retry=0, stream=False, outputFile=None, **kwargs):
     """
       Sends the request to server
 
-      :param postArguments: dictionnary with arguments who needs to be sends,
-              you should have "method" (str, name of distant method)
-              and "args" (str in JSON, list of arguments for ce procedure)
+      :param retry: internal parameters for recursive call. TODO: remove ?
+      :param stream: (default False) if True, we will receive the output in several chunks.
+                    It is usefull when receiving big amount of data. Note that this is not optimzied
+                    on the server side (see TornadoService)
+                    It shows primarily useful to receive files.
+      :param outputFile: (default None) path to a file where to store the received data.
+      :param **kwargs: Any argument there is used as a post parameter. They are detailed bellow.
+      :param method: (mandatory) name of the distant method
+      :param args: (mandatory) json serialized list of argument for the procedure
+      :param rawContent: if set to True, the data is transmitted and returned from this method
+                        without going through the JEncode serialization.
+
+
+
+      :returns: The received data. If outputFile is set, return always S_OK
+
     """
+
+    rawContent = kwargs.get('rawContent')
 
     # Adding some informations to send
     if self.__extraCredentials:
-      postArguments[self.KW_EXTRA_CREDENTIALS] = encode(self.__extraCredentials)
-    postArguments["clientVO"] = self.vo
+      kwargs[self.KW_EXTRA_CREDENTIALS] = encode(self.__extraCredentials)
+    kwargs["clientVO"] = self.vo
 
     # Getting URL
     url = self.__findServiceURL()
@@ -492,29 +511,54 @@ class TornadoBaseClient(object):
 
     # Do the request
     try:
+      rawText = None
 
-      call = requests.post(url, data=postArguments, timeout=self.timeout, verify=verify,
-                           cert=cert)
-      # raising the exception for status here
-      # means essentialy that we are losing here the information of what is returned by the server
-      # as error message, since it is not passed to the exception
-      # However, we can store the text and return it raw as an error,
-      # since there is no guarantee that it is any JEncoded text
-      # Note that we would get an exception only if there is an exception on the server side which
-      # is not handled.
-      # Any standard S_ERROR will be transfered as an S_ERROR with a correct code.
-      rawText = call.text
-      call.raise_for_status()
-      return decode(rawText)[0]
+      if not stream:
+        call = requests.post(url, data=kwargs,
+                             timeout=self.timeout, verify=verify,
+                             cert=cert)
+        # raising the exception for status here
+        # means essentialy that we are losing here the information of what is returned by the server
+        # as error message, since it is not passed to the exception
+        # However, we can store the text and return it raw as an error,
+        # since there is no guarantee that it is any JEncoded text
+        # Note that we would get an exception only if there is an exception on the server side which
+        # is not handled.
+        # Any standard S_ERROR will be transfered as an S_ERROR with a correct code.
+        rawText = call.text
+        call.raise_for_status()
+        return decode(rawText)[0]
+      else:
+        rawText = None
+        # Stream download
+        # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
+        with requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
+                           cert=cert, stream=True) as r:
+          r.raise_for_status()
+          contentFile = outputFile if outputFile else cStringIO.StringIO()
+
+          with open(contentFile, 'wb') as f:
+            for chunk in r.iter_content():
+              if chunk:  # filter out keep-alive new chuncks
+                f.write(chunk)
+
+          if outputFile:
+            return S_OK()
+
+          if rawContent:
+            return S_OK(contentFile.getvalue())
+          return decode(contentFile.getvalue())[0]
+
     except Exception as e:
+      # CHRIS TODO review this part.
+      # Is this list ever cleaned ?
       if url not in self.__bannedUrls:
         self.__bannedUrls += [url]
       if retry < self.__nbOfUrls - 1:
-        self._request(postArguments, retry + 1)
+        self._request(retry=retry + 1, stream=stream, outputFile=outputFile, **kwargs)
 
       errStr = "%s: %s" % (str(e), rawText)
       return S_ERROR(errStr)
-
 
 
 # --- TODO ----

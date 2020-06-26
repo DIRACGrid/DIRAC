@@ -112,7 +112,7 @@ class HandlerManager(object):
               if isHTTPS and isHTTPS.lower() == 'https':
                 serviceList.append(newservice)
         # On systems sometime you have things not related to services...
-        except RuntimeError as e:
+        except RuntimeError:
           pass
     return self.loadHandlersByServiceName(serviceList)
 
