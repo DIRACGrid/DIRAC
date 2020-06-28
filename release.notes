@@ -1,3 +1,23 @@
+[v7r0p28]
+
+*Core
+FIX: (#4642) M2Crypto closes the socket after dereferencing the Connection instance
+
+*DMS
+FIX: (#4644) Cancel FTS3 Operation if the RMS request does not exist
+
+*RMS
+NEW: (#4644) getRequestStatus returns ENOENT if the request does not exist
+
+*TS
+FIX: (#4647) TaskManager - hospital sites were not looked for correctly, which
+      generated an exception
+FIX: (#4656) fix parsing of command line flags (e.g., -ddd) for dirac-transformation-archive/clean/remove-output/verify-outputdata
+
+*Interfaces
+CHANGE: (#4652) dirac-admin-add-host now inserts hosts into the ComponentMonitoring if the host
+        is not yet known
+
 [v7r0p27]
 
 *Framework
