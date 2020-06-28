@@ -664,7 +664,7 @@ class RequestDB(object):
           else:
             summaryQuery = summaryQuery.filter(eval('%s.%s' % (objectType, key)) == value)
 
-      summaryQuery = summaryQuery.group_by(groupingAttribute)
+      summaryQuery = summaryQuery.group_by(eval(groupingAttribute))
 
       try:
         requestLists = summaryQuery.all()

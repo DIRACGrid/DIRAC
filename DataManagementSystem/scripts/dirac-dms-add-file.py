@@ -56,6 +56,11 @@ def getDict( item_list ):
   lfn_dict['guid'] = guid
   return lfn_dict
 
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC import gLogger
+import DIRAC
+exitCode = 0
+
 lfns = []
 if len( args ) == 1:
   inputFileName = args[0]
@@ -67,13 +72,11 @@ if len( args ) == 1:
       items[0] = items[0].replace( 'LFN:', '' ).replace( 'lfn:', '' )
       lfns.append( getDict( items ) )
     inputFile.close()
+  else:
+    gLogger.error("Error: LFN list '%s' missing." % inputFileName)
+    exitCode = 4
 else:
   lfns.append( getDict( args ) )
-
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC import gLogger
-import DIRAC
-exitCode = 0
 
 dm = DataManager()
 for lfn in lfns:

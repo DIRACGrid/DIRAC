@@ -511,6 +511,14 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p31]
+
+*DMS
+FIX: (#4646) Print error from dirac-dms-add-file if input LFN list file is missing.
+
+*RMS
+FIX: (#4657) RequestDB - fix getRequestCountersWeb error in DIRACOS
+
 [v6r22p30]
 
 *DataManagementSystem
