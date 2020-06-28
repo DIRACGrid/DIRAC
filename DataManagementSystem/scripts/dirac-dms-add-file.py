@@ -60,6 +60,7 @@ def getDict(item_list):
   lfn_dict['guid'] = guid
   return lfn_dict
 
+
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC import gLogger
 import DIRAC
