@@ -354,24 +354,36 @@ class FTS3Agent(AgentModule):
         continueOperationProcessing = True
 
         # Check the status of the associated RMS Request.
-        # If it is canceled then we will not create new FTS3Jobs, and mark
+        # If it is canceled or does not exist anymore then we will not create new FTS3Jobs, and mark
         # this as FTS3Operation canceled.
 
         if operation.rmsReqID:
           res = ReqClient().getRequestStatus(operation.rmsReqID)
           if not res['OK']:
-            log.error("Could not get request status", res)
-            return operation, res
-          rmsReqStatus = res['Value']
+            # If the Request does not exist anymore
+            if cmpError(res, errno.ENOENT):
+              log.info(
+                  "The RMS Request does not exist anymore, canceling the FTS3Operation",
+                  "rmsReqID: %s, FTS3OperationID: %s" %
+                  (operation.rmsReqID,
+                   operation.operationID))
+              operation.status = 'Canceled'
+              continueOperationProcessing = False
+            else:
+              log.error("Could not get request status", res)
+              return operation, res
 
-          if rmsReqStatus == 'Canceled':
-            log.info(
-                "The RMS Request is canceled, canceling the FTS3Operation",
-                "rmsReqID: %s, FTS3OperationID: %s" %
-                (operation.rmsReqID,
-                 operation.operationID))
-            operation.status = 'Canceled'
-            continueOperationProcessing = False
+          else:
+            rmsReqStatus = res['Value']
+
+            if rmsReqStatus == 'Canceled':
+              log.info(
+                  "The RMS Request is canceled, canceling the FTS3Operation",
+                  "rmsReqID: %s, FTS3OperationID: %s" %
+                  (operation.rmsReqID,
+                   operation.operationID))
+              operation.status = 'Canceled'
+              continueOperationProcessing = False
 
         if continueOperationProcessing:
           res = operation.prepareNewJobs(
