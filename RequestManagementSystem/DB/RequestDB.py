@@ -17,6 +17,7 @@
     db holding Request, Operation and File
 """
 import six
+import errno
 import random
 
 import datetime
@@ -666,7 +667,7 @@ class RequestDB(object):
           else:
             summaryQuery = summaryQuery.filter(eval('%s.%s' % (objectType, key)) == value)
 
-      summaryQuery = summaryQuery.group_by(groupingAttribute)
+      summaryQuery = summaryQuery.group_by(eval(groupingAttribute))
 
       try:
         requestLists = summaryQuery.all()
@@ -782,7 +783,7 @@ class RequestDB(object):
     try:
       status = session.query(Request._Status).filter(Request.RequestID == requestID).one()
     except NoResultFound:
-      return S_ERROR("Request %s does not exist" % requestID)
+      return S_ERROR(errno.ENOENT, "Request %s does not exist" % requestID)
     finally:
       session.close()
     return S_OK(status[0])

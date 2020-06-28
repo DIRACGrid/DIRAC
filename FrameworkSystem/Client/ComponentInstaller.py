@@ -1132,7 +1132,7 @@ class ComponentInstaller(object):
 
         for cType in self.componentTypes:
           if body.find('dirac-%s' % (cType)) != -1:
-            system, compT = component.split('_')[0:2]
+            system, compT = component.split('_', 1)
             if system not in resultDict[resultIndexes[cType]]:
               resultDict[resultIndexes[cType]][system] = []
             resultDict[resultIndexes[cType]][system].append(compT)
