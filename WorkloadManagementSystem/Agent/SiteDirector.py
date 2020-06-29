@@ -1197,11 +1197,12 @@ class SiteDirector(AgentModule):
     except BaseException as be:
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
+    location = Operations().getValue("Pilot/pilotFileServer", '')
     localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict=pilotFilesCompressedEncodedDict,
                                     pilotOptions=pilotOptions,
                                     pilotExecDir=pilotExecDir,
                                     envVariables=envVariables,
-				    location=Operations().getValue("Pilot/pilotFileServer", ''))
+                                    location=location)
 
     return _writePilotWrapperFile(workingDirectory=workingDirectory, localPilot=localPilot)
 
