@@ -536,7 +536,7 @@ class SiteDirector(AgentModule):
       totalWaitingPilots = 0
       manyWaitingPilotsFlag = False
       if self.pilotWaitingFlag:
-        tqIDList = additionalInfo.keys()
+        tqIDList = list(additionalInfo)
         result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
                                             'Status': WAITING_PILOT_STATUS},
                                            None)
@@ -659,7 +659,7 @@ class SiteDirector(AgentModule):
   def monitorJobsQueuesPilots(self, matchingTQs):
     """ Just printout of jobs queues and pilots status in TQ
     """
-    tqIDList = matchingTQs.keys()
+    tqIDList = list(matchingTQs)
     result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
                                         'Status': WAITING_PILOT_STATUS},
                                        None)
