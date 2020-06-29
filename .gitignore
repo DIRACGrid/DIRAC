@@ -73,6 +73,7 @@ tests/CI/SERVERCONFIG
 
 # VSCode
 .vscode
+.env
 
 # docs
 # this is auto generated
