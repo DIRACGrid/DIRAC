@@ -66,11 +66,11 @@ fi
 
 # Creating default structure
 mkdir -p "$WORKSPACE/TestCode" # Where the test code resides
-readonly TESTCODE=${_}
+TESTCODE=${_}
 mkdir -p "$WORKSPACE/ServerInstallDIR" # Where servers are installed
-readonly SERVERINSTALLDIR=${_}
+SERVERINSTALLDIR=${_}
 mkdir -p "$WORKSPACE/ClientInstallDIR" # Where clients are installed
-readonly CLIENTINSTALLDIR=${_}
+CLIENTINSTALLDIR=${_}
 
 # Location of the CFG file to be used (this can be replaced by the extensions)
 INSTALL_CFG_FILE="${TESTCODE}/DIRAC/tests/Jenkins/install.cfg"

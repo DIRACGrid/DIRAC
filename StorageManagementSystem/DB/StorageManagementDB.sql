@@ -9,7 +9,11 @@
 
 use StorageManagementDB;
 
+DROP TABLE IF EXISTS TaskReplicas;
+DROP TABLE IF EXISTS StageRequests;
+DROP TABLE IF EXISTS CacheReplicas;
 DROP TABLE IF EXISTS Tasks;
+
 CREATE TABLE Tasks(
   TaskID INTEGER AUTO_INCREMENT,
   Status VARCHAR(32) DEFAULT 'New',
@@ -23,7 +27,6 @@ CREATE TABLE Tasks(
   INDEX(TaskID,Status)
 )ENGINE=INNODB;
 
-DROP TABLE IF EXISTS TaskReplicas;
 CREATE TABLE TaskReplicas(
   TaskID INTEGER(8) NOT NULL REFERENCES Tasks(TaskID),
   ReplicaID INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID),
@@ -33,7 +36,7 @@ CREATE TABLE TaskReplicas(
 CREATE TRIGGER taskreplicasAfterInsert AFTER INSERT ON TaskReplicas FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Links=CacheReplicas.Links+1 WHERE CacheReplicas.ReplicaID=NEW.ReplicaID;
 CREATE TRIGGER taskreplicasAfterDelete AFTER DELETE ON TaskReplicas FOR EACH ROW UPDATE CacheReplicas SET CacheReplicas.Links=CacheReplicas.Links-1 WHERE CacheReplicas.ReplicaID=OLD.ReplicaID;
 
-DROP TABLE IF EXISTS CacheReplicas;
+
 CREATE TABLE CacheReplicas(
   ReplicaID INTEGER AUTO_INCREMENT,
   Type VARCHAR(32) NOT NULL,
@@ -52,7 +55,7 @@ CREATE TABLE CacheReplicas(
   INDEX(ReplicaID,Status,SE)
 )ENGINE=INNODB;
 
-DROP TABLE IF EXISTS StageRequests;
+
 CREATE TABLE StageRequests(
   ReplicaID INTEGER(8) NOT NULL REFERENCES CacheReplicas(ReplicaID),
   StageStatus VARCHAR(32) DEFAULT 'StageSubmitted',
