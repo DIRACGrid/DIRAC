@@ -1238,8 +1238,6 @@ Below is a complete example configuration with anotations for some sections::
           Group = 
           #Grid Environment (leave empty for auto-discovery)
           GridEnv = 
-          #Pilot 3 option
-          Pilot3 = False
           #the DN of the certificate proxy used to submit pilots. If not found here, what is in Operations/Pilot section of the CS will be used
           PilotDN = 
           #the group of the certificate proxy used to submit pilots. If not found here, what is in Operations/Pilot section of the CS will be used

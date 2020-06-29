@@ -18,7 +18,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
 import os
 import sys
 import random
@@ -26,6 +25,8 @@ import socket
 import hashlib
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+
+import six
 
 import DIRAC
 from DIRAC import S_OK, gConfig
@@ -53,11 +54,6 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 # dirac install file
 DIRAC_INSTALL = os.path.join(DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py')
-
-# pilot2 python files (NOT needed for pilot 3)
-DIRAC_PILOT = os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'dirac-pilot.py')
-DIRAC_MODULES = [os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotCommands.py'),
-                 os.path.join(DIRAC.rootPath, 'DIRAC', 'WorkloadManagementSystem', 'PilotAgent', 'pilotTools.py')]
 
 # status
 TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready', 'Unknown']
@@ -126,9 +122,6 @@ class SiteDirector(AgentModule):
     self.sendAccounting = True
     self.sendSubmissionAccounting = True
 
-    self.pilot3 = True
-    self.pilotFiles = []  # files whose content will be compressed and sent together with the pilot wrapper
-
     self.siteClient = None
     self.rssClient = None
     self.rssFlag = None
@@ -183,10 +176,6 @@ class SiteDirector(AgentModule):
             self.voGroups.append(group)
     else:
       self.voGroups = [self.group]
-
-    self.pilot3 = self.am_getOption('Pilot3', self.pilot3)
-    if self.pilot3 in (False, 'No', 'no', 'false'):
-      self.pilot3 = False
 
     # Get the clients
     self.siteClient = SiteStatus()
@@ -294,11 +283,6 @@ class SiteDirector(AgentModule):
                                                            self.queueDict[queue]['CEName'],
                                                            queue))
     self.firstPass = False
-
-    # which files to send in the pilotWrapper?
-    if not self.pilot3:
-      # If it's pilot 3, nothing will be sent: the wrapper will get them all
-      self.pilotFiles = DIRAC_MODULES + [DIRAC_PILOT]
 
     return S_OK()
 
@@ -1125,24 +1109,6 @@ class SiteDirector(AgentModule):
     if pilotLogging.lower() in ['true', 'yes', 'y']:
       pilotOptions.append('-z ')
 
-    # Request a release
-    # FIXME: this can disapper at some point (when there will only be pilot 3)
-    if not self.pilot3:  # in pilot 3 the version is taken from the JSON file exported from the CS
-      diracVersion = opsHelper.getValue("Pilot/Version", [])
-      if not diracVersion:
-        self.log.error('Pilot/Version is not defined in the configuration')
-        return [None, None]
-      # diracVersion is a list of accepted releases
-      pilotOptions.append('-r %s' % ','.join(str(it) for it in diracVersion))
-
-      # lcgBundle defined? (pilot 2 only)
-      lcgBundleVersion = opsHelper.getValue("Pilot/LCGBundleVersion", "")
-      if lcgBundleVersion:
-        self.log.warn(
-            "lcgBundle defined in CS: will overwrite possible per-release lcg bundle versions",
-            "(version in CS: %s)" % lcgBundleVersion)
-        pilotOptions.append('-g %s' % lcgBundleVersion)
-
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
     # Request token for maximum pilot efficiency
@@ -1226,15 +1192,12 @@ class SiteDirector(AgentModule):
     """
 
     try:
-      pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(self.pilotFiles + [DIRAC_INSTALL],
+      pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict([DIRAC_INSTALL],
                                                                            proxy)
     except BaseException as be:
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
     location = Operations().getValue("Pilot/pilotFileServer", '')
-    # Do not instruct pilot to download files if Pilot3 flag is not set
-    if not self.pilot3:
-      location = ''
     localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict=pilotFilesCompressedEncodedDict,
                                     pilotOptions=pilotOptions,
                                     pilotExecDir=pilotExecDir,
