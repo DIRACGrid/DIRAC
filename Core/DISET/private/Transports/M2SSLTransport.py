@@ -45,6 +45,9 @@ class SSLTransport(BaseTransport):
         as for other transports. If ctx is specified (as an instance of
         SSL.Context) then use that rather than creating a new context.
     """
+    # The thread init of M2Crypto is not really thread safe.
+    # So we put it a second time
+    M2Threading.init()
     self.remoteAddress = None
     self.peerCredentials = {}
     self.__timeout = 1
@@ -98,9 +101,7 @@ class SSLTransport(BaseTransport):
         error = "%s:%s" % (e, repr(e))
 
         if self.oSocket is not None:
-          self.oSocket.close()
-          self.oSocket.socket.close()
-          self.oSocket = None
+          self.close()
 
     return S_ERROR(error)
 
@@ -125,20 +126,85 @@ class SSLTransport(BaseTransport):
     return S_OK()
 
   def close(self):
+    # pylint: disable=line-too-long
     """ Close this socket. """
+
     if self.oSocket:
+      # TL;DR:
+      # Do NOT touch that method
+      #
       # Surprisingly (to me at least), M2Crypto does not close
-      # the socket when calling SSL.Connection.close
-      # It only does it when the garbage collector kicks in
-      # We have to manually close it here, otherwise the connections
-      # will hang forever
+      # the underlying socket when calling SSL.Connection.close
+      # It only does it when the garbage collector kicks in (see ~M2Crypto.SSL.Connection.Connection.__del__)
+      # If the socket is not closed, the connection may hang forever.
+      #
+      # Thus, we are setting self.oSocket to None to allow the GC to do the work, but since we are not sure
+      # that it will run, we anyway force the connection to be closed
+      #
+      # However, we should close the underlying socket only after SSL was shutdown properly.
+      # This is because OpenSSL `ssl3_shutdown` (see callstack below) may still read some data
+      # (see https://github.com/openssl/openssl/blob/master/ssl/s3_lib.c#L4509)::
+      #
+      #
+      # 1  0x00007fffe9d48fc0 in sock_read () from /lib/libcrypto.so.1.0.0
+      # 2  0x00007fffe9d46e83 in BIO_read () from /lib/libcrypto.so.1.0.0
+      # 3  0x00007fffe9eab9dd in ssl3_read_n () from /lib/libssl.so.1.0.0
+      # 4  0x00007fffe9ead216 in ssl3_read_bytes () from /lib/libssl.so.1.0.0
+      # 5  0x00007fffe9ea999c in ssl3_shutdown () from /lib/libssl.so.1.0.0
+      # 6  0x00007fffe9ed4f93 in ssl_free () from /lib/libssl.so.1.0.0
+      # 7  0x00007fffe9d46d5b in BIO_free () from /lib/libcrypto.so.1.0.0
+      # 8  0x00007fffe9f30a96 in bio_free (bio=0x5555556f3200) at SWIG/_m2crypto_wrap.c:5008
+      # 9  0x00007fffe9f30b1e in _wrap_bio_free (self=<optimized out>, args=<optimized out>) at SWIG/_m2crypto_wrap.c
+      #
+      # We unfortunately have no way to force that order, and there is a risk of deadlock
+      # when running in a multi threaded environment like the agents::
+      #
+      # Thread A opens socket, gets FD = 111
+      # Thread A works on it
+      # Thread A closes FD 111 (underlying socket.close())
+      # Thread B opens socket, gets FD = 111
+      # Thread A calls read on FD=111 from ssl3_shutdown
+      #
+      # This is illustrated on the strace below::
+      #
+      # 26461 14:25:15.266692 write(111<TCPv6:[[<srcAddressV6>]:42688->[<dstAddressV6>]:9140]>,
+      #                            "blabla", 37 <unfinished ...>
+      # 26464 14:25:15.266857 <... connect resumed>) = 0 <0.000195>
+      # 26464 14:25:15.267023 getsockname(120<UDP:[<srcAddress>:44252->188.185.84.86:9140]>, <unfinished ...>
+      # 26461 14:25:15.267176 <... write resumed>) = 37 <0.000453>
+      # 26464 14:25:15.267425 <... getsockname resumed>{sa_family=AF_INET, sin_port=htons(44252),
+      #                        sin_addr=inet_addr("<srcAddress>")}, [28->16]) = 0 <0.000292>
+      # 26461 14:25:15.267466 close(111<TCPv6:[[<srcAddressV6>]:42688->[<dstAddressV6>]:9140]> <unfinished ...>
+      # 26464 14:25:15.267637 close(120<UDP:[<srcAddress>:44252->188.185.84.86:9140]> <unfinished ...>
+      # 26464 14:25:15.267738 <... close resumed>) = 0 <0.000086>
+      # 26461 14:25:15.267768 <... close resumed>) = 0 <0.000285>
+      # 26464 14:25:15.267827 socket(AF_INET6, SOCK_DGRAM|SOCK_CLOEXEC, IPPROTO_IP <unfinished ...>
+      # 26461 14:25:15.267888 futex(0x21f8620, FUTEX_WAKE_PRIVATE, 1 <unfinished ...>
+      # 26464 14:25:15.267976 <... socket resumed>) = 111<UDPv6:[1207802822]> <0.000138>
+      # 26461 14:25:15.268092 <... futex resumed>) = 1 <0.000196>
+      # 26464 14:25:15.268195 connect(111<UDPv6:[1207802822]>,
+      #                      {sa_family=AF_INET6, sin6_port=htons(9140),
+      #                       inet_pton(AF_INET6, "<dstAddressV6>", &sin6_addr),
+      #                      sin6_flowinfo=htonl(0), sin6_scope_id=0
+      #                      }, 28 <unfinished ...>
+      # 26461 14:25:15.268294 read(111<UDPv6:[[<srcAddressV6>]:42480->[<dstAddressV6>]:9140]>, <unfinished ...>
+      # 26464 14:25:15.268503 <... connect resumed>) = 0 <0.000217>
+      # 26464 14:25:15.268673 getsockname(111<UDPv6:[[<srcAddressV6>]:42480->[<dstAddressV6>]:9140]>, <unfinished ...>
+      # 26464 14:25:15.268862 <... getsockname resumed>{sa_family=AF_INET6, sin6_port=htons(42480),
+      #                        inet_pton(AF_INET6, "<srcAddressV6>", &sin6_addr), sin6_flowinfo=htonl(0), sin6_scope_id=
+      # 0}, [28]) = 0 <0.000168>
+      # 26464 14:25:15.269048
+      # close(111<UDPv6:[[<srcAddressV6>]:42480->[<dstAddressV6>]:9140]>
+      # <unfinished ...>
+
       self.oSocket.close()
-      self.oSocket.socket.close()
-      # del self.oSocket
+      underlyingSocket = self.oSocket.socket
       self.oSocket = None
+      underlyingSocket.close()
     return S_OK()
 
   def renewServerContext(self):
+    # pylint: disable=line-too-long
     """ Renews the server context.
         This reloads the certificates and re-initialises the SSL context.
 

@@ -524,7 +524,7 @@ class TransformationDB(DB):
     # Attach files to transformation
     successful = {}
     if fileIDs:
-      res = self.__addFilesToTransformation(transID, fileIDs.keys(), connection=connection)
+      res = self.__addFilesToTransformation(transID, list(fileIDs), connection=connection)
       if not res['OK']:
         return res
       for fileID in fileIDs:
@@ -550,7 +550,7 @@ class TransformationDB(DB):
         if not res['OK']:
           return res
         originalFileIDs = res['Value'][0]
-        condDict['FileID'] = originalFileIDs.keys()
+        condDict['FileID'] = list(originalFileIDs)
 
       for val in condDict.itervalues():
         if not val:
@@ -1536,10 +1536,10 @@ class TransformationDB(DB):
       if lfn not in lfnFilesIDs:
         successful[lfn] = 'File does not exist'
     if fileIDs:
-      res = self.__setTransformationFileStatus(fileIDs.keys(), 'Deleted', connection=connection)
+      res = self.__setTransformationFileStatus(list(fileIDs), 'Deleted', connection=connection)
       if not res['OK']:
         return res
-      res = self.__setDataFileStatus(fileIDs.keys(), 'Deleted', connection=connection)
+      res = self.__setDataFileStatus(list(fileIDs), 'Deleted', connection=connection)
       if not res['OK']:
         return S_ERROR("TransformationDB.removeFile: Failed to remove files.")
     for lfn in lfnFilesIDs:

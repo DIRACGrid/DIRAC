@@ -85,6 +85,19 @@ else:
     errorList.append(("commit", result['Message']))
     exitCode = 255
 
+if exitCode == 0:
+  from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+  cmc = ComponentMonitoringClient()
+  ret = cmc.hostExists(dict(HostName=hostName))
+  if not ret['OK']:
+    Script.gLogger.error('Cannot check if host is registered in ComponentMonitoring', ret['Message'])
+  elif ret['Value']:
+    Script.gLogger.info('Host already registered in ComponentMonitoring')
+  else:
+    ret = cmc.addHost(dict(HostName=hostName, CPU='TO_COME'))
+    if not ret['OK']:
+      Script.gLogger.error('Failed to add Host to ComponentMonitoring', ret['Message'])
+
 for error in errorList:
   Script.gLogger.error("%s: %s" % error)
 

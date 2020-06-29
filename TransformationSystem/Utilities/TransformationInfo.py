@@ -155,7 +155,7 @@ class TransformationInfo(object):
         for lfn, err in result['Value']['Failed'].items():
           reason = str(err)
           errorReasons[reason].append(lfn)
-        successfullyRemoved += len(result['Value']['Successful'].keys())
+        successfullyRemoved += len(result['Value']['Successful'])
     for reason, lfns in errorReasons.items():
       self.log.error("Failed to remove %d files with error: %s" % (len(lfns), reason))
     self.log.notice("Successfully removed %d files" % successfullyRemoved)

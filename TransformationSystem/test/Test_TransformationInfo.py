@@ -352,7 +352,7 @@ def test_getJobs(tiFixture):
   assert ndone == 3
   assert nfailed == 3
   assert isinstance(jobs, OrderedDict)
-  assert [56, 89, 123, 456, 789, 1123] == jobs.keys()
+  assert [56, 89, 123, 456, 789, 1123] == list(jobs)
 
   # All ERROR
   tiFixture.jobMon.getJobs = Mock()
