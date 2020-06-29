@@ -23,16 +23,17 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.Core.Utilities.DErrno import cmpError
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 
 # # agent's name
 AGENT_NAME = 'Transformation/TransformationCleaningAgent'
@@ -83,7 +84,7 @@ class TransformationCleaningAgent(AgentModule):
   def initialize(self):
     """ agent initialisation
 
-    reading and setting confing opts
+    reading and setting config opts
 
     :param self: self reference
     """
@@ -123,6 +124,8 @@ class TransformationCleaningAgent(AgentModule):
     self.reqClient = ReqClient()
     # # file catalog client
     self.metadataClient = FileCatalogClient()
+    # # job monitoring client
+    self.jobMonitoringClient = JobMonitoringClient()
 
     return S_OK()
 
@@ -188,6 +191,81 @@ class TransformationCleaningAgent(AgentModule):
                                                      proxyUserGroup=transDict['AuthorGroup'])
     else:
       self.log.error("Could not get the transformations", res['Message'])
+    return S_OK()
+
+  def finalize(self):
+    """ Only at finalization: will clean ancient transformations (remnants)
+
+        1) get the transformation IDs of jobs that are older than 1 year
+        2) find the status of those transformations. Those "Cleaned" and "Archived" will be
+           cleaned and archived (again)
+
+    Why doing this here? Basically, it's a race:
+
+    1) the production manager submits a transformation
+    2) the TransformationAgent, and a bit later the WorkflowTaskAgent, put such transformation in their internal queue,
+       so eventually during their (long-ish) cycle they'll work on it.
+    3) 1 minute after creating the transformation, the production manager cleans it (by hand, for whatever reason).
+       So, the status is changed to "Cleaning"
+    4) the TransformationCleaningAgent cleans what has been created (maybe, nothing),
+       then sets the transformation status to "Cleaned" or "Archived"
+    5) a bit later the TransformationAgent, and later the WorkflowTaskAgent, kick in,
+       creating tasks and jobs for a production that's effectively cleaned (but these 2 agents don't know yet).
+
+    Of course, one could make one final check in TransformationAgent or WorkflowTaskAgent,
+    but these 2 agents are already doing a lot of stuff, and are pretty heavy.
+    So, we should just clean from time to time.
+    What I added here is done only when the agent finalize, and it's quite light-ish operation anyway.
+    """
+    res = self.jobMonitoringClient.getJobGroups(None, datetime.utcnow() - timedelta(days=365))
+    if not res['OK']:
+      self.log.error("Failed to get job groups", res['Message'])
+      return res
+    transformationIDs = res['Value']
+    if transformationIDs:
+      res = self.transClient.getTransformations({'TransformationID': transformationIDs})
+      if not res['OK']:
+        self.log.error("Failed to get transformations", res['Message'])
+        return res
+      transformations = res['Value']
+      toClean = []
+      toArchive = []
+      for transDict in transformations:
+        if transDict['Status'] == 'Cleaned':
+          toClean.append(transDict)
+        if transDict['Status'] == 'Archived':
+          toArchive.append(transDict)
+
+      for transDict in toClean:
+        if self.shifterProxy:
+          self._executeClean(transDict)
+        else:
+          self.log.info("Cleaning transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+                        transDict)
+          executeWithUserProxy(self._executeClean)(transDict,
+                                                   proxyUserDN=transDict['AuthorDN'],
+                                                   proxyUserGroup=transDict['AuthorGroup'])
+
+      for transDict in toArchive:
+        if self.shifterProxy:
+          self._executeArchive(transDict)
+        else:
+          self.log.info("Archiving files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+                        transDict)
+          executeWithUserProxy(self._executeArchive)(transDict,
+                                                     proxyUserDN=transDict['AuthorDN'],
+                                                     proxyUserGroup=transDict['AuthorGroup'])
+
+      # Remove JobIDs that were unknown to the TransformationSystem
+      jobGroupsToCheck = [str(transDict['TransformationID']).zfill(8) for transDict in toClean + toArchive]
+      res = self.jobMonitoringClient.getJobs({'JobGroup': jobGroupsToCheck})
+      if not res['OK']:
+        return res
+      jobIDsToRemove = [int(jobID) for jobID in res['Value']]
+      res = self.__removeWMSTasks(jobIDsToRemove)
+      if not res['OK']:
+        return res
+
     return S_OK()
 
   def _executeClean(self, transDict):
@@ -348,7 +426,7 @@ class TransformationCleaningAgent(AgentModule):
         activeDirs.extend(dirContents['SubDirs'])
         allFiles.update(dirContents['Files'])
     self.log.info("Found %d files" % len(allFiles))
-    return S_OK(allFiles.keys())
+    return S_OK(list(allFiles))
 
   def cleanTransformationLogFiles(self, directory):
     """ clean up transformation logs from directory :directory:

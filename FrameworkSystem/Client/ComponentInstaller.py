@@ -58,6 +58,7 @@ If a Master Configuration Server is being installed the following Options can be
 from __future__ import print_function, absolute_import
 
 import os
+import io
 import re
 import glob
 import stat
@@ -1015,7 +1016,7 @@ class ComponentInstaller(object):
           for agent in agentList:
             if os.path.splitext(agent)[1] == ".py":
               agentFile = os.path.join(agentDir, agent)
-              with open(agentFile, 'r') as afile:
+              with io.open(agentFile, 'rt') as afile:
                 body = afile.read()
               if body.find('AgentModule') != -1 or body.find('OptimizerModule') != -1:
                 if system not in agents:
@@ -1041,7 +1042,7 @@ class ComponentInstaller(object):
           for executor in executorList:
             if os.path.splitext(executor)[1] == ".py":
               executorFile = os.path.join(executorDir, executor)
-              with open(executorFile, 'r') as afile:
+              with io.open(executorFile, 'rt') as afile:
                 body = afile.read()
               if body.find('OptimizerExecutor') != -1:
                 if system not in executors:
@@ -1092,8 +1093,8 @@ class ComponentInstaller(object):
       for component in components:
         try:
           runFile = os.path.join(systemDir, component, 'run')
-          with open(runFile, 'r') as rfile:
-            body = rfile.read()
+          with io.open(runFile, 'rt') as rFile:
+            body = rFile.read()
 
           for cType in self.componentTypes:
             if body.find('dirac-%s' % (cType)) != -1:
@@ -1126,12 +1127,12 @@ class ComponentInstaller(object):
     for component in componentList:
       try:
         runFile = os.path.join(self.startDir, component, 'run')
-        with open(runFile, 'r') as rfile:
+        with io.open(runFile, 'rt') as rfile:
           body = rfile.read()
 
         for cType in self.componentTypes:
           if body.find('dirac-%s' % (cType)) != -1:
-            system, compT = component.split('_')[0:2]
+            system, compT = component.split('_', 1)
             if system not in resultDict[resultIndexes[cType]]:
               resultDict[resultIndexes[cType]][system] = []
             resultDict[resultIndexes[cType]][system].append(compT)
@@ -1462,7 +1463,7 @@ class ComponentInstaller(object):
       if not os.path.exists(logFileName):
         retDict[compName] = 'No log file found'
       else:
-        with open(logFileName, 'r') as logFile:
+        with io.open(logFileName, 'rt') as logFile:
           lines = [line.strip() for line in logFile.readlines()]
 
         if len(lines) < length:
@@ -1599,7 +1600,7 @@ class ComponentInstaller(object):
 
       if not cmdFound:
         gLogger.notice('Starting runsvdir ...')
-        with open(os.devnull, 'w') as devnull:
+        with io.open(os.devnull, 'w') as devnull:
           subprocess.Popen(['nohup', 'runsvdir', self.startDir, 'log:  DIRAC runsv'],
                            stdout=devnull, stderr=devnull, universal_newlines=True)
 
@@ -1813,22 +1814,21 @@ class ComponentInstaller(object):
     mkDir(logDir)
 
     logConfigFile = os.path.join(logDir, 'config')
-    with open(logConfigFile, 'w') as fd:
+    with io.open(logConfigFile, 'w') as fd:
       fd.write(
-          """s10000000
+          u"""s10000000
   n20
   """)
 
     logRunFile = os.path.join(logDir, 'run')
-    with open(logRunFile, 'w') as fd:
+    with io.open(logRunFile, 'w') as fd:
       fd.write(
-          """#!/bin/bash
-  #
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec svlogd .
+          u"""#!/bin/bash
 
+rcfile=%(bashrc)s
+[[ -e $rcfile ]] && source ${rcfile}
+#
+exec svlogd .
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
 
     os.chmod(logRunFile, self.gDefaultPerms)
@@ -1894,30 +1894,30 @@ class ComponentInstaller(object):
     try:
       componentCfg = os.path.join(self.linkedRootPath, 'etc', '%s_%s.cfg' % (system, component))
       if not os.path.exists(componentCfg):
-        fd = open(componentCfg, 'w')
-        fd.close()
+        io.open(componentCfg, 'w').close()
 
       self._createRunitLog(runitCompDir)
 
       runFile = os.path.join(runitCompDir, 'run')
-      with open(runFile, 'w') as fd:
+      with io.open(runFile, 'w') as fd:
         fd.write(
-          """#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  [ "%(componentType)s" = "agent" ] && renice 20 -p $$
-  #%(bashVariables)s
-  #
-  exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
-  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
-              'bashVariables': bashVars,
-              'componentType': componentType,
-              'system': system,
-              'component': component,
-              'componentCfg': componentCfg})
+            u"""#!/bin/bash
+
+rcfile=%(bashrc)s
+[[ -e $rcfile ]] && source ${rcfile}
+#
+exec 2>&1
+#
+[[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
+#%(bashVariables)s
+#
+exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
+    """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
+                'bashVariables': bashVars,
+                'componentType': componentType,
+                'system': system,
+                'component': component,
+                'componentCfg': componentCfg})
 
       os.chmod(runFile, self.gDefaultPerms)
 
@@ -1927,8 +1927,9 @@ class ComponentInstaller(object):
         stopFile = os.path.join(runitCompDir, 'control', 't')
         # This is, e.g., /opt/dirac/control/WorkfloadManagementSystem/Matcher/
         controlDir = self.runitDir.replace('runit', 'control')
-        with open(stopFile, 'w') as fd:
-          fd.write("""#!/bin/bash
+        with io.open(stopFile, 'w') as fd:
+          fd.write(u"""#!/bin/bash
+
 echo %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 """ % {'controlDir': controlDir,
@@ -2090,15 +2091,16 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       try:
         self._createRunitLog(runitWebAppDir)
         runFile = os.path.join(runitWebAppDir, 'run')
-        with open(runFile, 'w') as fd:
+        with io.open(runFile, 'w') as fd:
           fd.write(
-              """#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
+              u"""#!/bin/bash
+
+rcfile=%(bashrc)s
+[[ -e $rcfile ]] && source $rcfile
+#
+exec 2>&1
+#
+exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                   'DIRAC': self.linkedRootPath})
 
@@ -2402,9 +2404,8 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     cmdLines = []
 
-    fd = open(dbFile)
-    dbLines = fd.readlines()
-    fd.close()
+    with io.open(dbFile, 'rt') as fd:
+      dbLines = fd.readlines()
 
     for line in dbLines:
       # Should we first source an SQL file (is this sql file an extension)?
@@ -2412,9 +2413,8 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
         sourcedDBbFileName = line.split(' ')[1].replace('\n', '')
         gLogger.info("Found file to source: %s" % sourcedDBbFileName)
         sourcedDBbFile = os.path.join(rootPath, sourcedDBbFileName)
-        fdSourced = open(sourcedDBbFile)
-        dbLinesSourced = fdSourced.readlines()
-        fdSourced.close()
+        with io.open(sourcedDBbFile, 'rt') as fdSourced:
+          dbLinesSourced = fdSourced.readlines()
         for lineSourced in dbLinesSourced:
           if lineSourced.strip():
             cmdLines.append(lineSourced.strip())

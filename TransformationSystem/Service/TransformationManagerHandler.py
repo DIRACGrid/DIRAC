@@ -392,7 +392,7 @@ class TransformationManagerHandler(RequestHandler):
     """ Interface provides [ LFN1, LFN2, ... ]
     """
     if isinstance(lfns, dict):
-      lfns = lfns.keys()
+      lfns = list(lfns)
     res = database.removeFile(lfns)
     return self._parseRes(res)
 

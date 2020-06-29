@@ -74,80 +74,79 @@ class JobMonitoringHandler(RequestHandler):
   types_getApplicationStates = []
 
   @staticmethod
-  def export_getApplicationStates():
+  def export_getApplicationStates(condDict=None, older=None, newer=None):
     """ Return Distinct Values of ApplicationStatus job Attribute in WMS
     """
-    return gJobDB.getDistinctJobAttributes('ApplicationStatus')
+    return gJobDB.getDistinctJobAttributes('ApplicationStatus', condDict, older, newer)
 
 ##############################################################################
   types_getJobTypes = []
 
   @staticmethod
-  def export_getJobTypes():
+  def export_getJobTypes(condDict=None, older=None, newer=None):
     """ Return Distinct Values of JobType job Attribute in WMS
     """
-    return gJobDB.getDistinctJobAttributes('JobType')
+    return gJobDB.getDistinctJobAttributes('JobType', condDict, older, newer)
 
 ##############################################################################
   types_getOwners = []
 
   @staticmethod
-  def export_getOwners():
+  def export_getOwners(condDict=None, older=None, newer=None):
     """
     Return Distinct Values of Owner job Attribute in WMS
     """
-    return gJobDB.getDistinctJobAttributes('Owner')
+    return gJobDB.getDistinctJobAttributes('Owner', condDict, older, newer)
 
 ##############################################################################
   types_getProductionIds = []
 
   @staticmethod
-  def export_getProductionIds():
+  def export_getProductionIds(condDict=None, older=None, newer=None):
     """
     Return Distinct Values of ProductionId job Attribute in WMS
     """
-    return gJobDB.getDistinctJobAttributes('JobGroup')
+    return gJobDB.getDistinctJobAttributes('JobGroup', condDict, older, newer)
 
 ##############################################################################
   types_getJobGroups = []
 
   @staticmethod
-  def export_getJobGroups(condDict=None, cutDate=None):
+  def export_getJobGroups(condDict=None, older=None, cutDate=None):
     """
     Return Distinct Values of ProductionId job Attribute in WMS
     """
-    return gJobDB.getDistinctJobAttributes('JobGroup', condDict,
-                                           newer=cutDate)
+    return gJobDB.getDistinctJobAttributes('JobGroup', condDict, older, newer=cutDate)
 
 ##############################################################################
   types_getSites = []
 
   @staticmethod
-  def export_getSites():
+  def export_getSites(condDict=None, older=None, newer=None):
     """
     Return Distinct Values of Site job Attribute in WMS
     """
-    return gJobDB.getDistinctJobAttributes('Site')
+    return gJobDB.getDistinctJobAttributes('Site', condDict, older, newer)
 
 ##############################################################################
   types_getStates = []
 
   @staticmethod
-  def export_getStates():
+  def export_getStates(condDict=None, older=None, newer=None):
     """
     Return Distinct Values of Status job Attribute in WMS
     """
-    return gJobDB.getDistinctJobAttributes('Status')
+    return gJobDB.getDistinctJobAttributes('Status', condDict, older, newer)
 
 ##############################################################################
   types_getMinorStates = []
 
   @staticmethod
-  def export_getMinorStates():
+  def export_getMinorStates(condDict=None, older=None, newer=None):
     """
     Return Distinct Values of Minor Status job Attribute in WMS
     """
-    return gJobDB.getDistinctJobAttributes('MinorStatus')
+    return gJobDB.getDistinctJobAttributes('MinorStatus', condDict, older, newer)
 
 ##############################################################################
   types_getJobs = []

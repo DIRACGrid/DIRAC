@@ -1,4 +1,4 @@
-[v7r2-pre10]
+[v7r2-pre11]
 
 FIX: python 2-3 compatibility fixes
 
@@ -26,6 +26,21 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
+
+[v7r1p6]
+
+*Framework
+CHANGE: (#4643) BundleDeliveryClient: inheriting from Client
+
+*SMS
+FIX: (#4645) StorageManagementDB - drop the tables in the correct order to avoid foreign key errors
+
+*TS
+NEW: (#4641) TransformationCleaningAgent will (re)clean very old transformations that are still in the system
+
+*tests
+FIX: (#4645) dropDBs uses real array;
+FIX: (#4645) remove readonly variables
 
 [v7r1p5]
 
@@ -175,6 +190,26 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p28]
+
+*Core
+FIX: (#4642) M2Crypto closes the socket after dereferencing the Connection instance
+
+*DMS
+FIX: (#4644) Cancel FTS3 Operation if the RMS request does not exist
+
+*RMS
+NEW: (#4644) getRequestStatus returns ENOENT if the request does not exist
+
+*TS
+FIX: (#4647) TaskManager - hospital sites were not looked for correctly, which
+      generated an exception
+FIX: (#4656) fix parsing of command line flags (e.g., -ddd) for dirac-transformation-archive/clean/remove-output/verify-outputdata
+
+*Interfaces
+CHANGE: (#4652) dirac-admin-add-host now inserts hosts into the ComponentMonitoring if the host
+        is not yet known
 
 [v7r0p27]
 
@@ -679,6 +714,14 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p31]
+
+*DMS
+FIX: (#4646) Print error from dirac-dms-add-file if input LFN list file is missing.
+
+*RMS
+FIX: (#4657) RequestDB - fix getRequestCountersWeb error in DIRACOS
 
 [v6r22p30]
 

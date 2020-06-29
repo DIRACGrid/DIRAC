@@ -541,11 +541,11 @@ that the username provided to the function.
     if not res['OK']:
       print("failed to get any replica information: %s" % res['Message'])
       return
-    for lfn in sorted(res['Value']['Failed'].keys()):
+    for lfn in sorted(res['Value']['Failed']):
       error = res['Value']['Failed'][lfn]
       print("failed to get replica information for %s: %s" % (lfn, error))
-    for lfn in sorted(res['Value']['Successful'].keys()):
-      ses = sorted(res['Value']['Successful'][lfn].keys())
+    for lfn in sorted(res['Value']['Successful']):
+      ses = sorted(res['Value']['Successful'][lfn])
       outStr = "%s :" % lfn.ljust(100)
       for se in ses:
         outStr = "%s %s" % (outStr, se.ljust(15))
@@ -568,10 +568,10 @@ that the username provided to the function.
     if not res['OK']:
       print("failed to add any files: %s" % res['Message'])
       return
-    for lfn in sorted(res['Value']['Failed'].keys()):
+    for lfn in sorted(res['Value']['Failed']):
       error = res['Value']['Failed'][lfn]
       print("failed to add %s: %s" % (lfn, error))
-    for lfn in sorted(res['Value']['Successful'].keys()):
+    for lfn in sorted(res['Value']['Successful']):
       print("added %s" % lfn)
 
   def do_removeFile(self, args):
@@ -587,10 +587,10 @@ that the username provided to the function.
     if not res['OK']:
       print("failed to remove any files: %s" % res['Message'])
       return
-    for lfn in sorted(res['Value']['Failed'].keys()):
+    for lfn in sorted(res['Value']['Failed']):
       error = res['Value']['Failed'][lfn]
       print("failed to remove %s: %s" % (lfn, error))
-    for lfn in sorted(res['Value']['Successful'].keys()):
+    for lfn in sorted(res['Value']['Successful']):
       print("removed %s" % lfn)
 
   def do_addReplica(self, args):
@@ -610,10 +610,10 @@ that the username provided to the function.
     if not res['OK']:
       print("failed to add replica: %s" % res['Message'])
       return
-    for lfn in sorted(res['Value']['Failed'].keys()):
+    for lfn in sorted(res['Value']['Failed']):
       error = res['Value']['Failed'][lfn]
       print("failed to add replica: %s" % (error))
-    for lfn in sorted(res['Value']['Successful'].keys()):
+    for lfn in sorted(res['Value']['Successful']):
       print("added %s" % lfn)
 
   def do_removeReplica(self, args):
@@ -633,10 +633,10 @@ that the username provided to the function.
     if not res['OK']:
       print("failed to remove replica: %s" % res['Message'])
       return
-    for lfn in sorted(res['Value']['Failed'].keys()):
+    for lfn in sorted(res['Value']['Failed']):
       error = res['Value']['Failed'][lfn]
       print("failed to remove replica: %s" % (error))
-    for lfn in sorted(res['Value']['Successful'].keys()):
+    for lfn in sorted(res['Value']['Successful']):
       print("removed %s" % lfn)
 
   def do_setReplicaStatus(self, args):
@@ -663,10 +663,10 @@ that the username provided to the function.
     if not res['OK']:
       print("failed to set replica status: %s" % res['Message'])
       return
-    for lfn in sorted(res['Value']['Failed'].keys()):
+    for lfn in sorted(res['Value']['Failed']):
       error = res['Value']['Failed'][lfn]
       print("failed to set replica status: %s" % (error))
-    for lfn in sorted(res['Value']['Successful'].keys()):
+    for lfn in sorted(res['Value']['Successful']):
       print("updated replica status %s" % lfn)
 
 

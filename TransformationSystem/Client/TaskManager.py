@@ -391,7 +391,7 @@ class RequestTasks(TaskBase):
     if transID is None:
       return S_OK({})
 
-    res = self.transClient.getTransformationTasks({'TransformationID': transID, 'TaskID': taskFiles.keys()})
+    res = self.transClient.getTransformationTasks({'TransformationID': transID, 'TaskID': list(taskFiles)})
     if not res['OK']:
       return res
     requestFiles = {}
@@ -668,10 +668,12 @@ class WorkflowTasks(TaskBase):
 
     method = '__prepareTasks'
     startTime = time.time()
+
     oJobTemplate = self.jobClass(transBody)
     oJobTemplate.setOwner(owner)
     oJobTemplate.setOwnerGroup(ownerGroup)
     oJobTemplate.setOwnerDN(ownerDN)
+
     try:
       site = oJobTemplate.workflow.findParameter('Site').getValue()
     except AttributeError:
@@ -679,6 +681,7 @@ class WorkflowTasks(TaskBase):
     jobType = oJobTemplate.workflow.findParameter('JobType').getValue()
     templateOK = False
     getOutputDataTiming = 0.
+
     for taskID, paramsDict in taskDict.iteritems():
       # Create a job for each task and add it to the taskDict
       if not templateOK:
@@ -828,8 +831,8 @@ class WorkflowTasks(TaskBase):
     """ Check if the transformation is in the transformations to be processed at Hospital or Clinic
     """
     transID = int(transID)
-    clinicPath = "Hospital/Transformations"
-    if transID in set(int(x) for x in self.opsH.getValue(clinicPath, [])):
+    clinicPath = "Hospital"
+    if transID in set(int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])):
       return clinicPath
     if "Clinics" in self.opsH.getSections("Hospital").get('Value', []):
       basePath = os.path.join("Hospital", "Clinics")
