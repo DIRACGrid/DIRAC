@@ -285,7 +285,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         # Queue was cleared, nothing to do
         continue
       try:
-        transID = transIDOPBody.keys()[0]
+        transID = list(transIDOPBody)[0]
         operations = transIDOPBody[transID]['Operations']
         if transID not in self.transInQueue:
           self._logWarn("Got a transf not in transInQueue...?",
@@ -327,7 +327,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
   def updateTaskStatus(self, transIDOPBody, clients):
     """ Updates the task status
     """
-    transID = transIDOPBody.keys()[0]
+    transID = list(transIDOPBody)[0]
     method = 'updateTaskStatus'
 
     # Get the tasks which are in an UPDATE state, i.e. job statuses + request-specific statuses
@@ -410,7 +410,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
   def updateFileStatus(self, transIDOPBody, clients):
     """ Update the files status
     """
-    transID = transIDOPBody.keys()[0]
+    transID = list(transIDOPBody)[0]
     method = 'updateFileStatus'
 
     timeStamp = str(datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
@@ -480,7 +480,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
   def checkReservedTasks(self, transIDOPBody, clients):
     """ Checking Reserved tasks
     """
-    transID = transIDOPBody.keys()[0]
+    transID = list(transIDOPBody)[0]
     method = 'checkReservedTasks'
 
     # Select the tasks which have been in Reserved status for more than 1 hour for selected transformations
@@ -546,7 +546,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
     :return: S_OK/S_ERROR
     """
-    transID = transIDOPBody.keys()[0]
+    transID = list(transIDOPBody)[0]
     transBody = transIDOPBody[transID]['Body']
     owner = transIDOPBody[transID]['Owner']
     ownerGroup = transIDOPBody[transID]['OwnerGroup']

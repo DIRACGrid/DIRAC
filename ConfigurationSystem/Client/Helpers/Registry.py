@@ -23,6 +23,7 @@ def getUsernameForDN(dn, usersList=None):
 
       :return: S_OK(str)/S_ERROR()
   """
+  dn = dn.strip()
   if not usersList:
     result = gConfig.getSections("%s/Users" % gBaseRegistrySection)
     if not result['OK']:
@@ -63,6 +64,7 @@ def getGroupsForDN(dn):
 
       :return: S_OK(list)/S_ERROR() -- contain list of groups
   """
+  dn = dn.strip()
   result = getUsernameForDN(dn)
   if not result['OK']:
     return result
@@ -128,6 +130,7 @@ def getHostnameForDN(dn):
 
       :return: S_OK()/S_ERROR()
   """
+  dn = dn.strip()
   result = gConfig.getSections("%s/Hosts" % gBaseRegistrySection)
   if not result['OK']:
     return result
@@ -153,6 +156,7 @@ def findDefaultGroupForDN(dn):
 
       :return: S_OK()/S_ERROR()
   """
+  dn = dn.strip()
   result = getUsernameForDN(dn)
   if not result['OK']:
     return result

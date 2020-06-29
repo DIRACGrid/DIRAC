@@ -391,7 +391,7 @@ class RequestTasks(TaskBase):
     if transID is None:
       return S_OK({})
 
-    res = self.transClient.getTransformationTasks({'TransformationID': transID, 'TaskID': taskFiles.keys()})
+    res = self.transClient.getTransformationTasks({'TransformationID': transID, 'TaskID': list(taskFiles)})
     if not res['OK']:
       return res
     requestFiles = {}
@@ -668,10 +668,12 @@ class WorkflowTasks(TaskBase):
 
     method = '__prepareTasks'
     startTime = time.time()
+
     oJobTemplate = self.jobClass(transBody)
     oJobTemplate.setOwner(owner)
     oJobTemplate.setOwnerGroup(ownerGroup)
     oJobTemplate.setOwnerDN(ownerDN)
+
     try:
       site = oJobTemplate.workflow.findParameter('Site').getValue()
     except AttributeError:
@@ -679,6 +681,7 @@ class WorkflowTasks(TaskBase):
     jobType = oJobTemplate.workflow.findParameter('JobType').getValue()
     templateOK = False
     getOutputDataTiming = 0.
+
     for taskID, paramsDict in taskDict.iteritems():
       # Create a job for each task and add it to the taskDict
       if not templateOK:
