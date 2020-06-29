@@ -10,6 +10,8 @@
   This script was used by the dirac-pilot script to set the CPUTime limit for the matching but now this is no more the case
 """
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC

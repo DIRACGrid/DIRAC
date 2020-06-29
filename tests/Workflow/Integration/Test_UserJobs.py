@@ -2,6 +2,9 @@
     It will submit a number of test jobs locally (via runLocal), using the python unittest to assess the results.
     Can be automatized.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 

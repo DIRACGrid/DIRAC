@@ -1,5 +1,8 @@
 """ A set of utilities for getting configuration information for the WMS components
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

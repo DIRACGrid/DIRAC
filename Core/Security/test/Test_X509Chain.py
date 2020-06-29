@@ -19,6 +19,9 @@
 
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 
 # redefined-outer-name is needed because we keep bassing get_X509Chain_class as param

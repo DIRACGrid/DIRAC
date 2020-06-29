@@ -6,6 +6,9 @@
     Otherwise values are filled in using the batch system and CS
     information.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 import ssl

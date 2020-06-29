@@ -4,6 +4,9 @@
   classes to store accounting results in the accounting cache.
 
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # FIXME: NOT Usable ATM
 # missing doNew, doCache, doMaster

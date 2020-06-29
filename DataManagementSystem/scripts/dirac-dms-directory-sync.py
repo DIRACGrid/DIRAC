@@ -11,6 +11,9 @@ Syncs the source destination folder recursivly into the target destination
 If option --sync is used contend that is not in the source directory but is
 only in the target directory will be deleted.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from past.builtins import long
 import os

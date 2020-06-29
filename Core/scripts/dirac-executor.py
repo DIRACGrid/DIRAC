@@ -3,6 +3,9 @@
 # File :   dirac-executor
 # Author : Adria Casajus
 ########################################################################
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 """  This is a script to launch DIRAC executors

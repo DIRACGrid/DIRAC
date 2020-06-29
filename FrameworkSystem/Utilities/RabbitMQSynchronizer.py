@@ -3,6 +3,9 @@
   RabbitMQSynchronizer keeps the RabbitMQ user database  synchronized with the CS
   RabbitMQ user database is updated according to changes in CS.
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC import S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import hostHasProperties

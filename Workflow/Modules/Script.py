@@ -1,6 +1,9 @@
 """ The Script class provides a simple way for users to specify an executable
     or file to run (and is also a simple example of a workflow module).
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 import sys

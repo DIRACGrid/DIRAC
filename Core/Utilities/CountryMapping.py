@@ -1,4 +1,7 @@
 """  The CountryMapping module performs the necessary CS gymnastics to resolve country codes  """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

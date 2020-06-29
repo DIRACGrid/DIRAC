@@ -1,5 +1,8 @@
 """ The mind is a service the distributes "task" to executors
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import types
 import pprint

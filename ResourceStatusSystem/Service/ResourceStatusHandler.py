@@ -3,6 +3,9 @@
   Module that allows users to access the ResourceStatusDB remotely.
 
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=too-many-arguments
 

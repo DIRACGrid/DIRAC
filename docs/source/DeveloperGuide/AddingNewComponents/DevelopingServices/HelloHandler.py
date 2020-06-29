@@ -1,5 +1,8 @@
 """ Hello Service is an example of how to build services in the DIRAC framework
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

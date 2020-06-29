@@ -3,6 +3,9 @@
   Client to interact with the ResourceStatusDB.
 
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=unused-argument
 

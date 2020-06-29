@@ -5,6 +5,9 @@
   - All useful functions for initialization
   - All useful functions to handle the requests
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 # pylint: skip-file
 # __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
 

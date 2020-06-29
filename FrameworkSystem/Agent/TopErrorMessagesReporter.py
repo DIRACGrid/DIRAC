@@ -2,6 +2,9 @@
      injected in the SystemLoggingDB and sends a notification to a mailing
      list and specific users.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

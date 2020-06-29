@@ -18,6 +18,9 @@ The 'dfc' protocol also needs to be added to the RegistrationProtocols and Write
 Operations/DataManagement section.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

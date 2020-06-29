@@ -1,5 +1,8 @@
 """ TaskQueueDB class is a front-end to the task queues db
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id"
 

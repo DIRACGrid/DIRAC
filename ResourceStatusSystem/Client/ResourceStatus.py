@@ -3,6 +3,9 @@
   Module use to switch between the CS and the RSS.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from datetime import datetime, timedelta
 import math

@@ -5,6 +5,9 @@ Proxy RFC: https://tools.ietf.org/html/rfc38200
 X509RFC: https://tools.ietf.org/html/rfc5280
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

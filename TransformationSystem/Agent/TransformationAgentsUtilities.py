@@ -1,6 +1,9 @@
 """ Utility Class for threaded agents (e.g. TransformationAgent)
     Mostly for logging
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import time
 from DIRAC import gLogger

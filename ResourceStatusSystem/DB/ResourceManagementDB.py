@@ -15,6 +15,9 @@
     2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

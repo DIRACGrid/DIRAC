@@ -2,6 +2,9 @@
 
     This handler moves replicas from source SEs to target SEs. Replicas are first replicated to target SEs and then removed from the source SEs
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id $"
 

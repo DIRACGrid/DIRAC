@@ -14,6 +14,9 @@ This is now pure python, but it might be interesting to wrap the existing
 C library (https://github.com/italiangrid/voms) instead...
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from pyasn1.codec.der.decoder import decode as der_decode
 from pyasn1.error import PyAsn1Error

@@ -1,5 +1,8 @@
 """ DIRAC FileCatalog plug-in class to manage dynamic datasets defined by a metadata query
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

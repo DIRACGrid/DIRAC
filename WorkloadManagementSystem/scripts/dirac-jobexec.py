@@ -7,6 +7,9 @@
     are specified via their XML description.  The main client of
     this script is the Job Wrapper.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

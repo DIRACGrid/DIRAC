@@ -7,6 +7,9 @@
                      you do it several times within 1 second, then there will be no changed, and affected = 0
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from past.builtins import long
 import six

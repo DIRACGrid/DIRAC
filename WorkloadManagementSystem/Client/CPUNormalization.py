@@ -6,6 +6,9 @@
 """ DIRAC Workload Management System Client module that encapsulates all the
     methods necessary to handle CPU normalization
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 from six.moves.urllib.request import urlopen

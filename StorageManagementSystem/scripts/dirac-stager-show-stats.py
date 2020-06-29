@@ -24,6 +24,9 @@ Example:
    GRIDKA-RDST    :      6 replicas with a size of 29.141 GB.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script

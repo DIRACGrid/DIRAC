@@ -8,6 +8,8 @@ Delete DIRAC job from WMS, if running it will be killed
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 import os.path
 
 import DIRAC

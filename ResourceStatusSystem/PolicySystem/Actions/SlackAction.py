@@ -23,6 +23,9 @@
   Operations/[]/ResourceStatus/Config/Slack and not Operations/[]/ResourceStatus/Config/Mattermost
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = '$Id$'
 

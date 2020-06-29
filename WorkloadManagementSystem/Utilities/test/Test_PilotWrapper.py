@@ -1,5 +1,8 @@
 """ This is a test of the creation of the pilot wrapper
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=protected-access, invalid-name, no-self-use
 

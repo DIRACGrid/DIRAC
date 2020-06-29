@@ -3,6 +3,8 @@
 # author: lintao
 
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 import readline
 readline.set_completer_delims(' \t\n`~!@#$%^&*()=+[{]}\\|;:\'",<>/?')
 
@@ -82,7 +84,7 @@ class DirectoryCompletion(object):
 
 
 if __name__ == "__main__":
-  from AbstractFileSystem import UnixLikeFileSystem
+  from AbstractFileSystem import UnixLikeFileSystem  # pylint: disable=import-error
   ulfs = UnixLikeFileSystem()
   dc = DirectoryCompletion(ulfs)
 

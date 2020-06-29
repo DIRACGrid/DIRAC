@@ -7,6 +7,9 @@
     In case you want to further extend it you are required to follow the note on the
     initialize method and on the _getClients method.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

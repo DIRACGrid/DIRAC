@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 # List of OIDs used in handling VOMS extension.
 # VOMS extension is encoded in ASN.1 format and it's surprisingly hard to decode. OIDs describe content of sections
 # of the data. There is no "official list of OIDs", ones used here are sourced from analyzing VOMS extensions itself

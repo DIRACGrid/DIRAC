@@ -3,6 +3,9 @@ Tests the ComponentMonitoring DB and Service by creating, checking,
 updating and removing several instances of each table in the DB
 This program assumes that the service Framework/ComponentMonitoring is running
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=invalid-name,wrong-import-position
 

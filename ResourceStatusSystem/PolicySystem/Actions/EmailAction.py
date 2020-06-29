@@ -4,6 +4,9 @@
   will be used later by the EmailAgent in order to send the emails for each site.
 
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = '$Id$'
 

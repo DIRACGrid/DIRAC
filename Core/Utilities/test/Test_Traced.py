@@ -13,6 +13,9 @@
 
     Traced test cases
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 
 ## metaclass stuff too smart for pylint

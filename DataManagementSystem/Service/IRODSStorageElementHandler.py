@@ -21,6 +21,9 @@ which support single file, directory and file list upload and download
 The class can be used as the basis for more advanced StorageElement implementations
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # imports
 import os

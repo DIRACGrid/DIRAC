@@ -11,6 +11,9 @@
     getStorages()      This takes a DIRAC SE definition and creates storage stubs for the protocols found in the CS.
                       By providing an optional list of protocols it is possible to limit the created stubs.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

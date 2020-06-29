@@ -26,6 +26,8 @@ if a give datetime is in the defined interval.
 
 """
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 import time as nativetime
 import datetime
 from types import StringTypes

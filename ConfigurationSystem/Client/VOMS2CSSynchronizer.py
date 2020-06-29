@@ -1,6 +1,9 @@
 """ VOMS2CSSyncronizer is a helper class containing the logic for synchronization
     of the VOMS user data with the DIRAC Registry
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

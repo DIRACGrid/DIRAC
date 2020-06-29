@@ -4,6 +4,9 @@
     It supposes that the ProductionDB, TransformationDB and the FileCatalogDB to be present
     It supposes the ProductionManager, TransformationManager and that DataManagement/FileCatalog services running
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()

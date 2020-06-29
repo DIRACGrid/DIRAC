@@ -8,6 +8,9 @@
     A "InProcess" CE instance submits jobs in the current process.
     This is the standard "inner CE" invoked from the JobAgent, main alternative being the PoolCE
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

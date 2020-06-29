@@ -1,5 +1,8 @@
 """Unit tests of MQConsumer interface in the DIRAC.Resources.MessageQueue.MQConsumer
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import unittest
 from DIRAC import S_OK, S_ERROR

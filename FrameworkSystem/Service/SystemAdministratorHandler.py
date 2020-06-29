@@ -1,5 +1,8 @@
 """ SystemAdministrator service is a tool to control and monitor the DIRAC services and agents
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

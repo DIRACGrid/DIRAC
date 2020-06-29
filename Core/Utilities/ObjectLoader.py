@@ -1,5 +1,8 @@
 """ An utility to load modules and objects in DIRAC and extensions, being sure that the extensions are considered
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

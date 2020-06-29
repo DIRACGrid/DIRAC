@@ -7,6 +7,9 @@ https://docs.google.com/document/d/1yzCvKpxsbcQC5K9MyvXc-vBF1HGPBk4vhjw3MEXoXf8
 When this is used, the OccupancyLFN has to be the full HTTP(s) URL
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import requests
 

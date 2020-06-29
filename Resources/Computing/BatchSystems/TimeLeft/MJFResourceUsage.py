@@ -1,6 +1,9 @@
 """ The Machine/Job Features TimeLeft utility interrogates the MJF values
     for the current CPU and Wallclock consumed, as well as their limits.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

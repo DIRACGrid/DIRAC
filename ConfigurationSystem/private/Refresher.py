@@ -1,6 +1,9 @@
 """ Refresh local CS (if needed)
     In every gConfig
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

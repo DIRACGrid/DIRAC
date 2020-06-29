@@ -2,6 +2,9 @@
 It keeps the service configuration parameters like maximum running threads, number of processes, etc. ,
 which can be configured in CS.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

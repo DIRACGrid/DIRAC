@@ -8,6 +8,9 @@
   :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

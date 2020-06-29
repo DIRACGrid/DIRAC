@@ -1,6 +1,8 @@
 # TO-DO: to be moved to tests directory
 
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 import cmd
 import sys
 import os.path

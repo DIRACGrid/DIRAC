@@ -4,6 +4,8 @@
     class which is the base class for the main Workflow classes.
 """
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 from past.builtins import long
 from DIRAC.Core.Workflow.Utility import *
 

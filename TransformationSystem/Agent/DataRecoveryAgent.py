@@ -52,6 +52,9 @@ Requirements/Assumptions:
   removed from the configuration, otherwise no transformations of this type will be treated.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from collections import defaultdict
 import time

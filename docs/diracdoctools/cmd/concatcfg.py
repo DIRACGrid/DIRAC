@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 """script to concatenate the dirac.cfg file's Systems sections with the content of the ConfigTemplate.cfg files."""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from collections import OrderedDict
 import logging

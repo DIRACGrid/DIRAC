@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """ Create a DIRAC MoveReplica request to be executed by the RMS
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id $"
 

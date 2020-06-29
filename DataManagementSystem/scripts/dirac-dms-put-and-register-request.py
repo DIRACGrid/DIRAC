@@ -4,6 +4,9 @@
   warning: make sure the file you want to put is accessible from DIRAC production hosts,
            i.e. put file on network fs (AFS or NFS), otherwise operation will fail!!!
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id: $"
 
 import os

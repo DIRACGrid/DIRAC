@@ -2,6 +2,9 @@
   The InputData Optimizer Executor queries the file catalog for specified job input data and adds the
   relevant information to the job optimizer parameters to be used during the scheduling decision.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

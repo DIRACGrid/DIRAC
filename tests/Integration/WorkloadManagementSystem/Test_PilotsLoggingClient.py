@@ -3,6 +3,9 @@
 
     It supposes that the DB is present, and that the service is running
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import unittest
 import sys

@@ -1,5 +1,8 @@
 """ Collection of utilities for dealing with security files (i.e. proxy files)
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

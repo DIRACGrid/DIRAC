@@ -2,6 +2,9 @@
      It is important to note that in the FCConditionParser, the plugin is called for each
      and every lfn. This greatly simplifies the development of the plugin.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 

@@ -5,6 +5,8 @@
 
 # try: # this part to import as part of the DIRAC framework
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 import xml.sax
 from xml.sax.handler import ContentHandler
 

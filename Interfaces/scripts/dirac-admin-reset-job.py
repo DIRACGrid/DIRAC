@@ -8,6 +8,8 @@
   Reset a job or list of jobs in the WMS
 """
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script

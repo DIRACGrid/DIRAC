@@ -1,6 +1,9 @@
 """ Just listing the possible Properties
 This module contains list of Properties that can be assigned to users and groups
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
