@@ -1,3 +1,18 @@
+[v7r1p6]
+
+*Framework
+CHANGE: (#4643) BundleDeliveryClient: inheriting from Client
+
+*SMS
+FIX: (#4645) StorageManagementDB - drop the tables in the correct order to avoid foreign key errors
+
+*TS
+NEW: (#4641) TransformationCleaningAgent will (re)clean very old transformations that are still in the system
+
+*tests
+FIX: (#4645) dropDBs uses real array;
+FIX: (#4645) remove readonly variables
+
 [v7r1p5]
 
 *Framework
