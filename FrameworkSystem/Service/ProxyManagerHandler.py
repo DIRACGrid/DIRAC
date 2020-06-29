@@ -91,7 +91,7 @@ class ProxyManagerHandler(RequestHandler):
   def export_requestDelegationUpload(self, requestedUploadTime, diracGroup=None):
     """ Request a delegation. Send a delegation request to client
 
-	:param int requestedUploadTime: requested live time
+        :param int requestedUploadTime: requested live time
 
         :return: S_OK(dict)/S_ERROR() -- dict contain id and proxy as string of the request
     """
@@ -126,7 +126,7 @@ class ProxyManagerHandler(RequestHandler):
     """ Upload result of delegation
 
         :param int,long requestId: identity number
-	:param str pemChain: certificate as string
+        :param str pemChain: certificate as string
 
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies
     """
@@ -157,8 +157,8 @@ class ProxyManagerHandler(RequestHandler):
   def __checkProperties(self, requestedUserDN, requestedUserGroup):
     """ Check the properties and return if they can only download limited proxies if authorized
 
-	:param str requestedUserDN: user DN
-	:param str requestedUserGroup: DIRAC group
+        :param str requestedUserDN: user DN
+        :param str requestedUserGroup: DIRAC group
 
         :return: S_OK(boolean)/S_ERROR()
     """
@@ -202,13 +202,13 @@ class ProxyManagerHandler(RequestHandler):
   def __getProxy(self, userDN, userGroup, requestPem, requiredLifetime, forceLimited):
     """ Internal to get a proxy
 
-	:param str userDN: user DN
-	:param str userGroup: DIRAC group
-	:param str requestPem: dump of request certificate
-	:param int requiredLifetime: requested live time of proxy
+        :param str userDN: user DN
+        :param str userGroup: DIRAC group
+        :param str requestPem: dump of request certificate
+        :param int requiredLifetime: requested live time of proxy
         :param boolean forceLimited: limited proxy
 
-	:return: S_OK(str)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     retVal = self.__proxyDB.getProxy(userDN, userGroup, requiredLifeTime=requiredLifetime)
     if not retVal['OK']:
@@ -224,8 +224,8 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK(retVal['Value'])
 
   types_getVOMSProxy = [six.string_types, six.string_types,
-			six.string_types, six.integer_types,
-			[six.string_types, type(None), bool]]
+                        six.string_types, six.integer_types,
+                        [six.string_types, type(None), bool]]
 
   def export_getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup
@@ -259,16 +259,16 @@ class ProxyManagerHandler(RequestHandler):
     # If possible we return a proxy 1.5 longer than requested
     requiredLifetime = int(min(secsLeft, requiredLifetime * self.__maxExtraLifeFactor))
     return chain.generateChainFromRequestString(requestPem,
-						lifetime=requiredLifetime,
-						requireLimited=forceLimited)
+                                                lifetime=requiredLifetime,
+                                                requireLimited=forceLimited)
 
   types_setPersistency = [six.string_types, six.string_types, bool]
 
   def export_setPersistency(self, userDN, userGroup, persistentFlag):
     """ Set the persistency for a given dn/group
 
-	:param str userDN: user DN
-	:param str userGroup: DIRAC group
+        :param str userDN: user DN
+        :param str userGroup: DIRAC group
         :param boolean persistentFlag: if proxy persistent
 
         :return: S_OK()/S_ERROR()
@@ -309,8 +309,8 @@ class ProxyManagerHandler(RequestHandler):
   def export_deleteProxy(self, userDN, userGroup):
     """ Delete a proxy from the DB
 
-	:param str userDN: user DN
-	:param str userGroup: DIRAC group
+        :param str userDN: user DN
+        :param str userGroup: DIRAC group
 
         :return: S_OK()/S_ERROR()
     """
@@ -331,8 +331,8 @@ class ProxyManagerHandler(RequestHandler):
 
         :param dict selDict: selection fields
         :param list,tuple sortDict: sorting fields
-	:param int start: search limit start
-	:param int start: search limit amount
+        :param int start: search limit start
+        :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
@@ -348,8 +348,8 @@ class ProxyManagerHandler(RequestHandler):
 
         :param dict selDict: selection fields
         :param list,tuple sortDict: search filter
-	:param int start: search limit start
-	:param int start: search limit amount
+        :param int start: search limit start
+        :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
@@ -360,9 +360,9 @@ class ProxyManagerHandler(RequestHandler):
   def export_generateToken(self, requesterDN, requesterGroup, tokenUses):
     """ Generate tokens for proxy retrieval
 
-	:param str requesterDN: user DN
-	:param str requesterGroup: DIRAC group
-	:param int tokenUses: number of uses
+        :param str requesterDN: user DN
+        :param str requesterGroup: DIRAC group
+        :param int tokenUses: number of uses
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain token, number uses
     """
@@ -400,8 +400,8 @@ class ProxyManagerHandler(RequestHandler):
     return self.__getProxy(userDN, userGroup, requestPem, requiredLifetime, True)
 
   types_getVOMSProxyWithToken = [six.string_types, six.string_types,
-				 six.string_types, six.integer_types,
-				 [six.string_types, type(None)]]
+                                 six.string_types, six.integer_types,
+                                 [six.string_types, type(None)]]
 
   def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup

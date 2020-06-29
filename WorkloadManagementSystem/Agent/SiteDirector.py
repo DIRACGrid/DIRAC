@@ -536,7 +536,7 @@ class SiteDirector(AgentModule):
       totalWaitingPilots = 0
       manyWaitingPilotsFlag = False
       if self.pilotWaitingFlag:
-	tqIDList = list(additionalInfo)
+        tqIDList = list(additionalInfo)
         result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
                                             'Status': WAITING_PILOT_STATUS},
                                            None)

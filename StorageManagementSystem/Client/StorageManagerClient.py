@@ -223,5 +223,5 @@ class StorageManagerClient(Client):
   """
 
   def __init__(self, **kwargs):
-    Client.__init__(self, **kwargs)
+    super(StorageManagerClient, self).__init__(**kwargs)
     self.setServer('StorageManagement/StorageManager')

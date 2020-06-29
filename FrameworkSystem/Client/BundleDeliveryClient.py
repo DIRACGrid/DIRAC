@@ -21,7 +21,8 @@ __RCSID__ = "$Id$"
 class BundleDeliveryClient(Client):
 
   def __init__(self, transferClient=False, **kwargs):
-    Client.__init__(self, **kwargs)
+    super(BundleDeliveryClient, self).__init__(**kwargs)
+    self.setServer('Framework/BundleDelivery')
     self.transferClient = transferClient
     self.log = gLogger.getSubLogger("BundleDelivery")
 

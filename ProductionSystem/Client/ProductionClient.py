@@ -3,10 +3,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ProductionSystem.Utilities.StateMachine import ProductionsStateMachine
 
 
+@createClient('Framework/BundleDelivery')
 class ProductionClient(Client):
 
   """ Exposes the functionality available in the ProductionSystem/ProductionManagerHandler
@@ -16,7 +17,7 @@ class ProductionClient(Client):
     """ Simple constructor
     """
 
-    Client.__init__(self, **kwargs)
+    super(ProductionClient, self).__init__(**kwargs)
     self.setServer('Production/ProductionManager')
     self.prodDescription = {}
     self.stepCounter = 1
