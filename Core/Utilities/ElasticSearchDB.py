@@ -96,6 +96,30 @@ class ElasticSearchDB(object):
     return self.__indexPrefix
 
   ########################################################################
+  def update(self, index, doctype='_doc', query=None, updateByQuery=True, id=None):
+    """ Executes an update of a document, and returns S_OK/S_ERROR
+    :param self: self reference
+    :param basestring index: index name
+    :param basestring doctype: type of document
+    :param dict query: It is the query in ElasticSearch DSL language
+    :param bool updateByQuery: A bool to determine updation by update by query or index values using index function.
+    :param int id: ID for the document to be created.
+    """
+
+    sLog.debug("Updating %s/%s with %s, updateByQuery=%s, id=%s" % (index, doctype, query, updateByQuery, id))
+
+    if not index or not query:
+      return S_ERROR("Missing index or query")
+
+    try:
+      if updateByQuery:
+        esDSLQueryResult = self.__client.update_by_query(index=index, doc_type=doctype, body=query)
+      else:
+        esDSLQueryResult = self.__client.index(index=index, doc_type=doctype, body=query, id=id)
+      return S_OK(esDSLQueryResult)
+    except RequestError as re:
+      return S_ERROR(re)
+
   def query(self, index, query):
     """ Executes a query and returns its result (uses ES DSL language).
 
@@ -235,21 +259,29 @@ class ElasticSearchDB(object):
 
     return S_ERROR(retVal)
 
-  def index(self, indexName, doc_type, body):
+  def index(self, indexName, doc_type='_doc', body=None, docID=None):
     """
-    :param str indexName: the name of the index to be used...
+    :param str indexName: the name of the index to be used
     :param str doc_type: the type of the document
-    :param dict body: the data which will be indexed
+    :param dict body: the data which will be indexed (basically the JSON)
+    :param int id: optional document id
     :return: the index name in case of success.
     """
+
+    sLog.debug("Indexing %s/%s with %s, id=%s" % (indexName, doc_type, body, docID))
+
+    if not indexName or not body:
+      return S_ERROR("Missing index or body")
+
     try:
       res = self.__client.index(index=indexName,
                                 doc_type=doc_type,
-                                body=body)
+                                body=body,
+                                id=docID)
     except TransportError as e:
       return S_ERROR(e)
 
-    if res.get('created') or res.get('result') == 'created':
+    if res.get('created') or res.get('result') in ('created', 'updated'):
       # the created index exists but the value can be None.
       return S_OK(indexName)
 
