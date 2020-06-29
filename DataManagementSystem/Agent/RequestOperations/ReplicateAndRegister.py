@@ -41,6 +41,8 @@ from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
 
 def filterReplicas(opFile, logger=None, dataManager=None):
   """ filter out banned/invalid source SEs """
@@ -157,24 +159,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     :param str csPath: CS path for this handler
     """
     super(ReplicateAndRegister, self).__init__(operation, csPath)
-    # # own gMonitor stuff for files
-    gMonitor.registerActivity("ReplicateAndRegisterAtt", "Replicate and register attempted",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("ReplicateOK", "Replications successful",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("ReplicateFail", "Replications failed",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RegisterOK", "Registrations successful",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RegisterFail", "Registrations failed",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    # # for FTS
-    gMonitor.registerActivity("FTSScheduleAtt", "Files schedule attempted",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("FTSScheduleOK", "File schedule successful",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("FTSScheduleFail", "File schedule failed",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+
     # # SE cache
 
     # Clients
@@ -182,6 +167,31 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
   def __call__(self):
     """ call me maybe """
+
+    # The flag  'rmsMonitoring' is set by the RequestTask and is False by default.
+    # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+    else:
+      # # own gMonitor stuff for files
+      gMonitor.registerActivity("ReplicateAndRegisterAtt", "Replicate and register attempted",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("ReplicateOK", "Replications successful",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("ReplicateFail", "Replications failed",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RegisterOK", "Registrations successful",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RegisterFail", "Registrations failed",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      # # for FTS
+      gMonitor.registerActivity("FTSScheduleAtt", "Files schedule attempted",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("FTSScheduleOK", "File schedule successful",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("FTSScheduleFail", "File schedule failed",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+
     # # check replicas first
     checkReplicas = self.__checkReplicas()
     if not checkReplicas["OK"]:
@@ -212,7 +222,12 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       waitingFiles[failedLFN].Error = errStr
       if reMissing.search(errStr.lower()):
         self.log.error("File does not exists", failedLFN)
-        gMonitor.addMark("ReplicateFail", len(targetSESet))
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
+        else:
+          gMonitor.addMark("ReplicateFail", len(targetSESet))
         waitingFiles[failedLFN].Status = "Failed"
 
     for successfulLFN, reps in replicas["Value"]["Successful"].iteritems():
@@ -342,11 +357,17 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     # Dict which maps the FileID to the object
     rmsFilesIds = {}
 
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.addRecord(
+          self.createRMSRecord("Attempted", len(self.getWaitingFilesList()))
+      )
+
     for opFile in self.getWaitingFilesList():
       rmsFilesIds[opFile.FileID] = opFile
 
       opFile.Error = ''
-      gMonitor.addMark("FTSScheduleAtt")
+      if not self.rmsMonitoring:
+        gMonitor.addMark("FTSScheduleAtt")
       # # check replicas
       replicas = self._filterReplicas(opFile)
       if not replicas["OK"]:
@@ -368,7 +389,12 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
           toSchedule[opFile.LFN] = [opFile, validTargets]
 
       else:
-        gMonitor.addMark("FTSScheduleFail")
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
+        else:
+          gMonitor.addMark("FTSScheduleFail")
         if noMetaReplicas:
           self.log.warn("unable to schedule file",
                         "'%s': couldn't get metadata at %s" % (opFile.LFN, ','.join(noMetaReplicas)))
@@ -391,6 +417,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
           self.log.warn(
               "unable to schedule %s, could not get a PFN at %s" %
               (opFile.LFN, ','.join(noPFN)))
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
 
     res = self._addMetadataToFiles(toSchedule)
     if not res['OK']:
@@ -428,13 +457,22 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
       self.log.info("%d files have been scheduled to FTS3" % len(fts3Files))
 
+      if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord(
+            self.createRMSRecord("Successful", len(fts3Files))
+        )
+
       for ftsFile in fts3Files:
         opFile = rmsFilesIds[ftsFile.rmsFileID]
-        gMonitor.addMark("FTSScheduleOK", 1)
+        if not self.rmsMonitoring:
+          gMonitor.addMark("FTSScheduleOK", 1)
         opFile.Status = "Scheduled"
         self.log.debug("%s has been scheduled for FTS" % opFile.LFN)
     else:
       self.log.info("No files to schedule after metadata checks")
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
 
     # Just in case some transfers could not be scheduled, try them with RM
     return self.dmTransfer(fromFTS=True)
@@ -448,8 +486,15 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       # # check source se for read
       bannedSource = self.checkSEsRSS(sourceSE, 'ReadAccess')
       if not bannedSource["OK"]:
-        gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
-        gMonitor.addMark("ReplicateFail", len(self.operation))
+        if self.rmsMonitoring:
+          for status in ["Attempted", "Failed"]:
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord(status, len(self.operation))
+            )
+          self.rmsMonitoringReporter.commit()
+        else:
+          gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
+          gMonitor.addMark("ReplicateFail", len(self.operation))
         return bannedSource
 
       if bannedSource["Value"]:
@@ -460,8 +505,15 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     # # check targetSEs for write
     bannedTargets = self.checkSEsRSS()
     if not bannedTargets['OK']:
-      gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
-      gMonitor.addMark("ReplicateFail", len(self.operation))
+      if self.rmsMonitoring:
+        for status in ["Attempted", "Failed"]:
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord(status, len(self.operation))
+          )
+        self.rmsMonitoringReporter.commit()
+      else:
+        gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
+        gMonitor.addMark("ReplicateFail", len(self.operation))
       return bannedTargets
 
     if bannedTargets['Value']:
@@ -481,6 +533,12 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       self.log.info("Transferring files using Data manager...")
     errors = defaultdict(int)
     delayExecution = 0
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.addRecord(
+          self.createRMSRecord("Attempted", len(waitingFiles))
+      )
+
     for opFile in waitingFiles:
       if opFile.Error in ("Couldn't get metadata",
                           "File doesn't exist",
@@ -489,7 +547,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         err = "File already in error status"
         errors[err] += 1
 
-      gMonitor.addMark("ReplicateAndRegisterAtt", 1)
+      if not self.rmsMonitoring:
+        gMonitor.addMark("ReplicateAndRegisterAtt", 1)
+
       opFile.Error = ''
       lfn = opFile.LFN
 
@@ -506,7 +566,12 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       noActiveReplicas = replicas.get('NoActiveReplicas')
 
       if not validReplicas:
-        gMonitor.addMark("ReplicateFail")
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
+        else:
+          gMonitor.addMark("ReplicateFail")
         if noMetaReplicas:
           err = "Couldn't get metadata"
           errors[err] += 1
@@ -570,17 +635,21 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
               repTime = res["Value"]["Successful"][lfn]["replicate"]
               prString = "file %s replicated at %s in %s s." % (lfn, targetSE, repTime)
 
-              gMonitor.addMark("ReplicateOK", 1)
+              if not self.rmsMonitoring:
+                gMonitor.addMark("ReplicateOK", 1)
 
               if "register" in res["Value"]["Successful"][lfn]:
 
-                gMonitor.addMark("RegisterOK", 1)
+                if not self.rmsMonitoring:
+                  gMonitor.addMark("RegisterOK", 1)
+
                 regTime = res["Value"]["Successful"][lfn]["register"]
                 prString += ' and registered in %s s.' % regTime
                 self.log.info(prString)
               else:
 
-                gMonitor.addMark("RegisterFail", 1)
+                if not self.rmsMonitoring:
+                  gMonitor.addMark("RegisterFail", 1)
                 prString += " but failed to register"
                 self.log.warn(prString)
 
@@ -593,12 +662,14 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             else:
 
               self.log.error("Failed to replicate", "%s to %s" % (lfn, targetSE))
-              gMonitor.addMark("ReplicateFail", 1)
+              if not self.rmsMonitoring:
+                gMonitor.addMark("ReplicateFail", 1)
               opFile.Error = "Failed to replicate"
 
           else:
 
-            gMonitor.addMark("ReplicateFail", 1)
+            if not self.rmsMonitoring:
+              gMonitor.addMark("ReplicateFail", 1)
             reason = res["Value"]["Failed"][lfn]
             self.log.error(
                 "Failed to replicate and register", "File %s at %s:" %
@@ -607,19 +678,32 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
         else:
 
-          gMonitor.addMark("ReplicateFail", 1)
+          if not self.rmsMonitoring:
+            gMonitor.addMark("ReplicateFail", 1)
           opFile.Error = "DataManager error: %s" % res["Message"]
           self.log.error("DataManager error", res["Message"])
 
       if not opFile.Error:
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Successful", 1)
+          )
+
         if len(self.operation.targetSEList) > 1:
           self.log.info("file %s has been replicated to all targetSEs" % lfn)
         opFile.Status = "Done"
+      elif self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord(
+            self.createRMSRecord("Failed", 1)
+        )
     # Log error counts
     if delayExecution:
       self.log.info("Delay execution of the request by %d minutes" % delayExecution)
       self.request.delayNextExecution(delayExecution)
     for error, count in errors.iteritems():
       self.log.error(error, 'for %d files' % count)
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
 
     return S_OK()

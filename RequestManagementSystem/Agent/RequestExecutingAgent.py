@@ -43,6 +43,11 @@ from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities import Time, Network
+
 from DIRAC.Core.Utilities.DErrno import cmpError
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
@@ -157,13 +162,25 @@ class RequestExecutingAgent(AgentModule):
                                                                      self.timeOuts[opHandler]['PerOperation'],
                                                                      self.timeOuts[opHandler]['PerFile']))
 
-    # # common monitor activity
-    gMonitor.registerActivity("Iteration", "Agent Loops",
-                              "RequestExecutingAgent", "Loops/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("Processed", "Request Processed",
-                              "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("Done", "Request Completed",
-                              "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
+    # Check whether the ES flag is enabled so we can send the data accordingly.
+    # This flag can be enabled inside /Operations/Defaults or RequestExecutingAgent of the 'cfg' file.
+    self.rmsMonitoring = (
+        Operations().getValue("EnableActivityMonitoring", False) or
+        self.am_getOption("EnableActivityMonitoring", False)
+    )
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+      gThreadScheduler.addPeriodicTask(100, self.__rmsMonitoringReporting)
+    else:
+      # # common monitor activity
+      gMonitor.registerActivity("Iteration", "Agent Loops",
+                                "RequestExecutingAgent", "Loops/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("Processed", "Request Processed",
+                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("Done", "Request Completed",
+                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
+
     # # create request dict
     self.__requestCache = dict()
 
@@ -260,7 +277,8 @@ class RequestExecutingAgent(AgentModule):
 
   def execute(self):
     """ read requests from RequestClient and enqueue them into ProcessPool """
-    gMonitor.addMark("Iteration", 1)
+    if not self.rmsMonitoring:
+      gMonitor.addMark("Iteration", 1)
     # # requests (and so tasks) counter
     taskCounter = 0
     while taskCounter < self.__requestsPerCycle:
@@ -342,7 +360,8 @@ class RequestExecutingAgent(AgentModule):
                                                             kwargs={"requestJSON": requestJSON,
                                                                     "handlersDict": self.handlersDict,
                                                                     "csPath": self.__configPath,
-                                                                    "agentName": self.agentName},
+                                                                    "agentName": self.agentName,
+                                                                    "rmsMonitoring": self.rmsMonitoring},
                                                             taskID=taskID,
                                                             blocking=True,
                                                             usePoolCallbacks=True,
@@ -352,7 +371,18 @@ class RequestExecutingAgent(AgentModule):
             else:
               self.log.debug("successfully enqueued task", "'%s'" % taskID)
               # # update monitor
-              gMonitor.addMark("Processed", 1)
+              if self.rmsMonitoring:
+                self.rmsMonitoringReporter.addRecord({
+                    "timestamp": int(Time.toEpoch()),
+                    "host": Network.getFQDN(),
+                    "objectType": "Request",
+                    "status": "Attempted",
+                    "objectID": request.RequestID,
+                    "nbObject": 1
+                })
+              else:
+                gMonitor.addMark("Processed", 1)
+
               # # update request counter
               taskCounter += 1
               # # task created, a little time kick to proceed
@@ -418,3 +448,11 @@ class RequestExecutingAgent(AgentModule):
     """
     self.log.error("exceptionCallback:", "%s was hit by exception %s" % (taskID, taskException))
     self.putRequest(taskID)
+
+  def __rmsMonitoringReporting(self):
+    """ This method is called by the ThreadScheduler as a periodic task in order to commit the collected data which
+        is done by the MonitoringReporter and is send to the 'RMSMonitoring' type.
+        :return: True / False
+    """
+    result = self.rmsMonitoringReporter.commit()
+    return result['OK']

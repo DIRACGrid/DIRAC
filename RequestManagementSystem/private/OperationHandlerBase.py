@@ -59,6 +59,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSA
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -87,6 +88,8 @@ class OperationHandlerBase(object):
     # # placeholders for operation and request
     self.operation = None
     self.request = None
+
+    self.rmsMonitoring = False
 
     self.dm = DataManager()
     self.fc = FileCatalog()
@@ -236,3 +239,26 @@ class OperationHandlerBase(object):
     should return S_OK/S_ERROR
     """
     raise NotImplementedError("Implement me please!")
+
+  def createRMSRecord(self, status, nbObject):
+    """
+    This method is used to create a record given some parameters for sending it to the ES backend.
+    It is used inside DMS/Agent/RequestOperations and this method is designed particularly for file
+    type of objects.
+
+    :param status: This can be one of these i.e. Attempted, Failed, or Successful.
+    :param nbObject: This is number of objects in question.
+
+    :returns: a dictionary.
+    """
+    record = {
+        "timestamp": int(Time.toEpoch()),
+        "host": Network.getFQDN(),
+        "objectType": "File",
+        "operationType": self.operation.Type,
+        "status": status,
+        "nbObject": nbObject,
+        "parentID": self.operation.OperationID
+    }
+
+    return record

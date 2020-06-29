@@ -30,6 +30,8 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
 ########################################################################
 
 
@@ -50,16 +52,23 @@ class RegisterFile(OperationHandlerBase):
 
     """
     OperationHandlerBase.__init__(self, operation, csPath)
-    # # RegisterFile specific monitor info
-    gMonitor.registerActivity("RegisterAtt", "Attempted file registrations",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RegisterOK", "Successful file registrations",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RegisterFail", "Failed file registrations",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
 
   def __call__(self):
     """ call me maybe """
+
+    # The flag  'rmsMonitoring' is set by the RequestTask and is False by default.
+    # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+    else:
+      # # RegisterFile specific monitor info
+      gMonitor.registerActivity("RegisterAtt", "Attempted file registrations",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RegisterOK", "Successful file registrations",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RegisterFail", "Failed file registrations",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+
     # # counter for failed files
     failedFiles = 0
     # # catalog(s) to use
@@ -69,10 +78,17 @@ class RegisterFile(OperationHandlerBase):
     dm = DataManager(catalogs=catalogs)
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.addRecord(
+          self.createRMSRecord("Attempted", len(waitingFiles))
+      )
+
     # # loop over files
     for opFile in waitingFiles:
 
-      gMonitor.addMark("RegisterAtt", 1)
+      if not self.rmsMonitoring:
+        gMonitor.addMark("RegisterAtt", 1)
 
       # # get LFN
       lfn = opFile.LFN
@@ -83,7 +99,12 @@ class RegisterFile(OperationHandlerBase):
       # # check results
       if not registerFile["OK"] or lfn in registerFile["Value"]["Failed"]:
 
-        gMonitor.addMark("RegisterFail", 1)
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
+        else:
+          gMonitor.addMark("RegisterFail", 1)
 #        self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterFile" )
 
         reason = str(registerFile.get("Message", registerFile.get("Value", {}).get("Failed", {}).get(lfn, 'Unknown')))
@@ -101,12 +122,20 @@ class RegisterFile(OperationHandlerBase):
 
       else:
 
-        gMonitor.addMark("RegisterOK", 1)
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Successful", 1)
+          )
+        else:
+          gMonitor.addMark("RegisterOK", 1)
 #        self.dataLoggingClient().addFileRecord( lfn, "Register", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterFile" )
 
         self.log.verbose("file %s has been registered at %s" %
                          (lfn, ','.join(catalogs) if catalogs else "all catalogs"))
         opFile.Status = "Done"
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
 
     # # final check
     if failedFiles:
