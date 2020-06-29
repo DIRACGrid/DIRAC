@@ -106,12 +106,12 @@ def __downloadPilotScripts(basepath, diracpath):
 
   context = ssl._create_unverified_context()
   for fileName in ['dirac-pilot.py', 'dirac-install.py',
-		   'pilotCommands.py', 'pilotTools',
-		   'MessageSender', 'PilotLogger.py', 'PilotLoggerTools.py']:
+                   'pilotCommands.py', 'pilotTools',
+                   'MessageSender', 'PilotLogger.py', 'PilotLoggerTools.py']:
     remoteFile = url_library_urlopen(
-	os.path.join('https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/', fileName),
-	timeout=10,
-	context=context)
+        os.path.join('https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/', fileName),
+        timeout=10,
+        context=context)
     with open(fileName, 'wb') as localFile:
       localFile.write(remoteFile.read())
 
