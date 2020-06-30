@@ -17,7 +17,6 @@ from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
@@ -35,6 +34,7 @@ class BaseClient(object):
   KW_TIMEOUT = "timeout"
   KW_SETUP = "setup"
   KW_VO = "VO"
+  KW_DELEGATED_ID = "delegatedID"
   KW_DELEGATED_DN = "delegatedDN"
   KW_DELEGATED_GROUP = "delegatedGroup"
   KW_IGNORE_GATEWAYS = "ignoreGateways"
@@ -256,17 +256,19 @@ class BaseClient(object):
       self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]
 
     # Are we delegating something?
+    delegatedID = self.kwargs.get(self.KW_DELEGATED_ID) or self.__threadConfig.getID()
     delegatedDN = self.kwargs.get(self.KW_DELEGATED_DN) or self.__threadConfig.getDN()
     delegatedGroup = self.kwargs.get(self.KW_DELEGATED_GROUP) or self.__threadConfig.getGroup()
+
+    if delegatedID:
+      self.kwargs[self.KW_DELEGATED_ID] = delegatedID
     if delegatedDN:
       self.kwargs[self.KW_DELEGATED_DN] = delegatedDN
-      if not delegatedGroup:
-        result = Registry.findDefaultGroupForDN(delegatedDN)
-        if not result['OK']:
-          return result
-        delegatedGroup = result['Value']
+    if delegatedGroup:
       self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
-      self.__extraCredentials = (delegatedDN, delegatedGroup)
+
+    if delegatedID or delegatedDN:
+      self.__extraCredentials = (delegatedID or delegatedDN, delegatedGroup)
     return S_OK()
 
   def __findServiceURL(self):
