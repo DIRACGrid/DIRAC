@@ -28,6 +28,7 @@ class ThreadConfig(threading.local):
     """ Reset extra information
     """
     self.__DN = False
+    self.__ID = False
     self.__group = False
     self.__deco = False
     self.__setup = False
@@ -74,21 +75,19 @@ class ThreadConfig(threading.local):
     """
     return self.__group
 
-  def setID(self, DN, group):
+  def setID(self, ID):
     """ Set user ID
 
-        :param str DN: user DN
-        :param str group: user group
+        :param str ID: user ID
     """
-    self.__DN = DN
-    self.__group = group
+    self.__ID = ID
 
   def getID(self):
     """ Return user ID
 
-        :return: tuple
+        :return: str
     """
-    return (self.__DN, self.__group)
+    return self.__ID
 
   def setSetup(self, setup):
     """ Set setup name
@@ -109,19 +108,17 @@ class ThreadConfig(threading.local):
 
         :return: tuple
     """
-    return (self.__DN, self.__group, self.__setup)
+    return (self.__ID, self.__DN, self.__group, self.__setup)
 
   def load(self, tp):
     """ Save extra information
 
         :param tuple tp: contain DN, group name, setup name
     """
-    if tp[0]:
-      self.__DN = tp[0]
-    if tp[1]:
-      self.__group = tp[1]
-    if tp[2]:
-      self.__setup = tp[2]
+    self.__ID = tp[0] or self.__ID
+    self.__DN = tp[1] or self.__DN
+    self.__group = tp[2] or self.__group
+    self.__setup = tp[3] or self.__setup
 
 
 def threadDeco(method):
