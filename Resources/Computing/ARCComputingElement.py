@@ -10,16 +10,17 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import stat
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -29,7 +30,7 @@ from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 # arc.Logger_getRootLogger().setThreshold(arc.VERBOSE)
 
 CE_NAME = 'ARC'
-MANDATORY_PARAMETERS = ['Queue']  # Probably not mandatory for ARC CEs
+MANDATORY_PARAMETERS = ['Queue']  # Mandatory for ARC CEs in GLUE2?
 
 
 class ARCComputingElement(ComputingElement):
@@ -105,13 +106,11 @@ class ARCComputingElement(ComputingElement):
     # Default         : Resources/Computing/CEDefaults/XRSLExtraString
     #
     xrslExtraString = ''  # Start with the default value
-    result = getSiteForCE(self.ceHost)
-    self.site = ''
-    if result['OK']:
-      self.site = result['Value']
-    else:
-      gLogger.error("Unknown Site ...")
+    result = getCESiteMapping(self.ceHost)
+    if not result['OK'] or not result['Value']:
+      gLogger.error("Unknown CE ...")
       return
+    self.site = result['Value'][self.ceHost]
     # Now we know the site. Get the grid
     grid = self.site.split(".")[0]
     # The different possibilities that we have agreed upon
@@ -195,6 +194,7 @@ class ARCComputingElement(ComputingElement):
     self.queue = self.ceParameters.get("CEQueueName", self.ceParameters['Queue'])
     if 'GridEnv' in self.ceParameters:
       self.gridEnv = self.ceParameters['GridEnv']
+    return S_OK()
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):
@@ -284,7 +284,7 @@ class ARCComputingElement(ComputingElement):
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobList = [jobIDList]
 
     gLogger.debug("Killing jobs %s" % jobIDList)
@@ -336,9 +336,16 @@ class ARCComputingElement(ComputingElement):
     else:
       # The system which works properly at present for ARC CEs that are configured correctly.
       # But for this we need the VO to be known - ask me (Raja) for the whole story if interested.
-      cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' % (
-          self.ceHost, vo.lower())
-      res = shellCall(0, cmd)
+      # cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' % (
+      #     self.ceHost, vo.lower())
+      if not self.queue:
+        gLogger.error('ARCComputingElement: No queue ...')
+        res = S_ERROR('Unknown queue (%s) failure for site %s' % (self.queue, self.ceHost))
+        return res
+      cmd1 = 'ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135  -b \'o=glue\' "(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:%s))"' % (self.ceHost, vo.lower())
+      cmd2 = ' | grep GLUE2MappingPolicyShareForeignKey | grep %s' % (self.queue)
+      cmd3 = ' | sed \'s/GLUE2MappingPolicyShareForeignKey: /GLUE2ShareID=/\' | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135 -b \'o=glue\'  | egrep \'(ShareWaiting|ShareRunning)\'' % (self.ceHost)
+      res = shellCall(0, cmd1 + cmd2 + cmd3)
       if not res['OK']:
         gLogger.debug("Could not query CE %s - is it down?" % self.ceHost)
         return res
@@ -366,7 +373,7 @@ class ARCComputingElement(ComputingElement):
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobTmpList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobTmpList = [jobIDList]
 
     # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
