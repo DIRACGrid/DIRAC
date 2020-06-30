@@ -14,7 +14,7 @@ from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
@@ -88,7 +88,8 @@ def getGridJobOutput(pilotReference):
     return S_ERROR('Pilot info is empty')
 
   pilotDict = result['Value'][pilotReference]
-  owner = pilotDict['OwnerDN']
+  owner = pilotDict['Owner']
+  ownerDN = pilotDict['OwnerDN']
   group = pilotDict['OwnerGroup']
 
   # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
@@ -100,7 +101,8 @@ def getGridJobOutput(pilotReference):
       resultDict = {}
       resultDict['StdOut'] = stdout
       resultDict['StdErr'] = error
-      resultDict['OwnerDN'] = owner
+      resultDict['Owner'] = owner
+      resultDict['OwnerDN'] = ownerDN
       resultDict['OwnerGroup'] = group
       resultDict['FileList'] = []
       return S_OK(resultDict)
@@ -122,11 +124,13 @@ def getGridJobOutput(pilotReference):
     shutil.rmtree(queueDict['WorkingDirectory'])
     return result
   ce = result['Value']
-  groupVOMS = getGroupOption(group, 'VOMSRole', group)
-  result = gProxyManager.getPilotProxyFromVOMSGroup(owner, groupVOMS)
+  if not getVOMSAttributeForGroup(group):
+    gLogger.error("No voms attribute assigned to group %s when requested pilot proxy." % group)
+    return S_ERROR("Failed to get the pilot's owner proxy")
+  result = gProxyManager.downloadVOMSProxy(owner, group)
   if not result['OK']:
     gLogger.error('Could not get proxy:',
-                  'User "%s" Group "%s" : %s' % (owner, groupVOMS, result['Message']))
+                  'User "%s" Group "%s" : %s' % (owner, group, result['Message']))
     return S_ERROR("Failed to get the pilot's owner proxy")
   proxy = result['Value']
   ce.setProxy(proxy)
@@ -147,7 +151,8 @@ def getGridJobOutput(pilotReference):
   resultDict = {}
   resultDict['StdOut'] = stdout
   resultDict['StdErr'] = error
-  resultDict['OwnerDN'] = owner
+  resultDict['Owner'] = owner
+  resultDict['OwnerDN'] = ownerDN
   resultDict['OwnerGroup'] = group
   resultDict['FileList'] = []
   shutil.rmtree(queueDict['WorkingDirectory'])
@@ -177,8 +182,10 @@ def killPilotsInQueues(pilotRefDict):
 
     # FIXME: quite hacky. Should be either removed, or based on some flag
     if gridType in ["LCG", "CREAM", "ARC", "Globus", "HTCondorCE"]:
-      group = getGroupOption(group, 'VOMSRole', group)
-      ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
+      if not getVOMSAttributeForGroup(group):
+        gLogger.error("No voms attribute assigned to group %s when requested pilot proxy." % group)
+        return S_ERROR("Failed to get the pilot's owner proxy")
+      ret = gProxyManager.downloadVOMSProxy(owner, group)
       if not ret['OK']:
         gLogger.error('Could not get proxy:',
                       'User "%s" Group "%s" : %s' % (owner, group, ret['Message']))

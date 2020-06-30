@@ -303,8 +303,9 @@ class MultiProcessorSiteDirector(SiteDirector):
 
         # Get the working proxy
         cpuTime = queueCPUTime + 86400
-        self.log.verbose("Getting pilot proxy for %s/%s %d long" % (self.pilotDN, self.pilotGroup, cpuTime))
-        result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, cpuTime)
+        self.log.verbose("Getting pilot proxy for",
+                         "%s@%s (%s) %d long" % (self.pilotUser, self.pilotGroup, self.pilotDN, cpuTime))
+        result = gProxyManager.downloadCorrectProxy(self.pilotUser, self.pilotGroup, cpuTime)
         if not result['OK']:
           return result
         self.proxy = result['Value']
