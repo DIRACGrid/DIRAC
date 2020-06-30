@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import os
@@ -14,24 +15,33 @@ from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFact
 certsPath = os.path.join(rootPath, 'DIRAC/Core/Security/test/certs')
 
 
-def sf_getInfoAboutProviders(of, providerName, option, section):
-  if of == 'Proxy' and option == 'all' and section == 'all':
-    if providerName == 'MY_DIRACCA':
-      return S_OK({'ProviderType': 'DIRACCA',
-                   'CertFile': os.path.join(certsPath, 'ca/ca.cert.pem'),
-                   'KeyFile': os.path.join(certsPath, 'ca/ca.key.pem'),
-                   'Supplied': ['O', 'OU', 'CN'],
-                   'Optional': ['emailAddress'],
-                   'DNOrder': ['O', 'OU', 'CN', 'emailAddress'],
-                   'OU': 'CA',
-                   'C': 'DN',
-                   'O': 'DIRACCA'})
-    if providerName == 'MY_PUSP':
-      return S_OK({'ProviderType': 'PUSP', 'ServiceURL': 'https://somedomain'})
+class proxyManager(object):
+  """ Fake proxyManager
+  """
+  def _storeProxy(self, userDN, chain):
+    """ Fake store method
+    """
+    return S_OK()
+
+
+def sf_getProviderInfo(providerName):
+  if providerName == 'MY_DIRACCA':
+    return S_OK({'ProviderType': 'DIRACCA',
+                 'CertFile': os.path.join(certsPath, 'ca/ca.cert.pem'),
+                 'KeyFile': os.path.join(certsPath, 'ca/ca.key.pem'),
+                 'Supplied': ['O', 'OU', 'CN'],
+                 'Optional': ['emailAddress'],
+                 'DNOrder': ['O', 'OU', 'CN', 'emailAddress'],
+                 'OU': 'CA',
+                 'C': 'DN',
+                 'O': 'DIRACCA'})
+  if providerName == 'MY_PUSP':
+    return S_OK({'ProviderType': 'PUSP', 'ServiceURL': 'https://somedomain'})
   return S_ERROR('No proxy provider found')
 
-@mock.patch('DIRAC.Resources.ProxyProvider.ProxyProviderFactory.getInfoAboutProviders',
-            new=sf_getInfoAboutProviders)
+
+@mock.patch('DIRAC.Resources.ProxyProvider.ProxyProviderFactory.getProviderInfo',
+            new=sf_getProviderInfo)
 class ProxyProviderFactoryTest(unittest.TestCase):
   """ Base class for the ProxyProviderFactory test cases
   """
@@ -40,7 +50,7 @@ class ProxyProviderFactoryTest(unittest.TestCase):
     """ Test loading a proxy provider element with everything defined in itself.
     """
     for provider, resultOfGenerateDN in [('MY_DIRACCA', True), ('MY_PUSP', False)]:
-      result = ProxyProviderFactory().getProxyProvider(provider)
+      result = ProxyProviderFactory().getProxyProvider(provider, proxyManager=proxyManager())
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       proxyProviderObj = result['Value']
       result = proxyProviderObj.generateDN(FullName='test', Email='email@test.org')

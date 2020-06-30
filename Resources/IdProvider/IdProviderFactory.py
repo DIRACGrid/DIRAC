@@ -12,7 +12,7 @@ from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProviderInfo
 
 __RCSID__ = "$Id$"
 
@@ -26,15 +26,16 @@ class IdProviderFactory(object):
     self.log = gLogger.getSubLogger('IdProviderFactory')
 
   #############################################################################
-  def getIdProvider(self, idProvider):
+  def getIdProvider(self, idProvider, sessionManager=None):
     """ This method returns a IdProvider instance corresponding to the supplied
         name.
 
-        :param basestring idProvider: the name of the Identity Provider
+        :param str idProvider: the name of the Identity Provider
+        :param object sessionManager: session manager
 
         :return: S_OK(IdProvider)/S_ERROR()
     """
-    result = getInfoAboutProviders(of='Id', providerName=idProvider, option="all", section="all")
+    result = getProviderInfo(idProvider)
     if not result['OK']:
       return result
     pDict = result['Value']
@@ -54,6 +55,7 @@ class IdProviderFactory(object):
     try:
       provider = pClass()
       provider.setParameters(pDict)
+      provider.setManager(sessionManager)
     except Exception as x:
       msg = 'IdProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
       self.log.exception()

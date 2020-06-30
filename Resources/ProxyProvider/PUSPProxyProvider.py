@@ -68,4 +68,7 @@ class PUSPProxyProvider(ProxyProvider):
     if credDict['identity'] != userDN:
       return S_ERROR('Requested DN does not match the obtained one in the PUSP proxy')
 
-    return chain.generateProxyToString(lifeTime=credDict['secondsLeft'])
+    # Store proxy in proxy manager
+    result = self.proxyManager._storeProxy(userDN, chain)
+
+    return S_OK(chain) if result['OK'] else result

@@ -10,7 +10,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsernameInGroup
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
 from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
 
@@ -225,11 +225,8 @@ class FileCatalogClient(FileCatalogClientBase):
     for path in result['Value']['Successful']:
       owner = result['Value']['Successful'][path]['Owner']
       group = result['Value']['Successful'][path]['OwnerGroup']
-      res = getDNForUsername(owner)
-      if res['OK']:
-        result['Value']['Successful'][path]['OwnerDN'] = res['Value'][0]
-      else:
-        result['Value']['Successful'][path]['OwnerDN'] = ''
+      ownerDN = getDNForUsernameInGroup(owner, group).get('Value') or ''
+      result['Value']['Successful'][path]['OwnerDN'] = ownerDN
       result['Value']['Successful'][path]['OwnerRole'] = getVOMSAttributeForGroup(group)
     return result
 
