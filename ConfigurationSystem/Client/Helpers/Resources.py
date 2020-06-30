@@ -465,42 +465,68 @@ def getFilterConfig(filterID):
   return gConfig.getOptionsDict('Resources/LogFilters/%s' % filterID)
 
 
-def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
-  """ Get the information about providers
+def getProvidersForInstance(instance, providerType=None):
+  """ Get providers for instance
 
-      :param basestring of: provider of what(Id, Proxy or etc.) need to look,
-             None, "all" to get list of instance of what this providers
-      :param basestring providerName: provider name,
-             None, "all" to get list of providers names
-      :param basestring option: option name that need to get,
-             None, "all" to get all options in a section
-      :param basestring section: section path in root section of provider,
-             "all" to get options in all sections
+      :param str instance: instance of what this providers
+      :param str providerType: provider type
 
-      :return: S_OK()/S_ERROR()
+      :return: S_OK(list)/S_ERROR()
   """
-  if not of or of == "all":
+  result = gConfig.getSections('%s/%sProviders' % (gBaseResourcesSection, instance))
+  if not result['OK'] or not result['Value'] or (result['OK'] and not providerType):
+    return result
+  data = []
+  for prov in result['Value']:
+    if providerType == gConfig.getValue('%s/%sProviders/%s/ProviderType' %
+                                        (gBaseResourcesSection, instance, prov)):
+      data.append(prov)
+  return S_OK(data)
+
+
+def getProviderByAlias(alias, instance=None):
+  """ Find provider name by alias
+
+      :param str alias: other registered provider name
+      :param str instance: provider of what
+
+      :return: S_OK(str)/S_ERROR()
+  """
+  instances = [instance] or []
+  if not instances:
     result = gConfig.getSections(gBaseResourcesSection)
     if not result['OK']:
       return result
-    return S_OK([i.replace('Providers', '') for i in result['Value']])
-  if not providerName or providerName == "all":
-    return gConfig.getSections('%s/%sProviders' % (gBaseResourcesSection, of))
-  if not option or option == 'all':
-    if not section:
-      return gConfig.getOptionsDict("%s/%sProviders/%s" % (gBaseResourcesSection, of, providerName))
-    elif section == "all":
-      resDict = {}
-      relPath = "%s/%sProviders/%s/" % (gBaseResourcesSection, of, providerName)
-      result = gConfig.getConfigurationTree(relPath)
+    for section in result['Value']:
+      if section[-9:] == 'Providers':
+        instances.append(section[:-9])
+  for instance in instances:
+    result = getProvidersForInstance(instance)
+    if not result['OK']:
+      return result
+    for provider in result['Value']:
+      if alias in gConfig.getValue("%s/%sProviders/%s/Aliases" % (gBaseResourcesSection,
+                                                                  instance, provider), []):
+        return S_OK(provider)
+  return S_ERROR('No found any provider for %s' % alias)
+
+
+def getProviderInfo(provider):
+  """ Get provider info
+
+      :param str provider: provider
+
+      :return: S_OK(dict)/S_ERROR()
+  """
+  result = gConfig.getSections(gBaseResourcesSection)
+  if not result['OK']:
+    return result
+  for section in result['Value']:
+    if section[-9:] == 'Providers':
+      result = getProvidersForInstance(section[:-9])
       if not result['OK']:
         return result
-      for key, value in result['Value'].items():  # can be an iterator
-        if value:
-          resDict[key.replace(relPath, '')] = value
-      return S_OK(resDict)
-    else:
-      return gConfig.getSections('%s/%sProviders/%s/%s/' % (gBaseResourcesSection, of, providerName, section))
-  else:
-    return S_OK(gConfig.getValue('%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, of, providerName,
-                                                              section, option)))
+      if provider in result['Value']:
+        return gConfig.getOptionsDictRecursively("%s/%s/%s/" % (gBaseResourcesSection,
+                                                                section, provider))
+  return S_ERROR('%s provider not found.' % provider)
