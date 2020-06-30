@@ -26,7 +26,6 @@ class Params(object):
   proxyPath = False
   proxyLifeTime = 86400
   enableVOMS = False
-  vomsAttr = None
 
   def setLimited(self, args):
     """ Set limited
@@ -73,15 +72,6 @@ class Params(object):
     self.enableVOMS = True
     return S_OK()
 
-  def setVOMSAttr(self, arg):
-    """ Register CLI switches
-
-        :param str arg: VOMS attribute
-    """
-    self.enableVOMS = True
-    self.vomsAttr = arg
-    return S_OK()
-
   def registerCLISwitches(self):
     """ Register CLI switches
     """
@@ -89,8 +79,6 @@ class Params(object):
     Script.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
     Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
     Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
-    Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
-
 
 params = Params()
 params.registerCLISwitches()
@@ -100,7 +88,7 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   '  %s [option|cfgfile] ... <DN|user> group' % Script.scriptName,
                                   'Arguments:',
                                   '  DN:       DN of the user',
-                                  '  user:     DIRAC user name (will fail if there is more than 1 DN registered)',
+                                  '  user:     DIRAC user name',
                                   '  group:    DIRAC group name']))
 
 Script.parseCommandLine(ignoreErrors=True)
@@ -110,45 +98,27 @@ if len(args) != 2:
   Script.showHelp()
 
 userGroup = str(args[1])
-userDN = str(args[0])
-userName = False
-if userDN.find("/") != 0:
-  userName = userDN
-  retVal = Registry.getDNForUsername(userName)
-  if not retVal['OK']:
-    gLogger.notice("Cannot discover DN for username %s\n\t%s" % (userName, retVal['Message']))
+
+# First argument is user name
+if not str(args[0]).startswith("/"):
+  userName = str(args[0])
+  userDN = None
+else:
+  userDN = str(args[0])
+  result = Registry.getUsernameForDN(userDN)
+  if not result['OK']:
+    gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
     DIRAC.exit(2)
-  DNList = retVal['Value']
-  if len(DNList) > 1:
-    gLogger.notice("Username %s has more than one DN registered" % userName)
-    ind = 0
-    for dn in DNList:
-      gLogger.notice("%d %s" % (ind, dn))
-      ind += 1
-    inp = raw_input("Which DN do you want to download? [default 0] ")
-    if not inp:
-      inp = 0
-    else:
-      inp = int(inp)
-    userDN = DNList[inp]
-  else:
-    userDN = DNList[0]
+  userName = result['Value']
 
 if not params.proxyPath:
-  if not userName:
-    result = Registry.getUsernameForDN(userDN)
-    if not result['OK']:
-      gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
-      DIRAC.exit(2)
-    userName = result['Value']
   params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
 
 if params.enableVOMS:
-  result = gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=params.limited,
-                                           requiredTimeLeft=params.proxyLifeTime,
-                                           requiredVOMSAttribute=params.vomsAttr)
+  result = gProxyManager.downloadVOMSProxy(userDN or userName, userGroup, limited=params.limited,
+                                           requiredTimeLeft=params.proxyLifeTime)
 else:
-  result = gProxyManager.downloadProxy(userDN, userGroup, limited=params.limited,
+  result = gProxyManager.downloadProxy(userDN or userName, userGroup, limited=params.limited,
                                        requiredTimeLeft=params.proxyLifeTime)
 if not result['OK']:
   gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
