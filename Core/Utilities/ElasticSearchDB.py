@@ -21,6 +21,8 @@ from DIRAC.Core.Utilities import Time, DErrno
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 
+sLog = gLogger.getSubLogger(__name__)
+
 class ElasticSearchDB(object):
 
   """
@@ -96,6 +98,20 @@ class ElasticSearchDB(object):
     return self.__indexPrefix
 
   ########################################################################
+  def query(self, index, query):
+    """ Executes a query and returns its result (uses ES DSL language).
+
+    :param self: self reference
+    :param basestring index: index name
+    :param dict query: It is the query in ElasticSearch DSL language
+
+    """
+    try:
+      esDSLQueryResult = self.__client.search(index=index, body=query)
+      return S_OK(esDSLQueryResult)
+    except RequestError as re:
+      return S_ERROR(re)
+
   def update(self, index, doctype='_doc', query=None, updateByQuery=True, id=None):
     """ Executes an update of a document, and returns S_OK/S_ERROR
     :param self: self reference
@@ -116,20 +132,6 @@ class ElasticSearchDB(object):
         esDSLQueryResult = self.__client.update_by_query(index=index, doc_type=doctype, body=query)
       else:
         esDSLQueryResult = self.__client.index(index=index, doc_type=doctype, body=query, id=id)
-      return S_OK(esDSLQueryResult)
-    except RequestError as re:
-      return S_ERROR(re)
-
-  def query(self, index, query):
-    """ Executes a query and returns its result (uses ES DSL language).
-
-    :param self: self reference
-    :param basestring index: index name
-    :param dict query: It is the query in ElasticSearch DSL language
-
-    """
-    try:
-      esDSLQueryResult = self.__client.search(index=index, body=query)
       return S_OK(esDSLQueryResult)
     except RequestError as re:
       return S_ERROR(re)
