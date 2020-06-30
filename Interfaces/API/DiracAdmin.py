@@ -14,22 +14,22 @@ import six
 import os
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
+from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView, ldapSE
+from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 voName = ''
 ret = getProxyInfo(disableVOMS=True)
@@ -63,39 +63,18 @@ class DiracAdmin(API):
 
   #############################################################################
   def uploadProxy(self):
-    """Upload a proxy to the DIRAC WMS.  This method
+    """ Upload a proxy to the DIRAC WMS.  This method
 
-       Example usage:
+        Example usage:
 
-         >>> print diracAdmin.uploadProxy('dteam_pilot')
-         {'OK': True, 'Value': 0L}
+          >>> print diracAdmin.uploadProxy('dteam_pilot')
+          {'OK': True, 'Value': 0L}
 
-       :return: S_OK,S_ERROR
+        :param bool permanent: Indefinitely update proxy
 
-       :param permanent: Indefinitely update proxy
-       :type permanent: boolean
-
+        :return: S_OK,S_ERROR
     """
     return gProxyManager.uploadProxy()
-
-  #############################################################################
-  def setProxyPersistency(self, userDN, userGroup, persistent=True):
-    """Set the persistence of a proxy in the Proxy Manager
-
-       Example usage:
-
-         >>> gLogger.notice(diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True ))
-         {'OK': True }
-
-       :param userDN: User DN
-       :type userDN: string
-       :param userGroup: DIRAC Group
-       :type userGroup: string
-       :param persistent: Persistent flag
-       :type persistent: boolean
-       :return: S_OK,S_ERROR
-    """
-    return gProxyManager.setPersistency(userDN, userGroup, persistent)
 
   #############################################################################
   def checkProxyUploaded(self, userDN, userGroup, requiredTime):
