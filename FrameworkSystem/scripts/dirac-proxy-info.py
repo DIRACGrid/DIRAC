@@ -133,17 +133,16 @@ if params.uploadedInfo:
     if uploadedInfo:
       gLogger.notice("== Proxies uploaded ==")
       maxDNLen = 0
-      maxGroupLen = 0
-      for userDN in uploadedInfo:
+      maxProviderLen = len('ProxyProvider')
+      for userDN, data in uploadedInfo.items():
         maxDNLen = max(maxDNLen, len(userDN))
-        for group in uploadedInfo[userDN]:
-          maxGroupLen = max(maxGroupLen, len(group))
-      gLogger.notice(" %s | %s | Until (GMT)" % ("DN".ljust(maxDNLen), "Group".ljust(maxGroupLen)))
-      for userDN in uploadedInfo:
-        for group in uploadedInfo[userDN]:
-          gLogger.notice(" %s | %s | %s" % (userDN.ljust(maxDNLen),
-                                            group.ljust(maxGroupLen),
-                                            uploadedInfo[userDN][group].strftime("%Y/%m/%d %H:%M")))
+        maxProviderLen = max(maxProviderLen, len(data['provider']))
+      gLogger.notice(" %s | %s | %s | SupportedGroups" % ("DN".ljust(maxDNLen), "ProxyProvider".ljust(maxProviderLen),
+                                                          "Until (GMT)".ljust(16)))
+      for userDN, data in uploadedInfo.items():
+        gLogger.notice(" %s | %s | %s | " % (userDN.ljust(maxDNLen), data['provider'].ljust(maxProviderLen),
+                                             data['expirationtime'].strftime("%Y/%m/%d %H:%M").ljust(16)),
+                       ",".join(data['groups']))
 
 if params.checkValid:
   if infoDict['secondsLeft'] == 0:
