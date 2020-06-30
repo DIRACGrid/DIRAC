@@ -70,10 +70,10 @@ class FTS3ManagerHandler(RequestHandler):
     credProperties = remoteCredentials['properties']
 
     # First, get the DN matching the username
-    res = getDNForUsername(opObj.username)
+    res = getDNsForUsernameInGroup(opObj.username, opObj.userGroup)
     # if we have an error, do not allow
     if not res['OK']:
-      gLogger.error("Error retrieving DN for username", res)
+      gLogger.error("Error retrieving DN for username/group", res)
       return False
 
     # List of DN matching the username
