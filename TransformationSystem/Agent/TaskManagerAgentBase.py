@@ -25,7 +25,7 @@ from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Dictionaries import breakDictionaryIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsernameInGroup, getUsernameForDN
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
@@ -664,7 +664,10 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     owner = resCred['Value']['User']
     ownerGroup = resCred['Value']['Group']
     # returns  a list
-    ownerDN = getDNForUsername(owner)['Value'][0]
+    result = getDNForUsernameInGroup(owner, ownerGroup)
+    if not result['OK']:
+      return result
+    ownerDN = result['Value']
     self.credTuple = (owner, ownerGroup, ownerDN)
     self.log.info("Cred: Tasks will be submitted with the credentials %s:%s" % (owner, ownerGroup))
     return S_OK()
