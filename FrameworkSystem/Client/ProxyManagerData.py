@@ -20,7 +20,7 @@ class ProxyManagerData(object):
   """ Proxy manager client
   """
   # # __usersCache cache, with following:
-  # #   Key: (username, group)
+  # #   Key: (userDN, group)
   # #   Value: dict
   # #       {
   # #         'DN': <certificate DN>,
@@ -113,7 +113,7 @@ class ProxyManagerData(object):
     resDict = {}
     for record in retVal['Value']:
       for group in record['groups']:
-        cacheKey = (record['user'], group)
+        cacheKey = (record['DN'], group)
         resDict[cacheKey] = record
         self.__addUsersCache({cacheKey: record}, self.__getSecondsLeftToExpiration(record['expirationtime']))
     return S_OK(resDict)
@@ -187,30 +187,25 @@ class ProxyManagerData(object):
           res[vo]['Value'][dn]['ActuelRoles'] = list(set(res[vo]['Value'][dn]['ActuelRoles'] + data['Roles']))
     return S_OK(res)
 
-  def userHasProxy(self, user, group, validSeconds=0):
+  def userHasProxy(self, userDN, group, validSeconds=0):
     """ Check if a user-group has a proxy in the proxy management
         Updates internal cache if needed to minimize queries to the service
 
-        :param str user: user name
+        :param str userDN: user DN
         :param str group: user group
         :param int validSeconds: proxy valid time in a seconds
 
         :return: S_OK(bool)/S_ERROR()
     """
-    cacheKey = (user, group)
+    cacheKey = (userDN, group)
     if self.__getUsersCache(cacheKey, validSeconds):
       return S_OK(True)
     # Get list of users from the DB with proxys at least 300 seconds
     gLogger.verbose("Updating list of users in proxy management")
     result = self.__refreshUserCache(validSeconds)
-    if not result['OK']:
-      return result
-    if result['Value'].get(cacheKey):
-      return S_OK(bool(result['Value'].get(cacheKey)))  # if result['OK'] else result
-    result = self.__getRPC().getGroupsStatusByUsername(user, [group])
-    if not result['OK']:
-      return result
-    return S_OK(True if result['Value'][group]['Status'] == "ready" else False)
+    if result.get('Value', {}).get(cacheKey):
+      return S_OK(bool(result['Value'].get(cacheKey)))
+    return result
 
 
 gProxyManagerData = ProxyManagerData()
