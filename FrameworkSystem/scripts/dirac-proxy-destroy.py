@@ -6,18 +6,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
 import os
 
 import DIRAC
-from DIRAC import gLogger, S_OK
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.Base import Script
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security import ProxyInfo
+from DIRAC import gLogger, S_OK
+from DIRAC.Core.Base import Script
+from DIRAC.Core.Security import Locations, ProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+
 
 __RCSID__ = "$Id$"
 
@@ -78,7 +76,7 @@ def getProxyGroups():
 
   user_groups = set()
   for dn in proxies['Value']:
-    dn_groups = set(proxies['Value'][dn].keys())
+    dn_groups = set(proxies['Value'][dn]['groups'])
     user_groups.update(dn_groups)
 
   return user_groups
@@ -96,18 +94,15 @@ def mapVoToGroups(voname):
   return set(vo_dict['Value'])
 
 
-def deleteRemoteProxy(userdn, vogroup):
+def deleteRemoteProxy(userdn):
   """
-  Deletes proxy for a vogroup for the user envoking this function.
+  Deletes proxy for all groups for the user envoking this function.
   Returns a list of all deleted proxies (if any).
   """
-  rpcClient = RPCClient("Framework/ProxyManager")
-  retVal = rpcClient.deleteProxyBundle([(userdn, vogroup)])
-
-  if retVal['OK']:
-    gLogger.notice('Deleted proxy for %s.' % vogroup)
+  if gProxyManager.deleteProxy(userdn)['OK']:
+    gLogger.notice('Deleted proxy %s.' % userdn)
   else:
-    gLogger.error('Failed to delete proxy for %s.' % vogroup)
+    gLogger.error('Failed to delete proxy %s.' % userdn)
 
 
 def deleteLocalProxy(proxyLoc):
@@ -160,7 +155,7 @@ def main():
     if not remote_groups:
       gLogger.notice('No remote proxies found.')
     for vo_group in remote_groups:
-      deleteRemoteProxy(userDN, vo_group)
+      deleteRemoteProxy(userDN)
     # delete local proxy
     deleteLocalProxy(proxyLoc)
   elif options.vos:
@@ -173,7 +168,7 @@ def main():
     if not vo_groups:
       gLogger.notice('You have no proxies registered for any of the specified VOs.')
     for group in vo_groups:
-      deleteRemoteProxy(userDN, group)
+      deleteRemoteProxy(userDN)
   else:
     deleteLocalProxy(proxyLoc)
 
