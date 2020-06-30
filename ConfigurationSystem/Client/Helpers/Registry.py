@@ -10,12 +10,24 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
+from DIRAC.FrameworkSystem.Client.AuthManagerData import gAuthManagerData
 
 __RCSID__ = "$Id$"
 
 # pylint: disable=missing-docstring
 
 gBaseRegistrySection = "/Registry"
+
+
+def getVOMSInfo(vo=None, dn=None):
+  """ Get cached information from VOMS API
+
+      :param list dn: requested DN
+
+      :return: S_OK(dict)/S_ERROR()
+  """
+  return gProxyManagerData.getActualVOMSesDNs(voList=[vo] if vo else vo, dnList=[dn] if dn else dn)
 
 
 def getUsernameForDN(dn, usersList=None):
@@ -35,18 +47,26 @@ def getUsernameForDN(dn, usersList=None):
   for username in usersList:
     if dn in gConfig.getValue("%s/Users/%s/DN" % (gBaseRegistrySection, username), []):
       return S_OK(username)
+
+  # Get users profiles from session manager cache
+  result = gAuthManagerData.getIDsForDN(dn)
+  if result['OK']:
+    for uid in result['Value']:
+      result = getUsernameForID(uid)
+      if result['OK']:
+        return result
+
   return S_ERROR("No username found for dn %s" % dn)
 
 
-def getDNForUsername(username):
-  """ Get user DN for user
+def getDNsForUsernameFromSC(username):
+  """ Find DNs for DIRAC user from CS
 
-      :param str username: user name
+      :param str username: DIRAC user
 
-      :return: S_OK(str)/S_ERROR()
+      :return: list -- contain DNs
   """
-  dnList = gConfig.getValue("%s/Users/%s/DN" % (gBaseRegistrySection, username), [])
-  return S_OK(dnList) if dnList else S_ERROR("No DN found for user %s" % username)
+  return gConfig.getValue("%s/Users/%s/DN" % (gBaseRegistrySection, username), [])
 
 
 def getDNForHost(host):
@@ -60,18 +80,53 @@ def getDNForHost(host):
   return S_OK(dnList) if dnList else S_ERROR("No DN found for host %s" % host)
 
 
-def getGroupsForDN(dn):
+def getGroupsForDN(dn, groupsList=None):
   """ Get all possible groups for DN
 
       :param str dn: user DN
+      :param list groupsList: group list where need to search
 
       :return: S_OK(list)/S_ERROR() -- contain list of groups
   """
   dn = dn.strip()
+  groups = []
+  if not groupsList:
+    result = gConfig.getSections("%s/Groups" % gBaseRegistrySection)
+    if not result['OK']:
+      return result
+    groupsList = result['Value']
+
   result = getUsernameForDN(dn)
   if not result['OK']:
     return result
-  return getGroupsForUser(result['Value'])
+  user = result['Value']
+
+  # Get VOMS information cache
+  result = getVOMSInfo(dn=dn)
+  if not result['OK']:
+    return result
+  vomsData = result['Value']
+
+  result = getVOsWithVOMS()
+  if not result['OK']:
+    return result
+  vomsVOs = result['Value']
+
+  for group in groupsList:
+    if user in getGroupOption(group, 'Users', []):
+      vo = getGroupOption(group, 'VO')
+      # Is VOMS VO?
+      if vo in vomsVOs and vomsData.get(vo) and vomsData[vo]['OK'] and vomsData[vo]['Value']:
+        voData = vomsData[vo]['Value']
+        role = getGroupOption(group, 'VOMSRole')
+        if not role or role in voData[dn]['VOMSRoles']:
+          groups.append(group)
+      else:
+        # If it's not VOMS VO or cannot get information from VOMS
+        groups.append(group)
+
+  groups.sort()
+  return S_OK(list(set(groups))) if groups else S_ERROR('No groups found for %s' % dn)
 
 
 def __getGroupsWithAttr(attrName, value):
@@ -94,14 +149,27 @@ def __getGroupsWithAttr(attrName, value):
   return S_OK(groups) if groups else S_ERROR("No groups found for %s=%s" % (attrName, value))
 
 
-def getGroupsForUser(username):
-  """ Find groups for user
+def getGroupsForUser(username, groupsList=None):
+  """ Find groups for user or if set reseachedGroup check it for user
 
       :param str username: user name
+      :param list groupsList: groups
 
-      :return: S_OK(list)/S_ERROR() -- contain list of groups
+      :return: S_OK(list or bool)/S_ERROR() -- contain list of groups or status group for user
   """
-  return __getGroupsWithAttr('Users', username)
+  if not groupsList:
+    retVal = gConfig.getSections("%s/Groups" % gBaseRegistrySection)
+    if not retVal['OK']:
+      return retVal
+    groupsList = retVal['Value']
+
+  groups = []
+  for group in groupsList:
+    if username in getGroupOption(group, 'Users', []):
+      groups.append(group)
+
+  groups.sort()
+  return S_OK(list(set(groups))) if groups else S_ERROR('No groups found for %s user' % username)
 
 
 def getGroupsForVO(vo):
@@ -203,7 +271,7 @@ def getAllGroups():
   return result['Value'] if result['OK'] else []
 
 
-def getUsersInGroup(groupName, defaultValue=None):
+def getUsersInGroup(group, defaultValue=None):
   """ Find all users for group
 
       :param str group: group name
@@ -211,8 +279,9 @@ def getUsersInGroup(groupName, defaultValue=None):
 
       :return: list
   """
-  option = "%s/Groups/%s/Users" % (gBaseRegistrySection, groupName)
-  return gConfig.getValue(option, [] if defaultValue is None else defaultValue)
+  users = getGroupOption(group, 'Users', [])
+  users.sort()
+  return list(set(users)) or [] if defaultValue is None else defaultValue
 
 
 def getUsersInVO(vo, defaultValue=None):
@@ -223,45 +292,57 @@ def getUsersInVO(vo, defaultValue=None):
 
       :return: list
   """
+  users = []
   result = getGroupsForVO(vo)
-  if not result['OK'] or not result['Value']:
-    return [] if defaultValue is None else defaultValue
-  groups = result['Value']
+  if result['OK'] and result['Value']:
+    for group in result['Value']:
+      users += getUsersInGroup(group)
 
-  userList = []
-  for group in groups:
-    userList += getUsersInGroup(group)
-  return userList
+  users.sort()
+  return list(set(users)) or [] if defaultValue is None else defaultValue
 
 
-def getDNsInVO(vo):
-  """ Get all DNs that have a VO users
+def getDNsInGroup(group, checkStatus=False):
+  """ Find user DNs for DIRAC group
 
-      :param str vo: VO name
-
-      :return: list
-  """
-  DNs = []
-  for user in getUsersInVO(vo):
-    result = getDNForUsername(user)
-    if result['OK']:
-      DNs.extend(result['Value'])
-  return DNs
-
-
-def getDNsInGroup(groupName):
-  """ Find all DNs  for DIRAC group
-
-      :param str groupName: group name
+      :param str group: group name
+      :param bool checkStatus: don't add suspended DNs
 
       :return: list
   """
+  vomsData = {}
+  vo = getGroupOption(group, 'VO')
+
+  # Get VOMS information for VO, if it's VOMS VO
+  result = getVOsWithVOMS(vo)
+  if not result['OK']:
+    return result
+  if result['Value']:
+    result = getVOMSInfo(vo=vo)
+    if not result['OK']:
+      return result
+    vomsData = result['Value']
+
   DNs = []
-  for user in getUsersInGroup(groupName):
-    result = getDNForUsername(user)
-    if result['OK']:
-      DNs.extend(result['Value'])
-  return DNs
+  for username in getGroupOption(group, 'Users', []):
+    if checkStatus and vo in getUserOption(username, 'Suspended', []):
+      continue
+    result = getDNsForUsername(username)
+    if not result['OK']:
+      return result
+    userDNs = result['Value']
+    if vomsData.get(vo) and vomsData[vo]['OK']:
+      voData = vomsData[vo]['Value']
+      role = getGroupOption(group, 'VOMSRole')
+      for dn in userDNs:
+        if dn in voData:
+          if not checkStatus or not voData[dn]['Suspended']:
+            if not role or role in voData[dn]['ActuelRoles' if checkStatus else 'VOMSRoles']:
+              DNs.append(dn)
+    else:
+      DNs += userDNs
+
+  return list(set(DNs))
 
 
 def getPropertiesForGroup(groupName, defaultValue=None):
@@ -298,8 +379,6 @@ def getPropertiesForEntity(group, name="", dn="", defaultValue=None):
 
       :return: defaultValue or list
   """
-  if defaultValue is None:
-    defaultValue = []
   if group == 'hosts':
     if not name:
       result = getHostnameForDN(dn)
@@ -466,15 +545,16 @@ def getVOMSVOForGroup(group):
   return vomsVO
 
 
-def getGroupsWithVOMSAttribute(vomsAttr):
+def getGroupsWithVOMSAttribute(vomsAttr, groupsList=None):
   """ Search groups with VOMS attribute
 
       :param str vomsAttr: VOMS attribute
+      :param list groupsList: groups where need to search
 
       :return: list
   """
   groups = []
-  for group in gConfig.getSections("%s/Groups" % (gBaseRegistrySection)).get('Value', []):
+  for group in groupsList or getAllGroups():
     if vomsAttr == gConfig.getValue("%s/Groups/%s/VOMSRole" % (gBaseRegistrySection, group), ""):
       groups.append(group)
   return groups
@@ -569,10 +649,10 @@ def getVOMSRoleGroupMapping(vo=''):
 def getUsernameForID(ID, usersList=None):
   """ Get DIRAC user name by ID
 
-      :param basestring ID: user ID
+      :param str ID: user ID
       :param list usersList: list of DIRAC user names
 
-      :return: S_OK(basestring)/S_ERROR()
+      :return: S_OK(str)/S_ERROR()
   """
   if not usersList:
     result = gConfig.getSections("%s/Users" % gBaseRegistrySection)
@@ -585,72 +665,30 @@ def getUsernameForID(ID, usersList=None):
   return S_ERROR("No username found for ID %s" % ID)
 
 
-def getCAForUsername(username):
-  """ Get CA option by user name
+def getDNProperty(dn, prop, defaultValue=None, username=None):
+  """ Get user DN property
 
-      :param str username: user name
-
-      :return: S_OK(str)/S_ERROR()
-  """
-  dnList = gConfig.getValue("%s/Users/%s/CA" % (gBaseRegistrySection, username), [])
-  return S_OK(dnList) if dnList else S_ERROR("No CA found for user %s" % username)
-
-
-def getDNProperty(userDN, value, defaultValue=None):
-  """ Get property from DNProperties section by user DN
-
-      :param str userDN: user DN
-      :param str value: option that need to get
+      :param str dn: user DN
+      :param str prop: property name
       :param defaultValue: default value
+      :param str username: username
 
-      :return: S_OK()/S_ERROR() -- str or list that contain option value
+      :return: S_OK()/S_ERROR()
   """
-  result = getUsernameForDN(userDN)
-  if not result['OK']:
-    return result
-  pathDNProperties = "%s/Users/%s/DNProperties" % (gBaseRegistrySection, result['Value'])
-  result = gConfig.getSections(pathDNProperties)
-  if result['OK']:
-    for section in result['Value']:
-      if userDN == gConfig.getValue("%s/%s/DN" % (pathDNProperties, section)):
-        return S_OK(gConfig.getValue("%s/%s/%s" % (pathDNProperties, section, value), defaultValue))
-  return S_OK(defaultValue)
-
-
-def getProxyProvidersForDN(userDN):
-  """ Get proxy providers by user DN
-
-      :param str userDN: user DN
-
-      :return: S_OK(list)/S_ERROR()
-  """
-  return getDNProperty(userDN, 'ProxyProviders', [])
-
-
-def getDNFromProxyProviderForUserID(proxyProvider, userID):
-  """ Get groups by user DN in DNProperties
-
-      :param str proxyProvider: proxy provider name
-      :param str userID: user identificator
-
-      :return: S_OK(str)/S_ERROR()
-  """
-  # Get user name
-  result = getUsernameForID(userID)
-  if not result['OK']:
-    return result
-  # Get DNs from user
-  result = getDNForUsername(result['Value'])
-  if not result['OK']:
-    return result
-  for DN in result['Value']:
-    result = getProxyProvidersForDN(DN)
+  if not username:
+    result = getUsernameForDN(dn)
     if not result['OK']:
       return result
-    if proxyProvider in result['Value']:
-      return S_OK(DN)
-  return S_ERROR(errno.ENODATA,
-                 "No DN found for %s proxy provider for user ID %s" % (proxyProvider, userID))
+    username = result['Value']
+
+  root = "%s/Users/%s/DNProperties" % (gBaseRegistrySection, username)
+  result = gConfig.getSections(root)
+  if not result['OK']:
+    return result
+  for section in result['Value']:
+    if dn == gConfig.getValue("%s/%s/DN" % (root, section)):
+      return S_OK(gConfig.getValue("%s/%s/%s" % (root, section, prop), defaultValue))
+  return S_OK(defaultValue)
 
 
 def isDownloadableGroup(groupName):
@@ -665,24 +703,6 @@ def isDownloadableGroup(groupName):
   return True
 
 
-def getUserDict(username):
-  """ Get full information from user section
-
-      :param str username: DIRAC user name
-
-      :return: S_OK()/S_ERROR()
-  """
-  resDict = {}
-  relPath = '%s/Users/%s/' % (gBaseRegistrySection, username)
-  result = gConfig.getConfigurationTree(relPath)
-  if not result['OK']:
-    return result
-  for key, value in result['Value'].items():
-    if value:
-      resDict[key.replace(relPath, '')] = value
-  return S_OK(resDict)
-
-
 def getEmailsForGroup(groupName):
   """ Get email list of users in group
 
@@ -695,3 +715,125 @@ def getEmailsForGroup(groupName):
     email = getUserOption(username, 'Email', [])
     emails.append(email)
   return emails
+
+
+def getIDsForUsername(username):
+  """ Return IDs for DIRAC user
+
+      :param str username: DIRAC user
+
+      :return: list -- contain IDs
+  """
+  return gConfig.getValue("%s/Users/%s/ID" % (gBaseRegistrySection, username), [])
+
+
+def getVOsWithVOMS(voList=None):
+  """ Get all the configured VOMS VOs
+
+      :param list voList: VOs where to look
+
+      :return: S_OK(list)/S_ERROR()
+  """
+  vos = []
+  if not voList:
+    result = getVOs()
+    if result['OK']:
+      # Hack to run integration tests where not exist VO section.
+      #return result
+      
+      voList = result['Value']
+  for vo in voList or []:
+    if getVOOption(vo, 'VOMSName'):
+      vos.append(vo)
+  return S_OK(vos)
+
+
+def getDNsForUsername(username):
+  """ Find all DNs for DIRAC user
+
+      :param str username: DIRAC user
+
+      :return: S_OK(list)/S_ERROR() -- contain DNs
+  """
+  userDNs = getDNsForUsernameFromSC(username)
+  for uid in getIDsForUsername(username):
+    result = gAuthManagerData.getDNsForID(uid)
+    if result['OK']:
+      userDNs += result['Value']
+  return S_OK(list(set(userDNs)))
+
+
+def getDNForUsernameInGroup(username, group, checkStatus=False):
+  """ Get user DN for user in group
+
+      :param str username: user name
+      :param str group: group name
+      :param bool checkStatus: don't add suspended DNs
+
+      :return: S_OK(str)/S_ERROR()
+  """
+  result = getDNsForUsernameInGroup(username, group, checkStatus)
+  return S_OK(result['Value'][0]) if result['OK'] else result
+
+
+def getDNsForUsernameInGroup(username, group, checkStatus=False):
+  """ Get user DN for user in group
+
+      :param str username: user name
+      :param str group: group name
+      :param bool checkStatus: don't add suspended DNs
+
+      :return: S_OK(str)/S_ERROR()
+  """
+  if username not in getGroupOption(group, 'Users', []):
+    return S_ERROR('%s group not have %s user.' % (group, username))
+
+  DNs = []
+  result = getDNsForUsername(username)
+  if not result['OK']:
+    return result
+  userDNs = result['Value']
+
+  vo = getGroupOption(group, 'VO')
+  if checkStatus and vo in getUserOption(username, 'Suspended', []):
+    return S_ERROR('%s marked as suspended for %s VO.' % (username, vo))
+
+  result = getVOsWithVOMS(vo)
+  if not result['OK']:
+    return result
+  if result['Value']:
+    result = getVOMSInfo(vo=vo)
+    if not result['OK']:
+      return result
+    vomsData = result['Value']
+    if vomsData.get(vo) and vomsData[vo]['OK']:
+      voData = vomsData[vo]['Value']
+      role = getGroupOption(group, 'VOMSRole')
+      for dn in userDNs:
+        if dn in voData:
+          if not checkStatus or not voData[dn]['Suspended']:
+            if not role or role in voData[dn]['ActuelRoles' if checkStatus else 'VOMSRoles']:
+              DNs.append(dn)
+    else:
+      DNs += userDNs
+  else:
+    DNs += userDNs
+
+  if DNs:
+    return S_OK(list(set(DNs)))
+  return S_ERROR('For %s@%s not found DN%s.' % (username, group, ' or it suspended' if checkStatus else ''))
+
+
+def findSomeDNToUseForGroupsThatNotNeedDN(username):
+  """ This method is HACK for groups that not need DN from user, like as dirac_user, dirac_admin
+      In this cause we will search first DN in CS or any DN that we can to find
+
+      :param str username: user name
+
+      :return: S_OK(str)/S_ERROR()
+  """
+  defDNs = getDNsForUsernameFromSC(username)
+  if not defDNs:
+    result = getDNsForUsername(username)
+    return S_OK(result['Value'][0]) if result['OK'] else result
+  return S_OK(defDNs[0])
