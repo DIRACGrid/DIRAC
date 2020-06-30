@@ -10,17 +10,16 @@
 
 __RCSID__ = "$Id$"
 
-import six
 import os
 import stat
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -106,11 +105,13 @@ class ARCComputingElement(ComputingElement):
     # Default         : Resources/Computing/CEDefaults/XRSLExtraString
     #
     xrslExtraString = ''  # Start with the default value
-    result = getCESiteMapping(self.ceHost)
-    if not result['OK'] or not result['Value']:
-      gLogger.error("Unknown CE ...")
+    result = getSiteForCE(self.ceHost)
+    self.site = ''
+    if result['OK']:
+      self.site = result['Value']
+    else:
+      gLogger.error("Unknown Site ...")
       return
-    self.site = result['Value'][self.ceHost]
     # Now we know the site. Get the grid
     grid = self.site.split(".")[0]
     # The different possibilities that we have agreed upon
@@ -194,7 +195,6 @@ class ARCComputingElement(ComputingElement):
     self.queue = self.ceParameters.get("CEQueueName", self.ceParameters['Queue'])
     if 'GridEnv' in self.ceParameters:
       self.gridEnv = self.ceParameters['GridEnv']
-    return S_OK()
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):
@@ -284,7 +284,7 @@ class ARCComputingElement(ComputingElement):
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobList = list(jobIDList)
-    if isinstance(jobIDList, six.string_types):
+    if isinstance(jobIDList, basestring):
       jobList = [jobIDList]
 
     gLogger.debug("Killing jobs %s" % jobIDList)
@@ -373,7 +373,7 @@ class ARCComputingElement(ComputingElement):
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobTmpList = list(jobIDList)
-    if isinstance(jobIDList, six.string_types):
+    if isinstance(jobIDList, basestring):
       jobTmpList = [jobIDList]
 
     # Pilots are stored with a DIRAC stamp (":::XXXXX") appended
