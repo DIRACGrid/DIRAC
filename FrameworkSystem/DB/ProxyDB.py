@@ -24,9 +24,12 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
+from DIRAC.FrameworkSystem.Client.AuthManagerData import gAuthManagerData
 
 
 class ProxyDB(DB):
+  """ Proxy database
+  """
 
   NOTIFICATION_TIMES = [2592000, 1296000]
 
@@ -34,6 +37,7 @@ class ProxyDB(DB):
                useMyProxy=False):
     DB.__init__(self, 'ProxyDB', 'Framework/ProxyDB')
     random.seed()
+    self.__version = 2
     self.__defaultRequestLifetime = 300  # 5min
     self.__defaultTokenLifetime = 86400 * 7  # 1 week
     self.__defaultTokenMaxUses = 50
@@ -49,7 +53,7 @@ class ProxyDB(DB):
   def getMyProxyServer(self):
     """ Get MyProxy server from configuration
 
-        :return: basestring
+        :return: str
     """
     return gConfig.getValue("/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch")
 
@@ -63,7 +67,7 @@ class ProxyDB(DB):
   def getFromAddr(self):
     """ Get the From address to use in proxy expiry e-mails.
 
-        :return: basestring
+        :return: str
     """
     cs_path = getDatabaseSection(self.fullname)
     opt_path = "/%s/%s" % (cs_path, "FromAddr")
@@ -91,13 +95,11 @@ class ProxyDB(DB):
                                      }
 
     if 'ProxyDB_CleanProxies' not in tablesInDB:
-      tablesD['ProxyDB_CleanProxies'] = {'Fields': {'UserName': 'VARCHAR(64) NOT NULL',
-                                                    'UserDN': 'VARCHAR(255) NOT NULL',
-                                                    'ProxyProvider': 'VARCHAR(64) DEFAULT "Certificate"',
+      tablesD['ProxyDB_CleanProxies'] = {'Fields': {'UserDN': 'VARCHAR(255) NOT NULL',
                                                     'Pem': 'BLOB',
                                                     'ExpirationTime': 'DATETIME',
                                                     },
-                                         'PrimaryKey': ['UserDN', 'ProxyProvider']
+                                         'PrimaryKey': 'UserDN'
                                          }
     # WARN: Now proxies upload only in ProxyDB_CleanProxies, so this table will not be needed in some future
     if 'ProxyDB_Proxies' not in tablesInDB:
@@ -124,9 +126,9 @@ class ProxyDB(DB):
 
     if 'ProxyDB_Log' not in tablesInDB:
       tablesD['ProxyDB_Log'] = {'Fields': {'ID': 'BIGINT NOT NULL AUTO_INCREMENT',
-                                           'IssuerDN': 'VARCHAR(255) NOT NULL',
+                                           'IssuerUsername': 'VARCHAR(255) NOT NULL',
                                            'IssuerGroup': 'VARCHAR(255) NOT NULL',
-                                           'TargetDN': 'VARCHAR(255) NOT NULL',
+                                           'TargetUsername': 'VARCHAR(255) NOT NULL',
                                            'TargetGroup': 'VARCHAR(255) NOT NULL',
                                            'Action': 'VARCHAR(128) NOT NULL',
                                            'Timestamp': 'DATETIME',
@@ -137,7 +139,7 @@ class ProxyDB(DB):
 
     if 'ProxyDB_Tokens' not in tablesInDB:
       tablesD['ProxyDB_Tokens'] = {'Fields': {'Token': 'VARCHAR(64) NOT NULL',
-                                              'RequesterDN': 'VARCHAR(255) NOT NULL',
+                                              'RequesterUsername': 'VARCHAR(255) NOT NULL',
                                               'RequesterGroup': 'VARCHAR(255) NOT NULL',
                                               'ExpirationTime': 'DATETIME NOT NULL',
                                               'UsesLeft': 'SMALLINT UNSIGNED DEFAULT 1',
@@ -159,7 +161,7 @@ class ProxyDB(DB):
   def __addUserNameToTable(self, tableName):
     """ Add user name to the table
 
-        :param basestring tableName: table name
+        :param str tableName: table name
 
         :return: S_OK()/S_ERROR()
     """
@@ -196,7 +198,12 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
     """
-    for tableName in ("ProxyDB_CleanProxies", "ProxyDB_Proxies", "ProxyDB_VOMSProxies"):
+    if self.versionDB == self.__version:  # pylint: disable=no-member
+      return S_OK()
+    if self.versionDB > self.__version:  # pylint: disable=no-member
+      return S_ERROR('Already installed newer DB version "%s".' % self.versionDB)  # pylint: disable=no-member
+
+    for tableName in ("ProxyDB_Proxies", "ProxyDB_VOMSProxies"):
       result = self._query("describe `%s`" % tableName)
       if not result['OK']:
         return result
@@ -206,11 +213,36 @@ class ProxyDB(DB):
         if not result['OK']:
           return result
 
-  def generateDelegationRequest(self, proxyChain, userDN):
+    if self.versionDB == 0 and self.versionDB < self.__version:  # pylint: disable=no-member
+      for tb, oldColumn, newColumn in [('ProxyDB_Log', 'IssuerDN', 'IssuerUsername'),
+                                       ('ProxyDB_Log', 'TargetDN', 'TargetUsername'),
+                                       ('ProxyDB_Tokens', 'RequesterDN', 'RequesterUsername')]:
+        result = self._query("SHOW COLUMNS FROM `%s` LIKE '%s'" % (tb, oldColumn))
+        if result['OK'] and len(result['Value']) > 0:
+          result = self._query('ALTER TABLE %s CHANGE COLUMN %s %s VARCHAR(255) NOT NULL' % (tb, oldColumn, newColumn))
+        if not result['OK']:
+          return result
+      result = self.updateDBVersion(1)  # pylint: disable=no-member
+      if not result['OK']:
+        return result
+
+    if self.versionDB == 1 and self.versionDB < self.__version:  # pylint: disable=no-member
+      for column in ['UserName', 'ProxyProvider']:
+        result = self._query("SHOW COLUMNS FROM `ProxyDB_CleanProxies` LIKE '%s'" % column)
+        if result['OK'] and len(result['Value']) > 0:
+          result = self._query('ALTER TABLE ProxyDB_CleanProxies DROP COLUMN %s' % column)
+        if not result['OK']:
+          return result
+      result = self.updateDBVersion(2)  # pylint: disable=no-member
+      if not result['OK']:
+        return result
+
+    return S_OK()
+
+  def generateDelegationRequest(self, credDict):
     """ Generate a request and store it for a given proxy Chain
 
-        :param X509Chain() proxyChain: proxy as chain
-        :param basestring userDN: user DN
+        :param dict credDict: dictionary that contain proxy as chain
 
         :return: S_OK(dict)/S_ERROR() -- dict contain id and proxy as string of the request
     """
@@ -218,7 +250,7 @@ class ProxyDB(DB):
     if not retVal['OK']:
       return retVal
     connObj = retVal['Value']
-    retVal = proxyChain.generateProxyRequest()
+    retVal = credDict['x509Chain'].generateProxyRequest()
     if not retVal['OK']:
       return retVal
     request = retVal['Value']
@@ -231,14 +263,13 @@ class ProxyDB(DB):
       return retVal
     allStr = reqStr + retVal['Value']
     try:
-      sUserDN = self._escapeString(userDN)['Value']
+      sDN = self._escapeString(credDict['DN'])['Value']
       sAllStr = self._escapeString(allStr)['Value']
     except KeyError:
       return S_ERROR("Cannot escape DN")
-    cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, Pem, ExpirationTime )"
-    cmd += " VALUES ( 0, %s, %s, TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() ) )" % (sUserDN,
-                                                                                   sAllStr,
-                                                                                   int(self.__defaultRequestLifetime))
+    cmd = "INSERT INTO `ProxyDB_Requests` (UserDN, Pem, ExpirationTime) VALUES "
+    cmd += "(%s, %s, TIMESTAMPADD(SECOND, %d, UTC_TIMESTAMP()))" % (sDN, sAllStr,
+                                                                    int(self.__defaultRequestLifetime))
     retVal = self._update(cmd, conn=connObj)
     if not retVal['OK']:
       return retVal
@@ -252,8 +283,7 @@ class ProxyDB(DB):
     data = retVal['Value']
     if not data:
       return S_ERROR("Insertion of the request in the db didn't work as expected")
-    userGroup = proxyChain.getDIRACGroup().get('Value') or "unset"
-    self.logAction("request upload", userDN, userGroup, userDN, "any")
+    self.logAction("request upload", credDict['username'], credDict['group'], credDict['username'], "any")
     # Here we go!
     return S_OK({'id': data[0][0], 'request': reqStr})
 
@@ -261,26 +291,25 @@ class ProxyDB(DB):
     """ Retrieve a request from the DB
 
         :param int requestId: id of the request
-        :param basestring userDN: user DN
+        :param str userDN: user DN
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
-    try:
-      sUserDN = self._escapeString(userDN)['Value']
-    except KeyError:
+    result = self._escapeString(userDN)
+    if not result['OK']:
       return S_ERROR("Cannot escape DN")
+    sUserDN = result['Value']
+
     cmd = "SELECT Pem FROM `ProxyDB_Requests` WHERE Id = %s AND UserDN = %s" % (requestId, sUserDN)
-    retVal = self._query(cmd)
-    if not retVal['OK']:
-      return retVal
-    data = retVal['Value']
-    if len(data) == 0:
-      return S_ERROR("No requests with id %s" % requestId)
-    request = X509Request()
-    retVal = request.loadAllFromString(data[0][0])
-    if not retVal['OK']:
-      return retVal
-    return S_OK(request)
+    result = self._query(cmd)
+    if result['OK']:
+      data = result['Value']
+      if len(data) == 0:
+        return S_ERROR("No requests with id %s" % requestId)
+      request = X509Request()
+      result = request.loadAllFromString(data[0][0])
+
+    return S_OK(request) if result['OK'] else result
 
   def purgeExpiredRequests(self):
     """ Purge expired requests from the db
@@ -304,8 +333,8 @@ class ProxyDB(DB):
     """ Complete a delegation and store it in the db
 
         :param int requestId: id of the request
-        :param basestring userDN: user DN
-        :param basestring delegatedPem: delegated proxy as string
+        :param str userDN: DN
+        :param str delegatedPem: delegated proxy as string
 
         :return: S_OK()/S_ERROR()
     """
@@ -332,64 +361,48 @@ class ProxyDB(DB):
       # WARN: Since v7r1, DIRAC has implemented proxyProviders and ProxyDB_CleanProxies,
       # WARN:   which has helped implement the ability to store only one proxy and
       # WARN:   dynamically add a group at the request of a proxy. This means that group extensions
-      # WARN:   doesn't need for storing proxies, but for compatibility with older versions,
-      # WARN:   the following block has been added to store proxies with group extensions.
-      self.log.warn("Proxies with DIRAC group extensions must be not allowed to be uploaded:", retVal['Value'])
-      retVal = chain.getDIRACGroup()
-      if not retVal['OK']:
-        return retVal
-      userGroup = retVal['Value'] or Registry.getDefaultUserGroup()
-      retVal = Registry.getGroupsForDN(userDN)
-      if not retVal['OK']:
-        return retVal
-      if userGroup not in retVal['Value']:
-        return S_ERROR("%s group is not valid for %s" % (userGroup, userDN))
-      retVal = chain.isValidProxy(ignoreDefault=True)
-      if not retVal['OK'] and DErrno.cmpError(retVal, DErrno.ENOGROUP):
-        retVal = self.deleteProxy(userDN)
-        if not retVal['OK']:
-          return retVal
-      retVal = self.__storeProxyOld(userDN, userGroup, chain)
-      # WARN: End of compatibility block
-    else:
-      retVal = self.__storeProxy(userDN, chain)
-    if not retVal['OK']:
-      return retVal
-    retVal = self.deleteRequest(requestId)
-    if not retVal['OK']:
-      return retVal
-    return S_OK()
+      # WARN:   doesn't need for storing proxies.
+      return S_ERROR("Proxies with DIRAC group extensions not allowed to be uploaded.")
 
-  def __storeProxy(self, userDN, chain, proxyProvider=None):
-    """ Store user proxy into the Proxy repository for a user specified by his
-        DN and group or proxy provider.
+    result = self._storeProxy(userDN, chain)
 
-        :param basestring userDN: user DN from proxy
-        :param X509Chain() chain: proxy chain
-        :param basestring proxyProvider: proxy provider name
+    return self.deleteRequest(requestId) if result['OK'] else result
+
+  def _isProxyExist(self, userDN, timeleft=None):
+    """ Check if proxy present in DB
+
+        :param str userDN: user DN
+        :param int timeleft: requirement time
 
         :return: S_OK()/S_ERROR()
     """
-    retVal = Registry.getUsernameForDN(userDN)
-    if not retVal['OK']:
-      return retVal
-    userName = retVal['Value']
+    result = self._escapeString(userDN)
+    if not result['OK']:
+      return result
+    sUserDN = result['Value']
+    cmd = 'SELECT * FROM ProxyDB_CleanProxies WHERE UserDN = %s' % sUserDN
+    if timeleft:
+      cmd += ' AND TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) > %s' % timeleft
+    result = self._query(cmd)
+    return S_OK(True if result['Value'] else False) if result['OK'] else result
 
-    if not proxyProvider:
-      result = Registry.getProxyProvidersForDN(userDN)
-      if not result['OK']:
-        return result
-      proxyProvider = result.get('Value') and result['Value'][0] or 'Certificate'
+  def _storeProxy(self, userDN, chain):
+    """ Store user proxy into the Proxy repository for a user specified by his
+        DN and group or proxy provider.
 
+        :param str userDN: user DN from proxy
+        :param X509Chain() chain: proxy chain
+
+        :return: S_OK()/S_ERROR()
+    """
     # Get remaining secs
     retVal = chain.getRemainingSecs()
     if not retVal['OK']:
       return retVal
     remainingSecs = retVal['Value']
     if remainingSecs < self._minSecsToAllowStore:
-      return S_ERROR(
-          "Cannot store proxy, remaining secs %s is less than %s" %
-          (remainingSecs, self._minSecsToAllowStore))
+      return S_ERROR("Cannot store proxy, remaining secs %s is less than %s" %
+                     (remainingSecs, self._minSecsToAllowStore))
 
     # Compare the DNs
     retVal = chain.getIssuerCert()
@@ -414,57 +427,109 @@ class ProxyDB(DB):
 
     try:
       sUserDN = self._escapeString(userDN)['Value']
-      sTable = 'ProxyDB_CleanProxies'
     except KeyError:
       return S_ERROR("Cannot escape DN")
     # Check what we have already got in the repository
     cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem "
-    cmd += "FROM `%s` WHERE UserDN=%s " % (sTable, sUserDN)
+    cmd += "FROM `ProxyDB_CleanProxies` WHERE UserDN=%s " % sUserDN
     result = self._query(cmd)
     if not result['OK']:
       return result
+    data = result['Value']
 
     # Check if there is a previous ticket for the DN
-    data = result['Value']
-    sqlInsert = True
+    pemChain = chain.dumpAllToString()['Value']
+    dValues = {'UserDN': sUserDN, 'Pem': self._escapeString(pemChain)['Value'],
+               'ExpirationTime': 'TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )' % int(remainingSecs)}
+    cmd = "INSERT INTO `ProxyDB_CleanProxies` (%s) VALUES (%s)" % (", ".join(dValues.keys()),
+                                                                   ", ".join(dValues.values()))
     if data:
-      sqlInsert = False
+      cmd = 'UPDATE `ProxyDB_CleanProxies` SET %s WHERE UserDN = %s' % (
+          ", ".join(["%s = %s" % (k, v) for k, v in dValues.items()]), sUserDN)
       pem = data[0][1]
       if pem:
         remainingSecsInDB = data[0][0]
         if remainingSecs <= remainingSecsInDB:
-          self.log.info(
-              "Proxy stored is longer than uploaded, omitting.",
-              "%s in uploaded, %s in db" %
-              (remainingSecs,
-               remainingSecsInDB))
+          self.log.info("Proxy stored is longer than uploaded, omitting.",
+                        "%s in uploaded, %s in db" % (remainingSecs, remainingSecsInDB))
           return S_OK()
 
-    pemChain = chain.dumpAllToString()['Value']
-    dValues = {'UserName': self._escapeString(userName)['Value'],
-               'UserDN': sUserDN,
-               'Pem': self._escapeString(pemChain)['Value'],
-               'ExpirationTime': 'TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )' % int(remainingSecs)}
-    dValues['ProxyProvider'] = "'%s'" % proxyProvider
-    if sqlInsert:
-      sqlFields = []
-      sqlValues = []
-      for key in dValues:
-        sqlFields.append(key)
-        sqlValues.append(dValues[key])
-      cmd = "INSERT INTO `%s` ( %s ) VALUES ( %s )" % (sTable, ", ".join(sqlFields), ", ".join(sqlValues))
-    else:
-      sqlSet = []
-      sqlWhere = []
-      for k in dValues:
-        if k in ('UserDN', 'ProxyProvider'):
-          sqlWhere.append("%s = %s" % (k, dValues[k]))
-        else:
-          sqlSet.append("%s = %s" % (k, dValues[k]))
-      cmd = "UPDATE `%s` SET %s WHERE %s" % (sTable, ", ".join(sqlSet), " AND ".join(sqlWhere))
+    retVal = Registry.getUsernameForDN(userDN)
+    if not retVal['OK']:
+      return retVal
+    userName = retVal['Value']
 
-    self.logAction("store proxy", userDN, proxyProvider, userDN, proxyProvider)
+    self.logAction("store proxy", userName, 'any', userName, 'any')
     return self._update(cmd)
+
+  def __getPemAndTimeLeft(self, userDN, userGroup, requiredLifeTime=None, vomsAttr=None):
+    """ Get proxy from DB and add group
+
+        :param str userDN: user DN
+        :param str userGroup: required DIRAC group
+        :param int requiredLifeTime: required proxy live time in a seconds
+        :param str vomsAttr: if need search VOMS proxy first
+
+        :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
+    """
+    cmd = 'SELECT Pem, TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) FROM '
+    cmd += '`%%s` WHERE UserDN="%s" AND TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) > 0' % userDN
+    if vomsAttr:
+      # Search VOMS proxy first
+      result = self._query(cmd % 'ProxyDB_VOMSProxies' + " AND VOMSAttr=%s AND UserGroup=%s" % (vomsAttr, userGroup))
+      if not result['OK']:
+        result = self._query(cmd % 'ProxyDB_CleanProxies')
+    else:
+      result = self._query(cmd % 'ProxyDB_CleanProxies')
+    err = "%s@%s proxy" % (userDN, userGroup)
+    if not result['OK']:
+      return S_ERROR("%s getting error: %s" % (err, result['Message']))
+    data = result['Value']
+    if data and data[0][0]:
+      if requiredLifeTime and data[0][1] <= requiredLifeTime:
+        return S_ERROR("%s stored in DB, but with less live time that required " % err)
+      chain = X509Chain()
+      result = chain.loadProxyFromString(data[0][0])
+      if result['OK']:
+        result = chain.generateProxyToString(requiredLifeTime or min(
+            3600 * 12, data[0][1]), diracGroup=userGroup, rfc=True)
+      if not result['OK']:
+        return S_ERROR("%s exist in DB, but %s" % (err, result['Message']))
+      return S_OK((result['Value'], requiredLifeTime))
+    return S_ERROR("%s with %s group is absent in DB" % (userDN, userGroup))
+
+  def __generateProxyForDNGroup(self, userDN, userGroup, requiredLifeTime):
+    """ Generate proxy from proxy provider and store it to DB
+
+        :param str userDN: user DN
+        :param str userGroup: required DIRAC group
+        :param int requiredLifeTime: required proxy live time in a seconds
+
+        :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
+    """
+    # Try to get proxy
+    result = self.getProxyProviderForDN(userDN)
+    if not result['OK']:
+      return result
+    if result['Value'] == 'Certificate':
+      return S_ERROR('No proxy provider found for this DN, need to upload proxy')
+
+    result = ProxyProviderFactory().getProxyProvider(result['Value'], proxyManager=self)
+    if not result['OK']:
+      return result
+    providerObj = result['Value']
+
+    # Generate the proxy and store in the DB
+    result = providerObj.getProxy(userDN)
+    if not result['OK']:
+      return result
+    chain = result['Value']
+
+    # Add group
+    result = chain.generateProxyToString(requiredLifeTime, diracGroup=userGroup, rfc=True)
+    if not result['OK']:
+      return S_ERROR("Cannot generate proxy: %s" % result['Message'])
+    return S_OK((result['Value'], requiredLifeTime))
 
   def purgeExpiredProxies(self, sendNotifications=True):
     """ Purge expired requests from the db
@@ -487,47 +552,36 @@ class ProxyDB(DB):
         return result
     return S_OK(purged)
 
-  def deleteProxy(self, userDN, userGroup=None, proxyProvider=None):
+  def deleteProxy(self, userDN):
     """ Remove proxy of the given user from the repository
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: DIRAC group
-        :param basestring proxyProvider: proxy provider name
+        :param str userDN: user DN
 
         :return: S_OK()/S_ERROR()
     """
-    try:
-      userDN = self._escapeString(userDN)['Value']
-      if userGroup:
-        userGroup = self._escapeString(userGroup)['Value']
-      if proxyProvider:
-        proxyProvider = self._escapeString(proxyProvider)['Value']
-    except KeyError:
-      return S_ERROR("Invalid DN or group or proxy provider")
+    tables = ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies', 'ProxyDB_CleanProxies']
+    result = self._escapeString(userDN)
+    if not result['OK']:
+      return S_ERROR("Invalid DN: %s" % result['Message'])
+    userDN = result['Value']
     errMsgs = []
     req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
-    if proxyProvider or not userGroup:
-      result = self._update('%s %s' % (req % 'ProxyDB_CleanProxies',
-                                       proxyProvider and 'AND ProxyProvider=%s' % proxyProvider or ''))
-      if not result['OK']:
-        errMsgs.append(result['Message'])
-    for table in ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies']:
-      result = self._update('%s %s' % (req % table,
-                                       userGroup and 'AND UserGroup=%s' % userGroup or ''))
+    for table in tables:
+      result = self._update(req % table)
       if not result['OK']:
         if result['Message'] not in errMsgs:
           errMsgs.append(result['Message'])
-    if errMsgs:
-      return S_ERROR(', '.join(errMsgs))
-    return result
 
-  def __getPemAndTimeLeft(self, userDN, userGroup=None, vomsAttr=None, proxyProvider=None):
+    return S_ERROR(', '.join(errMsgs)) if errMsgs else result
+
+  # WARN: Old method for compatibility with older versions v7r0-
+  @deprecated("Only for DIRAC v6")
+  def __getPemAndTimeLeftOld(self, userDN, userGroup, vomsAttr=None):
     """ Get proxy from database
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: requested DIRAC group
-        :param basestring vomsAttr: VOMS name
-        :param basestring proxyProvider: proxy provider name
+        :param str userDN: user DN
+        :param str userGroup: requested DIRAC group
+        :param str vomsAttr: VOMS name
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remaining seconds
     """
@@ -539,52 +593,36 @@ class ProxyDB(DB):
         sVomsAttr = self._escapeString(vomsAttr)['Value']
     except KeyError:
       return S_ERROR("Invalid DN or Group")
-    if proxyProvider:
-      sTable = "`ProxyDB_CleanProxies`"
-    elif not vomsAttr:
+    if not vomsAttr:
       sTable = "`ProxyDB_Proxies`"
     else:
       sTable = "`ProxyDB_VOMSProxies`"
     cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from %s " % sTable
     cmd += "WHERE UserDN=%s AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % (sUserDN)
-    if proxyProvider:
-      cmd += ' AND ProxyProvider="%s"' % proxyProvider
-    else:
-      if userGroup:
-        cmd += " AND UserGroup=%s" % sUserGroup
-      if vomsAttr:
-        cmd += " AND VOMSAttr=%s" % sVomsAttr
+    if userGroup:
+      cmd += " AND UserGroup=%s" % sUserGroup
+    if vomsAttr:
+      cmd += " AND VOMSAttr=%s" % sVomsAttr
     retVal = self._query(cmd)
     if not retVal['OK']:
       return retVal
     data = retVal['Value']
     for record in data:
       if record[0]:
-        if proxyProvider:
-          chain = X509Chain()
-          result = chain.loadProxyFromString(record[0])
-          if not result['OK']:
-            return result
-          result = chain.generateProxyToString(record[1], diracGroup=userGroup, rfc=True)
-          if not result['OK']:
-            return result
-          return S_OK((result['Value'], record[1]))
         return S_OK((record[0], record[1]))
-    if userGroup:
-      userMask = "%s@%s" % (userDN, userGroup)
-    else:
-      userMask = userDN
+    userMask = "%s@%s" % (userDN, userGroup)
     return S_ERROR("%s has no proxy registered" % userMask)
 
+  # WARN: This proxy manager work as myproxy, it seems we no use an external myproxy anymore
   def renewFromMyProxy(self, userDN, userGroup, lifeTime=None, chain=None):
     """ Renew proxy from MyProxy
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
+        :param str userDN: user DN
+        :param str userGroup: user group
         :param int lifeTime: needed proxy live time in a seconds
-        :param X509Chain chain: proxy as chain
+        :param object chain: proxy as X509Chain
 
-        :return: S_OK(X509Chain/S_ERROR()
+        :return: S_OK(X509Chain)/S_ERROR()
     """
     if not lifeTime:
       lifeTime = 43200
@@ -637,7 +675,7 @@ class ProxyDB(DB):
     chainGroup = retVal['Value']
     if chainGroup != userGroup:
       return S_ERROR("Mismatch between renewed proxy group and expected: %s vs %s" % (userGroup, chainGroup))
-    retVal = self.__storeProxy(userDN, userGroup, mpChain)
+    retVal = self.__storeProxyOld(userDN, userGroup, mpChain)
     if not retVal['OK']:
       self.log.error("Cannot store proxy after renewal", retVal['Message'])
     retVal = myProxy.getServiceDN()
@@ -648,284 +686,77 @@ class ProxyDB(DB):
     self.logAction("myproxy renewal", hostDN, "host", userDN, userGroup)
     return S_OK(mpChain)
 
-  # WARN: this method will not be needed if CS section Users/<user>/DNProperties will be for every user
-  # in this case will be used proxy providers that described there
-  def __getPUSProxy(self, userDN, userGroup, requiredLifetime, requestedVOMSAttr=False):
-    result = Registry.getGroupsForDN(userDN)
-    if not result['OK']:
-      return result
+  def getProxy(self, userDN, userGroup, requiredLifeTime=None, voms=False):
+    """ Get proxy string from the Proxy Repository for use with userDN in the userGroup
 
-    validGroups = result['Value']
-    if userGroup not in validGroups:
-      return S_ERROR('Invalid group %s for user' % userGroup)
-
-    voName = Registry.getVOForGroup(userGroup)
-    if not voName:
-      return S_ERROR('Can not determine VO for group %s' % userGroup)
-
-    retVal = self.__getVOMSAttribute(userGroup, requestedVOMSAttr)
-    if not retVal['OK']:
-      return retVal
-    vomsAttribute = retVal['Value']['attribute']
-    vomsVO = retVal['Value']['VOMSVO']
-
-    puspServiceURL = Registry.getVOOption(voName, 'PUSPServiceURL')
-    if not puspServiceURL:
-      return S_ERROR('Can not determine PUSP service URL for VO %s' % voName)
-
-    user = userDN.split(":")[-1]
-
-    puspURL = "%s?voms=%s:%s&proxy-renewal=false&disable-voms-proxy=false" \
-              "&rfc-proxy=true&cn-label=user:%s" % (puspServiceURL, vomsVO, vomsAttribute, user)
-
-    try:
-      proxy = urlopen(puspURL).read()
-    except Exception:
-      return S_ERROR('Failed to get proxy from the PUSP server')
-
-    chain = X509Chain()
-    chain.loadChainFromString(proxy)
-    chain.loadKeyFromString(proxy)
-
-    result = chain.getCredentials()
-    if not result['OK']:
-      return S_ERROR('Failed to get a valid PUSP proxy')
-    credDict = result['Value']
-    if credDict['identity'] != userDN:
-      return S_ERROR('Requested DN does not match the obtained one in the PUSP proxy')
-    timeLeft = credDict['secondsLeft']
-
-    result = chain.generateProxyToString(timeLeft, diracGroup=userGroup)
-    if not result['OK']:
-      return result
-    proxyString = result['Value']
-    return S_OK((proxyString, timeLeft))
-
-  def __generateProxyFromProxyProvider(self, userDN, proxyProvider):
-    """ Get proxy from proxy provider
-
-        :param basestring userDN: user DN for what need to create proxy
-        :param basestring proxyProvider: proxy provider name that will ganarete proxy
-
-        :return: S_OK(dict)/S_ERROR() -- dict with remaining seconds, proxy as a string and as a chain
-    """
-    gLogger.info('Getting proxy from proxyProvider', '(for "%s" DN by "%s")' % (userDN, proxyProvider))
-    result = ProxyProviderFactory().getProxyProvider(proxyProvider)
-    if not result['OK']:
-      return result
-    pp = result['Value']
-    result = pp.getProxy(userDN)
-    if not result['OK']:
-      return result
-    proxyStr = result['Value']
-    chain = X509Chain()
-    result = chain.loadProxyFromString(proxyStr)
-    if not result['OK']:
-      return result
-    result = chain.getRemainingSecs()
-    if not result['OK']:
-      return result
-    remainingSecs = result['Value']
-    result = self.__storeProxy(userDN, chain, proxyProvider)
-    if result['OK']:
-      return S_OK({'proxy': proxyStr, 'chain': chain, 'remainingSecs': remainingSecs})
-    return result
-
-  def __getProxyFromProxyProviders(self, userDN, userGroup, requiredLifeTime):
-    """ Generate new proxy from exist clean proxy or from proxy provider
-        for use with userDN in the userGroup
-
-        :param basestring userDN: user DN
-        :param basestring userGroup: required group name
+        :param str userDN: user DN
+        :param str userGroup: required DIRAC group
         :param int requiredLifeTime: required proxy live time in a seconds
-
-        :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remainig seconds
-    """
-    result = Registry.getGroupsForDN(userDN)
-    if not result['OK']:
-      return S_ERROR('Cannot generate proxy: %s' % result['Message'])
-    if userGroup not in result['Value']:
-      return S_ERROR('Cannot generate proxy: Invalid group %s for user' % userGroup)
-    result = Registry.getProxyProvidersForDN(userDN)
-
-    errMsgs = []
-    if result['OK']:
-      providers = result['Value']
-      providers.append('Certificate')
-      for proxyProvider in providers:
-        self.log.verbose('Try to get proxy from ProxyDB_CleanProxies')
-        result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
-        if result['OK'] and (not requiredLifeTime or result['Value'][1] > requiredLifeTime):
-          return result
-        if len(providers) == 1:
-          return S_ERROR('Cannot generate proxy: No proxy providers found for "%s"' % userDN)
-        self.log.verbose('Try to generate proxy from %s proxy provider' % proxyProvider)
-        result = self.__generateProxyFromProxyProvider(userDN, proxyProvider)
-        if result['OK']:
-          chain = result['Value']['chain']
-          remainingSecs = result['Value']['remainingSecs']
-          result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup, rfc=True)
-          if result['OK']:
-            return S_OK((result['Value'], remainingSecs))
-        errMsgs.append('"%s": %s' % (proxyProvider, result['Message']))
-
-    return S_ERROR('Cannot generate proxy%s' % (errMsgs and ': ' + ', '.join(errMsgs) or ''))
-
-  def getProxy(self, userDN, userGroup, requiredLifeTime=None):
-    """ Get proxy string from the Proxy Repository for use with userDN
-        in the userGroup
-
-        :param basestring userDN: user DN
-        :param basestring userGroup: required DIRAC group
-        :param int requiredLifeTime: required proxy live time in a seconds
+        :param bool voms: if need VOMS attribute
 
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
     """
-    # Test that group enable to download
-    if not Registry.isDownloadableGroup(userGroup):
-      return S_ERROR('"%s" group is disable to download.' % userGroup)
-
-    # WARN: this block will not be needed if CS section Users/<user>/DNProperties will be for every user
-    # in this case will be used proxy providers that described there
-    # Get the Per User SubProxy if one is requested
-    if isPUSPdn(userDN):
-      result = self.__getPUSProxy(userDN, userGroup, requiredLifeTime)
-      if not result['OK']:
-        return result
-      pemData = result['Value'][0]
-      timeLeft = result['Value'][1]
-      chain = X509Chain()
-      result = chain.loadProxyFromString(pemData)
-      if not result['OK']:
-        return result
-      return S_OK((chain, timeLeft))
+    vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
+    if not vomsAttr and voms:
+      return S_ERROR("No mapping defined for group %s in the CS" % userGroup)
 
     # Standard proxy is requested
-    self.log.verbose('Try to get proxy from ProxyDB_Proxies')
-    retVal = self.__getPemAndTimeLeft(userDN, userGroup)
-    errMsg = "Can't get proxy%s: " % (requiredLifeTime and ' for %s seconds' % requiredLifeTime or '')
-    if not retVal['OK']:
-      errMsg += '%s, try to generate new' % retVal['Message']
-      retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
-    elif requiredLifeTime:
-      if retVal['Value'][1] < requiredLifeTime and not self.__useMyProxy:
-        errMsg += 'Stored proxy is not long lived enough, try to generate new'
-        retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
-    if not retVal['OK']:
-      return S_ERROR("%s; %s" % (errMsg, retVal['Message']))
-    pemData = retVal['Value'][0]
-    timeLeft = retVal['Value'][1]
+    self.log.verbose('Try to get proxy from ProxyDB_CleanProxies')
+    result = self.__getPemAndTimeLeft(userDN, userGroup, requiredLifeTime, voms and vomsAttr)
+    if not result['OK']:
+
+      # WARN: for compatibility
+      result = self.__getPemAndTimeLeftOld(userDN, userGroup, voms and vomsAttr)
+      if not result['OK'] or requiredLifeTime and result['Value'][1] < requiredLifeTime:
+
+        errMsg = result.get('Message') or 'Stored proxy have not enough lifetime'
+        result = self.__generateProxyForDNGroup(userDN, userGroup, requiredLifeTime)
+        if not result['OK']:
+          return S_ERROR('%s; %s' % (errMsg, result['Message']))
+
+    pemData, timeLeft = result['Value']
+
     chain = X509Chain()
     result = chain.loadProxyFromString(pemData)
-    if not retVal['OK']:
-      return S_ERROR("%s; %s" % (errMsg, retVal['Message']))
-    if self.__useMyProxy:
-      if requiredLifeTime:
-        if timeLeft < requiredLifeTime:
-          retVal = self.renewFromMyProxy(userDN, userGroup, lifeTime=requiredLifeTime, chain=chain)
-          if not retVal['OK']:
-            return S_ERROR("%s; the proxy lifetime from MyProxy is less than required." % errMsg)
-          chain = retVal['Value']
+    if not result['OK']:
+      self.deleteProxy(userDN)
+      return S_ERROR("Checking %s@%s proxy failed: %s" % (userDN, userGroup, result['Message']))
 
     # Proxy is invalid for some reason, let's delete it
     if not chain.isValidProxy()['OK']:
-      self.deleteProxy(userDN, userGroup)
+      self.deleteProxy(userDN)
       return S_ERROR("%s@%s has no proxy registered" % (userDN, userGroup))
-    return S_OK((chain, timeLeft))
 
-  def __getVOMSAttribute(self, userGroup, requiredVOMSAttribute=False):
-    """ Get VOMS attribute for DIRAC group
-
-        :param basestring userGroup: DIRAC group
-        :param boolean requiredVOMSAttribute: VOMS attribute
-
-        :return: S_OK(dict)/S_ERROR() -- dict contain attribute and VOMS VO
-    """
-    if requiredVOMSAttribute:
-      return S_OK({'attribute': requiredVOMSAttribute, 'VOMSVO': Registry.getVOMSVOForGroup(userGroup)})
-
-    csVOMSMapping = Registry.getVOMSAttributeForGroup(userGroup)
-    if not csVOMSMapping:
-      return S_ERROR("No mapping defined for group %s in the CS" % userGroup)
-
-    return S_OK({'attribute': csVOMSMapping, 'VOMSVO': Registry.getVOMSVOForGroup(userGroup)})
-
-  def getVOMSProxy(self, userDN, userGroup, requiredLifeTime=None, requestedVOMSAttr=None):
-    """ Get proxy string from the Proxy Repository for use with userDN
-        in the userGroup
-
-        :param basestring userDN: user DN
-        :param basestring userGroup: required DIRAC group
-        :param int requiredLifeTime: required proxy live time in a seconds
-        :param basestring requestedVOMSAttr: VOMS attribute
-
-        :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
-    """
-    retVal = self.__getVOMSAttribute(userGroup, requestedVOMSAttr)
-    if not retVal['OK']:
-      return retVal
-    vomsAttr = retVal['Value']['attribute']
-    vomsVO = retVal['Value']['VOMSVO']
-
-    # Look in the cache
-    retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr)
-    if retVal['OK']:
-      pemData = retVal['Value'][0]
-      vomsTime = retVal['Value'][1]
-      chain = X509Chain()
-      retVal = chain.loadProxyFromString(pemData)
-      if retVal['OK']:
-        retVal = chain.getRemainingSecs()
-        if retVal['OK']:
-          remainingSecs = retVal['Value']
-          if requiredLifeTime and requiredLifeTime <= vomsTime and requiredLifeTime <= remainingSecs:
-            return S_OK((chain, min(vomsTime, remainingSecs)))
-
-    if isPUSPdn(userDN):
-      # Get the Per User SubProxy if one is requested
-      result = self.__getPUSProxy(userDN, userGroup, requiredLifeTime, requestedVOMSAttr)
-      if not result['OK']:
-        return result
-      pemData = result['Value'][0]
-      chain = X509Chain()
-      result = chain.loadProxyFromString(pemData)
-      if not result['OK']:
-        return result
-
-    else:
-      # Get the stored proxy and dress it with the VOMS extension
-      retVal = self.getProxy(userDN, userGroup, requiredLifeTime)
-      if not retVal['OK']:
-        return retVal
-      chain, _secsLeft = retVal['Value']
-
+    if voms:
+      # If VOMS proxy requested
       vomsMgr = VOMS()
-      attrs = vomsMgr.getVOMSAttributes(chain).get('Value') or ['']
-      if attrs[0]:
+      attrs = vomsMgr.getVOMSAttributes(chain).get('Value')
+      if attrs and attrs[0]:
         if vomsAttr != attrs[0]:
           return S_ERROR("Stored proxy has already a different VOMS attribute %s than requested %s" %
                          (attrs[0], vomsAttr))
       else:
-        retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=vomsVO)
+        retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=Registry.getVOMSVOForGroup(userGroup))
         if not retVal['OK']:
           return S_ERROR("Cannot append voms extension: %s" % retVal['Message'])
         chain = retVal['Value']
+      # We have got the VOMS proxy, store it into the cache
+      result = self.__storeVOMSProxy(userDN, userGroup, vomsAttr, chain)
+      if not result['OK']:
+        return result
+      timeLeft = result['Value']
 
-    # We have got the VOMS proxy, store it into the cache
-    result = self.__storeVOMSProxy(userDN, userGroup, vomsAttr, chain)
-    if not result['OK']:
-      return result
-    return S_OK((chain, result['Value']))
+    return S_OK((chain, timeLeft))
 
   def __storeVOMSProxy(self, userDN, userGroup, vomsAttr, chain):
     """ Store VOMS proxy
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: DIRAC group
-        :param basestring vomsAttr: VOMS attribute
-        :param X509Chain() chain: proxy as chain
+        :param str userDN: user DN
+        :param str userGroup: DIRAC group
+        :param str vomsAttr: VOMS attribute
+        :param object chain: proxy as X509Chain
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     retVal = self._getConnection()
     if not retVal['OK']:
@@ -971,47 +802,26 @@ class ProxyDB(DB):
         with valid proxies within the given validity period expressed in seconds
 
         :param int validSecondsLeft: validity period expressed in seconds
-        :param basestring userMask: user name that need to add to search filter
+        :param str userMask: user name that need to add to search filter
 
-        :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, group
-                                         expiration time, persistent flag
+        :return: S_OK(list)/S_ERROR() -- list contain dicts with DN, group, expiration time
     """
-    data = []
+    selDict = {}
     sqlCond = []
     if validSecondsLeft:
       try:
         validSecondsLeft = int(validSecondsLeft)
       except ValueError:
         return S_ERROR("Seconds left has to be an integer")
-      sqlCond.append("TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > %d" % validSecondsLeft)
+      sqlCond.append("TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) > %d" % validSecondsLeft)
 
     if userMask:
-      try:
-        sUserName = self._escapeString(userMask)['Value']
-      except KeyError:
-        return S_ERROR("Can't escape user name")
-      sqlCond.append('UserName = %s' % sUserName)
-
-    for table, fields in [('ProxyDB_CleanProxies', ("UserName", "UserDN", "ExpirationTime")),
-                          ('ProxyDB_Proxies', ("UserName", "UserDN", "UserGroup",
-                                               "ExpirationTime", "PersistentFlag"))]:
-      cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
-      if sqlCond:
-        cmd += " WHERE %s" % " AND ".join(sqlCond)
-      retVal = self._query(cmd)
-      if not retVal['OK']:
-        return retVal
-      for record in retVal['Value']:
-        record = list(record)
-        if table == 'ProxyDB_CleanProxies':
-          record.insert(2, '')
-          record.insert(4, False)
-        data.append({'Name': record[0],
-                     'DN': record[1],
-                     'group': record[2],
-                     'expirationtime': record[3],
-                     'persistent': record[4] == 'True'})
-    return S_OK(data)
+      result = Registry.getDNsForUsername(userMask)
+      if not result['OK'] or not result.get('Value'):
+        return S_OK([])
+      selDict['UserDN'] = result['Value']
+    result = self.getProxiesContent(selDict, cond=sqlCond)
+    return S_OK(result['Value']['Dictionaries']) if result['OK'] else result
 
   def getCredentialsAboutToExpire(self, requiredSecondsLeft, onlyPersistent=True):
     """ Get credentials about to expire for MyProxy
@@ -1031,8 +841,8 @@ class ProxyDB(DB):
   def setPersistencyFlag(self, userDN, userGroup, persistent=True):
     """ Set the proxy PersistentFlag to the flag value
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: group name
+        :param str userDN: user DN
+        :param str userGroup: group name
         :param boolean persistent: enable persistent flag
 
         :return: S_OK()/S_ERROR()
@@ -1053,7 +863,7 @@ class ProxyDB(DB):
     sqlInsert = True
     if retVal['OK']:
       data = retVal['Value']
-      if len(data) > 0:
+      if data:
         sqlInsert = False
         if data[0][0] == sqlFlag:
           return S_OK()
@@ -1065,12 +875,9 @@ class ProxyDB(DB):
       if not result['OK']:
         self.log.error("setPersistencyFlag: Can not retrieve username for DN", userDN)
         return result
-      try:
-        sUserName = self._escapeString(result['Value'])['Value']
-      except KeyError:
-        return S_ERROR("Can't escape user name")
-      cmd = "INSERT INTO `ProxyDB_Proxies` ( UserName, UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) "
-      cmd += " VALUES( %s, %s, %s, '', UTC_TIMESTAMP(), 'True' )" % (sUserName, sUserDN, sUserGroup)
+      userName = result['Value']
+      cmd = "INSERT INTO `ProxyDB_Proxies` (UserName, UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag)"
+      cmd += " VALUES ('%s', %s, %s, '', UTC_TIMESTAMP(), 'True' )" % (userName, sUserDN, sUserGroup)
     else:
       cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN=%s AND UserGroup=%s" % (sqlFlag,
                                                                                                    sUserDN,
@@ -1080,49 +887,101 @@ class ProxyDB(DB):
       return retVal
     return S_OK()
 
-  def getProxiesContent(self, selDict, sortList, start=0, limit=0):
-    """ Get the contents of the db, parameters are a filter to the db
+  def getProxiesContent(self, selDict, sortList=None, start=0, limit=0, cond=None):
+    """ Get the contents of the db, parameters are a filter to the db.
 
-        :param dict selDict: selection dict that contain fields and their posible values
-        :param dict sortList: dict with sorting fields
-        :param int,long start: search limit start
-        :param int,long start: search limit amount
+        :param dict selDict: selection dict that contain fields and their possible values
+        :param sortList: dict with sorting fields
+        :type sortList: str or list
+        :param int start: search limit start
+        :param int start: search limit amount
+        :param dict cond: filters
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
-    data = []
+    paramNames = ("UserName", "UserDN", "UserGroup", "ExpirationTime", "ProxyProvider")
+
+    users = []
+    groups = []
+    if 'UserName' in selDict:
+      users = selDict['UserName']
+      if not isinstance(users, (list, tuple)):
+        users = [users]
+      del selDict["UserName"]
+    if 'UserGroup' in selDict:
+      groups = selDict['UserGroup']
+      if not isinstance(groups, (list, tuple)):
+        groups = [groups]
+      del selDict["UserGroup"]
+
+    if groups or users:
+      DNs = []
+      if groups and users:
+        for user in users:
+          for group in groups:
+            result = Registry.getDNsForUsernameInGroup(user, group)
+            if result['OK']:
+              DNs += result['Value']
+      elif users:
+        for user in users:
+          result = Registry.getDNsForUsername(user)
+          if result['OK']:
+            DNs += result['Value']
+      elif groups:
+        for group in groups:
+          for user in Registry.getUsersInGroup(group):
+            result = Registry.getDNsForUsername(user)
+            if result['OK']:
+              DNs += result['Value']
+
+      if not DNs:
+        return S_OK({'ParameterNames': paramNames, 'Records': [], 'TotalRecords': 0, 'Dictionaries': []})
+      if selDict.get("UserDN"):
+        selDNs = selDict["UserDN"] if isinstance(selDict["UserDN"], (list, tuple)) else [selDict["UserDN"]]
+        selDict["UserDN"] = []
+        for dn in selDNs:
+          if dn in DNs:
+            selDict["UserDN"].append(dn)
+        if not selDict["UserDN"]:
+          return S_OK({'ParameterNames': paramNames, 'Records': [], 'TotalRecords': 0, 'Dictionaries': []})
+      else:
+        selDict["UserDN"] = DNs
+
+    listData = []
+    dataRecords = []
     sqlWhere = ["Pem is not NULL"]
-    for table, fields in [('ProxyDB_CleanProxies', ("UserName", "UserDN", "ExpirationTime")),
-                          ('ProxyDB_Proxies', ("UserName", "UserDN", "UserGroup",
-                                               "ExpirationTime", "PersistentFlag"))]:
+    if cond:
+      sqlWhere += (list(cond) if isinstance(cond, (list, tuple)) else [cond])
+
+    sqlOrder = []
+    if sortList:
+      for sort in sortList:
+        if len(sort) == 1:
+          sort = (sort, "DESC")
+        elif len(sort) > 2:
+          return S_ERROR("Invalid sort %s" % sort)
+        if sort[0] in ['UserDN', 'ExpirationTime']:
+          if sort[1].upper() not in ("ASC", "DESC"):
+            return S_ERROR("Invalid sorting order %s" % sort[1])
+          sqlOrder.append("%s %s" % (sort[0], sort[1]))
+
+    for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
+                          ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
+
+      cmd = "%s ORDER BY %s " % (cmd, ", ".join(sqlOrder)) if sqlOrder else " ORDER BY UserDN DESC "
+
       for field in selDict:
         if field not in fields:
           continue
         fVal = selDict[field]
         if isinstance(fVal, (dict, tuple, list)):
-          sqlWhere.append("%s in (%s)" %
-                          (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
+          if fVal:
+            sqlWhere.append("%s in (%s)" %
+                            (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
         else:
           sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
-      sqlOrder = []
-      if sortList:
-        for sort in sortList:
-          if len(sort) == 1:
-            sort = (sort, "DESC")
-          elif len(sort) > 2:
-            return S_ERROR("Invalid sort %s" % sort)
-          if sort[0] not in fields:
-            if table == 'ProxyDB_CleanProxies' and sort[0] in ['UserGroup', 'PersistentFlag']:
-              continue
-            return S_ERROR("Invalid sorting field %s" % sort[0])
-          if sort[1].upper() not in ("ASC", "DESC"):
-            return S_ERROR("Invalid sorting order %s" % sort[1])
-          sqlOrder.append("%s %s" % (sort[0], sort[1]))
-      if sqlWhere:
-        cmd = "%s WHERE %s" % (cmd, " AND ".join(sqlWhere))
-      if sqlOrder:
-        cmd = "%s ORDER BY %s" % (cmd, ", ".join(sqlOrder))
+      cmd += " WHERE %s " % " AND ".join(sqlWhere)
       if limit:
         try:
           start = int(start)
@@ -1133,37 +992,63 @@ class ProxyDB(DB):
       retVal = self._query(cmd)
       if not retVal['OK']:
         return retVal
+
       for record in retVal['Value']:
         record = list(record)
-        if table == 'ProxyDB_CleanProxies':
-          record.insert(2, '')
-          record.insert(4, False)
-        record[4] = record[4] == 'True'
-        data.append(record)
-    totalRecords = len(data)
-    return S_OK({'ParameterNames': fields, 'Records': data, 'TotalRecords': totalRecords})
+        result = Registry.getUsernameForDN(record[0])
+        if not result['OK']:
+          gLogger.error(result['Message'])
+          continue
+        user = result['Value']
+        result = Registry.getGroupsForDN(record[0])
+        if not result['OK']:
+          gLogger.error(result['Message'])
+          continue
+        groups = result['Value']
+        result = self.getProxyProviderForDN(record[0])
+        if not result['OK']:
+          gLogger.error(result['Message'])
+          continue
+        provider = result['Value']
 
-  def logAction(self, action, issuerDN, issuerGroup, targetDN, targetGroup):
+        if table == 'ProxyDB_CleanProxies':
+          record.insert(1, groups)
+          record.append(provider)
+
+        listData.append({'DN': record[0],
+                         'user': user,
+                         'groups': [record[1]] if table == 'ProxyDB_Proxies' else groups,
+                         'expirationtime': record[2],
+                         'provider': provider})
+
+        record.insert(0, user)
+        record.append(provider)
+        dataRecords.append(record)
+    return S_OK({'ParameterNames': paramNames, 'Records': dataRecords, 'TotalRecords': len(dataRecords),
+                 'Dictionaries': listData})
+
+  def logAction(self, action, issuerUsername, issuerGroup, targetUsername, targetGroup):
     """ Add an action to the log
 
-        :param basestring action: proxy action
-        :param basestring issuerDN: user DN of issuer
-        :param basestring issuerGroup: DIRAC group of issuer
-        :param basestring targetDN: user DN of target
-        :param basestring targetGroup: DIRAC group of target
+        :param str action: proxy action
+        :param str issuerUsername: user DN of issuer
+        :param str issuerGroup: DIRAC group of issuer
+        :param str targetUsername: user DN of target
+        :param str targetGroup: DIRAC group of target
 
         :return: S_ERROR()
     """
     try:
       sAction = self._escapeString(action)['Value']
-      sIssuerDN = self._escapeString(issuerDN)['Value']
+      sIssuerUsername = self._escapeString(issuerUsername)['Value']
       sIssuerGroup = self._escapeString(issuerGroup)['Value']
-      sTargetDN = self._escapeString(targetDN)['Value']
+      sTargetUsername = self._escapeString(targetUsername)['Value']
       sTargetGroup = self._escapeString(targetGroup)['Value']
     except KeyError:
       return S_ERROR("Can't escape from death")
-    cmd = "INSERT INTO `ProxyDB_Log` ( Action, IssuerDN, IssuerGroup, TargetDN, TargetGroup, Timestamp ) VALUES "
-    cmd += "( %s, %s, %s, %s, %s, UTC_TIMESTAMP() )" % (sAction, sIssuerDN, sIssuerGroup, sTargetDN, sTargetGroup)
+    cmd = "INSERT INTO `ProxyDB_Log` (Action, IssuerUsername, IssuerGroup, TargetUsername, TargetGroup, Timestamp)"
+    cmd += " VALUES (%s, %s, %s, %s, %s, UTC_TIMESTAMP())" % (sAction, sIssuerUsername, sIssuerGroup,
+                                                              sTargetUsername, sTargetGroup)
     retVal = self._update(cmd)
     if not retVal['OK']:
       self.log.error("Can't add a proxy action log: ", retVal['Message'])
@@ -1177,11 +1062,16 @@ class ProxyDB(DB):
     return self._update(cmd)
 
   def getLogsContent(self, selDict, sortList, start=0, limit=0):
+    """ Function to get the contents of the logs table parameters are a filter to the db
+
+        :param dict selDict: filters
+        :param list sortList: sort list
+        :param int start: start number
+        :param int limit: limit
+
+        :return: S_OK()/S_ERROR()
     """
-    Function to get the contents of the logs table
-      parameters are a filter to the db
-    """
-    fields = ("Action", "IssuerDN", "IssuerGroup", "TargetDN", "TargetGroup", "Timestamp")
+    fields = ("Action", "IssuerUsername", "IssuerGroup", "TargetUsername", "TargetGroup", "Timestamp")
     cmd = "SELECT %s FROM `ProxyDB_Log`" % ", ".join(fields)
     if selDict:
       qr = []
@@ -1215,11 +1105,11 @@ class ProxyDB(DB):
       totalRecords = retVal['Value'][0][0]
     return S_OK({'ParameterNames': fields, 'Records': data, 'TotalRecords': totalRecords})
 
-  def generateToken(self, requesterDN, requesterGroup, numUses=1, lifeTime=0, retries=10):
+  def generateToken(self, requesterUsername, requesterGroup, numUses=1, lifeTime=0, retries=10):
     """ Generate and return a token and the number of uses for the token
 
-        :param basestring requesterDN: DN of requester
-        :param basestring requesterGroup: DIRAC group of requester
+        :param str requesterUsername: DN of requester
+        :param str requesterGroup: DIRAC group of requester
         :param int numUses: number of uses
         :param int lifeTime: proxy live time in a seconds
         :param int retries: number of retries
@@ -1234,9 +1124,9 @@ class ProxyDB(DB):
     rndData = "%s.%s.%s.%s" % (time.time(), random.random(), numUses, lifeTime)
     m.update(rndData)
     token = m.hexdigest()
-    fieldsSQL = ", ".join(("Token", "RequesterDN", "RequesterGroup", "ExpirationTime", "UsesLeft"))
+    fieldsSQL = ", ".join(("Token", "RequesterUsername", "RequesterGroup", "ExpirationTime", "UsesLeft"))
     valuesSQL = ", ".join((self._escapeString(token)['Value'],
-                           self._escapeString(requesterDN)['Value'],
+                           self._escapeString(requesterUsername)['Value'],
                            self._escapeString(requesterGroup)['Value'],
                            "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int(lifeTime),
                            str(numUses)))
@@ -1259,18 +1149,18 @@ class ProxyDB(DB):
     delSQL = "DELETE FROM `ProxyDB_Tokens` WHERE ExpirationTime < UTC_TIMESTAMP() OR UsesLeft < 1"
     return self._update(delSQL)
 
-  def useToken(self, token, requesterDN, requesterGroup):
+  def useToken(self, token, requesterUsername, requesterGroup):
     """ Uses of token count
 
-        :param basestring token: token
-        :param basestring requesterDN: DN of requester
-        :param basestring requesterGroup: DIRAC group of requester
+        :param str token: token
+        :param str requesterUsername: user name of requester
+        :param str requesterGroup: DIRAC group of requester
 
         :return: S_OK(boolean)/S_ERROR()
     """
     sqlCond = " AND ".join(("UsesLeft > 0",
                             "Token=%s" % self._escapeString(token)['Value'],
-                            "RequesterDN=%s" % self._escapeString(requesterDN)['Value'],
+                            "RequesterUsername=%s" % self._escapeString(requesterUsername)['Value'],
                             "RequesterGroup=%s" % self._escapeString(requesterGroup)['Value'],
                             "ExpirationTime >= UTC_TIMESTAMP()"))
     updateSQL = "UPDATE `ProxyDB_Tokens` SET UsesLeft = UsesLeft - 1 WHERE %s" % sqlCond
@@ -1287,7 +1177,6 @@ class ProxyDB(DB):
     cmd = "DELETE FROM `ProxyDB_ExpNotifs` WHERE ExpirationTime < UTC_TIMESTAMP()"
     return self._update(cmd)
 
-  # FIXME: Add clean proxy
   def sendExpirationNotifications(self):
     """ Send notification about expiration
 
@@ -1327,7 +1216,7 @@ class ProxyDB(DB):
         if notKey in notifDone and notifDone[notKey] <= notifLimit:
           # Already notified for this notification limit
           break
-        if not self._notifyProxyAboutToExpire(userDN, lTime):
+        if not self._notifyProxyAboutToExpire(userDN, group, lTime):
           # Cannot send notification, retry later
           break
         try:
@@ -1351,10 +1240,11 @@ class ProxyDB(DB):
         notifDone[notKey] = notifLimit
     return S_OK(sent)
 
-  def _notifyProxyAboutToExpire(self, userDN, lTime):
+  def _notifyProxyAboutToExpire(self, userDN, userGroup, lTime):
     """ Send notification mail about to expire
 
-        :param basestring userDN: user DN
+        :param str userDN: user DN
+        :param str userGroup: DIRAC group
         :param int lTime: left proxy live time in a seconds
 
         :return: boolean
@@ -1376,18 +1266,19 @@ Dear %s,
   information is:
 
   DN:    %s
+  Group: %s
 
   If you plan on keep using this credentials please upload a newer proxy to
   DIRAC by executing:
 
-  $ dirac-proxy-init --upload
+  $ dirac-proxy-init -P -g %s --rfc
 
   If you have been issued different certificate, please make sure you have a
   proxy uploaded with that certificate.
 
 Cheers,
  DIRAC's Proxy Manager
-""" % (userName, daysLeft, userDN)
+""" % (userName, daysLeft, userDN, userGroup, userGroup)
     fromAddr = self.getFromAddr()
     result = self.__notifClient.sendMail(userEMail, msgSubject, msgBody, fromAddress=fromAddr)
     if not result['OK']:
@@ -1499,5 +1390,60 @@ Cheers,
           sqlSet.append("%s = %s" % (k, dValues[k]))
       cmd = "UPDATE `ProxyDB_Proxies` SET %s WHERE %s" % (", ".join(sqlSet), " AND ".join(sqlWhere))
 
-    self.logAction("store proxy", userDN, userGroup, userDN, userGroup)
+    self.logAction("store proxy", userName, userGroup, userName, userGroup)
     return self._update(cmd)
+
+  def getProxyProviderForDN(self, userDN, username=None):
+    """ Get proxy providers by user DN
+
+        :param str userDN: user DN
+        :param str username: user name
+
+        :return: S_OK(str)/S_ERROR()
+    """
+    if not username:
+      result = Registry.getUsernameForDN(userDN)
+      if not result['OK']:
+        return result
+      username = result['Value']
+
+    result = Registry.getDNProperty(userDN, 'ProxyProviders', username=username, defaultValue=[])
+    if result['OK'] and result['Value']:
+      return S_OK(result['Value'][0])
+
+    for userID in Registry.getIDsForUsername(username):
+      result = gAuthManagerData.getDNOptionForID(userID, userDN, 'PROVIDER')
+      if not result['OK']:
+        return result
+      provider = result['Value']
+      if provider:
+        return S_OK(provider)
+    return S_OK('Certificate')
+
+  def getValidDNs(self, listDNs, sqlCond=None):
+    """ Get valid DNs
+
+        :param list listDNs: list DNs
+
+        :return: S_OK()/S_ERROR()
+    """
+    dns = []
+    dataRecords = []
+    sqlWhere = ["Pem is not NULL"]
+    if sqlCond:
+      sqlWhere += (list(sqlCond) if isinstance(sqlCond, (list, tuple)) else [sqlCond])
+    sqlWhere.append("UserDN in (%s)" % ", ".join([self._escapeString(str(v))['Value'] for v in listDNs]))
+    for table, exfield in [('ProxyDB_CleanProxies', ''), ('ProxyDB_Proxies', ', UserGroup')]:
+      cmd = "SELECT UserDN, ExpirationTime%s FROM `%s`" % (exfield, table)
+      result = self._query("%s WHERE %s ORDER BY UserDN DESC" % (cmd, " AND ".join(sqlWhere)))
+      if not result['OK']:
+        return result
+      for record in result['Value']:
+        record = list(record)
+        if len(record) == 2:
+          record.append(None)
+        if record[0] in dns:
+          continue
+        dns.append(record[0])
+        dataRecords.append(record)
+    return S_OK(dataRecords)
