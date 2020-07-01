@@ -54,6 +54,8 @@ class ProxyManagerClient(object):
     print('//// 10')
     self.rpcClient = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
     print('//// 11')
+    print(self.rpcClient)
+    print('///////')
 
   def __deleteTemporalFile(self, filename):
     """ Delete temporal file
