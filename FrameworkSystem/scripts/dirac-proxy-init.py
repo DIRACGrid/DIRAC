@@ -16,7 +16,7 @@ import pickle
 import datetime
 
 import DIRAC
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -192,7 +192,6 @@ class ProxyInit(object):
     userDN = resultUserDN['Value']
 
     gLogger.notice("Uploading proxy..")
-    gLogger.info(gConfig.getValue('/Systems/Framework/Production/URLs/ProxyManager'))
     if userDN in self.__uploadedInfo:
       expiry = self.__uploadedInfo[userDN].get('')
       if expiry:
@@ -206,7 +205,6 @@ class ProxyInit(object):
     upParams.rfcIfPossible = self.__piParams.rfc
     for k in ('certLoc', 'keyLoc', 'userPasswd'):
       setattr(upParams, k, getattr(self.__piParams, k))
-    gLogger.info(gConfig.getValue('/Systems/Framework/Production/URLs/ProxyManager'))
     resultProxyUpload = ProxyUpload.uploadProxy(upParams)
     if not resultProxyUpload['OK']:
       gLogger.error(resultProxyUpload['Message'])
@@ -404,7 +402,7 @@ class ProxyInit(object):
 
     with Halo('Authentification from %s.' % self.__piParams.provider) as spin:
       # Get https endpoint of OAuthService API from http API of ConfigurationService
-      confUrl = gConfig.getValue("/LocalInstallation/ConfigurationServerAPI")
+      confUrl = DIRAC.gConfig.getValue("/LocalInstallation/ConfigurationServerAPI")
       if not confUrl:
         sys.exit('Cannot get http url of configuration server.')
       result = restRequest(confUrl, '/get', option='/Systems/Framework/Production/URLs/AuthAPI')
@@ -534,7 +532,7 @@ class ProxyInit(object):
     if not result['OK']:
       return S_ERROR("Cannot contact CS to get user list")
     threading.Thread(target=self.checkCAs).start()
-    gConfig.forceRefresh(fromMaster=True)
+    DIRAC.gConfig.forceRefresh(fromMaster=True)
     return S_OK(self.__piParams.proxyLoc)
 
 
@@ -547,7 +545,6 @@ if __name__ == "__main__":
   DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
 
   pI = ProxyInit(piParams)
-  gLogger.info(gConfig.getConfigurationTree())
   if piParams.addProvider:
     resultDoMagic = pI.doOAuthMagic()
   else:
