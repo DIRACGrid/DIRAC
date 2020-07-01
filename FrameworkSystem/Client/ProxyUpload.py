@@ -103,11 +103,20 @@ class CLIParams(object):
     Script.registerSwitch("i", "version", "Print version", self.showVersion)
     Script.addDefaultOptionValue("LogLevel", "always")
 
-
+time.sleep(5)
+print('====>> .1')
 from DIRAC import S_ERROR
+time.sleep(5)
+print('====>> .2')
 from DIRAC.Core.Security import Locations
+time.sleep(5)
+print('====>> .3')
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+time.sleep(5)
+print('====>> .4')
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+time.sleep(5)
+print('====>> .5')
 
 
 def uploadProxy(params):
