@@ -7,23 +7,43 @@ from __future__ import print_function
 import os
 import six
 import datetime
+import time
+time.sleep(5)
 print('//// 1')
 from DIRAC import S_OK, S_ERROR, gLogger
+time.sleep(5)
 print('//// 2')
 from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
+time.sleep(5)
 print('//// 3')
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup,\
     getUsernameForDN, getDNsForUsernameInGroup
+time.sleep(5)
 print('//// 4')
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
+time.sleep(5)
 print('//// 5')
 from DIRAC.Core.Utilities.DictCache import DictCache
+time.sleep(5)
+print('//// 6')
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
+time.sleep(5)
+print('//// 7')
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+time.sleep(5)
+print('//// 8')
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
+time.sleep(5)
+print('//// 9')
 from DIRAC.Core.Security.VOMS import VOMS
+time.sleep(5)
+print('//// 0')
 from DIRAC.Core.Security import Locations
+time.sleep(5)
+print('//// 01')
 from DIRAC.Core.DISET.RPCClient import RPCClient
+time.sleep(5)
+print('//// 02')
 
 __RCSID__ = "$Id$"
 
