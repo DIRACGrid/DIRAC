@@ -9,10 +9,14 @@ import six
 import datetime
 print('//// 1')
 from DIRAC import S_OK, S_ERROR, gLogger
+print('//// 2')
 from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
+print('//// 3')
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup,\
     getUsernameForDN, getDNsForUsernameInGroup
+print('//// 4')
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
+print('//// 5')
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
