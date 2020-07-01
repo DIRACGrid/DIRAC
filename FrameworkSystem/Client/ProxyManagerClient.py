@@ -7,19 +7,11 @@ from __future__ import print_function
 import os
 import six
 import datetime
-import time
-time.sleep(5)
-print('====>> -1')
+
 from DIRAC import S_OK, S_ERROR, gLogger
-time.sleep(5)
-print('====>> -2')
 from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
-time.sleep(5)
-print('====>> -3')
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup,\
     getUsernameForDN, getDNsForUsernameInGroup
-time.sleep(5)
-print('====>> -4')
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
