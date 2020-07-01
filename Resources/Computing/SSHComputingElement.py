@@ -573,7 +573,7 @@ class SSHComputingElement(ComputingElement):
     for job in jobIDList:
       stamp = os.path.basename(urlparse(job).path)
       jobDict[stamp] = job
-    stampList = jobDict.keys()
+    stampList = list(jobDict)
 
     commandOptions = {'JobIDList': stampList, 'User': self.user}
     resultCommand = self.__executeHostCommand('killJob', commandOptions, host=host)
@@ -637,7 +637,7 @@ class SSHComputingElement(ComputingElement):
     for job in jobIDList:
       stamp = os.path.basename(urlparse(job).path)
       jobDict[stamp] = job
-    stampList = jobDict.keys()
+    stampList = list(jobDict)
 
     for jobList in breakListIntoChunks(stampList, 100):
       resultCommand = self.__executeHostCommand('getJobStatus', {'JobIDList': jobList}, host=host)

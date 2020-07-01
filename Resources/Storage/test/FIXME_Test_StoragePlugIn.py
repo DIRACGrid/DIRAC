@@ -13,6 +13,7 @@ from types import IntType, LongType, StringTypes
 
 from DIRAC.Core.Base.Script import parseCommandLine, getPositionalArgs
 parseCommandLine()
+
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.File import getSize
 positionalArgs = getPositionalArgs()
