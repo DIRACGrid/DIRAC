@@ -12,15 +12,29 @@ import sys
 import glob
 import time
 import datetime
-
+time.sleep(5)
+print('====>> 1')
 import DIRAC
-
+time.sleep(5)
+print('====>> 2')
 from DIRAC import gLogger, S_OK, S_ERROR
+time.sleep(5)
+print('====>> 3')
 from DIRAC.Core.Base import Script
+time.sleep(5)
+print('====>> 4')
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
+time.sleep(5)
+print('====>> 5')
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
+time.sleep(5)
+print('====>> 6')
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+time.sleep(5)
+print('====>> 7')
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
+time.sleep(5)
+print('====>> 8')
 
 __RCSID__ = "$Id$"
 
