@@ -8,54 +8,35 @@ import os
 import six
 import datetime
 
-print('//// 1')
 from DIRAC import S_OK, S_ERROR, gLogger
-print('//// 2')
 from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
-print('//// 3')
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup,\
     getUsernameForDN, getDNsForUsernameInGroup
-print('//// 4')
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
-print('//// 5')
 from DIRAC.Core.Utilities.DictCache import DictCache
-print('//// 6')
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
-print('//// 7')
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-print('//// 8')
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
-print('//// 9')
 from DIRAC.Core.Security.VOMS import VOMS
-print('//// 0')
 from DIRAC.Core.Security import Locations
-print('//// 01')
 from DIRAC.Core.DISET.RPCClient import RPCClient
-print('//// 02')
 
 __RCSID__ = "$Id$"
-print('//// 03')
+
 gProxiesSync = ThreadSafe.Synchronizer()
-print('//// 04')
 
 class ProxyManagerClient(object):
   """ Proxy manager client
   """
-  print('//// 05')
+
   __metaclass__ = DIRACSingleton.DIRACSingleton
-  print('//// 06')
+
   def __init__(self, **kwargs):
-    print('//// 07')
     self.__extArgs = kwargs
-    print('//// 08')
     self.__proxiesCache = DictCache()
-    print('//// 09')
     self.__filesCache = DictCache(self.__deleteTemporalFile)
-    print('//// 10')
     #self.rpcClient = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
-    print('//// 11')
-    #print(self.rpcClient)
-    print('///////')
+  
 
   def __deleteTemporalFile(self, filename):
     """ Delete temporal file
