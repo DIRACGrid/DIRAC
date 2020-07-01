@@ -351,8 +351,8 @@ class ARCComputingElement(ComputingElement):
         return res
       try:
         ldapValues = res['Value'][1].split("\n")
-        running = [lValue for lValue in ldapValues if 'GlueCEStateRunningJobs' in lValue]
-        waiting = [lValue for lValue in ldapValues if 'GlueCEStateWaitingJobs' in lValue]
+        running = [lValue for lValue in ldapValues if 'GLUE2ComputingShareRunningJobs' in lValue]
+        waiting = [lValue for lValue in ldapValues if 'GLUE2ComputingShareWaitingJobs' in lValue]
         result['RunningJobs'] = int(running[0].split(":")[1])
         result['WaitingJobs'] = int(waiting[0].split(":")[1])
       except IndexError:
