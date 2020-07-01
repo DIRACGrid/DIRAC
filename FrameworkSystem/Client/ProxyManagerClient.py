@@ -34,20 +34,26 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 print('//// 02')
 
 __RCSID__ = "$Id$"
-
+print('//// 03')
 gProxiesSync = ThreadSafe.Synchronizer()
-
+print('//// 04')
 
 class ProxyManagerClient(object):
   """ Proxy manager client
   """
+  print('//// 05')
   __metaclass__ = DIRACSingleton.DIRACSingleton
-
+  print('//// 06')
   def __init__(self, **kwargs):
+    print('//// 07')
     self.__extArgs = kwargs
+    print('//// 08')
     self.__proxiesCache = DictCache()
+    print('//// 09')
     self.__filesCache = DictCache(self.__deleteTemporalFile)
+    print('//// 10')
     self.rpcClient = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
+    print('//// 11')
 
   def __deleteTemporalFile(self, filename):
     """ Delete temporal file

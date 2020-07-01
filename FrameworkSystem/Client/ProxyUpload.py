@@ -115,7 +115,6 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 time.sleep(5)
 print('====>> .4')
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-time.sleep(5)
 print('====>> .5')
 
 
