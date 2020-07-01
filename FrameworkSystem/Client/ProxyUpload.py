@@ -8,10 +8,18 @@ from __future__ import absolute_import
 from __future__ import division
 import sys
 import getpass
+import time
+time.sleep(5)
+print('====>> 11')
 import DIRAC
-
+time.sleep(5)
+print('====>> 22')
 from DIRAC import gLogger
+time.sleep(5)
+print('====>> 33')
 from DIRAC.Core.Base import Script
+time.sleep(5)
+print('====>> 44')
 
 __RCSID__ = "$Id$"
 
