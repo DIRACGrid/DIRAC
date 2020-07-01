@@ -18,9 +18,9 @@ import datetime
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS  # pylint: disable=import-error
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
+from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 __RCSID__ = "$Id$"
