@@ -22,8 +22,11 @@ time.sleep(5)
 print('====>> 3')
 from DIRAC.Core.Base import Script
 time.sleep(5)
-print('====>> 4')
-from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
+print('====>> 4 == 0 ==')
+from DIRAC.FrameworkSystem.Client import ProxyGeneration
+time.sleep(5)
+print('====>> 4 == 1 ==')
+from DIRAC.FrameworkSystem.Client import ProxyUpload
 time.sleep(5)
 print('====>> 5')
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
