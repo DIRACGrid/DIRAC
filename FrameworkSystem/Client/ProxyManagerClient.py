@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import six
 import datetime
-
+print('//// 1')
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup,\
