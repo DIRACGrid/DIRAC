@@ -13,10 +13,7 @@ jobs:
       matrix:
         command:
           - pytest --no-cov
-          - DIRAC_USE_M2CRYPTO=Yes DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes pytest --no-cov
-          # Security tests are flakey due to reference counting bugs in pyGSI/src/crypto/asn1.c
           - pytest --no-cov Core/Security/test
-          - DIRAC_USE_M2CRYPTO=Yes DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes pytest --no-cov Core/Security/test
           - tests/checkDocs.sh
           # TODO This should cover more than just tests/CI
           # Excluded codes related to sourcing files
