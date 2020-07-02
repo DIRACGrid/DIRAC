@@ -314,7 +314,7 @@ def getDNsInGroup(group, checkStatus=False):
   vo = getGroupOption(group, 'VO')
 
   # Get VOMS information for VO, if it's VOMS VO
-  result = getVOsWithVOMS(vo)
+  result = getVOsWithVOMS([vo])
   if not result['OK']:
     return result
   if result['Value']:
@@ -785,42 +785,74 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
 
       :return: S_OK(str)/S_ERROR()
   """
+  from DIRAC import gLogger
+  gLogger.info('=====>> getDNsForUsernameInGroup')
   if username not in getGroupOption(group, 'Users', []):
+    gLogger.info('=====>> getDNsForUsernameInGroup1')
     return S_ERROR('%s group not have %s user.' % (group, username))
-
+  gLogger.info('=====>> getDNsForUsernameInGroup2')
   DNs = []
+  gLogger.info('=====>> getDNsForUsernameInGroup3')
   result = getDNsForUsername(username)
+  gLogger.info('=====>> getDNsForUsernameInGroup4')
   if not result['OK']:
+    gLogger.info('=====>> getDNsForUsernameInGroup5')
     return result
+  gLogger.info('=====>> getDNsForUsernameInGroup6')
   userDNs = result['Value']
+  gLogger.info('=====>> getDNsForUsernameInGroup7')
 
   vo = getGroupOption(group, 'VO')
+  gLogger.info('=====>> getDNsForUsernameInGroup8')
   if checkStatus and vo in getUserOption(username, 'Suspended', []):
+    gLogger.info('=====>> getDNsForUsernameInGroup9')
     return S_ERROR('%s marked as suspended for %s VO.' % (username, vo))
-
-  result = getVOsWithVOMS(vo)
+  gLogger.info('=====>> getDNsForUsernameInGroup10')
+  result = getVOsWithVOMS([vo])
+  gLogger.info('=====>> getDNsForUsernameInGroup11')
   if not result['OK']:
+    gLogger.info('=====>> getDNsForUsernameInGroup12')
     return result
+  gLogger.info('=====>> getDNsForUsernameInGroup13')
   if result['Value']:
+    gLogger.info('=====>> getDNsForUsernameInGroup14')
     result = getVOMSInfo(vo=vo)
+    gLogger.info('=====>> getDNsForUsernameInGroup15')
     if not result['OK']:
+      gLogger.info('=====>> getDNsForUsernameInGroup16')
       return result
+    gLogger.info('=====>> getDNsForUsernameInGroup17')
     vomsData = result['Value']
+    gLogger.info('=====>> getDNsForUsernameInGroup18')
     if vomsData.get(vo) and vomsData[vo]['OK']:
+      gLogger.info('=====>> getDNsForUsernameInGroup19')
       voData = vomsData[vo]['Value']
+      gLogger.info('=====>> getDNsForUsernameInGroup20')
       role = getGroupOption(group, 'VOMSRole')
+      gLogger.info('=====>> getDNsForUsernameInGroup21')
       for dn in userDNs:
+        gLogger.info('=====>> getDNsForUsernameInGroup22')
         if dn in voData:
+          gLogger.info('=====>> getDNsForUsernameInGroup23')
           if not checkStatus or not voData[dn]['Suspended']:
+            gLogger.info('=====>> getDNsForUsernameInGroup24')
             if not role or role in voData[dn]['ActuelRoles' if checkStatus else 'VOMSRoles']:
+              gLogger.info('=====>> getDNsForUsernameInGroup25')
               DNs.append(dn)
+      gLogger.info('=====>> getDNsForUsernameInGroup26')
     else:
+      gLogger.info('=====>> getDNsForUsernameInGroup27')
       DNs += userDNs
+    gLogger.info('=====>> getDNsForUsernameInGroup28')
   else:
+    gLogger.info('=====>> getDNsForUsernameInGroup29')
     DNs += userDNs
+  gLogger.info('=====>> getDNsForUsernameInGroup30')
 
   if DNs:
+    gLogger.info('=====>> getDNsForUsernameInGroup31')
     return S_OK(list(set(DNs)))
+  gLogger.info('=====>> getDNsForUsernameInGroup32')
   return S_ERROR('For %s@%s not found DN%s.' % (username, group, ' or it suspended' if checkStatus else ''))
 
 

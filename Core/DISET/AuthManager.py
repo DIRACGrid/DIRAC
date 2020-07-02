@@ -80,7 +80,7 @@ def initializationOfCertificate(credDict, logObj=gLogger):
 
       :return: bool -- specifying whether the username was found
   """
-  logObj.debug("initializationOfCertificate")
+  logObj.info("initializationOfCertificate")
   # Search host
   result = Registry.getHostnameForDN(credDict[KW_DN])
   if result['OK'] and result['Value']:
@@ -111,7 +111,7 @@ def initializationOfGroup(credDict, logObj=gLogger):
 
       :return: bool -- specifying whether the username was found
   """
-  logObj.debug("initializationOfGroup", credDict)
+  logObj.info("initializationOfGroup", credDict)
   # Find/check group
   credDict[KW_PROPERTIES] = []
   if not credDict.get(KW_GROUP) or credDict[KW_GROUP] == 'visitor':
@@ -121,28 +121,28 @@ def initializationOfGroup(credDict, logObj=gLogger):
       credDict[KW_GROUP] = "visitor"
       return False
     credDict[KW_GROUP] = result['Value']
-  logObj.debug("initializationOfGroup 1")
+  logObj.info("initializationOfGroup 1")
   if credDict[KW_GROUP] == KW_HOSTS_GROUP:
-    logObj.debug("initializationOfGroup 12")
+    logObj.info("initializationOfGroup 12")
     credDict[KW_PROPERTIES] = Registry.getPropertiesForHost(credDict[KW_USERNAME], [])
     return True
-  logObj.debug("initializationOfGroup 2")
+  logObj.info("initializationOfGroup 2")
   if not Registry.getGroupsForUser(credDict[KW_USERNAME], groupsList=[credDict[KW_GROUP]]).get('Value'):
     credDict[KW_USERNAME] = "anonymous"
     credDict[KW_GROUP] = "visitor"
     return False
-
+  logObj.info("initializationOfGroup 3")
   # Get DN for user/group
   result = Registry.getDNsForUsernameInGroup(credDict[KW_USERNAME], credDict[KW_GROUP], checkStatus=True)
   if not result['OK']:
     logObj.error(result['Message'])
     credDict[KW_GROUP] = "visitor"
     return False
-
+  logObj.info("initializationOfGroup 4")
   # Set DN if authorization not througth certificate
   if not credDict.get(KW_DN):
      credDict[KW_DN] = result['Value'][0]
-
+  logObj.info("initializationOfGroup 5")
   # Check if DN match for group
   if credDict[KW_DN] not in result["Value"]:
     logObj.error('%s DN is not match for %s group.' % (credDict[KW_DN], credDict[KW_GROUP]))
@@ -195,7 +195,7 @@ class AuthManager(object):
 
     # Extract valid groups
     validGroups = self.getValidGroups(requiredProperties)
-    self.__authLogger.debug("validGroups: ", validGroups)
+    self.__authLogger.info("validGroups: ", validGroups)
 
     # Read extra credentials
     if KW_EXTRA_CREDENTIALS in credDict:
