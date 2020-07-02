@@ -968,8 +968,7 @@ class ProxyDB(DB):
     for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
                           ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
-
-      cmd = "%s ORDER BY %s " % (cmd, ", ".join(sqlOrder)) if sqlOrder else " ORDER BY UserDN DESC "
+      cmd += "%s ORDER BY %s " % (cmd, ", ".join(sqlOrder)) if sqlOrder else " ORDER BY UserDN DESC "
 
       for field in selDict:
         if field not in fields:
@@ -991,7 +990,6 @@ class ProxyDB(DB):
         cmd += " LIMIT %d,%d" % (start, limit)
       retVal = self._query(cmd)
       if not retVal['OK']:
-        retVal['Message'] = cmd
         return retVal
 
       for record in retVal['Value']:
