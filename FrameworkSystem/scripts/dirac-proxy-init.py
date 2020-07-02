@@ -231,6 +231,7 @@ class ProxyInit(object):
       for userDN, data in self.__uploadedInfo.items():
         maxDNLen = max(maxDNLen, len(userDN))
         print(maxProviderLen)
+        print(data)
         print(data['provider'])
         print(len(data['provider']))
         print(max(maxProviderLen, len(data['provider'])))
