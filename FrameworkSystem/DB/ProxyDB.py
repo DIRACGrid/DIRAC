@@ -989,6 +989,8 @@ class ProxyDB(DB):
         except ValueError:
           return S_ERROR("start and limit have to be integers")
         cmd += " LIMIT %d,%d" % (start, limit)
+      print('====================')
+      print(cmd)
       retVal = self._query(cmd)
       if not retVal['OK']:
         return retVal
