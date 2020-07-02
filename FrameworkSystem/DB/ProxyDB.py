@@ -987,7 +987,7 @@ class ProxyDB(DB):
         except ValueError:
           return S_ERROR("start and limit have to be integers")
         cmd += " LIMIT %d,%d" % (start, limit)
-      cmd += "ORDER BY %s " % (", ".join(sqlOrder)) if sqlOrder else " ORDER BY UserDN DESC")
+      cmd += "ORDER BY %s " % (", ".join(sqlOrder) if sqlOrder else " ORDER BY UserDN DESC")
       retVal = self._query(cmd)
       if not retVal['OK']:
         retVal['Message'] += "\n" + cmd
