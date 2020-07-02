@@ -103,11 +103,11 @@ class DIRACCAProxyProvider(ProxyProvider):
     if 'Algoritm' in parameters:
       self.algoritm = parameters['Algoritm']
     if 'Match' in parameters:
-      self.match = [self.fields2nid[f] for f in parameters['Match']]
+      self.match = [self.fields2nid[f] for f in parameters['Match']] if parameters['Match'][0] else []
     if 'Supplied' in parameters:
-      self.supplied = [self.fields2nid[f] for f in parameters['Supplied']]
+      self.supplied = [self.fields2nid[f] for f in parameters['Supplied']] if parameters['Match'][0] else []
     if 'Optional' in parameters:
-      self.optional = [self.fields2nid[f] for f in parameters['Optional']]
+      self.optional = [self.fields2nid[f] for f in parameters['Optional']] if parameters['Match'][0] else []
     allFields = self.optional + self.supplied + self.match
     if 'DNOrder' in parameters:
       self.dnList = []

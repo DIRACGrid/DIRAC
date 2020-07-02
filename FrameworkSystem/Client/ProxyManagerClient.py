@@ -11,7 +11,7 @@ import datetime
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup,\
-    getUsernameForDN, getDNsForUsernameInGroup
+    getUsernameForDN, getDNsForUsernameInGroup, getDNForUsernameInGroup
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
@@ -35,8 +35,6 @@ class ProxyManagerClient(object):
     self.__extArgs = kwargs
     self.__proxiesCache = DictCache()
     self.__filesCache = DictCache(self.__deleteTemporalFile)
-    #self.rpcClient = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
-  
 
   def __deleteTemporalFile(self, filename):
     """ Delete temporal file
@@ -65,7 +63,7 @@ class ProxyManagerClient(object):
     """
     dn = user
     if not user.startswith('/'):
-      result = getDNForUsernameInGroup(user, userGroup)
+      result = getDNForUsernameInGroup(user, group)
       if not result['OK']:
         return result
       dn = result['Value']
@@ -119,7 +117,8 @@ class ProxyManagerClient(object):
     if not retVal['OK']:
       return retVal
     # Upload!
-    return RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs).completeDelegationUpload(reqDict['id'], retVal['Value'])
+    rpc = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
+    return rpc.completeDelegationUpload(reqDict['id'], retVal['Value'])
 
   @gProxiesSync
   def __getProxy(self, user, userGroup, limited=False, requiredTimeLeft=1200, cacheTime=14400,
@@ -341,7 +340,8 @@ class ProxyManagerClient(object):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain token, number uses
     """
-    return RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs).generateToken(requester, requesterGroup, numUses)
+    rpc = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
+    return rpc.generateToken(requester, requesterGroup, numUses)
 
   def renewProxy(self, proxyToBeRenewed=None, minLifeTime=3600, newProxyLifeTime=43200, proxyToConnect=None):
     """ Renew a proxy using the ProxyManager
@@ -431,7 +431,8 @@ class ProxyManagerClient(object):
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
-    return RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs).getContents(condDict, [['UserDN', 'DESC']], 0, 0)
+    rpc = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
+    return rpc.getContents(condDict, [['UserDN', 'DESC']], 0, 0)
 
   def getUploadedProxiesDetails(self, user=None, group=None):
     """ Get the details about an uploaded proxy
@@ -501,6 +502,7 @@ class ProxyManagerClient(object):
     # #       ],
     # #       <group2>: [ ... ]
     # # } }
-    return RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs).getGroupsStatusByUsername(username, groups)
+    rpc = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
+    return rpc.getGroupsStatusByUsername(username, groups)
 
 gProxyManager = ProxyManagerClient()

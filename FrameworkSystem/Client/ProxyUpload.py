@@ -6,20 +6,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import sys
 import getpass
-import time
-time.sleep(5)
-print('====>> 11')
+
 import DIRAC
-time.sleep(5)
-print('====>> 22')
 from DIRAC import gLogger
-time.sleep(5)
-print('====>> 33')
 from DIRAC.Core.Base import Script
-time.sleep(5)
-print('====>> 44')
 
 __RCSID__ = "$Id$"
 
@@ -103,19 +96,11 @@ class CLIParams(object):
     Script.registerSwitch("i", "version", "Print version", self.showVersion)
     Script.addDefaultOptionValue("LogLevel", "always")
 
-time.sleep(5)
-print('====>> .1')
+
 from DIRAC import S_ERROR
-time.sleep(5)
-print('====>> .2')
 from DIRAC.Core.Security import Locations
-time.sleep(5)
-print('====>> .3')
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-time.sleep(5)
-print('====>> .4')
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-print('====>> .5')
 
 
 def uploadProxy(params):

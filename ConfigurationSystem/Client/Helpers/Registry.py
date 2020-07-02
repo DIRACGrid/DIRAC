@@ -739,8 +739,7 @@ def getVOsWithVOMS(voList=None):
     result = getVOs()
     if result['OK']:
       # Hack to run integration tests where not exist VO section.
-      #return result
-      
+      # return result
       voList = result['Value']
   for vo in voList or []:
     if getVOOption(vo, 'VOMSName'):

@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import mock
 import pickle
 import unittest
 
@@ -141,7 +142,14 @@ Registry
 }
 """
 
-
+def sf_getVOMSInfo(vo=None, dn=None):
+  vomsDict = {'testVO': S_OK({'/User/test/DN/CN=userS': {},
+                              '/User/test/DN/CN=userA': {}}),
+              'testVOOther': S_ERROR())}
+  return S_OK(vomsDict[vo])
+  
+@mock.patch('DIRAC.ConfigurationSystem.Client.Helpers.Registry.getVOMSInfo',
+            new=sf_getVOMSInfo)
 class AuthManagerTest(unittest.TestCase):
   """ Base class for the Modules test cases
   """
