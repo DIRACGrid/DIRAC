@@ -231,7 +231,7 @@ class ProxyManagerHandler(RequestHandler):
       proxiesInfo[dn]['SupportedGroups'] = list(set(data['SupportedGroups']))
       proxiesInfo[dn]['SupportedGroups'].sort()
 
-    return proxiesInfo
+    return S_OK(proxiesInfo)
 
   auth_getUserProxiesInfo = ['authenticated']
   types_getUserProxiesInfo = []
@@ -241,7 +241,7 @@ class ProxyManagerHandler(RequestHandler):
 
         :return: S_OK(dict)
     """
-    return S_OK(self.__generateUserProxiesInfo())
+    return self.__generateUserProxiesInfo()
 
   # WARN: Since v7r1 requestDelegationUpload method not use arguments!
   auth_requestDelegationUpload = ['authenticated']
@@ -287,7 +287,7 @@ class ProxyManagerHandler(RequestHandler):
       gLogger.error("Upload proxy failed", "id: %s user: %s message: %s" % (requestId, userId, retVal['Message']))
       return retVal
     gLogger.info("Upload %s by %s completed" % (requestId, userId))
-    return S_OK(self.__generateUserProxiesInfo())
+    return self.__generateUserProxiesInfo()
 
   types_getRegisteredUsers = []
 
