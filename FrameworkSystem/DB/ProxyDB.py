@@ -990,6 +990,7 @@ class ProxyDB(DB):
         cmd += " LIMIT %d,%d" % (start, limit)
       retVal = self._query(cmd)
       if not retVal['OK']:
+        retVal['Message'] = cmd
         return retVal
 
       for record in retVal['Value']:
