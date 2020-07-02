@@ -230,6 +230,10 @@ class ProxyInit(object):
       maxProviderLen = len('ProxyProvider')
       for userDN, data in self.__uploadedInfo.items():
         maxDNLen = max(maxDNLen, len(userDN))
+        print(maxProviderLen)
+        print(data['provider'])
+        print(len(data['provider']))
+        print(max(maxProviderLen, len(data['provider'])))
         maxProviderLen = max(maxProviderLen, len(data['provider']))
       gLogger.notice(" %s | %s | %s | SupportedGroups" % ("DN".ljust(maxDNLen), "ProxyProvider".ljust(maxProviderLen),
                                                           "Until (GMT)".ljust(16)))
