@@ -158,12 +158,13 @@ class ReqClientMix(ReqClientTestCase):
 
     request = Request({"RequestName": "unauthorized"})
     request.OwnerDN = 'NotMe'
-    request.OwnerDN = 'AnotherGroup'
+    request.OwnerGroup = 'AnotherGroup'
     op = Operation({"Type": "RemoveReplica", "TargetSE": "CERN-USER"})
     op += File({"LFN": "/lhcb/user/c/cibak/foo"})
     request += op
     res = self.requestClient.putRequest(request)
     credProperties = getProxyInfo()['Value']['groupProperties']
+    print('==> %s' % getProxyInfo()['Value'])
 
     # If the proxy with which we test has delegation, it should work
     if FULL_DELEGATION in credProperties or LIMITED_DELEGATION in credProperties:

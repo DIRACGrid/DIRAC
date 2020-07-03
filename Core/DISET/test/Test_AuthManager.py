@@ -10,7 +10,7 @@ import pickle
 import unittest
 
 from diraccfg import CFG
-from DIRAC import gConfig, rootPath
+from DIRAC import gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.AuthManager import AuthManager
 
 __RCSID__ = "$Id$"
@@ -147,6 +147,7 @@ def sf_getVOMSInfo(vo=None, dn=None):
   vomsDict = {'testVO': S_OK({'/User/test/DN/CN=userS': {}, '/User/test/DN/CN=userA': {}}),
               'testVOOther': S_ERROR()}
   return S_OK(vomsDict[vo])
+
 
 @mock.patch('DIRAC.ConfigurationSystem.Client.Helpers.Registry.getVOMSInfo',
             new=sf_getVOMSInfo)

@@ -65,6 +65,15 @@ Registry
 """
 
 
+class proxyManager(object):
+  """ Fake proxyManager
+  """
+  def _storeProxy(self, userDN, chain):
+    """ Fake store method
+    """
+    return S_OK()
+
+
 class DIRACCAPPTest(unittest.TestCase):
   """ Base class for the Modules test cases
   """
@@ -85,7 +94,7 @@ class DIRACCAPPTest(unittest.TestCase):
     cfg.loadFromBuffer(userCFG)
     gConfig.loadCFG(cfg)
 
-    result = ProxyProviderFactory().getProxyProvider('DIRAC_TEST_CA')
+    result = ProxyProviderFactory().getProxyProvider('DIRAC_TEST_CA', proxyManager=proxyManager())
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.pp = result['Value']
 
