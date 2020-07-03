@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import csv
 import matplotlib.pyplot as plt
@@ -34,8 +35,8 @@ plt.suptitle(
 
 def get_results():
   if len(sys.argv) < 3:
-    print "Usage: python plot-distributedTest NAME NUMBEROFFILE"
-    print "Example: python plot-distributedTest 1532506328.38 2"
+    print("Usage: python plot-distributedTest NAME NUMBEROFFILE")
+    print("Example: python plot-distributedTest 1532506328.38 2")
     sys.exit(1)
 
   file = sys.argv[1]
@@ -44,7 +45,7 @@ def get_results():
   for i in range(1, count + 1):
     fileName = "%s.%s.txt" % (file, i)
     with open(fileName, 'r') as content:
-      print "reading %s" % fileName
+      print("reading %s" % fileName)
       lines = content.read().split('\n')[1:-1]
       result = [line.split(',') for line in lines]
       results.append(result)
@@ -53,9 +54,9 @@ def get_results():
 
 
 def get_server_stats():
-  print "Please specify location to file with server stats:"
+  print("Please specify location to file with server stats:")
   serverStatFile = "/tmp/results.txt"  # raw_input()
-  print "Loading %s" % serverStatFile
+  print ("Loading %s" % serverStatFile)
 
   serverStats = dict()
   with open(serverStatFile, 'r') as content_file:
@@ -113,7 +114,7 @@ def process_data(results, serverStats):
       RAM.append(RAM[-1])
       loadAvg.append(loadAvg[-1])
 
-      print "ERROR - Some values missing for CPU and Memory usage [try to load for time=%s]" % t
+      print("ERROR - Some values missing for CPU and Memory usage [try to load for time=%s]" % t)
 
   return (time, requestTime, CPU, RAM, reqPerSec, errorRate, loadAvg)
 
@@ -147,7 +148,7 @@ def displayGraph(results, serverStats):
   """
     Display all the graph on the same figure
   """
-  print "Processing data and plot, it may take some time for huge tests"
+  print("Processing data and plot, it may take some time for huge tests")
   (time, requestTime, CPU, RAM, reqPerSec, errorCount, loadAvg) = process_data(results, serverStats)
 
   plt.subplot(221)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import xmlrpclib
 import time
 import sys
@@ -12,7 +13,7 @@ portList = ['9000', '9001']
 
 servers = []
 
-print "Starting test servers...."
+print("Starting test servers....")
 # We send signal to all servers
 for port in portList:
   for server in serversList:
@@ -22,7 +23,7 @@ for port in portList:
   time.sleep(2)
 
 
-print "Waiting for results..."
+print("Waiting for results...")
 while servers[-1].get_results() == 'Results Not Available':
   time.sleep(1)
 
@@ -36,10 +37,10 @@ fileCount = 0
 for server in servers:
   fileCount += 1
   fileName = "%s.%s.txt" % (output, fileCount)
-  print "Writing output file %s" % fileName
+  print("Writing output file %s" % fileName)
   file = open(fileName, 'w')
   file.write(server.get_results())
   file.close()
 
 # We print the command you can copy paste to have the results in a plot
-print "python plot-distributedTest.py %s %d" % (output, fileCount)
+print("python plot-distributedTest.py %s %d" % (output, fileCount))

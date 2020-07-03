@@ -256,7 +256,10 @@ class TornadoRefresher(RefresherBase):
 
   try:
     from tornado import gen
-    from tornado.ioloop import IOLoop
+    # We change the import name otherwise sphinx tries
+    # to compile the tornado doc and fails
+    from tornado.ioloop import IOLoop as _IOLoop
+
   except ImportError:
     gLogger.fatal("You should install tornado to use this refresher, please unset USE_TORNADO_IOLOOP")
 
@@ -275,7 +278,7 @@ class TornadoRefresher(RefresherBase):
     if not gConfigurationData.getServers() or not self._lastRefreshExpired():  # pylint: disable=no-member
       return
     self._lastUpdateTime = time.time()
-    self.IOLoop.current().run_in_executor(None, self._refresh)  # pylint: disable=no-member
+    self._IOLoop.current().run_in_executor(None, self._refresh)  # pylint: disable=no-member
     return
 
   def autoRefreshAndPublish(self, sURL):
@@ -296,7 +299,7 @@ class TornadoRefresher(RefresherBase):
 
     # Tornado replacement solution to the classic thread
     # It start the method self.__refreshLoop on the next IOLoop iteration
-    self.IOLoop.current().spawn_callback(self.__refreshLoop)
+    self._IOLoop.current().spawn_callback(self.__refreshLoop)
 
   @gen.coroutine
   def __refreshLoop(self):
@@ -316,7 +319,7 @@ class TornadoRefresher(RefresherBase):
       yield self.gen.sleep(gConfigurationData.getPropagationTime())
       # Publish step is blocking so we have to run it in executor
       # If we are not doing it, when master try to ping we block the IOLoop
-      yield self.IOLoop.current().run_in_executor(None, self.__AutoRefresh)
+      yield self._IOLoop.current().run_in_executor(None, self.__AutoRefresh)
 
   @gen.coroutine
   def __AutoRefresh(self):
@@ -332,7 +335,7 @@ class TornadoRefresher(RefresherBase):
   def daemonize(self):
     """ daemonize is probably not the best name because there is no daemon behind
     but we must keep it to the same interface of the DISET refresher """
-    self.IOLoop.current().spawn_callback(self.__refreshLoop)
+    self._IOLoop.current().spawn_callback(self.__refreshLoop)
 
 
 # Here we define the refresher which should be used.

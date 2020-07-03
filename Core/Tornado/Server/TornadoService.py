@@ -1,26 +1,26 @@
 """
-  TornadoService represent one service services, your handler must inherith form this class
-  TornadoService may be used only by TornadoServer.
+TornadoService represent one service services, your handler must inherith form this class
+TornadoService may be used only by TornadoServer.
 
-  To create you must write this "minimal" code::
+To create you must write this "minimal" code::
 
-    from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
-    class yourServiceHandler(TornadoService):
+  from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
+  class yourServiceHandler(TornadoService):
 
-      @classmethod
-      def initializeHandler(cls, infosDict):
-        ## Called 1 time, at first request.
-        ## You don't need to use super or to call any parents method, it's managed by the server
+    @classmethod
+    def initializeHandler(cls, infosDict):
+      ## Called 1 time, at first request.
+      ## You don't need to use super or to call any parents method, it's managed by the server
 
-      def initializeRequest(self):
-        ## Called at each request
+    def initializeRequest(self):
+      ## Called at each request
 
-      auth_someMethod = ['all']
-      def export_someMethod(self):
-        #Insert your method here, don't forgot the return
+    auth_someMethod = ['all']
+    def export_someMethod(self):
+      #Insert your method here, don't forgot the return
 
 
-  Then you must configure service like any other service
+Then you must configure service like any other service
 
 """
 
@@ -154,8 +154,10 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
   def initialize(self, debug):  # pylint: disable=arguments-differ
     """
       initialize, called at every request
-      ..warning:: DO NOT REWRITE THIS FUNCTION IN YOUR HANDLER
-          ==> initialize in DISET became initializeRequest in HTTPS !
+
+      ..warning::
+        DO NOT REWRITE THIS FUNCTION IN YOUR HANDLER
+        ==> initialize in DISET became initializeRequest in HTTPS !
     """
     self.debug = debug
     self.authorized = False

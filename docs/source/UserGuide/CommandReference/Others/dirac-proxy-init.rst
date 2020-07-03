@@ -26,7 +26,6 @@ Options::
   -r  --rfc                    : Create an RFC proxy, true by default, deprecated flag
   -L  --legacy                 : Create a legacy non-RFC proxy
   -U  --upload                 : Upload a long lived proxy to the ProxyManager
-  -P  --uploadPilot            : Upload a long lived pilot proxy to the ProxyManager
   -M  --VOMS                   : Add voms extension
 
 Example::

@@ -27,7 +27,8 @@ def isURL(url):
 def TransferClientSelector(*args, **kwargs):  # We use same interface as TransferClient
   """
     Select the correct TransferClient, instanciate it, and return it
-    :param args[0]: url: URL can be just "system/service" or "dips://domain:port/system/service"
+
+    :param args: URL can be just "system/service" or "dips://domain:port/system/service"
   """
 
   # We detect if we need to use a specific class for the HTTPS client

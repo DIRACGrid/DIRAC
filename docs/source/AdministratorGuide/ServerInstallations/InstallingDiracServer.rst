@@ -197,6 +197,8 @@ Couple notes:
 * SAN in your certificates: if you are contacting a machine using its aliases, make sure that all the aliases are in the SubjectAlternativeName (SAN) field of the certificates
 * FQDN in the configuration: SAN normally contains only FQDN, so make sure you use the FQDN in the CS as well (e.g. ``mymachine.cern.ch`` and not ``mymachine``)
 
+.. _using_own_CA:
+
 -----------------
 Using your own CA
 -----------------

@@ -70,3 +70,32 @@ EOL
 dirac-restart-component DataManagement S3Gateway "$DEBUG"
 
 echo -e "*** $(date -u) **** DONE Adding S3-INDIRECT SERVER CONFIGURATION"
+
+# Here, if we are testing HTTPS services, we install the equivalent services and replace the URL in the CS
+
+if [[ "${TESTBRANCH:-No}" = "Yes" ]];
+then
+  echo -e "*** $(date -u) **** Installing Tornado based services"
+
+  # Find all Tornado Handler
+  # We ignore the Configuration for now because it is a bit special (the master needs to run in a separate process)
+  # system_component is a space separated System (without the word System), and Component, without the 'Handler.py'.
+  # For example "DataManagement TornadoFileCatalog"
+  while read -r system_component;
+  do
+    echo -e "*** $(date -u) **** Installing Tornado service ${system_component}"
+    # do NOT put quotes around ${system_component} since
+    # we want it to be seen as two arguments
+    # shellcheck disable=SC2086
+    dirac-install-tornado-service -ddd ${system_component};
+    # origin_component is the original service before Tornado (FileCatalog vs TornadoFileCatalog for example)
+    orig_component=$(echo "${system_component}" | sed 's/Tornado//g' | awk '{print $2}');
+    # Replace the dips url with the https url in the cs, assuming port 8443
+    sed -E "s|( +${orig_component} = )dips://([a-z]+)(:[0-9]+)(/.*/)(.*)|\1https://\2:8443\4Tornado\5|g" -i  "${SERVERINSTALLDIR}"/etc/Production.cfg
+  done< <(find "${SERVERINSTALLDIR}"/DIRAC/ -name 'Tornado*Handler.py' | grep -v Configuration | sed -e 's/Handler.py//g' -e 's/System//g'| awk -F '/' '{print $(NF-2), $NF}')
+
+  # Restart the CS to take all that into account
+  dirac-restart-component Configuration Server "$DEBUG"
+
+  echo -e "*** $(date -u) **** DONE Installing Tornado services"
+fi

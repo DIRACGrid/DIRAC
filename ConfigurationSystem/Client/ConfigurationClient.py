@@ -26,7 +26,7 @@ class CSJSONClient(TornadoClient):
       Transmit request to service and get data in base64,
       it decode base64 before returning
 
-      :returns str:Configuration data, compressed
+      :returns str: Configuration data, compressed
     """
     retVal = self.executeRPC('getCompressedData')
     if retVal['OK']:
@@ -38,7 +38,7 @@ class CSJSONClient(TornadoClient):
       Transmit request to service and get data in base64,
       it decode base64 before returning.
 
-      :returns str:Configuration data, if changed, compressed
+      :returns: Configuration data, if changed, compressed
     """
     retVal = self.executeRPC('getCompressedDataIfNewer', sClientVersion)
     if retVal['OK'] and 'data' in retVal['Value']:
@@ -49,7 +49,7 @@ class CSJSONClient(TornadoClient):
     """
       Transmit request to service by encoding data in base64.
 
-      :param: Data to commit, you may call this method with CSAPI and Modificator
+      :param sData: Data to commit, you may call this method with CSAPI and Modificator
     """
     return self.executeRPC('commitNewData', b64encode(sData))
 

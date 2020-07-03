@@ -5,7 +5,8 @@
 :mod: FileCatalogHandler
 
 .. module: FileCatalogHandler
-  :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service
+
+:synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service
 
 """
 
@@ -759,7 +760,7 @@ class TornadoFileCatalogHandler(TornadoService):
       for lfn in retVal:
         writer.writerow(lfn)
 
-      #csvOutput.seek(0)
+      # csvOutput.seek(0)
       ret = csvOutput.getvalue()
       return ret
 

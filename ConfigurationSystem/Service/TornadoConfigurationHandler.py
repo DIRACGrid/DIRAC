@@ -1,8 +1,8 @@
 """ The CS! (Configuration Service)
 
-  Modified to work with Tornado
-  Encode data in base64 because of JSON limitations
-  In client side you must use a specific client
+Modified to work with Tornado
+Encode data in base64 because of JSON limitations
+In client side you must use a specific client
 
 """
 
@@ -17,7 +17,8 @@ from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 
 
 class TornadoConfigurationHandler(TornadoService):
-  """ The CS handler
+  """
+    The CS handler
   """
   ServiceInterface = None
   PilotSynchronizer = None

@@ -14,6 +14,7 @@
 
     You don't need to setup anything, just run ``pytest TestClientSelection.py`` !
 """
+from __future__ import print_function
 import os
 import re
 
@@ -25,7 +26,7 @@ from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Utilities.CFG import CFG
+from diraccfg import CFG
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 
@@ -98,7 +99,7 @@ def config(request):
   gConfigurationData.remoteCFG = CFG()
   gConfigurationData.mergedCFG = CFG()
   gConfigurationData.generateNewVersion()
-  print "TearDown"
+  print("TearDown")
   # request is given by @fixture decorator, addfinalizer set the function who need to be called after the tests
   # request.addfinalizer(tearDown)
 

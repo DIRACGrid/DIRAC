@@ -9,6 +9,7 @@ Here the reader can find technical documentation for developing DIRAC systems
 .. toctree::
    :maxdepth: 2
 
+   ConfigurationSystem
    Framework/index
    Transformation/index
    Monitoring/index

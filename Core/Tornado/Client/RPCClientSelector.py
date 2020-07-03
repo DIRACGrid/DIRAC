@@ -27,7 +27,8 @@ def isURL(url):
 def RPCClientSelector(*args, **kwargs):  # We use same interface as RPCClient
   """
     Select the correct RPCClient, instanciate it, and return it
-    :param args[0]: url: URL can be just "system/service" or "dips://domain:port/system/service"
+
+    :param args: URL can be just "system/service" or "dips://domain:port/system/service"
   """
 
   # We detect if we need to use a specific class for the HTTPS client

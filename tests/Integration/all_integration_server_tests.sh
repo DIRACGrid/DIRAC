@@ -60,6 +60,7 @@ diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Restart the DFC service\n" |& tee -a "${SERVER_TEST_OUTPUT}"
 dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Run it with the admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
 echo -e "*** $(date -u)  getting the prod role again\n" |& tee -a "${SERVER_TEST_OUTPUT}"
