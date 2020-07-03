@@ -142,12 +142,12 @@ Registry
 }
 """
 
+
 def sf_getVOMSInfo(vo=None, dn=None):
-  vomsDict = {'testVO': S_OK({'/User/test/DN/CN=userS': {},
-                              '/User/test/DN/CN=userA': {}}),
-              'testVOOther': S_ERROR())}
+  vomsDict = {'testVO': S_OK({'/User/test/DN/CN=userS': {}, '/User/test/DN/CN=userA': {}}),
+              'testVOOther': S_ERROR()}
   return S_OK(vomsDict[vo])
-  
+
 @mock.patch('DIRAC.ConfigurationSystem.Client.Helpers.Registry.getVOMSInfo',
             new=sf_getVOMSInfo)
 class AuthManagerTest(unittest.TestCase):

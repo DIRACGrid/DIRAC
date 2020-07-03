@@ -105,9 +105,9 @@ class DIRACCAProxyProvider(ProxyProvider):
     if 'Match' in parameters:
       self.match = [self.fields2nid[f] for f in parameters['Match']] if parameters['Match'][0] else []
     if 'Supplied' in parameters:
-      self.supplied = [self.fields2nid[f] for f in parameters['Supplied']] if parameters['Match'][0] else []
+      self.supplied = [self.fields2nid[f] for f in parameters['Supplied']] if parameters['Supplied'][0] else []
     if 'Optional' in parameters:
-      self.optional = [self.fields2nid[f] for f in parameters['Optional']] if parameters['Match'][0] else []
+      self.optional = [self.fields2nid[f] for f in parameters['Optional']] if parameters['Optional'][0] else []
     allFields = self.optional + self.supplied + self.match
     if 'DNOrder' in parameters:
       self.dnList = []
@@ -277,7 +277,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     # WARN: This logic not support list of distribtes name elements
     resDN = m2.x509_name_oneline(self.__X509Name.x509_name)  # pylint: disable=no-member
-
+    self.log.info(resDN, 'was generated.')
     result = self.checkStatus(resDN)
     if not result['OK']:
       return result
