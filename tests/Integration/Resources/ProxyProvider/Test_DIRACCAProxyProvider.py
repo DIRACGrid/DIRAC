@@ -12,7 +12,7 @@ import unittest
 
 from diraccfg import CFG
 
-from DIRAC import gConfig
+from DIRAC import gConfig, S_OK
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 

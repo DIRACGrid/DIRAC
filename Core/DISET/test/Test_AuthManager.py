@@ -144,9 +144,8 @@ Registry
 
 
 def sf_getVOMSInfo(vo=None, dn=None):
-  vomsDict = {'testVO': S_OK({'/User/test/DN/CN=userS': {}, '/User/test/DN/CN=userA': {}}),
-              'testVOOther': S_ERROR()}
-  return S_OK(vomsDict[vo])
+  return S_OK({'testVO': S_OK({'/User/test/DN/CN=userS': {}, '/User/test/DN/CN=userA': {}}),
+              'testVOOther': S_ERROR()})
 
 
 @mock.patch('DIRAC.ConfigurationSystem.Client.Helpers.Registry.getVOMSInfo',
