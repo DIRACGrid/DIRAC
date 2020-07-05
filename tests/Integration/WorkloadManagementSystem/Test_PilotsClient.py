@@ -73,7 +73,7 @@ def test_PilotsDB():
                           'Broker': ['Unknown'], 'Status': ['Submitted'],
                           'OwnerDN': [realDN],
                           'GridSite': ['Unknown'],
-                          'Owner': []}, res['Value']
+                          'Owner': ['adminusername']}, res['Value']
   res = pilots.getPilotSummaryWeb({}, [], 0, 100)
   assert res['OK'] is True, res['Message']
   assert res['Value']['TotalRecords'] == 1, res['Value']
