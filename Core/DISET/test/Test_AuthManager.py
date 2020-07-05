@@ -18,7 +18,7 @@ __RCSID__ = "$Id$"
 workDir = os.path.join(gConfig.getValue('/LocalSite/InstancePath', rootPath), 'work/ProxyManager')
 
 voDict = {
-    'testVO': {
+    'testVO': S_OK({
         '/User/test/DN/CN=userS': {
             'Suspended': True,
             'VOMSRoles': [u'/testVO'],
@@ -31,15 +31,15 @@ voDict = {
             'ActuelRoles': [],
             'SuspendedRoles': []
         }
-    },
-    'testVOOther': {
+    }),
+    'testVOOther': S_OK({
         '/User/test/DN/CN=userS': {
             'Suspended': False,
             'VOMSRoles': [u'/testVOOther'],
             'ActuelRoles': [],
             'SuspendedRoles': []
         }
-    }
+    })
 }
 
 testSystemsCFG = """
@@ -144,8 +144,7 @@ Registry
 
 
 def sf_getVOMSInfo(vo=None, dn=None):
-  return S_OK({'testVO': S_OK({'/User/test/DN/CN=userS': {}, '/User/test/DN/CN=userA': {}}),
-              'testVOOther': S_ERROR()})
+  return S_OK(voDict)
 
 
 @mock.patch('DIRAC.ConfigurationSystem.Client.Helpers.Registry.getVOMSInfo',
