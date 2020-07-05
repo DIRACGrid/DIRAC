@@ -27,7 +27,7 @@ gLogger.setLevel('VERBOSE')
 def test_PilotsDB():
 
   pilots = PilotManagerClient()
-
+  from DIRAC.ConfigurationSystem.Client.Helpers import Registry
   res = pilots.addPilotTQReference(['aPilot'], 1, '/a/ownerDN', 'a/owner/Group')
   assert res['OK'] is True, res['Message']
   res = pilots.getCurrentPilotCounters({})
@@ -44,7 +44,7 @@ def test_PilotsDB():
   res = pilots.storePilotOutput('anotherPilot', 'This is an output', 'this is an error')
   assert res['OK'] is True, res['Message']
   res = pilots.getPilotOutput('anotherPilot')
-  assert res['OK'] is True, res['Message']
+  assert res['OK'] is True, '%s %s' % (res['Message'], Registry.getAllUsers())
   # There are new "Owner" key ... Therefore, if the main keys match then all is well
   expectedDict = {'FileList': [],
                   'OwnerDN': '/a/ownerDN',
