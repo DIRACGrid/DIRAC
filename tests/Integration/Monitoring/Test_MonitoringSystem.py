@@ -363,7 +363,7 @@ class MonitoringTestChain(MonitoringTestCase):
   def test_getLastDayData(self):
     params = {'Status': 'Running', 'Site': 'LCG.NIKHEF.nl'}
     result = self.client.getLastDayData('WMSHistory', params)
-    self.assertTrue(result['OK'])
+    self.assertTrue(result['OK'], result['Message'])
     self.assertEqual(len(result['Value']), 2)
     self.assertEqual(sorted(result['Value'][0].keys()), sorted([u'Status',
                                                                 u'Jobs',
