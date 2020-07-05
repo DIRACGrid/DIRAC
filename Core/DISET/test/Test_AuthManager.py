@@ -23,12 +23,12 @@ voDict = {
             'Suspended': True,
             'VOMSRoles': [u'/testVO'],
             'ActuelRoles': [],
-            'SuspendedRoles': []
+            'SuspendedRoles': [u'/testVO']
         },
         '/User/test/DN/CN=userA': {
             'Suspended': False,
             'VOMSRoles': [u'/testVO'],
-            'ActuelRoles': [],
+            'ActuelRoles': [u'/testVO'],
             'SuspendedRoles': []
         }
     }),
@@ -36,7 +36,7 @@ voDict = {
         '/User/test/DN/CN=userS': {
             'Suspended': False,
             'VOMSRoles': [u'/testVOOther'],
-            'ActuelRoles': [],
+            'ActuelRoles': [u'/testVOOther'],
             'SuspendedRoles': []
         }
     })
