@@ -192,7 +192,6 @@ class ProxyInit(object):
     userDN = resultUserDN['Value']
 
     gLogger.notice("Uploading proxy..")
-    gLogger.info(gConfig.getValue('/Systems/Framework/Production/URLs/ProxyManager'))
     if userDN in self.__uploadedInfo:
       expiry = self.__uploadedInfo[userDN].get('')
       if expiry:
@@ -206,7 +205,6 @@ class ProxyInit(object):
     upParams.rfcIfPossible = self.__piParams.rfc
     for k in ('certLoc', 'keyLoc', 'userPasswd'):
       setattr(upParams, k, getattr(self.__piParams, k))
-    gLogger.info(gConfig.getValue('/Systems/Framework/Production/URLs/ProxyManager'))
     resultProxyUpload = ProxyUpload.uploadProxy(upParams)
     if not resultProxyUpload['OK']:
       gLogger.error(resultProxyUpload['Message'])

@@ -277,7 +277,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     # WARN: This logic not support list of distribtes name elements
     resDN = m2.x509_name_oneline(self.__X509Name.x509_name)  # pylint: disable=no-member
-    self.log.info(resDN, 'was generated.')
+
     result = self.checkStatus(resDN)
     if not result['OK']:
       return result
