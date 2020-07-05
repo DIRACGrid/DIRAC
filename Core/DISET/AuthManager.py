@@ -95,6 +95,7 @@ def initializationOfCertificate(credDict, logObj=gLogger):
 
   # Search user
   result = Registry.getUsernameForDN(credDict[KW_DN])
+  logObj.info("initializationOfCertificate: %s:\n" % credDict, result)
   if not result['OK']:
     credDict[KW_USERNAME] = "anonymous"
     credDict[KW_GROUP] = "visitor"
@@ -128,12 +129,14 @@ def initializationOfGroup(credDict, logObj=gLogger):
     return True
   logObj.info("initializationOfGroup 2")
   if not Registry.getGroupsForUser(credDict[KW_USERNAME], groupsList=[credDict[KW_GROUP]]).get('Value'):
+    logObj.info("initializationOfGroup--1", Registry.getGroupsForUser(credDict[KW_USERNAME], groupsList=[credDict[KW_GROUP]]))
     credDict[KW_USERNAME] = "anonymous"
     credDict[KW_GROUP] = "visitor"
     return False
   logObj.info("initializationOfGroup 3")
   # Get DN for user/group
   result = Registry.getDNsForUsernameInGroup(credDict[KW_USERNAME], credDict[KW_GROUP], checkStatus=True)
+  logObj.info("initializationOfGroup--2", result)
   if not result['OK']:
     logObj.error(result['Message'])
     credDict[KW_GROUP] = "visitor"
