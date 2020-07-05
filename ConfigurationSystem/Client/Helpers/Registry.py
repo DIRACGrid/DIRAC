@@ -799,7 +799,7 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
     return result
   gLogger.info('=====>> getDNsForUsernameInGroup6')
   userDNs = result['Value']
-  gLogger.info('=====>> getDNsForUsernameInGroup7')
+  gLogger.info('=====>> getDNsForUsernameInGroup7', userDNs)
 
   vo = getGroupOption(group, 'VO')
   gLogger.info('=====>> getDNsForUsernameInGroup8')
@@ -812,7 +812,7 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   if not result['OK']:
     gLogger.info('=====>> getDNsForUsernameInGroup12')
     return result
-  gLogger.info('=====>> getDNsForUsernameInGroup13')
+  gLogger.info('=====>> getDNsForUsernameInGroup13', result['Value'])
   if result['Value']:
     gLogger.info('=====>> getDNsForUsernameInGroup14')
     result = getVOMSInfo(vo=vo)
@@ -822,7 +822,7 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
       return result
     gLogger.info('=====>> getDNsForUsernameInGroup17')
     vomsData = result['Value']
-    gLogger.info('=====>> getDNsForUsernameInGroup18')
+    gLogger.info('=====>> getDNsForUsernameInGroup18', vomsData)
     if vomsData.get(vo) and vomsData[vo]['OK']:
       gLogger.info('=====>> getDNsForUsernameInGroup19')
       voData = vomsData[vo]['Value']
@@ -830,11 +830,11 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
       role = getGroupOption(group, 'VOMSRole')
       gLogger.info('=====>> getDNsForUsernameInGroup21')
       for dn in userDNs:
-        gLogger.info('=====>> getDNsForUsernameInGroup22')
+        gLogger.info('=====>> getDNsForUsernameInGroup22', dn)
         if dn in voData:
           gLogger.info('=====>> getDNsForUsernameInGroup23')
           if not checkStatus or not voData[dn]['Suspended']:
-            gLogger.info('=====>> getDNsForUsernameInGroup24')
+            gLogger.info('=====>> getDNsForUsernameInGroup24 role: %s\n' % role, voData[dn])
             if not role or role in voData[dn]['ActuelRoles' if checkStatus else 'VOMSRoles']:
               gLogger.info('=====>> getDNsForUsernameInGroup25')
               DNs.append(dn)
