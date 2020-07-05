@@ -111,8 +111,7 @@ class DIRACCAPPTest(unittest.TestCase):
                                      ': %s' % result.get('Message', 'Error message is absent.'))
       self.assertEqual(result['OK'], res, text)
       if res:
-        chain = X509Chain()
-        chain.loadChainFromString(result['Value'])
+        chain = result['Value']
         result = chain.getCredentials()
         self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
         credDict = result['Value']
