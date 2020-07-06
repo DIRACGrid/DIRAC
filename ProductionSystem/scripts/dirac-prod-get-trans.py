@@ -64,6 +64,13 @@ if result['Value']['TotalRecords'] > 0:
     showDict = dict(zip(paramShowNames, paramShowValues))
     resList.append(showDict)
 
+# get production ID (useful if production name is given as arg)
+res = prodClient.getProduction(prodID)
+prodID = res['Value']['ProductionID']
+if not res['OK']:
+  DIRAC.gLogger.error('Failed to get production %s: %s' % (prodID, res['Message']))
+  DIRAC.exit(-1)
+
 for res in resList:
   files_Processed = res['Files_Processed']
   status = res['Status']
