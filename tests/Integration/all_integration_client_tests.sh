@@ -56,7 +56,6 @@ python "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/cre
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
 pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_MonitoringSystem.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-cat "${SERVERINSTALLDIR}/runit/Monitoring/Monitoring/log/current"
 
 
 #-------------------------------------------------------------------------------#
