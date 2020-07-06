@@ -412,12 +412,19 @@ class MonitoringDB(ElasticDB):
 
     :param int size: number of rows which whill be returned. By default is all
     """
+    gLogger.info('__getRawData')
     if size < 0:
+      gLogger.info('__getRawData 1')
       size = self.RESULT_SIZE
+      gLogger.info('__getRawData 2')
     retVal = self.getIndexName(typeName)
+    gLogger.info('__getRawData 3')
     if not retVal['OK']:
+      gLogger.info('__getRawData 4')
       return retVal
+    gLogger.info('__getRawData 5')
     date = datetime.datetime.utcnow()
+    gLogger.info('__getRawData 6')
     indexName = "%s-%s" % (retVal['Value'], date.strftime('%Y-%m-%d'))
 
     # going to create:
@@ -426,41 +433,67 @@ class MonitoringDB(ElasticDB):
     #  Q('match', component='Bookkeeping_BookkeepingManager')])
     # s = s.query(q)
     # s = s.sort('-timestamp')
-
+    gLogger.info('__getRawData 7')
     mustClose = []
+    gLogger.info('__getRawData 8')
     for cond in condDict:
+      gLogger.info('__getRawData 9')
       kwargs = {cond: condDict[cond]}
+      gLogger.info('__getRawData 10')
       query = self._Q('match', **kwargs)
+      gLogger.info('__getRawData 11')
       mustClose.append(query)
-
+      gLogger.info('__getRawData 12')
+    gLogger.info('__getRawData 13')
     if condDict.get('startTime') and condDict.get('endTime'):
+      gLogger.info('__getRawData 14')
       query = self._Q('range',
                       timestamp={'lte': condDict.get('endTime'),
                                  'gte': condDict.get('startTime')})
-
+      gLogger.info('__getRawData 15')
       mustClose.append(query)
-
+      gLogger.info('__getRawData 16')
+    gLogger.info('__getRawData 17')
     s = self._Search(indexName)
+    gLogger.info('__getRawData 18')
     s = s.filter('bool', must=mustClose)
+    gLogger.info('__getRawData 19')
     s = s.sort('-timestamp')
+    gLogger.info('__getRawData 20')
 
     if size > 0:
+      gLogger.info('__getRawData 21')
       s = s.extra(size=size)
+      gLogger.info('__getRawData 22')
 
     retVal = s.execute()
+    gLogger.info('__getRawData 23')
     if not retVal:
+      gLogger.info('__getRawData 24')
       return S_ERROR(str(retVal))
+    gLogger.info('__getRawData 25')
     hits = retVal['hits']
+    gLogger.info('__getRawData 26')
     if hits and 'hits' in hits and hits['hits']:
+      gLogger.info('__getRawData 27')
       records = []
+      gLogger.info('__getRawData 28')
       paramNames = dir(hits['hits'][0]['_source'])
+      gLogger.info('__getRawData 29')
       try:
+        gLogger.info('__getRawData 30')
         paramNames.remove(u'metric')
+        gLogger.info('__getRawData 32')
       except KeyError as e:
         gLogger.warn("metric is not in the Result", e)
+      gLogger.info('__getRawData 33')
       for resObj in hits['hits']:
+        gLogger.info('__getRawData 34')
         records.append(dict([(paramName, getattr(resObj['_source'], paramName)) for paramName in paramNames]))
+        gLogger.info('__getRawData 35')
+      gLogger.info('__getRawData 36', records)
       return S_OK(records)
+    gLogger.info('__getRawData END')
 
   def getLastDayData(self, typeName, condDict):
     """

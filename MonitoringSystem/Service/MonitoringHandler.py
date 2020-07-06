@@ -306,7 +306,8 @@ class MonitoringHandler(RequestHandler):
                    * key -> name of the field
                    * value -> list of possible values
     """
-
+    from DIRAC import gLogger
+    gLogger.info('export_getLastDayData')
     return self.__db.getLastDayData(typeName, condDict)
 
   types_getLimitedDat = [basestring, dict, int]

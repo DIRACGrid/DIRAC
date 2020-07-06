@@ -151,7 +151,10 @@ class MonitoringClient(object):
                   * key -> name of the field
                   * value -> list of possible values
     """
+    from DIRAC import gLogger
+    gLogger.info('getLastDayData CLI typeName: %s, condDict: %s' % (typeName, condDict))
     rpcClient = self.__getServer()
+    gLogger.info('getLastDayData CLI 2')
     return rpcClient.getLastDayData(typeName, condDict)
 
   def getLimitedData(self, typeName, condDict, size=10):
