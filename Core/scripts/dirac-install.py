@@ -2214,7 +2214,8 @@ def createBashrc():
       lines.append('# export DIRAC_USE_M2CRYPTO=true')
       lines.append('# export DIRAC_USE_NEWTHREADPOOL=yes')
       lines.append('# export DIRAC_VOMSES=$DIRAC/etc/grid-security/vomses')
-
+      lines.append('# export DIRAC_NO_CFG=true')
+      
       lines.append('')
       f = open(bashrcFile, 'w')
       f.write('\n'.join(lines))
