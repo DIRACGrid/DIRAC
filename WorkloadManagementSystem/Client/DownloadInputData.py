@@ -244,14 +244,15 @@ class DownloadInputData:
     availableBytes = diskSpace * 1024 * 1024  # bytes
     # below can be a configuration option sent via the job wrapper in the future
     # Moved from 3 to 5 GB (PhC 130822) for standard output file
-    data = 5 * 1024 * 1024 * 1024  # 5GB in bytes
+    bufferGBs = 5.0
+    data = bufferGBs * 1024 * 1024 * 1024  # bufferGBs in bytes
     if (data + totalSize) < availableBytes:
       msg = 'Enough disk space available (%s bytes)' % (availableBytes)
       self.log.verbose(msg)
       return S_OK(msg)
     else:
-      msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' \
-          % ((data + totalSize), availableBytes)
+      msg = 'Not enough disk space available for download %s (including %dGB buffer) > %s bytes' \
+          % ((data + totalSize), bufferGBs, availableBytes)
       self.log.warn(msg)
       return S_ERROR(msg)
 
