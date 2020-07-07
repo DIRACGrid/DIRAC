@@ -3,12 +3,13 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ProductionSystem.DB.ProductionDB import ProductionDB
 
-prodTypes = [basestring, int, long]
-transTypes = [basestring, int, long, list]
+prodTypes = [six.string_types, six.integer_types]
+transTypes = [six.string_types, six.integer_types]
 
 
 class ProductionManagerHandlerBase(RequestHandler):
@@ -27,7 +28,7 @@ class ProductionManagerHandlerBase(RequestHandler):
   # These are the methods to manipulate the Productions table
   #
 
-  types_addProduction = [basestring, basestring]
+  types_addProduction = [six.string_types, six.string_types]
 
   def export_addProduction(self, prodName, prodDescription):
     credDict = self.getRemoteCredentials()
@@ -67,13 +68,13 @@ class ProductionManagerHandlerBase(RequestHandler):
     res = database.getProduction(prodName)
     return self._parseRes(res)
 
-  types_getProductionParameters = [prodTypes, [basestring, list, tuple]]
+  types_getProductionParameters = [prodTypes, [six.string_types, list, tuple]]
 
   def export_getProductionParameters(self, prodName, parameters):
     res = database.getProductionParameters(prodName, parameters)
     return self._parseRes(res)
 
-  types_setProductionStatus = [prodTypes, basestring]
+  types_setProductionStatus = [prodTypes, six.string_types]
 
   def export_setProductionStatus(self, prodName, status):
     res = database.setProductionStatus(prodName, status)
@@ -147,7 +148,7 @@ class ProductionManagerHandlerBase(RequestHandler):
       gLogger.info("Added production step %d" % res['Value'])
     return self._parseRes(res)
 
-  types_getProductionStep = [int]
+  types_getProductionStep = [six.integer_types]
 
   def export_getProductionStep(self, stepID):
     res = database.getProductionStep(stepID)
