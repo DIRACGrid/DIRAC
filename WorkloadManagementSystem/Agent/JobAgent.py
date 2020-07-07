@@ -70,6 +70,8 @@ class JobAgent(AgentModule):
     self.timeLeftUtil = None
     self.timeLeftError = ''
     self.pilotInfoReportedFlag = False
+    self.numberOfProcessors = 1
+    self.latestJobCPURequired = 0
 
   #############################################################################
   def initialize(self, loops=0):
@@ -105,6 +107,8 @@ class JobAgent(AgentModule):
     self.initTimeLeft = ceDict.get('CPUTime', self.timeLeft)
     self.initTimeLeft = gConfig.getValue('/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft)
     self.timeLeft = self.initTimeLeft
+    # Get the total number of processors: used to compute time left
+    self.numberOfProcessors = ceDict.get('NumberOfProcessors', self.numberOfProcessors)
 
     self.initTimes = os.times()
     # Localsite options
@@ -289,6 +293,9 @@ class JobAgent(AgentModule):
 
     if 'CPUTime' not in params:
       self.log.warn('Job has no CPU requirement defined in JDL parameters')
+      self.latestJobCPURequired = 0
+    else:
+      self.latestJobCPURequired = params['CPUTime']
 
     # Job requirements for determining the number of processors
     # the minimum number of processors requested
@@ -372,11 +379,17 @@ class JobAgent(AgentModule):
 
     :return: timeLeft in hepspec06 seconds
     """
-    # Get user+system time seconds: time effectively used by the processors since the beginning of the execution of the JobAgent
+    # Get user+system time seconds: time effectively used by the procs since the beginning of the JobAgent exec
     # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
     cpuTime = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
-    result = self.timeLeftUtil.getTimeLeft(cpuTime, processors)
+    result = self.timeLeftUtil.getTimeLeft(cpuTime, self.numberOfProcessors)
     if result['OK']:
+      timeleft = result['Value']['timeLeft']
+      dependsOnWallClockTime = result['Value']['dependsOnWallClockTime']
+      if not dependsOnWallClockTime and self.numberOfProcessors > 1:
+        # In this case, we use a PoolCE, we cannot trust timeleft as some jobs may run at the same time
+        timeleft = self.timeLeft - self.latestJobCPURequired
+      result['Value'] = timeleft
       return result
     else:
       if result['Message'] != 'Current batch system is not supported':

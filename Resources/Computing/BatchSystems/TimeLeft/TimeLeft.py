@@ -98,13 +98,13 @@ class TimeLeft(object):
     if not resources['CPULimit']:
       resources['CPULimit'] = resources['WallClockLimit'] * processors
     elif not resources['WallClockLimit']:
-      resources['WallClockLimit'] = resources['CPULimit']
+      resources['WallClockLimit'] = resources['CPULimit'] / processors
 
     # if one of CPU or WallClock is missing, compute a reasonable value
     if not resources['CPU']:
       resources['CPU'] = resources['WallClock'] * processors
     elif not resources['WallClock']:
-      resources['WallClock'] = resources['CPU']
+      resources['WallClock'] = resources['CPU'] / processors
 
     timeLeft = 0.
     cpu = float(resources['CPU'])
@@ -115,6 +115,25 @@ class TimeLeft(object):
     validTimeLeft = enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, self.cpuMargin, self.wallClockMargin)
 
     if validTimeLeft:
+      # Compute cpuTimeLeft first
+      dependsOnWallClockTime = False
+
+      wallClockTimeLeft = wallClockLimit - wallClock
+      cpuTimeLeft = cpuLimit - cpu
+
+      # Integrate the safety margin to wallClockTime
+      wallClockTimeLeftSafe = wallClockTimeLeft - wallClockTimeLeft * (self.wallClockMargin / 100.0)
+
+      if wallClockTimeLeftSafe < cpuTimeLeft:
+        # In this case, wallClockTimeLeft may influence cpuTimeLeft and has to be taken into account
+        if wallClockTimeLeftSafe >= cpuTimeLeft / processors:
+          # Here, we use a part of the cpuTime to avoid fetching jobs that could not run within wallClockTimeLeft
+          cpuTimeLeft = cpuTimeLeft / processors
+        else:
+          # Here, wallClockTimeLeft is too low to be ignored, we use it to fetch the jobs
+          cpuTimeLeft = wallClockTimeLeftSafe
+          dependsOnWallClockTime = True
+
       if cpu and cpuConsumed > 3600. and self.normFactor:
         # If there has been more than 1 hour of consumed CPU and
         # there is a Normalization set for the current CPU
@@ -123,19 +142,21 @@ class TimeLeft(object):
         # cpuLimit and cpu may be in the units of the batch system, not real seconds...
         # (in this case the other case won't work)
         # therefore renormalise it using cpuConsumed (which is in real seconds)
-        timeLeft = (cpuLimit - cpu) * self.normFactor * cpuConsumed / cpu
+        timeLeft = cpuTimeLeft * self.normFactor * cpuConsumed / cpu
       elif self.normFactor:
         # FIXME: this is always used by the watchdog... Also used by the JobAgent
         #        if consumed less than 1 hour of CPU
         # It was using self.scaleFactor but this is inconsistent: use the same as above
         # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
-        timeLeft = (cpuLimit - cpu) * self.normFactor
+        timeLeft = cpuTimeLeft * self.normFactor
       else:
         # Last resort recovery...
-        timeLeft = (cpuLimit - cpu) * self.scaleFactor
+        timeLeft = cpuTimeLeft * self.scaleFactor
+
+      timeLeftDict = {'timeLeft': timeLeft, 'dependsOnWallClockTime': dependsOnWallClockTime}
 
       self.log.verbose('Remaining CPU in normalized units is: %.02f' % timeLeft)
-      return S_OK(timeLeft)
+      return S_OK(timeLeftDict)
     else:
       return S_ERROR('No time left for slot')
 
@@ -220,7 +241,9 @@ def enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallCloc
                                                                                              cpuLimit,
                                                                                              wallClock,
                                                                                              wallClockLimit))
-  gLogger.verbose('Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin CPU %s%%, margin WC %s%%' % fractionTuple)
+  gLogger.verbose(
+      'Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin CPU %s%%, margin WC %s%%' %
+      fractionTuple)
 
   if cpuRemainingFraction > cpuMargin \
           and wallClockRemainingFraction > wallClockMargin:

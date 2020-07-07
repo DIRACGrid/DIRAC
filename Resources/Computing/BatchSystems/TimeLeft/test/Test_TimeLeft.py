@@ -109,16 +109,16 @@ def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
   assert res == expected
 
 
-@pytest.mark.parametrize("batch, requiredVariables, returnValue, expected_1, expected_2", [
-    ('LSF', {'bin': '/usr/bin', 'hostNorm': 10.0, 'cpuLimit': 1000, 'wallClockLimit': 1000}, LSF_OUT, True, 9400.0),
-    ('SGE', {}, SGE_OUT, True, 9400.0),
-    ('SLURM', {}, SLURM_OUT_0, True, 1728000.0),
-    ('SLURM', {}, SLURM_OUT_1, True, 84672000.0),
-    ('SLURM', {}, SLURM_OUT_2, True, 216000.0),
-    ('SLURM', {}, SLURM_OUT_3, False, 0.0),
-    ('SLURM', {}, SLURM_OUT_4, False, 0.0),
+@pytest.mark.parametrize("batch, requiredVariables, processors, returnValue, expected_1, expected_2", [
+    ('LSF', {'bin': '/usr/bin', 'hostNorm': 10.0, 'cpuLimit': 1000, 'wallClockLimit': 1000}, 1, LSF_OUT, True, 9400.0),
+    ('SGE', {}, 1, SGE_OUT, True, 9400.0),
+    ('SLURM', {}, 24, SLURM_OUT_0, True, 66240.0),
+    ('SLURM', {}, 24, SLURM_OUT_1, True, 3245760.0),
+    ('SLURM', {}, 24, SLURM_OUT_2, True, 8280.0),
+    ('SLURM', {}, 24, SLURM_OUT_3, False, 0.0),
+    ('SLURM', {}, 24, SLURM_OUT_4, False, 0.0),
 ])
-def test_getTimeLeft(mocker, batch, requiredVariables, returnValue, expected_1, expected_2):
+def test_getTimeLeft(mocker, batch, requiredVariables, processors, returnValue, expected_1, expected_2):
   """ Test getTimeLeft()
   """
   mocker.patch("DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.runCommand", return_value=S_OK(returnValue))
@@ -138,7 +138,7 @@ def test_getTimeLeft(mocker, batch, requiredVariables, returnValue, expected_1, 
   # Update attributes of the batch systems to get scaled CPU
   tl.batchPlugin.__dict__.update(requiredVariables)
 
-  res = tl.getTimeLeft()
+  res = tl.getTimeLeft(processors=processors)
   assert res['OK'] is expected_1
   if res['OK']:
-    assert res['Value'] == expected_2
+    assert res['Value']['timeLeft'] == expected_2
