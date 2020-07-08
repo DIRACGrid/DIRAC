@@ -158,34 +158,28 @@ class DownloadInputData(object):
       guid = info['GUID']
       reps = replicas.get(lfn, {})
       if seName:
-        result = StorageElement(seName).getFileMetadata(lfn)
+        result = returnSingleResult(StorageElement(seName).getFileMetadata(lfn))
         if not result['OK']:
           self.log.error("Error getting metadata", result['Message'])
-          failedReplicas.add(lfn)
-          continue
-        if lfn in result['Value']['Failed']:
-          self.log.error('Could not get Storage Metadata',
-                         'for %s at %s: %s' % (lfn, seName, result['Value']['Failed'][lfn]))
-          failedReplicas.add(lfn)
-          continue
-        metadata = result['Value']['Successful'][lfn]
-        if metadata.get('Lost', False):
-          error = "PFN has been Lost by the StorageElement"
-        elif metadata.get('Unavailable', False):
-          error = "PFN is declared Unavailable by the StorageElement"
-        elif not metadata.get('Cached', metadata['Accessible']):
-          error = "PFN is no longer in StorageElement Cache"
+          error = result['Message']
         else:
-          error = ''
+          metadata = result['Value']
+          if metadata.get('Lost', False):
+            error = "PFN has been Lost by the StorageElement"
+          elif metadata.get('Unavailable', False):
+            error = "PFN is declared Unavailable by the StorageElement"
+          elif not metadata.get('Cached', metadata['Accessible']):
+            error = "PFN is no longer in StorageElement Cache"
+          else:
+            error = ''
         if error:
           self.log.error(error, lfn)
-          failedReplicas.add(lfn)
-          continue
-
-        self.log.info('Preliminary checks OK', 'download %s from %s:' % (lfn, seName))
-        result = self._downloadFromSE(lfn, seName, reps, guid)
-        if not result['OK']:
-          self.log.error("Download failed", "Tried downloading from SE %s: %s" % (seName, result['Message']))
+          result = {'OK': False}
+        else:
+          self.log.info('Preliminary checks OK', 'download %s from %s:' % (lfn, seName))
+          result = self._downloadFromSE(lfn, seName, reps, guid)
+          if not result['OK']:
+            self.log.error("Download failed", "Tried downloading from SE %s: %s" % (seName, result['Message']))
       else:
         result = {'OK': False}
 
