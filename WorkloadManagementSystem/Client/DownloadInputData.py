@@ -91,11 +91,11 @@ class DownloadInputData(object):
         failedReplicas.add(lfn)
         continue
 
-      # Get and remove size and GUIS
+      # Get and remove size and GUID
       size = reps.pop('Size')
       guid = reps.pop('GUID')
       # Remove all other items that are not SEs
-      for item in reps.keys():
+      for item in list(reps):  # note the pop below
         if item not in self.availableSEs:
           reps.pop(item)
       downloadReplicas[lfn] = {'SE': [], 'Size': size, 'GUID': guid}
@@ -124,7 +124,6 @@ class DownloadInputData(object):
         if len(reps['SE']) > 1:
           # if more than one SE is available randomly select one
           random.shuffle(reps['SE'])
-        # get SE and pfn from tuple
         reps['SE'] = reps['SE'][0]
       totalSize += int(reps.get('Size', 0))
       if verbose:
