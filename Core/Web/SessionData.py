@@ -4,14 +4,13 @@ from __future__ import print_function
 
 import os
 from DIRAC import gConfig, gLogger
+from DIRAC.Core.Web import Conf
 from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-
-from DIRAC.Core.Web import Conf
 
 __RCSID__ = "$Id$"
 

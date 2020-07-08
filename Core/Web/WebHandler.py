@@ -18,16 +18,14 @@ import tornado.websocket
 import tornado.stack_context
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Web import Conf
+from DIRAC.Core.Web.SessionData import SessionData
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-from DIRAC.Core.Web import Conf
-from DIRAC.Core.Web.SessionData import SessionData
-
 from DIRAC.FrameworkSystem.Client.AuthManagerData import gAuthManagerData
 
 

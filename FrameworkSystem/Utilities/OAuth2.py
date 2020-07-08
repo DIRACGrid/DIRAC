@@ -1,6 +1,10 @@
 """ OAuth2
 
     OAuth2 included all methods to work with OIDC authentication flow.
+
+    .. _timeouts:
+    Most requests to external servers should have a timeout attached,
+    in case the server is not responding in a timely manner. By default, requests do not time out unless a timeout value is set explicitly. Without a timeout, your code may hang for minutes or more.
 """
 from __future__ import absolute_import
 from __future__ import division

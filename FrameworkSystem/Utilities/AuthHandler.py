@@ -10,12 +10,10 @@ from tornado import web, gen
 from tornado.template import Template
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Web.WebHandler import WebHandler, asyncGen, WErr
+from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance
-
-from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
-
-from DIRAC.Core.Web.WebHandler import WebHandler, asyncGen, WErr
 
 __RCSID__ = "$Id$"
 
@@ -38,17 +36,12 @@ class AuthHandler(WebHandler):
   @asyncGen
   def web_auth(self):
     """ Authentication endpoint, used:
-          GET /auth/<IdP>?<options> -- submit authentication flow, retrieve session with status and describe
-            IdP - Identity provider name for authentication
-            options:
-            email - email to get authentcation URL(optional)
-
-          GET /auth/<session> -- will redirect to authentication endpoint
-          GET /auth/<session>/status -- retrieve session with status and describe
-            session - session number
-
-          GET /auth/redirect?<options> -- redirect endpoint to catch authentication responce
-            options - responce options
+        GET /auth/<IdP>?<options> -- submit authentication flow, retrieve session with status and describe,
+        where IdP is Identity provider name for authentication, and options:
+        email is email to get authentcation URL(optional)
+        GET /auth/<session> -- will redirect to authentication endpoint
+        GET /auth/<session>/status -- retrieve session with status and describe
+        GET /auth/redirect?<options> -- redirect endpoint to catch authentication responce
 
         :return: json
     """

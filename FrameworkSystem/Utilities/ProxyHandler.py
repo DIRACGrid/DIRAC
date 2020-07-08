@@ -12,10 +12,9 @@ from tornado import web, gen
 from tornado.template import Template
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Web.WebHandler import WebHandler, asyncGen, WErr
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsernameInGroup
-
-from DIRAC.Core.Web.WebHandler import WebHandler, asyncGen, WErr
 
 __RCSID__ = "$Id$"
 

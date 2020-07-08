@@ -8,10 +8,9 @@ import tornado
 
 from DIRAC import gConfig, S_OK
 from DIRAC.Core.Base import Script
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-
 from DIRAC.Core.Web.App import App
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 
 __RCSID__ = "$Id$"
 

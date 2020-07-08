@@ -11,14 +11,13 @@ import inspect
 import collections
 
 from DIRAC import S_OK, S_ERROR, rootPath, gLogger
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
-
 from DIRAC.Core.Web import Conf
 from DIRAC.Core.Web.WebHandler import WebHandler, WebSocketHandler
 from DIRAC.Core.Web.CoreHandler import CoreHandler
 from DIRAC.Core.Web.StaticHandler import StaticHandler
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 __RCSID__ = "$Id$"
 
