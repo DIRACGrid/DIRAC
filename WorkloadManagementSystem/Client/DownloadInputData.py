@@ -18,18 +18,17 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Os import getDiskSpace
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 COMPONENT_NAME = 'DownloadInputData'
 
 
 def _isCached(lfn, seName):
-  result = StorageElement(seName).getFileMetadata(lfn)
+  result = returnSingleResult(StorageElement(seName).getFileMetadata(lfn))
   if not result['OK']:
     return False
-  if lfn in result['Value']['Failed']:
-    return False
-  metadata = result['Value']['Successful'][lfn]
+  metadata = result['Value']
   return metadata.get('Cached', metadata['Accessible'])
 
 
