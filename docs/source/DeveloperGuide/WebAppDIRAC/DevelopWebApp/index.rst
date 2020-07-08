@@ -53,7 +53,7 @@ This file defines a Python class responsible for all server side functionality o
 extends **WebHandler** class which is the base class for all server side applications handling clients requests. 
 The starting definition of this class is as follows::
    
-   from WebAppDIRAC.Lib.WebHandler import WebHandler
+   from DIRAC.Core.Web.WebHandler import WebHandler
 
    class MyAppHandler(WebHandler):
    
@@ -63,7 +63,7 @@ Therefore the name of the class is **MyAppHandler** and the name of the method w
 This means that if you want a method to be accessible in the application class you have to put the prefix **web_** 
 to the name of the method.::
 
-   from WebAppDIRAC.Lib.WebHandler import WebHandler
+   from DIRAC.Core.Web.WebHandler import WebHandler
 
    class MyAppHandler(WebHandler):
       def web_getData(self):
@@ -176,7 +176,7 @@ by the server is shown in the textarea.
      The code::
 
 
-      from WebAppDIRAC.Lib.WebHandler import WebHandler
+      from DIRAC.Core.Web.WebHandler import WebHandler
       from DIRAC.Core.DISET.RPCClient import RPCClient
       import random
       

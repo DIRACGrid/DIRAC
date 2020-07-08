@@ -98,7 +98,10 @@ class App(object):
     gConfig.loadCFG(webCFG)
 
   def _loadDefaultWebCFG(self):
-    """ This method reloads the web.cfg file from etc/web.cfg """
+    """ This method reloads the web.cfg file from etc/web.cfg
+
+        :return: bool
+    """
     modCFG = None
     cfgPath = os.path.join(DIRAC.rootPath, 'etc', 'web.cfg')
     isLoaded = True
@@ -126,6 +129,7 @@ class App(object):
     """
     It is used to properly stop tornado when more than one process is used.
     In principle this is doing the job of runsv....
+
     :param int sig: the signal sent to the process
     :param object frame: execution frame which contains the child processes
     """

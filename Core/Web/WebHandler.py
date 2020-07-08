@@ -146,6 +146,8 @@ class WebHandler(tornado.web.RequestHandler):
 
   def __processCredentials(self):
     """ Extract the user credentials based on the certificate or what comes from the balancer
+
+        :return: S_OK()/S_ERROR()
     """
     # Unsecure protocol only for visitors
     if self.request.protocol != "https" or self.__idp == "Visitor":
@@ -328,7 +330,7 @@ class WebHandler(tornado.web.RequestHandler):
     else:
       self.log.info("AUTH KO: %s by %s@%s" % (handlerRoute, self.__credDict['username'], self.__credDict['group']))
 
-    if self.isTrustedHost(self.__credDict.get('DN')):
+    if self.__credDict.get('DN') and self.isTrustedHost(self.__credDict['DN']):
       self.log.info("Request is coming from Trusted host")
       return True
 
@@ -336,6 +338,7 @@ class WebHandler(tornado.web.RequestHandler):
 
   def isTrustedHost(self, dn):
     """ Check if the request coming from a TrustedHost
+
         :param str dn: certificate DN
 
         :return: bool if the host is Trusrted it return true otherwise false
