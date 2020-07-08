@@ -143,6 +143,7 @@ class DownloadInputData(object):
       self.log.warn('Problem checking available disk space:\n%s' % (result))
       return result
 
+    # FIXME: this can never happen at the moment
     if not result['Value']:
       self.log.warn("Not enough disk space available for download",
                     "%s / %s bytes" % (result['Value'], totalSize))
