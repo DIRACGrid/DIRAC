@@ -2101,7 +2101,7 @@ rcfile=%(bashrc)s
 #
 exec 2>&1
 #
-exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
+exec python %(DIRAC)s/DIRAC/Core/scripts/dirac-webapp-run.py -p < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                   'DIRAC': self.linkedRootPath})
 

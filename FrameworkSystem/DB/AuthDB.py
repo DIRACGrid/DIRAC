@@ -158,7 +158,7 @@ class AuthDB(DB):
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR('%s session is change status or deleted.')
+      return S_ERROR('%s session is change status or deleted.' % session)
     url = result['Value']['Comment']
     if not url:
       return S_ERROR('No link found.')
