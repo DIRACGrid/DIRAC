@@ -2507,5 +2507,93 @@ exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
 
     return result
 
+  def installTornado(self):
+    """
+    Install runit directory for the tornado, and add the configuration of the required service
+    """
+    # Check if the Tornado itself is already installed
+    runitCompDir = os.path.join(self.runitDir, 'Tornado', 'Tornado')
+    if os.path.exists(runitCompDir):
+      msg = "Tornado_Tornado already installed"
+      gLogger.notice(msg)
+      return S_OK(runitCompDir)
+
+    # Check the setup for the given system
+    result = gConfig.getOption('DIRAC/Setups/%s/Tornado' % (CSGlobals.getSetup()))
+    if not result['OK']:
+      return result
+    self.instance = result['Value']
+
+    # Now do the actual installation
+    try:
+
+      self._createRunitLog(runitCompDir)
+
+      runFile = os.path.join(runitCompDir, 'run')
+      with open(runFile, 'w') as fd:
+        fd.write(
+            """#!/bin/bash
+  rcfile=%(bashrc)s
+  [ -e $rcfile ] && source $rcfile
+  #
+  exec 2>&1
+  #
+  #
+  exec python $DIRAC/DIRAC/Core/Tornado/scripts/tornado-start-all.py -ddd
+  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
+
+      os.chmod(runFile, self.gDefaultPerms)
+
+    except Exception:
+      error = 'Failed to prepare self.setup forTornado'
+      gLogger.exception(error)
+      if self.exitOnError:
+        DIRAC.exit(-1)
+      return S_ERROR(error)
+
+    result = self.execCommand(5, [runFile])
+
+    gLogger.notice(result['Value'][1])
+
+    return S_OK(runitCompDir)
+
+  def addTornadoOptionsToCS(self, gConfig_o):
+    """
+    Add the section with the component options to the CS
+    """
+
+    if gConfig_o:
+      gConfig_o.forceRefresh()
+
+    instanceOption = cfgPath('DIRAC', 'Setups', self.setup, 'Tornado')
+
+    if gConfig_o:
+      compInstance = gConfig_o.getValue(instanceOption, '')
+    else:
+      compInstance = self.localCfg.getOption(instanceOption, '')
+    if not compInstance:
+      return S_ERROR('%s not defined in %s' % (instanceOption, self.cfgFile))
+    tornadoSection = cfgPath('Systems', 'Tornado', compInstance)
+
+    cfg = self.__getCfg(tornadoSection, 'Port', 8443)
+    # cfg.setOption(cfgPath(tornadoSection, 'Password'), self.mysqlPassword)
+    return self._addCfgToCS(cfg)
+
+  
+
+
+
+
+  
+      port = compCfg.getOption('Port', 0)
+      if port and self.host:
+        urlsPath = cfgPath('Systems', system, compInstance, 'URLs')
+        cfg.createNewSection(urlsPath)
+        failoverUrlsPath = cfgPath('Systems', system, compInstance, 'FailoverURLs')
+        cfg.createNewSection(failoverUrlsPath)
+        cfg.setOption(cfgPath(urlsPath, component),
+                      'dips://%s:%d/%s/%s' % (self.host, port, system, component))
+
+
 
 gComponentInstaller = ComponentInstaller()
