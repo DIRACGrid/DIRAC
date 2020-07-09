@@ -52,8 +52,8 @@ class SLURMResourceUsage(ResourceUsage):
         cpuLimit = wallClockLimit * int(allocCPUs)
       cpu = float(cpu)
 
-    consumed = {'CPU': cpu,
-                'CPULimit': cpuLimit,
+    consumed = {'CPU': wallClock,
+                'CPULimit': wallClockLimit,
                 'WallClock': wallClock,
                 'WallClockLimit': wallClockLimit}
 
