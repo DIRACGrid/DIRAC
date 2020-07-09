@@ -96,8 +96,8 @@ class ProdValidator(object):
         msg = 'Metadata %s is not defined in the Catalog' % meta
         return S_ERROR(msg)
       mtype = MetaTypeDict[meta]
-      if mtype not in ['VARCHAR(128)', 'int', 'float']:
-        msg = 'Metatype %s is not supported' % mtype
+      if mtype.lower() not in ['varchar(128)', 'int', 'float']:
+        msg = 'Metatype %s is not supported' % mtype.lower()
         return S_ERROR(msg)
       if meta not in ParentMetaQueryDict:
         msg = 'Metadata %s is not in parent transformation query' % meta
@@ -136,9 +136,8 @@ class ProdValidator(object):
     :param str parentValue: a meta data value (str, int, ...) to be compared with value
     """
     return set(
-        value.values()[0]).issubset(
+        str(value.values()[0])).issubset(
         set(
-            parentValue.values()[0])) or set(
-        parentValue.values()[0]).issubset(
-        set(
-            value.values()[0]))
+            str(parentValue.values()[0]))) or set(
+              str(parentValue.values()[0])).issubset(
+                set(str(value.values()[0])))
