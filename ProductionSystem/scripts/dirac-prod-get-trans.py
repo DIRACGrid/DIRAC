@@ -4,7 +4,7 @@
   Get the transformations belonging to a given production
 """
 
-__RCSID__ = "2bf8e43be (2018-11-21 10:55:53 +0100) arrabito <arrabito@in2p3.fr>"
+__RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
