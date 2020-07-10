@@ -50,8 +50,15 @@ else:
   DIRAC.exit(-1)
 
 
-fields = ['TransformationName', 'Status', 'F_Proc.', 'F_Proc.(%)', 'TransformationID', 'ProductionID', 'Prod_LastUpdate',
-          'Prod_InsertedTime']
+fields = [
+    'TransformationName',
+    'Status',
+    'F_Proc.',
+    'F_Proc.(%)',
+    'TransformationID',
+    'ProductionID',
+    'Prod_LastUpdate',
+    'Prod_InsertedTime']
 
 records = []
 
@@ -66,7 +73,7 @@ res = transClient.getTransformationSummaryWeb({'TransformationID': transIDs}, []
 if not res['OK']:
   DIRAC.gLogger.error(res['Message'])
   DIRAC.exit(-1)
-  
+
 if res['Value']['TotalRecords'] > 0:
   paramNames = res['Value']['ParameterNames']
   for paramValues in res['Value']['Records']:
