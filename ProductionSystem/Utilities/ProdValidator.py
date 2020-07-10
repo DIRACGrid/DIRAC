@@ -132,12 +132,12 @@ class ProdValidator(object):
   def compareValues(self, value, parentValue):
     """ Very simple comparison. To be improved
 
-    :param str value: a meta data value (str, int, ...) to be compared with the parentValue
-    :param str parentValue: a meta data value (str, int, ...) to be compared with value
+    :param dict value: a dictionary of meta data values (str, int, float) to be compared with the parentValue
+    :param dict parentValue: a dictionary of meta data values (str, int, float) to be compared with value
     """
     return set(
         str(value.values()[0])).issubset(
         set(
             str(parentValue.values()[0]))) or set(
-              str(parentValue.values()[0])).issubset(
+        str(parentValue.values()[0])).issubset(
                 set(str(value.values()[0])))
