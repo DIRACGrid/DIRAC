@@ -1,4 +1,4 @@
-""" DIRAC AuthManager Client class encapsulates the data cache.
+""" DIRAC AuthManager Client class encapsulates the cache data.
 """
 from __future__ import absolute_import
 from __future__ import division

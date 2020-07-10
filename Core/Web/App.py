@@ -34,6 +34,7 @@ class App(object):
     self.log = gLogger.getSubLogger("Web")
 
   def _logRequest(self, handler):
+    """ Log request """
     status = handler.get_status()
     if status < 400:
       logm = self.log.notice
@@ -45,6 +46,7 @@ class App(object):
     logm("%d %s %.2fms" % (status, handler._request_summary(), request_time))
 
   def __reloadAppCB(self):
+    """ Reload """
     gLogger.notice("\n !!!!!! Reloading web app...\n")
 
   def _loadWebAppCFGFiles(self):

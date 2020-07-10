@@ -1,4 +1,4 @@
-""" HTTP API of the DIRAC configuration data, rewrite from RESTDIRAC project
+""" HTTP API of the DIRAC configuration data, rewrite from the RESTDIRAC project
 """
 import re
 import json

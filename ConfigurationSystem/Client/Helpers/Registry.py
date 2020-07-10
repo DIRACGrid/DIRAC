@@ -10,12 +10,12 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+
+# Registry use cached data from AuthManager and ProxyManager services
 from DIRAC.FrameworkSystem.Client.ProxyManagerData import gProxyManagerData
 from DIRAC.FrameworkSystem.Client.AuthManagerData import gAuthManagerData
 
 __RCSID__ = "$Id$"
-
-# pylint: disable=missing-docstring
 
 gBaseRegistrySection = "/Registry"
 
@@ -738,8 +738,6 @@ def getVOsWithVOMS(voList=None):
   if not voList:
     result = getVOs()
     if result['OK']:
-      # Hack to run integration tests where not exist VO section.
-      # return result
       voList = result['Value']
   for vo in voList or []:
     if getVOOption(vo, 'VOMSName'):
@@ -819,18 +817,3 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   if DNs:
     return S_OK(list(set(DNs)))
   return S_ERROR('For %s@%s not found DN%s.' % (username, group, ' or it suspended' if checkStatus else ''))
-
-
-def findSomeDNToUseForGroupsThatNotNeedDN(username):
-  """ This method is HACK for groups that not need DN from user, like as dirac_user, dirac_admin
-      In this cause we will search first DN in CS or any DN that we can to find
-
-      :param str username: user name
-
-      :return: S_OK(str)/S_ERROR()
-  """
-  defDNs = getDNsForUsernameFromSC(username)
-  if not defDNs:
-    result = getDNsForUsername(username)
-    return S_OK(result['Value'][0]) if result['OK'] else result
-  return S_OK(defDNs[0])

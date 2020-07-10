@@ -903,12 +903,12 @@ class ProxyDB(DB):
 
     users = []
     groups = []
-    if 'UserName' in selDict:
+    if selDict.get('UserName'):
       users = selDict['UserName']
       if not isinstance(users, (list, tuple)):
         users = [users]
       del selDict["UserName"]
-    if 'UserGroup' in selDict:
+    if selDict.get('UserGroup'):
       groups = selDict['UserGroup']
       if not isinstance(groups, (list, tuple)):
         groups = [groups]
