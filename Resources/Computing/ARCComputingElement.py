@@ -141,9 +141,7 @@ class ARCComputingElement(ComputingElement):
         if result != '':
           xrslExtraString = result
           gLogger.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
-    if xrslExtraString == '':
-      gLogger.always("No %s found in configuration for %s" % (xtraVariable, self.ceHost))
-    else:
+    if xrslExtraString:
       gLogger.always("%s : %s" % (xtraVariable, xrslExtraString))
       gLogger.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
     return xrslExtraString
