@@ -604,10 +604,14 @@ class ReleaseConfig(object):
     It loads the default configuration files
     """
 
-    self.__dbgMsg("Loading global defaults from: %s" % self.globalDefaultsURL)
-    result = self.__loadCFGFromURL(self.globalDefaultsURL)
+    globalDefaultsCVMFSPath = "/cvmfs/dirac.egi.eu/admin/globalDefaults.cfg"
+    self.__dbgMsg("Loading global defaults from: %s" % globalDefaultsCVMFSPath)
+    result = self.__loadCFGFromURL(globalDefaultsCVMFSPath)
     if not result['OK']:
-      return result
+      self.__dbgMsg("Loading global defaults from: %s" % self.globalDefaultsURL)
+      result = self.__loadCFGFromURL(self.globalDefaultsURL)
+      if not result['OK']:
+        return result
     self.globalDefaults = result['Value']
     for k in ("Installations", "Projects"):
       if not self.globalDefaults.isSection(k):
