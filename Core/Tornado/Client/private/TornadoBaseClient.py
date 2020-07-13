@@ -1,11 +1,11 @@
 """
-    TornadoBaseClient contain all low-levels functionnalities and initilization methods
+    TornadoBaseClient contains all the low-levels functionnalities and initilization methods
     It must be instanciated from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`
 
-    Requests library manage himself retry when connection failed, so the __nbOfRetry attribute is removed from DIRAC
+    Requests library manage itself retry when connection failed, so the __nbOfRetry attribute is removed from DIRAC
     (For each URL requests manage retries himself, if it still fail, we try next url)
     KeepAlive lapse is also removed because managed by request,
-    see http://docs.python-requests.org/en/master/user/advanced/#keep-alive
+    see https://requests.readthedocs.io/en/latest/user/advanced/#keep-alive
 
     If necessary this class can be modified to define number of retry in requests, documentation does not give
     lot of informations but you can see this simple solution from StackOverflow.
@@ -93,13 +93,9 @@ class TornadoBaseClient(object):
     self.__initStatus = S_OK()
     self.__idDict = {}
     self.__extraCredentials = ""
-    self.__retry = 0
-    self.__retryDelay = 0
     # by default we always have 1 url for example:
     # RPCClient('dips://volhcb38.cern.ch:9162/Framework/SystemAdministrator')
     self.__nbOfUrls = 1
-    # self.__nbOfRetry removed in https, see note at the begining of the class
-    self.__retryCounter = 1
     self.__bannedUrls = []
 
     # For pylint...
@@ -324,7 +320,7 @@ class TornadoBaseClient(object):
 
     # Load the Gateways URLs for the current site Name
     gatewayURL = False
-    if self.KW_IGNORE_GATEWAYS not in self.kwargs or not self.kwargs[self.KW_IGNORE_GATEWAYS]:
+    if not self.kwargs.get(self.KW_IGNORE_GATEWAYS):
       dRetVal = gConfig.getOption("/DIRAC/Gateways/%s" % DIRAC.siteName())
       if dRetVal['OK']:
         rawGatewayURL = List.randomize(List.fromChar(dRetVal['Value'], ","))[0]
@@ -372,7 +368,7 @@ class TornadoBaseClient(object):
       self.__bannedUrls = []  # retry all urls
       gLogger.debug("Retrying again all URLs")
 
-    if len(self.__bannedUrls) > 0 and len(urlsList) > 1:
+    if self.__bannedUrls and len(urlsList) > 1:
       # we have host which is not accessible. We remove that host from the list.
       # We only remove if we have more than one instance
       for i in self.__bannedUrls:
@@ -387,7 +383,8 @@ class TornadoBaseClient(object):
     # If we have banned URLs, and several URLs at disposals, we make sure that the selected sURL
     # is not on a host which is banned. If it is, we take the next one in the list using __selectUrl
 
-    if len(self.__bannedUrls) > 0 and self.__nbOfUrls > 2:
+    if self.__bannedUrls and self.__nbOfUrls > 2:  # when we have multiple services then we can
+      # have a situation when two services are running on the same machine with different ports...
       retVal = Network.splitURL(sURL)
       nexturl = None
       if retVal['OK']:
@@ -550,8 +547,8 @@ class TornadoBaseClient(object):
           return decode(contentFile.getvalue())[0]
 
     except Exception as e:
-      # CHRIS TODO review this part.
-      # Is this list ever cleaned ?
+      # CHRIS TODO review this part: catch specific exceptions
+      # self.__bannedUrls is emptied in findServiceURLs
       if url not in self.__bannedUrls:
         self.__bannedUrls += [url]
       if retry < self.__nbOfUrls - 1:

@@ -27,3 +27,7 @@ The changes from one stage to the next is controlled by environment variables, a
 
 The last stage (JSON only) will be the default of the following release, so before upgrading you will have to go through the previous steps.
 
+HTTPS Services
+==============
+
+The aim is to replace the DISET services with HTTPS services. The changes should be almost transparent for users/admins. However, because it is still very much in the state of preview, we do not yet describe how/what to change. If you really want to play around, please check :ref:`httpsTornado`.

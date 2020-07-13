@@ -347,7 +347,7 @@ class TornadoRefresher(RefresherBase):
 
 
 # USE_TORNADO_IOLOOP is defined by starting scripts
-if os.environ.get('USE_TORNADO_IOLOOP', 'false').lower() == 'true':
+if os.environ.get('USE_TORNADO_IOLOOP', 'false').lower() in ('yes', 'true'):
   gRefresher = TornadoRefresher()
 else:
   gRefresher = Refresher()

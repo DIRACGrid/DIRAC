@@ -49,7 +49,7 @@ class TornadoClient(TornadoBaseClient):
   # Name from RPCClient Interface
   def executeRPC(self, method, *args):
     """
-      This function call a remote service
+      Calls a remote service
 
       :param str procedure: remote procedure name
       :param args: list of arguments
@@ -58,8 +58,7 @@ class TornadoClient(TornadoBaseClient):
     rpcCall = {'method': method, 'args': encode(args)}
     # Start request
     retVal = self._request(**rpcCall)
-    # Should this line bellow go ? I guess yes
-    retVal['rpcStub'] = (self._getBaseStub(), method, args)
+    retVal['rpcStub'] = (self._getBaseStub(), method, list(args))
     return retVal
 
   def receiveFile(self, destFile, *args):
