@@ -1,0 +1,2 @@
+These tests were writen in order to compare the existing DISET based services with the new Tornado/HTTPs based services.
+They were ran by hand, and are kept here just in case for the time being.
