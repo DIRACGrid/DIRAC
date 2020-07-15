@@ -25,6 +25,7 @@ excludeMask = ['__init__.py']
 simpleCopyMask = [os.path.basename(__file__),
                   'dirac-compile-externals.py',
                   'dirac-install.py',
+                  'dirac-install-extension.py',
                   'dirac-platform.py',
                   'dirac_compile_externals.py',
                   'dirac_install.py',
@@ -40,10 +41,11 @@ exec $PYTHONLOCATION$ $DIRAC/$SCRIPTLOCATION$ "$@"
 pythonLocation = "/usr/bin/env python"
 # if True, do not use the script wrapper but just use symlinks
 useSymlinks = False
-
+# Module in which to look for the scripts
+module = None
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "", ["symlink"])
+  opts, args = getopt.getopt(sys.argv[1:], "", ["symlink", "module="])
 except getopt.GetoptError as err:
   # print help information and exit:
   print(str(err))  # will print something like "option -a not recognized"
@@ -51,9 +53,10 @@ except getopt.GetoptError as err:
 for o, a in opts:
   if o == "--symlink":
     useSymlinks = True
+  elif o == "--module":
+    module = a
   else:
     assert False, "unhandled options %s" % o
-
 
 if args:
   pythonLocation = os.path.join(args[0], 'bin', 'python')
@@ -95,13 +98,15 @@ print("Scripts will be deployed at %s" % targetScriptsPath)
 if not os.path.isdir(targetScriptsPath):
   os.mkdir(targetScriptsPath)
 
-
-# DIRAC scripts need to be treated first, so that its scripts
-# can be overwritten by the extensions
-listDir = os.listdir(rootPath)
-if 'DIRAC' in listDir:  # should always be true...
-  listDir.remove('DIRAC')
-  listDir.insert(0, 'DIRAC')
+if module:
+  listDir = module.split(',')
+else:
+  listDir = os.listdir(rootPath)
+  # DIRAC scripts need to be treated first, so that its scripts
+  # can be overwritten by the extensions
+  if 'DIRAC' in listDir:  # should always be true...
+    listDir.remove('DIRAC')
+    listDir.insert(0, 'DIRAC')
 
 for rootModule in listDir:
   modulePath = os.path.join(rootPath, rootModule)
