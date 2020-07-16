@@ -18,22 +18,21 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Os import getDiskSpace
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 COMPONENT_NAME = 'DownloadInputData'
 
 
 def _isCached(lfn, seName):
-  result = StorageElement(seName).getFileMetadata(lfn)
+  result = returnSingleResult(StorageElement(seName).getFileMetadata(lfn))
   if not result['OK']:
     return False
-  if lfn in result['Value']['Failed']:
-    return False
-  metadata = result['Value']['Successful'][lfn]
+  metadata = result['Value']
   return metadata.get('Cached', metadata['Accessible'])
 
 
-class DownloadInputData:
+class DownloadInputData(object):
   """
    retrieve InputData LFN from localSEs (if available) or from elsewhere.
   """
@@ -92,11 +91,11 @@ class DownloadInputData:
         failedReplicas.add(lfn)
         continue
 
-      # Get and remove size and GUIS
+      # Get and remove size and GUID
       size = reps.pop('Size')
       guid = reps.pop('GUID')
       # Remove all other items that are not SEs
-      for item in reps.keys():
+      for item in list(reps):  # note the pop below
         if item not in self.availableSEs:
           reps.pop(item)
       downloadReplicas[lfn] = {'SE': [], 'Size': size, 'GUID': guid}
@@ -125,7 +124,6 @@ class DownloadInputData:
         if len(reps['SE']) > 1:
           # if more than one SE is available randomly select one
           random.shuffle(reps['SE'])
-        # get SE and pfn from tuple
         reps['SE'] = reps['SE'][0]
       totalSize += int(reps.get('Size', 0))
       if verbose:
@@ -145,6 +143,7 @@ class DownloadInputData:
       self.log.warn('Problem checking available disk space:\n%s' % (result))
       return result
 
+    # FIXME: this can never happen at the moment
     if not result['Value']:
       self.log.warn("Not enough disk space available for download",
                     "%s / %s bytes" % (result['Value'], totalSize))
@@ -160,34 +159,28 @@ class DownloadInputData:
       guid = info['GUID']
       reps = replicas.get(lfn, {})
       if seName:
-        result = StorageElement(seName).getFileMetadata(lfn)
+        result = returnSingleResult(StorageElement(seName).getFileMetadata(lfn))
         if not result['OK']:
           self.log.error("Error getting metadata", result['Message'])
-          failedReplicas.add(lfn)
-          continue
-        if lfn in result['Value']['Failed']:
-          self.log.error('Could not get Storage Metadata',
-                         'for %s at %s: %s' % (lfn, seName, result['Value']['Failed'][lfn]))
-          failedReplicas.add(lfn)
-          continue
-        metadata = result['Value']['Successful'][lfn]
-        if metadata.get('Lost', False):
-          error = "PFN has been Lost by the StorageElement"
-        elif metadata.get('Unavailable', False):
-          error = "PFN is declared Unavailable by the StorageElement"
-        elif not metadata.get('Cached', metadata['Accessible']):
-          error = "PFN is no longer in StorageElement Cache"
+          error = result['Message']
         else:
-          error = ''
+          metadata = result['Value']
+          if metadata.get('Lost', False):
+            error = "PFN has been Lost by the StorageElement"
+          elif metadata.get('Unavailable', False):
+            error = "PFN is declared Unavailable by the StorageElement"
+          elif not metadata.get('Cached', metadata['Accessible']):
+            error = "PFN is no longer in StorageElement Cache"
+          else:
+            error = ''
         if error:
           self.log.error(error, lfn)
-          failedReplicas.add(lfn)
-          continue
-
-        self.log.info('Preliminary checks OK', 'download %s from %s:' % (lfn, seName))
-        result = self._downloadFromSE(lfn, seName, reps, guid)
-        if not result['OK']:
-          self.log.error("Download failed", "Tried downloading from SE %s: %s" % (seName, result['Message']))
+          result = {'OK': False}
+        else:
+          self.log.info('Preliminary checks OK', 'download %s from %s:' % (lfn, seName))
+          result = self._downloadFromSE(lfn, seName, reps, guid)
+          if not result['OK']:
+            self.log.error("Download failed", "Tried downloading from SE %s: %s" % (seName, result['Message']))
       else:
         result = {'OK': False}
 
@@ -244,14 +237,15 @@ class DownloadInputData:
     availableBytes = diskSpace * 1024 * 1024  # bytes
     # below can be a configuration option sent via the job wrapper in the future
     # Moved from 3 to 5 GB (PhC 130822) for standard output file
-    data = 5 * 1024 * 1024 * 1024  # 5GB in bytes
+    bufferGBs = 5.0
+    data = bufferGBs * 1024 * 1024 * 1024  # bufferGBs in bytes
     if (data + totalSize) < availableBytes:
       msg = 'Enough disk space available (%s bytes)' % (availableBytes)
       self.log.verbose(msg)
       return S_OK(msg)
     else:
-      msg = 'Not enough disk space available for download %s (including 3GB buffer) > %s bytes' \
-          % ((data + totalSize), availableBytes)
+      msg = 'Not enough disk space available for download %s (including %dGB buffer) > %s bytes' \
+          % ((data + totalSize), bufferGBs, availableBytes)
       self.log.warn(msg)
       return S_ERROR(msg)
 
@@ -316,16 +310,11 @@ class DownloadInputData:
         return S_OK(fileDict)
 
     localFile = os.path.join(downloadDir, fileName)
-    result = StorageElement(seName).getFile(lfn, localPath=downloadDir)
+    result = returnSingleResult(StorageElement(seName).getFile(lfn, localPath=downloadDir))
     if not result['OK']:
       self.log.warn('Problem getting lfn', '%s from %s:\n%s' % (lfn, seName, result['Message']))
+      self.__cleanFailedFile(lfn, downloadDir)
       return result
-    if lfn in result['Value']['Failed']:
-      self.log.warn('Problem getting lfn', '%s from %s:\n%s' % (lfn, seName, result['Value']['Failed'][lfn]))
-      return S_ERROR(result['Value']['Failed'][lfn])
-    if lfn not in result['Value']['Successful']:
-      self.log.warn("%s got from %s not in Failed nor Successful???\n" % (lfn, seName))
-      return S_ERROR("Return from StorageElement.getFile() incomplete")
 
     if os.path.exists(localFile):
       self.log.verbose("File successfully downloaded locally", "(%s to %s)" % (lfn, localFile))
@@ -353,5 +342,16 @@ class DownloadInputData:
       self.log.warn("Failed to set job parameters", jobParam['Message'])
 
     return jobParam
+
+  def __cleanFailedFile(self, lfn, downloadDir):
+    """ Try to remove a file after a failed download attempt """
+    filePath = os.path.join(downloadDir, os.path.basename(lfn))
+    self.log.info("Trying to remove file after failed download", "Local path: %s " % filePath)
+    if os.path.exists(filePath):
+      try:
+        os.remove(filePath)
+        self.log.info("Removed file remnant after failed download", "Local path: %s " % filePath)
+      except OSError as e:
+        self.log.info("Failed to remove file after failed download", repr(e))
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
