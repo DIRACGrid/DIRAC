@@ -50,6 +50,7 @@ def usage():
 
   sys.exit(0)
 
+
 def loadConfiguration():
   """
   It loads the configuration file
@@ -66,8 +67,8 @@ def loadConfiguration():
       diracInstall.cliParams.globalDefaults = value
 
   rConfig = diracInstall.ReleaseConfig(
-      instName = diracInstall.cliParams.installation,
-      globalDefaultsURL = diracInstall.cliParams.globalDefaults)
+      instName=diracInstall.cliParams.installation,
+      globalDefaultsURL=diracInstall.cliParams.globalDefaults)
   if diracInstall.cliParams.debug:
     rConfig.debugCB = diracInstall.logDEBUG
 
@@ -132,6 +133,7 @@ def loadConfiguration():
   rConfig.loadInstallationLocalDefaults(args)
 
   return diracInstall.S_OK(rConfig)
+
 
 if __name__ == "__main__":
 
