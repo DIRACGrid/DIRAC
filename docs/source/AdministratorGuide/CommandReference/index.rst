@@ -100,6 +100,7 @@ Managing DIRAC installation:
     dirac-install-db
     dirac-install-web-portal
     dirac-install
+    dirac-install-extension
     dirac-uninstall-component
     dirac-restart-component
     dirac-start-component
