@@ -36,7 +36,6 @@ if __name__ == "__main__":
   from dirac_install import cliParams, loadConfiguration  # pylint: disable=import-error
   from dirac_install import downloadAndExtractTarball, logERROR, logNOTICE  # pylint: disable=import-error
 
-
   result = loadConfiguration()
   if result['OK']:
     releaseConfig = result['Value']
