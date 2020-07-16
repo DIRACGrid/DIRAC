@@ -146,7 +146,9 @@ Options for the HTCondorCEs
 | **Name**            | **Description**                                     | **Example**                                               |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+
 | ExtraSubmitString   | Additional string for the condor submit             | request_cpus = 8 \\n periodic_remove = ...                |
-|                     | file. Separate entries with "\\n".                  |                                                           |
+|                     | file. Separate entries with "\\n".                  | To use actual proxy lifetime instead of server default    |
+|                     |                                                     | when using remote scheduler:                              |
+|                     |                                                     | delegate_job_GSI_credentials_lifetime = 0                 |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+
 | WorkingDirectory    | Directory where the pilot log files are stored      | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT    |
 |                     | locally. It should exist on the server and          |                                                           |
