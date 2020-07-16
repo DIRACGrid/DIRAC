@@ -141,9 +141,7 @@ class ARCComputingElement(ComputingElement):
         if result != '':
           xrslExtraString = result
           gLogger.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
-    if xrslExtraString == '':
-      gLogger.always("No %s found in configuration for %s" % (xtraVariable, self.ceHost))
-    else:
+    if xrslExtraString:
       gLogger.always("%s : %s" % (xtraVariable, xrslExtraString))
       gLogger.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
     return xrslExtraString
@@ -160,14 +158,16 @@ class ARCComputingElement(ComputingElement):
     """ Create the JDL for submission
     """
     diracStamp = makeGuid()[:8]
+    # Evaluate the number of processors to allocate
+    nProcessors = processors if processors > 1 else self.ceParameters.get('NumberOfProcessors', processors)
 
     xrslMPAdditions = ''
-    if processors > 1:
+    if nProcessors > 1:
       xrslMPAdditions = """
 (count = %(processors)u)
 %(xrslMPExtraString)s
       """ % {
-          'processors': processors,
+          'processors': nProcessors,
           'xrslMPExtraString': self.xrslMPExtraString
       }
 
@@ -193,7 +193,7 @@ class ARCComputingElement(ComputingElement):
 
   #############################################################################
   def _reset(self):
-    self.queue = self.ceParameters['Queue']
+    self.queue = self.ceParameters.get("CEQueueName", self.ceParameters['Queue'])
     if 'GridEnv' in self.ceParameters:
       self.gridEnv = self.ceParameters['GridEnv']
 
