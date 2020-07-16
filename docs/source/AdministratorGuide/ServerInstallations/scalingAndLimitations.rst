@@ -59,7 +59,14 @@ Finally, the parameter `SocketBacklog` for a service can be increased (`man list
 Duplications
 ============
 
+The WMS **Executors** can be duplicated.
+
 In some cases, it is possible to run several instances of the same agent/service in order to scale.
+
+NB: in the tables below, for those components where the **Duplicate** column is not filled,
+it simply means that we have not tried to duplicate them yet.
+For services, this probably means that they can be duplicated.
+For agents, instead, this probably means that they can not be duplicated.
 
 Services
 ========
@@ -71,7 +78,7 @@ Services
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`ReportGenerator <DIRAC.AccountingSystem.Service.ReportGeneratorHandler>`                    |             |                                                                           |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-| Configuration      | :mod:`Configuration <DIRAC.ConfigurationSystem.Service.ConfigurationHandler>`                     | PARTIAL     |                                                                           |
+| Configuration      | :mod:`Configuration <DIRAC.ConfigurationSystem.Service.ConfigurationHandler>`                     | PARTIAL     | One master (rw) and slaves (ro). It's advised to have several CS slaves   |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 | DataManagement     | :mod:`DataIntegrity <DIRAC.DataManagementSystem.Service.DataIntegrityHandler>`                    | YES         |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
@@ -91,9 +98,9 @@ Services
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 | Framework          | :mod:`BundleDelivery <DIRAC.FrameworkSystem.Service.BundleDeliveryHandler>`                       |             |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-|                    | :mod:`ComponentMonitoring <DIRAC.FrameworkSystem.Service.ComponentMonitoringHandler>`             |             |                                                                           |
+|                    | :mod:`ComponentMonitoring <DIRAC.FrameworkSystem.Service.ComponentMonitoringHandler>`             | YES         |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-|                    | :mod:`Monitoring <DIRAC.FrameworkSystem.Service.MonitoringHandler>`                               |             |                                                                           |
+|                    | :mod:`Monitoring <DIRAC.FrameworkSystem.Service.MonitoringHandler>`                               | NO          |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`Notification <DIRAC.FrameworkSystem.Service.NotificationHandler>`                           |             |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
@@ -105,7 +112,7 @@ Services
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`SecurityLogging <DIRAC.FrameworkSystem.Service.SecurityLoggingHandler>`                     | YES         |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-|                    | :mod:`SystemAdministrator <DIRAC.FrameworkSystem.Service.SystemAdministratorHandler>`             | YES         | In principle there should be one on each and every machine                |
+|                    | :mod:`SystemAdministrator <DIRAC.FrameworkSystem.Service.SystemAdministratorHandler>`             | **MUST**    | There should be one on each and every machine                             |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`SystemLogging <DIRAC.FrameworkSystem.Service.SystemLoggingHandler>`                         |             |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
@@ -113,21 +120,21 @@ Services
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`UserProfileManager <DIRAC.FrameworkSystem.Service.UserProfileManagerHandler>`               |             |                                                                           |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-| Monitoring         | :mod:`Monitoring <DIRAC.MonitoringSystem.Service.MonitoringHandler>`                              |             |                                                                           |
+| Monitoring         | :mod:`Monitoring <DIRAC.MonitoringSystem.Service.MonitoringHandler>`                              | YES         |                                                                           |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 | RequestManagement  | :mod:`ReqManager <DIRAC.RequestManagementSystem.Service.ReqManagerHandler>`                       | YES         |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`ReqProxy <DIRAC.RequestManagementSystem.Service.ReqProxyHandler>`                           | YES         |                                                                           |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-| ResourcesStatus    | :mod:`Publisher <DIRAC.ResourceStatusSystem.Service.PublisherHandler>`                            |             |                                                                           |
+| ResourcesStatus    | :mod:`Publisher <DIRAC.ResourceStatusSystem.Service.PublisherHandler>`                            | YES         |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-|                    | :mod:`ResourceManagement <DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler>`          |             |                                                                           |
+|                    | :mod:`ResourceManagement <DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler>`          | YES         |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-|                    | :mod:`ResourceStatus <DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler>`                  |             |                                                                           |
+|                    | :mod:`ResourceStatus <DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler>`                  | YES         |                                                                           |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 | StorageManager     | :mod:`StorageManager <DIRAC.StorageManagementSystem.Service.StorageManagerHandler>`               |             |                                                                           |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-| Transformation     | :mod:`TransformationManager <DIRAC.TransformationSystem.Service.TransformationManagerHandler>`    |             |                                                                           |
+| Transformation     | :mod:`TransformationManager <DIRAC.TransformationSystem.Service.TransformationManagerHandler>`    | YES         |                                                                           |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 | WorkloadManagement | :mod:`JobManager <DIRAC.WorkloadManagementSystem.Service.JobManagerHandler>`                      | YES         |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
@@ -145,7 +152,7 @@ Services
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 |                    | :mod:`SandboxStore <DIRAC.WorkloadManagementSystem.Service.SandboxStoreHandler>`                  |             |                                                                           |
 +                    +---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
-|                    | :mod:`WMSAdministrator <DIRAC.WorkloadManagementSystem.Service.WMSAdministratorHandler>`          |             |                                                                           |
+|                    | :mod:`WMSAdministrator <DIRAC.WorkloadManagementSystem.Service.WMSAdministratorHandler>`          | YES         |                                                                           |
 +--------------------+---------------------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------+
 
 
@@ -209,7 +216,7 @@ Agents
 +--------------------+---------------------------------------------------------------------------------------------------+---------------+-----------------------------------------------------------------------------------+
 | WorkloadManagement | :mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`                                         | PARTIAL       | Split by Sites, CETypes                                                           |
 +                    +---------------------------------------------------------------------------------------------------+---------------+-----------------------------------------------------------------------------------+
-|                    | :mod:`~DIRAC.WorkloadManagementSystem.Agent.JobAgent`                                             |               |                                                                                   |
+|                    | :mod:`~DIRAC.WorkloadManagementSystem.Agent.JobAgent`                                             |               | Installed by Pilots on Worker Nodes, not for server installations                 |
 +                    +---------------------------------------------------------------------------------------------------+---------------+-----------------------------------------------------------------------------------+
 |                    | :mod:`~DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent`                                     |               |                                                                                   |
 +                    +---------------------------------------------------------------------------------------------------+---------------+-----------------------------------------------------------------------------------+
@@ -217,7 +224,7 @@ Agents
 +                    +---------------------------------------------------------------------------------------------------+---------------+-----------------------------------------------------------------------------------+
 |                    | :mod:`~DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent`                                      |               |                                                                                   |
 +                    +---------------------------------------------------------------------------------------------------+---------------+-----------------------------------------------------------------------------------+
-|                    | :mod:`~DIRAC.WorkloadManagementSystem.Agent.StatesAccountingAgent`                                |               |                                                                                   |
+|                    | :mod:`~DIRAC.WorkloadManagementSystem.Agent.StatesAccountingAgent`                                | NO            |                                                                                   |
 +                    +---------------------------------------------------------------------------------------------------+---------------+-----------------------------------------------------------------------------------+
-|                    | :mod:`~DIRAC.WorkloadManagementSystem.Agent.StatesMonitoringAgent`                                |               |                                                                                   |
+|                    | :mod:`~DIRAC.WorkloadManagementSystem.Agent.StatesMonitoringAgent`                                | NO            |                                                                                   |
 +--------------------+---------------------------------------------------------------------------------------------------+---------------+-----------------------------------------------------------------------------------+
