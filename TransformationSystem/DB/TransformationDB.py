@@ -392,7 +392,7 @@ class TransformationDB(DB):
     """ Get filters for all defined input streams in all the transformations.
     """
     resultList = []
-    res = self.getTransformations(condDict={'Status' : ['New', 'Active', 'Stopped', 'Flush', 'Completing']},
+    res = self.getTransformations(condDict={'Status': ['New', 'Active', 'Stopped', 'Flush', 'Completing']},
                                   connection=connection)
     if not res['OK']:
       return res
