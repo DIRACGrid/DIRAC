@@ -14,15 +14,20 @@
 # modifies files in /DIRAC/docs/tools/ files, only @andresailer and not the global
 # owner(s) will be requested for a review.
 
-AccontingSystem/          @zmathe
-MonitoringSystem/         @zmathe
-DataManagementSystem/     @phicharp @chaen
-RequestManagementSystem/  @phicharp @chaen
-StorageManagementSystem/  @phicharp @chaen
-TransformationSystem/     @phicharp @fstagni
+AccontingSystem/          @fstagni
+DataManagementSystem/     @andresailer @chaen
+MonitoringSystem/         @fstagni
+FrameworkSystem/          @TaykYoku
+ProductionSystem/         @arrabito
+RequestManagementSystem/  @chaen
 Resources/Storage/        @chaen
 Resources/Catalog/        @chaen
 Resources/Computing/      @atsareg
 Resources/MessageQueue    @wkrzemien
+StorageManagementSystem/  @chaen
+TransformationSystem/     @arrabito @fstagni
+container/                @petricm
+dashboards/               @chaen
 docs/                     @andresailer
 tests/                    @fstagni
+virtualmachine/           @petricm
