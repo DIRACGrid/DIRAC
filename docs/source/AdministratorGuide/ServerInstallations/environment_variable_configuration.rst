@@ -25,6 +25,9 @@ DIRAC_GFAL_GRIDFTP_SESSION_REUSE
 DIRAC_M2CRYPTO_SPLIT_HANDSHAKE
   If ``true`` or ``yes`` the SSL handshake is done in a new thread (default Yes)
 
+DIRAC_NO_CFG
+  If set to anything, cfg files on the command line must be passed to the command using the --cfg option.
+
 DIRAC_USE_M2CRYPTO
   If ``true`` or ``yes`` DIRAC uses m2crypto instead of pyGSI for handling certificates, proxies, etc.
 
