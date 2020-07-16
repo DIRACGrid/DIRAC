@@ -1,7 +1,7 @@
 """
 Test of multi-VO user metadata handling. Assumes a running Dirac instance with the (master?) FileCatalog
 """
-from __future__ import division
+from __future__ import division, print_function
 
 import unittest
 import os
@@ -18,6 +18,26 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC import gConfig
 
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+
+try:
+  res = getProxyInfo()
+  if not res['OK']:
+    raise Exception(res['Message'])
+
+  proxyInfo = res['Value']
+  username = proxyInfo['username']
+  vo = ''
+  if 'group' in proxyInfo:
+    vo = getVOForGroup(proxyInfo['group'])
+
+  DESTINATION_PATH = '/%s/test/unit-test/FC-user-metadata/' % vo
+
+except Exception as e:  # pylint: disable=broad-except
+  print(repr(e))
+  sys.exit(2)
+
 
 def random_dd(outfile, size_mb):
   import os
@@ -31,7 +51,7 @@ class TestUserMetadataBasicTestCase(unittest.TestCase):
     self.dirac = Dirac()
     csAPI = CSAPI()
 
-    self.lfn5 = '/Jenkins/test/unit-test/FC-user-metadata/test_file_10MB_v5.bin'
+    self.lfn5 = os.path.join(DESTINATION_PATH, 'test_file_10MB_v5.bin')
     self.dir5 = os.path.dirname(self.lfn5)
     # local file, for now:
     self.fname = os.path.basename(self.lfn5)
