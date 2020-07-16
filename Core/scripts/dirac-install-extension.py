@@ -19,19 +19,6 @@ import getopt
 import time
 import six
 
-# Get dirac-install.py source as a module in the current directory
-installFile = ''
-for basePath in ('pro', '.'):
-  if os.path.exists(os.path.join(basePath, 'DIRAC/Core/scripts/dirac-install.py')):
-    installFile = os.path.join(basePath, 'DIRAC/Core/scripts/dirac-install.py')
-    break
-
-if installFile:
-  sys.path.append(os.path.dirname(installFile))
-  diracInstall = importlib.import_module("dirac-install")
-else:
-  sys.exit(-1)
-
 cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('l:', 'project=', 'Project to install'),
            ('e:', 'extensions=', 'Extensions to install (comma separated)'),
@@ -49,6 +36,20 @@ def usage():
     print("  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
 
   sys.exit(0)
+
+# Get dirac-install.py source as a module in the current directory
+installFile = ''
+for basePath in ('pro', '.'):
+  if os.path.exists(os.path.join(basePath, 'DIRAC/Core/scripts/dirac-install.py')):
+    installFile = os.path.join(basePath, 'DIRAC/Core/scripts/dirac-install.py')
+    break
+
+if installFile:
+  sys.path.append(os.path.dirname(installFile))
+  diracInstall = importlib.import_module("dirac-install")
+else:
+  usage()
+  sys.exit(-1)
 
 
 def loadConfiguration():
