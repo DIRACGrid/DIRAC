@@ -80,7 +80,7 @@ def loadConfiguration():
 
   rConfig.loadInstallationLocalDefaults(args)
 
-  for opName in ('release', 'globalDefaults', 'extensions'):
+  for opName in ('release', 'globalDefaults', 'useVersionsDir'):
     try:
       opVal = rConfig.getInstallationConfig(
           "LocalInstallation/%s" % (opName[0].upper() + opName[1:]))
@@ -91,8 +91,6 @@ def loadConfiguration():
       setattr(diracInstall.cliParams, opName, opVal)
     elif isinstance(getattr(diracInstall.cliParams, opName), bool):
       setattr(diracInstall.cliParams, opName, opVal.lower() in ("y", "yes", "true", "1"))
-    elif isinstance(getattr(diracInstall.cliParams, opName), list):
-      setattr(diracInstall.cliParams, opName, [opV.strip() for opV in opVal.split(",") if opV])
 
   # Now parse the ops
   for opt, value in optList:
@@ -111,13 +109,8 @@ def loadConfiguration():
 
   diracInstall.cliParams.basePath = diracInstall.cliParams.targetPath
   if diracInstall.cliParams.useVersionsDir:
-    # install under <installPath>/versions/<version>_<timestamp>
-    diracInstall.cliParams.targetPath = os.path.join(
-        diracInstall.cliParams.targetPath, 'versions', '%s_%s' % (diracInstall.cliParams.release, int(time.time())))
-    try:
-      os.makedirs(diracInstall.cliParams.targetPath)
-    except BaseException:
-      pass
+    # install under the pro directory
+    diracInstall.cliParams.targetPath = os.path.join(diracInstall.cliParams.targetPath, 'pro')
 
   diracInstall.logNOTICE("Destination path for installation is %s" % diracInstall.cliParams.targetPath)
   rConfig.projectName = diracInstall.cliParams.project
@@ -127,9 +120,6 @@ def loadConfiguration():
                                    sourceURL=diracInstall.cliParams.installSource)
   if not res['OK']:
     return res
-
-  if not rConfig.isProjectLoaded("DIRAC"):
-    return diracInstall.S_ERROR("DIRAC is not depended by this installation. Aborting")
 
   # Reload the local configuration to ensure it takes prescience
   rConfig.loadInstallationLocalDefaults(args)
