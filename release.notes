@@ -11,7 +11,7 @@ FIX: (#4606) Handle expected HTTP status codes in dirac-install (#4562)
 CHANGE: (#4630) Create symlinks to bashrc when using versions directory structure
         with dirac-install.py. Fixes #4565
 NEW: (#4497) add histogram support to the Graph package.
-NEW: (#4497) adopt Graph package to python3
+NEW: (#4497) adapt Graph package to python3
 CHANGE: (#4581) Replace DIRAC.Core.Utilities.CFG with independent diraccfg module
 
 *Accounting
