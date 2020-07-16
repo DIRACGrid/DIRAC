@@ -26,8 +26,11 @@ if __name__ == "__main__":
       installFile = os.path.join(basePath, 'DIRAC/Core/scripts/dirac-install.py')
       break
 
-  shutil.copy(installFile, 'dirac_install.py')
-  sys.path.append('.')
+  if installFile:
+    shutil.copy(installFile, 'dirac_install.py')
+    sys.path.append('.')
+  else:
+    sys.exit(-1)
 
   # Import dirac-install goodies
   from dirac_install import cliParams, loadConfiguration, downloadAndExtractTarball, logERROR, logNOTICE
