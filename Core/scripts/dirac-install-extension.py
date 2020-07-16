@@ -37,7 +37,8 @@ def usage():
 
   sys.exit(0)
 
-# Get dirac-install.py source as a module in the current directory
+
+# Import dirac-install.py as a module
 installFile = ''
 for basePath in ('pro', '.'):
   if os.path.exists(os.path.join(basePath, 'DIRAC/Core/scripts/dirac-install.py')):
