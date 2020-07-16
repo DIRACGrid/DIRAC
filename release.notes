@@ -1,3 +1,14 @@
+[v6r22p32]
+
+*Core
+Change: (#4665) ElasticSearchDB - existing index function is modified to add argument option of document id
+NEW: (#4665) ElasticSearchDB - update() function is added.
+
+*Resources
+CHANGE: (#4676) ARCComputingElement - reserve the number of cores as defined in the NumberOfProcessors
+        configuration parameter
+FIX: (#4676) ARCComputingElement - use CEQueueName configuration parameter if defined
+
 [v6r22p31]
 
 *DMS
