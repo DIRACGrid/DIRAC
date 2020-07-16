@@ -92,7 +92,7 @@ import _strptime
 
 majorVersion = 7
 minorVersion = 0
-patchLevel = 28
+patchLevel = 29
 preVersion = 0
 
 version = "v%sr%s" % (majorVersion, minorVersion)

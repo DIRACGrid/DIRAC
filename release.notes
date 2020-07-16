@@ -1,3 +1,21 @@
+[v7r0p29]
+
+*Core
+FIX: (#4683) M2Crypto - force bio free and shutdown when closing
+
+*Configuration
+CHANGE: (#4651) Add --cfg option for config files, deprecating old non-option version.
+
+*TransformationSystem
+FIX: (#4680) Bug fixed in updateFilterQueries. The bug was affecting only TS catalog interface.
+
+*Production
+FIX: (#4672) minor fix in ProdValidator
+FIX: (#4672) more detailed output added in dirac-prod-get-trans
+
+*Resources
+FIX: (#4673) hack in Slurm ResourceUsage to stop jobs running out of time on multi-processors resources
+
 [v7r0p28]
 
 *Core
