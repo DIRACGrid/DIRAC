@@ -1,3 +1,24 @@
+[v7r1p7]
+
+*Core
+FIX: (#4679) dirac-install is getting the globalDefaults.cfg from CVMFS if available
+FIX: (#4679) dirac-install - loads the installation configuration from etc/dirac.cfg if it is present
+NEW: (#4679) dirac-install-extension - new command to add an extension to an existing installation
+CHANGE: (#4679) dirac-deploy-scripts - added --module option to inspect only specified modules
+
+*WMS
+CHANGE: (#4674) DownloadInputData no longer fails if getFileMetadata fails for the first SE, tries others if available
+
+*DMS
+FIX: (#4678) Fix problem where a FileCatalog instance was not aware of SEs added by a different instance.
+     SEManager.getSEName now refreshes if an seID is not known. Fixes #4653
+
+*docs
+FIX: (#4667) some more info on duplications
+
+*tests
+FIX: (#4681) Test_UserMetadata makes dynamic lfns using VO
+
 [v7r1p6]
 
 *Framework
