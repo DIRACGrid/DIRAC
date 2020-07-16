@@ -15,7 +15,7 @@ dependencies:
   - fts-rest
   - future
   - gitpython >=2.1.0
-  - m2crypto # ==0.32
+  - m2crypto >=0.36
   - matplotlib >=2.1.0,<3.0
   - mysql-connector-c  # Included as it's a dependency of MySQL-python which is installed with pip
   - numpy >=1.10.1,<1.16  # Limit to 1.15 as Python 2 pylint has bugs with numpy 1.16
