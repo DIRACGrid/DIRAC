@@ -682,11 +682,16 @@ class ReleaseConfig(object):
     """
     Load the configuration file from a file
 
-    :param str args: the arguments in which to look for configuration filenames
+    :param str args: the arguments in which to look for configuration file names
     """
-    # at the end we load the local configuration and merge with the global cfg
-    for arg in args:
-      if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
+
+    # at the end we load the local configuration and merge it with the global cfg
+    argList = list(args)
+    if os.path.exists('etc/dirac.cfg') and 'etc/dirac.cfg' not in args:
+      argList = ['etc/dirac.cfg'] + argList
+
+    for arg in argList:
+      if arg.endswith(".cfg") and ':::' not in arg:
         fileName = arg
       else:
         continue
@@ -694,7 +699,6 @@ class ReleaseConfig(object):
       logNOTICE("Defaults for LocalInstallation are in %s" % fileName)
       try:
         fd = open(fileName, "r")
-        # TODO: Merge with installation CFG
         cfg = ReleaseConfig.CFG().parse(fd.read())
         fd.close()
       except Exception as excp:
