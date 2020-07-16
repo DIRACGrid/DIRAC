@@ -27,7 +27,6 @@ from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClie
 
 sLog = gLogger.getSubLogger(__name__)
 
-
 class ElasticSearchDB(object):
 
   """

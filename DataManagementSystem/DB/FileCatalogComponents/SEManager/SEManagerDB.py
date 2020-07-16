@@ -119,8 +119,23 @@ class SEManagerDB(SEManagerBase):
     return self.getSEID(seName)
 
   def getSEName(self, seID):
-    if seID in self.db.seids.keys():
+    """Return the name of the SE.
+
+    Refresh list of SEs if not found, an SE might have been added by a different FileCatalog instance.
+
+    :param int seID: ID of a storage element
+    :return: S_OK/S_ERROR
+    """
+    if seID in self.db.seids:
       return S_OK(self.db.seids[seID])
+    gLogger.info("getSEName: seID not found, refreshing", "ID: %s" % seID)
+    result = self._refreshSEs(connection=False)
+    if not result['OK']:
+      gLogger.error("getSEName: refreshing failed", result['Message'])
+      return result
+    if seID in self.db.seids:
+      return S_OK(self.db.seids[seID])
+    gLogger.error("getSEName: seID not found after refreshing", "ID: %s" % seID)
     return S_ERROR('SE id %d not found' % seID)
 
   def deleteSE(self, seName, force=True):

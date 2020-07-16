@@ -4,7 +4,7 @@ fts3-rest
 # From pypi
 boto3
 #asn1
-M2Crypto==0.32
+M2Crypto>=0.36
 autopep8==1.3.3
 certifi
 coverage
