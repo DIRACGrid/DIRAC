@@ -196,11 +196,27 @@ class SSLTransport(BaseTransport):
       # 26464 14:25:15.269048
       # close(111<UDPv6:[[<srcAddressV6>]:42480->[<dstAddressV6>]:9140]>
       # <unfinished ...>
+      #
+      #
+      # Update 16.07.20:
+      # M2Crypto 0.36 contains the bug fix https://gitlab.com/m2crypto/m2crypto/-/merge_requests/247
+      # that allows proper closing. So manual closing of the underlying socket should not be needed anymore
 
-      self.oSocket.close()
-      underlyingSocket = self.oSocket.socket
+      # Update 16.07.20
+      # I add this shutdown call without being 100% sure
+      # it solves some hanging connections issues, but it seems
+      # to work. it does not appear in any M2Crypto doc, but comparing
+      # some internals of M2Crypto and official python SSL library,
+      # it seems to make sense
+      self.oSocket.shutdown(socket.SHUT_RDWR)
+
+      # Update 16.07.20
+      # With freeBio=True, we force the
+      # closing of the socket before the GC runs
+      self.oSocket.close(freeBio=True)
+      # underlyingSocket = self.oSocket.socket
       self.oSocket = None
-      underlyingSocket.close()
+      # underlyingSocket.close()
     return S_OK()
 
   def renewServerContext(self):

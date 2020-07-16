@@ -183,6 +183,24 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p29]
+
+*Core
+FIX: (#4683) M2Crypto - force bio free and shutdown when closing
+
+*Configuration
+CHANGE: (#4651) Add --cfg option for config files, deprecating old non-option version.
+
+*TransformationSystem
+FIX: (#4680) Bug fixed in updateFilterQueries. The bug was affecting only TS catalog interface.
+
+*Production
+FIX: (#4672) minor fix in ProdValidator
+FIX: (#4672) more detailed output added in dirac-prod-get-trans
+
+*Resources
+FIX: (#4673) hack in Slurm ResourceUsage to stop jobs running out of time on multi-processors resources
+
 [v7r0p28]
 
 *Core
@@ -695,6 +713,17 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p32]
+
+*Core
+Change: (#4665) ElasticSearchDB - existing index function is modified to add argument option of document id
+NEW: (#4665) ElasticSearchDB - update() function is added.
+
+*Resources
+CHANGE: (#4676) ARCComputingElement - reserve the number of cores as defined in the NumberOfProcessors
+        configuration parameter
+FIX: (#4676) ARCComputingElement - use CEQueueName configuration parameter if defined
 
 [v6r22p31]
 
