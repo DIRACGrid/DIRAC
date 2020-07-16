@@ -33,7 +33,8 @@ if __name__ == "__main__":
     sys.exit(-1)
 
   # Import dirac-install goodies
-  from dirac_install import cliParams, loadConfiguration, downloadAndExtractTarball, logERROR, logNOTICE # pylint: disable=import-error
+  from dirac_install import cliParams, loadConfiguration  # pylint: disable=import-error
+  from dirac_install import downloadAndExtractTarball, logERROR, logNOTICE  # pylint: disable=import-error
 
 
   result = loadConfiguration()
