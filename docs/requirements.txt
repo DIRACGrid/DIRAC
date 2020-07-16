@@ -1,7 +1,7 @@
 # cannot use DIRAC requirements because of inability to install pycurl (from FTS dependency) on RTD
 #-r https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/requirements.txt
 #-e git+https://github.com/DIRACGrid/DIRAC/@integration#egg=diracdoctools&subdirectory=docs
-M2Crypto==0.32
+M2Crypto>=0.36
 Sphinx>=1.8.0
 docutils>=0.15
 boto3
