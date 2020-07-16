@@ -342,9 +342,11 @@ class ARCComputingElement(ComputingElement):
         gLogger.error('ARCComputingElement: No queue ...')
         res = S_ERROR('Unknown queue (%s) failure for site %s' % (self.queue, self.ceHost))
         return res
-      cmd1 = 'ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135  -b \'o=glue\' "(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:%s))"' % (self.ceHost, vo.lower())
+      cmd1 = 'ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135  -b \'o=glue\' "(&(objectClass=GLUE2MappingPolicy)(GLUE2PolicyRule=vo:%s))"' \
+         % (self.ceHost, vo.lower())
       cmd2 = ' | grep GLUE2MappingPolicyShareForeignKey | grep %s' % (self.queue.split("-")[-1])
-      cmd3 = ' | sed \'s/GLUE2MappingPolicyShareForeignKey: /GLUE2ShareID=/\' | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135 -b \'o=glue\'  | egrep \'(ShareWaiting|ShareRunning)\'' % (self.ceHost)
+      cmd3 = ' | sed \'s/GLUE2MappingPolicyShareForeignKey: /GLUE2ShareID=/\' | xargs -L1 ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135 -b \'o=glue\' '
+         ' | egrep \'(ShareWaiting|ShareRunning)\'' % (self.ceHost)
       res = shellCall(0, cmd1 + cmd2 + cmd3)
       if not res['OK']:
         gLogger.debug("Could not query CE %s - is it down?" % self.ceHost)
