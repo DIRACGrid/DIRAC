@@ -41,7 +41,7 @@ Computing Elements
 -------------------
 
 DIRAC can use different computing resources via specialized clients called *ComputingElements*. 
-Each computing resource is accessed using an appropriate *ComputingElement* class derived from a common
+Each computing resource is accessed using an appropriate :mod:`~DIRAC.Resources.Computing` class derived from a common
 base class. 
 
 The *ComputingElements* should be properly described to be useful. The configuration
@@ -135,32 +135,6 @@ A commented example follows::
      }
    }
 
-
-HTCondor Computing Element
-@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-The configuration is similar to the CREAM example above.
-The following settings are recommended in::
-
-  Resources
-  {
-    Computing
-    {
-      HTCondorCE
-      {
-        # temporary directory
-        WorkingDirectory = /opt/dirac/condor
-        # if True, local scheduler must be installed and running
-        UseLocalSchedd = False
-        DaysToKeepLogFiles = 7
-        # To use full length of proxy instead of server default
-        # HTCondorCE does not do remote proxy renewals
-        ExtraSubmitString = delegate_job_GSI_credentials_lifetime = 0
-      }
-    }
-  }
-
-    
 SSH Computing Element
 @@@@@@@@@@@@@@@@@@@@@
 

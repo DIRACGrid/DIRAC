@@ -140,30 +140,7 @@ Singularity CE Parameters
 HTCondorCE Parameters
 ---------------------
 
-Options for the HTCondorCEs
-
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| **Name**            | **Description**                                     | **Example**                                               |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| ExtraSubmitString   | Additional string for the condor submit             | request_cpus = 8 \\n periodic_remove = ...                |
-|                     | file. Separate entries with "\\n".                  | To use actual proxy lifetime instead of server default    |
-|                     |                                                     | when using remote scheduler:                              |
-|                     |                                                     | delegate_job_GSI_credentials_lifetime = 0                 |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| WorkingDirectory    | Directory where the pilot log files are stored      | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT    |
-|                     | locally. It should exist on the server and          |                                                           |
-|                     | be accessible (both readable and writeable).        |                                                           |
-|                     | Also temporary files like condor submit             |                                                           |
-|                     | files are kept here. This option is only read from  |                                                           |
-|                     | the global Resources/Computing/HTCondorCE location. |                                                           |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| UseLocalSchedd      | If True use a local condor schedd to submit jobs, if| Default is True                                           |
-|                     | False submit to remote condor schedd                |                                                           |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| DaysToKeepLogFiles  | How many days pilot log files are kept on the disk  | 15                                                        |
-|                     | before they are removed                             |                                                           |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-
+For the options for the HTCondorCEs see :mod:`~DIRAC.Resources.Computing.HTCondorCEComputingElement`
 
 .. _res-comp-cream:
 

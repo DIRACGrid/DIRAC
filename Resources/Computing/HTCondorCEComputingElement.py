@@ -5,19 +5,38 @@
 
 """HTCondorCE Computing Element
 
-   Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
-   Needs the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
+Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
 
-   Configuration for the HTCondorCE submission can be done via the configuration system ::
+**Configuration Parameters**
 
-     WorkingDirectory: Location to store the pilot and condor log files
-     DaysToKeepLogs:  how long to keep the log files until they are removed
-     ExtraSubmitString: Additional option for the condor submit file, separate options with '\\n', for example:
-        request_cpus = 8 \\n periodic_remove = ...
-     UseLocalSchedd: If False, directly submit to a remote condor schedule daemon,
-     then one does not need to run condor daemons on the submit machine
+Configuration for the HTCondorCE submission can be done via the configuration system. See the page about
+configuring :ref:`resourcesComputing` for where the options can be placed.
 
-   see :ref:`res-comp-htcondor`
+WorkingDirectory:
+   Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
+   readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
+   from the global Resources/Computing/HTCondorCE location.
+
+DaysToKeepLogs:
+   How long to keep the log files until they are removed
+
+ExtraSubmitString:
+   Additional options for the condor submit file, separate options with '\\n', for example::
+
+     request_cpus = 8 \\n periodic_remove = ...
+
+UseLocalSchedd:
+   If False, directly submit to a remote condor schedule daemon,
+   then one does not need to run condor daemons on the submit machine.
+   If True requires the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
+
+**Proxy renewal or lifetime**
+
+When not using a local condor_schedd, add ``delegate_job_GSI_credentials_lifetime = 0`` to the ``ExtraSubmitString``.
+
+When using a local condor_schedd look at the HTCondor documenation for enabling the proxy refresh.
+
+**Code Documentation**
 """
 # Note: if you read this documentation in the source code and not via the sphinx
 # created documentation, there should only be one slash when setting the option,
