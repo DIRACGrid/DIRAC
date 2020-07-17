@@ -1,7 +1,9 @@
 name: dirac-development
 
 channels:
+  - diracgrid
   - conda-forge
+  - defaults
 
 dependencies:
   # runtime
@@ -15,9 +17,9 @@ dependencies:
   - fts-rest
   - future
   - gitpython >=2.1.0
-  #- m2crypto >=0.36  # 0.36 does not have a conda package yet, so go with pip in the meantime
+  - m2crypto >=0.36  # 0.36 does not have a conda package yet, so go with pip in the meantime
   - matplotlib >=2.1.0,<3.0
-  - mysql-connector-c  # Included as it's a dependency of MySQL-python which is installed with pip
+  - mysql-python
   - numpy >=1.10.1,<1.16  # Limit to 1.15 as Python 2 pylint has bugs with numpy 1.16
   - pexpect >=4.0.1
   - pillow
@@ -60,6 +62,3 @@ dependencies:
   - simplejson >=3.8.1
   - tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
-  - pip:
-    - MySQL-python
-    - M2Crypto>=0.36
