@@ -115,7 +115,7 @@ class TestLogicEvaluation(unittest.TestCase):
       self.assertTrue(not res['Value']['Successful'][lfn], res)
 
     res = self.fcp('catalogName', 'operationName', self.lfns,
-		   condition="Dummy=True & Dummy=False | Dummy=True")
+                   condition="Dummy=True & Dummy=False | Dummy=True")
 
     self.assertTrue(res['OK'], res)
     # We expect all the lfn to be to True
@@ -123,7 +123,7 @@ class TestLogicEvaluation(unittest.TestCase):
       self.assertTrue(res['Value']['Successful'][lfn], res)
 
     res = self.fcp('catalogName', 'operationName', self.lfns,
-		   condition="Dummy=True | Dummy=False & Dummy=True")
+                   condition="Dummy=True | Dummy=False & Dummy=True")
 
     self.assertTrue(res['OK'], res)
     # We expect all the lfn to be to True
@@ -131,7 +131,7 @@ class TestLogicEvaluation(unittest.TestCase):
       self.assertTrue(res['Value']['Successful'][lfn], res)
 
     res = self.fcp('catalogName', 'operationName', self.lfns,
-		   condition="!Dummy=True | Dummy=False & Dummy=True")
+                   condition="!Dummy=True | Dummy=False & Dummy=True")
 
     self.assertTrue(res['OK'], res)
     # We expect all the lfn to be to False
@@ -139,7 +139,7 @@ class TestLogicEvaluation(unittest.TestCase):
       self.assertTrue(not res['Value']['Successful'][lfn], res)
 
     res = self.fcp('catalogName', 'operationName', self.lfns,
-		   condition="!Dummy=True | !Dummy=False & Dummy=True")
+                   condition="!Dummy=True | !Dummy=False & Dummy=True")
 
     self.assertTrue(res['OK'], res)
     # We expect all the lfn to be to True
@@ -147,7 +147,7 @@ class TestLogicEvaluation(unittest.TestCase):
       self.assertTrue(res['Value']['Successful'][lfn], res)
 
     res = self.fcp('catalogName', 'operationName', self.lfns,
-		   condition="!Dummy=True | !Dummy=False & !Dummy=True")
+                   condition="!Dummy=True | !Dummy=False & !Dummy=True")
 
     self.assertTrue(res['OK'], res)
     # We expect all the lfn to be to False
@@ -176,7 +176,7 @@ class TestLogicEvaluation(unittest.TestCase):
       self.assertTrue(res['Value']['Successful'][lfn], res)
 
     res = self.fcp('catalogName', 'operationName', self.lfns,
-		   condition="[Dummy=True | Dummy=False] & Dummy=True")
+                   condition="[Dummy=True | Dummy=False] & Dummy=True")
 
     self.assertTrue(res['OK'], res)
     # We expect all the lfn to be to True
@@ -184,7 +184,7 @@ class TestLogicEvaluation(unittest.TestCase):
       self.assertTrue(res['Value']['Successful'][lfn], res)
 
     res = self.fcp('catalogName', 'operationName', self.lfns,
-		   condition="Dummy=True | [Dummy=False & Dummy=True]")
+                   condition="Dummy=True | [Dummy=False & Dummy=True]")
 
     self.assertTrue(res['OK'], res)
     # We expect all the lfn to be to True
@@ -192,7 +192,7 @@ class TestLogicEvaluation(unittest.TestCase):
       self.assertTrue(res['Value']['Successful'][lfn], res)
 
     res = self.fcp('catalogName', 'operationName', self.lfns,
-		   condition="Dummy=False | [Dummy=False & Dummy=True]")
+                   condition="Dummy=False | [Dummy=False & Dummy=True]")
 
     self.assertTrue(res['OK'], res)
     # We expect all the lfn to be to False

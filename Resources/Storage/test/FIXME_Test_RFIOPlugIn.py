@@ -47,19 +47,19 @@ class StoragePlugInTestCase(unittest.TestCase):
   """
 
   @mock.patch('DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageName',
-	      side_effect=mock_StorageFactory_getConfigStorageName)
+              side_effect=mock_StorageFactory_getConfigStorageName)
   @mock.patch('DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageOptions',
-	      side_effect=mock_StorageFactory_getConfigStorageOptions)
+              side_effect=mock_StorageFactory_getConfigStorageOptions)
   @mock.patch('DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageProtocols',
-	      side_effect=mock_StorageFactory_getConfigStorageProtocols)
+              side_effect=mock_StorageFactory_getConfigStorageProtocols)
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-	      return_value=S_OK(True))  # Pretend it's local
+              return_value=S_OK(True))  # Pretend it's local
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-	      return_value=None)  # Don't send accounting
+              return_value=None)  # Don't send accounting
   # @mock.patch( 'DIRAC.Resources.Storage.StorageFactory.StorageFactory._getCurrentURL',
   #              side_effect = mock_StorageFactory_getCurrentURL_getCurrentURL )
   def setUp(self, mk_getConfigStorageName, mk_getConfigStorageOptions, mk_getConfigStorageProtocols,
-	    mk_isLocalSE, mk_addAccountingOperation):
+            mk_isLocalSE, mk_addAccountingOperation):
     self.storage = StorageElementItem('FAKE')
     self.storage.vo = 'test'
 

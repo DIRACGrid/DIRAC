@@ -93,7 +93,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]
-		       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
+                       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
     self.assertTrue(isinstance(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], int))
     self.assertTrue(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in six.integer_types)
 
@@ -163,13 +163,13 @@ class DirectoryTestCase(StoragePlugInTestCase):
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]
-		       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
+                       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
     self.assertTrue(isinstance(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], int))
     self.assertTrue(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in six.integer_types)
 
   def test_putGetDirectorySize(self):
     print('\n\n#########################################################'
-	  '################\n\n\t\t\tGet Directory Size test\n')
+          '################\n\n\t\t\tGet Directory Size test\n')
     # First clean the remote directory incase something was left there
     remoteDir = self.storage.getCurrentURL('')['Value']
     _ = self.storage.removeDirectory(remoteDir, True)
@@ -213,13 +213,13 @@ class DirectoryTestCase(StoragePlugInTestCase):
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]
-		       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
+                       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
     self.assertTrue(isinstance(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], int))
     self.assertTrue(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in six.integer_types)
 
   def test_putListDirectory(self):
     print('\n\n#########################################################'
-	  '################\n\n\t\t\tList Directory test\n')
+          '################\n\n\t\t\tList Directory test\n')
     # First clean the remote directory incase something was left there
     remoteDir = self.storage.getCurrentURL('')['Value']
     _ = self.storage.removeDirectory(remoteDir, True)
@@ -264,13 +264,13 @@ class DirectoryTestCase(StoragePlugInTestCase):
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]
-		       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
+                       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
     self.assertTrue(isinstance(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], int))
     self.assertTrue(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in six.integer_types)
 
   def test_putGetDirectory(self):
     print('\n\n#########################################################'
-	  '################\n\n\t\t\tGet Directory test\n')
+          '################\n\n\t\t\tGet Directory test\n')
     # First clean the remote directory incase something was left there
     remoteDir = self.storage.getCurrentURL('')['Value']
     _ = self.storage.removeDirectory(remoteDir, True)
@@ -319,7 +319,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles)
       self.assertEqual(removeDirRes['Value']['Successful'][remoteDir]
-		       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
+                       ['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile)
     self.assertTrue(isinstance(removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], int))
     self.assertTrue(type(removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved']) in six.integer_types)
 

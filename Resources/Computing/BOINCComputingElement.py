@@ -58,7 +58,7 @@ class BOINCComputingElement(ComputingElement):
       try:
         from suds.client import Client
         if self.log.getLevel() == 'DEBUG':
-	  self.log.enableLogsFromExternalLibs()
+          self.log.enableLogsFromExternalLibs()
         self.BOINCClient = Client(self.wsdl)
       except Exception as x:
         self.log.error('Creation of the soap client failed', '%s' % str(x))

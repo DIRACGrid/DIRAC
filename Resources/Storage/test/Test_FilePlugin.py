@@ -24,8 +24,8 @@ def mock_StorageFactory_getConfigStorageOptions(storageName, derivedStorageName=
   optionsDict = {'BackendType': 'local',
                  'ReadAccess': 'Active',
                  'WriteAccess': 'Active',
-		 'AccessProtocols': ['file'],
-		 'WriteProtocols': ['file'], }
+                 'AccessProtocols': ['file'],
+                 'WriteProtocols': ['file'], }
   return S_OK(optionsDict)
 
 
@@ -48,22 +48,22 @@ class TestBase(unittest.TestCase):
   """
 
   @mock.patch('DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageName',
-	      side_effect=mock_StorageFactory_getConfigStorageName)
+              side_effect=mock_StorageFactory_getConfigStorageName)
   @mock.patch('DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageOptions',
-	      side_effect=mock_StorageFactory_getConfigStorageOptions)
+              side_effect=mock_StorageFactory_getConfigStorageOptions)
   @mock.patch('DIRAC.Resources.Storage.StorageFactory.StorageFactory._getConfigStorageProtocols',
-	      side_effect=mock_StorageFactory_getConfigStorageProtocols)
+              side_effect=mock_StorageFactory_getConfigStorageProtocols)
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-	      return_value=S_OK(True))  # Pretend it's local
+              return_value=S_OK(True))  # Pretend it's local
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-	      return_value=None)  # Don't send accounting
+              return_value=None)  # Don't send accounting
   def setUp(
-	  self,
-	  mk_getConfigStorageName,
-	  mk_getConfigStorageOptions,
-	  mk_getConfigStorageProtocols,
-	  mk_isLocalSE,
-	  mk_addAccountingOperation):
+          self,
+          mk_getConfigStorageName,
+          mk_getConfigStorageOptions,
+          mk_getConfigStorageProtocols,
+          mk_isLocalSE,
+          mk_addAccountingOperation):
     self.se = StorageElementItem('FAKE')
     self.se.vo = 'test'
 
@@ -122,9 +122,9 @@ class TestBase(unittest.TestCase):
         print("    ", os.path.join(root, f))
 
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-	      return_value=S_OK(True))  # Pretend it's local
+              return_value=S_OK(True))  # Pretend it's local
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-	      return_value=None)  # Don't send accounting
+              return_value=None)  # Don't send accounting
   def test_01_getURL(self, mk_isLocalSE, mk_addAccounting):
     """Testing getURL"""
     # Testing the getURL
@@ -136,9 +136,9 @@ class TestBase(unittest.TestCase):
       self.assertEqual(url, self.basePath.rstrip('/') + lfn)
 
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-	      return_value=S_OK(True))  # Pretend it's local
+              return_value=S_OK(True))  # Pretend it's local
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-	      return_value=None)  # Don't send accounting
+              return_value=None)  # Don't send accounting
   def test_02_FileTest(self, mk_isLocalSE, mk_addAccounting):
     """Testing createDirectory"""
     # Putting the files
@@ -230,9 +230,9 @@ class TestBase(unittest.TestCase):
     self.assertTrue(os.strerror(errno.EISDIR) in res['Value']['Failed'][self.subDir])
 
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-	      return_value=S_OK(True))  # Pretend it's local
+              return_value=S_OK(True))  # Pretend it's local
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-	      return_value=None)  # Don't send accounting
+              return_value=None)  # Don't send accounting
   def test_03_createDirectory(self, mk_isLocalSE, mk_addAccounting):
     """Testing creating directories"""
 
@@ -242,9 +242,9 @@ class TestBase(unittest.TestCase):
     self.assertTrue(os.path.exists(self.basePath + self.subDir))
 
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
-	      return_value=S_OK(True))  # Pretend it's local
+              return_value=S_OK(True))  # Pretend it's local
   @mock.patch('DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation',
-	      return_value=None)  # Don't send accounting
+              return_value=None)  # Don't send accounting
   def test_04_putDirectory(self, mk_isLocalSE, mk_addAccounting):
     """Testing putDirectory"""
 
@@ -256,7 +256,7 @@ class TestBase(unittest.TestCase):
     self.assertTrue(res['OK'], res)
     self.assertTrue('/test' in res['Value']['Successful'], res)
     self.assertEqual(res['Value']['Successful']['/test'],
-		     {'Files': 2, 'Size': self.existingFileSize + self.subFileSize})
+                     {'Files': 2, 'Size': self.existingFileSize + self.subFileSize})
     self.assertTrue(os.path.exists(self.basePath + '/test'))
     self.assertTrue(os.path.exists(self.basePath + self.existingFile))
     self.assertTrue(os.path.exists(self.basePath + self.subFile))
@@ -312,7 +312,7 @@ class TestBase(unittest.TestCase):
     res = self.se.getDirectory(self.ALL + localdirs, localPath=self.destPath)
     self.assertTrue(res['OK'], res)
     self.assertEqual(res['Value']['Successful']['/test'],
-		     {'Files': 2, 'Size': self.existingFileSize + self.subFileSize})
+                     {'Files': 2, 'Size': self.existingFileSize + self.subFileSize})
     self.assertTrue(os.path.exists(self.destPath + self.existingFile))
     self.assertTrue(os.path.exists(self.destPath + self.subFile))
     self.assertEqual(res['Value']['Successful'][self.subDir], {'Files': 1, 'Size': self.subFileSize})

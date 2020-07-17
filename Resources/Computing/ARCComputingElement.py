@@ -132,13 +132,13 @@ class ARCComputingElement(ComputingElement):
       result = gConfig.getValue(secondOption, defaultValue='')
       if result != '':
         xrslExtraString = result
-	self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
+        self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
       else:
-	self.log.debug("Trying to get %s : default option %s" % (xtraVariable, defaultOption))
+        self.log.debug("Trying to get %s : default option %s" % (xtraVariable, defaultOption))
         result = gConfig.getValue(defaultOption, defaultValue='')
         if result != '':
           xrslExtraString = result
-	  self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
+          self.log.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
     if xrslExtraString:
       self.log.always("%s : %s" % (xtraVariable, xrslExtraString))
       self.log.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
@@ -229,7 +229,7 @@ class ARCComputingElement(ComputingElement):
       self.log.debug("XRSL string submitted : %s" % xrslString)
       self.log.debug("DIRAC stamp for job : %s" % diracStamp)
       if not arc.JobDescription_Parse(xrslString, jobdescs):
-	self.log.error("Invalid job description")
+        self.log.error("Invalid job description")
         break
       # Submit the job
       jobs = arc.JobList()  # filled by the submit process
@@ -241,28 +241,28 @@ class ARCComputingElement(ComputingElement):
         pilotJobReference = jobs[0].JobID
         batchIDList.append(pilotJobReference)
         stampDict[pilotJobReference] = diracStamp
-	self.log.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
+        self.log.debug("Successfully submitted job %s to CE %s" % (pilotJobReference, self.ceHost))
       else:
         message = "Failed to submit job because "
         if result.isSet(arc.SubmissionStatus.NOT_IMPLEMENTED):  # pylint: disable=no-member
-	  self.log.warn("%s feature not implemented on CE? (weird I know - complain to site admins" % message)
+          self.log.warn("%s feature not implemented on CE? (weird I know - complain to site admins" % message)
         if result.isSet(arc.SubmissionStatus.NO_SERVICES):  # pylint: disable=no-member
-	  self.log.warn("%s no services are running on CE? (open GGUS ticket to site admins" % message)
+          self.log.warn("%s no services are running on CE? (open GGUS ticket to site admins" % message)
         if result.isSet(arc.SubmissionStatus.ENDPOINT_NOT_QUERIED):  # pylint: disable=no-member
-	  self.log.warn("%s endpoint was not even queried. (network ..?)" % message)
+          self.log.warn("%s endpoint was not even queried. (network ..?)" % message)
         if result.isSet(arc.SubmissionStatus.BROKER_PLUGIN_NOT_LOADED):  # pylint: disable=no-member
-	  self.log.warn("%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
+          self.log.warn("%s BROKER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
         if result.isSet(arc.SubmissionStatus.DESCRIPTION_NOT_SUBMITTED):  # pylint: disable=no-member
-	  self.log.warn("%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message)
+          self.log.warn("%s Job not submitted - incorrect job description? (missing field in XRSL string?)" % message)
         if result.isSet(arc.SubmissionStatus.SUBMITTER_PLUGIN_NOT_LOADED):  # pylint: disable=no-member
-	  self.log.warn("%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
+          self.log.warn("%s SUBMITTER_PLUGIN_NOT_LOADED : ARC library installation problem?" % message)
         if result.isSet(arc.SubmissionStatus.AUTHENTICATION_ERROR):  # pylint: disable=no-member
-	  self.log.warn(
+          self.log.warn(
               "%s authentication error - screwed up / expired proxy? Renew / upload pilot proxy on machine?" %
               message)
         if result.isSet(arc.SubmissionStatus.ERROR_FROM_ENDPOINT):  # pylint: disable=no-member
-	  self.log.warn("%s some error from the CE - possibly CE problems?" % message)
-	self.log.warn("%s ... maybe above messages will give a hint." % message)
+          self.log.warn("%s some error from the CE - possibly CE problems?" % message)
+        self.log.warn("%s ... maybe above messages will give a hint." % message)
         break  # Boo hoo *sniff*
 
     if batchIDList:
@@ -340,7 +340,7 @@ class ARCComputingElement(ComputingElement):
           self.ceHost, vo.lower())
       res = shellCall(0, cmd)
       if not res['OK']:
-	self.log.debug("Could not query CE %s - is it down?" % self.ceHost)
+        self.log.debug("Could not query CE %s - is it down?" % self.ceHost)
         return res
       try:
         ldapValues = res['Value'][1].split("\n")
@@ -403,12 +403,12 @@ class ARCComputingElement(ComputingElement):
           if job.ProxyExpirationTime < nearExpiry:
             # Jobs to renew are aggregated to perform bulk operations
             jobsToRenew.append(job)
-	    self.log.debug("Renewing proxy for job %s whose proxy expires at %s" % (jobID, job.ProxyExpirationTime))
+            self.log.debug("Renewing proxy for job %s whose proxy expires at %s" % (jobID, job.ProxyExpirationTime))
         if arcState == "Hold":
           # Jobs to cancel are aggregated to perform bulk operations
           # Cancel held jobs so they don't sit in the queue forever
           jobsToCancel.append(job)
-	  self.log.debug("Killing held job %s" % jobID)
+          self.log.debug("Killing held job %s" % jobID)
       else:
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
@@ -476,7 +476,7 @@ class ARCComputingElement(ComputingElement):
           error = errFile.read()
         os.unlink(errFileName)
       except IOError as e:
-	self.log.error("Error downloading outputs", repr(e).replace(',)', ')'))
+        self.log.error("Error downloading outputs", repr(e).replace(',)', ')'))
         return S_ERROR("Error downloading outputs")
       self.log.debug("Pilot output = %s" % output)
       self.log.debug("Pilot error = %s" % error)

@@ -49,7 +49,7 @@ class GenericCatalog(object):
       mName = "%s%d" % (mType, catId)
       methodList.append(mName)
       if catId >= no_lfn_start:
-	self.no_lfn.append(mName)
+        self.no_lfn.append(mName)
 
   def getInterfaceMethods(self):
     return self.r_method, self.w_method, self.no_lfn
@@ -66,12 +66,12 @@ class GenericCatalog(object):
 
     if self.call in self.no_lfn:
       if not args:
-	return S_OK("yeah")
+        return S_OK("yeah")
       ret = args[0]
       if self.name in ret:
-	return S_ERROR("%s.%s did not go well" % (self.name, self.call))
+        return S_ERROR("%s.%s did not go well" % (self.name, self.call))
       else:
-	return S_OK("yeah")
+        return S_OK("yeah")
 
     lfns = args[0]
 
@@ -81,9 +81,9 @@ class GenericCatalog(object):
         idName = lfnSplit.index(self.name)
         retType = lfnSplit[idName + 1]
         if retType == "Error":
-	  return S_ERROR("%s.%s did not go well" % (self.name, self.call))
+          return S_ERROR("%s.%s did not go well" % (self.name, self.call))
         elif retType == "Failed":
-	  failed[lfn] = "%s.%s failed for %s" % (self.name, self.call, lfn)
+          failed[lfn] = "%s.%s failed for %s" % (self.name, self.call, lfn)
       except ValueError:
         successful[lfn] = "yeah"
 
@@ -287,13 +287,13 @@ class TestWrite(unittest.TestCase):
 
     # No condition for c3, so it should always pass
     fcConditions = {'c1': "Filename=find('c1_pass')",
-		    'c2': "Filename=find('c2_pass')"}
+                    'c2': "Filename=find('c2_pass')"}
 
     # Everything pass everywhere
     lfn1 = '/lhcb/c1_pass/c2_pass/lfn1'
     lfn2 = '/lhcb/c1_pass/c2_pass/lfn2'
     res = fc.write1([lfn1, lfn2],
-		    fcConditions=fcConditions)
+                    fcConditions=fcConditions)
     self.assertTrue(res['OK'])
     self.assertEqual(sorted(res['Value']['Successful']), sorted([lfn1, lfn2]))
     self.assertEqual(sorted(res['Value']['Successful'][lfn1]), sorted(['c1', 'c2', 'c3']))
@@ -304,7 +304,7 @@ class TestWrite(unittest.TestCase):
     lfn1 = '/lhcb/c1_pass/lfn1'
     lfn2 = '/lhcb/c1_pass/c2_pass/lfn2'
     res = fc.write1([lfn1, lfn2],
-		    fcConditions=fcConditions)
+                    fcConditions=fcConditions)
     self.assertTrue(res['OK'])
     self.assertEqual(sorted(res['Value']['Successful']), sorted([lfn1, lfn2]))
     self.assertEqual(sorted(res['Value']['Successful'][lfn1]), ['c1', 'c3'])
@@ -315,7 +315,7 @@ class TestWrite(unittest.TestCase):
     lfn1 = '/lhcb/c2_pass/lfn1'
     lfn2 = '/lhcb/c1_pass/c2_pass/lfn2'
     res = fc.write1([lfn1, lfn2],
-		    fcConditions=fcConditions)
+                    fcConditions=fcConditions)
     self.assertTrue(not res['OK'])
 
   @mock.patch.object(

@@ -491,7 +491,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         'Access': 'local',
         'Host': 'srm-eoslhcb.cern.ch',
         'Path': '/eos/lhcb/grid/prod',
-	'PluginName': 'AnotherPluginName',
+        'PluginName': 'AnotherPluginName',
         'Port': 8443,
         'Protocol': 'srm',
         'SpaceToken': 'LHCb-EOS',
