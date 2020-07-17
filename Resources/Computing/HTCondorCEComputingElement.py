@@ -83,11 +83,11 @@ def logDir(ceName, stamp):
 
 @deprecated("Please use condorIDAndPathToResultFromJobRef")
 def condorIDFromJobRef(jobRef):
-  """ Extract tuple of jobURL and jobID from the jobRef string.
+  """Extract tuple of jobURL and jobID from the jobRef string.
 
-  :param str jobRef: PilotJobReference of the following form: htcondorce://<ceName>/<pathToResult>-<condorID>
+:param str jobRef: PilotJobReference of the following form: ``htcondorce://<ceName>/<pathToResult>-<condorID>``
 
-  :return: tuple composed of the jobURL and the condorID of the given jobRef
+:return: tuple composed of the jobURL and the condorID of the given jobRef
   """
   jobURL, _, condorID = condorIDAndPathToResultFromJobRef(jobRef)
   return jobURL, condorID
@@ -97,7 +97,7 @@ def condorIDAndPathToResultFromJobRef(jobRef):
   """ Extract tuple of jobURL and jobID from the jobRef string.
   The condorID as well as the path leading to the job results are also extracted from the jobID.
 
-  :param str jobRef: PilotJobReference of the following form: htcondorce://<ceName>/<condorID>:::<pilotStamp>
+  :param str jobRef: PilotJobReference of the following form: ``htcondorce://<ceName>/<condorID>:::<pilotStamp>``
 
   :return: tuple composed of the jobURL, the path to the job results and the condorID of the given jobRef
   """
