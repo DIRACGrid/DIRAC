@@ -44,6 +44,5 @@ def main():
 
   print(r1 + r2 + r3 + r4)  # pylint: disable=print-statement
 
-
 if __name__ == '__main__':
   main()

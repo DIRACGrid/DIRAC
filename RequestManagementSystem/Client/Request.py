@@ -17,7 +17,6 @@ from __future__ import unicode_literals
 # Disable invalid names warning
 # pylint: disable=invalid-name
 
-
 __RCSID__ = "$Id$"
 
 

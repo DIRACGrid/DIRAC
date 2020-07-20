@@ -3,11 +3,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
 # FIXME: NOT Usable ATM
 # missing doNew, doCache, doMaster
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 from six.moves.urllib.parse import urlparse
 

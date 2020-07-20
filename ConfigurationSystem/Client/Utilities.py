@@ -18,11 +18,9 @@ __RCSID__ = "$Id$"
 
 import re
 import socket
-
-from builtins import str
-from six.moves.urllib.parse import urlparse
-
 import six
+
+from six.moves.urllib.parse import urlparse
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath

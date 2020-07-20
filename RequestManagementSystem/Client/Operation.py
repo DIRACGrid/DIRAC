@@ -14,11 +14,10 @@ Operation implementation
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
+
 # Disable invalid names warning
 # pylint: disable=invalid-name
-
-from __future__ import absolute_import, print_function, unicode_literals
-from builtins import str
 
 __RCSID__ = "$Id$"
 
