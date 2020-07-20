@@ -320,7 +320,7 @@ class ConfigurationData(object):
   def dumpLocalCFGToFile(self, fileName):
     try:
       with open(fileName, "w") as fd:
-        fd.write(str(self.localCFG))
+        fd.write(self.localCFG)
       gLogger.verbose("Configuration file dumped", "'%s'" % fileName)
     except IOError:
       gLogger.error("Can't dump cfg file", "'%s'" % fileName)
@@ -335,7 +335,7 @@ class ConfigurationData(object):
 
   def dumpRemoteCFGToFile(self, fileName):
     with open(fileName, "w") as fd:
-      fd.write(str(self.remoteCFG))
+      fd.write(self.remoteCFG)
 
   def __backupCurrentConfiguration(self, backupName):
     configurationFilename = "%s.cfg" % self.getName()
@@ -359,7 +359,7 @@ class ConfigurationData(object):
     configurationFile = os.path.join(DIRAC.rootPath, "etc", "%s.cfg" % self.getName())
     try:
       with open(configurationFile, "w") as fd:
-        fd.write(str(self.remoteCFG))
+        fd.write(self.remoteCFG)
     except Exception as e:
       gLogger.fatal("Cannot write new configuration to disk!",
                     "file %s exception %s" % (configurationFile, repr(e)))
