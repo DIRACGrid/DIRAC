@@ -97,6 +97,9 @@ prepareEnvironment() {
     echo ""
     echo "# Test specific variables"
     echo "export WORKSPACE=${WORKSPACE}"
+    if [[ -n "${DIRAC_DEPRECATED_FAIL+x}" ]]; then
+      echo "export DIRAC_DEPRECATED_FAIL=${DIRAC_DEPRECATED_FAIL}"
+    fi
     echo ""
     echo "# Optional parameters"
 
