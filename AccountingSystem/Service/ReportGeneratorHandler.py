@@ -18,6 +18,8 @@ import six
 import os
 import datetime
 
+from io import open
+
 from DIRAC import S_OK, S_ERROR, rootPath, gConfig, gLogger
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import Time

@@ -102,7 +102,7 @@ class NetworkAgent (AgentModule):
       return S_ERROR('Unable to fetch perfSONAR endpoints from CS.')
 
     tmpDict = {}
-    for path, value in result['Value'].iteritems():
+    for path, value in result['Value'].items():  # can be an iterator
       if value == 'True':
         elements = path.split('/')
         diracName = elements[4]

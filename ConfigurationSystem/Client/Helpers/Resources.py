@@ -6,10 +6,10 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import urlparse
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 import six
+from six.moves.urllib.parse import urlparse
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath

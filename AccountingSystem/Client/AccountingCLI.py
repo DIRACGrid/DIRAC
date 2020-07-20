@@ -6,9 +6,12 @@ DIRAC Accounting DataStore Service
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import sys
+
+from builtins import input
 
 from DIRAC import gLogger
 from DIRAC.Core.Base.CLI import CLI, colorize
@@ -200,7 +203,7 @@ class AccountingCLI(CLI):
         gLogger.error("No type name specified")
         return
       while True:
-        choice = raw_input(
+        choice = input(
             "Are you completely sure you want to delete type %s and all it's data? yes/no [no]: " %
             typeName)
         choice = choice.lower()

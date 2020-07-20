@@ -33,7 +33,6 @@ from __future__ import unicode_literals
 import time as nativetime
 import datetime
 import sys
-import time as nativetime
 
 __RCSID__ = "$Id$"
 
@@ -202,19 +201,27 @@ def fromString(myDate=None):
     try:
       return (datetime.datetime(year=dateTuple[0],
                                 month=dateTuple[1],
-                                day=dateTuple[2]) +
-              fromString(dateTimeTuple[1]))
+                                day=dateTuple[2]) + fromString(dateTimeTuple[1]))
       # return dt.combine( fromString( dateTimeTuple[0] ),
       #                                   fromString( dateTimeTuple[1] ) )
-    except BaseException:
+    except Exception:
       try:
         return (datetime.datetime(year=int(dateTuple[0]),
                                   month=int(dateTuple[1]),
-                                  day=int(dateTuple[2])) +
-                fromString(dateTimeTuple[1]))
+                                  day=int(dateTuple[2])) + fromString(dateTimeTuple[1]))
+      except ValueError:
+        return None
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
-      except Exception:
+  elif myDate.find(':') > 0:
+    timeTuple = myDate.replace('.', ':').split(':')
+    try:
+      if len(timeTuple) == 4:
+        return datetime.timedelta(hours=int(timeTuple[0]),
+                                  minutes=int(timeTuple[1]),
+                                  seconds=int(timeTuple[2]),
+                                  microseconds=int(timeTuple[3]))
+      elif len(timeTuple) == 3:
         try:
           return datetime.timedelta(hours=int(timeTuple[0]),
                                     minutes=int(timeTuple[1]),
@@ -222,21 +229,15 @@ def fromString(myDate=None):
                                     microseconds=0)
         except ValueError:
           return None
-      except Exception:
+      else:
         return None
-    elif myDate.find('-') > 0:
-      dateTuple = myDate.split('-')
-      try:
-        return datetime.date(int(dateTuple[0]), int(dateTuple[1]), int(dateTuple[2]))
-      except BaseException:
-        return None
-    except BaseException:
+    except Exception:
       return None
   elif myDate.find('-') > 0:
     dateTuple = myDate.split('-')
     try:
       return datetime.date(int(dateTuple[0]), int(dateTuple[1]), int(dateTuple[2]))
-    except BaseException:
+    except Exception:
       return None
 
 

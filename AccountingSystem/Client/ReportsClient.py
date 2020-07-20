@@ -8,6 +8,8 @@ __RCSID__ = "$Id$"
 
 import tempfile
 
+from io import open
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.DISET.TransferClient import TransferClient

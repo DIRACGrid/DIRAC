@@ -56,8 +56,8 @@ class NetworkPlotter(BaseReporter):
   def _plotPacketLossRate(self, reportRequest, plotInfo, filename):
 
     # prepare custom scale (10,20,...,100)
-    scale_data = dict(zip(range(0, 101), range(100, -1, -1)))
-    scale_ticks = range(0, 101, 10)
+    scale_data = dict(zip(list(range(0, 101)), list(range(100, -1, -1))))
+    scale_ticks = list(range(0, 101, 10))
 
     metadata = {'title': 'Packet loss rate by %s' % reportRequest['grouping'],
                 'starttime': reportRequest['startTime'],
@@ -101,12 +101,12 @@ class NetworkPlotter(BaseReporter):
 
     # prepare custom scale (1..10, 100)
     boundaries = list(np.arange(0, 10, 0.1))
-    boundaries.extend(range(10, 110, 10))
+    boundaries.extend(list(range(10, 110, 10)))
     values = list(np.arange(100, 0, -1))
     values.extend([0] * 10)
 
     scale_data = dict(zip(boundaries, values))
-    scale_ticks = range(0, 11)
+    scale_ticks = list(range(0, 11))
     scale_ticks.append(100)
 
     metadata = {'title': 'Magnified packet loss rate by %s' % reportRequest['grouping'],

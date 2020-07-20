@@ -10,6 +10,8 @@ import sys
 import os
 import getopt
 
+from io import open
+
 import DIRAC
 from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR

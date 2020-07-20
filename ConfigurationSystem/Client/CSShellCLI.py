@@ -4,14 +4,17 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import cmd
 import os
 
-from DIRAC.Core.Base.CLI import CLI, colorize
+from builtins import input
+
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
+from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 
@@ -72,7 +75,7 @@ class CSShellCLI(CLI):
   def do_disconnect(self, _line):
     """Disconnect from CS"""
     if self.connected and self.dirty:
-      res = raw_input("Do you want to commit your changes into the CS ? [y/N] ")
+      res = input("Do you want to commit your changes into the CS ? [y/N] ")
       if res.lower() in ["y", "yes"]:
         self.do_commit("")
 
