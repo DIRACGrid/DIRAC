@@ -48,15 +48,14 @@ XML_node_ongoing += '<FORMATED_END_DATE>' + nowPlus24h + '</FORMATED_END_DATE>'
 XML_node_ongoing += '<GOCDB_PORTAL_URL>https://bof</GOCDB_PORTAL_URL>'
 XML_node_ongoing += '</DOWNTIME></ROOT>\n'
 
-xml_endpoint_and_affected_ongoing = '<DOWNTIME ID="29118" PRIMARY_KEY="109962G0" CLASSIFICATION="UNSCHEDULED">'
+xml_endpoint_and_affected_ongoing = '<?xml version="1.0"?>\n<ROOT>'
+xml_endpoint_and_affected_ongoing += '<DOWNTIME ID="29118" PRIMARY_KEY="109962G0" CLASSIFICATION="UNSCHEDULED">'
 xml_endpoint_and_affected_ongoing += '<PRIMARY_KEY>109962G0</PRIMARY_KEY>'
 xml_endpoint_and_affected_ongoing += '<HOSTNAME>lhcbsrm-kit.gridka.de</HOSTNAME>'
 xml_endpoint_and_affected_ongoing += '<SERVICE_TYPE>SRM</SERVICE_TYPE>'
 xml_endpoint_and_affected_ongoing += '<ENDPOINT>lhcbsrm-kit.gridka.deSRM</ENDPOINT>'
 xml_endpoint_and_affected_ongoing += '<HOSTED_BY>FZK-LCG2</HOSTED_BY>'
-xml_endpoint_and_affected_ongoing += '<GOCDB_PORTAL_URL>'
-xml_endpoint_and_affected_ongoing += 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=29118'
-xml_endpoint_and_affected_ongoing += '</GOCDB_PORTAL_URL>'
+xml_endpoint_and_affected_ongoing += '<GOCDB_PORTAL_URL>https://goc.egi.eu/bof</GOCDB_PORTAL_URL>'
 xml_endpoint_and_affected_ongoing += '<AFFECTED_ENDPOINTS>'
 xml_endpoint_and_affected_ongoing += '<ENDPOINT>'
 xml_endpoint_and_affected_ongoing += '<ID>7517</ID>'
@@ -73,7 +72,7 @@ xml_endpoint_and_affected_ongoing += '<START_DATE>1595314800</START_DATE>'
 xml_endpoint_and_affected_ongoing += '<END_DATE>1595343600</END_DATE>'
 xml_endpoint_and_affected_ongoing += '<FORMATED_START_DATE>' + nowLess12h + '</FORMATED_START_DATE>'
 xml_endpoint_and_affected_ongoing += '<FORMATED_END_DATE>' + nowPlus24h + '</FORMATED_END_DATE>'
-xml_endpoint_and_affected_ongoing += '</DOWNTIME>'
+xml_endpoint_and_affected_ongoing += '</DOWNTIME></ROOT>\n'
 
 XML_nodesite_ongoing = '<?xml version="1.0"?>\n<ROOT><DOWNTIME ID="78505455" PRIMARY_KEY="28490G0"'
 XML_nodesite_ongoing += ' CLASSIFICATION="SCHEDULED"><HOSTNAME>egse-cresco.portici.enea.it</HOSTNAME>'
@@ -247,7 +246,8 @@ def test__downTimeXMLParsing():
   assert res == {}
 
   res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Resource')
-  assert res == {}
+  assert list(res)[0] == '109962G0 lhcbsrm-kit.gridka.deSRM'
+  assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['HOSTNAME'] == 'lhcbsrm-disk-kit.gridka.de'
   res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Site')
   assert res == {}
 
