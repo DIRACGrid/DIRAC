@@ -17,6 +17,7 @@ import requests
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.Locations import getCAsLocation
 
+
 def _parseSingleElement(element, attributes=None):
   """
   Given a DOM Element, return a dictionary of its child elements and values (as strings).
