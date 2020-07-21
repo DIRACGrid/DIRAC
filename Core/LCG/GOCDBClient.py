@@ -8,11 +8,11 @@ __RCSID__ = "$Id$"
 
 import time
 import socket
+import requests
+import six
 
 from datetime import datetime, timedelta
 from xml.dom import minidom
-
-import requests
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.Locations import getCAsLocation
@@ -71,7 +71,7 @@ class GOCDBClient(object):
 
     :param str granularity: should be a ValidRes, e.g. "Resource"
     :param name: should be the name(s) of the ValidRes.
-      Could be a list of basestring or simply one basestring.
+      Could be a list of strings or simply one string.
       If not given, fetches the complete list.
 
     :param startDate: if not given, takes only ongoing DownTimes.
@@ -117,7 +117,7 @@ class GOCDBClient(object):
       startDateMax = startDate + timedelta(hours=startingInHours)
 
     if startDate is not None:
-      if isinstance(startDate, basestring):
+      if isinstance(startDate, six.string_types):
         startDate_STR = startDate
         startDate = datetime(*time.strptime(startDate, "%Y-%m-%d")[0:3])
       elif isinstance(startDate, datetime):
@@ -181,7 +181,7 @@ class GOCDBClient(object):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    assert isinstance(granularity, basestring) and isinstance(entity, basestring)
+    assert isinstance(granularity, six.string_types) and isinstance(entity, six.string_types)
     try:
       serviceXML = self._getServiceEndpointCurlDownload(granularity, entity)
       return S_OK(self._serviceEndpointXMLParsing(serviceXML))
@@ -278,7 +278,7 @@ class GOCDBClient(object):
     # GOCDB-PI to query
     gocdb_ep = gocdbpi_url
     if entity is not None:
-      if isinstance(entity, basestring):
+      if isinstance(entity, six.string_types):
         gocdb_ep = gocdb_ep + "&topentity=" + entity
     gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
@@ -301,7 +301,7 @@ class GOCDBClient(object):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    if not isinstance(granularity, basestring) or not isinstance(entity, basestring):
+    if not isinstance(granularity, six.string_types) or not isinstance(entity, six.string_types):
       raise ValueError("Arguments must be strings.")
 
     # GOCDB-PI query
