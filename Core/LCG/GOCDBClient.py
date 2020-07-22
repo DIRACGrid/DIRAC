@@ -346,16 +346,24 @@ class GOCDBClient(object):
                                                  'HOSTED_BY', 'FORMATED_START_DATE',
                                                  'FORMATED_END_DATE', 'DESCRIPTION',
                                                  'GOCDB_PORTAL_URL', 'SERVICE_TYPE'])
+      try:
+        affectedEndpoints = dtElement.getElementsByTagName('AFFECTED_ENDPOINTS')
+        urls = []
+        for epElement in affectedEndpoints[0].childNodes:
+          urls.append(_parseSingleElement(epElement, ['URL'])['URL'])
+      except IndexError:
+        pass
 
       try:
         dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['ENDPOINT']] = elements
+        dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['ENDPOINT']]['URL'] = urls
       except Exception:
         try:
           dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['HOSTNAME']] = elements
         except Exception:
           dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['SITENAME']] = elements
 
-    for dtID in dtDict.keys():  # pylint: disable=consider-iterating-dictionary
+    for dtID in list(dtDict):
       if siteOrRes in ('Site', 'Sites'):
         if 'SITENAME' not in dtDict[dtID]:
           dtDict.pop(dtID)
@@ -377,7 +385,7 @@ class GOCDBClient(object):
             dtDict.pop(dtID)
 
     if startDateMax is not None:
-      for dtID in dtDict.keys():  # pylint: disable=consider-iterating-dictionary
+      for dtID in list(dtDict):
         startDateMaxFromKeys = datetime(*time.strptime(dtDict[dtID]['FORMATED_START_DATE'],
                                                        "%Y-%m-%d %H:%M")[0:5])
         if startDateMaxFromKeys > startDateMax:

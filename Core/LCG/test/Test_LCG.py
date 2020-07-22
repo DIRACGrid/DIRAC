@@ -228,6 +228,15 @@ XML_node_ongoing_and_other_node_starting_in_24_hours += '</DOWNTIME></ROOT>\n'
 
 # test
 
+def test__downTimeXMLParsing_affected():
+
+  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Resource')
+  assert list(res)[0] == '109962G0 lhcbsrm-kit.gridka.deSRM'
+  assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['HOSTNAME'] == 'lhcbsrm-kit.gridka.de'
+  assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['URL'] == ['lhcbsrm-disk-kit.gridka.de']
+  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Site')
+  assert res == {}
+
 
 def test__downTimeXMLParsing():
 
@@ -243,12 +252,6 @@ def test__downTimeXMLParsing():
   res = GOCCli._downTimeXMLParsing(XML_site_ongoing, 'Resource')
   assert res == {}
   res = GOCCli._downTimeXMLParsing(XML_node_ongoing, 'Site')
-  assert res == {}
-
-  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Resource')
-  assert list(res)[0] == '109962G0 lhcbsrm-kit.gridka.deSRM'
-  assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['HOSTNAME'] == 'lhcbsrm-disk-kit.gridka.de'
-  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Site')
   assert res == {}
 
   res = GOCCli._downTimeXMLParsing(XML_nodesite_ongoing, 'Site')
