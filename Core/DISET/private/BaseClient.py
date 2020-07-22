@@ -13,7 +13,7 @@ import thread
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities import List, Network
+from DIRAC.Core.Utilities import List, Network, DErrno
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
@@ -498,10 +498,10 @@ and this is thread %s
           # try to reconnect
           return self._connect()
         else:
-          return retVal
+          return S_ERROR(DErrno.ECONNECT, retVal['Message'])
     except Exception as e:
       gLogger.exception(lException=True, lExcInfo=True)
-      return S_ERROR("Can't connect to %s: %s" % (self.serviceURL, repr(e)))
+      return S_ERROR(DErrno.ECONNECT, "Can't connect to %s: %s" % (self.serviceURL, repr(e)))
     # We add the connection to the transport pool
     gLogger.debug("Connected to: %s" % self.serviceURL)
     trid = getGlobalTransportPool().add(transport)

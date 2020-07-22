@@ -49,6 +49,11 @@ class AuthManagerData(object):
   # #   <ID2>: { ... }
   # # }
 
+  __service = DictCache()
+  # # {
+  # #   crash: bool
+  # # }
+
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
   @gCacheProfiles
@@ -113,8 +118,14 @@ class AuthManagerData(object):
 
         :return: S_OK()/S_ERROR()
     """
+    servCrash = self.__service.get('crash')
+    if servCrash:
+      return servCrash
     from DIRAC.Core.DISET.RPCClient import RPCClient
-    result = RPCClient('Framework/AuthManager').getSessionsInfo(session, userID)
+    result = RPCClient('Framework/AuthManager', timeout=10).getSessionsInfo(session, userID)
+    # If the AuthManager service is down client will ignore it 1 minute
+    if result.get('Errno', 0) == 1112:
+      self.__service.add('crash', 60, value=result)
     if result['OK'] and result['Value']:
       self.updateSessions({session: result['Value']} if session else result['Value'])
     return result
@@ -126,8 +137,14 @@ class AuthManagerData(object):
 
         :return: S_OK()/S_ERROR()
     """
+    servCrash = self.__service.get('crash')
+    if servCrash:
+      return servCrash
     from DIRAC.Core.DISET.RPCClient import RPCClient
-    result = RPCClient('Framework/AuthManager').getIdProfiles(userID)
+    result = RPCClient('Framework/AuthManager', timeout=10).getIdProfiles(userID)
+    # If the AuthManager service is down client will ignore it 1 minute
+    if result.get('Errno', 0) == 1112:
+      self.__service.add('crash', 60, value=result)
     if result['OK'] and result['Value']:
       self.updateProfiles({userID: result['Value']} if userID else result['Value'])
     return result
