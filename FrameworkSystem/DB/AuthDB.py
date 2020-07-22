@@ -301,7 +301,8 @@ class AuthDB(DB):
       result = self._query("SELECT ADDDATE(UTC_TIMESTAMP(), INTERVAL %s SECOND)" % exp)
       if not result['OK']:
         return result
-      exp = result['Value'][0][0] if result['Value'] else 'UTC_TIMESTAMP()'
+      # exp = result['Value'][0][0] if result['Value'] else 'UTC_TIMESTAMP()'
+      fieldsToUpdate['ExpiresIn'] = result['Value'][0][0] if result['Value'] else 'UTC_TIMESTAMP()'
     return self.updateFields('Sessions', updateDict=fieldsToUpdate, condDict=condDict)
 
   def __getFields(self, fields=None, cond=None, **kwargs):

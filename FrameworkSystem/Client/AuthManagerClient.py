@@ -36,9 +36,7 @@ class AuthManagerClient(Client):
         :return: S_OK(dict)/S_ERROR()
     """
     result = self._getRPC().parseAuthResponse(response, state)
-    if not result['OK']:
-      return result
-    if result['Value']['Status'] in ['authed', 'redirect']:
+    if result['OK'] and result['Value']['Status'] in ['authed', 'redirect']:
       gAuthManagerData.updateProfiles(result['Value']['upProfile'])
       gAuthManagerData.updateSessions(result['Value']['upSession'])
 

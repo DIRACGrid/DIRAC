@@ -42,7 +42,7 @@ class ProxyManagerHandler(RequestHandler):
         Value: S_OK(dict)/S_ERROR() -- dictionary contain:
   """
   # # { <user DN>: {
-  # #     Roles: [<list of roles>],
+  # #     Roles: [ <list of roles> ],
   # #     suspended: bool,
   # #     certSuspended: bool,
   # #     ...

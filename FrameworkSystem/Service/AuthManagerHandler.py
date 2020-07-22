@@ -457,11 +457,12 @@ class AuthManagerHandler(RequestHandler):
     result = getUsernameForID(userID)
     if not result['OK']:
       status = 'failed'
-      comment = '%s ID is not registred in the DIRAC.'
+      comment = '%s ID is not registred in the DIRAC.' % userID
       result = self.__registerNewUser(provider, parseDict)
       if result['OK']:
         comment += ' Administrators have been notified about you.'
-      comment += ' Please, contact the DIRAC administrators.'
+      else:
+        comment += ' Please, contact the DIRAC administrators.'
 
     else:
       # This session to reserve?
@@ -487,7 +488,7 @@ class AuthManagerHandler(RequestHandler):
           return result
 
     # Update status in current session
-    result = self.__db.updateSession(session, {'Status': status})
+    result = self.__db.updateSession(session, {'Status': status, 'Comment': comment})
     if not result['OK']:
       return result
 
