@@ -93,13 +93,14 @@ class FailoverTransfer(object):
                                                                 se,
                                                                 guid=fileGUID,
                                                                 checksum=fileChecksum)
-        self.log.verbose(result)
-
-        # If the FC is unavailable, we stay in the loop and retry
-        # otherwise we continue without retrying
-        if result['OK'] or not cmpError(result, EFCERR):
+        # retry on any failure
+        if result['OK']:
+          self.log.verbose(result)
           break
-        self.log.error("transferAndRegisterFile: FC unavailable, retry")
+        elif cmpError(result, EFCERR):
+          self.log.error("transferAndRegisterFile: FC unavailable, retry")
+        else:
+          self.log.error('dm.putAndRegister failed, will retry', result['Message'])
         time.sleep(sleeptime)
 
       if not result['OK']:
