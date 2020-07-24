@@ -272,9 +272,6 @@ csAPI.setOption('Resources/StorageElements/S3-INDIRECT/S3/Access', 'remote')
 csAPI.setOption('Resources/StorageElements/S3-INDIRECT/S3/SecureConnection', 'False')
 
 
-
-
-
 # Now setting up the following option:
 #     Resources
 #     {
@@ -450,7 +447,6 @@ if not res['OK']:
   print(res['Message'])
   exit(1)
 csAPI.setOption('Operations/Defaults/DataManagement/RegistrationProtocols', 'srm,dips,s3')
-
 
 
 # Now setting the Registry section
