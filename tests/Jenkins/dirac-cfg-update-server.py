@@ -115,7 +115,6 @@ if not res['OK']:
 csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/CatalogType', 'FileCatalog')
 csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/AccessType', 'Read-Write')
 csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/Status', 'Active')
-csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/Master', 'True')
 csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/CatalogURL', 'DataManagement/MultiVOFileCatalog')
 
 # Now setting up the following option:
