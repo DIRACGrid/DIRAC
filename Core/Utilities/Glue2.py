@@ -170,17 +170,18 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
 
   # ARC CEs do not have endpoints, we have to try something else to get the information about the queue etc.
   if not shareEndpoints and shareInfoDict['GLUE2ShareID'].startswith('urn:ogf'):
-    exeInfo = dict(resExeInfo['Value'])  # silence pylint about tuples
-    ceType = 'ARC'
-    managerName = exeInfo.pop('MANAGER', '').split(' ', 1)[0].rsplit(':', 1)[1]
-    managerName = managerName.capitalize() if managerName == 'condor' else managerName
-    queueName = 'nordugrid-%s-%s' % (managerName, shareInfoDict['GLUE2ComputingShareMappingQueue'])
-    ceName = shareInfoDict['GLUE2ShareID'].split('ComputingShare:')[1].split(':')[0]
-    cesDict.setdefault(ceName, {})
-    existingQueues = dict(cesDict[ceName].get('Queues', {}))
-    existingQueues[queueName] = queueInfo
-    ceInfo['Queues'] = existingQueues
-    cesDict[ceName].update(ceInfo)
+    if 'Value' in list(resExeInfo):
+      exeInfo = dict(resExeInfo['Value'])  # silence pylint about tuples
+      ceType = 'ARC'
+      managerName = exeInfo.pop('MANAGER', '').split(' ', 1)[0].rsplit(':', 1)[1]
+      managerName = managerName.capitalize() if managerName == 'condor' else managerName
+      queueName = 'nordugrid-%s-%s' % (managerName, shareInfoDict['GLUE2ComputingShareMappingQueue'])
+      ceName = shareInfoDict['GLUE2ShareID'].split('ComputingShare:')[1].split(':')[0]
+      cesDict.setdefault(ceName, {})
+      existingQueues = dict(cesDict[ceName].get('Queues', {}))
+      existingQueues[queueName] = queueInfo
+      ceInfo['Queues'] = existingQueues
+      cesDict[ceName].update(ceInfo)
 
   return S_OK()
 
