@@ -19,7 +19,7 @@ fi
 ###############################################################################
 # Can't find anywhere a batch plugin, not even MJF
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
@@ -35,7 +35,7 @@ fi
 export MACHINEFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg
 export JOBFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
@@ -51,7 +51,7 @@ fi
 export MACHINEFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/MJF/
 export JOBFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/MJF/
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
