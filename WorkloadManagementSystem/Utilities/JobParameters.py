@@ -29,11 +29,11 @@ def getJobFeatures():
 
 
 def getProcessorFromMJF():
-  return getJobFeatures().get('allocated_cpu')
+  return int(getJobFeatures().get('allocated_cpu'))
 
 
 def getMemoryFromMJF():
-  return getJobFeatures().get('max_rss_bytes')
+  return int(getJobFeatures().get('max_rss_bytes'))
 
 
 def getMemoryFromProc():
@@ -59,7 +59,7 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
 
   # 1) from /Resources/Computing/CEDefaults/NumberOfProcessors
   gLogger.info("Getting numberOfProcessors from /Resources/Computing/CEDefaults/NumberOfProcessors")
-  numberOfProcessors = gConfig.getValue('/Resources/Computing/CEDefaults/NumberOfProcessors')
+  numberOfProcessors = gConfig.getValue('/Resources/Computing/CEDefaults/NumberOfProcessors', 0)
   if numberOfProcessors:
     return numberOfProcessors
 
@@ -68,31 +68,20 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
   numberOfProcessors = getProcessorFromMJF()
   if numberOfProcessors:
     return numberOfProcessors
+  gLogger.info("NumberOfProcessors could not be found in MJF")
 
   # 3) looks in CS for "NumberOfProcessors" Queue or CE or site option
   grid = siteName.split('.')[0]
-
-  gLogger.info("NumberOfProcessors could not be found in MJF, trying from CS (queue definition)")
-  numberOfProcessors = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors' % (grid,
-                                                                                                        siteName,
-                                                                                                        gridCE,
-                                                                                                        queue))
-  if numberOfProcessors:
-    return numberOfProcessors
-
-  gLogger.info("NumberOfProcessors could not be found in CS queue definition, ",
-               "trying from /Resources/Sites/%s/%s/CEs/%s/NumberOfProcessors" % (grid, siteName, gridCE))
-  numberOfProcessors = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/NumberOfProcessors' % (grid,
-                                                                                              siteName,
-                                                                                              gridCE))
-  if numberOfProcessors:
-    return numberOfProcessors
-
-  gLogger.info("NumberOfProcessors could not be found in CS CE definition, ",
-               "trying from /Resources/Sites/%s/%s/NumberOfProcessors" % (grid, siteName))
-  numberOfProcessors = gConfig.getValue('/Resources/Sites/%s/%s/NumberOfProcessors' % (grid, siteName))
-  if numberOfProcessors:
-    return numberOfProcessors
+  csPaths = [
+    "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors" % (grid, siteName, gridCE, queue),
+    "/Resources/Sites/%s/%s/CEs/%s/NumberOfProcessors" % (grid, siteName, gridCE),
+    "/Resources/Sites/%s/%s/NumberOfProcessors" % (grid, siteName, gridCE),
+  ]
+  for csPath in csPaths:
+    gLogger.info("Looking in", csPath)
+    numberOfProcessors = gConfig.getValue(csPath, 0)
+    if numberOfProcessors:
+      return numberOfProcessors
 
   # 3) looks in CS for tags
   gLogger.info("Getting number of processors" "from tags for %s: %s: %s" % (siteName, gridCE, queue))
