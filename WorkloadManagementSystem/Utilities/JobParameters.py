@@ -73,9 +73,9 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
   # 3) looks in CS for "NumberOfProcessors" Queue or CE or site option
   grid = siteName.split('.')[0]
   csPaths = [
-    "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors" % (grid, siteName, gridCE, queue),
-    "/Resources/Sites/%s/%s/CEs/%s/NumberOfProcessors" % (grid, siteName, gridCE),
-    "/Resources/Sites/%s/%s/NumberOfProcessors" % (grid, siteName, gridCE),
+      "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors" % (grid, siteName, gridCE, queue),
+      "/Resources/Sites/%s/%s/CEs/%s/NumberOfProcessors" % (grid, siteName, gridCE),
+      "/Resources/Sites/%s/%s/NumberOfProcessors" % (grid, siteName),
   ]
   for csPath in csPaths:
     gLogger.info("Looking in", csPath)
