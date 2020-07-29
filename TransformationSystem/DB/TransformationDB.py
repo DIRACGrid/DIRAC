@@ -397,17 +397,18 @@ class TransformationDB(DB):
     """ Get filters for all defined input streams in all the transformations.
     """
     resultList = []
-    res = self.getTransformations(condDict={'Status': {'in': ['New', 'Active', 'Stopped', 'Flush', 'Completing']}},
+    res = self.getTransformations(condDict={'Status': ['New', 'Active', 'Stopped', 'Flush', 'Completing']},
                                   connection=connection)
     if not res['OK']:
       return res
 
     transIDs = res['Value']
-    for transID in transIDs:
+    for transDict in transIDs:
+      transID = str(transDict['TransformationID'])
       res = self.getTransformationMetaQuery(transID, 'Input')
       if not res['OK']:
-        return res
-      resultList.append(transID, res['Value'])
+        continue
+      resultList.append((transID, res['Value']))
 
     self.filterQueries = resultList
     return S_OK(resultList)

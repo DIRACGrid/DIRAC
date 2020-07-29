@@ -55,10 +55,18 @@ in the order of preference of the option resolution:
      dirac-wms-job-submit job.jdl -o /DIRAC/Setup=Dirac-Production
 
 *Command line argument specifying a CFG file*
-  If a filename with the *.cfg* extension is passed as an argument to any DIRAC command
-  it will be interpreted as a configuration file. For example::
+  A config file can be passed to any dirac command with the ``--cfg`` flag::
   
-     dirac-wms-job-submit job.jdl my.cfg
+     dirac-wms-job-submit job.jdl --cfg my.cfg
+
+  .. versionchanged:: v7r0
+
+     The passing of ``.cfg`` files was changed to require the ``--cfg`` flag.
+
+  .. deprecated:: v7r0
+
+     If a filename with the ``.cfg`` extension is passed as an argument to any DIRAC command
+     it will be interpreted as a configuration file, if the ``DIRAC_NO_CFG`` environment variable is not set.
 
 *Value of $DIRACSYSCONFIG environment variable*
   if the DIRACSYSCONFIG variable is set, it should point to a cfg file (written in *CFG* format)

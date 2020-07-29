@@ -439,6 +439,7 @@ def test_chainWithTags():
   #   3 : SingleProcessor, MultiProcessor
   #   4 : MultiProcessor, GPU
   #   5 : -- no tags
+  #   6 : MultiProcessor, 17Processors
 
   tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
                'Tags': ['MultiProcessor']}
@@ -479,6 +480,14 @@ def test_chainWithTags():
   tq_job5 = result['Value'][5]
   assert tq_job5 > tq_job4
 
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Tags': ['MultiProcessor', '17Processors']}
+  result = tqDB.insertJob(6, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([6])
+  tq_job6 = result['Value'][6]
+  assert tq_job6 > tq_job5
+
   # We should be in this situation (TQIds are obviously invented):
   #
   # mysql Dirac@localhost:TaskQueueDB> select `TQId`,`JobId` FROM `tq_Jobs`
@@ -490,6 +499,7 @@ def test_chainWithTags():
   # |    103 |       3 |
   # |    104 |       4 |
   # |    105 |       5 |
+  # |    106 |       6 |
   # +--------+---------+
   #
   # mysql Dirac@localhost:TaskQueueDB> select * FROM `tq_TQToTags`
@@ -502,6 +512,8 @@ def test_chainWithTags():
   # |    103 | SingleProcessor |
   # |    104 | GPU             |
   # |    104 | MultiProcessor  |
+  # |    106 | MultiProcessor  |
+  # |    106 | 17Processors    |
   # +--------+-----------------+
 
   # Matching
@@ -509,27 +521,27 @@ def test_chainWithTags():
   # Matching Everything with Tag = "ANY"
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
                                       'Tag': 'ANY'},
-                                     numQueuesToGet=5)
+                                     numQueuesToGet=6)
   assert result['OK'] is True
   # this should match whatever
   res = set([int(x[0]) for x in result['Value']])
-  assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5}
+  assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
   # Matching Everything with Tag = "aNy"
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
                                       'Tag': 'aNy'},
-                                     numQueuesToGet=5)
+                                     numQueuesToGet=6)
   assert result['OK'] is True
   res = set([int(x[0]) for x in result['Value']])
-  assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5}
+  assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
   # Matching Everything with Tag contains "aNy"
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
                                       'Tag': ['MultiProcessor', 'aNy']},
-                                     numQueuesToGet=5)
+                                     numQueuesToGet=6)
   assert result['OK'] is True
   res = set([int(x[0]) for x in result['Value']])
-  assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5}
+  assert res == {tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6}
 
   # Matching only tq_job5 when no tag is specified
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000},
@@ -577,7 +589,7 @@ def test_chainWithTags():
   # the tq_job4, as it is the only one that requires BOTH MultiProcessor and GPU,
   # AND the tq_job5, for which we have inserted no tags
   res = set([int(x[0]) for x in result['Value']])
-  assert res == {tq_job1, tq_job4, tq_job5}
+  assert res == {tq_job1, tq_job4, tq_job5, tq_job5}
 
   # RequiredTag: 'MultiProcessor' (but no Tag)
   # By doing this, we would be saying that this CE is accepting ONLY MultiProcessor payloads,
@@ -607,9 +619,22 @@ def test_chainWithTags():
                                       'RequiredTag': 'MultiProcessor'},
                                      numQueuesToGet=4)
   assert result['OK'] is True
-  # this matches the tq_job1 as it is the only one that expose the MultiProcessor tag ONLY
+  # this matches the tq_job1 as it is the only one that exposes the MultiProcessor tag ONLY
+  # and tq_job4 because it has GPU and MultiProcessor tags
   res = set([int(x[0]) for x in result['Value']])
   assert res == {tq_job1, tq_job4}
+
+  # CINECA type
+  # We only want to have MultiProcessor payloads
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Tag': ['MultiProcessor', '17Processors', '20Processors', '4Processors'],
+                                      'RequiredTag': 'MultiProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this matches the tq_job1 as it is the only one that exposes the MultiProcessor tag ONLY
+  # and tq_job6 because it has 17Processors and MultiProcessor tags
+  res = set([int(x[0]) for x in result['Value']])
+  assert res == {tq_job1, tq_job6}
 
   # NumberOfProcessors and MaxRAM
   # This is translated to "#Processors" by the SiteDirector
@@ -622,11 +647,11 @@ def test_chainWithTags():
   # FIXME: the MaxRam parameter has a similar fate, and becomes "#GB",
   # and then there's no specific matching about it.
 
-  for jobId in xrange(1, 8):
+  for jobId in range(1, 8):
     result = tqDB.deleteJob(jobId)
     assert result['OK'] is True
 
-  for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5]:
+  for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6]:
     result = tqDB.deleteTaskQueueIfEmpty(tqId)
     assert result['OK'] is True
 

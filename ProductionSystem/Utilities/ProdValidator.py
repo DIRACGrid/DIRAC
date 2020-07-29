@@ -99,8 +99,8 @@ class ProdValidator(object):
         msg = 'Metadata %s is not defined in the Catalog' % meta
         return S_ERROR(msg)
       mtype = MetaTypeDict[meta]
-      if mtype not in ['VARCHAR(128)', 'int', 'float']:
-        msg = 'Metatype %s is not supported' % mtype
+      if mtype.lower() not in ['varchar(128)', 'int', 'float']:
+        msg = 'Metatype %s is not supported' % mtype.lower()
         return S_ERROR(msg)
       if meta not in ParentMetaQueryDict:
         msg = 'Metadata %s is not in parent transformation query' % meta
@@ -126,6 +126,9 @@ class ProdValidator(object):
         if operation not in ['=', 'in']:
           msg = 'Operation %s is not supported' % operation
           return S_ERROR(msg)
+        else:
+          if not isinstance(value.values()[0], list):
+            MetaQueryDict[meta] = {"in": value.values()}
       else:
         values.append(value)
         MetaQueryDict[meta] = {"in": values}
@@ -135,13 +138,11 @@ class ProdValidator(object):
   def compareValues(self, value, parentValue):
     """ Very simple comparison. To be improved
 
-    :param str value: a meta data value (str, int, ...) to be compared with the parentValue
-    :param str parentValue: a meta data value (str, int, ...) to be compared with value
+    :param dict value: a dictionary with meta data values to be compared with the parentValues
+    :param dict parentValue: a dictionary with meta data parentValues be compared with values
     """
     return set(
         value.values()[0]).issubset(
-        set(
-            parentValue.values()[0])) or set(
+        set(parentValue.values()[0])) or set(
         parentValue.values()[0]).issubset(
-        set(
-            value.values()[0]))
+        set(value.values()[0]))

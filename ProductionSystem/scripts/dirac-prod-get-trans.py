@@ -42,14 +42,26 @@ transIDs = []
 
 if res['OK']:
   transList = res['Value']
+  if not transList:
+    DIRAC.gLogger.notice('No transformation associated with production %s' % prodID)
+    DIRAC.exit(-1)
   for trans in transList:
     transIDs.append(trans['TransformationID'])
 else:
   DIRAC.gLogger.error(res['Message'])
   DIRAC.exit(-1)
 
-fields = ['TransformationName', 'Status', 'F_Proc.(%)', 'TransformationID', 'ProductionID', 'Prod_LastUpdate',
-          'Prod_InsertedTime']
+
+fields = [
+    'TransformationName',
+    'Status',
+    'F_Proc.',
+    'F_Proc.(%)',
+    'TransformationID',
+    'ProductionID',
+    'Prod_LastUpdate',
+    'Prod_InsertedTime']
+
 records = []
 
 paramShowNames = ['TransformationID', 'TransformationName', 'Type', 'Status', 'Files_Total', 'Files_PercentProcessed',
@@ -58,22 +70,27 @@ paramShowNames = ['TransformationID', 'TransformationName', 'Type', 'Status', 'F
 resList = []
 
 
-result = transClient.getTransformationSummaryWeb({'TransformationID': transIDs}, [], 0, len(transIDs))
+res = transClient.getTransformationSummaryWeb({'TransformationID': transIDs}, [], 0, len(transIDs))
 
-if result['Value']['TotalRecords'] > 0:
-  paramNames = result['Value']['ParameterNames']
-  for paramValues in result['Value']['Records']:
+if not res['OK']:
+  DIRAC.gLogger.error(res['Message'])
+  DIRAC.exit(-1)
+
+if res['Value']['TotalRecords'] > 0:
+  paramNames = res['Value']['ParameterNames']
+  for paramValues in res['Value']['Records']:
     paramShowValues = map(lambda pname: paramValues[paramNames.index(pname)], paramShowNames)
     showDict = dict(zip(paramShowNames, paramShowValues))
     resList.append(showDict)
 
 for res in resList:
   files_Processed = res['Files_Processed']
+  files_PercentProcessed = res['Files_PercentProcessed']
   status = res['Status']
   type = res['Type']
   transName = res['TransformationName']
   transID = res['TransformationID']
-  records.append([transName, status, str(files_Processed), str(transID), str(prodID),
+  records.append([transName, status, str(files_Processed), str(files_PercentProcessed), str(transID), str(prodID),
                   str(trans['LastUpdate']), str(trans['InsertedTime'])])
 
 
