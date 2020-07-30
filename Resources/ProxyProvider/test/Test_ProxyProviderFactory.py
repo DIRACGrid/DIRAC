@@ -27,6 +27,7 @@ def sf_getInfoAboutProviders(of, providerName, option, section):
       return S_OK({'ProviderType': 'PUSP', 'ServiceURL': 'https://somedomain'})
   return S_ERROR('No proxy provider found')
 
+
 @mock.patch('DIRAC.Resources.ProxyProvider.ProxyProviderFactory.getInfoAboutProviders',
             new=sf_getInfoAboutProviders)
 class ProxyProviderFactoryTest(unittest.TestCase):

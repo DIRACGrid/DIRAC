@@ -16,8 +16,8 @@ import tempfile
 
 from urlparse import urlparse
 
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC import S_OK, S_ERROR, gLogger
 
 CE_NAME = 'BOINC'
 
@@ -58,7 +58,7 @@ class BOINCComputingElement(ComputingElement):
       try:
         from suds.client import Client
         if self.log.getLevel() == 'DEBUG':
-          gLogger.enableLogsFromExternalLibs()
+          self.log.enableLogsFromExternalLibs()
         self.BOINCClient = Client(self.wsdl)
       except Exception as x:
         self.log.error('Creation of the soap client failed', '%s' % str(x))
