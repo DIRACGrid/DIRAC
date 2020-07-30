@@ -3,12 +3,13 @@ from __future__ import division
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+import copy
 import unittest
 import mock
-from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-import pprint
-import copy
+from DIRAC.Resources.Storage.StorageFactory import StorageFactory
+from functools import reduce
 
 gLogger.setLevel('DEBUG')
 dict_cs = {
@@ -215,7 +216,7 @@ class fake_gConfig(object):
     # split the path and recursively dig down the dict_cs dictionary
     return reduce(lambda d, e: d.get(e, {}), path.strip('/').split('/'), dict_cs)
 
-  def getValue(self, path, defaultValue = ''):
+  def getValue(self, path, defaultValue=''):
     if 'StorageElements' not in path and 'StorageElementBases' not in path:
       return gConfig.getValue(path, defaultValue)
     csValue = self.crawlCS(path)
@@ -265,7 +266,7 @@ def mock_StorageFactory__generateStorageObject(*args, **kwargs):
   return S_OK(object())
 
 
-def mock_resourceStatus_getElementStatus(seName, elementType = 'StorageElement'):
+def mock_resourceStatus_getElementStatus(seName, elementType='StorageElement'):
   """ We shut up RSS
   """
   return S_OK({seName: {}})
@@ -283,13 +284,13 @@ mandatoryProtocolOptions = {
 }
 
 
-@mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new = sf_gConfig)
+@mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new=sf_gConfig)
 @mock.patch(
     'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
-    side_effect = mock_StorageFactory__generateStorageObject)
+    side_effect=mock_StorageFactory__generateStorageObject)
 @mock.patch(
     'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
-    side_effect = mock_resourceStatus_getElementStatus)
+    side_effect=mock_resourceStatus_getElementStatus)
 class StorageFactoryStandaloneTestCase(unittest.TestCase):
   """ Base class for the StorageFactory test cases
   """
@@ -299,7 +300,7 @@ class StorageFactoryStandaloneTestCase(unittest.TestCase):
         It should have two storage plugins
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-SIMPLE')
 
     self.assertTrue(storages['OK'], storages)
@@ -322,13 +323,13 @@ class StorageFactoryStandaloneTestCase(unittest.TestCase):
     self.assertDictEqual(storages['StorageOptions'], {'BackendType': 'Eos', 'SEType': 'T0D1'})
 
 
-@mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new = sf_gConfig)
+@mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new=sf_gConfig)
 @mock.patch(
     'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
-    side_effect = mock_StorageFactory__generateStorageObject)
+    side_effect=mock_StorageFactory__generateStorageObject)
 @mock.patch(
     'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
-    side_effect = mock_resourceStatus_getElementStatus)
+    side_effect=mock_resourceStatus_getElementStatus)
 class StorageFactorySimpleInheritance(unittest.TestCase):
   """ In this class we perform simple inheritance test, with only one
     protocol and no extra protocol definition
@@ -339,7 +340,7 @@ class StorageFactorySimpleInheritance(unittest.TestCase):
         add a storage option, redefine the path and the space token
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-USER')
 
     self.assertTrue(storages['OK'], storages)
@@ -375,7 +376,7 @@ class StorageFactorySimpleInheritance(unittest.TestCase):
         and redefine the same value for Path and PluginName
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-DST')
 
     self.assertTrue(storages['OK'], storages)
@@ -409,7 +410,7 @@ class StorageFactorySimpleInheritance(unittest.TestCase):
         but does not redefine ANYTHING. We expect it to be just like the parent
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-NO-DEF')
 
     self.assertTrue(storages['OK'], storages)
@@ -439,24 +440,23 @@ class StorageFactorySimpleInheritance(unittest.TestCase):
                           'BaseSE': 'CERN-BASE'})
 
 
-@mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new = sf_gConfig)
+@mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new=sf_gConfig)
 @mock.patch(
     'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
-    side_effect = mock_StorageFactory__generateStorageObject)
+    side_effect=mock_StorageFactory__generateStorageObject)
 @mock.patch(
     'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
-    side_effect = mock_resourceStatus_getElementStatus)
+    side_effect=mock_resourceStatus_getElementStatus)
 class StorageFactoryWeirdDefinition(unittest.TestCase):
   """ In this class, we test very specific cases to highlight inheritance of the StorageElement
   """
-
 
   def test_no_plugin_name(self, _sf_generateStorageObject, _rss_getSEStatus):
     """ In this test, we load a storage element CERN-NO-PLUGIN-NAME that inherits from CERN-BASE,
         and redefine the same protocol but with no PluginName
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-NO-PLUGIN-NAME')
 
     self.assertTrue(storages['OK'], storages)
@@ -482,7 +482,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         and redefine the same protocol but with a different PluginName.
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-BAD-PLUGIN-NAME')
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
@@ -494,7 +494,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         'Access': 'local',
         'Host': 'srm-eoslhcb.cern.ch',
         'Path': '/eos/lhcb/grid/prod',
-        'PluginName' : 'AnotherPluginName',
+        'PluginName': 'AnotherPluginName',
         'Port': 8443,
         'Protocol': 'srm',
         'SpaceToken': 'LHCb-EOS',
@@ -508,12 +508,12 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         and uses the same Plugin with a different section.
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-REDEFINE-PLUGIN-NAME')
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
 
-    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2','GFAL2_SRM2'])
+    self.assertListEqual(storages['RemotePlugins'], ['GFAL2_SRM2', 'GFAL2_SRM2'])
 
     expectedProtocols = [{
         'Access': 'remote',
@@ -541,7 +541,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     """ In this test, we load a storage element CERN-USE-PLUGIN-AS-PROTOCOL-NAME that inherits from CERN-BASE,
         and uses a protocol named as a plugin name, the plugin name is not present.
     """
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-USE-PLUGIN-AS-PROTOCOL-NAME')
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
@@ -573,7 +573,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     """ In this test, we load a storage element CERN-USE-PLUGIN-AS-PROTOCOL-NAME that inherits from CERN-BASE,
         and uses a protocol named as a plugin name, the plugin name is also present.
     """
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-USE-PLUGIN-AS-PROTOCOL-NAME-WITH-PLUGIN-NAME')
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
@@ -607,7 +607,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         and adds an extra protocol
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-MORE')
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
@@ -637,10 +637,10 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
 
   def test_child_inherit_from_base_with_two_same_plugins(self, _sf_generateStorageObject, _rss_getSEStatus):
-    """ In this test, we load a storage element CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS that inherits 
+    """ In this test, we load a storage element CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS that inherits
         from CERN-BASE-WITH-TWO-SAME-PLUGINS, using two identical plugin names in two sections.
     """
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS')
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
@@ -670,13 +670,13 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
 
 
-@mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new = sf_gConfig)
+@mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new=sf_gConfig)
 @mock.patch(
     'DIRAC.Resources.Storage.StorageFactory.StorageFactory._StorageFactory__generateStorageObject',
-    side_effect = mock_StorageFactory__generateStorageObject)
+    side_effect=mock_StorageFactory__generateStorageObject)
 @mock.patch(
     'DIRAC.ResourceStatusSystem.Client.ResourceStatus.ResourceStatus.getElementStatus',
-    side_effect = mock_resourceStatus_getElementStatus)
+    side_effect=mock_resourceStatus_getElementStatus)
 class StorageFactoryPureAbstract(unittest.TestCase):
   """ In this class, we test pure abstract inheritance
   """
@@ -686,7 +686,7 @@ class StorageFactoryPureAbstract(unittest.TestCase):
         CERN-ABSTRACT has two uncomplete protocols, and CERN-CHILD defines them
     """
 
-    sf = StorageFactory(vo = 'lhcb')
+    sf = StorageFactory(vo='lhcb')
     storages = sf.getStorages('CERN-CHILD')
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
@@ -721,4 +721,4 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageFactorySimpleInheritance))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageFactoryWeirdDefinition))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(StorageFactoryPureAbstract))
-  testResult = unittest.TextTestRunner(verbosity = 3).run(suite)
+  testResult = unittest.TextTestRunner(verbosity=3).run(suite)

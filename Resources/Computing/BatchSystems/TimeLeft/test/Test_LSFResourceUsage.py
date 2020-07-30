@@ -7,9 +7,8 @@ from __future__ import print_function
 
 import os
 import pytest
-from mock import MagicMock, patch
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.LSFResourceUsage import LSFResourceUsage
 

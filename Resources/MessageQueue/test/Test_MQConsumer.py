@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import unittest
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Resources.MessageQueue.MQConsumer import MQConsumer
 from DIRAC.Resources.MessageQueue.MQConnectionManager import MQConnectionManager
 from DIRAC.Resources.MessageQueue.MQConnector import MQConnector

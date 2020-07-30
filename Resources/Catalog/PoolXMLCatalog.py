@@ -234,10 +234,9 @@ class PoolXMLCatalog(object):
   def getFileByGuid(self, guid):
     """ Get PoolFile object by GUID
     """
-    if guid in self.files.keys():
+    if guid in self.files:
       return self.files[guid]
-    else:
-      return None
+    return None
 
   def getGuidByPfn(self, pfn):
     """ Get GUID for a given PFN
@@ -275,14 +274,13 @@ class PoolXMLCatalog(object):
     """
     if self.getGuidByLfn(lfn):
       return 1
-    else:
-      return 0
+    return 0
 
   def getLfnsList(self):
     """Get list of LFNs in catalogue.
     """
     lfnsList = []
-    for guid in self.files.keys():
+    for guid in self.files:
       lfn = self.files[guid].getLfns()
       lfnsList.append(lfn[0])
 
@@ -293,7 +291,7 @@ class PoolXMLCatalog(object):
     """
 
     lfn = ''
-    if guid in self.files.keys():
+    if guid in self.files:
       lfns = self.files[guid].getLfns()
       lfn = lfns[0]
 
@@ -309,7 +307,7 @@ class PoolXMLCatalog(object):
     result = S_OK()
 
     repdict = {}
-    if guid in self.files.keys():
+    if guid in self.files:
       pfns = self.files[guid].getPfns()
       for pfn, se in pfns:
         repdict[se] = pfn
@@ -405,7 +403,7 @@ class PoolXMLCatalog(object):
     """ Add PFN for a given GUID - not standard
     """
 
-    if guid in self.files.keys():
+    if guid in self.files:
       self.files[guid].addPfn(pfn, pfntype, se)
     else:
       self.addFile([lfn, pfn, se, guid, pfntype])
@@ -414,7 +412,7 @@ class PoolXMLCatalog(object):
     """ Add LFN for a given GUID - not standard
     """
 
-    if guid in self.files.keys():
+    if guid in self.files:
       self.files[guid].addLfn(lfn)
     else:
       self.addFile([lfn, pfn, se, guid, pfntype])

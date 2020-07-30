@@ -21,12 +21,12 @@ class DataOperationPlotter(BaseReporter):
   _reportSuceededTransfersName = "Successful transfers"
 
   def _reportSuceededTransfers(self, reportRequest):
-    return self.__reportTransfers(reportRequest, 'Suceeded', ('Failed', 0))
+    return self.__reportTransfers(reportRequest, 'Succeeded', ('Failed', 0))
 
   _reportFailedTransfersName = "Failed transfers"
 
   def _reportFailedTransfers(self, reportRequest):
-    return self.__reportTransfers(reportRequest, 'Failed', ('Suceeded', 1))
+    return self.__reportTransfers(reportRequest, 'Failed', ('Succeeded', 1))
 
   def __reportTransfers(self, reportRequest, titleType, togetherFieldsToPlot):
     selectFields = (
@@ -59,10 +59,10 @@ class DataOperationPlotter(BaseReporter):
                  'granularity': granularity, 'unit': unitName})
 
   def _plotSuceededTransfers(self, reportRequest, plotInfo, filename):
-    return self.__plotTransfers(reportRequest, plotInfo, filename, 'Suceeded', ('Failed', 0))
+    return self.__plotTransfers(reportRequest, plotInfo, filename, 'Succeeded', ('Failed', 0))
 
   def _plotFailedTransfers(self, reportRequest, plotInfo, filename):
-    return self.__plotTransfers(reportRequest, plotInfo, filename, 'Failed', ('Suceeded', 1))
+    return self.__plotTransfers(reportRequest, plotInfo, filename, 'Failed', ('Succeeded', 1))
 
   def __plotTransfers(self, reportRequest, plotInfo, filename, titleType, togetherFieldsToPlot):
     metadata = {'title': '%s Transfers by %s' % (titleType, reportRequest['grouping']),

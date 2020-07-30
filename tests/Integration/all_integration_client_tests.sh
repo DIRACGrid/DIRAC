@@ -104,16 +104,9 @@ pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/DataManagementSystem/Test_Da
 #-------------------------------------------------------------------------------#
 # MultiVO File Catalog tests are configured to use MultiVOFileCatalog module with a separate DB.
 # FileMetadata and DirectoryMetadata options are set to MultiVOFileMetadata and  MultiVODirectoryMetadata
-# respectively. The default FileCatalog Master option is set to False before running the tests.
+# respectively.
 
-# need the dirac_admin user, so we can make a change in the CS
-echo -e "*** $(date -u)  Getting a dirac_admin user in order to modify the configuration \n" |& tee -a clientTestOutputs.txt
-if ! dirac-proxy-init -g dirac_admin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" --rfc; then
-  echo 'ERROR: dirac-proxy-init for dirac_admin failed' >&2
-  exit 1
-fi
-python "${CLIENTINSTALLDIR}/DIRAC/tests/Jenkins/dirac-cfg-update-filecatalog.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-# now back to a normal user
+# normal user proxy
 dirac-proxy-init -g jenkins_user -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
 echo -e "*** $(date -u) **** MultiVO User Metadata TESTS ****\n"
 python -m pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/DataManagementSystem/Test_UserMetadata.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))

@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: FileCatalogProxyClient.py
 ########################################################################
 """ File catalog client for the File Catalog proxy service """
