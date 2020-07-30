@@ -67,8 +67,20 @@ class FailoverTransfer(object):
                               destinationSEList,
                               fileMetaDict,
                               fileCatalog=None,
-                              masterCatalogOnly=False):
+                              masterCatalogOnly=False,
+                              retryUpload=False):
     """Performs the transfer and register operation with failover.
+
+      :param filename: of absolute no use except for printing logs.
+      :param localPath: path to the file locally
+      :param lfn: LFN
+      :param destinationSEList: list of possible destination for the file.
+        Loop over it until one succeeds or we reach the end of it.
+      :param fileMetaDict: file metadata for registration
+      :param fileCatalog: list of catalogs to use (see :py:class:`DIRAC.DataManagementSystem.Client.DataManager`)
+      :param masterCatalogOnly: use only master catalog (see :py:class:`DIRAC.DataManagementSystem.Client.DataManager`)
+      :param retryUpload: if set to True, and there is only one output SE in destinationSEList, retry several times.
+
     """
     errorList = []
     fileGUID = fileMetaDict.get("GUID", None)
@@ -81,6 +93,8 @@ class FailoverTransfer(object):
       # and we would not make any failover request. So the only way is to wait a bit
       # This keeps the WN busy for a while, but at least we do not lose all the processing
       # time we just spent
+      # This same retry path is taken if we only have one possible stage out SE
+      # and retryUpload is True
       for sleeptime in (10, 60, 300, 600):
         self.log.info("Attempting dm.putAndRegister",
                       "('%s','%s','%s',guid='%s',catalog='%s', checksum = '%s')" %
@@ -93,13 +107,18 @@ class FailoverTransfer(object):
                                                                 se,
                                                                 guid=fileGUID,
                                                                 checksum=fileChecksum)
-        self.log.verbose(result)
-
-        # If the FC is unavailable, we stay in the loop and retry
-        # otherwise we continue without retrying
-        if result['OK'] or not cmpError(result, EFCERR):
+        # retry on any failure
+        if result['OK']:
+          self.log.verbose(result)
           break
-        self.log.error("transferAndRegisterFile: FC unavailable, retry")
+        elif cmpError(result, EFCERR):
+          self.log.debug("transferAndRegisterFile: FC unavailable, retry")
+        elif retryUpload and len(destinationSEList) == 1:
+          self.log.debug(
+              "transferAndRegisterFile: Failed uploading to the only SE, retry")
+        else:
+          self.log.debug('dm.putAndRegister failed, but move to the next')
+          break
         time.sleep(sleeptime)
 
       if not result['OK']:

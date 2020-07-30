@@ -1,10 +1,14 @@
-########################################################################
-# File :   JobWrapper.py
-# Author : Stuart Paterson
-########################################################################
-""" The Job Wrapper Class is instantiated with arguments tailored for running
-    a particular job. The JobWrapper starts a thread for execution of the job
-    and a Watchdog Agent that can monitor its progress.
+"""
+The Job Wrapper Class is instantiated with arguments tailored for running
+a particular job. The JobWrapper starts a thread for execution of the job
+and a Watchdog Agent that can monitor its progress.
+
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN JobWrapper
+  :end-before: ##END
+  :caption: JobWrapper options
+
 """
 
 from __future__ import print_function
@@ -124,6 +128,7 @@ class JobWrapper(object):
     self.masterCatalogOnlyFlag = gConfig.getValue(self.section + '/MasterCatalogOnlyFlag', True)
     self.defaultFailoverSE = resolveSEGroup(gConfig.getValue('/Resources/StorageElementGroups/Tier1-Failover', []))
     self.defaultOutputPath = ''
+    self.retryUpload = gConfig.getValue(self.section + '/RetryUpload', False)
     self.dm = DataManager()
     self.fc = FileCatalog()
     self.log.verbose('===========================================================================')
@@ -922,7 +927,8 @@ class JobWrapper(object):
                                                              destinationSEList=outputSEList,
                                                              fileMetaDict=fileMetaDict,
                                                              fileCatalog=self.defaultCatalog,
-                                                             masterCatalogOnly=self.masterCatalogOnlyFlag)
+                                                             masterCatalogOnly=self.masterCatalogOnlyFlag,
+                                                             retryUpload=self.retryUpload)
       if upload['OK']:
         self.log.info('"%s" successfully uploaded to "%s" as "LFN:%s"' % (localfile,
                                                                           upload['Value']['uploadedSE'],
