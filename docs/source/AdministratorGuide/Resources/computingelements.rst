@@ -41,7 +41,7 @@ Computing Elements
 -------------------
 
 DIRAC can use different computing resources via specialized clients called *ComputingElements*. 
-Each computing resource is accessed using an appropriate *ComputingElement* class derived from a common
+Each computing resource is accessed using an appropriate :mod:`~DIRAC.Resources.Computing` class derived from a common
 base class. 
 
 The *ComputingElements* should be properly described to be useful. The configuration
