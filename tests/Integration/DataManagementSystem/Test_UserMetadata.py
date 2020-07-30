@@ -15,7 +15,7 @@ parseCommandLine()
 
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC import gConfig
 
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -58,7 +58,7 @@ class TestUserMetadataBasicTestCase(unittest.TestCase):
     random_dd(self.fname, 10)
     self.diracSE = 'SE-1'
     try:
-      self.fc = FileCatalog(['MultiVOFileCatalog'])
+      self.fc = FileCatalogClient("DataManagement/MultiVOFileCatalog")
     except Exception:
       self.fail(" FileCatalog(['MultiVOFileCatalog']) raised Exception unexpectedly!\n" + traceback.format_exc())
       return
@@ -85,24 +85,17 @@ class testMetadata(TestUserMetadataBasicTestCase):
     fileMetadataOption = gConfig.getOption('Systems/DataManagement/Production/Services/MultiVOFileCatalog/FileMetadata')
     dirMetadataOption = gConfig.getOption(
         'Systems/DataManagement/Production/Services/MultiVOFileCatalog/DirectoryMetadata')
-    masterOption = gConfig.getOption('Resources/FileCatalogs/MultiVOFileCatalog/Master')
     self.assertTrue(fileMetadataOption['OK'])
     self.assertEqual(fileMetadataOption['Value'], 'MultiVOFileMetadata')
     self.assertTrue(dirMetadataOption['OK'])
     self.assertEqual(dirMetadataOption['Value'], 'MultiVODirectoryMetadata')
-    self.assertTrue(masterOption['OK'])
-    self.assertEqual(masterOption['Value'], 'True')
-    # the default catalog is not a master anymore...
-    dmasterOption = gConfig.getOption('Resources/FileCatalogs/FileCatalog/Master')
-    self.assertTrue(dmasterOption['OK'])
-    self.assertEqual(dmasterOption['Value'], 'False')
 
   def test_fileCatalogClient(self):
     try:
       #  MultiVOFileCatalog instantiation test only
-      fc = FileCatalog(['MultiVOFileCatalog'])
+      fc = FileCatalogClient("DataManagement/MultiVOFileCatalog")
     except Exception:
-      self.fail(" FileCatalog(['MultiVOFileCatalog']) raised ExceptionType unexpectedly!")
+      self.fail(" FileCatalogClient('DataManagement/MultiVOFileCatalog') raised ExceptionType unexpectedly!")
 
   def test_isFileAdded(self):
     self.assertTrue(self.fileadded['OK'])

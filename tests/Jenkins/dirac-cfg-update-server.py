@@ -115,7 +115,6 @@ if not res['OK']:
 csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/CatalogType', 'FileCatalog')
 csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/AccessType', 'Read-Write')
 csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/Status', 'Active')
-csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/Master', 'True')
 csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/CatalogURL', 'DataManagement/MultiVOFileCatalog')
 
 # Now setting up the following option:
@@ -271,9 +270,6 @@ csAPI.setOption('Resources/StorageElements/S3-INDIRECT/S3/Protocol', 's3')
 csAPI.setOption('Resources/StorageElements/S3-INDIRECT/S3/Path', 'myFirstBucket')
 csAPI.setOption('Resources/StorageElements/S3-INDIRECT/S3/Access', 'remote')
 csAPI.setOption('Resources/StorageElements/S3-INDIRECT/S3/SecureConnection', 'False')
-
-
-
 
 
 # Now setting up the following option:
@@ -451,7 +447,6 @@ if not res['OK']:
   print(res['Message'])
   exit(1)
 csAPI.setOption('Operations/Defaults/DataManagement/RegistrationProtocols', 'srm,dips,s3')
-
 
 
 # Now setting the Registry section
