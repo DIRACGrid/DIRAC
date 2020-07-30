@@ -1,4 +1,4 @@
-[v7r2-pre11]
+[v7r2-pre12]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -13,6 +13,7 @@ CHANGE: (#4630) Create symlinks to bashrc when using versions directory structur
 NEW: (#4497) add histogram support to the Graph package.
 NEW: (#4497) adapt Graph package to python3
 CHANGE: (#4581) Replace DIRAC.Core.Utilities.CFG with independent diraccfg module
+CHANGE: (#4671) Add an example for DIRAC_NO_CFG to bashrc.
 
 *Accounting
 NEW: (#4537) Add histogram of CPU usage to Job accounting
