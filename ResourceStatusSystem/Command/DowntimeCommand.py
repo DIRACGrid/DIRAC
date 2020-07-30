@@ -230,13 +230,13 @@ class DowntimeCommand(Command):
     uniformResult = []
 
     # Humanize the results into a dictionary, not the most optimal, but readable
-    for downtime, downDic in results.iteritems():
+    for downtime, downDic in results.items():  # can be an iterator
 
       dt = {}
 
-      dt['Name'] = downDic.get('HOSTNAME', downDic.get('SITENAME'))
+      dt['Name'] = downDic.get('URL', downDic.get('HOSTNAME', downDic.get('SITENAME')))
       if not dt['Name']:
-        return S_ERROR("SITENAME and HOSTNAME are missing from downtime dictionary")
+        return S_ERROR("URL, SITENAME and HOSTNAME are missing from downtime dictionary")
 
       dt['gOCDBServiceType'] = downDic.get('SERVICE_TYPE')
 
