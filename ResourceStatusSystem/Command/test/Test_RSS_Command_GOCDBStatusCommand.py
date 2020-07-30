@@ -6,6 +6,7 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 import mock
+import pytest
 
 from DIRAC import gLogger, S_OK
 from DIRAC.ResourceStatusSystem.Command.DowntimeCommand import DowntimeCommand
@@ -241,41 +242,49 @@ def test_doCache(mocker):
   assert res['Value']['DowntimeID'] == '2 aRealName'
 
 
-def test_doNew():
+@pytest.mark.parametrize("downtimeCommandArgs, gocDBClientRV, expectedRes, expectedValue", [
+    ({'element': 'X'}, None, False, None),
+    ({'element': 'Site', "name": 'aSite', 'elementType': 'Z'}, S_OK(), True, None),
+    ({'element': 'Resource', 'name': '669 devel.edu.mk', 'elementType': 'Z'},
+     {'OK': True,
+      'Value': {'669 devel.edu.mk': {
+                'HOSTED_BY': 'MK-01-UKIM_II',
+                'DESCRIPTION': 'Problem with SE server',
+                'SEVERITY': 'OUTAGE',
+                'HOSTNAME': 'devel.edu.mk',
+                'GOCDB_PORTAL_URL': 'myURL',
+                'FORMATED_END_DATE': '2011-07-20 00:00',
+                'FORMATED_START_DATE': '2011-07-16 00:00'
+                }}},
+     True,
+     None),
+    ({'element': 'Resource', 'name': '669 devel.edu.mk', 'elementType': 'Z'},
+     {'OK': True,
+      'Value': {'669 devel.edu.mk': {
+                'HOSTED_BY': 'MK-01-UKIM_II',
+                'DESCRIPTION': 'Problem with SE server',
+                'SEVERITY': 'OUTAGE',
+                'HOSTNAME': 'devel.edu.mk',
+                'URL': 'anotherDevel.edu.mk',
+                'GOCDB_PORTAL_URL': 'myURL',
+                'FORMATED_END_DATE': '2011-07-20 00:00',
+                'FORMATED_START_DATE': '2011-07-16 00:00'
+                }}},
+     True,
+     None)
+])
+def test_doNew(downtimeCommandArgs, gocDBClientRV, expectedRes, expectedValue):
   """ tests the doNew method
   """
 
-  args = {'element': 'X'}
-  command = DowntimeCommand(args, {'GOCDBClient': mock_GOCDBClient})
+  mock_GOCDBClient.getStatus.return_value = gocDBClientRV
+
+  command = DowntimeCommand(downtimeCommandArgs, {'GOCDBClient': mock_GOCDBClient,
+                                                  'ResourceManagementClient': mock_RMClient})
   res = command.doNew()
-  assert res['OK'] is False
-
-  getGOCSiteNameMock = mock.MagicMock()
-  getGOCSiteNameMock.return_value = {'OK': True, 'Value': 'aSite'}
-
-  mock_GOCDBClient.getStatus.return_value = S_OK()
-  command = DowntimeCommand({'element': 'Site', "name": 'aSite', 'elementType': 'Z'},
-                            {'GOCDBClient': mock_GOCDBClient})
-  res = command.doNew()
-  assert res['OK'] is True
-  assert res['Value'] is None
-
-  mock_GOCDBClient.getStatus.return_value = {'OK': True,
-                                             'Value': {'669 devel.edu.mk': {
-                                                       'HOSTED_BY': 'MK-01-UKIM_II',
-                                                       'DESCRIPTION': 'Problem with SE server',
-                                                       'SEVERITY': 'OUTAGE',
-                                                       'HOSTNAME': 'devel.edu.mk',
-                                                       'GOCDB_PORTAL_URL': 'myURL',
-                                                       'FORMATED_END_DATE': '2011-07-20 00:00',
-                                                       'FORMATED_START_DATE': '2011-07-16 00:00'
-                                                       }}}
-
-  command = DowntimeCommand({'element': 'Resource', 'name': '669 devel.edu.mk', 'elementType': 'Z'},
-                            {'GOCDBClient': mock_GOCDBClient,
-                             'ResourceManagementClient': mock_RMClient})
-  res = command.doNew()
-  assert res['OK'] is True
+  assert res['OK'] is expectedRes
+  if res['OK']:
+    assert res['Value'] == expectedValue
 
 
 def test_doMaster(mocker):

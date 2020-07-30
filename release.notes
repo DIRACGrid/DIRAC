@@ -199,6 +199,24 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p30]
+
+*Core
+FIX: (#4698) Glue2: Fix crash in bdii2CSAgent, when ARC CEs do not have an ExecutionEnvironment
+
+*WorkloadManagementSystem
+FIX: (#4701) Ensure JobParameters.getNumberOfProcessors always returns an integer
+
+*RSS
+NEW: (#4691) GOCDB - interpret also downtimes with URLs different from the hostname
+
+*Resources
+CHANGE: (#4666) ARCComputingElement - enable GLUE2 queries on ARC CEs, which is now strongly recommended
+        as GLUE1 publishing is stopped in ARC6.
+
+*docs
+NEW: (#4684) Added documentation for HTCondor/use full proxy length setting.
+
 [v7r0p29]
 
 *Core

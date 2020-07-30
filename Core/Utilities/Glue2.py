@@ -135,7 +135,7 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
                 'GlueHostOperatingSystemRelease': '',
                 'GlueHostArchitecturePlatformType': 'x86_64',
                 'GlueHostBenchmarkSI00': '2500',  # needed for the queue to be used by the sitedirector
-                'MANAGER': '',
+                'MANAGER': 'manager:unknownBatchSystem',  # doesn't matter what this is for ARC, is eventually discarded
                 }]
   try:
     # take the CE with the lowest MainMemory
@@ -170,7 +170,7 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
 
   # ARC CEs do not have endpoints, we have to try something else to get the information about the queue etc.
   if not shareEndpoints and shareInfoDict['GLUE2ShareID'].startswith('urn:ogf'):
-    exeInfo = dict(resExeInfo['Value'])  # silence pylint about tuples
+    exeInfo = dict(exeInfo[0])  # silence pylint about tuples
     ceType = 'ARC'
     managerName = exeInfo.pop('MANAGER', '').split(' ', 1)[0].rsplit(':', 1)[1]
     managerName = managerName.capitalize() if managerName == 'condor' else managerName

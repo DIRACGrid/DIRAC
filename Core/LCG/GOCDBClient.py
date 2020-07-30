@@ -9,11 +9,11 @@ __RCSID__ = "$Id$"
 import six
 import time
 import socket
+import requests
+import six
 
 from datetime import datetime, timedelta
 from xml.dom import minidom
-
-import requests
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.Locations import getCAsLocation
@@ -72,7 +72,7 @@ class GOCDBClient(object):
 
     :param str granularity: should be a ValidRes, e.g. "Resource"
     :param name: should be the name(s) of the ValidRes.
-      Could be a list of basestring or simply one basestring.
+      Could be a list of strings or simply one string.
       If not given, fetches the complete list.
 
     :param startDate: if not given, takes only ongoing DownTimes.
@@ -87,27 +87,28 @@ class GOCDBClient(object):
       .. code-block:: python
 
         {'OK': True,
-         'Value': {'92569G0 lhcbsrm-kit.gridka.de': {'DESCRIPTION': 'Annual site downtime for various major tasks i...',
-                                                     'FORMATED_END_DATE': '2014-05-27 15:21',
-                                                     'FORMATED_START_DATE': '2014-05-26 04:00',
-                                                     'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
-                                                     'HOSTED_BY': 'FZK-LCG2',
-                                                     'HOSTNAME': 'lhcbsrm-kit.gridka.de',
-                                                     'SERVICE_TYPE': 'SRM.nearline',
-                                                     'SEVERITY': 'OUTAGE'},
-                   '99873G0 srm.pic.esSRM': {'HOSTED_BY': 'pic',
-                                             'ENDPOINT': 'srm.pic.esSRM',
-                                             'SEVERITY': 'OUTAGE',
-                                             'HOSTNAME': 'srm.pic.es',
-                                             'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=21303',
-                                             'FORMATED_START_DATE': '2016-09-14 06:00',
-                                             'SERVICE_TYPE': 'SRM',
-                                             'FORMATED_END_DATE': '2016-09-14 15:00',
-                                             'DESCRIPTION': 'Outage declared due to network and dCache upgrades'}
+         'Value': {'92569G0 lhcbsrm-kit.gridka.de': {
+                       'DESCRIPTION': 'Annual site downtime for various major tasks i...',
+                       'FORMATED_END_DATE': '2014-05-27 15:21',
+                       'FORMATED_START_DATE': '2014-05-26 04:00',
+                       'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
+                       'HOSTED_BY': 'FZK-LCG2',
+                       'HOSTNAME': 'lhcbsrm-kit.gridka.de',
+                       'SERVICE_TYPE': 'SRM.nearline',
+                       'SEVERITY': 'OUTAGE'},
+                   '99873G0 srm.pic.esSRM': {
+                        'HOSTED_BY': 'pic',
+                        'ENDPOINT': 'srm.pic.esSRM',
+                        'SEVERITY': 'OUTAGE',
+                        'HOSTNAME': 'srm.pic.es',
+                        'URL': 'srm.pic.es',
+                        'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=21303',
+                        'FORMATED_START_DATE': '2016-09-14 06:00',
+                        'SERVICE_TYPE': 'SRM',
+                        'FORMATED_END_DATE': '2016-09-14 15:00',
+                        'DESCRIPTION': 'Outage declared due to network and dCache upgrades'}
                    }
           }
-
-
     """
 
     startDate_STR = None
@@ -161,12 +162,6 @@ class GOCDBClient(object):
 
       res = self._downTimeXMLParsing(resXML, granularity, name, startDateMax)
 
-    # Common: build URL
-#    if res is None or res == []:
-#      return S_OK(None)
-#
-#    self.buildURL(res)
-
     if res == {}:
       res = None
 
@@ -182,7 +177,7 @@ class GOCDBClient(object):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    assert isinstance(granularity, basestring) and isinstance(entity, six.string_types)
+    assert isinstance(granularity, six.string_types) and isinstance(entity, six.string_types)
     try:
       serviceXML = self._getServiceEndpointCurlDownload(granularity, entity)
       return S_OK(self._serviceEndpointXMLParsing(serviceXML))
@@ -302,7 +297,7 @@ class GOCDBClient(object):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    if not isinstance(granularity, basestring) or not isinstance(entity, six.string_types):
+    if not isinstance(granularity, six.string_types) or not isinstance(entity, six.string_types):
       raise ValueError("Arguments must be strings.")
 
     # GOCDB-PI query
@@ -347,16 +342,24 @@ class GOCDBClient(object):
                                                  'HOSTED_BY', 'FORMATED_START_DATE',
                                                  'FORMATED_END_DATE', 'DESCRIPTION',
                                                  'GOCDB_PORTAL_URL', 'SERVICE_TYPE'])
+      try:
+        affectedEndpoints = dtElement.getElementsByTagName('AFFECTED_ENDPOINTS')
+        urls = []
+        for epElement in affectedEndpoints[0].childNodes:
+          urls.append(_parseSingleElement(epElement, ['URL'])['URL'])
+      except IndexError:
+        pass
 
       try:
         dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['ENDPOINT']] = elements
+        dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['ENDPOINT']]['URL'] = urls[0]
       except Exception:
         try:
           dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['HOSTNAME']] = elements
         except Exception:
           dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + ' ' + elements['SITENAME']] = elements
 
-    for dtID in dtDict.keys():  # pylint: disable=consider-iterating-dictionary
+    for dtID in list(dtDict):
       if siteOrRes in ('Site', 'Sites'):
         if 'SITENAME' not in dtDict[dtID]:
           dtDict.pop(dtID)
@@ -378,7 +381,7 @@ class GOCDBClient(object):
             dtDict.pop(dtID)
 
     if startDateMax is not None:
-      for dtID in dtDict.keys():  # pylint: disable=consider-iterating-dictionary
+      for dtID in list(dtDict):
         startDateMaxFromKeys = datetime(*time.strptime(dtDict[dtID]['FORMATED_START_DATE'],
                                                        "%Y-%m-%d %H:%M")[0:5])
         if startDateMaxFromKeys > startDateMax:
