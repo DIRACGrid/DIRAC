@@ -482,6 +482,13 @@ class JobAgent(AgentModule):
     logLevel = self.am_getOption('DefaultLogLevel', 'INFO')
     defaultWrapperLocation = self.am_getOption('JobWrapperTemplate',
                                                'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py')
+
+    # Add the number of requested processors to the job environment
+    if 'ExecutionEnvironment' in jobParams:
+      if isinstance(jobParams['ExecutionEnvironment'], basestring):
+        jobParams['ExecutionEnvironment'] = [jobParams['ExecutionEnvironment']]
+    jobParams.setdefault('ExecutionEnvironment', []).append('DIRAC_JOB_PROCESSORS=%d' % processors)
+
     jobDesc = {"jobID": jobID,
                "jobParams": jobParams,
                "resourceParams": resourceParams,
