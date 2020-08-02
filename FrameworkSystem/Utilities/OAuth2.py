@@ -17,6 +17,7 @@ import re
 import random
 import string
 import pprint
+import urllib2 
 # from oauthlib.oauth2 import WebApplicationClient
 
 from requests import Session, exceptions
@@ -81,7 +82,7 @@ class OAuth2(Session):
       raise Exception('client_id parameter is absent.')
 
     # Create list of all possible scopes
-    self.parameters['scope'] = scope or __optns.get('scope') or []
+    self.parameters['scope'] = scope or __optns.get('scope', [])
     if not isinstance(self.parameters['scope'], list):
       self.parameters['scope'] = self.parameters['scope'].split(',')
 
@@ -93,7 +94,7 @@ class OAuth2(Session):
     self.parameters['proxy_endpoint'] = proxy_endpoint or __optns.get('proxy_endpoint')
     self.parameters['scopes_supported'] = scopes_supported or __optns.get('scopes_supported')
     self.parameters['userinfo_endpoint'] = userinfo_endpoint or __optns.get('userinfo_endpoint')
-    self.parameters['max_proxylifetime'] = max_proxylifetime or __optns.get('max_proxylifetime') or 86400
+    self.parameters['max_proxylifetime'] = max_proxylifetime or __optns.get('max_proxylifetime', 86400)
     self.parameters['revocation_endpoint'] = revocation_endpoint or __optns.get('revocation_endpoint')
     self.parameters['registration_endpoint'] = registration_endpoint or __optns.get('registration_endpoint')
     self.parameters['authorization_endpoint'] = authorization_endpoint or __optns.get('authorization_endpoint')
@@ -115,20 +116,21 @@ class OAuth2(Session):
     kwargs['response_type'] = 'code'
     kwargs['state'] = state
     kwargs['client_id'] = self.parameters['client_id']
-    kwargs['redirect_uri'] = kwargs.get('redirect_uri') or self.parameters['redirect_uri']
-    kwargs['scope'] = kwargs.get('scope') or self.parameters['scope'] or self.parameters['scopes_supported']
+    kwargs['redirect_uri'] = kwargs.get('redirect_uri', self.parameters['redirect_uri'])
+    kwargs['scope'] = kwargs.get('scope', self.parameters['scope'] or self.parameters['scopes_supported'])
     if self.parameters['prompt']:
       kwargs['prompt'] = self.parameters['prompt']
 
     # Add IdP authorization endpoint
     self.log.info(kwargs['state'], 'session, generate URL for authetication.')
-    url = (kwargs.get('authorization_endpoint') or self.parameters['authorization_endpoint']) + '?access_type=offline'
+    url = kwargs.get('authorization_endpoint', self.parameters['authorization_endpoint']) + '?access_type=offline'
     if not url:
       return S_ERROR('No found authorization endpoint.')
 
     # Add arguments
     for key, value in kwargs.items():
-      url += '&%s=%s' % (key, '+'.join(list(set(v.strip() for v in value))) if isinstance(value, list) else value)
+      val = '+'.join(list(set(v.strip() for v in value))) if isinstance(value, list) else value
+      url += '&%s=%s' % (urllib2.quote(key), urllib2.quote(val, '+'))
     return S_OK(url)
 
   def parseAuthResponse(self, code):
