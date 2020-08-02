@@ -37,7 +37,7 @@ class ProxyManagerData(object):
   # #       { <user DN>: {
   # #           Suspended: bool,
   # #           VOMSRoles: [<all roles>],
-  # #           ActuelRoles: [<active roles>],
+  # #           ActiveRoles: [<active roles>],
   # #           SuspendedRoles: [<suspended roles>]
   # #         }
   # #       }
@@ -45,6 +45,7 @@ class ProxyManagerData(object):
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__(self):
+    self.rpc = None
     self.__usersCache = DictCache()
     self.__VOMSesUsersCache = DictCache()
 
@@ -96,8 +97,10 @@ class ProxyManagerData(object):
   def __getRPC(self):
     """ Get RPC
     """
-    from DIRAC.Core.DISET.RPCClient import RPCClient
-    return RPCClient("Framework/ProxyManager", timeout=120)
+    if not self.rpc:
+      from DIRAC.Core.Base.Client import Client
+      self.rpc = Client()._getRPC(url="Framework/ProxyManager", timeout=120)
+    return self.rpc
 
   def __refreshUserCache(self, validSeconds=0):
     """ Refresh user cache
@@ -178,13 +181,13 @@ class ProxyManagerData(object):
         if dn not in res[vo]['Value']:
           res[vo]['Value'][dn] = {'Suspended': data['suspended'],
                                   'VOMSRoles': [],
-                                  'ActuelRoles': [],
+                                  'ActiveRoles': [],
                                   'SuspendedRoles': []}
         res[vo]['Value'][dn]['VOMSRoles'] = list(set(res[vo]['Value'][dn]['VOMSRoles'] + data['Roles']))
         if data['certSuspended'] or data['suspended']:
           res[vo]['Value'][dn]['SuspendedRoles'] = list(set(res[vo]['Value'][dn]['SuspendedRoles'] + data['Roles']))
         else:
-          res[vo]['Value'][dn]['ActuelRoles'] = list(set(res[vo]['Value'][dn]['ActuelRoles'] + data['Roles']))
+          res[vo]['Value'][dn]['ActiveRoles'] = list(set(res[vo]['Value'][dn]['ActiveRoles'] + data['Roles']))
     return S_OK(res)
 
   def userHasProxy(self, userDN, group, validSeconds=0):

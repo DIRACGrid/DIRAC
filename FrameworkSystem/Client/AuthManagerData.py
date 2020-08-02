@@ -56,6 +56,9 @@ class AuthManagerData(object):
 
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
+  def __init__(self):
+    self.rpc = None
+
   @gCacheProfiles
   def getProfiles(self, userID=None):
     """ Get cache information
@@ -110,6 +113,14 @@ class AuthManagerData(object):
       self.__cahceIDs.add(info['ID'], time, list(set(idSessions + [session])))
       self.__cacheSessions.add(session, time, value=info)
 
+  def __getRPC(self):
+    """ Get RPC
+    """
+    if not self.rpc:
+      from DIRAC.Core.Base.Client import Client
+      self.rpc = Client()._getRPC(url="Framework/AuthManager", timeout=10)
+    return self.rpc
+
   def resfreshSessions(self, session=None, userID=None):
     """ Refresh session cache from service
 
@@ -121,8 +132,7 @@ class AuthManagerData(object):
     servCrash = self.__service.get('crash')
     if servCrash:
       return servCrash
-    from DIRAC.Core.DISET.RPCClient import RPCClient
-    result = RPCClient('Framework/AuthManager', timeout=10).getSessionsInfo(session, userID)
+    result = self.__getRPC().getSessionsInfo(session, userID)
     # If the AuthManager service is down client will ignore it 1 minute
     if result.get('Errno', 0) == 1112:
       self.__service.add('crash', 60, value=result)
@@ -140,8 +150,7 @@ class AuthManagerData(object):
     servCrash = self.__service.get('crash')
     if servCrash:
       return servCrash
-    from DIRAC.Core.DISET.RPCClient import RPCClient
-    result = RPCClient('Framework/AuthManager', timeout=10).getIdProfiles(userID)
+    result = self.__getRPC().getIdProfiles(userID)
     # If the AuthManager service is down client will ignore it 1 minute
     if result.get('Errno', 0) == 1112:
       self.__service.add('crash', 60, value=result)
