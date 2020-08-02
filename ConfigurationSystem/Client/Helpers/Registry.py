@@ -8,6 +8,7 @@ import errno
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
@@ -58,8 +59,12 @@ def getUsernameForDN(dn, usersList=None):
 
   return S_ERROR("No username found for dn %s" % dn)
 
+@deprecated("Use getDNsForUsername or getDNsForUsernameFromCS if need information only from CS")
+def getDNForUsername(username):
+  dnList = getDNsForUsernameFromSC(username)
+  return S_OK(dnList) if dnList else S_ERROR("No DN found for user %s" % username)
 
-def getDNsForUsernameFromSC(username):
+def getDNsForUsernameFromCS(username):
   """ Find DNs for DIRAC user from CS
 
       :param str username: DIRAC user
@@ -124,9 +129,9 @@ def getGroupsForDN(dn, groupsList=None):
       else:
         # If it's not VOMS VO or cannot get information from VOMS
         groups.append(group)
-
+  groups = list(set(groups))
   groups.sort()
-  return S_OK(list(set(groups))) if groups else S_ERROR('No groups found for %s' % dn)
+  return S_OK(groups) if groups else S_ERROR('No groups found for %s' % dn)
 
 
 def __getGroupsWithAttr(attrName, value):
@@ -167,9 +172,9 @@ def getGroupsForUser(username, groupsList=None):
   for group in groupsList:
     if username in getGroupOption(group, 'Users', []):
       groups.append(group)
-
+  groups = list(set(groups))
   groups.sort()
-  return S_OK(list(set(groups))) if groups else S_ERROR('No groups found for %s user' % username)
+  return S_OK(groups) if groups else S_ERROR('No groups found for %s user' % username)
 
 
 def getGroupsForVO(vo):
@@ -279,9 +284,9 @@ def getUsersInGroup(group, defaultValue=None):
 
       :return: list
   """
-  users = getGroupOption(group, 'Users', [])
+  users = list(set(getGroupOption(group, 'Users', [])))
   users.sort()
-  return list(set(users)) or [] if defaultValue is None else defaultValue
+  return users or [] if defaultValue is None else defaultValue
 
 
 def getUsersInVO(vo, defaultValue=None):
@@ -297,9 +302,9 @@ def getUsersInVO(vo, defaultValue=None):
   if result['OK'] and result['Value']:
     for group in result['Value']:
       users += getUsersInGroup(group)
-
+  users = list(set(users))
   users.sort()
-  return list(set(users)) or [] if defaultValue is None else defaultValue
+  return users or [] if defaultValue is None else defaultValue
 
 
 def getDNsInGroup(group, checkStatus=False):
@@ -335,10 +340,9 @@ def getDNsInGroup(group, checkStatus=False):
       voData = vomsData[vo]['Value']
       role = getGroupOption(group, 'VOMSRole')
       for dn in userDNs:
-        if dn in voData:
-          if not checkStatus or not voData[dn]['Suspended']:
-            if not role or role in voData[dn]['ActuelRoles' if checkStatus else 'VOMSRoles']:
-              DNs.append(dn)
+        if dn in voData and (not checkStatus or not voData[dn]['Suspended']):
+          if not role or role in voData[dn]['ActiveRoles' if checkStatus else 'VOMSRoles']:
+            DNs.append(dn)
     else:
       DNs += userDNs
 
@@ -752,7 +756,7 @@ def getDNsForUsername(username):
 
       :return: S_OK(list)/S_ERROR() -- contain DNs
   """
-  userDNs = getDNsForUsernameFromSC(username)
+  userDNs = getDNsForUsernameFromCS(username)
   for uid in getIDsForUsername(username):
     result = gAuthManagerData.getDNsForID(uid)
     if result['OK']:
@@ -805,10 +809,9 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
       voData = vomsData[vo]['Value']
       role = getGroupOption(group, 'VOMSRole')
       for dn in userDNs:
-        if dn in voData:
-          if not checkStatus or not voData[dn]['Suspended']:
-            if not role or role in voData[dn]['ActuelRoles' if checkStatus else 'VOMSRoles']:
-              DNs.append(dn)
+        if dn in voData and (not checkStatus or not voData[dn]['Suspended']):
+          if not role or role in voData[dn]['ActiveRoles' if checkStatus else 'VOMSRoles']:
+            DNs.append(dn)
     else:
       DNs += userDNs
   else:
