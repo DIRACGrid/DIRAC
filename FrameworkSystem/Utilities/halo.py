@@ -30,16 +30,16 @@ def coloredFrame(text, color=None, onColor=None, attrs=['bold']):
   """ Colorize text, while stripping nested ANSI color sequences.
       Source: https://github.com/hfeeki/termcolor/blob/master/termcolor.py
 
-      :param basestring text: text
-      :param basestring color: text colors -> red, green, yellow, blue, magenta, cyan, white.
-      :param basestring onColor: text highlights -> on_red, on_green, on_yellow, on_blue, on_magenta, on_cyan, on_white.
+      :param str text: text
+      :param str color: text colors -> red, green, yellow, blue, magenta, cyan, white.
+      :param str onColor: text highlights -> on_red, on_green, on_yellow, on_blue, on_magenta, on_cyan, on_white.
       :param list attrs: attributes -> bold, dark, underline, blink, reverse, concealed.
 
       --
           coloredFrame('Hello, World!', 'red', 'on_grey', ['blue', 'blink'])
           coloredFrame('Hello, World!', 'green')
 
-      :return: basestring
+      :return: str
   """
   ATTRIBUTES = dict(list(zip(['bold', 'dark', '', 'underline', 'blink', '', 'reverse', 'concealed'],
                              list(range(1, 9)))))
@@ -143,7 +143,7 @@ class PreWrapp(object):
 
 
 def resetAll():
-  if PreWrapp is not None:    # Issue #74: objects might become None at exit
+  if PreWrapp is not None:  # Issue #74: objects might become None at exit
     PreWrapp(sys.stdout).resetAll()
 
 
@@ -163,7 +163,7 @@ def isSupported():
 def getEnvironment():
   """ Get the environment in which halo is running
 
-      :return: basestring -- Environment name
+      :return: str -- Environment name
   """
   try:
     from IPython import get_ipython
@@ -184,7 +184,7 @@ def getEnvironment():
 def isTextType(text):
   """ Check if given parameter is a string or not
 
-      :param basestring text: Parameter to be checked for text type
+      :param str text: Parameter to be checked for text type
 
       :return: boolen -- Whether parameter is a string or not
   """
@@ -194,9 +194,9 @@ def isTextType(text):
 def decodeUTF8Text(text):
   """ Decode the text from utf-8 format
 
-      :param basestring text: String to be decoded
+      :param str text: String to be decoded
 
-      :return: basestring -- Decoded string
+      :return: str -- Decoded string
   """
   try:
     return codecs.decode(text, 'utf-8')
@@ -207,9 +207,9 @@ def decodeUTF8Text(text):
 def encodeUTF8Text(text):
   """ Encodes the text to utf-8 format
 
-      :param basestring text: String to be encoded
+      :param str text: String to be encoded
 
-      :return: basestring -- Encoded string
+      :return: str -- Encoded string
   """
   try:
     return codecs.encode(text, 'utf-8', 'ignore')
@@ -248,13 +248,13 @@ class Halo(object):
                animation=None, placement='left', interval=-1, enabled=True, stream=sys.stdout, result='succeed'):
     """ Constructs the Halo object.
 
-        :param basestring text: Text to display.
-        :param basestring color: Color of the text.
-        :param basestring textColor: Color of the text to display.
-        :param basestring,dict spinner: String or dictionary representing spinner.
+        :param str text: Text to display.
+        :param str color: Color of the text.
+        :param str textColor: Color of the text to display.
+        :param str,dict spinner: String or dictionary representing spinner.
         :param basesrting animation: Animation to apply if text is too large. Can be one of `bounce`, `marquee`.
                Defaults to ellipses.
-        :param basestring placement: Side of the text to place the spinner on. Can be `left` or `right`.
+        :param str placement: Side of the text to place the spinner on. Can be `left` or `right`.
                Defaults to `left`.
         :param int interval: Interval between each frame of the spinner in milliseconds.
         :param boolean enabled: Spinner enabled or not.
@@ -333,7 +333,7 @@ class Halo(object):
   def spinner(self, spinner=None):
     """ Setter for spinner property.
 
-        :param dict,basestring spinner: Defines the spinner value with frame and interval
+        :param dict,str spinner: Defines the spinner value with frame and interval
     """
     self._spinner = {"interval": 80, "frames": ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]}
     self._frameIndex = 0
@@ -343,7 +343,7 @@ class Halo(object):
   def text(self):
     """ Getter for text property.
 
-        :return: basestring -- text value
+        :return: str -- text value
     """
     return self._text['original']
 
@@ -351,7 +351,7 @@ class Halo(object):
   def text(self, text):
     """ Setter for text property.
 
-        :param basestring text: Defines the text value for spinner
+        :param str text: Defines the text value for spinner
     """
     self._text = self._getText(text)
 
@@ -359,7 +359,7 @@ class Halo(object):
   def result(self):
     """ Getter for result property.
 
-        :return: basestring -- result value
+        :return: str -- result value
     """
     return self._result
 
@@ -368,7 +368,7 @@ class Halo(object):
   def result(self, result):
     """ Setter for result property.
 
-        :param basestring result: Defines the result of with
+        :param str result: Defines the result of with
     """
     self._result = result
 
@@ -376,7 +376,7 @@ class Halo(object):
   def textColor(self):
     """ Getter for text color property.
 
-        :return: basestring -- text color value
+        :return: str -- text color value
     """
     return self._textColor
 
@@ -384,7 +384,7 @@ class Halo(object):
   def textColor(self, textColor):
     """ Setter for text color property.
 
-        :param basestring textColor: Defines the text color value for spinner
+        :param str textColor: Defines the text color value for spinner
     """
     self._textColor = textColor
 
@@ -392,7 +392,7 @@ class Halo(object):
   def color(self):
     """ Getter for color property.
 
-        :return: basestring -- color value
+        :return: str -- color value
     """
     return self._color
 
@@ -400,7 +400,7 @@ class Halo(object):
   def color(self, color):
     """ Setter for color property.
 
-        :param basestring color: Defines the color value for spinner
+        :param str color: Defines the color value for spinner
     """
     self._color = color
 
@@ -408,7 +408,7 @@ class Halo(object):
   def placement(self):
     """ Getter for placement property.
 
-        :return: basestring -- spinner placement
+        :return: str -- spinner placement
     """
     return self._placement
 
@@ -416,7 +416,7 @@ class Halo(object):
   def placement(self, placement):
     """ Setter for placement property.
 
-        :param basestring placement: Defines the placement of the spinner
+        :param str placement: Defines the placement of the spinner
     """
     if placement not in self.SPINNER_PLACEMENTS:
       raise ValueError("Unknown spinner placement '{0}', available are {1}".format(placement, self.SPINNER_PLACEMENTS))
@@ -426,7 +426,7 @@ class Halo(object):
   def spinner_id(self):
     """ Getter for spinner id
 
-        :return: basestring -- Spinner id value
+        :return: str -- Spinner id value
     """
     return self._spinnerId
 
@@ -434,7 +434,7 @@ class Halo(object):
   def animation(self):
     """ Getter for animation property.
 
-        :return: basestring -- Spinner animation
+        :return: str -- Spinner animation
     """
     return self._animation
 
@@ -442,7 +442,7 @@ class Halo(object):
   def animation(self, animation):
     """ Setter for animation property.
 
-        :param basestring animation: Defines the animation of the spinner
+        :param str animation: Defines the animation of the spinner
     """
     self._animation = animation
     self._text = self._getText(self._text['original'])
@@ -467,7 +467,7 @@ class Halo(object):
   def _write(self, s):
     """ Write to the stream, if writable
 
-        :params basestring s: Characters to write to the stream
+        :params str s: Characters to write to the stream
     """
     if self._checkStream():
       self._stream.write(s)
@@ -507,7 +507,7 @@ class Halo(object):
   def _getText(self, text):
     """ Creates frames based on the selected animation
 
-        :params basestring text: text
+        :params str text: text
     """
     animation = self._animation
     strippedText = text.strip()
@@ -601,7 +601,7 @@ class Halo(object):
   def start(self, text=None):
     """ Starts the spinner on a separate thread.
 
-        :param basestring text: Text to be used alongside spinner
+        :param str text: Text to be used alongside spinner
     """
     if text is not None:
       self.text = text
@@ -634,7 +634,7 @@ class Halo(object):
   def succeed(self, text=None):
     """ Shows and persists success symbol and text and exits.
 
-        :param basestring text: Text to be shown alongside success symbol.
+        :param str text: Text to be shown alongside success symbol.
     """
     self._color = 'green'
     return self.stop(symbol='✔', text=text)
@@ -642,7 +642,7 @@ class Halo(object):
   def fail(self, text=None):
     """ Shows and persists fail symbol and text and exits.
 
-        :param basestring text: Text to be shown alongside fail symbol.
+        :param str text: Text to be shown alongside fail symbol.
     """
     self._color = 'red'
     return self.stop(symbol='✖', text=text)
@@ -650,7 +650,7 @@ class Halo(object):
   def warn(self, text=None):
     """ Shows and persists warn symbol and text and exits.
 
-        :param basestring text: Text to be shown alongside warn symbol.
+        :param str text: Text to be shown alongside warn symbol.
     """
     self._color = 'yellow'
     return self.stop(symbol='⚠', text=text)
@@ -658,7 +658,7 @@ class Halo(object):
   def info(self, text=None):
     """ Shows and persists info symbol and text and exits.
 
-        :param basestring text: Text to be shown alongside info symbol.
+        :param str text: Text to be shown alongside info symbol.
     """
     self._color = 'blue'
     return self.stop(symbol='ℹ', text=text)
@@ -666,8 +666,8 @@ class Halo(object):
   def stop(self, text=None, symbol=None):
     """ Stops the spinner and persists the final frame to be shown.
 
-        :param basestring text: Text to be shown in final frame
-        :param basestring symbol: Symbol to be shown in final frame
+        :param str text: Text to be shown in final frame
+        :param str symbol: Symbol to be shown in final frame
     """
     if not (symbol and text):
       self.__stop()
