@@ -108,17 +108,17 @@ class ThreadConfig(threading.local):
 
         :return: tuple
     """
-    return (self.__ID, self.__DN, self.__group, self.__setup)
+    return (self.__DN, self.__group, self.__setup, self.__ID)
 
   def load(self, tp):
     """ Save extra information
 
-        :param tuple tp: contain DN, group name, setup name
+        :param tuple tp: contain DN, group name, setup name, ID
     """
-    self.__ID = tp[0] or self.__ID
-    self.__DN = tp[1] or self.__DN
-    self.__group = tp[2] or self.__group
-    self.__setup = tp[3] or self.__setup
+    self.__ID = tp[3] or self.__ID
+    self.__DN = tp[0] or self.__DN
+    self.__group = tp[1] or self.__group
+    self.__setup = tp[2] or self.__setup
 
 
 def threadDeco(method):
