@@ -19,20 +19,24 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client, createClient
 
 __RCSID__ = "$Id$"
 
 gProxiesSync = ThreadSafe.Synchronizer()
 
-class ProxyManagerClient(object):
+@createClient('Framework/ProxyManager')
+class ProxyManagerClient(Client):
   """ Proxy manager client
   """
 
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__(self, **kwargs):
-    self.__extArgs = kwargs
+    """ Constructor
+    """
+    super(ProxyManagerClient, self).__init__(**kwargs)
+    self.setServer('Framework/ProxyManager')
     self.__proxiesCache = DictCache()
     self.__filesCache = DictCache(self.__deleteTemporalFile)
 
@@ -105,7 +109,7 @@ class ProxyManagerClient(object):
       return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions")
 
     # Get a delegation request
-    result = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs).requestDelegationUpload()
+    result = self._getRPC().requestDelegationUpload()
     if not result['OK']:
       return result
     reqDict = result['Value']
@@ -117,8 +121,7 @@ class ProxyManagerClient(object):
     if not retVal['OK']:
       return retVal
     # Upload!
-    rpc = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
-    return rpc.completeDelegationUpload(reqDict['id'], retVal['Value'])
+    return self._getRPC().completeDelegationUpload(reqDict['id'], retVal['Value'])
 
   @gProxiesSync
   def __getProxy(self, user, userGroup, limited=False, requiredTimeLeft=1200, cacheTime=14400,
@@ -158,12 +161,7 @@ class ProxyManagerClient(object):
 
     req = X509Request()
     req.generateProxyRequest(limited=limited)
-    if proxyToConnect:
-      rpcClient = RPCClient("Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120,
-                            **self.__extArgs)
-    else:
-      rpcClient = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
-
+    rpcClient = self._getRPC(proxyChain=proxyToConnect) if proxyToConnect else self._getRPC()
     retVal = rpcClient.getProxy(dn or user, userGroup, req.dumpRequest()['Value'],
                                 int(cacheTime + requiredTimeLeft), token, voms, personal)
     if not retVal['OK']:
@@ -340,8 +338,7 @@ class ProxyManagerClient(object):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain token, number uses
     """
-    rpc = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
-    return rpc.generateToken(requester, requesterGroup, numUses)
+    return self._getRPC().generateToken(requester, requesterGroup, numUses)
 
   def renewProxy(self, proxyToBeRenewed=None, minLifeTime=3600, newProxyLifeTime=43200, proxyToConnect=None):
     """ Renew a proxy using the ProxyManager
@@ -431,8 +428,7 @@ class ProxyManagerClient(object):
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
-    rpc = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
-    return rpc.getContents(condDict, [['UserDN', 'DESC']], 0, 0)
+    return self._getRPC().getContents(condDict, [['UserDN', 'DESC']], 0, 0)
 
   def getUploadedProxiesDetails(self, user=None, group=None):
     """ Get the details about an uploaded proxy
@@ -467,42 +463,9 @@ class ProxyManagerClient(object):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    result = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs).getUserProxiesInfo()
+    result = self._getRPC().getUserProxiesInfo()
     if 'rpcStub' in result:
       result.pop('rpcStub')
     return result
-
-  def deleteProxy(self, userDNs):
-    """ Delete proxy
-
-        :param list userDNs: user DNs
-
-        :return: S_OK()/S_ERROR()
-    """
-    return RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs).deleteProxyBundle(userDNs)
-
-  def getGroupsStatusByUsername(self, username, groups=None):
-    """ Get status of every group for DIRAC user:
-
-        :param str username: user name
-
-        :return: S_OK(dict)/S_ERROR()
-    """
-    # # { <user>: {
-    # #       <group>: [
-    # #         {
-    # #           Status: ..,
-    # #           Comment: ..,
-    # #           DN: ..,
-    # #           Action: {
-    # #             <fn>: { <opns> }
-    # #           }
-    # #         },
-    # #         { ... }
-    # #       ],
-    # #       <group2>: [ ... ]
-    # # } }
-    rpc = RPCClient("Framework/ProxyManager", timeout=120, **self.__extArgs)
-    return rpc.getGroupsStatusByUsername(username, groups)
 
 gProxyManager = ProxyManagerClient()
