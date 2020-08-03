@@ -16,8 +16,8 @@ new applications.
 Before you start this tutorial, it is desirable that you have some experience with programming in Python, JavaScript, HTML,
 CSS scripting, client-server communication (such as AJAX and web sockets) and sufficient knowledge
 in object-oriented programming. If you are not familiar with some of the web technologies, or
-there has been a while since you used those technologies, please visit the W3CSchool web site (`<http://www.w3schools.com/>`_). T
-here, you can find tutorials that you can use to learn or to refresh your knowledge for web-programming.
+there has been a while since you used those technologies, please visit the `W3CSchool web site <http://www.w3schools.com/>`_.
+There, you can find tutorials that you can use to learn or to refresh your knowledge for web-programming.
 As well we suggest to read :ref:`webappdirac_setupeclipse` section.
 
 Each application consists of two parts:
@@ -82,7 +82,7 @@ In order to send back response to the client, we can use the **write** method of
 
 The server handles all requests one-by-one which means that the server does not handle the next request until
 the current one is finished. This mechanism becomes a bottleneck if one request lasts longer and increases the response time for each subsequent request waiting in the server queue until the previous one has finished. Thus the server provides a way how to asynchronously handle clients' requests and mitigate this obstacle.
-Read the following link and tutorial for further information `<https://github.com/DIRACGrid/WebAppDIRAC/wiki/Asynchronous-handling-mechanisms-of-clients%27-requests>`_
+Read the `asynchronous handling mechanisms wiki <https://github.com/DIRACGrid/WebAppDIRAC/wiki/Asynchronous-handling-mechanisms-of-clients%27-requests>`_ for further information.
 
 Any other method that is not an entry point, can have any arbitrary name satisfying the rules of the Python programming language.
 
@@ -140,7 +140,7 @@ This file defines a ExtJS class responsible for all client side functionality of
 
 When extending the base class, there are some mandatory methods to be implemented within the derived class:
 
-* **initComponent**: this method is called by the constructor of the application. In this method you can set up the title of the application, its width and height, its maximized state, starting position on the screen and the icon css class. Here it is suitable to set up the layout of the entire application. For further information regarding ExtJS component layouts refer to `<http://docs.sencha.com/extjs/4.2.1/extjs-build/examples/layout-browser/layout-browser.html>`_.
+* **initComponent**: this method is called by the constructor of the application. In this method you can set up the title of the application, its width and height, its maximized state, starting position on the screen and the icon css class. Here it is suitable to set up the layout of the entire application. For further information regarding ExtJS component layouts refer to the `Ext JS documentation <https://docs.sencha.com/extjs/6.2.1/guides/core_concepts/layouts.html>`_ and the `official examples <https://examples.sencha.com/extjs/6.2.1/examples/kitchensink/?classic#all>`_.
 * **buildUI**: this method is used to build the user interface. Usually this is done by instantiating ExtJS widgets. These instances are added to the application in a way prescribed by the layout which is defined in the initComponent method. This method is called after all the CSS files regarding this application have been successfully loaded.
 * **getStateData**: The DIRAC web framework provides a generic way to save and load states of an application. This method is not mandatory, and it can be overridden by a new implementation in the application class. Whenever the user saves an application state, this method is called in order to take the data defining the current state of the application. The data has to be a JavaScript object.
 * **loadState(data)**: When we want to load a state, this method is being called. As an argument the framework provides the data that have been saved previously for that state.
@@ -262,7 +262,7 @@ by the server is shown in the textarea.
 
 
 2. Now we have to create the folder structure for the CS. The main folder of the **MyApp** application have
-  to be located in a namespace folder. Let name that namespace folder DIRAC and place it in the **[root]/static/** folder.
+   to be located in a namespace folder. Let name that namespace folder DIRAC and place it in the **[root]/static/** folder.
 
   ::
 
@@ -274,6 +274,7 @@ by the server is shown in the textarea.
             └── MyApp
                 ├── build
                 ├── classes
+                ├── overrides
                 ├── css
                 └── images
 
@@ -489,7 +490,7 @@ by the server is shown in the textarea.
 
 
 6. In order to have the application within the list of applications, you have to open the **web.cfg** file
-  located into the root. There you have to add new registration line within the **Schema/Applications** section:
+   located into the root. There you have to add new registration line within the **Schema/Applications** section:
 
   .. code-block:
 
@@ -548,10 +549,7 @@ In order to set up the production mode, you have to set the ``DevelopMode`` para
 
 
 Before you can use the compiled version of the JavaScript files, you have to compiled them first.
-For this reason you have to execute the python script **dirac-webapp-compile**.
-In order to run the script, you have to download and install a tool called Sencha Cmd ( `<https://www.sencha.com/products/sencha-cmd/download>`_ ).
-You can also refer to `<https://docs.sencha.com/extjs/4.2.1/#!/guide/command>`_ and read
-the System Setup section for detailed installation.
+For this reason you have to execute the python script ``dirac-webapp-compile`` from the ``dirac-distribution`` docker image.
 
 Inheritance of applications
 ---------------------------
@@ -621,6 +619,6 @@ We already prepared a simple example using predefined widgets named ``ExampleApp
 
 NOTE: Please make sure that your application will compile. For this you should run:
 
-.. code-block:: python
+.. code-block:: bash
 
   docker run --rm -it -v $PWD/..:/shared -w /shared diracgrid/dirac-distribution /dirac-webapp-compile.py -D /shared -n WebAppDIRAC
