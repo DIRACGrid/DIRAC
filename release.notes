@@ -31,6 +31,13 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
+[v7r1p9]
+
+Fixes from v7r0p31
+
+*Resources
+FIX: (#4704) ARCComputingElement: fix use of gLogger, which was replaced by self.log
+
 [v7r1p8]
 
 *WMS
@@ -231,6 +238,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p31]
+
+*WorkloadManagement
+FIX: (#4706) Crash getting available memory limits when MJF is not available
 
 [v7r0p30]
 

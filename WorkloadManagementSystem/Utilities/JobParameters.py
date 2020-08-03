@@ -32,11 +32,25 @@ def getJobFeatures():
 
 
 def getProcessorFromMJF():
-  return int(getJobFeatures().get('allocated_cpu'))
+  jobFeatures = getJobFeatures()
+  if jobFeatures:
+    try:
+      return int(jobFeatures['allocated_cpu'])
+    except KeyError:
+      gLogger.error("MJF is available but allocated_cpu is not an integer",
+                    repr(jobFeatures.get('allocated_cpu')))
+  return None
 
 
 def getMemoryFromMJF():
-  return int(getJobFeatures().get('max_rss_bytes'))
+  jobFeatures = getJobFeatures()
+  if jobFeatures:
+    try:
+      return int(jobFeatures['max_rss_bytes'])
+    except KeyError:
+      gLogger.error("MJF is available but max_rss_bytes is not an integer",
+                    repr(jobFeatures.get('max_rss_bytes')))
+  return None
 
 
 def getMemoryFromProc():
