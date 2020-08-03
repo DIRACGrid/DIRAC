@@ -534,7 +534,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     failoverLfns = []
     for lfn, replicaDict in replicas['Successful'].iteritems():
       for se in replicaDict:
-        # This sremains here for backward compatibility in case VOs have not defined SEs not to be used for jobs
+        # This remains here for backward compatibility in case VOs have not defined SEs not to be used for jobs
         if forJobs and 'failover' in se.lower():
           self._logVerbose("Ignoring failover replica for %s." % lfn, method=method, transID=transID)
         else:
