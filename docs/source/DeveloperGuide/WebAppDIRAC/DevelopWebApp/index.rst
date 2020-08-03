@@ -107,6 +107,7 @@ the **static/<Module name folder such as DIRAC, LHCbDIRAC, WebAppDIRAC>** folder
   * **build**: this folder contains the compiled version of the javascript files contained in the classes folder
   * **classes**: this folder contains the javascript file that defines the main ExtJS class representing the application on the client side.
     * MyApp.js: this mandatory file contains the main ExtJS class representing the application on the client side. The name of the file must have the same name as the application we want to build.
+  * **overrides**: this folder contains code which is used for modifying ExtJS classes. This is typically used for applying bug fixes to the SDK itself, see `here<https://docs.sencha.com/extjs/7.1.0/classic/Ext.Base.html#static-method-override>_` for details.
   * **css**: this folder contains all the css files specific to this application.
     * MyApp.css: this mandatory file contains the css style needed by some of the components of the application. The name of the file must have the same name as the application we want to build. The file must be created no matter it contains some code or not.
   * **images**: this folder contains all the specific images and icons needed by this application.
