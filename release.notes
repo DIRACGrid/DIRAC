@@ -1,3 +1,10 @@
+[v7r1p9]
+
+Fixes from v7r0p31
+
+*Resources
+FIX: (#4704) ARCComputingElement: fix use of gLogger, which was replaced by self.log
+
 [v7r1p8]
 
 *WMS
