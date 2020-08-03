@@ -339,7 +339,7 @@ class ARCComputingElement(ComputingElement):
       # cmd = 'ldapsearch -x -LLL -H ldap://%s:2135 -b mds-vo-name=resource,o=grid "(GlueVOViewLocalID=%s)"' % (
       #     self.ceHost, vo.lower())
       if not self.queue:
-        gLogger.error('ARCComputingElement: No queue ...')
+        self.log.error('ARCComputingElement: No queue ...')
         res = S_ERROR('Unknown queue (%s) failure for site %s' % (self.queue, self.ceHost))
         return res
       cmd1 = "ldapsearch -x -o ldif-wrap=no -LLL -h %s:2135  -b \'o=glue\' " % self.ceHost
