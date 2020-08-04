@@ -26,11 +26,10 @@ __RCSID__ = "$Id$"
 gProxiesSync = ThreadSafe.Synchronizer()
 
 @createClient('Framework/ProxyManager')
+@six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class ProxyManagerClient(Client):
   """ Proxy manager client
   """
-
-  __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__(self, **kwargs):
     """ Constructor

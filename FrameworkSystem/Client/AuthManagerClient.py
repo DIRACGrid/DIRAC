@@ -5,6 +5,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import six
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities import DIRACSingleton
@@ -14,10 +16,10 @@ __RCSID__ = "$Id$"
 
 
 @createClient('Framework/AuthManager')
+@six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class AuthManagerClient(Client):
   """ Authentication manager
   """
-  __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__(self, **kwargs):
     """ Constructor

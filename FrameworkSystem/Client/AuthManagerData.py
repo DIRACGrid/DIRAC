@@ -4,6 +4,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import six
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
@@ -14,7 +16,7 @@ __RCSID__ = "$Id$"
 gCacheProfiles = ThreadSafe.Synchronizer()
 gCacheSessions = ThreadSafe.Synchronizer()
 
-
+@six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class AuthManagerData(object):
   """ Authentication manager
   """
@@ -53,8 +55,6 @@ class AuthManagerData(object):
   # # {
   # #   crash: bool
   # # }
-
-  __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__(self):
     self.rpc = None

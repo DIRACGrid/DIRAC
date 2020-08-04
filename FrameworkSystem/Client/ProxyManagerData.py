@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import datetime
+import six
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
@@ -15,7 +16,7 @@ __RCSID__ = "$Id$"
 gUsersSync = ThreadSafe.Synchronizer()
 gVOMSUsersSync = ThreadSafe.Synchronizer()
 
-
+@six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class ProxyManagerData(object):
   """ Proxy manager client
   """
@@ -41,8 +42,6 @@ class ProxyManagerData(object):
   # #           SuspendedRoles: [<suspended roles>]
   # #         }
   # #       }
-
-  __metaclass__ = DIRACSingleton.DIRACSingleton
 
   def __init__(self):
     self.rpc = None
