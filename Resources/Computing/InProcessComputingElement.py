@@ -46,6 +46,8 @@ class InProcessComputingElement(ComputingElement):
                                Normally the JobWrapperTemplate when invoked by the JobAgent.
     :param str proxy: the proxy used for running the job (the payload). It will be dumped to a file.
     """
+
+    # This will get the pilot proxy
     ret = getProxyInfo()
     if not ret['OK']:
       pilotProxy = None
@@ -64,7 +66,6 @@ class InProcessComputingElement(ComputingElement):
         return result
 
       payloadProxy = result['Value']  # proxy file location
-      # pilotProxy = os.environ['X509_USER_PROXY']
       payloadEnv['X509_USER_PROXY'] = payloadProxy
 
       self.log.verbose('Starting process for monitoring payload proxy')

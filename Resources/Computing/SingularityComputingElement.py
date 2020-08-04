@@ -1,9 +1,12 @@
-""" A computing element class using singularity containers.
+""" SingularityCE is a type of "inner" CEs
+    (meaning it's used by a jobAgent inside a pilot).
+    A computing element class using singularity containers,
+    where Singularity is supposed to be found on the WN.
 
-    This computing element will start the job in the container set by
+    The goal of this CE is to start the job in the container set by
     the "ContainerRoot" config option.
 
-    DIRAC will the re-installed within the container, extra flags can
+    DIRAC can be re-installed within the container, extra flags can
     be given to the dirac-install command with the "ContainerExtraOpts"
     option.
 
@@ -46,8 +49,6 @@ cd /tmp
 ./dirac-install.py %(install_args)s
 source bashrc
 dirac-configure -F %(config_args)s -I
-# Add compatibility with pilot3 where config is in pilot.cfg
-ln -s etc/dirac.cfg pilot.cfg
 # Run next wrapper (to start actual job)
 bash %(next_wrapper)s
 # Write the payload errorcode to a file for the outer scripts
