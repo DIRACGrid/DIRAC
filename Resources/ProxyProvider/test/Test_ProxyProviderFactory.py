@@ -23,7 +23,7 @@ def sf_getInfoAboutProviders(of, providerName, option, section):
                    'OU': 'CA',
                    'C': 'DN',
                    'O': 'DIRACCA'})
-    if providerName == 'MY_PUSP':
+    elif providerName == 'MY_PUSP':
       return S_OK({'ProviderType': 'PUSP', 'ServiceURL': 'https://somedomain'})
   return S_ERROR('No proxy provider found')
 
