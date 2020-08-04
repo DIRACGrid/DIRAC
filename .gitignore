@@ -69,6 +69,7 @@ integration_test_results/
 tests/CI/CLIENTCONFIG
 tests/CI/SERVERCONFIG
 
+pilot.cfg
 
 # VSCode
 .vscode
