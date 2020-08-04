@@ -35,7 +35,7 @@ __RCSID__ = "$Id$"
 DIRAC_INSTALL = os.path.join(DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py')
 # Default container to use if it isn't specified in the CE options
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
-CONTAINER_WORKDIR = "containers"
+CONTAINER_WORKDIR = "DIRAC_containers"
 CONTAINER_INNERDIR = "/tmp"
 CONTAINER_WRAPPER = """#!/bin/bash
 
@@ -123,9 +123,6 @@ class SingularityComputingElement(ComputingElement):
       extensionsList = CSGlobals.getCSExtensions()
     if extensionsList:
       instOpts.append("-e '%s'" % ','.join([ext for ext in extensionsList if 'Web' not in ext]))
-    lcgVer = opsHelper.getValue("Pilot/LCGBundleVersion", None)
-    if lcgVer:
-      instOpts.append("-g %s" % lcgVer)
     if 'ContainerExtraOpts' in self.ceParameters:
       instOpts.append(self.ceParameters['ContainerExtraOpts'])
     return ' '.join(instOpts)
@@ -144,12 +141,12 @@ class SingularityComputingElement(ComputingElement):
     cfgOpts.append("-n '%s'" % DIRAC.siteName())
     return ' '.join(cfgOpts)
 
-  def __createWorkArea(self, proxy, jobDesc, log, logLevel):
+  def __createWorkArea(self, jobDesc, log, logLevel, proxy=None):
     """ Creates a directory for the container and populates it with the
         template directories, scripts & proxy.
     """
 
-    # Create the directory for our continer area
+    # Create the directory for our container area
     try:
       os.mkdir(self.__workdir)
     except OSError:
@@ -173,11 +170,14 @@ class SingularityComputingElement(ComputingElement):
 
     # Now we have a directory, we can stage in the proxy and scripts
     # Proxy
-    proxyLoc = os.path.join(tmpDir, "proxy")
-    rawfd = os.open(proxyLoc, os.O_WRONLY | os.O_CREAT, 0o600)
-    fd = os.fdopen(rawfd, "w")
-    fd.write(proxy)
-    fd.close()
+    if proxy:
+      proxyLoc = os.path.join(tmpDir, "proxy")
+      rawfd = os.open(proxyLoc, os.O_WRONLY | os.O_CREAT, 0o600)
+      fd = os.fdopen(rawfd, "w")
+      fd.write(proxy)
+      fd.close()
+    else:
+      self.log.warn("No user proxy")
 
     # dirac-install.py
     install_loc = os.path.join(tmpDir, "dirac-install.py")
@@ -254,7 +254,7 @@ class SingularityComputingElement(ComputingElement):
     return result
 
   # pylint: disable=unused-argument,arguments-differ
-  def submitJob(self, executableFile, proxy, jobDesc, log, logLevel, **kwargs):
+  def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Start a container for a job.
         executableFile is ignored. A new wrapper suitable for running in a
         container is created from jobDesc.
@@ -271,7 +271,7 @@ class SingularityComputingElement(ComputingElement):
     self.log.info('Creating singularity container')
 
     # Start by making the directory for the container
-    ret = self.__createWorkArea(proxy, jobDesc, log, logLevel)
+    ret = self.__createWorkArea(kwargs['jobDesc'], kwargs['log'], kwargs['logLevel'], proxy)
     if not ret['OK']:
       return ret
     baseDir = ret['baseDir']
