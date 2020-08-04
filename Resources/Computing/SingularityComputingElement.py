@@ -34,7 +34,7 @@ __RCSID__ = "$Id$"
 
 DIRAC_INSTALL = os.path.join(DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py')
 # Default container to use if it isn't specified in the CE options
-CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm3"
+CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
 CONTAINER_WORKDIR = "containers"
 CONTAINER_INNERDIR = "/tmp"
 CONTAINER_WRAPPER = """#!/bin/bash
