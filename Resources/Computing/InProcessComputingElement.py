@@ -39,7 +39,7 @@ class InProcessComputingElement(ComputingElement):
     self.ceParameters['MaxTotalJobs'] = 1
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, **kwargs):
+  def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Method to submit job (overriding base method).
 
     :param str executableFile: file to execute via systemCall.

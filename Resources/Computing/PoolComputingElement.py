@@ -21,6 +21,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
+from DIRAC.Resources.Computing.SingularityComputingElement import SingularityComputingElement
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 MandatoryParameters = []
@@ -29,7 +30,7 @@ MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 
 def executeJob(executableFile, proxy, taskID, **kwargs):
-  """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess)
+  """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess or Singularity)
 
   :param str executableFile: location of the executable file
   :param str proxy: proxy file location to be used for job submission
@@ -39,8 +40,15 @@ def executeJob(executableFile, proxy, taskID, **kwargs):
   """
 
   useSudo = kwargs.pop('UseSudo', False)
+  useSingularity = kwargs.pop('UseSingularity', False)
+
   if useSudo:
     ce = SudoComputingElement("Task-" + str(taskID))
+    payloadUser = kwargs.get('PayloadUser')
+    if payloadUser:
+      ce.setParameters({'PayloadUser': payloadUser})
+  elif useSingularity:
+    ce = SingularityComputingElement("Task-" + str(taskID))
     payloadUser = kwargs.get('PayloadUser')
     if payloadUser:
       ce.setParameters({'PayloadUser': payloadUser})
@@ -68,6 +76,7 @@ class PoolComputingElement(ComputingElement):
     self.processorsPerTask = {}
     self.userNumberPerTask = {}
     self.useSudo = False
+    self.useSingularity = False
 
   def _reset(self):
     """ Update internal variables after some extra parameters are added
@@ -78,6 +87,7 @@ class PoolComputingElement(ComputingElement):
     self.processors = int(self.ceParameters.get('NumberOfProcessors', self.processors))
     self.ceParameters['MaxTotalJobs'] = self.processors
     self.useSudo = self.ceParameters.get('SudoExecution', False)
+    self.useSingularity = self.ceParameters.get('SingularityExecution', False)
     return S_OK()
 
   def getProcessorsInUse(self):
@@ -91,7 +101,7 @@ class PoolComputingElement(ComputingElement):
     return processorsInUse
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, **kwargs):
+  def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Method to submit job.
 
     :param str executableFile: location of the executable file
@@ -138,6 +148,10 @@ class PoolComputingElement(ComputingElement):
       kwargs['NUser'] = nUser
       kwargs['PayloadUser'] = os.environ['USER'] + 'p%s' % str(nUser).zfill(2)
       kwargs['UseSudo'] = True
+
+    kwargs = {'UseSingularity': False}
+    if self.useSingularity:
+      kwargs['UseSingularity'] = True
 
     result = self.pPool.createAndQueueTask(executeJob,
                                            args=(executableFile, proxy, self.taskID),
