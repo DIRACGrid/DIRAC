@@ -29,7 +29,7 @@ class IdProviderFactory(object):
   def getIdProvider(self, idProvider):
     """ This method returns a IdProvider instance corresponding to the supplied name.
 
-	:param str idProvider: the name of the Identity Provider
+        :param str idProvider: the name of the Identity Provider
 
         :return: S_OK(IdProvider)/S_ERROR()
     """
