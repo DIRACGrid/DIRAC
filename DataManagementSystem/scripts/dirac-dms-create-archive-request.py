@@ -1,6 +1,6 @@
 """Create and put Requests to archive files.
 
-List of operations:
+**List of operations**
 
 #. Optionally replicate files to SourceSE
 #. ArchiveFiles: Create a tarball from input files, upload tarball  to TarballSE
@@ -15,15 +15,14 @@ another storage element. Once the file is migrated to tape the original files wi
 removed. Optionally the original files can be registered in a special archive SE, so that their
 metadata is preserved.
 
-
-Related Options:
+**Related Options**
 
 This script only works if the ``ArchiveFiles`` and ``CheckMigration`` RequestHandlers are configured.
 To prevent submission of broken requests the script needs to be enabled in the Operations section of the CS
 
 * Operations/DataManagement/ArchiveFiles/Enabled=True
 
-Default values for any of the command line options can also be set in the CS:
+Default values for any of the command line options can also be set in the CS
 
 * Operations/DataManagement/ArchiveFiles/ArchiveSE
 * Operations/DataManagement/ArchiveFiles/TarballSE
@@ -45,7 +44,7 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
-LOG = gLogger.getSubLogger('AddArchive')
+sLog = gLogger.getSubLogger('AddArchive')
 __RCSID__ = '$Id$'
 MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
 MAX_FILES = 2000
@@ -162,23 +161,23 @@ class CreateArchiveRequest(object):
 
     ops = Operations()
     if not ops.getValue('DataManagement/ArchiveFiles/Enabled', False):
-      LOG.error('The "ArchiveFiles" operation is not enabled, contact your administrator!')
+      sLog.error('The "ArchiveFiles" operation is not enabled, contact your administrator!')
       DIRAC.exit(1)
     for _short, longOption, _doc in self.options:
       defaultValue = ops.getValue('DataManagement/ArchiveFiles/%s' % longOption, None)
       if defaultValue:
-        LOG.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
+        sLog.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
         self.switches[longOption] = defaultValue
     for _short, longOption, _doc in self.flags:
       defaultValue = ops.getValue('DataManagement/ArchiveFiles/%s' % longOption, False)
       if defaultValue:
-        LOG.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
+        sLog.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
         self.switches[longOption] = defaultValue
 
     for switch in Script.getUnprocessedSwitches():
       for short, longOption, doc in self.options:
         if switch[0] == short or switch[0].lower() == longOption.lower():
-          LOG.verbose('Found switch %r with value %r' % (longOption, switch[1]))
+          sLog.verbose('Found switch %r with value %r' % (longOption, switch[1]))
           self.switches[longOption] = switch[1]
           break
       for short, longOption, doc in self.flags:
@@ -207,23 +206,23 @@ class CreateArchiveRequest(object):
         raise ValueError('%s not a file' % self.switches.get('List'))
     elif self.lfnFolderPath:
       path = self.lfnFolderPath
-      LOG.debug('Check if %r is a directory' % path)
+      sLog.debug('Check if %r is a directory' % path)
       isDir = returnSingleResult(self.fcClient.isDirectory(path))
-      LOG.debug('Result: %r' % isDir)
+      sLog.debug('Result: %r' % isDir)
       if not isDir['OK'] or not isDir['Value']:
-        LOG.error('Path is not a directory', isDir.get('Message', ''))
+        sLog.error('Path is not a directory', isDir.get('Message', ''))
         raise RuntimeError('Path %r is not a directory' % path)
-      LOG.notice('Looking for files in %r' % path)
+      sLog.notice('Looking for files in %r' % path)
 
       metaDict = {'SE': self.sourceSEs[0]} if self.switches.get('SourceOnly') else {}
       lfns = self.fcClient.findFilesByMetadata(metaDict=metaDict, path=path)
       if not lfns['OK']:
-        LOG.error('Could not find files')
+        sLog.error('Could not find files')
         raise RuntimeError(lfns['Message'])
       self.lfnList = lfns['Value']
 
     if self.lfnList:
-      LOG.notice('Will create request(s) with %d lfns' % len(self.lfnList))
+      sLog.notice('Will create request(s) with %d lfns' % len(self.lfnList))
       if len(self.lfnList) == 1:
         raise RuntimeError('Only 1 file in the list, aborting!')
       return
@@ -235,27 +234,27 @@ class CreateArchiveRequest(object):
     requestIDs = []
 
     if self.dryRun:
-      LOG.notice('Would have created %d requests' % len(self.requests))
+      sLog.notice('Would have created %d requests' % len(self.requests))
       for reqID, req in enumerate(self.requests):
-        LOG.notice('Request %d:' % reqID)
+        sLog.notice('Request %d:' % reqID)
         for opID, op in enumerate(req):
-          LOG.notice('        Operation %d: %s #lfn %d' % (opID, op.Type, len(op)))
+          sLog.notice('        Operation %d: %s #lfn %d' % (opID, op.Type, len(op)))
       return 0
     for request in self.requests:
       putRequest = self.reqClient.putRequest(request)
       if not putRequest['OK']:
-        LOG.error('unable to put request %r: %s' % (request.RequestName, putRequest['Message']))
+        sLog.error('unable to put request %r: %s' % (request.RequestName, putRequest['Message']))
         continue
       requestIDs.append(str(putRequest['Value']))
-      LOG.always('Request %r has been put to ReqDB for execution.' % request.RequestName)
+      sLog.always('Request %r has been put to ReqDB for execution.' % request.RequestName)
 
     if requestIDs:
-      LOG.always('%d requests have been put to ReqDB for execution' % len(requestIDs))
-      LOG.always('RequestID(s): %s' % ' '.join(requestIDs))
-      LOG.always('You can monitor the request status using the command: dirac-rms-request <requestName/ID>')
+      sLog.always('%d requests have been put to ReqDB for execution' % len(requestIDs))
+      sLog.always('RequestID(s): %s' % ' '.join(requestIDs))
+      sLog.always('You can monitor the request status using the command: dirac-rms-request <requestName/ID>')
       return 0
 
-    LOG.error('No requests created')
+    sLog.error('No requests created')
     return 1
 
   def checkSwitches(self):
@@ -267,21 +266,21 @@ class CreateArchiveRequest(object):
     if not self.name and self.lfnFolderPath:
       self.switches['AutoName'] = os.path.join(os.path.dirname(self.lfnFolderPath),
                                                os.path.basename(self.lfnFolderPath) + '.tar')
-      LOG.notice('Using %r for tarball' % self.switches.get('AutoName'))
+      sLog.notice('Using %r for tarball' % self.switches.get('AutoName'))
 
     if self.switches.get('List') and not self.name:
       raise RuntimeError('Have to set "Name" with "List"')
 
     if self.switches.get('RemoveReplicas') and self.switches.get('ArchiveSE') is None:
-      LOG.error("'RemoveReplicas' does not work without 'ArchiveSE'")
+      sLog.error("'RemoveReplicas' does not work without 'ArchiveSE'")
       raise RuntimeError('ArchiveSE missing')
 
     if self.switches.get('RemoveReplicas') and self.switches.get('RemoveFiles'):
-      LOG.error("Use either 'RemoveReplicas' or 'RemoveFiles', not both!")
+      sLog.error("Use either 'RemoveReplicas' or 'RemoveFiles', not both!")
       raise RuntimeError('Too many removal flags')
 
     if self.switches.get('ReplicateTarball') and not self.switches.get('TargetSE'):
-      LOG.error("Have to set 'TargetSE' with 'ReplicateTarball'")
+      sLog.error("Have to set 'TargetSE' with 'ReplicateTarball'")
       raise RuntimeError('ReplicateTarball missing TargetSE')
 
   def splitLFNsBySize(self):
@@ -289,20 +288,20 @@ class CreateArchiveRequest(object):
 
     :return: list of list of lfns
     """
-    LOG.notice('Splitting files by Size')
+    sLog.notice('Splitting files by Size')
     lfnChunk = []
     totalSize = 0
     for lfn, info in self.metaData['Successful'].iteritems():
       if (totalSize > self.switches['MaxSize'] or len(lfnChunk) >= self.switches['MaxFiles']):
         self.lfnChunks.append(lfnChunk)
-        LOG.notice('Created Chunk of %s lfns with %s bytes' % (len(lfnChunk), totalSize))
+        sLog.notice('Created Chunk of %s lfns with %s bytes' % (len(lfnChunk), totalSize))
         lfnChunk = []
         totalSize = 0
       lfnChunk.append(lfn)
       totalSize += info['Size']
 
     self.lfnChunks.append(lfnChunk)
-    LOG.notice('Created Chunk of %s lfns with %s bytes' % (len(lfnChunk), totalSize))
+    sLog.notice('Created Chunk of %s lfns with %s bytes' % (len(lfnChunk), totalSize))
 
     self.replicaSEs = set([seItem for se in self.fcClient.getReplicas(self.lfnList)['Value']['Successful'].values()
                            for seItem in se.keys()])
@@ -323,7 +322,7 @@ class CreateArchiveRequest(object):
 
     for count, lfnChunk in enumerate(self.lfnChunks):
       if not lfnChunk:
-        LOG.error('LFN list is empty!!!')
+        sLog.error('LFN list is empty!!!')
         return 1
 
       if len(self.lfnChunks) > 1:
@@ -337,7 +336,7 @@ class CreateArchiveRequest(object):
 
       valid = RequestValidator().validate(request)
       if not valid['OK']:
-        LOG.error('putRequest: request not valid', '%s' % valid['Message'])
+        sLog.error('putRequest: request not valid', '%s' % valid['Message'])
         return 1
       else:
         self.requests.append(request)
@@ -373,18 +372,18 @@ class CreateArchiveRequest(object):
     metaData = self.fcClient.getFileMetadata(self.lfnList)
     error = False
     if not metaData['OK']:
-      LOG.error('Unable to read metadata for lfns: %s' % metaData['Message'])
+      sLog.error('Unable to read metadata for lfns: %s' % metaData['Message'])
       raise RuntimeError('Could not read metadata: %s' % metaData['Message'])
 
     self.metaData = metaData['Value']
     for failedLFN, reason in self.metaData['Failed'].items():
-      LOG.error('skipping %s: %s' % (failedLFN, reason))
+      sLog.error('skipping %s: %s' % (failedLFN, reason))
       error = True
     if error:
       raise RuntimeError('Could not read all metadata')
 
     for lfn in self.metaData['Successful'].keys():
-      LOG.verbose('found %s' % lfn)
+      sLog.verbose('found %s' % lfn)
 
   def createRequest(self, requestName, archiveLFN, lfnChunk):
     """Create the Request."""
@@ -458,16 +457,16 @@ class CreateArchiveRequest(object):
 
   def checkArchive(self, archiveLFN):
     """Check that archiveLFN does not exist yet."""
-    LOG.notice('Using Tarball: %s' % archiveLFN)
+    sLog.notice('Using Tarball: %s' % archiveLFN)
     exists = returnSingleResult(self.fcClient.isFile(archiveLFN))
-    LOG.debug('Checking for Tarball existence %r' % exists)
+    sLog.debug('Checking for Tarball existence %r' % exists)
     if exists['OK'] and exists['Value']:
       raise RuntimeError('Tarball %r already exists' % archiveLFN)
 
-    LOG.debug('Checking permissions for %r' % archiveLFN)
+    sLog.debug('Checking permissions for %r' % archiveLFN)
     hasAccess = returnSingleResult(self.fcClient.hasAccess(archiveLFN, 'addFile'))
     if not archiveLFN or not hasAccess['OK'] or not hasAccess['Value']:
-      LOG.error('Error checking tarball location: %r' % hasAccess)
+      sLog.error('Error checking tarball location: %r' % hasAccess)
       raise ValueError('%s is not a valid path, parameter "Name" must be correct' % archiveLFN)
 
   def _checkReplicaSites(self, request, lfnChunk):
@@ -478,7 +477,7 @@ class CreateArchiveRequest(object):
     """
     resReplica = self.fcClient.getReplicas(lfnChunk)
     if not resReplica['OK']:
-      LOG.error('Failed to get replica information:', resReplica['Message'])
+      sLog.error('Failed to get replica information:', resReplica['Message'])
       raise RuntimeError('Failed to get replica information')
 
     atSource = []
@@ -489,16 +488,16 @@ class CreateArchiveRequest(object):
       if sourceSE in replInfo:
         atSource.append(lfn)
       else:
-        LOG.notice('WARN: LFN %r not found at source, only at: %s' % (lfn, ','.join(replInfo.keys())))
+        sLog.notice('WARN: LFN %r not found at source, only at: %s' % (lfn, ','.join(replInfo.keys())))
         notAt.append(lfn)
 
     for lfn, errorMessage in resReplica['Value']['Failed'].iteritems():
-      LOG.error('Failed to get replica info', '%s: %s' % (lfn, errorMessage))
+      sLog.error('Failed to get replica info', '%s: %s' % (lfn, errorMessage))
       failed.append(lfn)
 
     if failed:
       raise RuntimeError('Failed to get replica information')
-    LOG.notice('Found %d files to replicate' % len(notAt))
+    sLog.notice('Found %d files to replicate' % len(notAt))
     if not notAt:
       return
     if notAt and self.switches.get('AllowReplication'):
@@ -524,9 +523,9 @@ if __name__ == '__main__':
     CAR = CreateArchiveRequest()
     CAR.run()
   except Exception as e:
-    if LogLevels.getLevelValue(LOG.getLevel()) <= LogLevels.VERBOSE:
-      LOG.exception('Failed to create Archive Request')
+    if LogLevels.getLevelValue(sLog.getLevel()) <= LogLevels.VERBOSE:
+      sLog.exception('Failed to create Archive Request')
     else:
-      LOG.error('ERROR: Failed to create Archive Request:', str(e))
+      sLog.error('ERROR: Failed to create Archive Request:', str(e))
     exit(1)
   exit(0)

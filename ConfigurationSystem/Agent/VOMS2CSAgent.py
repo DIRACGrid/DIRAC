@@ -1,9 +1,17 @@
 """
-  VOMS2CSAgent performs the following operations:
+The VOMS2CSAgent extracts VO user information from VOMS servers.
 
-    - Adds new users for the given VO taking into account the VO VOMS information
-    - Updates the data in the CS for existing users including DIRAC group membership
-    -
+It performs the following operations:
+
+- Extracts user info from the VOMS server using its REST interface
+- Finds user DN's not yet registered in the DIRAC Registry
+- For each new DN it constructs a DIRAC login name by a best guess or using the nickname VOMS attribute
+- Registers new users to the DIRAC Registry including group membership
+- Updates information for already registered users, including group membership
+- Sends report for performed operation to the VO administrator
+
+The agent is performing its operations with credentials of the VO administrator as defined
+in the ``/Registry/VO/<VO_name>`` configuration section. See also :ref:`registry_vo`.
 
 The following options can be set for the VOMS2CSAgent.
 
@@ -13,7 +21,12 @@ The following options can be set for the VOMS2CSAgent.
   :dedent: 2
   :caption: VOMS2CSAgent options
 
+.. note:: The options *AutoAddUsers*, *AutoModifyUsers*, *AutoDeleteUsers* can be overridden by the
+  corresponding options defined in the ``/Registry/VO/<VO_name>`` configuration section.
+
 """
+
+from __future__ import absolute_import
 
 from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule

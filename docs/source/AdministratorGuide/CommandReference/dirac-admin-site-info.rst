@@ -1,8 +1,10 @@
-============================
-dirac-admin-site-info
-============================
+.. _admin_dirac-admin-site-info:
 
-  Print Configuration information for a given Site
+=====================
+dirac-admin-site-info
+=====================
+
+Print Configuration information for a given Site
 
 Usage::
 
@@ -10,7 +12,7 @@ Usage::
 
 Arguments::
 
-  Site:     Name of the Site 
+  Site:     Name of the Site
 
 Example::
 
@@ -21,5 +23,3 @@ Example::
    'MoUTierLevel': '1',
    'Name': 'IN2P3-CC',
    'SE': 'IN2P3-disk, DIRAC-USER'}
-
-

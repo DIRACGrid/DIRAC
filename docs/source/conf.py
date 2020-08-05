@@ -11,30 +11,30 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+# pylint: disable=invalid-name
+
+import logging
 import datetime
 import os
 import sys
-import subprocess
 
 sys.path.insert(0, ".")
 
-try:
-  import fakeEnvironment
-except ImportError:
-  pass
-try:
-  import fakeEnv
-except ImportError:
-  pass
+import recommonmark
+from recommonmark.transform import AutoStructify
 
-diracRelease = os.environ.get( 'DIRACVERSION', 'integration' )
-if os.environ.get('READTHEDOCS') == 'True':
-  diracRelease = os.path.basename( os.path.abspath( "../../" ) )
-  if diracRelease.startswith("rel-"):
-    diracRelease = diracRelease[4:]
-print 'conf.py: %s as DIRACVERSION' % diracRelease
+import diracdoctools
+import diracdoctools.cmd
+from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
+from diracdoctools.Utilities import setUpReadTheDocsEnvironment
 
+logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
+LOG = logging.getLogger('conf.py')
 
+LOG.info('Current location %r', os.getcwd())
+LOG.info('DiracDocTools location %r', diracdoctools.__file__)
+LOG.info('DiracDocTools location %r', diracdoctools.Utilities.__file__)
+LOG.info('DiracDocTools location %r', diracdoctools.cmd.__file__)
 #...............................................................................
 # configuration
 
@@ -42,54 +42,49 @@ print 'conf.py: %s as DIRACVERSION' % diracRelease
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+# diracdoctools are taken from integration, we need to specify this in rel-v7r0
+os.environ['DIRAC_USE_M2CRYPTO'] = 'Yes'
+
+# AUTO SETUP START
 if os.environ.get('READTHEDOCS') == 'True':
-  sys.path.append(os.path.abspath('.'))
-  diracPath = os.path.abspath( os.path.join( os.getcwd(), "../..") )
-  print "DiracPath",diracPath
+  setUpReadTheDocsEnvironment(moduleName='DIRAC')
 
-  buildfolder ="_build"
-  try:
-    os.mkdir( os.path.abspath( "../"+buildfolder) )
-  except:
-    pass
+  # re-create the RST files for the command references
+  LOG.info('Building command reference')
+  from diracdoctools.cmd.commandReference import run as buildCommandReference
+  buildCommandReference(configFile='../docs.conf')
 
-  ##We need to have the DIRAC module somewhere, or we cannot import it, as readtheDocs clones the repo into something based on the branchname
-  if not os.path.exists( "../../DIRAC" ):
-    diracLink =  os.path.abspath( os.path.join( os.getcwd()  , "../" , buildfolder, "DIRAC" ) )
-    print "DiracLink",diracLink
-    if not os.path.exists( diracLink ):
-      RES = subprocess.check_output( ["ln","-s", diracPath, diracLink ] )
-    diracPath = os.path.abspath( os.path.join( diracLink, ".." ) )
+  # singlehtml build needs too much memory, so we need to create less code documentation
+  buildType = 'limited' if any('singlehtml' in arg for arg in sys.argv) else 'full'
+  LOG.info('Chosing build type: %r', buildType)
+  from diracdoctools.cmd.codeReference import run as buildCodeDoc
+  buildCodeDoc(configFile='../docs.conf', buildType=buildType)
 
-  sys.path.insert(0, diracPath)
+  # Update dirac.cfg
+  LOG.info('Concatenating dirac.cfg')
+  from diracdoctools.cmd.concatcfg import run as updateCompleteDiracCFG
+  updateCompleteDiracCFG(configFile='../docs.conf')
 
-  for path in sys.path:
-    os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')+":"+path
+# AUTO SETUP END
 
-  ##  this is not working at the moment because the DIRAC folder is not found by the buildScriptsDOC script
-  # print "Pythonpath",os.environ['PYTHONPATH']
-  # buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
-  # scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
-  # try:
-  #   os.mkdir( scriptdir )
-  # except:
-  #   pass
-  # print "command", buildCommand
-  # code = subprocess.Popen( ["python", buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  # stdout , err = code.communicate()
-  # print "script",stdout
-  # print "script",err
+# get the dirac version
+try:
+  from DIRAC import version
+  LOG.info('Found dirac version %r', version)
+except ImportError as e:
+  LOG.info('Failed to import DIRAC.version: %s', e)
+  version = 'integration'
+diracRelease = version
+# on rtd we use (parts of) the branch, unless "branch" is latest
+if os.environ.get('READTHEDOCS') == 'True':
+  diracRelease = os.path.basename(os.path.abspath('../../'))
+  if diracRelease.startswith('rel-'):
+    # basically version without patch number
+    diracRelease = diracRelease[4:]
+  elif diracRelease == 'latest':
+    diracRelease = version
 
-  os.environ["DIRAC"] = diracPath
-  print "DIRAC ENVIRON", os.environ["DIRAC"]
-  ##singlehtml build needs too much memory, so we need to create less code documentation
-  buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv ) else "full"
-  print "Chosing build type:", buildtype
-  buildCommand =os.path.join( os.getcwd() , "../Tools/MakeDoc.py" )
-  code = subprocess.Popen( ["python",buildCommand, buildtype], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  stdout , err = code.communicate()
-  print "code",stdout
-  print "code",err
+LOG.info('DIRACVERSION is %r', diracRelease)
 
 # -- General configuration -----------------------------------------------------
 
@@ -99,13 +94,27 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx',
               'sphinx.ext.napoleon',
               'sphinx.ext.graphviz',
-             ]
+              'recommonmark',
+              ]
+
+
+def setup(app):
+  app.add_config_value('recommonmark_config',
+                       {'enable_eval_rst': True,
+                        'auto_toc_tree_section': 'Contents',
+                        },
+                       True)
+  app.add_transform(AutoStructify)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext',
+                 '.txt': 'ma',
+                 '.md': 'markdown',
+                 }
+
 
 # The encoding of source files.
 #source_encoding = 'utf-8'
@@ -141,8 +150,8 @@ today_fmt = '%H:%M %d/%m/%Y %Z'
 
 # List of directories, relative to source directory, that shouldn't be searched
 # for source files.
-#ADRI: Ignore old stuff that is not included in the compilation
-exclude_trees = [ 'AdministratorGuide/Configuration/ConfigurationReference' ]
+# ADRI: Ignore old stuff that is not included in the compilation
+exclude_trees = ['AdministratorGuide/Configuration/ConfigurationReference']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -176,7 +185,7 @@ html_style = 'dirac.css'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {
+# html_theme_options = {
 #  'sidebarbgcolor':'#D5E2F2'
 #}
 
@@ -254,8 +263,8 @@ htmlhelp_basename = 'DiracDocsdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'DiracDocs.tex', u'DIRAC Documentation',
-   u'DIRAC Project.', 'manual'),
+    ('index', 'DiracDocs.tex', u'DIRAC Documentation',
+     u'DIRAC Project.', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -275,13 +284,17 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_use_modindex = True
 
+# packages that cannot be installed in RTD
+autodoc_mock_imports = DIRAC_DOC_MOCK_LIST
 
-## link with the python standard library docs
+
+# link with the python standard library docs
 intersphinx_mapping = {
-                        'python': ('https://docs.python.org/2.7', None),
-                      }
+    'python': ('https://docs.python.org/2.7', None),
+    'matplotlib': ('https://matplotlib.org/2.2.5/', None),
+}
 
 
 #...............................................................................
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

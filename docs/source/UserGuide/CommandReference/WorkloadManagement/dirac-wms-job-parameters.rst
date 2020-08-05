@@ -1,8 +1,10 @@
-===============================
-dirac-wms-job-parameters
-===============================
+.. _dirac-wms-job-parameters:
 
-  Retrieve parameters associated to the given DIRAC job
+========================
+dirac-wms-job-parameters
+========================
+
+Retrieve parameters associated to the given DIRAC job
 
 Usage::
 
@@ -10,7 +12,7 @@ Usage::
 
 Arguments::
 
-  JobID:    DIRAC Job ID 
+  JobID:    DIRAC Job ID
 
 Example::
 
@@ -38,5 +40,3 @@ Example::
    'Pilot_Reference': 'https://lb2.eela.ufrj.br:9000/ktM6WWR1GdkOTm98_hwM9Q',
    'ScaledCPUTime': '115.6',
    'TotalCPUTime(s)': '0.15'}
-
-

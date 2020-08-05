@@ -83,7 +83,8 @@ fts3OperationTable = Table('Operations', metadata,
                            Column('operationID', Integer, primary_key=True),
                            Column('username', String(255)),
                            Column('userGroup', String(255)),
-                           # -1 because with 0 we get any request
+                           # -1 because with 0 we would get any random request
+                           # when performing reqClient.getRequest
                            Column('rmsReqID', Integer, server_default='-1'),
                            Column('rmsOpID', Integer, server_default='0', index=True),
                            Column('sourceSEs', String(255)),
@@ -181,7 +182,8 @@ class FTS3DB(object):
          self.dbPort,
          self.dbName),
         echo=runDebug,
-        pool_size=pool_size)
+        pool_size=pool_size,
+        pool_recycle=3600)
 
     metadata.bind = self.engine
 
@@ -330,7 +332,7 @@ class FTS3DB(object):
 
         TODO: maybe it should query first the status and filter the rows I want to update !
 
-       :param fileStatusDict : { fileID : { status , error, ftsGUID } }
+       :param fileStatusDict: { fileID : { status , error, ftsGUID } }
        :param ftsGUID: If specified, only update the rows where the ftsGUID matches this value.
                        This avoids two jobs handling the same file one after another to step on each other foot.
                        Note that for the moment it is an optional parameter, but it may turn mandatory soon.
@@ -399,7 +401,7 @@ class FTS3DB(object):
         The update is only done if the job is not in a final state
         The assignment flag is released
 
-       :param jobStatusDict : { jobID : { status , error, completeness } }
+       :param jobStatusDict: { jobID : { status , error, completeness } }
     """
     session = self.dbSession()
     try:
@@ -439,6 +441,53 @@ class FTS3DB(object):
       session.rollback()
       self.log.exception("updateJobStatus: unexpected exception", lException=e)
       return S_ERROR("updateJobStatus: unexpected exception %s" % e)
+    finally:
+      session.close()
+
+  def cancelNonExistingJob(self, operationID, ftsGUID):
+    """
+      Cancel an FTS3Job with the associated FTS3Files.
+      This is to be used when the job is not found on the server when monitoring.
+
+      The status of the job and files will be 'Canceled'.
+      The error is specifying that the job is not found.
+      The ftsGUID of the file is released as to be able to pick it up again
+
+      :param operationID: guess
+      :param ftsGUID: guess
+
+      :returns: S_OK() if successful, S_ERROR otherwise
+    """
+    session = self.dbSession()
+    try:
+
+      # We update both the rows of the Jobs and the Files tables
+      # having matching operationID and ftsGUID
+      # https://docs.sqlalchemy.org/en/13/core/tutorial.html#multiple-table-updates
+
+      # We do not need to specify that the File status should be final
+      # since they would have been updated before and the ftsGUID already removed
+      updStmt = update(FTS3Job)\
+          .values({FTS3File.status: 'Canceled',
+                   FTS3File.ftsGUID: None,
+                   FTS3File.error: 'Job %s not found' % ftsGUID,
+                   FTS3Job.status: 'Canceled',
+                   FTS3Job.error: 'Job %s not found' % ftsGUID,
+                   })\
+          .where(and_(FTS3File.operationID == FTS3Job.operationID,
+                      FTS3File.ftsGUID == FTS3Job.ftsGUID,
+                      FTS3Job.operationID == operationID,
+                      FTS3Job.ftsGUID == ftsGUID))
+
+      session.execute(updStmt)
+      session.commit()
+
+      return S_OK()
+
+    except SQLAlchemyError as e:
+      session.rollback()
+      self.log.exception("cancelNonExistingJob: unexpected exception", lException=e)
+      return S_ERROR("cancelNonExistingJob: unexpected exception %s" % e)
     finally:
       session.close()
 

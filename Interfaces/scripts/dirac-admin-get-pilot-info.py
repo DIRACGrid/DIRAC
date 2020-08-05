@@ -6,6 +6,7 @@
 """
   Retrieve available info about the given pilot
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
@@ -82,10 +83,10 @@ for gridID in args:
               diracAdmin.log.notice('%s%s:' % (tab, key), job[key])
       diracAdmin.log.notice('')
     else:
-      print diracAdmin.pPrint.pformat({gridID: res})
+      print(diracAdmin.pPrint.pformat({gridID: res}))
 
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRACExit(exitCode)

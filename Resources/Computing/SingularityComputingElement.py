@@ -43,6 +43,8 @@ cd /tmp
 ./dirac-install.py %(install_args)s
 source bashrc
 dirac-configure -F %(config_args)s -I
+# Add compatibility with pilot3 where config is in pilot.cfg
+ln -s etc/dirac.cfg pilot.cfg
 # Run next wrapper (to start actual job)
 bash %(next_wrapper)s
 # Write the payload errorcode to a file for the outer scripts
@@ -334,7 +336,7 @@ class SingularityComputingElement(ComputingElement):
     self.__deleteWorkArea(baseDir)
     return result
 
-  def getCEStatus(self, jobIDList=None):
+  def getCEStatus(self):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()

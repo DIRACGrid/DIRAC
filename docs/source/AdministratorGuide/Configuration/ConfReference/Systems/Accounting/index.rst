@@ -7,5 +7,4 @@ In this subsection are described the databases, services and URLs related with A
    :maxdepth: 2
    
    Databases/index
-   Services/index
    URLs/index

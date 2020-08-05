@@ -7,6 +7,7 @@
 
 """
 
+from __future__ import print_function
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -17,7 +18,7 @@ import sys
 import os
 
 if len(sys.argv) < 4:
-  print "Usage %s <scriptName> <jobName> <nbJobs>"%sys.argv[0]
+  print("Usage %s <scriptName> <jobName> <nbJobs>" % sys.argv[0])
   sys.exit(1)
 
 scriptName = sys.argv[1]
@@ -29,7 +30,7 @@ if not os.path.exists(jobName):
   os.makedirs("%s/Done"%jobName)
   os.makedirs("%s/Failed"%jobName)
 else:
-  print "Folder %s exists"%jobName
+  print("Folder %s exists" % jobName)
   sys.exit(1)      
 
 f = open("%s/jobIdList.txt"%jobName, 'w')

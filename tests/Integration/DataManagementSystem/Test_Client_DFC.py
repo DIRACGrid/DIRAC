@@ -5,6 +5,7 @@
 """
 
 # pylint: disable=invalid-name,wrong-import-position
+from __future__ import print_function
 import csv
 import filecmp
 
@@ -56,10 +57,10 @@ class UserGroupCase(DFCTestCase):
 
     expectedRes = None
     if isAdmin:
-      print "Running UserTest in admin mode"
+      print("Running UserTest in admin mode")
       expectedRes = True
     else:
-      print "Running UserTest in non admin mode"
+      print("Running UserTest in non admin mode")
       expectedRes = False
 
     # Add the user
@@ -93,10 +94,10 @@ class UserGroupCase(DFCTestCase):
 
     expectedRes = None
     if isAdmin:
-      print "Running UserTest in admin mode"
+      print("Running UserTest in admin mode")
       expectedRes = True
     else:
-      print "Running UserTest in non admin mode"
+      print("Running UserTest in non admin mode")
       expectedRes = False
 
     # Create new group
@@ -129,9 +130,9 @@ class FileCase(DFCTestCase):
 
     """
     if isAdmin:
-      print "Running UserTest in admin mode"
+      print("Running UserTest in admin mode")
     else:
-      print "Running UserTest in non admin mode"
+      print("Running UserTest in non admin mode")
 
     # Adding a new file
     result = self.dfc.addFile({testFile: {'PFN': 'testfilePFN',
@@ -733,7 +734,7 @@ class DirectoryCase(DFCTestCase):
     # when updating something to the same value
     # returns a success if it is allowed
     for attempt in xrange(2):
-      print "Attempt %s" % (attempt + 1)
+      print("Attempt %s" % (attempt + 1))
 
       # Only admin can change path group
       resultG = self.dfc.changePathGroup({parentDir: "toto"})
@@ -1105,7 +1106,7 @@ if __name__ == '__main__':
   properties.extend(res.get('groupProperties', []))
 
   isAdmin = FC_MANAGEMENT in properties
-  print "Running test with admin privileges : ", isAdmin
+  print("Running test with admin privileges : ", isAdmin)
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(UserGroupCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileCase))

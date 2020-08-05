@@ -2,6 +2,7 @@
 """
 
 #! /usr/bin/env python
+from __future__ import print_function
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -24,7 +25,7 @@ def printDict( dictionary ):
     if len( str( value ) ) > value_max:
       value_max = len( str( value ) )
   for key, value in dictionary.items():
-    print key.rjust( key_max ), ' : ', str( value ).ljust( value_max )
+    print(key.rjust(key_max), ' : ', str(value).ljust(value_max))
 
 class TransformationCLI( CLI, API ):
 
@@ -36,9 +37,9 @@ class TransformationCLI( CLI, API ):
 
   def printPair( self, key, value, separator = ":" ):
     valueList = value.split( "\n" )
-    print "%s%s%s %s" % ( key, " " * ( self.indentSpace - len( key ) ), separator, valueList[0].strip() )
+    print("%s%s%s %s" % (key, " " * (self.indentSpace - len(key)), separator, valueList[0].strip()))
     for valueLine in valueList[ 1:-1 ]:
-      print "%s  %s" % ( " " * self.indentSpace, valueLine.strip() )
+      print("%s  %s" % (" " * self.indentSpace, valueLine.strip()))
 
   def do_help( self, args ):
     """ Default version of the help command
@@ -54,19 +55,19 @@ class TransformationCLI( CLI, API ):
         If no command is specified all commands are shown
     """
     if len( args ) == 0:
-      print "\nAvailable commands:\n"
+      print("\nAvailable commands:\n")
       attrList = dir( self )
       attrList.sort()
       for attribute in attrList:
         if attribute.find( "do_" ) == 0:
           self.printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
-          print ""
+          print("")
     else:
       command = args.split()[0].strip()
       try:
         obj = getattr( self, "do_%s" % command )
       except:
-        print "There's no such %s command" % command
+        print("There's no such %s command" % command)
         return
       self.printPair( command, obj.__doc__[1:] )
 
@@ -79,16 +80,16 @@ class TransformationCLI( CLI, API ):
     res = shellCall( 0, comm )
     if res['OK'] and res['Value'][0] == 0:
       _returnCode, stdOut, stdErr = res['Value']
-      print "%s\n%s" % ( stdOut, stdErr )
+      print("%s\n%s" % (stdOut, stdErr))
     else:
-      print res['Message']
+      print(res['Message'])
 
   def check_params( self, args, num ):
     """Checks if the number of parameters correct"""
     argss = args.split()
     length = len( argss )
     if length < num:
-      print "Error: Number of arguments provided %d less that required %d, please correct." % ( length, num )
+      print("Error: Number of arguments provided %d less that required %d, please correct." % (length, num))
       return ( False, length )
     return ( argss, length )
 
@@ -132,12 +133,12 @@ that the username provided to the function.
     author = ""
     status = []
     if not len( argss ) > 0:
-      print self.do_getAllByUser.__doc__
+      print(self.do_getAllByUser.__doc__)
       return
 
     # if the user didnt quoted the authorDN ends
     if '=' in argss[0] and argss[0][0] not in ["'", '"']:
-      print "AuthorDN need to be quoted (just quote that argument)"
+      print("AuthorDN need to be quoted (just quote that argument)")
       return
 
     if argss[0][0] in ["'", '"']:  # authorDN given
@@ -150,7 +151,7 @@ that the username provided to the function.
           break
       # At this point we should have something like 'author'
       if not author[0] in ["'", '"'] or not author[-1] in ["'", '"']:
-        print "AuthorDN need to be quoted (just quote that argument)"
+        print("AuthorDN need to be quoted (just quote that argument)")
         return
       else:
         author = author[1:-1]  # throw away the quotes
@@ -172,7 +173,7 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print self.do_summaryTransformations.__doc__
+      print(self.do_summaryTransformations.__doc__)
       return
 
     transid = argss
@@ -186,14 +187,14 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     for transName in argss:
       res = self.transClient.getTransformation( transName )
       if not res['OK']:
-        print "Getting status of %s failed: %s" % ( transName, res['Message'] )
+        print("Getting status of %s failed: %s" % (transName, res['Message']))
       else:
-        print "%s: %s" % ( transName, res['Value']['Status'] )
+        print("%s: %s" % (transName, res['Value']['Status']))
 
   def do_setStatus( self, args ):
     """Set transformation status
@@ -203,16 +204,16 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 1:
-      print "transformation and status not supplied"
+      print("transformation and status not supplied")
       return
     status = argss[0]
     transNames = argss[1:]
     for transName in transNames:
       res = self.transClient.setTransformationParameter( transName, 'Status', status )
       if not res['OK']:
-        print "Setting status of %s failed: %s" % ( transName, res['Message'] )
+        print("Setting status of %s failed: %s" % (transName, res['Message']))
       else:
-        print "%s set to %s" % ( transName, status )
+        print("%s set to %s" % (transName, status))
 
   def do_start( self, args ):
     """Start transformation
@@ -221,18 +222,18 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     for transName in argss:
       res = self.transClient.setTransformationParameter( transName, 'Status', 'Active' )
       if not res['OK']:
-        print "Setting Status of %s failed: %s" % ( transName, res['Message'] )
+        print("Setting Status of %s failed: %s" % (transName, res['Message']))
       else:
         res = self.transClient.setTransformationParameter( transName, 'AgentType', 'Automatic' )
         if not res['OK']:
-          print "Setting AgentType of %s failed: %s" % ( transName, res['Message'] )
+          print("Setting AgentType of %s failed: %s" % (transName, res['Message']))
         else:
-          print "%s started" % transName
+          print("%s started" % transName)
 
   def do_stop( self, args ):
     """Stop transformation
@@ -241,17 +242,17 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     for transName in argss:
       res = self.transClient.setTransformationParameter( transName, 'AgentType', 'Manual' )
       if not res['OK']:
-        print "Stopping of %s failed: %s" % ( transName, res['Message'] )
+        print("Stopping of %s failed: %s" % (transName, res['Message']))
       else:
-        print "%s stopped" % transName
+        print("%s stopped" % transName)
 
   def do_flush( self, args ):
     """Flush transformation
@@ -260,14 +261,14 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     for transName in argss:
       res = self.transClient.setTransformationParameter( transName, 'Status', 'Flush' )
       if not res['OK']:
-        print "Flushing of %s failed: %s" % ( transName, res['Message'] )
+        print("Flushing of %s failed: %s" % (transName, res['Message']))
       else:
-        print "%s flushing" % transName
+        print("%s flushing" % transName)
 
   def do_get( self, args ):
     """Get transformation definition
@@ -276,12 +277,12 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     transName = argss[0]
     res = self.transClient.getTransformation( transName )
     if not res['OK']:
-      print "Failed to get %s: %s" % ( transName, res['Message'] )
+      print("Failed to get %s: %s" % (transName, res['Message']))
     else:
       res['Value'].pop( 'Body' )
       printDict( res['Value'] )
@@ -293,14 +294,14 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     transName = argss[0]
     res = self.transClient.getTransformation( transName )
     if not res['OK']:
-      print "Failed to get %s: %s" % ( transName, res['Message'] )
+      print("Failed to get %s: %s" % (transName, res['Message']))
     else:
-      print res['Value']['Body']
+      print(res['Value']['Body'])
 
   def do_getFileStat( self, args ):
     """Get transformation file statistics
@@ -309,12 +310,12 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     transName = argss[0]
     res = self.transClient.getTransformationStats( transName )
     if not res['OK']:
-      print "Failed to get statistics for %s: %s" % ( transName, res['Message'] )
+      print("Failed to get statistics for %s: %s" % (transName, res['Message']))
     else:
       res['Value'].pop( 'Total' )
       printDict( res['Value'] )
@@ -326,16 +327,16 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     mask = argss[0]
     transNames = argss[1:]
     for transName in transNames:
       res = self.transClient.setTransformationParameter( transName, "FileMask", mask )
       if not res['OK']:
-        print "Failed to modify input file mask for %s: %s" % ( transName, res['Message'] )
+        print("Failed to modify input file mask for %s: %s" % (transName, res['Message']))
       else:
-        print "Updated %s filemask" % transName
+        print("Updated %s filemask" % transName)
 
   def do_getFiles( self, args ):
     """Get files for the transformation (optionally with a given status)
@@ -344,25 +345,25 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     transName = argss[0]
     status = argss[1:]
     res = self.transClient.getTransformation( transName )
     if not res['OK']:
-      print "Failed to get transformation information: %s" % res['Message']
+      print("Failed to get transformation information: %s" % res['Message'])
     else:
       selectDict = {'TransformationID':res['Value']['TransformationID']}
       if status:
         selectDict['Status'] = status
       res = self.transClient.getTransformationFiles( condDict = selectDict )
       if not res['OK']:
-        print "Failed to get transformation files: %s" % res['Message']
+        print("Failed to get transformation files: %s" % res['Message'])
       elif res['Value']:
         self._printFormattedDictList( res['Value'], ['LFN', 'Status', 'ErrorCount', 'TargetSE', 'LastUpdate'],
                                       'LFN', 'LFN' )
       else:
-        print "No files found"
+        print("No files found")
 
   def do_getFileStatus( self, args ):
     """Get file(s) status for the given transformation
@@ -371,19 +372,19 @@ that the username provided to the function.
     """
     argss = args.split()
     if len( argss ) < 2:
-      print "transformation and file not supplied"
+      print("transformation and file not supplied")
       return
     transName = argss[0]
     lfns = argss[1:]
 
     res = self.transClient.getTransformation( transName )
     if not res['OK']:
-      print "Failed to get transformation information: %s" % res['Message']
+      print("Failed to get transformation information: %s" % res['Message'])
     else:
       selectDict = {'TransformationID':res['Value']['TransformationID']}
       res = self.transClient.getTransformationFiles( condDict = selectDict )
       if not res['OK']:
-        print "Failed to get transformation files: %s" % res['Message']
+        print("Failed to get transformation files: %s" % res['Message'])
       elif res['Value']:
         filesList = []
         for fileDict in res['Value']:
@@ -393,9 +394,9 @@ that the username provided to the function.
           self._printFormattedDictList( filesList, ['LFN', 'Status', 'ErrorCount', 'TargetSE', 'LastUpdate'],
                                         'LFN', 'LFN' )
         else:
-          print "Could not find any LFN in", lfns, "for transformation", transName
+          print("Could not find any LFN in", lfns, "for transformation", transName)
       else:
-        print "No files found"
+        print("No files found")
 
   def do_getOutputFiles( self, args ):
     """Get output files for the transformation
@@ -404,26 +405,26 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     transName = argss[0]
     res = self.transClient.getTransformation( transName )
     if not res['OK']:
-      print "Failed to get transformation information: %s" % res['Message']
+      print("Failed to get transformation information: %s" % res['Message'])
     else:
       fc = FileCatalog()
       meta = {}
       meta ['ProdID'] = transName
       res = fc.findFilesByMetadata( meta )
       if not res['OK']:
-        print res['Message']
+        print(res['Message'])
         return
       if not len( res['Value'] ) > 0:
-        print 'No output files yet for transformation %d' % int( transName )
+        print('No output files yet for transformation %d' % int(transName))
         return
       else:
         for lfn in res['Value']:
-          print lfn
+          print(lfn)
 
   def do_getInputDataQuery( self, args ):
     """Get input data query for the transformation
@@ -432,14 +433,15 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no transformation supplied"
+      print("no transformation supplied")
       return
     transName = argss[0]
-    res = self.transClient.getTransformationInputDataQuery( transName )
+    # res = self.transClient.getTransformationInputDataQuery( transName )
+    res = self.transClient.getTransformationMetaQuery(transName, 'Input')
     if not res['OK']:
-      print "Failed to get transformation input data query: %s" % res['Message']
+      print("Failed to get transformation input data query: %s" % res['Message'])
     else:
-      print res['Value']
+      print(res['Value'])
 
   def do_setFileStatus( self, args ):
     """Set file status for the given transformation
@@ -448,16 +450,16 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) == 3:
-      print "transformation file and status not supplied"
+      print("transformation file and status not supplied")
       return
     transName = argss[0]
     lfn = argss[1]
     status = argss[2]
     res = self.transClient.setFileStatusForTransformation( transName, status, [lfn] )
     if not res['OK']:
-      print "Failed to update file status: %s" % res['Message']
+      print("Failed to update file status: %s" % res['Message'])
     else:
-      print "Updated file status to %s" % status
+      print("Updated file status to %s" % status)
 
   def do_resetFile( self, args ):
     """Reset file status for the given transformation
@@ -466,20 +468,20 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 1:
-      print "transformation and file(s) not supplied"
+      print("transformation and file(s) not supplied")
       return
     transName = argss[0]
     lfns = argss[1:]
     res = self.transClient.setFileStatusForTransformation( transName, 'Unused', lfns )
     if not res['OK']:
-      print "Failed to reset file status: %s" % res['Message']
+      print("Failed to reset file status: %s" % res['Message'])
     else:
       if 'Failed' in res['Value']:
-        print "Could not reset some files: "
+        print("Could not reset some files: ")
         for lfn, reason in res['Value']['Failed'].items():
-          print lfn, reason
+          print(lfn, reason)
       else:
-        print "Updated file statuses to 'Unused' for %d file(s)" % len( lfns )
+        print("Updated file statuses to 'Unused' for %d file(s)" % len(lfns))
 
   def do_resetProcessedFile( self, args ):
     """ Reset file status for the given transformation
@@ -488,20 +490,20 @@ that the username provided to the function.
     argss = args.split()
 
     if not len( argss ) > 1:
-      print "transformation and file(s) not supplied"
+      print("transformation and file(s) not supplied")
       return
     transName = argss[0]
     lfns = argss[1:]
     res = self.transClient.setFileStatusForTransformation( transName, 'Unused', lfns, force = True )
     if not res['OK']:
-      print "Failed to reset file status: %s" % res['Message']
+      print("Failed to reset file status: %s" % res['Message'])
     else:
       if 'Failed' in res['Value'] and res['Value']['Failed']:
-        print "Could not reset some files: "
+        print("Could not reset some files: ")
         for lfn, reason in res['Value']['Failed'].items():
-          print lfn, reason
+          print(lfn, reason)
       else:
-        print "Updated file statuses to 'Unused' for %d file(s)" % len( lfns )
+        print("Updated file statuses to 'Unused' for %d file(s)" % len(lfns))
 
   ####################################################################
   #
@@ -515,14 +517,14 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no directory supplied"
+      print("no directory supplied")
       return
     for directory in argss:
       res = self.transClient.addDirectory( directory, force = True )
       if not res['OK']:
-        print 'failed to add directory %s: %s' % ( directory, res['Message'] )
+        print('failed to add directory %s: %s' % (directory, res['Message']))
       else:
-        print 'added %s files for %s' % ( res['Value'], directory )
+        print('added %s files for %s' % (res['Value'], directory))
 
   def do_replicas( self, args ):
     """ Get replicas for <path>
@@ -531,21 +533,21 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no files supplied"
+      print("no files supplied")
       return
     res = self.transClient.getReplicas( argss )
     if not res['OK']:
-      print "failed to get any replica information: %s" % res['Message']
+      print("failed to get any replica information: %s" % res['Message'])
       return
     for lfn in sorted( res['Value']['Failed'].keys() ):
       error = res['Value']['Failed'][lfn]
-      print "failed to get replica information for %s: %s" % ( lfn, error )
+      print("failed to get replica information for %s: %s" % (lfn, error))
     for lfn in sorted( res['Value']['Successful'].keys() ):
       ses = sorted( res['Value']['Successful'][lfn].keys() )
       outStr = "%s :" % lfn.ljust( 100 )
       for se in ses:
         outStr = "%s %s" % ( outStr, se.ljust( 15 ) )
-      print outStr
+      print(outStr)
 
   def do_addFile( self, args ):
     """Add new files to transformation DB
@@ -554,7 +556,7 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no files supplied"
+      print("no files supplied")
       return
     lfnDict = {}
     for lfn in argss:
@@ -562,13 +564,13 @@ that the username provided to the function.
                       'Checksum':'IGNORED-CHECKSUM'}
     res = self.transClient.addFile( lfnDict, force = True )
     if not res['OK']:
-      print "failed to add any files: %s" % res['Message']
+      print("failed to add any files: %s" % res['Message'])
       return
     for lfn in sorted( res['Value']['Failed'].keys() ):
       error = res['Value']['Failed'][lfn]
-      print "failed to add %s: %s" % ( lfn, error )
+      print("failed to add %s: %s" % (lfn, error))
     for lfn in sorted( res['Value']['Successful'].keys() ):
-      print "added %s" % lfn
+      print("added %s" % lfn)
 
   def do_removeFile( self, args ):
     """Remove file from transformation DB
@@ -577,17 +579,17 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 0:
-      print "no files supplied"
+      print("no files supplied")
       return
     res = self.transClient.removeFile( argss )
     if not res['OK']:
-      print "failed to remove any files: %s" % res['Message']
+      print("failed to remove any files: %s" % res['Message'])
       return
     for lfn in sorted( res['Value']['Failed'].keys() ):
       error = res['Value']['Failed'][lfn]
-      print "failed to remove %s: %s" % ( lfn, error )
+      print("failed to remove %s: %s" % (lfn, error))
     for lfn in sorted( res['Value']['Successful'].keys() ):
-      print "removed %s" % lfn
+      print("removed %s" % lfn)
 
   def do_addReplica( self, args ):
     """ Add new replica to the transformation DB
@@ -596,7 +598,7 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) == 2:
-      print "no file info supplied"
+      print("no file info supplied")
       return
     lfn = argss[0]
     se = argss[1]
@@ -604,13 +606,13 @@ that the username provided to the function.
     lfnDict[lfn] = {'PFN':'IGNORED-PFN', 'SE':se, 'Size':0, 'GUID':'IGNORED-GUID', 'Checksum':'IGNORED-CHECKSUM'}
     res = self.transClient.addReplica( lfnDict, force = True )
     if not res['OK']:
-      print "failed to add replica: %s" % res['Message']
+      print("failed to add replica: %s" % res['Message'])
       return
     for lfn in sorted( res['Value']['Failed'].keys() ):
       error = res['Value']['Failed'][lfn]
-      print "failed to add replica: %s" % ( error )
+      print("failed to add replica: %s" % (error))
     for lfn in sorted( res['Value']['Successful'].keys() ):
-      print "added %s" % lfn
+      print("added %s" % lfn)
 
   def do_removeReplica( self, args ):
     """Remove replica from the transformation DB
@@ -619,7 +621,7 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) == 2:
-      print "no file info supplied"
+      print("no file info supplied")
       return
     lfn = argss[0]
     se = argss[1]
@@ -627,13 +629,13 @@ that the username provided to the function.
     lfnDict[lfn] = {'PFN':'IGNORED-PFN', 'SE':se, 'Size':0, 'GUID':'IGNORED-GUID', 'Checksum':'IGNORED-CHECKSUM'}
     res = self.transClient.removeReplica( lfnDict )
     if not res['OK']:
-      print "failed to remove replica: %s" % res['Message']
+      print("failed to remove replica: %s" % res['Message'])
       return
     for lfn in sorted( res['Value']['Failed'].keys() ):
       error = res['Value']['Failed'][lfn]
-      print "failed to remove replica: %s" % ( error )
+      print("failed to remove replica: %s" % (error))
     for lfn in sorted( res['Value']['Successful'].keys() ):
-      print "removed %s" % lfn
+      print("removed %s" % lfn)
 
   def do_setReplicaStatus( self, args ):
     """Set replica status, usually used to mark a replica Problematic
@@ -642,7 +644,7 @@ that the username provided to the function.
     """
     argss = args.split()
     if not len( argss ) > 2:
-      print "no file info supplied"
+      print("no file info supplied")
       return
     lfn = argss[0]
     status = argss[1]
@@ -651,13 +653,13 @@ that the username provided to the function.
     lfnDict[lfn] = {'Status':status, 'PFN':'IGNORED-PFN', 'SE':se, 'Size':0, 'GUID':'IGNORED-GUID', 'Checksum':'IGNORED-CHECKSUM'}
     res = self.transClient.setReplicaStatus( lfnDict )
     if not res['OK']:
-      print "failed to set replica status: %s" % res['Message']
+      print("failed to set replica status: %s" % res['Message'])
       return
     for lfn in sorted( res['Value']['Failed'].keys() ):
       error = res['Value']['Failed'][lfn]
-      print "failed to set replica status: %s" % ( error )
+      print("failed to set replica status: %s" % (error))
     for lfn in sorted( res['Value']['Successful'].keys() ):
-      print "updated replica status %s" % lfn
+      print("updated replica status %s" % lfn)
 
 if __name__ == "__main__":
   cli = TransformationCLI()

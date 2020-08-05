@@ -12,7 +12,8 @@ from DIRAC.Core.Security import Locations, Utilities
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 __RCSID__ = "$Id$"
 
-class BundleDeliveryClient:
+
+class BundleDeliveryClient(object):
 
   def __init__(self, rpcClient=False, transferClient=False):
     self.rpcClient = rpcClient

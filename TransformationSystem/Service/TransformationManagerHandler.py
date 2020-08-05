@@ -1,7 +1,7 @@
 """ DISET request handler base class for the TransformationDB.
 """
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -39,7 +39,7 @@ class TransformationManagerHandler(RequestHandler):
 
   def _parseRes(self, res):
     if not res['OK']:
-      gLogger.error('TransformationManager failure', res['Message'])
+      self.log.error('TransformationManager failure', res['Message'])
     return res
 
   def setDatabase(self, oDatabase):
@@ -66,7 +66,9 @@ class TransformationManagerHandler(RequestHandler):
                                body='',
                                maxTasks=0,
                                eventsPerTask=0,
-                               addFiles=True):
+                               addFiles=True,
+                               inputMetaQuery=None,
+                               outputMetaQuery=None):
     #    authorDN = self._clientTransport.peerCredentials['DN']
     #    authorGroup = self._clientTransport.peerCredentials['group']
     credDict = self.getRemoteCredentials()
@@ -80,9 +82,11 @@ class TransformationManagerHandler(RequestHandler):
                                      body=body,
                                      maxTasks=maxTasks,
                                      eventsPerTask=eventsPerTask,
-                                     addFiles=addFiles)
+                                     addFiles=addFiles,
+                                     inputMetaQuery=inputMetaQuery,
+                                     outputMetaQuery=outputMetaQuery)
     if res['OK']:
-      gLogger.info("Added transformation %d" % res['Value'])
+      self.log.info("Added transformation", res['Value'])
     return self._parseRes(res)
 
   types_deleteTransformation = [transTypes]
@@ -190,21 +194,10 @@ class TransformationManagerHandler(RequestHandler):
       return S_OK({})
 
     statusSample = dictOfNewFilesStatus.values()[0]
-    if isinstance(statusSample, basestring):
-      # FIXME: kept for backward compatibility with old clients... Remove when no longer needed
-      # This comes from an old client, set the error flag but we must get the current status first
-      newStatusForFileIDs = {}
-      res = database.getTransformationFiles({'TransformationID': transName, 'FileID': dictOfNewFilesStatus.keys()})
-      if not res['OK']:
-        return res
-      currentStatus = dict((fileDict['FileID'], fileDict['Status']) for fileDict in res['Value'])
-      for fileID, status in dictOfNewFilesStatus.iteritems():
-        newStatus = dictOfNewFilesStatus[fileID]
-        newStatusForFileIDs[fileID] = (newStatus, self._wasFileInError(newStatus, currentStatus[fileID]))
-    elif isinstance(statusSample, (list, tuple)) and len(statusSample) == 2:
+    if isinstance(statusSample, (list, tuple)) and len(statusSample) == 2:
       newStatusForFileIDs = dictOfNewFilesStatus
     else:
-      return S_ERROR("Status field should be a string or two values")
+      return S_ERROR("Status field should be two values")
 
     res = database._getConnectionTransID(False, transName)
     if not res['OK']:
@@ -314,32 +307,31 @@ class TransformationManagerHandler(RequestHandler):
 
   ####################################################################
   #
-  # These are the methods for TransformationInputDataQuery table
+  # These are the methods for TransformationMetaQueries table. It replaces methods
+  # for the old TransformationInputDataQuery table
   #
 
-  types_createTransformationInputDataQuery = [transTypes, dict]
+  types_createTransformationMetaQuery = [transTypes, dict, basestring]
 
-  def export_createTransformationInputDataQuery(self, transName, queryDict):
+  def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict['DN']
-    # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.createTransformationInputDataQuery(transName, queryDict, author=authorDN)
+    res = database.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
     return self._parseRes(res)
 
-  types_deleteTransformationInputDataQuery = [transTypes]
+  types_deleteTransformationMetaQuery = [transTypes, basestring]
 
-  def export_deleteTransformationInputDataQuery(self, transName):
+  def export_deleteTransformationMetaQuery(self, transName, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict['DN']
-    # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.deleteTransformationInputDataQuery(transName, author=authorDN)
+    res = database.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
     return self._parseRes(res)
 
-  types_getTransformationInputDataQuery = [transTypes]
+  types_getTransformationMetaQuery = [transTypes, basestring]
 
-  def export_getTransformationInputDataQuery(self, transName):
-    res = database.getTransformationInputDataQuery(transName)
-    return self._parseRes(res)
+  def export_getTransformationMetaQuery(self, transName, queryType):
+    # Here not calling _parseRes of the result because it should not log an error
+    return database.getTransformationMetaQuery(transName, queryType)
 
   ####################################################################
   #
@@ -456,7 +448,7 @@ class TransformationManagerHandler(RequestHandler):
       transID = transDict['TransformationID']
       res = database.getTransformationTaskStats(transID)
       if not res['OK']:
-        gLogger.warn('Failed to get job statistics for transformation %d' % transID)
+        self.log.warn('Failed to get job statistics for transformation', transID)
         continue
       transDict['JobStats'] = res['Value']
       res = database.getTransformationStats(transID)
@@ -497,7 +489,7 @@ class TransformationManagerHandler(RequestHandler):
                                     selectColumns=tableSelections[table], timeStamp=tableTimeStamps[table],
                                     statusColumn=tableStatusColumn[table])
     if not res['OK']:
-      gLogger.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
+      self.log.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
       return self._parseRes(res)
     resDict[table] = res['Value']
     selections = res['Value']['Selections']
@@ -515,7 +507,7 @@ class TransformationManagerHandler(RequestHandler):
                                       selectColumns=tableSelections[table], timeStamp=tableTimeStamps[table],
                                       statusColumn=tableStatusColumn[table])
       if not res['OK']:
-        gLogger.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
+        self.log.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
         return self._parseRes(res)
       resDict[table] = res['Value']
     return S_OK(resDict)

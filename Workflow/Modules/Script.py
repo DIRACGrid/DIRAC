@@ -99,7 +99,7 @@ class Script(ModuleBase):
     status, stdout, stderr = outputDict['Value'][0:3]
     if status:
       failed = True
-      self.log.error("Non-zero status while executing", "%s: %s" % (status, self.command))
+      self.log.error("Non-zero status while executing", "%s exited with status %s" % (self.command, status))
     else:
       self.log.info("%s execution completed with status %s" % (self.command, status))
 

@@ -4,6 +4,7 @@
 
 
 #try: # this part to import as part of the DIRAC framework
+from __future__ import print_function
 import xml.sax
 from xml.sax.handler import ContentHandler
 
@@ -70,7 +71,7 @@ class WorkflowXMLHandler(ContentHandler):
     name == "required" or name == "descr_short" or name == "name" or name == "type"  or name == "description"  or name == "body":
       pass
     else:
-      print "UNTREATED! startElement name=", name, "attr=", attrs.getLength(), attrs.getNames()
+      print("UNTREATED! startElement name=", name, "attr=", attrs.getLength(), attrs.getNames())
       pass
 
   def endElement(self, name):
@@ -121,7 +122,7 @@ class WorkflowXMLHandler(ContentHandler):
       obj=self.stack.pop();
       self.stack[len(self.stack)-1].addParameter(obj)
     else:
-      print "UNTREATED! endElement", name
+      print("UNTREATED! endElement", name)
 
   def getCharacters(self):
     # combine all strings and clear the list

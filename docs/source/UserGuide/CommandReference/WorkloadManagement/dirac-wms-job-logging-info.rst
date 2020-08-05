@@ -1,8 +1,10 @@
-=================================
-dirac-wms-job-logging-info
-=================================
+.. _dirac-wms-job-logging-info:
 
-  Retrieve history of transitions for a DIRAC job
+==========================
+dirac-wms-job-logging-info
+==========================
+
+Retrieve history of transitions for a DIRAC job
 
 Usage::
 
@@ -10,7 +12,7 @@ Usage::
 
 Arguments::
 
-  JobID:    DIRAC Job ID 
+  JobID:    DIRAC Job ID
 
 Example::
 
@@ -30,5 +32,3 @@ Example::
   Completed                     Uploading Output Sandbox            Unknown                       2011-02-14 11:28:04
   Completed                     Output Sandbox Uploaded             Unknown                       2011-02-14 11:28:07
   Done                          Execution Complete                  Unknown                       2011-02-14 11:28:07
-
-

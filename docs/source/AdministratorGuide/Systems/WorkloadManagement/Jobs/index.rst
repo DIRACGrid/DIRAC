@@ -19,3 +19,22 @@ Applications properties are reflected in payload properties.
 
 The DIRAC `APIs <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/API_Module.html>`_ can be used to create and submit jobs. 
 Specifically, objects of type `Job <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/Job.html>`_ represents a job. The API class `Dirac <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/Dirac.html>`_ and more specifically the call to `submitJob <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/Dirac.html#DIRAC.Interfaces.API.Dirac.Dirac.submitJob>`_ submits jobs to the DIRAC WMS.
+
+The job status of a successful job proceeds in the following order:
+
+- Received,
+- Checking,
+- Staging,
+- Waiting,
+- Matched,
+- Running,
+- Completed,
+- Done.
+
+Jobs which return no heartbeat have a status of *Stalled* and jobs where any workflow modules return an error status are classed as *Failed*.
+
+The basic flowchart describing the evolution of a job's status can be found in the following flowchart.
+
+.. image:: jobsStateMachine.png
+   :alt: Jobs state machine
+   :align: center

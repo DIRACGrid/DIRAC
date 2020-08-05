@@ -30,7 +30,7 @@ class CREAMComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(CREAMComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = CE_NAME
     self.submittedJobs = 0
@@ -98,8 +98,7 @@ class CREAMComputingElement(ComputingElement):
   def _reset(self):
     self.queue = self.ceParameters.get("CEQueueName", self.ceParameters['Queue'])
     self.outputURL = self.ceParameters.get('OutputURL', 'gsiftp://localhost')
-    if 'GridEnv' in self.ceParameters:
-      self.gridEnv = self.ceParameters['GridEnv']
+    self.gridEnv = self.ceParameters.get('GridEnv', self.gridEnv)
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):

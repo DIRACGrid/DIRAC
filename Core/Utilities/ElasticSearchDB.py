@@ -4,6 +4,8 @@ Elasticsearch database.
 
 """
 
+from __future__ import absolute_import
+import six
 __RCSID__ = "$Id$"
 
 from datetime import datetime
@@ -42,6 +44,7 @@ class ElasticSearchDB(object):
   ########################################################################
   def __init__(self, host, port, user=None, password=None, indexPrefix='', useSSL=True):
     """ c'tor
+
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
@@ -191,8 +194,8 @@ class ElasticSearchDB(object):
   ########################################################################
   def getDocTypes(self, indexName):
     """
-    :param str indexName is the name of the index...
-    :return S_OK or S_ERROR
+    :param str indexName: is the name of the index...
+    :return: S_OK or S_ERROR
     """
     result = []
     try:
@@ -220,6 +223,7 @@ class ElasticSearchDB(object):
   def exists(self, indexName):
     """
     it checks the existance of an index
+
     :param str indexName: the name of the index
     """
     return self.__client.indices.exists(indexName)
@@ -234,7 +238,7 @@ class ElasticSearchDB(object):
                        Currently only daily and monthly indexes are supported.
 
     """
-    fullIndex = generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
+    fullIndex = self.generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
     if self.exists(fullIndex):
       return S_OK(fullIndex)
 
@@ -243,12 +247,12 @@ class ElasticSearchDB(object):
       self.__client.indices.create(fullIndex, body={'mappings': mapping})
       return S_OK(fullIndex)
     except Exception as e:  # pylint: disable=broad-except
-      sLog.error("Can not create the index:", e)
+      sLog.error("Can not create the index:", repr(e))
       return S_ERROR("Can not create the index")
 
   def deleteIndex(self, indexName):
     """
-    :param str indexName the name of the index to be deleted...
+    :param str indexName: the name of the index to be deleted...
     """
     try:
       retVal = self.__client.indices.delete(indexName)
@@ -291,21 +295,22 @@ class ElasticSearchDB(object):
 
     return S_ERROR(res)
 
-  def bulk_index(self, indexprefix, doc_type, data, mapping=None, period=None):
+  def bulk_index(self, indexprefix, doc_type='_doc', data=None, mapping=None, period=None):
     """
     :param str indexPrefix: index name.
     :param str doc_type: the type of the document
     :param list data: contains a list of dictionary
-    :paran dict mapping: the mapping used by elasticsearch
+    :param dict mapping: the mapping used by elasticsearch
     :param str period: We can specify which kind of indices will be created.
                        Currently only daily and monthly indexes are supported.
     """
-    sLog.info("%d records will be insert to %s" % (len(data), doc_type))
+    sLog.verbose("Bulk indexing", "%d records will be inserted" % len(data))
     if mapping is None:
       mapping = {}
 
-    indexName = generateFullIndexName(indexprefix, period)
-    sLog.debug("inserting datat to %s index" % indexName)
+    indexName = self.generateFullIndexName(indexprefix, period)
+    sLog.debug("Bulk indexing into %s/%s of %s" % (indexName, doc_type, data))
+
     if not self.exists(indexName):
       retVal = self.createIndex(indexprefix, mapping, period)
       if not retVal['OK']:
@@ -327,7 +332,7 @@ class ElasticSearchDB(object):
       try:
         if isinstance(timestamp, datetime):
           body['_source']['timestamp'] = int(timestamp.strftime('%s')) * 1000
-        elif isinstance(timestamp, basestring):
+        elif isinstance(timestamp, six.string_types):
           timeobj = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
           body['_source']['timestamp'] = int(timeobj.strftime('%s')) * 1000
         else:  # we assume  the timestamp is an unix epoch time (integer).
@@ -351,9 +356,9 @@ class ElasticSearchDB(object):
 
   def getUniqueValue(self, indexName, key, orderBy=False):
     """
-    :param str indexName the name of the index which will be used for the query
-    :param dict orderBy it is a dictionary in case we want to order the result {key:'desc'} or {key:'asc'}
-    It returns a list of unique value for a certain key from the dictionary.
+    :param str indexName: the name of the index which will be used for the query
+    :param dict orderBy: it is a dictionary in case we want to order the result {key:'desc'} or {key:'asc'}
+    :returns: a list of unique value for a certain key from the dictionary.
     """
 
     query = self._Search(indexName)
@@ -399,6 +404,7 @@ class ElasticSearchDB(object):
   def pingDB(self):
     """
     Try to connect to the database
+
     :return: S_OK(TRUE/FALSE)
     """
     connected = False
@@ -422,28 +428,29 @@ class ElasticSearchDB(object):
       return S_ERROR(inst)
     return S_OK('Successfully deleted data from index %s' % indexName)
 
+  @staticmethod
+  def generateFullIndexName(indexName, period=None):
+    """
+    Given an index prefix we create the actual index name. Each day an index is created.
 
-def generateFullIndexName(indexName, period=None):
-  """
-  Given an index prefix we create the actual index name. Each day an index is created.
-  :param str indexName: it is the name of the index
-  :param str period: We can specify, which kind of indexes will be created.
-                     Currently only daily and monthly indexes are supported.
-  """
+    :param str indexName: it is the name of the index
+    :param str period: We can specify, which kind of indexes will be created.
+        Currently only daily and monthly indexes are supported.
+    """
 
-  if period is None:
-    sLog.warn("Daily indexes are used, because the period is not provided!")
-    period = 'day'
+    if period is None:
+      sLog.warn("Daily indexes are used, because the period is not provided!")
+      period = 'day'
 
-  today = datetime.today().strftime("%Y-%m-%d")
-  index = ''
-  if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
-    sLog.warn("Period is not correct daily indexes are used instead:", period)
-    index = "%s-%s" % (indexName, today)
-  elif period.lower() == 'day':
-    index = "%s-%s" % (indexName, today)
-  elif period.lower() == 'month':
-    month = datetime.today().strftime("%Y-%m")
-    index = "%s-%s" % (indexName, month)
+    today = datetime.today().strftime("%Y-%m-%d")
+    index = ''
+    if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
+      sLog.warn("Period is not correct daily indexes are used instead:", period)
+      index = "%s-%s" % (indexName, today)
+    elif period.lower() == 'day':
+      index = "%s-%s" % (indexName, today)
+    elif period.lower() == 'month':
+      month = datetime.today().strftime("%Y-%m")
+      index = "%s-%s" % (indexName, month)
 
-  return index
+    return index

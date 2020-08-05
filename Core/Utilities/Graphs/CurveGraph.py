@@ -95,7 +95,7 @@ class CurveGraph( PlotBase ):
     ymax *= 1.1
     ymin = min( tmp_min_y, 0. )
     ymin *= 1.1
-    if self.prefs.has_key('log_yaxis'):
+    if 'log_yaxis' in self.prefs:
       ymin = 0.001
 
     xmax=max(tmp_x)*1.1

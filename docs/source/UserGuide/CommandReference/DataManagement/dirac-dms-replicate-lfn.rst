@@ -1,8 +1,10 @@
-==============================
-dirac-dms-replicate-lfn
-==============================
+.. _dirac-dms-replicate-lfn:
 
-  Replicate an existing LFN to another Storage Element
+=======================
+dirac-dms-replicate-lfn
+=======================
+
+Replicate an existing LFN to another Storage Element
 
 Usage::
 
@@ -11,12 +13,9 @@ Usage::
 Arguments::
 
   LFN:      Logical File Name or file containing LFNs
-
   Dest:     Valid DIRAC SE
-
   Source:   Valid DIRAC SE
-
-  Cache:    Local directory to be used as cache 
+  Cache:    Local directory to be used as cache
 
 Example::
 
@@ -24,5 +23,3 @@ Example::
   {'Failed': {},
    'Successful': {'/formation/user/v/vhamar/Test.txt': {'register': 0.50833415985107422,
                                                         'replicate': 11.878520965576172}}}
-
-

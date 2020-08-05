@@ -415,7 +415,7 @@ class Logging(object):
       # extras attributes are not camel case because log record attributes are
       # not either.
       extra = {'componentname': self._componentName,
-               'varmessage': sVarMsg,
+               'varmessage': str(sVarMsg),
                'spacer': '' if not sVarMsg else ' ',
                'customname': self._customName}
       self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)

@@ -4,17 +4,21 @@
 # Date: 2013/03/12 15:36:47
 ########################################################################
 
-""" :mod: RequestExecutingAgent
+"""Agent processing the requests
 
-    ===========================
+ .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    .. module: RequestExecutingAgent
+See also the information about the :ref:`requestManagementSystem`.
 
-    :synopsis: request executing agent
+The following options can be set for the RequestExecutingAgent. The configuration also includes the
+``OperationHandlers`` available in DIRAC.
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN RequestExecutingAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: RequestExecutingAgent options
 
-    request processing agent
 """
 
 __RCSID__ = '$Id$'
@@ -49,6 +53,7 @@ class AgentConfigError(Exception):
 
   def __init__(self, msg):
     """ ctor
+
     :param str msg: error string
     """
     Exception.__init__(self)
@@ -74,17 +79,15 @@ class RequestExecutingAgent(AgentModule):
   # # requests/cycle
   __requestsPerCycle = 100
   # # minimal nb of subprocess running
-  __minProcess = 2
+  __minProcess = 20
   # # maximal nb of subprocess executed same time
-  __maxProcess = 4
+  __maxProcess = 20
   # # ProcessPool queue size
   __queueSize = 20
   # # file timeout
   __fileTimeout = 300
   # # operation timeout
   __operationTimeout = 300
-  # # ProcessTask default timeout in seconds
-  __taskTimeout = 900
   # # ProcessPool finalization timeout
   __poolTimeout = 900
   # # ProcessPool sleep time
@@ -103,7 +106,7 @@ class RequestExecutingAgent(AgentModule):
     self.log.info("Requests/cycle = %d" % self.__requestsPerCycle)
     self.__minProcess = self.am_getOption("MinProcess", self.__minProcess)
     self.log.info("ProcessPool min process = %d" % self.__minProcess)
-    self.__maxProcess = self.am_getOption("MaxProcess", 4)
+    self.__maxProcess = self.am_getOption("MaxProcess", self.__maxProcess)
     self.log.info("ProcessPool max process = %d" % self.__maxProcess)
     self.__queueSize = self.am_getOption("ProcessPoolQueueSize", self.__queueSize)
     self.log.info("ProcessPool queue size = %d" % self.__queueSize)
@@ -111,7 +114,7 @@ class RequestExecutingAgent(AgentModule):
     self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout)
     self.__poolSleep = int(self.am_getOption("ProcessPoolSleep", self.__poolSleep))
     self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep)
-    self.__bulkRequest = self.am_getOption("BulkRequest", 0)
+    self.__bulkRequest = self.am_getOption("BulkRequest", self.__bulkRequest)
     self.log.info("Bulk request size = %d" % self.__bulkRequest)
 
     # # keep config path and agent name

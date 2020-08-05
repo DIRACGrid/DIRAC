@@ -7,7 +7,8 @@ Workload Management System (WMS)
 The DIRAC Workload Management System (WMS) realizes the task scheduling paradigm with Generic :ref:`Pilot <pilots>` Jobs.
 This task scheduling method solves many problems of using unstable distributed computing resources which are
 available in computing grids. In particular, it helps the management of the user activities in large Virtual
-Organizations such as LHC experiments. 
+Organizations such as LHC experiments. In more details the DIRAC WMS with Pilot Jobs is described
+`here <http://iopscience.iop.org/article/10.1088/1742-6596/898/9/092024>`__.
 
 The WMS provides high user jobs efficiency, hiding the heterogeneity of the the underlying computing resources.
 
@@ -27,11 +28,11 @@ The environment checks can be tailored for specific needs of a particular commun
 For the users all the internal WMS/pilots machinery is completely hidden.
 They see all the DIRAC operated computing resources as single large batch system.
 
-The following picture shows a simplified view of how the system works
+The following video shows a simplified view of how the system works
 
-.. image:: WMS.png
-   :alt: WMS-Pilots.
-   :align: center
+.. raw:: html
+
+   <iframe width="560" height="315" src="https://www.youtube.com/embed/t7BAnbE4glA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
 The :ref:`computing resources <resourcesComputing>` that DIRAC can administer can be of different types.
@@ -44,11 +45,13 @@ In any case, the following definitions apply:
 - computing slot: a resource allocated by a resource provider for a community usage on a WN (a batch job slot, a VM slot...)
 
 DIRAC alone can send pilots to several types of computing element, and recognizes several types of batch systems.
-You can find a presentation highlighting these concepts `here <https://indico.cern.ch/event/658060/contributions/2943568/attachments/1623665/2584839/DIRAC.pdf>`_.
+You can find a presentation highlighting these concepts `here <https://indico.cern.ch/event/658060/contributions/2943568/attachments/1623665/2584839/DIRAC.pdf>`__.
 
 
 In case more than one type of resource is available, specifically VM-based resources,
 the pilots scheduling should happen with other means then SiteDirectors, as exemplified in the following picture:
+
+
 
 .. image:: WMS-Pilots2.png
    :alt: WMS-Pilots.

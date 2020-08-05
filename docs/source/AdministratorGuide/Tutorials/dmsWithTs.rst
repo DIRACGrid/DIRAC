@@ -261,19 +261,17 @@ To add the metadata query functionality to our ``createRemoval.py`` script from 
 of lines
 
 .. code-block:: python
-   :lineno-start: 61
+   :lineno-start: 44
 
-   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-   metadata = {'TransformationID': 2}
-   res = TransformationClient().createTransformationInputDataQuery(transID, metadata)
-   gLogger.notice('Added input data query', res)
+   metaQuery = {'TransformationID': 2}
+   myTrans.setInputDataQuery(metaQuery)
+
    ...
 
 Adapt the script by inserting the lines and changing the ``uniqueIdentifier`` and execute it::
 
   [diracuser@dirac-tuto ~]$ python createRemoval.py
   Created transformation JJJ
-  Added input data query {'OK': True, 'rpcStub': (('Transformation/TransformationManager', {'skipCACheck': False, 'keepAliveLapse': 150, 'timeout': 120}), 'createTransformationInputDataQuery', (JJJL, {'TransformationID': 2})), 'Value': 1L}
   Created RemoveReplica transformation: JJJL
 
 Conclusion

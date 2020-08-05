@@ -2,15 +2,17 @@
 
 __RCSID__ = "$Id$"
 
+import six
+
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
+@createClient('Transformation/TransformationManager')
 class TransformationClient(Client):
-
-  """ Exposes the functionality available in the DIRAC/TransformationHandler
+  """ Exposes the functionality available in the DIRAC/TransformationManagerHandler
 
       This inherits the DIRAC base Client for direct execution of server functionality.
       The following methods are available (although not visible here).
@@ -53,7 +55,7 @@ class TransformationClient(Client):
           getTransformationStatusCounters()
           getTransformationSummary()
           getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
-  """
+    """
 
   def __init__(self, **kwargs):
     """ Simple constructor
@@ -61,7 +63,7 @@ class TransformationClient(Client):
 
     Client.__init__(self, **kwargs)
     opsH = Operations()
-    self.maxResetCounter = opsH.getValue('Productions/ProductionFilesMaxResetCounter', 10)
+    self.maxResetCounter = opsH.getValue('Transformations/FilesMaxResetCounter', 10)
 
     self.setServer('Transformation/TransformationManager')
 
@@ -80,13 +82,15 @@ class TransformationClient(Client):
                         maxTasks=0,
                         eventsPerTask=0,
                         addFiles=True,
+                        inputMetaQuery=None,
+                        outputMetaQuery=None,
                         timeout=1800):
     """ add a new transformation
     """
     rpcClient = self._getRPC(timeout=timeout)
     return rpcClient.addTransformation(transName, description, longDescription, transType, plugin,
                                        agentType, fileMask, transformationGroup, groupSize, inheritedFrom,
-                                       body, maxTasks, eventsPerTask, addFiles)
+                                       body, maxTasks, eventsPerTask, addFiles, inputMetaQuery, outputMetaQuery)
 
   def getTransformations(self, condDict=None, older=None, newer=None, timeStamp=None,
                          orderAttribute=None, limit=100, extraParams=False):
@@ -227,6 +231,36 @@ class TransformationClient(Client):
     # Setting the status
     return self.setTransformationParameter(transID, 'Status', 'TransformationCleaned')
 
+  # Add methods to handle transformation status
+
+  def startTransformation(self, transID):
+    """ Start the transformation
+    """
+    res = self.setTransformationParameter(transID, 'Status', 'Active')
+    if not res['OK']:
+      gLogger.error("Failed to start transformation %s: %s" % (transID, res['Message']))
+      return res
+    else:
+      res = self.setTransformationParameter(transID, 'AgentType', 'Automatic')
+      if not res['OK']:
+        gLogger.error("Failed to set AgentType to transformation %s: %s" % (transID, res['Message']))
+
+    return res
+
+  def stopTransformation(self, transID):
+    """ Stop the transformation
+    """
+    res = self.setTransformationParameter(transID, 'Status', 'Stopped')
+    if not res['OK']:
+      gLogger.error("Failed to stop transformation %s: %s" % (transID, res['Message']))
+      return res
+    else:
+      res = self.setTransformationParameter(transID, 'AgentType', 'Manual')
+      if not res['OK']:
+        gLogger.error("Failed to set AgentType to transformation %s: %s" % (transID, res['Message']))
+
+    return res
+
   def moveFilesToDerivedTransformation(self, transDict, resetUnused=True):
     """ move files input to a transformation, to the derived one
     """
@@ -284,11 +318,11 @@ class TransformationClient(Client):
         else:
           parentStatusFiles.setdefault('Moved', []).append(lfn)
 
-    for status, count in badStatusFiles.iteritems():
+    for status, count in badStatusFiles.items():  # can be an iterator
       log.warn('Files found in an unexpected status in derived transformation',
                ': %d files in status %s' % (count, status))
     # Set the status in the parent transformation first
-    for status, lfnList in parentStatusFiles.iteritems():
+    for status, lfnList in parentStatusFiles.items():  # can be an iterator
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(parentProd, status, lfnChunk)
         if not res['OK']:
@@ -296,18 +330,18 @@ class TransformationClient(Client):
                     "%d: status %s for %d files - %s" % (parentProd, status, len(lfnList), res['Message']))
 
     # Set the status in the new transformation
-    for (status, oldStatus), lfnList in newStatusFiles.iteritems():
+    for (status, oldStatus), lfnList in newStatusFiles.items():  # can be an iterator
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(prod, status, lfnChunk)
         if not res['OK']:
           log.error(" Error setting status in transformation",
-                    "%d: status %s for %d files; resetting them %s - %s" %
-                    (parentProd, status, len(lfnChunk), oldStatus, res['Message']))
+                    "%d: status %s for %d files; resetting them %s" %
+                    (parentProd, status, len(lfnChunk), oldStatus), res['Message'])
           res = self.setFileStatusForTransformation(parentProd, oldStatus, lfnChunk)
           if not res['OK']:
             log.error(" Error setting status in transformation",
-                      " %d: status %s for %d files - %s" %
-                      (parentProd, oldStatus, len(lfnChunk), res['Message']))
+                      " %d: status %s for %d files" %
+                      (parentProd, oldStatus, len(lfnChunk)), res['Message'])
         else:
           log.info('Successfully moved files', ": %d files from %s to %s" % (len(lfnChunk), oldStatus, status))
 
@@ -344,10 +378,10 @@ class TransformationClient(Client):
 
     """
     # create dictionary in case newLFNsStatus is a string
-    if isinstance(newLFNsStatus, basestring):
+    if isinstance(newLFNsStatus, six.string_types):
       if not lfns:
         return S_OK({})
-      if isinstance(lfns, basestring):
+      if isinstance(lfns, six.string_types):
         lfns = [lfns]
       newLFNsStatus = dict.fromkeys(lfns, newLFNsStatus)
     if not newLFNsStatus:
@@ -396,7 +430,7 @@ class TransformationClient(Client):
     """
     newStatuses = {}
 
-    for lfn, newStatus in dictOfProposedLFNsStatus.iteritems():
+    for lfn, newStatus in dictOfProposedLFNsStatus.items():  # can be an iterator
       if lfn in tsFilesAsDict:
         currentStatus = tsFilesAsDict[lfn][0].lower()
         # Apply optional corrections
@@ -457,7 +491,7 @@ class TransformationClient(Client):
 
         It returns the new status (the standard is just doing nothing: everything is possible)
     """
-    return dictOfProposedstatus.values()[0]
+    return list(dictOfProposedstatus.values())[0]
 
   def isOK(self):
     return self.valid

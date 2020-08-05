@@ -14,9 +14,11 @@ class MessageQueueBackend(AbstractBackend):
   """
   MessageQueueBackend is used to create an abstraction of the handler and the formatter concepts from logging.
   Here, we have:
+
     - MessageQueueHandler: which is a custom handler created in DIRAC to send
       log records to a Message Queue server. You can find it in: FrameworkSys./private/standardlogging/Handler
     - BaseFormatter: is a custom Formatter object, created for DIRAC in order to get the appropriate display.
+
     You can find it in FrameworkSystem/private/standardLogging/Formatter
   """
 

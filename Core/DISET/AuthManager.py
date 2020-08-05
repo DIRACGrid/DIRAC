@@ -96,8 +96,10 @@ class AuthManager(object):
       if self.KW_GROUP not in credDict:
         result = Registry.findDefaultGroupForDN(credDict[self.KW_DN])
         if not result['OK']:
-          return False
-        credDict[self.KW_GROUP] = result['Value']
+          credDict[self.KW_USERNAME] = "anonymous"
+          credDict[self.KW_GROUP] = "visitor"
+        else:
+          credDict[self.KW_GROUP] = result['Value']
       if credDict[self.KW_GROUP] == self.KW_HOSTS_GROUP:
         # For host
         if not self.getHostNickName(credDict):
@@ -122,6 +124,12 @@ class AuthManager(object):
           # If all, then set anon credentials
           credDict[self.KW_USERNAME] = "anonymous"
           credDict[self.KW_GROUP] = "visitor"
+    else:
+      if not allowAll:
+        return False
+      credDict[self.KW_USERNAME] = "anonymous"
+      credDict[self.KW_GROUP] = "visitor"
+
     # If any or all in the props, allow
     allowGroup = not validGroups or credDict[self.KW_GROUP] in validGroups
     if allowAll and allowGroup:
@@ -215,7 +223,7 @@ class AuthManager(object):
     :param credDict: Credentials to ckeck
     :return: Boolean with the result
     """
-    if self.KW_EXTRA_CREDENTIALS in credDict and isinstance(credDict[self.KW_EXTRA_CREDENTIALS], tuple):
+    if self.KW_EXTRA_CREDENTIALS in credDict and isinstance(credDict[self.KW_EXTRA_CREDENTIALS], (tuple, list)):
       if self.KW_DN in credDict:
         retVal = Registry.getHostnameForDN(credDict[self.KW_DN])
         if retVal['OK']:
@@ -285,6 +293,7 @@ class AuthManager(object):
   def matchProperties(self, credDict, validProps, caseSensitive=False):
     """
     Return True if one or more properties are in the valid list of properties
+
     :type  props: list
     :param props: List of properties to match
     :type  validProps: list

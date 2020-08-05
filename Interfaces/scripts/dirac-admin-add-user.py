@@ -45,7 +45,7 @@ def addUserGroup( arg ):
 
 Script.setUsageMessage( '\n'.join( ['Add or Modify a User info in DIRAC',
                                     'Usage:',
-                                    '%s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
+                                    '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
                                     'Arguments:',
                                     ' Property=<Value>: Properties to be added to the User like (Phone=XXXX)', ] ) )
 

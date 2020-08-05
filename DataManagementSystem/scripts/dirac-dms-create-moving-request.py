@@ -21,7 +21,7 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
-LOG = gLogger.getSubLogger('CreateMoving')
+sLog = gLogger.getSubLogger('CreateMoving')
 __RCSID__ = '$Id$'
 
 
@@ -114,7 +114,7 @@ class CreateMovingRequest(object):
     for switch in Script.getUnprocessedSwitches():
       for short, longOption, doc in self.options:
         if switch[0] == short or switch[0].lower() == longOption.lower():
-          LOG.verbose('Found switch %r with value %r' % (longOption, switch[1]))
+          sLog.verbose('Found switch %r with value %r' % (longOption, switch[1]))
           self.switches[longOption] = switch[1]
           break
       for short, longOption, doc in self.flags:
@@ -151,23 +151,23 @@ class CreateMovingRequest(object):
         raise ValueError('%s not a file' % self.switches.get('List'))
     elif self.lfnFolderPath:
       path = self.lfnFolderPath
-      LOG.debug('Check if %r is a directory' % path)
+      sLog.debug('Check if %r is a directory' % path)
       isDir = returnSingleResult(self.fcClient.isDirectory(path))
-      LOG.debug('Result: %r' % isDir)
+      sLog.debug('Result: %r' % isDir)
       if not isDir['OK'] or not isDir['Value']:
-        LOG.error('Path is not a directory', isDir.get('Message', ''))
+        sLog.error('Path is not a directory', isDir.get('Message', ''))
         raise RuntimeError('Path %r is not a directory' % path)
-      LOG.notice('Looking for files in %r' % path)
+      sLog.notice('Looking for files in %r' % path)
 
       metaDict = {'SE': self.sourceSEs[0]} if self.switches.get('SourceOnly') else {}
       lfns = self.fcClient.findFilesByMetadata(metaDict=metaDict, path=path)
       if not lfns['OK']:
-        LOG.error('Could not find files')
+        sLog.error('Could not find files')
         raise RuntimeError(lfns['Message'])
       self.lfnList = lfns['Value']
 
     if self.lfnList:
-      LOG.notice('Will create request(s) with %d lfns' % len(self.lfnList))
+      sLog.notice('Will create request(s) with %d lfns' % len(self.lfnList))
       if len(self.lfnList) == 1:
         raise RuntimeError('Only 1 file in the list, aborting!')
       return
@@ -179,32 +179,32 @@ class CreateMovingRequest(object):
     metaData = self.fcClient.getFileMetadata(self.lfnList)
     error = False
     if not metaData['OK']:
-      LOG.error('Unable to read metadata for lfns: %s' % metaData['Message'])
+      sLog.error('Unable to read metadata for lfns: %s' % metaData['Message'])
       raise RuntimeError('Could not read metadata: %s' % metaData['Message'])
 
     self.metaData = metaData['Value']
     for failedLFN, reason in self.metaData['Failed'].items():
-      LOG.error('skipping %s: %s' % (failedLFN, reason))
+      sLog.error('skipping %s: %s' % (failedLFN, reason))
       error = True
     if error:
       raise RuntimeError('Could not read all metadata')
 
     for lfn in self.metaData['Successful'].keys():
-      LOG.verbose('found %s' % lfn)
+      sLog.verbose('found %s' % lfn)
 
   def run(self):
     """Perform checks and create the request."""
     from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
     for count, lfnChunk in enumerate(breakListIntoChunks(self.lfnList, 100)):
       if not lfnChunk:
-        LOG.error('LFN list is empty!!!')
+        sLog.error('LFN list is empty!!!')
         return 1
 
       requestName = '%s_%d' % (self.switches.get('Name'), count)
       request = self.createRequest(requestName, lfnChunk)
       valid = RequestValidator().validate(request)
       if not valid['OK']:
-        LOG.error('putRequest: request not valid', '%s' % valid['Message'])
+        sLog.error('putRequest: request not valid', '%s' % valid['Message'])
         return 1
       else:
         self.requests.append(request)
@@ -266,27 +266,27 @@ class CreateMovingRequest(object):
     requestIDs = []
 
     if self.dryRun:
-      LOG.notice('Would have created %d requests' % len(self.requests))
+      sLog.notice('Would have created %d requests' % len(self.requests))
       for reqID, req in enumerate(self.requests):
-        LOG.notice('Request %d:' % reqID)
+        sLog.notice('Request %d:' % reqID)
         for opID, op in enumerate(req):
-          LOG.notice('        Operation %d: %s #lfn %d' % (opID, op.Type, len(op)))
+          sLog.notice('        Operation %d: %s #lfn %d' % (opID, op.Type, len(op)))
       return 0
     for request in self.requests:
       putRequest = self.reqClient.putRequest(request)
       if not putRequest['OK']:
-        LOG.error('unable to put request %r: %s' % (request.RequestName, putRequest['Message']))
+        sLog.error('unable to put request %r: %s' % (request.RequestName, putRequest['Message']))
         continue
       requestIDs.append(str(putRequest['Value']))
-      LOG.always('Request %r has been put to ReqDB for execution.' % request.RequestName)
+      sLog.always('Request %r has been put to ReqDB for execution.' % request.RequestName)
 
     if requestIDs:
-      LOG.always('%d requests have been put to ReqDB for execution' % len(requestIDs))
-      LOG.always('RequestID(s): %s' % ' '.join(requestIDs))
-      LOG.always('You can monitor the request status using the command: dirac-rms-request <requestName/ID>')
+      sLog.always('%d requests have been put to ReqDB for execution' % len(requestIDs))
+      sLog.always('RequestID(s): %s' % ' '.join(requestIDs))
+      sLog.always('You can monitor the request status using the command: dirac-rms-request <requestName/ID>')
       return 0
 
-    LOG.error('No requests created')
+    sLog.error('No requests created')
     return 1
 
 
@@ -295,9 +295,9 @@ if __name__ == '__main__':
     CMR = CreateMovingRequest()
     CMR.run()
   except Exception as e:
-    if LogLevels.getLevelValue(LOG.getLevel()) <= LogLevels.VERBOSE:
-      LOG.exception('Failed to create Moving Request')
+    if LogLevels.getLevelValue(sLog.getLevel()) <= LogLevels.VERBOSE:
+      sLog.exception('Failed to create Moving Request')
     else:
-      LOG.error('ERROR: Failed to create Moving Request:', str(e))
+      sLog.error('ERROR: Failed to create Moving Request:', str(e))
     exit(1)
   exit(0)

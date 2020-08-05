@@ -2,6 +2,7 @@
 """ Drop DBs from the MySQL server
 """
 
+from __future__ import print_function
 from DIRAC.Core.Base import Script
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
@@ -18,4 +19,4 @@ if len(args) < 1:
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 gComponentInstaller.getMySQLPasswords()
 for db in args:
-  print gComponentInstaller.execMySQL("DROP DATABASE IF EXISTS %s" % db)
+  print(gComponentInstaller.execMySQL("DROP DATABASE IF EXISTS %s" % db))

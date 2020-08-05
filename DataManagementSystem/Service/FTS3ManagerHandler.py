@@ -1,23 +1,26 @@
 """
-:mod: FTS3ManagerHandler
+Service handler for FTS3DB using DISET
 
-.. module: FTS3ManagerHandler
-  :synopsis: handler for FTS3DB using DISET
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN FTS3Manager
+  :end-before: ##END
+  :dedent: 2
+  :caption: FTS3Manager options
 
-Service handler for FT3SDB using DISET
 """
 
 __RCSID__ = "$Id$"
 
-import json
-
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION, TRUSTED_HOST
+from DIRAC.Core.Utilities import DErrno
 
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONEncoder, FTS3JSONDecoder
+from DIRAC.Core.Utilities.JEncode import encode, decode
 
 ########################################################################
 
@@ -29,8 +32,6 @@ class FTS3ManagerHandler(RequestHandler):
   """
 
   fts3db = None
-  ftsValidator = None
-  ftsPlacement = None
 
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
@@ -45,18 +46,64 @@ class FTS3ManagerHandler(RequestHandler):
     # # create tables for empty db
     return cls.fts3db.createTables()
 
+  @staticmethod
+  def _isAllowed(opObj, remoteCredentials):
+    """
+        Make sure the client is allowed to persist an operation
+        (FULL_DELEGATION or LIMITED_DELEGATION). This is the case of pilots,
+        the RequestExecutingAgent or the FTS3Agent
+
+        :param opObj: the FTS3Operation object
+        :param remoteCredentials: credentials from the clients
+
+        :returns: True if everything is fine, False otherwise
+    """
+
+    credDN = remoteCredentials['DN']
+    credGroup = remoteCredentials['group']
+    credProperties = remoteCredentials['properties']
+
+    # First, get the DN matching the username
+    res = getDNForUsername(opObj.username)
+    # if we have an error, do not allow
+    if not res['OK']:
+      gLogger.error("Error retrieving DN for username", res)
+      return False
+
+    # List of DN matching the username
+    dnList = res['Value']
+
+    # If the credentials in the Request match those from the credentials, it's OK
+    if credDN in dnList and opObj.userGroup == credGroup:
+      return True
+
+    # From here, something/someone is putting a request on behalf of someone else
+
+    # Only allow this if the credentials have Full or Limited delegation properties
+
+    if FULL_DELEGATION in credProperties or LIMITED_DELEGATION in credProperties:
+      return True
+
+    return False
+
   types_persistOperation = [basestring]
 
-  @classmethod
-  def export_persistOperation(cls, opJSON):
+  def export_persistOperation(self, opJSON):
     """ update or insert request into db
+
         :param opJSON: json string representing the operation
 
         :return: OperationID
     """
 
-    opObj = json.loads(opJSON, cls=FTS3JSONDecoder)
-    return cls.fts3db.persistOperation(opObj)
+    opObj, _size = decode(opJSON)
+
+    isAuthorized = FTS3ManagerHandler._isAllowed(opObj, self.getRemoteCredentials())
+
+    if not isAuthorized:
+      return S_ERROR(DErrno.ENOAUTH, "Credentials in the requests are not allowed")
+
+    return self.fts3db.persistOperation(opObj)
 
   types_getOperation = [(long, int)]
 
@@ -74,7 +121,7 @@ class FTS3ManagerHandler(RequestHandler):
       return getOperation
 
     getOperation = getOperation["Value"]
-    opJSON = getOperation.toJSON()
+    opJSON = encode(getOperation)
     return S_OK(opJSON)
 
   types_getActiveJobs = [(long, int), [None] + [basestring], basestring]
@@ -82,6 +129,7 @@ class FTS3ManagerHandler(RequestHandler):
   @classmethod
   def export_getActiveJobs(cls, limit, lastMonitor, jobAssignmentTag):
     """ Get all the FTSJobs that are not in a final state
+
         :param limit: max number of jobs to retrieve
         :param jobAssignmentTag: tag to put in the DB
         :param lastMonitor: jobs monitored earlier than the given date
@@ -96,30 +144,9 @@ class FTS3ManagerHandler(RequestHandler):
       return res
 
     activeJobs = res['Value']
-    activeJobsJSON = json.dumps(activeJobs, cls=FTS3JSONEncoder)
+    activeJobsJSON = encode(activeJobs)
 
     return S_OK(activeJobsJSON)
-
-  types_updateFileStatus = [dict]
-
-  @classmethod
-  def export_updateFileStatus(cls, fileStatusDict, ftsGUID):
-    """ Update the file ftsStatus and error
-       :param fileStatusDict : { fileID : { status , error } }
-       :param ftsGUID: (not mandatory) If specified, only update the rows where the ftsGUID matches this value.
-    """
-
-    return cls.fts3db.updateFileStatus(fileStatusDict, ftsGUID)
-
-  types_updateJobStatus = [dict]
-
-  @classmethod
-  def export_updateJobStatus(cls, jobStatusDict):
-    """ Update the job Status and error
-       :param jobStatusDict : { jobID : { status , error } }
-    """
-
-    return cls.fts3db.updateJobStatus(jobStatusDict)
 
   types_getNonFinishedOperations = [(long, int), basestring]
 
@@ -127,6 +154,7 @@ class FTS3ManagerHandler(RequestHandler):
   def export_getNonFinishedOperations(cls, limit, operationAssignmentTag):
     """ Get all the FTS3Operations that are missing a callback, i.e.
         in 'Processed' state
+
         :param limit: max number of operations to retrieve
         :return: json list of FTS3Operation
     """
@@ -137,7 +165,7 @@ class FTS3ManagerHandler(RequestHandler):
       return res
 
     nonFinishedOperations = res['Value']
-    nonFinishedOperationsJSON = json.dumps(nonFinishedOperations, cls=FTS3JSONEncoder)
+    nonFinishedOperationsJSON = encode(nonFinishedOperations)
 
     return S_OK(nonFinishedOperationsJSON)
 
@@ -157,6 +185,6 @@ class FTS3ManagerHandler(RequestHandler):
       return res
 
     operations = res["Value"]
-    opsJSON = json.dumps(operations, cls=FTS3JSONEncoder)
+    opsJSON = encode(operations)
 
     return S_OK(opsJSON)

@@ -451,7 +451,7 @@ and this is thread %s
       # the socket timeout is the default value which is 1.
       # later we increase to 5
       retVal = transport.initAsClient()
-      # If we have an issue connecting
+      # We try at most __nbOfRetry each URLs
       if not retVal['OK']:
         gLogger.warn("Issue getting socket:", "%s : %s : %s" % (transport, self.__URLTuple, retVal['Message']))
         # We try at most __nbOfRetry each URLs

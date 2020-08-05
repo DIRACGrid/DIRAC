@@ -20,21 +20,19 @@ class ComputingElementFactory(object):
     """ Standard constructor
     """
     self.ceType = ceType
-    self.log = gLogger.getSubLogger(self.ceType)
+    self.log = gLogger.getSubLogger('ComputingElementFactory')
 
   #############################################################################
   def getCE(self, ceType='', ceName='', ceParametersDict={}):
     """This method returns the CE instance corresponding to the supplied
        CEUniqueID.  If no corresponding CE is available, this is indicated.
     """
-    self.log = gLogger.getSubLogger(ceType)
-    self.log.verbose('Creating CE of %s type with the name %s' % (ceType, ceName))
-    ceTypeLocal = ceType
-    if not ceTypeLocal:
-      ceTypeLocal = self.ceType
-    ceNameLocal = ceName
-    if not ceNameLocal:
-      ceNameLocal = self.ceType
+    if ceType:
+      self.log.verbose('Creating CE of type %s' % ceType)
+    if ceName:
+      self.log.verbose('Creating CE for name %s' % ceName)
+    ceTypeLocal = ceType if ceType else self.ceType
+    ceNameLocal = ceName if ceName else ceType
     ceConfigDict = getCEConfigDict(ceNameLocal)
     self.log.verbose('CEConfigDict', ceConfigDict)
     if 'CEType' in ceConfigDict:
@@ -48,7 +46,7 @@ class ComputingElementFactory(object):
     objectLoader = ObjectLoader.ObjectLoader()
     result = objectLoader.loadObject('Resources.Computing.%s' % subClassName, subClassName)
     if not result['OK']:
-      gLogger.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
+      self.log.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
       return result
 
     ceClass = result['Value']
@@ -66,5 +64,3 @@ class ComputingElementFactory(object):
       return S_ERROR(msg)
 
     return S_OK(computingElement)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

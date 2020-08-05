@@ -1,15 +1,15 @@
 """ :mod: GFAL2_StorageBase
 
-    =================
+.. module: python
 
-    .. module: python
+:synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
 
-    :synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
 
-Environment Variables
----------------------
 
-DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported and set to true in server bashrc files for efficiency reasons.
+Environment Variables:
+
+DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported
+  and set to true in server bashrc files for efficiency reasons.
 
 """
 
@@ -124,9 +124,9 @@ class GFAL2_StorageBase(StorageBase):
 
     :param self: self reference
     :param str path: path or list of paths to be checked
-    :returns Failed dictionary: {pfn : error message}
-             Successful dictionary: {pfn : bool}
-             S_ERROR in case of argument problems
+    :returns: Failed dictionary: {pfn : error message}
+              Successful dictionary: {pfn : bool}
+              S_ERROR in case of argument problems
     """
     res = checkArgumentFormat(path)
     if not res['OK']:
@@ -189,9 +189,9 @@ class GFAL2_StorageBase(StorageBase):
 
     :param self: self reference
     :param str: path or list of paths to be checked ( 'srm://...')
-    :returns Failed dict: {path : error message}
-             Successful dict: {path : bool}
-             S_ERROR in case of argument problems
+    :returns: Failed dict: {path : error message}
+              Successful dict: {path : bool}
+              S_ERROR in case of argument problems
 
     """
     res = checkArgumentFormat(path)
@@ -387,9 +387,9 @@ class GFAL2_StorageBase(StorageBase):
     :param self: self reference
     :param str path: path (or list of paths) on storage (srm://...)
     :param localPath: destination folder. Default is from current directory
-    :returns Successful dict: {path : size}
-             Failed dict: {path : errorMessage}
-             S_ERROR in case of argument problems
+    :returns: Successful dict: {path : size}
+              Failed dict: {path : errorMessage}
+              S_ERROR in case of argument problems
     """
 
     res = checkArgumentFormat(path)
@@ -853,9 +853,9 @@ class GFAL2_StorageBase(StorageBase):
     :param str path: path of list of paths to be pinned
     :param int lifetime: pinning time in seconds (default 24h)
 
-    :return successful dict {url : token},
-            failed dict {url : message}
-            S_ERROR in case of argument problems
+    :return: successful dict {url : token},
+             failed dict {url : message}
+             S_ERROR in case of argument problems
     """
 
     res = checkArgumentFormat(path)
@@ -911,9 +911,9 @@ class GFAL2_StorageBase(StorageBase):
                      Just as you can pass an empty token string and a directory as pfn which then releases all the files in the directory
                      an its subdirectories
 
-    :return successful dict {url : token},
-            failed dict {url : message}
-            S_ERROR in case of argument problems
+    :return: successful dict {url : token},
+             failed dict {url : message}
+             S_ERROR in case of argument problems
     """
     res = checkArgumentFormat(path)
     if not res['OK']:
@@ -1039,7 +1039,7 @@ class GFAL2_StorageBase(StorageBase):
 
     :param self: self reference
     :param time: unix time
-    :return Date in following format: 2014-10-29 14:32:10
+    :return: Date in following format: 2014-10-29 14:32:10
     """
     return datetime.datetime.fromtimestamp(time).strftime('%Y-%m-%d %H:%M:%S')
 

@@ -13,6 +13,7 @@ It creates a local hierarchy, and then tries to upload, download, remove, get me
 # pylint: disable=invalid-name,wrong-import-position
 
 
+from __future__ import print_function
 import os
 import tempfile
 import shutil
@@ -76,7 +77,7 @@ try:
   DESTINATION_PATH = '/%s/user/%s/%s/gfaltests' % (vo, username[0], username)
 
 except Exception as e:  # pylint: disable=broad-except
-  print repr(e)
+  print(repr(e))
   sys.exit(2)
 
 
@@ -102,8 +103,8 @@ def _mul(txt):
 
 def clearDirectory(se, local_path, target_path):
   """ Removing target directory """
-  print "=================================================="
-  print "==== Removing the older Directory ================"
+  print("==================================================")
+  print("==== Removing the older Directory ================")
   filesToRemove = []
   for root, _dirs, files in os.walk(local_path):
     for fn in files:
@@ -115,11 +116,11 @@ def clearDirectory(se, local_path, target_path):
                   '').strip('/'),
               fn))
 
-  print "CHRIS WILL REMOVE %s" % filesToRemove
+  print("CHRIS WILL REMOVE %s" % filesToRemove)
   res = se.removeFile(filesToRemove)
   if not res['OK']:
-    print "basicTest.clearDirectory: Workflow folder maybe not empty"
-  print "=================================================="
+    print("basicTest.clearDirectory: Workflow folder maybe not empty")
+  print("==================================================")
 
 
 @pytest.fixture(scope="module")
@@ -239,7 +240,7 @@ def test_uploadDirectory_shouldFail(setuptest):
   assert res['OK']
   assert res['Value']['Failed'].keys() == putDir.keys()
 
-  print "CHRIS uploadDir %s" % res
+  print("CHRIS uploadDir %s" % res)
   # Need to sleep for echo to update ?
   # time.sleep(1)
 

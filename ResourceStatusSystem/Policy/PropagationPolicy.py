@@ -1,32 +1,31 @@
 ''' DIRAC.ResourceStatusSystem.Policy.PropagationPolicy
 
-   PropagationPolicy.__bases__:
-     DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase.PolicyBase
+    The following lines are needed in the CS::
 
-    The following lines are needed in the CS:
-    PropagationPolicy
-    {
-      matchParams
+      PropagationPolicy
       {
-        element = Site
+        matchParams
+        {
+          element = Site
+        }
+        policyType = PropagationPolicy
       }
-      policyType = PropagationPolicy
-    }
 
 '''
 
-from DIRAC                                              import S_OK
+from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 __RCSID__ = "$Id$"
 
-class PropagationPolicy( PolicyBase ):
+
+class PropagationPolicy(PolicyBase):
   """
     PropagationPolicy module doc
   """
 
   @staticmethod
-  def _evaluate( commandResult ):
+  def _evaluate(commandResult):
     """
     commandResult is the result of 'PropagationCommand' which
     indicates if a site should be 'Active' or 'Banned'
@@ -38,14 +37,14 @@ class PropagationPolicy( PolicyBase ):
        }
     """
 
-    result = { 'Status' : None,
-               'Reason' : None }
+    result = {'Status': None,
+              'Reason': None}
 
     if not commandResult['OK']:
 
       result['Status'] = 'Error'
       result['Reason'] = commandResult['Message']
-      return S_OK( result )
+      return S_OK(result)
 
     else:
 
@@ -53,7 +52,7 @@ class PropagationPolicy( PolicyBase ):
 
       result['Status'] = commandResult['Status']
       result['Reason'] = commandResult['Reason']
-      return S_OK( result )
+      return S_OK(result)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

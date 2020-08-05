@@ -4,6 +4,7 @@
 # Author :  Stuart Paterson
 ########################################################################
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 
@@ -29,5 +30,5 @@ result = diracAdmin.getSiteMask(printOutput=True, status="Active")
 if result['OK']:
   DIRACExit( 0 )
 else:
-  print result['Message']
+  print(result['Message'])
   DIRACExit( 2 )

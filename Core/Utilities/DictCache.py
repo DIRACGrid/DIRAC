@@ -97,7 +97,7 @@ class DictCache(object):
   def exists(self, cKey, validSeconds=0):
     """
       Returns True/False if the key exists for the given number of seconds
-      Arguments:
+
       :param cKey: identification key of the record
       :param validSeconds: The amount of seconds the key has to be valid for
     """

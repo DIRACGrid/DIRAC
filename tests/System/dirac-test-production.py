@@ -3,6 +3,7 @@
 
 # pylint: disable=wrong-import-position, protected-access
 
+from __future__ import print_function
 import time
 import os
 
@@ -24,7 +25,7 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 # Parse the arguments
-args = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 if len(args) != 1:
   Script.showHelp()
 directory = args[0]
@@ -52,23 +53,23 @@ prodJob.workflow.setDescrShort(desc)
 prodJob.workflow.setDescription(desc)
 prodJob.setCPUTime(86400)
 prodJob.setInputDataPolicy('Download')
-prodJob.setExecutable('/bin/ls', '-l')
+prodJob.setExecutable('/bin/ls', '-l', modulesList=['Script', 'FailoverRequest'])
 
 # Let's submit the prodJobuction now
-#result = prodJob.create()
+# result = prodJob.create()
 
 name = prodJob.workflow.getName()
 name = name.replace('/', '').replace('\\', '')
 prodJob.workflow.toXMLFile(name)
 
-print 'Workflow XML file name is: %s' % name
+print('Workflow XML file name is: %s' % name)
 
 workflowBody = ''
 if os.path.exists(name):
   with open(name, 'r') as fopen:
     workflowBody = fopen.read()
 else:
-  print 'Could not get workflow body'
+  print('Could not get workflow body')
 
 # Standard parameters
 transformation = Transformation()
@@ -112,19 +113,19 @@ if UseFilter:
   # Set the transformation meta data filter
   MDdict1b = {'particle': 'gamma', 'timestamp': timestamp}
   mqJson1b = json.dumps(MDdict1b)
-  res = transformation.setFileMask(mqJson1b)
+  res = transformation.setInputMetaQuery(MDdict1b)
   if not res['OK']:
-    gLogger.error("Failed to set FileMask", res['Message'])
+    gLogger.error("Failed to set InputMetaQuery", res['Message'])
     exit(-1)
 
 # Create the transformation
 result = transformation.addTransformation()
 
 if not result['OK']:
-  print result
+  print(result)
   exit(1)
 
 transID = result['Value']
 with open('TransformationID', 'w') as fd:
   fd.write(str(transID))
-print "Created %s, stored in file 'TransformationID'" % transID
+print("Created %s, stored in file 'TransformationID'" % transID)

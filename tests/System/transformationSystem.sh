@@ -46,7 +46,7 @@ directory=/dteam/diracCertification/Test/INIT/$version/$tdate/$stime
 #selecting a random USER Storage Element
 #SEs=$(dirac-dms-show-se-status |grep USER |grep -v 'Banned\|Degraded\|-2' | awk '{print $1}')
 #get all SEs ending with -SE that are Active
-SEs=$(dirac-dms-show-se-status | grep -e "-SE " | grep -v 'Banned\|Probing\|-new' | awk '{print $1}')
+SEs=$(dirac-dms-show-se-status | grep -e "-SE " | grep -v 'Banned\|Probing\|Error\|-new' | awk '{print $1}')
 
 x=0
 for n in $SEs

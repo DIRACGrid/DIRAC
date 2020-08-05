@@ -63,23 +63,19 @@ What's on the left is an example of a dirac platform as determined the dirac-pla
 This platform is declared to be compatible with a list of "OS" strings.
 These strings are identifying the architectures of computing elements.
 This list of strings can be constructed from the "Architecture" + "OS" fields
-that can be found in the CEs description in the CS (:ref:`cs-sites`).
+that can be found in the CEs description in the CS (:ref:`cs-site`).
 
 This compatibility is, by default, used by the SiteDirector when deciding if to send a pilot or not to a certain CE:
 the SiteDirector matches "TaskQueues" to Computing Element capabilities.
 
 Other subsections are instead used to describe specific types of computing elements:
 
-  /Resources/Computing/CEDefaults
-   For all computing elements
-  /Resources/Computing/<CEType>
-   For CEs of a given type, e.g., HTCondorCE or ARC
-  /Resources/Sites/<grid>/<site>/CEs
-   For all CEs at a given site
-  /Resources/Sites/<grid>/<site>/CEs/<CEName>
-   For the specific CE
+- */Resources/Computing/CEDefaults* for all computing elements
+- */Resources/Computing/<CEType>* for CEs of a given type, e.g., HTCondorCE or ARC
+- */Resources/Sites/<grid>/<site>/CEs* for all CEs at a given site
+- */Resources/Sites/<grid>/<site>/CEs/<CEName>* for a specific CE
 
-Values are overwritten.
+Values are overwritten by the most specialized option.
 
 
 General Parameters
@@ -87,12 +83,20 @@ General Parameters
 
 These parameters are valid for all types of computing elements
 
-+---------------------------------+------------------------------------------------+-----------------------------------+
-| **Name**                        | **Description**                                | **Example**                       |
-+---------------------------------+------------------------------------------------+-----------------------------------+
-| GridEnv                         |Default environment file sourced before calling | /opt/dirac/gridenv                |
-|                                 |grid commands, without extension '.sh'.         | (when the file is gridenv.sh)     |
-+---------------------------------+------------------------------------------------+-----------------------------------+
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
+| **Name**                        | **Description**                                 | **Example**                                   |
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
+| GridEnv                         | Default environment file sourced before calling | /opt/dirac/gridenv                            |
+|                                 | grid commands, without extension '.sh'.         | (when the file is gridenv.sh)                 |
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
+| SharedArea                      | Will be added to the pilot configuration        | /cvmfs/lhcb.cern.ch/lib                       |
+|                                 | as /LocalSite/SharedArea                        |                                               |
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
+| ExtraPilotOptions               | For adding some generic pilot options.          | --userEnvVariables DIRACSYSCONFIG:::pilot.cfg |
+|                                 | (only for pilots submitted by SiteDirectors)    | will add the environment variable             |
+|                                 |                                                 | DIRACSYSCONFIG                                |
+|                                 |                                                 | (see :ref:`bashrc_variables`)                 |
++---------------------------------+-------------------------------------------------+-----------------------------------------------+
 
 
 
@@ -136,26 +140,7 @@ Singularity CE Parameters
 HTCondorCE Parameters
 ---------------------
 
-Options for the HTCondorCEs
-
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| **Name**            | **Description**                                     | **Example**                                               |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| ExtraSubmitString   | Additional string for the condor submit             | request_cpus = 8 \\n periodic_remove = ...                |
-|                     | file. Separate entries with "\\n".                  |                                                           |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| WorkingDirectory    | Directory where the pilot log files are stored      | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT    |
-|                     | locally. Also temproray files like condor submit    |                                                           |
-|                     | files are kept here. This option is only read from  |                                                           |
-|                     | the global Resources/Computing/HTCondorCE location. |                                                           |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| UseLocalSchedd      | If True use a local condor schedd to submit jobs, if| Default is True                                           |
-|                     | False submit to remote condor schedd                |                                                           |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-| DaysToKeepLogFiles  | How many days pilot log files are kept on the disk  | 15                                                        |
-|                     | before they are removed                             |                                                           |
-+---------------------+-----------------------------------------------------+-----------------------------------------------------------+
-
+For the options for the HTCondorCEs see :mod:`~DIRAC.Resources.Computing.HTCondorCEComputingElement`
 
 .. _res-comp-cream:
 

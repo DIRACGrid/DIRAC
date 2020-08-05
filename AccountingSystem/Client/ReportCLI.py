@@ -22,6 +22,7 @@ if __name__=="__main__":
 
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import sys
@@ -68,22 +69,22 @@ class ReportCLI(CLI):
   def printComment(self, comment):
     commentList = comment.split("\n")
     for commentLine in commentList[:-1]:
-      print "# %s" % commentLine.strip()
+      print("# %s" % commentLine.strip())
 
   def showTraceback(self):
     import traceback
     type, value = sys.exc_info()[:2]
-    print "________________________\n"
-    print "Exception", type, ":", value
-    traceback.print_tb(sys.exc_info()[2])
-    print "________________________\n"
+    print("________________________\n")
+    print("Exception", type, ":", value)
+    traceback.print_tb( sys.exc_info()[2] )
+    print("________________________\n")
 
   def __getDatetimeFromArg(self, dtString):
     if len(dtString) != 12:
       return False
-    dt = datetime.datetime(year=int(dtString[0:4]),
-                           month=int(dtString[4:6]),
-                           day=int(dtString[6:8]))
-    dt += datetime.timedelta(hours=int(dtString[8:10]),
-                             minutes=int(dtString[10:12]))
+    dt = datetime.datetime( year  = int( dtString[0:4] ),
+                            month = int( dtString[4:6] ),
+                            day   = int( dtString[6:8] ) )
+    dt += datetime.timedelta( hours = int( dtString[ 8:10 ] ),
+                              minutes = int( dtString[ 10:12 ] ) )
     return dt

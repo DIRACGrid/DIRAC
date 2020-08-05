@@ -9,6 +9,7 @@
   
   This script was used by the dirac-pilot script to set the CPUTime limit for the matching but now this is no more the case
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -33,9 +34,9 @@ for ceUniqueID in args:
   normCPU = queueNormalizedCPU( ceUniqueID )
 
   if not normCPU['OK']:
-    print 'ERROR %s:' % ceUniqueID, normCPU['Message']
+    print('ERROR %s:' % ceUniqueID, normCPU['Message'])
     exitCode = 2
     continue
-  print ceUniqueID, normCPU['Value']
+  print(ceUniqueID, normCPU['Value'])
 
 DIRAC.exit( exitCode )

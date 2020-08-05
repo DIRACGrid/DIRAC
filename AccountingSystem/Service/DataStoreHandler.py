@@ -1,12 +1,19 @@
 """ DataStore is the service for inserting accounting reports (rows) in the Accounting DB
 
     This service CAN be duplicated iff the first is a "master" and all the others are slaves.
+    See the information about :ref:`datastorehelpers`.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN DataStore
+  :end-before: ##END
+  :dedent: 2
+  :caption: DataStore options
 """
 
 
 import datetime
 
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
@@ -155,16 +162,17 @@ class DataStoreHandler(RequestHandler):
     for entry in entriesList:
       if len(entry) != 4:
         return S_ERROR("Invalid records")
-      for i in range(len(entry)):
+      for i, _ in enumerate(entry):
         if not isinstance(entry[i], expectedTypes[i]):
-          gLogger.error("Unexpected type in report",
-                        ": field %d in the records should be %s (and it is %s)" % (i, expectedTypes[i],
-                                                                                   type(entry[i])))
+          self.log.error("Unexpected type in report",
+                         ": field %d in the records should be %s (and it is %s)" % (i, expectedTypes[i],
+                                                                                    type(entry[i])))
           return S_ERROR("Unexpected type in report")
     records = []
     for entry in entriesList:
       startTime = int(Time.toEpoch(entry[1]))
       endTime = int(Time.toEpoch(entry[2]))
+      self.log.debug("inserting", entry)
       records.append((setup, entry[0], startTime, endTime, entry[3]))
     return self.__acDB.insertRecordBundleThroughQueue(records)
 

@@ -6,7 +6,6 @@
 
 # imports
 import pytest
-import importlib
 from mock import MagicMock
 
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
@@ -15,21 +14,20 @@ from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 from DIRAC import gLogger, S_OK
 
 from DIRAC.TransformationSystem.Agent.TransformationPlugin import TransformationPlugin
-from DIRAC.TransformationSystem.Client import Utilities
 
 paramsBase = {'AgentType': 'Automatic',
               'DerivedProduction': '0',
               'FileMask': '',
-              'GroupSize': 1L,
-              'InheritedFrom': 0L,
+              'GroupSize': 1,
+              'InheritedFrom': 0,
               'JobType': 'MCSimulation',
-              'MaxNumberOfTasks': 0L,
+              'MaxNumberOfTasks': 0,
               'OutputDirectories': "['/lhcb/MC/20', '/lhcb/debug/20']",
               'OutputLFNs': "{'LogTargetPath': ['/lhcb/9.tar'], 'LogFilePath': ['/lhcb/9']}",
               'Priority': '0',
               'SizeGroup': '1',
               'Status': 'Active',
-              'TransformationID': 1080L,
+              'TransformationID': 1080,
               'Type': 'MCSimulation',
               'outputDataFileMask': 'GAUSSHIST;ALLSTREAMS.DST'}
 
@@ -58,7 +56,7 @@ def setup(mocker):
 def test__Standard_G10(setup):
   """Test StandardPlugin: no input data, active."""
   params = dict(paramsBase)
-  params['GroupSize'] = 10L
+  params['GroupSize'] = 10
   pluginStandard = TransformationPlugin('Standard')
   pluginStandard.setParameters(params)
   res = pluginStandard.run()
@@ -70,7 +68,7 @@ def test__Standard_G10(setup):
 def test__Standard_Data_G10(setup):
   """Test StandardPlugin: input data, active."""
   params = dict(paramsBase)
-  params['GroupSize'] = 10L
+  params['GroupSize'] = 10
   pluginStandard = TransformationPlugin('Standard')
   pluginStandard.setParameters(params)
   pluginStandard.setInputData(data)
@@ -84,7 +82,7 @@ def test__Standard_Flush_G10(setup):
   """Test StandardPlugin: input data, flush."""
   pluginStandard = TransformationPlugin('Standard')
   params = dict(paramsBase)
-  params['GroupSize'] = 10L
+  params['GroupSize'] = 10
   params['Status'] = 'Flush'
   pluginStandard.setParameters(params)
   pluginStandard.setInputData(data)

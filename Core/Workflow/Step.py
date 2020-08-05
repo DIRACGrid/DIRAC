@@ -2,6 +2,7 @@
 """
 #pylint: disable=unused-wildcard-import,wildcard-import
 
+from __future__ import print_function
 import os
 import time
 import traceback
@@ -218,7 +219,7 @@ class StepInstance( AttributeCollection ):
     """ Step execution method. step_exec_attr is array to hold parameters belong to this Step,
         filled above in the workflow
     """
-    print 'Executing StepInstance', self.getName(), 'of type', self.getType(), definitions.keys()
+    print('Executing StepInstance', self.getName(), 'of type', self.getType(), definitions.keys())
     # Report the Application state if the corresponding tool is supplied
     if 'JobReport' in self.workflow_commons:
       if self.parent.workflowStatus['OK']:
@@ -286,8 +287,9 @@ class StepInstance( AttributeCollection ):
                 # print "ModuleInstance self ." + parameter.getName(), '=', parameter.getLinkedModule() + '.' + parameter.getLinkedParameter()
                 if parameter.getLinkedModule() == 'self':
                   # this is not supposed to happen
-                  print "Warning! Module OUTPUT attribute", parameter.getName(),
-                  print "refer to the attribute of the same module", parameter.getLinkedParameter(), '=', getattr( step_exec_modules[mod_inst_name], parameter.getName() )
+                  print("Warning! Module OUTPUT attribute", parameter.getName(), end=' ')
+                  print("refer to the attribute of the same module", parameter.getLinkedParameter(),
+                        '=', getattr(step_exec_modules[mod_inst_name], parameter.getName()))
                   step_exec_attr[parameter.getName()] = getattr( step_exec_modules[mod_inst_name], parameter.getLinkedParameter(), parameter.getValue() )
                   # print "                 OUT", parameter.getLinkedParameter(), '=', getattr( step_exec_modules[mod_inst_name], parameter.getName(), parameter.getValue() )
                 else:
@@ -297,8 +299,8 @@ class StepInstance( AttributeCollection ):
                                   parameter.getLinkedParameter() )
               else:
                 # This also does not make sense - we can give a warning
-                print "Warning! Module OUTPUT attribute ", parameter.getName(),
-                print "assigned constant", parameter.getValue()
+                print("Warning! Module OUTPUT attribute ", parameter.getName(), end=' ')
+                print("assigned constant", parameter.getValue())
                 # print "StepInstance self." + parameter.getName(), '=', parameter.getValue()
                 step_exec_attr[parameter.getName()] = parameter.getValue()
 
@@ -314,18 +316,18 @@ class StepInstance( AttributeCollection ):
                   self.step_commons[vkey] = result['Value'][vkey]
 
       except Exception as x:
-        print "Exception while module execution"
-        print "Module", mod_inst_name, mod_inst.getType()
-        print str( x )
+        print("Exception while module execution")
+        print("Module", mod_inst_name, mod_inst.getType())
+        print(str(x))
         exc = sys.exc_info()
         exc_type = exc[0]
         value = exc[1]
-        print "== EXCEPTION ==\n%s: %s\n\n%s===============" % ( exc_type,
+        print("== EXCEPTION ==\n%s: %s\n\n%s===============" % (exc_type,
                                                                  value,
-                                                                 "\n".join( traceback.format_tb( exc[2] ) ) )
+                                                                "\n".join(traceback.format_tb(exc[2]))))
 
-        print "Step status: ", self.stepStatus
-        print "Workflow status: ", self.parent.workflowStatus
+        print("Step status: ", self.stepStatus)
+        print("Workflow status: ", self.parent.workflowStatus)
         if self.stepStatus['OK']:
           # This is the error that caused the workflow disruption
           # report it to the WMS
@@ -345,8 +347,10 @@ class StepInstance( AttributeCollection ):
           # print "StepInstance self." + st_parameter.getName(), '=', st_parameter.getLinkedModule() + '.' + st_parameter.getLinkedParameter()
           if st_parameter.getLinkedModule() == 'self':
             # this is not supposed to happen
-            print "Warning! Step OUTPUT attribute", st_parameter.getName(),
-            print "refer to the attribute of the same step", st_parameter.getLinkedParameter(), step_exec_attr[st_parameter.getLinkedParameter()]
+            print("Warning! Step OUTPUT attribute", st_parameter.getName(), end=' ')
+            print("refer to the attribute of the same step",
+                  st_parameter.getLinkedParameter(),
+                  step_exec_attr[st_parameter.getLinkedParameter()])
             step_exec_attr[st_parameter.getName()] = step_exec_attr[st_parameter.getLinkedParameter()]
 
           else:
@@ -357,12 +361,12 @@ class StepInstance( AttributeCollection ):
           setattr( self, st_parameter.getName(), step_exec_attr[st_parameter.getName()] )
         else:
           # This also does not make sense - we can give a warning
-          print "Warning! Step OUTPUT attribute ", st_parameter.getName(),
-          print "assigned constant", st_parameter.getValue()
+          print("Warning! Step OUTPUT attribute ", st_parameter.getName(), end=' ')
+          print("assigned constant", st_parameter.getValue())
           # print "StepInstance self." + st_parameter.getName(), '=', st_parameter.getValue()
           step_exec_attr[st_parameter.getName()] = st_parameter.getValue()
 
-        print 'Step Output', st_parameter.getName(), '=', step_exec_attr[st_parameter.getName()]
+        print('Step Output', st_parameter.getName(), '=', step_exec_attr[st_parameter.getName()])
 
     # Return the result of the first failed module or S_OK
     if not self.stepStatus['OK']:

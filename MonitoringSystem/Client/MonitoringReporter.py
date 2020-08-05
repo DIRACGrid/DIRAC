@@ -37,7 +37,7 @@ class MonitoringReporter(object):
 
   :param int __maxRecordsInABundle: limit the number of records to be inserted to the db.
   :param threading.RLock __documentLock: is used to lock the local store when it is being modified.
-  :param __documents: contains the recods which will be inserted to the db\
+  :param __documents: contains the recods which will be inserted to the db.
   :type __documents: python:list
   :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
   :param str __failoverQueueName: the name of the messaging queue. For example: /queue/dirac.certification
@@ -58,7 +58,7 @@ class MonitoringReporter(object):
 
   def processRecords(self):
     """
-    It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
+    It consumes all messages from the MQ (these are failover messages). In case of failure, the messages
     will be inserted to the MQ again.
     """
     retVal = monitoringDB.pingDB()  # if the db is not accessible, the records will be not processed from MQ
@@ -97,13 +97,17 @@ class MonitoringReporter(object):
   def addRecord(self, rec):
     """
     It inserts the record to the list
-    :param dict rec: it kontains a key/value pair.
+
+    :param dict rec: it contains a key/value pair.
     """
+    self.__documentLock.acquire()
     self.__documents.append(rec)
+    self.__documentLock.release()
 
   def publishRecords(self, records, mqProducer=None):
     """
     send data to the MQ. If the mqProducer instance is provided, it will be used for publishing the data to MQ.
+
     :param list records: contains a list of key/value pairs (dictionaries)
     :param object mqProducer: We can provide the instance of a producer, which will be used to publish the data
     """
@@ -114,8 +118,7 @@ class MonitoringReporter(object):
       if mqProducer is None:
         gLogger.error("Fail to get Producer")
         return S_ERROR("Fail to get Producer")
-      result = mqProducer.put(json.dumps(records))
-      return result
+      return mqProducer.put(json.dumps(records))
 
     return mqProducer.put(json.dumps(records))
 
@@ -160,7 +163,9 @@ class MonitoringReporter(object):
       gLogger.exception("Error committing", lException=e)
       return S_ERROR("Error committing %s" % repr(e).replace(',)', ')'))
     finally:
+      self.__documentLock.acquire()
       self.__documents.extend(documents)
+      self.__documentLock.release()
     return S_OK(recordSent)
 
   def __getProducer(self):

@@ -1,10 +1,11 @@
-====================
+=============
 dirac-version
-====================
+=============
 
-v6r0
+Prints the version of DIRAC, see also `dirac-info`
 
 Example::
 
-  $ dirac-version        
-  v5r12-pre9
+  $ dirac-version
+  v6r20-pre17
+

@@ -6,6 +6,7 @@
 Some Helper class to access Default options for Different Resources (CEs, SEs, Catalags,...)
 """
 
+from __future__ import print_function
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgResourceSection, cfgPath, cfgInstallPath, cfgPathToList
 from DIRAC.Core.Utilities.CFG import CFG
 
@@ -89,5 +90,5 @@ def __getExtraOptions(currentSectionPath):
   result = gConfig.getOptionsDict(currentSectionPath)
   if not result['OK']:
     return optionsDict
-  print result
+  print(result)
   return result['Value']

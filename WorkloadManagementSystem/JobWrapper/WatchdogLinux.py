@@ -12,14 +12,12 @@
 
 __RCSID__ = "$Id$"
 
-import os
 import socket
-import resource
 import getpass
 
-from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Os import getDiskSpace
+from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 
 
 class WatchdogLinux(Watchdog):
@@ -65,20 +63,6 @@ class WatchdogLinux(Watchdog):
 
     return result
 
-  ############################################################################
-  def getLoadAverage(self):
-    """Obtains the load average.
-    """
-    return S_OK(float(os.getloadavg()[0]))
-
-  #############################################################################
-  def getMemoryUsed(self):
-    """Obtains the memory used.
-    """
-    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + \
-        resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-    return S_OK(float(mem))
-
   #############################################################################
   def getDiskSpace(self):
     """Obtains the disk space used.
@@ -89,9 +73,7 @@ class WatchdogLinux(Watchdog):
     if diskSpace == -1:
       result = S_ERROR('Could not obtain disk usage')
       self.log.warn(' Could not obtain disk usage')
-      result['Value'] = -1
+    else:
+      result['Value'] = float(diskSpace)
 
-    result['Value'] = float(diskSpace)
     return result
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -1,8 +1,12 @@
+""" Module for handling AccountingDB tables on multiple DBs (e.g. 2 MySQL servers)
+"""
+
+
 __RCSID__ = "$Id$"
 
 from DIRAC import gConfig, S_OK, gLogger
+from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
-from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
 
 
 class MultiAccountingDB(object):

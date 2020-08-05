@@ -1,6 +1,7 @@
 """ test File Plugin
 """
 
+from __future__ import print_function
 import mock
 import unittest
 import tempfile
@@ -111,13 +112,13 @@ class TestBase( unittest.TestCase ):
 
   def walkPath( self, path ):
     for root, dirs, files in os.walk( path ):
-      print root
-      print "  dirs"
+      print(root)
+      print("  dirs")
       for d in dirs:
-        print "    ", os.path.join( root, d )
-      print "  files"
+        print("    ", os.path.join(root, d))
+      print("  files")
       for f in files:
-        print "    ", os.path.join( root, f )
+        print("    ", os.path.join(root, f))
 
 
   @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',

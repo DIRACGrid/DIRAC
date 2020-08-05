@@ -7,6 +7,10 @@
 
 """
 
+from __future__ import absolute_import
+import six
+from six.moves import range
+
 __RCSID__ = "$Id$"
 
 import time
@@ -14,12 +18,15 @@ import time
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
 # This is a global instance of the JobDB class
 jobDB = False
 logDB = False
+elasticJobDB = False
 
 JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
@@ -35,8 +42,24 @@ def initializeJobStateUpdateHandler(serviceInfo):
 
 class JobStateUpdateHandler(RequestHandler):
 
+  def initialize(self):
+    """
+    Flags gESFlag and gMySQLFlag have bool values (True/False)
+    derived from dirac.cfg configuration file
+
+    Determines the switching of ElasticSearch and MySQL backends
+    """
+    global elasticJobDB
+
+    useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
+    if useESForJobParametersFlag:
+      elasticJobDB = ElasticJobDB()
+      self.log.verbose("Using ElasticSearch for JobParameters")
+
+    return S_OK()
+
   ###########################################################################
-  types_updateJobFromStager = [[basestring, int, long], basestring]
+  types_updateJobFromStager = [[six.string_types, int], six.string_types]
 
   def export_updateJobFromStager(self, jobID, status):
     """ Simple call back method to be used by the stager. """
@@ -76,9 +99,9 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobStatus = [[basestring, int, long], basestring, basestring, basestring]
+  types_setJobStatus = [[six.string_types, int]]
 
-  def export_setJobStatus(self, jobID, status, minorStatus, source='Unknown', datetime=None):
+  def export_setJobStatus(self, jobID, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
@@ -86,9 +109,9 @@ class JobStateUpdateHandler(RequestHandler):
     return self.__setJobStatus(int(jobID), status, minorStatus, source, datetime)
 
   ###########################################################################
-  types_setJobsStatus = [list, basestring, basestring, basestring]
+  types_setJobsStatus = [list]
 
-  def export_setJobsStatus(self, jobIDs, status, minorStatus, source='Unknown', datetime=None):
+  def export_setJobsStatus(self, jobIDs, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
@@ -124,7 +147,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobStatusBulk = [[basestring, int, long], dict]
+  types_setJobStatusBulk = [[six.string_types, int], dict]
 
   def export_setJobStatusBulk(self, jobID, statusDict):
     """ Set various status fields for job specified by its JobId.
@@ -224,7 +247,7 @@ class JobStateUpdateHandler(RequestHandler):
     return S_OK()
 
   ###########################################################################
-  types_setJobSite = [[basestring, int, long], basestring]
+  types_setJobSite = [[six.string_types, int], six.string_types]
 
   def export_setJobSite(self, jobID, site):
     """Allows the site attribute to be set for a job specified by its jobID.
@@ -233,7 +256,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobFlag = [[basestring, int, long], basestring]
+  types_setJobFlag = [[six.string_types, int], six.string_types]
 
   def export_setJobFlag(self, jobID, flag):
     """ Set job flag for job with jobID
@@ -242,7 +265,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_unsetJobFlag = [[basestring, int, long], basestring]
+  types_unsetJobFlag = [[six.string_types, int], six.string_types]
 
   def export_unsetJobFlag(self, jobID, flag):
     """ Unset job flag for job with jobID
@@ -251,7 +274,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobApplicationStatus = [[basestring, int, long], basestring, basestring]
+  types_setJobApplicationStatus = [[six.string_types, int], six.string_types, six.string_types]
 
   def export_setJobApplicationStatus(self, jobID, appStatus, source='Unknown'):
     """ Set the application status for job specified by its JobId.
@@ -267,28 +290,30 @@ class JobStateUpdateHandler(RequestHandler):
 
     status = result['Value']['Status']
     if status == "Stalled" or status == "Matched":
-      new_status = 'Running'
+      newStatus = 'Running'
     else:
-      new_status = status
+      newStatus = status
     minorStatus = result['Value']['MinorStatus']
 
-    result = jobDB.setJobStatus(int(jobID), new_status, application=appStatus)
+    result = jobDB.setJobStatus(int(jobID), status=newStatus, minor=minorStatus, application=appStatus)
     if not result['OK']:
       return result
 
-    result = logDB.addLoggingRecord(int(jobID), new_status, minorStatus, appStatus, source=source)
+    result = logDB.addLoggingRecord(int(jobID), newStatus, minorStatus, appStatus, source=source)
     return result
 
   ###########################################################################
-  types_setJobParameter = [[basestring, int, long], basestring, basestring]
+  types_setJobParameter = [[six.string_types, int], six.string_types, six.string_types]
 
   def export_setJobParameter(self, jobID, name, value):
     """ Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
     """
 
-    result = jobDB.setJobParameter(int(jobID), name, value)
-    return result
+    if elasticJobDB:
+      return elasticJobDB.setJobParameter(int(jobID), name, value)
+
+    return jobDB.setJobParameter(int(jobID), name, value)
 
   ###########################################################################
   types_setJobsParameter = [dict]
@@ -298,11 +323,25 @@ class JobStateUpdateHandler(RequestHandler):
         for job specified by its JobId
     """
     for jobID in jobsParameterDict:
-      jobDB.setJobParameter(jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1]))
+
+      if elasticJobDB:
+        res = elasticJobDB.setJobParameter(jobID,
+                                           str(jobsParameterDict[jobID][0]),
+                                           str(jobsParameterDict[jobID][1]))
+        if not res['OK']:
+          self.log.error('Failed to add Job Parameter to elasticJobDB', res['Message'])
+
+      else:
+        res = jobDB.setJobParameter(jobID,
+                                    str(jobsParameterDict[jobID][0]),
+                                    str(jobsParameterDict[jobID][1]))
+        if not res['OK']:
+          self.log.error('Failed to add Job Parameter to MySQL', res['Message'])
+
     return S_OK()
 
   ###########################################################################
-  types_setJobParameters = [[basestring, int, long], list]
+  types_setJobParameters = [[six.string_types, int], list]
 
   def export_setJobParameters(self, jobID, parameters):
     """ Set arbitrary parameters specified by a list of name/value pairs
@@ -316,7 +355,7 @@ class JobStateUpdateHandler(RequestHandler):
     return S_OK('All parameters stored for job')
 
   ###########################################################################
-  types_sendHeartBeat = [[basestring, int, long], dict, dict]
+  types_sendHeartBeat = [[six.string_types, int], dict, dict]
 
   def export_sendHeartBeat(self, jobID, dynamicData, staticData):
     """ Send a heart beat sign of life for a job jobID

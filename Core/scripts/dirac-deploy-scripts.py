@@ -6,6 +6,7 @@ Options:
  * <python path>: you can specify the folder where your python installation should be fetched from
                   to replace the shebang
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import getopt
@@ -29,60 +30,10 @@ simpleCopyMask = [os.path.basename(__file__),
                   'dirac_install.py',
                   'dirac_platform.py']
 
-wrapperTemplate = """#!$PYTHONLOCATION$
-#
-import os,sys,imp
-#
-DiracRoot = os.path.dirname(os.path.dirname( os.path.realpath( sys.argv[0] ) ))
-if 'DIRACPLAT' in os.environ:
-  DiracPlatform = os.environ['DIRACPLAT']
-else:
-  platformPath = os.path.join( DiracRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
-  with open( platformPath, "r" ) as platFD:
-    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-  DiracPlatform = Platform.getPlatformString()
-  if not DiracPlatform or DiracPlatform == "ERROR":
-    print >> sys.stderr, "Can not determine local platform"
-    sys.exit(-1)
-DiracPath        = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'bin'), )
-DiracPythonPath  = '%s' % ( DiracRoot, )
-DiracLibraryPath      = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'lib'), )
+wrapperTemplate = """#!/bin/bash
 
-baseLibPath = DiracLibraryPath
-if os.path.exists( baseLibPath ):
-  for entry in os.listdir( baseLibPath ):
-    if os.path.isdir( entry ):
-      DiracLibraryPath = '%s:%s' % ( DiracLibraryPath, os.path.join( baseLibPath, entry ) )
-
-
-os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
-
-for varName in ( 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH'):
-  if varName not in os.environ:
-    os.environ[varName] = DiracLibraryPath
-  else:
-    os.environ[varName] = '%s:%s' % ( DiracLibraryPath, os.environ[varName] )
-
-if 'PYTHONPATH' not in os.environ:
-  os.environ['PYTHONPATH'] = DiracPythonPath
-else:
-  os.environ['PYTHONPATH'] = '%s:%s' % ( DiracPythonPath, os.environ['PYTHONPATH'] )
-
-DiracScript = os.path.join( DiracRoot, '$SCRIPTLOCATION$' )
-
-certDir = os.path.join( "etc", "grid-security", "certificates" )
-if 'X509_CERT_DIR' not in os.environ and \
-  not os.path.isdir( os.path.join( "/", certDir ) ) and \
-  os.path.isdir( os.path.join( DiracRoot, certDir ) ):
-  os.environ[ 'X509_CERT_DIR' ] = os.path.join( DiracRoot, certDir )
-
-# DCommands special
-os.environ['DCOMMANDS_PPID'] = str( os.getppid( ) )
-
-if sys.argv[1:]:
-  args = ' "%s"' % '" "'.join( sys.argv[1:] )
-else:
-  args = ''
+export DCOMMANDS_PPID=$PPID
+exec $PYTHONLOCATION$ $DIRAC/$SCRIPTLOCATION$ "$@"
 """
 
 # Python interpreter location can be specified as an argument
@@ -95,7 +46,7 @@ try:
   opts, args = getopt.getopt(sys.argv[1:], "", ["symlink"])
 except getopt.GetoptError as err:
   # print help information and exit:
-  print str(err)  # will print something like "option -a not recognized"
+  print(str(err))  # will print something like "option -a not recognized"
   sys.exit(2)
 for o, a in opts:
   if o == "--symlink":
@@ -108,17 +59,6 @@ if args:
   pythonLocation = os.path.join(args[0], 'bin', 'python')
 
 wrapperTemplate = wrapperTemplate.replace('$PYTHONLOCATION$', pythonLocation)
-
-# On the newest MacOS the DYLD_LIBRARY_PATH variable is not passed to the shell of
-# the os.system() due to System Integrity Protection feature
-if platform.system() == "Darwin":
-  wrapperTemplate += """
-sys.exit( os.system( 'DYLD_LIBRARY_PATH=%s python "%s"%s' % ( DiracLibraryPath, DiracScript, args )  ) / 256 )
-"""
-else:
-  wrapperTemplate += """
-sys.exit( os.system('python "%s"%s' % ( DiracScript, args )  ) / 256 )
-"""
 
 
 def lookForScriptsInPath(basePath, rootModule):
@@ -145,12 +85,12 @@ def findDIRACRoot(path):
 
 rootPath = findDIRACRoot(os.path.dirname(os.path.realpath(__file__)))
 if not rootPath:
-  print "Error: Cannot find DIRAC root!"
+  print("Error: Cannot find DIRAC root!")
   sys.exit(1)
 
 targetScriptsPath = os.path.join(rootPath, "scripts")
 pythonScriptRE = re.compile("(.*/)*([a-z]+-[a-zA-Z0-9-]+|[a-z]+_[a-zA-Z0-9_]+|d[a-zA-Z0-9-]+).py$")
-print "Scripts will be deployed at %s" % targetScriptsPath
+print("Scripts will be deployed at %s" % targetScriptsPath)
 
 if not os.path.isdir(targetScriptsPath):
   os.mkdir(targetScriptsPath)
@@ -170,7 +110,7 @@ for rootModule in listDir:
   extSuffixPos = rootModule.find(moduleSuffix)
   if extSuffixPos == -1 or extSuffixPos != len(rootModule) - len(moduleSuffix):
     continue
-  print "Inspecting %s module" % rootModule
+  print(("Inspecting %s module" % rootModule))
   scripts = lookForScriptsInPath(modulePath, rootModule)
   for script in scripts:
     scriptPath = script[0]
@@ -181,7 +121,7 @@ for rootModule in listDir:
     if scriptName not in simpleCopyMask and pythonScriptRE.match(scriptName):
       newScriptName = scriptName[:-3].replace('_', '-')
       if DEBUG:
-        print " Wrapping %s as %s" % (scriptName, newScriptName)
+        print((" Wrapping %s as %s" % (scriptName, newScriptName)))
       fakeScriptPath = os.path.join(targetScriptsPath, newScriptName)
 
       # Either create the symlink or write the wrapper script
@@ -199,14 +139,9 @@ for rootModule in listDir:
       os.chmod(fakeScriptPath, gDefaultPerms)
     else:
       if DEBUG:
-        print " Copying %s" % scriptName
+        print((" Copying %s" % scriptName))
       shutil.copy(os.path.join(rootPath, scriptPath), targetScriptsPath)
       copyPath = os.path.join(targetScriptsPath, scriptName)
-      if platform.system() == 'Darwin':
-        with open(copyPath, 'r+') as script:
-          scriptStr = script.read()
-          script.seek(0)
-          script.write(scriptStr.replace('/usr/bin/env python', pythonLocation))
       os.chmod(copyPath, gDefaultPerms)
       cLen = len(copyPath)
       reFound = pythonScriptRE.match(copyPath)
@@ -215,5 +150,5 @@ for rootModule in listDir:
         pathList[-1] = pathList[-1].replace('_', '-')
         destPath = "".join(pathList)
         if DEBUG:
-          print " Renaming %s as %s" % (copyPath, destPath)
+          print((" Renaming %s as %s" % (copyPath, destPath)))
         os.rename(copyPath, destPath)

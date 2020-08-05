@@ -4,25 +4,29 @@
 # Author : Adria Casajus
 ########################################################################
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 try:
   from DIRAC.Core.Utilities.Platform import getPlatformString
-except:
-  import platform, os, sys, re, subprocess
+except Exception:
+  import platform
+  import os
+  import sys
+  import re
+  import subprocess
 
   # We need to patch python platform module. It does a string comparison for the libc versions.
   # it fails when going from 2.9 to 2.10,
   # the fix converts the version to a tuple and attempts a numeric comparison
 
-  _libc_search = re.compile( r'(__libc_init)'
+  _libc_search = re.compile(r'(__libc_init)'
                             '|'
                             '(GLIBC_([0-9.]+))'
                             '|'
-                            '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)' )
+                            r'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)')
 
-  def libc_ver( executable = sys.executable, lib = '', version = '', chunksize = 2048 ):
-
+  def libc_ver(executable=sys.executable, lib='', version='', chunksize=2048):
     """ Tries to determine the libc version that the file executable
         (which defaults to the Python interpreter) is linked against.
 
@@ -36,14 +40,14 @@ except:
         The file is read and scanned in chunks of chunksize bytes.
 
     """
-    with open( executable, 'rb' ) as f:
-      binary = f.read( chunksize )
+    with open(executable, 'rb') as f:
+      binary = f.read(chunksize)
       pos = 0
       version = [0, 0, 0]
       while True:
-        m = _libc_search.search( binary, pos )
+        m = _libc_search.search(binary, pos)
         if not m:
-          binary = f.read( chunksize )
+          binary = f.read(chunksize)
           if not binary:
             break
           pos = 0
@@ -52,10 +56,10 @@ except:
         if libcinit and not lib:
           lib = 'libc'
         elif glibc:
-          glibcversion_parts = glibcversion.split( '.' )
-          for i in xrange( len( glibcversion_parts ) ):
+          glibcversion_parts = glibcversion.split('.')
+          for i in xrange(len(glibcversion_parts)):
             try:
-              glibcversion_parts[i] = int( glibcversion_parts[i] )
+              glibcversion_parts[i] = int(glibcversion_parts[i])
             except ValueError:
               glibcversion_parts[i] = 0
           if libcinit and not lib:
@@ -69,58 +73,57 @@ except:
         elif so:
           if lib != 'glibc':
             lib = 'libc'
-            version = max( version, soversion )
-            if threads and version[-len( threads ):] != threads:
+            version = max(version, soversion)
+            if threads and version[-len(threads):] != threads:
               version = version + threads
         pos = m.end()
-    return lib, '.'.join( map( str, version ) )
+    return lib, '.'.join(map(str, version))
 
-
-  ### Command line interface
+  # Command line interface
 
   def getPlatformString():
     # Modified to return our desired platform string, R. Graciani
-    platformTuple = ( platform.system(), platform.machine() )
+    platformTuple = (platform.system(), platform.machine())
     if platformTuple[0] == 'Linux':
-      sp = subprocess.Popen( [ '/sbin/ldconfig', '--print-cache' ], stdout=subprocess.PIPE )
-      ldre = re.compile( ".*=> (.*/libc\.so\..*$)" )
+      sp = subprocess.Popen(['/sbin/ldconfig', '--print-cache'], stdout=subprocess.PIPE)
+      ldre = re.compile(r".*=> (.*/libc\.so\..*$)")
       libs = []
       for line in sp.stdout.readlines():
-        reM = ldre.match( line )
+        reM = ldre.match(line)
         if reM:
-          libs.append( reM.groups()[0] )
+          libs.append(reM.groups()[0])
       if not libs:
         # get version of higher libc installed
-        if platform.machine().find( '64' ) != -1:
+        if platform.machine().find('64') != -1:
           lib = '/lib64'
         else:
           lib = '/lib'
-        for libFile in os.listdir( lib ):
-          if libFile.find( 'libc-' ) == 0 or libFile.find( 'libc.so' ) == 0 :
-            libs.append( os.path.join( lib , libFile ) )
+        for libFile in os.listdir(lib):
+          if libFile.find('libc-') == 0 or libFile.find('libc.so') == 0:
+            libs.append(os.path.join(lib, libFile))
       newest_lib = [0, 0, 0]
       for lib in libs:
-        lib_parts = libc_ver( lib )[1].split( '.' )
-        for i in xrange( len( lib_parts ) ):
+        lib_parts = libc_ver(lib)[1].split('.')
+        for i in xrange(len(lib_parts)):
           try:
-            lib_parts[i] = int( lib_parts[i] )
+            lib_parts[i] = int(lib_parts[i])
           except ValueError:
             lib_parts[i] = 0
             # print "non integer version numbers"
         if lib_parts > newest_lib:
           newest_lib = lib_parts
 
-      platformTuple += ( 'glibc-' + '.'.join( map( str, newest_lib ) ) , )
+      platformTuple += ('glibc-' + '.'.join(map(str, newest_lib)), )
     elif platformTuple[0] == 'Darwin':
-      platformTuple += ( '.'.join( platform.mac_ver()[0].split( "." )[:2] ), )
+      platformTuple += ('.'.join(platform.mac_ver()[0].split(".")[:2]), )
     elif platformTuple[0] == 'Windows':
-      platformTuple += ( platform.win32_ver()[0], )
+      platformTuple += (platform.win32_ver()[0], )
     else:
-      platformTuple += ( platform.release() )
+      platformTuple += (platform.release())
 
     platformString = "%s_%s_%s" % platformTuple
 
     return platformString
 
 if __name__ == "__main__":
-  print getPlatformString()
+  print(getPlatformString())

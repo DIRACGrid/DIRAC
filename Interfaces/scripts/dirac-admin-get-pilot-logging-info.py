@@ -7,6 +7,7 @@
   Retrieve logging info of a Grid pilot
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
@@ -37,11 +38,11 @@ for gridID in args:
     errorList.append((gridID, result['Message']))
     exitCode = 2
   else:
-    print 'Pilot Reference: %s', gridID
-    print result['Value']
-    print
+    print('Pilot Reference: %s', gridID)
+    print(result['Value'])
+    print()
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRACExit(exitCode)

@@ -19,7 +19,6 @@ Operations / DataManagement
 * FTSVersion (FTS2): version of FTS to use. Possibilities: FTS3 or FTS2 (deprecated)
 * FTSPlacement section:
 
-  - FTS2 section: deprecated
   - FTS3 section:
 
     - ServerPolicy (Random): policy to choose between FTS3 servers (Random, Sequence, Failover)

@@ -11,8 +11,8 @@
         {
             Catalogs
             {
-            CatalogList = DIRACFileCatalog, TSCatalog
-            DIRACFileCatalog
+            CatalogList = FileCatalog, TSCatalog
+            FileCatalog
             {
             CatalogType = FileCatalog
             AccessType = Read-Write
@@ -52,7 +52,7 @@ class TestTSDFCCatalogTestCase(unittest.TestCase):
     self.transClient = TransformationClient()
     self.fc = FileCatalog()
     self.dm = DataManager()
-    self.metaCatalog = 'DIRACFileCatalog'
+    self.metaCatalog = 'FileCatalog'
     gLogger.setLevel('DEBUG')
 
   def tearDown(self):
@@ -91,7 +91,6 @@ class TransformationClientChainID(TestTSDFCCatalogTestCase):
 
     # Create a transformation having a query that matches the file metadata
     MDdict1b = {'particle': 'gamma_diffuse', 'zenith': {"<=": 20}}
-    mqJson1b = json.dumps(MDdict1b)
     res = self.transClient.addTransformation(
         'transformationName',
         'description',
@@ -99,7 +98,9 @@ class TransformationClientChainID(TestTSDFCCatalogTestCase):
         'MCSimulation',
         'Standard',
         'Manual',
-        mqJson1b)
+        '',
+        inputMetaQuery=MDdict1b)
+
     self.assertTrue(res['OK'])
     transID = res['Value']
 
@@ -153,7 +154,6 @@ class TransformationClientChainID(TestTSDFCCatalogTestCase):
 
     # Create another transformation having a query not matching none of the files added to the DFC
     MDdict3 = {'particle': 'gamma', 'zenith': 60}
-    mqJson3 = json.dumps(MDdict3)
     res = self.transClient.addTransformation(
         'transformationName',
         'description',
@@ -161,7 +161,8 @@ class TransformationClientChainID(TestTSDFCCatalogTestCase):
         'MCSimulation',
         'Standard',
         'Manual',
-        mqJson3)
+        '',
+        inputMetaQuery=MDdict3)
     self.assertTrue(res['OK'])
     transID = res['Value']
 
@@ -173,7 +174,7 @@ class TransformationClientChainID(TestTSDFCCatalogTestCase):
     res = self.transClient.deleteTransformation(transID)
     self.assertTrue(res['OK'])
 
-    # Create another transformation having an empty query
+    # Create another transformation with no InputMetaQuery defined
     res = self.transClient.addTransformation(
         'transformationName',
         'description',

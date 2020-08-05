@@ -1,6 +1,6 @@
 """
 Module for managing the installation of DIRAC components:
-MySQL, DB's, NoSQL DBs, Services, Agents, Executors and Consumers
+MySQL, DB's, NoSQL DBs, Services, Agents, Executors
 
 It only makes use of defaults in LocalInstallation Section in dirac.cfg
 
@@ -18,17 +18,12 @@ The Following Options are used::
                                       service (default: socket.getfqdn())
   /LocalInstallation/RunitDir:        Location where runit directory is created (default InstancePath/runit)
   /LocalInstallation/StartupDir:      Location where startup directory is created (default InstancePath/startup)
-  /LocalInstallation/MySQLDir:        Location where mysql databases are created (default InstancePath/mysql)
   /LocalInstallation/Database/User:                 (default Dirac)
   /LocalInstallation/Database/Password:             (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/RootUser:             (default root)
   /LocalInstallation/Database/RootPwd:              (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/Host:                 (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/Port:                 (default 3306)
-  /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements
-                                                    for testing purposes innodb_buffer_pool_size=200MB
-  /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements
-                                                    for production purposes innodb_buffer_pool_size=10000MB
   /LocalInstallation/NoSQLDatabase/Host:            (must be set for SystemAdministrator Service to work)
   /LocalInstallation/NoSQLDatabase/Port:            (default 9200)
   /LocalInstallation/NoSQLDatabase/User:            (default '')
@@ -60,13 +55,15 @@ If a Master Configuration Server is being installed the following Options can be
 
 """
 
+from __future__ import print_function, absolute_import
+
 import os
 import re
 import glob
 import stat
 import time
+import subprocess32 as subprocess
 import shutil
-import socket
 
 import DIRAC
 from DIRAC import rootPath
@@ -93,7 +90,6 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.Platform import getPlatformString
 
 __RCSID__ = "$Id$"
 
@@ -123,27 +119,19 @@ class ComponentInstaller(object):
     self.runitDir = ''
     self.startDir = ''
     self.db = {}
-    self.mysqlDir = ''
-    self.mysqlDbDir = ''
-    self.mysqlLogDir = ''
-    self.mysqlMyOrg = ''
-    self.mysqlMyCnf = ''
-    self.mysqlStartupScript = ''
     self.mysqlUser = ''
     self.mysqlPassword = ''
     self.mysqlRootUser = ''
     self.mysqlRootPwd = ''
     self.mysqlHost = ''
     self.mysqlPort = ''
-    self.mysqlSmallMem = ''
-    self.mysqlLargeMem = ''
     self.noSQLHost = ''
     self.noSQLPort = ''
     self.noSQLUser = ''
     self.noSQLPassword = ''
     self.noSQLSSL = ''
     self.controlDir = ''
-    self.componentTypes = ['service', 'agent', 'executor', 'consumer']
+    self.componentTypes = ['service', 'agent', 'executor']
     self.monitoringClient = None
 
     self.loadDiracCfg()
@@ -191,17 +179,6 @@ class ComponentInstaller(object):
     gLogger.verbose('Using Control Dir at', self.controlDir)
 
     # Now some MySQL default values
-    self.mysqlDir = os.path.join(self.instancePath, 'mysql')
-    self.mysqlDir = self.localCfg.getOption(cfgInstallPath('MySQLDir'), self.mysqlDir)
-    gLogger.verbose('Using MySQL Dir at', self.mysqlDir)
-
-    self.mysqlDbDir = os.path.join(self.mysqlDir, 'db')
-    self.mysqlLogDir = os.path.join(self.mysqlDir, 'log')
-    self.mysqlMyOrg = os.path.join(rootPath, 'mysql', 'etc', 'my.cnf')
-    self.mysqlMyCnf = os.path.join(self.mysqlDir, '.my.cnf')
-
-    self.mysqlStartupScript = os.path.join(rootPath, 'mysql', 'share', 'mysql', 'mysql.server')
-
     self.mysqlRootPwd = self.localCfg.getOption(cfgInstallPath('Database', 'RootPwd'), self.mysqlRootPwd)
     if self.mysqlRootPwd:
       gLogger.verbose('Reading Root MySQL Password from local configuration')
@@ -245,14 +222,6 @@ class ComponentInstaller(object):
     self.mysqlMode = self.localCfg.getOption(cfgInstallPath('Database', 'MySQLMode'), '')
     if self.mysqlMode:
       gLogger.verbose('Configuring MySQL server as %s' % self.mysqlMode)
-
-    self.mysqlSmallMem = self.localCfg.getOption(cfgInstallPath('Database', 'MySQLSmallMem'), False)
-    if self.mysqlSmallMem:
-      gLogger.verbose('Configuring MySQL server for Low Memory usage')
-
-    self.mysqlLargeMem = self.localCfg.getOption(cfgInstallPath('Database', 'MySQLLargeMem'), False)
-    if self.mysqlLargeMem:
-      gLogger.verbose('Configuring MySQL server for Large Memory usage')
 
     # Now some noSQL defaults
     self.noSQLHost = self.localCfg.getOption(cfgInstallPath('NoSQLDatabase', 'Host'), '')
@@ -337,6 +306,9 @@ class ComponentInstaller(object):
     """
     Merge cfg into central CS
     """
+
+    gLogger.debug("Adding CFG to CS:")
+    gLogger.debug(cfg)
 
     cfgClient = CSAPI()
     result = cfgClient.downloadCSData()
@@ -608,7 +580,8 @@ class ComponentInstaller(object):
         isRenamed = True
 
       result = self.monitoringClient.getInstallations({'UnInstallationTime': None},
-                                                      {'System': system, 'Module': installation['Component']['Module']},
+                                                      {'System': system,
+                                                       'Module': installation['Component']['Module']},
                                                       {}, True)
       if not result['OK']:
         return result
@@ -729,6 +702,8 @@ class ComponentInstaller(object):
       for element in execList:
         result = self.addDefaultOptionsToCS(gConfig_o, componentType, systemName, element, extensions, self.setup,
                                             {}, overwrite)
+        if not result['OK']:
+          gLogger.warn("Can't add to default CS", result['Message'])
         resultAddToCFG.setdefault('Modules', {})
         resultAddToCFG['Modules'][element] = result['OK']
     return resultAddToCFG
@@ -750,7 +725,9 @@ class ComponentInstaller(object):
     compCfg = result['Value']
 
     compCfgFile = os.path.join(rootPath, 'etc', '%s_%s.cfg' % (system, component))
-    return compCfg.writeToFile(compCfgFile)
+    if compCfg.writeToFile(compCfgFile):  # this returns a True/False
+      return S_OK()
+    return S_ERROR()
 
   def addCfgToComponentCfg(self, componentType, systemName, component, cfg):
     """
@@ -952,7 +929,7 @@ class ComponentInstaller(object):
                         str(rDict[comp]['PID'])])
       printTable(fields, records)
     except Exception as x:
-      print "Exception while gathering data for printing: %s" % str(x)
+      print("Exception while gathering data for printing: %s" % str(x))
     return S_OK()
 
   def printOverallStatus(self, rDict):
@@ -980,7 +957,7 @@ class ComponentInstaller(object):
             records.append(record)
       printTable(fields, records)
     except Exception as x:
-      print "Exception while gathering data for printing: %s" % str(x)
+      print("Exception while gathering data for printing: %s" % str(x))
 
     return S_OK()
 
@@ -1153,7 +1130,7 @@ class ComponentInstaller(object):
 
         for cType in self.componentTypes:
           if body.find('dirac-%s' % (cType)) != -1:
-            system, compT = component.split('_')[0:2]
+            system, compT = component.split('_', 1)
             if system not in resultDict[resultIndexes[cType]]:
               resultDict[resultIndexes[cType]][system] = []
             resultDict[resultIndexes[cType]][system].append(compT)
@@ -1528,13 +1505,11 @@ class ComponentInstaller(object):
 
     # Now get the necessary info from self.localCfg
     setupSystems = self.localCfg.getOption(cfgInstallPath('Systems'), ['Configuration', 'Framework'])
-    installMySQLFlag = self.localCfg.getOption(cfgInstallPath('InstallMySQL'), False)
     setupDatabases = self.localCfg.getOption(cfgInstallPath('Databases'), [])
     setupServices = [k.split('/') for k in self.localCfg.getOption(cfgInstallPath('Services'), [])]
     setupAgents = [k.split('/') for k in self.localCfg.getOption(cfgInstallPath('Agents'), [])]
     setupExecutors = [k.split('/') for k in self.localCfg.getOption(cfgInstallPath('Executors'), [])]
     setupWeb = self.localCfg.getOption(cfgInstallPath('WebPortal'), False)
-    setupWebApp = self.localCfg.getOption(cfgInstallPath('WebApp'), True)
     setupConfigurationMaster = self.localCfg.getOption(cfgInstallPath('ConfigurationMaster'), False)
     setupPrivateConfiguration = self.localCfg.getOption(cfgInstallPath('PrivateConfiguration'), False)
     setupConfigurationName = self.localCfg.getOption(cfgInstallPath('ConfigurationName'), self.setup)
@@ -1624,7 +1599,9 @@ class ComponentInstaller(object):
 
       if not cmdFound:
         gLogger.notice('Starting runsvdir ...')
-        os.system("runsvdir %s 'log:  DIRAC runsv' &" % self.startDir)
+        with open(os.devnull, 'w') as devnull:
+            subprocess.Popen(['nohup', 'runsvdir', self.startDir, 'log:  DIRAC runsv'],
+                             stdout=devnull, stderr=devnull, universal_newlines=True)
 
     if ['Configuration', 'Server'] in setupServices and setupConfigurationMaster:
       # This server hosts the Master of the CS
@@ -1707,15 +1684,27 @@ class ComponentInstaller(object):
       for system, service in setupServices:
         if not self.addDefaultOptionsToCS(None, 'service', system, service, extensions, overwrite=True)['OK']:
           # If we are not allowed to write to the central CS, add the configuration to the local file
-          self.addDefaultOptionsToComponentCfg('service', system, service, extensions)
+          gLogger.warn("Can't write to central CS, so adding to the specific component CFG",
+                       "for %s : %s" % (system, service))
+          res = self.addDefaultOptionsToComponentCfg('service', system, service, extensions)
+          if not res['OK']:
+            gLogger.warn("Can't write to the specific component CFG")
       for system, agent in setupAgents:
         if not self.addDefaultOptionsToCS(None, 'agent', system, agent, extensions, overwrite=True)['OK']:
           # If we are not allowed to write to the central CS, add the configuration to the local file
-          self.addDefaultOptionsToComponentCfg('agent', system, agent, extensions)
+          gLogger.warn("Can't write to central CS, so adding to the specific component CFG")
+          res = self.addDefaultOptionsToComponentCfg('agent', system, agent, extensions)
+          if not res['OK']:
+            gLogger.warn("Can't write to the specific component CFG",
+                         "for %s : %s" % (system, agent))
       for system, executor in setupExecutors:
         if not self.addDefaultOptionsToCS(None, 'executor', system, executor, extensions, overwrite=True)['OK']:
           # If we are not allowed to write to the central CS, add the configuration to the local file
-          self.addDefaultOptionsToComponentCfg('executor', system, executor, extensions)
+          gLogger.warn("Can't write to central CS, so adding to the specific component CFG")
+          res = self.addDefaultOptionsToComponentCfg('executor', system, executor, extensions)
+          if not res['OK']:
+            gLogger.warn("Can't write to the specific component CFG",
+                         "for %s : %s" % (system, executor))
     else:
       gLogger.warn('Configuration parameters definition is not requested')
 
@@ -1723,13 +1712,7 @@ class ComponentInstaller(object):
       cfg = self.__getCfg(cfgPath('DIRAC', 'Configuration'), 'AutoPublish', 'no')
       self._addCfgToDiracCfg(cfg)
 
-    # 2.- Check if MySQL is to be installed
-    if installMySQLFlag:
-      gLogger.notice('Installing MySQL')
-      self.getMySQLPasswords()
-      self.installMySQL()
-
-    # 3.- Install requested Databases
+    # 2.- Install requested Databases
     # if MySQL is not installed locally, we assume a host is given
     if setupDatabases:
       result = self.getDatabases()
@@ -1776,33 +1759,30 @@ class ComponentInstaller(object):
           DIRAC.exit(-1)
         return S_ERROR(error)
 
-    # 4.- Then installed requested services
+    # 3.- Then installed requested services
     for system, service in setupServices:
       result = self.setupComponent('service', system, service, extensions)
       if not result['OK']:
         gLogger.error(result['Message'])
         continue
 
-    # 5.- Now the agents
+    # 4.- Now the agents
     for system, agent in setupAgents:
       result = self.setupComponent('agent', system, agent, extensions)
       if not result['OK']:
         gLogger.error(result['Message'])
         continue
 
-    # 6.- Now the executors
+    # 5.- Now the executors
     for system, executor in setupExecutors:
       result = self.setupComponent('executor', system, executor, extensions)
       if not result['OK']:
         gLogger.error(result['Message'])
         continue
 
-    # 7.- And finally the Portal
+    # 6.- And finally the Portal
     if setupWeb:
-      if setupWebApp:
-        self.setupNewPortal()
-      else:
-        self.setupPortal()
+      self.setupPortal()
 
     if localServers != masterServer:
       self._addCfgToDiracCfg(initialCfg)
@@ -1941,7 +1921,7 @@ class ComponentInstaller(object):
       os.chmod(runFile, self.gDefaultPerms)
 
       cTypeLower = componentType.lower()
-      if cTypeLower == 'agent' or cTypeLower == 'consumer':
+      if cTypeLower == 'agent':
         # This is, e.g., /opt/dirac/runit/WorkfloadManagementSystem/Matcher/control/t
         stopFile = os.path.join(runitCompDir, 'control', 't')
         # This is, e.g., /opt/dirac/control/WorkfloadManagementSystem/Matcher/
@@ -1986,7 +1966,15 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     if not os.path.lexists(startCompDir):
       gLogger.notice('Creating startup link at', startCompDir)
       mkLink(runitCompDir, startCompDir)
-      time.sleep(10)
+
+      # Wait for the service to be recognised (can't use isfile as supervise/ok is a device)
+      start = time.time()
+      while (time.time() - 10) < start:
+        time.sleep(1)
+        if os.path.exists(os.path.join(startCompDir, 'supervise', 'ok')):
+          break
+      else:
+        return S_ERROR('Failed to find supervise/ok for component %s_%s' % (system, component))
 
     # Check the runsv status
     start = time.time()
@@ -1997,10 +1985,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       if result['Value'] and result['Value']['%s_%s' % (system, component)]['RunitStatus'] == "Run":
         break
       time.sleep(1)
-
-    # Final check
-    result = self.getStartupComponentStatus([(system, component)])
-    if not result['OK']:
+    else:
       return S_ERROR('Failed to start the component %s_%s' % (system, component))
 
     resDict = {}
@@ -2044,139 +2029,11 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     return S_OK()
 
-  def installPortal(self):
-    """
-    Install runit directories for the Web Portal
-    """
-    # Check that the software for the Web Portal is installed
-    error = ''
-    webDir = os.path.join(self.linkedRootPath, 'Web')
-    if not os.path.exists(webDir):
-      error = 'Web extension not installed at %s' % webDir
-      if self.exitOnError:
-        gLogger.error(error)
-        DIRAC.exit(-1)
-      return S_ERROR(error)
-
-    # First the lighthttpd server
-
-    # Check if the component is already installed
-    runitHttpdDir = os.path.join(self.runitDir, 'Web', 'httpd')
-    runitPasterDir = os.path.join(self.runitDir, 'Web', 'paster')
-
-    if os.path.exists(runitHttpdDir):
-      msg = "lighthttpd already installed"
-      gLogger.notice(msg)
-    else:
-      gLogger.notice('Installing Lighttpd')
-      # Now do the actual installation
-      try:
-        self._createRunitLog(runitHttpdDir)
-        runFile = os.path.join(runitHttpdDir, 'run')
-        fd = open(runFile, 'w')
-        fd.write(
-            """#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  exec lighttpdSvc.sh < /dev/null
-  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'), })
-        fd.close()
-
-        os.chmod(runFile, self.gDefaultPerms)
-      except Exception:
-        error = 'Failed to prepare self.setup for lighttpd'
-        gLogger.exception(error)
-        if self.exitOnError:
-          DIRAC.exit(-1)
-        return S_ERROR(error)
-
-      result = self.execCommand(5, [runFile])
-      gLogger.notice(result['Value'][1])
-
-    # Second the Web portal
-
-    # Check if the component is already installed
-    if os.path.exists(runitPasterDir):
-      msg = "Web Portal already installed"
-      gLogger.notice(msg)
-    else:
-      gLogger.notice('Installing Web Portal')
-      # Now do the actual installation
-      try:
-        self._createRunitLog(runitPasterDir)
-        runFile = os.path.join(runitPasterDir, 'run')
-        fd = open(runFile, 'w')
-        fd.write(
-            """#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  cd %(DIRAC)s/Web
-  exec paster serve --reload production.ini < /dev/null
-  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
-                'DIRAC': self.linkedRootPath})
-        fd.close()
-
-        os.chmod(runFile, self.gDefaultPerms)
-      except Exception:
-        error = 'Failed to prepare self.setup for Web Portal'
-        gLogger.exception(error)
-        if self.exitOnError:
-          DIRAC.exit(-1)
-        return S_ERROR(error)
-
-      result = self.execCommand(5, [runFile])
-      gLogger.notice(result['Value'][1])
-
-    return S_OK([runitHttpdDir, runitPasterDir])
-
   def setupPortal(self):
     """
     Install and create link in startup
     """
     result = self.installPortal()
-    if not result['OK']:
-      return result
-
-    # Create the startup entries now
-    runitCompDir = result['Value']
-    startCompDir = [os.path.join(self.startDir, 'Web_httpd'),
-                    os.path.join(self.startDir, 'Web_paster')]
-
-    mkDir(self.startDir)
-
-    for i in range(2):
-      if not os.path.lexists(startCompDir[i]):
-        gLogger.notice('Creating startup link at', startCompDir[i])
-        mkLink(runitCompDir[i], startCompDir[i])
-        time.sleep(1)
-    time.sleep(5)
-
-    # Check the runsv status
-    start = time.time()
-    while (time.time() - 10) < start:
-      result = self.getStartupComponentStatus([('Web', 'httpd'), ('Web', 'paster')])
-      if not result['OK']:
-        return S_ERROR('Failed to start the Portal')
-      if result['Value'] and \
-         result['Value']['%s_%s' % ('Web', 'httpd')]['RunitStatus'] == "Run" and \
-         result['Value']['%s_%s' % ('Web', 'paster')]['RunitStatus'] == "Run":
-        break
-      time.sleep(1)
-
-    # Final check
-    return self.getStartupComponentStatus([('Web', 'httpd'), ('Web', 'paster')])
-
-  def setupNewPortal(self):
-    """
-    Install and create link in startup
-    """
-    result = self.installNewPortal()
     if not result['OK']:
       return result
 
@@ -2204,7 +2061,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     # Final check
     return self.getStartupComponentStatus([('Web', 'WebApp')])
 
-  def installNewPortal(self):
+  def installPortal(self):
     """
     Install runit directories for the Web Portal
     """
@@ -2281,60 +2138,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     return S_OK(runitWebAppDir)
 
-  def fixMySQLScripts(self, startupScript=None):
-    """
-    Edit MySQL scripts to point to desired locations for db and my.cnf
-    """
-    if startupScript is None:
-      startupScript = self.mysqlStartupScript
-
-    gLogger.verbose('Updating:', startupScript)
-    try:
-      fd = open(startupScript, 'r')
-      orgLines = fd.readlines()
-      fd.close()
-      fd = open(startupScript, 'w')
-      for line in orgLines:
-        if line.find('export HOME') == 0:
-          continue
-        if line.find('datadir=') == 0:
-          line = 'datadir=%s\n' % self.mysqlDbDir
-          gLogger.debug(line)
-          line += 'export HOME=%s\n' % self.mysqlDir
-        if line.find('basedir=') == 0:
-          platform = getPlatformString()
-          line = 'basedir=%s\n' % os.path.join(rootPath, platform)
-        if line.find('extra_args=') == 0:
-          line = 'extra_args="-n"\n'
-        if line.find('$bindir/mysqld_safe --') >= 0 and ' --defaults-file' not in line:
-          line = line.replace('mysqld_safe', 'mysqld_safe --defaults-file=$HOME/.my.cnf')
-        fd.write(line)
-      fd.close()
-    except Exception:
-      error = 'Failed to Update MySQL startup script'
-      gLogger.exception(error)
-      if self.exitOnError:
-        DIRAC.exit(-1)
-      return S_ERROR(error)
-
-    return S_OK()
-
-  def mysqlInstalled(self, doNotExit=False):
-    """
-    Check if MySQL is already installed
-    """
-
-    if os.path.exists(self.mysqlDbDir) or os.path.exists(self.mysqlLogDir):
-      return S_OK()
-    if doNotExit:
-      return S_ERROR()
-
-    error = 'MySQL not properly Installed'
-    gLogger.error(error)
-    if self.exitOnError:
-      DIRAC.exit(-1)
-    return S_ERROR(error)
-
   def getMySQLPasswords(self):
     """
     Get MySQL passwords from local configuration or prompt
@@ -2359,148 +2162,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       self.mysqlRootPwd = root
     if dirac:
       self.mysqlPassword = dirac
-
-    return S_OK()
-
-  def startMySQL(self):
-    """
-    Start MySQL server
-    """
-    result = self.mysqlInstalled()
-    if not result['OK']:
-      return result
-    return self.execCommand(0, [self.mysqlStartupScript, 'start'])
-
-  def stopMySQL(self):
-    """
-    Stop MySQL server
-    """
-    result = self.mysqlInstalled()
-    if not result['OK']:
-      return result
-    return self.execCommand(0, [self.mysqlStartupScript, 'stop'])
-
-  def installMySQL(self):
-    """
-    Attempt an installation of MySQL
-    mode:
-
-      -Master
-      -Slave
-      -None
-
-    """
-    self.fixMySQLScripts()
-
-    if self.mysqlInstalled(doNotExit=True)['OK']:
-      gLogger.notice('MySQL already installed')
-      return S_OK()
-
-    if self.mysqlMode.lower() not in ['', 'master', 'slave']:
-      error = 'Unknown MySQL server Mode'
-      if self.exitOnError:
-        gLogger.fatal(error, self.mysqlMode)
-        DIRAC.exit(-1)
-      gLogger.error(error, self.mysqlMode)
-      return S_ERROR(error)
-
-    if self.mysqlHost:
-      gLogger.notice('Installing MySQL server at', self.mysqlHost)
-
-    if self.mysqlMode:
-      gLogger.notice('This is a MySQl %s server' % self.mysqlMode)
-
-    mkDir(self.mysqlDbDir)
-    mkDir(self.mysqlLogDir)
-
-    try:
-      with open(self.mysqlMyOrg, 'r') as fd:
-        myOrg = fd.readlines()
-
-      with open(self.mysqlMyCnf, 'w') as fd:
-        for line in myOrg:
-          if line.find('[mysqld]') == 0:
-            line += '\n'.join(['innodb_file_per_table', ''])
-          elif line.find('innodb_log_arch_dir') == 0:
-            line = ''
-          elif line.find('innodb_data_file_path') == 0:
-            line = line.replace('2000M', '200M')
-          elif line.find('server-id') == 0 and self.mysqlMode.lower() == 'master':
-            # MySQL Configuration for Master Server
-            line = '\n'.join(['server-id = 1',
-                              '# DIRAC Master-Server',
-                              'sync-binlog = 1',
-                              'replicate-ignore-table = mysql.MonitorData',
-                              '# replicate-ignore-db=db_name',
-                              'log-bin = mysql-bin',
-                              'log-slave-updates', ''])
-          elif line.find('server-id') == 0 and self.mysqlMode.lower() == 'slave':
-            # MySQL Configuration for Slave Server
-            line = '\n'.join(['server-id = %s' % int(time.time()),
-                              '# DIRAC Slave-Server',
-                              'sync-binlog = 1',
-                              'replicate-ignore-table = mysql.MonitorData',
-                              '# replicate-ignore-db=db_name',
-                              'log-bin = mysql-bin',
-                              'log-slave-updates', ''])
-          elif line.find('/opt/dirac/mysql') > -1:
-            line = line.replace('/opt/dirac/mysql', self.mysqlDir)
-
-          if self.mysqlSmallMem:
-            if line.find('innodb_buffer_pool_size') == 0:
-              line = 'innodb_buffer_pool_size = 200M\n'
-          elif self.mysqlLargeMem:
-            if line.find('innodb_buffer_pool_size') == 0:
-              line = 'innodb_buffer_pool_size = 10G\n'
-
-          fd.write(line)
-    except Exception:
-      error = 'Can not create my.cnf'
-      gLogger.exception(error)
-      if self.exitOnError:
-        DIRAC.exit(-1)
-      return S_ERROR(error)
-
-    gLogger.notice('Initializing MySQL...')
-    platform = getPlatformString()
-    baseDir = os.path.join(rootPath, platform)
-    result = self.execCommand(0, ['mysql_install_db',
-                                  '--defaults-file=%s' % self.mysqlMyCnf,
-                                  '--baseDir=%s' % baseDir,
-                                  '--datadir=%s' % self.mysqlDbDir])
-    if not result['OK']:
-      return result
-
-    gLogger.notice('Starting MySQL...')
-    result = self.startMySQL()
-    if not result['OK']:
-      return result
-
-    gLogger.notice('Setting MySQL root password')
-    result = self.execCommand(0, ['mysqladmin', '-u', self.mysqlRootUser, 'password', self.mysqlRootPwd])
-    if not result['OK']:
-      return result
-
-    # MySQL tends to define root@host user rather than root@host.domain
-    hostName = self.mysqlHost.split('.')[0]
-    result = self.execMySQL("UPDATE user SET Host='%s' WHERE Host='%s'" % (self.mysqlHost, hostName),
-                            localhost=True)
-    if not result['OK']:
-      return result
-    result = self.execMySQL("FLUSH PRIVILEGES")
-    if not result['OK']:
-      return result
-
-    if self.mysqlHost and socket.gethostbyname(self.mysqlHost) != '127.0.0.1':
-      result = self.execCommand(0, ['mysqladmin', '-u', self.mysqlRootUser, '-h',
-                                    self.mysqlHost, 'password', self.mysqlRootPwd])
-      if not result['OK']:
-        return result
-
-    result = self.execMySQL("DELETE from user WHERE Password=''", localhost=True)
-
-    if not self._addMySQLToDiracCfg():
-      return S_ERROR('Failed to add MySQL user password to local configuration')
 
     return S_OK()
 
@@ -2626,7 +2287,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
         return S_ERROR(error)
     result = self.execMySQL('FLUSH PRIVILEGES')
     if not result['OK']:
-      gLogger.error('Failed to flush provileges', result['Message'])
+      gLogger.error('Failed to flush privileges', result['Message'])
       if self.exitOnError:
         exit(-1)
       return result

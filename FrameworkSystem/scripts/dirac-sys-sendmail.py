@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-sys-sendmail
 # Author :  Matvey Sapunov
 ########################################################################
@@ -14,7 +13,6 @@
     by newline character. Meaningful headers are "To:", "From:", "Subject:".
     Other keys will be ommited.
     Message body is an arbitrary string.
-    
 
   Options:
     There are no options.
@@ -24,64 +22,67 @@
     echo "From: source@email.com\\nSubject: Test\\n\\nMessage body" | dirac-sys-sendmail destination@email.com
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
-import socket , sys , os
+import socket
+import sys
+import os
 
-from DIRAC                                              import gLogger, exit as DIRACexit
-from DIRAC.Core.Base                                    import Script
-from DIRAC.FrameworkSystem.Client.NotificationClient    import NotificationClient
+from DIRAC import gLogger, exit as DIRACexit
+from DIRAC.Core.Base import Script
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
-Script.setUsageMessage( ''.join( __doc__ ) )
+Script.setUsageMessage(''.join(__doc__))
 
-Script.parseCommandLine( ignoreErrors = True )
+Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
-arg = "".join( args )
+arg = "".join(args)
 
-if not len( arg ) > 0:
-  gLogger.error( "Missing argument" )
-  DIRACexit( 2 )
+if not len(arg) > 0:
+  gLogger.error("Missing argument")
+  DIRACexit(2)
 
 try:
-  head , body = arg.split( "\\n\\n" )
-except Exception , x:
+  head, body = arg.split("\\n\\n")
+except Exception as x:
   head = "To: %s" % arg
   body = sys.stdin.read()
 
 try:
-  tmp , body = body.split( "\\n\\n" )
+  tmp, body = body.split("\\n\\n")
   head = tmp + "\\n" + head
-except Exception , x:
+except Exception as x:
   pass
 
-body = "".join( body.strip() )
+body = "".join(body.strip())
 
 try:
-  headers = dict( ( i.strip() , j.strip()) for i , j in 
-              ( item.split( ':' ) for item in head.split( '\\n' ) ) )
-except:
-  gLogger.error( "Failed to convert string: %s to email headers" % head )
-  DIRACexit( 4 )
+  headers = dict((i.strip(), j.strip()) for i, j in
+                 (item.split(':') for item in head.split('\\n')))
+except BaseException:
+  gLogger.error("Failed to convert string: %s to email headers" % head)
+  DIRACexit(4)
 
-if not "To" in headers:
-  gLogger.error( "Failed to get 'To:' field from headers %s" % head )
-  DIRACexit( 5 )
-to = headers[ "To" ]
+if "To" not in headers:
+  gLogger.error("Failed to get 'To:' field from headers %s" % head)
+  DIRACexit(5)
+to = headers["To"]
 
-origin = "%s@%s" %( os.getenv( "LOGNAME" , "dirac" ) , socket.getfqdn() )
+origin = "%s@%s" % (os.getenv("LOGNAME", "dirac"), socket.getfqdn())
 if "From" in headers:
-  origin = headers[ "From" ]
+  origin = headers["From"]
 
 subject = "Sent from %s" % socket.getfqdn()
 if "Subject" in headers:
-  subject = headers[ "Subject" ]
+  subject = headers["Subject"]
 
 ntc = NotificationClient()
-print "sendMail(%s,%s,%s,%s,%s)" % ( to , subject , body , origin , False )
-result = ntc.sendMail( to , subject , body , origin , localAttempt = False )
-if not result[ "OK" ]:
-  gLogger.error( result[ "Message" ] )
-  DIRACexit( 6 )
+print("sendMail(%s,%s,%s,%s,%s)" % (to, subject, body, origin, False))
+result = ntc.sendMail(to, subject, body, origin, localAttempt=False)
+if not result["OK"]:
+  gLogger.error(result["Message"])
+  DIRACexit(6)
 
-DIRACexit( 0 )
+DIRACexit(0)

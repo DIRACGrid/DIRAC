@@ -1,21 +1,16 @@
 #!/usr/bin/env python
 """
-  dirac-rss-sync
+Script that synchronizes the resources described on the CS with the RSS.
+By default, it sets their Status to `Unknown`, StatusType to `all` and
+reason to `Synchronized`. However, it can copy over the status on the CS to
+the RSS. Important: If the StatusType is not defined on the CS, it will set
+it to Banned !
 
-    Script that synchronizes the resources described on the CS with the RSS.
-    By default, it sets their Status to `Unknown`, StatusType to `all` and
-    reason to `Synchronized`. However, it can copy over the status on the CS to
-    the RSS. Important: If the StatusType is not defined on the CS, it will set
-    it to Banned !
+Usage:
+  dirac-rss-sync [options]
 
-    Usage:
-      dirac-rss-sync
-        --init                Initialize the element to the status in the CS ( applicable for StorageElements )
-        --element=            Element family to be Synchronized ( Site, Resource or Node ) or `all`
-
-
-    Verbosity:
-        -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
+Verbosity:
+    -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
 __RCSID__ = '$Id$'
@@ -42,13 +37,8 @@ def registerUsageMessage():
   '''
     Takes the script __doc__ and adds the DIRAC version to it
   '''
-
-  hLine = '  ' + '=' * 78 + '\n'
-
-  usageMessage = hLine
-  usageMessage += '  DIRAC %s\n' % version
+  usageMessage = 'DIRAC %s\n' % version
   usageMessage += __doc__
-  usageMessage += '\n' + hLine
 
   Script.setUsageMessage(usageMessage)
 

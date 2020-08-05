@@ -1,0 +1,64 @@
+stages:
+  - build_images
+  - run_tests
+
+build_compose_image:
+  stage: build_images
+  tags:
+    - docker-image-build
+  variables:
+    TO: ${CI_REGISTRY_IMAGE}/docker-compose:latest
+    DOCKER_FILE: tests/CI/Docker/docker-compose/Dockerfile
+  script: "echo" # unused but this line is required by GitLab CI
+  only:
+    - schedules
+
+build_slc6-dirac_image:
+  stage: build_images
+  tags:
+    - docker-image-build
+  variables:
+    FROM: cern/slc6-base:latest
+    TO: ${CI_REGISTRY_IMAGE}/slc6-dirac:latest
+    # Reuse the CC7 Dockerfile with FROM and RUNIT_RPM changed
+    DOCKER_FILE: tests/CI/Docker/cc7-dirac/Dockerfile
+    BUILD_ARG: RUNIT_RPM=runit-2.1.2-1.el6.x86_64.rpm
+  script: "echo" # unused but this line is required by GitLab CI
+  only:
+    - schedules
+
+build_cc7-dirac_image:
+  stage: build_images
+  tags:
+    - docker-image-build
+  variables:
+    TO: ${CI_REGISTRY_IMAGE}/cc7-dirac:latest
+    DOCKER_FILE: tests/CI/Docker/cc7-dirac/Dockerfile
+  script: "echo" # unused but this line is required by GitLab CI
+  only:
+    - schedules
+
+test:
+  stage: run_tests
+  image: ${CI_REGISTRY_IMAGE}/docker-compose:latest
+  tags:
+    - docker-privileged
+  services:
+    - name: docker:18-dind
+  variables:
+    COMPOSE_HTTP_TIMEOUT: "360"
+  before_script:
+    - "echo ${CI_REGISTRY_PASSWORD} | docker login -u ${CI_REGISTRY_USER} ${CI_REGISTRY} --password-stdin"
+    # GitLab only clones the current reference but testing requires other branches
+    - git fetch --all
+  script:
+    - "bash tests/CI/run_docker_setup.sh"
+  artifacts:
+    name: "logs_$CI_JOB_NAME"
+    paths:
+      - log_server_install.txt
+      - log_server_tests.txt
+      - log_client_install.txt
+      - log_client_tests.txt
+    expire_in: 1 week
+    when: always

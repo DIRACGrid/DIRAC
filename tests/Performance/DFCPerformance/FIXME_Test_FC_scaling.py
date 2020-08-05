@@ -5,6 +5,7 @@
 """
   Test suite for a generic File Catalog scalability tests
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -159,8 +160,8 @@ def listDirectory(n_queries):
   average, error = doStats(resultList)
 
   if verbosity >= 1:
-    print "getReplicas: Total time", total, 'Success', sCount, 'Failure', \
-        fCount, 'Average', average, 'Stdvar', error
+    print("getReplicas: Total time", total, 'Success', sCount, 'Failure',
+          fCount, 'Average', average, 'Stdvar', error)
 
   result = S_OK((resultList, sCount, fCount))
   return result
@@ -187,13 +188,13 @@ def getBulkReplicas(n_queries):
     resultList.append(time.time() - start)
 
     if verbosity >= 2:
-      print "getReplicas: received lfns", len(result['Value']['Successful'])
+      print("getReplicas: received lfns", len(result['Value']['Successful']))
       for lfn in result['Value']['Successful']:
-        print result['Value']['Successful'][lfn]
+        print(result['Value']['Successful'][lfn])
         if verbosity >= 3:
           for lfn, res in result['Value']['Successful'].items():
-            print lfn
-            print res
+            print(lfn)
+            print(res)
             break
 
     if result['OK']:
@@ -206,8 +207,8 @@ def getBulkReplicas(n_queries):
   average, error = doStats(resultList)
 
   if verbosity >= 1:
-    print "getReplicas: Total time", total, 'Success', sCount, 'Failure', \
-        fCount, 'Average', average, 'Stdvar', error
+    print("getReplicas: Total time", total, 'Success', sCount, 'Failure',
+          fCount, 'Average', average, 'Stdvar', error)
 
   result = S_OK((resultList, sCount, fCount))
   return result
@@ -230,10 +231,10 @@ def getDirectoryReplicas(n_queries):
     resultList.append(time.time() - start)
 
     if verbosity >= 2:
-      print "Returned values", len(result['Value']['Successful'][testDir])
+      print("Returned values", len(result['Value']['Successful'][testDir]))
       for lfn, res in result['Value']['Successful'][testDir].items():
-        print lfn
-        print res
+        print(lfn)
+        print(res)
         break
 
     if result['OK']:
@@ -246,8 +247,8 @@ def getDirectoryReplicas(n_queries):
   average, error = doStats(resultList)
 
   if verbosity >= 1:
-    print "getDirectoryReplicas: Total time", total, 'Success', sCount, 'Failure', \
-        fCount, '\nAverage', average, 'Stdvar', error
+    print("getDirectoryReplicas: Total time", total, 'Success', sCount, 'Failure',
+          fCount, '\nAverage', average, 'Stdvar', error)
 
   result = S_OK((resultList, sCount, fCount))
   return result
@@ -259,15 +260,15 @@ def finalize(task, result):
 
   if verbosity >= 2:
     if result['OK']:
-      print "Test time ", result['Value'], task.getTaskID()
+      print("Test time ", result['Value'], task.getTaskID())
     else:
-      print "Error:", result['Message']
+      print("Error:", result['Message'])
 
   resultTest.append(result['Value'])
 
 
 def doException(expt):
-  print "Exception", expt
+  print("Exception", expt)
 
 
 def runTest():
@@ -298,12 +299,12 @@ def runTest():
   averageRate, errorRate = doStats(rateResult)
 
   if testDir:
-    print "\nTest results for clients %d, %s" % (nClients, testDir)
+    print("\nTest results for clients %d, %s" % (nClients, testDir))
   else:
-    print "\nTest results for clients %d, %s" % (nClients, lfnListFile)
+    print("\nTest results for clients %d, %s" % (nClients, lfnListFile))
 
-  print "Query time: %.2f +/- %.2f" % (averageTime, errorTime)
-  print "Query rate: %.2f +/- %.2f" % (averageRate, errorRate)
+  print("Query time: %.2f +/- %.2f" % (averageTime, errorTime))
+  print("Query rate: %.2f +/- %.2f" % (averageRate, errorRate))
 
   return((averageTime, errorTime), (averageRate, errorRate))
 
@@ -421,7 +422,7 @@ def runFullTest():
 
 
 if os.path.exists(outputFile):
-  print "Output file %s already exists, exiting ..."
+  print("Output file %s already exists, exiting ...")
   sys.exit(-1)
 
 if fullTest:

@@ -8,13 +8,13 @@ class Job(BaseAccountingType):
 
   def __init__(self):
     BaseAccountingType.__init__(self)
-    self.definitionKeyFields = [('User', 'VARCHAR(32)'),
+    self.definitionKeyFields = [('User', 'VARCHAR(64)'),
                                 ('UserGroup', 'VARCHAR(32)'),
                                 ('JobGroup', "VARCHAR(64)"),
                                 ('JobType', 'VARCHAR(32)'),
                                 ('JobClass', 'VARCHAR(32)'),
                                 ('ProcessingType', 'VARCHAR(256)'),
-                                ('Site', 'VARCHAR(32)'),
+                                ('Site', 'VARCHAR(64)'),
                                 ('FinalMajorStatus', 'VARCHAR(32)'),
                                 ('FinalMinorStatus', 'VARCHAR(256)')
                                 ]

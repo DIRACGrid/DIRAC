@@ -22,6 +22,15 @@ throughout this document the terms "transformation" and "production" are often u
 - A *"production"* is a transformation managed by the TS that is a "Data Processing" transformation (e.g. Simulation, Merge, DataReconstruction...). A Production ends up creating jobs in the WMS.
 - A "Data Manipulation" transformation replicates, or remove, data from storage elements. A "Data Manipulation" transformation ends up creating requests in the RMS (Request Management System).
 
+.. image:: ../../../_static/Systems/TS/ts-wms.png
+   :alt: Interaction of Transformation System with the Workload Management System for Job Productions transformations
+   :align: center
+
+
+.. image:: ../../../_static/Systems/TS/ts-rms.png
+   :alt: Interaction of Transformation System with the Request Management System for Data Manipulation transformations
+   :align: center
+
 For each high-level production task, the production manager creates a transformation.
 Each transformation can have different parameters. The main parameters of a Transformation are the following:
 
@@ -177,7 +186,6 @@ Configuration
           TransType = DataReconstruction
           TransType += DataStripping
           shifterProxy = DataProcessing
-          LoadName = WorkflowTaskAgent-RealData
           Module = WorkflowTaskAgent
         }
         WorkflowTaskAgent-Simulation
@@ -185,7 +193,6 @@ Configuration
           TransType = Simulation
           TransType += MCSimulation
           shifterProxy = SimulationProcessing
-          LoadName = WorkflowTaskAgent-RealData
           Module = WorkflowTaskAgent
         }
         RequestTaskAgent

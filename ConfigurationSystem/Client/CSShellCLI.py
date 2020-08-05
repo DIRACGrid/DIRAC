@@ -1,6 +1,7 @@
 """CSShellCmd class emulates the behaviour of a shell to edit the CS config.
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import cmd
@@ -43,25 +44,27 @@ class CSShellCLI( CLI ):
       self.serverURL  = self.serverName = line
 
     if self.serverURL == None:
-      print "Unable to connect to the default server. Maybe you don't have a proxy ?"
+      print("Unable to connect to the default server. Maybe you don't have a proxy ?")
       return self.do_disconnect("")
 
-    print "Trying to connect to " + self.serverURL + "...",
+    print("Trying to connect to " + self.serverURL + "...", end=' ')
 
     self.modificator = Modificator(RPCClient(self.serverURL))
     rv               = self.modificator.loadFromRemote()
     rv2              = self.modificator.loadCredentials()
 
     if rv['OK'] == False or rv2['OK'] == False:
-      print "failed: ",
-      if rv['OK'] == False: print rv['Message']
-      else:                 print rv2['Message']
+      print("failed: ", end=' ')
+      if rv['OK'] is False:
+        print(rv['Message'])
+      else:
+        print(rv2['Message'])
       self.connected = False
       self.update_prompt()
     else:
       self.connected = True
       self.update_prompt()
-      print "done."
+      print("done.")
 
   def do_disconnect(self, _line):
     """Disconnect from CS"""
@@ -83,15 +86,15 @@ class CSShellCLI( CLI ):
       opts = self.modificator.getOptions(self.root)
       if line.startswith("-") and "l" in line:
         for i in secs:
-          print colorize(i, "blue") + "  "
+          print(colorize(i, "blue") + "  ")
         for i in opts:
-          print i + " "
+          print(i + " ")
       else:
         for i in secs:
-          print colorize(i, "blue") + "  ",
+          print(colorize(i, "blue") + "  ", end=' ')
         for i in opts:
-          print i + " ",
-        print ""
+          print(i + " ", end=' ')
+        print("")
 
   def do_cd(self, line):
     """cd
@@ -112,7 +115,7 @@ class CSShellCLI( CLI ):
             self.root = self.root + "/" + os.path.normpath(line)
           self.update_prompt()
         else:
-          print "cd: no such section: " + line
+          print("cd: no such section: " + line)
 
   def complete_cd(self, text, _line, _begidx, _endidx):
     secs = self.modificator.getSections(self.root)
@@ -125,9 +128,9 @@ class CSShellCLI( CLI ):
       opts = self.modificator.getOptionsDict(self.root)
 
       if line in opts.keys():
-        print opts[line]
+        print(opts[line])
       else:
-        print "cat: No such option"
+        print("cat: No such option")
 
   def complete_cat(self, text, _line, _begidx, _endidx):
     opts = self.modificator.getOptions(self.root)
@@ -172,7 +175,7 @@ class CSShellCLI( CLI ):
     if self.connected:
       line = line.split(" ", 2)
       if len(line) != 2:
-        print "Usage: set <key> <value>"
+        print("Usage: set <key> <value>")
       else:
         self.modificator.setOptionValue(self.root + "/" + line[0], line[1])
         self.dirty = True
@@ -199,7 +202,7 @@ class CSShellCLI( CLI ):
     """Override [Cmd.default(line)] function."""
     if line == "EOF":
       if self.prompt:
-        print
+        print()
       return self.do_quit( line )
     else:
       cmd.Cmd.default(self, line)

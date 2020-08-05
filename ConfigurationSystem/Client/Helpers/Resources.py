@@ -10,7 +10,6 @@ from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.List import uniqueElements, fromChar
-from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 gBaseResourcesSection = "/Resources"
@@ -31,48 +30,6 @@ def getSites():
     sites += result['Value']
 
   return S_OK(sites)
-
-
-@deprecated("Only for FTS2")
-def getStorageElementSiteMapping(siteList=None):
-  """ Get Storage Element belonging to the given sites
-  """
-  if not siteList:
-    result = getSites()
-    if not result['OK']:
-      return result
-    siteList = result['Value']
-  siteDict = {}
-  for site in siteList:
-    grid = site.split('.')[0]
-    ses = gConfig.getValue(cfgPath(gBaseResourcesSection, 'Sites', grid, site, 'SE'), [])
-    if ses:
-      siteDict[site] = ses
-
-  return S_OK(siteDict)
-
-
-@deprecated("Only for FTS2")
-def getFTS2ServersForSites(siteList=None):
-  """ get FTSServers for sites
-
-  :param siteList: list of sites
-  :type siteList: python:list
-
-  """
-  siteList = siteList if siteList else None
-  if not siteList:
-    siteList = getSites()
-    if not siteList["OK"]:
-      return siteList
-    siteList = siteList["Value"]
-  ftsServers = dict()
-  defaultServ = gConfig.getValue(cfgPath(gBaseResourcesSection, 'FTSEndpoints/Default', 'FTSEndpoint'), '')
-  for site in siteList:
-    serv = gConfig.getValue(cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS2", site), defaultServ)
-    if serv:
-      ftsServers[site] = serv
-  return S_OK(ftsServers)
 
 
 def getFTS3Servers(hostOnly=False):
@@ -133,38 +90,6 @@ def getSiteGrid(site):
   return S_OK(sitetuple[0])
 
 
-@deprecated("Unused and dangerous, use StorageElement('seName').options ")
-def getStorageElementOptions(seName):
-  """ Get the CS StorageElementOptions
-  """
-  storageConfigPath = '/Resources/StorageElements/%s' % seName
-  result = gConfig.getOptionsDict(storageConfigPath)
-  if not result['OK']:
-    return result
-  options = result['Value']
-  # If the SE is an baseSE or an alias, derefence it
-  if 'BaseSE' in options or 'Alias' in options:
-    storageConfigPath = '/Resources/StorageElements/%s' % options.get('BaseSE', options.get('Alias'))
-    result = gConfig.getOptionsDict(storageConfigPath)
-    if not result['OK']:
-      return result
-    result['Value'].update(options)
-    options = result['Value']
-
-  # Help distinguishing storage type
-  diskSE = True
-  tapeSE = False
-  if 'SEType' in options:
-    # Type should follow the convention TXDY
-    seType = options['SEType']
-    diskSE = re.search('D[1-9]', seType) is not None
-    tapeSE = re.search('T[1-9]', seType) is not None
-  options['DiskSE'] = diskSE
-  options['TapeSE'] = tapeSE
-
-  return S_OK(options)
-
-
 def getQueue(site, ce, queue):
   """ Get parameters of the specified queue
   """
@@ -218,7 +143,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
         continue
       if community:
         comList = gConfig.getValue('/Resources/Sites/%s/%s/VO' % (grid, site), [])
-        if comList and community not in comList:
+        if comList and community.lower() not in [cl.lower() for cl in comList]:
           continue
       siteCEParameters = {}
       result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs' % (grid, site))
@@ -231,7 +156,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
       for ce in ces:
         if mode:
           ceMode = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % (grid, site, ce), 'Direct')
-          if not ceMode or ceMode != mode:
+          if not ceMode or ceMode.lower() != mode.lower():
             continue
         if ceTypeList:
           ceType = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/CEType' % (grid, site, ce), '')
@@ -241,7 +166,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
           continue
         if community:
           comList = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/VO' % (grid, site, ce), [])
-          if comList and community not in comList:
+          if comList and community.lower() not in [cl.lower() for cl in comList]:
             continue
         ceOptionsDict = dict(siteCEParameters)
         result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs/%s' % (grid, site, ce))
@@ -255,7 +180,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
         for queue in queues:
           if community:
             comList = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/VO' % (grid, site, ce, queue), [])
-            if comList and community not in comList:
+            if comList and community.lower() not in [cl.lower() for cl in comList]:
               continue
           resultDict.setdefault(site, {})
           resultDict[site].setdefault(ce, ceOptionsDict)
@@ -267,6 +192,49 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
           resultDict[site][ce]['Queues'][queue] = queueOptionsDict
 
   return S_OK(resultDict)
+
+
+def getStorageElements(vo=None):
+  """
+  Get configuration of storage elements
+
+  :param str vo: select SE's for the given VO
+
+  :return: S_OK/S_ERROR, Value SE information dictionary
+  """
+
+  result = gConfig.getSections('Resources/StorageElements')
+  if not result['OK']:
+    return result
+  storageElements = result['Value']
+  baseSEs = {}
+  for se in storageElements:
+    for option in ('BaseSE', 'Alias'):
+      originalSE = gConfig.getValue('Resources/StorageElements/%s/%s' % (se, option))
+      if originalSE:
+        baseSEs.setdefault(originalSE, []).append(se)
+        break
+    else:
+      baseSEs.setdefault(se, [])
+
+  seDict = {}
+  for se in baseSEs:
+    result = gConfig.getOptionsDict('Resources/StorageElements/%s' % se)
+    if vo:
+      seVOs = gConfig.getValue('Resources/StorageElements/%s/VO' % se, [])
+      if seVOs and vo not in seVOs:
+        continue
+    seDict[se] = result['Value']
+    seDict[se]['Aliases'] = baseSEs[se]
+    protocols = []
+    result = gConfig.getSections('Resources/StorageElements/%s' % se)
+    for pluginSection in result['Value']:
+      protocol = gConfig.getValue('Resources/StorageElements/%s/%s/Protocol' % (se, pluginSection))
+      if protocol:
+        protocols.append(protocol)
+    seDict[se]['Protocols'] = protocols
+
+  return S_OK(seDict)
 
 
 def getCompatiblePlatforms(originalPlatforms):
@@ -308,7 +276,7 @@ def getDIRACPlatform(OSList):
       In practice the "highest" version (which should be the most "desirable" one is returned first)
 
       :param list OSList: list of platforms defined by resource providers
-      :return : a list of DIRAC platforms that can be specified in job descriptions
+      :return: a list of DIRAC platforms that can be specified in job descriptions
   """
 
   # For backward compatibility allow a single string argument

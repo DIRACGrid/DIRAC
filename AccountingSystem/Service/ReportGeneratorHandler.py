@@ -1,4 +1,10 @@
 """ Module that holds the ReportGeneratorHandler class
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ReportGenerator
+  :end-before: ##END
+  :dedent: 2
+  :caption: ReportGenerator options
 """
 
 __RCSID__ = "$Id$"
@@ -102,6 +108,7 @@ class ReportGeneratorHandler(RequestHandler):
   def export_generatePlot(self, reportRequest):
     """
     Plot a accounting
+
     Arguments:
       - viewName : Name of view (easy!)
       - startTime
@@ -123,6 +130,7 @@ class ReportGeneratorHandler(RequestHandler):
   def export_getReport(self, reportRequest):
     """
     Plot a accounting
+
     Arguments:
       - viewName : Name of view (easy!)
       - startTime
@@ -144,6 +152,7 @@ class ReportGeneratorHandler(RequestHandler):
   def export_listReports(self, typeName):
     """
     List all available plots
+
     Arguments:
       - none
     """
@@ -155,6 +164,7 @@ class ReportGeneratorHandler(RequestHandler):
   def export_listUniqueKeyValues(self, typeName):
     """
     List all values for all keys in a type
+
     Arguments:
       - none
     """

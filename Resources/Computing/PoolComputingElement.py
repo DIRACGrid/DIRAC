@@ -1,23 +1,24 @@
 ########################################################################
-# $Id$
 # File :   PoolComputingElement.py
 # Author : A.T.
 ########################################################################
 
-""" The Computing Element to run several jobs simultaneously in separate processes
-    managed by a ProcessPool
+""" The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
+
+    It's used running several jobs simultaneously in separate processes, managed by a ProcessPool
 """
 
 __RCSID__ = "$Id$"
 
 import os
 
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 
 MandatoryParameters = []
 # Number of unix users to run job payloads with sudo
@@ -26,12 +27,12 @@ MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 def executeJob(executableFile, proxy, taskID, **kwargs):
   """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess)
-  
+
   :param str executableFile: location of the executable file
   :param str proxy: proxy file location to be used for job submission
   :param int taskID: local task ID of the PoolCE
 
-  :return:
+  :return: the result of the job submission
   """
 
   useSudo = kwargs.pop('UseSudo', False)
@@ -54,9 +55,9 @@ class PoolComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(PoolComputingElement, self).__init__(ceUniqueID)
+
     self.ceType = "Pool"
-    self.log = gLogger.getSubLogger('Pool')
     self.submittedJobs = 0
     self.processors = 1
     self.pPool = None
@@ -64,13 +65,6 @@ class PoolComputingElement(ComputingElement):
     self.processorsPerTask = {}
     self.userNumberPerTask = {}
     self.useSudo = False
-
-  #############################################################################
-  def _addCEConfigDefaults(self):
-    """Method to make sure all necessary Configuration Parameters are defined
-    """
-    # First assure that any global parameters are loaded
-    ComputingElement._addCEConfigDefaults(self)
 
   def _reset(self):
     """ Update internal variables after some extra parameters are added
@@ -109,23 +103,21 @@ class PoolComputingElement(ComputingElement):
 
     self.pPool.processResults()
 
-    processorsInUse = self.getProcessorsInUse()
-    if kwargs.get('wholeNode'):
-      if processorsInUse > 0:
-        return S_ERROR('Can not take WholeNode job')  # , %d/%d slots used' % (self.slotsInUse,self.slots) )
-      else:
-        requestedProcessors = self.processors
-    elif "numberOfProcessors" in kwargs:
-      requestedProcessors = int(kwargs['numberOfProcessors'])
-      if requestedProcessors > 0:
-        if (processorsInUse + requestedProcessors) > self.processors:
-          return S_ERROR('Not enough slots: requested %d, available %d' % (requestedProcessors,
-                                                                           self.processors - processorsInUse))
-    else:
-      requestedProcessors = 1
-    if self.processors - processorsInUse < requestedProcessors:
-      return S_ERROR('Not enough slots: requested %d, available %d' % (requestedProcessors,
-                                                                       self.processors - processorsInUse))
+    processorsForJob = self._getProcessorsForJobs(kwargs)
+    if not processorsForJob:
+      return S_ERROR('Not enough processors for the job')
+
+    # Now persisting the job limits for later use in pilot.cfg file (pilot 3 default)
+    cd = ConfigurationData(loadDefaultCFG=False)
+    res = cd.loadFile('pilot.cfg')
+    if not res['OK']:
+      self.log.error("Could not load pilot.cfg", res['Message'])
+    # only NumberOfProcessors for now, but RAM (or other stuff) can also be added
+    jobID = int(kwargs.get('jobDesc', {}).get('jobID', 0))
+    cd.setOptionInCFG('/Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID, processorsForJob)
+    res = cd.dumpLocalCFGToFile('pilot.cfg')
+    if not res['OK']:
+      self.log.error("Could not dump cfg to pilot.cfg", res['Message'])
 
     ret = getProxyInfo()
     if not ret['OK']:
@@ -148,12 +140,50 @@ class PoolComputingElement(ComputingElement):
                                            kwargs=kwargs,
                                            taskID=self.taskID,
                                            usePoolCallbacks=True)
-    self.processorsPerTask[self.taskID] = requestedProcessors
+    self.processorsPerTask[self.taskID] = processorsForJob
     self.taskID += 1
 
     self.pPool.processResults()
 
     return result
+
+  def _getProcessorsForJobs(self, kwargs):
+    """ helper function
+    """
+    processorsInUse = self.getProcessorsInUse()
+    availableProcessors = self.processors - processorsInUse
+
+    self.log.verbose("Processors (total, in use, available)",
+                     "(%d, %d, %d)" % (self.processors, processorsInUse, availableProcessors))
+
+    # Does this ask for MP?
+    if not kwargs.get('mpTag', False):
+      if availableProcessors:
+        return 1
+      else:
+        return 0
+
+    # From here we assume the job is asking for MP
+    if kwargs.get('wholeNode', False):
+      if processorsInUse > 0:
+        return 0
+      else:
+        return self.processors
+
+    if "numberOfProcessors" in kwargs:
+      requestedProcessors = int(kwargs['numberOfProcessors'])
+    else:
+      requestedProcessors = 1
+
+    if availableProcessors < requestedProcessors:
+      return 0
+
+    # If there's a maximum number of processors allowed for the job, use that as maximum,
+    # otherwise it will use all the remaining processors
+    if 'maxNumberOfProcessors' in kwargs and kwargs['maxNumberOfProcessors']:
+      requestedProcessors = min(int(kwargs['maxNumberOfProcessors']), availableProcessors)
+
+    return requestedProcessors
 
   def finalizeJob(self, taskID, result):
     """ Finalize the job by updating the process utilisation counters
@@ -169,10 +199,11 @@ class PoolComputingElement(ComputingElement):
       self.log.error("Task failed submission", "%d, message: %s" % (taskID, result['Message']))
 
   #############################################################################
-  def getCEStatus(self, jobIDList=None):
-    """ Method to return information on running and pending jobs.
+  def getCEStatus(self):
+    """ Method to return information on running and waiting jobs,
+        as well as the number of processors (used, and available).
 
-    :return: dictionary of numbers of jobs per status
+    :return: dictionary of numbers of jobs per status and processors (used, and available)
     """
 
     if self.pPool is None:
@@ -182,20 +213,24 @@ class PoolComputingElement(ComputingElement):
 
     self.pPool.processResults()
     result = S_OK()
-    result['SubmittedJobs'] = 0
     nJobs = 0
     for _j, value in self.processorsPerTask.iteritems():
       if value > 0:
         nJobs += 1
+    result['SubmittedJobs'] = nJobs
     result['RunningJobs'] = nJobs
     result['WaitingJobs'] = 0
+
+    # dealing with processors
     processorsInUse = self.getProcessorsInUse()
     result['UsedProcessors'] = processorsInUse
     result['AvailableProcessors'] = self.processors - processorsInUse
     return result
 
   def getDescription(self):
-    """ Get CE description as a dictionary
+    """ Get a list of CEs descriptions (each is a dict)
+
+        This is called by the JobAgent.
     """
     result = super(PoolComputingElement, self).getDescription()
     if not result['OK']:
@@ -234,5 +269,3 @@ class PoolComputingElement(ComputingElement):
     :param str payloadProxy: location of the payloadProxy
     """
     return self._monitorProxy(pilotProxy, payloadProxy)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

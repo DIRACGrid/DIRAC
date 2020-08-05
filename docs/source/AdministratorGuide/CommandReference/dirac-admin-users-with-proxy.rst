@@ -1,36 +1,16 @@
-===================================
+.. _admin_dirac-admin-users-with-proxy:
+
+============================
 dirac-admin-users-with-proxy
-===================================
+============================
 
 Usage::
 
-  dirac-admin-users-with-proxy.py (<options>|<cfgFile>)* 
-
- 
+  dirac-admin-users-with-proxy.py (<options>|<cfgFile>)*
 
 Options::
 
-  -v:  --valid=          : Required HH:MM for the users 
-
-Usage::
-
-  dirac-admin-users-with-proxy.py (<options>|<cfgFile>)* 
-
- 
-
-Options::
-
-  -v:  --valid=          : Required HH:MM for the users 
-
-Usage::
-
-  dirac-admin-users-with-proxy.py (<options>|<cfgFile>)* 
-
- 
-
-Options::
-
-  -v:  --valid=          : Required HH:MM for the users 
+  -v  --valid <value>          : Required HH:MM for the users
 
 Example::
 
@@ -50,4 +30,3 @@ Example::
   group      : dirac_user
   not after  : 2011-06-29 12:04:30
   persistent : True
-

@@ -3,14 +3,15 @@ AccountingCLI class implementing command line administrative interface to
 DIRAC Accounting DataStore Service
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import sys
 
+from DIRAC import gLogger
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.Core.Utilities import ExitCallback
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import gLogger
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 
 
 class AccountingCLI(CLI):
@@ -28,7 +29,7 @@ class AccountingCLI(CLI):
       gLogger.error("Client is not connected")
     try:
       self.cmdloop()
-    except KeyboardInterrupt as v:
+    except KeyboardInterrupt:
       gLogger.warn("Received a keyboard interrupt.")
       self.do_quit("")
 
@@ -40,7 +41,7 @@ class AccountingCLI(CLI):
     gLogger.info("Trying to connect to server")
     self.connected = False
     self.prompt = "(%s)> " % colorize("Not connected", "red")
-    acClient = RPCClient("Accounting/DataStore")
+    acClient = DataStoreClient()
     retVal = acClient.ping()
     if retVal['OK']:
       self.prompt = "(%s)> " % colorize("Connected", "green")
@@ -49,15 +50,15 @@ class AccountingCLI(CLI):
   def printComment(self, comment):
     commentList = comment.split("\n")
     for commentLine in commentList[:-1]:
-      print "# %s" % commentLine.strip()
+      print("# %s" % commentLine.strip())
 
   def showTraceback(self):
     import traceback
     type, value = sys.exc_info()[:2]
-    print "________________________\n"
-    print "Exception", type, ":", value
+    print("________________________\n")
+    print("Exception", type, ":", value)
     traceback.print_tb(sys.exc_info()[2])
-    print "________________________\n"
+    print("________________________\n")
 
   def do_registerType(self, args):
     """
@@ -84,7 +85,7 @@ class AccountingCLI(CLI):
         return
       gLogger.info("Loaded type %s" % typeClass.__name__)
       typeDef = typeClass().getDefinition()
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.registerType(*typeDef)
       if retVal['OK']:
         gLogger.info("Type registered successfully")
@@ -118,7 +119,7 @@ class AccountingCLI(CLI):
         return
       gLogger.info("Loaded type %s" % typeClass.__name__)
       typeDef = typeClass().getDefinition()
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.setBucketsLength(typeDef[0], typeDef[3])
       if retVal['OK']:
         gLogger.info("Type registered successfully")
@@ -152,7 +153,7 @@ class AccountingCLI(CLI):
         return
       gLogger.info("Loaded type %s" % typeClass.__name__)
       typeDef = typeClass().getDefinition()
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.regenerateBuckets(typeDef[0])
       if retVal['OK']:
         gLogger.info("Buckets recalculated!")
@@ -167,18 +168,18 @@ class AccountingCLI(CLI):
       Usage : showRegisteredTypes
     """
     try:
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.getRegisteredTypes()
 
-      print retVal
+      print(retVal)
 
       if not retVal['OK']:
         gLogger.error("Error: %s" % retVal['Message'])
         return
       for typeList in retVal['Value']:
-        print typeList[0]
-        print " Key fields:\n  %s" % "\n  ".join(typeList[1])
-        print " Value fields:\n  %s" % "\n  ".join(typeList[2])
+        print(typeList[0])
+        print(" Key fields:\n  %s" % "\n  ".join(typeList[1]))
+        print(" Value fields:\n  %s" % "\n  ".join(typeList[2]))
     except BaseException:
       self.showTraceback()
 
@@ -204,14 +205,14 @@ class AccountingCLI(CLI):
         if choice in ("yes", "y"):
           break
         else:
-          print "Delete aborted"
+          print("Delete aborted")
           return
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.deleteType(typeName)
       if not retVal['OK']:
         gLogger.error("Error: %s" % retVal['Message'])
         return
-      print "Hope you meant it, because it's done"
+      print("Hope you meant it, because it's done")
     except BaseException:
       self.showTraceback()
 
@@ -221,7 +222,7 @@ class AccountingCLI(CLI):
       Usage : compactBuckets
     """
     try:
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.compactDB()
       if not retVal['OK']:
         gLogger.error("Error: %s" % retVal['Message'])

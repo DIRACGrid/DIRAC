@@ -62,7 +62,7 @@ class Request( object ):
     """c'tor
 
     :param self: self reference
-    :param fromDict : if false, new request. Can be json string that represents the object, or the dictionary directly
+    :param fromDict: if false, new request. Can be json string that represents the object, or the dictionary directly
     """
     self.__waiting = None
 
@@ -328,7 +328,8 @@ class Request( object ):
   def delayNextExecution( self, deltaTime ):
     """This helper sets the NotBefore attribute in deltaTime minutes
        in the future
-       :param deltaTime : time in minutes before next execution
+
+       :param deltaTime: time in minutes before next execution
     """
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     extraDelay = datetime.timedelta( minutes = deltaTime )

@@ -1,19 +1,20 @@
 .. -*- mode: rst -*-
 
-.. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=master
-   :target: https://travis-ci.org/DIRACGrid/DIRAC
-   :alt: Build Status
+Cite us:
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1451647.svg
+   :target: https://doi.org/10.5281/zenodo.1451647
+
+
+
+Status master branch (stable):
 
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
    :target: http://dirac.readthedocs.io/en/latest/
    :alt: Documentation Status
 
 
-Integration branch:
-
-.. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=integration
-  :target: https://travis-ci.org/DIRACGrid/DIRAC
-  :alt: Build Status
+Status integration branch (devel):
 
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=integration
   :target: http://dirac.readthedocs.io/en/integration/
@@ -28,6 +29,7 @@ DIRAC (Distributed Infrastructure with Remote Agent Control) INTERWARE is a soft
 
 DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb/>`_ who still maintains it. It is now used by several communities (AKA VO=Virtual Organizations) for their distributed computing workflows.
 
+DIRAC is written in python 2.7.13 and transitioning to python 3.
 
 Important links
 ===============
@@ -36,7 +38,6 @@ Important links
 - HTML documentation (stable release): http://diracgrid.org (http://dirac.readthedocs.io/en/latest/index.html)
 - Issue tracker: https://github.com/DIRACGrid/DIRAC/issues
 - Support Mailing list: https://groups.google.com/forum/#!forum/diracgrid-forum
-- Developers Mailing list: https://groups.google.com/forum/#!forum/diracgrid-develop
 
 Install
 =======
@@ -46,6 +47,8 @@ There are basically 2 types of installations: client, and server.
 For DIRAC client installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/InstallingClient/index.html>`_.
 
 For DIRAC server installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/AdministratorGuide/InstallingDIRACService/index.html>`_.
+
+The supported distributions are EL6 (e.g. SLC6) and EL7 (e.g. CC7).
 
 Development
 ===========
@@ -64,9 +67,18 @@ Code quality
 
 The contributions are subject to reviews.
 
-Pylint, and pep8 style checker are run regularly on the source code. The .pylintrc file defines the expected coding rules and peculiarities (e.g.: tabs consists of 2 spaces instead of 4). Each Pull Request is checked for pylint and pep8 compliance.
+Pylint, and pep8 style checker are run regularly on the source code. The .pylintrc file defines the expected coding rules and peculiarities (e.g.: tabs consists of 2 spaces instead of 4).
+Each Pull Request is checked for pylint and pep8 compliance.
+
+Each PR is a also subject to check for python 3 compatibility.
+If you are issuing PRs that are devoted to future versions of DIRAC (so, not for patch releases),
+for each of the python files touched please run (and react to)::
+
+   pylint --rcfile=tests/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=GSI,numpy path/to/file.py
+
 
 Testing
 ~~~~~~~
 
-Unit tests are provided within the source code. Integration, regression and system tests are instead in the tests directory. Run pytest to run all unit tests.
+Unit tests are provided within the source code. Integration, regression and system tests are instead in the DIRAC/tests/ directory.
+Run pytest to run all unit tests (it will include the coverage).

@@ -12,6 +12,7 @@ Encoding and decoding for dirac, Ids:
  t -> tuple
  d -> dictionary
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import types
@@ -57,7 +58,7 @@ def printDebugCallstack():
   # print the traceback that leads us here
   # remove the last element which is the traceback module call
   for line in tb[:-1]:
-    print line
+    print(line)
 
   # Now we try to navigate up to the caller of dEncode.
   # For this, we find the frame in which we enter dEncode.
@@ -75,16 +76,16 @@ def printDebugCallstack():
           dencArgs = stripArgs(frame[0])
           # Take the calling frame
           frame = next(framesIter)
-          print "Calling frame: %s" % (frame[1:3],)
-          print "With arguments ",
+          print("Calling frame: %s" % (frame[1:3],))
+          print("With arguments ", end=' ')
           pprint(dencArgs)
           break
 
   except BaseException:
     pass
-  print "=" * 100
-  print
-  print
+  print("=" * 100)
+  print()
+  print()
 
 
 _dateTimeObject = datetime.datetime.utcnow()
@@ -313,7 +314,7 @@ def encodeTuple(lValue, eList):
   """ Encoding tuple """
 
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
-    print '=' * 45, "Encoding tuples", '=' * 45
+    print('=' * 45, "Encoding tuples", '=' * 45)
     printDebugCallstack()
 
   eList.append("t")
@@ -326,7 +327,7 @@ def decodeTuple(data, i):
   """ Decoding tuple """
 
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
-    print '=' * 45, "Decoding tuples", '=' * 45
+    print('=' * 45, "Decoding tuples", '=' * 45)
     printDebugCallstack()
 
   oL, i = decodeList(data, i)
@@ -343,7 +344,7 @@ def encodeDict(dValue, eList):
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
     # If we have numbers as keys
     if any([isinstance(x, (int, float, long)) for x in dValue]):
-      print '=' * 40, "Encoding dict with numeric keys", '=' * 40
+      print('=' * 40, "Encoding dict with numeric keys", '=' * 40)
       printDebugCallstack()
 
   eList.append("d")
@@ -363,7 +364,7 @@ def decodeDict(data, i):
     if DIRAC_DEBUG_DENCODE_CALLSTACK:
       # If we have numbers as keys
       if data[i] in ('i', 'I', 'f'):
-        print '=' * 40, "Decoding dict with numeric keys", '=' * 40
+        print('=' * 40, "Decoding dict with numeric keys", '=' * 40)
         printDebugCallstack()
 
     k, i = g_dDecodeFunctions[data[i]](data, i)
@@ -401,7 +402,7 @@ def decode(data):
 
 if __name__ == "__main__":
   gObject = {2: "3", True: (3, None), 2.0 * 10 ** 20: 2.0 * 10 ** -10}
-  print "Initial: %s" % gObject
+  print("Initial: %s" % gObject)
   gData = encode(gObject)
-  print "Encoded: %s" % gData
-  print "Decoded: %s, [%s]" % decode(gData)
+  print("Encoded: %s" % gData)
+  print("Decoded: %s, [%s]" % decode(gData))

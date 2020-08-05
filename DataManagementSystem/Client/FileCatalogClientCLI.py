@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """ File Catalog Client Command Line Interface. """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import commands
@@ -77,24 +78,24 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     if (len(argss)==0):
-      print self.do_register.__doc__
+      print(self.do_register.__doc__)
       return
     option = argss[0]
     del argss[0]
     if option == 'file':
       if (len(argss) < 4):
-        print self.do_register.__doc__
+        print(self.do_register.__doc__)
         return
       return self.registerFile(argss)
     elif option == 'pfn' or option == "replica":
       # TODO
       # Is the __doc__ not complete ?
       if (len(argss) != 3):
-        print self.do_register.__doc__
+        print(self.do_register.__doc__)
         return
       return self.registerReplica(argss)
     else:
-      print "Unknown option:",option
+      print("Unknown option:", option)
 
   # An Auto Completion For ``register``
   _available_register_cmd = ['file', 'replica']
@@ -126,7 +127,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     
     if len(argss) < 3:
-      print "Error: insufficient number of arguments"
+      print("Error: insufficient number of arguments")
       return
     
     lfn = argss[0]
@@ -140,9 +141,9 @@ File Catalog Client $Revision: 1.17 $Date:
     dirac = Dirac()
     result = dirac.addFile(lfn,pfn,se,guid,printOutput=False)
     if not result['OK']:
-      print 'Error: %s' %(result['Message'])
+      print('Error: %s' % (result['Message']))
     else:
-      print "File %s successfully uploaded to the %s SE" % (lfn,se)  
+      print("File %s successfully uploaded to the %s SE" % (lfn, se))
 
   def complete_add(self, text, line, begidx, endidx):
     result = []
@@ -170,7 +171,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     if (len(argss)==0):
-      print self.do_get.__doc__
+      print(self.do_get.__doc__)
       return
     lfn = argss[0]
     lfn = self.getPath(lfn)
@@ -188,9 +189,9 @@ File Catalog Client $Revision: 1.17 $Date:
       os.chdir(localCWD)
       
     if not result['OK']:
-      print 'Error: %s' %(result['Message'])
+      print('Error: %s' % (result['Message']))
     else:
-      print "File %s successfully downloaded" % lfn      
+      print("File %s successfully downloaded" % lfn)
 
   def complete_get(self, text, line, begidx, endidx):
     result = []
@@ -218,27 +219,27 @@ File Catalog Client $Revision: 1.17 $Date:
     """        
     argss = args.split()
     if (len(argss)==0):
-      print self.do_unregister.__doc__
+      print(self.do_unregister.__doc__)
       return
     option = argss[0]
     del argss[0]
     if option == 'replica':
       if (len(argss) != 2):
-        print self.do_unregister.__doc__
+        print(self.do_unregister.__doc__)
         return
       return self.removeReplica(argss)
     elif option == 'file': 
       if (len(argss) != 1):
-        print self.do_unregister.__doc__
+        print(self.do_unregister.__doc__)
         return
       return self.removeFile(argss)
     elif option == "dir" or option == "directory":
       if (len(argss) != 1):
-        print self.do_unregister.__doc__
+        print(self.do_unregister.__doc__)
         return
       return self.removeDirectory(argss)    
     else:
-      print "Error: illegal option %s" % option
+      print("Error: illegal option %s" % option)
 
   # An Auto Completion For ``register``
   _available_unregister_cmd = ['replica', 'file', 'dir', 'directory']
@@ -265,21 +266,21 @@ File Catalog Client $Revision: 1.17 $Date:
     """        
     argss = args.split()
     if (len(argss) != 2):
-      print self.do_rmreplica.__doc__
+      print(self.do_rmreplica.__doc__)
       return
     lfn = argss[0]
     lfn = self.getPath(lfn)
-    print "lfn:",lfn
+    print("lfn:", lfn)
     se = argss[1]
     try:
       result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
       if result['OK']:
-        print "Replica at",se,"moved to Trash Bin"
+        print("Replica at", se, "moved to Trash Bin")
       else:
-        print "Failed to remove replica at",se
-        print result['Message']
+        print("Failed to remove replica at", se)
+        print(result['Message'])
     except Exception as x:
-      print "Error: rmreplica failed with exception: ", x
+      print("Error: rmreplica failed with exception: ", x)
 
   def complete_rmreplica(self, text, line, begidx, endidx):
     result = []
@@ -309,7 +310,7 @@ File Catalog Client $Revision: 1.17 $Date:
     # Not yet really implemented
     argss = args.split()
     if len(argss) != 1:
-      print self.do_rm.__doc__
+      print(self.do_rm.__doc__)
       return
     self.removeFile(argss)
 
@@ -340,7 +341,7 @@ File Catalog Client $Revision: 1.17 $Date:
     # Not yet really implemented yet
     argss = args.split()
     if len(argss) != 1:
-      print self.do_rmdir.__doc__
+      print(self.do_rmdir.__doc__)
       return
     self.removeDirectory(argss)  
 
@@ -366,25 +367,25 @@ File Catalog Client $Revision: 1.17 $Date:
     
     path = args[0]
     lfn = self.getPath(path)
-    print "lfn:",lfn
+    print("lfn:", lfn)
     rmse = args[1]
     try:
       result =  self.fc.removeReplica( {lfn:{'SE':rmse}} )
       if result['OK']:
         if 'Failed' in result['Value']:
           if lfn in result['Value']['Failed']:
-            print "ERROR: %s" % ( result['Value']['Failed'][lfn])
+            print("ERROR: %s" % (result['Value']['Failed'][lfn]))
           elif  lfn in result['Value']['Successful']:
-            print "File %s at %s removed from the catalog" %( lfn, rmse )
+            print("File %s at %s removed from the catalog" % (lfn, rmse))
           else:
-            print "ERROR: Unexpected returned value %s" % result['Value']
+            print("ERROR: Unexpected returned value %s" % result['Value'])
         else:
-          print "File %s at %s removed from the catalog" %( lfn, rmse )
+          print("File %s at %s removed from the catalog" % (lfn, rmse))
       else:
-        print "Failed to remove replica at",rmse
-        print result['Message']
+        print("Failed to remove replica at", rmse)
+        print(result['Message'])
     except Exception as x:
-      print "Error: rmpfn failed with exception: ", x
+      print("Error: rmpfn failed with exception: ", x)
       
   def removeFile(self,args):
     """ Remove file from the catalog
@@ -392,24 +393,24 @@ File Catalog Client $Revision: 1.17 $Date:
     
     path = args[0]
     lfn = self.getPath(path)
-    print "lfn:",lfn
+    print("lfn:", lfn)
     try:
       result =  self.fc.removeFile(lfn)
       if result['OK']:
         if 'Failed' in result['Value']:
           if lfn in result['Value']['Failed']:
-            print "ERROR: %s" % ( result['Value']['Failed'][lfn] )
+            print("ERROR: %s" % (result['Value']['Failed'][lfn]))
           elif lfn in result['Value']['Successful']:
-            print "File",lfn,"removed from the catalog"
+            print("File", lfn, "removed from the catalog")
           else:
-            print "ERROR: Unexpected result %s" % result['Value']
+            print("ERROR: Unexpected result %s" % result['Value'])
         else:
-          print "File",lfn,"removed from the catalog"
+          print("File", lfn, "removed from the catalog")
       else:
-        print "Failed to remove file from the catalog"  
-        print result['Message']
+        print("Failed to remove file from the catalog")
+        print(result['Message'])
     except Exception as x:
-      print "Error: rm failed with exception: ", x       
+      print("Error: rm failed with exception: ", x)
       
   def removeDirectory(self,args):
     """ Remove file from the catalog
@@ -417,19 +418,19 @@ File Catalog Client $Revision: 1.17 $Date:
     
     path = args[0]
     lfn = self.getPath(path)
-    print "lfn:",lfn
+    print("lfn:", lfn)
     try:
       result =  self.fc.removeDirectory(lfn)
       if result['OK']:
         if result['Value']['Successful']:
-          print "Directory",lfn,"removed from the catalog"
+          print("Directory", lfn, "removed from the catalog")
         elif result['Value']['Failed']:
-          print "ERROR:", result['Value']['Failed'][lfn]  
+          print("ERROR:", result['Value']['Failed'][lfn])
       else:
-        print "Failed to remove directory from the catalog"  
-        print result['Message']
+        print("Failed to remove directory from the catalog")
+        print(result['Message'])
     except Exception as x:
-      print "Error: rm failed with exception: ", x            
+      print("Error: rm failed with exception: ", x)
       
   def do_replicate(self,args):
     """ Replicate a given file to a given SE
@@ -439,7 +440,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     argss = args.split()
     if len(argss) < 2:
-      print "Error: unsufficient number of arguments"
+      print("Error: unsufficient number of arguments")
       return
     lfn = argss[0]
     lfn = self.getPath(lfn)
@@ -451,13 +452,13 @@ File Catalog Client $Revision: 1.17 $Date:
       dirac = Dirac()
       result = dirac.replicateFile(lfn,se,sourceSE,printOutput=True)      
       if not result['OK']:
-        print 'Error: %s' %(result['Message'])
+        print('Error: %s' % (result['Message']))
       elif not result['Value']:
-        print "Replica is already present at the target SE"
+        print("Replica is already present at the target SE")
       else:  
-        print "File %s successfully replicated to the %s SE" % (lfn,se)  
+        print("File %s successfully replicated to the %s SE" % (lfn, se))
     except Exception as x:
-      print "Error: replicate failed with exception: ", x      
+      print("Error: replicate failed with exception: ", x)
       
   def complete_replicate(self, text, line, begidx, endidx):
     result = []
@@ -482,21 +483,21 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     argss = args.split()
     if (len(argss) == 0):
-      print self.do_replicas.__doc__
+      print(self.do_replicas.__doc__)
       return
     apath = argss[0]
     path = self.getPath(apath)
-    print "lfn:",path
+    print("lfn:", path)
     try:
       result =  self.fc.getReplicas(path)    
       if result['OK']:
         if result['Value']['Successful']:
           for se,entry in result['Value']['Successful'][path].items():
-            print se.ljust(15),entry
+            print(se.ljust(15), entry)
       else:
-        print "Replicas: ",result['Message']
+        print("Replicas: ", result['Message'])
     except Exception as x:
-      print "replicas failed: ", x
+      print("replicas failed: ", x)
 
   def complete_replicas(self, text, line, begidx, endidx):
     result = []
@@ -539,16 +540,16 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.addFile(fileDict)         
       if not result['OK']:
-        print "Failed to add file to the catalog: ",
-        print result['Message']
+        print("Failed to add file to the catalog: ", end=' ')
+        print(result['Message'])
       elif result['Value']['Failed']:
         if result['Value']['Failed'].has_key(lfn):
-          print 'Failed to add file:',result['Value']['Failed'][lfn]  
+          print('Failed to add file:', result['Value']['Failed'][lfn])
       elif result['Value']['Successful']:
         if result['Value']['Successful'].has_key(lfn):
-          print "File successfully added to the catalog"    
+          print("File successfully added to the catalog")
     except Exception as x:
-      print "add file failed: ", str(x)    
+      print("add file failed: ", str(x))
     
   def registerReplica(self,args):
     """ Add a file to the catatlog 
@@ -569,14 +570,14 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.addReplica(repDict)                    
       if not result['OK']:
-        print "Failed to add replica to the catalog: ",
-        print result['Message']
+        print("Failed to add replica to the catalog: ", end=' ')
+        print(result['Message'])
       elif result['Value']['Failed']:
-        print 'Failed to add replica:',result['Value']['Failed'][lfn]   
+        print('Failed to add replica:', result['Value']['Failed'][lfn])
       else:
-        print "Replica added successfully:", result['Value']['Successful'][lfn]    
+        print("Replica added successfully:", result['Value']['Successful'][lfn])
     except Exception as x:
-      print "add pfn failed: ", str(x)    
+      print("add pfn failed: ", str(x))
       
   def do_ancestorset(self,args):
     """ Set ancestors for the given file
@@ -586,7 +587,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()    
     if (len(argss) == 0):
-      print self.do_ancestorset.__doc__
+      print(self.do_ancestorset.__doc__)
       return 
     lfn = argss[0]
     if lfn[0] != '/':
@@ -602,15 +603,15 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.addFileAncestors({lfn:{'Ancestors':ancestors}})
       if not result['OK']:
-        print "Failed to add file ancestors to the catalog: ",
-        print result['Message']
+        print("Failed to add file ancestors to the catalog: ", end=' ')
+        print(result['Message'])
       elif result['Value']['Failed']:
-        print "Failed to add file ancestors to the catalog: ",
-        print result['Value']['Failed'][lfn]
+        print("Failed to add file ancestors to the catalog: ", end=' ')
+        print(result['Value']['Failed'][lfn])
       else:
-        print "Added %d ancestors to file %s" % (len(ancestors),lfn)
+        print("Added %d ancestors to file %s" % (len(ancestors), lfn))
     except Exception as x:
-      print "Exception while adding ancestors: ", str(x)                
+      print("Exception while adding ancestors: ", str(x))
                          
   def complete_ancestorset(self, text, line, begidx, endidx):
 
@@ -638,7 +639,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     if (len(argss) == 0):
-      print self.do_ancestor.__doc__
+      print(self.do_ancestor.__doc__)
       return
     lfn = argss[0]
     if lfn[0] != '/':
@@ -651,11 +652,11 @@ File Catalog Client $Revision: 1.17 $Date:
     try:      
       result = self.fc.getFileAncestors([lfn],depth)
       if not result['OK']:
-        print "ERROR: Failed to get ancestors: ",
-        print result['Message']       
+        print("ERROR: Failed to get ancestors: ", end=' ')
+        print(result['Message'])
       elif result['Value']['Failed']:
-        print "Failed to get ancestors: ",
-        print result['Value']['Failed'][lfn]
+        print("Failed to get ancestors: ", end=' ')
+        print(result['Value']['Failed'][lfn])
       else:
         depthDict = {}  
         depSet = set()    
@@ -666,12 +667,12 @@ File Catalog Client $Revision: 1.17 $Date:
             depSet.add(dep)
         depList = list(depSet)
         depList.sort()
-        print lfn   
+        print(lfn)
         for dep in depList:
           for lfn in depthDict[dep]:      
-            print dep,' '*dep*5, lfn
+            print(dep, ' ' * dep * 5, lfn)
     except Exception as x:
-      print "Exception while getting ancestors: ", str(x)    
+      print("Exception while getting ancestors: ", str(x))
 
   def complete_ancestor(self, text, line, begidx, endidx):
     result = []
@@ -697,7 +698,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     if (len(argss) == 0):
-      print self.do_descendent.__doc__
+      print(self.do_descendent.__doc__)
       return
     lfn = argss[0]
     if lfn[0] != '/':
@@ -710,11 +711,11 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.getFileDescendents([lfn],depth)
       if not result['OK']:
-        print "ERROR: Failed to get descendents: ",
-        print result['Message']       
+        print("ERROR: Failed to get descendents: ", end=' ')
+        print(result['Message'])
       elif result['Value']['Failed']:
-        print "Failed to get descendents: ",
-        print result['Value']['Failed'][lfn]
+        print("Failed to get descendents: ", end=' ')
+        print(result['Value']['Failed'][lfn])
       else:
         depthDict = {}  
         depSet = set()    
@@ -725,12 +726,12 @@ File Catalog Client $Revision: 1.17 $Date:
             depSet.add(dep)
         depList = list(depSet)
         depList.sort()
-        print lfn   
+        print(lfn)
         for dep in depList:
           for lfn in depthDict[dep]:      
-            print dep,' '*dep*5, lfn
+            print(dep, ' ' * dep * 5, lfn)
     except Exception as x:
-      print "Exception while getting descendents: ", str(x)              
+      print("Exception while getting descendents: ", str(x))
 
   def complete_descendent(self, text, line, begidx, endidx):
     result = []
@@ -761,32 +762,32 @@ File Catalog Client $Revision: 1.17 $Date:
     """    
     argss = args.split()
     if (len(argss)==0):
-      print self.do_user.__doc__
+      print(self.do_user.__doc__)
       return
     option = argss[0]
     del argss[0]
     if option == 'add':
       if (len(argss)!=1):
-        print self.do_user.__doc__
+        print(self.do_user.__doc__)
         return
       return self.registerUser(argss) 
     elif option == 'delete':
       if (len(argss)!=1):
-        print self.do_user.__doc__
+        print(self.do_user.__doc__)
         return
       return self.deleteUser(argss) 
     elif option == "show":
       result = self.fc.getUsers()
       if not result['OK']:
-        print ("Error: %s" % result['Message'])            
+        print(("Error: %s" % result['Message']))
       else:  
         if not result['Value']:
-          print "No entries found"
+          print("No entries found")
         else:  
           for user,id_ in result['Value'].items():
-            print user.rjust(20),':',id_
+            print(user.rjust(20), ':', id_)
     else:
-      print "Unknown option:",option
+      print("Unknown option:", option)
 
   # completion for ``user``
   _available_user_cmd = ['add', 'delete', 'show']
@@ -811,32 +812,32 @@ File Catalog Client $Revision: 1.17 $Date:
     """    
     argss = args.split()
     if (len(argss)==0):
-      print self.do_group.__doc__
+      print(self.do_group.__doc__)
       return
     option = argss[0]
     del argss[0]
     if option == 'add':
       if (len(argss)!=1):
-        print self.do_group.__doc__
+        print(self.do_group.__doc__)
         return
       return self.registerGroup(argss) 
     elif option == 'delete':
       if (len(argss)!=1):
-        print self.do_group.__doc__
+        print(self.do_group.__doc__)
         return
       return self.deleteGroup(argss) 
     elif option == "show":
       result = self.fc.getGroups()
       if not result['OK']:
-        print ("Error: %s" % result['Message'])            
+        print(("Error: %s" % result['Message']))
       else:  
         if not result['Value']:
-          print "No entries found"
+          print("No entries found")
         else:  
           for user,id_ in result['Value'].items():
-            print user.rjust(20),':',id_
+            print(user.rjust(20), ':', id_)
     else:
-      print "Unknown option:",option  
+      print("Unknown option:", option)
   
   # completion for ``group``
   _available_group_cmd = ['add', 'delete', 'show']
@@ -860,9 +861,9 @@ File Catalog Client $Revision: 1.17 $Date:
     
     result =  self.fc.addUser(username)
     if not result['OK']:
-      print ("Error: %s" % result['Message'])
+      print(("Error: %s" % result['Message']))
     else:
-      print "User ID:",result['Value']  
+      print("User ID:", result['Value'])
       
   def deleteUser(self,args):
     """ Delete user from the File Catalog
@@ -874,7 +875,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     result =  self.fc.deleteUser(username)
     if not result['OK']:
-      print ("Error: %s" % result['Message'])    
+      print(("Error: %s" % result['Message']))
       
   def registerGroup(self,argss):
     """ Add new group to the File Catalog
@@ -886,9 +887,9 @@ File Catalog Client $Revision: 1.17 $Date:
     
     result =  self.fc.addGroup(gname)
     if not result['OK']:
-      print ("Error: %s" % result['Message'])
+      print(("Error: %s" % result['Message']))
     else:
-      print "Group ID:",result['Value']    
+      print("Group ID:", result['Value'])
       
   def deleteGroup(self,args):
     """ Delete group from the File Catalog
@@ -900,7 +901,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     result =  self.fc.deleteGroup(gname)
     if not result['OK']:
-      print ("Error: %s" % result['Message'])         
+      print(("Error: %s" % result['Message']))
          
   def do_mkdir(self,args):
     """ Make directory
@@ -910,7 +911,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     if (len(argss)==0):
-      print self.do_mkdir.__doc__
+      print(self.do_mkdir.__doc__)
       return
     path = argss[0] 
     if path.find('/') == 0:
@@ -924,12 +925,12 @@ File Catalog Client $Revision: 1.17 $Date:
     if result['OK']:
       if result['Value']['Successful']:
         if result['Value']['Successful'].has_key(newdir):
-          print "Successfully created directory:", newdir
+          print("Successfully created directory:", newdir)
       elif result['Value']['Failed']:
         if result['Value']['Failed'].has_key(newdir):  
-          print 'Failed to create directory:',result['Value']['Failed'][newdir]
+          print('Failed to create directory:', result['Value']['Failed'][newdir])
     else:
-      print 'Failed to create directory:',result['Message']
+      print('Failed to create directory:', result['Message'])
 
   def complete_mkdir(self, text, line, begidx, endidx):
     result = []
@@ -976,11 +977,11 @@ File Catalog Client $Revision: 1.17 $Date:
           self.cwd = newcwd
           self.prompt = 'FC:'+self.cwd+'>'
         else:
-          print newcwd,'does not exist or is not a directory'
+          print(newcwd, 'does not exist or is not a directory')
       else:
-        print newcwd,'is not found'
+        print(newcwd, 'is not found')
     else:
-      print 'Server failed to find the directory',newcwd
+      print('Server failed to find the directory', newcwd)
 
   def complete_cd(self, text, line, begidx, endidx):
     result = []
@@ -1003,23 +1004,23 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     result = getProxyInfo()
     if not result['OK']:
-      print "Error: %s" % result['Message']
+      print("Error: %s" % result['Message'])
       return
     user = result['Value']['username']
     group = result['Value']['group']
     result = self.fc.getUsers()
     if not result['OK']:
-      print "Error: %s" % result['Message']
+      print("Error: %s" % result['Message'])
       return
     userDict = result['Value']
     result = self.fc.getGroups()
     if not result['OK']:
-      print "Error: %s" % result['Message']
+      print("Error: %s" % result['Message'])
       return
     groupDict = result['Value']    
     idUser = userDict.get(user,0)
     idGroup = groupDict.get(group,0)
-    print "user=%d(%s) group=%d(%s)" % (idUser,user,idGroup,group)
+    print("user=%d(%s) group=%d(%s)" % (idUser, user, idGroup, group))
       
   def do_lcd(self,args):
     """ Change local directory
@@ -1029,15 +1030,15 @@ File Catalog Client $Revision: 1.17 $Date:
     """    
     argss = args.split()
     if (len(argss) != 1):
-      print self.do_lcd.__doc__
+      print(self.do_lcd.__doc__)
       return
     localDir = argss[0]
     try:
       os.chdir(localDir)
       newDir = os.getcwd()
-      print "Local directory: %s" % newDir
+      print("Local directory: %s" % newDir)
     except:
-      print "%s seems not a directory" % localDir
+      print("%s seems not a directory" % localDir)
 
   def complete_lcd(self, text, line, begidx, endidx):
     # TODO
@@ -1061,7 +1062,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
         usage: pwd
     """
-    print self.cwd      
+    print(self.cwd)
 
   def do_ls(self,args):
     """ Lists directory entries at <path> 
@@ -1092,8 +1093,8 @@ File Catalog Client $Revision: 1.17 $Date:
       try:
         optlist, arguments = getopt.getopt(argss,shortopts,longopts)
       except getopt.GetoptError, e:
-        print str(e)
-        print self.do_ls.__doc__
+        print(str(e))
+        print(self.do_ls.__doc__)
         return
       # Duplicated options are allowed: later options have precedence, e.g.,
       # '-ltSt' will be order by time
@@ -1140,7 +1141,7 @@ File Catalog Client $Revision: 1.17 $Date:
     # Check if the target path is a file
     result =  self.fc.isFile(path)          
     if not result['OK']:
-      print "Error: can not verify path"
+      print("Error: can not verify path")
       return
     elif path in result['Value']['Successful'] and result['Value']['Successful'][path]:
       result = self.fc.getFileMetadata(path)      
@@ -1196,9 +1197,9 @@ File Catalog Client $Revision: 1.17 $Date:
           else:
             dList.printOrdered()
       else:
-        print "Error:",result['Message']
+        print("Error:", result['Message'])
     except Exception as x:
-      print "Error:", str(x)
+      print("Error:", str(x))
 
   def complete_ls(self, text, line, begidx, endidx):
     result = []
@@ -1231,13 +1232,13 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     recursive = False
     if (len(argss) == 0):
-      print self.do_chown.__doc__
+      print(self.do_chown.__doc__)
       return
     if argss[0] == '-R':
       recursive = True
       del argss[0]
     if (len(argss) != 2):
-      print self.do_chown.__doc__
+      print(self.do_chown.__doc__)
       return
     owner = argss[0]
     path = argss[1]
@@ -1248,13 +1249,13 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.changePathOwner( pathDict, recursive )        
       if not result['OK']:
-        print "Error:",result['Message']
+        print("Error:", result['Message'])
         return
       if lfn in result['Value']['Failed']:
-        print "Error:",result['Value']['Failed'][lfn]
+        print("Error:", result['Value']['Failed'][lfn])
         return  
     except Exception as x:
-      print "Exception:", str(x)         
+      print("Exception:", str(x))
 
   def complete_chown(self, text, line, begidx, endidx):
     result = []
@@ -1286,13 +1287,13 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     recursive = False
     if (len(argss) == 0):
-      print self.do_chgrp.__doc__
+      print(self.do_chgrp.__doc__)
       return
     if argss[0] == '-R':
       recursive = True
       del argss[0]
     if (len(argss) != 2):
-      print self.do_chgrp.__doc__
+      print(self.do_chgrp.__doc__)
       return
     group = argss[0]
     path = argss[1]
@@ -1303,13 +1304,13 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.changePathGroup( pathDict, recursive )         
       if not result['OK']:
-        print "Error:",result['Message']
+        print("Error:", result['Message'])
         return
       if lfn in result['Value']['Failed']:
-        print "Error:",result['Value']['Failed'][lfn]
+        print("Error:", result['Value']['Failed'][lfn])
         return  
     except Exception as x:
-      print "Exception:", str(x)    
+      print("Exception:", str(x))
 
   def complete_chgrp(self, text, line, begidx, endidx):
     result = []
@@ -1340,7 +1341,7 @@ File Catalog Client $Revision: 1.17 $Date:
     argss = args.split()
     recursive = False
     if (len(argss) < 2):
-      print self.do_chmod.__doc__
+      print(self.do_chmod.__doc__)
       return
     if argss[0] == '-R':
       recursive = True
@@ -1355,13 +1356,13 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.changePathMode( pathDict, recursive )             
       if not result['OK']:
-        print "Error:",result['Message']
+        print("Error:", result['Message'])
         return
       if lfn in result['Value']['Failed']:
-        print "Error:",result['Value']['Failed'][lfn]
+        print("Error:", result['Value']['Failed'][lfn])
         return  
     except Exception as x:
-      print "Exception:", str(x)       
+      print("Exception:", str(x))
       
   def complete_chmod(self, text, line, begidx, endidx):
     result = []
@@ -1418,31 +1419,31 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.isFile(path)
       if not result['OK']:
-        print "Error:",result['Message']
+        print("Error:", result['Message'])
       if result['Value']['Successful']:
         if result['Value']['Successful'][path]:  
-          print "lfn:",path
+          print("lfn:", path)
           result =  self.fc.getFileSize(path)
           if result['OK']:
             if result['Value']['Successful']:
-              print "Size:",result['Value']['Successful'][path]
+              print("Size:", result['Value']['Successful'][path])
             else:
-              print "File size failed:", result['Value']['Failed'][path]  
+              print("File size failed:", result['Value']['Failed'][path])
           else:
-            print "File size failed:",result['Message']
+            print("File size failed:", result['Message'])
         else:
-          print "directory:",path
+          print("directory:", path)
           result =  self.fc.getDirectorySize( path, _long, fromFiles )          
           if result['OK']:
             if result['Value']['Successful']:
-              print "Logical Size:",int_with_commas(result['Value']['Successful'][path]['LogicalSize']), \
+              print("Logical Size:", int_with_commas(result['Value']['Successful'][path]['LogicalSize']),
                     "Files:",result['Value']['Successful'][path]['LogicalFiles'], \
-                    "Directories:",result['Value']['Successful'][path]['LogicalDirectories']
+                    "Directories:", result['Value']['Successful'][path]['LogicalDirectories'])
               if _long:
                 fields = ['StorageElement','Size','Replicas']
                 values = []
                 if "PhysicalSize" in result['Value']['Successful'][path]:
-                  print 
+                  print()
                   totalSize = result['Value']['Successful'][path]['PhysicalSize']['TotalSize']
                   totalFiles = result['Value']['Successful'][path]['PhysicalSize']['TotalFiles'] 
                   for se,sdata in result['Value']['Successful'][path]['PhysicalSize'].items():
@@ -1456,15 +1457,15 @@ File Catalog Client $Revision: 1.17 $Date:
                   values.append( ('Total', int_with_commas(totalSize), str(totalFiles)) )
                   printTable(fields,values)  
               if "QueryTime" in result['Value']:
-                print "Query time %.2f sec" % result['Value']['QueryTime']
+                print("Query time %.2f sec" % result['Value']['QueryTime'])
             else:
-              print "Directory size failed:", result['Value']['Failed'][path]
+              print("Directory size failed:", result['Value']['Failed'][path])
           else:
-            print "Directory size failed:",result['Message']  
+            print("Directory size failed:", result['Message'])
       else:
-        print "Failed to determine path type"        
+        print("Failed to determine path type")
     except Exception as x:
-      print "Size failed: ", x
+      print("Size failed: ", x)
 
   def complete_size(self, text, line, begidx, endidx):
     result = []
@@ -1495,7 +1496,7 @@ File Catalog Client $Revision: 1.17 $Date:
     
     argss = args.split()
     if (len(argss) == 0):
-      print self.do_guid.__doc__
+      print(self.do_guid.__doc__)
       return
     path = argss[0]
     path = self.getPath(path)
@@ -1503,13 +1504,13 @@ File Catalog Client $Revision: 1.17 $Date:
       result =  self.fc.getFileMetadata(path)
       if result['OK']:
         if result['Value']['Successful']:
-          print "GUID:",result['Value']['Successful'][path]['GUID']
+          print("GUID:", result['Value']['Successful'][path]['GUID'])
         else:
-          print "ERROR: getting guid failed"  
+          print("ERROR: getting guid failed")
       else:
-        print "ERROR:",result['Message']
+        print("ERROR:", result['Message'])
     except Exception as x:
-      print "guid failed: ", x   
+      print("guid failed: ", x)
 
   def complete_guid(self, text, line, begidx, endidx):
     result = []
@@ -1549,13 +1550,13 @@ File Catalog Client $Revision: 1.17 $Date:
     """    
     argss = args.split()
     if (len(argss)==0):
-      print self.do_meta.__doc__
+      print(self.do_meta.__doc__)
       return
     option = argss[0]
     del argss[0]
     if option == 'set':
       if (len(argss) < 3 or len(argss)%2 != 1):
-        print self.do_meta.__doc__
+        print(self.do_meta.__doc__)
         return
       return self.setMeta(argss)
     elif option == 'get':
@@ -1563,29 +1564,29 @@ File Catalog Client $Revision: 1.17 $Date:
     elif option[:3] == 'tag':
       # TODO
       if (len(argss) == 0):
-        print self.do_meta.__doc__
+        print(self.do_meta.__doc__)
         return
       return self.metaTag(argss)    
     elif option == 'index':
       if (len(argss) < 1):
-        print self.do_meta.__doc__
+        print(self.do_meta.__doc__)
         return
       return self.registerMeta(argss)
     elif option == 'metaset':
       # TODO
       if (len(argss) == 0):
-        print self.do_meta.__doc__
+        print(self.do_meta.__doc__)
         return
       return self.registerMetaset(argss)
     elif option == 'show':
       return self.showMeta()
     elif option == 'remove' or option == "rm":
       if (len(argss) < 2):
-        print self.do_meta.__doc__
+        print(self.do_meta.__doc__)
         return
       return self.removeMeta(argss) 
     else:
-      print "Unknown option:",option  
+      print("Unknown option:", option)
 
   # auto completion for ``meta``
   # TODO: what's the doc for metaset?
@@ -1625,23 +1626,23 @@ File Catalog Client $Revision: 1.17 $Date:
     apath = argss[0]
     path = self.getPath(apath)
     if len(argss) < 2:
-      print "Error: no metadata is specified for removal"
+      print("Error: no metadata is specified for removal")
       return
     
     metadata = argss[1:]
     metaDict = {path:metadata}
     result = self.fc.removeMetadata(metaDict)
     if not result['OK']:
-      print "Error:", result['Message']
+      print("Error:", result['Message'])
       if "FailedMetadata" in result:
         for meta,error in result['FailedMetadata']:
-          print meta,';',error
+          print(meta, ';', error)
      
   def setMeta(self,argss):
     """ Set metadata value for a directory
     """      
     if (len(argss) < 3 or len(argss)%2 != 1):
-      print "Error: command requires at least 3 arguments (or odd number of arguments > 3), %d given" % len(argss)
+      print("Error: command requires at least 3 arguments (or odd number of arguments > 3), %d given" % len(argss))
       return
     path = argss[0]
     if path == '.':
@@ -1653,10 +1654,10 @@ File Catalog Client $Revision: 1.17 $Date:
     meta = argss[::2]
     value = argss[1::2]
     metadict = { meta[n]:value[n] for n in range(len(meta)) }
-    print path,metadict
+    print(path, metadict)
     result = self.fc.setMetadata(path,metadict)
     if not result['OK']:
-      print ("Error: %s" % result['Message'])     
+      print(("Error: %s" % result['Message']))
       
   def getMeta(self,argss):
     """ Get metadata for the given directory
@@ -1685,15 +1686,15 @@ File Catalog Client $Revision: 1.17 $Date:
       # Have to decide if it is a file or not
       result = self.fc.isFile(path)
       if not result['OK']:
-        print "ERROR: Failed to contact the catalog"      
+        print("ERROR: Failed to contact the catalog")
       if not result['Value']['Successful']:
-        print "ERROR: Path not found"
+        print("ERROR: Path not found")
       dirFlag = not result['Value']['Successful'][path]        
         
     if dirFlag:    
       result = self.fc.getDirectoryUserMetadata(path)
       if not result['OK']:
-        print ("Error: %s" % result['Message']) 
+        print(("Error: %s" % result['Message']))
         return
       if result['Value']:
         metaDict = result['MetadataOwner']
@@ -1705,31 +1706,31 @@ File Catalog Client $Revision: 1.17 $Date:
             prefix = "+"
           if metaDict[meta] == 'ParentMetadata':
             prefix += "*"
-            print (prefix+meta).rjust(20),':',value
+            print((prefix + meta).rjust(20), ':', value)
           elif metaDict[meta] == 'OwnMetadata':
             prefix += "!"
-            print (prefix+meta).rjust(20),':',value   
+            print((prefix + meta).rjust(20), ':', value)
           else:
-            print meta.rjust(20),':',value 
+            print(meta.rjust(20), ':', value)
           if setFlag and expandFlag:
             result = self.fc.getMetadataSet(value,expandFlag)
             if not result['OK']:
-              print ("Error: %s" % result['Message']) 
+              print(("Error: %s" % result['Message']))
               return
             for m,v in result['Value'].items():
-              print " "*10,m.rjust(20),':',v      
+              print(" " * 10, m.rjust(20), ':', v)
       else:
-        print "No metadata defined for directory"   
+        print("No metadata defined for directory")
     else:
       result = self.fc.getFileUserMetadata(path)      
       if not result['OK']:
-        print ("Error: %s" % result['Message']) 
+        print(("Error: %s" % result['Message']))
         return
       if result['Value']:      
         for meta,value in result['Value'].items():
-          print meta.rjust(20),':', value
+          print(meta.rjust(20), ':', value)
       else:
-        print "No metadata found"        
+        print("No metadata found")
       
   def metaTag(self,argss):
     """ Get values of a given metadata tag compatible with the given selection
@@ -1746,10 +1747,10 @@ File Catalog Client $Revision: 1.17 $Date:
       if argss[0].lower() == 'where':
         result = self.fc.getMetadataFields()        
         if not result['OK']:
-          print ("Error: %s" % result['Message']) 
+          print(("Error: %s" % result['Message']))
           return
         if not result['Value']:
-          print "Error: no metadata fields defined"
+          print("Error: no metadata fields defined")
           return
         typeDictfm = result['Value']['FileMetaFields']
         typeDict = result['Value']['DirectoryMetaFields']
@@ -1761,9 +1762,9 @@ File Catalog Client $Revision: 1.17 $Date:
             name,value = arg.split('=')
             if not name in typeDict:
               if not name in typeDictfm:
-                print "Error: metadata field %s not defined" % name
+                print("Error: metadata field %s not defined" % name)
               else:
-                print 'No support for meta data at File level yet: %s' % name
+                print('No support for meta data at File level yet: %s' % name)
               return
             mtype = typeDict[name]
             mvalue = value
@@ -1773,44 +1774,44 @@ File Catalog Client $Revision: 1.17 $Date:
               mvalue = float(value)
             metaDict[name] = mvalue
           except Exception,x:
-            print "Error:",str(x)
+            print("Error:", str(x))
             return  
       else:
-        print "Error: WHERE keyword is not found after the metadata tag name"
+        print("Error: WHERE keyword is not found after the metadata tag name")
         return
       
     result = self.fc.getCompatibleMetadata( metaDict, path )  
     if not result['OK']:
-      print ("Error: %s" % result['Message']) 
+      print(("Error: %s" % result['Message']))
       return
     tagDict = result['Value']
     if tag in tagDict:
       if tagDict[tag]:
-        print "Possible values for %s:" % tag
+        print("Possible values for %s:" % tag)
         for v in tagDict[tag]:
-          print v
+          print(v)
       else:
-        print "No compatible values found for %s" % tag       
+        print("No compatible values found for %s" % tag)
 
   def showMeta(self):
     """ Show defined metadata indices
     """
     result = self.fc.getMetadataFields()  
     if not result['OK']:
-      print ("Error: %s" % result['Message'])            
+      print(("Error: %s" % result['Message']))
     else:
       if not result['Value']:
-        print "No entries found"
+        print("No entries found")
       else:  
         for meta,_type in result['Value'].items():
-          print meta.rjust(20),':',_type
+          print(meta.rjust(20), ':', _type)
 
   def registerMeta(self,argss):
     """ Add metadata field. 
     """
 
     if len(argss) < 2:
-      print "Unsufficient number of arguments"
+      print("Unsufficient number of arguments")
       return
 
     fdType = '-d'
@@ -1823,14 +1824,14 @@ File Catalog Client $Revision: 1.17 $Date:
       del argss[0]
 
     if len(argss) < 2 and not removeFlag:
-      print "Unsufficient number of arguments"
+      print("Unsufficient number of arguments")
       return
 
     mname = argss[0]
     if removeFlag:
       result = self.fc.deleteMetadataField(mname)
       if not result['OK']:
-        print "Error:", result['Message']
+        print("Error:", result['Message'])
       return
 
     mtype = argss[1]
@@ -1848,14 +1849,14 @@ File Catalog Client $Revision: 1.17 $Date:
     elif mtype.lower() == 'metaset':
       rtype = 'MetaSet'
     else:
-      print "Error: illegal metadata type %s" % mtype
+      print("Error: illegal metadata type %s" % mtype)
       return
 
     result =  self.fc.addMetadataField(mname,rtype,fdType)
     if not result['OK']:
-      print ("Error: %s" % result['Message'])
+      print(("Error: %s" % result['Message']))
     else:
-      print "Added metadata field %s of type %s" % (mname,mtype)   
+      print("Added metadata field %s of type %s" % (mname, mtype))
  
   def registerMetaset(self,argss):
     """ Add metadata set
@@ -1870,9 +1871,9 @@ File Catalog Client $Revision: 1.17 $Date:
       
     result =  self.fc.addMetadataSet(setName,setDict)
     if not result['OK']:
-      print ("Error: %s" % result['Message'])  
+      print(("Error: %s" % result['Message']))
     else:
-      print "Added metadata set %s" % setName  
+      print("Added metadata set %s" % setName)
     
   def do_find(self,args):
     """ Find all files satisfying the given metadata information 
@@ -1882,7 +1883,7 @@ File Catalog Client $Revision: 1.17 $Date:
 
     argss = args.split()
     if (len(argss) < 1):
-      print self.do_find.__doc__
+      print(self.do_find.__doc__)
       return
     
     verbose = True
@@ -1905,16 +1906,17 @@ File Catalog Client $Revision: 1.17 $Date:
       else:  
         result = self.__createQuery(' '.join(argss))
         if not result['OK']:
-          print "Illegal metaQuery:", ' '.join(argss), result['Message']
+          print("Illegal metaQuery:", ' '.join(argss), result['Message'])
           return
         metaDict = result['Value']
     else:
       metaDict = {}    
-    if verbose: print "Query:",metaDict
+    if verbose:
+      print("Query:", metaDict)
 
     result = self.fc.findFilesByMetadata(metaDict, path)
     if not result['OK']:
-      print ("Error: %s" % result['Message']) 
+      print(("Error: %s" % result['Message']))
       return 
 
     if result['Value']:
@@ -1926,14 +1928,14 @@ File Catalog Client $Revision: 1.17 $Date:
         listToPrint = lfnList
 
       for dir_ in listToPrint:
-        print dir_
+        print(dir_)
 
     else:
       if verbose:
-        print "No matching data found"      
+        print("No matching data found")
 
     if verbose and "QueryTime" in result:
-      print "QueryTime %.2f sec" % result['QueryTime']  
+      print("QueryTime %.2f sec" % result['QueryTime'])
 
   def complete_find(self, text, line, begidx, endidx):
     result = []
@@ -1963,10 +1965,10 @@ File Catalog Client $Revision: 1.17 $Date:
     result = self.fc.getMetadataFields()
 
     if not result['OK']:
-      print ("Error: %s" % result['Message']) 
+      print(("Error: %s" % result['Message']))
       return None
     if not result['Value']:
-      print "Error: no metadata fields defined"
+      print("Error: no metadata fields defined")
       return None
     typeDict = result['Value']['FileMetaFields']
     typeDict.update(result['Value']['DirectoryMetaFields'])
@@ -1995,7 +1997,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     argss = args.split()
     if (len(argss)==0):
-      print self.do_dataset.__doc__
+      print(self.do_dataset.__doc__)
       return
     command = argss[0]
     del argss[0]
@@ -2027,16 +2029,16 @@ File Catalog Client $Revision: 1.17 $Date:
     metaSelections = ' '.join( argss[1:] )
     result = self.__createQuery( metaSelections )
     if not result['OK']:
-      print "Illegal metaQuery:", metaSelections
+      print("Illegal metaQuery:", metaSelections)
       return
     metaDict = result['Value']
     datasetName = self.getPath( datasetName )
     
     result = returnSingleResult( self.fc.addDataset( { datasetName: metaDict } ) )
     if not result['OK']:
-      print "ERROR: failed to add dataset:", result['Message']
+      print("ERROR: failed to add dataset:", result['Message'])
     else:
-      print "Successfully added dataset", datasetName  
+      print("Successfully added dataset", datasetName)
 
   def dataset_annotate( self, argss ):
     """ Add a new dataset
@@ -2047,9 +2049,9 @@ File Catalog Client $Revision: 1.17 $Date:
     
     result = returnSingleResult( self.fc.addDatasetAnnotation( {datasetName: annotation} ) )
     if not result['OK']:
-      print "ERROR: failed to add annotation:", result['Message']
+      print("ERROR: failed to add annotation:", result['Message'])
     else:
-      print "Successfully added annotation to", datasetName  
+      print("Successfully added annotation to", datasetName)
 
   def dataset_status( self, argss ):
     """ Display the dataset status
@@ -2057,11 +2059,11 @@ File Catalog Client $Revision: 1.17 $Date:
     datasetName = argss[0]
     result = returnSingleResult( self.fc.getDatasetParameters( datasetName ) )
     if not result['OK']:
-      print "ERROR: failed to get status of dataset:", result['Message']
+      print("ERROR: failed to get status of dataset:", result['Message'])
     else:
       parDict = result['Value']
       for par,value in parDict.items():
-        print par.rjust(20),':',value  
+        print(par.rjust(20), ':', value)
 
   def dataset_rm( self, argss ):
     """ Remove the given dataset
@@ -2069,9 +2071,9 @@ File Catalog Client $Revision: 1.17 $Date:
     datasetName = argss[0]
     result = returnSingleResult( self.fc.removeDataset( datasetName ) )
     if not result['OK']:
-      print "ERROR: failed to remove dataset:", result['Message']
+      print("ERROR: failed to remove dataset:", result['Message'])
     else:
-      print "Successfully removed dataset", datasetName  
+      print("Successfully removed dataset", datasetName)
 
   def dataset_check( self, argss ):
     """ check if the dataset parameters are still valid
@@ -2079,15 +2081,15 @@ File Catalog Client $Revision: 1.17 $Date:
     datasetName = argss[0]
     result = returnSingleResult( self.fc.checkDataset( datasetName ) )
     if not result['OK']:
-      print "ERROR: failed to check dataset:", result['Message']
+      print("ERROR: failed to check dataset:", result['Message'])
     else:
       changeDict = result['Value']
       if not changeDict:
-        print "Dataset is not changed"
+        print("Dataset is not changed")
       else:
-        print "Dataset changed:"
+        print("Dataset changed:")
         for par in changeDict:
-          print "   ",par,': ',changeDict[par][0],'->',changeDict[par][1]
+          print("   ", par, ': ', changeDict[par][0], '->', changeDict[par][1])
           
   def dataset_update( self, argss ):
     """ Update the given dataset parameters
@@ -2095,9 +2097,9 @@ File Catalog Client $Revision: 1.17 $Date:
     datasetName = argss[0]
     result = returnSingleResult( self.fc.updateDataset( datasetName ) )
     if not result['OK']:
-      print "ERROR: failed to update dataset:", result['Message']
+      print("ERROR: failed to update dataset:", result['Message'])
     else:
-      print "Successfully updated dataset", datasetName            
+      print("Successfully updated dataset", datasetName)
 
   def dataset_freeze( self, argss ):
     """ Freeze the given dataset
@@ -2105,9 +2107,9 @@ File Catalog Client $Revision: 1.17 $Date:
     datasetName = argss[0]
     result = returnSingleResult( self.fc.freezeDataset( datasetName ) )
     if not result['OK']:
-      print "ERROR: failed to freeze dataset:", result['Message']
+      print("ERROR: failed to freeze dataset:", result['Message'])
     else:
-      print "Successfully frozen dataset", datasetName            
+      print("Successfully frozen dataset", datasetName)
 
   def dataset_release( self, argss ):
     """ Release the given dataset
@@ -2115,9 +2117,9 @@ File Catalog Client $Revision: 1.17 $Date:
     datasetName = argss[0]
     result = returnSingleResult( self.fc.releaseDataset( datasetName ) )
     if not result['OK']:
-      print "ERROR: failed to release dataset:", result['Message']
+      print("ERROR: failed to release dataset:", result['Message'])
     else:
-      print "Successfully released dataset", datasetName       
+      print("Successfully released dataset", datasetName)
 
   def dataset_files( self, argss ):
     """ Get the given dataset files
@@ -2125,11 +2127,11 @@ File Catalog Client $Revision: 1.17 $Date:
     datasetName = argss[0]
     result = returnSingleResult( self.fc.getDatasetFiles( datasetName ) )
     if not result['OK']:
-      print "ERROR: failed to get files for dataset:", result['Message']
+      print("ERROR: failed to get files for dataset:", result['Message'])
     else:
       lfnList = result['Value']
       for lfn in lfnList:
-        print lfn
+        print(lfn)
 
   def dataset_show( self, argss ):
     """ Show existing requested datasets
@@ -2144,13 +2146,13 @@ File Catalog Client $Revision: 1.17 $Date:
 
     result = returnSingleResult( self.fc.getDatasets( datasetName ) )
     if not result['OK']:
-      print "ERROR: failed to get datasets"
+      print("ERROR: failed to get datasets")
       return
 
     datasetDict = result['Value']
     if not long_:
       for dName in datasetDict.keys():
-        print dName
+        print(dName)
     else:
       fields = ['Key','Value']
       datasets = datasetDict.keys()
@@ -2160,8 +2162,8 @@ File Catalog Client $Revision: 1.17 $Date:
         dsAnnotations = resultAnno['Value']
       for dName in datasets:
         records = []
-        print '\n'+dName+":"
-        print '='*(len(dName)+1)
+        print('\n' + dName + ":")
+        print('=' * (len(dName) + 1))
         for key,value in datasetDict[dName].items():
           records.append( [key,str( value )] )
         if dName in dsAnnotations:
@@ -2178,11 +2180,11 @@ File Catalog Client $Revision: 1.17 $Date:
     try:
       result = self.fc.getCatalogCounters()
     except AttributeError, x:
-      print "Error: no statistics available for this type of catalog:", str(x)
+      print("Error: no statistics available for this type of catalog:", str(x))
       return
       
     if not result['OK']:
-      print ("Error: %s" % result['Message']) 
+      print(("Error: %s" % result['Message']))
       return 
     fields = ['Counter','Number']
     records = []
@@ -2203,11 +2205,11 @@ File Catalog Client $Revision: 1.17 $Date:
     start = time.time()
     result = self.fc.rebuildDirectoryUsage( timeout = 300 )
     if not result['OK']:
-      print "Error:", result['Message']
+      print("Error:", result['Message'])
       return 
       
     total = time.time() - start
-    print "Directory storage info rebuilt in %.2f sec", total    
+    print("Directory storage info rebuilt in %.2f sec", total)
     
   def do_repair( self, args ):
     """ Repair catalog inconsistencies
@@ -2221,16 +2223,16 @@ File Catalog Client $Revision: 1.17 $Date:
     start = time.time()
     result = self.fc.repairCatalog()
     if not result['OK']:
-      print "Error:", result['Message']
+      print("Error:", result['Message'])
       return 
       
     total = time.time() - start
-    print "Catalog repaired in %.2f sec" % total
+    print("Catalog repaired in %.2f sec" % total)
       
 if __name__ == "__main__":
   
   if len(sys.argv) > 2:
-    print FileCatalogClientCLI.__doc__
+    print(FileCatalogClientCLI.__doc__)
     sys.exit(2)
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -2240,6 +2242,6 @@ if __name__ == "__main__":
   fc = FileCatalog( catalogs = catalogs )
   cli = FileCatalogClientCLI( fc )
   if catalogs:
-    print "Starting %s file catalog client", catalogs[0]
+    print("Starting %s file catalog client", catalogs[0])
   cli.cmdloop()
       

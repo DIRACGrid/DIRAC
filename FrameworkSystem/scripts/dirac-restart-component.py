@@ -2,6 +2,7 @@
 """
   Restart DIRAC component using runsvctrl utility
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
@@ -32,7 +33,7 @@ gComponentInstaller.exitOnError = True
 #
 result = gComponentInstaller.runsvctrlComponent(system, component, 't')
 if not result['OK']:
-  print 'ERROR:', result['Message']
+  print('ERROR:', result['Message'])
   exit(-1)
 
 gComponentInstaller.printStartupStatus(result['Value'])

@@ -4,6 +4,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
+from __future__ import print_function
 from DIRAC.Core.Utilities.Graphs.Palette import Palette
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import pixelToPoint, evalPrefs
@@ -35,7 +36,7 @@ class PlotBase( object ):
   def dumpPrefs( self ):
 
     for key in self.prefs:
-      print key.rjust( 20 ), ':', str( self.prefs[key] ).ljust( 40 )
+      print(key.rjust(20), ':', str(self.prefs[key]).ljust(40))
 
   def setAxes( self, axes ):
 

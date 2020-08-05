@@ -3,6 +3,7 @@
     a ParameterCollection class as a list of parameters as well as an AttributeCollection
     class which is the base class for the main Workflow classes.
 """
+from __future__ import print_function
 from DIRAC.Core.Workflow.Utility import *
 
 __RCSID__ = "$Id$"
@@ -298,7 +299,8 @@ class ParameterCollection( list ):
     """
     par = self.find( name )
     if par == None:
-      print "ERROR ParameterCollection.setValue() can not find parameter with the name=%s to set Value=%s" % ( name, value )
+      print("ERROR ParameterCollection.setValue() can not find parameter with "
+            "the name=%s to set Value=%s" % (name, value))
       return False
     else:
       par.setValue( value, vtype )
@@ -348,7 +350,9 @@ class ParameterCollection( list ):
     """
     par = self.find( name )
     if par == None:
-      print "ERROR ParameterCollection.setLink() can not find parameter with the name=%s to link it with %s.%s" % ( name, module_name, parameter_name )
+      print(
+          "ERROR ParameterCollection.setLink() can not find parameter with the name=%s to link it with %s.%s" %
+          (name, module_name, parameter_name))
       return False
     else:
       par.link( module_name, parameter_name )
@@ -369,7 +373,7 @@ class ParameterCollection( list ):
       for p in opt:
         par = self.find( p.getName() )
         if par == None:
-          print "WARNING ParameterCollection.linkUp can not find parameter with the name=", p.getName(), " IGNORING"
+          print("WARNING ParameterCollection.linkUp can not find parameter with the name=", p.getName(), " IGNORING")
         else:
           par.link( objname, prefix + p.getName() + postfix )
     elif isinstance( opt, Parameter ):
@@ -378,13 +382,13 @@ class ParameterCollection( list ):
       for s in opt:
         par = self.find( s )
         if par == None:
-          print "ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % ( s )
+          print("ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % (s))
         else:
           par.link( objname, prefix + p.getName() + postfix )
     elif isinstance( opt, str ):
       par = self.find( opt )
       if par == None:
-        print "ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % ( par )
+        print("ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % (par))
       else:
         par.link( objname, prefix + par.getName() + postfix )
     else:
@@ -403,7 +407,7 @@ class ParameterCollection( list ):
       for p in opt:
         par = self.find( p.getName() )
         if par == None:
-          print "WARNING ParameterCollection.linkUp can not find parameter with the name=", p.getName(), " IGNORING"
+          print("WARNING ParameterCollection.linkUp can not find parameter with the name=", p.getName(), " IGNORING")
         else:
           par.unlink()
     elif isinstance( opt, Parameter ):
@@ -412,13 +416,13 @@ class ParameterCollection( list ):
       for s in opt:
         par = self.find( s )
         if par == None:
-          print "ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % ( s )
+          print("ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % (s))
         else:
           par.unlink()
     elif isinstance( opt, str ):
       par = self.find( opt )
       if par == None:
-        print "ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % ( s )
+        print("ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % (s))
       else:
         par.unlink()
     else:
@@ -436,7 +440,7 @@ class ParameterCollection( list ):
       for s in name_or_ind:
         par = self.find( s )
         if par == None:
-          print "ERROR ParameterCollection.remove() can not find parameter with the name=%s" % ( s )
+          print("ERROR ParameterCollection.remove() can not find parameter with the name=%s" % (s))
         else:
           index = self.findIndex( s )
           if index > -1:
@@ -553,23 +557,23 @@ class ParameterCollection( list ):
           if v_other != None and not v_other.isLinked():
             v.value = substitute( v.value, substitute_var, v_other.value )
           elif v_other != None:
-            print "Leaving %s variable for dynamic resolution" % substitute_var
+            print("Leaving %s variable for dynamic resolution" % substitute_var)
             skip_list.append( substitute_var )
           else: # if nothing helped tough!
-            print "Can not resolve ", substitute_var, str( v )
+            print("Can not resolve ", substitute_var, str(v))
 
         recurrency += 1
         if recurrency > recurrency_max:
           # must be an exception
-          print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str( v )
+          print("ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str(v))
           if step_parameters == None:
             if wf_parameters == None:
-              print "on the level of Workflow"
+              print("on the level of Workflow")
             else:
-              print "on the level of Step"
+              print("on the level of Step")
           else:
             if wf_parameters != None:
-              print "on the level of Module"
+              print("on the level of Module")
           break
         else:
           substitute_vars = getSubstitute( v.value, skip_list )
@@ -641,11 +645,11 @@ class AttributeCollection( dict ):
 
   def setValue( self, name, value, type_ = None ):
     if not self.parameters.setValue( name, value, type_ ):
-      print " in the object=", type( self ), "with name=", self.getName(), "of type=", self.getType()
+      print(" in the object=", type(self), "with name=", self.getName(), "of type=", self.getType())
 
   def setLink( self, name, module_name, parameter_name ):
     if not  self.parameters.setLink( name, module_name, parameter_name ):
-      print " in the object=", type( self ), "with name=", self.getName(), "of type=", self.getType()
+      print(" in the object=", type(self), "with name=", self.getName(), "of type=", self.getType())
 
   def compare( self, s ):
     return ( self == s ) and  self.parameters.compare( s.parameters )
@@ -661,17 +665,13 @@ class AttributeCollection( dict ):
     self['name'] = name
 
   def getName( self ):
-    if self.has_key( 'name' ):
-      return self['name']
-    return ''
+    return self.get('name', '')
 
   def setType( self, att_type ):
     self['type'] = att_type
 
   def getType( self ):
-    if self.has_key( 'type' ):
-      return self['type']
-    return ''
+    return self.get('type', '')
 
   def setRequired( self, required ):
     self['required'] = required

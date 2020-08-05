@@ -1,6 +1,8 @@
-=============================
+.. _admin_dirac-status-component:
+
+======================
 dirac-status-component
-=============================
+======================
 
 Status of DIRAC components using runsvstat utility
 
@@ -11,12 +13,11 @@ Usage::
 Arguments::
 
   system:        Name of the system for the component (default *: all)
-
-  service|agent: Name of the particular component (default *: all) 
+  service|agent: Name of the particular component (default *: all)
 
 Example::
 
-  $ dirac-status-component 
+  $ dirac-status-component
   DIRAC Root Path = /vo/dirac/versions/Lyon-HEAD-1296215324
                                            Name : Runit    Uptime    PID
             WorkloadManagement_PilotStatusAgent : Run        4029     1697
@@ -56,5 +57,3 @@ Example::
               WorkloadManagement_JobStateUpdate : Run        4025     2117
                   Framework_SystemLoggingReport : Run        4024     2220
                        Framework_BundleDelivery : Run        4025     2157
-
-

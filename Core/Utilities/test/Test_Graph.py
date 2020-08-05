@@ -53,7 +53,7 @@ class DynamicPropTests( unittest.TestCase ):
     # # AttributeError for read only property setattr
     try:
       testObj.roTestProp = 11
-    except AttributeError, error:
+    except AttributeError as error:
       self.assertEqual( str( error ), "can't set attribute" )
 
 class NodeTests( unittest.TestCase ):
@@ -81,11 +81,11 @@ class NodeTests( unittest.TestCase ):
     self.assertEqual( self.node.name, self.name )
     try:
       self.node.name = "can't do this"
-    except AttributeError, error:
+    except AttributeError as error:
       self.assertEqual( str( error ), "can't set attribute" )
     try:
       self.node.makeProperty( "name", "impossible" )
-    except AttributeError, error:
+    except AttributeError as error:
       self.assertEqual( str( error ), "_name or name is already defined as a member" )
 
     # # visited attr for walking
@@ -98,7 +98,7 @@ class NodeTests( unittest.TestCase ):
       self.assertEqual( getattr( self.node, k ), v )
       try:
         setattr( self.node, k, "new value" )
-      except AttributeError, error:
+      except AttributeError as error:
         self.assertEqual( str( error ), "can't set attribute" )
 
     # # rw attrs
@@ -142,11 +142,11 @@ class EdgeTests( unittest.TestCase ):
     self.assertEqual( edge.name, "%s-%s" % ( self.fromNode.name, self.toNode.name ) )
     try:
       edge.name = "can't do this"
-    except AttributeError, error:
+    except AttributeError as error:
       self.assertEqual( str( error ), "can't set attribute" )
     try:
       edge.makeProperty( "name", "impossible" )
-    except AttributeError, error:
+    except AttributeError as error:
       self.assertEqual( str( error ), "_name or name is already defined as a member" )
 
     # # visited attr
@@ -159,7 +159,7 @@ class EdgeTests( unittest.TestCase ):
       self.assertEqual( getattr( edge, k ), v )
       try:
         setattr( edge, k, "new value" )
-      except AttributeError, error:
+      except AttributeError as error:
         self.assertEqual( str( error ), "can't set attribute" )
 
     # # rw attrs

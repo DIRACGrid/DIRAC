@@ -1,8 +1,10 @@
-===============================
-dirac-wms-job-attributes
-===============================
+.. _dirac-wms-job-attributes:
 
-  Retrieve attributes associated with the given DIRAC job
+========================
+dirac-wms-job-attributes
+========================
+
+Retrieve attributes associated with the given DIRAC job
 
 Usage::
 
@@ -10,7 +12,7 @@ Usage::
 
 Arguments::
 
-  JobID:    DIRAC Job ID 
+  JobID:    DIRAC Job ID
 
 Example::
 
@@ -49,5 +51,3 @@ Example::
    'SystemPriority': '0',
    'UserPriority': '1',
    'VerifiedFlag': 'True'}
-
-

@@ -3,6 +3,7 @@
 
 # pylint: disable=invalid-name
 
+from __future__ import print_function
 import os
 
 from DIRAC import rootPath
@@ -31,8 +32,8 @@ def getDIRAC(diracClass=None):
 
 
 def baseToAllJobs(jName, jobClass=None):
-  print "**********************************************************************************************************"
-  print "\n Submitting job ", jName
+  print("**********************************************************************************************************")
+  print("\n Submitting job ", jName)
 
   J = getJob(jobClass)
   J.setName(jName)
@@ -42,9 +43,9 @@ def baseToAllJobs(jName, jobClass=None):
 
 def endOfAllJobs(J):
   result = getDIRAC().submitJob(J)
-  print "Job submission result:", result
+  print("Job submission result:", result)
   if result['OK']:
-    print "Submitted with job ID:", result['Value']
+    print("Submitted with job ID:", result['Value'])
 
   return result
 
@@ -64,6 +65,76 @@ def helloWorld():
   return endOfAllJobs(J)
 
 
+def helloWorldCERN():
+  """ simple hello world job to CERN
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('LCG.CERN.cern')
+  return endOfAllJobs(J)
+
+
+def helloWorldNCBJ():
+  """ simple hello world job to NCBJ
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('LCG.NCBJ.pl')
+  return endOfAllJobs(J)
+
+
+def helloWorldGRIDKA():
+  """ simple hello world job to GRIDKA
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('LCG.GRIDKA.de')
+  return endOfAllJobs(J)
+
+
+def helloWorldGRIF():
+  """ simple hello world job to GRIF
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('LCG.GRIF.fr')
+  return endOfAllJobs(J)
+
+
+def helloWorldSSHBatch():
+  """ simple hello world job to DIRAC.Jenkins_SSHBatch.ch
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('DIRAC.Jenkins_SSHBatch.ch')
+  return endOfAllJobs(J)
+
+
 def mpJob():
   """ simple hello world job, with 4Processors and MultiProcessor tags
   """
@@ -76,6 +147,36 @@ def mpJob():
 
   J.setExecutable('mpTest.py')
   J.setTag(['4Processors', 'MultiProcessor'])
+  return endOfAllJobs(J)
+
+
+def mp3Job():
+  """ simple hello world job, with 2 to 4 processors
+  """
+
+  J = baseToAllJobs('min2max4Job')
+  try:
+    J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('mpTest.py', os.environ['WORKSPACE'], 'DIRAC/tests/Utilities')[0]])
+
+  J.setExecutable('mpTest.py')
+  J.setNumberOfProcessors(numberOfProcessors=3)
+  return endOfAllJobs(J)
+
+
+def min2max4Job():
+  """ simple hello world job, with 2 to 4 processors
+  """
+
+  J = baseToAllJobs('min2max4Job')
+  try:
+    J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('mpTest.py', os.environ['WORKSPACE'], 'DIRAC/tests/Utilities')[0]])
+
+  J.setExecutable('mpTest.py')
+  J.setNumberOfProcessors(minNumberOfProcessors=2, maxNumberOfProcessors=4)
   return endOfAllJobs(J)
 
 

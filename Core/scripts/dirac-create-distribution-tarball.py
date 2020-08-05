@@ -11,7 +11,7 @@ import sys
 import os
 import shutil
 import tempfile
-import subprocess
+import subprocess32 as subprocess
 import shlex
 
 from DIRAC.Core.Utilities.File import mkDir
@@ -290,7 +290,8 @@ class TarModuleCreator(object):
             foundKeyWord = fileContents.find(keyWord)
             if foundKeyWord > -1:
               po2 = subprocess.Popen("git log -n 1 %s '%s' 2>/dev/null" % (cmdArgs, fileName),
-                                     stdout=subprocess.PIPE, cwd=dirToDo, shell=True)
+                                     stdout=subprocess.PIPE, cwd=dirToDo, shell=True,
+                                     universal_newlines=True)
               po2.wait()
               if po2.returncode:
                 continue
@@ -530,11 +531,6 @@ class TarModuleCreator(object):
           fd.write(parts['whole'])
       except Exception as excp:
         return S_ERROR("Could not write %s: %s" % (htmlFileName, repr(excp).replace(',)', ')')))
-      # To pdf
-      pdfCmd = "rst2pdf '%s' -o '%s.pdf'" % (relNotesRST, baseFileName)
-      gLogger.verbose("Executing %s" % pdfCmd)
-      if os.system(pdfCmd):
-        gLogger.warn("Could not generate PDF version of %s" % baseNotesPath)
     # Unlink if not necessary
     if False and not cliParams.relNotes:
       try:

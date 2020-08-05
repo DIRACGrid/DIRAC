@@ -2,6 +2,7 @@
     Condor ClassAd library.
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 
@@ -28,7 +29,7 @@ class ClassAd(object):
     result = {}
 
     if temp[0] != '[' or temp[-1] != ']':
-      print "Invalid JDL: it should start with [ and end with ]"
+      print("Invalid JDL: it should start with [ and end with ]")
       return result
 
     # Parse the jdl string now
@@ -293,15 +294,11 @@ class ClassAd(object):
   def getAttributeBool(self, name):
     """ Get Boolean type attribute value
     """
-    if self.lookupAttribute(name):
-      value = self.get_expression(name).replace('"', '')
-    else:
+    if not self.lookupAttribute(name):
       return False
-    if value.lower() == "true":
-      return True
-    elif value.lower() == "false":
-      return False
-    return False
+
+    value = self.get_expression(name).replace('"', '')
+    return value.lower() == "true"
 
   def getAttributeFloat(self, name):
     """ Get Float type attribute value
@@ -316,6 +313,7 @@ class ClassAd(object):
 
   def getAttributes(self):
     """ Get the list of all the attribute names
+
     :return: list of names as strings
     """
     return self.contents.keys()

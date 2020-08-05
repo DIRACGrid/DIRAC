@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 
 from DIRAC.tests.Utilities.utils import cleanTestDir
@@ -31,5 +32,5 @@ class FailingUserJobTestCase( IntegrationTest ):
                           '/lhcb/testCfg/testVer/SIM/00012345/0006/00012345_00067890_1.sim'],
                         force = True )
     if not res['OK']:
-      print "Could not remove files", res['Message']
+      print("Could not remove files", res['Message'])
       exit( 1 )

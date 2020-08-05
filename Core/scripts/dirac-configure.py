@@ -466,23 +466,22 @@ if not os.path.exists(outputFile):
   update = True
   DIRAC.gConfig.dumpLocalCFGToFile(outputFile)
 
-# We need user proxy or server certificate to continue
-if not useServerCert:
-  Script.enableCS()
-  result = getProxyInfo()
-  if not result['OK']:
-    DIRAC.gLogger.notice('Configuration is not completed because no user proxy is available')
-    DIRAC.gLogger.notice('Create one using dirac-proxy-init and execute again with -F option')
-    sys.exit(1)
-else:
-  Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-  # When using Server Certs CA's will be checked, the flag only disables initial download
-  # this will be replaced by the use of SkipCADownload
-  Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-  Script.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
-  Script.enableCS()
-
 if includeAllServers:
+  # We need user proxy or server certificate to continue in order to get all the CS URLs
+  if not useServerCert:
+    Script.enableCS()
+    result = getProxyInfo()
+    if not result['OK']:
+      DIRAC.gLogger.notice('Configuration is not completed because no user proxy is available')
+      DIRAC.gLogger.notice('Create one using dirac-proxy-init and execute again with -F option')
+      sys.exit(1)
+  else:
+    Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+    # When using Server Certs CA's will be checked, the flag only disables initial download
+    # this will be replaced by the use of SkipCADownload
+    Script.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
+    Script.enableCS()
+
   DIRAC.gConfig.setOptionValue('/DIRAC/Configuration/Servers', ','.join(DIRAC.gConfig.getServersList()))
   DIRAC.gLogger.verbose('/DIRAC/Configuration/Servers =', ','.join(DIRAC.gConfig.getServersList()))
 
@@ -513,38 +512,36 @@ error = ''
 vomsDict = result['Value']
 for vo in vomsDict:
   voName = vomsDict[vo]['VOMSName']
-  vomsDirHosts = vomsDict[vo]['Servers'].keys()
   vomsDirPath = os.path.join(DIRAC.rootPath, 'etc', 'grid-security', 'vomsdir', voName)
   vomsesDirPath = os.path.join(DIRAC.rootPath, 'etc', 'grid-security', 'vomses')
   for path in (vomsDirPath, vomsesDirPath):
     mkDir(path)
   vomsesLines = []
-  for vomsHost in vomsDirHosts:
+  for vomsHost in vomsDict[vo].get('Servers', {}):
     hostFilePath = os.path.join(vomsDirPath, "%s.lsc" % vomsHost)
-    if "Servers" in vomsDict[vo]:
-      try:
-        DN = vomsDict[vo]['Servers'][vomsHost]['DN']
-        CA = vomsDict[vo]['Servers'][vomsHost]['CA']
-        port = vomsDict[vo]['Servers'][vomsHost]['Port']
-        if not DN or not CA or not port:
-          DIRAC.gLogger.error('DN = %s' % DN)
-          DIRAC.gLogger.error('CA = %s' % CA)
-          DIRAC.gLogger.error('Port = %s' % port)
-          DIRAC.gLogger.error('Missing Parameter for %s' % vomsHost)
-          continue
-        with open(hostFilePath, "wb") as fd:
-          fd.write("%s\n%s\n" % (DN, CA))
-        vomsesLines.append('"%s" "%s" "%s" "%s" "%s" "24"' % (voName, vomsHost, port, DN, voName))
-        DIRAC.gLogger.notice("Created vomsdir file %s" % hostFilePath)
-      except BaseException:
-        DIRAC.gLogger.exception("Could not generate vomsdir file for host", vomsHost)
-        error = "Could not generate vomsdir file for VO %s, host %s" % (voName, vomsHost)
+    try:
+      DN = vomsDict[vo]['Servers'][vomsHost]['DN']
+      CA = vomsDict[vo]['Servers'][vomsHost]['CA']
+      port = vomsDict[vo]['Servers'][vomsHost]['Port']
+      if not DN or not CA or not port:
+        DIRAC.gLogger.error('DN = %s' % DN)
+        DIRAC.gLogger.error('CA = %s' % CA)
+        DIRAC.gLogger.error('Port = %s' % port)
+        DIRAC.gLogger.error('Missing Parameter for %s' % vomsHost)
+        continue
+      with open(hostFilePath, "wb") as fd:
+        fd.write("%s\n%s\n" % (DN, CA))
+      vomsesLines.append('"%s" "%s" "%s" "%s" "%s" "24"' % (voName, vomsHost, port, DN, voName))
+      DIRAC.gLogger.notice("Created vomsdir file %s" % hostFilePath)
+    except Exception:
+      DIRAC.gLogger.exception("Could not generate vomsdir file for host", vomsHost)
+      error = "Could not generate vomsdir file for VO %s, host %s" % (voName, vomsHost)
   try:
     vomsesFilePath = os.path.join(vomsesDirPath, voName)
     with open(vomsesFilePath, "wb") as fd:
       fd.write("%s\n" % "\n".join(vomsesLines))
     DIRAC.gLogger.notice("Created vomses file %s" % vomsesFilePath)
-  except BaseException:
+  except Exception:
     DIRAC.gLogger.exception("Could not generate vomses file")
     error = "Could not generate vomses file for VO %s" % voName
 

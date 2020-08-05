@@ -6,12 +6,15 @@ __RCSID__ = "$Id$"
 import socket
 import os
 import re
+import time
 import commands
 import getpass
 import importlib
 import shutil
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
+
+import psutil
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -22,7 +25,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import Profiler
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
@@ -238,23 +241,6 @@ class SystemAdministratorHandler(RequestHandler):
     """
     return gComponentInstaller.getAvailableDatabases(getCSExtensions())
 
-  types_installMySQL = []
-
-  def export_installMySQL(self, mysqlPassword=None, diracPassword=None):
-    """ Install MySQL database server
-    """
-
-    if mysqlPassword or diracPassword:
-      gComponentInstaller.setMySQLPasswords(mysqlPassword, diracPassword)
-    if gComponentInstaller.mysqlInstalled()['OK']:
-      return S_OK('Already installed')
-
-    result = gComponentInstaller.installMySQL()
-    if not result['OK']:
-      return result
-
-    return S_OK('Successfully installed')
-
   types_installDatabase = [basestring]
 
   def export_installDatabase(self, dbName, mysqlPassword=None):
@@ -307,15 +293,6 @@ class SystemAdministratorHandler(RequestHandler):
 
     if rootPath and not os.path.exists(rootPath):
       return S_ERROR('Path "%s" does not exists' % rootPath)
-    # For LHCb we need to check Oracle client
-    installOracleClient = False
-    oracleFlag = gConfig.getValue('/LocalInstallation/InstallOracleClient', 'unknown')
-    if oracleFlag.lower() in ['yes', 'true', '1']:
-      installOracleClient = True
-    elif oracleFlag.lower() == "unknown":
-      result = systemCall(30, ['python', '-c', 'import cx_Oracle'])
-      if result['OK'] and result['Value'][0] == 0:
-        installOracleClient = True
 
     cmdList = ['dirac-install', '-r', version, '-t', 'server']
     if rootPath:
@@ -367,29 +344,6 @@ class SystemAdministratorHandler(RequestHandler):
       else:
         message = "Failed to update software to %s" % version
       return S_ERROR(message)
-
-    # Check if there is a MySQL installation and fix the server scripts if necessary
-    if os.path.exists(gComponentInstaller.mysqlDir):
-      startupScript = os.path.join(gComponentInstaller.instancePath,
-                                   'mysql', 'share', 'mysql', 'mysql.server')
-      if not os.path.exists(startupScript):
-        startupScript = os.path.join(gComponentInstaller.instancePath, 'pro',
-                                     'mysql', 'share', 'mysql', 'mysql.server')
-      if os.path.exists(startupScript):
-        gComponentInstaller.fixMySQLScripts(startupScript)
-
-    # For LHCb we need to check Oracle client
-    if installOracleClient:
-      result = systemCall(30, 'install_oracle-client.sh')
-      if not result['OK']:
-        return result
-      status = result['Value'][0]
-      if status != 0:
-        # Get error messages
-        error = result['Value'][1].split('\n')
-        error.extend(result['Value'][2].split('\n'))
-        error.append('Failed to install Oracle client module')
-        return S_ERROR('\n'.join(error))
 
     return S_OK()
 
@@ -540,9 +494,7 @@ class SystemAdministratorHandler(RequestHandler):
       result[name] = '%.1f%%/%.1fMB' % (percentage, memory / 1024.)
 
     # Loads
-    with open('/proc/loadavg') as fd:
-      line = fd.read()
-      l1, l5, l15, _d1, _d2 = line.split()
+    l1, l5, l15 = (str(lx) for lx in os.getloadavg())
     result['Load1'] = l1
     result['Load5'] = l5
     result['Load15'] = l15
@@ -626,12 +578,7 @@ class SystemAdministratorHandler(RequestHandler):
       result['CertificateIssuer'] = resultCert['Value']['issuer']
 
     # Host uptime
-    try:
-      with open('/proc/uptime', 'r') as upFile:
-        uptime_seconds = float(upFile.readline().split()[0])
-      result['Uptime'] = str(timedelta(seconds=uptime_seconds))
-    except BaseException:
-      pass
+    result['Uptime'] = str(timedelta(seconds=(time.time() - psutil.boot_time())))
 
     return S_OK(result)
 
@@ -653,6 +600,7 @@ class SystemAdministratorHandler(RequestHandler):
   def export_getUsedPorts(self):
     """
     Retrieve the ports in use by services on this host
+
     :return: Returns a dictionary containing, for each system, which port is being used by which service
     """
     result = gComponentInstaller.getSetupComponents()
@@ -748,7 +696,7 @@ class SystemAdministratorHandler(RequestHandler):
           if pid not in gProfilers:
             gProfilers[pid] = Profiler.Profiler(pid)
           profiler = gProfilers[pid]
-          result = profiler.getAllProcessData()
+          result = profiler.getAllProcessData(withChildren=True)
           if result['OK']:
             log = result['Value']['stats']
             log['host'] = socket.getfqdn()

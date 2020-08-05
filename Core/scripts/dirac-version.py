@@ -6,6 +6,7 @@
 """
     print version of current DIRAC installation
 """
-__RCSID__   = "$Id: dirac-version,v 1.3 2008/03/22 10:39:02 rgracian Exp $"
+from __future__ import print_function
+
 import DIRAC
-print DIRAC.version
+print(DIRAC.version)

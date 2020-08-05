@@ -1,35 +1,18 @@
 #!/usr/bin/env python
 """
-  dirac-rss-query-db
+Script that dumps the DB information for the elements into the standard output.
+If returns information concerning the StatusType and Status attributes.
 
-    Script that dumps the DB information for the elements into the standard output.
-    If returns information concerning the StatusType and Status attributes.
+Usage:
+  dirac-rss-query-db [option] <query> <element> <tableType>
 
-    Usage:
-        dirac-rss-query-db [option] <query> <element> <tableType>
+Arguments:
+  Queries: [select|add|modify|delete]
+  Elements: [site|resource|component|node]
+  TableTypes: [status|log|history]
 
-    Queries:
-        [select|add|modify|delete]
-
-    Elements:
-        [site|resource|component|node]
-
-    TableTypes:
-        [status|log|history]
-
-    Options:
-        --name=               ElementName (it admits a comma-separated list of element names); None by default
-        --statusType=         A valid StatusType argument (it admits a comma-separated list of statusTypes
-                              e.g. ReadAccess, WriteAccess, RemoveAccess ); None by default
-        --status=             A valid Status argument ( Active, Probing, Degraded, Banned, Unknown, Error );
-                              None by default
-        --elementType=        ElementType narrows the search (string, list); None by default
-        --reason=             Decision that triggered the assigned status
-        --lastCheckTime=      Time-stamp setting last time the status & status were checked
-        --tokenOwner=         Owner of the token ( to specify only with select/delete queries )
-
-    Verbosity:
-        -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
+Verbosity:
+  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
 __RCSID__ = '$Id$'
@@ -56,7 +39,7 @@ def registerSwitches():
   switches = (
       ('element=', 'Element family to be Synchronized ( Site, Resource, Node )'),
       ('tableType=', 'A valid table type (Status, Log, History)'),
-      ('name=', 'ElementName; None if default'),
+      ('name=', 'ElementName (comma separated list allowed); None if default'),
       ('statusType=',
        'A valid StatusType argument (it admits a comma-separated list of statusTypes); None if default'),
       ('status=', 'A valid Status argument ( Active, Probing, Degraded, Banned, Unknown, Error ); None if default'),
@@ -274,7 +257,7 @@ def tabularPrint(table):
   records = []
   for row in table:
     record = []
-    for _k, v in row.items():
+    for _k, v in row.iteritems():
       if isinstance(v, datetime.datetime):
         record.append(Time.toString(v))
       elif v is None:

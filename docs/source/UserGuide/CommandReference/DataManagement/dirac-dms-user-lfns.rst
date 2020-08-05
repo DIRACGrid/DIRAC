@@ -1,28 +1,23 @@
-==========================
+.. _dirac-dms-user-lfns:
+
+===================
 dirac-dms-user-lfns
-==========================
+===================
 
 Get the list of all the user files.
 
 Usage::
 
-  dirac-dms-user-lfns [option|cfgfile] ... 
-
- 
+  dirac-dms-user-lfns [option|cfgfile] ...
 
 Options::
 
-  -D:  --Days=           : Match files older than number of days [0] 
-
-  -M:  --Months=         : Match files older than number of months [0] 
-
-  -Y:  --Years=          : Match files older than number of years [0] 
-
-  -w:  --Wildcard=       : Wildcard for matching filenames [*] 
-
-  -b:  --BaseDir=        : Base directory to begin search (default /[vo]/user/[initial]/[username]) 
-
-  -e   --EmptyDirs       : Create a list of empty directories 
+  -D  --Days <value>           : Match files older than number of days [0]
+  -M  --Months <value>         : Match files older than number of months [0]
+  -Y  --Years <value>          : Match files older than number of years [0]
+  -w  --Wildcard <value>       : Wildcard for matching filenames [All]
+  -b  --BaseDir <value>        : Base directory to begin search (default /[vo]/user/[initial]/[username])
+  -e  --EmptyDirs              : Create a list of empty directories
 
 Example::
 
@@ -45,5 +40,3 @@ Example::
   /formation/user/v/vhamar/1/1133: 1 files, 0 sub-directories
   /formation/user/v/vhamar/1/1134: 0 files, 0 sub-directories
   22 matched files have been put in formation-user-v-vhamar.lfns
-
-

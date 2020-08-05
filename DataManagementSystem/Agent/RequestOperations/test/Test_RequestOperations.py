@@ -35,7 +35,7 @@ class MoveReplicaSuccess( ReqOpsTestCase ):
 
     self.File = File()
     self.File.LFN = '/cta/file1'
-    self.File.Size = 2L
+    self.File.Size = 2
     self.File.Checksum = '011300a2'
     self.File.ChecksumType = "adler32"
     self.op.addFile( self.File )
@@ -95,7 +95,7 @@ class MoveReplicaFailure( ReqOpsTestCase ):
 
     self.File = File()
     self.File.LFN = '/cta/file1'
-    self.File.Size = 2L
+    self.File.Size = 2
     self.File.Checksum = '011300a2'
     self.File.ChecksumType = "adler32"
     self.op.addFile( self.File )

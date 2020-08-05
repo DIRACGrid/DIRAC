@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 """
-  dirac-rss-set-status
-
-    Script that facilitates the modification of a element through the command line.
-    However, the usage of this script will set the element token to the command
-    issuer with a duration of 1 day.
-
+Script that facilitates the modification of a element through the command line.
+However, the usage of this script will set the element token to the command
+issuer with a duration of 1 day.
 """
 
 __RCSID__ = '$Id$'
@@ -46,13 +43,8 @@ def registerUsageMessage():
   '''
     Takes the script __doc__ and adds the DIRAC version to it
   '''
-
-  hLine = '  ' + '=' * 78 + '\n'
-
-  usageMessage = hLine
-  usageMessage += '  DIRAC %s\n' % version
+  usageMessage = '  DIRAC %s\n' % version
   usageMessage += __doc__
-  usageMessage += '\n' + hLine
 
   Script.setUsageMessage(usageMessage)
 

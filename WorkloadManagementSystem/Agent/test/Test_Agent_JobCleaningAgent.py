@@ -2,6 +2,7 @@
 """
 
 # imports
+from __future__ import absolute_import
 import pytest
 from mock import MagicMock
 
@@ -86,14 +87,14 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
     "inputs, params, expected", [
         ([], {'OK': True, 'Value': {}}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
         (['a', 'b'], {'OK': True, 'Value': {}}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
-        ([], {'OK': True, 'Value': {1L: {'OutputSandboxLFN': '/some/lfn/1.txt'}}},
-            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1L: '/some/lfn/1.txt'}}}),
-        ([], {'OK': True, 'Value': {1L: {'OutputSandboxLFN': '/some/lfn/1.txt'},
-                                    2L: {'OutputSandboxLFN': '/some/other/lfn/2.txt'}}},
-            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1L: '/some/lfn/1.txt',
-                                                                2L: '/some/other/lfn/2.txt'}}}),
-        (['a', 'b'], {'OK': True, 'Value': {1L: {'OutputSandboxLFN': '/some/lfn/1.txt'}}},
-            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1L: '/some/lfn/1.txt'}}}),
+        ([], {'OK': True, 'Value': {1: {'OutputSandboxLFN': '/some/lfn/1.txt'}}},
+            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1: '/some/lfn/1.txt'}}}),
+        ([], {'OK': True, 'Value': {1: {'OutputSandboxLFN': '/some/lfn/1.txt'},
+                                    2: {'OutputSandboxLFN': '/some/other/lfn/2.txt'}}},
+            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1: '/some/lfn/1.txt',
+                                                                2: '/some/other/lfn/2.txt'}}}),
+        (['a', 'b'], {'OK': True, 'Value': {1: {'OutputSandboxLFN': '/some/lfn/1.txt'}}},
+            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1: '/some/lfn/1.txt'}}}),
         (['a', 'b'], {'OK': False}, {'OK': False}),
     ])
 def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):

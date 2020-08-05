@@ -7,6 +7,7 @@
 """
   Lists the users in the Configuration. If no group is specified return all users.
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -37,21 +38,21 @@ def printUsersInGroup( group = False ):
   result = diracAdmin.csListUsers( group )
   if result[ 'OK' ]:
     if group:
-      print "Users in group %s:" % group
+      print("Users in group %s:" % group)
     else:
-      print "All users registered:"
+      print("All users registered:")
     for username in result[ 'Value' ]:
-      print " %s" % username
+      print(" %s" % username)
 
 def describeUsersInGroup( group = False ):
   result = diracAdmin.csListUsers( group )
   if result[ 'OK' ]:
     if group:
-      print "Users in group %s:" % group
+      print("Users in group %s:" % group)
     else:
-      print "All users registered:"
+      print("All users registered:")
     result = diracAdmin.csDescribeUsers( result[ 'Value' ] )
-    print diracAdmin.pPrint.pformat( result[ 'Value' ] )
+    print(diracAdmin.pPrint.pformat(result['Value']))
 
 for group in args:
   if 'all' in args:
@@ -62,6 +63,6 @@ for group in args:
     describeUsersInGroup( group )
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit( exitCode )

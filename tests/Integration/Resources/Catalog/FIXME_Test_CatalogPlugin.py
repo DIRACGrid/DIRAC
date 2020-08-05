@@ -3,6 +3,7 @@
 # FIXME: it has to be seen if this is any useful
 # FIXME: to bring back to life
 
+from __future__ import print_function
 from DIRAC.Core.Base.Script                             import parseCommandLine
 parseCommandLine()
 from DIRAC.Resources.Catalog.FileCatalog                import FileCatalog
@@ -12,7 +13,7 @@ from types                                              import *
 import unittest,time,os,shutil,sys
 
 if len(sys.argv) < 2:
-  print 'Usage: TestCatalogPlugIn.py CatalogClient'
+  print('Usage: TestCatalogPlugIn.py CatalogClient')
   sys.exit()
 else:
   catalogClientToTest = sys.argv[1]

@@ -1,19 +1,19 @@
 """ Base class for all services
 """
 
+__RCSID__ = "$Id$"
+
 import os
-import types
 import time
+import psutil
 
 import DIRAC
 
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities import Time
-
-__RCSID__ = "$Id$"
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
 def getServiceOption(serviceInfo, optionName, defaultValue):
@@ -114,7 +114,7 @@ class RequestHandler(object):
                         of action to execute. The second position is the action itself.
     """
     actionTuple = proposalTuple[1]
-    gLogger.debug("Executing %s:%s action" % actionTuple)
+    gLogger.debug("Executing %s:%s action" % tuple(actionTuple))
     startTime = time.time()
     actionType = actionTuple[0]
     self.serviceInfoDict['actionTuple'] = actionTuple
@@ -127,7 +127,7 @@ class RequestHandler(object):
         retVal = self.__doConnection(actionTuple[1])
       else:
         return S_ERROR("Unknown action %s" % actionType)
-    except RequestHandler.ConnectionError, excp:
+    except RequestHandler.ConnectionError as excp:
       gLogger.error("ConnectionError", str(excp))
       return S_ERROR(excp)
     if not isReturnStructure(retVal):
@@ -137,7 +137,6 @@ class RequestHandler(object):
     self.__logRemoteQueryResponse(retVal, time.time() - startTime)
     result = self.__trPool.send(self.__trid, retVal)  # this will delete the value from the S_OK(value)
     del retVal
-    retVal = None
     return result
 
 #####
@@ -193,7 +192,6 @@ class RequestHandler(object):
           gLogger.error("You haven't finished receiving/sending the file", str(fileInfo))
           return S_ERROR("Incomplete transfer")
         del fileHelper
-        fileHelper = None
         return uRetVal
       finally:
         self.__lockManager.unlock("FileTransfer/%s" % sDirection)
@@ -253,7 +251,7 @@ class RequestHandler(object):
     try:
       # Get the method we are trying to call
       oMethod = getattr(self, realMethod)
-    except:
+    except BaseException:
       return S_ERROR("Unknown method %s" % method)
     # Check if the client sends correct arguments
     dRetVal = self.__checkExpectedArgumentTypes(method, args)
@@ -261,9 +259,20 @@ class RequestHandler(object):
       return dRetVal
     # Lock the method with Semaphore to avoid too many calls at the same time
     self.__lockManager.lock("RPC/%s" % method)
-    self.__msgBroker.addTransportId(self.__trid,
-                                    self.serviceInfoDict['serviceName'],
-                                    idleRead=True)
+    # 18.02.19 WARNING CHRIS
+    # The line bellow adds the current transportID to the message broker
+    # First of all, I do not see why it is doing so.
+    # Second, this affects only one every other socket, since the
+    # message broker selects on that one, and in the meantime, many sockets
+    # are added and removed, without even being seen by the message broker.
+    # Finally, there seem to be a double read on the socket: from the message broker
+    # and from the ServiceReactor, resulting in conflict.
+    # This is warned in the man page of "select".
+    # it has been exhibited when testing M2Crypto.
+    # I will comment it out, and try to put it in a separate commit when merging
+    # self.__msgBroker.addTransportId(self.__trid,
+    #                                 self.serviceInfoDict['serviceName'],
+    #                                 idleRead=True)
     try:
       try:
         # Trying to execute the method
@@ -272,7 +281,9 @@ class RequestHandler(object):
       finally:
         # Unlock method
         self.__lockManager.unlock("RPC/%s" % method)
-        self.__msgBroker.removeTransport(self.__trid, closeTransport=False)
+        # 18.02.19 WARNING CHRIS
+        # See comment above
+        # self.__msgBroker.removeTransport(self.__trid, closeTransport=False)
     except Exception as e:
       gLogger.exception("Uncaught exception when serving RPC", "Function %s" % method, lException=e)
       return S_ERROR("Server error while serving %s: %s" % (method, str(e)))
@@ -290,7 +301,7 @@ class RequestHandler(object):
     sListName = "types_%s" % method
     try:
       oTypesList = getattr(self, sListName)
-    except:
+    except BaseException:
       gLogger.error("There's no types info for method", "export_%s" % method)
       return S_ERROR("Handler error for server %s while processing method %s" % (self.serviceInfoDict['serviceName'],
                                                                                  method))
@@ -314,7 +325,7 @@ class RequestHandler(object):
           return S_ERROR(sError)
       if len(args) < len(oTypesList):
         return S_ERROR("Function %s expects at least %s arguments" % (method, len(oTypesList)))
-    except Exception, v:
+    except Exception as v:
       sError = "Error in parameter check: %s" % str(v)
       gLogger.exception(sError)
       return S_ERROR(sError)
@@ -326,7 +337,7 @@ class RequestHandler(object):
 #
 ####
 
-  __connectionCallbackTypes = {'new': [types.StringTypes, types.DictType],
+  __connectionCallbackTypes = {'new': [basestring, dict],
                                'connected': [],
                                'drop': []}
 
@@ -361,7 +372,7 @@ class RequestHandler(object):
     gLogger.debug("Callback to %s" % realMethod)
     try:
       oMethod = getattr(self, realMethod)
-    except:
+    except BaseException:
       # No callback defined by handler
       return S_OK()
     try:
@@ -383,7 +394,7 @@ class RequestHandler(object):
     startTime = time.time()
     try:
       oMethod = getattr(self, methodName)
-    except:
+    except BaseException:
       return S_ERROR("Handler function for message %s does not exist!" % msgName)
     self.__lockManager.lock(methodName)
     try:
@@ -462,23 +473,13 @@ class RequestHandler(object):
     dInfo['version'] = DIRAC.version
     dInfo['time'] = Time.dateTime()
     # Uptime
-    try:
-      with open("/proc/uptime") as oFD:
-        iUptime = long(float(oFD.readline().split()[0].strip()))
-      dInfo['host uptime'] = iUptime
-    except:
-      pass
+    dInfo['host uptime'] = int(time.time() - psutil.boot_time())
     startTime = self.serviceInfoDict['serviceStartTime']
     dInfo['service start time'] = self.serviceInfoDict['serviceStartTime']
     serviceUptime = Time.dateTime() - startTime
     dInfo['service uptime'] = serviceUptime.days * 3600 + serviceUptime.seconds
     # Load average
-    try:
-      with open("/proc/loadavg") as oFD:
-        sLine = oFD.readline()
-      dInfo['load'] = " ".join(sLine.split()[:3])
-    except:
-      pass
+    dInfo['load'] = " ".join([str(lx) for lx in os.getloadavg()])
     dInfo['name'] = self.serviceInfoDict['serviceName']
     stTimes = os.times()
     dInfo['cpu times'] = {'user time': stTimes[0],

@@ -2,28 +2,29 @@
 
 This module module is used to generate the CAs and CRLs (revoked certificates)
 
-Example:
+Example::
 
-from DIRAC.Core.Security import Utilities
+  from DIRAC.Core.Security import Utilities
 
-retVal = Utilities.generateRevokedCertsFile()
-if retVal['OK']:
-  cl = Elasticsearch( self.__url,
-                      timeout = self.__timeout,
-                      use_ssl = True,
-                      verify_certs = True,
-                      ca_certs = retVal['Value'] )
+  retVal = Utilities.generateRevokedCertsFile()
+  if retVal['OK']:
+    cl = Elasticsearch( self.__url,
+                        timeout = self.__timeout,
+                        use_ssl = True,
+                        verify_certs = True,
+                        ca_certs = retVal['Value'] )
 
-or
-retVal = Utilities.generateCAFile('/WebApp/HTTPS/Cert')
-if retVal['OK']:
-  sslops = dict( certfile = CertificateMgmt.getCert(/WebApp/HTTPS/Cert),
-                 keyfile = CertificateMgmt.getCert(/WebApp/HTTPS/Key),
-                 cert_reqs = ssl.CERT_OPTIONAL,
-                 ca_certs = retVal['Value'],
-                 ssl_version = ssl.PROTOCOL_TLSv1 )
+or::
 
-srv = tornado.httpserver.HTTPServer( self.__app, ssl_options = sslops, xheaders = True )
+  retVal = Utilities.generateCAFile('/WebApp/HTTPS/Cert')
+  if retVal['OK']:
+    sslops = dict( certfile = CertificateMgmt.getCert(/WebApp/HTTPS/Cert),
+                   keyfile = CertificateMgmt.getCert(/WebApp/HTTPS/Key),
+                   cert_reqs = ssl.CERT_OPTIONAL,
+                   ca_certs = retVal['Value'],
+                   ssl_version = ssl.PROTOCOL_TLSv1 )
+
+  srv = tornado.httpserver.HTTPServer( self.__app, ssl_options = sslops, xheaders = True )
 
 Note: If you wan to make sure that the CA is up to date, better to use the BundleDeliveryClient.
 
@@ -31,7 +32,8 @@ Note: If you wan to make sure that the CA is up to date, better to use the Bundl
 import os
 import tempfile
 
-from DIRAC.Core.Security import Locations, X509Chain, X509CRL
+from DIRAC.Core.Security import X509Chain, X509CRL
+from DIRAC.Core.Security import Locations
 from DIRAC import gLogger, S_OK, S_ERROR
 
 
@@ -41,7 +43,7 @@ def generateCAFile(location=None):
   Generate a single CA file with all the PEMs
 
   :param str location: we can specify a specific location in CS
-  :return file cas.pem which contains all certificates
+  :return: file cas.pem which contains all certificates
 
   """
   caDir = Locations.getCAsLocation()
@@ -56,10 +58,11 @@ def generateCAFile(location=None):
       with open(fn, "w") as fd:
         for caFile in os.listdir(caDir):
           caFile = os.path.join(caDir, caFile)
-          result = X509Chain.X509Chain.instanceFromFile(caFile)
+          chain = X509Chain.X509Chain()
+          result = chain.loadChainFromFile(caFile)
           if not result['OK']:
             continue
-          chain = result['Value']
+
           expired = chain.hasExpired()
           if not expired['OK'] or expired['Value']:
             continue
@@ -79,7 +82,7 @@ def generateRevokedCertsFile(location=None):
   Generate a single CA file with all the PEMs
 
   :param str location: we can specify a specific location in CS
-  :return file crls.pem which contains all revoked certificates
+  :return: file crls.pem which contains all revoked certificates
 
   """
   caDir = Locations.getCAsLocation()

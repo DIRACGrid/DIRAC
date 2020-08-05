@@ -7,6 +7,7 @@
   Report info about local DIRAC installation
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
@@ -60,22 +61,10 @@ if gConfig.getValue('/DIRAC/Security/SkipCAChecks', False):
 else:
   records.append(('Skip CA Checks', 'No'))
 
-try:
-  import gfalthr  # pylint: disable=import-error
-  records.append(('gfal version', gfalthr.gfal_version()))
-except BaseException:
-  pass
-
-try:
-  import lcg_util  # pylint: disable=import-error
-  records.append(('lcg_util version', lcg_util.lcg_util_version()))
-except BaseException:
-  pass
-
 records.append(('DIRAC version', DIRAC.version))
 
 fields = ['Option', 'Value']
 
-print
+print()
 printTable(fields, records, numbering=False)
-print
+print()

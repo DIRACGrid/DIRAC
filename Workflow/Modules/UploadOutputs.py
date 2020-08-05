@@ -9,15 +9,16 @@
 from DIRAC import gLogger
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination
 
-class UploadOutputs( ModuleBase ):
+
+class UploadOutputs(ModuleBase):
 
   #############################################################################
 
-  def __init__( self ):
+  def __init__(self):
     """ c'tor
     """
-    self.log = gLogger.getSubLogger( "UploadOutputs" )
-    super( UploadOutputs, self ).__init__( self.log )
+    self.log = gLogger.getSubLogger("UploadOutputs")
+    super(UploadOutputs, self).__init__(self.log)
 
     self.outputDataStep = ''
     self.outputData = None
@@ -28,22 +29,22 @@ class UploadOutputs( ModuleBase ):
 
   #############################################################################
 
-  def _resolveInputVariables( self ):
+  def _resolveInputVariables(self):
     """ The module parameters are resolved here.
     """
-    super( UploadOutputs, self )._resolveInputVariables()
+    super(UploadOutputs, self)._resolveInputVariables()
 
     # this comes from Job().setOutputData(). Typical for user jobs
     if 'OutputData' in self.workflow_commons:
       self.outputData = self.workflow_commons['OutputData']
       if isinstance(self.outputData, basestring):
-        self.outputData = [ i.strip() for i in self.outputData.split( ';' ) ]
+        self.outputData = [i.strip() for i in self.outputData.split(';')]
     # if not present, we use the outputList, which is instead incrementally created based on the single step outputs
     # This is more typical for production jobs, that can have many steps linked one after the other
     elif 'outputList' in self.workflow_commons:
       self.outputList = self.workflow_commons['outputList']
     else:
-      raise GracefulTermination( 'Nothing to upload' )
+      raise GracefulTermination('Nothing to upload')
 
     # in case you want to put a mask on the steps
     # TODO: add it to the DIRAC API
@@ -63,26 +64,25 @@ class UploadOutputs( ModuleBase ):
     if 'OutputPath' in self.workflow_commons:
       self.outputPath = self.workflow_commons['OutputPath']
 
-
-  def _initialize( self ):
+  def _initialize(self):
     """ gets the files to upload, check if to upload
     """
     # lfnsList = self.__getOutputLFNs( self.outputData ) or outputList?
 
     if not self._checkWFAndStepStatus():
-      raise GracefulTermination( 'No output data upload attempted' )
+      raise GracefulTermination('No output data upload attempted')
 
-  def __getOuputLFNs( self, outputList, *args ):
+  def __getOuputLFNs(self, outputList, *args):
     """ This is really VO-specific.
         It should be replaced by each VO. Setting an LFN here just as an idea, and for testing purposes.
     """
     lfnList = []
     for outputFile in outputList:
-      lfnList.append( '/'.join( [str( x ) for x in args] ) + outputFile )
+      lfnList.append('/'.join([str(x) for x in args]) + outputFile)
 
     return lfnList
 
-  def _execute( self ):
+  def _execute(self):
     """ uploads the files
     """
     pass

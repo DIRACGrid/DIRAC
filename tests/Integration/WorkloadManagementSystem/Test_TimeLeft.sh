@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #-------------------------------------------------------------------------------
 
 # Tests that require a $DIRACSCRIPTS pointing to DIRAC deployed scripts location,

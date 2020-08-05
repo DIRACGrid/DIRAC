@@ -1,8 +1,10 @@
-============================
-dirac-wms-job-get-jdl
-============================
+.. _dirac-wms-job-get-jdl:
 
-  Retrieve the current JDL of a DIRAC job
+=====================
+dirac-wms-job-get-jdl
+=====================
+
+Retrieve the current JDL of a DIRAC job
 
 Usage::
 
@@ -10,7 +12,11 @@ Usage::
 
 Arguments::
 
-  JobID:    DIRAC Job ID 
+  JobID:    DIRAC Job ID
+
+Options::
+
+  -O  --Original               : Gets the original JDL
 
 Example::
 
@@ -28,5 +34,3 @@ Example::
    'OwnerGroup': 'eela_user',
    'OwnerName': 'vhamar',
    'Priority': '1'}
-
-

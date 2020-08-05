@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
+# spawns 4 processes (in theory on 4 processors...)
+
+from __future__ import print_function
+
 from multiprocessing import Process, Queue, current_process
 
 
 def do_sum(q, l):
   q.put(sum(l))
   proc_name = current_process().name
-  print proc_name
+  print(proc_name)
 
 
 def main():
@@ -35,7 +39,7 @@ def main():
   p3.join()
   p4.join()
 
-  print r1 + r2 + r3 + r4
+  print(r1 + r2 + r3 + r4)
 
 
 if __name__ == '__main__':

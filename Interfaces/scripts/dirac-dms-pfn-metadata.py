@@ -7,6 +7,7 @@
 """
   Retrieve metadata for a PFN given a valid DIRAC SE
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -24,7 +25,7 @@ if len( args ) < 2:
   Script.showHelp()
 
 if len( args ) > 2:
-  print 'Only one PFN SE pair will be considered'
+  print('Only one PFN SE pair will be considered')
 
 from DIRAC.Interfaces.API.Dirac                       import Dirac
 dirac = Dirac()
@@ -42,7 +43,7 @@ except:
 for pfn in pfns:
   result = dirac.getPhysicalFileMetadata( pfn, seName, printOutput = True )
   if not result['OK']:
-    print 'ERROR: ', result['Message']
+    print('ERROR: ', result['Message'])
     exitCode = 2
 
 DIRAC.exit( exitCode )

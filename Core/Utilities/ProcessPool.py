@@ -131,7 +131,8 @@ except ImportError:
     return {'OK': False, 'Message': mess}
 
 
-LOG = gLogger.getSubLogger(__name__)
+sLog = gLogger.getSubLogger(__name__)
+
 
 class WorkingProcess(multiprocessing.Process):
   """
@@ -343,8 +344,8 @@ class ProcessTask(object):
     """ c'tor
 
     :warning: taskFunction has to be callable: it could be a function, lambda OR a class with
-    __call__ operator defined. But be carefull with interpretation of args and kwargs, as they
-    are passed to different places in above cases:
+      __call__ operator defined. But be carefull with interpretation of args and kwargs, as they
+      are passed to different places in above cases:
 
     1. for functions or lambdas args and kwargs are just treated as function parameters
 
@@ -359,8 +360,8 @@ class ProcessTask(object):
             ...
 
     :warning: depending on :timeOut: value, taskFunction execution can be forcefully terminated
-    using SIGALRM after :timeOut: seconds spent, :timeOut: equal to zero means there is no any
-    time out at all, except those during :ProcessPool: finalization
+      using SIGALRM after :timeOut: seconds spent, :timeOut: equal to zero means there is no any
+      time out at all, except those during :ProcessPool: finalization
 
     :param self: self reference
     :param mixed taskFunction: definition of callable object to be executed in this task
@@ -872,7 +873,7 @@ class ProcessPool(object):
     :param self: self reference
     """
     processed = 0
-    log = LOG.getSubLogger('WorkingProcess')
+    log = sLog.getSubLogger('WorkingProcess')
     while True:
       if (
           not log.debug(
@@ -954,7 +955,7 @@ class ProcessPool(object):
     self.__stopEvent.set()
     # # join idle workers
     start = time.time()
-    log = LOG.getSubLogger("finalize")
+    log = sLog.getSubLogger("finalize")
     nWorkers = 9999999
     while self.__workersDict:
       self.__cleanDeadProcesses()

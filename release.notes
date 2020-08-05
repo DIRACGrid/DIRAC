@@ -1,3 +1,557 @@
+[v7r0p31]
+
+*WorkloadManagement
+FIX: (#4706) Crash getting available memory limits when MJF is not available
+
+[v7r0p30]
+
+*Core
+FIX: (#4698) Glue2: Fix crash in bdii2CSAgent, when ARC CEs do not have an ExecutionEnvironment
+
+*WorkloadManagementSystem
+FIX: (#4701) Ensure JobParameters.getNumberOfProcessors always returns an integer
+
+*RSS
+NEW: (#4691) GOCDB - interpret also downtimes with URLs different from the hostname
+
+*Resources
+CHANGE: (#4666) ARCComputingElement - enable GLUE2 queries on ARC CEs, which is now strongly recommended
+        as GLUE1 publishing is stopped in ARC6.
+
+*docs
+NEW: (#4684) Added documentation for HTCondor/use full proxy length setting.
+
+[v7r0p29]
+
+*Core
+FIX: (#4683) M2Crypto - force bio free and shutdown when closing
+
+*Configuration
+CHANGE: (#4651) Add --cfg option for config files, deprecating old non-option version.
+
+*TransformationSystem
+FIX: (#4680) Bug fixed in updateFilterQueries. The bug was affecting only TS catalog interface.
+
+*Production
+FIX: (#4672) minor fix in ProdValidator
+FIX: (#4672) more detailed output added in dirac-prod-get-trans
+
+*Resources
+FIX: (#4673) hack in Slurm ResourceUsage to stop jobs running out of time on multi-processors resources
+
+[v7r0p28]
+
+*Core
+FIX: (#4642) M2Crypto closes the socket after dereferencing the Connection instance
+
+*DMS
+FIX: (#4644) Cancel FTS3 Operation if the RMS request does not exist
+
+*RMS
+NEW: (#4644) getRequestStatus returns ENOENT if the request does not exist
+
+*TS
+FIX: (#4647) TaskManager - hospital sites were not looked for correctly, which
+      generated an exception
+FIX: (#4656) fix parsing of command line flags (e.g., -ddd) for dirac-transformation-archive/clean/remove-output/verify-outputdata
+
+*Interfaces
+CHANGE: (#4652) dirac-admin-add-host now inserts hosts into the ComponentMonitoring if the host
+        is not yet known
+
+[v7r0p27]
+
+*Framework
+FIX: (#4639) MySQL - commit transaction when creating tables
+
+[v7r0p26]
+
+*Resources
+CHANGE: (#4626) Test_PoolComputingElement - increase delays for job submission
+CHANGE: (#4626) PoolComputingElement - fix the logic of number of processors evaluation
+FIX: (#4634) Add pilot.cfg symlink in SingularityCE for Pilot3 compatibility.
+FIX: (#4620) in getPilotOutput, returns errors when the HTCondor working directory is
+     not available and condor_transfer_data fails
+
+*WMS
+NEW: (#4614) uploadToWebApp flag to disable the json upload for the CSToJson
+FIX: (#4614) Fix an absolute path in the CSToJSON
+NEW: (#4620) pop the pilot reference from the failedPilotOutput dictionary when
+     maxRetryGetPilotOutput is reached
+NEW: (#4619) Watchdog - added DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK env variable
+FIX: (#4619) Watchdog - Split check methods for better control
+
+*Docs:
+CHANGE: (#4614) allow to generate only header/footer in the release notes if no PR were merged
+FIX: (#4635) add missing packages for the UBUNTU Linux Distribution that need to be installed
+     before installing DIRAC
+NEW: (#4635) add useful commands for working with conda environments
+CHANGE: (#4622) diracdoctools - No longer mock numpy and matplotlib
+FIX: (#4619) added doc about DIRACSYSCONFIG environment variable
+
+[v7r0p25]
+
+Fixes from v6r22p29 patch
+
+*Core
+FIX: (#4615) M2SSLTransport does not catch all the exceptions
+FIX: (#4615) M2SSLTransport calls parent class when renewing context
+CHANGE: (#4615) default to split handshake
+NEW: (#4617) Added test for profiler.py
+
+*WMS
+FIX: (#4617) Watchdog - use 2 flags for profiler: withChildren and withTerminatedChildren
+
+[v7r0p24]
+
+*Core
+FIX: (#4584) M2SSLTransport catch exceptions and convert them into S_ERROR
+CHANGE: (#4584) M2SSLTransport: allow to do the SSL handshake in threads
+CHANGE: (#4584) Do not query the Registry when doing the handshake
+
+*WMS
+CHANGE: (#4587) Check LFN InputSandbox separately from InputData
+NEW: (#4593) option to only retry to get pilot outputs a limited number of times
+CHANGE: (#4594) SandboxStoreClient - remove direct access to SandboxMetadataDB by default
+CHANGE: (#4594) JobSanity - instantiate SandboxStoreClient with direct access to SandboxMetadataDB
+FIX: (#4601) JobAgent: check if there are arguments
+
+*Resources
+CHANGE: (#4593) retrieve pilot output paths in getJobOutput using the pilot IDs instead of calling condor
+
+*Interfaces
+Change: (#4594) Dirac - instantiate SandboxStoreClient without smdb=False which is now a default
+
+*docs
+FIX: (#4598) Use also time in addition to date to get list of PRs since last tag
+
+[v7r0p23]
+
+*Core
+FIX: (#4580) The CPU for the jobWrapper process group was incorrectly calculated as
+     it was not including former children of the JobWrapper.
+
+*Framework
+FIX: (#4570) MonitoringCatalog only prints an error when there is really one
+
+*WMS
+NEW: (#4576) add a workDir to PilotCStoJSONSynchronizer
+FIX: (#4591) Fix exception when calling HTCondorCE killJob, used when killing pilots
+     with dirac-admin-kill-pilot for example. Fixes #4590
+
+*DMS
+FIX: (#4591) allow dirac-dms-protocol-matrix be run for non LHCb VOs
+
+*RMS
+CHANGE: (#4573) Add include from ConfigTemplate to CleanReqDBAgent, RequestExecutingAgent, ReqManager
+CHANGE: (#4573) align defaults in ConfigTemplate with those in the Code
+
+*Resources
+FIX: (#4588) HTCondorCE cleanup only the pilots files related to the CE
+
+*Docs:
+NEW: (#4571) the DiracDocTools are now also compatible with python3
+NEW: (#4571) added ".readthedocs.yml" config
+
+[v7r0p22]
+
+*Core:
+CHANGE: (#4554) dirac-install: remove empty lines between options in dirac-install --help
+
+*Configuration
+CHANGE: (#4563) move documentation to ConfigTemplate, Module docstrings
+
+*Accounting
+CHANGE: (#4564) Move documentation about agent and services configuration to module docstrings, ConfigTemplate
+
+*Docs
+CHANGE: (#4554) Small restructuring in the DeveloperGuide: merge sections on testing, add note about generating command references
+NEW: (#4554) DeveloperGuide: add section about DIRACOS and link to diracos.readthedocs.io
+CHANGE: (#4560) allow release notes to be empty in dirac-docs-get-release-notes
+
+*Tests
+FIX: (#4560) DataManager tests check VO dynamically
+
+[v7r0p21]
+
+*Core
+CHANGE: (#4506) remove rst2pdf from dirac-create-distribution-tarball
+
+*Framework
+CHANGE: (#4536) Don't loop forever if a query does not work in the MonitoringCatalog
+
+[v7r0p20]
+
+*Core
+FIX: (#4531) Mail.py - add SMTP parameters
+
+*DMS
+CHANGE: (#4528) FTS3 - failoverTransfer sleep & retries in case of FC unavailability
+
+*Resources
+NEW: (#4529) WLCGAccountingHTTPJson occupancy plugin
+
+*TS
+CHANGE: (#4525) clean the DataFiles table when cleaning a Transformation
+
+[v7r0p19]
+
+*DMS
+CHANGE: (#4505) explicitly delegate the proxy to FTS3 with a configurable lifetime
+NEW: (#4519) S3 storage support
+
+*RSS
+FIX: (#4520) correct verbosity (avoid non-necessary warnings)
+
+*docs
+NEW: (#4520) Minimal documentation on Bdii2CSAgent and GOCDB2CSAgent
+
+[v7r0p18]
+
+*Interfaces
+CHANGE: (#4502) run jobs locally: use $DIRAC for $DIRACROOT
+
+*Docs
+NEW: (#4513) add recommonmark extension to allow use of markdown files in the documenation
+
+[v7r0p17]
+
+*WMS
+FIX: (#4496) PilotCS2Json: fix writing of local pilot.json file, which is used to calculate the hash
+FIX: (#4496) PilotCS2Json: write checksum file in text mode
+
+*DMS
+FIX: (#4476) StorageElementHandler: removed ignoreMaxStorageSize flag from getTotalDiskSpace and getFreeDiskSpace
+
+*Resources
+FIX: (#4499) Slurm Resource Usage
+
+[v7r0p16]
+
+*Core
+CHANGE: (#4482) TimeLeft modules become ResourceUsage and inherit from an abstract module called ResourceUsage
+NEW: (#4482) TimeLeft/SLURMResourceUsage module to get resource usage from a SLURM installation
+CHANGE: (#4482) Move TimeLeft from Core/Utilities to Resources/Computing/BatchSystems
+
+*WMS
+NEW: (#4493) Add checksum calculation for PilotCSToJsonSynchroniser
+NEW: (#4493) Add checksum checks to PilotWrapper
+FIX: (#4493) Fix download checks in PilotWrapper in case the webserver does not return 404 but not the expected file content either.
+
+*Resources
+FIX: (#4482) LocalCE: proxy submission and getJobStatus
+FIX: (#4482) Slurm getJobStatus() making use of sacct
+FIX: (#4466) Stomp reconnection only reconnect the connection that dropped
+
+[v7r0p15]
+
+*Accounting
+NEW: (#4464) StorageOccupancy accounting
+
+*RSS
+NEW: (#4464) FreeDiskSpaceCommand used to fill the StorageOccupancy accounting
+CHANGE: (#4464) FreeDiskSpaceCommand can clean the from not-anymore-existing SEs
+
+*WMS
+CHANGE: (#4471) Optimizer: treat input sandboxes uploaded as LFNs ad Input Data
+
+[v7r0p14]
+
+*Framework
+CHANGE: (#4458) Remove LHCb specific code used to install cx_Oracle
+
+*Core
+CHANGE: (#4460) agents exit with sys.exit(2) in case of errors
+
+*Resources
+CHANGE: (#4460) InProcess CE correctly reports number of processors available
+
+*WMS
+FIX: (#4454) PilotWrapper: try to untar also with system tar
+
+[v7r0p13]
+
+*Core
+FIX: (#4448) SubProcess: rewritten function for getting child PIDs
+
+*ResourceStatusSystem
+NEW: (#4419) Backported GGUSTicketsPolicy from LHCb
+CHANGE: (#4419) removed dangerous script dirac-rss-policy-manager
+
+*tests
+NEW: (#4429) Allow extensions to extend the continuous integration tests
+
+*docs
+NEW: (#4431) dirac-doc-get-release-notes can take a sinceLatestTag option, header and footer messages,
+     and can create github/gitlab release
+
+[v7r0p12]
+
+*WMS
+FIX: (#4432) Better logging for WMS Optimizers
+NEW: (#4435) PilotCS2JSONSynchronizer: added options pilotRepoBranch and pilotVORepoBranch
+
+*DMS
+FIX: (#4436) dirac-dms-clean-directory: also works on single empty directory, fixes #4420
+
+*Framework
+FIX: (#4436) dirac-install-component: fix bug prohibiting use of the -m/--module parameter
+
+*tests
+NEW: (#4429) Allow extensions to extend the continuous integration tests
+NEW: (#4433) added README.rst for every subdirectory
+
+*docs
+FIX: (#4438) update notes for dirac-distribution (add extensions)
+
+[v7r0p11]
+
+*Core
+FIX: (#4411) Make dirac-install tool python 3 compatible
+NEW: (#4409) Allow --dirac-os-version argument to dirac-install.py to be a path or URL to a tarball
+
+[v7r0p10]
+
+*Core
+FIX: (#4394) RequestHandler - fix log output for the case where the ActionTuple is actually a string
+FIX: (#4394) AuthManager - manage the case where ExtraCredentials are in a form of a list
+NEW: (#4379) dirac-install accepts userEnvVariables switch, adds user-requested env variables
+     to *rc* files
+
+*WMS
+FIX: (#4404) Fix the matching delay functionality, fixes #2983
+NEW: (#4403) JobCleaningAgent: Add possibility to remove HeartBeatLoggingInfo before jobs are
+     completely removed.
+FIX: (#4394) SiteDirector - do not add downloading files ti the pilot if Pilot3 flag is False
+FIX: (#4390) Watchdog: get the CPU consumed by children processes too
+FIX: (#4370) SiteDirector: Pilot3 option easier to interpret
+CHANGE: (#4338) getStatus method in ARC CE now uses a JobSupervisor to get status of multiple pilots at once.
+CHANGE: (#4338) SiteDirector.updatePilotStatus has been parallelized using threads.
+NEW: (#4338) AvailableSlotsUpdateCycleFactor is a parameter part of the configuration allowing to control
+     the rate of the update of the available slots in the queues.
+FIX: (#4338) Revert to queueCECache being an object attribute to fix the CEs instantiation.
+
+*RMS
+CHANGE: (#4400) ReqDB: Add pool_recycle=3600 parameter for sql engine setup, might prevent
+        occasional "Mysql Server has gone away" errors
+
+*Resources
+FIX: (#4380) ComputingElement classes: use GridEnv if present
+CHANGE: (#4360) in HTCondor CEs, the pilot stamps are now used to retrieve outputs and logging info
+
+*DMS
+CHANGE: (#4400) FTS3DB: Add pool_recycle=3600 parameter for sql engine setup, might prevent
+        occasional "Mysql Server has gone away" errors
+
+*Docs
+CHANGE: (#4402) dirac-docs-get-release-notes.py does not require a GITLABTOKEN
+
+[v7r0p9]
+
+*Core
+CHANGE: (#4302) Simplify and convert command wrapper scripts to bash. Also removed some obsolete MacOS code.
+FIX: (#4361) restore the possibility to set a global timeout for a Client
+
+*DMS
+CHANGE: (#4353) FTS3 persistOperation method checks that the caller is allowed to do so
+CHANGE: (#4353) FTS3Manager: do not expose updateJobStatus and updateFileStatus on the service
+CHANGE: (#4353) FTS3 operation is canceled if the matching request is canceled
+CHANGE: (#4353) when a source file does not exist, defunct the FTS3File associated
+CHANGE: (#4353) use the JEncode serializer instead of the custom FTS3Serializer
+CHANGE: (#4353) cancel an FTS3Job together with its associated FTS3Files if the job is not found on the server
+
+*RSS
+CHANGE: (#4336) remove a call to shifterProxy configuration which would not work for multi VO Dirac
+
+*docs
+CHANGE: (#4378) using docker images from docker hub
+
+[v7r0p8]
+
+*Configuration
+CHANGE: Let update the config, even if the Pilot info is not in the CS
+
+[v7r0p7]
+
+*Core
+CHANGE: {bash,tchs,diracos}rc set the PYTHONPATH to only dirac (ignore existing PYTHONPATH)
+CHANGE: dirac-configure might work without the need of a proxy
+CHANGE: the timeout of an RPC call is always updated
+
+[v7r0p6]
+
+*Core
+NEW: Add environment.yml file for preparing an environment with conda
+CHANGE: Use subprocess32 if possible for significantly better performance
+FIX: TypeLoader should not be a singleton as it has a cache
+
+*FrameworkSystem
+FIX: Avoid leaking std(in|out|err) file handles when running runsvdir
+
+*WorkloadManagementSystem
+NEW: To activate the pilot logging mechanism the following option must be present in CS: Pilot/PilotLogging with a value set to "true", "yes" or "y".
+
+*Tests
+NEW: CI for unit/lint/integration testing with GitHub actions
+NEW: Start using shell linting of the test scripts
+FIX: Exit quickly if the installation fails to make it easier to find issues
+
+*Docs
+NEW: Document how to run integration tests in docker
+CHANGE: The options in the command reference sections: 'ignore' and 'scripts', are replaced by 'exclude' and 'manual' respectively. The entries in 'exclude' will now reject scripts that are otherwise picked up by the 'patterns'. Entries in 'manual' will be added to the indexFile, but their rst file has to be provided by hand. Fixes #4345
+
+
+[v7r0p5]
+
+FIX: changes from v6r22p15 included
+
+[v7r0p4]
+
+*Core
+FIX: (#4337) remove unexisting import from dirac-info
+
+*WMS
+CHANGE: (#4317) dealing with min and max number of processors from the job
+
+*docs
+CHANGE: (#4317) added WMS admin doc (job state machine)
+
+[v7r0p3]
+
+*Core
+FIX: (#4298) install_site.sh : set UpdatePilotCStoJSONFile=False for initial installations
+
+*WMS
+FIX: (#4294) JobState - restored logic of having database clients at the class level
+
+*TS
+CHANGE: (#4308) Rename Operations option Productions/ProductionFilesMaxResetCounter to Transformations/FilesMaxResetCounter
+
+*Resources, WMS, tests
+CHANGE: (#4295) save the number of processors as jobLimits in pilot cfg
+
+*tests
+CHANGE: (#4291) removed pilot2 tests
+
+*docs
+NEW: (#4309) Added how to create a dedicated dirac file catalog
+
+[v7r0p2]
+
+*Accounting
+FIX: (#4290) Allow longer user and site names.
+
+*WMS
+NEW: (#4287) dirac-wms-get-wn and dirac-wms-pilot-job-info scripts (ported from LHCbDIRAC)
+
+*docs
+CHANGE: (#4266) the AdministratorGuide has been restructured
+
+[v7r0p1]
+
+FIX: Removing some deprecated codes
+
+[v7r0]
+
+FIX: (#3962) use print function instead of print statement
+FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
+FIX: (#3962) convert octal literals to new syntax
+NEW: (#3962) Add pylint test to check python 3 compatibility
+
+*Configuration
+CHANGE: (#4249) The flag UpdatePilotCStoJSONFile has been moved to Operations/[]/Pilot section
+NEW: (#4255) Resources - added getStorageElements() method
+
+*Framework
+CHANGE: (#4180) Removed local MySQL handling (DIRACOS won't have install it)
+CHANGE: (#4180) Removed setup of old portal
+
+*Accounting
+CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
+
+*WorkloadManagementSystem
+NEW: Add JobElasticDB.py with getJobParameters and setJobParameter methods to work with ElasticSearch (ES) backend.
+NEW: Add gJobElasticDB variable and indicates the activation of ES backend.
+CHANGE: Modify export_getJobParameter(s) to report values from ES if available.
+CHANGE: (#3748) Reduced (removed, in fact) interactions of Optimizers with JobParameters, using only OptimizerParameters
+NEW: (#3760) Add Client/JobStateUpdateClient.py
+NEW: (#3760) Add Client/JobManagerClient.py
+CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
+NEW: Added ES backend to WMSAdministratorHandler to get JobParameters.
+NEW: Added separate MySQL table for JobsStatus in JobDB, and modified code accordingly.
+CHANGE: ElasticJobDB.py: Modify setJobParameter method to register JobAttributes like Owner, Proxy, JobGroup etc.
+CHANGE: ElasticJobDB.py: added getJobParametersAndAttributes method to retrieve both parameters and attributes for a given JobID.
+CHANGE: Pilot Watchdog - using python UNIX services for some watchdog calls
+CHANGE: (#3890) JobState always connects to DBs directly
+CHANGE: (#3890) remove JobStateSync service
+CHANGE: (#3873) Watchdog: use Profiler instead of ProcessMonitor
+NEW: (#4163) SiteDirectors send by default Pilot3 (flag for pilot2 is still kept)
+FIX: (#4163) removed unicode_literals (messes up things with DEncode)
+NEW: (#4224) PilotWrapper can get the Pilot files from a list of locations
+CHANGE: (#4224) PilotWrapper is compatible with several python versions
+NEW: (#4260) New dirac-wms-match command to test a given job for matching computing resources
+NEW: (#4260) QueueUtilities - utilities relevant to queues manipulation
+FIX: (#4265) urllib.urlopen() call with and without the 'context' parameter in Utilities/PilotWrapper.py 
+     according to the version of urllib instead of the python version
+CHANGE: (#4244) Modified flag for using the JobParameters on ElasticSearch database
+
+*Core
+NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
+     sent from the setJobParameter function. Uses update_by_query and index ES APIs.
+CHANGE: (#3744) generateFullIndexName() method made static under the ElasticSearchDB class.
+CHANGE: (#3744) removed unused/outdated stuff from Distribution module
+FIX: check for empty /etc/grid-security/certificates dir
+NEW: (#3842) Add createClient decorator to add wrapper for all export_ functions automatically
+NEW: (#3678) dirac-install can install a non released code directly from the git repository
+FIX: (#3931) AuthManager - modified to work with the case of unregistered DN in credDict
+FIX: (#4182) Add CountryName OID and be more permissive in the String type for decoding VOMSExtensions
+FIX: (#4211) change orders of @deprecated and @classmethod decorators in X509Chain
+NEW: (#4229) dirac-install defines XRD_RUNFORKHANDLER environment variable
+
+*TransformationSystem
+NEW: (#4124) InputDataQuery and OutputDataQuery parameters can be set for Transformations before 
+     they are added to the transformation system. Solves #4071
+CHANGE: (#4238) TransformationDB.getTransformationMetaQuery returns ENOENT if no meta query exists
+FIX: (#4238) InputDataAgent: silence warnings about transformations not having a input data query
+
+*ProductionManagement
+NEW: (#3703) ProductionManagement system is introduced
+
+*Interfaces
+CHANGE: (#4163) removed deprecated methods from Dirac.py
+
+*Resources
+FIX: (#4229) add proxy location as a virtual user for xroot urls
+FIX: (#4234) future import in executeBatch script that prevented the pilot deployment on SSH CE, fixes #4233
+FIX: (#4231) SE __executeMethod: only pass protocols parameter to getTransportURL
+NEW: (#4255) New dirac-resource-info command to display computing and storage resources available
+     to a given VO     
+
+*ResourceStatusSystem
+CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
+
+*Monitoring
+FIX: MonitoringReporter - make processRecords() method thread safe, fixes #4193
+
+*tests
+NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
+CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
+NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
+NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
+FIX: (#4177) restored test of JobsMonitor().JobParameters
+NEW: (#4224) added a test for PilotWrapper
+NEW: (#4244) integration test for JobParameters on ElasticSearch database
+
+*Docs
+FIX: Better dirac.cfg example configuration for web
+NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
+NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
+     files into the main dirac.cfg file
+CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
+NEW: (#4170) added Production system documentation
+CHANGE: (#4224) Pilot 3 is the default
+NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
 [v6r22p32]
 
 *Core
@@ -31,7 +585,6 @@ CHANGE: (#4603) Updated to customize the JobType of user jobs in JobDescription 
 CHANGE: (#4618) dirac-dms-remove-catalog-files and dirac-dms-remove-catalog-files use
         Operations/.../DataManagement/AllowUserReplicaManagement to allow users perform
         direct File Catalog operations
-
 
 [v6r22p28]
 
@@ -135,7 +688,7 @@ CHANGE: (#4413) FTS3Agent - change proxy lifetime of FTS3Agent from 2 to 12 hour
 
 *TS
 CHANGE: (#4331) TaskManager - give possibility to run jobs for different problematic productions at
-        different Hospital sites
+        different Hospital sites>>>>>>> rel-v6r22
 
 [v6r22p17]
 
@@ -1125,7 +1678,6 @@ FIX: (#3723) TaskManagerAgentBase - refactor adding operations for transformatio
 
 CHANGE: (#3745) Add the deprecated decorator to native XROOT plugin
 
-
 [v6r20p4]
 
 *DMS
@@ -1226,8 +1778,7 @@ FIX: MJF utility won't throw exceptions when MJF is not fully deployed at a site
 NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
 NEW: add JsonFormatter for logs
 NEW: add default configuration to CS: only TrustedHost can upload file
-CHANGE: ComponentInstaller - remove the old web portal configuration data
-	used during the installation
+CHANGE: ComponentInstaller - remove the old web portal configuration data used during the installation
 CHANGE: MessageQueue log handler uses JsonFormatter
 
 *Monitoring

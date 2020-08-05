@@ -2,8 +2,11 @@
 ########################################################################
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
-###########################################################from DIRAC.Core.Base import Script#############
+########################################################################
+from __future__ import print_function
+
 import sys
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
@@ -28,8 +31,8 @@ Script.parseCommandLine()
 
 result = getProxyInfo()
 if not result['OK']:
-  print "Do you have a valid proxy?"
-  print result['Message']
+  print("Do you have a valid proxy?")
+  print(result['Message'])
   sys.exit(1)
 proxyProps = result['Value']
 
@@ -39,25 +42,25 @@ if not userName:
 if userName in Registry.getAllUsers():
   if Properties.PROXY_MANAGEMENT not in proxyProps['groupProperties']:
     if userName != proxyProps['username'] and userName != proxyProps['issuer']:
-      print "You can only query info about yourself!"
+      print("You can only query info about yourself!")
       sys.exit(1)
   result = Registry.getDNForUsername(userName)
   if not result['OK']:
-    print "Oops %s" % result['Message']
+    print("Oops %s" % result['Message'])
   dnList = result['Value']
   if not dnList:
-    print "User %s has no DN defined!" % userName
+    print("User %s has no DN defined!" % userName)
     sys.exit(1)
   userDNs = dnList
 else:
   userDNs = [userName]
 
 
-print "Checking for DNs %s" % " | ".join(userDNs)
+print("Checking for DNs %s" % " | ".join(userDNs))
 pmc = ProxyManagerClient()
 result = pmc.getDBContents({'UserDN': userDNs})
 if not result['OK']:
-  print "Could not retrieve the proxy list: %s" % result['Value']
+  print("Could not retrieve the proxy list: %s" % result['Message'])
   sys.exit(1)
 
 data = result['Value']
@@ -84,4 +87,4 @@ for row in data['Records']:
   lines.append(nL)
   lines.append("-" * tL)
 
-print "\n".join(lines)
+print("\n".join(lines))

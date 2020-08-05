@@ -1,6 +1,8 @@
-============================
+.. _admin_dirac-admin-add-group:
+
+=====================
 dirac-admin-add-group
-============================
+=====================
 
 Add or Modify a Group info in DIRAC
 
@@ -10,15 +12,13 @@ Usage::
 
 Arguments::
 
-  Property=<Value>: Other properties to be added to the User like (VOMSRole=XXXX) 
-
- 
+  Property=<Value>: Other properties to be added to the User like (VOMSRole=XXXX)
 
 Options::
 
-  -G:  --GroupName:      : Name of the Group (Mandatory) 
-  -U:  --UserName:       : Short Name of user to be added to the Group (Allow Multiple instances or None) 
-  -P:  --Property:       : Property to be added to the Group (Allow Multiple instances or None) 
+  -G  --GroupName <value>      : Name of the Group (Mandatory)
+  -U  --UserName <value>       : Short Name of user to be added to the Group (Allow Multiple instances or None)
+  -P  --Property <value>       : Property to be added to the Group (Allow Multiple instances or None)
 
 Example::
 

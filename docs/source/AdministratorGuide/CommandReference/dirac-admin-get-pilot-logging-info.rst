@@ -1,8 +1,10 @@
-=========================================
-dirac-admin-get-pilot-logging-info
-=========================================
+.. _admin_dirac-admin-get-pilot-logging-info:
 
-  Retrieve logging info of a Grid pilot
+==================================
+dirac-admin-get-pilot-logging-info
+==================================
+
+Retrieve logging info of a Grid pilot
 
 Usage::
 
@@ -10,7 +12,7 @@ Usage::
 
 Arguments::
 
-  PilotID:  Grid ID of the pilot 
+  PilotID:  Grid ID of the pilot
 
 Example::
 
@@ -34,5 +36,3 @@ Example::
   - Priority                   =    asynchronous
   - Seqcode                    =    UI=000000:NS=0000000001:WM=000000:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000
   - Source                     =    NetworkServer
-
-

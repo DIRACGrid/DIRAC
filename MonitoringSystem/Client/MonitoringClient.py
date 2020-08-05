@@ -84,14 +84,15 @@ class MonitoringClient(object):
   def getReport(self, typeName, reportName, startTime, endTime, condDict, grouping, extraArgs=None):
     """
     It is used to get the raw data used to create a plot.
-    :param str typeName the type of the monitoring
-    :param str reportName the name of the plotter used to create the plot for example:  NumberOfJobs
-    :param int startTime epoch time, start time of the plot
-    :param int endTime epoch time, end time of the plot
-    :param dict condDict is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
-    :param str grouping is the grouping of the data for example: 'Site'
-    :paran dict extraArgs epoch time which can be last day, last week, last month
-    :rerturn S_OK or S_ERROR
+
+    :param str typeName: the type of the monitoring
+    :param str reportName: the name of the plotter used to create the plot for example:  NumberOfJobs
+    :param int startTime: epoch time, start time of the plot
+    :param int endTime: epoch time, end time of the plot
+    :param dict condDict: is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
+    :param str grouping: is the grouping of the data for example: 'Site'
+    :param dict extraArgs: epoch time which can be last day, last week, last month
+    :rerturn: S_OK or S_ERROR
     """
     rpcClient = self.__getServer()
     if not isinstance(extraArgs, dict):

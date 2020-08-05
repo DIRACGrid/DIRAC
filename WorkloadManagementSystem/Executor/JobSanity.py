@@ -32,7 +32,7 @@ class JobSanity(OptimizerExecutor):
   def initializeOptimizer(cls):
     """Initialize specific parameters for JobSanityAgent.
     """
-    cls.sandboxClient = SandboxStoreClient(useCertificates=True)
+    cls.sandboxClient = SandboxStoreClient(useCertificates=True, smdb=True)
     return S_OK()
 
   def optimizeJob(self, jid, jobState):
@@ -44,11 +44,13 @@ class JobSanity(OptimizerExecutor):
     # Job JDL check
     result = jobState.getAttribute('JobType')
     if not result['OK']:
+      self.jobLog.error("Failed to get job type attribute", result['Message'])
       return result
     jobType = result['Value'].lower()
 
     result = jobState.getManifest()
     if not result['OK']:
+      self.jobLog.error("Failed to get job manifest", result['Message'])
       return result
     manifest = result['Value']
 
@@ -59,6 +61,7 @@ class JobSanity(OptimizerExecutor):
         return S_ERROR("No VirtualOrganization defined in manifest")
       result = self.checkInputData(jobState, jobType, voName)
       if not result['OK']:
+        self.jobLog.error("Failed to check input data", result['Message'])
         return result
       self.jobLog.info("Found LFNs", result['Value'])
 
@@ -66,6 +69,7 @@ class JobSanity(OptimizerExecutor):
     if self.ex_getOption('InputSandboxCheck', True):
       result = self.checkInputSandbox(jobState, manifest)
       if not result['OK']:
+        self.jobLog.error("Failed to check input sandbox", result['Message'])
         return result
       self.jobLog.info("Assigned ISBs", result['Value'])
 
@@ -111,6 +115,7 @@ class JobSanity(OptimizerExecutor):
     """
     result = jobState.getAttributes(['Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'])
     if not result['OK']:
+      self.jobLog.error("Failed to get job attributes", result['Message'])
       return result
     attDict = result['Value']
     ownerName = attDict['Owner']
@@ -120,6 +125,7 @@ class JobSanity(OptimizerExecutor):
         return S_ERROR("Missing OwnerDN")
       result = Registry.getUsernameForDN(ownerDN)
       if not result['OK']:
+        self.jobLog.error("Failed to get user name from DN", result['Message'])
         return result
       ownerName = result['Value']
     ownerGroup = attDict['OwnerGroup']

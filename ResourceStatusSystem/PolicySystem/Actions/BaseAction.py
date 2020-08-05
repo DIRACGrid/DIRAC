@@ -49,3 +49,4 @@ class BaseAction(object):
     '''
 
     self.log.warn('%s: you may want to overwrite this method' % self.actionName)
+

@@ -2,6 +2,7 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC           import exit as DIRACExit
@@ -37,11 +38,17 @@ else:
 
 res = DataManager().getReplicaMetadata( lfns, storageElement )
 if not res['OK']:
-  print 'Error:', res['Message']
+  print('Error:', res['Message'])
   DIRACExit( 1 )
 
-print '%s %s %s %s' % ( 'File'.ljust( 100 ), 'Migrated'.ljust( 8 ), 'Cached'.ljust( 8 ), 'Size (bytes)'.ljust( 10 ) )
+print('%s %s %s %s' % ('File'.ljust(100), 'Migrated'.ljust(8), 'Cached'.ljust(8), 'Size (bytes)'.ljust(10)))
 for lfn, metadata in res['Value']['Successful'].items():
-  print '%s %s %s %s' % ( lfn.ljust( 100 ), str( metadata['Migrated'] ).ljust( 8 ), str( metadata.get( 'Cached', metadata['Accessible'] ) ).ljust( 8 ), str( metadata['Size'] ).ljust( 10 ) )
+  print(
+      '%s %s %s %s' %
+      (lfn.ljust(100), str(
+          metadata['Migrated']).ljust(8), str(
+          metadata.get(
+              'Cached', metadata['Accessible'])).ljust(8), str(
+          metadata['Size']).ljust(10)))
 for lfn, reason in res['Value']['Failed'].items():
-  print '%s %s' % ( lfn.ljust( 100 ), reason.ljust( 8 ) )
+  print('%s %s' % (lfn.ljust(100), reason.ljust(8)))

@@ -21,6 +21,7 @@
     Run  ./DIRACbenchmark.py help  to see more options.
 """
 
+from __future__ import print_function
 import os
 import sys
 import random
@@ -228,32 +229,32 @@ DIRACbenchmark.py is distributed from  https://github.com/DIRACGrid/DB12
     elif arg == '--extra-iteration':
       extraIteration = True
     elif arg == '--help' or arg == 'help':
-      print helpString
+      print(helpString)
       sys.exit(0)
     elif not arg.startswith('--'):
       copies = arg
 
   if copies == 'version':
-    print version
+    print(version)
     sys.exit(0)
 
   if copies is None or copies == 'single':
-    print singleDiracBenchmark()['NORM']
+    print(singleDiracBenchmark()['NORM'])
     sys.exit(0)
 
   if copies == 'wholenode':
     result = wholenodeDiracBenchmark(iterations=iterations, extraIteration=extraIteration)
-    print result['copies'], result['sum'], result['arithmetic_mean'], result['geometric_mean'], result['median']
-    print ' '.join([str(i) for i in result['raw']])
+    print(result['copies'], result['sum'], result['arithmetic_mean'], result['geometric_mean'], result['median'])
+    print(' '.join([str(i) for i in result['raw']]))
     sys.exit(0)
 
   if copies == 'jobslot':
     result = jobslotDiracBenchmark(iterations=iterations, extraIteration=extraIteration)
-    print result['copies'], result['sum'], result['arithmetic_mean'], result['geometric_mean'], result['median']
-    print ' '.join([str(i) for i in result['raw']])
+    print(result['copies'], result['sum'], result['arithmetic_mean'], result['geometric_mean'], result['median'])
+    print(' '.join([str(i) for i in result['raw']]))
     sys.exit(0)
 
   result = multipleDiracBenchmark(copies=int(copies), iterations=iterations, extraIteration=extraIteration)
-  print result['copies'], result['sum'], result['arithmetic_mean'], result['geometric_mean'], result['median']
-  print ' '.join([str(i) for i in result['raw']])
+  print(result['copies'], result['sum'], result['arithmetic_mean'], result['geometric_mean'], result['median'])
+  print(' '.join([str(i) for i in result['raw']]))
   sys.exit(0)

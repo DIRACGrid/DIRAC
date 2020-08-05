@@ -13,23 +13,24 @@ import os
 from DIRAC import gLogger
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
+from DIRAC.Core.Security.Locations import getProxyLocation
 
-class GFAL2_XROOTStorage( GFAL2_StorageBase ):
+sLog = gLogger.getSubLogger(__name__)
+
+
+class GFAL2_XROOTStorage(GFAL2_StorageBase):
   """ .. class:: GFAL2_XROOTStorage
 
   Xroot interface to StorageElement using gfal2
   """
 
-
   _INPUT_PROTOCOLS = ['file', 'root']
   _OUTPUT_PROTOCOLS = ['root']
 
-
-
   PROTOCOL_PARAMETERS = GFAL2_StorageBase.PROTOCOL_PARAMETERS + ['SvcClass']
-  DYNAMIC_OPTIONS = { 'SvcClass' : 'svcClass'}
+  DYNAMIC_OPTIONS = {'SvcClass': 'svcClass'}
 
-  def __init__( self, storageName, parameters ):
+  def __init__(self, storageName, parameters):
     """ c'tor
 
     :param self: self reference
@@ -42,10 +43,10 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     :param str wspath: location of SRM on :host:
     """
     # # init base class
-    super( GFAL2_XROOTStorage, self ).__init__( storageName, parameters )
+    super(GFAL2_XROOTStorage, self).__init__(storageName, parameters)
     self.srmSpecificParse = False
 
-    self.log = gLogger.getSubLogger( "GFAL2_XROOTStorage", True )
+    self.log = sLog.getSubLogger(storageName)
 
     self.pluginName = 'GFAL2_XROOT'
 
@@ -62,7 +63,7 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     if 'XrdSecPROTOCOL' not in os.environ:
       os.environ['XrdSecPROTOCOL'] = 'gsi,unix'
 
-  def __addDoubleSlash( self, res ):
+  def __addDoubleSlash(self, res):
     """ Utilities to add the double slash between the host(:port) and the path
 
         :param res: DIRAC return structure which contains an URL if S_OK
@@ -71,21 +72,42 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     if not res['OK']:
       return res
     url = res['Value']
-    res = pfnparse( url, srmSpecific = self.srmSpecificParse )
+    res = pfnparse(url, srmSpecific=self.srmSpecificParse)
     if not res['OK']:
       return res
     urlDict = res['Value']
     urlDict['Path'] = '/' + urlDict['Path']
-    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
 
-  def getURLBase( self, withWSUrl = False ):
-    """ Overwrite to add the double slash """
-    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).getURLBase( withWSUrl = withWSUrl ) )
+    # Now, that's one heck of a disgusting hack
+    # xrootd client is a bit faulty when managing
+    # the connection cache, and ends up reusing an
+    # existing connection for different users (security flaw...)
+    # they have fixed it (to some extent starting from xrootd 4.10)
+    # (https://github.com/xrootd/xrootd/issues/976)
+    # BUT. They still can't consume properly the information when
+    # the identity is passed in the url (root://url?gsiusrpxy=/tmp/myproxy)
+    # So we apply a trick here which is to specify the proxy filename as a virtual user
+    # This has no consequence (developer's own words), but to distinguish between users
+    # Another ticket has been opened for that https://github.com/xrootd/xrootd/issues/992
 
-  def constructURLFromLFN( self, lfn, withWSUrl = False ):
-    """ Overwrite to add the double slash """
-    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).constructURLFromLFN( lfn = lfn, withWSUrl = withWSUrl ) )
+    try:
+      proxyLoc = getProxyLocation()
+      if proxyLoc:
+        proxyLoc = os.path.basename(proxyLoc)
+        urlDict['Host'] = '%s@%s' % (proxyLoc, urlDict['Host'])
+    except Exception as e:
+      self.log.warn("Exception trying to add virtual user in the url", repr(e))
 
-  def getCurrentURL( self, fileName ):
+    return pfnunparse(urlDict, srmSpecific=self.srmSpecificParse)
+
+  def getURLBase(self, withWSUrl=False):
     """ Overwrite to add the double slash """
-    return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).getCurrentURL( fileName ) )
+    return self.__addDoubleSlash(super(GFAL2_XROOTStorage, self).getURLBase(withWSUrl=withWSUrl))
+
+  def constructURLFromLFN(self, lfn, withWSUrl=False):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash(super(GFAL2_XROOTStorage, self).constructURLFromLFN(lfn=lfn, withWSUrl=withWSUrl))
+
+  def getCurrentURL(self, fileName):
+    """ Overwrite to add the double slash """
+    return self.__addDoubleSlash(super(GFAL2_XROOTStorage, self).getCurrentURL(fileName))

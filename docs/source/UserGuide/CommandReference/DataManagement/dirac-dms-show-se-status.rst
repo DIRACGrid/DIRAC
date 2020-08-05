@@ -1,14 +1,20 @@
-===============================
+.. _dirac-dms-show-se-status:
+
+========================
 dirac-dms-show-se-status
-===============================
+========================
 
 Get status of the available Storage Elements
 
 Usage::
 
-  dirac-dms-show-se-status [<options>] 
+  dirac-dms-show-se-status [<options>]
 
- 
+Options::
+
+  -V  --vo <value>             : Virtual Organization
+  -a  --all                    : All Virtual Organizations flag
+  -n  --noVO                   : No Virtual Organizations assigned flag
 
 Example::
 
@@ -20,5 +26,3 @@ Example::
   IRES-disk                        InActive        InActive
   M3PEC-disk                         Active          Active
   ProductionSandboxSE                Active          Active
-
-

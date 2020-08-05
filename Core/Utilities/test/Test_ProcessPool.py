@@ -13,6 +13,7 @@
     unit tests for ProcessPool
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id $"
 
 ##
@@ -35,15 +36,15 @@ from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 
 def ResultCallback( task, taskResult ):
   """ dummy result callback """
-  print "callback for %s result is %s" % ( task.getTaskID(), taskResult )
+  print("callback for %s result is %s" % (task.getTaskID(), taskResult))
 
 def ExceptionCallback( task, exec_info ):
   """ dummy exception callback """
-  print "callback for %s exception is %s" % ( task.getTaskID(), exec_info )
+  print("callback for %s exception is %s" % (task.getTaskID(), exec_info))
 
 def CallableFunc( taskID, timeWait, raiseException = False ):
   """ global function to be executed in task """
-  print "pid=%s task=%s will sleep for %s s" % ( os.getpid(), taskID, timeWait )
+  print("pid=%s task=%s will sleep for %s s" % (os.getpid(), taskID, timeWait))
   time.sleep( timeWait )
   if raiseException:
     raise Exception( "testException" )

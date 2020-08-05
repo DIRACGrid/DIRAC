@@ -7,6 +7,7 @@
 """
   Retrieve output of a Grid pilot
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -37,6 +38,6 @@ for gridID in args:
     exitCode = 2
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRACExit( exitCode )

@@ -1,6 +1,7 @@
 """ ConfigurationData module is the base for cfg files management
 """
 
+from __future__ import print_function
 import os.path
 import zlib
 import zipfile
@@ -103,7 +104,7 @@ class ConfigurationData(object):
         fileName = os.path.join(DIRAC.rootPath, "etc", fileName)
       self.remoteCFG.loadFromFile(fileName)
     except Exception as e:
-      print e
+      print(e)
     self.unlock()
     self.sync()
 

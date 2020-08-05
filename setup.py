@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 base_dir = os.path.abspath(os.path.dirname(__file__))
 
 # Take all the packages but the scripts and tests
-allPackages = find_packages(where=base_dir, exclude=["*test*", "*scripts*"])
+allPackages = find_packages(where=base_dir, exclude=["*test*", "*scripts*", "*docs*"])
 
 # Because we want to have a 'DIRAC' base module and that the setup.py
 # is lying inside it, we need to define a mapping
@@ -34,7 +34,7 @@ scripts = glob.glob('%s/*/scripts/*.py' % base_dir)
 
 setup(
     name="DIRAC",
-    version="6.22.32",
+    version="7.0.31",
     url="https://github.com/DIRACGRID/DIRAC",
     license="GPLv3",
     package_dir=package_dir,

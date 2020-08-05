@@ -2,6 +2,7 @@
 ########################################################################
 # $Header: $
 ########################################################################
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC           import exit as dexit
@@ -55,9 +56,9 @@ else:
 
 res = dm.removeReplicaFromCatalog( storageElementName, lfns )
 if not res['OK']:
-  print res['Message']
+  print(res['Message'])
   dexit( 0 )
 for lfn in sorted( res['Value']['Failed'] ):
   message = res['Value']['Failed'][lfn]
-  print 'Failed to remove %s replica of %s: %s' % ( storageElementName, lfn, message )
-print 'Successfully remove %d catalog replicas at %s' % ( len( res['Value']['Successful'] ), storageElementName )
+  print('Failed to remove %s replica of %s: %s' % (storageElementName, lfn, message))
+print('Successfully remove %d catalog replicas at %s' % (len(res['Value']['Successful']), storageElementName))

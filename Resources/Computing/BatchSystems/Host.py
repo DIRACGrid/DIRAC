@@ -8,18 +8,19 @@
     with LocalComputingElement or SSHComputingElement objects
 """
 
-__RCSID__ = "$Id$"
-
+from __future__ import print_function
 import commands
 import os
 import glob
 import shutil
 import signal
-import subprocess
+import subprocess32 as subprocess
 import stat
 import json
 import multiprocessing
 from datetime import datetime, timedelta
+
+__RCSID__ = "$Id$"
 
 # Clean job info and output after so many days
 CLEAN_DELAY = timedelta(7)
@@ -95,7 +96,8 @@ exit 0
                 args],
             stdout=subprocess.PIPE,
             shell=True,
-            env=envDict)
+            env=envDict,
+            universal_newlines=True)
         pid = popenObject.communicate()[0]
       except OSError as x:
         output = str(x)

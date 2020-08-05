@@ -1,9 +1,10 @@
 """ Module that contains client access to the Pilots handler.
 """
 
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 
 
+@createClient('WorkloadManagement/PilotManager')
 class PilotManagerClient(Client):
   """ PilotManagerClient sets url for the PilotManagerHandler.
   """

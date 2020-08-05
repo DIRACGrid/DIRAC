@@ -21,11 +21,8 @@ import Queue
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-ResourceManagementClient = getattr(Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
-                                   'ResourceManagementClient')
 
 AGENT_NAME = 'ResourceStatus/ElementInspectorAgent'
 
@@ -75,10 +72,24 @@ class ElementInspectorAgent(AgentModule):
     self.threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
 
     self.elementType = self.am_getOption('elementType', self.elementType)
-    self.rsClient = ResourceStatusClient()
 
-    self.clients['ResourceStatusClient'] = self.rsClient
-    self.clients['ResourceManagementClient'] = ResourceManagementClient()
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient',
+                                    'ResourceStatusClient')
+    if not res['OK']:
+      self.log.error('Failed to load ResourceStatusClient class: %s' % res['Message'])
+      return res
+    rsClass = res['Value']
+
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
+                                    'ResourceManagementClient')
+    if not res['OK']:
+      self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
+      return res
+    rmClass = res['Value']
+
+    self.rsClient = rsClass()
+    self.clients['ResourceStatusClient'] = rsClass()
+    self.clients['ResourceManagementClient'] = rmClass()
 
     if not self.elementType:
       return S_ERROR('Missing elementType')

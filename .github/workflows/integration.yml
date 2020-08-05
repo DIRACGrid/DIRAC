@@ -1,0 +1,66 @@
+name: Integration tests
+
+on: [push, pull_request]
+
+jobs:
+  Integration:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: False
+      matrix:
+        MYSQL_VER:
+          - 5.7
+          # - 8.0
+        HOST_OS:
+          - slc6
+          - cc7
+        SERVER_USE_M2CRYPTO:
+          - Yes
+          - No
+        CLIENT_USE_M2CRYPTO:
+          - Yes
+          - No
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Fail-fast for outdated pipelines
+      run: .github/workflows/fail-fast.sh
+    - name: Clean up GitHub actions environment
+      run: |
+        # Prepare wrapper script
+        echo "#!/usr/bin/env bash" >> run_in_container
+        echo "set -euo pipefail" >> run_in_container
+        echo "IFS=\$'\n\t'" >> run_in_container
+        echo -n "exec docker exec -w /repo " >> run_in_container
+        # Set environment variables
+        echo -n "-e HOST_OS=${{ matrix.HOST_OS }} " >> run_in_container
+        echo -n "-e CI_PROJECT_DIR=/repo " >> run_in_container
+        echo -n "-e CI_COMMIT_REF_NAME=$GITHUB_REF " >> run_in_container
+        echo -n "-e CI_MERGE_REQUEST_TARGET_BRANCH_NAME=$GITHUB_BASE_REF " >> run_in_container
+        echo -n "-e CI_REGISTRY_IMAGE=diracgrid " >> run_in_container
+        echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
+        echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
+        echo -n "-e SERVER_USE_M2CRYPTO=${{ matrix.SERVER_USE_M2CRYPTO }} " >> run_in_container
+        echo -n "-e CLIENT_USE_M2CRYPTO=${{ matrix.CLIENT_USE_M2CRYPTO }} " >> run_in_container
+        # Finish wrapper script
+        echo -n "dirac-testing-host \"\$@\"" >> run_in_container
+        chmod +x run_in_container
+    - name: Prepare environment
+      run: |
+        docker run --name dirac-testing-host -v $PWD:/repo/DIRAC --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm diracgrid/docker-compose-dirac:latest bash -c 'sleep 100000000'
+        ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && prepareEnvironment'
+    - name: Install server
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && installServer'
+    - name: Install client
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && installClient'
+    - name: Server tests
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && testServer'
+    - name: Client tests
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && testClient'
+    - name: Elasticsearch logs
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && docker logs elasticsearch'
+    - name: Check test status
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && checkErrors'

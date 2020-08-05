@@ -4,8 +4,12 @@
 DIRAC Configuration 
 ===================================
 
-The DIRAC Configuration information has a hierarchical structure and can come
-from different sources. This section describes the main sections of the DIRAC
+The DIRAC Configuration information is written in a *CFG* format.
+`diraccfg <https://github.com/DIRACGrid/diraccfg/>`_ is a standalone parser for files written in a *CFG* format.
+
+The DIRAC configuration has a hierarchical structure and can come from different sources.
+
+This section describes the main sections of the DIRAC
 configuration and the way how this information is delivered to the consumers.
 
 Configuration structure
@@ -18,14 +22,14 @@ The options are the leafs in the configuration tree, which contain the actual co
 At the top level of the Configuration tree there are the following sections:
 
 :ref:`DIRAC <dirac-general-cs>`
-  This section contains the most general information about the DIRAC installation.    
+  This section contains the most general information about the DIRAC installation.
   
 :ref:`Systems <dirac-systems-cs>`
   This section provides configuration data for all the DIRAC Systems, their instances and
   components - services, agents and databases.     
 
 :ref:`Registry <dirac-registry-cs>`
-  The *Registry* contains information about DIRAC users, groups and communities (VOs).  
+  The *Registry* contains information about DIRAC users, groups and communities (VOs).
   
 :ref:`Resources <dirac-resources-cs>`
   The *Resources* section provides description of all the DIRAC computing resources. This
@@ -35,7 +39,7 @@ At the top level of the Configuration tree there are the following sections:
 :ref:`Operations <dirac-operations-cs>`  
   This section collects various operational parameters needed to run the system.
   
-The top level sections are described in details in dedicated chapters of the guide.  
+The top level sections are described in details in dedicated chapters of the guide.
 
 Configuration sources
 -----------------------
@@ -51,10 +55,21 @@ in the order of preference of the option resolution:
      dirac-wms-job-submit job.jdl -o /DIRAC/Setup=Dirac-Production
 
 *Command line argument specifying a CFG file*
-  If a filename with the *.cfg* extension is passed as an argument to any DIRAC command
-  it will be interpreted as a configuration file. For example::
+  A config file can be passed to any dirac command with the ``--cfg`` flag::
   
-     dirac-wms-job-submit job.jdl my.cfg
+     dirac-wms-job-submit job.jdl --cfg my.cfg
+
+  .. versionchanged:: v7r0
+
+     The passing of ``.cfg`` files was changed to require the ``--cfg`` flag.
+
+  .. deprecated:: v7r0
+
+     If a filename with the ``.cfg`` extension is passed as an argument to any DIRAC command
+     it will be interpreted as a configuration file, if the ``DIRAC_NO_CFG`` environment variable is not set.
+
+*Value of $DIRACSYSCONFIG environment variable*
+  if the DIRACSYSCONFIG variable is set, it should point to a cfg file (written in *CFG* format)
 
 *$HOME/.dirac.cfg*
   This is the file in the user's home directory with the *CFG* format
@@ -68,4 +83,4 @@ in the order of preference of the option resolution:
 The client needing a configuration option is first looking for it in the command line arguments. 
 If the option is not found, the search continues in the user configuration file, then in the
 DIRAC installation configuration file and finally in the Configuration Service. These gives
-a flexible mechanism of overriding global options by specific local settings.       
+a flexible mechanism of overriding global options by specific local settings.

@@ -11,14 +11,13 @@ import DIRAC.AccountingSystem.DB.AccountingDB as moduleTested
 
 
 class TestCase(unittest.TestCase):
-  """ Base class for the EmailAction / EmailAgent test cases
+  """ Base class for the AccountingDB test cases
   """
 
   def setUp(self):
 
     self.moduleTested = moduleTested
     self.testClass = self.moduleTested.AccountingDB
-    # self.moduleTested.OracleDB = mock_OracleDB
 
     self.moduleTested.DB = MagicMock()
     self.moduleTested.DB.fullname = 'AccountingDB'

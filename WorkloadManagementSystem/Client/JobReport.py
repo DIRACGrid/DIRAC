@@ -3,6 +3,7 @@
 
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -169,18 +170,18 @@ class JobReport(object):
     """ Print out the contents of the internal cached information
     """
 
-    print "Job status info:"
+    print("Job status info:")
     for status, minor, timeStamp in self.jobStatusInfo:
-      print status.ljust(20), minor.ljust(30), timeStamp
+      print(status.ljust(20), minor.ljust(30), timeStamp)
 
-    print "Application status info:"
+    print("Application status info:")
     for status, timeStamp in self.appStatusInfo:
-      print status.ljust(20), timeStamp
+      print(status.ljust(20), timeStamp)
 
-    print "Job parameters:"
+    print("Job parameters:")
     for pname, value in self.jobParameters.items():
       pvalue, timeStamp = value
-      print pname.ljust(20), pvalue.ljust(30), timeStamp
+      print(pname.ljust(20), pvalue.ljust(30), timeStamp)
 
   def generateForwardDISET(self):
     """ Generate and return failover requests for the operations in the internal cache

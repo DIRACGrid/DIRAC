@@ -2,6 +2,7 @@
 """
     This is a comment
 """
+from __future__ import print_function
 __RCSID__ = "$Revision: 1.16 $"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
@@ -217,9 +218,9 @@ w1.toXMLFile('/afs/cern.ch/user/g/gkuznets/test1.xml')
 w2 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test1.xml")
 w2.toXMLFile('/afs/cern.ch/user/g/gkuznets/test2.xml')
 w4 = fromXMLFile("/afs/cern.ch/user/g/gkuznets/test2.xml")
-print w4.createCode()
+print(w4.createCode())
 eval(compile(w4.createCode(),'<string>','exec'))
-print "==================================================================="
+print("===================================================================")
 w4.execute()
 
 

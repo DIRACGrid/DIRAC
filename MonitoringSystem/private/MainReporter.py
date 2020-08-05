@@ -15,15 +15,14 @@ __RCSID__ = "$Id$"
 class PlottersList( object ):
 
   """
-  .. class:: PlottersList
-
   Used to determine all available plotters used to create the plots
 
-  :param dict __plotters stores the available plotters
+  :param dict __plotters: stores the available plotters
   """
   def __init__( self ):
 
     """ c'tor
+
     :param self: self reference
     """
 
@@ -45,20 +44,18 @@ class PlottersList( object ):
 
 
 class MainReporter( object ):
-
   """
-  .. class:: MainReporter
-
-  :param object __db database object
-  :param str __setup DIRAC setup
-  :param str __csSection CS section used to configure some parameters.
-  :param list __plotterList available plotters
+  :param object __db: database object
+  :param str __setup: DIRAC setup
+  :param str __csSection: CS section used to configure some parameters.
+  :param list __plotterList: available plotters
   """
   def __init__( self, db, setup ):
     """ c'tor
+
     :param self: self reference
-    :param object the database module
-    :param str setup DIRAC setup
+    :param object: the database module
+    :param str setup: DIRAC setup
     """
     self.__db = db
     self.__setup = setup
@@ -68,8 +65,10 @@ class MainReporter( object ):
   def __calculateReportHash( self, reportRequest ):
     """
     It creates an unique identifier
-    :param dict reportRequest plot attributes used to create the plot
-    :return str it return an unique value
+
+    :param dict reportRequest: plot attributes used to create the plot
+    :return: an unique value
+    :rtype: str
     """
     requestToHash = dict( reportRequest )
     granularity = gConfig.getValue( "%s/CacheTimeGranularity" % self.__csSection, 300 )
@@ -84,10 +83,12 @@ class MainReporter( object ):
   def generate( self, reportRequest, credDict ):
     """
     It is used to create a plot.
-    :param dict reportRequest plot attributes used to create the plot
 
-    Note: I know credDict is not used, but if we plan to add some policy, we need to use it!
-    :return dict S_OK/S_ERROR the values used to create the plot
+    :param dict reportRequest: plot attributes used to create the plot
+
+    .. note:: I know credDict is not used, but if we plan to add some policy, we need to use it!
+
+    :return: dict S_OK/S_ERROR the values used to create the plot
     """
     typeName = reportRequest[ 'typeName' ]
     plotterClass = self.__plotterList.getPlotterClass( typeName )
@@ -101,8 +102,9 @@ class MainReporter( object ):
   def list( self, typeName ):
     """
     It returns the available plots
-    :param str typeName monitoring type
-    :return dict S_OK/S_ERROR list of available reports (plots)
+
+    :param str typeName: monitoring type
+    :return: dict S_OK/S_ERROR list of available reports (plots)
     """
     plotterClass = self.__plotterList.getPlotterClass( typeName )
     if not plotterClass['OK']:

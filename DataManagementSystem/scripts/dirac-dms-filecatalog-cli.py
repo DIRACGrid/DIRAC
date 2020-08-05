@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 
 from DIRAC.Core.Base import Script
@@ -34,20 +35,20 @@ for switch in Script.getUnprocessedSwitches():
     fcType = switch[1]
 
 if not fcType:
-  print "No file catalog given and defaults could not be obtained"
+  print("No file catalog given and defaults could not be obtained")
   sys.exit(1)
 
 from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 
 result = FileCatalogFactory().createCatalog(fcType)
 if not result['OK']:
-  print result['Message']
+  print(result['Message'])
   if fcList:
-    print "Possible choices are:"
+    print("Possible choices are:")
     for fc in fcList:
-      print ' '*5,fc
+      print(' ' * 5, fc)
   sys.exit(1)
-print "Starting %s client" % fcType
+print("Starting %s client" % fcType)
 catalog = result['Value']
 cli = FileCatalogClientCLI( catalog )
 cli.cmdloop()

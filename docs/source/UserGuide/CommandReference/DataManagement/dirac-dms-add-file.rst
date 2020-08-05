@@ -1,3 +1,5 @@
+.. _dirac-dms-add-file:
+
 ==================
 dirac-dms-add-file
 ==================
@@ -28,16 +30,6 @@ Arguments::
   lfn1 localfile1 SE [GUID1]
   lfn2 localfile2 SE [GUID2]
 
-General options::
-
-  -o  --option <value>         : Option=value to add
-  -s  --section <value>        : Set base section for relative parsed options
-  -c  --cert <value>           : Use server certificate to connect to Core Services
-  -d  --debug                  : Set debug mode (-ddd is extra debug)
-  -   --autoreload             : Automatically restart if there's any change in the module
-  -   --license                : Show DIRAC's LICENSE
-  -h  --help                   : Shows this help
-
 Options::
 
   -f  --force                  : Force overwrite of existing file
@@ -48,5 +40,3 @@ Example::
   {'Failed': {},
    'Successful': {'/formationes/user/v/vhamar/Example.txt': {'put': 0.70791220664978027,
                                                              'register': 0.61061787605285645}}}
-
-

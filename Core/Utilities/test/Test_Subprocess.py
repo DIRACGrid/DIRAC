@@ -3,9 +3,9 @@
 # Date: 2012/12/11 18:04:25
 ########################################################################
 
-""" :mod: SubprocessTests 
+""" :mod: SubprocessTests
     =======================
- 
+
     .. module: SubprocessTests
     :synopsis: unittest for Subprocess module
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -13,73 +13,50 @@
     unittest for Subprocess module
 """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
-##
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/12/11 18:04:37
-
-## imports 
-import unittest
+# imports
 import time
-## SUT
-from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall
+import pytest
+
+from subprocess import Popen
+
+# SUT
+from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall, getChildrenPIDs
 
 ########################################################################
-class SubprocessTests(unittest.TestCase):
-  """
-  .. class:: SubprocessTests
-  
-  """
 
-  def setUp( self ):
-    """ test case setup
+cmd = ["sleep", "2"]
 
-    :param self: self reference
-    """
-    self.cmd = [ "sleep", "10" ]
-    self.timeout=3
 
-  def testNoTimeouts( self ):
-    """ tests no timeouts  """
+def pyfunc(_name):
+  time.sleep(2)
 
-    ## systemCall
-    ret = systemCall( timeout=False, cmdSeq = self.cmd )
-    self.assertEqual( ret, {'OK': True, 'Value': (0, '', '') } )
-    
-    ## shellCall
-    ret  = shellCall( timeout=False, cmdSeq = " ".join( self.cmd ) )
-    self.assertEqual( ret, {'OK': True, 'Value': (0, '', '') } )
 
-    def pyfunc( name ):
-      time.sleep(10)
-      return name
+@pytest.mark.parametrize("timeout, expected", [
+    (False, True),
+    (3, True),
+    (1, False)
+])
+def test_calls(timeout, expected):
+  ret = systemCall(timeout, cmdSeq=cmd)
+  assert ret['OK'] == expected
 
-    ## pythonCall
-    ret = pythonCall( 0, pyfunc, "Krzysztof" )
-    self.assertEqual( ret, {'OK': True, 'Value': 'Krzysztof'} )
+  ret = shellCall(timeout, cmdSeq=" ".join(cmd))
+  assert ret['OK'] == expected
 
-  def testTimeouts( self ):
-    """ test timeouts """
-    
-    ## systemCall
-    ret = systemCall( timeout=self.timeout, cmdSeq = self.cmd )
-    self.assertFalse( ret['OK'] )
-    
-    ## shellCall
-    ret  = shellCall( timeout=self.timeout, cmdSeq = " ".join( self.cmd ) )
-    self.assertFalse( ret['OK'] )
+  ret = pythonCall(timeout, pyfunc, 'something')
+  assert ret['OK'] == expected
 
-    def pyfunc( name ):
-      time.sleep(10)
-      return name
 
-    ## pythonCall
-    ret = pythonCall( self.timeout, pyfunc, "Krzysztof" )
-    self.assertFalse( ret['OK'] )
+def test_getChildrenPIDs():
+  import os
+  os.system("echo $PWD")
+  mainProcess = Popen(['python', 'Core/Utilities/test/ProcessesCreator.py'])
+  time.sleep(1)
+  res = getChildrenPIDs(mainProcess.pid)
+  assert len(res) == 3
+  for p in res:
+    assert isinstance(p, int)
 
-## tests execution
-if __name__ == "__main__":
-  gTestLoader = unittest.TestLoader()
-  gTestSuite = gTestLoader.loadTestsFromTestCase( SubprocessTests )      
-  unittest.TextTestRunner( verbosity=3 ).run( gTestSuite )
+  mainProcess.wait()

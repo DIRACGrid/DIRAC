@@ -43,10 +43,8 @@ from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 
-BASE_PATH = ""
-
-# This is in bytes, but in MB in the CS
-MAX_STORAGE_SIZE = 0
+BASE_PATH = "/"  # This is not a constant and it will be set in initializeStorageElementHandler() function
+MAX_STORAGE_SIZE = 0  # This is in bytes, but in MB in the CS
 USE_TOKENS = False
 
 
@@ -93,7 +91,7 @@ def getTotalDiskSpace():
   return S_OK(maxTotalSpace)
 
 
-def getFreeDiskSpace(ignoreMaxStorageSize=True):
+def getFreeDiskSpace():
   """ Returns the free disk space still available for writing taking into account
       the total available disk space and the MAX_STORAGE_SIZE limitation
 
@@ -103,7 +101,7 @@ def getFreeDiskSpace(ignoreMaxStorageSize=True):
   global MAX_STORAGE_SIZE
   global BASE_PATH
 
-  result = getDiskSpace(BASE_PATH)
+  result = getDiskSpace(BASE_PATH)  # free
   if not result['OK']:
     return result
   freeSpace = result['Value']
@@ -111,10 +109,7 @@ def getFreeDiskSpace(ignoreMaxStorageSize=True):
   if not result['OK']:
     return result
   totalSpace = result['Value']
-  if ignoreMaxStorageSize:
-    maxTotalSpace = totalSpace
-  else:
-    maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
+  maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
   occupiedSpace = totalSpace - freeSpace
   freeSpace = maxTotalSpace - occupiedSpace
   return S_OK(freeSpace)
@@ -128,13 +123,13 @@ def initializeStorageElementHandler(serviceInfo):
   global USE_TOKENS
   global MAX_STORAGE_SIZE
 
-  BASE_PATH = getServiceOption(serviceInfo, "BasePath", BASE_PATH)
+  BASE_PATH = getServiceOption(serviceInfo, "BasePath", '')
   if not BASE_PATH:
     gLogger.error('Failed to get the base path')
     return S_ERROR('Failed to get the base path')
   mkDir(BASE_PATH)
 
-  USE_TOKENS = getServiceOption(serviceInfo, "%UseTokens", USE_TOKENS)
+  USE_TOKENS = getServiceOption(serviceInfo, "UseTokens", USE_TOKENS)
   MAX_STORAGE_SIZE = convertSizeUnits(getServiceOption(serviceInfo, "MaxStorageSize", MAX_STORAGE_SIZE), 'MB', 'B')
 
   gLogger.info('Starting DIRAC Storage Element')
@@ -163,24 +158,11 @@ class StorageElementHandler(RequestHandler):
         :param int size: size of a new file to store in the StorageElement
         :return: S_OK/S_ERROR, Value is boolean flag True if enough space is available
     """
-    result = getFreeDiskSpace(ignoreMaxStorageSize=False)
+    result = getFreeDiskSpace()
     if not result['OK']:
       return result
     freeSpace = result['Value']
-    spaceFlag = freeSpace > size
-    if spaceFlag:
-      return S_OK(spaceFlag)
-
-    # We do not have enough space taking into account MAX_STORAGE_SIZE limit
-    # check if the total disk space is enough however
-    result = getFreeDiskSpace(ignoreMaxStorageSize=True)
-    if not result['OK']:
-      return result
-    freeSpace = result['Value']
-    spaceFlag = freeSpace > size
-    if spaceFlag:
-      gLogger.warn('Space limited by MAX_STORAGE_SIZE is not enough to store file')
-    return S_OK(spaceFlag)
+    return S_OK(freeSpace > size)
 
   def __resolveFileID(self, fileID):
     """ get path to file for a given :fileID: """

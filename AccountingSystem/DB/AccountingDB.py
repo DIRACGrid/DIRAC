@@ -12,7 +12,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities import List, ThreadSafe, Time, DEncode
-from DIRAC.AccountingSystem.private.TypeLoader import TypeLoader
+from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 gSynchro = ThreadSafe.Synchronizer()
@@ -196,11 +196,10 @@ class AccountingDB(DB):
     now = Time.toEpoch()
     recordsPerSlot = self.getCSOption("RecordsPerSlot", 100)
     for typeName in self.dbCatalog:
-      self.log.info("[PENDING] Checking", "%s" % typeName)
+      self.log.info("[PENDING] Checking %s" % typeName)
       pendingInQueue = self.__threadPool.pendingJobs()
       emptySlots = max(0, 3000 - pendingInQueue)
-      self.log.info("[PENDING] jobs in the queue",
-                    "%s (%d empty slots)" % (pendingInQueue, emptySlots))
+      self.log.info("[PENDING] %s in the queue, %d empty slots" % (pendingInQueue, emptySlots))
       if emptySlots < 1:
         continue
       emptySlots = min(100, emptySlots)
@@ -429,7 +428,10 @@ class AccountingDB(DB):
     keyTables = []
     sqlCond = []
     mainTable = "`%s`" % _getTableName("bucket", typeName)
-    typeKeysList = self.dbCatalog[typeName]['keys']
+    try:
+      typeKeysList = self.dbCatalog[typeName]['keys']
+    except KeyError:
+      return S_ERROR("Please select a category")
 
     for keyName in condDict:
       if keyName in typeKeysList:

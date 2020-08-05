@@ -6,6 +6,12 @@
 
 # pylint: disable=wrong-import-position
 
+from __future__ import print_function, absolute_import
+
+from datetime import datetime, timedelta
+
+__RCSID__ = "$Id$"
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -98,3 +104,40 @@ def test_getCounters():
 
   res = jobDB.getCounters('Jobs', ['Status', 'MinorStatus'], {}, '2007-04-22 00:00:00')
   assert res['OK'] is True
+
+
+def test_heartBeatLogging():
+
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
+  assert res['OK'] is True
+  jobID = res['JobID']
+
+  res = jobDB.setJobStatus(jobID, status='Running')
+  assert res['OK'] is True
+  res = jobDB.setHeartBeatData(jobID, staticDataDict={}, dynamicDataDict={'CPU': 2345})
+  assert res['OK'] is True
+  res = jobDB.setHeartBeatData(jobID, staticDataDict={}, dynamicDataDict={'Memory': 5555})
+  assert res['OK'] is True
+  res = jobDB.getHeartBeatData(jobID)
+  assert res['OK'] is True
+  assert len(res['Value']) == 2, str(res)
+
+  for name, value, _hbt in res['Value']:
+    if name == 'Memory':
+      assert value == '5555.0'
+    elif name == 'CPU':
+      assert value == '2345.0'
+    else:
+      assert False, 'Unknown entry: %s: %s' % (name, value)
+
+  res = jobDB.setJobStatus(jobID, status='Done')
+  assert res['OK'] is True
+
+  tomorrow = datetime.today() + timedelta(1)
+  delTime = datetime.strftime(tomorrow, '%Y-%m-%d')
+  res = jobDB.removeInfoFromHeartBeatLogging(status='Done', delTime=delTime, maxLines=100)
+  assert res['OK'] is True, str(res)
+
+  res = jobDB.getHeartBeatData(jobID)
+  assert res['OK'] is True, str(res)
+  assert not res['Value'], str(res)

@@ -7,6 +7,7 @@
 """
   Calculate md5 of the supplied file
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Utilities.File      import makeGuid
@@ -28,12 +29,12 @@ for file in files:
   try:
     md5 = makeGuid( file )
     if md5:
-      print file.rjust( 100 ), md5.ljust( 10 )
+      print(file.rjust(100), md5.ljust(10))
     else:
-      print 'ERROR %s: Failed to get md5' % file
+      print('ERROR %s: Failed to get md5' % file)
       exitCode = 2
   except Exception as x:
-    print 'ERROR %s: Failed to get md5' % file, str( x )
+    print('ERROR %s: Failed to get md5' % file, str(x))
     exitCode = 2
 
 DIRAC.exit( exitCode )

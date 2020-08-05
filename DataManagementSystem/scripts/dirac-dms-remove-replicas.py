@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC           import exit as DIRACExit
@@ -44,10 +45,10 @@ Usage:
     for storageElementName in storageElementNames:
       res = dm.removeReplica( storageElementName, lfnList )
       if not res['OK']:
-        print 'Error:', res['Message']
+        print('Error:', res['Message'])
         continue
       for lfn in sorted( res['Value']['Successful'] ):
-        print 'Successfully removed %s replica of %s' % ( storageElementName, lfn )
+        print('Successfully removed %s replica of %s' % (storageElementName, lfn))
       for lfn in sorted( res['Value']['Failed'] ):
         message = res['Value']['Failed'][lfn]
-        print 'Error: failed to remove %s replica of %s: %s' % ( storageElementName, lfn, message )
+        print('Error: failed to remove %s replica of %s: %s' % (storageElementName, lfn, message))

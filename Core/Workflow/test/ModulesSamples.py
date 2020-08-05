@@ -1,3 +1,4 @@
+from __future__ import print_function
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
@@ -41,6 +42,6 @@ mi1 = sd1.createModuleInstance('TestAppModule', 'testappmod1')
 wf1 = Workflow('TestAppWF')
 wf1.addStep(sd1)
 si1 = wf1.createStepInstance('TestAppStep','testappstep1')
-print wf1.createCode()
+print(wf1.createCode())
 #eval(compile(wf1.createCode(),'<string>','exec'))
 wf1.execute()

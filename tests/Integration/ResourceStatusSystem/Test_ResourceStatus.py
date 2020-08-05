@@ -5,6 +5,7 @@
 
 # pylint: disable=invalid-name,wrong-import-position
 
+from __future__ import print_function
 import sys
 import time
 import datetime
@@ -81,7 +82,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     # TEST insertStatusElement (now site)
     # ...............................................................................
 
-    print "add an element (status: Active)"
+    print("add an element (status: Active)")
     res = rssClient.insertStatusElement('Site', 'Status', 'TestSite1234', 'statusType',
                                         'Active', 'elementType', 'reason', Datetime,
                                         Datetime, 'tokenOwner', Datetime)
@@ -95,7 +96,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     self.assertEqual(res['Value'][0][0], 'TestSite1234')
     self.assertEqual(res['Value'][0][1], 'statusType')
     self.assertEqual(res['Value'][0][2], 'Active')
-    print "inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4])
+    print("inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4]))
 
     # try to select the previously entered element from the Log table (it should NOT be there)
     res = rssClient.selectStatusElement('Site', 'Log', 'TestSite1234')
@@ -115,7 +116,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     # TEST addOrModifyStatusElement (this time for modifying)
     # ...............................................................................
 
-    print "modify the previously entered element (making it Banned)"
+    print("modify the previously entered element (making it Banned)")
     res = rssClient.addOrModifyStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                              'Banned', 'elementType', 'reason')
     # check if the addOrModify query was executed properly
@@ -128,7 +129,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     self.assertEqual(res['Value'][0][0], 'TestName1234')
     self.assertEqual(res['Value'][0][1], 'statusType')
     self.assertEqual(res['Value'][0][2], 'Banned')
-    print "inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4])
+    print("inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4]))
 
     # try to select the previously entered element from the Log table (now it should be there)
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234')
@@ -160,7 +161,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     # TEST modifyStatusElement
     # ...............................................................................
 
-    print "modify again the previously entered element, putting it back to active"
+    print("modify again the previously entered element, putting it back to active")
     res = rssClient.modifyStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                         'Active', 'elementType', 'reason')
     # check if the modify query was executed properly
@@ -173,7 +174,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     self.assertEqual(res['Value'][0][0], 'TestName1234')
     self.assertEqual(res['Value'][0][1], 'statusType')
     self.assertEqual(res['Value'][0][2], 'Active')
-    print "inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4])
+    print("inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4]))
 
     # try to select the previously entered element from the Log table (now it should be there)
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234')
@@ -184,7 +185,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     self.assertEqual(res['Value'][0][3], 'Banned')
     self.assertEqual(res['Value'][1][3], 'Active')  # this is the last one
 
-    print "modifing once more the previously entered element"
+    print("modifing once more the previously entered element")
     res = rssClient.modifyStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                         'Probing', 'elementType', 'reason')
     # check if the modify query was executed properly
@@ -197,7 +198,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     self.assertEqual(res['Value'][0][0], 'TestName1234')
     self.assertEqual(res['Value'][0][1], 'statusType')
     self.assertEqual(res['Value'][0][2], 'Probing')
-    print "inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4])
+    print("inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4]))
 
     # try to select the previously entered element from the Log table (now it should be there)
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234')
@@ -221,7 +222,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     self.assertEqual(res['Value'][2][0], 'Probing')  # this is the last one
 
     time.sleep(3)  # just for seeing a difference between lastCheckTime and DateEffective
-    print "modifing once more the previously entered element, but this time we only modify the reason"
+    print("modifing once more the previously entered element, but this time we only modify the reason")
     res = rssClient.modifyStatusElement('Resource', 'Status', 'TestName1234', 'statusType',
                                         'Probing', 'elementType', 'a new reason')
     # check if the modify query was executed properly
@@ -235,7 +236,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     self.assertEqual(res['Value'][0][1], 'statusType')
     self.assertEqual(res['Value'][0][2], 'Probing')
     self.assertEqual(res['Value'][0][3], 'a new reason')
-    print "inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4])
+    print("inserted lastCheckTime and DateEffective: %s, %s" % (res['Value'][0][7], res['Value'][0][4]))
     self.assertNotEqual(res['Value'][0][7], res['Value'][0][4])
 
     # try to select the previously entered element from the Log table (now it should be there)

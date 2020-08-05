@@ -1,75 +1,17 @@
 """ Test the FTS3Utilities"""
+
+__RCSID__ = "$Id$"
+
+import unittest
+
+import mock
+
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC import S_OK, S_ERROR
 
-__RCSID__ = "$Id $"
-
-import unittest
-import mock
-import datetime
-
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONDecoder, \
-    FTS3Serializable, \
-    groupFilesByTarget, \
-    generatePossibleTransfersBySources, \
-    selectUniqueSourceforTransfers, \
+from DIRAC.DataManagementSystem.private.FTS3Utilities import groupFilesByTarget, \
     selectUniqueRandomSource, \
     FTS3ServerPolicy
-
-
-import json
-
-
-class FakeClass(FTS3Serializable):
-  """ Just a fake class"""
-  _attrToSerialize = ['string', 'date', 'dic', 'sub']
-
-  def __init__(self):
-    self.string = ''
-    self.date = None
-    self.dic = {}
-
-
-class TestFTS3Serialization(unittest.TestCase):
-  """ Test the FTS3 JSON serialization mechanizme with FTS3JSONEncoder,
-      FTS3JSONDecoder, FTS3Serializable"""
-
-  def test_01_basic(self):
-    """ Basic json transfer"""
-
-    obj = FakeClass()
-    obj.string = 'tata'
-    obj.date = datetime.datetime.utcnow().replace(microsecond=0)
-    obj.dic = {'a': 1}
-    obj.notSerialized = 'Do not'
-
-    obj2 = json.loads(obj.toJSON(), cls=FTS3JSONDecoder)
-
-    self.assertTrue(obj.string == obj2.string)
-    self.assertTrue(obj.date == obj2.date)
-    self.assertTrue(obj.dic == obj2.dic)
-
-    self.assertTrue(not hasattr(obj2, 'notSerialized'))
-
-  def test_02_subobjects(self):
-    """ Try setting as attribute an object """
-
-    class NonSerializable(object):
-      """ Fake class not inheriting from FTS3Serializable"""
-      pass
-
-    obj = FakeClass()
-    obj.sub = NonSerializable()
-
-    with self.assertRaises(TypeError):
-      obj.toJSON()
-
-    obj.sub = FakeClass()
-    obj.sub.string = 'pipo'
-
-    obj2 = json.loads(obj.toJSON(), cls=FTS3JSONDecoder)
-
-    self.assertTrue(obj.sub.string == obj2.sub.string)
 
 
 def mock__checkSourceReplicas(ftsFiles):
@@ -131,42 +73,6 @@ class TestFileGrouping(unittest.TestCase):
   @mock.patch(
       'DIRAC.DataManagementSystem.private.FTS3Utilities._checkSourceReplicas',
       side_effect=mock__checkSourceReplicas)
-  def test_02_generatePossibleTransfersBySources(self, _mk_checkSourceReplicas):
-    """ Get all the possible sources"""
-    # We assume here that they all go to the same target
-    res = generatePossibleTransfersBySources(self.allFiles)
-
-    self.assertTrue(res['OK'])
-    groups = res['Value']
-    self.assertTrue(self.f1 in groups['Src1'])
-    self.assertTrue(self.f1 in groups['Src2'])
-    self.assertTrue(self.f2 in groups['Src2'])
-    self.assertTrue(self.f2 in groups['Src3'])
-    self.assertTrue(self.f3 in groups['Src4'])
-    self.assertTrue(self.f2 in groups['Src3'])
-
-  @mock.patch(
-      'DIRAC.DataManagementSystem.private.FTS3Utilities._checkSourceReplicas',
-      side_effect=mock__checkSourceReplicas)
-  def test_03_selectUniqueSourceforTransfers(self, _mk_checkSourceReplicas):
-    """ Suppose they all go to the same target """
-
-    groupBySource = generatePossibleTransfersBySources(self.allFiles)['Value']
-
-    res = selectUniqueSourceforTransfers(groupBySource)
-
-    self.assertTrue(res['OK'])
-
-    uniqueSources = res['Value']
-    # Src1 and Src2 should not be here because f1 and f2 should be taken from Src2
-    self.assertTrue(sorted(uniqueSources.keys()) == sorted(['Src2', 'Src4']))
-    self.assertTrue(self.f1 in uniqueSources['Src2'])
-    self.assertTrue(self.f2 in uniqueSources['Src2'])
-    self.assertTrue(self.f3 in uniqueSources['Src4'])
-
-  @mock.patch(
-      'DIRAC.DataManagementSystem.private.FTS3Utilities._checkSourceReplicas',
-      side_effect=mock__checkSourceReplicas)
   def test_04_selectUniqueRandomSource(self, _mk_checkSourceReplicas):
     """ Suppose they all go to the same target """
 
@@ -174,12 +80,12 @@ class TestFileGrouping(unittest.TestCase):
 
     self.assertTrue(res['OK'])
 
-    uniqueSources = res['Value']
+    uniqueSources, _failedFiles = res['Value']
 
     # There should be only f1,f2 and f3
     allReturnedFiles = []
     existingFiles = [self.f1, self.f2, self.f3]
-    for srcSe, ftsFiles in uniqueSources.iteritems():
+    for _srcSe, ftsFiles in uniqueSources.iteritems():
       allReturnedFiles.extend(ftsFiles)
 
     # No files should be duplicated and all files should be there, except the non existing one
@@ -301,7 +207,6 @@ class TestFTS3ServerPolicy (unittest.TestCase):
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestFTS3Serialization)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestFileGrouping))
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestFileGrouping)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestFTS3ServerPolicy))
   unittest.TextTestRunner(verbosity=2).run(suite)

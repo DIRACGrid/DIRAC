@@ -297,7 +297,6 @@ Below is a complete example configuration with anotations for some sections::
         {
           HandlerPath = DIRAC/ConfigurationSystem/Service/ConfigurationHandler.py
           Port = 9135
-          UpdatePilotCStoJSONFile = False
           Authorization
           {
             Default = authenticated

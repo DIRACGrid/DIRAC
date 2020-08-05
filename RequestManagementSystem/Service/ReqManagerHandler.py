@@ -1,11 +1,15 @@
 #####################################################################
 # File: ReqManagerHandler.py
 ########################################################################
-"""
-:mod: ReqManagerHandler
+"""Implementation of the RequestDB service in the DISET framework
 
-.. module: ReqManagerHandler
-  :synopsis: Implementation of the RequestDB service in the DISET framework
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ReqManager
+  :end-before: ##END
+  :dedent: 2
+  :caption: ReqManager options
+
 
 """
 __RCSID__ = "$Id$"
@@ -188,9 +192,9 @@ class ReqManagerHandler(RequestHandler):
   @classmethod
   def export_getBulkRequests(cls, numberOfRequest, assigned):
     """ Get a request of given type from the database
-        :param numberOfRequest : size of the bulk (default 10)
 
-        :return S_OK( {Failed : message, Successful : list of Request.toJSON()} )
+        :param numberOfRequest: size of the bulk (default 10)
+        :return: S_OK( {Failed : message, Successful : list of Request.toJSON()} )
     """
     getRequests = cls.__requestDB.getBulkRequests(
         numberOfRequest=numberOfRequest, assigned=assigned)
@@ -263,8 +267,8 @@ class ReqManagerHandler(RequestHandler):
         The key can be any field from the RequestTable. or "Type",
         which will be interpreted as 'Operation.Type'
 
-        :param groupingAttribute : attribute used for grouping
-        :param selectDict : selection criteria
+        :param groupingAttribute: attribute used for grouping
+        :param selectDict: selection criteria
     """
 
     return cls.__requestDB.getRequestCountersWeb(groupingAttribute, selectDict)

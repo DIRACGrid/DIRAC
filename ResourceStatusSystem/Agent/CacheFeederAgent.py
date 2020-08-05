@@ -12,17 +12,12 @@
 __RCSID__ = '$Id$'
 
 from DIRAC import S_OK
-from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Command import CommandCaller
-from DIRAC.ResourceStatusSystem.Utilities import Utils
-ResourceManagementClient = getattr(
-    Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
-    'ResourceManagementClient')
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.ResourceStatusSystem.Command import CommandCaller
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
@@ -49,9 +44,19 @@ class CacheFeederAgent(AgentModule):
     """ Define the commands to be executed, and instantiate the clients that will be used.
     """
 
-    self.am_setOption('shifterProxy', 'DataManager')
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient',
+                                    'ResourceStatusClient')
+    if not res['OK']:
+      self.log.error('Failed to load ResourceStatusClient class: %s' % res['Message'])
+      return res
+    rsClass = res['Value']
 
-    self.rmClient = ResourceManagementClient()
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
+                                    'ResourceManagementClient')
+    if not res['OK']:
+      self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
+      return res
+    rmClass = res['Value']
 
     self.commands['Downtime'] = [{'Downtime': {}}]
     self.commands['GOCDBSync'] = [{'GOCDBSync': {}}]
@@ -85,10 +90,9 @@ class CacheFeederAgent(AgentModule):
 
     # Reuse clients for the commands
     self.clients['GOCDBClient'] = GOCDBClient()
-    self.clients['ReportGenerator'] = RPCClient('Accounting/ReportGenerator')
     self.clients['ReportsClient'] = ReportsClient()
-    self.clients['ResourceStatusClient'] = ResourceStatusClient()
-    self.clients['ResourceManagementClient'] = ResourceManagementClient()
+    self.clients['ResourceStatusClient'] = rsClass()
+    self.clients['ResourceManagementClient'] = rmClass()
     self.clients['WMSAdministrator'] = WMSAdministratorClient()
     self.clients['Pilots'] = PilotManagerClient()
 

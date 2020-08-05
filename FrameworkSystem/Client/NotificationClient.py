@@ -5,10 +5,11 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_ERROR
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Mail import Mail
 
 
+@createClient('Framework/Notification')
 class NotificationClient(Client):
 
   def __init__(self, **kwargs):

@@ -7,6 +7,7 @@
 """
   Reset a job or list of jobs in the WMS
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -39,12 +40,12 @@ for job in args:
 
   result = diracAdmin.resetJob( job )
   if result['OK']:
-    print 'Reset Job %s' % ( job )
+    print('Reset Job %s' % (job))
   else:
     errorList.append( ( job, result['Message'] ) )
     exitCode = 2
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit( exitCode )

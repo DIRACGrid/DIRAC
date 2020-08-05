@@ -11,18 +11,12 @@
 
 """
 
+__RCSID__ = '$Id$'
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 from DIRAC.ResourceStatusSystem.Utilities import Utils
-SiteStatus = getattr(Utils.voimport('DIRAC.ResourceStatusSystem.Client.SiteStatus'), 'SiteStatus')
-ResourceManagementClient = getattr(
-    Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
-    'ResourceManagementClient')
-ResourceStatusClient = getattr(
-    Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient'),
-    'ResourceStatusClient')
-
-__RCSID__ = '$Id: $'
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
 class PEP(object):
@@ -47,14 +41,35 @@ class PEP(object):
 
     self.clients = dict(clients)
 
-    # Creating the client in the PEP is a convenience for the PDP, that
-    # uses internally the two TSS clients: ResourceStatusClient and ResouceManagementClient
+    # Creating the client in the PEP is a convenience for the PDP, that uses internally the RSS clients
+
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient',
+                                    'ResourceStatusClient')
+    if not res['OK']:
+      self.log.error('Failed to load ResourceStatusClient class: %s' % res['Message'])
+      raise ImportError(res['Message'])
+    rsClass = res['Value']
+
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
+                                    'ResourceManagementClient')
+    if not res['OK']:
+      self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
+      raise ImportError(res['Message'])
+    rmClass = res['Value']
+
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus',
+                                    'SiteStatus')
+    if not res['OK']:
+      self.log.error('Failed to load SiteStatus class: %s' % res['Message'])
+      raise ImportError(res['Message'])
+    ssClass = res['Value']
+
     if 'ResourceStatusClient' not in clients:
-      self.clients['ResourceStatusClient'] = ResourceStatusClient()
+      self.clients['ResourceStatusClient'] = rsClass()
     if 'ResourceManagementClient' not in clients:
-      self.clients['ResourceManagementClient'] = ResourceManagementClient()
+      self.clients['ResourceManagementClient'] = rmClass()
     if 'SiteStatus' not in clients:
-      self.clients['SiteStatus'] = SiteStatus()
+      self.clients['SiteStatus'] = ssClass()
 
     # Pass to the PDP the clients that are going to be used on the Commands
     self.pdp = PDP(self.clients)

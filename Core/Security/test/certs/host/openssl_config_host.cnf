@@ -1,0 +1,39 @@
+# OpenSSL root CA configuration file
+
+
+[ req ]
+# Options for the `req` tool (`man req`).
+default_bits        = 2048
+distinguished_name  = req_distinguished_name
+string_mask         = utf8only
+prompt              = no
+encrypt_key         = yes
+
+# SHA-1 is deprecated, so use SHA-2 instead.
+default_md          = sha256
+
+# Extension to add in the request
+req_extensions     = v3_req
+
+[ req_distinguished_name ]
+# CAUTION the name also needs to be in the alt_names as per RFC (don't remember the number)
+# See <https://en.wikipedia.org/wiki/Certificate_signing_request>.
+O                   = Dirac Computing
+0.O                 = CERN # Adapt here to your institute
+CN                  = VOBox
+
+
+[ v3_req ]
+# Extensions to ask for the cert (`man x509v3_config`).
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth,clientAuth
+subjectKeyIdentifier = hash
+subjectAltName = @alt_names
+
+
+
+
+
+[ alt_names ]
+DNS.1 = VOBox
+DNS.2 = localhost

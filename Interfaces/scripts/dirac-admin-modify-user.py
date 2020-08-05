@@ -7,6 +7,7 @@
 """
   Modify a user in the CS.
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -47,7 +48,7 @@ for unprocSw in Script.getUnprocessedSwitches():
     else:
       pName = pl[0]
       pValue = "=".join( pl[1:] )
-      print "Setting property %s to %s" % ( pName, pValue )
+      print("Setting property %s to %s" % (pName, pValue))
       userProps[ pName ] = pValue
 
 userName = args[0]
@@ -64,6 +65,6 @@ else:
     exitCode = 255
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit( exitCode )

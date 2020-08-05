@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+
 __RCSID__ = "$Id$"
 
 import os

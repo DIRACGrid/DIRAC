@@ -8,6 +8,8 @@
     It's still under development & debugging,
 """
 
+__RCSID__ = "$Id$"
+
 import os
 import socket
 import stat
@@ -20,18 +22,15 @@ from DIRAC.Resources.Computing.SSHComputingElement import SSHComputingElement
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
 
 
-CE_NAME = 'SSHBatch'
-
-
 class SSHBatchComputingElement(SSHComputingElement):
 
   #############################################################################
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    SSHComputingElement.__init__(self, ceUniqueID)
+    super(SSHBatchComputingElement, self).__init__(ceUniqueID)
 
-    self.ceType = CE_NAME
+    self.ceType = 'SSHBatch'
     self.sshHost = []
 
   def _reset(self):

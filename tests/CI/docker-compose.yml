@@ -1,0 +1,64 @@
+version: '2.4'
+
+services:
+  mysql:
+    image: mysql:${MYSQL_VER}
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  elasticsearch:
+    image: elasticsearch:${ES_VER}
+    container_name: elasticsearch
+    hostname: elasticsearch
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.flood_stage=200mb
+      - cluster.routing.allocation.disk.watermark.low=500mb
+      - cluster.routing.allocation.disk.watermark.high=300mb
+      # Elasticsearch allocates 1GB of memory by default. As resources are limited
+      # and elasticsearch performance isn't critical in CI, limit this to 256MB
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  # Mock of an S3 storage
+  s3-direct:
+    image: adobe/s3mock
+    container_name: s3-direct
+    hostname: s3-direct
+    ports:
+      - 9090
+      - 9191
+    environment:
+      - initialBuckets=myFirstBucket
+
+  dirac-server:
+    image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
+    container_name: server
+    hostname: server
+    depends_on:
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  dirac-client:
+    image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
+    container_name: client
+    hostname: client
+    depends_on:
+      - dirac-server
+

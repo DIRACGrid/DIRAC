@@ -10,7 +10,7 @@ gForceRawEncoding = False
 try:
   import zlib
   gZCompressionEnabled = True
-except ImportError, x:
+except ImportError as x:
   gZCompressionEnabled = False
 
 def codeRequestInFileId( plotRequest, compressIfPossible = True ):

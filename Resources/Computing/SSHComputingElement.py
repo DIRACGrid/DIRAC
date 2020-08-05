@@ -12,6 +12,7 @@ import os
 import urllib
 import json
 import stat
+import shutil
 from urlparse import urlparse
 
 from DIRAC import S_OK, S_ERROR
@@ -20,6 +21,7 @@ from DIRAC import gLogger
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
+from DIRAC.Resources.Computing.BatchSystems.executeBatch import executeBatchContent
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.List import breakListIntoChunks
@@ -144,7 +146,7 @@ class SSH(object):
                                                                                    self.user, self.host,
                                                                                    self.sshTunnel, pattern, command)
     else:
-      #command = command.replace( '$', '\$' )
+      # command = command.replace( '$', '\$' )
       command = '%s -q %s -l %s %s "echo %s; %s"' % (self.sshType, self.options, self.user, self.host,
                                                      pattern, command)
     self.log.debug("SSH command: %s" % command)
@@ -231,7 +233,7 @@ class SSHComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(SSHComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = 'SSH'
     self.execution = "SSH"
@@ -268,7 +270,7 @@ class SSHComputingElement(ComputingElement):
       self.ceParameters['ExecQueue'] = self.ceParameters.get('Queue', '')
 
     if 'SharedArea' not in self.ceParameters:
-      #. isn't a good location, move to $HOME
+      # . isn't a good location, move to $HOME
       self.ceParameters['SharedArea'] = '$HOME'
 
     if 'BatchOutput' not in self.ceParameters:
@@ -364,13 +366,15 @@ class SSHComputingElement(ComputingElement):
       return S_ERROR('Failed to create directories: %s' % output)
 
     # Upload the control script now
-    batchSystemDir = os.path.join(rootPath, "DIRAC", "Resources", "Computing", "BatchSystems")
-    batchSystemScript = os.path.join(batchSystemDir, '%s.py' % self.batchSystem)
-    batchSystemExecutor = os.path.join(batchSystemDir, 'executeBatch.py')
+    result = self._generateControlScript()
+    if not result['OK']:
+      self.log.warn('Failed generating control script')
+      return result
+    localScript = result['Value']
     self.log.verbose('Uploading %s script to %s' % (self.batchSystem, self.ceParameters['SSHHost']))
     remoteScript = '%s/execute_batch' % self.sharedArea
     result = ssh.scpCall(30,
-                         '%s %s' % (batchSystemScript, batchSystemExecutor),
+                         localScript,
                          remoteScript,
                          postUploadCommand='chmod +x %s' % remoteScript)
     if not result['OK']:
@@ -384,13 +388,20 @@ class SSHComputingElement(ComputingElement):
       self.log.warn('Failed uploading control script: %s' % output)
       return S_ERROR('Failed uploading control script')
 
+    # Delete the generated control script locally
+    try:
+      os.remove(localScript)
+    except OSError:
+      self.log.warn('Failed removing the generated control script locally')
+      return S_ERROR('Failed removing the generated control script locally')
+
     # Chmod the control scripts
-    #self.log.verbose( 'Chmod +x control script' )
-    #result = ssh.sshCall( 10, "chmod +x %s/%s" % ( self.sharedArea, self.controlScript ) )
+    # self.log.verbose( 'Chmod +x control script' )
+    # result = ssh.sshCall( 10, "chmod +x %s/%s" % ( self.sharedArea, self.controlScript ) )
     # if not result['OK']:
     #  self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
     #  return result
-    #status, output, _error = result['Value']
+    # status, output, _error = result['Value']
     # if status != 0:
     #  if status == -1:
     #    self.log.warn( 'Timeout while chmod control script' )
@@ -400,6 +411,28 @@ class SSHComputingElement(ComputingElement):
     #    return S_ERROR( 'Failed uploading chmod script' )
 
     return S_OK()
+
+  def _generateControlScript(self):
+    """ Generates a control script from a BatchSystem and a script called executeBatch
+
+        :return: a path containing the script generated
+    """
+    # Get the batch system module to use
+    batchSystemDir = os.path.join(rootPath, "DIRAC", "Resources", "Computing", "BatchSystems")
+    batchSystemScript = os.path.join(batchSystemDir, '%s.py' % self.batchSystem)
+
+    # Get the executeBatch.py content: an str variable composed of code content that has to be extracted
+    # The control script is generated from the batch system module and this variable
+    controlScript = os.path.join(batchSystemDir, "control_script.py")
+
+    try:
+      shutil.copyfile(batchSystemScript, controlScript)
+      with open(controlScript, "a") as cs:
+        cs.write(executeBatchContent)
+    except IOError:
+        return S_ERROR('IO Error trying to generate control script')
+
+    return S_OK('%s' % controlScript)
 
   def __executeHostCommand(self, command, options, ssh=None, host=None):
 
@@ -567,7 +600,7 @@ class SSHComputingElement(ComputingElement):
 
     return S_OK(result)
 
-  def getCEStatus(self, jobIDList=None):
+  def getCEStatus(self):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()
@@ -693,5 +726,3 @@ class SSHComputingElement(ComputingElement):
       error = localErrorFile
 
     return S_OK((output, error))
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -41,7 +41,7 @@ class DB(MySQL):
     if not self._connected:
       raise RuntimeError("Can not connect to DB '%s', exiting..." % self.dbName)
 
-    self.log.info("==================================================")
+    self.log.info("===================== MySQL ======================")
     self.log.info("User:           " + self.dbUser)
     self.log.info("Host:           " + self.dbHost)
     self.log.info("Port:           " + str(self.dbPort))

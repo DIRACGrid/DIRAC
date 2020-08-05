@@ -4,6 +4,7 @@
 # Added 02.03.2015
 #################################################################
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import stat
@@ -217,13 +218,13 @@ class DirectoryListing(object):
       size = e[4]
       if humanread:
         size = self.humanReadableSize(e[4])
-      print str(e[0]),
-      print str(e[1]).rjust(wList[1]),
-      print str(e[2]).ljust(wList[2]),
-      print str(e[3]).ljust(wList[3]),
-      print str(size).rjust(wList[4]),
-      print str(e[5]).rjust(wList[5]),
-      print str(e[6])
+      print(str(e[0]), end=' ')
+      print(str(e[1]).rjust(wList[1]), end=' ')
+      print(str(e[2]).ljust(wList[2]), end=' ')
+      print(str(e[3]).ljust(wList[3]), end=' ')
+      print(str(size).rjust(wList[4]), end=' ')
+      print(str(e[5]).rjust(wList[5]), end=' ')
+      print(str(e[6]))
 
   def addSimpleFile(self, name):
     """ Add single files to be sorted later"""
@@ -233,4 +234,5 @@ class DirectoryListing(object):
     """ print the ordered list"""
     self.entries.sort()
     for entry in self.entries:
-      print entry
+      print(entry)
+

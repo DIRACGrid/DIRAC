@@ -6,7 +6,7 @@
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import List, Time
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security import Locations
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
@@ -121,7 +121,7 @@ class CSAPI(object):
   def describeUsers(self, users=None):
     """ describe users by nickname
 
-        :param list users: list of users' nickanames
+        :param list users: list of users' nicknames
         :return: a S_OK(description) of the users in input
     """
     if users is None:
@@ -240,14 +240,14 @@ class CSAPI(object):
     """
     Add a user to the cs
 
-      :param str username: group name
-      :param dict properties: dictionary describing user properties:
+    :param str username: username
+    :param dict properties: dictionary describing user properties:
 
-        - DN
-        - groups
-        - <extra params>
+      - DN
+      - groups
+      - <extra params>
 
-      :return: True/False
+    :return: True/False
     """
     if not self.__initialized['OK']:
       return self.__initialized
@@ -279,14 +279,15 @@ class CSAPI(object):
     """
     Modify a user
 
-      :param str username: group name
-      :param dict properties: dictionary describing user properties:
+    :param str username: group name
+    :param dict properties: dictionary describing user properties:
 
         - DN
         - Groups
         - <extra params>
 
-      :return: S_OK, Value = True/False
+    :param bool createIfNonExistant: if true, registers the users if it did not exist
+    :return: S_OK, Value = True/False
     """
     if not self.__initialized['OK']:
       return self.__initialized
@@ -341,14 +342,14 @@ class CSAPI(object):
     """
     Add a group to the cs
 
-      :param str groupname: group name
-      :param dict properties: dictionary describing group properties:
+    :param str groupname: group name
+    :param dict properties: dictionary describing group properties:
 
         - Users
         - Properties
         - <extra params>
 
-      :return: True/False
+    :return: S_OK, Value = True/False
     """
     if not self.__initialized['OK']:
       return self.__initialized
@@ -366,14 +367,15 @@ class CSAPI(object):
     """
     Modify a group
 
-      :param str groupname: group name
-      :param dict properties: dictionary describing group properties:
+    :param str groupname: group name
+    :param dict properties: dictionary describing group properties:
 
         - Users
         - Properties
         - <extra params>
 
-      :return: True/False
+    :param bool createIfNonExistant: if true, creates the group if it did not exist
+    :return: S_OK, Value = True/False
     """
     if not self.__initialized['OK']:
       return self.__initialized
@@ -401,14 +403,15 @@ class CSAPI(object):
   def addHost(self, hostname, properties):
     """
     Add a host to the cs
-      :param str hostname: hostname name
-      :param dict properties: dictionary describing host properties:
+
+    :param str hostname: host name
+    :param dict properties: dictionary describing host properties:
 
         - DN
         - Properties
         - <extra params>
 
-      :return: True/False
+    :return: S_OK, Value = True/False
     """
     if not self.__initialized['OK']:
       return self.__initialized
@@ -528,14 +531,16 @@ class CSAPI(object):
   def modifyHost(self, hostname, properties, createIfNonExistant=False):
     """
     Modify a host
-      :param str hostname: hostname name
-      :param dict properties: dictionary describing host properties:
+
+    :param str hostname: hostname name
+    :param dict properties: dictionary describing host properties:
 
         - DN
         - Properties
         - <extra params>
 
-      :return: True/False
+    :param bool createIfNonExistant: if true, creates the host if it did not exist
+    :return: S_OK, Value = True/False
     """
     if not self.__initialized['OK']:
       return self.__initialized

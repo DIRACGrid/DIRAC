@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import time
 from DIRAC import S_OK, S_ERROR
@@ -23,7 +24,7 @@ def pongCB( msgObj ):
   Just send a Ping message incrementing in 1 the id
   """
   pongid = msgObj.id
-  print "RECEIVED PONG %d" % pongid
+  print("RECEIVED PONG %d" % pongid)
   return sendPingMsg( msgObj.msgClient, pongid + 1 )
 
 def disconnectedCB( msgClient ):
@@ -45,11 +46,11 @@ if __name__ == "__main__":
   msgClient.subscribeToDisconnect( disconnectedCB )
   result = msgClient.connect()
   if not result[ 'OK' ]:
-    print "CANNOT CONNECT: %s" % result[ 'Message' ]
+    print("CANNOT CONNECT: %s" % result['Message'])
     sys.exit(1)
   result = sendPingMsg( msgClient )
   if not result[ 'OK' ]:
-    print "CANNOT SEND PING: %s" % result[ 'Message' ]
+    print("CANNOT SEND PING: %s" % result['Message'])
     sys.exit(1)
   #Wait 10 secs of pingpongs :P
   time.sleep( 10 )

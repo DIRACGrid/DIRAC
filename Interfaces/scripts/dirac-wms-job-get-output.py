@@ -7,6 +7,7 @@
   Retrieve output sandbox for a DIRAC job
 """
 
+from __future__ import print_function
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -55,26 +56,26 @@ for sw, value in Script.getUnprocessedSwitches():
     result = dirac.selectJobs( jobGroup = value, date = jobDate, status = 'Done' )
     if not result['OK']:
       if not "No jobs selected" in result['Message']:
-        print "Error:", result['Message']
+        print("Error:", result['Message'])
         DIRAC.exit( -1 )
     else:
       jobs += result['Value']
     result = dirac.selectJobs( jobGroup = value, date = jobDate, status = 'Failed' )
     if not result['OK']:
       if not "No jobs selected" in result['Message']:
-        print "Error:", result['Message']
+        print("Error:", result['Message'])
         DIRAC.exit( -1 )
     else:
       jobs += result['Value']
 
 for arg in parseArguments( args ):
   if os.path.isdir( arg ):
-    print "Output for job %s already retrieved, remove the output directory to redownload" % arg
+    print("Output for job %s already retrieved, remove the output directory to redownload" % arg)
   else:
     jobs.append( arg )
 
 if not jobs:
-  print "No jobs selected"
+  print("No jobs selected")
   DIRAC.exit( 0 )
 
 if group:
@@ -101,7 +102,7 @@ for job in todoJobs:
     jobDir = os.path.join( outputDir, job )
   if result['OK']:
     if os.path.exists( jobDir ):
-      print 'Job output sandbox retrieved in %s/' % ( jobDir )
+      print('Job output sandbox retrieved in %s/' % (jobDir))
   else:
     if os.path.exists( '%s' % jobDir ):
       shutil.rmtree( jobDir )
@@ -109,6 +110,6 @@ for job in todoJobs:
     exitCode = 2
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit( exitCode )

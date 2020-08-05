@@ -14,6 +14,7 @@
 
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import re
@@ -25,6 +26,7 @@ import tempfile
 import glob
 import tarfile
 import urllib
+import shlex
 import StringIO
 
 import DIRAC
@@ -35,15 +37,14 @@ from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
@@ -144,7 +145,7 @@ class Dirac(API):
       return S_OK()
     jobIDs = self.jobRepo.readRepository()['Value'].keys()
     if printOutput:
-      print self.pPrint.pformat(jobIDs)
+      print(self.pPrint.pformat(jobIDs))
     return S_OK(jobIDs)
 
   def monitorRepository(self, printOutput=False):
@@ -171,7 +172,7 @@ class Dirac(API):
       state = jobDict.get('State', 'Unknown')
       statusDict[state] = statusDict.setdefault(state, 0) + 1
     if printOutput:
-      print self.pPrint.pformat(statusDict)
+      print(self.pPrint.pformat(statusDict))
     return S_OK(statusDict)
 
   def retrieveRepositorySandboxes(self, requestedStates=None, destinationDirectory=''):
@@ -284,9 +285,6 @@ class Dirac(API):
     return S_OK()
 
   #############################################################################
-  @deprecated("Use function submitJob instead")
-  def submit(self, job, mode='wms'):
-    return self.submitJob(job, mode=mode)
 
   def submitJob(self, job, mode='wms'):
     """Submit jobs to DIRAC (by default to the Worload Management System).
@@ -451,8 +449,6 @@ class Dirac(API):
     """ This internal method runs a tailored job agent for the local execution
         of a previously submitted WMS job. The type of CEUniqueID can be overidden
         via the configuration.
-
-        Currently must unset CMTPROJECTPATH to get this to work.
     """
     agentName = 'WorkloadManagement/JobAgent'
     self.log.verbose('In case being booted from a DIRAC script,'
@@ -464,7 +460,6 @@ class Dirac(API):
     localCfg.addDefaultEntry('ControlDirectory', os.getcwd())
     localCfg.addDefaultEntry('MaxCycles', 1)
     localCfg.addDefaultEntry('/LocalSite/WorkingDirectory', os.getcwd())
-    localCfg.addDefaultEntry('/LocalSite/MaxCPUTime', 300000)
     localCfg.addDefaultEntry('/LocalSite/CPUTime', 300000)
     localCfg.addDefaultEntry('/LocalSite/OwnerGroup', self.__getCurrentGroup())
     # Running twice in the same process, the second time it use the initial JobID.
@@ -713,6 +708,9 @@ class Dirac(API):
     """ Internal function.  This method is called by DIRAC API function submitJob(job,mode='Local').
         All output files are written to the local directory.
 
+        This is a method for running local tests. It skips the creation of a JobWrapper,
+        but preparing an environment that mimicks it.
+
     :param job: a job object
     :type job: ~DIRAC.Interfaces.API.Job.Job
     """
@@ -738,13 +736,14 @@ class Dirac(API):
       self.log.error("Could not extract job parameters from job")
       return res
     parameters = res['Value']
+    self.log.debug("Extracted job parameters from JDL", parameters)
 
     arguments = parameters.get('Arguments', '')
 
     # Replace argument placeholders for parametric jobs
     # if we have Parameters then we have a parametric job
     if 'Parameters' in parameters:
-      for par, value in parameters.iteritems():
+      for par, value in parameters.items():
         if par.startswith('Parameters.'):
           # we just use the first entry in all lists to run one job
           parameters[par[len('Parameters.'):]] = value[0]
@@ -818,6 +817,7 @@ class Dirac(API):
     else:
       self.log.verbose('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
 
+    self.log.debug("Looking for resolving the input sandbox, if it is present")
     sandbox = parameters.get('InputSandbox')
     if sandbox:
       self.log.verbose("Input Sandbox is %s" % sandbox)
@@ -863,19 +863,24 @@ class Dirac(API):
 
     self.log.info('Attempting to submit job to local site: %s' % DIRAC.siteName())
 
+    # DIRACROOT is used for finding dirac-jobexec (it is normally set by the JobWrapper)
+    # We don't use DIRAC.rootPath as we assume that a DIRAC installation is already done at this point
+    os.environ['DIRACROOT'] = os.environ['DIRAC']
+    self.log.verbose('DIRACROOT = %s' % (os.environ['DIRACROOT']))
+
     if 'Executable' in parameters:
       executable = os.path.expandvars(parameters['Executable'])
     else:
       return self._errorReport('Missing job "Executable"')
 
+    if '-o LogLevel' in arguments:
+      dArguments = arguments.split()
+      logLev = dArguments.index('-o') + 1
+      dArguments[logLev] = 'LogLevel=DEBUG'
+      arguments = ' '.join(dArguments)
+    else:
+      arguments += ' -o LogLevel=DEBUG'
     command = '%s %s' % (executable, arguments)
-    # If not set differently in the CS use the root from the current DIRAC installation
-    siteRoot = gConfig.getValue('/LocalSite/Root', DIRAC.rootPath)
-
-    os.environ['DIRACROOT'] = siteRoot
-    self.log.verbose('DIRACROOT = %s' % (siteRoot))
-    os.environ['DIRACPYTHON'] = sys.executable
-    self.log.verbose('DIRACPYTHON = %s' % (sys.executable))
 
     self.log.info('Executing: %s' % command)
     executionEnv = dict(os.environ)
@@ -890,9 +895,7 @@ class Dirac(API):
         executionEnv[nameEnv] = valEnv
         self.log.verbose('%s = %s' % (nameEnv, valEnv))
 
-    cbFunction = self.__printOutput
-
-    result = shellCall(0, command, env=executionEnv, callbackFunction=cbFunction)
+    result = systemCall(0, cmdSeq=shlex.split(command), env=executionEnv, callbackFunction=self.__printOutput)
     if not result['OK']:
       return result
 
@@ -909,7 +912,7 @@ class Dirac(API):
         os.remove(outputFileName)
       self.log.info('Standard output written to %s' % (outputFileName))
       with open(outputFileName, 'w') as outputFile:
-        print >> outputFile, stdout
+        print(stdout, file=outputFile)
     else:
       self.log.warn('Job JDL has no StdOutput file parameter defined')
 
@@ -919,7 +922,7 @@ class Dirac(API):
         os.remove(errorFileName)
       self.log.verbose('Standard error written to %s' % (errorFileName))
       with open(errorFileName, 'w') as errorFile:
-        print >> errorFile, stderr
+        print(stderr, file=errorFile)
       sandbox = None
     else:
       self.log.warn('Job JDL has no StdError file parameter defined')
@@ -946,7 +949,7 @@ class Dirac(API):
 
     if status:  # if it fails, copy content of execution dir in current directory
       destDir = os.path.join(curDir, os.path.basename(os.path.dirname(tmpdir)))
-      self.log.debug("Copying outputs from %s to %s" % (tmpdir, destDir))
+      self.log.verbose("Copying outputs from %s to %s" % (tmpdir, destDir))
       if os.path.exists(destDir):
         shutil.rmtree(destDir)
       shutil.copytree(tmpdir, destDir)
@@ -978,15 +981,15 @@ class Dirac(API):
     if fd:
       if isinstance(fd, (int, long)):
         if fd == 0:
-          print >> sys.stdout, message
+          print(message, file=sys.stdout)
         elif fd == 1:
-          print >> sys.stderr, message
+          print(message, file=sys.stderr)
         else:
-          print message
+          print(message)
       elif isinstance(fd, file):
-        print >> fd, message
+        print(message, file=fd)
     else:
-      print message
+      print(message)
 
   #############################################################################
   # def listCatalog( self, directory, printOutput = False ):
@@ -1150,7 +1153,7 @@ class Dirac(API):
       return repsResult
 
     if printOutput:
-      print self.pPrint.pformat(repsResult['Value'])
+      print(self.pPrint.pformat(repsResult['Value']))
 
     return repsResult
 
@@ -1218,13 +1221,10 @@ class Dirac(API):
       lfnGroups += lists
 
     if printOutput:
-      print self.pPrint.pformat(lfnGroups)
+      print(self.pPrint.pformat(lfnGroups))
     return S_OK(lfnGroups)
 
   #############################################################################
-  @deprecated("Use function getLfnMetadata instead")
-  def getMetadata(self, lfns, printOutput=False):
-    return self.getLfnMetadata(lfns, printOutput=printOutput)
 
   def getLfnMetadata(self, lfns, printOutput=False):
     """Obtain replica metadata from file catalogue client.
@@ -1272,7 +1272,7 @@ class Dirac(API):
         repsResult['Failed'].pop(directory)
 
     if printOutput:
-      print self.pPrint.pformat(repsResult)
+      print(self.pPrint.pformat(repsResult))
 
     return S_OK(repsResult)
 
@@ -1315,7 +1315,7 @@ class Dirac(API):
     if not result['OK']:
       return self._errorReport('Problem during putAndRegister call', result['Message'])
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -1350,11 +1350,11 @@ class Dirac(API):
     if result['Value']['Failed']:
       self.log.error('Failures occurred during rm.getFile')
       if printOutput:
-        print self.pPrint.pformat(result['Value'])
+        print(self.pPrint.pformat(result['Value']))
       return S_ERROR(result['Value'])
 
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -1411,7 +1411,7 @@ class Dirac(API):
     if not result['OK']:
       return self._errorReport('Problem during replicateFile call', result['Message'])
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   def replicate(self, lfn, destinationSE, sourceSE='', printOutput=False):
@@ -1452,7 +1452,7 @@ class Dirac(API):
     if not result['OK']:
       return self._errorReport('Problem during replicate call', result['Message'])
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -1485,7 +1485,7 @@ class Dirac(API):
     if not result['OK']:
       return self._errorReport('Problem during getAccessURL call', result['Message'])
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -1516,7 +1516,7 @@ class Dirac(API):
     if not result['OK']:
       return self._errorReport('Problem during getAccessURL call', result['Message'])
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -1548,7 +1548,7 @@ class Dirac(API):
     if not result['OK']:
       return self._errorReport('Problem during getStorageFileMetadata call', result['Message'])
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -1576,7 +1576,7 @@ class Dirac(API):
     dm = DataManager()
     result = dm.removeFile(lfn)
     if printOutput and result['OK']:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -1603,7 +1603,7 @@ class Dirac(API):
     dm = DataManager()
     result = dm.removeReplica(storageElement, lfn)
     if printOutput and result['OK']:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -1647,8 +1647,7 @@ class Dirac(API):
     except Exception as x:
       return self._errorReport(repr(x), 'Could not create directory in %s' % (dirPath))
 
-    result = SandboxStoreClient(smdb=False,
-                                useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
+    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
                                                                                             'Input',
                                                                                             dirPath)
     if not result['OK']:
@@ -1696,8 +1695,7 @@ class Dirac(API):
     mkDir(dirPath)
 
     # New download
-    result = SandboxStoreClient(smdb=False,
-                                useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
+    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
                                                                                             'Output',
                                                                                             dirPath,
                                                                                             inMemory=False,
@@ -1758,9 +1756,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function deleteJob instead")
-  def delete(self, jobID):
-    return self.deleteJob(jobID)
 
   def deleteJob(self, jobID):
     """Delete job or list of jobs from the WMS, if running these jobs will
@@ -1789,9 +1784,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function rescheduleJob instead")
-  def reschedule(self, jobID):
-    return self.rescheduleJob(jobID)
 
   def rescheduleJob(self, jobID):
     """Reschedule a job or list of jobs in the WMS.  This operation is the same
@@ -1823,10 +1815,6 @@ class Dirac(API):
         self.jobRepo.updateJobs(repoDict)
     return result
 
-  @deprecated("Use function killJob instead")
-  def kill(self, jobID):
-    return self.killJob(jobID)
-
   def killJob(self, jobID):
     """Issue a kill signal to a running job.  If a job has already completed this
        action is harmless but otherwise the process will be killed on the compute
@@ -1855,9 +1843,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function getJobStatus instead")
-  def status(self, jobID):
-    return self.getJobStatus(jobID)
 
   def getJobStatus(self, jobID):
     """Monitor the status of DIRAC Jobs.
@@ -2186,7 +2171,7 @@ class Dirac(API):
       self.log.verbose('Output written to %s' % outputFile)
 
     if printOutput:
-      print self.pPrint.pformat(summary)
+      print(self.pPrint.pformat(summary))
 
     return S_OK(summary)
 
@@ -2345,14 +2330,11 @@ class Dirac(API):
         self.log.warn('No heartbeat data for job %s' % job)
 
     if printOutput:
-      print self.pPrint.pformat(summary)
+      print(self.pPrint.pformat(summary))
 
     return S_OK(summary)
 
   #############################################################################
-  @deprecated("Use function getJobAttributes instead")
-  def attributes(self, jobID, printOutput=False):
-    return self.getJobAttributes(jobID, printOutput=printOutput)
 
   def getJobAttributes(self, jobID, printOutput=False):
     """Return DIRAC attributes associated with the given job.
@@ -2385,15 +2367,12 @@ class Dirac(API):
       return result
 
     if printOutput:
-      print '=================\n', jobID
-      print self.pPrint.pformat(result['Value'])
+      print('=================\n', jobID)
+      print(self.pPrint.pformat(result['Value']))
 
     return result
 
   #############################################################################
-  @deprecated("Use function getJobParameters instead")
-  def parameters(self, jobID, printOutput=False):
-    return self.getJobParameters(jobID, printOutput=printOutput)
 
   def getJobParameters(self, jobID, printOutput=False):
     """Return DIRAC parameters associated with the given job.
@@ -2426,7 +2405,7 @@ class Dirac(API):
     result['Value'].get(jobID, {}).pop('StandardOutput', None)
 
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
 
     if jobID in result['Value']:
       return S_OK(result['Value'][jobID])
@@ -2434,9 +2413,6 @@ class Dirac(API):
       return S_ERROR('Failed to get job parameters for %s' % jobID)
 
   #############################################################################
-  @deprecated("Use getJobLoggingInfo instead")
-  def loggingInfo(self, jobID, printOutput=False):
-    return self.getJobLoggingInfo(jobID, printOutput=printOutput)
 
   def getJobLoggingInfo(self, jobID, printOutput=False):
     """DIRAC keeps track of job transitions which are kept in the job monitoring
@@ -2479,9 +2455,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function peekJob instead")
-  def peek(self, jobID, printout=False, printOutput=False):
-    return self.peekJob(jobID, printOutput=printout or printOutput)
 
   def peekJob(self, jobID, printOutput=False):
     """The peek function will attempt to return standard output from the WMS for
@@ -2521,9 +2494,6 @@ class Dirac(API):
     return S_OK(stdout)
 
   #############################################################################
-  @deprecated("Use function pingService instead")
-  def ping(self, system, service, printOutput=False, url=None):
-    return self.pingService(system, service, printOutput=printOutput, url=url)
 
   def pingService(self, system, service, printOutput=False, url=None):
     """The ping function will attempt to return standard information from a system
@@ -2569,7 +2539,7 @@ class Dirac(API):
       result['Message'] = str(x)
 
     if printOutput:
-      print self.pPrint.pformat(result)
+      print(self.pPrint.pformat(result))
     return result
 
   #############################################################################
@@ -2600,7 +2570,7 @@ class Dirac(API):
 
     result = self.__getJDLParameters(result['Value'])
     if printOutput:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
 
     return result
 
@@ -2611,9 +2581,12 @@ class Dirac(API):
     :param jdl: a JDL
     :type jdl: ~DIRAC.Interfaces.API.Job.Job or str or file
     """
+    self.log.debug("in __getJDLParameters")
     if hasattr(jdl, '_toJDL'):
+      self.log.debug("jdl has a _toJDL method")
       jdl = jdl._toJDL()
     elif os.path.exists(jdl):
+      self.log.debug("jdl %s is a file" % jdl)
       with open(jdl, 'r') as jdlFile:
         jdl = jdlFile.read()
 

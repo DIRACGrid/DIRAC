@@ -30,6 +30,6 @@ In the short term, most of this schema will be moved into [vo]/[setup] dependent
 
 
 List of options
-===============
+---------------
 
 * `MainServers`: List of server names (no protocol, no port) to be used as MainServer

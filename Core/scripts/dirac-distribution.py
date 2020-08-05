@@ -248,7 +248,7 @@ class DistributionMaker:
     return True
 
   def tarExternals(self, releaseVersion):
-    externalsVersion = self.relConf.getExtenalsVersion(releaseVersion)
+    externalsVersion = self.relConf.getExternalsVersion(releaseVersion)
     platform = Platform.getPlatformString()
     availableExternals = self.getAvailableExternals()
 

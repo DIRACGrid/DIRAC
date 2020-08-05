@@ -374,8 +374,8 @@ class VOMSPolicy( SecurityManagerBase ):
         For existing directories, we must have the write permission
         on the parent
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
 
@@ -410,8 +410,8 @@ class VOMSPolicy( SecurityManagerBase ):
         For existing files, we must have the write permission
         on the parent
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
 
@@ -444,8 +444,8 @@ class VOMSPolicy( SecurityManagerBase ):
     """ Test Read permission on the directory.
         If the directory does not exist, we do not allow.
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
 
@@ -459,8 +459,8 @@ class VOMSPolicy( SecurityManagerBase ):
         be it a file or a directory.
         So it reads permissions from a directory
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
 
@@ -472,8 +472,8 @@ class VOMSPolicy( SecurityManagerBase ):
         be it a file or a directory.
         So it reads permissions from a directory
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
 
@@ -485,8 +485,8 @@ class VOMSPolicy( SecurityManagerBase ):
     """ Test Read permission on the file associated to the replica.
         If the file does not exist, we allow.
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
     return self.__testPermissionOnFile( paths, 'Read', credDict,
@@ -496,8 +496,8 @@ class VOMSPolicy( SecurityManagerBase ):
     """ Test Write permission on the file associated to the replica.
         If the file does not exist, we allow.
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
     return self.__testPermissionOnFile( paths, 'Write', credDict,
@@ -507,8 +507,8 @@ class VOMSPolicy( SecurityManagerBase ):
     """ Test Write permission on the file.
         If the file does not exist, we allow.
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
     return self.__testPermissionOnFile( paths, 'Write', credDict,
@@ -520,8 +520,8 @@ class VOMSPolicy( SecurityManagerBase ):
     """ Test Write permission on the directory/file.
         If the directory/file does not exist, we allow.
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
 
@@ -532,8 +532,8 @@ class VOMSPolicy( SecurityManagerBase ):
   def __policyDeny( self, paths, credDict ):
     """ Denies the access to all the paths given
 
-        :param paths : list/dict of path
-        :param credDict : credential of the user
+        :param paths: list/dict of path
+        :param credDict: credential of the user
         :returns: Successful with True of False, and Failed.
     """
 
@@ -547,9 +547,9 @@ class VOMSPolicy( SecurityManagerBase ):
   def hasAccess( self, opType, paths, credDict ):
     """ Checks whether a given operation on given paths is permitted
 
-        :param opType : name of the operation (the FileCatalog methods in fact...)
+        :param opType: name of the operation (the FileCatalog methods in fact...)
         :param paths: list/dictionary of path on which we want to apply the operation
-        :param credDict : credential of the users (with at least username, group and properties)
+        :param credDict: credential of the users (with at least username, group and properties)
 
         :returns: Successful dict with True or False, and Failed dict. In fact, it is not neccesarily
                 a boolean, rather an int (binary operation results)

@@ -10,6 +10,7 @@ __RCSID__ = '$Id$'
 
 import json
 
+import hashlib
 import shutil
 import os
 import glob
@@ -36,9 +37,10 @@ class PilotCStoJSONSynchronizer(object):
     """ c'tor
         Just setting defaults
     """
+    self.workDir = ''  # Working directory where the files are going to be stored
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
 
-    # domain name of the web server used to upload the pilot json file and the pilot scripts
+    # domain name of the web server(s) used to upload the pilot json file and the pilot scripts
     self.pilotFileServer = ''
 
     # pilot sync parameters
@@ -53,8 +55,16 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVOScriptPath = ''
     self.pilotVersion = ''
     self.pilotVOVersion = ''
+    self.pilotRepoBranch = 'master'
+    self.pilotVORepoBranch = 'master'
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
     self.casLocation = getCAsLocation()
+    self._checksumDict = {}
+
+    # If this is set to True, we will attempt to upload the files
+    # to all the servers in the list. Obviously, it will only work
+    # for the DIRAC web servers (see _upload)
+    self.uploadToWebApp = True
 
     self.log = gLogger.getSubLogger(__name__)
 
@@ -62,12 +72,20 @@ class PilotCStoJSONSynchronizer(object):
     """ Main synchronizer method.
     """
     ops = Operations()
+    self._checksumDict = {}
 
     self.pilotFileServer = ops.getValue("Pilot/pilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
-      self.log.warn("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
-      self.log.warn("Pilot 3 files won't be updated, and you won't be able to use Pilot 3")
-      self.log.warn("The Synchronization steps are anyway displayed")
+      self.log.fatal("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
+      self.log.fatal("Pilot 3 files won't be updated, and you won't be able to send pilots")
+      return S_OK("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
+
+    self.workDir = ops.getValue("Pilot/workDir", self.workDir)
+    if self.workDir:
+      try:
+        os.mkdir(self.workDir)
+      except OSError:
+        pass
 
     self.log.notice('-- Synchronizing the content of the JSON file with the content of the CS --',
                     '(%s)' % self.jsonFile)
@@ -77,34 +95,34 @@ class PilotCStoJSONSynchronizer(object):
     self.projectDir = ops.getValue("Pilot/projectDir", self.projectDir)
     self.pilotScriptPath = ops.getValue("Pilot/pilotScriptsPath", self.pilotScriptPath)
     self.pilotVOScriptPath = ops.getValue("Pilot/pilotVOScriptsPath", self.pilotVOScriptPath)
+    self.pilotRepoBranch = ops.getValue("Pilot/pilotRepoBranch", self.pilotRepoBranch)
+    self.pilotVORepoBranch = ops.getValue("Pilot/pilotVORepoBranch", self.pilotVORepoBranch)
+    self.uploadToWebApp = ops.getValue("Pilot/uploadToWebApp", True)
 
-    result = self._syncJSONFile()
-    if not result['OK']:
-      self.log.error("Error uploading the pilot file", result['Message'])
-      return result
-
+    res = self._syncJSONFile()
+    if not res['OK']:
+      return res
     self.log.notice('-- Synchronizing the pilot scripts with the content of the repository --',
                     '(%s)' % self.pilotRepo)
-
     self._syncScripts()
+    self._syncChecksum()
 
     return S_OK()
 
   def _syncJSONFile(self):
     """ Creates the pilot dictionary from the CS, ready for encoding as JSON
     """
-    pilotDict = self._getCSDict()
-
-    result = self._upload(pilotDict=pilotDict)
-    if not result['OK']:
-      self.log.error("Error uploading the pilot file", result['Message'])
-      return result
+    res = self._getCSDict()
+    if not res['OK']:
+      return res
+    pilotDict = res['Value']
+    self._upload(pilotDict=pilotDict)
     return S_OK()
 
   def _getCSDict(self):
     """ Gets minimal info for running a pilot, from the CS
     :returns: pilotDict (containing pilots run info)
-    :rtype: dict
+    :rtype: S_OK, S_ERROR, value is pilotDict
     """
 
     pilotDict = {'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
@@ -171,7 +189,7 @@ class PilotCStoJSONSynchronizer(object):
             pilotDict['CEs'][ce] = {'Site': site, 'GridCEType': ceType}
 
           if localCEType is not None:
-            pilotDict['CEs'][ce].setDefault('LocalCEType', localCEType)
+            pilotDict['CEs'][ce].setdefault('LocalCEType', localCEType)
 
     defaultSetup = gConfig.getValue('/DIRAC/DefaultSetup')
     if defaultSetup:
@@ -182,7 +200,7 @@ class PilotCStoJSONSynchronizer(object):
 
     self.log.debug("Got pilotDict", str(pilotDict))
 
-    return pilotDict
+    return S_OK(pilotDict)
 
   def _getPilotOptionsPerSetup(self, setup, pilotDict):
     """ Given a setup, returns its pilot options in a dictionary
@@ -266,39 +284,40 @@ class PilotCStoJSONSynchronizer(object):
 
     # Extension, if it exists
     if self.pilotVORepo:
-      if os.path.isdir('pilotVOLocalRepo'):
-        shutil.rmtree('pilotVOLocalRepo')
-      os.mkdir('pilotVOLocalRepo')
-      repo_VO = Repo.init('pilotVOLocalRepo')
+
+      pilotVOLocalRepo = os.path.join(self.workDir, 'pilotVOLocalRepo')
+      if os.path.isdir(pilotVOLocalRepo):
+        shutil.rmtree(pilotVOLocalRepo)
+      os.mkdir(pilotVOLocalRepo)
+      repo_VO = Repo.init(pilotVOLocalRepo)
       upstream = repo_VO.create_remote('upstream', self.pilotVORepo)
       upstream.fetch()
       upstream.pull(upstream.refs[0].remote_head)
       if repo_VO.tags:
         repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotVOScripts')
       else:
-        repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
-      scriptDir = (os.path.join('pilotVOLocalRepo', self.projectDir, self.pilotVOScriptPath, "*.py"))
+        repo_VO.git.checkout('upstream/%s' % self.pilotVORepoBranch, b='pilotVOScripts')
+      scriptDir = (os.path.join(pilotVOLocalRepo, self.projectDir, self.pilotVOScriptPath, "*.py"))
       for fileVO in glob.glob(scriptDir):
-        result = self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
-        if not result['OK']:
-          self.log.error("Error uploading the VO pilot script", result['Message'])
+        self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
         tarFiles.append(fileVO)
     else:
       self.log.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
 
     # DIRAC repo
-    if os.path.isdir('pilotLocalRepo'):
-      shutil.rmtree('pilotLocalRepo')
-    os.mkdir('pilotLocalRepo')
-    repo = Repo.init('pilotLocalRepo')
+    pilotLocalRepo = os.path.join(self.workDir, 'pilotLocalRepo')
+    if os.path.isdir(pilotLocalRepo):
+      shutil.rmtree(pilotLocalRepo)
+    os.mkdir(pilotLocalRepo)
+    repo = Repo.init(pilotLocalRepo)
     upstream = repo.create_remote('upstream', self.pilotRepo)
     upstream.fetch()
     upstream.pull(upstream.refs[0].remote_head)
     if repo.tags:
       if self.pilotVORepo:
-        localRepo = 'pilotVOLocalRepo'
+        localRepo = pilotVOLocalRepo
       else:
-        localRepo = 'pilotLocalRepo'
+        localRepo = pilotLocalRepo
       with open(os.path.join(localRepo, self.projectDir, 'releases.cfg'), 'r') as releasesFile:
         lines = [line.rstrip('\n') for line in releasesFile]
         lines = [s.strip() for s in lines]
@@ -306,47 +325,39 @@ class PilotCStoJSONSynchronizer(object):
           self.pilotVersion = lines[(lines.index(self.pilotVOVersion)) + 3].split(':')[1]
       repo.git.checkout(repo.tags[self.pilotVersion], b='pilotScripts')
     else:
-      repo.git.checkout('upstream/master', b='pilotScripts')
+      repo.git.checkout('upstream/%s' % self.pilotRepoBranch, b='pilotScripts')
     try:
-      scriptDir = os.path.join('pilotLocalRepo', self.pilotScriptPath, "*.py")
+      scriptDir = os.path.join(pilotLocalRepo, self.pilotScriptPath, "*.py")
       for filename in glob.glob(scriptDir):
-        result = self._upload(filename=os.path.basename(filename),
-                              pilotScript=filename)
-        if not result['OK']:
-          self.log.error("Error uploading the pilot script", result['Message'])
+        self._upload(filename=os.path.basename(filename), pilotScript=filename)
         tarFiles.append(filename)
-      if not os.path.isfile(os.path.join('pilotLocalRepo',
+      if not os.path.isfile(os.path.join(pilotLocalRepo,
                                          self.pilotScriptPath,
                                          "dirac-install.py")):
-        result = self._upload(filename='dirac-install.py',
-                              pilotScript=os.path.join('pilotLocalRepo', "Core/scripts/dirac-install.py"))
-        if not result['OK']:
-          self.log.error("Error uploading dirac-install.py", result['Message'])
-        tarFiles.append('dirac-install.py')
+        self._upload(filename='dirac-install.py',
+                     pilotScript=os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
+        tarFiles.append(os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
 
-      with tarfile.TarFile(name='pilot.tar', mode='w') as tf:
-        pwd = os.getcwd()
+      tarPath = os.path.join(self.workDir, 'pilot.tar')
+      with tarfile.TarFile(name=tarPath, mode='w') as tf:
         for ptf in tarFiles:
-          shutil.copyfile(ptf, os.path.join(pwd, os.path.basename(ptf)))
-          tf.add(os.path.basename(ptf), recursive=False)
+          # This copy makes sure that all the files in the tarball are accessible
+          # in the work directory. It should be kept
+          shutil.copyfile(ptf, os.path.join(self.workDir, os.path.basename(ptf)))
+          tf.add(ptf, arcname=os.path.basename(ptf), recursive=False)
 
-      result = self._upload(filename='pilot.tar',
-                            pilotScript='pilot.tar')
-      if not result['OK']:
-        self.log.error("Error uploading pilot.tar", result['Message'])
-        return result
+      self._upload(filename='pilot.tar', pilotScript=tarPath)
 
     except ValueError:
-      self.log.error("Error uploading the pilot scripts", result['Message'])
-      return result
+      return S_ERROR("Error uploading the pilot scripts")
     return S_OK()
 
   def _upload(self, pilotDict=None, filename='', pilotScript=''):
     """ Method to upload the pilot json file and the pilot scripts to the server.
+
         :param pilotDict: used only to upload the pilot.json, which is what it is
         :param filename: remote filename
         :param pilotScript: local path to the file to upload
-        :returns: S_OK if the upload was successful, S_ERROR otherwise
     """
     # Note: this method could clearly get a revamp... also the upload is not done in an
     # optimal way since we could send the file with request without reading it in memory,
@@ -354,31 +365,59 @@ class PilotCStoJSONSynchronizer(object):
     # http://docs.python-requests.org/en/master/user/advanced/#post-multiple-multipart-encoded-files
     # But well, maybe too much optimization :-)
 
-    if pilotDict:  # this is for the pilot.json file
-      if not self.pilotFileServer:
-        self.log.warn("NOT uploading the pilot JSON file, just printing it out")
+    if not self.uploadToWebApp:
+      self.log.verbose("Skipping upload")
+      return
+
+    if not self.pilotFileServer:
+      self.log.warn("No pilotFileServer, nowhere to upload")
+      if pilotDict:
         print(json.dumps(pilotDict, indent=4, sort_keys=True))  # just print here as formatting is important
-        return S_OK()
 
-      data = {'filename': self.jsonFile, 'data': json.dumps(pilotDict)}
-
-    else:  # we assume the method is asked to upload the pilots scripts
-      if not self.pilotFileServer:
-        self.log.warn("NOT uploading", filename)
-        return S_OK()
-
-      # ALWAYS open binary when sending a file
-      with open(pilotScript, "rb") as psf:
-        script = psf.read()
-      data = {'filename': filename, 'data': script}
-
-    resp = requests.post('https://%s/DIRAC/upload' % self.pilotFileServer,
-                         data=data,
-                         verify=self.casLocation,
-                         cert=self.certAndKeyLocation)
-
-    if resp.status_code != 200:
-      return S_ERROR(resp.text)
     else:
-      self.log.info('-- File and scripts upload done --')
-      return S_OK()
+      if pilotDict:  # this is for the pilot.json file
+        filename = os.path.join(self.workDir, self.jsonFile)
+        script = json.dumps(pilotDict)
+        with open(filename, 'w') as jf:
+          jf.write(script)
+
+      else:  # we assume the method is asked to upload the pilots scripts
+        # ALWAYS open binary when sending a file
+        with open(pilotScript, "rb") as psf:
+          script = psf.read()
+
+      for pfServer in self.pilotFileServer.replace(' ', '').split(','):
+        try:
+          data = {'filename': os.path.basename(filename), 'data': script}
+          resp = requests.post('https://%s/DIRAC/upload' % pfServer,
+                               data=data,
+                               verify=self.casLocation,
+                               cert=self.certAndKeyLocation)
+          self._checksumFile(pilotScript if pilotScript else filename)
+          # This POST works iff the webserver implements the upload function
+          # Which is done in WebAppDIRAC.WebApp.handler.RooHandler.RootHandler.web_upload()
+          # So, this location is specific to DIRAC WebApp.
+          if resp.status_code != 200:
+            self.log.error("Status code != 200", "%s returned when POSTing on %s" % (resp.text, pfServer))
+
+        except requests.ConnectionError:
+          # if we are here it is probably because we are trying to upload to a WS that does not expose a POST API
+          self.log.error("Can't issue POST", "on %s" % pfServer)
+
+  def _checksumFile(self, filePath):
+    """Calculate the checksum for the file and add to self._checkSumDict.
+
+    :param str filePath: path to the file for which to calculate the checksum
+    :returns None:
+    """
+    filename = os.path.basename(filePath)
+    self._checksumDict[filename] = hashlib.sha512(open(filePath, 'rb').read()).hexdigest()
+
+  def _syncChecksum(self):
+    """Upload the checksum file to the fileservers."""
+    cksPath = os.path.join(self.workDir, 'checksums.sha512')
+    with open(cksPath, 'wt') as chksums:
+      for filename, chksum in sorted(self._checksumDict.items()):
+        # same as the output from sha512sum commands
+        chksums.write('%s  %s\n' % (chksum, filename))
+    self._upload(filename='checksums.sha512', pilotScript=cksPath)

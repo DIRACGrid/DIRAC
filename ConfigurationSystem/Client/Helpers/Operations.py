@@ -59,11 +59,11 @@
 
     1. by specifying the VO name directly::
 
-      Operations(vo=anotherVOName).getValue('someSectionName/someOptionX')
+         Operations(vo=anotherVOName).getValue('someSectionName/someOptionX')
 
     2. by give a group name::
 
-      Operations(group=thisIsAGroupOfVO_X).getValue('someSectionName/someOptionX')
+         Operations(group=thisIsAGroupOfVO_X).getValue('someSectionName/someOptionX')
 
     3. if no VO nor group is provided, the VO will be guessed from the proxy,
     but this works iff the object is instantiated by a proxy (and not, e.g., using a server certificate)

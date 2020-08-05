@@ -85,7 +85,7 @@ class ModuleDefinition(AttributeCollection):
       # A.T.  Use vars() function to inspect local objects instead of playing with
       #       fake modules. We assume that after the body execution there will be
       #       a class with name "self.getType()" defined in the local scope.
-      exec self.getBody()
+      exec(self.getBody())
       if self.getType() in vars():
         self.main_class_obj = vars()[self.getType()]  # save class object
       else:

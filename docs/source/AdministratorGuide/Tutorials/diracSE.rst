@@ -88,7 +88,7 @@ Test it
 
 Create a dummy file::
 
-  [dirauserc@dirac-tuto ~]$ echo "dummyFile" > /tmp/dummy.txt
+  [diracuser@dirac-tuto ~]$ echo "dummyFile" > /tmp/dummy.txt
 
 Now create a file called ``/tmp/testSE.py``, with the following content
 
@@ -123,7 +123,7 @@ Now create a file called ``/tmp/testSE.py``, with the following content
 
 
 
-This file uploads ``/tmp/dummy.txt`` on the StorageElement, list the directory and removes it. The output should be something like that::
+This script uploads ``/tmp/dummy.txt`` on the StorageElement as ``myFirstFile.txt``, list the directory, downloads the uploaded file and removes it from the StorageElement. The output should be something like that::
 
   [diracuser@dirac-tuto ~]$ python /tmp/testSE.py
   Putting file
@@ -137,7 +137,7 @@ This file uploads ``/tmp/dummy.txt`` on the StorageElement, list the directory a
   Listing directory
   {'OK': True, 'Value': {'Successful': {'/tutoVO': {'Files': {}, 'SubDirs': {}}}, 'Failed': {}}}
 
-
+The list of files within ``tmp`` should also contain ``dummy.txt`` as well as ``myFirstFile.txt``.
 
 Adding a second DIRAC SE
 ========================

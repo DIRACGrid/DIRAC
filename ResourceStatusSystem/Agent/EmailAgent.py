@@ -12,30 +12,29 @@
 
 import os
 import sqlite3
-from DIRAC                                                       import gConfig, S_OK, S_ERROR
-from DIRAC.Core.Base.AgentModule                                 import AgentModule
-from DIRAC.ResourceStatusSystem.Utilities                        import RssConfiguration
-from DIRAC.Interfaces.API.DiracAdmin                             import DiracAdmin
+from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
 __RCSID__ = '$Id$'
 
 AGENT_NAME = 'ResourceStatus/EmailAgent'
 
+class EmailAgent(AgentModule):
 
-class EmailAgent( AgentModule ):
+  def __init__(self, *args, **kwargs):
 
-  def __init__( self, *args, **kwargs ):
-
-    AgentModule.__init__( self, *args, **kwargs )
+    AgentModule.__init__(self, *args, **kwargs)
     self.diracAdmin = None
     self.default_value = None
 
     if 'DIRAC' in os.environ:
-      self.cacheFile = os.path.join( os.getenv('DIRAC'), 'work/ResourceStatus/cache.db' )
+      self.cacheFile = os.path.join(os.getenv('DIRAC'), 'work/ResourceStatus/cache.db')
     else:
       self.cacheFile = os.path.realpath('cache.db')
 
-  def initialize( self ):
+  def initialize(self):
     ''' EmailAgent initialization
     '''
 
@@ -43,14 +42,16 @@ class EmailAgent( AgentModule ):
 
     return S_OK()
 
-  def execute( self ):
+  def execute(self):
 
     if os.path.isfile(self.cacheFile):
       with sqlite3.connect(self.cacheFile) as conn:
 
         result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
         for site in result:
-          cursor = conn.execute("SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache WHERE SiteName='"+ site[0] +"';")
+          query = "SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache "
+          query += "WHERE SiteName='%s';" % site[0]
+          cursor = conn.execute(query)
 
           email = ""
           html_body = ""
@@ -105,53 +106,53 @@ class EmailAgent( AgentModule ):
           email = html_header + html_body
 
           subject = "RSS actions taken for " + site[0] + "\n"
-          self._sendMail(subject, email, html = True)
+          self._sendMail(subject, email, html=True)
 
         conn.execute("DELETE FROM ResourceStatusCache;")
         conn.execute("VACUUM;")
 
     return S_OK()
 
-  def _sendMail( self, subject, body, html = False ):
+  def _sendMail(self, subject, body, html=False):
 
     userEmails = self._getUserEmails()
-    if not userEmails[ 'OK' ]:
+    if not userEmails['OK']:
       return userEmails
 
     # User email address used to send the emails from.
     fromAddress = RssConfiguration.RssConfiguration().getConfigFromAddress()
 
-    for user in userEmails[ 'Value' ]:
+    for user in userEmails['Value']:
 
-      #FIXME: should not I get the info from the RSS User cache ?
+      # FIXME: should not I get the info from the RSS User cache ?
 
-      resEmail = self.diracAdmin.sendMail( user, subject, body, fromAddress = fromAddress, html = html )
-      if not resEmail[ 'OK' ]:
-        return S_ERROR( 'Cannot send email to user "%s"' % user )
+      resEmail = self.diracAdmin.sendMail(user, subject, body, fromAddress=fromAddress, html=html)
+      if not resEmail['OK']:
+        return S_ERROR('Cannot send email to user "%s"' % user)
 
     return S_OK()
 
-  def _getUserEmails( self ):
+  def _getUserEmails(self):
 
     configResult = RssConfiguration.getnotificationGroups()
-    if not configResult[ 'OK' ]:
+    if not configResult['OK']:
       return configResult
     try:
-      notificationGroups = configResult[ 'Value' ][ 'notificationGroups' ]
+      notificationGroups = configResult['Value']['notificationGroups']
     except KeyError:
-      return S_ERROR( '%s/notificationGroups not found' )
+      return S_ERROR('%s/notificationGroups not found')
 
     notifications = RssConfiguration.getNotifications()
-    if not notifications[ 'OK' ]:
+    if not notifications['OK']:
       return notifications
-    notifications = notifications[ 'Value' ]
+    notifications = notifications['Value']
 
     userEmails = []
 
     for notificationGroupName in notificationGroups:
       try:
-        userEmails.extend( notifications[ notificationGroupName ][ 'users' ] )
+        userEmails.extend(notifications[notificationGroupName]['users'])
       except KeyError:
-        self.log.error( '%s not present' % notificationGroupName )
+        self.log.error('%s not present' % notificationGroupName)
 
-    return S_OK( userEmails )
+    return S_OK(userEmails)

@@ -5,24 +5,26 @@
 # Author :  Daniela Remenska
 ########################################################################
 """
--gives monitoring information regarding a staging file uniquely identified with (LFN,SE):
--   - status
--   - last update
--   - jobs requesting this file to be staged
--   - SRM requestID
--   - pin expiry time
--   - pin length
+Give monitoring information regarding a staging file uniquely identified with (LFN,SE)
+
+- status
+- last update
+- jobs requesting this file to be staged
+- SRM requestID
+- pin expiry time
+- pin length
+
 """
 __RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s  LFN SE ...' % Script.scriptName,
-                                     'Arguments:',
-                                     '  LFN: LFN of the staging file \n',
-                                     '  SE: Storage Element for the staging file \n'
-                                       ] ) )
+Script.setUsageMessage('\n'.join([__doc__,
+                                  'Usage:',
+                                  '  %s  LFN SE ...' % Script.scriptName,
+                                  'Arguments:',
+                                  '  LFN: LFN of the staging file',
+                                  '  SE: Storage Element for the staging file'
+                                  ]))
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 if len( args ) < 2:

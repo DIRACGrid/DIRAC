@@ -14,8 +14,17 @@
   :caption: JobCleaningAgent options
 
 
+Cleaning HeartBeatLoggingInfo
+-----------------------------
+
+If the HeartBeatLoggingInfo table of the JobDB is too large, the information for finished jobs can be removed (including
+for transformation related jobs). In vanilla DIRAC the HeartBeatLoggingInfo is only used by the StalledJobAgent. For
+this purpose the options MaxHBJobsAtOnce and RemoveStatusDelayHB/[Done|Killed|Failed] should be set to values larger
+than 0.
+
 """
 
+from __future__ import absolute_import
 __RCSID__ = "$Id$"
 
 import time
@@ -54,7 +63,6 @@ class JobCleaningAgent(AgentModule):
     AgentModule.__init__(self, *args, **kwargs)
 
     # clients
-    # FIXME: shouldn't we avoid using the DBs directly, and instead go through the service?
     self.jobDB = None
     self.taskQueueDB = None
     self.jobLoggingDB = None
@@ -66,6 +74,7 @@ class JobCleaningAgent(AgentModule):
     self.prodTypes = []
 
     self.removeStatusDelay = {}
+    self.removeStatusDelayHB = {}
 
   #############################################################################
   def initialize(self):
@@ -94,6 +103,11 @@ class JobCleaningAgent(AgentModule):
     self.removeStatusDelay['Failed'] = self.am_getOption('RemoveStatusDelay/Failed', 7)
     self.removeStatusDelay['Any'] = self.am_getOption('RemoveStatusDelay/Any', -1)
 
+    self.removeStatusDelayHB['Done'] = self.am_getOption('RemoveStatusDelayHB/Done', -1)
+    self.removeStatusDelayHB['Killed'] = self.am_getOption('RemoveStatusDelayHB/Killed', -1)
+    self.removeStatusDelayHB['Failed'] = self.am_getOption('RemoveStatusDelayHB/Failed', -1)
+    self.maxHBJobsAtOnce = self.am_getOption('MaxHBJobsAtOnce', 0)
+
     return S_OK()
 
   def _getAllowedJobTypes(self):
@@ -117,6 +131,7 @@ class JobCleaningAgent(AgentModule):
     result = self.removeJobsByStatus({'Status': 'Deleted'})
     if not result['OK']:
       return result
+
     # Get all the Job types that can be cleaned
     result = self._getAllowedJobTypes()
     if not result['OK']:
@@ -140,6 +155,12 @@ class JobCleaningAgent(AgentModule):
       result = self.removeJobsByStatus(condDict, delTime)
       if not result['OK']:
         gLogger.warn('Failed to remove jobs in status %s' % status)
+
+    if self.maxHBJobsAtOnce > 0:
+      for status, delay in self.removeStatusDelayHB.items():
+        if delay > 0:
+          self.removeHeartBeatLoggingInfo(status, delay)
+
     return S_OK()
 
   def removeJobsByStatus(self, condDict, delay=False):
@@ -284,3 +305,19 @@ class JobCleaningAgent(AgentModule):
     oRequest.addOperation(removeFile)
 
     return ReqClient().putRequest(oRequest)
+
+  def removeHeartBeatLoggingInfo(self, status, delayDays):
+    """Remove HeartBeatLoggingInfo for jobs with given status after given number of days.
+
+    :param str status: Job Status
+    :param int delayDays: number of days after which information is removed
+    :returns: None
+    """
+    gLogger.info("Removing HeartBeatLoggingInfo for Jobs with %s and older than %s day(s)" % (status, delayDays))
+    delTime = str(Time.dateTime() - delayDays * Time.day)
+    result = self.jobDB.removeInfoFromHeartBeatLogging(status, delTime, self.maxHBJobsAtOnce)
+    if not result['OK']:
+      gLogger.error('Failed to delete from HeartBeatLoggingInfo', result['Message'])
+    else:
+      gLogger.info('Deleted HeartBeatLogging info')
+    return

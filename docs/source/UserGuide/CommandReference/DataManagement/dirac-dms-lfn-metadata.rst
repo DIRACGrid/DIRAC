@@ -1,8 +1,10 @@
-=============================
-dirac-dms-lfn-metadata
-=============================
+.. _dirac-dms-lfn-metadata:
 
-  Obtain replica metadata from file catalogue client.
+======================
+dirac-dms-lfn-metadata
+======================
+
+Obtain replica metadata from file catalogue client.
 
 Usage::
 
@@ -10,7 +12,7 @@ Usage::
 
 Arguments::
 
-  LFN:      Logical File Name or file containing LFNs 
+  LFN:      Logical File Name or file containing LFNs
 
 Example::
 
@@ -29,4 +31,3 @@ Example::
                                                            'Size': 34L,
                                                            'Status': 1,
                                                            'UID': 2}}}
-

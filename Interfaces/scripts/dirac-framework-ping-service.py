@@ -7,6 +7,7 @@
 """
   Ping the given DIRAC Service
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -48,10 +49,10 @@ exitCode = 0
 result = dirac.pingService(system, service, printOutput=True, url=url)
 
 if not result:
-  print 'ERROR: Null result from ping()'
+  print('ERROR: Null result from ping()')
   exitCode = 2
 elif not result['OK']:
-  print 'ERROR: ', result['Message']
+  print('ERROR: ', result['Message'])
   exitCode = 2
 
 DIRAC.exit(exitCode)

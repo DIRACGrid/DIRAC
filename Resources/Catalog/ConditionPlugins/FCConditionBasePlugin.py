@@ -13,7 +13,9 @@ class FCConditionBasePlugin( object ):
   def __init__( self, conditions ):
     """ Gives the parameter of the evaluation to be done.
         The expression is defined as
+
           <PluginName> = <Plugin params>
+
         conditions is the string <Plugin params>
         They have to be interpreted
     """

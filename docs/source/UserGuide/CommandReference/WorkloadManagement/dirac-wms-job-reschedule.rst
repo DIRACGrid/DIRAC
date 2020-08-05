@@ -1,8 +1,10 @@
-===============================
-dirac-wms-job-reschedule
-===============================
+.. _dirac-wms-job-reschedule:
 
-  Reschedule the given DIRAC job
+========================
+dirac-wms-job-reschedule
+========================
+
+Reschedule the given DIRAC job
 
 Usage::
 
@@ -10,11 +12,9 @@ Usage::
 
 Arguments::
 
-  JobID:    DIRAC Job ID 
+  JobID:    DIRAC Job ID
 
 Example::
 
   $ dirac-wms-job-reschedule 1
   Rescheduled job 1
-
-

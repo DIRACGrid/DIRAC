@@ -7,19 +7,20 @@
 
 """
 
-from DIRAC                                                import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
-from DIRAC.ResourceStatusSystem.Utilities                 import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter      import getPolicyActionsThatApply, getPoliciesThatApply
+from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPolicyActionsThatApply, getPoliciesThatApply
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
-class PDP( object ):
+
+class PDP(object):
   """ PDP ( Policy Decision Point )
   """
 
-  def __init__( self, clients = None ):
+  def __init__(self, clients=None):
     """ Constructor.
 
     examples:
@@ -38,15 +39,14 @@ class PDP( object ):
     self.decisionParams = None
 
     # Helpers to discover policies and RSS metadata in CS
-    self.pCaller = PolicyCaller( clients )
+    self.pCaller = PolicyCaller(clients)
 
     # RSS State Machine, used to calculate most penalizing state while merging them
-    self.rssMachine = RSSMachine( 'Unknown' )
+    self.rssMachine = RSSMachine('Unknown')
 
-    self.log = gLogger.getSubLogger( 'PDP' )
+    self.log = gLogger.getSubLogger('PDP')
 
-
-  def setup( self, decisionParams = None ):
+  def setup(self, decisionParams=None):
     """ method that sanitizes the decisionParams and ensures that at least it has
     the keys in `standardParamsDict`. This will be relevant while doing the matching
     with the RSS Policies configuration in the CS.
@@ -72,27 +72,27 @@ class PDP( object ):
 
     """
 
-    standardParamsDict = {'element'     : None,
-                          'name'        : None,
-                          'elementType' : None,
-                          'statusType'  : None,
-                          'status'      : None,
-                          'reason'      : None,
-                          'tokenOwner'  : None,
+    standardParamsDict = {'element': None,
+                          'name': None,
+                          'elementType': None,
+                          'statusType': None,
+                          'status': None,
+                          'reason': None,
+                          'tokenOwner': None,
                           # Last parameter allows policies to be de-activated
-                          'active'      : 'Active'}
+                          'active': 'Active'}
 
     if decisionParams is not None:
-      standardParamsDict.update( decisionParams )
+      standardParamsDict.update(decisionParams)
       if standardParamsDict['element'] is not None:
-        self.log = gLogger.getSubLogger( 'PDP/%s' % standardParamsDict['element'] )
+        self.log = gLogger.getSubLogger('PDP/%s' % standardParamsDict['element'])
         if standardParamsDict['name'] is not None:
-          self.log = gLogger.getSubLogger( 'PDP/%s/%s' % ( standardParamsDict['element'], standardParamsDict['name'] ) )
-          self.log.verbose( "Setup - statusType: %s, status: %s" % ( standardParamsDict['statusType'],
-                                                                     standardParamsDict['status'] ) )
+          self.log = gLogger.getSubLogger('PDP/%s/%s' % (standardParamsDict['element'], standardParamsDict['name']))
+          self.log.verbose("Setup - statusType: %s, status: %s" % (standardParamsDict['statusType'],
+                                                                   standardParamsDict['status']))
       self.decisionParams = standardParamsDict
 
-  def takeDecision( self ):
+  def takeDecision(self):
     """ main PDP method which does all the work. If firstly finds all the policies
     defined in the CS that match <self.decisionParams> and runs them. Once it has
     all the singlePolicyResults, it combines them. Next step is action discovery:
@@ -126,54 +126,52 @@ class PDP( object ):
 
     """
     if self.decisionParams is None:
-      return S_OK( {'singlePolicyResults'  : [],
-                    'policyCombinedResult' : {},
-                    'decisionParams'      : self.decisionParams} )
+      return S_OK({'singlePolicyResults': [],
+                   'policyCombinedResult': {},
+                   'decisionParams': self.decisionParams})
 
-    self.log.verbose( "Taking decision" )
+    self.log.verbose("Taking decision")
 
     # Policies..................................................................
 
     # Get policies that match self.decisionParams
-    policiesThatApply = getPoliciesThatApply( self.decisionParams )
+    policiesThatApply = getPoliciesThatApply(self.decisionParams)
     if not policiesThatApply['OK']:
       return policiesThatApply
     policiesThatApply = policiesThatApply['Value']
-    self.log.verbose( "Policies that apply: %s" % ', '.join( [po['name'] for po in policiesThatApply] ) )
+    self.log.verbose("Policies that apply: %s" % ', '.join([po['name'] for po in policiesThatApply]))
 
     # Evaluate policies
-    singlePolicyResults = self._runPolicies( policiesThatApply )
+    singlePolicyResults = self._runPolicies(policiesThatApply)
     if not singlePolicyResults['OK']:
       return singlePolicyResults
     singlePolicyResults = singlePolicyResults['Value']
-    self.log.verbose( "Single policy results: %s" % singlePolicyResults )
+    self.log.verbose("Single policy results: %s" % singlePolicyResults)
 
     # Combine policies and get most penalizing status ( see RSSMachine )
-    policyCombinedResults = self._combineSinglePolicyResults( singlePolicyResults )
+    policyCombinedResults = self._combineSinglePolicyResults(singlePolicyResults)
     if not policyCombinedResults['OK']:
       return policyCombinedResults
     policyCombinedResults = policyCombinedResults['Value']
-    self.log.verbose( "Combined policy result: %s" % policyCombinedResults )
-
+    self.log.verbose("Combined policy result: %s" % policyCombinedResults)
 
     # Actions...................................................................
 
-    policyActionsThatApply = getPolicyActionsThatApply( self.decisionParams,
-                                                        singlePolicyResults,
-                                                        policyCombinedResults )
+    policyActionsThatApply = getPolicyActionsThatApply(self.decisionParams,
+                                                       singlePolicyResults,
+                                                       policyCombinedResults)
     if not policyActionsThatApply['OK']:
       return policyActionsThatApply
     policyActionsThatApply = policyActionsThatApply['Value']
-    self.log.verbose( "Policy actions that apply: %s" % ','.join( pata[0] for pata in policyActionsThatApply ) )
+    self.log.verbose("Policy actions that apply: %s" % ','.join(pata[0] for pata in policyActionsThatApply))
 
     policyCombinedResults['PolicyAction'] = policyActionsThatApply
 
-    return S_OK( {'singlePolicyResults'  : singlePolicyResults,
-                  'policyCombinedResult' : policyCombinedResults,
-                  'decisionParams'       : self.decisionParams} )
+    return S_OK({'singlePolicyResults': singlePolicyResults,
+                 'policyCombinedResult': policyCombinedResults,
+                 'decisionParams': self.decisionParams})
 
-
-  def _runPolicies( self, policies ):
+  def _runPolicies(self, policies):
     """ Given a list of policy dictionaries, loads them making use of the PolicyCaller
     and evaluates them. This method requires to have run setup previously.
 
@@ -208,39 +206,38 @@ class PDP( object ):
 
       # Load and evaluate policy described in <policyDict> for element described
       # in <self.decisionParams>
-      policyInvocationResult = self.pCaller.policyInvocation( self.decisionParams,
-                                                              policyDict )
+      policyInvocationResult = self.pCaller.policyInvocation(self.decisionParams,
+                                                             policyDict)
       if not policyInvocationResult['OK']:
         # We should never enter this line ! Just in case there are policies
         # missconfigured !
         _msg = 'runPolicies no OK: %s' % policyInvocationResult
-        self.log.error( _msg )
-        return S_ERROR( _msg )
+        self.log.error(_msg)
+        return S_ERROR(_msg)
 
       policyInvocationResult = policyInvocationResult['Value']
 
       # Sanity Checks ( they should never happen ! )
-      if not 'Status' in policyInvocationResult:
+      if 'Status' not in policyInvocationResult:
         _msg = 'runPolicies (no Status): %s' % policyInvocationResult
-        self.log.error( _msg )
-        return S_ERROR( _msg )
+        self.log.error(_msg)
+        return S_ERROR(_msg)
 
       if not policyInvocationResult['Status'] in validStatus:
         _msg = 'runPolicies ( not valid status ) %s' % policyInvocationResult['Status']
-        self.log.error( _msg )
-        return S_ERROR( _msg )
+        self.log.error(_msg)
+        return S_ERROR(_msg)
 
-      if not 'Reason' in policyInvocationResult:
+      if 'Reason' not in policyInvocationResult:
         _msg = 'runPolicies (no Reason): %s' % policyInvocationResult
-        self.log.error( _msg )
-        return S_ERROR( _msg )
+        self.log.error(_msg)
+        return S_ERROR(_msg)
 
-      policyInvocationResults.append( policyInvocationResult )
+      policyInvocationResults.append(policyInvocationResult)
 
-    return S_OK( policyInvocationResults )
+    return S_OK(policyInvocationResults)
 
-
-  def _combineSinglePolicyResults( self, singlePolicyRes ):
+  def _combineSinglePolicyResults(self, singlePolicyRes):
     """ method that merges all the policies results into a combined one, which
     will be the most penalizing status and the reasons of the single policy
     results that returned the same penalizing status. All the rest, are ignored.
@@ -268,33 +265,33 @@ class PDP( object ):
     """
 
     # Dictionary to be returned
-    policyCombined = { 'Status' : 'Unknown', # default, it should be overridden by the policies, if they exist
-                       'Reason' : '' }
+    policyCombined = {'Status': 'Unknown',  # default, it should be overridden by the policies, if they exist
+                      'Reason': ''}
 
     # If there are no policyResults, we return Unknown
     if not singlePolicyRes:
       policyCombined['Reason'] = 'No policy applies to %(element)s, %(name)s, %(elementType)s' % self.decisionParams
       self.log.warn(policyCombined['Reason'])
-      return S_OK( policyCombined )
+      return S_OK(policyCombined)
 
     # We set the rssMachine on the current state ( ensures it is a valid one )
     # FIXME: probably this check can be done at takeDecision
-    machineStatus = self.rssMachine.setState( self.decisionParams['status'] )
+    machineStatus = self.rssMachine.setState(self.decisionParams['status'], noWarn=True)
     if not machineStatus['OK']:
       return machineStatus
 
     # Discard all single policy results which belongs to policies that have set
     # the option `doNotCombine` in the CS
-    policiesToCombine = self._findPoliciesToCombine( singlePolicyRes )
+    policiesToCombine = self._findPoliciesToCombine(singlePolicyRes)
 
     # Sort policy results using ther statuses by most restrictive ( lower level first )
-    self.rssMachine.orderPolicyResults( policiesToCombine )
+    self.rssMachine.orderPolicyResults(policiesToCombine)
 
     # As they have been sorted by most restrictive status, the first one is going
     # to be our candidate new state. Let's ask the RSSMachine if it allows us to
     # make such transition.
-    candidateState = policiesToCombine[ 0 ]['Status']
-    nextState = self.rssMachine.getNextState( candidateState )
+    candidateState = policiesToCombine[0]['Status']
+    nextState = self.rssMachine.getNextState(candidateState)
 
     if not nextState['OK']:
       return nextState
@@ -304,8 +301,8 @@ class PDP( object ):
     if candidateState != nextState:
 
       policyCombined['Status'] = nextState
-      policyCombined['Reason'] = 'RssMachine forced status %s to %s' % ( candidateState, nextState )
-      return S_OK( policyCombined )
+      policyCombined['Reason'] = 'RssMachine forced status %s to %s' % (candidateState, nextState)
+      return S_OK(policyCombined)
 
     # If the RssMachine accepts the candidate, just concatenate the reasons
     for policyRes in policiesToCombine:
@@ -315,10 +312,9 @@ class PDP( object ):
 
     policyCombined['Status'] = nextState
 
-    return S_OK( policyCombined )
+    return S_OK(policyCombined)
 
-
-  def _findPoliciesToCombine( self, singlePolicyRes ):
+  def _findPoliciesToCombine(self, singlePolicyRes):
     """ method that iterates over the single policy results and checks the CS
     configuration of the policies looking for the option 'doNotCombine'. If it is
     present, that single policy result is discarded.
@@ -340,19 +336,19 @@ class PDP( object ):
 
     # Function that let's us know if we should combine the result of a single policy
     # or not.
-    def combinePolicy( policyResult ):
+    def combinePolicy(policyResult):
       # Extract policy name from the dictionary returned by PolicyCaller
       policyName = policyResult['Policy']['name']
       try:
         # If doNotCombineResult is defined, the policy is not taken into account
         # to create the combined result. However, the single policy result remains
-        _ = policiesConfiguration[ policyName ]['doNotCombineResult']
+        _ = policiesConfiguration[policyName]['doNotCombineResult']
         return False
       except KeyError:
         return True
 
     # Make a list of policies of which we want to merge their results
-    return [ policyResult for policyResult in singlePolicyRes if combinePolicy( policyResult ) ]
+    return [policyResult for policyResult in singlePolicyRes if combinePolicy(policyResult)]
 
 # ...............................................................................
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

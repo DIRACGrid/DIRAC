@@ -7,6 +7,7 @@
     and a Watchdog Agent that can monitor its progress.
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
@@ -20,6 +21,7 @@ import tarfile
 import glob
 import urllib
 import json
+import six
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -34,26 +36,25 @@ from DIRAC.Core.Utilities.Subprocess import Subprocess
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 from DIRAC.Core.Utilities.Adler import fileAdler
-
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
-from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory import WatchdogFactory
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 
 
 EXECUTION_RESULT = {}
@@ -184,7 +185,7 @@ class JobWrapper(object):
     """ Initializes parameters and environment for job.
     """
     self.__report('Running', 'Job Initialization')
-    self.log.info('Starting Job Wrapper Initialization for Job %s' % (self.jobID))
+    self.log.info('Starting Job Wrapper Initialization for Job', self.jobID)
     self.jobArgs = arguments['Job']
     self.log.verbose(self.jobArgs)
     self.ceArgs = arguments['CE']
@@ -223,6 +224,10 @@ class JobWrapper(object):
 
     with open('job.info', 'w') as infoFile:
       infoFile.write(self.__dictAsInfoString(self.jobArgs, '/Job'))
+
+    self.log.debug("Environment used")
+    self.log.debug("================")
+    self.log.debug(json.dumps(dict(os.environ), indent=4))
 
   #############################################################################
   def __setInitialJobParameters(self):
@@ -280,8 +285,6 @@ class JobWrapper(object):
     os.environ['DIRACJOBID'] = str(self.jobID)
     os.environ['DIRACROOT'] = self.localSiteRoot
     self.log.verbose('DIRACROOT = %s' % (self.localSiteRoot))
-    os.environ['DIRACPYTHON'] = sys.executable
-    self.log.verbose('DIRACPYTHON = %s' % (sys.executable))
     os.environ['DIRACSITE'] = DIRAC.siteName()
     self.log.verbose('DIRACSITE = %s' % (DIRAC.siteName()))
 
@@ -297,8 +300,8 @@ class JobWrapper(object):
     if 'CPUTime' in self.jobArgs:
       jobCPUTime = int(self.jobArgs['CPUTime'])
     else:
-      self.log.info('Job %s has no CPU time limit specified, '
-                    'applying default of %s' % (self.jobID, self.defaultCPUTime))
+      self.log.info('Job has no CPU time limit specified, ',
+                    'applying default of %s to %s' % (self.defaultCPUTime, self.jobID))
       jobCPUTime = self.defaultCPUTime
     processors = int(self.jobArgs.get('NumberOfProcessors', 1))
 
@@ -337,7 +340,7 @@ class JobWrapper(object):
     if 'ExecutionEnvironment' in self.jobArgs:
       self.log.verbose('Adding variables to execution environment')
       variableList = self.jobArgs['ExecutionEnvironment']
-      if isinstance(variableList, basestring):
+      if isinstance(variableList, six.string_types):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split('=')[0]
@@ -417,6 +420,11 @@ class JobWrapper(object):
           self.__setJobParam('ApplicationError', 'None reported', sendFlag=True)
       else:
         outputs = threadResult['Value']
+    else:  # if the execution thread didn't complete
+      self.log.error('Application thread did not complete')
+      self.__report('Failed', 'Application thread did not complete', sendFlag=True)
+      self.__setJobParam('ApplicationError', 'Application thread did not complete', sendFlag=True)
+      return S_ERROR('No outputs generated from job execution')
 
     if 'CPU' in EXECUTION_RESULT:
       cpuString = ' '.join(['%.2f' % x for x in EXECUTION_RESULT['CPU']])
@@ -436,7 +444,7 @@ class JobWrapper(object):
 
     if watchdog.currentStats:
       self.log.info('Statistics collected by the Watchdog:\n ',
-                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.iteritems()]))
+                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.items()]))  # can be an iterator
     if outputs:
       status = threadResult['Value'][0]  # the status of the payload execution
       # Send final heartbeat of a configurable number of lines here
@@ -542,7 +550,7 @@ class JobWrapper(object):
       self.log.error(msg)
       return S_ERROR(msg)
     else:
-      if isinstance(inputData, basestring):
+      if isinstance(inputData, six.string_types):
         inputData = [inputData]
       lfns = [fname.replace('LFN:', '') for fname in inputData]
       self.log.verbose('Job input data requirement is \n%s' % ',\n'.join(lfns))
@@ -556,7 +564,7 @@ class JobWrapper(object):
     if not localSEList:
       self.log.warn("Job has input data requirement but no site LocalSE defined")
     else:
-      if isinstance(localSEList, basestring):
+      if isinstance(localSEList, six.string_types):
         localSEList = List.fromChar(localSEList)
       self.log.info("Site has the following local SEs: %s" % ', '.join(localSEList))
 
@@ -596,7 +604,7 @@ class JobWrapper(object):
       resolvedData = result
 
     # add input data size to accounting report (since resolution successful)
-    for lfn, mdata in resolvedData['Value']['Successful'].iteritems():
+    for lfn, mdata in resolvedData['Value']['Successful'].items():  # can be an iterator
       if 'Size' in mdata:
         lfnSize = mdata['Size']
         if not isinstance(lfnSize, long):
@@ -607,7 +615,10 @@ class JobWrapper(object):
             self.log.info('File size for LFN:%s was not a long integer, setting size to 0' % (lfn))
         self.inputDataSize += lfnSize
 
-    configDict = {'JobID': self.jobID, 'LocalSEList': localSEList, 'DiskSEList': self.diskSE, 'TapeSEList': self.tapeSE}
+    configDict = {'JobID': self.jobID,
+                  'LocalSEList': localSEList,
+                  'DiskSEList': self.diskSE,
+                  'TapeSEList': self.tapeSE}
     self.log.info(configDict)
     argumentsDict = {'FileCatalog': resolvedData, 'Configuration': configDict, 'InputData': lfns, 'Job': self.jobArgs}
     self.log.info(argumentsDict)
@@ -644,7 +655,7 @@ class JobWrapper(object):
     self.log.verbose(replicas)
 
     failedGUIDs = []
-    for lfn, reps in replicas['Value']['Successful'].iteritems():
+    for lfn, reps in replicas['Value']['Successful'].items():  # can be an iterator
       if 'GUID' not in reps:
         failedGUIDs.append(lfn)
 
@@ -674,11 +685,11 @@ class JobWrapper(object):
     badLFNs = []
     catalogResult = repsResult['Value']
 
-    for lfn, cause in catalogResult.get('Failed', {}).iteritems():
+    for lfn, cause in catalogResult.get('Failed', {}).items():  # can be an iterator
       badLFNCount += 1
       badLFNs.append('LFN:%s Problem: %s' % (lfn, cause))
 
-    for lfn, replicas in catalogResult.get('Successful', {}).iteritems():
+    for lfn, replicas in catalogResult.get('Successful', {}).items():  # can be an iterator
       if not replicas:
         badLFNCount += 1
         badLFNs.append('LFN:%s Problem: Null replica value' % (lfn))
@@ -706,7 +717,7 @@ class JobWrapper(object):
       self.log.warn(failed)
       return S_ERROR('Missing GUIDs')
 
-    for lfn, reps in repsResult['Value']['Successful'].iteritems():
+    for lfn, reps in repsResult['Value']['Successful'].items():  # can be an iterator
       guidDict['Value']['Successful'][lfn].update(reps)
 
     catResult = guidDict
@@ -719,12 +730,12 @@ class JobWrapper(object):
 
     # first iteration of this, no checking of wildcards or oversize sandbox files etc.
     outputSandbox = self.jobArgs.get('OutputSandbox', [])
-    if isinstance(outputSandbox, basestring):
+    if isinstance(outputSandbox, six.string_types):
       outputSandbox = [outputSandbox]
     if outputSandbox:
       self.log.verbose('OutputSandbox files are: %s' % ', '.join(outputSandbox))
     outputData = self.jobArgs.get('OutputData', [])
-    if outputData and isinstance(outputData, basestring):
+    if outputData and isinstance(outputData, six.string_types):
       outputData = outputData.split(';')
     if outputData:
       self.log.verbose('OutputData files are: %s' % ', '.join(outputData))
@@ -785,11 +796,11 @@ class JobWrapper(object):
       # Do not upload outputdata if the job has failed.
       # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
       outputSE = self.jobArgs.get('OutputSE', self.defaultOutputSE)
-      if isinstance(outputSE, basestring):
+      if isinstance(outputSE, six.string_types):
         outputSE = [outputSE]
 
       outputPath = self.jobArgs.get('OutputPath', self.defaultOutputPath)
-      if not isinstance(outputPath, basestring):
+      if not isinstance(outputPath, six.string_types):
         outputPath = self.defaultOutputPath
 
       if not outputSE and not self.defaultFailoverSE:
@@ -1194,7 +1205,7 @@ class JobWrapper(object):
     if 'JobName' in self.jobArgs:
       # To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
-      if isinstance(jobName, basestring) and jobName:
+      if isinstance(jobName, six.string_types) and jobName:
         jobName = jobName.replace(' ', '').replace('(', '').replace(')', '').replace('"', '')
         jobName = jobName.replace('.', '').replace('{', '').replace('}', '').replace(':', '')
         requestName = '%s_%s' % (jobName, requestName)
@@ -1254,7 +1265,7 @@ class JobWrapper(object):
         self.log.error("Job will fail, first trying to print out the content of the request")
         reqToJSON = request.toJSON()
         if reqToJSON['OK']:
-          print str(reqToJSON['Value'])
+          print(str(reqToJSON['Value']))
         else:
           self.log.error("Something went wrong creating the JSON from request", reqToJSON['Message'])
       else:
@@ -1392,10 +1403,10 @@ class ExecutionThread(threading.Thread):
   def sendOutput(self, stdid, line):
     if stdid == 0 and self.stdout:
       with open(self.stdout, 'a+') as outputFile:
-        print >> outputFile, line
+        print(line, file=outputFile)
     elif stdid == 1 and self.stderr:
       with open(self.stderr, 'a+') as errorFile:
-        print >> errorFile, line
+        print(line, file=errorFile)
     self.outputLines.append(line)
     size = len(self.outputLines)
     if size > self.maxPeekLines:

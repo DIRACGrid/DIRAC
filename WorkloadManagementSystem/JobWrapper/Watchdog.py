@@ -22,22 +22,25 @@ __RCSID__ = "$Id$"
 import os
 import re
 import time
+import resource
+import errno
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import MJF
+from DIRAC.Core.Utilities.Profiler import Profiler
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
+from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
-from DIRAC.Core.Utilities.ProcessMonitor import ProcessMonitor
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
-from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 
 class Watchdog(object):
 
   #############################################################################
-  def __init__(self, pid, exeThread, spObject, jobCPUTime, memoryLimit=0, processors=1, systemFlag='linux', jobArgs={}):
+  def __init__(self, pid, exeThread, spObject, jobCPUTime,
+               memoryLimit=0, processors=1, systemFlag='linux', jobArgs={}):
     """ Constructor, takes system flag as argument.
     """
     self.stopSigStartSeconds = int(jobArgs.get('StopSigStartSeconds', 1800))  # 30 minutes
@@ -59,7 +62,7 @@ class Watchdog(object):
     self.parameters = {}
     self.peekFailCount = 0
     self.peekRetry = 5
-    self.processMonitor = ProcessMonitor()
+    self.profiler = Profiler(pid)
     self.checkError = ''
     self.currentStats = {}
     self.initialized = False
@@ -275,48 +278,48 @@ class Watchdog(object):
 
     msg = ''
 
-    loadAvg = self.getLoadAverage()
-    if not loadAvg['OK']:
-      msg += 'LoadAvg: ERROR'
-    else:
-      loadAvg = loadAvg['Value']
-      msg += 'LoadAvg: %d ' % loadAvg
-      heartBeatDict['LoadAverage'] = loadAvg
-      if 'LoadAverage' not in self.parameters:
-        self.parameters['LoadAverage'] = []
-      self.parameters['LoadAverage'].append(loadAvg)
+    loadAvg = float(os.getloadavg()[0])
+    msg += 'LoadAvg: %d ' % loadAvg
+    heartBeatDict['LoadAverage'] = loadAvg
+    if 'LoadAverage' not in self.parameters:
+      self.parameters['LoadAverage'] = []
+    self.parameters['LoadAverage'].append(loadAvg)
 
     memoryUsed = self.getMemoryUsed()
-    if not memoryUsed['OK']:
-      msg += 'MemUsed: ERROR '
-    else:
-      memoryUsed = memoryUsed['Value']
-      msg += 'MemUsed: %.1f kb ' % (memoryUsed)
-      heartBeatDict['MemoryUsed'] = memoryUsed
-      if 'MemoryUsed' not in self.parameters:
-        self.parameters['MemoryUsed'] = []
-      self.parameters['MemoryUsed'].append(memoryUsed)
+    msg += 'MemUsed: %.1f kb ' % (memoryUsed)
+    heartBeatDict['MemoryUsed'] = memoryUsed
+    if 'MemoryUsed' not in self.parameters:
+      self.parameters['MemoryUsed'] = []
+    self.parameters['MemoryUsed'].append(memoryUsed)
 
-    result = self.processMonitor.getMemoryConsumed(self.wrapperPID)
-    if result['OK']:
-      vsize = result['Value']['Vsize'] / 1024.
-      rss = result['Value']['RSS'] / 1024.
+    result = self.profiler.vSizeUsage(withChildren=True)
+    if not result['OK']:
+      self.log.warn("Could not get vSize info from profiler", result['Message'])
+    else:
+      vsize = result['Value'] * 1024.
       heartBeatDict['Vsize'] = vsize
-      heartBeatDict['RSS'] = rss
       self.parameters.setdefault('Vsize', [])
       self.parameters['Vsize'].append(vsize)
+      msg += "Job Vsize: %.1f kb " % vsize
+
+    result = self.profiler.memoryUsage(withChildren=True)
+    if not result['OK']:
+      self.log.warn("Could not get rss info from profiler", result['Message'])
+    else:
+      rss = result['Value'] * 1024.
+      heartBeatDict['RSS'] = rss
       self.parameters.setdefault('RSS', [])
       self.parameters['RSS'].append(rss)
-      msg += "Job Vsize: %.1f kb " % vsize
       msg += "Job RSS: %.1f kb " % rss
+
+    if 'DiskSpace' not in self.parameters:
+      self.parameters['DiskSpace'] = []
+
     result = self.getDiskSpace()
     if not result['OK']:
       self.log.warn("Could not establish DiskSpace", result['Message'])
     else:
       msg += 'DiskSpace: %.1f MB ' % (result['Value'])
-    if 'DiskSpace' not in self.parameters:
-      self.parameters['DiskSpace'] = []
-    if result['OK']:
       self.parameters['DiskSpace'].append(result['Value'])
       heartBeatDict['AvailableDiskSpace'] = result['Value']
 
@@ -399,25 +402,33 @@ class Watchdog(object):
 
   #############################################################################
   def __getCPU(self):
-    """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
+    """Uses the profiler to get CPU time for current process, its child, and the terminated child,
+       and returns HH:MM:SS after conversion.
     """
-    try:
-      cpuTime = self.processMonitor.getCPUConsumed(self.wrapperPID)
-      if not cpuTime['OK']:
-        self.log.warn('Problem while checking consumed CPU')
-        return cpuTime
-      cpuTime = cpuTime['Value']
-      if cpuTime:
-        self.log.verbose("Raw CPU time consumed (s) = %s" % (cpuTime))
-        return self.__getCPUHMS(cpuTime)
-      else:
-        self.log.error("CPU time consumed found to be 0")
-        return S_ERROR()
+    result = self.profiler.cpuUsageUser(withChildren=True,
+                                        withTerminatedChildren=True)
+    if not result['OK']:
+      self.log.warn("Issue while checking consumed CPU for user", result['Message'])
+      if result['Errno'] == errno.ESRCH:
+        self.log.warn("The main process does not exist (anymore). This might be correct.")
+      return result
+    cpuUsageUser = result['Value']
 
-    except Exception as e:
-      self.log.warn('Could not determine CPU time consumed with exception')
-      self.log.exception(e)
-      return S_ERROR("Could not determine CPU time consumed with exception")
+    result = self.profiler.cpuUsageSystem(withChildren=True,
+                                          withTerminatedChildren=True)
+    if not result['OK']:
+      self.log.warn("Issue while checking consumed CPU for system", result['Message'])
+      if result['Errno'] == errno.ESRCH:
+        self.log.warn("The main process does not exist (anymore). This might be correct.")
+      return result
+    cpuUsageSystem = result['Value']
+
+    cpuTimeTotal = cpuUsageUser + cpuUsageSystem
+    if cpuTimeTotal:
+      self.log.verbose("Raw CPU time consumed (s) =", cpuTimeTotal)
+      return self.__getCPUHMS(cpuTimeTotal)
+    self.log.error("CPU time consumed found to be 0")
+    return S_ERROR()
 
   #############################################################################
   def __getCPUHMS(self, cpuTime):
@@ -532,8 +543,9 @@ class Watchdog(object):
 
     wallClockTime = self.parameters['WallClockTime'][-1]
     if wallClockTime < self.sampleCPUTime:
-      self.log.info("Stopping check, wallclock time (%s) is still smaller than sample time (%s)" % (wallClockTime,
-                                                                                                    self.sampleCPUTime))
+      self.log.info("Stopping check, wallclock time (%s) is still smaller than sample time (%s)" % (
+          wallClockTime,
+          self.sampleCPUTime))
       return S_OK()
 
     intervals = max(1, int(self.sampleCPUTime / self.checkingTime))
@@ -561,8 +573,9 @@ class Watchdog(object):
       self.log.info("CPU/Wallclock ratio is %.2f%%" % ratio)
       # in case of error cpuTime might be 0, exclude this
       if ratio < self.minCPUWallClockRatio:
-        if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK'):
-          self.log.info('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
+        if os.path.exists('DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK') or \
+           'DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK' in os.environ:
+          self.log.warn('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
           return S_OK()
         self.log.info("Job is stalled!")
         return S_ERROR('Watchdog identified this job as stalled')
@@ -635,6 +648,7 @@ class Watchdog(object):
   def __checkMemoryLimit(self):
     """ Checks that the job memory consumption is within a limit
     """
+    vsize = 0
     if 'Vsize' in self.parameters:
       vsize = self.parameters['Vsize'][-1]
 
@@ -719,46 +733,42 @@ class Watchdog(object):
     self.initialValues['CPUConsumed'] = cpuConsumed
     self.parameters['CPUConsumed'] = []
 
-    loadAvg = self.getLoadAverage()
-    if not loadAvg['OK']:
-      self.log.warn("Could not establish LoadAverage, setting to 0")
-      loadAvg = 0
-    else:
-      loadAvg = loadAvg['Value']
-
-    self.initialValues['LoadAverage'] = loadAvg
+    self.initialValues['LoadAverage'] = float(os.getloadavg()[0])
     self.parameters['LoadAverage'] = []
 
     memUsed = self.getMemoryUsed()
-    if not memUsed['OK']:
-      self.log.warn("Could not establish MemoryUsed, setting to 0")
-      memUsed = 0
-    else:
-      memUsed = memUsed['Value']
 
     self.initialValues['MemoryUsed'] = memUsed
     self.parameters['MemoryUsed'] = []
 
-    result = self.processMonitor.getMemoryConsumed(self.wrapperPID)
-    self.log.verbose('Job Memory: %s' % (result['Value']))
+    result = self.profiler.vSizeUsage(withChildren=True)
     if not result['OK']:
-      self.log.warn('Could not get job memory usage')
-
-    self.initialValues['Vsize'] = result['Value']['Vsize'] / 1024.
-    self.initialValues['RSS'] = result['Value']['RSS'] / 1024.
+      self.log.warn("Could not get vSize info from profiler", result['Message'])
+    else:
+      vsize = result['Value'] * 1024.
+      self.initialValues['Vsize'] = vsize
+      self.log.verbose("Vsize(kb)", "%.1f" % vsize)
     self.parameters['Vsize'] = []
+
+    result = self.profiler.memoryUsage(withChildren=True)
+    if not result['OK']:
+      self.log.warn("Could not get rss info from profiler", result['Message'])
+    else:
+      rss = result['Value'] * 1024.
+      self.initialValues['RSS'] = rss
+      self.log.verbose("RSS(kb)", "%.1f" % rss)
     self.parameters['RSS'] = []
 
     result = self.getDiskSpace()
-    self.log.verbose('DiskSpace: %s' % (result))
+    self.log.verbose('DiskSpace', result)
     if not result['OK']:
       self.log.warn("Could not establish DiskSpace")
-
-    self.initialValues['DiskSpace'] = result['Value']
+    else:
+      self.initialValues['DiskSpace'] = result['Value']
     self.parameters['DiskSpace'] = []
 
     result = self.getNodeInformation()
-    self.log.verbose('NodeInfo: %s' % (result))
+    self.log.verbose('NodeInfo', result)
     if not result['OK']:
       self.log.warn("Could not establish static system information")
 
@@ -947,18 +957,12 @@ class Watchdog(object):
     return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
 
   #############################################################################
-  def getLoadAverage(self):
-    """ Attempts to get the load average, should be overridden in a subclass"""
-    methodName = 'getLoadAverage'
-    self.log.warn('Watchdog: ' + methodName + ' method should be implemented in a subclass')
-    return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
-
-  #############################################################################
   def getMemoryUsed(self):
-    """ Attempts to get the memory used, should be overridden in a subclass"""
-    methodName = 'getMemoryUsed'
-    self.log.warn('Watchdog: ' + methodName + ' method should be implemented in a subclass')
-    return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
+    """Obtains the memory used.
+    """
+    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + \
+        resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+    return float(mem)
 
   #############################################################################
   def getDiskSpace(self):

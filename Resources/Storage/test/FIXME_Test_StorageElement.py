@@ -2,6 +2,7 @@
 
 # FIXME: if it requires a dirac.cfg it is not a unit test and should be moved to tests directory
 
+from __future__ import print_function
 import unittest
 import time
 import os
@@ -21,7 +22,7 @@ positionalArgs = getPositionalArgs()
 __RCSID__ = "$Id$"
 
 if len( positionalArgs ) < 3:
-  print 'Usage: TestStoragePlugIn.py StorageElement <lfnDir> <localFile>'
+  print('Usage: TestStoragePlugIn.py StorageElement <lfnDir> <localFile>')
   sys.exit()
 else:
   storageElementToTest = positionalArgs[0]
@@ -50,28 +51,33 @@ class StorageElementTestCase( unittest.TestCase ):
 class GetInfoTestCase( StorageElementTestCase ):
 
   def test_dump( self ):
-    print '\n\n#########################################################################\n\n\t\t\tDump test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tDump test\n')
     self.storageElement.dump()
 
   def test_isValid( self ):
-    print '\n\n#########################################################################\n\n\t\t\tIs valid test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tIs valid test\n')
     res = self.storageElement.isValid()
     self.assertTrue(res['OK'])
 
   def test_getRemotePlugins( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet remote protocols test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet remote protocols test\n')
     res = self.storageElement.getRemotePlugins()
     self.assertTrue(res['OK'])
     self.assertEqual( type( res['Value'] ), types.ListType )
 
   def test_getLocalPlugins( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet local protocols test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet local protocols test\n')
     res = self.storageElement.getLocalPlugins()
     self.assertTrue(res['OK'])
     self.assertEqual( type( res['Value'] ), types.ListType )
 
   def test_getPlugins( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet protocols test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet protocols test\n')
     res = self.storageElement.getPlugins()
     self.assertTrue(res['OK'])
     self.assertEqual( type( res['Value'] ), types.ListType )
@@ -89,7 +95,8 @@ class GetInfoTestCase( StorageElementTestCase ):
   #  self.assertEqual( res['Value'], 'DISET' )
 
   def test_getStorageParameters( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet storage parameters test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet storage parameters test\n')
     result = self.storageElement.getStorageParameters( 'DIP' )
     self.assertTrue(result['OK'])
     resDict = result['Value']
@@ -104,7 +111,8 @@ class GetInfoTestCase( StorageElementTestCase ):
 class FileTestCases( StorageElementTestCase ):
 
   def test_exists( self ):
-    print '\n\n#########################################################################\n\n\t\t\tExists test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tExists test\n')
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     # pfnForLfnRes = self.storageElement.getURL( destinationFilePath )
     #destinationPfn = pfnForLfnRes['Value']['Successful'].values()[0]
@@ -138,7 +146,8 @@ class FileTestCases( StorageElementTestCase ):
     self.assertTrue( directoryExistsRes['Value'] )
 
   def test_isFile( self ):
-    print '\n\n#########################################################################\n\n\t\t\tIs file size test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tIs file size test\n')
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
@@ -173,7 +182,8 @@ class FileTestCases( StorageElementTestCase ):
     self.assertFalse( directoryIsFileRes['Value'] )
 
   def test_putFile( self ):
-    print '\n\n#########################################################################\n\n\t\t\tPut file test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tPut file test\n')
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
@@ -191,7 +201,8 @@ class FileTestCases( StorageElementTestCase ):
     self.assertTrue( removeFileRes['Value'] )
 
   def test_getFile( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet file test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet file test\n')
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
@@ -216,7 +227,8 @@ class FileTestCases( StorageElementTestCase ):
     self.assertTrue( removeFileRes['Value'] )
 
   def test_getFileMetadata( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet file metadata test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet file metadata test\n')
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
@@ -257,7 +269,8 @@ class FileTestCases( StorageElementTestCase ):
     self.assertTrue( expectedError in directoryMetadataRes['Message'] )
 
   def test_getFileSize( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet file size test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet file size test\n')
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
@@ -392,7 +405,8 @@ class FileTestCases( StorageElementTestCase ):
 #     self.assertTrue( removeFileRes['Value'] )
 
   def test_getURL( self ):
-    print '\n\n#########################################################################\n\n\t\tGet access url test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\tGet access url test\n')
     destinationFilePath = '%s/testFile.%s' % ( self.destDirectory, time.time() )
     # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( destinationFilePath ) )
     #destinationPfn = pfnForLfnRes['Value']
@@ -427,7 +441,8 @@ class FileTestCases( StorageElementTestCase ):
 class DirectoryTestCases( StorageElementTestCase ):
 
   def test_createDirectory( self ):
-    print '\n\n#########################################################################\n\n\t\t\tCreate directory test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tCreate directory test\n')
     directory = "%s/%s" % ( self.destDirectory, 'createDirectoryTest' )
     # pfnForLfnRes = returnSingleResult( self.storageElement.getURL( directory ) )
     #directoryPfn = pfnForLfnRes['Value']
@@ -444,7 +459,8 @@ class DirectoryTestCases( StorageElementTestCase ):
     self.assertTrue( removeDirRes['Value'] )
 
   def test_isDirectory( self ):
-    print '\n\n#########################################################################\n\n\t\t\tIs directory test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tIs directory test\n')
     destDirectory = self.destDirectory
     # Test that it is a directory
     isDirectoryRes = self.storageElement.isDirectory( destDirectory )
@@ -459,7 +475,8 @@ class DirectoryTestCases( StorageElementTestCase ):
     self.assertTrue( nonExistantDirRes['Value']['Failed'][nonExistantDir] in ['Path does not exist'] )
 
   def test_listDirectory( self ):
-    print '\n\n#########################################################################\n\n\t\t\tList directory test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tList directory test\n')
     destDirectory = "%s/%s" % ( self.destDirectory, 'listDirectoryTest' )
     # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
     # Create a local directory to upload
@@ -474,12 +491,12 @@ class DirectoryTestCases( StorageElementTestCase ):
     # Check that we can successfully upload the directory to the storage element
     dirDict = {destDirectory:localDir}
     putDirRes = self.storageElement.putDirectory( dirDict )
-    print putDirRes
+    print(putDirRes)
     # List the remote directory
     listDirRes = self.storageElement.listDirectory( destDirectory )
     # Now remove the remove directory
     removeDirRes = self.storageElement.removeDirectory( destDirectory, recursive = True )
-    print removeDirRes
+    print(removeDirRes)
     #Clean up the locally created directory
     shutil.rmtree( localDir )
 
@@ -507,7 +524,8 @@ class DirectoryTestCases( StorageElementTestCase ):
     self.assertTrue( type( removeDirRes['Value']['Successful'][destDirectory]['SizeRemoved'] ) in [types.IntType, types.LongType] )
 
   def test_getDirectoryMetadata( self ):
-    print '\n\n#########################################################################\n\n\t\t\tDirectory metadata test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tDirectory metadata test\n')
     destDirectory = "%s/%s" % ( self.destDirectory, 'getDirectoryMetadataTest' )
     # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
     # Create a local directory to upload
@@ -557,7 +575,8 @@ class DirectoryTestCases( StorageElementTestCase ):
       self.assertTrue( type( removeDirRes['Value']['Successful'][destDirectory]['SizeRemoved'] ) in [types.IntType, types.LongType] )
 
   def test_getDirectorySize( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet directory size test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet directory size test\n')
     destDirectory = "%s/%s" % ( self.destDirectory, 'getDirectorySizeTest' )
     # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
     # Create a local directory to upload
@@ -603,7 +622,8 @@ class DirectoryTestCases( StorageElementTestCase ):
       self.assertTrue( type( removeDirRes['Value']['Successful'][destDirectory]['SizeRemoved'] ) in [types.IntType, types.LongType] )
 
   def test_removeDirectory( self ):
-    print '\n\n#########################################################################\n\n\t\t\tRemove directory test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tRemove directory test\n')
     destDirectory = "%s/%s" % ( self.destDirectory, 'removeDirectoryTest' )
     # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
     # Create a local directory to upload
@@ -642,7 +662,8 @@ class DirectoryTestCases( StorageElementTestCase ):
       self.assertTrue( type( removeDirRes['Value']['Successful'][destDirectory]['SizeRemoved'] ) in [types.IntType, types.LongType] )
 
   def test_getDirectory( self ):
-    print '\n\n#########################################################################\n\n\t\t\tGet directory test\n'
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet directory test\n')
     destDirectory = "%s/%s" % ( self.destDirectory, 'getDirectoryTest' )
     # destDirectory = returnSingleResult( self.storageElement.getURL( directory ) )['Value']
     # Create a local directory to upload

@@ -4,21 +4,25 @@
     The following methods are available in the Service interface
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
+
+from datetime import timedelta
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
 # These are global instances of the DB classes
 gJobDB = False
+gElasticJobDB = False
 gJobLoggingDB = False
 gTaskQueueDB = False
 
@@ -32,15 +36,22 @@ FINAL_STATES = ['Done', 'Completed', 'Stalled', 'Failed', 'Killed']
 def initializeJobMonitoringHandler(serviceInfo):
 
   global gJobDB, gJobLoggingDB, gTaskQueueDB
+
   gJobDB = JobDB()
   gJobLoggingDB = JobLoggingDB()
   gTaskQueueDB = TaskQueueDB()
+
   return S_OK()
 
 
 class JobMonitoringHandler(RequestHandler):
 
   def initialize(self):
+    """
+    Flags useESForJobParametersFlag (in /Operations/[]/Services/JobMonitoring/) have bool value (True/False)
+    and determines the switching of backends from MySQL to ElasticSearch for the JobParameters DB table.
+    For version v7r0, the MySQL backend is (still) the default.
+    """
 
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
@@ -49,6 +60,12 @@ class JobMonitoringHandler(RequestHandler):
     self.globalJobsInfo = operations.getValue('/Services/JobMonitoring/GlobalJobsInfo', True)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = gJobDB
+
+    useESForJobParametersFlag = operations.getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
+    global gElasticJobDB
+    if useESForJobParametersFlag:
+      gElasticJobDB = ElasticJobDB()
+      self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
 
@@ -148,8 +165,6 @@ class JobMonitoringHandler(RequestHandler):
     #    # Only those Attribute in self.queryAttributes can be used
     #    if attrDict.has_key(attribute):
     #      queryDict[attribute] = attrDict[attribute]
-
-    print attrDict
 
     return gJobDB.selectJobs(attrDict, newer=cutDate)
 
@@ -264,11 +279,11 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsParameters = [list, list]
 
   @staticmethod
-  @deprecated("Unused")
   def export_getJobsParameters(jobIDs, parameters):
     if not (jobIDs and parameters):
       return S_OK({})
     return gJobDB.getAttributesForJobList(jobIDs, parameters)
+
 
 ##############################################################################
   types_getJobsStatus = [list]
@@ -410,12 +425,11 @@ class JobMonitoringHandler(RequestHandler):
         else:
           lastTime = Time.fromString(jobDict['LastUpdateTime'])
           hbTime = Time.fromString(jobDict['HeartBeatTime'])
-          # There is no way to express a timedelta of 0 ;-)
           # Not only Stalled jobs but also Failed jobs because Stalled
-          if ((hbTime - lastTime) > (lastTime - lastTime) or
-              jobDict['Status'] == "Stalled" or
-              jobDict['MinorStatus'].startswith('Job stalled') or
-              jobDict['MinorStatus'].startswith('Stalling')):
+          if ((hbTime - lastTime) > timedelta(0) or
+                  jobDict['Status'] == "Stalled" or
+                  jobDict['MinorStatus'].startswith('Job stalled') or
+                  jobDict['MinorStatus'].startswith('Stalling')):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
@@ -492,10 +506,24 @@ class JobMonitoringHandler(RequestHandler):
     :param str/int/long jobID: one single Job ID
     :param str parName: one single parameter name
     """
+    if gElasticJobDB:
+      res = gElasticJobDB.getJobParameters(jobID, [parName])
+      if not res['OK']:
+        return res
+      if res['Value'].get(int(jobID)):
+        return S_OK(res['Value'][int(jobID)])
+
     res = gJobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
       return res
     return S_OK(res['Value'].get(int(jobID), {}))
+
+##############################################################################
+  types_getJobOptParameters = [int]
+
+  @staticmethod
+  def export_getJobOptParameters(jobID):
+    return gJobDB.getJobOptParameters(jobID)
 
 ##############################################################################
   types_getJobParameters = [[basestring, int, long, list]]
@@ -506,6 +534,31 @@ class JobMonitoringHandler(RequestHandler):
     :param str/int/long/list jobIDs: one single job ID or a list of them
     :param str parName: one single parameter name, or None (meaning all of them)
     """
+    if gElasticJobDB:
+      if not isinstance(jobIDs, list):
+        jobIDs = [jobIDs]
+      parameters = {}
+      for jobID in jobIDs:
+        res = gElasticJobDB.getJobParameters(jobID, parName)
+        if not res['OK']:
+          return res
+        parameters.update(res['Value'])
+
+      # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
+      res = gJobDB.getJobParameters(jobIDs, parName)
+      if not res['OK']:
+        return res
+      parametersM = res['Value']
+
+      # and now combine
+      final = dict(parametersM)
+      for jobID in parametersM:
+        final[jobID].update(parameters.get(jobID, {}))
+      for jobID in parameters:
+        if jobID not in final:
+          final[jobID] = parameters[jobID]
+      return S_OK(final)
+
     return gJobDB.getJobParameters(jobIDs, parName)
 
 ##############################################################################
@@ -540,6 +593,10 @@ class JobMonitoringHandler(RequestHandler):
 
   @staticmethod
   def export_getJobAttributes(jobID):
+    """
+    :param int jobID: one single Job ID
+    """
+
     return gJobDB.getJobAttributes(jobID)
 
 ##############################################################################
@@ -547,6 +604,11 @@ class JobMonitoringHandler(RequestHandler):
 
   @staticmethod
   def export_getJobAttribute(jobID, attribute):
+    """
+    :param int jobID: one single Job ID
+    :param str attribute: one single attribute name
+    """
+
     return gJobDB.getJobAttribute(jobID, attribute)
 
 ##############################################################################

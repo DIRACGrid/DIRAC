@@ -1,8 +1,10 @@
-=============================
-dirac-admin-allow-site
-=============================
+.. _admin_dirac-admin-allow-site:
 
-  Add Site to Active mask for current Setup
+======================
+dirac-admin-allow-site
+======================
+
+Add Site to Active mask for current Setup
 
 Usage::
 
@@ -11,16 +13,13 @@ Usage::
 Arguments::
 
   Site:     Name of the Site
-
-  Comment:  Reason of the action 
-
- 
+  Comment:  Reason of the action
 
 Options::
 
-  -E:  --email=          : Boolean True/False (True by default) 
+  -E  --email <value>          : Boolean True/False (True by default)
 
 Example::
   
-  $ dirac-admin-allow-site LCG.IN2P3.fr 'FRANCE'
 
+  $ dirac-admin-allow-site LCG.IN2P3.fr 'FRANCE'

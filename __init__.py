@@ -64,21 +64,35 @@
 
 """
 
+from __future__ import print_function
 import sys
 import os
 import platform as pyPlatform
 from pkgutil import extend_path
 __path__ = extend_path(__path__, __name__)
 
+# Set the environment variable such that openssl accepts proxy cert
+# Sadly, this trick was removed in openssl >= 1.1.0
+# https://github.com/openssl/openssl/commit/8e21938ce3a5306df753eb40a20fe30d17cf4a68
+# Lets see if they would accept to put it back
+# https://github.com/openssl/openssl/issues/8177
+os.environ['OPENSSL_ALLOW_PROXY_CERTS'] = "True"
 
 __RCSID__ = "$Id$"
+
+# Now that's one hell of a hack :)
+# _strptime is not thread safe, resulting in obscure callstack
+# whenever you would have multiple threads and calling datetime.datetime.strptime
+# (AttributeError: 'module' object has no attribute '_strptime')
+# Importing _strptime before instantiating the threads seem to be a working workaround
+import _strptime
 
 
 # Define Version
 
-majorVersion = 6
-minorVersion = 22
-patchLevel = 32
+majorVersion = 7
+minorVersion = 0
+patchLevel = 31
 preVersion = 0
 
 version = "v%sr%s" % (majorVersion, minorVersion)
@@ -97,11 +111,11 @@ __pythonMinorVersion = ("7")
 
 pythonVersion = pyPlatform.python_version_tuple()
 if str(pythonVersion[0]) not in __pythonMajorVersion or str(pythonVersion[1]) not in __pythonMinorVersion:
-  print "Python Version %s not supported by DIRAC" % pyPlatform.python_version()
-  print "Supported versions are: "
+  print("Python Version %s not supported by DIRAC" % pyPlatform.python_version())
+  print("Supported versions are: ")
   for major in __pythonMajorVersion:
     for minor in __pythonMinorVersion:
-      print "%s.%s.x" % (major, minor)
+      print("%s.%s.x" % (major, minor))
 
   sys.exit(1)
 

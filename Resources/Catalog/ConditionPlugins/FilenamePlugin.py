@@ -27,7 +27,8 @@ class FilenamePlugin( FCConditionBasePlugin ):
           * startswith
 
       It should be written just like if you were calling the python call yourself.
-      For example:
+      For example::
+
         Filename=startswith('/lhcb')
         Filename=istitle()
 

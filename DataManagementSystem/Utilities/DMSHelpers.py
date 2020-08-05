@@ -21,7 +21,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
   :param allSEs: if provided, list of all known SEs
   :type allSEs: list
 
-  :return : list of resolved SEs or [] if error
+  :return: list of resolved SEs or [] if error
   """
   if allSEs is None:
     res = gConfig.getSections('/Resources/StorageElements')

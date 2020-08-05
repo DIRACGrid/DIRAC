@@ -6,6 +6,8 @@
 """
   Dump DIRAC Configuration data
 """
+from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import sys
@@ -41,11 +43,11 @@ Script.parseCommandLine()
 
 from DIRAC import gConfig, gLogger
 result = gConfig.dumpCFGAsLocalCache(fileName, raw)
-if not result['OK']:
-  print "Error: %s" % result['Message']
+if not result[ 'OK' ]:
+  print("Error: %s" % result['Message'])
   sys.exit(1)
 
 if not fileName:
-  print result['Value']
+  print(result['Value'])
 
 sys.exit(0)

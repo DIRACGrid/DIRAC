@@ -10,7 +10,6 @@ import time
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
-from DIRAC.Core.Utilities.ElasticSearchDB import generateFullIndexName
 
 elHost = 'localhost'
 elPort = 9200
@@ -155,7 +154,7 @@ class ElasticTestChain(ElasticTestCase):
     self.elasticSearchDB = ElasticSearchDB(host=elHost,
                                            port=elPort,
                                            useSSL=False)
-    result = generateFullIndexName('integrationtest')
+    result = self.elasticSearchDB.generateFullIndexName('integrationtest')
     self.assertTrue(len(result) > len('integrationtest'))
     self.index_name = result
 
@@ -190,14 +189,14 @@ class ElasticTestChain(ElasticTestCase):
     indexName = 'test'
     today = datetime.datetime.today().strftime("%Y-%m-%d")
     expected = "%s-%s" % (indexName, today)
-    result = generateFullIndexName(indexName)
+    result = self.elasticSearchDB.generateFullIndexName(indexName)
     self.assertEqual(result, expected)
 
   def test_generateFullIndexName2(self):
     indexName = 'test'
     month = datetime.datetime.today().strftime("%Y-%m")
     expected = "%s-%s" % (indexName, month)
-    result = generateFullIndexName(indexName, 'month')
+    result = self.elasticSearchDB.generateFullIndexName(indexName, 'month')
     self.assertEqual(result, expected)
 
   def test_getUniqueValue(self):
@@ -326,71 +325,6 @@ class ElasticTestChain(ElasticTestCase):
   #           }
   #          }
   #   result = self.elasticSearchDB.query(self.index_name, body)
-  #   self.assertEqual(result['aggregations'],
-  #                    {u'3': {u'buckets': [{u'4': {u'buckets': [{u'1': {u'value': 5.0},
-  #                                                               u'key': u'a',
-  #                                                               u'doc_count': 5}],
-  #                                                 u'sum_other_doc_count': 0,
-  #                                                 u'doc_count_error_upper_bound': 0},
-  #                                          u'key': 1423468800000,
-  #                                          u'doc_count': 5},
-  #                                         {u'4': {u'buckets': [{u'1': {u'value': 8.0},
-  #                                                               u'key': u'b',
-  #                                                               u'doc_count': 5}],
-  #                                                 u'sum_other_doc_count': 0,
-  #                                                 u'doc_count_error_upper_bound': 0},
-  #                                          u'key': 1423494000000,
-  #                                          u'doc_count': 5}]}})
-
-  # FIXME: "filtered" is discontinued since ES 5.0
-  # def test_queryMontly(self):
-  #   body = {"size": 0,
-  #           "query": {"filtered": {"query": {"query_string": {"query": "*"}},
-  #                                  "filter": {"bool": {"must": [{"range": {
-  #                                      "timestamp": {
-  #                                          "gte": 1423399451544,
-  #                                             "lte": 1423631917911
-  #                                             }
-  #                                  }
-  #                                  }],
-  #                                      "must_not": []
-  #                                  }
-  #           }
-  #           }
-  #           },
-  #           "aggs": {
-  #               "3": {
-  #                   "date_histogram": {
-  #                       "field": "timestamp",
-  #                       "interval": "3600000ms",
-  #                       "min_doc_count": 1,
-  #                       "extended_bounds": {
-  #                           "min": 1423399451544,
-  #                           "max": 1423631917911
-  #                       }
-  #                   },
-  #                   "aggs": {
-  #                       "4": {
-  #                           "terms": {
-  #                               "field": "Product",
-  #                               "size": 0,
-  #                               "order": {
-  #                                   "1": "desc"
-  #                               }
-  #                           },
-  #                           "aggs": {
-  #                               "1": {
-  #                                   "sum": {
-  #                                       "field": "quantity"
-  #                                   }
-  #                               }
-  #                           }
-  #                       }
-  #                   }
-  #               }
-  #           }
-  #           }
-  #   result = self.elasticSearchDB.query('integrationtestmontly*', body)
   #   self.assertEqual(result['aggregations'],
   #                    {u'3': {u'buckets': [{u'4': {u'buckets': [{u'1': {u'value': 5.0},
   #                                                               u'key': u'a',

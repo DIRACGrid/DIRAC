@@ -9,7 +9,7 @@ from DIRAC import S_OK, S_ERROR
 
 def checkMetadata( metadata ):
   """ 
-  :param dict metadata it contains information which will used in the plot creation.
+  :param dict metadata: it contains information which will used in the plot creation.
   """
   if 'span' in metadata:
     granularity = metadata[ 'span' ]
@@ -23,9 +23,10 @@ def checkMetadata( metadata ):
 def generateNoDataPlot( fileName, data, metadata ):
   """
   Tis generate an image with a specific error message.
-  :param str fileName name of the file
-  :param list data data
-  :param dict metadata metadata information
+
+  :param str fileName: name of the file
+  :param list data: data
+  :param dict metadata: metadata information
   """
   try:
     with open( fileName, "wb" ) as fn:
@@ -38,8 +39,9 @@ def generateNoDataPlot( fileName, data, metadata ):
 def generateErrorMessagePlot( msgText ):
   """
   It creates a plot whith a specific error message
-  :param str msgText the text which will appear on the plot.
-  :return the plot.
+
+  :param str msgText: the text which will appear on the plot.
+  :return: the plot.
   """
   fn = cStringIO.StringIO()
   textGraph( msgText, fn, {} )
@@ -51,9 +53,10 @@ def generateErrorMessagePlot( msgText ):
 def generateTimedStackedBarPlot( fileName, data, metadata ):
   """
   It is used to create a time based line plot.
-  :param str fileName the name of the file
-  :param list data the data which is used to create the plot
-  :param dict metadata extra information used to create the plot.
+
+  :param str fileName: the name of the file
+  :param list data: the data which is used to create the plot
+  :param dict metadata: extra information used to create the plot.
   """
   try:
     with open( fileName, "wb" ) as fn:
@@ -70,9 +73,9 @@ def generateQualityPlot( fileName, data, metadata ):
   """
   It is used to create 2D plots.
   
-  :param str fileName the name of the file
-  :param list data the data which is used to create the plot
-  :param dict metadata extra information used to create the plot.
+  :param str fileName: the name of the file
+  :param list data: the data which is used to create the plot
+  :param dict metadata: extra information used to create the plot.
   """
   try:
     with open( fileName, "wb" ) as fn:
@@ -90,9 +93,10 @@ def generateQualityPlot( fileName, data, metadata ):
 def generateCumulativePlot( fileName, data, metadata ):
   """
   It is used to create cumulativ plots.
-  :param str fileName the name of the file
-  :param list data the data which is used to create the plot
-  :param dict metadata extra information used to create the plot.
+
+  :param str fileName: the name of the file
+  :param list data: the data which is used to create the plot
+  :param dict metadata: extra information used to create the plot.
   """
   try:
     with open( fileName, "wb" ) as fn:
@@ -107,9 +111,10 @@ def generateCumulativePlot( fileName, data, metadata ):
 def generateStackedLinePlot( fileName, data, metadata ):
   """
   It is used to create stacked line plot.
-  :param str fileName the name of the file
-  :param list data the data which is used to create the plot
-  :param dict metadata extra information used to create the plot.
+
+  :param str fileName: the name of the file
+  :param list data: the data which is used to create the plot
+  :param dict metadata: extra information used to create the plot.
   """
   try:
     with open( fileName, "wb" ) as fn:
@@ -125,9 +130,10 @@ def generateStackedLinePlot( fileName, data, metadata ):
 def generatePiePlot( fileName, data, metadata ):
   """
   It is used to create pie charts.
-  :param str fileName the nanme of the file
-  :param list data the data which is used to create the plot
-  :param dict metadata extra information used to create the plot.
+
+  :param str fileName: the nanme of the file
+  :param list data: the data which is used to create the plot
+  :param dict metadata: extra information used to create the plot.
   """
   try:
     with open( fileName, "wb" ) as fn:

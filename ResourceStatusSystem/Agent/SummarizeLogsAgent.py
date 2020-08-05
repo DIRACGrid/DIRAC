@@ -1,6 +1,6 @@
 """ SummarizeLogsAgent module
 
-  This agents scans all the log tables ( SiteLog, ResourceLog and NodeLog ) on the
+  This agents scans all the log tables (SiteLog, ResourceLog and NodeLog) on the
   ResourceStatusDB and summarizes them. The results are stored on the History
   tables (SiteHistory, ResourceHistory and NodeHistory) and the Log tables
   cleared.

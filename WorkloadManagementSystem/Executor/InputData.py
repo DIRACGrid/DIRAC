@@ -85,7 +85,8 @@ class InputData(OptimizerExecutor):
     # Is it a production job?
     result = jobState.getAttribute("JobType")
     if not result['OK']:
-      return S_ERROR("Could not retrieve job type")
+      self.jobLog.error("Could not retrieve job type", result['Message'])
+      return result
     jobType = result['Value']
     if jobType in Operations().getValue('Transformations/DataProcessing', []):
       self.jobLog.info("Skipping optimizer, since this is a Production job")
@@ -95,13 +96,21 @@ class InputData(OptimizerExecutor):
     result = jobState.getInputData()
     if not result['OK']:
       self.jobLog.error("Cannot retrieve input data", result['Message'])
-      return S_ERROR("Cannot retrieve input data")
-    if not result['Value']:
-      self.jobLog.notice("No input data. Skipping.")
+      return result
+    inputData = result['Value']
+
+    result = self._getInputSandbox(jobState)
+    if not result['OK']:
+      self.jobLog.error("Cannot retrieve input sandbox", result['Message'])
+      return result
+    inputSandbox = result['Value']
+
+    if not inputData and not inputSandbox:
+      self.jobLog.notice("No input data nor LFN input sandboxes. Skipping.")
       return self.setNextOptimizer()
 
     # From now on we know that it is a user job with input data
-    inputData = result['Value']
+    # and or with input sandbox
 
     # Check if we already executed this Optimizer and the input data is resolved
     result = self.retrieveOptimizerParam(self.ex_getProperty('optimizerName'))
@@ -112,20 +121,40 @@ class InputData(OptimizerExecutor):
       if self.checkWithUserProxy:
         result = jobState.getAttribute("Owner")
         if not result['OK']:
-          return S_ERROR("Could not retrieve job owner")
+          self.jobLog.error("Could not retrieve job owner", result['Message'])
+          return result
         userName = result['Value']
         result = jobState.getAttribute("OwnerGroup")
         if not result['OK']:
-          return S_ERROR("Could not retrieve job owner group")
+          self.jobLog.error("Could not retrieve job owner group", result['Message'])
+          return result
         userGroup = result['Value']
-        result = self._resolveInputData(  # pylint: disable=unexpected-keyword-arg
-            jobState,
-            inputData,
-            proxyUserName=userName,
-            proxyUserGroup=userGroup,
-            executionLock=True)
+        if inputSandbox:
+          result = self._resolveInputSandbox(  # pylint: disable=unexpected-keyword-arg
+              jobState, inputSandbox,
+              proxyUserName=userName,
+              proxyUserGroup=userGroup,
+              executionLock=True)
+          if not result['OK']:
+            self.jobLog.error("Could not resolve input sandbox", result['Message'])
+            return result
+
+        if inputData:
+          result = self._resolveInputData(  # pylint: disable=unexpected-keyword-arg
+              jobState,
+              inputData,
+              proxyUserName=userName,
+              proxyUserGroup=userGroup,
+              executionLock=True)
       else:
-        result = self._resolveInputData(jobState, inputData)
+        if inputSandbox:
+          result = self._resolveInputSandbox(jobState, inputSandbox)
+          if not result['OK']:
+            self.jobLog.error("Could not resolve input sandbox", result['Message'])
+            return result
+
+        if inputData:
+          result = self._resolveInputData(jobState, inputData)
       if not result['OK']:
         self.jobLog.warn(result['Message'])
         return result
@@ -134,14 +163,42 @@ class InputData(OptimizerExecutor):
 
   #############################################################################
 
+  def _getInputSandbox(self, jobState):
+    """ Return the LFN input sandbox if any
+
+        :param JobState jobState: the JobState object
+        :returns: S_OK/S_ERROR structure with (input sandbox lfn list)
+    """
+    inputSandbox = []
+    # Check if the InputSandbox contains LFNs, and in that case treat them as input data
+    result = jobState.getManifest()
+    if not result['OK']:
+      return result
+    manifest = result['Value']
+    # isb below will look something horrible like "['/an/lfn/1.txt', 'another/one.boo' ]"
+    isb = manifest.getOption('InputSandbox')
+    if not isb:
+      return S_OK(inputSandbox)
+    isbList = [li.replace('[', '').replace(']', '').replace("'", '') for li in isb.replace(' ', '').split(',')]
+    for li in isbList:
+      if li.startswith('LFN:'):
+        inputSandbox.append(li.replace('LFN:', ''))
+    return S_OK(inputSandbox)
+
   @executeWithUserProxy
   def _resolveInputData(self, jobState, inputData):
     """ This method checks the file catalog for replica information.
+
+        :param JobState jobState: JobState object
+        :param list inputData: list of LFNs
+
+        :returns: S_OK/S_ERROR structure with resolved input data info
     """
     lfns = inputData
 
     result = jobState.getManifest()
     if not result['OK']:
+      self.jobLog.error("Failed to get job manifest", result['Message'])
       return result
     manifest = result['Value']
     vo = manifest.getOption('VirtualOrganization')
@@ -166,6 +223,12 @@ class InputData(OptimizerExecutor):
 
     if not result['OK']:
       self.jobLog.error("Failed to check replicas", result['Message'])
+      return result
+    okReplicas = result['Value']
+
+    result = self.__getSiteCandidates(okReplicas, vo)
+    if not result['OK']:
+      self.jobLog.error("Failed to check SiteCandidates", result['Message'])
       return result
     siteCandidates = result['Value']
 
@@ -209,6 +272,8 @@ class InputData(OptimizerExecutor):
   #############################################################################
   def __checkReplicas(self, replicaDict, vo):
     """Check that all input lfns have valid replicas and can all be found at least in one single site.
+
+      :returns: S_ERROR/S_OK(dict of ok replicas)
     """
     badLFNs = []
 
@@ -234,7 +299,7 @@ class InputData(OptimizerExecutor):
         self.log.error('Failed to set job parameter', result['Message'])
       return S_ERROR('Input data not available')
 
-    return self.__getSiteCandidates(okReplicas, vo)
+    return S_OK(okReplicas)
 
   #############################################################################
   def __getSitesForSE(self, seName):
@@ -252,6 +317,7 @@ class InputData(OptimizerExecutor):
     if seName not in self.__SEToSiteMap:
       result = DMSHelpers().getSitesForSE(seName)
       if not result['OK']:
+        self.jobLog.error("Failed to get site for SE", result['Message'])
         return result
       self.__SEToSiteMap[seName] = list(result['Value'])
     return S_OK(self.__SEToSiteMap[seName])
@@ -306,10 +372,11 @@ class InputData(OptimizerExecutor):
             continue
           siteList = result['Value']
           seObj = StorageElement(seName, vo=vo)
-          seStatus = seObj.getStatus()
-          if not seStatus['OK']:
-            return seStatus
-          seDict[seName] = {'Sites': siteList, 'Status': seStatus['Value']}
+          result = seObj.getStatus()
+          if not result['OK']:
+            self.jobLog.error("Failed to get SE status", result['Message'])
+            return result
+          seDict[seName] = {'Sites': siteList, 'Status': result['Value']}
         # Get SE info from the dict
         seData = seDict[seName]
         siteList = seData['Sites']
@@ -334,3 +401,44 @@ class InputData(OptimizerExecutor):
       sitesData[siteName]['disk'] = len(sitesData[siteName]['disk'])
       sitesData[siteName]['tape'] = len(sitesData[siteName]['tape'])
     return S_OK(sitesData)
+
+  @executeWithUserProxy
+  def _resolveInputSandbox(self, jobState, inputSandbox):
+    """ This method checks the file catalog for replica information.
+
+        :param JobState jobState: JobState object
+        :param list inputSandbox: list of LFNs for the input sandbox
+
+        :returns: S_OK/S_ERROR structure with resolved input data info
+    """
+
+    result = jobState.getManifest()
+    if not result['OK']:
+      self.jobLog.error("Failed to get job manifest", result['Message'])
+      return result
+    manifest = result['Value']
+    vo = manifest.getOption('VirtualOrganization')
+    startTime = time.time()
+    dm = self.__getDataManager(vo)
+    if dm is None:
+      return S_ERROR('Failed to instantiate DataManager for vo %s' % vo)
+
+    # This will return already active replicas, excluding banned SEs, and
+    # removing tape replicas if there are disk replicas
+
+    result = dm.getReplicasForJobs(inputSandbox)
+    self.jobLog.verbose('Catalog replicas lookup time', '%.2f seconds ' % (time.time() - startTime))
+    if not result['OK']:
+      self.log.warn(result['Message'])
+      return result
+
+    isDict = result['Value']
+
+    self.jobLog.verbose("REPLICA DICT", isDict)
+
+    result = self.__checkReplicas(isDict, vo)
+
+    if not result['OK']:
+      self.jobLog.error("Failed to check replicas", result['Message'])
+
+    return result

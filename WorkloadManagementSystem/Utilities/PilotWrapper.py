@@ -21,6 +21,8 @@ pilotWrapperContent = """#!/bin/bash
 /usr/bin/env python << EOF
 
 # imports
+from __future__ import print_function
+
 import os
 import stat
 import tempfile
@@ -30,8 +32,8 @@ import base64
 import bz2
 import logging
 import time
-import urllib2
 import tarfile
+import hashlib
 
 # setting up the logging
 formatter = logging.Formatter(fmt='%%(asctime)s UTC %%(levelname)-8s %%(message)s', datefmt='%%Y-%%m-%%d %%H:%%M:%%S')
@@ -46,11 +48,11 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
 # just logging the environment as first thing
-print '==========================================================='
+logger.debug('===========================================================')
 logger.debug('Environment of execution host\\n')
-for key, val in os.environ.iteritems():
+for key, val in os.environ.items():
   logger.debug(key + '=' + val)
-print '===========================================================\\n'
+logger.debug('===========================================================\\n')
 
 # putting ourselves in the right directory
 pilotExecDir = '%(pilotExecDir)s'
@@ -76,16 +78,16 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
                         the proxy can be part of this, and of course the pilot files
      :type pilotFilesCompressedEncodedDict: dict
      :param pilotOptions: options with which to start the pilot
-     :type pilotOptions: basestring
+     :type pilotOptions: string
      :param pilotExecDir: pilot execution directory
-     :type pilotExecDir: basestring
+     :type pilotExecDir: string
      :param envVariables: dictionary of environment variables
      :type envVariables: dict
      :param location: location where to get the pilot files
-     :type location: basestring
+     :type location: string
 
      :returns: content of the pilot wrapper
-     :rtype: basestring
+     :rtype: string
   """
 
   if pilotFilesCompressedEncodedDict is None:
@@ -95,22 +97,26 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
     envVariables = {}
 
   compressedString = ""
-  for pfName, encodedPf in pilotFilesCompressedEncodedDict.iteritems():  # are there some pilot files to unpack?
-                                                                         # then we create the unpacking string
+  # are there some pilot files to unpack? Then we create the unpacking string
+  for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():
     compressedString += """
 try:
-  with open('%(pfName)s', 'w') as fd:
-    fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
+  with open('%(pfName)s', 'wb') as fd:
+    if sys.version_info < (3,):
+      fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
+    else:
+      fd.write(bz2.decompress(base64.b64decode(b'%(encodedPf)s')))
   os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-except BaseException as x:
-  print >> sys.stderr, x
+except Exception as x:
+  print(x, file=sys.stderr)
+  logger.error(x)
   shutil.rmtree(pilotWorkingDirectory)
-  sys.exit(-1)
-""" % {'encodedPf': encodedPf,
+  sys.exit(3)
+""" % {'encodedPf': encodedPf.decode(),
        'pfName': pfName}
 
   envVariablesString = ""
-  for name, value in envVariables.iteritems():  # are there some environment variables to add?
+  for name, value in envVariables.items():  # are there some environment variables to add?
     envVariablesString += """
 os.environ[\"%(name)s\"]=\"%(value)s\"
 """ % {'name': name,
@@ -144,20 +150,95 @@ logger.info("But first unpacking pilot files")
 # Getting the pilot files
 logger.info("Getting the pilot files from %(location)s")
 
-# Getting the json file
-rJson = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.json')
-with open('pilot.json', 'wb') as pj:
-  pj.write(rJson.read())
-  pj.close()
+location = '%(location)s'.replace(' ', '').split(',')
 
-# Getting the tar file
-rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar')
-with open('pilot.tar', 'wb') as pt:
-  pt.write(rTar.read())
-  pt.close()
-with tarfile.open('pilot.tar', 'r') as pt:
-  pt.extractall()
-  pt.close()
+import random
+random.shuffle(location)
+
+# we try from the available locations
+locs = [os.path.join('https://', loc) for loc in location]
+locations = locs + [os.path.join(loc, 'pilot') for loc in locs]
+
+for loc in locations:
+  print('Trying %%s' %% loc)
+
+  # Getting the json, tar, and checksum file
+  try:
+
+    # urllib is different between python 2 and 3
+    if sys.version_info < (3,):
+      from urllib2 import urlopen as url_library_urlopen
+      from urllib2 import URLError as url_library_URLError
+    else:
+      from urllib.request import urlopen as url_library_urlopen
+      from urllib.error import URLError as url_library_URLError
+
+    for fileName in ['pilot.json', 'pilot.tar', 'checksums.sha512']:
+      # needs to distinguish whether urlopen method contains the 'context' param
+      # in theory, it should be available from python 2.7.9
+      # in practice, some prior versions may be composed of recent urllib version containing the param
+      if 'context' in url_library_urlopen.__code__.co_varnames:
+        import ssl
+        context = ssl._create_unverified_context()
+        remoteFile = url_library_urlopen(os.path.join(loc, fileName),
+                                         timeout=10,
+                                         context=context)
+
+      else:
+        remoteFile = url_library_urlopen(os.path.join(loc, fileName),
+                                         timeout=10)
+
+      localFile = open(fileName, 'wb')
+      localFile.write(remoteFile.read())
+      localFile.close()
+
+      if fileName != 'pilot.tar':
+        continue
+      try:
+        pt = tarfile.open('pilot.tar', 'r')
+        pt.extractall()
+        pt.close()
+      except Exception as x:
+        print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
+        logger.error("tarfile failed with message %%s" %% repr(x))
+        logger.warn("Trying tar command (tar -xvf pilot.tar)")
+        res = os.system("tar -xvf pilot.tar")
+        if res:
+          logger.error("tar failed with exit code %%d, giving up" %% int(res))
+          print("tar failed with exit code %%d, giving up" %% int(res), file=sys.stderr)
+          raise
+    # if we get here we break out of the loop of locations
+    break
+  except (url_library_URLError, Exception) as e:
+    print('%%s unreacheable' %% loc, file=sys.stderr)
+    logger.error('%%s unreacheable' %% loc)
+    logger.exception(e)
+
+else:
+  print("None of the locations of the pilot files is reachable", file=sys.stderr)
+  logger.error("None of the locations of the pilot files is reachable")
+  sys.exit(-1)
+
+# download was successful, now we check checksums
+if os.path.exists('checksums.sha512'):
+  checksumDict = {}
+  chkSumFile = open('checksums.sha512', 'rt')
+  for line in chkSumFile.read().split('\\n'):
+    if not line.strip():  ## empty lines are ignored
+      continue
+    expectedHash, fileName = line.split('  ', 1)
+    if not os.path.exists(fileName):
+      continue
+    logger.info('Checking %%r for checksum', fileName)
+    fileHash = hashlib.sha512(open(fileName, 'rb').read()).hexdigest()
+    if fileHash != expectedHash:
+      print('Checksum mismatch for file %%r' %% fileName, file=sys.stderr)
+      print('Expected %%r, found %%r' %%(expectedHash, fileHash), file=sys.stderr)
+      logger.error('Checksum mismatch for file %%r', fileName)
+      logger.error('Expected %%r, found %%r', expectedHash, fileHash)
+      sys.exit(-1)
+    logger.debug('Checksum matched')
+
 """ % {'location': location}
 
   localPilot += """
@@ -165,10 +246,14 @@ with tarfile.open('pilot.tar', 'r') as pt:
 cmd = "python dirac-pilot.py %s"
 logger.info('Executing: %%s' %% cmd)
 sys.stdout.flush()
-os.system(cmd)
+ret = os.system(cmd)
 
 # and cleaning up
 shutil.rmtree(pilotWorkingDirectory)
+
+# did it fail?
+if ret:
+  sys.exit(1)
 
 EOF
 """ % pilotOptions
@@ -190,7 +275,7 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
   for pf in pilotFiles:
     with open(pf, "r") as fd:
       pfContent = fd.read()
-    pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
+    pfContentEncoded = base64.b64encode(bz2.compress(pfContent.encode(), 9))
     pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 
   if proxy is not None:
@@ -204,12 +289,12 @@ def _writePilotWrapperFile(workingDirectory=None, localPilot=''):
   """ write the localPilot string to a file, rurn the file name
 
      :param workingDirectory: the directory where to store the pilot wrapper file
-     :type workingDirectory: basestring
+     :type workingDirectory: string
      :param localPilot: content of the pilot wrapper
-     :type localPilot: basestring
+     :type localPilot: string
 
      :returns: file name of the pilot wrapper
-     :rtype: basestring
+     :rtype: string
   """
 
   fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)

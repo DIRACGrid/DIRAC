@@ -15,6 +15,7 @@
     test cases for Files
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 # #
@@ -55,7 +56,7 @@ class FileTests( unittest.TestCase ):
     try:
       theFile = File( self.fromDict )
     except AttributeError, error:
-      print "AttributeError: %s" % str( error )
+      print("AttributeError: %s" % str(error))
 
     self.assertEqual( isinstance( theFile, File ), True )
     for key, value in self.fromDict.items():

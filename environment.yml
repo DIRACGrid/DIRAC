@@ -1,0 +1,64 @@
+name: dirac-development
+
+channels:
+  - diracgrid
+  - conda-forge
+  - defaults
+
+dependencies:
+  # runtime
+  - python =2.7
+  - pip
+  - boto3
+  - certifi
+  - cmreshandler >1.0.0b4
+  - docutils
+  - elasticsearch-dsl ~=6.3.1
+  - fts-rest
+  - future
+  - gitpython >=2.1.0
+  - m2crypto >=0.36
+  - matplotlib >=2.1.0,<3.0
+  - mysql-python
+  - numpy >=1.10.1,<1.16  # Limit to 1.15 as Python 2 pylint has bugs with numpy 1.16
+  - pexpect >=4.0.1
+  - pillow
+  - psutil >=4.2.0
+  - pyasn1 >0.4.1
+  - pyasn1-modules
+  - pygsi
+  - python-json-logger >=0.1.8
+  - pytz >=2015.7
+  - recommonmark
+  - requests >=2.9.1
+  - six >=1.10
+  - sqlalchemy >=1.0.9
+  - subprocess32
+  - stomp.py >=3.1.5
+  - suds-jurko >=0.6
+  # testing and development
+  - autopep8
+  - caniusepython3
+  - coverage
+  - hypothesis
+  - ipython
+  - mock
+  - parameterized
+  - pylint >=1.6.5
+  - pyparsing >=2.0.6
+  - pytest >=3.6
+  - pytest-cov >=2.2.0
+  - pytest-mock
+  - shellcheck
+  # docs
+  - pygments >=1.5
+  - sphinx
+  # unused
+  - funcsigs
+  - futures
+  - jinja2
+  - multi-mechanize >=1.2.0
+  # - readline >=6.2.4 in the standard library
+  - simplejson >=3.8.1
+  - tornado >=5.0.0,<6.0.0
+  - typing >=3.6.6

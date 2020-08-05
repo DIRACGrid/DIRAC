@@ -14,11 +14,12 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.ReturnValues import S_OK
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
 
 
+@createClient('DataManagement/FileCatalog')
 class FileCatalogClientBase( Client ):
   """ Client code to the DIRAC File Catalogue
   """
@@ -68,6 +69,7 @@ class FileCatalogClientBase( Client ):
   @classmethod
   def hasCatalogMethod( cls, methodName ):
     """ Check of a method with the given name is implemented
+
     :param str methodName: the name of the method to check
     :return: boolean Flag True if the method is implemented
     """

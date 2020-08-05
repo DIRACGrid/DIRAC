@@ -47,8 +47,9 @@ class _MagicMethod( object ):
 
 class RPCClient( object ):
   """ This class contains the mechanism to convert normal calls to RPC calls.
-      When instanciated, it creates a :any:`~DIRAC.Core.DISET.private.InnerRPCClient.InnerRPCClient` as an attribute.
-      Any attribute which is accessed is then either redirected to InnerRPCClient if it has it,
+
+      When instanciated, it creates a :class:`~DIRAC.Core.DISET.private.InnerRPCClient.InnerRPCClient`
+      as an attribute. Any attribute which is accessed is then either redirected to InnerRPCClient if it has it,
       or creates a MagicMethod object otherwise. If the attribute is a function, MagicMethod will
       trigger the RPC call, using the InnerRPCClient.
 
@@ -71,6 +72,7 @@ class RPCClient( object ):
       Constructor
       The arguments are just passed on to InnerRPCClient.
       In practice:
+
         * args: has to be the service name or URL
         * kwargs: all the arguments InnerRPCClient and BaseClient accept as configuration
     """

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import make_dfc_plots_lib as dfcPlot
 
 
@@ -14,7 +15,7 @@ parser.add_option("-b", "--bin", dest="binSize", default=10, type="int", help = 
 parser.add_option("-m", "--no-max", dest="disableMax", action="store_true", help = "Disable the max line (default: False)", default = False)
 parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help = "Verbose print", default = False)
 (options, args) = parser.parse_args()
-print options
+print(options)
 if not options.filename:   # if filename is not given
   parser.error( 'Filename not given' )
 

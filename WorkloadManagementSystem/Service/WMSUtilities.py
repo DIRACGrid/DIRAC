@@ -43,6 +43,9 @@ def getPilotLoggingInfo(grid, pilotRef):
    Get LoggingInfo of a GRID job
   """
   if grid == 'CREAM':
+    # pilotRef may integrate the pilot stamp
+    # it has to be removed before being passed in parameter
+    pilotRef = pilotRef.split(':::')[0]
     cmd = ['glite-ce-job-status', '-L', '2', '%s' % pilotRef]
   elif grid == 'HTCondorCE':
     # need to import here, otherwise import errors happen
@@ -74,8 +77,12 @@ def getGridJobOutput(pilotReference):
   """
 
   result = pilotAgentsDB.getPilotInfo(pilotReference)
-  if not result['OK'] or not result['Value']:
-    return S_ERROR('Failed to get info for pilot ' + pilotReference)
+  if not result['OK']:
+    gLogger.error("Failed to get info for pilot", result['Message'])
+    return S_ERROR('Failed to get info for pilot')
+  if not result['Value']:
+    gLogger.warn("The pilot info is empty", pilotReference)
+    return S_ERROR('Pilot info is empty')
 
   pilotDict = result['Value'][pilotReference]
   owner = pilotDict['OwnerDN']

@@ -478,6 +478,7 @@ class StorageElementItem(object):
       * TapeSE: True if TXDY with X > 0 (defaults to False)
       * TotalCapacityTB: float (-1 if not defined)
       * DiskCacheTB: float (-1 if not defined)
+
     It returns directly the dictionary
     """
 
@@ -630,7 +631,7 @@ class StorageElementItem(object):
   def getStorageParameters(self, plugin=None, protocol=None):
     """ Get plugin specific options
 
-      :param plugin : plugin we are interested in
+      :param plugin: plugin we are interested in
       :param protocol: protocol we are interested in
 
       Either plugin or protocol can be defined, not both, but at least one of them
@@ -688,7 +689,7 @@ class StorageElementItem(object):
         :param sourceSE: storageElement instance of the sourceSE
         :param protocols: ordered protocol restriction list
 
-        :return:dictionnary Successful/Failed with pair (src, dest) urls
+        :return: dictionnary Successful/Failed with pair (src, dest) urls
     """
     log = self.log.getSubLogger('generateTransferURLsBetweenSEs')
 
@@ -803,7 +804,7 @@ class StorageElementItem(object):
         between the sourceSE and ourselves. If protocols is given,
         the chosen protocol has to be among those
 
-        :param sourceSE : storageElement instance of the sourceSE
+        :param sourceSE: storageElement instance of the sourceSE
         :param protocols: ordered protocol restriction list
 
         :return: a list protocols that fits the needs, or None
@@ -890,7 +891,7 @@ class StorageElementItem(object):
   def getLFNFromURL(self, urls):
     """ Get the LFN from the PFNS .
 
-        :param lfn : input lfn or lfns (list/dict)
+        :param lfn: input lfn or lfns (list/dict)
 
     """
     result = checkArgumentFormat(urls)
@@ -963,9 +964,9 @@ class StorageElementItem(object):
     """ Generates a dictionary (url : lfn ), where the url are constructed
         from the lfn using the constructURLFromLFN method of the storage plugins.
 
-        :param: lfns : dictionary {lfn:whatever}
+        :param lfns: dictionary {lfn:whatever}
 
-        :returns dictionary {constructed url : lfn}
+        :returns: dictionary {constructed url : lfn}
     """
     log = self.log.getSubLogger("__generateURLDict")
     log.verbose("generating url dict for %s lfn in %s." % (len(lfns), self.name))
@@ -1120,16 +1121,21 @@ class StorageElementItem(object):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
 
-        :param lfn : string, list or dictionary
-        :param *args : variable amount of non-keyword arguments. SHOULD BE EMPTY
-        :param **kwargs : keyword arguments
+        :param lfn: string, list or dictionary
+        :param *args: variable amount of non-keyword arguments. SHOULD BE EMPTY
+        :param **kwargs: keyword arguments
 
-        :returns S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
+        A special argument is 'protocols', which will be used by the StorageElement to filter
+        the usable plugins. Unless the method being executed is getTransportURL, this parameter
+        is removed from kwargs.
+        A special kwargs is 'inputProtocol', which can be specified for putFile. It describes
+        the protocol used as source protocol, since there is in principle only one.
+
+
+        :returns: S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
                 The Failed dict contains the lfn only if the operation failed on all the storages
                 The Successful dict contains the value returned by the successful storages.
 
-        A special kwargs is 'inputProtocol', which can be specified for putFile. It describes
-        the protocol used as source protocol, since there is in principle only one.
     """
 
     removedArgs = {}
@@ -1186,13 +1192,19 @@ class StorageElementItem(object):
     # and avoid fake failures showing in the accounting
     inputProtocol = kwargs.pop('inputProtocol', None)
 
+    # the 'protocols' parameter is only given to the plugin when calling getTransportURL.
+    # The other methods do not expect it.
+    protocols = kwargs.get('protocols')
+    if self.methodName != 'getTransportURL':
+      kwargs.pop('protocols', None)
+
     successful = {}
     failed = {}
-    filteredPlugins = self.__filterPlugins(self.methodName, kwargs.get('protocols'), inputProtocol)
+    filteredPlugins = self.__filterPlugins(self.methodName, protocols, inputProtocol)
     if not filteredPlugins:
       return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins matching the requirements\
                                            (operation %s protocols %s inputProtocol %s)" %
-                     (self.methodName, kwargs.get('protocols'), inputProtocol))
+                     (self.methodName, protocols, inputProtocol))
     # Try all of the storages one by one
     for storage in filteredPlugins:
       # Determine whether to use this storage object
@@ -1282,11 +1294,11 @@ class StorageElementItem(object):
     """
         Generates a DataOperation accounting if needs to be, and adds it to the DataStore client cache
 
-        :param lfns : list of lfns on which we attempted the operation
-        :param startDate : datetime, start of the operation
-        :param elapsedTime : time (seconds) the operation took
-        :param storageParameters : the parameters of the plugins used to perform the operation
-        :param callRes : the return of the method call, S_OK or S_ERROR
+        :param lfns: list of lfns on which we attempted the operation
+        :param startDate: datetime, start of the operation
+        :param elapsedTime: time (seconds) the operation took
+        :param storageParameters: the parameters of the plugins used to perform the operation
+        :param callRes: the return of the method call, S_OK or S_ERROR
 
         The operation is generated with the OperationType "se.methodName"
         The TransferSize and TransferTotal for directory methods actually take into

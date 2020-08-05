@@ -15,6 +15,7 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
 
 __RCSID__ = "$Id$"
 
+import errno
 import time
 
 # from threading import current_thread
@@ -27,6 +28,7 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
@@ -38,6 +40,7 @@ from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 
 # pylint: disable=attribute-defined-outside-init
@@ -88,6 +91,8 @@ class FTS3Agent(AgentModule):
     self.maxKick = self.am_getOption("KickLimitPerCycle", 100)
     self.deleteDelay = self.am_getOption("DeleteGraceDays", 180)
     self.maxDelete = self.am_getOption("DeleteLimitPerCycle", 100)
+    # lifetime of the proxy we download to delegate to FTS
+    self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
 
     return S_OK()
 
@@ -120,8 +125,10 @@ class FTS3Agent(AgentModule):
         per tuple (user, group, server).
         We dump the proxy of a user to a file (shared by all the threads),
         and use it to make the context.
-        The proxy needs a lifetime of PROXY_LIFETIME, is cached for half an hour less,
+        The proxy needs a lifetime of self.proxyLifetime, is cached for cacheTime = (2*lifeTime/3) - 10mn,
         and the lifetime of the context is 45mn
+        The reason for cacheTime to be what it is is because the FTS3 server will ask for a new proxy
+        after 2/3rd of the existing proxy has expired, so we renew it just before
 
         :param username: name of the user
         :param group: group of the user
@@ -138,7 +145,9 @@ class FTS3Agent(AgentModule):
     idTuple = (username, group, ftsServer)
     log.debug("Getting context for %s" % (idTuple, ))
 
-    if not contextes.exists(idTuple, 2700):
+    # We keep a context in the cache for 45 minutes
+    # (so it needs to be valid at least 15 since we add it for one hour)
+    if not contextes.exists(idTuple, 15 * 60):
       res = getDNForUsername(username)
       if not res['OK']:
         return res
@@ -148,11 +157,12 @@ class FTS3Agent(AgentModule):
       log.debug("UserDN %s" % userDN)
 
       # We dump the proxy to a file.
-      # It has to have a lifetime of PROXY_LIFETIME
-      # and we cache it for half an hour less
-      cacheTime = PROXY_LIFETIME - 1800
+      # It has to have a lifetime of self.proxyLifetime
+      # Because the FTS3 servers cache it for 2/3rd of the lifetime
+      # we should make our cache a bit less than 2/3rd of the lifetime
+      cacheTime = int(2 * self.proxyLifetime / 3) - 600
       res = gProxyManager.downloadVOMSProxyToFile(
-          userDN, group, requiredTimeLeft=PROXY_LIFETIME, cacheTime=cacheTime)
+          userDN, group, requiredTimeLeft=self.proxyLifetime, cacheTime=cacheTime)
       if not res['OK']:
         return res
 
@@ -160,7 +170,13 @@ class FTS3Agent(AgentModule):
       log.debug("Proxy file %s" % proxyFile)
 
       # We generate the context
-      res = FTS3Job.generateContext(ftsServer, proxyFile)
+      # In practice, the lifetime will be less than proxyLifetime
+      # because we reuse a cached proxy. However, the cached proxy will
+      # never forced a redelegation, because it is recent enough for FTS3 servers.
+      # The delegation is forced when 2/3 rd of the lifetime are left, and we get a fresh
+      # one just before. So no problem
+      res = FTS3Job.generateContext(ftsServer, proxyFile, lifetime=self.proxyLifetime)
+
       if not res['OK']:
         return res
       context = res['Value']
@@ -194,6 +210,11 @@ class FTS3Agent(AgentModule):
 
       if not res['OK']:
         log.error("Error monitoring job", res)
+
+        # If the job was not found on the server, update the DB
+        if cmpError(res, errno.ESRCH):
+          res = self.fts3db.cancelNonExistingJob(ftsJob.operationID, ftsJob.ftsGUID)
+
         return ftsJob, res
 
       # { fileID : { Status, Error } }
@@ -327,50 +348,88 @@ class FTS3Agent(AgentModule):
       else:
         log.debug("FTS3Operation %s is not totally processed yet" % operation.operationID)
 
-        res = operation.prepareNewJobs(
-            maxFilesPerJob=self.maxFilesPerJob, maxAttemptsPerFile=self.maxAttemptsPerFile)
+        # This flag is set to False if we want to stop the ongoing processing
+        # of an operation, typically when the matching RMS Request has been
+        # canceled (see below)
+        continueOperationProcessing = True
 
-        if not res['OK']:
-          log.error("Cannot prepare new Jobs", "FTS3Operation %s : %s" %
-                    (operation.operationID, res))
-          return operation, res
+        # Check the status of the associated RMS Request.
+        # If it is canceled or does not exist anymore then we will not create new FTS3Jobs, and mark
+        # this as FTS3Operation canceled.
 
-        newJobs = res['Value']
-
-        log.debug("FTS3Operation %s: %s new jobs to be submitted" %
-                  (operation.operationID, len(newJobs)))
-
-        for ftsJob in newJobs:
-          res = self._serverPolicy.chooseFTS3Server()
+        if operation.rmsReqID:
+          res = ReqClient().getRequestStatus(operation.rmsReqID)
           if not res['OK']:
-            log.error(res)
-            continue
+            # If the Request does not exist anymore
+            if cmpError(res, errno.ENOENT):
+              log.info(
+                  "The RMS Request does not exist anymore, canceling the FTS3Operation",
+                  "rmsReqID: %s, FTS3OperationID: %s" %
+                  (operation.rmsReqID,
+                   operation.operationID))
+              operation.status = 'Canceled'
+              continueOperationProcessing = False
+            else:
+              log.error("Could not get request status", res)
+              return operation, res
 
-          ftsServer = res['Value']
-          log.debug("Use %s server" % ftsServer)
+          else:
+            rmsReqStatus = res['Value']
 
-          ftsJob.ftsServer = ftsServer
+            if rmsReqStatus == 'Canceled':
+              log.info(
+                  "The RMS Request is canceled, canceling the FTS3Operation",
+                  "rmsReqID: %s, FTS3OperationID: %s" %
+                  (operation.rmsReqID,
+                   operation.operationID))
+              operation.status = 'Canceled'
+              continueOperationProcessing = False
 
-          res = self.getFTS3Context(
-              ftsJob.username, ftsJob.userGroup, ftsServer, threadID=threadID)
+        if continueOperationProcessing:
+          res = operation.prepareNewJobs(
+              maxFilesPerJob=self.maxFilesPerJob, maxAttemptsPerFile=self.maxAttemptsPerFile)
 
           if not res['OK']:
-            log.error("Could not get context", res)
-            continue
-
-          context = res['Value']
-          res = ftsJob.submit(context=context, protocols=self.thirdPartyProtocols)
-
-          if not res['OK']:
-            log.error("Could not submit FTS3Job", "FTS3Operation %s : %s" %
+            log.error("Cannot prepare new Jobs", "FTS3Operation %s : %s" %
                       (operation.operationID, res))
-            continue
+            return operation, res
 
-          operation.ftsJobs.append(ftsJob)
+          newJobs = res['Value']
 
-          submittedFileIds = res['Value']
-          log.info("FTS3Operation %s: Submitted job for %s transfers" %
-                   (operation.operationID, len(submittedFileIds)))
+          log.debug("FTS3Operation %s: %s new jobs to be submitted" %
+                    (operation.operationID, len(newJobs)))
+
+          for ftsJob in newJobs:
+            res = self._serverPolicy.chooseFTS3Server()
+            if not res['OK']:
+              log.error(res)
+              continue
+
+            ftsServer = res['Value']
+            log.debug("Use %s server" % ftsServer)
+
+            ftsJob.ftsServer = ftsServer
+
+            res = self.getFTS3Context(
+                ftsJob.username, ftsJob.userGroup, ftsServer, threadID=threadID)
+
+            if not res['OK']:
+              log.error("Could not get context", res)
+              continue
+
+            context = res['Value']
+            res = ftsJob.submit(context=context, protocols=self.thirdPartyProtocols)
+
+            if not res['OK']:
+              log.error("Could not submit FTS3Job", "FTS3Operation %s : %s" %
+                        (operation.operationID, res))
+              continue
+
+            operation.ftsJobs.append(ftsJob)
+
+            submittedFileIds = res['Value']
+            log.info("FTS3Operation %s: Submitted job for %s transfers" %
+                     (operation.operationID, len(submittedFileIds)))
 
         # new jobs are put in the DB at the same time
       res = self.fts3db.persistOperation(operation)

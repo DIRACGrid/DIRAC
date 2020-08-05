@@ -1,23 +1,21 @@
-########################################################################
-# $Id$
-########################################################################
 """ DIRAC DirectoryTree base class """
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import getIDSelectString
-from DIRAC import S_OK, S_ERROR, gLogger
 import time
 import threading
 import os
 import stat
+
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import getIDSelectString
 
 DEBUG = 0
 
 #############################################################################
 
 
-class DirectoryTreeBase:
+class DirectoryTreeBase(object):
 
   def __init__(self, database=None):
     self.db = database
@@ -398,7 +396,7 @@ class DirectoryTreeBase:
   def changeDirectoryOwner(self, paths, recursive=False):
     """ Bulk setting of the directory owner
 
-        :param dictionary paths : dictionary < lfn : owner >
+        :param dictionary paths: dictionary < lfn : owner >
     """
     return self._changeDirectoryParameter(paths,
                                           self._setDirectoryOwner,
@@ -409,7 +407,7 @@ class DirectoryTreeBase:
   def changeDirectoryGroup(self, paths, recursive=False):
     """ Bulk setting of the directory group
 
-        :param dictionary paths : dictionary < lfn : group >
+        :param dictionary paths: dictionary < lfn : group >
     """
     return self._changeDirectoryParameter(paths,
                                           self._setDirectoryGroup,
@@ -429,7 +427,7 @@ class DirectoryTreeBase:
   def changeDirectoryMode(self, paths, recursive=False):
     """ Bulk setting of the directory mode
 
-        :param dictionary paths : dictionary < lfn : mode >
+        :param dictionary paths: dictionary < lfn : mode >
     """
     return self._changeDirectoryParameter(paths,
                                           self._setDirectoryMode,
@@ -443,7 +441,7 @@ class DirectoryTreeBase:
                                 recursive=False):
     """ Bulk setting of the directory parameter with recursion for all the subdirectories and files
 
-        :param dictionary paths : dictionary < lfn : value >, where value is the value of parameter to be set
+        :param dictionary paths: dictionary < lfn : value >, where value is the value of parameter to be set
         :param function directoryFunction: function to change directory(ies) parameter
         :param function fileFunction: function to change file(s) parameter
         :param bool recursive: flag to apply the operation recursively

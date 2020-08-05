@@ -2,6 +2,15 @@
 This module provides GOCDB2CSAgent code.
 
 The agent is used to synchronize information between GOCDB and DIRAC configuration System (CS)
+Right now it only adds perfosonar endpoints
+
+The following options can be set for the GOCDB2CSAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN GOCDB2CSAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: GOCDB2CSAgent options
 """
 
 __RCSID__ = "$Id$"

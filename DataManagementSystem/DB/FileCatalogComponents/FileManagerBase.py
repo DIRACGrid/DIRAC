@@ -258,7 +258,10 @@ class FileManagerBase(object):
           extraLfns[lfn]['SE'] = lfns[lfn]['SE'][1:]
 
     # Check whether the supplied files have been registered already
-    existingMetadata, failed = self._getExistingMetadata(masterLfns.keys(), connection=connection)
+    res = self._getExistingMetadata(masterLfns.keys(), connection=connection)
+    if not res['OK']:
+      return res
+    existingMetadata, failed = res['Value']
     if existingMetadata:
       success, fail = self._checkExistingMetadata(existingMetadata, masterLfns)
       successful.update(success)
@@ -583,7 +586,7 @@ class FileManagerBase(object):
     for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         failed.pop(lfn)
-    return successful, failed
+    return S_OK((successful, failed))
 
   def _checkExistingMetadata(self, existingLfns, lfns):
     failed = {}
@@ -1219,7 +1222,8 @@ class FileManagerBase(object):
 
   def changeFileGroup(self, lfns):
     """ Get set the group for the supplied files
-        :param lfns : dictionary < lfn : group >
+
+        :param lfns: dictionary < lfn : group >
         :param int/str newGroup: optional new group/groupID the same for all the supplied lfns
      """
     res = self._findFiles(lfns, ['FileID', 'GID'])
@@ -1248,7 +1252,8 @@ class FileManagerBase(object):
 
   def changeFileOwner(self, lfns):
     """ Set the owner for the supplied files
-        :param lfns : dictionary < lfn : owner >
+
+        :param lfns: dictionary < lfn : owner >
         :param int/str newOwner: optional new user/userID the same for all the supplied lfns
     """
     res = self._findFiles(lfns, ['FileID', 'UID'])
@@ -1277,7 +1282,8 @@ class FileManagerBase(object):
 
   def changeFileMode(self, lfns):
     """" Set the mode for the supplied files
-        :param lfns : dictionary < lfn : mode >
+
+        :param lfns: dictionary < lfn : mode >
         :param int newMode: optional new mode the same for all the supplied lfns
     """
     res = self._findFiles(lfns, ['FileID', 'Mode'])

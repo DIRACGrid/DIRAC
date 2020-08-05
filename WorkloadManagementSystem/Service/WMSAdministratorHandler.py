@@ -42,7 +42,6 @@ def initializeWMSAdministratorHandler(serviceInfo):
 
 class WMSAdministratorHandler(RequestHandler):
 
-  ###########################################################################
   types_setSiteMask = [list]
 
   def export_setSiteMask(self, siteList):

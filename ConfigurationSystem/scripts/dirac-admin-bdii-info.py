@@ -6,6 +6,7 @@
 """
   Check info on BDII for a given CE or site
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -94,7 +95,7 @@ def getInfo(params):
     result = diracAdmin.getBDIISE(params['site'], useVO=params['vo'], host=params['host'])
 
   if not result['OK']:
-    print result['Message']
+    print(result['Message'])
     DIRAC.exit(2)
 
   return result
@@ -109,26 +110,26 @@ def showInfo(result, info):
 
   for element in elements:
     if info == 'ce' or info == 'all':
-      print "CE: %s \n{" % element.get('GlueSubClusterName', 'Unknown')
+      print("CE: %s \n{" % element.get('GlueSubClusterName', 'Unknown'))
 
     if info == 'ce-state' or info == 'all':
-      print "CE: %s \n{" % element.get('GlueCEUniqueID', 'Unknown')
+      print("CE: %s \n{" % element.get('GlueCEUniqueID', 'Unknown'))
 
     if info == 'ce-cluster' or info == 'all':
-      print "Cluster: %s \n{" % element.get('GlueClusterName', 'Unknown')
+      print("Cluster: %s \n{" % element.get('GlueClusterName', 'Unknown'))
 
     if info == 'ce-vo' or info == 'all':
-      print "CEVOView: %s \n{" % element.get('GlueChunkKey', 'Unknown')
+      print("CEVOView: %s \n{" % element.get('GlueChunkKey', 'Unknown'))
 
     if info == 'site' or info == 'all':
-      print "Site: %s \n{" % element.get('GlueSiteName', 'Unknown')
+      print("Site: %s \n{" % element.get('GlueSiteName', 'Unknown'))
 
     if info == 'site-se' or info == 'all':
-      print "SE: %s \n{" % element.get('GlueSEUniqueID', 'Unknown')
+      print("SE: %s \n{" % element.get('GlueSEUniqueID', 'Unknown'))
 
     for item in element.iteritems():
-      print "  %s: %s" % item
-    print "}"
+      print("  %s: %s" % item)
+    print("}")
 
 
 # ...............................................................................

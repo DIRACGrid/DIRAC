@@ -1,9 +1,10 @@
 """ Test class for JobWrapper
 """
 
-#pylint: disable=protected-access, invalid-name
+# pylint: disable=protected-access, invalid-name
 
 # imports
+from __future__ import print_function
 import unittest
 import importlib
 import os
@@ -22,13 +23,15 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinu
 getSystemSectionMock = MagicMock()
 getSystemSectionMock.return_value = 'aValue'
 
-class JobWrapperTestCase( unittest.TestCase ):
+
+class JobWrapperTestCase(unittest.TestCase):
   """ Base class for the JobWrapper test cases
   """
-  def setUp( self ):
-    gLogger.setLevel( 'DEBUG' )
 
-  def tearDown( self ):
+  def setUp(self):
+    gLogger.setLevel('DEBUG')
+
+  def tearDown(self):
     for f in ['std.out']:
       try:
         os.remove(f)
@@ -36,10 +39,10 @@ class JobWrapperTestCase( unittest.TestCase ):
         pass
 
 
-class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
+class JobWrapperTestCaseSuccess(JobWrapperTestCase):
 
-  def test_InputData( self ):
-    myJW = importlib.import_module( 'DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper' )
+  def test_InputData(self):
+    myJW = importlib.import_module('DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper')
     myJW.getSystemSection = MagicMock()
     myJW.ModuleFactory = MagicMock()
 
@@ -47,14 +50,14 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
 
     jw.jobArgs['InputData'] = ''
     res = jw.resolveInputData()
-    self.assertFalse( res['OK'] )
+    self.assertFalse(res['OK'])
 
     jw = JobWrapper()
     jw.jobArgs['InputData'] = 'pippo'
     jw.dm = dm_mock
     jw.fc = fc_mock
     res = jw.resolveInputData()
-    self.assertTrue( res['OK'] )
+    self.assertTrue(res['OK'])
 
     jw = JobWrapper()
     jw.jobArgs['InputData'] = 'pippo'
@@ -63,65 +66,64 @@ class JobWrapperTestCaseSuccess( JobWrapperTestCase ):
     jw.dm = dm_mock
     jw.fc = fc_mock
     res = jw.resolveInputData()
-    self.assertTrue( res['OK'] )
+    self.assertTrue(res['OK'])
 
-  def test__performChecks( self ):
-    wd = WatchdogLinux( pid = os.getpid(), 
-                        exeThread = MagicMock(), 
-                        spObject = MagicMock(), 
-                        jobCPUTime = 1000, 
-                        memoryLimit = 1024 * 1024, 
-                        jobArgs = { 'StopSigNumber' : 10 } )
+  def test__performChecks(self):
+    wd = WatchdogLinux(pid=os.getpid(),
+                       exeThread=MagicMock(),
+                       spObject=MagicMock(),
+                       jobCPUTime=1000,
+                       memoryLimit=1024 * 1024,
+                       jobArgs={'StopSigNumber': 10})
     res = wd._performChecks()
-    self.assertTrue( res['OK'] )
+    self.assertTrue(res['OK'])
 
-  @patch( "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect = getSystemSectionMock )
-  @patch( "DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", side_effect = getSystemSectionMock )
+  @patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock)
+  @patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", side_effect=getSystemSectionMock)
   def test_execute(self, _patch1, _patch2):
     jw = JobWrapper()
-    jw.jobArgs = {'Executable':'/bin/ls'}
+    jw.jobArgs = {'Executable': '/bin/ls'}
     res = jw.execute('')
-    print 'jw.execute() returns',str(res) 
-    self.assertTrue( res['OK'] )
+    print('jw.execute() returns', str(res))
+    self.assertTrue(res['OK'])
 
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
     jw = JobWrapper()
-    jw.jobArgs = {'Executable':'script-OK.sh'}
+    jw.jobArgs = {'Executable': 'script-OK.sh'}
     res = jw.execute('')
-    self.assertTrue( res['OK'] )
+    self.assertTrue(res['OK'])
     os.remove('script-OK.sh')
 
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script.sh', 'script.sh')
     jw = JobWrapper()
-    jw.jobArgs = {'Executable':'script.sh', 'Arguments':'111'}
+    jw.jobArgs = {'Executable': 'script.sh', 'Arguments': '111'}
     res = jw.execute('')
-    self.assertTrue( res['OK'] ) # In this case the application finished with errors,
-                                 # but the JobWrapper executed successfully
+    self.assertTrue(res['OK'])  # In this case the application finished with errors,
+    # but the JobWrapper executed successfully
     os.remove('script.sh')
 
-    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh') #this will reschedule
+    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh')  # this will reschedule
     jw = JobWrapper()
-    jw.jobArgs = {'Executable':'script-RESC.sh'}
+    jw.jobArgs = {'Executable': 'script-RESC.sh'}
     res = jw.execute('')
-    if res['OK']: # FIXME: This may happen depending on the shell - not the best test admittedly!
-      print "We should not be here, unless the 'Execution thread status' is equal to 1"
-      self.assertTrue( res['OK'] )
+    if res['OK']:  # FIXME: This may happen depending on the shell - not the best test admittedly!
+      print("We should not be here, unless the 'Execution thread status' is equal to 1")
+      self.assertTrue(res['OK'])
     else:
-      self.assertFalse( res['OK'] ) # In this case the application finished with an error code
-                                    # that the JobWrapper interpreted as "to reschedule"
-                                    # so in this case the "execute" is considered an error
+      self.assertFalse(res['OK'])  # In this case the application finished with an error code
+      # that the JobWrapper interpreted as "to reschedule"
+      # so in this case the "execute" is considered an error
     os.remove('script-RESC.sh')
-
-
 
 
 #############################################################################
 # Test Suite run
 #############################################################################
 
+
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( JobWrapperTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobWrapperTestCaseSuccess ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(JobWrapperTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobWrapperTestCaseSuccess))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

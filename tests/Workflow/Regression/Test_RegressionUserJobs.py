@@ -44,7 +44,9 @@ class RegressionTestCase(IntegrationTest):
     try:
       helloWorldXMLLocation = find_all('helloWorld.xml', rootPath, '/DIRAC/tests/Workflow/Regression')[0]
     except IndexError:  # we are in Jenkins
-      helloWorldXMLLocation = find_all('helloWorld.xml', os.environ['WORKSPACE'], '/DIRAC/tests/Workflow/Regression')[0]
+      helloWorldXMLLocation = find_all('helloWorld.xml',
+                                       os.environ['WORKSPACE'],
+                                       '/DIRAC/tests/Workflow/Regression')[0]
 
     self.j_u_hello = Job(helloWorldXMLLocation)
     self.j_u_hello.setConfigArgs('pilot.cfg')

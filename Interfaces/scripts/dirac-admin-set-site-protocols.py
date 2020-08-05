@@ -7,6 +7,7 @@
 """
   Defined protocols for each SE for a given site.
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -34,7 +35,7 @@ diracAdmin = DiracAdmin()
 exitCode = 0
 result = diracAdmin.setSiteProtocols( site, args, printOutput = True )
 if not result['OK']:
-  print 'ERROR: %s' % result['Message']
+  print('ERROR: %s' % result['Message'])
   exitCode = 2
 
 DIRAC.exit( exitCode )

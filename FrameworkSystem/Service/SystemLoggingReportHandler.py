@@ -21,24 +21,25 @@ from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
 
 __RCSID__ = "$Id$"
 
-def initializeSystemLoggingReportHandler( serviceInfo ):
+
+def initializeSystemLoggingReportHandler(serviceInfo):
 
   global LogDB
   LogDB = SystemLoggingDB()
   return S_OK()
 
 
-class SystemLoggingReportHandler( RequestHandler ):
+class SystemLoggingReportHandler(RequestHandler):
 
-  types_getMessages=[]
+  types_getMessages = []
 
-  def __getMessages( self, selectionDict = {}, sortList = [],
-                     startItem = 0, maxItems = 0 ):
+  def __getMessages(self, selectionDict={}, sortList=[],
+                    startItem=0, maxItems=0):
     """
     """
     from re import search
 
-    if selectionDict.has_key('convertDates'):
+    if 'convertDates' in selectionDict:
       convertDatesToStrings = selectionDict['convertDates']
       del selectionDict['convertDates']
     else:
@@ -49,29 +50,29 @@ class SystemLoggingReportHandler( RequestHandler ):
     else:
       dateField = 'MessageTime'
 
-    if selectionDict.has_key('count'):
+    if 'count' in selectionDict:
       countMessages = selectionDict['count']
       del selectionDict['count']
     else:
       countMessages = True
 
-    if selectionDict.has_key( 'beginDate' ):
+    if 'beginDate' in selectionDict:
       beginDate = selectionDict['beginDate']
       del selectionDict['beginDate']
     else:
       beginDate = None
-    if selectionDict.has_key( 'endDate' ):
+    if 'endDate' in selectionDict:
       endDate = selectionDict['endDate']
       del selectionDict['endDate']
     else:
       endDate = None
 
-    if not ( beginDate or endDate ):
-      beginDate= Time.date() - 1 * Time.day
+    if not (beginDate or endDate):
+      beginDate = Time.date() - 1 * Time.day
 
-    if selectionDict.has_key('groupField'):
+    if 'groupField' in selectionDict:
       groupField = selectionDict['groupField']
-      if not selectionDict.has_key( groupField ):
+      if groupField not in selectionDict:
         groupField = selectionDict.keys()[0]
       del selectionDict['groupField']
     elif countMessages:
@@ -86,64 +87,64 @@ class SystemLoggingReportHandler( RequestHandler ):
 
     if selectionDict:
       fieldList = selectionDict.keys()
-      fieldList.append( dateField )
-      if not ( selectionDict.has_key( 'LogLevel' ) and
-               selectionDict['LogLevel'] ):
-        selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
+      fieldList.append(dateField)
+      if not ('LogLevel' in selectionDict and
+              selectionDict['LogLevel']):
+        selectionDict['LogLevel'] = ['ERROR', 'EXCEPT', 'FATAL']
     else:
-      fieldList = [ dateField, 'LogLevel', 'FixedTextString',
-                    'VariableText', 'SystemName', 'SubSystemName',
-                    'OwnerDN', 'OwnerGroup', 'ClientIPNumberString',
-                    'SiteName' ]
-      selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL' ]
+      fieldList = [dateField, 'LogLevel', 'FixedTextString',
+                   'VariableText', 'SystemName', 'SubSystemName',
+                   'OwnerDN', 'OwnerGroup', 'ClientIPNumberString',
+                   'SiteName']
+      selectionDict['LogLevel'] = ['ERROR', 'EXCEPT', 'FATAL']
 
-    result = LogDB._queryDB( showFieldList = fieldList, condDict = selectionDict,
-                             older = endDate, newer = beginDate,
-                             count = countMessages, groupColumn = groupField,
-                             orderFields = sortList )
+    result = LogDB._queryDB(showFieldList=fieldList, condDict=selectionDict,
+                            older=endDate, newer=beginDate,
+                            count=countMessages, groupColumn=groupField,
+                            orderFields=sortList)
 
-    if not result['OK']: return result
+    if not result['OK']:
+      return result
 
     if maxItems:
-      records = result['Value'][ startItem:maxItems + startItem ]
+      records = result['Value'][startItem:maxItems + startItem]
     else:
-      records = result['Value'][ startItem: ]
+      records = result['Value'][startItem:]
 
     if not sortList:
-      unOrderedFields = [ ( s[-1], s ) for s in records ]
-      unOrderedFields.sort()
-      records = [ t[1] for t in unOrderedFields ]
+      unOrderedFields = sorted([(s[-1], s) for s in records])
+      records = [t[1] for t in unOrderedFields]
       records.reverse()
 
     if countMessages:
       if 'count(*) as recordCount' in fieldList:
-        fieldList.remove( 'count(*) as recordCount' )
-      fieldList.append( 'Number of Errors' )
+        fieldList.remove('count(*) as recordCount')
+      fieldList.append('Number of Errors')
 
     if convertDatesToStrings:
       for element in fieldList:
-        if search( 'MessageTime',element ):
-          index = fieldList.index( element )
+        if search('MessageTime', element):
+          index = fieldList.index(element)
       fieldList[index] = 'MessageTime'
 
-    retValue = { 'ParameterNames': fieldList, 'Records': records ,
-                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = {'ParameterNames': fieldList, 'Records': records,
+                'TotalRecords': len(result['Value']), 'Extras': {}}
 
-    return S_OK( retValue )
+    return S_OK(retValue)
 
-  def export_getMessages( self, selectionDict = {}, sortList = [], startItem = 0, maxItems = 0 ):
+  def export_getMessages(self, selectionDict={}, sortList=[], startItem=0, maxItems=0):
     """ Query the database for all the messages between two given dates.
         If no date is provided then the records returned are those generated
         during the last 24 hours.
     """
     selectionDict['count'] = False
     selectionDict['groupField'] = None
-    selectionDict['LogLevel'] = [ 'ERROR', 'EXCEPT', 'FATAL', 'ALWAYS' ]
-    return self.__getMessages( selectionDict, sortList, startItem, maxItems )
+    selectionDict['LogLevel'] = ['ERROR', 'EXCEPT', 'FATAL', 'ALWAYS']
+    return self.__getMessages(selectionDict, sortList, startItem, maxItems)
 
-  types_getCountMessages=[]
+  types_getCountMessages = []
 
-  def export_getCountMessages( self, selectionDict = {}, sortList = [], startItem = 0, maxItems = 0 ):
+  def export_getCountMessages(self, selectionDict={}, sortList=[], startItem=0, maxItems=0):
     """ Query the database for the number of messages that match 'conds' and
         were generated between initialDate and endDate. If no condition is
         provided it returns the total number of messages present in the
@@ -152,12 +153,11 @@ class SystemLoggingReportHandler( RequestHandler ):
     selectionDict['count'] = True
     selectionDict['groupField'] = None
 
-    return self.__getMessages( selectionDict, sortList, startItem, maxItems )
-
+    return self.__getMessages(selectionDict, sortList, startItem, maxItems)
 
   types_getGroupedMessages = []
 
-  def export_getGroupedMessages( self, selectionDict = {}, sortList = [], startItem = 0, maxItems = 0 ):
+  def export_getGroupedMessages(self, selectionDict={}, sortList=[], startItem=0, maxItems=0):
     """  This function reports the number of messages per fixed text
          string, system and subsystem that generated them using the
          DIRAC convention for communications between services and
@@ -165,95 +165,99 @@ class SystemLoggingReportHandler( RequestHandler ):
     """
     selectionDict['count'] = True
 
-    return self.__getMessages( selectionDict, sortList, startItem, maxItems )
+    return self.__getMessages(selectionDict, sortList, startItem, maxItems)
 
   types_getSites = []
 
-  def export_getSites( self, selectionDict = {}, sortList = [], startItem = 0, maxItems = 0 ):
-    result = LogDB._queryDB( showFieldList = [ 'SiteName' ] )
+  def export_getSites(self, selectionDict={}, sortList=[], startItem=0, maxItems=0):
+    result = LogDB._queryDB(showFieldList=['SiteName'])
 
     if not result['OK']:
       return result
 
     if maxItems:
-      records = result['Value'][ startItem:maxItems + startItem ]
+      records = result['Value'][startItem:maxItems + startItem]
     else:
-      records = result['Value'][ startItem: ]
+      records = result['Value'][startItem:]
 
-    retValue = { 'ParameterNames': [ 'SiteName' ], 'Records': records,
-                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = {'ParameterNames': ['SiteName'], 'Records': records,
+                'TotalRecords': len(result['Value']), 'Extras': {}}
 
-    return S_OK( retValue )
+    return S_OK(retValue)
 
   types_getSystems = []
 
-  def export_getSystems( self , selectionDict = {}, sortList = [],
-                         startItem = 0, maxItems = 0 ):
-    result = LogDB._queryDB( showFieldList = [ 'SystemName' ] )
+  def export_getSystems(self, selectionDict={}, sortList=[],
+                        startItem=0, maxItems=0):
+    result = LogDB._queryDB(showFieldList=['SystemName'])
 
-    if not result['OK']: return result
+    if not result['OK']:
+      return result
 
     if maxItems:
-      records = result['Value'][ startItem:maxItems + startItem ]
+      records = result['Value'][startItem:maxItems + startItem]
     else:
-      records = result['Value'][ startItem: ]
+      records = result['Value'][startItem:]
 
-    retValue = { 'ParameterNames': [ 'SystemName' ], 'Records': records,
-                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = {'ParameterNames': ['SystemName'], 'Records': records,
+                'TotalRecords': len(result['Value']), 'Extras': {}}
 
-    return S_OK( retValue )
+    return S_OK(retValue)
 
   types_getSubSystems = []
 
-  def export_getSubSystems( self, selectionDict = {}, sortList = [],
-                            startItem = 0, maxItems = 0 ):
-    result = LogDB._queryDB( showFieldList = [ 'SubSystemName' ] )
+  def export_getSubSystems(self, selectionDict={}, sortList=[],
+                           startItem=0, maxItems=0):
+    result = LogDB._queryDB(showFieldList=['SubSystemName'])
 
-    if not result['OK']: return result
+    if not result['OK']:
+      return result
 
     if maxItems:
-      records = result['Value'][ startItem:maxItems + startItem ]
+      records = result['Value'][startItem:maxItems + startItem]
     else:
-      records = result['Value'][ startItem: ]
+      records = result['Value'][startItem:]
 
-    retValue={ 'ParameterNames': [ 'SubSystemName' ], 'Records': records,
-               'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = {'ParameterNames': ['SubSystemName'], 'Records': records,
+                'TotalRecords': len(result['Value']), 'Extras': {}}
 
-    return S_OK( retValue )
+    return S_OK(retValue)
 
   types_getGroups = []
 
-  def export_getGroups( self, selectionDict = {}, sortList = [],
-                        startItem = 0, maxItems = 0 ):
+  def export_getGroups(self, selectionDict={}, sortList=[],
+                       startItem=0, maxItems=0):
 
-    result = LogDB._queryDB( showFieldList = [ 'OwnerGroup' ] )
+    result = LogDB._queryDB(showFieldList=['OwnerGroup'])
 
-    if not result['OK']: return result
+    if not result['OK']:
+      return result
 
     if maxItems:
-      records = result['Value'][ startItem:maxItems + startItem ]
+      records = result['Value'][startItem:maxItems + startItem]
     else:
-      records = result['Value'][ startItem: ]
+      records = result['Value'][startItem:]
 
-    retValue = { 'ParameterNames': [ 'OwnerGroup' ], 'Records': records,
-                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = {'ParameterNames': ['OwnerGroup'], 'Records': records,
+                'TotalRecords': len(result['Value']), 'Extras': {}}
 
-    return S_OK( retValue )
+    return S_OK(retValue)
 
   types_getFixedTextStrings = []
 
-  def export_getFixedTextStrings( self, selectionDict = {}, sortList = [],
-                                  startItem = 0, maxItems = 0 ):
-    result = LogDB._queryDB( showFieldList = [ 'FixedTextString' ] )
+  def export_getFixedTextStrings(self, selectionDict={}, sortList=[],
+                                 startItem=0, maxItems=0):
+    result = LogDB._queryDB(showFieldList=['FixedTextString'])
 
-    if not result['OK']: return result
+    if not result['OK']:
+      return result
 
     if maxItems:
-      records = result['Value'][ startItem:maxItems + startItem ]
+      records = result['Value'][startItem:maxItems + startItem]
     else:
-      records = result['Value'][ startItem: ]
+      records = result['Value'][startItem:]
 
-    retValue = { 'ParameterNames': [ 'FixedTextString' ], 'Records': records,
-                 'TotalRecords': len( result['Value'] ), 'Extras': {}}
+    retValue = {'ParameterNames': ['FixedTextString'], 'Records': records,
+                'TotalRecords': len(result['Value']), 'Extras': {}}
 
-    return S_OK( retValue )
+    return S_OK(retValue)
