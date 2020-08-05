@@ -504,7 +504,7 @@ class RequestHandler(object):
 
   def export_whoami(self):
     """
-      A simple whoami, returns all credential dictionnary, except certificate chain object.
+      A simple whoami, returns all credential dictionary, except certificate chain object.
     """
     credDict = self.srv_getRemoteCredentials()
     if 'x509Chain' in credDict:

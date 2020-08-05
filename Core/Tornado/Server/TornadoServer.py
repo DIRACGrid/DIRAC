@@ -3,8 +3,9 @@ TornadoServer create a web server and load services.
 It may work better with TornadoClient but as it accepts HTTPS you can create your own client
 """
 
-__RCSID__ = "$Id$"
-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import time
 import datetime
@@ -68,7 +69,6 @@ class TornadoServer(object):
     :param int port: Used to change port, default is 443
     """
 
-    # If port not precised, get it from config
     if port is None:
       port = gConfig.getValue("/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance('Tornado'), 443)
 
@@ -93,7 +93,7 @@ class TornadoServer(object):
 
     # if no service list is given, load services from configuration
     handlerDict = self.handlerManager.getHandlersDict()
-    for item in handlerDict.iteritems():
+    for item in handlerDict.items():
       # handlerDict[key].initializeService(key)
       self.urls.append(url(item[0], item[1], dict(debug=self.debugSSL)))
     # If there is no services loaded:
@@ -115,7 +115,7 @@ class TornadoServer(object):
     if self.debugSSL:
       gLogger.warn("Server is running in debug mode")
 
-    router = Application(self.urls, debug=self.debugSSL)
+    router = Application(self.urls, debug=self.debugSSL, compress_response=True)
 
     certs = Locations.getHostCertificateAndKeyLocation()
     if certs is False:
@@ -137,14 +137,14 @@ class TornadoServer(object):
     tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
 
     # Start server
-    server = HTTPServer(router, ssl_options=ssl_options)
+    server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)
     try:
       if multiprocess:
         server.bind(self.port)
       else:
         server.listen(self.port)
-    except socketerror as e:
-      gLogger.fatal(e)
+    except Exception as e:  # pylint: disable=broad-except
+      gLogger.exception("Exception starting HTTPServer", e)
       return S_ERROR()
     gLogger.always("Listening on port %s" % self.port)
     for service in self.urls:
@@ -153,7 +153,6 @@ class TornadoServer(object):
     if multiprocess:
       server.start(0)
     IOLoop.current().start()
-    return True  # Never called because we are stuck in the IOLoop, but to make pylint happy
 
   def _initMonitoring(self):
     """

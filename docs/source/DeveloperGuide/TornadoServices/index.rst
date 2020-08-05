@@ -171,7 +171,7 @@ You can also see this example::
       The specific client for configuration system.
       To avoid JSON limitation the HTTPS handler encode data in base64
       before sending them, this class only decode the base64
-      An exception is made with CommitNewData wich ENCODE in base64
+      An exception is made with CommitNewData which ENCODE in base64
     """
     def getCompressedData(self):
       """

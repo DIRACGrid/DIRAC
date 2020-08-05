@@ -350,7 +350,7 @@ class Service(object):
       The method stacks openened connection in a queue, another thread
       read this queue and handle connection.
 
-      :param clientTransport: Object wich describe opened connection (PlainTransport or SSLTransport)
+      :param clientTransport: Object which describes opened connection (PlainTransport or SSLTransport)
     """
     self._stats['connections'] += 1
     self._monitor.setComponentExtraParam('queries', self._stats['connections'])

@@ -2,7 +2,7 @@
   Custom TornadoClient for Configuration System
   Used like a normal client, should be instanciated if and only if we use the configuration service
 
-  Because of limitation with JSON some datas are encoded in base64
+  because JSON cannot ship binary data, we encode it in base64
 
 """
 
@@ -18,7 +18,7 @@ class CSJSONClient(TornadoClient):
     To avoid JSON limitation the HTTPS handler encode data in base64
     before sending them, this class only decode the base64
 
-    An exception is made with CommitNewData wich ENCODE in base64
+    An exception is made with CommitNewData which ENCODE in base64
   """
 
   def getCompressedData(self):
@@ -26,7 +26,8 @@ class CSJSONClient(TornadoClient):
       Transmit request to service and get data in base64,
       it decode base64 before returning
 
-      :returns str: Configuration data, compressed
+      :returns: Configuration data, compressed
+      :rtype: str
     """
     retVal = self.executeRPC('getCompressedData')
     if retVal['OK']:

@@ -6,13 +6,14 @@
 # Just run this script to start Tornado and CS service
 # Use dirac.cfg (or other cfg given in the command line) to change port
 
-__RCSID__ = "$Id$"
-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # Must be define BEFORE any dirac import
 import os
 import sys
-os.environ['USE_TORNADO_IOLOOP'] = "True"
+os.environ['DIRAC_USE_TORNADO_IOLOOP'] = "True"
 
 
 from DIRAC.FrameworkSystem.Client.Logger import gLogger

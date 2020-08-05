@@ -40,7 +40,7 @@ def _updateFromRemoteLocation(serviceClient):
   return retVal
 
 
-class RefresherBase():
+class RefresherBase(object):
   """
     Code factorisation for the refresher
   """
@@ -182,8 +182,8 @@ class Refresher(RefresherBase, threading.Thread):
 
   def _refreshInThread(self):
     """
-      Refreshing configration in the background. By default it use a thread but it can be
-      also runned in the IOLoop
+      Refreshing configuration in the background. By default it uses a thread but it can be
+      run also in the IOLoop
     """
     retVal = self._refresh()
     if not retVal['OK']:
@@ -191,7 +191,7 @@ class Refresher(RefresherBase, threading.Thread):
 
   def refreshConfigurationIfNeeded(self):
     """
-      Refresh the configuration if automatic update are disabled, refresher is enabled and servers are defined
+      Refresh the configuration if automatic updates are disabled, refresher is enabled and servers are defined
     """
     if not self._refreshEnabled or self._automaticUpdate or not gConfigurationData.getServers():
       return
@@ -251,20 +251,10 @@ class TornadoRefresher(RefresherBase):
     tasks, so it work with Tornado (HTTPS server).
   """
 
-  # For pylint...
-  gen = None
-
-  try:
-    from tornado import gen
-    # We change the import name otherwise sphinx tries
-    # to compile the tornado doc and fails
-    from tornado.ioloop import IOLoop as _IOLoop
-
-  except ImportError:
-    gLogger.fatal("You should install tornado to use this refresher, please unset USE_TORNADO_IOLOOP")
-
-  def __init__(self):
-    RefresherBase.__init__(self)
+  from tornado import gen
+  # We change the import name otherwise sphinx tries
+  # to compile the tornado doc and fails
+  from tornado.ioloop import IOLoop as _IOLoop
 
   def refreshConfigurationIfNeeded(self):
     """
@@ -279,7 +269,6 @@ class TornadoRefresher(RefresherBase):
       return
     self._lastUpdateTime = time.time()
     self._IOLoop.current().run_in_executor(None, self._refresh)  # pylint: disable=no-member
-    return
 
   def autoRefreshAndPublish(self, sURL):
     """
@@ -307,7 +296,7 @@ class TornadoRefresher(RefresherBase):
       Trigger the autorefresh when configuration is expired
 
       This task must use Tornado utilities to avoid blocking the ioloop and
-      pottentialy deadlock the server.
+      potentialy deadlock the server.
 
       See http://www.tornadoweb.org/en/stable/guide/coroutines.html#looping
       for official documentation about this type of method.
@@ -346,8 +335,8 @@ class TornadoRefresher(RefresherBase):
 # but background tasks will be delayed until IOLoop start.
 
 
-# USE_TORNADO_IOLOOP is defined by starting scripts
-if os.environ.get('USE_TORNADO_IOLOOP', 'false').lower() in ('yes', 'true'):
+# DIRAC_USE_TORNADO_IOLOOP is defined by starting scripts
+if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() in ('yes', 'true'):
   gRefresher = TornadoRefresher()
 else:
   gRefresher = Refresher()

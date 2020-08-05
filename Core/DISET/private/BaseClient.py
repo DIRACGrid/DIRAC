@@ -250,7 +250,7 @@ class BaseClient(object):
 
         :return: S_OK()/S_ERROR()
     """
-    # Wich extra credentials to use?
+    # which extra credentials to use?
     self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST if self.__useCertificates else ""
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]

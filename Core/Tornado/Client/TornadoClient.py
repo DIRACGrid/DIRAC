@@ -8,9 +8,10 @@
   It also exposes the same interface for receiving file than the TransferClient.
 
   Main changes:
-    - KeepAliveLapse is removed, requests library manage it itself.
-    - nbOfRetry (defined as private attribute) is removed, requests library manage it hitself.
-    - Underneath it use HTTP POST protocol and JSON
+
+  - KeepAliveLapse is removed, requests library manages it itself.
+  - nbOfRetry (defined as private attribute) is removed, requests library manage it itself.
+  - Underneath it use HTTP POST protocol and JSON
 
   Example::
 
@@ -19,6 +20,10 @@
     myService.doSomething() #Returns S_OK/S_ERROR
 
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=broad-except
 
@@ -51,7 +56,7 @@ class TornadoClient(TornadoBaseClient):
     """
       Calls a remote service
 
-      :param str procedure: remote procedure name
+      :param str method: remote procedure name
       :param args: list of arguments
       :returns: decoded response from server, server may return S_OK or S_ERROR
     """
@@ -63,7 +68,7 @@ class TornadoClient(TornadoBaseClient):
 
   def receiveFile(self, destFile, *args):
     """
-      Equivalent of the :py:meth`~DIRAC.Core.DISET.TransferClient.TransferClient.receiveFile
+      Equivalent of :py:meth`~DIRAC.Core.DISET.TransferClient.TransferClient.receiveFile
 
       In practice, it calls the remote method `streamToClient` and stores the raw result in a file
 

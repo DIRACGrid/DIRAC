@@ -14,10 +14,10 @@ __RCSID__ = "$Id$"
 
 # imports
 import six
-import cStringIO
 import csv
 import os
-from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
+
+from io import BytesIO
 # from DIRAC
 from DIRAC.Core.DISET.RequestHandler import getServiceOption
 
@@ -114,21 +114,15 @@ class TornadoFileCatalogHandler(TornadoService):
   ########################################################################
   # Path operations (not updated)
   #
-  types_changePathOwner = [[ListType, DictType] + list(StringTypes)]
-
   def export_changePathOwner(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
     """
     return self.gFileCatalogDB.changePathOwner(lfns, self.getRemoteCredentials(), recursive)
 
-  types_changePathGroup = [[ListType, DictType] + list(StringTypes)]
-
   def export_changePathGroup(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
     """
     return self.gFileCatalogDB.changePathGroup(lfns, self.getRemoteCredentials(), recursive)
-
-  types_changePathMode = [[ListType, DictType] + list(StringTypes)]
 
   def export_changePathMode(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
@@ -138,14 +132,10 @@ class TornadoFileCatalogHandler(TornadoService):
   ########################################################################
   # ACL Operations
   #
-  types_getPathPermissions = [[ListType, DictType] + list(StringTypes)]
-
   def export_getPathPermissions(self, lfns):
     """ Determine the ACL information for a supplied path
     """
     return self.gFileCatalogDB.getPathPermissions(lfns, self.getRemoteCredentials())
-
-  types_hasAccess = [[basestring, dict], [basestring, list, dict]]
 
   def export_hasAccess(self, paths, opType):
     """ Determine if the given op can be performed on the paths
@@ -168,8 +158,6 @@ class TornadoFileCatalogHandler(TornadoService):
   #  isOK
   #
 
-  types_isOK = []
-
   @classmethod
   def export_isOK(cls):
     """ returns S_OK if DB is connected
@@ -183,25 +171,17 @@ class TornadoFileCatalogHandler(TornadoService):
   #  User/Group write operations
   #
 
-  types_addUser = [StringTypes]
-
   def export_addUser(self, userName):
     """ Add a new user to the File Catalog """
     return self.gFileCatalogDB.addUser(userName, self.getRemoteCredentials())
-
-  types_deleteUser = [StringTypes]
 
   def export_deleteUser(self, userName):
     """ Delete user from the File Catalog """
     return self.gFileCatalogDB.deleteUser(userName, self.getRemoteCredentials())
 
-  types_addGroup = [StringTypes]
-
   def export_addGroup(self, groupName):
     """ Add a new group to the File Catalog """
     return self.gFileCatalogDB.addGroup(groupName, self.getRemoteCredentials())
-
-  types_deleteGroup = [StringTypes]
 
   def export_deleteGroup(self, groupName):
     """ Delete group from the File Catalog """
@@ -212,13 +192,9 @@ class TornadoFileCatalogHandler(TornadoService):
   #  User/Group read operations
   #
 
-  types_getUsers = []
-
   def export_getUsers(self):
     """ Get all the users defined in the File Catalog """
     return self.gFileCatalogDB.getUsers(self.getRemoteCredentials())
-
-  types_getGroups = []
 
   def export_getGroups(self):
     """ Get all the groups defined in the File Catalog """
@@ -229,8 +205,6 @@ class TornadoFileCatalogHandler(TornadoService):
   # Path read operations
   #
 
-  types_exists = [[ListType, DictType] + list(StringTypes)]
-
   def export_exists(self, lfns):
     """ Check whether the supplied paths exists """
     return self.gFileCatalogDB.exists(lfns, self.getRemoteCredentials())
@@ -239,8 +213,6 @@ class TornadoFileCatalogHandler(TornadoService):
   #
   # File write operations
   #
-
-  types_addFile = [[ListType, DictType] + list(StringTypes)]
 
   def export_addFile(self, lfns):
     """ Register supplied files """
@@ -252,8 +224,6 @@ class TornadoFileCatalogHandler(TornadoService):
 
     return res
 
-  types_removeFile = [[ListType, DictType] + list(StringTypes)]
-
   def export_removeFile(self, lfns):
     """ Remove the supplied lfns """
     gMonitor.addMark("RemoveFile", 1)
@@ -264,13 +234,9 @@ class TornadoFileCatalogHandler(TornadoService):
 
     return res
 
-  types_setFileStatus = [DictType]
-
   def export_setFileStatus(self, lfns):
     """ Remove the supplied lfns """
     return self.gFileCatalogDB.setFileStatus(lfns, self.getRemoteCredentials())
-
-  types_addReplica = [[ListType, DictType] + list(StringTypes)]
 
   def export_addReplica(self, lfns):
     """ Register supplied replicas """
@@ -282,8 +248,6 @@ class TornadoFileCatalogHandler(TornadoService):
 
     return res
 
-  types_removeReplica = [[ListType, DictType] + list(StringTypes)]
-
   def export_removeReplica(self, lfns):
     """ Remove the supplied replicas """
     gMonitor.addMark("RemoveReplica", 1)
@@ -294,19 +258,13 @@ class TornadoFileCatalogHandler(TornadoService):
 
     return res
 
-  types_setReplicaStatus = [[ListType, DictType] + list(StringTypes)]
-
   def export_setReplicaStatus(self, lfns):
     """ Set the status for the supplied replicas """
     return self.gFileCatalogDB.setReplicaStatus(lfns, self.getRemoteCredentials())
 
-  types_setReplicaHost = [[ListType, DictType] + list(StringTypes)]
-
   def export_setReplicaHost(self, lfns):
     """ Change the registered SE for the supplied replicas """
     return self.gFileCatalogDB.setReplicaHost(lfns, self.getRemoteCredentials())
-
-  types_addFileAncestors = [DictType]
 
   def export_addFileAncestors(self, lfns):
     """ Add file ancestor information for the given list of LFNs """
@@ -317,57 +275,41 @@ class TornadoFileCatalogHandler(TornadoService):
   # File read operations
   #
 
-  types_isFile = [[ListType, DictType] + list(StringTypes)]
-
   def export_isFile(self, lfns):
     """ Check whether the supplied lfns are files """
     return self.gFileCatalogDB.isFile(lfns, self.getRemoteCredentials())
-
-  types_getFileSize = [[ListType, DictType] + list(StringTypes)]
 
   def export_getFileSize(self, lfns):
     """ Get the size associated to supplied lfns """
     return self.gFileCatalogDB.getFileSize(lfns, self.getRemoteCredentials())
 
-  types_getFileMetadata = [[ListType, DictType] + list(StringTypes)]
-
   def export_getFileMetadata(self, lfns):
     """ Get the metadata associated to supplied lfns """
     return self.gFileCatalogDB.getFileMetadata(lfns, self.getRemoteCredentials())
-
-  types_getReplicas = [[ListType, DictType] + list(StringTypes), BooleanType]
 
   def export_getReplicas(self, lfns, allStatus=False):
     """ Get replicas for supplied lfns """
     return self.gFileCatalogDB.getReplicas(lfns, allStatus, self.getRemoteCredentials())
 
-  types_getReplicaStatus = [[ListType, DictType] + list(StringTypes)]
-
   def export_getReplicaStatus(self, lfns):
     """ Get the status for the supplied replicas """
     return self.gFileCatalogDB.getReplicaStatus(lfns, self.getRemoteCredentials())
 
-  types_getFileAncestors = [[ListType, DictType], [ListType, IntType, LongType]]
-
   def export_getFileAncestors(self, lfns, depths):
     """ Get the status for the supplied replicas """
     dList = depths
-    if not isinstance(dList, ListType):
+    if not isinstance(dList, list):
       dList = [depths]
     lfnDict = dict.fromkeys(lfns, True)
     return self.gFileCatalogDB.getFileAncestors(lfnDict, dList, self.getRemoteCredentials())
 
-  types_getFileDescendents = [[ListType, DictType], [ListType, IntType, LongType]]
-
   def export_getFileDescendents(self, lfns, depths):
     """ Get the status for the supplied replicas """
     dList = depths
-    if not isinstance(dList, ListType):
+    if not isinstance(dList, list):
       dList = [depths]
     lfnDict = dict.fromkeys(lfns, True)
     return self.gFileCatalogDB.getFileDescendents(lfnDict, dList, self.getRemoteCredentials())
-
-  types_getLFNForGUID = [[ListType, DictType] + list(StringTypes)]
 
   def export_getLFNForGUID(self, guids):
     """Get the matching lfns for given guids"""
@@ -378,13 +320,9 @@ class TornadoFileCatalogHandler(TornadoService):
   # Directory write operations
   #
 
-  types_createDirectory = [[ListType, DictType] + list(StringTypes)]
-
   def export_createDirectory(self, lfns):
     """ Create the supplied directories """
     return self.gFileCatalogDB.createDirectory(lfns, self.getRemoteCredentials())
-
-  types_removeDirectory = [[ListType, DictType] + list(StringTypes)]
 
   def export_removeDirectory(self, lfns):
     """ Remove the supplied directories """
@@ -395,32 +333,22 @@ class TornadoFileCatalogHandler(TornadoService):
   # Directory read operations
   #
 
-  types_listDirectory = [[ListType, DictType] + list(StringTypes), BooleanType]
-
   def export_listDirectory(self, lfns, verbose):
     """ List the contents of supplied directories """
     gMonitor.addMark('ListDirectory', 1)
     return self.gFileCatalogDB.listDirectory(lfns, self.getRemoteCredentials(), verbose=verbose)
 
-  types_isDirectory = [[ListType, DictType] + list(StringTypes)]
-
   def export_isDirectory(self, lfns):
     """ Determine whether supplied path is a directory """
     return self.gFileCatalogDB.isDirectory(lfns, self.getRemoteCredentials())
-
-  types_getDirectoryMetadata = [[ListType, DictType] + list(StringTypes)]
 
   def export_getDirectoryMetadata(self, lfns):
     """ Get the size of the supplied directory """
     return self.gFileCatalogDB.getDirectoryMetadata(lfns, self.getRemoteCredentials())
 
-  types_getDirectorySize = [[ListType, DictType] + list(StringTypes)]
-
   def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False):
     """ Get the size of the supplied directory """
     return self.gFileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, self.getRemoteCredentials())
-
-  types_getDirectoryReplicas = [[ListType, DictType] + list(StringTypes), BooleanType]
 
   def export_getDirectoryReplicas(self, lfns, allStatus=False):
     """ Get replicas for files in the supplied directory """
@@ -431,20 +359,14 @@ class TornadoFileCatalogHandler(TornadoService):
   # Administrative database operations
   #
 
-  types_getCatalogCounters = []
-
   def export_getCatalogCounters(self):
     """ Get the number of registered directories, files and replicas in various tables """
     return self.gFileCatalogDB.getCatalogCounters(self.getRemoteCredentials())
-
-  types_rebuildDirectoryUsage = []
 
   @staticmethod
   def export_rebuildDirectoryUsage(self):
     """ Rebuild DirectoryUsage table from scratch """
     return self.gFileCatalogDB.rebuildDirectoryUsage()
-
-  types_repairCatalog = []
 
   def export_repairCatalog(self):
     """ Repair the catalog inconsistencies """
@@ -453,8 +375,6 @@ class TornadoFileCatalogHandler(TornadoService):
   ########################################################################
   # Metadata Catalog Operations
   #
-
-  types_addMetadataField = [StringTypes, StringTypes, StringTypes]
 
   def export_addMetadataField(self, fieldName, fieldType, metaType='-d'):
     """ Add a new metadata field of the given type
@@ -467,8 +387,6 @@ class TornadoFileCatalogHandler(TornadoService):
           fieldName, fieldType, self.getRemoteCredentials())
     else:
       return S_ERROR('Unknown metadata type %s' % metaType)
-
-  types_deleteMetadataField = [StringTypes]
 
   def export_deleteMetadataField(self, fieldName):
     """ Delete the metadata field
@@ -484,8 +402,6 @@ class TornadoFileCatalogHandler(TornadoService):
 
     return result
 
-  types_getMetadataFields = []
-
   def export_getMetadataFields(self):
     """ Get all the metadata fields
     """
@@ -499,50 +415,36 @@ class TornadoFileCatalogHandler(TornadoService):
     return S_OK({'DirectoryMetaFields': resultDir['Value'],
                  'FileMetaFields': resultFile['Value']})
 
-  types_setMetadata = [StringTypes, DictType]
-
   def export_setMetadata(self, path, metadatadict):
     """ Set metadata parameter for the given path
     """
     return self.gFileCatalogDB.setMetadata(path, metadatadict, self.getRemoteCredentials())
-
-  types_setMetadataBulk = [DictType]
 
   def export_setMetadataBulk(self, pathMetadataDict):
     """ Set metadata parameter for the given path
     """
     return self.gFileCatalogDB.setMetadataBulk(pathMetadataDict, self.getRemoteCredentials())
 
-  types_removeMetadata = [DictType]
-
   def export_removeMetadata(self, pathMetadataDict):
     """ Remove the specified metadata for the given path
     """
     return self.gFileCatalogDB.removeMetadata(pathMetadataDict, self.getRemoteCredentials())
-
-  types_getDirectoryUserMetadata = [StringTypes]
 
   def export_getDirectoryUserMetadata(self, path):
     """ Get all the metadata valid for the given directory path
     """
     return self.gFileCatalogDB.dmeta.getDirectoryMetadata(path, self.getRemoteCredentials())
 
-  types_getFileUserMetadata = [StringTypes]
-
   def export_getFileUserMetadata(self, path):
     """ Get all the metadata valid for the given file
     """
     return self.gFileCatalogDB.fmeta.getFileUserMetadata(path, self.getRemoteCredentials())
-
-  types_findDirectoriesByMetadata = [DictType]
 
   def export_findDirectoriesByMetadata(self, metaDict, path='/'):
     """ Find all the directories satisfying the given metadata set
     """
     return self.gFileCatalogDB.dmeta.findDirectoriesByMetadata(
         metaDict, path, self.getRemoteCredentials())
-
-  types_findFilesByMetadata = [DictType, StringTypes]
 
   def export_findFilesByMetadata(self, metaDict, path='/'):
     """ Find all the files satisfying the given metadata set
@@ -553,8 +455,6 @@ class TornadoFileCatalogHandler(TornadoService):
     lfns = result['Value'].values()
     return S_OK(lfns)
 
-  types_getReplicasByMetadata = [DictType, StringTypes, BooleanType]
-
   def export_getReplicasByMetadata(self, metaDict, path='/', allStatus=False):
     """ Find all the files satisfying the given metadata set
     """
@@ -562,8 +462,6 @@ class TornadoFileCatalogHandler(TornadoService):
                                                                  path,
                                                                  allStatus,
                                                                  self.getRemoteCredentials())
-
-  types_findFilesByMetadataDetailed = [DictType, StringTypes]
 
   def export_findFilesByMetadataDetailed(self, metaDict, path='/'):
     """ Find all the files satisfying the given metadata set
@@ -574,8 +472,6 @@ class TornadoFileCatalogHandler(TornadoService):
 
     lfns = result['Value'].values()
     return self.gFileCatalogDB.getFileDetails(lfns, self.getRemoteCredentials())
-
-  types_findFilesByMetadataWeb = [DictType, StringTypes, [IntType, LongType], [IntType, LongType]]
 
   def export_findFilesByMetadataWeb(self, metaDict, path, startItem, maxItems):
     """ Find files satisfying the given metadata set
@@ -628,21 +524,15 @@ class TornadoFileCatalogHandler(TornadoService):
     result = S_OK({"TotalRecords": totalRecords, "Records": resultDetails['Value']})
     return result
 
-  types_getCompatibleMetadata = [DictType, StringTypes]
-
   def export_getCompatibleMetadata(self, metaDict, path='/'):
     """ Get metadata values compatible with the given metadata subset
     """
     return self.gFileCatalogDB.dmeta.getCompatibleMetadata(metaDict, path, self.getRemoteCredentials())
 
-  types_addMetadataSet = [StringTypes, DictType]
-
   def export_addMetadataSet(self, setName, setDict):
     """ Add a new metadata set
     """
     return self.gFileCatalogDB.dmeta.addMetadataSet(setName, setDict, self.getRemoteCredentials())
-
-  types_getMetadataSet = [StringTypes, BooleanType]
 
   def export_getMetadataSet(self, setName, expandFlag):
     """ Add a new metadata set
@@ -653,14 +543,11 @@ class TornadoFileCatalogHandler(TornadoService):
 #
 #  Dataset manipulation methods
 #
-  types_addDataset = [DictType]
 
   def export_addDataset(self, datasets):
     """ Add a new dynamic dataset defined by its meta query
     """
     return self.gFileCatalogDB.datasetManager.addDataset(datasets, self.getRemoteCredentials())
-
-  types_addDatasetAnnotation = [DictType]
 
   def export_addDatasetAnnotation(self, datasetDict):
     """ Add annotation to an already created dataset
@@ -668,63 +555,45 @@ class TornadoFileCatalogHandler(TornadoService):
     return self.gFileCatalogDB.datasetManager.addDatasetAnnotation(
         datasetDict, self.getRemoteCredentials())
 
-  types_removeDataset = [DictType]
-
   def export_removeDataset(self, datasets):
     """ Check the given dynamic dataset for changes since its definition
     """
     return self.gFileCatalogDB.datasetManager.removeDataset(datasets, self.getRemoteCredentials())
-
-  types_checkDataset = [DictType]
 
   def export_checkDataset(self, datasets):
     """ Check the given dynamic dataset for changes since its definition
     """
     return self.gFileCatalogDB.datasetManager.checkDataset(datasets, self.getRemoteCredentials())
 
-  types_updateDataset = [DictType]
-
   def export_updateDataset(self, datasets):
     """ Update the given dynamic dataset for changes since its definition
     """
     return self.gFileCatalogDB.datasetManager.updateDataset(datasets, self.getRemoteCredentials())
-
-  types_getDatasets = [DictType]
 
   def export_getDatasets(self, datasets):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
     return self.gFileCatalogDB.datasetManager.getDatasets(datasets, self.getRemoteCredentials())
 
-  types_getDatasetParameters = [DictType]
-
   def export_getDatasetParameters(self, datasets):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
     return self.gFileCatalogDB.datasetManager.getDatasetParameters(datasets, self.getRemoteCredentials())
-
-  types_getDatasetAnnotation = [DictType]
 
   def export_getDatasetAnnotation(self, datasets):
     """ Get annotation of the given datasets
     """
     return self.gFileCatalogDB.datasetManager.getDatasetAnnotation(datasets, self.getRemoteCredentials())
 
-  types_freezeDataset = [DictType]
-
   def export_freezeDataset(self, datasets):
     """ Freeze the contents of the dataset making it effectively static
     """
     return self.gFileCatalogDB.datasetManager.freezeDataset(datasets, self.getRemoteCredentials())
 
-  types_releaseDataset = [DictType]
-
   def export_releaseDataset(self, datasets):
     """ Release the contents of the frozen dataset allowing changes in its contents
     """
     return self.gFileCatalogDB.datasetManager.releaseDataset(datasets, self.getRemoteCredentials())
-
-  types_getDatasetFiles = [DictType]
 
   def export_getDatasetFiles(self, datasets):
     """ Get lfns in the given dataset
@@ -755,7 +624,7 @@ class TornadoFileCatalogHandler(TornadoService):
     retVal = self.getSEDump(seName)
 
     try:
-      csvOutput = cStringIO.StringIO()
+      csvOutput = BytesIO()
       writer = csv.writer(csvOutput, delimiter='|')
       for lfn in retVal:
         writer.writerow(lfn)

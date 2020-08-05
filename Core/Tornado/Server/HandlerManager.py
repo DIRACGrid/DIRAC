@@ -7,6 +7,10 @@
 
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 from tornado.web import url as TornadoURL, RequestHandler
 
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -19,16 +23,15 @@ def urlFinder(module):
   """
     Try to guess the url with module name
 
-    :param module: path writed like import (e.g. "DIRAC.something.something")
+    :param module: path written like import (e.g. "DIRAC.something.something")
   """
   sections = module.split('.')
   for section in sections:
     # This condition is a bit long
     # We search something which look like <...>.<component>System.<...>.<service>Handler
     # If find we return /<component>/<service>
-    if(section.find("System") > 0) and (sections[-1].find('Handler') > 0):
-      return "/%s/%s" % (section.replace("System", ""), sections[-1].replace("Handler", ""))
-  return None
+    if section.endswith("System") and sections[-1].endswith("Handler"):
+      return "/".join(["", section[:-len("System")], sections[-1][:-len("Handler")]])
 
 
 class HandlerManager(object):
@@ -44,7 +47,8 @@ class HandlerManager(object):
       discovery of handler. If disabled you can use loadHandlersByServiceName() to
       load your handlers or loadHandlerInHandlerManager()
 
-      :param autoDiscovery=False: Disable the automatic discovery, can be used to choose service we want to load.
+      :param autoDiscovery: (default True) Disable the automatic discovery,
+          can be used to choose service we want to load.
     """
     self.__handlers = {}
     self.__objectLoader = ObjectLoader()
@@ -86,7 +90,7 @@ class HandlerManager(object):
         gLogger.info("New handler: %s with URL %s" % (handlerTuple[0], url))
     else:
       gLogger.debug("Handler already loaded %s" % (handlerTuple[0]))
-    return S_OK
+    return S_OK()
 
   def discoverHandlers(self):
     """
@@ -160,9 +164,9 @@ class HandlerManager(object):
 
   def getHandlersDict(self):
     """
-      Return all handler dictionnary
+      Return all handler dictionary
 
-      :returns: dictionnary with absolute url as key ("/System/Service")
+      :returns: dictionary with absolute url as key ("/System/Service")
                 and tornado.web.url object as value
     """
     if not self.__handlers and self.__autoDiscovery:

@@ -85,8 +85,8 @@ class MonitoringFlusher(object):
       self.__mcList.append(mc)
 
 
-# USE_TORNADO_IOLOOP is defined by starting scripts
-if os.environ.get('USE_TORNADO_IOLOOP', 'false').lower() in ('yes', 'true'):
+# DIRAC_USE_TORNADO_IOLOOP is defined by starting scripts
+if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() in ('yes', 'true'):
   from DIRAC.FrameworkSystem.Client.MonitoringClientIOLoop import MonitoringFlusherTornado
   gMonitoringFlusher = MonitoringFlusherTornado()
 else:

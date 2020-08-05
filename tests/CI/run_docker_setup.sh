@@ -97,6 +97,7 @@ prepareEnvironment() {
     echo ""
     echo "# Test specific variables"
     echo "export WORKSPACE=${WORKSPACE}"
+    echo "export TEST_HTTPS=${TEST_HTTPS}"
     echo ""
     echo "# Optional parameters"
 

@@ -73,7 +73,7 @@ echo -e "*** $(date -u) **** DONE Adding S3-INDIRECT SERVER CONFIGURATION"
 
 # Here, if we are testing HTTPS services, we install the equivalent services and replace the URL in the CS
 
-if [[ "${TESTBRANCH:-No}" = "Yes" ]];
+if [[ "${TEST_HTTPS:-No}" = "Yes" ]];
 then
   echo -e "*** $(date -u) **** Installing Tornado based services"
 

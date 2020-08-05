@@ -12,16 +12,24 @@
     After some tests request seems to retry 3 times by default.
     https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request
 
-    *WARNING*: If you use your own certificates, it's like in dips, please take a look at
-    :ref:`using_own_CA`
+    .. warning::
+      If you use your own certificates, it's like in dips, please take a look at :ref:`using_own_CA`
 
-    *WARNING*: Lots of method are copy-paste from :py:class:`~DIRAC.Core.DISET.private.BaseClient`.
-    And some methods are copy-paste AND modifications, for now it permit to fully separate DISET and HTTPS.
+    .. warning::
+      Lots of method are copy-paste from :py:class:`~DIRAC.Core.DISET.private.BaseClient`.
+      And some methods are copy-paste AND modifications, for now it permit to fully separate DISET and HTTPS.
 
 
 """
 
 # pylint: disable=broad-except
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from io import open
+import six
 
 import cStringIO
 import requests
@@ -78,7 +86,7 @@ class TornadoBaseClient(object):
       :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)  (now managed by requests)
     """
 
-    if not isinstance(serviceName, basestring):
+    if not isinstance(serviceName, six.string_types):
       raise TypeError("Service name expected to be a string. Received %s type %s" %
                       (str(serviceName), type(serviceName)))
 
@@ -246,7 +254,7 @@ class TornadoBaseClient(object):
 
     WARNING: COPY/PASTE FROM Core/Diset/private/BaseClient
     """
-    # Wich extra credentials to use?
+    # which extra credentials to use?
     if self.__useCertificates:
       self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
     else:

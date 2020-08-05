@@ -24,6 +24,12 @@ Then you must configure service like any other service
 
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from io import open
+
 import os
 import time
 from datetime import datetime
@@ -133,23 +139,23 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
     """
-      This may be overwrited when you write a DIRAC service handler
+      This may be overwritten when you write a DIRAC service handler
       And it must be a class method. This method is called only one time,
       at the first request
 
       :param dict ServiceInfoDict: infos about services, it contains
                                     'serviceName', 'serviceSectionPath',
-                                    'csPaths'and 'URL'
+                                    'csPaths' and 'URL'
     """
     pass
 
   def initializeRequest(self):
     """
-      Called at every request, may be overwrited in your handler.
+      Called at every request, may be overwritten in your handler.
     """
     pass
 
-  # This function is designed to be overwrited as we want in Tornado
+  # This function is designed to be overwritten as we want in Tornado
   # It's why we should disable pylint for this one
   def initialize(self, debug):  # pylint: disable=arguments-differ
     """
@@ -203,7 +209,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     except Exception:  # pylint: disable=broad-except
       # If an error occur when reading certificates we close connection
       # It can be strange but the RFC, for HTTP, say's that when error happend
-      # before authenfication we return 401 UNAUTHORIZED instead of 403 FORBIDDEN
+      # before authentication we return 401 UNAUTHORIZED instead of 403 FORBIDDEN
       self.reportUnauthorizedAccess(HTTPErrorCodes.HTTP_UNAUTHORIZED)
 
     try:
@@ -232,7 +238,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     self.__write_return(retVal.result())
     self.finish()
 
-  # This nice idea of streaming to the client cannot work because we are ran in an eecutor
+  # This nice idea of streaming to the client cannot work because we are ran in an executor
   # and we should not write back to the client in a different thread.
   # See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
   # def export_streamToClient(self, filename):
@@ -296,22 +302,26 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
     return retVal
 
-  def __write_return(self, dictionnary):
+  def __write_return(self, dictionary):
     """
       Write to client what we wan't to return to client
-      It must be a dictionnary
+      It must be a dictionary
     """
 
     # In case of error in server side we hide server CallStack to client
-    if 'CallStack' in dictionnary:
-      del dictionnary['CallStack']
+    if 'CallStack' in dictionary:
+      del dictionary['CallStack']
 
     # Write status code before writing, by default error code is "200 OK"
     self.set_status(self._httpError)
 
-    # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
-    self.set_header("Content-Type", "application/octet-stream")
-    returnedData = dictionnary if self.rawContent else encode(dictionnary)
+    if self.rawContent:
+      # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
+      self.set_header("Content-Type", "application/octet-stream")
+    else:
+      self.set_header("Content-Type", "application/json")
+
+    returnedData = dictionary if self.rawContent else encode(dictionary)
     self.write(returnedData)
 
   def reportUnauthorizedAccess(self, errorCode=401):
@@ -343,7 +353,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     """
       Load client certchain in DIRAC and extract informations.
 
-      The dictionnary returned is designed to work with the AuthManager,
+      The dictionary returned is designed to work with the AuthManager,
       already written for DISET and re-used for HTTPS.
     """
 
@@ -395,10 +405,10 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     dInfo['time'] = datetime.utcnow()
     # Uptime
     try:
-      with open("/proc/uptime") as oFD:
-        iUptime = long(float(oFD.readline().split()[0].strip()))
+      with open("/proc/uptime", 'rt') as oFD:
+        iUptime = int(float(oFD.readline().split()[0].strip()))
       dInfo['host uptime'] = iUptime
-    except BaseException:
+    except Exception:  # pylint: disable=broad-except
       pass
     startTime = self._startTime
     dInfo['service start time'] = self._startTime
@@ -406,10 +416,9 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     dInfo['service uptime'] = serviceUptime.days * 3600 + serviceUptime.seconds
     # Load average
     try:
-      with open("/proc/loadavg") as oFD:
-        sLine = oFD.readline()
-      dInfo['load'] = " ".join(sLine.split()[:3])
-    except BaseException:
+      with open("/proc/loadavg", 'rt') as oFD:
+        dInfo['load'] = " ".join(oFD.read().split()[:3])
+    except Exception:  # pylint: disable=broad-except
       pass
     dInfo['name'] = self._serviceInfoDict['serviceName']
     stTimes = os.times()
@@ -435,7 +444,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
   def export_whoami(self):
     """
-      A simple whoami, returns all credential dictionnary, except certificate chain object.
+      A simple whoami, returns all credential dictionary, except certificate chain object.
     """
     credDict = self.srv_getRemoteCredentials()
     if 'x509Chain' in credDict:
