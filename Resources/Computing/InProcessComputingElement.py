@@ -72,8 +72,8 @@ class InProcessComputingElement(ComputingElement):
       if result['OK']:
         renewTask = result['Value']
       else:
-	self.log.warn('Failed to start proxy renewal task')
-	renewTask = None
+        self.log.warn('Failed to start proxy renewal task')
+        renewTask = None
 
     if not os.access(executableFile, 5):
       os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
