@@ -34,10 +34,10 @@ switchDict = {}
 
 
 def registerSwitches():
-  '''
+  """
     Registers all switches that can be used while calling the script from the
     command line interface.
-  '''
+  """
 
   switches = (
       ('element=', 'Element family to be Synchronized ( Site, Resource, Node )'),
@@ -57,9 +57,9 @@ def registerSwitches():
 
 
 def registerUsageMessage():
-  '''
+  """
     Takes the script __doc__ and adds the DIRAC version to it
-  '''
+  """
 
   usageMessage = 'DIRAC version: %s \n' % version
   usageMessage += __doc__
@@ -68,9 +68,9 @@ def registerUsageMessage():
 
 
 def parseSwitches():
-  '''
+  """
     Parses the arguments passed by the user
-  '''
+  """
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
@@ -117,13 +117,12 @@ def parseSwitches():
   return args, switches
 
 
-#...............................................................................
 # UTILS: to check and unpack
 
 def getToken(key):
-  '''
+  """
     Function that gets the userName from the proxy
-  '''
+  """
 
   proxyInfo = getProxyInfo()
   if not proxyInfo['OK']:
@@ -149,9 +148,9 @@ def getToken(key):
 
 
 def checkStatusTypes(statusTypes):
-  '''
+  """
     To check if values for 'statusType' are valid
-  '''
+  """
 
   opsH = Operations().getValue('ResourceStatus/Config/StatusTypes/StorageElement',
                                "ReadAccess,WriteAccess,CheckAccess,RemoveAccess")
@@ -169,9 +168,9 @@ def checkStatusTypes(statusTypes):
 
 
 def unpack(switchDict):
-  '''
+  """
     To split and process comma-separated list of values for 'name' and 'statusType'
-  '''
+  """
 
   switchDictSet = []
   names = []
@@ -211,13 +210,12 @@ def unpack(switchDict):
   return switchDictSet
 
 
-#...............................................................................
 # UTILS: for filtering 'select' output
 
 def filterReason(selectOutput, reason):
-  '''
+  """
     Selects all the elements that match 'reason'
-  '''
+  """
 
   elements = selectOutput
   elementsFiltered = []
@@ -231,25 +229,23 @@ def filterReason(selectOutput, reason):
   return elementsFiltered
 
 
-#...............................................................................
 # Utils: for formatting query output and notifications
 
 def error(msg):
-  '''
+  """
     Format error messages
-  '''
+  """
 
   subLogger.error("\nERROR:")
   subLogger.error("\t" + msg)
   subLogger.error("\tPlease, check documentation below")
-  Script.showHelp()
-  DIRACExit(1)
+  Script.showHelp(1)
 
 
 def confirm(query, matches):
-  '''
+  """
     Format confirmation messages
-  '''
+  """
 
   subLogger.notice("\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % (query, matches))
 
@@ -274,14 +270,12 @@ def tabularPrint(table):
 
   subLogger.notice(output)
 
-#...............................................................................
-
 
 def select(args, switchDict):
-  '''
+  """
     Given the switches, request a query 'select' on the ResourceStatusDB
     that gets from <element><tableType> all rows that match the parameters given.
-  '''
+  """
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
@@ -308,11 +302,11 @@ def select(args, switchDict):
 
 
 def add(args, switchDict):
-  '''
+  """
     Given the switches, request a query 'addOrModify' on the ResourceStatusDB
     that inserts or updates-if-duplicated from <element><tableType> and also adds
     a log if flag is active.
-  '''
+  """
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
@@ -336,10 +330,10 @@ def add(args, switchDict):
 
 
 def modify(args, switchDict):
-  '''
+  """
     Given the switches, request a query 'modify' on the ResourceStatusDB
     that updates from <element><tableType> and also adds a log if flag is active.
-  '''
+  """
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
@@ -364,10 +358,10 @@ def modify(args, switchDict):
 
 
 def delete(args, switchDict):
-  '''
+  """
     Given the switches, request a query 'delete' on the ResourceStatusDB
     that deletes from <element><tableType> all rows that match the parameters given.
-  '''
+  """
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
@@ -389,12 +383,10 @@ def delete(args, switchDict):
   return result
 
 
-#...............................................................................
-
 def run(args, switchDictSet):
-  '''
+  """
     Main function of the script
-  '''
+  """
 
   query = args[0]
 
@@ -417,8 +409,6 @@ def run(args, switchDictSet):
     tabularPrint(table)
   confirm(query, matches)
 
-#...............................................................................
-
 
 if __name__ == "__main__":
 
@@ -437,6 +427,3 @@ if __name__ == "__main__":
 
   # Bye
   DIRACExit(0)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

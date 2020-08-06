@@ -7,30 +7,28 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
-
 Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-from DIRAC import exit as DIRACExit
+from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+
 diracAdmin = DiracAdmin()
 
 result = diracAdmin.getBannedSites()
 if result['OK']:
   bannedSites = result['Value']
 else:
-  print(result['Message'])
+  gLogger.error(result['Message'])
   DIRACExit(2)
 
 for site in bannedSites:
-  result = diracAdmin.getSiteMaskLogging(site)
-  if result['OK']:
-    for siteLog in result['Value']:
-      print('%-30s %s %s %s' % (site, siteLog[0], siteLog[1], siteLog[2]))
-  else:
-    print('%-30s %s' % (site, result['Message']))
+  result = diracAdmin.getSiteMaskLogging(site, printOutput=True)
+  if not result['OK']:
+    gLogger.error(result['Message'])
+    DIRACExit(2)
 
 DIRACExit(0)
