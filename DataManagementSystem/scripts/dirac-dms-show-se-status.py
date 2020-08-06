@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from DIRAC import S_OK
+
+from DIRAC import S_OK, exit as DIRACexit
 from DIRAC.Core.Base import Script
 
 __RCSID__ = "$Id$"
@@ -59,7 +60,7 @@ res = gConfig.getSections(storageCFGBase, True)
 if not res['OK']:
   gLogger.error('Failed to get storage element info')
   gLogger.error(res['Message'])
-  DIRAC.exit(-1)
+  DIRACexit(1)
 
 gLogger.info("%s %s %s" % ('Storage Element'.ljust(25), 'Read Status'.rjust(15), 'Write Status'.rjust(15)))
 
@@ -70,7 +71,7 @@ resourceStatus = ResourceStatus()
 res = resourceStatus.getElementStatus(seList, "StorageElement")
 if not res['OK']:
   gLogger.error("Failed to get StorageElement status for %s" % str(seList))
-  DIRAC.exit(1)
+  DIRACexit(1)
 
 fields = ['SE', 'ReadAccess', 'WriteAccess', 'RemoveAccess', 'CheckAccess']
 records = []
@@ -79,10 +80,8 @@ if vo is None and not allVOsFlag:
   result = getVOfromProxyGroup()
   if not result['OK']:
     gLogger.error('Failed to determine the user VO')
-    DIRAC.exit(-1)
+    DIRACexit(1)
   vo = result['Value']
-
-print(allVOsFlag, noVOFlag, vo)
 
 for se, statusDict in res['Value'].items():
 
@@ -102,7 +101,4 @@ for se, statusDict in res['Value'].items():
 
 printTable(fields, records, numbering=False, sortField='SE')
 
-DIRAC.exit(0)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+DIRACexit(0)
