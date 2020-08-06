@@ -1,3 +1,8 @@
+[v6r22p33]
+
+*Core
+NEW: (#4710) add loadCRLFromFile to pyGSI implementation of X509CRL
+
 [v6r22p32]
 
 *Core
