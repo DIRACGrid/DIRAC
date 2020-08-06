@@ -276,7 +276,7 @@ class PilotStatusAgent(AgentModule):
       pA.setValueByKey('User', userName)
       pA.setValueByKey('UserGroup', pData['OwnerGroup'])
       result = getCESiteMapping(pData['DestinationSite'])
-      if result['OK'] and result['Value'].strip():
+      if result['OK'] and pData['DestinationSite'] in result['Value']:
         pA.setValueByKey('Site', result['Value'][pData['DestinationSite']].strip())
       else:
         pA.setValueByKey('Site', 'Unknown')
