@@ -15,7 +15,7 @@ from DIRAC.Core.Base import Script
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-__RCSID__ = '$Id:$'
+__RCSID__ = '$Id$'
 
 subLogger = None
 switchDict = {}

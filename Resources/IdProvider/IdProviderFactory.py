@@ -3,7 +3,7 @@
 # Author : A.T.
 ########################################################################
 
-"""  The Identtity Provider Factory instantiates IdProvider objects
+"""  The Identity Provider Factory instantiates IdProvider objects
      according to their configuration
 """
 from __future__ import absolute_import
@@ -27,10 +27,9 @@ class IdProviderFactory(object):
 
   #############################################################################
   def getIdProvider(self, idProvider):
-    """ This method returns a IdProvider instance corresponding to the supplied
-        name.
+    """ This method returns a IdProvider instance corresponding to the supplied name.
 
-        :param basestring idProvider: the name of the Identity Provider
+        :param str idProvider: the name of the Identity Provider
 
         :return: S_OK(IdProvider)/S_ERROR()
     """
@@ -41,7 +40,7 @@ class IdProviderFactory(object):
     pDict['ProviderName'] = idProvider
     pType = pDict['ProviderType']
 
-    self.log.verbose('Creating IdProvider of %s type with the name %s' % (pType, idProvider))
+    self.log.verbose('Creating IdProvider', 'of %s type with the name %s' % (pType, idProvider))
     subClassName = "%sIdProvider" % (pType)
 
     objectLoader = ObjectLoader.ObjectLoader()
@@ -57,7 +56,7 @@ class IdProviderFactory(object):
     except Exception as x:
       msg = 'IdProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
       self.log.exception()
-      self.log.warn(msg)
+      self.log.error(msg)
       return S_ERROR(msg)
 
     return S_OK(provider)

@@ -27,8 +27,6 @@ import urllib
 import json
 import six
 
-import six
-
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities import DErrno

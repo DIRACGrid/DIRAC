@@ -566,10 +566,10 @@ def getVOMSRoleGroupMapping(vo=''):
 def getUsernameForID(ID, usersList=None):
   """ Get DIRAC user name by ID
 
-      :param basestring ID: user ID
+      :param str ID: user ID
       :param list usersList: list of DIRAC user names
 
-      :return: S_OK(basestring)/S_ERROR()
+      :return: S_OK(str)/S_ERROR()
   """
   if not usersList:
     result = gConfig.getSections("%s/Users" % gBaseRegistrySection)

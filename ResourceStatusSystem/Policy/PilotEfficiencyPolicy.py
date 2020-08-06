@@ -1,4 +1,3 @@
-# $HeadURL: $
 """ PilotEfficiencyPolicy
 
   Policy that calculates the efficiency following the formula::
@@ -52,11 +51,11 @@ class PilotEfficiencyPolicy(PolicyBase):
       return S_OK(result)
 
     aborted = float(commandResult['Aborted'])
-    #deleted = float( commandResult[ 'Deleted' ] )
+    # deleted = float( commandResult[ 'Deleted' ] )
     done = float(commandResult['Done'])
     failed = float(commandResult['Failed'])
 
-    #total     = aborted + deleted + done + failed
+    # total     = aborted + deleted + done + failed
     total = aborted + done + failed
 
     # we want a minimum amount of pilots to take a decision ( at least 10 pilots )
@@ -76,6 +75,3 @@ class PilotEfficiencyPolicy(PolicyBase):
 
     result['Reason'] = 'Pilots Efficiency of %.2f' % efficiency
     return S_OK(result)
-
-# ...............................................................................
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
