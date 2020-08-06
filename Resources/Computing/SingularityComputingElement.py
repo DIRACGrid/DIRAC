@@ -285,7 +285,7 @@ class SingularityComputingElement(ComputingElement):
     else:
       pilotProxy = ret['Value']['path']
     result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self._monitorProxy,
-					      taskArgs=(pilotProxy, payloadProxyLoc),
+                                              taskArgs=(pilotProxy, payloadProxyLoc),
                                               executions=0, elapsedTime=0)
     renewTask = None
     if result['OK']:
