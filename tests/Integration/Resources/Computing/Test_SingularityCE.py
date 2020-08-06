@@ -16,14 +16,14 @@ executableFile = 'hello.sh'
 
 def test_submit():
   jobDesc = {"jobID": 123,
-	     "jobParams": {},
-	     "resourceParams": {},
-	     "optimizerParams": {}}
+             "jobParams": {},
+             "resourceParams": {},
+             "optimizerParams": {}}
 
   ce = SingularityComputingElement('InProcess')
 
   res = ce.submitJob(find_all(executableFile, 'tests')[0],
-		     jobDesc=jobDesc,
-		     log=gLogger.getSubLogger('job_log'),
-		     logLevel='DEBUG')
+                     jobDesc=jobDesc,
+                     log=gLogger.getSubLogger('job_log'),
+                     logLevel='DEBUG')
   assert res['OK'] is True
