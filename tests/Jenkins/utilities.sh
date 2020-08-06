@@ -356,7 +356,8 @@ installDIRAC() {
   echo "$PATH"
 
   # now configuring
-  if ! dirac-configure -S "${DIRACSETUP}" -C "${CSURL}" --SkipCAChecks "${CONFIGUREOPTIONS}" "${DEBUG}"; then
+  cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
+  if ! bash -c "${cmd}"; then
     echo 'ERROR: dirac-configure failed' >&2
     exit 1
   fi
@@ -377,7 +378,7 @@ installDIRAC() {
 submitJob() {
   echo -e "==> Submitting a simple job"
   #This has to be executed from the ${CLIENTINSTALLDIR}
-  if ! "cd ${CLIENTINSTALLDIR}"; then
+  if ! cd "${CLIENTINSTALLDIR}"; then
     echo "ERROR: cannot change to ${CLIENTINSTALLDIR}" >&2
     exit 1
   fi
