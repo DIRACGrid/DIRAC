@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
+
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
+import os
 
 from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
@@ -19,11 +20,10 @@ Script.parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-import os
+
 args = Script.getPositionalArgs()
 if not len(args) == 2:
-  Script.showHelp()
-  DIRACExit(-1)
+  Script.showHelp(1)
 else:
   inputFileName = args[0]
   storageElement = args[1]

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -14,15 +12,12 @@ Usage:
 
 Script.parseCommandLine()
 
-import sys
-import os
 import DIRAC
 from DIRAC import gLogger
 
 args = Script.getPositionalArgs()
 if len(args) != 1:
   Script.showHelp()
-  DIRAC.exit(0)
 guids = args[0]
 
 try:

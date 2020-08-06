@@ -44,8 +44,7 @@ Script.parseCommandLine()
 args = Script.getExtraCLICFGFiles()
 #
 if len(args) > 1:
-  Script.showHelp()
-  exit(-1)
+  Script.showHelp(1)
 #
 cfg = None
 if len(args):

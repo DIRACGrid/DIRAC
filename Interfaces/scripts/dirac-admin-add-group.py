@@ -15,16 +15,14 @@ userNames = []
 def setGroupName(arg):
   global groupName
   if groupName or not arg:
-    Script.showHelp()
-    DIRAC.exit(-1)
+    Script.showHelp(1)
   groupName = arg
 
 
 def addUserName(arg):
   global userNames
   if not arg:
-    Script.showHelp()
-    DIRAC.exit(-1)
+    Script.showHelp(1)
   if arg not in userNames:
     userNames.append(arg)
 
@@ -32,8 +30,7 @@ def addUserName(arg):
 def addProperty(arg):
   global groupProperties
   if not arg:
-    Script.showHelp()
-    DIRAC.exit(-1)
+    Script.showHelp(1)
   if arg not in groupProperties:
     groupProperties.append(arg)
 
@@ -60,8 +57,7 @@ Script.registerSwitch(
 Script.parseCommandLine(ignoreErrors=True)
 
 if groupName is None:
-  Script.showHelp()
-  DIRAC.exit(-1)
+  Script.showHelp(1)
 
 args = Script.getPositionalArgs()
 

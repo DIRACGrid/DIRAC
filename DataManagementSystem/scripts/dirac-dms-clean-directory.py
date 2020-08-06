@@ -3,7 +3,6 @@
 __RCSID__ = "$Id$"
 
 import os
-import sys
 
 from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.Core.Base import Script
@@ -21,8 +20,7 @@ Script.parseCommandLine()
 
 args = Script.getPositionalArgs()
 if len(args) != 1:
-  Script.showHelp()
-  DIRACExit(-1)
+  Script.showHelp(1)
 
 inputFileName = args[0]
 

@@ -20,8 +20,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 
 args = Script.getPositionalArgs()
 if len(args) != 1:
-  Script.showHelp()
-  DIRAC.exit(1)
+  Script.showHelp(1)
 
 tc = TransformationClient()
 res = tc.getTransformationFiles({'TransformationID': args[0]})

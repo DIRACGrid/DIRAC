@@ -41,8 +41,7 @@ if len(args) == 1:
   args = args[0].split('/')
 
 if len(args) < 2:
-  Script.showHelp()
-  DIRACexit(1)
+  Script.showHelp(1)
 
 system = args[0]
 component = args[1]

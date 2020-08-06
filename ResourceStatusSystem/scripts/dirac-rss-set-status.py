@@ -59,8 +59,7 @@ def parseSwitches():
   if args:
     subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
     subLogger.error("Please, check documentation below")
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(1)
 
   switches = dict(Script.getUnprocessedSwitches())
   switches.setdefault('statusType', None)
@@ -70,29 +69,24 @@ def parseSwitches():
     if key not in switches:
       subLogger.error("%s Switch missing" % key)
       subLogger.error("Please, check documentation below")
-      Script.showHelp()
-      DIRACExit(1)
+      Script.showHelp(1)
 
   if not switches['element'] in ('Site', 'Resource', 'Node'):
     subLogger.error("Found %s as element switch" % switches['element'])
     subLogger.error("Please, check documentation below")
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(1)
 
   statuses = StateMachine.RSSMachine(None).getStates()
 
   if not switches['status'] in statuses:
     subLogger.error("Found %s as element switch" % switches['element'])
     subLogger.error("Please, check documentation below")
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(1)
 
   subLogger.debug("The switches used are:")
   map(subLogger.debug, switches.iteritems())
 
   return switches
-
-#...............................................................................
 
 
 def checkStatusTypes(statusTypes):
@@ -215,8 +209,6 @@ def setStatus(switchDict, tokenOwner):
 
   return S_OK()
 
-#...............................................................................
-
 
 def run(switchDict):
   '''
@@ -235,8 +227,6 @@ def run(switchDict):
   if not result['OK']:
     subLogger.error(result['Message'])
     DIRACExit(1)
-
-#...............................................................................
 
 
 if __name__ == "__main__":

@@ -13,8 +13,7 @@ Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
 if len(args) < 1:
-  Script.showHelp()
-  exit(-1)
+  Script.showHelp(1)
 
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 gComponentInstaller.getMySQLPasswords()
