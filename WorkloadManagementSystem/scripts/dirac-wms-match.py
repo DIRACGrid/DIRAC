@@ -47,8 +47,7 @@ args = Script.getPositionalArgs()
 
 if len(args) == 0:
   gLogger.error("Error: No job description provided")
-  Script.showHelp()
-  DIRACExit(-1)
+  Script.showHelp(1)
 
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources

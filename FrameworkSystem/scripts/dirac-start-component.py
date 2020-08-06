@@ -19,8 +19,7 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 if len(args) > 2:
-  Script.showHelp()
-  exit(-1)
+  Script.showHelp(1)
 
 system = '*'
 component = '*'

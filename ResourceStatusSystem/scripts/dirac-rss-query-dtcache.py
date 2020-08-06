@@ -100,9 +100,8 @@ def parseSwitches():
 
   return (args, switches)
 
-
-#...............................................................................
 # UTILS: for filtering 'select' output
+
 
 def filterDate(selectOutput, start, end):
   """
@@ -185,7 +184,6 @@ def filterDescription(selectOutput, description):
 
   return downtimesFiltered
 
-#...............................................................................
 # Utils: for formatting query output and notifications
 
 
@@ -197,8 +195,7 @@ def error(msg):
   subLogger.error("\nERROR:")
   subLogger.error("\t" + msg)
   subLogger.error("\tPlease, check documentation below")
-  Script.showHelp()
-  DIRACExit(1)
+  Script.showHelp(1)
 
 
 def confirm(query, matches):
@@ -228,8 +225,6 @@ def tabularPrint(table):
                       columnSeparator=" | ", printOut=False)
 
   subLogger.notice(output)
-
-#...............................................................................
 
 
 def select(switchDict):
@@ -324,8 +319,6 @@ def delete(switchDict):
   return result
 
 
-#...............................................................................
-
 def run(args, switchDict):
   """
     Main function of the script
@@ -345,9 +338,6 @@ def run(args, switchDict):
     error(result['Message'])
 
 
-#...............................................................................
-
-
 if __name__ == "__main__":
 
   subLogger = gLogger.getSubLogger(__file__)
@@ -365,6 +355,3 @@ if __name__ == "__main__":
 
   # Bye
   DIRACExit(0)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

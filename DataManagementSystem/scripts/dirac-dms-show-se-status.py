@@ -50,7 +50,6 @@ Script.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", set
 
 Script.parseCommandLine()
 
-import DIRAC
 from DIRAC import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.Core.Utilities.PrettyPrint import printTable

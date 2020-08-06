@@ -24,8 +24,7 @@ catalog = FileCatalog()
 import os
 args = Script.getPositionalArgs()
 if not len(args) == 3:
-  Script.showHelp()
-  DIRACExit(-1)
+  Script.showHelp(1)
 else:
   inputFileName = args[0]
   se = args[1]
