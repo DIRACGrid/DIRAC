@@ -1,3 +1,9 @@
+[v7r1p10]
+
+Fixes from v7r0p32
+
+CHANGE: (#4690) ComponentInstaller uses --cfg option
+
 [v7r1p9]
 
 Fixes from v7r0p31
