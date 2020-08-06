@@ -464,6 +464,13 @@ and this is thread %s
             self.__bannedUrls += [url]
           # Increment the retry counter
           self.__retry += 1
+          # 16.07.20 CHRIS: I guess this setSocketTimeout does not behave as expected.
+          # If the initasClient did not work, we anyway re-enter the whole method,
+          # so a new transport object is created.
+          # However, it migh be that this timeout value was propagated down to the
+          # SocketInfoFactory singleton, and thus used, but that means that the timeout
+          # specified in parameter was then void.
+
           # If it is our last attempt for each URL, we increase the timeout
           if self.__retryCounter == self.__nbOfRetry - 1:
             transport.setSocketTimeout(5)  # we increase the socket timeout in case the network is not good
