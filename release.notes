@@ -1,3 +1,13 @@
+[v7r0p32]
+
+*Core
+FIX: (#4688) M2Crypto based protocol - better handling of timeout
+NEW: (#4710) add loadCRLFromFile to pyGSI implementation of X509CRL
+
+*WorkloadManagement
+NEW: (#4708) JobAgent - define DIRAC_JOB_PROCESSORS environment to number of
+     processors allocated for the user job
+
 [v7r0p31]
 
 *WorkloadManagement
