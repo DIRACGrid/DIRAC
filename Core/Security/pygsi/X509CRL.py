@@ -48,6 +48,9 @@ class X509CRL(object):
       return S_ERROR(DErrno.EOF, "%s: %s" % (crlLocation, repr(e).replace(',)', ')')))
     return self.loadChainFromString(pemData)
 
+  # Make an alias for compatibility with the M2Crypto implementation
+  loadCRLFromFile = loadChainFromFile
+
   def loadChainFromString(self, pemData):
     """
     Load a x509CRL certificate from a string containing the pem data

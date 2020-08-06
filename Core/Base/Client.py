@@ -10,8 +10,7 @@ import os
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Decorators import deprecated
-
-DEFAULT_RPC_TIMEOUT = 600
+from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
 
 
 class Client(object):

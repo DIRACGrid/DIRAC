@@ -14,6 +14,7 @@ import os
 import sys
 import re
 import time
+import six
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
@@ -481,6 +482,13 @@ class JobAgent(AgentModule):
     logLevel = self.am_getOption('DefaultLogLevel', 'INFO')
     defaultWrapperLocation = self.am_getOption('JobWrapperTemplate',
                                                'DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py')
+
+    # Add the number of requested processors to the job environment
+    if 'ExecutionEnvironment' in jobParams:
+      if isinstance(jobParams['ExecutionEnvironment'], six.string_types):
+        jobParams['ExecutionEnvironment'] = jobParams['ExecutionEnvironment'].split(';')
+    jobParams.setdefault('ExecutionEnvironment', []).append('DIRAC_JOB_PROCESSORS=%d' % processors)
+
     jobDesc = {"jobID": jobID,
                "jobParams": jobParams,
                "resourceParams": resourceParams,
