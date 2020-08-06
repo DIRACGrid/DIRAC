@@ -360,6 +360,11 @@ class ComputingElement(object):
     """Base class for the monitor and update of the payload proxy, to be used in
       derived classes for the basic renewal of the proxy, if further actions are
       necessary they should be implemented there
+
+      :param str pilotProxy: location of the pilot proxy file
+      :param str payloadProxy: location of the payload proxy file
+
+      :returns: S_OK(filename)/S_ERROR
     """
     retVal = getProxyInfo(payloadProxy)
     if not retVal['OK']:

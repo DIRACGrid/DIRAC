@@ -97,7 +97,7 @@ class SingularityComputingElement(ComputingElement):
         if os.access(binPath, os.X_OK):
           self.log.debug('Find singularity from PATH "%s"' % binPath)
           return True
-    # No suitablable binaries found
+    # No suitable binaries found
     return False
 
   def __getInstallFlags(self):
@@ -256,7 +256,6 @@ class SingularityComputingElement(ComputingElement):
       result = S_ERROR("Command failed with exit code %d" % retCode)
     return result
 
-  # pylint: disable=unused-argument,arguments-differ
   def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Start a container for a job.
         executableFile is ignored. A new wrapper suitable for running in a
@@ -279,9 +278,9 @@ class SingularityComputingElement(ComputingElement):
       return ret
     baseDir = ret['baseDir']
     tmpDir = ret['tmpDir']
-    proxyLoc = ret['proxyLocation']
+    payloadProxyLoc = ret['proxyLocation']
 
-    # Now we have to set-up proxy renewal for the container
+    # Now we have to set-up pilot proxy renewal for the container
     # This is fairly easy as it remains visible on the host filesystem
     ret = getProxyInfo()
     if not ret['OK']:
@@ -289,7 +288,7 @@ class SingularityComputingElement(ComputingElement):
     else:
       pilotProxy = ret['Value']['path']
     result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self._monitorProxy,
-                                              taskArgs=(pilotProxy, proxyLoc),
+					      taskArgs=(pilotProxy, payloadProxyLoc),
                                               executions=0, elapsedTime=0)
     renewTask = None
     if result['OK']:
