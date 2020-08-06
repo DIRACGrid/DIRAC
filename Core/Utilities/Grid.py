@@ -51,7 +51,7 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None):
     if not res['OK']:
       return res
     gridEnv['X509_USER_PROXY'] = res['Value']['path']
-  elif isinstance(proxy, basestring):
+  elif isinstance(proxy, six.string_types):
     if os.path.exists(proxy):
       gridEnv['X509_USER_PROXY'] = proxy
     else:

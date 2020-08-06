@@ -87,7 +87,8 @@ class CodeReference(object):
     lines = []
     lines.append('%s' % modulefinal)
     lines.append('=' * len(modulefinal))
-    lines.append('.. module:: %s ' % fullmodulename)
+    lines.append('.. automodule:: %s ' % fullmodulename)
+    lines.append('   :members:')
     lines.append('')
 
     if subpackages or modules:

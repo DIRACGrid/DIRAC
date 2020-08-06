@@ -1,4 +1,3 @@
-# $HeadURL:  $
 """ Statistics
 
   Module containing little helpers that extract information from the RSS databases
@@ -14,10 +13,9 @@ import datetime
 # DIRAC
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-#from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import getValidElements, getValidStatus
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
 
 class Statistics(object):
@@ -32,7 +30,6 @@ class Statistics(object):
     """
 
     self.rsClient = ResourceStatusClient()
-    #self.rmClient = ResourceManagementClient()
 
   def getElementHistory(self, element, elementName, statusType,
                         oldAs=None, newAs=None):
@@ -232,6 +229,3 @@ def timedelta_to_seconds(duration):
   seconds = (seconds % 60)
 
   return (((days * 24) + hours) * 60 + minutes) * 60 + seconds
-
-# ...............................................................................
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

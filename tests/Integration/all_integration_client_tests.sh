@@ -44,7 +44,7 @@ pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/ResourceStatusSystem/Test_Pu
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 # pytest "${CLIENTINSTALLDIR}"/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsLoggingClient.py |& tee -a clientTestOutputs.txt
-python "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py" "$WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+python "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py" --cfg "$WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobWrapper.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 

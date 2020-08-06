@@ -31,6 +31,12 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
+[v7r1p10]
+
+Fixes from v7r0p32
+
+CHANGE: (#4690) ComponentInstaller uses --cfg option
+
 [v7r1p9]
 
 Fixes from v7r0p31
@@ -238,6 +244,16 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p32]
+
+*Core
+FIX: (#4688) M2Crypto based protocol - better handling of timeout
+NEW: (#4710) add loadCRLFromFile to pyGSI implementation of X509CRL
+
+*WorkloadManagement
+NEW: (#4708) JobAgent - define DIRAC_JOB_PROCESSORS environment to number of
+     processors allocated for the user job
 
 [v7r0p31]
 
@@ -803,6 +819,11 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p33]
+
+*Core
+NEW: (#4710) add loadCRLFromFile to pyGSI implementation of X509CRL
 
 [v6r22p32]
 

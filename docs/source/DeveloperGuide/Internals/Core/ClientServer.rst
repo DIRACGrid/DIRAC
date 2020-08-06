@@ -45,7 +45,7 @@ Here is a rough overview of what is happening when you are calling a method from
 
 .. code-block:: python
 
-   from DIRAC.Core.Base.Cliet import Client
+   from DIRAC.Core.Base.Client import Client
 
    c = Client()
    c.serverURL('DataManagement/FileCatalog') # The subclient would have to define it themselves as well
@@ -183,3 +183,53 @@ You have to notice that the service can call __doFileTransfer() but functions re
 
 Client must send ('FileTransfer', direction) instead of ('RPC', method), direction can be "fromClient",
 "toClient", "bulkFromClient", "bulkToClient" or "listBulk".
+
+
+*************
+About timeout
+*************
+
+.. warning:: This section is true when using M2Crypto. When using pyGSI, good luck.
+
+Timeouts are in general a very delicate topic. The way DIRAC handles them for client/server interactions is through socket timeouts. Basically, each blocking operation of a socket has a timeout. However, executing an RPC call requires multiple socket operations (see diagram above). A lot more details are available in :py:mod:`~DIRAC.Core.DISET.private.Transports.M2SSLTransport` but important information are summarized here.
+
+Client timeout
+==============
+
+When executing an RPC call, the client can specify a timeout
+
+.. code-block:: python
+
+      from DIRAC.Core.Base.Client import Client
+
+      c = Client()
+      c.serverURL('DataManagement/FileCatalog')
+
+      c.doSomethingVeryLong(timeout=123)
+
+In practice, this timeout value is set to the socket, which can perform long blocking operations essentially twice:
+
+* when sending the arguments
+* when receiving the results
+
+This means that the real timeout of the whole operation is twice the value given as parameters.
+
+However, in reality, when there is no network issues, performing the transfers is fast, so the only real timeout is the one that waits for the server reply.
+
+Note that a client cutting the socket does not stop the server from performing the operation it started!
+
+
+Server timeout
+==============
+
+As for the client, the server sets the timeout at the socket level. Given the interaction diagram above, the only option we have is to set an upper limit for the time it takes to transfer a given chunk of argument/response. It is set, as an (generous) upper limit to the default RPC timeout.
+
+Default values
+==============
+
+Details in  :py:mod:`~DIRAC.Core.DISET`
+
+KeepAlive
+=========
+
+Keep alive is enabled on the connections, with the default values. That means that a dead peer/broken connection would be detected after ~ 2h and 10mn, providing we are not in a blocking operation (in which case, the timeout specified above are applied).

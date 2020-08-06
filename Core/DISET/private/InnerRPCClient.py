@@ -71,6 +71,9 @@ class InnerRPCClient(BaseClient):
         return retVal
 
       # Get the result of the call and append the stub to it
+      # Note that the RPC timeout basically ticks here, since
+      # the client waits for data for as long as the server side
+      # processes the request.
       receivedData = transport.receiveData()
       if isinstance(receivedData, dict):
         receivedData['rpcStub'] = stub

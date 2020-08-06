@@ -99,7 +99,8 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
   :param str host: BDII host to query
   :param list shareEndpoints: list of endpoint names
   :param dict shareInfoDict: dictionary of GLUE2 parameters belonging to the ComputingShare
-  :param dict cesDict: dictionary with the CE information, will be modified in this function to add the information of the share
+  :param dict cesDict: dictionary with the CE information,
+                       will be modified in this function to add the information of the share
   :returns: result structure S_OK/S_ERROR
   """
 

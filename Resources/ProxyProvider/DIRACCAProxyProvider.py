@@ -1,5 +1,4 @@
-""" ProxyProvider implementation for the proxy generation using local (DIRAC)
-    CA credentials
+""" ProxyProvider implementation for the proxy generation using local (DIRAC) CA credentials
 
     This class is a simple, limited CA, its main purpose is to generate a simple proxy for DIRAC users
     who do not have any certificate register on the fly.
@@ -40,6 +39,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
+
 import re
 import time
 import random
@@ -51,8 +52,6 @@ from M2Crypto import m2, util, X509, ASN1, EVP, RSA
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
-
-__RCSID__ = "$Id$"
 
 
 class DIRACCAProxyProvider(ProxyProvider):

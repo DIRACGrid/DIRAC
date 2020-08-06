@@ -398,7 +398,7 @@ getUserProxy() {
   echo '==> Started getUserProxy'
 
   cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update.py" "."
-  if ! python dirac-cfg-update.py -S "${DIRACSETUP}" "${CLIENTINSTALLDIR}/etc/dirac.cfg" -F "${CLIENTINSTALLDIR}/etc/dirac.cfg" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem "${DEBUG}"; then
+  if ! python dirac-cfg-update.py -S "${DIRACSETUP}" --cfg "${CLIENTINSTALLDIR}/etc/dirac.cfg" -F "${CLIENTINSTALLDIR}/etc/dirac.cfg" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem "${DEBUG}"; then
     echo 'ERROR: dirac-cfg-update failed' >&2
     exit 1
   fi
@@ -1025,15 +1025,15 @@ downloadProxy() {
 
   if [[ "${PILOTCFG}" ]]; then
     if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]]; then # called from the client directory
-      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
+      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
     else # assuming it's the pilot
-      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
+      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
     fi
   else
     if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]]; then # called from the client directory
-      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
+      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
     else # assuming it's the pilot
-      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
+      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${PILOTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
     fi
   fi
 

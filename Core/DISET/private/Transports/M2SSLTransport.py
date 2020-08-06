@@ -17,6 +17,8 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.Core.DISET.private.Transports.SSL.M2Utils import getM2SSLContext, getM2PeerInfo
 
+from DIRAC.Core.DISET import DEFAULT_CONNECTION_TIMEOUT, DEFAULT_RPC_TIMEOUT
+
 # TODO: For now we have to set an environment variable for proxy support in OpenSSL
 # Eventually we may need to add API support for this to M2Crypto...
 os.environ['OPENSSL_ALLOW_PROXY_CERTS'] = '1'
@@ -30,7 +32,12 @@ M2Threading.init()
 
 
 class SSLTransport(BaseTransport):
-  """ SSL Transport implementaiton using the M2Crypto library. """
+  """ SSL Transport implementation using the M2Crypto library. """
+
+  # This name is the same as BaseClient,
+  # and is used a bit everywhere, so it should be factorized out
+  # eventually
+  KW_TIMEOUT = 'timeout'
 
   def __getConnection(self):
     """ Helper function to get a connection object,
@@ -47,25 +54,51 @@ class SSLTransport(BaseTransport):
     """ Create an SSLTransport object, parameters are the same
         as for other transports. If ctx is specified (as an instance of
         SSL.Context) then use that rather than creating a new context.
+
+        kwargs can contain all the parameters defined in BaseClient,
+        in particular timeout
     """
     # The thread init of M2Crypto is not really thread safe.
     # So we put it a second time
     M2Threading.init()
     self.remoteAddress = None
     self.peerCredentials = {}
-    self.__timeout = 1
+
+    # The timeout used here is different from what it was in pyGSI.
+    # It is to be understood here as the timeout for socket operations
+    # involved in the RPC call, but NOT the establishment of the connection,
+    # for which there is a different timeout.
+    #
+    # The timeout management of pyGSI was a bit off.
+    # This is proven by that type of trace (look at the timestamp):
+    #
+    # 2020-07-16 09:48:55 UTC dirac-proxy-init [140013698656064] DEBUG: Connection timeout set to:  1
+    # 2020-07-16 09:58:55 UTC dirac-proxy-init [140013698656064] WARN: Issue getting socket:
+    #
+
+    self.__timeout = kwargs.get(SSLTransport.KW_TIMEOUT, DEFAULT_RPC_TIMEOUT)
+
     self.__locked = False  # We don't support locking, so this is always false.
 
     self.__ctx = kwargs.pop('ctx', None)
     if not self.__ctx:
       self.__ctx = getM2SSLContext(**kwargs)
 
+    # Note that kwargs is already kept in BaseTransport
+    # as self.extraArgsDict, but at least I am sure that
+    # self.__kwargs will never be modified
     self.__kwargs = kwargs
+
     BaseTransport.__init__(self, *args, **kwargs)
 
   def setSocketTimeout(self, timeout):
-    """ Set the timeout for socket operations.
-        The timeout parameter is in seconds (float).
+    """ Set the timeout for RPC calls.
+
+        .. warning: This needs to be called before initAsClient.
+          It is used as a timeout for RPC calls, not connection.
+
+        :param timeout: timeout for socket operation in seconds
+
     """
     self.__timeout = timeout
 
@@ -90,10 +123,24 @@ class SSLTransport(BaseTransport):
       try:
         self.oSocket = SSL.Connection(self.__ctx, family=family)
 
+        # First set a short connection timeout, that will trigger
+        # during blocking operations (read/write) use to
+        # establish the SSL connection
+        self.oSocket.settimeout(DEFAULT_CONNECTION_TIMEOUT)
+
+        # Enable keepAlive, with default options
+        # (see more comments about keepalive in :py:meth:`.acceptConnection`)
+        self.oSocket.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, True)
+
         # set SNI server name since we know it at this point
         self.oSocket.set_tlsext_host_name(host)
 
         self.oSocket.connect((host, port))
+
+        # Once the connection is established, we can use the timeout
+        # asked for RPC
+        self.oSocket.settimeout(self.__timeout)
+
         self.remoteAddress = self.oSocket.getpeername()
 
         return S_OK()
@@ -123,7 +170,9 @@ class SSLTransport(BaseTransport):
       param = 1
     else:
       param = 0
+
     self.oSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, param)
+
     self.oSocket.bind(self.stServerAddress)
     self.oSocket.listen(self.iListenQueueSize)
     return S_OK()
@@ -281,6 +330,15 @@ class SSLTransport(BaseTransport):
 
       self.peerCredentials = getM2PeerInfo(self.oSocket)
 
+      # Now that the handshake has been performed on the server
+      # we can set the timeout for the RPC operations.
+      # In practice, since we are on the server side, the
+      # timeout we set here represents the timeout for receiving
+      # the arguments and sending back the response. This should
+      # in principle be reasonably quick, but just to be sure
+      # we can set it to the DEFAULT_RPC_TIMEOUT
+      self.oSocket.settimeout(DEFAULT_RPC_TIMEOUT)
+
       return S_OK()
     except (socket.error, SSL.SSLError, SSLVerificationError) as e:
       return S_ERROR("Error in handhsake: %s %s" % (e, repr(e)))
@@ -332,9 +390,33 @@ class SSLTransport(BaseTransport):
     # So we have to do it manually
     # The following lines are basically a copy/paste
     # of the begining of SSL.Connection.accept method
+    # with added options and timeout
     try:
       sock, addr = self.oSocket.socket.accept()
       oClient = SSL.Connection(self.oSocket.ctx, sock)
+
+      # Set the keep alive to true. This keepalive will ensure that we
+      # detect remote peer crashing or network interruption
+      # Note that this is ineffective if we are in the middle of blocking
+      # operations.
+      oClient.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, True)
+
+      # I am adding here for reference the code that would allow to change
+      # the keepalive settings, although we should be fine with the default
+      # (connection would be closed after 7200 + 9 * 75 ~= 2h and 10mn )
+
+      # Duration between two keepalive probes, in seconds
+      # oClient.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 75)
+      # Number of consecutive bad probes to cut the connection
+      # oClient.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 9)
+      # Delay before the keepalive starts ticking, in seconds
+      # oClient.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7200)
+
+      # Here we set the timeout server side.
+      # We first set the connection timeout, which will
+      # be effective for TLS handshake
+      oClient.settimeout(DEFAULT_CONNECTION_TIMEOUT)
+
       oClient.addr = addr
       oClientTrans = SSLTransport(self.stServerAddress, ctx=self.__ctx)
       oClientTrans.setClientSocket(oClient)
@@ -401,6 +483,18 @@ class SSLTransport(BaseTransport):
         :returns: S_OK(number of bytes written)
     """
     try:
+      # If the client application has abruptly terminated
+      # the connection will be in CLOSE_WAIT on the server side.
+      # And when the server side will anyway try to send back its data.
+      # The first call to this _write method will succeed,
+      # and we will never know that the connection was broken.
+      # However, the client would answer with an RST packet.
+      # And writting on a socket that received an RST packet
+      # triggers a SIGPIPE.
+      # In practice, this means that if the server replies to a
+      # dead client with less that 16384 bytes (see),
+      # we will never notice that we sent the answer to the vacuum.
+      # And don't look for a fix, there just isn't.
       wrote = self.oSocket.write(buf)
       return S_OK(wrote)
     except (socket.error, SSL.SSLError, SSLVerificationError) as e:

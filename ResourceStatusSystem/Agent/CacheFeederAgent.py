@@ -107,7 +107,7 @@ class CacheFeederAgent(AgentModule):
     """ Loads and executes commands.
 
        :param commandModule: Name of the command (e.g. 'Downtime')
-       :type commandModule: basestring
+       :type commandModule: str
        :param commandDict: dictionary of {'CommandClass':{arguments}}
        :type commandDict: dict
     """

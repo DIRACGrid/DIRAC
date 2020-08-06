@@ -236,7 +236,7 @@ def test_submitJob(mocker, mockJWInput, expected):
   jobAgent.log.setLevel('DEBUG')
   jobAgent.ceName = 'Test'
 
-  result = jobAgent._submitJob(101, {}, {}, {}, {}, {})
+  result = jobAgent._submitJob(101, {}, {}, {}, '', 1)
 
   assert result['OK'] == expected['OK']
 

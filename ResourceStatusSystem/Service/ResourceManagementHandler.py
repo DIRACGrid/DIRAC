@@ -6,6 +6,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import six
+
 from DIRAC import gConfig, S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
@@ -23,7 +25,6 @@ def initializeResourceManagementHandler(serviceInfo):
 
       :param _serviceInfo: service info dictionary
       :return: standard Dirac return object
-
   """
 
   gLogger.debug("ServiceInfo", serviceInfo)
@@ -98,7 +99,7 @@ class ResourceManagementHandler(RequestHandler):
     global db
     db = database
 
-  types_insert = [basestring, dict]
+  types_insert = [six.string_types, dict]
 
   def export_insert(self, table, params):
     '''
@@ -129,7 +130,7 @@ class ResourceManagementHandler(RequestHandler):
 
     return res
 
-  types_select = [[basestring, dict], dict]
+  types_select = [[six.string_types, dict], dict]
 
   def export_select(self, table, params):
     '''
@@ -156,7 +157,7 @@ class ResourceManagementHandler(RequestHandler):
 
     return res
 
-  types_delete = [[basestring, dict], dict]
+  types_delete = [[six.string_types, dict], dict]
 
   def export_delete(self, table, params):
     '''
@@ -184,7 +185,7 @@ class ResourceManagementHandler(RequestHandler):
 
     return res
 
-  types_addOrModify = [[basestring, dict], dict]
+  types_addOrModify = [[six.string_types, dict], dict]
 
   def export_addOrModify(self, table, params):
     '''
@@ -210,6 +211,3 @@ class ResourceManagementHandler(RequestHandler):
     self.__logResult('addOrModify', res)
 
     return res
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
