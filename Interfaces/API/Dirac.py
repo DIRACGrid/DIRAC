@@ -124,14 +124,14 @@ class Dirac(API):
           return self._errorReport('Expected int or string, not list')
       return S_OK(jobID)
     except Exception as x:
-      return self._errorReport(str(x), 'Expected %sinteger or string for existing jobID' %
+      return self._errorReport(str(x), 'Expected %s integer or string for existing jobID' %
                                '(list of) ' if multiple else '')
 
   #############################################################################
   # Repository specific methods
   #############################################################################
   def getRepositoryJobs(self, printOutput=False):
-    """ Retireve all the jobs in the repository
+    """ Retrieve all the jobs in the repository
 
        Example Usage:
 
@@ -287,7 +287,7 @@ class Dirac(API):
   #############################################################################
 
   def submitJob(self, job, mode='wms'):
-    """Submit jobs to DIRAC (by default to the Worload Management System).
+    """Submit jobs to DIRAC (by default to the Workload Management System).
        These can be either:
 
         - Instances of the Job Class
@@ -335,7 +335,7 @@ class Dirac(API):
           self.log.error('>>>> Error in %s() <<<<\n%s' % (method, '\n'.join(errorList)))
         return S_ERROR(formulationErrors)
 
-      # Run any VO specific checks if desired prior to submission, this may or may not be overidden
+      # Run any VO specific checks if desired prior to submission, this may or may not be overridden
       # in a derived class for example
       try:
         result = self.preSubmissionChecks(job, mode)
@@ -447,7 +447,7 @@ class Dirac(API):
   #############################################################################
   def __runJobAgent(self, jobID):
     """ This internal method runs a tailored job agent for the local execution
-        of a previously submitted WMS job. The type of CEUniqueID can be overidden
+        of a previously submitted WMS job. The type of CEUniqueID can be overridden
         via the configuration.
     """
     agentName = 'WorkloadManagement/JobAgent'
@@ -709,7 +709,7 @@ class Dirac(API):
         All output files are written to the local directory.
 
         This is a method for running local tests. It skips the creation of a JobWrapper,
-        but preparing an environment that mimicks it.
+        but preparing an environment that mimics it.
 
     :param job: a job object
     :type job: ~DIRAC.Interfaces.API.Job.Job
@@ -1612,7 +1612,7 @@ class Dirac(API):
 
        This method allows the retrieval of an existing job input sandbox for
        debugging purposes.  By default the sandbox is downloaded to the current
-       directory but this can be overidden via the outputDir parameter. All files
+       directory but this can be overridden via the outputDir parameter. All files
        are extracted into a InputSandbox<JOBID> directory that is automatically created.
 
        Example Usage:
@@ -1662,7 +1662,7 @@ class Dirac(API):
 
        This method allows the retrieval of an existing job output sandbox.
        By default the sandbox is downloaded to the current directory but
-       this can be overidden via the outputDir parameter. All files are
+       this can be overridden via the outputDir parameter. All files are
        extracted into a <JOBID> directory that is automatically created.
 
        Example Usage:
