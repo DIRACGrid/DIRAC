@@ -28,10 +28,10 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "site":
     site = switch[1]
 
-args = Script.getPositionalArgs(exitCode=1)
+args = Script.getPositionalArgs()
 
 if not site or not args:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 diracAdmin = DiracAdmin()

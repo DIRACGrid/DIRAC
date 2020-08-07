@@ -9,10 +9,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
+
+import os
+
 import DIRAC
 from DIRAC.Core.Base import Script
-import os
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
@@ -24,7 +27,7 @@ Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 if len(args) < 1:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 dirac = Dirac()

@@ -9,6 +9,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -32,9 +33,8 @@ errorList = []
 
 if len(lfns) == 1:
   try:
-    f = open(lfns[0], 'r')
-    lfns = f.read().splitlines()
-    f.close()
+    with open(lfns[0], 'r') as f:
+      lfns = f.read().splitlines()
   except BaseException:
     pass
 

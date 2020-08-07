@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-framework-ping-service
 # Author :  Stuart Paterson
 ########################################################################
@@ -10,7 +9,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -18,8 +19,8 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s [option|cfgfile] ... System Service|System/Agent' % Script.scriptName,
                                   'Arguments:',
-                                  '  System:   Name of the DIRAC system (ie: WorkloadManagement)',
-                                  '  Service:  Name of the DIRAC service (ie: Matcher)',
+                                  '  System:   Name of the DIRAC system (ie: WorkloadManagement) (mandatory)',
+                                  '  Service:  Name of the DIRAC service (ie: Matcher) (mandatory)',
                                   '  url: URL of the service to ping (instead of System and Service)']))
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
@@ -34,14 +35,14 @@ if len(args) == 1:
   else:
     sys_serv = args[0].split('/')
     if len(sys_serv) != 2:
-      Script.showHelp()
+      Script.showHelp(exitCode=1)
     else:
       system, service = sys_serv
 
 elif len(args) == 2:
   system, service = args[0], args[1]
 else:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 
 from DIRAC.Interfaces.API.Dirac import Dirac

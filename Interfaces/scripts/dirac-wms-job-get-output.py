@@ -10,11 +10,14 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-import DIRAC
-from DIRAC.Core.Base import Script
+
+__RCSID__ = "$Id$"
 
 import os
 import shutil
+
+import DIRAC
+from DIRAC.Core.Base import Script
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
@@ -32,8 +35,6 @@ args = Script.getPositionalArgs()
 from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 from DIRAC.Core.Utilities.Time import toString, date, day
 from DIRAC.Core.Utilities.File import mkDir
-
-__RCSID__ = "$Id$"
 
 dirac = Dirac()
 exitCode = 0
