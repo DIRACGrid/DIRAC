@@ -141,6 +141,42 @@ Options available are:
 
 This start method can be useful for developing new service or create starting script for a specific service, like the Configuration System (as master).
 
+TransferClient
+**************
+
+There is no specific client for transfering files anymore. In fact, the whole idea of directly serving file will eventually disapear and be replaced with redirections to real content streaming server. In the meantine, in order to keep some compatibility, the features were implemented, but require some changes on the server side:
+
+- ``transfer_toClient`` needs to be renamed ``export_streamToClient``
+- It needs to return the whole file content at once
+- The parameter ``fileHelper`` is removed
+
+
+For example::
+
+  def transfer_toClient(self, myFileToSend, token, fileHelper):
+
+    # Do whatever with the token
+
+    with open(myFileToSend, 'r') as fd:
+      ret = fileHelper.DataSourceToNetwork(fd)
+      return ret
+
+Simply becomes::
+
+  def export_streamToClient(self, myFileToSend, token):
+
+    # Do whatever with the token
+
+    with open(myFileToSend, 'r') as fd:
+      return fd.read()
+
+
+From the client side, no change is needed since :py:meth:`DIRAC.Core.Tornado.Client.TornadoClient.TornadoClient.receiveFile` keeps the interface
+
+This procedure is not optimized server side (see commented ``export_streamToClient`` implementation in :py:class`DIRAC.Core.Tornado.Server.TornadoService.TornadoService`). 
+
+The ``transfer_fromClient`` equivalent has not yet been implemented as it concerns only very few cases (basically DIRAC SE and SandboxStore)
+
 ******
 Client
 ******

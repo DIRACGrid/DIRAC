@@ -191,7 +191,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
   def prepare(self):
     """
-      prepare the request, it read certificates and check authorizations.
+      prepare the request, it reads certificates and check authorizations.
     """
     self.method = self.get_argument("method")
     self.rawContent = self.get_argument('rawContent', default=False)
@@ -315,13 +315,16 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     # Write status code before writing, by default error code is "200 OK"
     self.set_status(self._httpError)
 
+    # This is basically only used for file download through
+    # the 'streamToClient' method.
     if self.rawContent:
       # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
       self.set_header("Content-Type", "application/octet-stream")
+      returnedData = dictionary
     else:
       self.set_header("Content-Type", "application/json")
+      returnedData = encode(dictionary)
 
-    returnedData = dictionary if self.rawContent else encode(dictionary)
     self.write(returnedData)
 
   def reportUnauthorizedAccess(self, errorCode=401):

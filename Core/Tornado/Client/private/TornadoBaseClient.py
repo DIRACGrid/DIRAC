@@ -31,7 +31,6 @@ from __future__ import print_function
 from io import open
 import six
 
-import cStringIO
 import requests
 import DIRAC
 
@@ -45,6 +44,10 @@ from DIRAC.Core.Utilities.JEncode import decode, encode
 
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
+
+# TODO: refactor all the messy `discover` methods
+# I do not do it now because I want first to decide
+# whether we go with code copy of fatorization
 
 
 class TornadoBaseClient(object):
@@ -468,29 +471,24 @@ class TornadoBaseClient(object):
       del newKwargs['useCertificates']
     return (self._destinationSrv, newKwargs)
 
-  def _request(self, retry=0, stream=False, outputFile=None, **kwargs):
+  def _request(self, retry=0, outputFile=None, **kwargs):
     """
       Sends the request to server
 
       :param retry: internal parameters for recursive call. TODO: remove ?
-      :param stream: (default False) if True, we will receive the output in several chunks.
-                    It is usefull when receiving big amount of data. Note that this is not optimzied
-                    on the server side (see TornadoService)
-                    It shows primarily useful to receive files.
       :param outputFile: (default None) path to a file where to store the received data.
+                        If set, the server response will be streamed for optimization
+                        purposes, and the response data will not go through the
+                        JDecode process
       :param **kwargs: Any argument there is used as a post parameter. They are detailed bellow.
       :param method: (mandatory) name of the distant method
       :param args: (mandatory) json serialized list of argument for the procedure
-      :param rawContent: if set to True, the data is transmitted and returned from this method
-                        without going through the JEncode serialization.
 
 
 
       :returns: The received data. If outputFile is set, return always S_OK
 
     """
-
-    rawContent = kwargs.get('rawContent')
 
     # Adding some informations to send
     if self.__extraCredentials:
@@ -518,7 +516,8 @@ class TornadoBaseClient(object):
     try:
       rawText = None
 
-      if not stream:
+      # Default case, just return the result
+      if not outputFile:
         call = requests.post(url, data=kwargs,
                              timeout=self.timeout, verify=verify,
                              cert=cert)
@@ -534,25 +533,23 @@ class TornadoBaseClient(object):
         call.raise_for_status()
         return decode(rawText)[0]
       else:
+        # Instruct the server not to encode the response
+        kwargs['rawContent'] = True
+
         rawText = None
         # Stream download
         # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
         with requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
                            cert=cert, stream=True) as r:
+          rawText = r.text
           r.raise_for_status()
-          contentFile = outputFile if outputFile else cStringIO.StringIO()
 
-          with open(contentFile, 'wb') as f:
-            for chunk in r.iter_content():
-              if chunk:  # filter out keep-alive new chuncks
-                f.write(chunk)
+          with open(outputFile, 'wb') as f:
+            for chunk in r.iter_content(4096):
+              # if chunk:  # filter out keep-alive new chuncks
+              f.write(chunk)
 
-          if outputFile:
-            return S_OK()
-
-          if rawContent:
-            return S_OK(contentFile.getvalue())
-          return decode(contentFile.getvalue())[0]
+          return S_OK()
 
     except Exception as e:
       # CHRIS TODO review this part: catch specific exceptions
@@ -560,7 +557,7 @@ class TornadoBaseClient(object):
       if url not in self.__bannedUrls:
         self.__bannedUrls += [url]
       if retry < self.__nbOfUrls - 1:
-        self._request(retry=retry + 1, stream=stream, outputFile=outputFile, **kwargs)
+        self._request(retry=retry + 1, outputFile=outputFile, **kwargs)
 
       errStr = "%s: %s" % (str(e), rawText)
       return S_ERROR(errStr)
