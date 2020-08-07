@@ -359,7 +359,7 @@ class Dirac(API):
 
     elif mode.lower() == 'wms':
       self.log.verbose('Will submit job to WMS')  # this will happen by default anyway
-      result = WMSClient().submitJob(jdlAsString, jobDescriptionObject)
+      result = WMSClient(useCertificates=self.useCertificates).submitJob(jdlAsString, jobDescriptionObject)
       if not result['OK']:
         self.log.error('Job submission failure', result['Message'])
       elif self.jobRepo:
@@ -404,7 +404,7 @@ class Dirac(API):
 
     jdl = self.__forceLocal(jdl)
 
-    jobID = WMSClient().submitJob(jdl, jobDescriptionObject)
+    jobID = WMSClient(useCertificates=self.useCertificates).submitJob(jdl, jobDescriptionObject)
 
     if not jobID['OK']:
       self.log.error('Job submission failure', jobID['Message'])
@@ -1776,7 +1776,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    result = WMSClient().deleteJob(jobID)
+    result = WMSClient(useCertificates=self.useCertificates).deleteJob(jobID)
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:
@@ -1806,7 +1806,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    result = WMSClient().rescheduleJob(jobID)
+    result = WMSClient(useCertificates=self.useCertificates).rescheduleJob(jobID)
     if result['OK']:
       if self.jobRepo:
         repoDict = {}
@@ -1835,7 +1835,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    result = WMSClient().killJob(jobID)
+    result = WMSClient(useCertificates=self.useCertificates).killJob(jobID)
     if result['OK']:
       if self.jobRepo:
         for jobID in result['Value']:
