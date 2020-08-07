@@ -19,7 +19,7 @@ Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 if len(args) < 1:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 pilotRef = args[0]
 

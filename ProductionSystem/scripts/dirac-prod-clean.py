@@ -13,7 +13,7 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s prodID' % Script.scriptName,
                                   'Arguments:',
-                                  '  prodID: Production ID'
+                                  '  prodID: Production ID (mandatory)'
                                   ]))
 
 
@@ -22,8 +22,8 @@ Script.parseCommandLine()
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
 args = Script.getPositionalArgs()
-if len(args) != 1:
-  Script.showHelp()
+if len(args) < 1:
+  Script.showHelp(exitCode=1)
 
 # get arguments
 prodID = args[0]

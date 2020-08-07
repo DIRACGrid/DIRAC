@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-sync-users-from-file
 # Author :  Adrian Casajus
 ########################################################################
@@ -8,7 +7,9 @@
   Sync users in Configuration with the cfg contents.
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.CFG import CFG

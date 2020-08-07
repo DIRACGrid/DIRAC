@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-ban-site
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,10 +7,13 @@
   Remove Site from Active mask for current Setup
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
+import time
+
+from DIRAC import exit as DIRACExit, gConfig, gLogger
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.PromptUser import promptUser
 
 Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
@@ -22,11 +24,9 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   '  Comment:  Reason of the action']))
 Script.parseCommandLine(ignoreErrors=True)
 
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC import exit as DIRACExit, gConfig, gLogger
-
-import time
+from DIRAC.Core.Utilities.PromptUser import promptUser
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
 
 def getBoolean(value):

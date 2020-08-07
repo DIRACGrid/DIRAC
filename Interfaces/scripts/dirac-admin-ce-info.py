@@ -19,13 +19,13 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s [option|cfgfile] ... CE ...' % Script.scriptName,
                                   'Arguments:',
-                                  '  CE:       Name of the CE']))
+                                  '  CE:       Name of the CE (mandatory)']))
 
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 if len(args) < 1:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 res = getCESiteMapping(args[0])
 if not res['OK']:

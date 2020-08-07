@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-modify-user
 # Author :  Adrian Casajus
 ########################################################################
@@ -8,7 +7,9 @@
   Modify a user in the CS.
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -19,15 +20,15 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s [option|cfgfile] ... user DN group [group] ...' % Script.scriptName,
                                   'Arguments:',
-                                  '  user:     User name',
-                                  '  DN:       DN of the User',
-                                  '  group:    Add the user to the group']))
+                                  '  user:     User name (mandatory)',
+                                  '  DN:       DN of the User (mandatory)',
+                                  '  group:    Add the user to the group (mandatory)']))
 Script.parseCommandLine(ignoreErrors=True)
 
 args = Script.getPositionalArgs()
 
 if len(args) < 3:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 diracAdmin = DiracAdmin()

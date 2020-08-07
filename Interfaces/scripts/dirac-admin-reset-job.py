@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-reset-job
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,7 +7,9 @@
   Reset a job or list of jobs in the WMS
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
