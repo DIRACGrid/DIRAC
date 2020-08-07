@@ -23,7 +23,7 @@ Script.parseCommandLine()
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 args = Script.getPositionalArgs()
-if len(args) != 2:
+if len(args) < 2:
   Script.showHelp(exitCode=1)
 
 # get arguments

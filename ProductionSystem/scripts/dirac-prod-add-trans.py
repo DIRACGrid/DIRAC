@@ -33,12 +33,12 @@ transClient = TransformationClient()
 
 # get arguments
 args = Script.getPositionalArgs()
-if (len(args) == 3):
+if len(args) == 3:
   parentTransID = args[2]
-elif (len(args) == 2):
+elif len(args) == 2:
   parentTransID = ''
 else:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 prodID = args[0]
 transID = args[1]

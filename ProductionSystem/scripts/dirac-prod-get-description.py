@@ -16,7 +16,7 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s prodID' % Script.scriptName,
                                   'Arguments:',
-                                  '  prodID: Production ID'
+                                  '  prodID: Production ID (mandatory)'
                                   ]))
 
 
@@ -28,8 +28,8 @@ prodClient = ProductionClient()
 
 # get arguments
 args = Script.getPositionalArgs()
-if (len(args) != 1):
-  Script.showHelp()
+if len(args) < 1:
+  Script.showHelp(exitCode=1)
 else:
   prodID = args[0]
   res = prodClient.getProduction(prodID)

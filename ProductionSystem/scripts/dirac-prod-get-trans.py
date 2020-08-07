@@ -17,7 +17,7 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s prodID' % Script.scriptName,
                                   'Arguments:',
-                                  '  prodID: Production ID',
+                                  '  prodID: Production ID (mandatory)',
                                   '\ne.g: %s 381' % Script.scriptName,
                                   ]))
 
@@ -28,8 +28,8 @@ from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 args = Script.getPositionalArgs()
-if (len(args) != 1):
-  Script.showHelp()
+if len(args) < 1:
+  Script.showHelp(exitCode=1)
 
 # get arguments
 prodID = args[0]

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-dms-get-file
 # Author :  Stuart Paterson
 ########################################################################
@@ -10,7 +9,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -31,10 +32,9 @@ exitCode = 0
 
 if len(lfns) == 1:
   try:
-    f = open(lfns[0], 'r')
-    lfns = f.read().splitlines()
-    f.close()
-  except BaseException:
+    with open(lfns[0], 'r') as f:
+      lfns = f.read().splitlines()
+  except Exception:
     pass
 
 result = dirac.getFile(lfns, printOutput=True)

@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-set-site-protocols
 # Author :  Stuart Paterson
 ########################################################################
@@ -10,7 +9,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -27,7 +28,7 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "site":
     site = switch[1]
 
-args = Script.getPositionalArgs()
+args = Script.getPositionalArgs(exitCode=1)
 
 if not site or not args:
   Script.showHelp()
