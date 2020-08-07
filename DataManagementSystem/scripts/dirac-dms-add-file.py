@@ -42,7 +42,7 @@ Script.registerSwitch("f", "force", "Force overwrite of existing file", setOverw
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 if len(args) < 1 or len(args) > 4:
-  Script.showHelp(1)
+  Script.showHelp(exitCode=1)
 
 
 def getDict(item_list):

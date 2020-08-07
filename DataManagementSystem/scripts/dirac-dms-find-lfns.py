@@ -59,7 +59,7 @@ if __name__ == "__main__":
   if len(args) < 1:
     print("Error: No argument provided\n%s:" % Script.scriptName)
     gLogger.notice("MetaDataDictionary: \n%s" % str(typeDict))
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
 
   mq = MetaQuery(typeDict=typeDict)
   result = mq.setMetaQuery(args)

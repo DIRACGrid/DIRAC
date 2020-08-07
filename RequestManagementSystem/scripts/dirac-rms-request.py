@@ -146,7 +146,7 @@ if __name__ == "__main__":
   if transID:
     if not taskIDs:
       gLogger.fatal("If Transformation is set, a list of Tasks should also be set")
-      Script.showHelp(2)
+      Script.showHelp(exitCode=2)
     # In principle, the task name is unique, so the request name should be unique as well
     # If ever this would not work anymore, we would need to use the transformationClient
     # to fetch the ExternalID
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     gLogger.notice('Obtained %d requests %s between %s and %s' % (len(requests), status, since, until))
   if not requests:
     gLogger.notice('No request selected....')
-    Script.showHelp(2)
+    Script.showHelp(exitCode=2)
   okRequests = []
   warningPrinted = False
   jobIDList = []

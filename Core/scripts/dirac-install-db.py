@@ -13,7 +13,7 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 if len(args) < 1:
-  Script.showHelp(1)
+  Script.showHelp(exitCode=1)
 
 # Script imports
 from DIRAC import gConfig

@@ -156,7 +156,7 @@ class CreateArchiveRequest(object):
       self.switches[longOption] = False
     Script.parseCommandLine()
     if Script.getPositionalArgs():
-      Script.showHelp(1)
+      Script.showHelp(exitCode=1)
 
     ops = Operations()
     if not ops.getValue('DataManagement/ArchiveFiles/Enabled', False):

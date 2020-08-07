@@ -15,21 +15,21 @@ userGroups = []
 def setUserName(arg):
   global userName
   if userName or not arg:
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
   userName = arg
 
 
 def setUserDN(arg):
   global userDN
   if userDN or not arg:
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
   userDN = arg
 
 
 def setUserMail(arg):
   global userMail
   if userMail or not arg:
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
   if not arg.find('@') > 0:
     Script.gLogger.error('Not a valid mail address', arg)
     DIRAC.exit(-1)
@@ -39,7 +39,7 @@ def setUserMail(arg):
 def addUserGroup(arg):
   global userGroups
   if not arg:
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
   if arg not in userGroups:
     userGroups.append(arg)
 
@@ -62,7 +62,7 @@ Script.registerSwitch(
 Script.parseCommandLine(ignoreErrors=True)
 
 if userName is None or userDN is None or userMail is None:
-  Script.showHelp(1)
+  Script.showHelp(exitCode=1)
 
 args = Script.getPositionalArgs()
 

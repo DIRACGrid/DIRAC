@@ -513,8 +513,8 @@ class LocalConfiguration(object):
 
     gLogger.notice("\nGeneral options:")
     iLastOpt = 0
-    for iPos in range(len(self.commandOptionList)):
-      optionTuple = self.commandOptionList[iPos]
+    for iPos, iVal in enumerate(self.commandOptionList):
+      optionTuple = iVal
       if optionTuple[0].endswith(':'):
         line = "  -%s --%s : %s" % (optionTuple[0][:-1].ljust(2),
                                     (optionTuple[1][:-1] + ' <value> ').ljust(22),

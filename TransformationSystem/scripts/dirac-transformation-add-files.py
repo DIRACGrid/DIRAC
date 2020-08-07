@@ -21,7 +21,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 
 args = Script.getPositionalArgs()
 if len(args) != 2:
-  Script.showHelp(1)
+  Script.showHelp(exitCode=1)
 
 # get arguments
 inputFileName = args[1]

@@ -131,5 +131,4 @@ def enableCS():
   return localCfg.enableCS()
 
 
-def showHelp(text=False):
-  localCfg.showHelp(text)
+showHelp = localCfg.showHelp

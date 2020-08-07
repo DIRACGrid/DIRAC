@@ -253,7 +253,7 @@ class DiracAdmin(API):
 
       sitesLogging = result['Value']
       if isinstance(sitesLogging, dict):
-	for siteName, tupleList in sitesLogging.items():  # can be an iterator
+        for siteName, tupleList in sitesLogging.items():  # can be an iterator
           if not siteName:
             gLogger.notice('\n===> %s\n' % siteName)
           for tup in tupleList:
@@ -262,9 +262,9 @@ class DiracAdmin(API):
             gLogger.notice(stup)
           gLogger.notice(' ')
       elif isinstance(sitesLogging, list):
-	sitesLoggingList = [(sl[1], sl[3], sl[4]) for sl in sitesLogging]
-	for siteLog in sitesLoggingList:
-	  gLogger.notice(siteLog)
+        sitesLoggingList = [(sl[1], sl[3], sl[4]) for sl in sitesLogging]
+        for siteLog in sitesLoggingList:
+          gLogger.notice(siteLog)
 
     return S_OK()
 
