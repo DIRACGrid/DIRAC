@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-utils-file-adler
 # Author :
 ########################################################################
@@ -8,7 +7,9 @@
   Calculate md5 of the supplied file
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Base import Script

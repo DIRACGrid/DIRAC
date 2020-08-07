@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-wms-get-queue-normalization.py
 # Author :  Ricardo Graciani
 ########################################################################
@@ -8,6 +7,7 @@
   Report Normalization Factor applied by Site to the given Queue
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import DIRAC

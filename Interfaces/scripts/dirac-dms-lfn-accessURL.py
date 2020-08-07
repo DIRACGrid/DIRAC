@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-dms-lfn-accessURL
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,7 +7,9 @@
   Retrieve an access URL for an LFN replica given a valid DIRAC SE.
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -16,8 +17,8 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s [option|cfgfile] ... LFN SE [PROTO]' % Script.scriptName,
                                   'Arguments:',
-                                  '  LFN:      Logical File Name or file containing LFNs',
-                                  '  SE:       Valid DIRAC SE',
+                                  '  LFN:      Logical File Name or file containing LFNs (mandatory)',
+                                  '  SE:       Valid DIRAC SE (mandatory)',
                                   '  PROTO:    Optional protocol for accessURL']))
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
@@ -26,7 +27,7 @@ args = Script.getPositionalArgs()
 from DIRAC.Interfaces.API.Dirac import Dirac
 
 if len(args) < 2:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 if len(args) > 3:
   print('Only one LFN SE pair will be considered')
@@ -41,9 +42,8 @@ if len(args) > 2:
   proto = args[2]
 
 try:
-  f = open(lfn, 'r')
-  lfns = f.read().splitlines()
-  f.close()
+  with open(lfn, 'r') as f:
+    lfns = f.read().splitlines()
 except IOError:
   lfns = [lfn]
 

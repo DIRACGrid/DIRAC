@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-wms-job-status
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,6 +7,7 @@
   Retrieve status of the given DIRAC job
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import os
@@ -49,7 +49,7 @@ for key, value in Script.getUnprocessedSwitches():
     jobs += result['Value']
 
 if len(args) < 1 and not jobs:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 if len(args) > 0:
   jobs += parseArguments(args)

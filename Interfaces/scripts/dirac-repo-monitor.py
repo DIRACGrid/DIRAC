@@ -1,17 +1,13 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
 """
   Monitor the jobs present in the repository
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-import os
-import sys
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',

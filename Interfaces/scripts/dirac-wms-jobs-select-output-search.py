@@ -7,9 +7,12 @@
   Retrieve output sandbox for DIRAC Jobs for the given selection and search for a string in their std.out
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import os
 from shutil import rmtree
+
 import DIRAC
 from DIRAC.Core.Base import Script
 

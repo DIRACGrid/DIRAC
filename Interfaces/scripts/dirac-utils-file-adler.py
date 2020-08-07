@@ -6,7 +6,9 @@
   Calculate alder32 of the supplied file
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Base import Script
