@@ -14,21 +14,21 @@ hostProperties = []
 def setHostName(arg):
   global hostName
   if hostName or not arg:
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
   hostName = arg
 
 
 def setHostDN(arg):
   global hostDN
   if hostDN or not arg:
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
   hostDN = arg
 
 
 def addProperty(arg):
   global hostProperties
   if not arg:
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
   if arg not in hostProperties:
     hostProperties.append(arg)
 
@@ -51,7 +51,7 @@ Script.registerSwitch(
 Script.parseCommandLine(ignoreErrors=True)
 
 if hostName is None or hostDN is None:
-  Script.showHelp(1)
+  Script.showHelp(exitCode=1)
 
 args = Script.getPositionalArgs()
 

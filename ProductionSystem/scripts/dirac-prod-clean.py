@@ -25,19 +25,16 @@ Script.parseCommandLine()
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
 args = Script.getPositionalArgs()
-if (len(args) != 1):
+if len(args) != 1:
   Script.showHelp()
 
 # get arguments
 prodID = args[0]
 
-prodClient = ProductionClient()
-
-res = prodClient.setProductionStatus(prodID, 'Cleaned')
-if res['OK']:
-  DIRAC.gLogger.notice('Production %s successully cleaned' % prodID)
-else:
+res = ProductionClient().setProductionStatus(prodID, 'Cleaned')
+if not res['OK']:
   DIRAC.gLogger.error(res['Message'])
-  DIRAC.exit(-1)
+  DIRAC.exit(1)
 
+DIRAC.gLogger.notice('Production %s successully cleaned' % prodID)
 DIRAC.exit(0)

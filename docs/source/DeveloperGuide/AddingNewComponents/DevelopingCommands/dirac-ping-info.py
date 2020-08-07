@@ -55,4 +55,4 @@ servicesList = Script.getPositionalArgs()
 
 # Check and process the command line switches and options
 if not servicesList:
-  Script.showHelp(1)
+  Script.showHelp(exitCode=1)

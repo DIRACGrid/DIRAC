@@ -47,7 +47,7 @@ Script.parseCommandLine(ignoreErrors=True)
 args = Script.getExtraCLICFGFiles()
 
 if len(args) > 1:
-  Script.showHelp(1)
+  Script.showHelp(exitCode=1)
 
 
 result = Resources.getQueue(Site, ceName, Queue)

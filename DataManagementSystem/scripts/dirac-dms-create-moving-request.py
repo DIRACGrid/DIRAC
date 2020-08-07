@@ -111,7 +111,7 @@ class CreateMovingRequest(object):
       self.switches[longOption] = False
     Script.parseCommandLine()
     if Script.getPositionalArgs():
-      Script.showHelp(1)
+      Script.showHelp(exitCode=1)
 
     for switch in Script.getUnprocessedSwitches():
       for short, longOption, doc in self.options:

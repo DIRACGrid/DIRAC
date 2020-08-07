@@ -195,7 +195,7 @@ def error(msg):
   subLogger.error("\nERROR:")
   subLogger.error("\t" + msg)
   subLogger.error("\tPlease, check documentation below")
-  Script.showHelp(1)
+  Script.showHelp(exitCode=1)
 
 
 def confirm(query, matches):

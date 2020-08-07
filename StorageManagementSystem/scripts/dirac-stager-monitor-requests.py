@@ -57,7 +57,7 @@ def parseSwitches():
   if args:
     subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
     subLogger.error("Please, check documentation below")
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
 
   switches = dict(Script.getUnprocessedSwitches())
 
@@ -69,7 +69,7 @@ def parseSwitches():
           'New', 'Offline', 'Waiting', 'Failed', 'StageSubmitted', 'Staged'):
     subLogger.error("Found \"%s\" as Status value. Incorrect value used!" % switches['status'])
     subLogger.error("Please, check documentation below")
-    Script.showHelp(1)
+    Script.showHelp(exitCode=1)
 
   subLogger.debug("The switches used are:")
   map(subLogger.debug, switches.iteritems())
