@@ -588,7 +588,6 @@ class GithubInterface(object):
       releaseNotes = rnf.read()
 
     releaseDict = dict(tag_name=self.tagName,
-                       target_commitish="unused",
                        name=self.tagName,
                        body=releaseNotes,
                        prerelease=False,
