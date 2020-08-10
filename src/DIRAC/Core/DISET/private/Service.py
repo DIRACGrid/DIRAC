@@ -5,9 +5,11 @@
   - All useful functions for initialization
   - All useful functions to handle the requests
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 # pylint: skip-file
 # __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
 
@@ -15,13 +17,7 @@ import os
 import time
 import threading
 
-# TODO: Remove ThreadPool later
-useThreadPoolExecutor = False
-if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'YES').lower() in ('yes', 'true'):
-  from concurrent.futures import ThreadPoolExecutor
-  useThreadPoolExecutor = True
-else:
-  from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -106,14 +102,7 @@ class Service(object):
     self._handler = result['Value']
     # Initialize lock manager
     self._lockManager = LockManager(self._cfg.getMaxWaitingPetitions())
-    # TODO: remove ThreadPool
-    if useThreadPoolExecutor:
-      self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
-    else:
-      self._threadPool = ThreadPool(max(1, self._cfg.getMinThreads()),
-                                    max(0, self._cfg.getMaxThreads()),
-                                    self._cfg.getMaxWaitingPetitions())
-      self._threadPool.daemonize()
+    self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
     self._msgBroker = MessageBroker("%sMSB" % self._name, threadPool=self._threadPool)
     # Create static dict
     self._serviceInfoDict = {'serviceName': self._name,
@@ -329,12 +318,8 @@ class Service(object):
 
   def __reportThreadPoolContents(self):
     # TODO: remove later
-    if useThreadPoolExecutor:
-      pendingQueries = self._threadPool._work_queue.qsize()
-      activeQuereies = len(self._threadPool._threads)
-    else:
-      pendingQueries = self._threadPool.pendingJobs()
-      activeQuereies = self._threadPool.numWorkingThreads()
+    pendingQueries = self._threadPool._work_queue.qsize()
+    activeQuereies = len(self._threadPool._threads)
 
     self._monitor.addMark('PendingQueries', pendingQueries)
     self._monitor.addMark('ActiveQueries', activeQuereies)
@@ -359,11 +344,7 @@ class Service(object):
       self._stats['connections'] += 1
       self._monitor.setComponentExtraParam('queries', self._stats['connections'])
     # TODO: remove later
-    if useThreadPoolExecutor:
-      self._threadPool.submit(self._processInThread, clientTransport)
-    else:
-      self._threadPool.generateJobAndQueueIt(self._processInThread,
-                                             args=(clientTransport,))
+    self._threadPool.submit(self._processInThread, clientTransport)
 
   # Threaded process function
   def _processInThread(self, clientTransport):

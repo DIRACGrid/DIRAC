@@ -21,15 +21,8 @@ from __future__ import print_function
 
 import sys
 from six import BytesIO
-import os
 
-# TODO: Remove ThreadPool later
-useThreadPoolExecutor = False
-if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'YES').lower() in ('yes', 'true'):
-  from concurrent.futures import ThreadPoolExecutor
-  useThreadPoolExecutor = True
-else:
-  from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from concurrent.futures import ThreadPoolExecutor
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -87,14 +80,7 @@ class GatewayService(Service):
       return result
     self._handler = result['Value']
     # Discover Handler
-    # TODO: remove later
-    if useThreadPoolExecutor:
-      self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
-    else:
-      self._threadPool = ThreadPool(1,
-                                    max(0, self._cfg.getMaxThreads()),
-                                    self._cfg.getMaxWaitingPetitions())
-      self._threadPool.daemonize()
+    self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
 
     self._msgBroker = MessageBroker("%sMSB" % GatewayService.GATEWAY_NAME, threadPool=self._threadPool)
     self._msgBroker.useMessageObjects(False)

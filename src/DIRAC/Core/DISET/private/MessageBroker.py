@@ -12,14 +12,7 @@ import time
 import socket
 import os
 
-# TODO: Remove ThreadPool later
-useThreadPoolExecutor = False
-if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'YES').lower() in ('yes', 'true'):
-  from concurrent.futures import ThreadPoolExecutor
-  useThreadPoolExecutor = True
-else:
-  from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-  from DIRAC.Core.Utilities.ThreadPool import getGlobalThreadPool
+from concurrent.futures import ThreadPoolExecutor
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
@@ -46,10 +39,7 @@ class MessageBroker(object):
       transportPool = getGlobalTransportPool()
     self.__trPool = transportPool
     if not threadPool:
-      if useThreadPoolExecutor:
-        threadPool = ThreadPoolExecutor(100)
-      else:
-        threadPool = getGlobalThreadPool()
+      threadPool = ThreadPoolExecutor(100)
     self.__threadPool = threadPool
     self.__listeningForMessages = False
     self.__listenThread = None
@@ -181,14 +171,11 @@ class MessageBroker(object):
     # If error close transport and exit
     if not result['OK']:
       self.__log.debug("[trid %s] ERROR RCV DATA %s" % (trid, result['Message']))
-      gLogger.warn("Error while receiving message", "from %s : %s" % (self.__trPool.get(trid).getFormattedCredentials(),
-                                                                      result['Message']))
+      gLogger.warn("Error while receiving message",
+		   "from %s : %s" % (self.__trPool.get(trid).getFormattedCredentials(),
+				     result['Message']))
       return self.removeTransport(trid)
-    if useThreadPoolExecutor:
-      self.__threadPool.submit(self.__processIncomingData, trid, result)
-    else:
-      self.__threadPool.generateJobAndQueueIt(self.__processIncomingData,
-                                              args=(trid, result))
+    self.__threadPool.submit(self.__processIncomingData, trid, result)
     return S_OK()
 
   def __processIncomingData(self, trid, receivedResult):
@@ -421,11 +408,7 @@ class MessageBroker(object):
 
     # Queue the disconnect CB if it's there
     if cbDisconnect:
-      if useThreadPoolExecutor:
-        self.__threadPool.submit(cbDisconnect, trid)
-      else:
-        self.__threadPool.generateJobAndQueueIt(cbDisconnect,
-                                                args=(trid,))
+      self.__threadPool.submit(cbDisconnect, trid)
 
     return S_OK()
 
