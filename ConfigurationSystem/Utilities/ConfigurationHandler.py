@@ -33,46 +33,54 @@ class ConfigurationHandler(WebHandler):
 
   @asyncGen
   def web_conf(self):
-    """ Configuration endpoint, used to:
-          GET /conf/get?<options> -- get configuration information, with arguments
-            * options:
-              * fullCFG - to get dump of configuration
-              * option - option path to get option value
-              * options - section path to get list of options
-              * section - section path to get dict of all options/values there
-              * sections - section path to get list of sections there
-              * version - version of configuration that request information(optional)
+    """ REST endpoint for configuration system:
 
-          GET /conf/<helper method>?<arguments> -- get some information by using helpers methods
-            * helper method - helper method of configuration service
-            * arguments - arguments specifecly for every helper method
+        **GET** /conf/<key>?<options> -- get configuration information
 
-        :return: json with requested data
+          Options:
+            * *path* -- path in the configuration structure, by default it's "/". 
+            * *version* -- the configuration version of the requester, if *version* is newer
+                           than the one present on the server, an empty result will be returned 
+        
+          Response:
+            +-----------+---------------------------------------+------------------------+
+            | *key*     | Description                           | Type                   |
+            +-----------+---------------------------------------+------------------------+
+            | dump      | Current CFG()                         | encoded in json format |
+            +-----------+---------------------------------------+------------------------+
+            | option    | Option value                          | text                   |
+            +-----------+---------------------------------------+------------------------+
+            | options   | Options list in a section             | encoded in json format |
+            +-----------+---------------------------------------+------------------------+
+            | dict      | Options with values in a section      | encoded in json format |
+            +-----------+---------------------------------------+------------------------+
+            | sections  | Sections list in a section            | text                   |
+            +-----------+---------------------------------------+------------------------+
+
+        **GET** /conf/<helper method>?<arguments> -- get some information using configuration helpers methods
+          * *helper method* -- helper method of configuration service
+          * *arguments* -- arguments specifically for every helper method
     """
     self.log.notice('Request configuration information')
     optns = self.overpath.strip('/').split('/')
+    path = self.args.get('path', '/')
     if not optns or len(optns) > 1:
-      raise WErr(404, "Wrone way")
+      raise WErr(404, "You forgot to set attribute.")
 
     result = S_ERROR('%s request unsuported' % optns[0])
-    if optns[0] == 'get':
-      if 'version' in self.args and (self.args.get('version') or '0') >= gConfigurationData.getVersion():
-        self.finish()
-
-      result = {}
-      if 'fullCFG' in self.args:
-        remoteCFG = yield self.threadTask(gConfigurationData.getRemoteCFG)
-        result['Value'] = str(remoteCFG)
-      elif 'option' in self.args:
-        result = yield self.threadTask(gConfig.getOption, self.args['option'])
-      elif 'section' in self.args:
-        result = yield self.threadTask(gConfig.getOptionsDict, self.args['section'])
-      elif 'options' in self.args:
-        result = yield self.threadTask(gConfig.getOptions, self.args['options'])
-      elif 'sections' in self.args:
-        result = yield self.threadTask(gConfig.getSections, self.args['sections'])
-      else:
-        raise WErr(500, 'Invalid argument')
+    if 'version' in self.args and (self.args.get('version') or '0') >= gConfigurationData.getVersion():
+      self.finish()
+    if optns[0] == 'dump':
+      remoteCFG = yield self.threadTask(gConfigurationData.getRemoteCFG)
+      result['Value'] = str(remoteCFG)
+    elif optns[0] == 'option':
+      result = yield self.threadTask(gConfig.getOption, path)
+    elif optns[0] == 'dict':
+      result = yield self.threadTask(gConfig.getOptionsDict, path)
+    elif optns[0] == 'options':
+      result = yield self.threadTask(gConfig.getOptions, path)
+    elif optns[0] == 'sections':
+      result = yield self.threadTask(gConfig.getSections, path)
     elif optns[0] == 'getGroupsStatusByUsername':
       result = yield self.threadTask(gProxyManager.getGroupsStatusByUsername, **self.args)
     elif any([optns[0] == m and re.match('^[a-z][A-z]+', m) for m in dir(Registry)]) and self.isRegisteredUser():

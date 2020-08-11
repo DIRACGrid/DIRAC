@@ -354,7 +354,11 @@ class AuthManagerHandler(RequestHandler):
         :param str providerName: provider name
         :param str session: session identificator
 
-        :return: S_OK(dict)/S_ERROR()
+        :return: S_OK(dict)/S_ERROR() -- dictionary contain next keys:
+                 Status -- session status
+                 UserName -- user name, returned if status is 'ready'
+                 Session -- session id, returned if status is 'needToAuth'
+                 URL -- link to start authetication flow, returned if status is 'needToAuth'
     """
     gLogger.info('Get authorization for %s.' % providerName, 'Session: %s' % session if session else '')
 

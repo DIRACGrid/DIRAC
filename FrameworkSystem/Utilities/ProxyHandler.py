@@ -36,23 +36,27 @@ class ProxyHandler(WebHandler):
 
   @asyncGen
   def web_proxy(self):
-    """ Proxy management endpoint, use:
-          GET /proxy?<options> -- retrieve personal proxy
-            * options:
-              * voms - to get VOMSproxy(optional)
-              * lifetime - requested proxy live time(optional)
+    """ REST endpoints to user proxy management
 
-          GET /proxy/<user>/<group>?<options> -- retrieve proxy
-            * user - user name
-            * group - group name
-            * options:
-              * voms - to get VOMSproxy(optional)
-              * lifetime - requested proxy live time(optional)
+        **GET** /proxy?<options> -- retrieve personal proxy
+        
+          Options:
+            * *voms* -- to get user proxy with VOMS extension(optional)
+            * *lifetime* -- requested proxy live time(optional)
+          
+          Response is a proxy certificate as text
 
-          GET /proxy/metadata?<options> -- retrieve proxy metadata..
-            * options:
+        **GET** /proxy/<user>/<group>?<options> -- retrieve proxy  
+          * *user* -- user name
+          * *group* -- group name
+        
+          Options:
+            * *voms* -- to get user proxy with VOMS extension(optional)
+            * *lifetime* -- requested proxy live time(optional)
+          
+          Response is a proxy certificate as text
 
-        :return: json
+        **GET** /proxy/metadata?<options> -- retrieve proxy metadata..
     """
     voms = self.args.get('voms')
     proxyLifeTime = 3600 * 12

@@ -410,15 +410,15 @@ class ProxyInit(object):
       confUrl = gConfig.getValue("/LocalInstallation/ConfigurationServerAPI")
       if not confUrl:
         sys.exit('Cannot get http url of configuration server.')
-      result = restRequest(confUrl, '/get', option='/Systems/Framework/Production/URLs/AuthAPI')
+      result = restRequest(confUrl, '/option', path='/Systems/Framework/Production/URLs/AuthAPI')
       if not result['OK']:
         sys.exit('Cannot get URL of authentication server:\n %s' % result['Message'])
       authAPI = result['Value']
-      result = restRequest(confUrl, '/get', option='/Systems/Framework/Production/URLs/ProxyAPI')
+      result = restRequest(confUrl, '/option', path='/Systems/Framework/Production/URLs/ProxyAPI')
       if not result['OK']:
         sys.exit('Cannot get URL of proxy server:\n %s' % result['Message'])
       proxyAPI = result['Value']
-      result = restRequest(confUrl, '/get', option='/DIRAC/Setup')
+      result = restRequest(confUrl, '/option', path='/DIRAC/Setup')
       if not result['OK']:
         sys.exit('Cannot get DIRAC setup name:\n %s' % result['Message'])
       setup = result['Value']
