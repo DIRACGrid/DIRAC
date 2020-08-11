@@ -210,7 +210,7 @@ class MultiProcessorSiteDirector(SiteDirector):
         queueCPUTime = self.maxQueueLength
 
       # Prepare the queue description to look for eligible jobs
-      ceDict = ce.getParameterDict()
+      ceDict = ce.ceParameters
       ceDict['GridCE'] = ceName
       # if not siteMask and 'Site' in ceDict:
       #  self.log.info( 'Site not in the mask %s' % siteName )

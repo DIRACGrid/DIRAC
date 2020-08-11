@@ -430,5 +430,3 @@ class CREAMComputingElement(ComputingElement):
       return S_ERROR('output URL not found for %s' % pilotRef)
     else:
       return S_ERROR('Failed to retrieve long status for %s' % pilotRef)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

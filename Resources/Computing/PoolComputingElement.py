@@ -19,12 +19,13 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
+
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
+
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
 from DIRAC.Resources.Computing.SingularityComputingElement import SingularityComputingElement
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
-MandatoryParameters = []
 # Number of unix users to run job payloads with sudo
 MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
@@ -60,8 +61,6 @@ def executeJob(executableFile, proxy, taskID, **kwargs):
 
 class PoolComputingElement(ComputingElement):
 
-  mandatoryParameters = MandatoryParameters
-
   #############################################################################
   def __init__(self, ceUniqueID):
     """ Standard constructor.
@@ -75,6 +74,9 @@ class PoolComputingElement(ComputingElement):
     self.taskID = 0
     self.processorsPerTask = {}
     self.userNumberPerTask = {}
+
+    # This CE will effectively submit to another "Inner"CE
+    # (by default to the InProcess CE)
     self.useSudo = False
     self.useSingularity = False
 
@@ -132,13 +134,6 @@ class PoolComputingElement(ComputingElement):
     res = cd.dumpLocalCFGToFile('pilot.cfg')
     if not res['OK']:
       self.log.error("Could not dump cfg to pilot.cfg", res['Message'])
-
-    ret = getProxyInfo()
-    if not ret['OK']:
-      pilotProxy = None
-    else:
-      pilotProxy = ret['Value']['path']
-    self.log.notice('Pilot Proxy:', pilotProxy)
 
     kwargs = {'UseSudo': False}
     if self.useSudo:
@@ -278,12 +273,3 @@ class PoolComputingElement(ComputingElement):
     ceDictList.append(dict(ceDict))
 
     return S_OK(ceDictList)
-
-  #############################################################################
-  def monitorProxy(self, pilotProxy, payloadProxy):
-    """ Monitor the payload proxy and renew as necessary.
-
-    :param str pilotProxy: location of the pilotProxy
-    :param str payloadProxy: location of the payloadProxy
-    """
-    return self._monitorProxy(pilotProxy, payloadProxy)

@@ -86,6 +86,7 @@ class ComputingElement(object):
     self.proxyCheckPeriod = gConfig.getValue('/Registry/ProxyCheckingPeriod', 3600)  # secs
 
     self.initializeParameters()
+    self.log.debug("CE parameters", self.ceParameters)
 
   def setProxy(self, proxy, valid=0):
     """ Set proxy for this instance
@@ -242,11 +243,6 @@ class ComputingElement(object):
 
     return self._reset()
 
-  def getParameterDict(self):
-    """  Get the CE complete parameter dictionary
-    """
-    return self.ceParameters
-
   #############################################################################
   def setCPUTimeLeft(self, cpuTimeLeft=None):
     """Update the CPUTime parameter of the CE classAd, necessary for running in filling mode
@@ -256,12 +252,10 @@ class ComputingElement(object):
       return S_OK()
     try:
       intCPUTimeLeft = int(cpuTimeLeft)
+      self.ceParameters['CPUTime'] = intCPUTimeLeft
+      return S_OK(intCPUTimeLeft)
     except ValueError:
       return S_ERROR('Wrong type for setCPUTimeLeft argument')
-
-    self.ceParameters['CPUTime'] = intCPUTimeLeft
-
-    return S_OK(intCPUTimeLeft)
 
   #############################################################################
   def available(self, jobIDList=None):
@@ -356,7 +350,7 @@ class ComputingElement(object):
     return S_OK(proxyLocation)
 
   #############################################################################
-  def _monitorProxy(self, pilotProxy, payloadProxy):
+  def _monitorProxy(self, pilotProxy=None, payloadProxy=None):
     """Base class for the monitor and update of the payload proxy, to be used in
       derived classes for the basic renewal of the proxy, if further actions are
       necessary they should be implemented there
@@ -366,6 +360,18 @@ class ComputingElement(object):
 
       :returns: S_OK(filename)/S_ERROR
     """
+    if not payloadProxy:
+      return S_ERROR("No payload proxy")
+
+    if not pilotProxy:
+      # This will get the pilot proxy
+      ret = getProxyInfo()
+      if not ret['OK']:
+        pilotProxy = None
+      else:
+        pilotProxy = ret['Value']['path']
+        self.log.notice('Pilot Proxy:', pilotProxy)
+
     retVal = getProxyInfo(payloadProxy)
     if not retVal['OK']:
       self.log.error('Could not get payload proxy info', retVal)

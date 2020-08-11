@@ -767,7 +767,7 @@ class SiteDirector(AgentModule):
     """
 
     ce = self.queueDict[queue]['CE']
-    ceDict = ce.getParameterDict()
+    ceDict = ce.ceParameters
     ceDict['GridCE'] = self.queueDict[queue]['CEName']
 
     if self.queueDict[queue]['Site'] not in self.siteMaskList:
