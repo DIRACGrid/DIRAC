@@ -59,8 +59,8 @@ def execute(arguments):
 
   global gJobReport
 
-  jobID = arguments['Job']['JobID']
-  os.environ['JOBID'] = jobID
+  jobID = arguments['Job'].get('JobID', 0)
+  os.environ['JOBID'] = str(jobID)
   jobID = int(jobID)
 
   if 'WorkingDirectory' in arguments:
