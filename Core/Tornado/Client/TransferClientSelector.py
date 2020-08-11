@@ -14,17 +14,20 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
-from DIRAC.Core.DISET.TransferClient import TransferClient
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
+__RCSID__ = "$Id$"
+
 from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
+from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
+
 
 sLog = gLogger.getSubLogger(__name__)
 
 
 def TransferClientSelector(*args, **kwargs):  # We use same interface as TransferClient
   """
-    Select the correct TransferClient, instanciate it, and return it
+    Select the correct TransferClient, instantiate it, and return it
 
     :param args: URL can be just "system/service" or "dips://domain:port/system/service"
   """

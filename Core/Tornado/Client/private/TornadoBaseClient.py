@@ -1,6 +1,6 @@
 """
-    TornadoBaseClient contains all the low-levels functionnalities and initilization methods
-    It must be instanciated from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`
+    TornadoBaseClient contains all the low-levels functionalities and initilization methods
+    It must be instantiated from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`
 
     Requests library manage itself retry when connection failed, so the __nbOfRetry attribute is removed from DIRAC
     (For each URL requests manage retries himself, if it still fail, we try next url)
@@ -28,24 +28,28 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
+
 from io import open
 import six
 
 import requests
 import DIRAC
 
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.Core.Utilities import List, Network
 from DIRAC import S_OK, S_ERROR, gLogger
+
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import findDefaultGroupForDN
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
+
+from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
+from DIRAC.Core.Security import Locations
+from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
 
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 
-# TODO: refactor all the messy `discover` methods
+# TODO CHRIS: refactor all the messy `discover` methods
 # I do not do it now because I want first to decide
 # whether we go with code copy of fatorization
 

@@ -7,11 +7,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
+
 import time
 import datetime
 import os
-
-from socket import error as socketerror
 
 import M2Crypto
 
@@ -25,21 +25,30 @@ from tornado.ioloop import IOLoop
 import tornado.ioloop
 
 import DIRAC
-from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
-from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC import gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Security import Locations
+from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.Core.Utilities import MemStat
+from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+
+sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoServer(object):
   """
     Tornado webserver
 
-    Initialize and run a HTTPS Server for DIRAC services.
-    By default it load all services from configuration, but you can also give an explicit list.
-    If you gave explicit list of services, only these ones are loaded
+    Initialize and run an HTTPS Server for DIRAC services.
+    By default it load all https services defined in the CS,
+    but you can also give an explicit list.
+
+    The listening port is either:
+
+    * Given as parameter
+    * Loaded from the CS ``/Systems/Tornado/<instance>/Port``
+    * Default to 8443
+
 
     Example 1: Easy way to start tornado::
 
@@ -52,74 +61,73 @@ class TornadoServer(object):
     Example 2:We want to debug service1 and service2 only, and use another port for that ::
 
       services = ['component/service1', 'component/service2']
-      serverToLaunch = TornadoServer(services=services, port=1234, debugSSL=True)
+      serverToLaunch = TornadoServer(services=services, port=1234)
       serverToLaunch.startTornado()
 
-
-    **WARNING:** debug=True enable SSL debug and Tornado autoreload,
-                 for extra logging use -ddd in your command line
   """
 
-  def __init__(self, services=None, debugSSL=False, port=None):
+  def __init__(self, services=None, port=None):
     """
-    Basic instanciation, set some variables
 
-    :param list services: List of services you want to start, start all by default
-    :param str debug: Activate debug mode of Tornado (autoreload server + more errors display) and M2Crypto
-    :param int port: Used to change port, default is 443
+    :param list services: (default None) List of service handlers to load. If ``None``, loads all
+    :param int port: Port to listen to. If None, the port is resolved following the logic
+       described in the class documentation
     """
 
     if port is None:
-      port = gConfig.getValue("/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance('Tornado'), 443)
+      port = gConfig.getValue("/Systems/Tornado/%s/Port" % PathFinder.getSystemInstance('Tornado'), 8443)
 
     if services and not isinstance(services, list):
       services = [services]
 
-    # URLs for services: 1URL/Service
+    # URLs for services.
+    # Contains Tornado :py:class:`tornado.web.url` object
     self.urls = []
     # Other infos
-    self.debugSSL = debugSSL  # Used by tornado and M2Crypto
     self.port = port
     self.handlerManager = HandlerManager()
+
+    # Monitoring attributes
+
     self._monitor = MonitoringClient()
+    # temp value for computation, used by the monitoring
+    self.__report = None
+    # Last update time stamp
+    self.__monitorLastStatsUpdate = None
     self.__monitoringLoopDelay = 60  # In secs
 
     # If services are defined, load only these ones (useful for debug purpose or specific services)
     if services:
       retVal = self.handlerManager.loadHandlersByServiceName(services)
       if not retVal['OK']:
-        gLogger.error(retVal['Message'])
+        sLog.error(retVal['Message'])
         raise ImportError("Some services can't be loaded, check the service names and configuration.")
 
     # if no service list is given, load services from configuration
     handlerDict = self.handlerManager.getHandlersDict()
     for item in handlerDict.items():
       # handlerDict[key].initializeService(key)
-      self.urls.append(url(item[0], item[1], dict(debug=self.debugSSL)))
+      self.urls.append(url(item[0], item[1]))
     # If there is no services loaded:
     if not self.urls:
       raise ImportError("There is no services loaded, please check your configuration")
-    self.__report = None
-    self.__monitorLastStatsUpdate = None
 
-  def startTornado(self, multiprocess=False):
+  def startTornado(self):
     """
-      Start the tornado server when ready.
-      The script is blocked in the Tornado IOLoop.
-      Multiprocess option is available but may be used with caution
+      Starts the tornado server when ready.
+      This method never returns.
     """
 
-    gLogger.debug("Starting Tornado")
+    sLog.debug("Starting Tornado")
     self._initMonitoring()
 
-    if self.debugSSL:
-      gLogger.warn("Server is running in debug mode")
-
-    router = Application(self.urls, debug=self.debugSSL, compress_response=True)
+    router = Application(self.urls,
+                         debug=False,
+                         compress_response=True)
 
     certs = Locations.getHostCertificateAndKeyLocation()
     if certs is False:
-      gLogger.fatal("Host certificates not found ! Can't start the Server")
+      sLog.fatal("Host certificates not found ! Can't start the Server")
       raise ImportError("Unable to load certificates")
     ca = Locations.getCAsLocation()
     ssl_options = {
@@ -127,7 +135,7 @@ class TornadoServer(object):
         'keyfile': certs[1],
         'cert_reqs': M2Crypto.SSL.verify_peer,
         'ca_certs': ca,
-        'sslDebug': self.debugSSL
+        'sslDebug': False,  # Set to true if you want to see the TLS debug messages
     }
 
     self.__monitorLastStatsUpdate = time.time()
@@ -139,24 +147,19 @@ class TornadoServer(object):
     # Start server
     server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)
     try:
-      if multiprocess:
-        server.bind(self.port)
-      else:
-        server.listen(self.port)
+      server.listen(self.port)
     except Exception as e:  # pylint: disable=broad-except
-      gLogger.exception("Exception starting HTTPServer", e)
-      return S_ERROR()
-    gLogger.always("Listening on port %s" % self.port)
+      sLog.exception("Exception starting HTTPServer", e)
+      raise
+    sLog.always("Listening on port %s" % self.port)
     for service in self.urls:
-      gLogger.debug("Available service: %s" % service)
+      sLog.debug("Available service: %s" % service)
 
-    if multiprocess:
-      server.start(0)
     IOLoop.current().start()
 
   def _initMonitoring(self):
     """
-      Init extra bits of monitoring
+      Initialize the monitoring
     """
 
     self._monitor.setComponentType(MonitoringClient.COMPONENT_TORNADO)
@@ -169,12 +172,10 @@ class TornadoServer(object):
     self._monitor.setComponentExtraParam('DIRACVersion', DIRAC.version)
     self._monitor.setComponentExtraParam('platform', DIRAC.getPlatform())
     self._monitor.setComponentExtraParam('startTime', datetime.datetime.utcnow())
-    return S_OK()
 
   def __reportToMonitoring(self):
     """
-      *Called every minute*
-      Every minutes we determine CPU and Memory usage
+      Periodically report to the monitoring of the CPU and MEM
     """
 
     # Calculate CPU usage by comparing realtime and cpu time since last report
@@ -185,7 +186,14 @@ class TornadoServer(object):
 
   def __startReportToMonitoringLoop(self):
     """
-      Get time to prepare CPU usage monitoring and send memory usage to monitor
+      Snapshot of resources to be taken at the beginning
+      of a monitoring cycle.
+      Also sends memory snapshot to the monitoring.
+
+      This is basically copy/paste of Service.py
+
+      :returns: tuple (<time.time(), cpuTime )
+
     """
     now = time.time()  # Used to calulate a delta
     stats = os.times()
@@ -203,7 +211,12 @@ class TornadoServer(object):
 
   def __endReportToMonitoringLoop(self, initialWallTime, initialCPUTime):
     """
-      Determine CPU usage by comparing walltime and cputime and send it to monitor
+      Snapshot of resources to be taken at the end
+      of a monitoring cycle.
+
+      This is basically copy/paste of Service.py
+
+      Determines CPU usage by comparing walltime and cputime and send it to monitor
     """
     wallTime = time.time() - initialWallTime
     stats = os.times()

@@ -8,7 +8,11 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import threading
-import thread
+try:
+  import thread
+except ImportError:  # python 3 compatibility
+  import _thread as thread
+
 import time
 import random
 import os

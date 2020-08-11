@@ -11,11 +11,12 @@ __RCSID__ = "$Id$"
 import ast
 import os
 
+from io import open
+
 from DIRAC.Core.Tornado.Client.RPCClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
-
 
 
 class Client(object):
@@ -168,7 +169,7 @@ def createClient(serviceName):
       fullHandlerClassPath = '%s.%s' % (location, handlerClassPath)
       if not os.path.exists(fullPath):
         continue
-      with open(fullPath) as moduleFile:
+      with open(fullPath, 'rt') as moduleFile:
         # parse the handler module into abstract syntax tree
         handlerAst = ast.parse(moduleFile.read(), fullPath)
 

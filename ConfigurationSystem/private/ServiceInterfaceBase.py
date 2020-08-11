@@ -1,5 +1,9 @@
 """Service interface is the service which provide config for client and synchronize Master/Slave servers"""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import os

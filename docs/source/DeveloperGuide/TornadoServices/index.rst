@@ -10,10 +10,13 @@ HTTPS Services with Tornado
 ************
 Presentation
 ************
+
 This page summarizes the changes between DISET and HTTPS. You can all also see these presentations:
 
 - `Presentation of HTTPS in DIRAC  <https://docs.google.com/presentation/d/1t0hVpceXgV8W8R0ef5raMK3sUgXWnKdCmJUrG_5LsT4/edit?usp=sharing>`_.
 - `Presentation of HTTPS migration <https://docs.google.com/presentation/d/1NZ8iKRv3c0OL1_RTXL21hP6YsAUXcKSCqDL2uhkf8Oc/edit?usp=sharing>`_.
+- `Summary presentation (latest) <https://indico.cern.ch/event/945474/>`.
+
 
 
 *******
@@ -34,6 +37,8 @@ Service
    }
 
 Service returns to Client S_OK/S_ERROR encoded in JSON
+
+Each service exposes only one route of the form ``System/Component`` with a ``POST`` handler. The semantic of the ``POST`` call is described bellow.
 
 *********************************************************
 Important changes between DISET server and Tornado Server
@@ -69,12 +74,12 @@ Nothing better than an example::
       ## Returned value may be an S_OK/S_ERROR
       ## You don't need to serialize in JSON, Tornado will do it
 
-Writing a service for tornado and diset is similar. You have to define your method starting with ``export_``, and your initialization method is a class method called ``initializeHandler``.
+Writing a service for tornado and DISET is similar. You have to define your method starting with ``export_``, and your initialization method is a class method called ``initializeHandler``.
 Main changes in tornado are:
 
 - Service are initialized at first request
-- You **should not** write a method called ``initialize`` because Tornado already use that name, so the ``initialize`` from diset handlers became ``initializeRequest``
-- ``infosDict``, arguments of initializedHandler is not really the same as for diset: all transport related matters are removed.
+- You **should not** write a method called ``initialize`` because Tornado already use that name, so the ``initialize`` from DISET handlers became ``initializeRequest``
+- ``infosDict``, arguments of initializedHandler is not really the same as for DISET: all transport related matters are removed.
 -  There is no parameter type check any more: attributes like ``types_yourMethod`` are ignored.
 - Auth attributes are still there (``auth_yourMethod``).
 
@@ -194,7 +199,7 @@ Client
 
 This diagram present what is behind TornadoClient, but you should use :py:class:`DIRAC.Core.Base.Client` ! The new client integrate a selection system which select for you between HTTPS and DISET client.
 
-In your client module when you inherit from :py:class:`DIRAC.Core.Base.Client` you can define `httpsClient` with another client, it can be useful when you can't serialize some data in JSON. Here the step to create and use a JSON patch:
+In your client module when you inherit from :py:class:`DIRAC.Core.Base.Client` you can define ``httpsClient`` with another client, it can be useful when you can't serialize some data in JSON. Here the step to create and use a JSON patch:
 
 - Create a class which inherit from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`
 - For every method who need a JSON patch create a method with the same name as the service
@@ -226,14 +231,53 @@ You can also see this example::
 
 Behind :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient` the `requests <http://docs.python-requests.org/>`_ library sends a HTTP POST request with:
 
-- procedure: str with procedure name
+- method : str with method name
 - args: your arguments encoded in JSON
 - clientVO: The VO of client
 - extraCredentials: (if apply) Extra informations to authenticate client
 
 Service is determined by server thanks to URL rooting, not with port like in DISET.
 
-By default server listen on port 443, default port for HTTPS.
+By default server listen on port 8443.
+
+Contacting the service using ``DIRAC``::
+
+  In [7]: from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+    ...: FileCatalogClient().whoami()
+    ...: 
+  Out[7]: 
+  {u'OK': True,
+  u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+    u'group': u'dirac_user',
+    u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+    u'isLimitedProxy': False,
+    u'isProxy': True,
+    u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+    u'properties': [u'NormalUser'],
+    u'secondsLeft': 86141,
+    u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=2409820262',
+    u'username': u'adminusername',
+    u'validDN': False,
+    u'validGroup': False},
+  'rpcStub': (('DataManagement/FileCatalog',
+    {'skipCACheck': True, 'timeout': 600}),
+    'whoami',
+    [])}
+
+
+
+
+Contacting the service using ``requests``::
+
+  In [20]: url = 'https://server:8443/DataManagement/TornadoFileCatalog'
+      ...: cert = '/tmp/x509up_u1000'
+      ...: kwargs = {'method':'whoami'}
+      ...: caPath = '/home/dirac/ClientInstallDIR/etc/grid-security/certificates/'
+      ...: with requests.post(url, data=kwargs, cert=cert, verify=caPath) as r:
+      ...:     print r.json()
+      ...:     
+  {u'OK': True, u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', u'username': u'adminusername', u'secondsLeft': 85846, u'group': u'dirac_user', u'isProxy': True, u'validGroup': False, u'validDN': False, u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', u'isLimitedProxy': False, u'properties': [u'NormalUser'], u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=2409820262'}}
+
 
 
 *****************************
@@ -255,7 +299,7 @@ Internal structure
 - :py:class:`~DIRAC.Core.Tornado.Client.private.TornadoBaseClient` is the new :py:class:`~DIRAC.Core.DISET.private.BaseClient`. Most of code is copied from :py:class:`~DIRAC.Core.DISET.private.BaseClient` but some method have been rewrited to use `Requests <http://docs.python-requests.org/>`_ instead of Transports. Code duplication is done to fully separate DISET and HTTPS but later, some parts can be merged by using a new common class between DISET and HTTPS (these parts are explicitly given in the docstrings).
 - :py:class:`~DIRAC.Core.DISET.private.Transports.BaseTransport`, :py:class:`~DIRAC.Core.DISET.private.Transports.PlainTransport` and :py:class:`~DIRAC.Core.DISET.private.Transports.SSLTransport` are replaced by `Requests <http://docs.python-requests.org/>`_
 - keepAliveLapse is removed from rpcStub returned by Client because `Requests <http://docs.python-requests.org/>`_  manage it himself.
-- Due to JSON limitation you can write some specifics clients who inherit from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`, there is a simple example with :py:class:`~DIRAC.Core.Tornado.Client.SpecificClient.ConfigurationClient` who transfer data in base64 to overcome JSON limitations
+- Due to JSON limitation you can write some specifics clients who inherit from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`, there is a simple example with :py:class:`~DIRAC.ConfigurationSystem.Client.ConfigurationClient.CSJSONClient` who transfer data in base64 to overcome JSON limitations
 
 
 Connections and certificates
@@ -284,7 +328,7 @@ Two special python packages are needed:
 Install a service
 *****************
 
-`dirac-install-tornado-service` is your friend. This will install a runit component running `tornado-start-all`.
+``dirac-install-tornado-service`` is your friend. This will install a runit component running ``tornado-start-all``.
 Nothing is ready yet to install specific tornado service, like the master CS.
 
 Start the server

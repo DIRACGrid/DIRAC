@@ -1,6 +1,6 @@
 """
-  RPCClientSelector can replace RPCClient (with import RPCClientSelector as RPCClient)
-  to migrate from DISET to Tornado. This method chooses and returns the client which should be
+  RPCClientSelector can replace RPCClient (with ``import RPCClientSelector as RPCClient``)
+  to migrate from DISET to Tornado. This function choses and returns the client which should be
   used for a service. If the url of the service uses HTTPS, TornadoClient is returned, else it returns RPCClient
 
   Example::
@@ -14,19 +14,32 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
+__RCSID__ = "$Id$"
+
 from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
+
 
 sLog = gLogger.getSubLogger(__name__)
 
 
+# TODO CHRIS: factorize RPCClientSelector and TransferClientSelector (using functool partial ?)
+
 def RPCClientSelector(*args, **kwargs):  # We use same interface as RPCClient
   """
-    Select the correct RPCClient, instanciate it, and return it
+    Select the correct RPCClient, instantiate it, and return it.
+    In principle, the only place for this class to be used is in
+    :py:class:`DIRAC.Core.Base.Client.Client`, since it is the only
+    one supposed to instantiate an :py:class:`DIRAC.Core.Base.DISET.RPCClient.RPCClient`
 
     :param args: URL can be just "system/service" or "dips://domain:port/system/service"
+    :param kwargs: This can contain:
+
+      * Whatever :py:class:`DIRAC.Core.Base.DISET.RPCClient.RPCClient` takes.
+      * httpsClient: specific class inheriting from TornadoClient
+
   """
 
   # We detect if we need to use a specific class for the HTTPS client

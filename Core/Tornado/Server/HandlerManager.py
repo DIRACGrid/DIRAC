@@ -1,29 +1,31 @@
 """
-
-  HandlerManager for tornado
-  This class search in the CS all services which use HTTPS and load them.
-
-  Must be used with the TornadoServer
-
+  This module contains the necessary tools to discover and load
+  the handlers for serving HTTPS
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
+
 from tornado.web import url as TornadoURL, RequestHandler
 
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
+from DIRAC import gConfig, gLogger, S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
 def urlFinder(module):
   """
-    Try to guess the url with module name
+    Tries to guess the url from module name.
+    The URL would be of the form ``/System/Component`` (e.g. ``DataManagement/FileCatalog``)
+    We search something which looks like ``<...>.<component>System.<...>.<service>Handler``
 
-    :param module: path written like import (e.g. "DIRAC.something.something")
+    :param module: full module name (e.g. "DIRAC.something.something")
+
+    :returns: the deduced URL or None
   """
   sections = module.split('.')
   for section in sections:
@@ -36,9 +38,16 @@ def urlFinder(module):
 
 class HandlerManager(object):
   """
-    This class is designed to work with Tornado
+    This utility class allows to load the handlers, generate the appropriate route,
+    and discover the handlers based on the CS.
+    In order for a service to be considered as using HTTPS, it must have
+    ``protocol = https`` as an option.
 
-    It search and loads the handlers of services
+    Each of the Handler will have one associated route to it:
+
+    * Directly specified as ``LOCATION`` in the handler module
+    * automatically deduced from the module name, of the form
+      ``System/Component`` (e.g. ``DataManagement/FileCatalog``)
   """
 
   def __init__(self, autoDiscovery=True):

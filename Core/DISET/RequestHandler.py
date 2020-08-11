@@ -7,6 +7,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
+import six
 import time
 import psutil
 
@@ -344,7 +345,7 @@ class RequestHandler(object):
 #
 ####
 
-  __connectionCallbackTypes = {'new': [basestring, dict],
+  __connectionCallbackTypes = {'new': [six.string_types, dict],
                                'connected': [],
                                'drop': []}
 
@@ -511,7 +512,7 @@ class RequestHandler(object):
       del credDict['x509Chain']
     return S_OK(credDict)
 
-  types_echo = [basestring]
+  types_echo = [six.string_types]
 
   @staticmethod
   def export_echo(data):

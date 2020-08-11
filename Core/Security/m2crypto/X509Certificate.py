@@ -18,6 +18,7 @@ import time
 
 import M2Crypto
 
+from io import open
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -171,7 +172,7 @@ class X509Certificate(object):
 
     """
     try:
-      with open(certLocation, 'r') as fd:
+      with open(certLocation, 'rb') as fd:
         pemData = fd.read()
         return self.loadFromString(pemData)
     except IOError:

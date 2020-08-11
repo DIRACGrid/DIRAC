@@ -6,14 +6,20 @@ In client side you must use a specific client
 
 """
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from base64 import b64encode, b64decode
 
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.private.ServiceInterfaceTornado import ServiceInterfaceTornado as ServiceInterface
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
+
+sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoConfigurationHandler(TornadoService):
@@ -86,7 +92,7 @@ class TornadoConfigurationHandler(TornadoService):
           # dependency on the git client preinstalled on all the servers running CS slaves
           from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
         except ImportError as exc:
-          self.log.exception("Failed to import PilotCStoJSONSynchronizer", repr(exc))
+          sLog.exception("Failed to import PilotCStoJSONSynchronizer", repr(exc))
           return S_ERROR(DErrno.EIMPERR, 'Failed to import PilotCStoJSONSynchronizer')
         self.PilotSynchronizer = PilotCStoJSONSynchronizer()
       return self.PilotSynchronizer.sync()

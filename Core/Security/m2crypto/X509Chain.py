@@ -23,6 +23,8 @@ import re
 
 import M2Crypto
 
+from io import open
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf, deprecated
@@ -216,7 +218,7 @@ class X509Chain(object):
       :returns: S_OK/S_ERROR
     """
     try:
-      with open(chainLocation) as fd:
+      with open(chainLocation, 'rb') as fd:
         pemData = fd.read()
     except IOError as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -274,7 +276,7 @@ class X509Chain(object):
         :returns: S_OK / S_ERROR
     """
     try:
-      with open(chainLocation) as fd:
+      with open(chainLocation, 'rb') as fd:
         pemData = fd.read()
     except BaseException as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -314,7 +316,7 @@ class X509Chain(object):
       :returns: S_OK  / S_ERROR
     """
     try:
-      with open(chainLocation) as fd:
+      with open(chainLocation, 'rb') as fd:
         pemData = fd.read()
     except BaseException as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -486,7 +488,7 @@ class X509Chain(object):
     if not retVal['OK']:
       return retVal
     try:
-      with open(filePath, 'w') as fd:
+      with open(filePath, 'wb') as fd:
         fd.write(retVal['Value'])
     except BaseException as e:
       return S_ERROR(DErrno.EWF, "%s :%s" % (filePath, repr(e).replace(',)', ')')))

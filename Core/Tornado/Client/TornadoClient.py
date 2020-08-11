@@ -1,17 +1,17 @@
 """
   TornadoClient is equivalent of the RPCClient but in HTTPS.
-  Usage of TornadoClient is the same as RPCClient, you can instanciate TornadoClient with
-  complete url (https://domain/component/service) or just "component/service". Like RPCClient
+  Usage of TornadoClient is the same as RPCClient, you can instantiate TornadoClient with
+  complete url (https://host:port/System/Component) or just "System/Component". Like RPCClient
   you can use all method defined in your service, your call will be automatically transformed
   in RPC.
 
-  It also exposes the same interface for receiving file than the TransferClient.
+  It also exposes the same interface for receiving file as the TransferClient.
 
   Main changes:
 
   - KeepAliveLapse is removed, requests library manages it itself.
   - nbOfRetry (defined as private attribute) is removed, requests library manage it itself.
-  - Underneath it use HTTP POST protocol and JSON
+  - Underneath it uses HTTP POST protocol and JSON. See  :ref:`httpsTornado` for details
 
   Example::
 
@@ -25,10 +25,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
+
 # pylint: disable=broad-except
 
-from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Tornado.Client.private.TornadoBaseClient import TornadoBaseClient
+from DIRAC.Core.Utilities.JEncode import encode
 
 
 class TornadoClient(TornadoBaseClient):

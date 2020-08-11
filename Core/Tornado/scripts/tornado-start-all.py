@@ -10,22 +10,21 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
+
 # Must be define BEFORE any dirac import
 import os
 import sys
 os.environ['DIRAC_USE_TORNADO_IOLOOP'] = "True"
 
 
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
-from DIRAC.Core.Base import Script
-
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC import gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
-
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
 # We check if there is no configuration server started as master
