@@ -82,11 +82,11 @@ pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/RequestManagementSystem/Test
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_MonitoringReporter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
-
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"
 
 python "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py" ProductionSandboxSE |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Resources/Computing/Test_SingularityCE.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 python "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 # Can only run if there's a Stomp MQ local...
