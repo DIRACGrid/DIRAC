@@ -279,19 +279,14 @@ class SingularityComputingElement(ComputingElement):
 
     # Now we have to set-up pilot proxy renewal for the container
     # This is fairly easy as it remains visible on the host filesystem
-    ret = getProxyInfo()
-    if not ret['OK']:
-      pilotProxy = None
-    else:
-      pilotProxy = ret['Value']['path']
     result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self._monitorProxy,
-                                              taskArgs=(pilotProxy, payloadProxyLoc),
+                                              taskArgs=(None, payloadProxyLoc),
                                               executions=0, elapsedTime=0)
-    renewTask = None
     if result['OK']:
       renewTask = result['Value']
     else:
       self.log.warn('Failed to start proxy renewal task')
+      renewTask = None
 
     # Very simple accounting
     self.__submittedJobs += 1
@@ -323,6 +318,7 @@ class SingularityComputingElement(ComputingElement):
     self.__runningJobs -= 1
 
     if not result["OK"]:
+      self.log.error('Fail to run Singularity', result['Message'])
       if renewTask:
         gThreadScheduler.removeTask(renewTask)
       self.__deleteWorkArea(baseDir)
@@ -343,4 +339,6 @@ class SingularityComputingElement(ComputingElement):
     result['SubmittedJobs'] = self.__submittedJobs
     result['RunningJobs'] = self.__runningJobs
     result['WaitingJobs'] = 0
+    # processors
+    result['AvailableProcessors'] = self.processors
     return result

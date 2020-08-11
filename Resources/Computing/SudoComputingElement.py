@@ -9,6 +9,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 __RCSID__ = "$Id$"
@@ -21,60 +22,75 @@ class SudoComputingElement(ComputingElement):
     """ Standard constructor.
     """
     super(SudoComputingElement, self).__init__(ceUniqueID)
+
+    self.ceType = 'Sudo'
     self.submittedJobs = 0
+    self.runningJobs = 0
+
+    self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
+    self.ceParameters['MaxTotalJobs'] = 1
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, **kwargs):
+  def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Method to submit job, overridden from super-class.
+
+    :param str executableFile: file to execute via systemCall.
+                               Normally the JobWrapperTemplate when invoked by the JobAgent.
+    :param str proxy: the proxy used for running the job (the payload). It will be dumped to a file.
     """
-    self.log.verbose('Setting up proxy for payload')
-    result = self.writeProxyToFile(proxy)
-    if not result['OK']:
-      return result
+    payloadProxy = ''
+    if proxy:
+      self.log.verbose('Setting up proxy for payload')
+      result = self.writeProxyToFile(proxy)
+      if not result['OK']:
+        return result
 
-    payloadProxy = result['Value']
-    if 'X509_USER_PROXY' not in os.environ:
-      self.log.error('X509_USER_PROXY variable for pilot proxy not found in local environment')
-      return S_ERROR(DErrno.EPROXYFIND, "X509_USER_PROXY not found")
+      payloadProxy = result['Value']  # payload proxy file location
 
-    pilotProxy = os.environ['X509_USER_PROXY']
-    self.log.info('Pilot proxy X509_USER_PROXY=%s' % pilotProxy)
+      if 'X509_USER_PROXY' not in os.environ:
+        self.log.error('X509_USER_PROXY variable for pilot proxy not found in local environment')
+        return S_ERROR(DErrno.EPROXYFIND, "X509_USER_PROXY not found")
 
-    # See if a fixed value has been given
-    payloadUsername = self.ceParameters.get('PayloadUser')
+      pilotProxy = os.environ['X509_USER_PROXY']
+      self.log.info('Pilot proxy X509_USER_PROXY=%s' % pilotProxy)
 
-    if payloadUsername:
-      self.log.info('Payload username %s from PayloadUser in ceParameters' % payloadUsername)
-    else:
-      # First username in the sequence to use when running payload job
-      # If first is pltXXp00 then have pltXXp01, pltXXp02, ...
+      # See if a fixed value has been given
+      payloadUsername = self.ceParameters.get('PayloadUser')
+
+      if payloadUsername:
+        self.log.info('Payload username %s from PayloadUser in ceParameters' % payloadUsername)
+      else:
+        # First username in the sequence to use when running payload job
+        # If first is pltXXp00 then have pltXXp01, pltXXp02, ...
+        try:
+          baseUsername = self.ceParameters.get('BaseUsername')
+          baseCounter = int(baseUsername[-2:])
+          self.log.info("Base username from BaseUsername in ceParameters : %s" % baseUsername)
+        except Exception:
+          baseUsername = os.environ['USER'] + '00p00'
+          baseCounter = 0
+          self.log.info('Base username from $USER + 00p00 : %s' % baseUsername)
+
+        # Next one in the sequence
+        payloadUsername = baseUsername[:-2] + ('%02d' % (baseCounter + self.submittedJobs))
+        self.log.info('Payload username set to %s using jobs counter' % payloadUsername)
+
       try:
-        baseUsername = self.ceParameters.get('BaseUsername')
-        baseCounter = int(baseUsername[-2:])
-        self.log.info("Base username from BaseUsername in ceParameters : %s" % baseUsername)
-      except Exception:
-        baseUsername = os.environ['USER'] + '00p00'
-        baseCounter = 0
-        self.log.info('Base username from $USER + 00p00 : %s' % baseUsername)
+        payloadUID = pwd.getpwnam(payloadUsername).pw_uid
+        payloadGID = pwd.getpwnam(payloadUsername).pw_gid
+      except KeyError:
+        error = S_ERROR('User "' + str(payloadUsername) + '" does not exist!')
+        return error
 
-      # Next one in the sequence
-      payloadUsername = baseUsername[:-2] + ('%02d' % (baseCounter + self.submittedJobs))
-      self.log.info('Payload username set to %s using jobs counter' % payloadUsername)
-
-    try:
-      payloadUID = pwd.getpwnam(payloadUsername).pw_uid
-      payloadGID = pwd.getpwnam(payloadUsername).pw_gid
-    except KeyError:
-      error = S_ERROR('User "' + str(payloadUsername) + '" does not exist!')
-      return error
-
-    self.log.verbose('Starting process for monitoring payload proxy')
-    gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self.monitorProxy,
-                                     taskArgs=(pilotProxy, payloadProxy, payloadUsername, payloadUID, payloadGID),
-                                     executions=0, elapsedTime=0)
+      self.log.verbose('Starting process for monitoring payload proxy')
+      gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self.monitorProxy,
+                                       taskArgs=(pilotProxy, payloadProxy, payloadUsername, payloadUID, payloadGID),
+                                       executions=0, elapsedTime=0)
 
     # Submit job
     self.log.info('Changing permissions of executable (%s) to 0755' % executableFile)
+    self.submittedJobs += 1
+
     try:
       os.chmod(os.path.abspath(executableFile), stat.S_IRWXU |
                stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
@@ -83,12 +99,13 @@ class SudoComputingElement(ComputingElement):
                      '\n%s' % (x))
 
     result = self.sudoExecute(os.path.abspath(executableFile), payloadProxy, payloadUsername, payloadUID, payloadGID)
+    self.runningJobs -= 1
     if not result['OK']:
       self.log.error('Failed sudoExecute', result)
       return result
 
     self.log.debug('Sudo CE result OK')
-    self.submittedJobs += 1
+
     return S_OK()
 
   #############################################################################
@@ -124,6 +141,7 @@ class SudoComputingElement(ComputingElement):
     cmd += "X509_CERT_DIR=$X509_CERT_DIR "
     cmd += "X509_USER_PROXY=/tmp/x509up_u%d sh -c '%s'" % (payloadUID, executableFile)
     self.log.info('CE submission command is: %s' % cmd)
+    self.runningJobs += 1
     result = shellCall(0, cmd, callbackFunction=self.sendOutput)
     if not result['OK']:
       result['Value'] = (0, '', '')
@@ -146,9 +164,11 @@ class SudoComputingElement(ComputingElement):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()
-    result['SubmittedJobs'] = 0
-    result['RunningJobs'] = 0
+    result['SubmittedJobs'] = self.submittedJobs
+    result['RunningJobs'] = self.runningJobs
     result['WaitingJobs'] = 0
+    # processors
+    result['AvailableProcessors'] = self.processors
     return result
 
   #############################################################################
