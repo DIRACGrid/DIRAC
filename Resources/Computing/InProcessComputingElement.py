@@ -79,7 +79,7 @@ class InProcessComputingElement(ComputingElement):
     if payloadProxy:
       os.unlink(payloadProxy)
 
-    if renewTask:
+    if proxy and renewTask:
       gThreadScheduler.removeTask(renewTask)
 
     self.runningJobs -= 1

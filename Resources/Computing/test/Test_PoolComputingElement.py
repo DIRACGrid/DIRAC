@@ -9,26 +9,31 @@ from __future__ import print_function
 import os
 import time
 
+import pytest
+
+# sut
 from DIRAC.Resources.Computing.PoolComputingElement import PoolComputingElement
 
 jobScript = """#!/usr/bin/env python
+
+from __future__ import print_function
 
 import time
 import os
 
 jobNumber = %s
-stopFile = 'stop_job_' + str( jobNumber )
+stopFile = 'stop_job_' + str(jobNumber)
 start = time.time()
 
-print "Start job", jobNumber, start
+print("Start job", jobNumber, start)
 while True:
-  time.sleep( 0.1 )
-  if os.path.isfile( stopFile ):
-    os.unlink( stopFile )
+  time.sleep(0.1)
+  if os.path.isfile(stopFile):
+    os.remove(stopFile)
     break
   if (time.time() - start) > 30:
     break
-print "End job", jobNumber, time.time()
+print("End job", jobNumber, time.time())
 """
 
 
@@ -37,7 +42,7 @@ def _stopJob(nJob):
     stopFile.write('Stop')
   time.sleep(0.2)
   if os.path.isfile('stop_job_%s' % nJob):
-    os.unlink('stop_job_%s' % nJob)
+    os.remove('stop_job_%s' % nJob)
 
 
 def test_executeJob():
@@ -143,63 +148,29 @@ def test_executeJob():
     _stopJob(i)
     for ff in ['testPoolCEJob_%s.py' % i, 'stop_job_%s' % i]:
       if os.path.isfile(ff):
-        os.unlink(ff)
+        os.remove(ff)
 
 
-def test__getProcessorsForJobs():
+@pytest.mark.parametrize("processorsPerTask, kwargs, expected", [
+    (None, {}, 1),
+    (None, {'mpTag': False}, 1),
+    (None, {'mpTag': True}, 1),
+    (None, {'mpTag': True, 'wholeNode': True}, 16),
+    (None, {'mpTag': True, 'wholeNode': False}, 1),
+    (None, {'mpTag': True, 'numberOfProcessors': 4}, 4),
+    (None, {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfProcessors': 8}, 8),
+    (None, {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfProcessors': 32}, 16),
+    ({1: 4}, {'mpTag': True, 'wholeNode': True}, 0),
+    ({1: 4}, {'mpTag': True, 'wholeNode': False}, 1),
+    ({1: 4}, {'mpTag': True, 'numberOfProcessors': 2}, 2),
+    ({1: 4}, {'mpTag': True, 'maxNumberOfProcessors': 2}, 2),
+    ({1: 4}, {'mpTag': True, 'maxNumberOfProcessors': 16}, 12),
+])
+def test__getProcessorsForJobs(processorsPerTask, kwargs, expected):
   ce = PoolComputingElement('TestPoolCE')
   ce.processors = 16
 
-  kwargs = {}
+  if processorsPerTask:
+    ce.processorsPerTask = processorsPerTask
   res = ce._getProcessorsForJobs(kwargs)
-  assert res == 1
-
-  kwargs = {'mpTag': False}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 1
-
-  kwargs = {'mpTag': True}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 1
-
-  kwargs = {'mpTag': True, 'wholeNode': True}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 16
-
-  kwargs = {'mpTag': True, 'wholeNode': False}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 1
-
-  kwargs = {'mpTag': True, 'numberOfProcessors': 4}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 4
-
-  kwargs = {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfProcessors': 8}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 8
-
-  kwargs = {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfProcessors': 32}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 16
-
-  # something is in use
-  ce.processorsPerTask = {1: 4}
-  kwargs = {'mpTag': True, 'wholeNode': True}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 0
-
-  kwargs = {'mpTag': True, 'wholeNode': False}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 1
-
-  kwargs = {'mpTag': True, 'numberOfProcessors': 2}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 2
-
-  kwargs = {'mpTag': True, 'maxNumberOfProcessors': 2}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 2
-
-  kwargs = {'mpTag': True, 'maxNumberOfProcessors': 16}
-  res = ce._getProcessorsForJobs(kwargs)
-  assert res == 12
+  assert res == expected
