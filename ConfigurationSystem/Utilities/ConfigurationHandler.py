@@ -56,10 +56,6 @@ class ConfigurationHandler(WebHandler):
             +-----------+---------------------------------------+------------------------+
             | sections  | Sections list in a section            | text                   |
             +-----------+---------------------------------------+------------------------+
-
-        **GET** /conf/<helper method>?<arguments> -- get some information using configuration helpers methods
-          * *helper method* -- helper method of configuration service
-          * *arguments* -- arguments specifically for every helper method
     """
     self.log.notice('Request configuration information')
     optns = self.overpath.strip('/').split('/')
