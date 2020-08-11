@@ -75,10 +75,10 @@ python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/RequestManagementSyst
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringReporter.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
-
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Computing/Test_SingularityCE.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 # Can only run if there's a Stomp MQ local...
 # TODO Enable
