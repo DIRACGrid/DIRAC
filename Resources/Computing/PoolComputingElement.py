@@ -14,7 +14,6 @@ import os
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -37,19 +36,15 @@ def executeJob(executableFile, proxy, taskID, **kwargs):
   :return: the result of the job submission
   """
 
-  useSudo = kwargs.pop('UseSudo', False)
-  useSingularity = kwargs.pop('UseSingularity', False)
+  innerCESubmissionType = kwargs.pop('InnerCESubmissionType')
 
-  if useSudo:
+  if innerCESubmissionType == 'Sudo':
     ce = SudoComputingElement("Task-" + str(taskID))
     payloadUser = kwargs.get('PayloadUser')
     if payloadUser:
       ce.setParameters({'PayloadUser': payloadUser})
-  elif useSingularity:
+  elif innerCESubmissionType == 'Singularity':
     ce = SingularityComputingElement("Task-" + str(taskID))
-    payloadUser = kwargs.get('PayloadUser')
-    if payloadUser:
-      ce.setParameters({'PayloadUser': payloadUser})
   else:
     ce = InProcessComputingElement("Task-" + str(taskID))
 
@@ -74,8 +69,7 @@ class PoolComputingElement(ComputingElement):
 
     # This CE will effectively submit to another "Inner"CE
     # (by default to the InProcess CE)
-    self.useSudo = False
-    self.useSingularity = False
+    self.innerCESubmissionType = 'InProcess'
 
   def _reset(self):
     """ Update internal variables after some extra parameters are added
@@ -85,8 +79,7 @@ class PoolComputingElement(ComputingElement):
 
     self.processors = int(self.ceParameters.get('NumberOfProcessors', self.processors))
     self.ceParameters['MaxTotalJobs'] = self.processors
-    self.useSudo = self.ceParameters.get('SudoExecution', False)
-    self.useSingularity = self.ceParameters.get('SingularityExecution', False)
+    self.innerCESubmissionType = self.ceParameters.get('InnerCESubmissionType', self.innerCESubmissionType)
 
   def getProcessorsInUse(self):
     """ Get the number of currently allocated processor cores
@@ -131,18 +124,13 @@ class PoolComputingElement(ComputingElement):
     if not res['OK']:
       self.log.error("Could not dump cfg to pilot.cfg", res['Message'])
 
-    kwargs = {'UseSudo': False}
-    if self.useSudo:
+    if self.innerCESubmissionType == 'Sudo':
       for nUser in range(MAX_NUMBER_OF_SUDO_UNIX_USERS):
         if nUser not in self.userNumberPerTask.values():
           break
       kwargs['NUser'] = nUser
       kwargs['PayloadUser'] = os.environ['USER'] + 'p%s' % str(nUser).zfill(2)
-      kwargs['UseSudo'] = True
-
-    kwargs = {'UseSingularity': False}
-    if self.useSingularity:
-      kwargs['UseSingularity'] = True
+    kwargs['InnerCESubmissionType'] = self.innerCESubmissionType
 
     result = self.pPool.createAndQueueTask(executeJob,
                                            args=(executableFile, proxy, self.taskID),
