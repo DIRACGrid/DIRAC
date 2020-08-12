@@ -46,15 +46,16 @@ class JobAgent(AgentModule):
       properties = {}
     super(JobAgent, self).__init__(agentName, loadName, baseAgentName, properties)
 
-    self.ceName = 'InProcess'
-    self.computingElement = None
-    self.timeLeft = 0.0
+    # Inner CE
+    self.ceName = 'InProcess'  # "Inner" CE type
+    self.innerCESubmissionType = 'InProcess'  # "Inner" CE submission type (e.g. for Pool CE)
+    self.computingElement = None  # The ComputingElement object, e.g. SingularityComputingElement()
 
-    self.initTimes = os.times()
     # Localsite options
     self.siteName = 'Unknown'
     self.pilotReference = 'Unknown'
     self.defaultProxyLength = 86400 * 5
+
     # Agent options
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
     self.cpuFactor = 0.0
@@ -66,7 +67,10 @@ class JobAgent(AgentModule):
     self.jobCount = 0
     self.matchFailedCount = 0
     self.extraOptions = ''
+
     # Timeleft
+    self.initTimes = os.times()
+    self.timeLeft = 0.0
     self.timeLeftUtil = None
     self.timeLeftError = ''
     self.pilotInfoReportedFlag = False
@@ -87,12 +91,14 @@ class JobAgent(AgentModule):
 
     # Create backend Computing Element
     ceFactory = ComputingElementFactory()
-    self.ceName = ceType
-    ceInstance = ceFactory.getCE(ceType)
+    self.ceName = ceType.split('/')[0]  # It might be "Pool/Singularity", or simply "Pool"
+    self.innerCESubmissionType = ceType.split('/')[1] if len(ceType.split('/')) == 2 else self.innerCESubmissionType
+    ceInstance = ceFactory.getCE(self.ceName)
     if not ceInstance['OK']:
       self.log.warn("Can't instantiate a CE", ceInstance['Message'])
       return ceInstance
     self.computingElement = ceInstance['Value']
+    self.computingElement.ceParameters['InnerCESubmissionType'] = self.innerCESubmissionType
 
     result = self.computingElement.getDescription()
     if not result['OK']:

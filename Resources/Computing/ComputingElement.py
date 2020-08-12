@@ -475,13 +475,14 @@ class ComputingElement(object):
     if project:
       ceDict['ReleaseProject'] = project
 
-    # the getCEStatus is implemented in the each of the specific CE classes
+    # the getCEStatus is implemented in each of the specific CE classes
     result = self.getCEStatus()
     if result['OK']:
       ceDict['NumberOfProcessors'] = result.get('AvailableProcessors',
                                                 result.get('NumberOfProcessors', 1))
     else:
-      self.log.error("Failure getting CE status", "we keep going without the number of waiting and running pilots")
+      self.log.error("Failure getting CE status",
+                     "(we keep going without the number of waiting and running pilots/jobs)")
 
     return S_OK(ceDict)
 
