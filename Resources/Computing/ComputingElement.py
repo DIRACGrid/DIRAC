@@ -31,7 +31,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
-import multiprocessing
 
 from DIRAC import S_OK, S_ERROR, gLogger, version
 
@@ -46,6 +45,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getNumberOfProcessors
 
 
 INTEGER_PARAMETERS = ['CPUTime',
@@ -230,7 +230,7 @@ class ComputingElement(object):
     # If NumberOfProcessors is present in the description but is equal to zero
     # interpret it as needing local evaluation
     if self.ceParameters.get("NumberOfProcessors", -1) == 0:
-      self.ceParameters["NumberOfProcessors"] = multiprocessing.cpu_count()
+      self.ceParameters["NumberOfProcessors"] = getNumberOfProcessors()
 
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
