@@ -72,7 +72,18 @@ Other options that can be set also in the Operations part of the CS include:
 Since DIRAC v7r0, SiteDirectors will send by default "pilots3".
 
 
-Pilot logging
-=============
+Pilots environment
+==================
 
-Advanced pilot logging comes together with Pilot3. To enable... <to complete>
+There is a small number of environment variables that can be set by the pilot to control the behaviour of DIRAC jobs.
+
+DIRAC_PROCESSORS
+  The number of processors the pilot can use
+
+DIRAC_JOB_PROCESSORS
+  The number of processors the jobs administered by the pilot can use (a subset of DIRAC_PROCESSORS)
+
+DIRAC_WHOLENODE
+  A boolean flag indicating the pilot is exploiting the whole node (normally, False)
+
+
