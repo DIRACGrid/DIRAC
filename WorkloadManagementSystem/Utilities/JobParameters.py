@@ -85,6 +85,16 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
   gLogger.info("NumberOfProcessors could not be found in MJF")
 
   # 3) looks in CS for "NumberOfProcessors" Queue or CE or site option
+  if not siteName:
+    siteName = gConfig.getValue('/LocalSite/Site', '')
+  if not gridCE:
+    gridCE = gConfig.getValue('/LocalSite/GridCE', '')
+  if not queue:
+    queue = gConfig.getValue('/LocalSite/CEQueue', '')
+  if not (siteName and gridCE and queue):
+    gLogger.error("Could not find NumberOfProcessors: missing siteName or gridCE or queue. Returning '1'")
+    return 1
+
   grid = siteName.split('.')[0]
   csPaths = [
       "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors" % (grid, siteName, gridCE, queue),
