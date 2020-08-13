@@ -51,9 +51,6 @@ class SudoComputingElement(ComputingElement):
         self.log.error('X509_USER_PROXY variable for pilot proxy not found in local environment')
         return S_ERROR(DErrno.EPROXYFIND, "X509_USER_PROXY not found")
 
-      pilotProxy = os.environ['X509_USER_PROXY']
-      self.log.info('Pilot proxy X509_USER_PROXY=%s' % pilotProxy)
-
       # See if a fixed value has been given
       payloadUsername = self.ceParameters.get('PayloadUser')
 
@@ -84,7 +81,7 @@ class SudoComputingElement(ComputingElement):
 
       self.log.verbose('Starting process for monitoring payload proxy')
       gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self.monitorProxy,
-                                       taskArgs=(pilotProxy, payloadProxy, payloadUsername, payloadUID, payloadGID),
+                                       taskArgs=(payloadProxy, payloadUsername, payloadUID, payloadGID),
                                        executions=0, elapsedTime=0)
 
     # Submit job
@@ -172,10 +169,10 @@ class SudoComputingElement(ComputingElement):
     return result
 
   #############################################################################
-  def monitorProxy(self, pilotProxy, payloadProxy, payloadUsername, payloadUID, payloadGID):
+  def monitorProxy(self, payloadProxy, payloadUsername, payloadUID, payloadGID):
     """ Monitor the payload proxy and renew as necessary.
     """
-    retVal = self._monitorProxy(pilotProxy, payloadProxy)
+    retVal = self._monitorProxy(payloadProxy)
     if not retVal['OK']:
       # Failed to renew the proxy, nothing else to be done
       return retVal

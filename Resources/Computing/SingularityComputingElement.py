@@ -325,7 +325,7 @@ class SingularityComputingElement(ComputingElement):
       # Now we have to set-up payload proxy renewal for the container
       # This is fairly easy as it remains visible on the host filesystem
       result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self._monitorProxy,
-                                                taskArgs=(None, payloadProxyLoc),
+                                                taskArgs=(payloadProxyLoc),
                                                 executions=0, elapsedTime=0)
       if result['OK']:
         renewTask = result['Value']
