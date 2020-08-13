@@ -19,12 +19,8 @@ from DIRAC.Core.Utilities.Subprocess import shellCall
 
 __RCSID__ = "$Id$"
 
-MandatoryParameters = []
-
 
 class glexecComputingElement(ComputingElement):
-
-  mandatoryParameters = MandatoryParameters
 
   #############################################################################
   def __init__(self, ceUniqueID):
@@ -55,8 +51,6 @@ class glexecComputingElement(ComputingElement):
       self.log.error('X509_USER_PROXY variable for pilot proxy not found in local environment')
       return S_ERROR('X509_USER_PROXY not found')
 
-    pilotProxy = os.environ['X509_USER_PROXY']
-    self.log.info('Pilot proxy X509_USER_PROXY=%s' % pilotProxy)
     os.environ['GLEXEC_CLIENT_CERT'] = payloadProxy
     os.environ['GLEXEC_SOURCE_PROXY'] = payloadProxy
     self.log.info('\n'.join(['Set payload proxy variables:',
@@ -95,7 +89,7 @@ class glexecComputingElement(ComputingElement):
 
     self.log.verbose('Starting process for monitoring payload proxy')
     gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self.monitorProxy,
-                                     taskArgs=(glexecLocation, pilotProxy, payloadProxy),
+                                     taskArgs=(glexecLocation, payloadProxy),
                                      executions=0, elapsedTime=0)
 
     # Submit job
@@ -318,16 +312,16 @@ class glexecComputingElement(ComputingElement):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()
-    result['SubmittedJobs'] = 0
+    result['SubmittedJobs'] = self.submittedJobs
     result['RunningJobs'] = 0
     result['WaitingJobs'] = 0
     return result
 
   #############################################################################
-  def monitorProxy(self, glexecLocation, pilotProxy, payloadProxy):
+  def monitorProxy(self, glexecLocation, payloadProxy):
     """ Monitor the payload proxy and renew as necessary.
     """
-    retVal = self._monitorProxy(pilotProxy, payloadProxy)
+    retVal = self._monitorProxy(payloadProxy)
     if not retVal['OK']:
       # Failed to renew the proxy, nothing else to be done
       return retVal
@@ -345,5 +339,3 @@ class glexecComputingElement(ComputingElement):
       self.log.info('Running without glexec, checking local proxy')
 
     return S_OK('Proxy checked')
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

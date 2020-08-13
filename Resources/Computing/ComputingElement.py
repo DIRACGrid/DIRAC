@@ -350,12 +350,11 @@ class ComputingElement(object):
     return S_OK(proxyLocation)
 
   #############################################################################
-  def _monitorProxy(self, pilotProxy=None, payloadProxy=None):
+  def _monitorProxy(self, payloadProxy=None):
     """Base class for the monitor and update of the payload proxy, to be used in
       derived classes for the basic renewal of the proxy, if further actions are
       necessary they should be implemented there
 
-      :param str pilotProxy: location of the pilot proxy file
       :param str payloadProxy: location of the payload proxy file
 
       :returns: S_OK(filename)/S_ERROR
@@ -363,14 +362,13 @@ class ComputingElement(object):
     if not payloadProxy:
       return S_ERROR("No payload proxy")
 
-    if not pilotProxy:
-      # This will get the pilot proxy
-      ret = getProxyInfo()
-      if not ret['OK']:
-        pilotProxy = None
-      else:
-        pilotProxy = ret['Value']['path']
-        self.log.notice('Pilot Proxy:', pilotProxy)
+    # This will get the pilot proxy
+    ret = getProxyInfo()
+    if not ret['OK']:
+      pilotProxy = None
+    else:
+      pilotProxy = ret['Value']['path']
+      self.log.notice('Pilot Proxy:', pilotProxy)
 
     retVal = getProxyInfo(payloadProxy)
     if not retVal['OK']:

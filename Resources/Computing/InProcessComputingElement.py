@@ -60,7 +60,7 @@ class InProcessComputingElement(ComputingElement):
 
       self.log.verbose('Starting process for monitoring payload proxy')
       result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self._monitorProxy,
-                                                taskArgs=(None, payloadProxy),
+                                                taskArgs=(payloadProxy),
                                                 executions=0, elapsedTime=0)
       if result['OK']:
         renewTask = result['Value']
