@@ -11,6 +11,7 @@ from DIRAC import gLogger
 from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC.Resources.Computing.test.Test_PoolComputingElement import jobScript, _stopJob
+from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
 # sut
 from DIRAC.Resources.Computing.SingularityComputingElement import SingularityComputingElement
@@ -39,16 +40,43 @@ def test_submitJob():
       os.remove(ff)
 
 
-# def test_submit():
-#   jobDesc = {"jobID": 123,
-#              "jobParams": {},
-#              "resourceParams": {},
-#              "optimizerParams": {}}
+def test_submitJobWrapper():
+  with open('testJob.py', 'w') as execFile:
+    execFile.write(jobScript % '2')
+  os.chmod('testJob.py', 0o755)
 
-#   ce = SingularityComputingElement('InProcess')
+  jobParams = {'JobType': 'User',
+               'Executable': 'testJob.py'}
+  resourceParams = {'GridCE': 'some_CE'}
+  optimizerParams = {}
 
-#   res = ce.submitJob(find_all(executableFile, 'tests')[0],
-#                      jobDesc=jobDesc,
-#                      log=gLogger.getSubLogger('job_log'),
-#                      logLevel='DEBUG')
-#   assert res['OK'] is True
+  wrapperFile = createJobWrapper(2,
+                                 jobParams,
+                                 resourceParams,
+                                 optimizerParams,
+                                 logLevel='DEBUG')['Value']  # This is not under test, assuming it works fine
+
+  shutil.copy(fj, os.curdir)
+
+  ce = SingularityComputingElement('SingularityComputingElement')
+  res = ce.submitJob(wrapperFile, proxy=None,
+                     numberOfProcessors=4,
+                     maxNumberOfProcessors=8,
+                     wholeNode=False,
+                     mpTag=True,
+                     jobDesc={"jobParams": jobParams,
+                              "resourceParams": resourceParams,
+                              "optimizerParams": optimizerParams})
+  assert res['OK'] is False
+  assert res['ReschedulePayload'] is True
+
+  res = ce.getCEStatus()
+  assert res['OK'] is True
+  assert res['SubmittedJobs'] == 1
+
+  _stopJob(2)
+  for ff in ['testJob.py', 'stop_job_2', 'job.info', 'std.out', 'pilot.json']:
+    if os.path.isfile(ff):
+      os.remove(ff)
+  if os.path.isdir('job'):
+    shutil.rmtree('job')
