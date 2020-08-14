@@ -79,7 +79,8 @@ def githubSetup():
   try:
     from GitTokens import GITHUBTOKEN
     if GITHUBTOKEN:
-      SESSION.headers.update({'Authorization': 'token %s ' % GITHUBTOKEN})
+      SESSION.headers.update({'Accept': 'application/vnd.github.v3+json',
+                              'Authorization': 'token %s ' % GITHUBTOKEN})
   except ImportError:
     raise ImportError(G_ERROR)
 
@@ -588,7 +589,6 @@ class GithubInterface(object):
       releaseNotes = rnf.read()
 
     releaseDict = dict(tag_name=self.tagName,
-                       target_commitish="unused",
                        name=self.tagName,
                        body=releaseNotes,
                        prerelease=False,
