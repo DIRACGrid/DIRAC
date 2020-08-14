@@ -1,3 +1,15 @@
+[v7r0p33]
+
+*Interfaces
+FIX: (#4713) Pass useCertificates to WMSClient in Dirac API
+
+*Resources
+NEW: (#4716) better way to discover the innerCESubmissionType (Pool CE)
+CHANGE: (#4716) SingularityCE: get info from Pilot3 pilot.json, if present
+
+*tests
+NEW: (#4716) added integration test for SingularityCE
+
 [v7r0p32]
 
 *Core
