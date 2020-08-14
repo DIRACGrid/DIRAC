@@ -35,7 +35,6 @@ if __name__ == "__main__":
   targetSE = None
   if len(args) != 4:
     Script.showHelp()
-    DIRAC.exit(0)
   else:
     requestName = args[0]
     LFN = args[1]

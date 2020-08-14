@@ -43,8 +43,7 @@ Script.parseCommandLine()
 posArgs = Script.getPositionalArgs()
 
 if not posArgs:
-  Script.showHelp()
-  sys.exit(1)
+  Script.showHelp(exitCode=1)
 
 
 from DIRAC import gLogger

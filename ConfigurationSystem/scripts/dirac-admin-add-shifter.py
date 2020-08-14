@@ -26,8 +26,7 @@ if __name__ == "__main__":
   csAPI = CSAPI()
 
   if len(args) < 3:
-    Script.showHelp()
-    DIRACExit(-1)
+    Script.showHelp(exitCode=1)
 
   shifterRole = args[0]
   userName = args[1]

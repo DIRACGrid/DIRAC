@@ -356,7 +356,8 @@ installDIRAC() {
   echo "$PATH"
 
   # now configuring
-  if ! dirac-configure -S "${DIRACSETUP}" -C "${CSURL}" --SkipCAChecks "${CONFIGUREOPTIONS}" "${DEBUG}"; then
+  cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
+  if ! bash -c "${cmd}"; then
     echo 'ERROR: dirac-configure failed' >&2
     exit 1
   fi
@@ -377,7 +378,7 @@ installDIRAC() {
 submitJob() {
   echo -e "==> Submitting a simple job"
   #This has to be executed from the ${CLIENTINSTALLDIR}
-  if ! "cd ${CLIENTINSTALLDIR}"; then
+  if ! cd "${CLIENTINSTALLDIR}"; then
     echo "ERROR: cannot change to ${CLIENTINSTALLDIR}" >&2
     exit 1
   fi
@@ -893,7 +894,7 @@ dropDBs(){
   echo '==> [dropDBs]'
 
   # make dbs a real array to avoid future mistake with escaping
-  mapfile -t dbs < <(cut -d ' ' -f 2 < /tmp/databases.txt | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
+  mapfile -t dbs < <(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-drop-db.py" "${dbs[@]}" "${DEBUG}"
 }
 

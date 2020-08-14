@@ -28,8 +28,7 @@ Usage:
   args = Script.getPositionalArgs()
 
   if len(args) < 2:
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(exitCode=1)
   else:
     inputFileName = args[0]
     storageElementNames = args[1:]

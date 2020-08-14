@@ -8,6 +8,9 @@ Delete DIRAC job from WMS, if running it will be killed
 """
 
 from __future__ import print_function
+
+__RCSID__ = "$Id$"
+
 import os.path
 
 import DIRAC
@@ -24,8 +27,6 @@ Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group
 
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
-
-__RCSID__ = "$Id$"
 
 
 if __name__ == "__main__":

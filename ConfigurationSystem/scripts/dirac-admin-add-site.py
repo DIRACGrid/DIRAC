@@ -33,8 +33,7 @@ if __name__ == "__main__":
   args = Script.getPositionalArgs()
 
   if len(args) < 3:
-    Script.showHelp()
-    DIRACExit(-1)
+    Script.showHelp(exitCode=1)
 
   diracSiteName = args[0]
   gridSiteName = args[1]

@@ -7,6 +7,7 @@
   Retrieve the output data files of a DIRAC job
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -22,7 +23,7 @@ Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 if len(args) < 1:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 dirac = Dirac()

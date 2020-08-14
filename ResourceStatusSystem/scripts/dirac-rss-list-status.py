@@ -22,10 +22,10 @@ switchDict = {}
 
 
 def registerSwitches():
-  '''
+  """
     Registers all switches that can be used while calling the script from the
     command line interface.
-  '''
+  """
 
   switches = (
       ('element=', 'Element family to be Synchronized ( Site, Resource or Node )'),
@@ -41,9 +41,9 @@ def registerSwitches():
 
 
 def registerUsageMessage():
-  '''
+  """
     Takes the script __doc__ and adds the DIRAC version to it
-  '''
+  """
   usageMessage = '  DIRAC %s\n' % version
   usageMessage += __doc__
 
@@ -51,17 +51,16 @@ def registerUsageMessage():
 
 
 def parseSwitches():
-  '''
+  """
     Parses the arguments passed by the user
-  '''
+  """
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
   if args:
     subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
     subLogger.error("Please, check documentation below")
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(exitCode=1)
 
   switches = dict(Script.getUnprocessedSwitches())
   # Default values
@@ -74,28 +73,24 @@ def parseSwitches():
   if 'element' not in switches:
     subLogger.error("element Switch missing")
     subLogger.error("Please, check documentation below")
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(exitCode=1)
 
   if not switches['element'] in ('Site', 'Resource', 'Node'):
     subLogger.error("Found %s as element switch" % switches['element'])
     subLogger.error("Please, check documentation below")
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(exitCode=1)
 
   subLogger.debug("The switches used are:")
   map(subLogger.debug, switches.iteritems())
 
   return switches
 
-#...............................................................................
-
 
 def getElements():
-  '''
+  """
     Given the switches, gets a list of elements with their respective statustype
     and status attributes.
-  '''
+  """
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
@@ -118,9 +113,9 @@ def getElements():
 
 
 def tabularPrint(elementsList):
-  '''
+  """
     Prints the list of elements on a tabular
-  '''
+  """
 
   subLogger.notice('')
   subLogger.notice('Selection parameters:')
@@ -140,13 +135,11 @@ def tabularPrint(elementsList):
   subLogger.notice(printTable(titles, elementsList, printOut=False,
                               numbering=False, columnSeparator=' | '))
 
-#...............................................................................
-
 
 def run():
-  '''
+  """
     Main function of the script
-  '''
+  """
 
   elements = getElements()
   if not elements['OK']:
@@ -155,8 +148,6 @@ def run():
   elements = elements['Value']
 
   tabularPrint(elements)
-
-#...............................................................................
 
 
 if __name__ == "__main__":
@@ -173,6 +164,3 @@ if __name__ == "__main__":
 
   # Bye
   DIRACExit(0)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

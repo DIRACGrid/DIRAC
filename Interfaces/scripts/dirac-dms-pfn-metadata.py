@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-dms-pfn-metadata
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,7 +7,9 @@
   Retrieve metadata for a PFN given a valid DIRAC SE
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -16,13 +17,13 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s [option|cfgfile] ... PFN SE' % Script.scriptName,
                                   'Arguments:',
-                                  '  PFN:      Physical File Name or file containing PFNs',
-                                  '  SE:       Valid DIRAC SE']))
+                                  '  PFN:      Physical File Name or file containing PFNs (mandatory)',
+                                  '  SE:       Valid DIRAC SE (mandatory)']))
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 if len(args) < 2:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 if len(args) > 2:
   print('Only one PFN SE pair will be considered')

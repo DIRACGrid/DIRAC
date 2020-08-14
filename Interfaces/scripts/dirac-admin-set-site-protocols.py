@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-set-site-protocols
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,7 +7,9 @@
   Defined protocols for each SE for a given site.
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -28,7 +29,7 @@ for switch in Script.getUnprocessedSwitches():
 args = Script.getPositionalArgs()
 
 if not site or not args:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 diracAdmin = DiracAdmin()

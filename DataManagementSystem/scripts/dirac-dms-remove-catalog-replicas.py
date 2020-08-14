@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-########################################################################
-# $Header: $
-########################################################################
+
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
+import os
 
 from DIRAC import exit as dexit
 from DIRAC.Core.Base import Script
@@ -37,12 +38,9 @@ if not allowUsers:
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 dm = DataManager()
-import os
-import sys
 args = Script.getPositionalArgs()
 if len(args) < 2:
-  Script.showHelp()
-  dexit(-1)
+  Script.showHelp(exitCode=1)
 else:
   inputFileName = args[0]
   storageElementName = args[1]

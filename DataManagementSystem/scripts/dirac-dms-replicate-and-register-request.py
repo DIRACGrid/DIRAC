@@ -39,8 +39,7 @@ if __name__ == "__main__":
   requestName = None
   targetSEs = None
   if len(args) < 3:
-    Script.showHelp()
-    DIRAC.exit(1)
+    Script.showHelp(exitCode=1)
 
   requestName = args[0]
   lfnList = getLFNList(args[1])

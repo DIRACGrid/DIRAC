@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-dms-replicate-lfn
 # Author  : Stuart Paterson
 ########################################################################
@@ -8,7 +7,9 @@
   Replicate an existing LFN to another Storage Element
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -16,15 +17,15 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s [option|cfgfile] ... LFN Dest [Source [Cache]]' % Script.scriptName,
                                   'Arguments:',
-                                  '  LFN:      Logical File Name or file containing LFNs',
-                                  '  Dest:     Valid DIRAC SE',
+                                  '  LFN:      Logical File Name or file containing LFNs (mandatory)',
+                                  '  Dest:     Valid DIRAC SE (mandatory)',
                                   '  Source:   Valid DIRAC SE',
                                   '  Cache:    Local directory to be used as cache']))
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 if len(args) < 2 or len(args) > 4:
-  Script.showHelp()
+  Script.showHelp(exitCode=1)
 
 lfn = args[0]
 seName = args[1]

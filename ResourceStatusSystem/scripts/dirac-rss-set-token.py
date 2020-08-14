@@ -66,8 +66,7 @@ def parseSwitches():
   if args:
     subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
     subLogger.error("Please, check documentation below")
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(exitCode=1)
 
   switches = dict(Script.getUnprocessedSwitches())
   switches.setdefault('statusType', None)
@@ -82,14 +81,12 @@ def parseSwitches():
     if key not in switches:
       subLogger.error("%s Switch missing" % key)
       subLogger.error("Please, check documentation above")
-      Script.showHelp()
-      DIRACExit(1)
+      Script.showHelp(exitCode=1)
 
   if not switches['element'] in ('Site', 'Resource', 'Node'):
     subLogger.error("Found %s as element switch" % switches['element'])
     subLogger.error("Please, check documentation above")
-    Script.showHelp()
-    DIRACExit(1)
+    Script.showHelp(exitCode=1)
 
   subLogger.debug("The switches used are:")
   map(subLogger.debug, switches.iteritems())

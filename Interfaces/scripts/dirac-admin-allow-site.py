@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-allow-site
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,10 +7,12 @@
   Add Site to Active mask for current Setup
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
+import time
+
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.PromptUser import promptUser
 
 Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
@@ -25,8 +26,6 @@ Script.parseCommandLine(ignoreErrors=True)
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC import exit as DIRACExit, gConfig, gLogger
-
-import time
 
 
 def getBoolean(value):

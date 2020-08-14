@@ -58,9 +58,8 @@ if __name__ == "__main__":
 
   if len(args) < 1:
     print("Error: No argument provided\n%s:" % Script.scriptName)
-    Script.showHelp()
     gLogger.notice("MetaDataDictionary: \n%s" % str(typeDict))
-    DIRAC.exit(-1)
+    Script.showHelp(exitCode=1)
 
   mq = MetaQuery(typeDict=typeDict)
   result = mq.setMetaQuery(args)

@@ -23,8 +23,7 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 __RCSID__ = "$Id$"
 
 if len(args) > 2:
-  Script.showHelp()
-  exit(-1)
+  Script.showHelp(exitCode=1)
 
 system = '*'
 component = '*'

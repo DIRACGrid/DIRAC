@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-service-ports
 # Author :  Stuart Paterson
 ########################################################################
@@ -8,7 +7,9 @@
   Print the service ports for the specified setup
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
