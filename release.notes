@@ -31,6 +31,14 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
+[v7r1p11]
+
+*WMS
+FIX: (#4712) PilotStatusAgent was crashing due to a bug
+
+*Test
+FIX: (#4712) fix for main RSS system test
+
 [v7r1p10]
 
 Fixes from v7r0p32
