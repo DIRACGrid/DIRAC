@@ -31,7 +31,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
-import multiprocessing
 
 from DIRAC import S_OK, S_ERROR, gLogger, version
 
@@ -46,6 +45,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getNumberOfProcessors
 
 
 INTEGER_PARAMETERS = ['CPUTime',
@@ -83,6 +83,7 @@ class ComputingElement(object):
     self.proxyCheckPeriod = gConfig.getValue('/Registry/ProxyCheckingPeriod', 3600)  # secs
 
     self.initializeParameters()
+    self.log.debug("CE parameters", self.ceParameters)
 
   def setProxy(self, proxy, valid=0):
     """ Set proxy for this instance
@@ -229,7 +230,7 @@ class ComputingElement(object):
     # If NumberOfProcessors is present in the description but is equal to zero
     # interpret it as needing local evaluation
     if self.ceParameters.get("NumberOfProcessors", -1) == 0:
-      self.ceParameters["NumberOfProcessors"] = multiprocessing.cpu_count()
+      self.ceParameters["NumberOfProcessors"] = getNumberOfProcessors()
 
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
@@ -240,11 +241,6 @@ class ComputingElement(object):
     self._reset()
     return S_OK()
 
-  def getParameterDict(self):
-    """  Get the CE complete parameter dictionary
-    """
-    return self.ceParameters
-
   #############################################################################
   def setCPUTimeLeft(self, cpuTimeLeft=None):
     """Update the CPUTime parameter of the CE classAd, necessary for running in filling mode
@@ -254,12 +250,10 @@ class ComputingElement(object):
       return S_OK()
     try:
       intCPUTimeLeft = int(cpuTimeLeft)
+      self.ceParameters['CPUTime'] = intCPUTimeLeft
+      return S_OK(intCPUTimeLeft)
     except ValueError:
       return S_ERROR('Wrong type for setCPUTimeLeft argument')
-
-    self.ceParameters['CPUTime'] = intCPUTimeLeft
-
-    return S_OK(intCPUTimeLeft)
 
   #############################################################################
   def available(self, jobIDList=None):
@@ -354,11 +348,26 @@ class ComputingElement(object):
     return S_OK(proxyLocation)
 
   #############################################################################
-  def _monitorProxy(self, pilotProxy, payloadProxy):
+  def _monitorProxy(self, payloadProxy=None):
     """Base class for the monitor and update of the payload proxy, to be used in
       derived classes for the basic renewal of the proxy, if further actions are
       necessary they should be implemented there
+
+      :param str payloadProxy: location of the payload proxy file
+
+      :returns: S_OK(filename)/S_ERROR
     """
+    if not payloadProxy:
+      return S_ERROR("No payload proxy")
+
+    # This will get the pilot proxy
+    ret = getProxyInfo()
+    if not ret['OK']:
+      pilotProxy = None
+    else:
+      pilotProxy = ret['Value']['path']
+      self.log.notice('Pilot Proxy:', pilotProxy)
+
     retVal = getProxyInfo(payloadProxy)
     if not retVal['OK']:
       self.log.error('Could not get payload proxy info', retVal)
@@ -464,13 +473,14 @@ class ComputingElement(object):
     if project:
       ceDict['ReleaseProject'] = project
 
-    # the getCEStatus is implemented in the each of the specific CE classes
+    # the getCEStatus is implemented in each of the specific CE classes
     result = self.getCEStatus()
     if result['OK']:
       ceDict['NumberOfProcessors'] = result.get('AvailableProcessors',
                                                 result.get('NumberOfProcessors', 1))
     else:
-      self.log.error("Failure getting CE status", "we keep going without the number of waiting and running pilots")
+      self.log.error("Failure getting CE status",
+                     "(we keep going without the number of waiting and running pilots/jobs)")
 
     return S_OK(ceDict)
 

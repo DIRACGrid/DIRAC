@@ -1,9 +1,12 @@
-""" A computing element class using singularity containers.
+""" SingularityCE is a type of "inner" CEs
+    (meaning it's used by a jobAgent inside a pilot).
+    A computing element class using singularity containers,
+    where Singularity is supposed to be found on the WN.
 
-    This computing element will start the job in the container set by
+    The goal of this CE is to start the job in the container set by
     the "ContainerRoot" config option.
 
-    DIRAC will the re-installed within the container, extra flags can
+    DIRAC can be re-installed within the container, extra flags can
     be given to the dirac-install command with the "ContainerExtraOpts"
     option.
 
@@ -12,13 +15,13 @@
 """
 
 import os
-import sys
+import io
 import shutil
 import tempfile
+import json
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
@@ -32,7 +35,7 @@ __RCSID__ = "$Id$"
 DIRAC_INSTALL = os.path.join(DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-install.py')
 # Default container to use if it isn't specified in the CE options
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm3"
-CONTAINER_WORKDIR = "containers"
+CONTAINER_WORKDIR = "DIRAC_containers"
 CONTAINER_INNERDIR = "/tmp"
 CONTAINER_WRAPPER = """#!/bin/bash
 
@@ -43,14 +46,12 @@ cd /tmp
 ./dirac-install.py %(install_args)s
 source bashrc
 dirac-configure -F %(config_args)s -I
-# Add compatibility with pilot3 where config is in pilot.cfg
-ln -s etc/dirac.cfg pilot.cfg
 # Run next wrapper (to start actual job)
 bash %(next_wrapper)s
 # Write the payload errorcode to a file for the outer scripts
 echo $? > retcode
 chmod 644 retcode
-echo "Finishing inner continer wrapper scripts at `date`."
+echo "Finishing inner container wrapper scripts at `date`."
 
 """
 
@@ -72,7 +73,7 @@ class SingularityComputingElement(ComputingElement):
     self.__innerdir = CONTAINER_INNERDIR
     self.__singularityBin = 'singularity'
 
-    self.log = gLogger.getSubLogger('Singularity')
+    self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
 
   def __hasSingularity(self):
     """ Search the current PATH for an exectuable named singularity.
@@ -93,27 +94,43 @@ class SingularityComputingElement(ComputingElement):
         if os.access(binPath, os.X_OK):
           self.log.debug('Find singularity from PATH "%s"' % binPath)
           return True
-    # No suitablable binaries found
+    # No suitable binaries found
     return False
 
-  def __getInstallFlags(self):
+  def __getInstallFlags(self, infoDict=None):
     """ Get the flags to pass to dirac-install.py inside the container.
         Returns a string containing the command line flags.
     """
-    instOpts = []
-    setup = gConfig.getValue("/DIRAC/Setup", "unknown")
-    opsHelper = Operations.Operations(setup=setup)
+    if not infoDict:
+      infoDict = {}
 
-    installationName = opsHelper.getValue("Pilot/Installation", "")
+    instOpts = []
+
+    setup = infoDict.get('DefaultSetup')
+    if not setup:
+      setup = list(infoDict.get('Setups'))[0]
+    if not setup:
+      setup = gConfig.getValue("/DIRAC/Setup", "unknown")
+    setup = str(setup)
+
+    installationName = str(infoDict.get('Installation'))
+    if not installationName:
+      installationName = Operations.Operations(setup=setup).getValue("Pilot/Installation", "")
     if installationName:
       instOpts.append('-V %s' % installationName)
 
-    diracVersions = opsHelper.getValue("Pilot/Version", [])
-    instOpts.append("-r '%s'" % diracVersions[0])
+    diracVersions = str(infoDict['Setups'][setup].get('Version')).split(',')
+    if not diracVersions:
+      diracVersions = str(infoDict['Setups']['Defaults'].get('Version')).split(',')
+    if not diracVersions:
+      diracVersions = Operations.Operations(setup=setup).getValue("Pilot/Version", [])
+    instOpts.append("-r '%s'" % diracVersions[0].strip())
 
-    pyVer = "%u%u" % (sys.version_info.major, sys.version_info.minor)
-    instOpts.append("-i %s" % pyVer)
-    pilotExtensionsList = opsHelper.getValue("Pilot/Extensions", [])
+    pilotExtensionsList = str(infoDict['Setups'][setup].get('CommandExtensions')).split(',')
+    if not pilotExtensionsList:
+      pilotExtensionsList = str(infoDict['Setups']['Defaults'].get('CommandExtensions')).split(',')
+    if not pilotExtensionsList:
+      pilotExtensionsList = Operations.Operations(setup=setup).getValue("Pilot/Extensions", [])
     extensionsList = []
     if pilotExtensionsList:
       if pilotExtensionsList[0] != 'None':
@@ -122,33 +139,42 @@ class SingularityComputingElement(ComputingElement):
       extensionsList = CSGlobals.getCSExtensions()
     if extensionsList:
       instOpts.append("-e '%s'" % ','.join([ext for ext in extensionsList if 'Web' not in ext]))
-    lcgVer = opsHelper.getValue("Pilot/LCGBundleVersion", None)
-    if lcgVer:
-      instOpts.append("-g %s" % lcgVer)
     if 'ContainerExtraOpts' in self.ceParameters:
       instOpts.append(self.ceParameters['ContainerExtraOpts'])
     return ' '.join(instOpts)
 
   @staticmethod
-  def __getConfigFlags():
+  def __getConfigFlags(infoDict=None):
     """ Get the flags for dirac-configure inside the container.
         Returns a string containing the command line flags.
     """
+    if not infoDict:
+      infoDict = {}
+
     cfgOpts = []
-    setup = gConfig.getValue("/DIRAC/Setup", "unknown")
-    if setup:
-      cfgOpts.append("-S '%s'" % setup)
-    csServers = gConfig.getValue("/DIRAC/Configuration/Servers", [])
-    cfgOpts.append("-C '%s'" % ','.join(csServers))
+
+    setup = infoDict.get('DefaultSetup')
+    if not setup:
+      setup = gConfig.getValue("/DIRAC/Setup", "unknown")
+    cfgOpts.append("-S '%s'" % setup)
+
+    csServers = infoDict.get('ConfigurationServers')
+    if not csServers:
+      csServers = gConfig.getValue("/DIRAC/Configuration/Servers", [])
+    cfgOpts.append("-C '%s'" % ','.join([str(ce) for ce in csServers]))
     cfgOpts.append("-n '%s'" % DIRAC.siteName())
     return ' '.join(cfgOpts)
 
-  def __createWorkArea(self, proxy, jobDesc, log, logLevel):
+  def __createWorkArea(self, jobDesc=None, log=None, logLevel='INFO', proxy=None):
     """ Creates a directory for the container and populates it with the
         template directories, scripts & proxy.
     """
+    if not jobDesc:
+      jobDesc = {}
+    if not log:
+      log = gLogger
 
-    # Create the directory for our continer area
+    # Create the directory for our container area
     try:
       os.mkdir(self.__workdir)
     except OSError:
@@ -159,7 +185,7 @@ class SingularityComputingElement(ComputingElement):
       # Otherwise, directory probably just already exists...
     baseDir = None
     try:
-      baseDir = tempfile.mkdtemp(prefix="job%s_" % jobDesc["jobID"], dir=self.__workdir)
+      baseDir = tempfile.mkdtemp(prefix="job%s_" % jobDesc.get('jobID', 0), dir=self.__workdir)
     except OSError:
       result = S_ERROR("Failed to create container work directory in '%s'" % self.__workdir)
       result['ReschedulePayload'] = True
@@ -172,29 +198,43 @@ class SingularityComputingElement(ComputingElement):
 
     # Now we have a directory, we can stage in the proxy and scripts
     # Proxy
-    proxyLoc = os.path.join(tmpDir, "proxy")
-    rawfd = os.open(proxyLoc, os.O_WRONLY | os.O_CREAT, 0o600)
-    fd = os.fdopen(rawfd, "w")
-    fd.write(proxy)
-    fd.close()
+    if proxy:
+      proxyLoc = os.path.join(tmpDir, "proxy")
+      rawfd = os.open(proxyLoc, os.O_WRONLY | os.O_CREAT, 0o600)
+      fd = os.fdopen(rawfd, "w")
+      fd.write(proxy)
+      fd.close()
+    else:
+      self.log.warn("No user proxy")
 
     # dirac-install.py
     install_loc = os.path.join(tmpDir, "dirac-install.py")
     shutil.copyfile(DIRAC_INSTALL, install_loc)
     os.chmod(install_loc, 0o755)
 
-    # Job Wrapper (Standard DIRAC wrapper)
-    result = createRelocatedJobWrapper(tmpDir, self.__innerdir,
-                                       log=log, logLevel=logLevel, **jobDesc)
+    # Job Wrapper (Standard-ish DIRAC wrapper)
+    result = createRelocatedJobWrapper(wrapperPath=tmpDir,
+                                       rootLocation=self.__innerdir,
+                                       jobID=jobDesc.get('jobID', 0),
+                                       jobParams=jobDesc.get('jobParams', {}),
+                                       resourceParams=jobDesc.get('resourceParams', {}),
+                                       optimizerParams=jobDesc.get('optimizerParams', {}),
+                                       log=log,
+                                       logLevel=logLevel)
     if not result['OK']:
       result['ReschedulePayload'] = True
       return result
     wrapperPath = result['Value']
 
+    infoDict = None
+    if os.path.isfile('pilot.json'):  # if this is a pilot 3 this file should be found
+      with io.open('pilot.json') as pj:
+        infoDict = json.load(pj)
+
     # Extra Wrapper (Container DIRAC installer)
     wrapSubs = {'next_wrapper': wrapperPath,
-                'install_args': self.__getInstallFlags(),
-                'config_args': self.__getConfigFlags(),
+                'install_args': self.__getInstallFlags(infoDict),
+                'config_args': self.__getConfigFlags(infoDict),
                 }
     wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
     rawfd = os.open(wrapLoc, os.O_WRONLY | os.O_CREAT, 0o700)
@@ -205,7 +245,8 @@ class SingularityComputingElement(ComputingElement):
     ret = S_OK()
     ret['baseDir'] = baseDir
     ret['tmpDir'] = tmpDir
-    ret['proxyLocation'] = proxyLoc
+    if proxy:
+      ret['proxyLocation'] = proxyLoc
     return ret
 
   def __deleteWorkArea(self, baseDir):
@@ -252,8 +293,7 @@ class SingularityComputingElement(ComputingElement):
       result = S_ERROR("Command failed with exit code %d" % retCode)
     return result
 
-  # pylint: disable=unused-argument,arguments-differ
-  def submitJob(self, executableFile, proxy, jobDesc, log, logLevel, **kwargs):
+  def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Start a container for a job.
         executableFile is ignored. A new wrapper suitable for running in a
         container is created from jobDesc.
@@ -270,28 +310,28 @@ class SingularityComputingElement(ComputingElement):
     self.log.info('Creating singularity container')
 
     # Start by making the directory for the container
-    ret = self.__createWorkArea(proxy, jobDesc, log, logLevel)
+    ret = self.__createWorkArea(kwargs.get('jobDesc'),
+                                kwargs.get('log'),
+                                kwargs.get('logLevel', 'INFO'),
+                                proxy)
     if not ret['OK']:
       return ret
     baseDir = ret['baseDir']
     tmpDir = ret['tmpDir']
-    proxyLoc = ret['proxyLocation']
 
-    # Now we have to set-up proxy renewal for the container
-    # This is fairly easy as it remains visible on the host filesystem
-    ret = getProxyInfo()
-    if not ret['OK']:
-      pilotProxy = None
-    else:
-      pilotProxy = ret['Value']['path']
-    result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self._monitorProxy,
-                                              taskArgs=(pilotProxy, proxyLoc),
-                                              executions=0, elapsedTime=0)
-    renewTask = None
-    if result['OK']:
-      renewTask = result['Value']
-    else:
-      self.log.warn('Failed to start proxy renewal task')
+    if proxy:
+      payloadProxyLoc = ret['proxyLocation']
+
+      # Now we have to set-up payload proxy renewal for the container
+      # This is fairly easy as it remains visible on the host filesystem
+      result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self._monitorProxy,
+                                                taskArgs=(payloadProxyLoc),
+                                                executions=0, elapsedTime=0)
+      if result['OK']:
+        renewTask = result['Value']
+      else:
+        self.log.warn('Failed to start proxy renewal task')
+        renewTask = None
 
     # Very simple accounting
     self.__submittedJobs += 1
@@ -314,7 +354,14 @@ class SingularityComputingElement(ComputingElement):
       containerOpts = self.ceParameters['ContainerOptions'].split(',')
       for opt in containerOpts:
         cmd.extend([opt.strip()])
-    cmd.extend([rootImage, innerCmd])
+    if os.path.isdir(rootImage) or os.path.isfile(rootImage):
+      cmd.extend([rootImage, innerCmd])
+    else:
+      # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
+      self.log.error('Singularity image to exec not found')
+      result = S_ERROR("Failed to find singularity image to exec")
+      result['ReschedulePayload'] = True
+      return result
 
     self.log.debug('Execute singularity command: %s' % cmd)
     self.log.debug('Execute singularity env: %s' % self.__getEnv())
@@ -323,7 +370,8 @@ class SingularityComputingElement(ComputingElement):
     self.__runningJobs -= 1
 
     if not result["OK"]:
-      if renewTask:
+      self.log.error('Fail to run Singularity', result['Message'])
+      if proxy and renewTask:
         gThreadScheduler.removeTask(renewTask)
       self.__deleteWorkArea(baseDir)
       result = S_ERROR("Error running singularity command")
@@ -331,7 +379,7 @@ class SingularityComputingElement(ComputingElement):
       return result
 
     result = self.__checkResult(tmpDir)
-    if renewTask:
+    if proxy and renewTask:
       gThreadScheduler.removeTask(renewTask)
     self.__deleteWorkArea(baseDir)
     return result
@@ -343,4 +391,6 @@ class SingularityComputingElement(ComputingElement):
     result['SubmittedJobs'] = self.__submittedJobs
     result['RunningJobs'] = self.__runningJobs
     result['WaitingJobs'] = 0
+    # processors
+    result['AvailableProcessors'] = self.processors
     return result

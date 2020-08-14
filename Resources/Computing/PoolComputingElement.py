@@ -14,19 +14,20 @@ import os
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
-from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
-from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
+
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
-MandatoryParameters = []
+from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
+from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
+from DIRAC.Resources.Computing.SingularityComputingElement import SingularityComputingElement
+
 # Number of unix users to run job payloads with sudo
 MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 
 def executeJob(executableFile, proxy, taskID, **kwargs):
-  """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess)
+  """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess or Singularity)
 
   :param str executableFile: location of the executable file
   :param str proxy: proxy file location to be used for job submission
@@ -35,12 +36,15 @@ def executeJob(executableFile, proxy, taskID, **kwargs):
   :return: the result of the job submission
   """
 
-  useSudo = kwargs.pop('UseSudo', False)
-  if useSudo:
+  innerCESubmissionType = kwargs.pop('InnerCESubmissionType')
+
+  if innerCESubmissionType == 'Sudo':
     ce = SudoComputingElement("Task-" + str(taskID))
     payloadUser = kwargs.get('PayloadUser')
     if payloadUser:
       ce.setParameters({'PayloadUser': payloadUser})
+  elif innerCESubmissionType == 'Singularity':
+    ce = SingularityComputingElement("Task-" + str(taskID))
   else:
     ce = InProcessComputingElement("Task-" + str(taskID))
 
@@ -48,8 +52,6 @@ def executeJob(executableFile, proxy, taskID, **kwargs):
 
 
 class PoolComputingElement(ComputingElement):
-
-  mandatoryParameters = MandatoryParameters
 
   #############################################################################
   def __init__(self, ceUniqueID):
@@ -64,7 +66,10 @@ class PoolComputingElement(ComputingElement):
     self.taskID = 0
     self.processorsPerTask = {}
     self.userNumberPerTask = {}
-    self.useSudo = False
+
+    # This CE will effectively submit to another "Inner"CE
+    # (by default to the InProcess CE)
+    self.innerCESubmissionType = 'InProcess'
 
   def _reset(self):
     """ Update internal variables after some extra parameters are added
@@ -74,7 +79,7 @@ class PoolComputingElement(ComputingElement):
 
     self.processors = int(self.ceParameters.get('NumberOfProcessors', self.processors))
     self.ceParameters['MaxTotalJobs'] = self.processors
-    self.useSudo = self.ceParameters.get('SudoExecution', False)
+    self.innerCESubmissionType = self.ceParameters.get('InnerCESubmissionType', self.innerCESubmissionType)
 
   def getProcessorsInUse(self):
     """ Get the number of currently allocated processor cores
@@ -87,7 +92,7 @@ class PoolComputingElement(ComputingElement):
     return processorsInUse
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, **kwargs):
+  def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Method to submit job.
 
     :param str executableFile: location of the executable file
@@ -119,21 +124,13 @@ class PoolComputingElement(ComputingElement):
     if not res['OK']:
       self.log.error("Could not dump cfg to pilot.cfg", res['Message'])
 
-    ret = getProxyInfo()
-    if not ret['OK']:
-      pilotProxy = None
-    else:
-      pilotProxy = ret['Value']['path']
-    self.log.notice('Pilot Proxy:', pilotProxy)
-
-    kwargs = {'UseSudo': False}
-    if self.useSudo:
+    if self.innerCESubmissionType == 'Sudo':
       for nUser in range(MAX_NUMBER_OF_SUDO_UNIX_USERS):
         if nUser not in self.userNumberPerTask.values():
           break
       kwargs['NUser'] = nUser
       kwargs['PayloadUser'] = os.environ['USER'] + 'p%s' % str(nUser).zfill(2)
-      kwargs['UseSudo'] = True
+    kwargs['InnerCESubmissionType'] = self.innerCESubmissionType
 
     result = self.pPool.createAndQueueTask(executeJob,
                                            args=(executableFile, proxy, self.taskID),
@@ -260,12 +257,3 @@ class PoolComputingElement(ComputingElement):
     ceDictList.append(dict(ceDict))
 
     return S_OK(ceDictList)
-
-  #############################################################################
-  def monitorProxy(self, pilotProxy, payloadProxy):
-    """ Monitor the payload proxy and renew as necessary.
-
-    :param str pilotProxy: location of the pilotProxy
-    :param str payloadProxy: location of the payloadProxy
-    """
-    return self._monitorProxy(pilotProxy, payloadProxy)

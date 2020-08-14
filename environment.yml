@@ -34,7 +34,7 @@ dependencies:
   - six >=1.10
   - sqlalchemy >=1.0.9
   - subprocess32
-  - stomp.py >=3.1.5
+  - stomp.py =4.1.23
   - suds-jurko >=0.6
   # testing and development
   - autopep8

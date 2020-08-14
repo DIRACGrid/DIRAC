@@ -15,10 +15,10 @@ import os
 import stat
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 
 class InProcessComputingElement(ComputingElement):
@@ -28,60 +28,58 @@ class InProcessComputingElement(ComputingElement):
     """ Standard constructor.
     """
     super(InProcessComputingElement, self).__init__(ceUniqueID)
-    self.submittedJobs = 0
 
-    self.log.debug("CE parameters", self.ceParameters)
+    self.ceType = 'InProcess'
+    self.submittedJobs = 0
+    self.runningJobs = 0
 
     self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
     self.ceParameters['MaxTotalJobs'] = 1
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, **kwargs):
+  def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Method to submit job (overriding base method).
 
     :param str executableFile: file to execute via systemCall.
                                Normally the JobWrapperTemplate when invoked by the JobAgent.
     :param str proxy: the proxy used for running the job (the payload). It will be dumped to a file.
     """
-    ret = getProxyInfo()
-    if not ret['OK']:
-      pilotProxy = None
-    else:
-      pilotProxy = ret['Value']['path']
-
-    self.log.notice('Pilot Proxy:', pilotProxy)
-
     payloadEnv = dict(os.environ)
     payloadProxy = ''
-    renewTask = None
     if proxy:
       self.log.verbose('Setting up proxy for payload')
       result = self.writeProxyToFile(proxy)
       if not result['OK']:
         return result
 
-      payloadProxy = result['Value']  # proxy file location
-      # pilotProxy = os.environ['X509_USER_PROXY']
+      payloadProxy = result['Value']  # payload proxy file location
       payloadEnv['X509_USER_PROXY'] = payloadProxy
 
       self.log.verbose('Starting process for monitoring payload proxy')
-
-      result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self.monitorProxy,
-                                                taskArgs=(pilotProxy, payloadProxy),
+      result = gThreadScheduler.addPeriodicTask(self.proxyCheckPeriod, self._monitorProxy,
+                                                taskArgs=(payloadProxy),
                                                 executions=0, elapsedTime=0)
       if result['OK']:
         renewTask = result['Value']
+      else:
+        self.log.warn('Failed to start proxy renewal task')
+        renewTask = None
+
+    self.submittedJobs += 1
+    self.runningJobs += 1
 
     if not os.access(executableFile, 5):
       os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
     cmd = os.path.abspath(executableFile)
-    self.log.verbose('CE submission command: %s' % (cmd))
+    self.log.verbose('CE submission command:', cmd)
     result = systemCall(0, cmd, callbackFunction=self.sendOutput, env=payloadEnv)
     if payloadProxy:
       os.unlink(payloadProxy)
 
-    if renewTask:
+    if proxy and renewTask:
       gThreadScheduler.removeTask(renewTask)
+
+    self.runningJobs -= 1
 
     ret = S_OK()
 
@@ -107,7 +105,6 @@ class InProcessComputingElement(ComputingElement):
     else:
       self.log.debug('InProcess CE result OK')
 
-    self.submittedJobs += 1
     return ret
 
   #############################################################################
@@ -116,15 +113,10 @@ class InProcessComputingElement(ComputingElement):
         as well as number of available processors
     """
     result = S_OK()
-    result['SubmittedJobs'] = 0
-    result['RunningJobs'] = 0
+
+    result['SubmittedJobs'] = self.submittedJobs
+    result['RunningJobs'] = self.runningJobs
     result['WaitingJobs'] = 0
     # processors
     result['AvailableProcessors'] = self.processors
     return result
-
-  #############################################################################
-  def monitorProxy(self, pilotProxy, payloadProxy):
-    """ Monitor the payload proxy and renew as necessary.
-    """
-    return self._monitorProxy(pilotProxy, payloadProxy)
