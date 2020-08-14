@@ -13,6 +13,8 @@ from DIRAC.FrameworkSystem.private.standardLogging.Formatter.BaseFormatter impor
 from DIRAC.FrameworkSystem.private.standardLogging.Handler.ServerHandler import ServerHandler
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 
+DEFAULT_SERVER_LEVEL = 'error'
+
 
 class ServerBackend(AbstractBackend):
   """
@@ -27,34 +29,24 @@ class ServerBackend(AbstractBackend):
     You can find it in FrameworkSystem/private/standardLogging/Formatter
   """
 
-  def __init__(self):
-    """
-    :params __site: string representing the site where the log messages are from.
-    :params __interactive: not used at the moment.
-    :params __sleepTime: the time separating the log messages sending, in seconds.
-    """
-    super(ServerBackend, self).__init__(None, BaseFormatter)
-    self.__site = None
-    self.__interactive = True
-    self.__sleepTime = 150
+  def __init__(self, backendParams=None):
+    super(ServerBackend, self).__init__(ServerHandler, BaseFormatter, backendParams, level=DEFAULT_SERVER_LEVEL)
 
-  def createHandler(self, parameters=None):
+  def _setHandlerParameters(self, backendParams=None):
     """
-    Each backend can initialize its attributes and create its handler with them.
+    Get the handler parameters from the backendParams.
+    The keys of handlerParams should correspond to the parameter names of the associated handler.
+    The method should be overridden in every backend that needs handler parameters.
+    The method should be called before creating the handler object.
 
-    :params parameters: dictionary of parameters. ex: {'FileName': file.log}
+    :param dict parameters: parameters of the backend. ex: {'FileName': file.log}
     """
-    if parameters is not None:
-      self.__interactive = parameters.get('Interactive', self.__interactive)
-      self.__sleepTime = parameters.get('SleepTime', self.__sleepTime)
-      self.__site = DIRAC.siteName()
+    # default values
+    self._handlerParams['sleepTime'] = 150
+    self._handlerParams['interactive'] = True
+    self._handlerParams['site'] = None
 
-    self._handler = ServerHandler(self.__sleepTime, self.__interactive, self.__site)
-    self._handler.setLevel(LogLevels.ERROR)
-
-  def setLevel(self, level):
-    """
-    No possibility to set the level of the server backend because it is hardcoded to ERROR
-    and must not be changed
-    """
-    pass
+    if backendParams is not None:
+      self._handlerParams['sleepTime'] = backendParams.get('SleepTime', self._handlerParams['sleepTime'])
+      self._handlerParams['interactive'] = backendParams.get('Interactive', self._handlerParams['interactive'])
+      self._handlerParams['site'] = DIRAC.siteName()

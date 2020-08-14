@@ -43,6 +43,16 @@ class ColoredBaseFormatter(BaseFormatter):
       'FATAL': ('red', 'black', False)
   }
 
+  def __init__(self, fmt=None, datefmt=None):
+    """
+    Initialize the formatter without using parameters.
+    They are then modified in format()
+
+    :param str fmt: log format: "%(asctime)s UTC %(name)s %(levelname)s: %(message)"
+    :param str datefmt: date format: "%Y-%m-%d %H:%M:%S"
+    """
+    super(ColoredBaseFormatter, self).__init__()
+
   def format(self, record):
     """
     Overriding.
@@ -50,13 +60,13 @@ class ColoredBaseFormatter(BaseFormatter):
     a log record into a string with colors.
     According to the level, the method get colors from LEVEL_MAP to add them to the message.
 
-    :params record: the log record containing all the information about the log message: name, level, threadid...
+    :param record: the log record containing all the information about the log message: name, level, threadid...
     """
 
     stringRecord = super(ColoredBaseFormatter, self).format(record)
 
     # post treatment
-    if self._options['Color'] and sys.stdout.isatty() and sys.stderr.isatty():
+    if record.color and sys.stdout.isatty() and sys.stderr.isatty():
       params = []
       bg, fg, bold = self.LEVEL_MAP[record.levelname]
       if bg in self.COLOR_MAP:

@@ -26,20 +26,20 @@ class FileBackend(AbstractBackend):
     You can find it in FrameworkSystem/private/standardLogging/Formatter
   """
 
-  def __init__(self):
-    """
-    :params __filename: string representing the default name of the file.
-                        The default name come from the old gLogger.
-    """
-    super(FileBackend, self).__init__(None, BaseFormatter)
-    self.__fileName = 'Dirac-log_%s.log' % getpid()
+  def __init__(self, backendParams=None):
+    super(FileBackend, self).__init__(logging.FileHandler, BaseFormatter, backendParams)
 
-  def createHandler(self, parameters=None):
+  def _setHandlerParameters(self, backendParams=None):
     """
-    Each backend can initialize its attributes and create its handler with them.
+    Get the handler parameters from the backendParams.
+    The keys of handlerParams should correspond to the parameter names of the associated handler.
+    The method should be overridden in every backend that needs handler parameters.
+    The method should be called before creating the handler object.
 
-    :params parameters: dictionary of parameters. ex: {'FileName': file.log}
+    :param dict parameters: parameters of the backend. ex: {'FileName': file.log}
     """
-    if parameters is not None:
-      self.__fileName = parameters.get('FileName', self.__fileName)
-    self._handler = logging.FileHandler(self.__fileName)
+    # default values
+    self._handlerParams['filename'] = 'Dirac-log_%s.log' % getpid()
+
+    if backendParams is not None:
+      self._handlerParams['filename'] = backendParams.get('FileName', self._handlerParams['filename'])

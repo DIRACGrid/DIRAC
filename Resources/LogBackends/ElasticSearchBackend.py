@@ -21,70 +21,55 @@ class ElasticSearchBackend(AbstractBackend):
   object.
   """
 
-  def __init__(self):
+  def __init__(self, backendParams=None):
     """
     CMRESHandler needs, at least, a hostname, a username, a password, a port and a specific index
     from the ElasticSearch DB to send log records.
     """
-    super(ElasticSearchBackend, self).__init__(None, None)
-    self.__host = ''
-    self.__user = None
-    self.__passwd = None
-    self.__port = 9203
-    self.__index = ''
-    self.__bufferSize = 1000
-    self.__flushTime = 1
-
-  def createHandler(self, parameters=None):
-    """
-    Each backend can initialize its attributes and create its handler with them.
-
-    :params parameters: dictionary of parameters. ex: {'FileName': file.log}
-    """
-    if parameters is not None:
-      self.__host = parameters.get('Host', self.__host)
-      self.__user = parameters.get('User', self.__user)
-      self.__passwd = parameters.get('Password', self.__passwd)
-      self.__port = int(parameters.get('Port', self.__port))
-      self.__index = parameters.get('Index', self.__index)
-      self.__bufferSize = int(parameters.get('BufferSize', self.__bufferSize))
-      self.__flushTime = int(parameters.get('FlushTime', self.__flushTime))
-
-    if self.__user is not None and self.__passwd is not None:
-      self._handler = CMRESHandler(hosts=[{'host': self.__host, 'port': self.__port}],
-                                   auth_type=CMRESHandler.AuthType.BASIC_AUTH,
-                                   auth_details=(self.__user, self.__passwd),
-                                   es_index_name=self.__index,
-                                   use_ssl=True,
-                                   verify_ssl=True,
-                                   buffer_size=self.__bufferSize,
-                                   flush_frequency_in_sec=self.__flushTime)
-    else:
-      self._handler = CMRESHandler(hosts=[{'host': self.__host, 'port': self.__port}],
-                                   auth_type=CMRESHandler.AuthType.NO_AUTH,
-                                   es_index_name=self.__index,
-                                   use_ssl=True,
-                                   verify_ssl=True,
-                                   buffer_size=self.__bufferSize,
-                                   flush_frequency_in_sec=self.__flushTime)
     # We give a format containing only asctime to add the field in elasticsearch
     # asctime is not created at the initialization of the LogRecords but built in the format process
-    self._handler.setFormatter(logging.Formatter('%(asctime)s'))
+    if not backendParams:
+      backendParams = {}
+    backendParams['Format'] = '%(asctime)s'
 
-  def setLevel(self, level):
-    """
-    No possibility to set the level of the ElasticSearch handler.
-    It is not set by default so it can send all Log Records of all levels to ElasticSearch.
-    """
-    pass
+    super(ElasticSearchBackend, self).__init__(CMRESHandler, logging.Formatter, backendParams)
 
-  def setFormat(self, fmt, datefmt, options):
+  def _setHandlerParameters(self, backendParams=None):
     """
-    Each backend give a format to their formatters and attach them to their handlers.
+    Get the handler parameters from the backendParams.
+    The keys of handlerParams should correspond to the parameter names of the associated handler.
+    The method should be overridden in every backend that needs handler parameters.
+    The method should be called before creating the handler object.
 
-    :params fmt: string representing the log format
-    :params datefmt: string representing the date format
-    :params component: string represented as "system/component"
-    :params options: dictionary of logging options. ex: {'Color': True}
+    :param dict parameters: parameters of the backend. ex: {'FileName': file.log}
     """
-    pass
+    # fixed parameters
+    self._handlerParams['use_ssl'] = True
+    self._handlerParams['verify_ssl'] = True
+    self._handlerParams['auth_type'] = CMRESHandler.AuthType.NO_AUTH
+
+    # variable parameters
+    self._handlerParams['es_index_name'] = ''
+    self._handlerParams['buffer_size'] = 1000
+    self._handlerParams['flush_frequency_in_sec'] = 1
+    user = None
+    password = None
+    host = ''
+    port = 9203
+
+    if backendParams is not None:
+      self._handlerParams['es_index_name'] = backendParams.get('Index', self._handlerParams['es_index_name'])
+      self._handlerParams['buffer_size'] = backendParams.get('BufferSize', self._handlerParams['buffer_size'])
+      self._handlerParams['flush_frequency_in_sec'] = backendParams.get('FlushTime',
+                                                                        self._handlerParams['flush_frequency_in_sec'])
+
+      user = backendParams.get('User', user)
+      password = backendParams.get('Password', password)
+      if user is not None and password is not None:
+        self._handlerParams['auth_type'] = CMRESHandler.AuthType.BASIC_AUTH
+        self._handlerParams['auth_details'] = (user, password)
+
+      host = backendParams.get('Host', host)
+      port = int(backendParams.get('Port', port))
+
+    self._handlerParams['hosts'] = [{'host': host, 'port': port}]
