@@ -212,6 +212,18 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p33]
+
+*Interfaces
+FIX: (#4713) Pass useCertificates to WMSClient in Dirac API
+
+*Resources
+NEW: (#4716) better way to discover the innerCESubmissionType (Pool CE)
+CHANGE: (#4716) SingularityCE: get info from Pilot3 pilot.json, if present
+
+*tests
+NEW: (#4716) added integration test for SingularityCE
+
 [v7r0p32]
 
 *Core
