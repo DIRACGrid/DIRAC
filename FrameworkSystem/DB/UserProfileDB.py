@@ -546,7 +546,7 @@ class UserProfileDB(DB):
     """
     if not hashTag:
       hashTag = hashlib.md5()
-      hashTag.update("%s;%s;%s" % (Time.dateTime(), userIds, tagName))
+      hashTag.update(("%s;%s;%s" % (Time.dateTime(), userIds, tagName)).encode())
       hashTag = hashTag.hexdigest()
 
     result = self.insertFields('up_HashTags', ['UserId', 'GroupId', 'VOId', 'TagName', 'HashTag'],

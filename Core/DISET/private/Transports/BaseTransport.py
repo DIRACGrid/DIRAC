@@ -55,7 +55,7 @@ class BaseTransport(object):
     self.remoteAddress = False
     self.appData = ""
     self.startedKeepAlives = set()
-    self.keepAliveId = md5(str(stServerAddress) + str(bServerMode)).hexdigest()
+    self.keepAliveId = md5((str(stServerAddress) + str(bServerMode)).encode()).hexdigest()
     self.receivedMessages = []
     self.sentKeepAlives = 0
     self.waitingForKeepAlivePong = False

@@ -332,7 +332,7 @@ class DatasetManager(object):
     lfnIDList = idLfnDict.keys()
     lfnList = sorted(idLfnDict.values())
     myMd5 = hashlib.md5()
-    myMd5.update(str(lfnList))
+    myMd5.update(str(lfnList).encode())
     datasetHash = myMd5.hexdigest().upper()
     numberOfFiles = len(lfnList)
     result = self.db.fileManager.getFileSize(lfnList)

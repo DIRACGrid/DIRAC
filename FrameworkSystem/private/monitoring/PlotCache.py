@@ -46,8 +46,8 @@ class PlotCache(object):
 
   def __generateName(self, *args, **kwargs):
     m = hashlib.md5()
-    m.update(repr(args))
-    m.update(repr(kwargs))
+    m.update(repr(args).encode())
+    m.update(repr(kwargs).encode())
     return m.hexdigest()
 
   def __isCurrentTime(self, toSecs):

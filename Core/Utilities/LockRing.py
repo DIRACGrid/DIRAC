@@ -21,10 +21,11 @@ class LockRing(object):
     self.__events = {}
 
   def __genName(self, container):
-    name = md5(str(time.time() + random.random())).hexdigest()
+    # TODO: Shouldn't this be a UUID?
+    name = md5(str(time.time() + random.random()).encode()).hexdigest()
     retries = 10
     while name in container and retries:
-      name = md5(str(time.time() + random.random())).hexdigest()
+      name = md5(str(time.time() + random.random()).encode()).hexdigest()
       retries -= 1
     return name
 

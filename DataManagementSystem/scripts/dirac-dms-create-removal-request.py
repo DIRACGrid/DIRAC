@@ -65,7 +65,10 @@ if targetSE == 'All':
 for lfnList in breakListIntoChunks(lfns, 100):
 
   oRequest = Request()
-  requestName = "%s_%s" % (md5(repr(time.time())).hexdigest()[:16], md5(repr(time.time())).hexdigest()[:16])
+  requestName = "%s_%s" % (
+    md5(repr(time.time()).encode()).hexdigest()[:16],
+    md5(repr(time.time()).encode()).hexdigest()[:16],
+  )
   oRequest.RequestName = requestName
 
   oOperation = Operation()

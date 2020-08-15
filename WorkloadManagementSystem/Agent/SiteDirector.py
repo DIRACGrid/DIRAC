@@ -290,7 +290,7 @@ class SiteDirector(AgentModule):
     """ Generate a hash of the queue description
     """
     myMD5 = hashlib.md5()
-    myMD5.update(str(queueDict))
+    myMD5.update(str(queueDict).encode())
     hexstring = myMD5.hexdigest()
     return hexstring
 

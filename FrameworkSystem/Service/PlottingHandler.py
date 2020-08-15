@@ -48,7 +48,11 @@ class PlottingHandler(RequestHandler):
 
   def __calculatePlotHash(self, data, metadata, subplotMetadata):
     m = hashlib.md5()
-    m.update(repr({'Data': data, 'PlotMetadata': metadata, 'SubplotMetadata': subplotMetadata}))
+    m.update(repr({
+      'Data': data,
+      'PlotMetadata': metadata,
+      'SubplotMetadata': subplotMetadata
+    }).encode())
     return m.hexdigest()
 
   types_generatePlot = [[dict, list], dict]

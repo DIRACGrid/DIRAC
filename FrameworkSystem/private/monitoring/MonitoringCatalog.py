@@ -278,7 +278,7 @@ class MonitoringCatalog(object):
     m = hashlib.md5()
     acDict['name'] = acName
     acDict['sourceId'] = sourceId
-    m.update(str(acDict))
+    m.update(str(acDict).encode())
     retList = self.__select("filename", "activities", acDict)
     if len(retList) > 0:
       return retList[0][0]
