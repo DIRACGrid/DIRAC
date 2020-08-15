@@ -1,0 +1,33 @@
+name: Python 3 tests
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: False
+      matrix:
+        command:
+          # Only collect tests for now
+          - pytest --no-cov --collect-only
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Fail-fast for outdated pipelines
+      run: .github/workflows/fail-fast.sh
+    - name: Prepare environment
+      run: |
+        conda env create --name dirac-testing environment-py3.yml
+    - name: Run tests
+      run: |
+        source "${CONDA}/bin/activate"
+        conda activate dirac-testing
+        set -euxo pipefail
+        export PYTHONPATH=${PWD%/*}
+        ${{ matrix.command }}
+      env:
+        REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
