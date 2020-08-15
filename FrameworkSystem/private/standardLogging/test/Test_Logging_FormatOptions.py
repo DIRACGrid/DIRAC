@@ -4,7 +4,7 @@ Test properties of log records
 
 __RCSID__ = "$Id$"
 
-import thread
+from six.moves import _thread as thread
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import gLogger, gLoggerReset

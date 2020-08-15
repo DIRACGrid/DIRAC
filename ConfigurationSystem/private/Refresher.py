@@ -8,7 +8,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import threading
-import thread
+from six.moves import _thread as thread
 import time
 import random
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData

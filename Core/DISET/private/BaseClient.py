@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 
 import six
 import time
-import thread
+from six.moves import _thread as thread
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.FrameworkSystem.Client.Logger import gLogger

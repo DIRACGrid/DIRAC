@@ -7,7 +7,7 @@ from __future__ import division
 import os.path
 import zlib
 import zipfile
-import thread
+from six.moves import _thread as thread
 import time
 import DIRAC
 

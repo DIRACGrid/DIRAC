@@ -5,7 +5,7 @@ from __future__ import division
 import random
 import time
 import threading
-import thread
+from six.moves import _thread as thread
 from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
