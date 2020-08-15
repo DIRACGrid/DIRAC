@@ -6,7 +6,6 @@ from __future__ import print_function
 
 # pylint: disable=protected-access,missing-docstring,invalid-name,too-many-lines
 
-from types import ListType
 import unittest
 import stat
 
@@ -146,7 +145,7 @@ class mock_FileManager(object):
     return S_OK({'Successful': dict((lfn, lfn in fileTree) for lfn in lfns), 'Failed': {}})
 
   def getFileMetadata(self, lfns):
-    if not isinstance(lfns, ListType):
+    if not isinstance(lfns, list):
       lfns = [lfns]
 
     retParam = ['Size', 'Checksum', 'ChecksumType', 'UID',
@@ -170,7 +169,7 @@ class mock_FileManager(object):
     return S_OK({'Successful': successful, 'Failed': failed})
 
   def getPathPermissions(self, lfns, credDict):
-    if not isinstance(lfns, ListType):
+    if not isinstance(lfns, list):
       lfns = [lfns]
 
     successful = {}

@@ -110,7 +110,6 @@ import os
 import signal
 from six.moves import queue as Queue
 import errno
-from types import FunctionType, TypeType, ClassType
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -518,6 +517,8 @@ class ProcessTask(object):
 
     :param self: self reference
     """
+    from types import FunctionType, ClassType
+
     self.__done = True
     try:
       # # it's a function?

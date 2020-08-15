@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 import os
 import time
 import psutil
+import six
 
 import DIRAC
 
@@ -344,7 +345,7 @@ class RequestHandler(object):
 #
 ####
 
-  __connectionCallbackTypes = {'new': [basestring, dict],
+  __connectionCallbackTypes = {'new': list(six.string_types) + [dict],
                                'connected': [],
                                'drop': []}
 
@@ -499,7 +500,7 @@ class RequestHandler(object):
 
     return S_OK(dInfo)
 
-  types_echo = [basestring]
+  types_echo = [six.string_types]
 
   @staticmethod
   def export_echo(data):
