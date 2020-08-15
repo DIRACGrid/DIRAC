@@ -19,7 +19,6 @@ __RCSID__ = "$Id$"
 
 from past.builtins import long
 import six
-import types
 import datetime
 import os
 
@@ -29,6 +28,22 @@ import traceback
 
 from collections import defaultdict
 from pprint import pprint
+
+
+# This is a hack for Python 3 to make it possible to import DEncode
+# There is not point in porting DEncode to Python 3 as it will be removed as
+# part of the HTTPS transition.
+class types(object):
+    IntType = int
+    LongType = long if six.PY2 else int
+    FloatType = float
+    BooleanType = bool
+    StringType = str
+    UnicodeType = type(u"")
+    NoneType = type(None)
+    ListType = list
+    TupleType = tuple
+    DictType = dict
 
 
 # Setting this environment variable to any value will enable the dump of the debugging

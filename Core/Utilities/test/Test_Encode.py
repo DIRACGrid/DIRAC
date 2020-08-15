@@ -23,8 +23,8 @@ from DIRAC.Core.Utilities.MixedEncode import encode as mixEncode, decode as mixD
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import builds, integers, lists, recursive, floats, text,\
     booleans, none, dictionaries, tuples, datetimes
-
-from pytest import mark, approx, raises, fixture
+import six
+from pytest import mark, approx, raises, fixture, skip
 parametrize = mark.parametrize
 
 
@@ -314,3 +314,23 @@ def test_nestedSerializable(data):
   subObj = Serializable(instAttr=data)
   objData = Serializable(instAttr=subObj)
   agnosticTestFunction(jsonTuple, objData)
+
+
+def test_types():
+  """ Ensure that the DEncode types object matches the Python 2 types module
+  """
+  if not six.PY2:
+    skip("This test only makes sense on Python 2")
+  import types as pythonTypes
+  from DIRAC.Core.Utilities.DEncode import types as DIRACTypes
+
+  assert pythonTypes.IntType is pythonTypes.IntType
+  assert pythonTypes.LongType is pythonTypes.LongType
+  assert pythonTypes.FloatType is pythonTypes.FloatType
+  assert pythonTypes.BooleanType is pythonTypes.BooleanType
+  assert pythonTypes.StringType is pythonTypes.StringType
+  assert pythonTypes.UnicodeType is pythonTypes.UnicodeType
+  assert pythonTypes.NoneType is pythonTypes.NoneType
+  assert pythonTypes.ListType is pythonTypes.ListType
+  assert pythonTypes.TupleType is pythonTypes.TupleType
+  assert pythonTypes.DictType is pythonTypes.DictType
