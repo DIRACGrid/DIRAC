@@ -20,7 +20,7 @@ __RCSID__ = "$Id:$"
 import os
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-import urlparse
+from six.moves.urllib import parse as urlparse
 
 
 def pfnunparse(pfnDict, srmSpecific=True):

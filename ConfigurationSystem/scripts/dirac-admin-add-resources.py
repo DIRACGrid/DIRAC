@@ -16,7 +16,7 @@ import signal
 import re
 import os
 import shlex
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit, S_OK

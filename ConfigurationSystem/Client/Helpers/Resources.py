@@ -6,7 +6,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import urlparse
+from six.moves.urllib import parse as urlparse
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 import six

@@ -17,7 +17,7 @@ __RCSID__ = "$Id$"
 
 import re
 import socket
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 import six
 

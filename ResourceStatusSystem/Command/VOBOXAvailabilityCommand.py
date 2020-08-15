@@ -7,7 +7,7 @@ from __future__ import print_function
 # FIXME: NOT Usable ATM
 # missing doNew, doCache, doMaster
 
-import urlparse
+from six.moves.urllib import parse as urlparse
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient

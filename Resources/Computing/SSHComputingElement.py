@@ -18,7 +18,7 @@ import json
 import stat
 import shutil
 import errno
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import rootPath
