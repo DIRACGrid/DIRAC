@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 from pprint import pformat
-from itertools import izip_longest
+from six.moves import zip_longest
 
 from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -55,14 +55,14 @@ class JobInfo(object):
     if self.otherTasks:
       info += ' (Last task %s)' % self.otherTasks
     if self.inputFiles:
-      ifInfo = ['<<< %s (%s, %s, Errors %s)' % _ for _ in izip_longest(self.inputFiles,
+      ifInfo = ['<<< %s (%s, %s, Errors %s)' % _ for _ in zip_longest(self.inputFiles,
                                                                        self.inputFilesExist,
                                                                        self.transFileStatus,
                                                                        self.errorCounts)]
       info += '\n'.join(ifInfo)
     if self.outputFiles:
       info += "\n::: OutputFiles: "
-      efInfo = ["%s (%s)" % _ for _ in izip_longest(self.outputFiles, self.outputFileStatus)]
+      efInfo = ["%s (%s)" % _ for _ in zip_longest(self.outputFiles, self.outputFileStatus)]
       info += ", ".join(efInfo)
     if self.pendingRequest:
       info += "\n PENDING REQUEST IGNORE THIS JOB!!!"
