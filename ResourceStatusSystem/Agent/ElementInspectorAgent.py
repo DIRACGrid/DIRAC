@@ -19,7 +19,7 @@ __RCSID__ = '$Id$'
 
 import datetime
 import math
-import Queue
+from six.moves import queue as Queue
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule

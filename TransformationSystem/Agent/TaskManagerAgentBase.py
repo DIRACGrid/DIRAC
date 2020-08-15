@@ -15,7 +15,7 @@ __RCSID__ = "$Id$"
 
 import time
 import datetime
-from Queue import Queue
+from six.moves.queue import Queue
 
 from DIRAC import S_OK
 

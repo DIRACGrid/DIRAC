@@ -8,7 +8,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import logging
-import Queue
+from six.moves import queue as Queue
 import threading
 
 from DIRAC.Core.Utilities import Network

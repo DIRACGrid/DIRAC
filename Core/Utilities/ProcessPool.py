@@ -108,7 +108,7 @@ import time
 import threading
 import os
 import signal
-import Queue
+from six.moves import queue as Queue
 import errno
 from types import FunctionType, TypeType, ClassType
 

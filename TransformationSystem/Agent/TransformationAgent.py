@@ -14,7 +14,7 @@ from __future__ import print_function
 
 from past.builtins import long
 import time
-import Queue
+from six.moves import queue as Queue
 import os
 import datetime
 import pickle

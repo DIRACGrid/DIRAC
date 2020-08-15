@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import Queue
+from six.moves import queue as Queue
 
 # imports
 import pytest
