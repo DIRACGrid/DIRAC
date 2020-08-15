@@ -9,7 +9,7 @@ from __future__ import print_function
 
 __RCSID__ = '$Id$'
 
-import urllib2
+from six.moves.urllib_error import URLError
 import re
 
 from datetime import datetime, timedelta
@@ -210,11 +210,11 @@ class DowntimeCommand(Command):
     # WARNING: checking all the DT that are ongoing or starting in given <hours> from now
     try:
       results = self.gClient.getStatus(element, name=elementNames, startingInHours=hours)
-    except urllib2.URLError:
+    except URLError:
       try:
         # Let's give it a second chance..
         results = self.gClient.getStatus(element, name=elementNames, startingInHours=hours)
-      except urllib2.URLError as e:
+      except URLError as e:
         return S_ERROR(e)
 
     if not results['OK']:

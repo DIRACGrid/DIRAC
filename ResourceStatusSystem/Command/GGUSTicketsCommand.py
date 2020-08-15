@@ -10,7 +10,7 @@ from __future__ import print_function
 
 __RCSID__ = '$Id$'
 
-import urllib2
+from six.moves.urllib_error import URLError
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getGOCSiteName, getGOCSites
@@ -91,7 +91,7 @@ class GGUSTicketsCommand(Command):
 
     try:
       results = self.gClient.getTicketsList(gocName)
-    except urllib2.URLError as e:
+    except URLError as e:
       return S_ERROR('%s %s' % (gocName, e))
 
     if not results['OK']:
