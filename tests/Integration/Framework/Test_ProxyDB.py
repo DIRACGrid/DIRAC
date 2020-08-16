@@ -12,7 +12,12 @@ import sys
 import stat
 import shutil
 import tempfile
-import commands
+# TODO: This should be moderised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatability layer
+  import subprocess as commands
 import unittest
 
 from diraccfg import CFG

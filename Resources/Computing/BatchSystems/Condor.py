@@ -14,7 +14,12 @@ from __future__ import absolute_import
 from __future__ import division
 import re
 import tempfile
-import commands
+# TODO: This should be moderised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatability layer
+  import subprocess as commands
 import os
 
 __RCSID__ = "$Id$"

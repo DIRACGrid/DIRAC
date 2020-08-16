@@ -6,7 +6,12 @@ from __future__ import absolute_import
 from __future__ import division
 __RCSID__ = "$Id$"
 
-import commands
+# TODO: This should be moderised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatability layer
+  import subprocess as commands
 import os.path
 import time
 import sys

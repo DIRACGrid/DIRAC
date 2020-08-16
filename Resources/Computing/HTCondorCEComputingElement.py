@@ -48,7 +48,12 @@ from __future__ import print_function
 import six
 import os
 import tempfile
-import commands
+# TODO: This should be moderised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatability layer
+  import subprocess as commands
 import errno
 
 from DIRAC import S_OK, S_ERROR, gConfig
