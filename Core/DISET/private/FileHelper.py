@@ -7,7 +7,7 @@ import six
 import os
 import hashlib
 import threading
-import cStringIO
+from six import StringIO
 import tarfile
 import tempfile
 
@@ -132,7 +132,7 @@ class FileHelper(object):
     """ Receive the input from a DISET client and return it as a string
     """
 
-    stringIO = cStringIO.StringIO()
+    stringIO = StringIO()
     result = self.networkToDataSink(stringIO, maxFileSize=maxFileSize)
     if not result['OK']:
       return result
@@ -184,7 +184,7 @@ class FileHelper(object):
     """ Send a given string to the DISET client over the network
     """
 
-    stringIO = cStringIO.StringIO(stringVal)
+    stringIO = StringIO(stringVal)
 
     iPacketSize = self.packetSize
     ioffset = 0
@@ -234,7 +234,7 @@ class FileHelper(object):
     return S_OK()
 
   def BufferToNetwork(self, stringToSend):
-    sIO = cStringIO.StringIO(stringToSend)
+    sIO = StringIO(stringToSend)
     try:
       return self.DataSourceToNetwork(sIO)
     finally:

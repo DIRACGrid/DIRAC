@@ -33,7 +33,7 @@ import re
 import os
 import urllib
 import shlex
-import StringIO
+from six import StringIO
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.API import API
@@ -1127,7 +1127,7 @@ class Job(API):
             self.log.warn("Job description XML file not found")
       self.addToInputSandbox.append(scriptName)
 
-    elif isinstance(jobDescriptionObject, StringIO.StringIO):
+    elif isinstance(jobDescriptionObject, StringIO):
       self.log.verbose("jobDescription is passed in as a StringIO object")
 
     else:

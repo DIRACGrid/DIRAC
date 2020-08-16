@@ -5,10 +5,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-try:
-  from StringIO import StringIO
-except ImportError:
-  from io import BytesIO as StringIO
+from six import BytesIO
 import errno
 from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph, histogram
 
@@ -53,7 +50,7 @@ def generateErrorMessagePlot(msgText):
   :param str msgText: the text which will appear on the plot.
   :return: the plot.
   """
-  fn = StringIO()
+  fn = BytesIO()
   textGraph(msgText, fn, {})
   data = fn.getvalue()
   fn.close()

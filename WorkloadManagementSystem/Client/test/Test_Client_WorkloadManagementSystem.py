@@ -8,7 +8,7 @@ from __future__ import division
 import os
 import unittest
 import importlib
-import StringIO
+from six import BytesIO
 
 from mock import MagicMock
 
@@ -99,7 +99,7 @@ class SandboxStoreTestCaseSuccess(ClientsTestCase):
     ourSSC = importlib.import_module('DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient')
     ourSSC.TransferClient = MagicMock()
     ssc = SandboxStoreClient()
-    fileList = [StringIO.StringIO('try')]
+    fileList = [BytesIO('try')]
     res = ssc.uploadFilesAsSandbox(fileList)
     print(res)
 

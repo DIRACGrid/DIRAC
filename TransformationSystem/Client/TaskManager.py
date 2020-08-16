@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 
 import six
 import time
-import StringIO
+from six import StringIO
 import json
 import copy
 import os
@@ -991,7 +991,7 @@ class WorkflowTasks(TaskBase):
       self._logError("No valid job description found")
       return S_ERROR("No valid job description found")
 
-    workflowFileObject = StringIO.StringIO(oJob._toXML())
+    workflowFileObject = StringIO(oJob._toXML())
     jdl = oJob._toJDL(jobDescriptionObject=workflowFileObject)
     return self.submissionClient.submitJob(jdl, workflowFileObject)
 

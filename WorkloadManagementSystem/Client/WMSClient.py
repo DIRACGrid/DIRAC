@@ -6,7 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import StringIO
+from six import StringIO
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -97,7 +97,7 @@ class WMSClient(object):
     stringIOFiles = []
     stringIOFilesSize = 0
     if jobDescriptionObject is not None:
-      if isinstance(jobDescriptionObject, StringIO.StringIO):
+      if isinstance(jobDescriptionObject, StringIO):
         stringIOFiles = [jobDescriptionObject]
         stringIOFilesSize = len(jobDescriptionObject.buf)
         gLogger.debug("Size of the stringIOFiles: " + str(stringIOFilesSize))

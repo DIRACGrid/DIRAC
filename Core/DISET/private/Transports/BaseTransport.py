@@ -25,7 +25,7 @@ __RCSID__ = "$Id$"
 
 import time
 import select
-import cStringIO
+from six import BytesIO
 from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
@@ -235,7 +235,7 @@ class BaseTransport(object):
         self.byteStream = pkgData[pkgSize:]
       else:
         # If we still need to read stuff
-        pkgMem = cStringIO.StringIO()
+        pkgMem = BytesIO()
         pkgMem.write(pkgData)
         # Receive while there's still data to be received
         while readSize < pkgSize:

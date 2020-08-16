@@ -31,7 +31,7 @@ import glob
 import tarfile
 import urllib
 import shlex
-import StringIO
+from six import StringIO
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -353,7 +353,7 @@ class Dirac(API):
         self.log.error(msg)
         return S_ERROR(msg)
 
-      jobDescriptionObject = StringIO.StringIO(job._toXML())  # pylint: disable=protected-access
+      jobDescriptionObject = StringIO(job._toXML())  # pylint: disable=protected-access
       jdlAsString = job._toJDL(jobDescriptionObject=jobDescriptionObject)  # pylint: disable=protected-access
 
     if mode.lower() == 'local':

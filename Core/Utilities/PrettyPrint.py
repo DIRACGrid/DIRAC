@@ -11,7 +11,7 @@ from __future__ import division
 __RCSID__ = '$Id$'
 
 import six
-import StringIO
+from six import StringIO
 
 
 def int_with_commas(inputValue):
@@ -159,7 +159,7 @@ def printTable(fields, records, sortField='', numbering=True,
     totalLength += (numberWidth + separatorWidth)
 
   # Accumulate the table output in the stringBuffer now
-  stringBuffer = StringIO.StringIO()
+  stringBuffer = StringIO()
   topLength = (numberWidth + separatorWidth) if numbering else 0
   stringBuffer.write(' ' * (topLength))
 

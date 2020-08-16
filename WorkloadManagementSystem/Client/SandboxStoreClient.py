@@ -13,7 +13,7 @@ import tarfile
 import hashlib
 import tempfile
 import re
-import StringIO
+from six import BytesIO
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
@@ -99,7 +99,7 @@ class SandboxStoreClient(object):
         a fileList item can be:
           - a string, which is an lfn name
           - a file name (real), that is supposed to be on disk, in the current directory
-          - a fileObject that should be a StringIO.StringIO type of object
+          - a fileObject that should be a BytesIO type of object
 
         Parameters:
           - assignTo : Dict containing { 'Job:<jobid>' : '<sbType>', ... }
@@ -126,7 +126,7 @@ class SandboxStoreClient(object):
           else:
             errorFiles.append(sFile)
 
-      elif isinstance(sFile, StringIO.StringIO):
+      elif isinstance(sFile, BytesIO):
         files2Upload.append(sFile)
       else:
         return S_ERROR("Objects of type %s can't be part of InputSandbox" % type(sFile))
@@ -144,7 +144,7 @@ class SandboxStoreClient(object):
       for sFile in files2Upload:
         if isinstance(sFile, six.string_types):
           tf.add(os.path.realpath(sFile), os.path.basename(sFile), recursive=True)
-        elif isinstance(sFile, StringIO.StringIO):
+        elif isinstance(sFile, BytesIO):
           tarInfo = tarfile.TarInfo(name='jobDescription.xml')
           tarInfo.size = len(sFile.buf)
           tf.addfile(tarinfo=tarInfo, fileobj=sFile)

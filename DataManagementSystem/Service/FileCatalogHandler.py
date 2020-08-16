@@ -16,7 +16,7 @@ __RCSID__ = "$Id$"
 
 # imports
 import six
-import cStringIO
+from six import StringIO
 import csv
 import os
 from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
@@ -759,7 +759,7 @@ class FileCatalogHandler(RequestHandler):
     retVal = self.getSEDump(seName)
 
     try:
-      csvOutput = cStringIO.StringIO()
+      csvOutput = StringIO()
       writer = csv.writer(csvOutput, delimiter='|')
       for lfn in retVal:
         writer.writerow(lfn)

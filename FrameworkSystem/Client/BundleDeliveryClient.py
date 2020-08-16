@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import io
 import tarfile
-import cStringIO
+from six import BytesIO
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
@@ -59,7 +59,7 @@ class BundleDeliveryClient(Client):
       dirCreated = True
     currentHash = self.__getHash(bundleID, dirToSyncTo)
     self.log.info("Current hash for bundle %s in dir %s is '%s'" % (bundleID, dirToSyncTo, currentHash))
-    buff = cStringIO.StringIO()
+    buff = BytesIO()
     transferClient = self.__getTransferClient()
     result = transferClient.receiveFile(buff, [bundleID, currentHash])
     if not result['OK']:
