@@ -30,7 +30,7 @@ from __future__ import absolute_import
 from __future__ import division
 import time as nativetime
 import datetime
-from types import StringTypes
+import six
 import sys
 
 __RCSID__ = "$Id$"
@@ -194,7 +194,7 @@ def fromString(myDate=None):
   See notice on toString method
   On Error, return None
   """
-  if StringTypes.__contains__(type(myDate)):
+  if isinstance(myDate, six.string_types):
     if myDate.find(' ') > 0:
       dateTimeTuple = myDate.split(' ')
       dateTuple = dateTimeTuple[0].split('-')
