@@ -118,7 +118,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
     self.log.info("Multithreaded with %d threads" % maxNumberOfThreads)
 
-    for i in xrange(maxNumberOfThreads):
+    for i in range(maxNumberOfThreads):
       threadPool.generateJobAndQueueIt(self._execute, [i])
 
     self.log.info("Will treat the following transformation types: %s" % str(self.transformationTypes))

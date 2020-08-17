@@ -29,7 +29,7 @@ def _parseOption(outDict, inDict, optionPrefix=''):
   Handle some special cases.
   """
   LOG.info("Parsing into %s, from %s, prefix %r", outDict, inDict, optionPrefix)
-  for option, value in inDict.iteritems():
+  for option, value in inDict.items():
     optionName = "/".join([optionPrefix, option]).strip('/')
     LOG.info("Parsing %r with %r", optionName, value)
     if isinstance(value, six.string_types) and value.lower() in ('no', 'false'):
@@ -88,7 +88,7 @@ def AgentOptionsTest(agentPath, options, mocker):
       mocker.patch(agentPath + "." + name, new=Mock())
 
   if specialMocks is not None:
-    for name, retVal in specialMocks.iteritems():
+    for name, retVal in specialMocks.items():
       mocker.patch(agentPath + "." + name, new=Mock(return_value=retVal))
 
   def returnDefault(*args):
@@ -164,7 +164,7 @@ def checkAgentOptions(getOptionMock, systemName, agentName,
   LOG.info("Options found in ConfigTemplate: %s ", list(optionsDict.keys()))
 
   # check that values in ConfigTemplate are used
-  for option, value in optionsDict.iteritems():
+  for option, value in optionsDict.items():
     if any(ignoreOp in option for ignoreOp in ignoreOptions):
       LOG.info("From Agent: ignoring option %r with value %r, (%s)", option, value, type(value))
       continue

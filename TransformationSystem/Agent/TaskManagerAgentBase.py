@@ -103,7 +103,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
     self.log.verbose("Multithreaded with %d threads" % maxNumberOfThreads)
 
-    for i in xrange(maxNumberOfThreads):
+    for i in range(maxNumberOfThreads):
       threadPool.generateJobAndQueueIt(self._execute, [i])
 
     return S_OK()
