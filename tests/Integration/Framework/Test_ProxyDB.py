@@ -12,7 +12,7 @@ import sys
 import stat
 import shutil
 import tempfile
-# TODO: This should be moderised to use subprocess(32)
+# TODO: This should be modernised to use subprocess(32)
 try:
   import commands
 except ImportError:

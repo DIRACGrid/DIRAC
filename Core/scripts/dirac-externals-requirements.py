@@ -19,7 +19,7 @@ import sys
 try:
   import commands
 except ImportError:
-  # Python 3's subprocess module contains a compatability layer
+  # Python 3's subprocess module contains a compatibility layer
   import subprocess as commands
 
 from diraccfg import CFG
