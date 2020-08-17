@@ -14,6 +14,23 @@ jobs:
         command:
           # Only collect tests for now
           - pytest --no-cov --collect-only
+          - |
+            pytest --no-cov \
+                --ignore=AccountingSystem \
+                --ignore=ConfigurationSystem \
+                --ignore=Core \
+                --ignore=DataManagementSystem \
+                --ignore=FrameworkSystem \
+                --ignore=Interfaces \
+                --ignore=MonitoringSystem \
+                --ignore=ProductionSystem \
+                --ignore=RequestManagementSystem \
+                --ignore=Resources \
+                --ignore=ResourceStatusSystem \
+                --ignore=StorageManagementSystem \
+                --ignore=TransformationSystem \
+                --ignore=Workflow \
+                --ignore=WorkloadManagementSystem
 
     steps:
     - uses: actions/checkout@v2
