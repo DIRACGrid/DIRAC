@@ -19,6 +19,7 @@ import io
 import shutil
 import tempfile
 import json
+import stat
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -72,6 +73,9 @@ class SingularityComputingElement(ComputingElement):
     self.__workdir = CONTAINER_WORKDIR
     self.__innerdir = CONTAINER_INNERDIR
     self.__singularityBin = 'singularity'
+    self.__installDIRACInContainer = self.ceParameters.get('InstallDIRACInContainer', True)
+    if self.__installDIRACInContainer.lower() in ('false', 'no'):
+      self.__installDIRACInContainer = False
 
     self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
 
@@ -165,7 +169,7 @@ class SingularityComputingElement(ComputingElement):
     cfgOpts.append("-n '%s'" % DIRAC.siteName())
     return ' '.join(cfgOpts)
 
-  def __createWorkArea(self, jobDesc=None, log=None, logLevel='INFO', proxy=None):
+  def __createWorkArea(self, executableFile, jobDesc=None, log=None, logLevel='INFO', proxy=None):
     """ Creates a directory for the container and populates it with the
         template directories, scripts & proxy.
     """
@@ -207,40 +211,68 @@ class SingularityComputingElement(ComputingElement):
     else:
       self.log.warn("No user proxy")
 
-    # dirac-install.py
-    install_loc = os.path.join(tmpDir, "dirac-install.py")
-    shutil.copyfile(DIRAC_INSTALL, install_loc)
-    os.chmod(install_loc, 0o755)
+    if self.__installDIRACInContainer:
+      # dirac-install.py
+      install_loc = os.path.join(tmpDir, "dirac-install.py")
+      shutil.copyfile(DIRAC_INSTALL, install_loc)
+      os.chmod(install_loc, 0o755)
 
-    # Job Wrapper (Standard-ish DIRAC wrapper)
-    result = createRelocatedJobWrapper(wrapperPath=tmpDir,
-                                       rootLocation=self.__innerdir,
-                                       jobID=jobDesc.get('jobID', 0),
-                                       jobParams=jobDesc.get('jobParams', {}),
-                                       resourceParams=jobDesc.get('resourceParams', {}),
-                                       optimizerParams=jobDesc.get('optimizerParams', {}),
-                                       log=log,
-                                       logLevel=logLevel)
-    if not result['OK']:
-      result['ReschedulePayload'] = True
-      return result
-    wrapperPath = result['Value']
+      # Job Wrapper (Standard-ish DIRAC wrapper)
+      result = createRelocatedJobWrapper(wrapperPath=tmpDir,
+                                         rootLocation=self.__innerdir,
+                                         jobID=jobDesc.get('jobID', 0),
+                                         jobParams=jobDesc.get('jobParams', {}),
+                                         resourceParams=jobDesc.get('resourceParams', {}),
+                                         optimizerParams=jobDesc.get('optimizerParams', {}),
+                                         log=log,
+                                         logLevel=logLevel)
+      if not result['OK']:
+        result['ReschedulePayload'] = True
+        return result
+      wrapperPath = result['Value']
 
-    infoDict = None
-    if os.path.isfile('pilot.json'):  # if this is a pilot 3 this file should be found
-      with io.open('pilot.json') as pj:
-        infoDict = json.load(pj)
+      infoDict = None
+      if os.path.isfile('pilot.json'):  # if this is a pilot 3 this file should be found
+        with io.open('pilot.json') as pj:
+          infoDict = json.load(pj)
 
-    # Extra Wrapper (Container DIRAC installer)
-    wrapSubs = {'next_wrapper': wrapperPath,
-                'install_args': self.__getInstallFlags(infoDict),
-                'config_args': self.__getConfigFlags(infoDict),
-                }
-    wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
-    rawfd = os.open(wrapLoc, os.O_WRONLY | os.O_CREAT, 0o700)
-    fd = os.fdopen(rawfd, "w")
-    fd.write(CONTAINER_WRAPPER % wrapSubs)
-    fd.close()
+      # Extra Wrapper (Container DIRAC installer)
+      wrapSubs = {'next_wrapper': wrapperPath,
+                  'install_args': self.__getInstallFlags(infoDict),
+                  'config_args': self.__getConfigFlags(infoDict),
+                  }
+      wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
+      rawfd = os.open(wrapLoc, os.O_WRONLY | os.O_CREAT, 0o700)
+      fd = os.fdopen(rawfd, "w")
+      fd.write(CONTAINER_WRAPPER % wrapSubs)
+      fd.close()
+
+    else:  # In case we don't (re)install DIRAC
+      CONTAINER_WRAPPER = """#!/bin/bash
+
+echo "Starting inner container wrapper scripts at `date`."
+set -x
+cd /tmp
+ls -al
+# Run next wrapper (to start actual job)
+%(next_wrapper)s
+# Write the payload errorcode to a file for the outer scripts
+echo $? > retcode
+chmod 644 retcode
+echo "Finishing inner container wrapper scripts at `date`."
+
+"""
+      if not os.access(executableFile, 5):
+        os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+      shutil.copy2(executableFile, tmpDir)
+      cmd = 'python ' + executableFile
+
+      wrapSubs = {'next_wrapper': cmd}
+      wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
+      rawfd = os.open(wrapLoc, os.O_WRONLY | os.O_CREAT, 0o700)
+      fd = os.fdopen(rawfd, "w")
+      fd.write(CONTAINER_WRAPPER % wrapSubs)
+      fd.close()
 
     ret = S_OK()
     ret['baseDir'] = baseDir
@@ -295,8 +327,8 @@ class SingularityComputingElement(ComputingElement):
 
   def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Start a container for a job.
-        executableFile is ignored. A new wrapper suitable for running in a
-        container is created from jobDesc.
+        executableFile might be ignored in case a new wrapper
+        suitable for running in a container is created from jobDesc.
     """
     rootImage = self.__root
 
@@ -310,7 +342,8 @@ class SingularityComputingElement(ComputingElement):
     self.log.info('Creating singularity container')
 
     # Start by making the directory for the container
-    ret = self.__createWorkArea(kwargs.get('jobDesc'),
+    ret = self.__createWorkArea(executableFile,
+                                kwargs.get('jobDesc'),
                                 kwargs.get('log'),
                                 kwargs.get('logLevel', 'INFO'),
                                 proxy)
@@ -342,14 +375,15 @@ class SingularityComputingElement(ComputingElement):
     withCVMFS = os.path.isdir("/cvmfs")
     innerCmd = os.path.join(self.__innerdir, "dirac_container.sh")
     cmd = [self.__singularityBin, "exec"]
-    cmd.extend(["-c", "-i", "-p"])
-    cmd.extend(["-W", baseDir])
+    cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
+    cmd.extend(["--ipc", "--pid"])  # run container in new IPC and PID namespaces
+    cmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
     if withCVMFS:
-      cmd.extend(["-B", "/cvmfs"])
+      cmd.extend(["--bind", "/cvmfs"])
     if 'ContainerBind' in self.ceParameters:
       bindPaths = self.ceParameters['ContainerBind'].split(',')
       for bindPath in bindPaths:
-        cmd.extend(["-B", bindPath.strip()])
+        cmd.extend(["--bind", bindPath.strip()])
     if 'ContainerOptions' in self.ceParameters:
       containerOpts = self.ceParameters['ContainerOptions'].split(',')
       for opt in containerOpts:
