@@ -91,8 +91,8 @@ if __name__ == "__main__":
 
     request = Request()
     request.RequestName = "%s_%s" % (
-      md5(repr(time.time()).encode()).hexdigest()[:16],
-      md5(repr(time.time()).encode()).hexdigest()[:16],
+        md5(repr(time.time()).encode()).hexdigest()[:16],
+        md5(repr(time.time()).encode()).hexdigest()[:16],
     )
 
     moveReplica = Operation()
