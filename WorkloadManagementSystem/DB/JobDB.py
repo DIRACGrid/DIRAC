@@ -1844,13 +1844,14 @@ class JobDB(DB):
     for siteFullName in resultDict:
       siteDict = resultDict[siteFullName]
       if siteFullName.count('.') == 2:
-        grid, site, country = siteFullName.split('.')
+        grid, _, country = siteFullName.split('.')
       else:
-        grid, site, country = 'Unknown', 'Unknown', 'Unknown'
+        grid, _, country = 'Unknown', 'Unknown', 'Unknown'
 
-      res = getSiteTier(site)
+      res = getSiteTier(siteFullName)
       if not res['OK']:
-        return res
+        self.log.error(res['Message'])
+        continue
       tier = res['Value']
 
       if country not in countryCounts:
