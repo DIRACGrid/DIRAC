@@ -38,6 +38,7 @@ def processScriptSwitches():
   Script.registerSwitch("G", "glue2", "query GLUE2 information schema")
 
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'WARNING: StorageElements only for SRM-style'
                                     'Usage:',
                                     '  %s [option|cfgfile]' % Script.scriptName]))
   Script.parseCommandLine(ignoreErrors=True)

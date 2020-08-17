@@ -335,15 +335,19 @@ def getStorageElements(vo=None):
 
   seDict = {}
   for se in baseSEs:
-    result = gConfig.getOptionsDict('Resources/StorageElements/%s' % se)
     if vo:
       seVOs = gConfig.getValue('Resources/StorageElements/%s/VO' % se, [])
       if seVOs and vo not in seVOs:
         continue
+    result = gConfig.getOptionsDict('Resources/StorageElements/%s' % se)
+    if not result['OK']:
+      continue
     seDict[se] = result['Value']
     seDict[se]['Aliases'] = baseSEs[se]
     protocols = []
     result = gConfig.getSections('Resources/StorageElements/%s' % se)
+    if not result['OK']:
+      return result
     for pluginSection in result['Value']:
       protocol = gConfig.getValue('Resources/StorageElements/%s/%s/Protocol' % (se, pluginSection))
       if protocol:
