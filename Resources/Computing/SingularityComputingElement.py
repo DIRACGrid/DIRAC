@@ -22,6 +22,7 @@ import io
 import shutil
 import tempfile
 import json
+import six
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -96,7 +97,8 @@ class SingularityComputingElement(ComputingElement):
     self.__innerdir = CONTAINER_INNERDIR
     self.__singularityBin = 'singularity'
     self.__installDIRACInContainer = self.ceParameters.get('InstallDIRACInContainer', True)
-    if self.__installDIRACInContainer.lower() in ('false', 'no'):
+    if isinstance(self.__installDIRACInContainer, six.string_types) and \
+       self.__installDIRACInContainer.lower() in ('false', 'no'):
       self.__installDIRACInContainer = False
 
     self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
@@ -385,10 +387,10 @@ class SingularityComputingElement(ComputingElement):
     if 'ContainerBind' in self.ceParameters:
       bindPaths = self.ceParameters['ContainerBind'].split(',')
       for bindPath in bindPaths:
-        if len(bindPath.split('=')) == 1:
+        if len(bindPath.split(':::')) == 1:
           cmd.extend(["--bind", bindPath.split(':::')[0].strip()])
-        elif len(bindPath.split('=')) == 2:
-          cmd.extend(["--bind", bindPath.split(':::')[0].strip(), bindPath.split('=')[0].strip()])
+        elif len(bindPath.split(':::')) == 2:
+          cmd.extend(["--bind", bindPath.split(':::')[0].strip(), bindPath.split(':::')[0].strip()])
     if 'ContainerOptions' in self.ceParameters:
       containerOpts = self.ceParameters['ContainerOptions'].split(',')
       for opt in containerOpts:
