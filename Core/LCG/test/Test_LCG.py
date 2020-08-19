@@ -74,6 +74,83 @@ xml_endpoint_and_affected_ongoing += '<FORMATED_START_DATE>' + nowLess12h + '</F
 xml_endpoint_and_affected_ongoing += '<FORMATED_END_DATE>' + nowPlus24h + '</FORMATED_END_DATE>'
 xml_endpoint_and_affected_ongoing += '</DOWNTIME></ROOT>\n'
 
+xml_endpoint_and_affected_ongoing_broken = '<?xml version="1.0"?>\n<ROOT>'
+xml_endpoint_and_affected_ongoing_broken += '<DOWNTIME ID="29118" PRIMARY_KEY="109962G0" CLASSIFICATION="UNSCHEDULED">'
+xml_endpoint_and_affected_ongoing_broken += '<PRIMARY_KEY>109962G0</PRIMARY_KEY>'
+xml_endpoint_and_affected_ongoing_broken += '<HOSTNAME>lhcbsrm-kit.gridka.de</HOSTNAME>'
+xml_endpoint_and_affected_ongoing_broken += '<SERVICE_TYPE>SRM</SERVICE_TYPE>'
+xml_endpoint_and_affected_ongoing_broken += '<ENDPOINT>lhcbsrm-kit.gridka.deSRM</ENDPOINT>'
+xml_endpoint_and_affected_ongoing_broken += '<HOSTED_BY>FZK-LCG2</HOSTED_BY>'
+xml_endpoint_and_affected_ongoing_broken += '<GOCDB_PORTAL_URL>https://goc.egi.eu/bof</GOCDB_PORTAL_URL>'
+xml_endpoint_and_affected_ongoing_broken += '<AFFECTED_ENDPOINTS>'
+xml_endpoint_and_affected_ongoing_broken += '<ENDPOINT>'
+xml_endpoint_and_affected_ongoing_broken += '<ID>7517</ID>'
+xml_endpoint_and_affected_ongoing_broken += '<NAME>lhcbsrm-disk-kit</NAME>'
+xml_endpoint_and_affected_ongoing_broken += '<INTERFACENAME>SRM</INTERFACENAME>'
+xml_endpoint_and_affected_ongoing_broken += '<ENDPOINT_MONITORED>N</ENDPOINT_MONITORED>'
+xml_endpoint_and_affected_ongoing_broken += '</ENDPOINT>'
+xml_endpoint_and_affected_ongoing_broken += '</AFFECTED_ENDPOINTS>'
+xml_endpoint_and_affected_ongoing_broken += '<SEVERITY>OUTAGE</SEVERITY>'
+xml_endpoint_and_affected_ongoing_broken += '<DESCRIPTION>Namespace reordering</DESCRIPTION>'
+xml_endpoint_and_affected_ongoing_broken += '<INSERT_DATE>1595233003</INSERT_DATE>'
+xml_endpoint_and_affected_ongoing_broken += '<START_DATE>1595314800</START_DATE>'
+xml_endpoint_and_affected_ongoing_broken += '<END_DATE>1595343600</END_DATE>'
+xml_endpoint_and_affected_ongoing_broken += '<FORMATED_START_DATE>' + nowLess12h + '</FORMATED_START_DATE>'
+xml_endpoint_and_affected_ongoing_broken += '<FORMATED_END_DATE>' + nowPlus24h + '</FORMATED_END_DATE>'
+xml_endpoint_and_affected_ongoing_broken += '</DOWNTIME></ROOT>\n'
+
+xml_endpoint_and_affected_ongoing_no_url = '<?xml version="1.0"?>\n<ROOT>'
+xml_endpoint_and_affected_ongoing_no_url += '<DOWNTIME ID="29118" PRIMARY_KEY="109962G0" CLASSIFICATION="UNSCHEDULED">'
+xml_endpoint_and_affected_ongoing_no_url += '<PRIMARY_KEY>109962G0</PRIMARY_KEY>'
+xml_endpoint_and_affected_ongoing_no_url += '<HOSTNAME>lhcbsrm-kit.gridka.de</HOSTNAME>'
+xml_endpoint_and_affected_ongoing_no_url += '<SERVICE_TYPE>SRM</SERVICE_TYPE>'
+xml_endpoint_and_affected_ongoing_no_url += '<ENDPOINT>lhcbsrm-kit.gridka.deSRM</ENDPOINT>'
+xml_endpoint_and_affected_ongoing_no_url += '<HOSTED_BY>FZK-LCG2</HOSTED_BY>'
+xml_endpoint_and_affected_ongoing_no_url += '<GOCDB_PORTAL_URL>https://goc.egi.eu/bof</GOCDB_PORTAL_URL>'
+xml_endpoint_and_affected_ongoing_no_url += '<AFFECTED_ENDPOINTS/>'
+xml_endpoint_and_affected_ongoing_no_url += '<SEVERITY>OUTAGE</SEVERITY>'
+xml_endpoint_and_affected_ongoing_no_url += '<DESCRIPTION>Namespace reordering</DESCRIPTION>'
+xml_endpoint_and_affected_ongoing_no_url += '<INSERT_DATE>1595233003</INSERT_DATE>'
+xml_endpoint_and_affected_ongoing_no_url += '<START_DATE>1595314800</START_DATE>'
+xml_endpoint_and_affected_ongoing_no_url += '<END_DATE>1595343600</END_DATE>'
+xml_endpoint_and_affected_ongoing_no_url += '<FORMATED_START_DATE>' + nowLess12h + '</FORMATED_START_DATE>'
+xml_endpoint_and_affected_ongoing_no_url += '<FORMATED_END_DATE>' + nowPlus24h + '</FORMATED_END_DATE>'
+xml_endpoint_and_affected_ongoing_no_url += '</DOWNTIME></ROOT>\n'
+
+
+xml_endpoint_and_affected_ongoing_2_endpoints = '<?xml version="1.0"?>\n<ROOT>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<DOWNTIME ID="29109" PRIMARY_KEY="123" CLASSIFICATION="SCHEDULED">'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<PRIMARY_KEY>123</PRIMARY_KEY>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<HOSTNAME>appsgrycap.i3m.upv.es</HOSTNAME>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<SERVICE_TYPE>es.upv.grycap.im</SERVICE_TYPE>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<ENDPOINT>appsgrycap.i3m.upv.eses.upv.grycap.im</ENDPOINT>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<HOSTED_BY>UPV-GRyCAP</HOSTED_BY>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<GOCDB_PORTAL_URL>https://goc.egi.eu/bof</GOCDB_PORTAL_URL>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<AFFECTED_ENDPOINTS>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<ENDPOINT>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<ID>6735</ID>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<NAME>IM Web portal</NAME>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<URL>https://appsgrycap.i3m.upv.es:31443/im-web/</URL>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<INTERFACENAME>es.upv.grycap.im</INTERFACENAME>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<ENDPOINT_MONITORED>N</ENDPOINT_MONITORED>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '</ENDPOINT>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<ENDPOINT>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<ID>6737</ID>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<NAME>IM REST API</NAME>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<URL>https://appsgrycap.i3m.upv.es:31443/im/</URL>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<INTERFACENAME>es.upv.grycap.im</INTERFACENAME>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<ENDPOINT_MONITORED>N</ENDPOINT_MONITORED>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '</ENDPOINT>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '</AFFECTED_ENDPOINTS>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<SEVERITY>OUTAGE</SEVERITY>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<DESCRIPTION>maintenance of the facilities</DESCRIPTION>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<INSERT_DATE>1594986508</INSERT_DATE>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<START_DATE>1596196800</START_DATE>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<END_DATE>1598961600</END_DATE>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<FORMATED_START_DATE>' + nowLess12h + '</FORMATED_START_DATE>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '<FORMATED_END_DATE>' + nowPlus24h + '</FORMATED_END_DATE>'
+xml_endpoint_and_affected_ongoing_2_endpoints += '</DOWNTIME></ROOT>\n'
+
 XML_nodesite_ongoing = '<?xml version="1.0"?>\n<ROOT><DOWNTIME ID="78505455" PRIMARY_KEY="28490G0"'
 XML_nodesite_ongoing += ' CLASSIFICATION="SCHEDULED"><HOSTNAME>egse-cresco.portici.enea.it</HOSTNAME>'
 XML_nodesite_ongoing += '<HOSTED_BY>GRISU-ENEA-GRID</HOSTED_BY>'
@@ -235,6 +312,25 @@ def test__downTimeXMLParsing_affected():
   assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['HOSTNAME'] == 'lhcbsrm-kit.gridka.de'
   assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['URL'] == 'lhcbsrm-disk-kit.gridka.de'
   res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Site')
+  assert res == {}
+
+  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_broken, 'Resource')
+  assert list(res)[0] == '109962G0 lhcbsrm-kit.gridka.deSRM'
+  assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['HOSTNAME'] == 'lhcbsrm-kit.gridka.de'
+  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_broken, 'Site')
+  assert res == {}
+
+  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_no_url, 'Resource')
+  assert list(res)[0] == '109962G0 lhcbsrm-kit.gridka.deSRM'
+  assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['HOSTNAME'] == 'lhcbsrm-kit.gridka.de'
+  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_no_url, 'Site')
+  assert res == {}
+
+  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_2_endpoints, 'Resource')
+  assert list(res)[0] == '123 appsgrycap.i3m.upv.eses.upv.grycap.im'
+  assert res['123 appsgrycap.i3m.upv.eses.upv.grycap.im']['HOSTNAME'] == 'appsgrycap.i3m.upv.es'
+  assert res['123 appsgrycap.i3m.upv.eses.upv.grycap.im']['URL'] == 'https://appsgrycap.i3m.upv.es:31443/im-web/'
+  res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing_2_endpoints, 'Site')
   assert res == {}
 
 
