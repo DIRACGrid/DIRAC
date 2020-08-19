@@ -92,7 +92,8 @@ if site:
     gLogger.error(res['Message'])
     DIRAC.exit(-1)
   if site not in res['Value']:
-    gLogger.error(res['Message'])
+    gLogger.error('The provided site (%s) is not known.' % site)
+    DIRAC.exit(-1)
   ses.extend(res['Value']['SE'].replace(' ', '').split(','))
 
 if not ses:

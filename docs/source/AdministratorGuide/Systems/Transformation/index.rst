@@ -642,7 +642,7 @@ When a new production is derived all *Unused* files of the parent will be picked
 2. Create a new duplicate production with the improved application version
 3. Wait for the parent production to have no more files in *Assigned*
 4. Reset all files in the parent which are NOT in Status *Processed* (e.g. *MaxReset*) to *Unused*
-5. Create a new production with *setInheritedFrom* calls:
+5. Create a new production and in addition use *setInheritedFrom* to set the *InheritedFrom* transformation parameter to inherit the input file statuses:
 
   ::
 
@@ -653,7 +653,7 @@ When a new production is derived all *Unused* files of the parent will be picked
     t = Transformation()
     t.setTransformationName("derived_123") # this must be unique
     t.setInheritedFrom(123)
-
+   # create transformation as usual
     ...
 
 The status of 123 will be changed to status *Completing* and the new one *Active*. The files already assigned to the old one, will be processed by the old one. If a job fails, the input file is reset as Unused and will be picked up by the new one.
