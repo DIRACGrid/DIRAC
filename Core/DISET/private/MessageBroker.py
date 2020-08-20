@@ -182,7 +182,7 @@ class MessageBroker(object):
                                                                       result['Message']))
       return self.removeTransport(trid)
     if useThreadPoolExecutor:
-      self.__threadPool.submit(self.__processIncomingData, (trid, result))
+      self.__threadPool.submit(self.__processIncomingData, trid, result)
     else:
       self.__threadPool.generateJobAndQueueIt(self.__processIncomingData,
                                               args=(trid, result))
