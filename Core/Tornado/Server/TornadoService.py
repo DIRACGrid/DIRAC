@@ -57,10 +57,10 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
       class yourServiceHandler(TornadoService):
 
-        ## Called only once when the first
-        ## request for this handler arrives
-        ## Useful for initializing DB or so.
-        ## You don't need to use super or to call any parents method, it's managed by the server
+        # Called only once when the first
+        # request for this handler arrives
+        # Useful for initializing DB or so.
+        # You don't need to use super or to call any parents method, it's managed by the server
         @classmethod
         def initializeHandler(cls, infosDict):
           '''Called only once when the first
@@ -224,16 +224,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
         ==> initialize in DISET became initializeRequest in HTTPS !
     """
 
-    # Used as timestamp for monitoring
-    self.requestStartTime = time.time()
-
-    # Credential dict as gathered from _gatherPeerCredentials
-    self.credDict = None
-
-    # HTTP status code of the response
-    self._httpStatus = http_client.OK
-
-    # Only initialize once
+    # Only initialized once
     if not self.__FLAG_INIT_DONE:
       # Ideally, if something goes wrong, we would like to return a Server Error 500
       # but this method cannot write back to the client as per the
@@ -247,10 +238,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
         sLog.error("Error in initialization", repr(e))
         raise
 
-    self._stats['requests'] += 1
-    self._monitor.setComponentExtraParam('queries', self._stats['requests'])
-    self._monitor.addMark("Queries")
-
   def prepare(self):
     """
       Prepare the request. It reads certificates and check authorizations.
@@ -262,13 +249,13 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     # "method" argument of the POST call.
     # This resolves into the ``export_<method>`` method
     # on the handler side
+    # If the argument is not available, the method exists
+    # and an error 400 ``Bad Request`` is returned to the client
     self.method = self.get_argument("method")
 
-    # If set to true, do not JEncode the return of the RPC call
-    # It's only purpose so far is to stream data out.
-    self.rawContent = self.get_argument('rawContent', default=False)
-
-    sLog.notice("Incoming request on /%s: %s" % (self._serviceName, self.method))
+    self._stats['requests'] += 1
+    self._monitor.setComponentExtraParam('queries', self._stats['requests'])
+    self._monitor.addMark("Queries")
 
     try:
       self.credDict = self._gatherPeerCredentials()
@@ -277,8 +264,8 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       # It can be strange but the RFC, for HTTP, say's that when error happend
       # before authentication we return 401 UNAUTHORIZED instead of 403 FORBIDDEN
       sLog.error(
-          "Error gathering credentials", "IP %s; path %s" %
-          (self.request.remote_ip, self.request.path))
+          "Error gathering credentials", "%s; path %s" %
+          (self.getRemoteAddress(), self.request.path))
       raise HTTPError(status_code=http_client.UNAUTHORIZED)
 
     # Resolves the hard coded authorization requirements
@@ -288,11 +275,12 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       hardcodedAuth = None
 
     # Check whether we are authorized to perform the query
+    # Note that performing the authQuery modifies the credDict...
     authorized = self._authManager.authQuery(self.method, self.credDict, hardcodedAuth)
     if not authorized:
       sLog.error(
-          "Unauthorized access", "IP %s; path %s; DN %s" %
-          (self.request.remote_ip,
+          "Unauthorized access", "Identity %s; path %s; DN %s" %
+          (self.srv_getFormattedRemoteCredentials,
            self.request.path,
            self.credDict['DN'],
            ))
@@ -310,9 +298,19 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
       The ``POST`` arguments expected are:
 
-      * `method`: name of the method to call
-      * `args`: JSON encoded arguments for the method
-      * `extraCredentials`: (if applies) Extra informations to authenticate client
+      * ``method``: name of the method to call
+      * ``args``: JSON encoded arguments for the method
+      * ``extraCredentials``: (optional) Extra informations to authenticate client
+      * ``rawContent``: (optionnal, default False) If set to True, return the raw output
+        of the method called.
+
+      If ``rawContent`` was requested by the client, the ``Content-Type``
+      is ``application/octet-stream``, otherwise we set it to ``application/json``
+      and JEncode retVal.
+
+      If ``retVal`` is a dictionary that contains a ``Callstack`` item,
+      it is removed, not to leak internal information.
+
 
       Example of call using ``requests``::
 
@@ -338,18 +336,41 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
             u'validGroup': False}}
     """
 
+    sLog.notice(
+        "Incoming request %s /%s: %s" %
+        (self.srv_getFormattedRemoteCredentials(),
+         self._serviceName,
+         self.method))
+
     # Execute the method in an executor (basically a separate thread)
     # Because of that, we cannot calls certain methods like `self.write`
     # in __executeMethod. This is because these methods are not threadsafe
     # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
     # However, we can still rely on instance attributes to store what should
-    # be sent back (like self._httpStatus) (reminder: there is an instance
+    # be sent back (reminder: there is an instance
     # of this class created for each request)
     retVal = yield IOLoop.current().run_in_executor(None, self.__executeMethod)
 
+    # retVal is :py:class:`tornado.concurrent.Future`
+    self.result = retVal.result()
+
     # Here it is safe to write back to the client, because we are not
     # in a thread anymore
-    self.__write_return(retVal.result())
+
+    # If set to true, do not JEncode the return of the RPC call
+    # This is basically only used for file download through
+    # the 'streamToClient' method.
+    rawContent = self.get_argument('rawContent', default=False)
+
+    if rawContent:
+      # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
+      self.set_header("Content-Type", "application/octet-stream")
+      result = self.result
+    else:
+      self.set_header("Content-Type", "application/json")
+      result = encode(self.result)
+
+    self.write(result)
     self.finish()
 
   # This nice idea of streaming to the client cannot work because we are ran in an executor
@@ -398,13 +419,12 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
         See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
     """
 
-    # CHRIS maybe better to use https://www.tornadoweb.org/en/stable/guide/structure.html#error-handling
-
     # getting method
     try:
       # For compatibility reasons with DISET, the methods are still called ``export_*``
       method = getattr(self, 'export_%s' % self.method)
     except AttributeError as e:
+      sLog.error("Invalid method", self.method)
       raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
 
     # Decode args
@@ -421,53 +441,64 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
     return retVal
 
-  def __write_return(self, retVal):
-    """
-      Write back to the client and return.
-      It sets some headers (status code, ``Content-Type``).
-      If raw content was requested by the client, the ``Content-Type``
-      is ``application/octet-stream``, otherwise we set it to ``application/json``
-      and JEncode retVal.
+  # def __write_return(self, retVal):
+  #   """
+  #     Write back to the client and return.
+  #     It sets some headers (status code, ``Content-Type``).
+  #     If raw content was requested by the client, the ``Content-Type``
+  #     is ``application/octet-stream``, otherwise we set it to ``application/json``
+  #     and JEncode retVal.
 
-      If ``retVal`` is a dictionary that contains a ``Callstack`` item,
-      it is removed, not to leak internal information.
+  #     If ``retVal`` is a dictionary that contains a ``Callstack`` item,
+  #     it is removed, not to leak internal information.
 
-      :param retVal: anything that can be serialized in json.
-    """
+  #     :param retVal: anything that can be serialized in json.
+  #   """
 
-    # In case of error in server side we hide server CallStack to client
-    try:
-      if 'CallStack' in retVal:
-        del retVal['CallStack']
-    except TypeError:
-      pass
+  #   # In case of error in server side we hide server CallStack to client
+  #   try:
+  #     if 'CallStack' in retVal:
+  #       del retVal['CallStack']
+  #   except TypeError:
+  #     pass
 
-    # Set the status
-    self.set_status(self._httpStatus)
+  #   # Set the status
+  #   self.set_status(self._httpStatus)
 
-    # This is basically only used for file download through
-    # the 'streamToClient' method.
-    if self.rawContent:
-      # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
-      self.set_header("Content-Type", "application/octet-stream")
-      returnedData = retVal
-    else:
-      self.set_header("Content-Type", "application/json")
-      returnedData = encode(retVal)
+  #   # This is basically only used for file download through
+  #   # the 'streamToClient' method.
+  #   if self.rawContent:
+  #     # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
+  #     self.set_header("Content-Type", "application/octet-stream")
+  #     returnedData = retVal
+  #   else:
+  #     self.set_header("Content-Type", "application/json")
+  #     returnedData = encode(retVal)
 
-    self.write(returnedData)
-
-  # TODO CHRIS ADD THAT
-  # set_default_headers
+  #   self.write(returnedData)
 
   def on_finish(self):
     """
       Called after the end of HTTP request.
       Log the request duration
     """
-    # TODO CHRIS: log better than that ! Look at what is in RequestHandler
-    requestDuration = time.time() - self.requestStartTime
-    sLog.notice("Ending request to %s after %fs" % (self.srv_getURL(), requestDuration))
+    elapsedTime = 1000.0 * self.request.request_time()
+
+    try:
+      if self.result['OK']:
+        argsString = "OK"
+      else:
+        argsString = "ERROR: %s" % self.result['Message']
+    except (AttributeError, KeyError):  # In case it is not a DIRAC structure
+      if self._reason == 'OK':
+        argsString = 'OK'
+      else:
+        argsString = 'ERROR %s' % self._reason
+
+      argsString = "ERROR: %s" % self._reason
+    sLog.notice("Returning response", "%s %s (%.2f ms) %s" % (self.srv_getFormattedRemoteCredentials(),
+                                                              self._serviceName,
+                                                              elapsedTime, argsString))
 
   def _gatherPeerCredentials(self):
     """
@@ -488,8 +519,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     for cert in cert_chain:
       chainAsText += cert.as_pem()
 
-    # And we let some utilities do the job...
-    # Following lines just get the right info, at the right place
     peerChain.loadChainFromString(chainAsText)
 
     # Retrieve the credentials
@@ -611,7 +640,16 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
     :return: Address of remote peer.
     """
-    return self.request.remote_ip
+
+    remote_ip = self.request.remote_ip
+    # Although it would be trivial to add this attribute in _HTTPRequestContext,
+    # Tornado won't release anymore 5.1 series, so go the hacky way
+    try:
+      remote_port = self.request.connection.stream.socket.getpeername()[1]
+    except Exception:  # pylint: disable=broad-except
+      remote_port = 0
+
+    return (remote_ip, remote_port)
 
   def getRemoteAddress(self):
     """
@@ -638,11 +676,35 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
   def srv_getFormattedRemoteCredentials(self):
     """
       Return the DN of user
+
+      Mostly copy paste from
+      :py:meth:`DIRAC.Core.DISET.private.Transports.BaseTransport.BaseTransport.getFormattedCredentials`
+
+      Note that the information will be complete only once the AuthManager was called
     """
+    address = self.getRemoteAddress()
+    peerId = ""
+    # Depending on where this is call, it may be that credDict is not yet filled.
+    # (reminder: AuthQuery fills part of it..)
     try:
-      return self.credDict['DN']
-    except KeyError:  # Called before reading certificate chain
-      return "unknown"
+      peerId = "[%s:%s]" % (self.credDict['group'], self.credDict['username'])
+    except AttributeError:
+      pass
+
+    if address[0].find(":") > -1:
+      return "([%s]:%s)%s" % (address[0], address[1], peerId)
+    return "(%s:%s)%s" % (address[0], address[1], peerId)
+
+# def getFormattedCredentials(self):
+#     peerCreds = self.getConnectingCredentials()
+#     address = self.getRemoteAddress()
+#     if 'username' in peerCreds:
+#       peerId = "[%s:%s]" % (peerCreds['group'], peerCreds['username'])
+#     else:
+#       peerId = ""
+#     if address[0].find(":") > -1:
+#       return "([%s]:%s)%s" % (address[0], address[1], peerId)
+#     return "(%s:%s)%s" % (address[0], address[1], peerId)
 
   def srv_getServiceName(self):
     """
