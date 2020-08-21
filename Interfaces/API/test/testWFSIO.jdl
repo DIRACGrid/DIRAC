@@ -1,20 +1,20 @@
  
-    Origin = DIRAC;
-    Priority = 1;
-    Executable = "$DIRACROOT/scripts/dirac-jobexec";
-    StdError = std.err;
-    LogLevel = info;
-    Site = ANY;
-    JobName = jobName;
-    OwnerGroup = ownerGroup;
     Arguments = "jobDescription.xml -o LogLevel=info";
+    Executable = "$DIRACROOT/scripts/dirac-jobexec";
     JobGroup = jobGroup;
-    StdOutput = std.out;
-    Owner = ownerName;
+    JobName = jobName;
+    JobType = jobType;
+    LogLevel = info;
+    Origin = DIRAC;
     OutputSandbox = 
         {
             Script1_CodeOutput.log,
             std.err,
             std.out
         };
-    JobType = jobType;
+    Owner = ownerName;
+    OwnerGroup = ownerGroup;
+    Priority = 1;
+    Site = ANY;
+    StdError = std.err;
+    StdOutput = std.out;

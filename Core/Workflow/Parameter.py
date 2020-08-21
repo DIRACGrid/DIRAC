@@ -638,7 +638,7 @@ class AttributeCollection(dict):
 
   def toXML(self):
     ret = ""
-    for v in self.keys():
+    for v in sorted(self):
       if v == 'parent':
         continue  # doing nothing
       elif v == 'body' or v == 'description':
