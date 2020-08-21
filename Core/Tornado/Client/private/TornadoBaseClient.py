@@ -31,9 +31,12 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from io import open
-import six
-
+import errno
 import requests
+import six
+from six.moves import http_client
+
+
 import DIRAC
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -516,44 +519,60 @@ class TornadoBaseClient(object):
     else:
       cert = self.__proxy_location
 
-    # Do the request
+    # We have a try/except for all the exceptions
+    # whose default behavior is to try again,
+    # maybe to different server
     try:
-      rawText = None
-
-      # Default case, just return the result
-      if not outputFile:
-        call = requests.post(url, data=kwargs,
-                             timeout=self.timeout, verify=verify,
-                             cert=cert)
-        # raising the exception for status here
-        # means essentialy that we are losing here the information of what is returned by the server
-        # as error message, since it is not passed to the exception
-        # However, we can store the text and return it raw as an error,
-        # since there is no guarantee that it is any JEncoded text
-        # Note that we would get an exception only if there is an exception on the server side which
-        # is not handled.
-        # Any standard S_ERROR will be transfered as an S_ERROR with a correct code.
-        rawText = call.text
-        call.raise_for_status()
-        return decode(rawText)[0]
-      else:
-        # Instruct the server not to encode the response
-        kwargs['rawContent'] = True
-
+      # And we have a second block to handle specific exceptions
+      # which makes it not worth retrying
+      try:
         rawText = None
-        # Stream download
-        # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
-        with requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
-                           cert=cert, stream=True) as r:
-          rawText = r.text
-          r.raise_for_status()
 
-          with open(outputFile, 'wb') as f:
-            for chunk in r.iter_content(4096):
-              # if chunk:  # filter out keep-alive new chuncks
-              f.write(chunk)
+        # Default case, just return the result
+        if not outputFile:
+          call = requests.post(url, data=kwargs,
+                               timeout=self.timeout, verify=verify,
+                               cert=cert)
+          # raising the exception for status here
+          # means essentialy that we are losing here the information of what is returned by the server
+          # as error message, since it is not passed to the exception
+          # However, we can store the text and return it raw as an error,
+          # since there is no guarantee that it is any JEncoded text
+          # Note that we would get an exception only if there is an exception on the server side which
+          # is not handled.
+          # Any standard S_ERROR will be transfered as an S_ERROR with a correct code.
+          rawText = call.text
+          call.raise_for_status()
+          return decode(rawText)[0]
+        else:
+          # Instruct the server not to encode the response
+          kwargs['rawContent'] = True
 
-          return S_OK()
+          rawText = None
+          # Stream download
+          # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
+          with requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
+                             cert=cert, stream=True) as r:
+            rawText = r.text
+            r.raise_for_status()
+
+            with open(outputFile, 'wb') as f:
+              for chunk in r.iter_content(4096):
+                # if chunk:  # filter out keep-alive new chuncks
+                f.write(chunk)
+
+            return S_OK()
+
+      # Some HTTPError are not worth retrying
+      except requests.exceptions.HTTPError as e:
+        status_code = e.response.status_code
+        if status_code == http_client.NOT_IMPLEMENTED:
+          return S_ERROR(errno.ENOSYS, "%s is not implemented" % kwargs.get('method'))
+        elif status_code in (http_client.FORBIDDEN, http_client.UNAUTHORIZED):
+          return S_ERROR(errno.EACCES, "No access to %s" % url)
+
+        # if it is something else, retry
+        raise
 
     except Exception as e:
       # CHRIS TODO review this part: catch specific exceptions
