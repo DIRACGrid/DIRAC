@@ -53,7 +53,7 @@ def getCSTree(csPath=''):
 
       opts = opts['Value']
 
-      for optKey, optValue in opts.iteritems():
+      for optKey, optValue in opts.items():
         if optValue.find(',') > -1:
           optValue = List.fromChar(optValue)
         else:

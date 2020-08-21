@@ -41,7 +41,7 @@ class FileManagerFlat(FileManagerBase):
         for fileName in fileNames:
           failed['%s/%s' % (dirPath, fileName)] = error
       else:
-        for fileName, fileDict in res['Value'].iteritems():
+        for fileName, fileDict in res['Value'].items():
           successful["%s/%s" % (dirPath, fileName)] = fileDict
     return S_OK({"Successful": successful, "Failed": failed})
 
@@ -110,7 +110,7 @@ class FileManagerFlat(FileManagerBase):
         lfns.pop(lfn)
     else:
       failed.update(res['Value']['Failed'])
-      for lfn, fileDict in res['Value']['Successful'].iteritems():
+      for lfn, fileDict in res['Value']['Successful'].items():
         lfns[lfn]['FileID'] = fileDict['FileID']
     return S_OK({'Successful': lfns, 'Failed': failed})
 
@@ -250,7 +250,7 @@ class FileManagerFlat(FileManagerBase):
     lfnFileIDDict = res['Value']['Successful']
     toRemove = []
     directorySESizeDict = {}
-    for lfn, fileDict in lfnFileIDDict.iteritems():
+    for lfn, fileDict in lfnFileIDDict.items():
       fileID = fileDict['FileID']
       se = lfns[lfn]['SE']
       toRemove.append((fileID, se))

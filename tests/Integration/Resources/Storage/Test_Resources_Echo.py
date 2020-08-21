@@ -214,7 +214,7 @@ def setuptest(request):
   fileAdlers = {}
   fileSizes = {}
 
-  for lfn, localFn in putFile.iteritems():
+  for lfn, localFn in putFile.items():
     fileAdlers[lfn] = fileAdler(localFn)
     fileSizes[lfn] = getSize(localFn)
 

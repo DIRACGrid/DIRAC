@@ -112,7 +112,7 @@ def parseSwitches():
       switches['statusType'] = 'all'
 
   subLogger.debug("The switches used are:")
-  map(subLogger.debug, switches.iteritems())
+  map(subLogger.debug, switches.items())
 
   return args, switches
 
@@ -256,7 +256,7 @@ def tabularPrint(table):
   records = []
   for row in table:
     record = []
-    for _k, v in row.iteritems():
+    for _k, v in row.items():
       if isinstance(v, datetime.datetime):
         record.append(Time.toString(v))
       elif v is None:

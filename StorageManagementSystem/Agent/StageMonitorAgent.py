@@ -67,7 +67,7 @@ class StageMonitorAgent(AgentModule):
     gLogger.info(
         "StageMonitor.monitorStageRequests: Obtained %s StageSubmitted replicas for monitoring." %
         len(replicaIDs))
-    for storageElement, seReplicaIDs in seReplicas.iteritems():
+    for storageElement, seReplicaIDs in seReplicas.items():
       self.__monitorStorageElementStageRequests(storageElement, seReplicaIDs, replicaIDs)
 
     gDataStoreClient.commit()
@@ -105,12 +105,12 @@ class StageMonitorAgent(AgentModule):
 
     accountingDict = self.__newAccountingDict(storageElement)
 
-    for lfn, reason in prestageStatus['Failed'].iteritems():
+    for lfn, reason in prestageStatus['Failed'].items():
       accountingDict['TransferTotal'] += 1
       if re.search('File does not exist', reason):
         gLogger.error("StageMonitor.__monitorStorageElementStageRequests: LFN did not exist in the StorageElement", lfn)
         terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN did not exist in the StorageElement'
-    for lfn, metadata in prestageStatus['Successful'].iteritems():
+    for lfn, metadata in prestageStatus['Successful'].items():
       if not metadata:
         continue
       staged = metadata.get('Cached', metadata['Accessible'])
@@ -203,7 +203,7 @@ class StageMonitorAgent(AgentModule):
 
     seReplicas = {}
     replicaIDs = res['Value']
-    for replicaID, info in replicaIDs.iteritems():
+    for replicaID, info in replicaIDs.items():
       storageElement = info['SE']
       seReplicas.setdefault(storageElement, []).append(replicaID)
 
@@ -214,7 +214,7 @@ class StageMonitorAgent(AgentModule):
     if not res['Value']:
       return S_ERROR('Could not obtain request IDs for replicas %s from StageRequests table' % (replicaIDs.keys()))
 
-    for replicaID, info in res['Value'].iteritems():
+    for replicaID, info in res['Value'].items():
       replicaIDs[replicaID]['RequestID'] = info['RequestID']
 
     return S_OK({'SEReplicas': seReplicas, 'ReplicaIDs': replicaIDs})

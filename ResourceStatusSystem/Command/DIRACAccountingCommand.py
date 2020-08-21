@@ -143,7 +143,7 @@ class TransferQualityCommand(Command):
     if not results['OK']:
       return results
 
-    pr_q_d = {channel: strToIntDict(value) for channel, value in results['Value']['data'].iteritems()}
+    pr_q_d = {channel: strToIntDict(value) for channel, value in results['Value']['data'].items()}
 
     # FIXME: WHAT the hell is this doing ?
     values = []

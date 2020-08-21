@@ -162,7 +162,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
           parentProd, movedFiles = res['Value']
           if movedFiles:
             self._logInfo("Successfully moved files from %d to %d:" % (parentProd, transID), transID=transID)
-            for status, val in movedFiles.iteritems():
+            for status, val in movedFiles.items():
               self._logInfo("\t%d files to status %s" % (val, status), transID=transID)
       if transID not in self.transInQueue:
         count += 1
@@ -464,7 +464,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     cachedReplicaSets = self.replicaCache.get(transID, {})
     cachedReplicas = {}
     # Merge all sets of replicas
-    for replicas in cachedReplicaSets.itervalues():
+    for replicas in cachedReplicaSets.values():
       cachedReplicas.update(replicas)
     self._logInfo("Number of cached replicas: %d" % len(cachedReplicas), method=method, transID=transID)
     setCached = set(cachedReplicas)
@@ -482,7 +482,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
       for chunk in breakListIntoChunks(newLFNs, 10000):
         res = self._getDataReplicasDM(transID, chunk, clients, forJobs=forJobs)
         if res['OK']:
-          reps = dict((lfn, ses) for lfn, ses in res['Value'].iteritems() if ses)
+          reps = dict((lfn, ses) for lfn, ses in res['Value'].items() if ses)
           newReplicas.update(reps)
           self.__updateCache(transID, reps)
         else:
@@ -532,7 +532,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
                        method=method, transID=transID)
     # Create a dictionary containing all the file replicas
     failoverLfns = []
-    for lfn, replicaDict in replicas['Successful'].iteritems():
+    for lfn, replicaDict in replicas['Successful'].items():
       for se in replicaDict:
         # This remains here for backward compatibility in case VOs have not defined SEs not to be used for jobs
         if forJobs and 'failover' in se.lower():
@@ -545,7 +545,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
       self._logVerbose("%d files have no replica but possibly in Failover SE" % len(failoverLfns))
     # Make sure that file missing from the catalog are marked in the transformation DB.
     missingLfns = []
-    for lfn, reason in replicas['Failed'].iteritems():
+    for lfn, reason in replicas['Failed'].items():
       if "No such file or directory" in reason:
         self._logVerbose("%s not found in the catalog." % lfn, method=method, transID=transID)
         missingLfns.append(lfn)
@@ -576,7 +576,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     """ Remove cached replicas that are not in a list
     """
     cachedReplicas = set()
-    for replicas in self.replicaCache.get(transID, {}).itervalues():
+    for replicas in self.replicaCache.get(transID, {}).values():
       cachedReplicas.update(replicas)
     toRemove = cachedReplicas - set(lfns)
     if toRemove:
@@ -646,7 +646,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
 
   def __filesInCache(self, transID):
     cache = self.replicaCache.get(transID, {})
-    return sum(len(lfns) for lfns in cache.itervalues())
+    return sum(len(lfns) for lfns in cache.values())
 
   @gSynchro
   def __writeCache(self, transID=None):

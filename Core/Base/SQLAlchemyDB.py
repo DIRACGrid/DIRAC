@@ -189,7 +189,7 @@ class SQLAlchemyDB(object):
         select = Query(columns, session=session)
 
       # query conditions
-      for columnName, columnValue in params.iteritems():
+      for columnName, columnValue in params.items():
         if not columnValue:
           continue
         column_a = getattr(table_c, columnName.lower())

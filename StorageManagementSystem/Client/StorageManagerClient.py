@@ -41,7 +41,7 @@ def getFilesToStage(lfnList, jobState=None, checkOnlyTapeSEs=None, jobLog=None):
   failedLFNs = set()
   if lfnListReplicas['Value']['Failed']:
     # Check if files are not existing
-    for lfn, reason in lfnListReplicas['Value']['Failed'].iteritems():
+    for lfn, reason in lfnListReplicas['Value']['Failed'].items():
       # FIXME: awful check until FC returns a proper error
       if cmpError(reason, errno.ENOENT) or 'No such file' in reason:
         # The file doesn't exist, job must be Failed
@@ -58,7 +58,7 @@ def getFilesToStage(lfnList, jobState=None, checkOnlyTapeSEs=None, jobLog=None):
   # If a file is reported here at a tape SE, it is not at a disk SE as we use disk in priority
   # We shall check all file anyway in order to make sure they exist
   seToLFNs = dict()
-  for lfn, ses in lfnListReplicas.iteritems():
+  for lfn, ses in lfnListReplicas.items():
     for se in ses:
       seToLFNs.setdefault(se, list()).append(lfn)
 
@@ -141,7 +141,7 @@ def _checkFilesToStage(seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
     checkOnlyTapeSEs = True
 
   failed = {}
-  for se, lfnsInSEList in seToLFNs.iteritems():
+  for se, lfnsInSEList in seToLFNs.items():
     # If we have found already all files online at another SE, no need to check the others
     # but still we want to set the SE as Online if not a TapeSE
     vo = getVOForGroup(proxyUserGroup)
@@ -178,7 +178,7 @@ def _checkFilesToStage(seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
       if fileMetadata['Value']['Failed']:
         failed[se] = fileMetadata['Value']['Failed']
       # is there at least one replica online?
-      for lfn, mDict in fileMetadata['Value']['Successful'].iteritems():
+      for lfn, mDict in fileMetadata['Value']['Successful'].items():
         # SRM returns Cached, but others may only return Accessible
         if mDict.get('Cached', mDict['Accessible']):
           onlineLFNs.setdefault(lfn, []).append(se)
@@ -210,7 +210,7 @@ def _checkFilesToStage(seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
   # Find the files that do not exist at SE
   if failed:
     logger.error("Error getting metadata", "for %d files" %
-                 len(set(lfn for lfnList in failed.itervalues() for lfn in lfnList)))
+                 len(set(lfn for lfnList in failed.values() for lfn in lfnList)))
 
   for lfn in absentLFNs:
     seList = absentLFNs[lfn]

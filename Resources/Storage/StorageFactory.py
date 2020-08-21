@@ -147,7 +147,7 @@ class StorageFactory(object):
     requestedProtocolDetails = []
     turlProtocols = []
     # Generate the protocol specific plug-ins
-    for protocolSection, protocolDetails in self.protocols.iteritems():
+    for protocolSection, protocolDetails in self.protocols.items():
       pluginName = protocolDetails.get('PluginName', protocolSection)
       if pluginList and pluginName not in pluginList:
         continue
@@ -328,7 +328,7 @@ class StorageFactory(object):
         for baseStorageProtocolSection in protocolSections:
           if protocolSection == baseStorageProtocolSection:
             inheritanceMatched = True
-            for key, val in detail.iteritems():
+            for key, val in detail.items():
               if val:
                 self.protocols[protocolSection][key] = val
             break

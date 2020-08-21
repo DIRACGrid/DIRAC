@@ -571,7 +571,7 @@ class SystemAdministratorHandler(RequestHandler):
       result.update(infoResult['Value'])
       # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string
       result.update({"Extensions": ";".join(["%s:%s" % (key, value)
-                                             for (key, value) in infoResult["Value"].get('Extensions').iteritems()])})
+                                             for (key, value) in infoResult["Value"].get('Extensions').items()])})
 
     # Host certificate properties
     certFile, _keyFile = getHostCertificateAndKeyLocation()

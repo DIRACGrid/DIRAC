@@ -215,7 +215,7 @@ class PoolComputingElement(ComputingElement):
     self.pPool.processResults()
     result = S_OK()
     nJobs = 0
-    for _j, value in self.processorsPerTask.iteritems():
+    for _j, value in self.processorsPerTask.items():
       if value > 0:
         nJobs += 1
     result['SubmittedJobs'] = nJobs

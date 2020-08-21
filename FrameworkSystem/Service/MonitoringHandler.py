@@ -89,7 +89,7 @@ class MonitoringHandler(RequestHandler):
     """
 
     # we have to cast the dictionary keys, because they are timestamps
-    activitiesDict = {metric: strToIntDict(value) for metric, value in activitiesDict.iteritems()}
+    activitiesDict = {metric: strToIntDict(value) for metric, value in activitiesDict.items()}
     nowEpoch = Time.toEpoch()
     maxEpoch = nowEpoch + 7200
     minEpoch = nowEpoch - 86400

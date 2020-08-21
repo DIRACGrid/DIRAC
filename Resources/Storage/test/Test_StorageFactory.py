@@ -233,7 +233,7 @@ class fake_gConfig(object):
     csSection = self.crawlCS(path)
     if not csSection:
       return S_ERROR("Not a valid section")
-    options = dict((opt, val) for opt, val in csSection.iteritems() if not isinstance(val, dict))
+    options = dict((opt, val) for opt, val in csSection.items() if not isinstance(val, dict))
     return S_OK(options)
 
   def getOptions(self, path):
@@ -245,7 +245,7 @@ class fake_gConfig(object):
     csSection = self.crawlCS(path)
     if not csSection:
       return S_ERROR("Not a valid section")
-    options = [opt for opt, val in csSection.iteritems() if not isinstance(val, dict)]
+    options = [opt for opt, val in csSection.items() if not isinstance(val, dict)]
     return S_OK(options)
 
   def getSections(self, path):
@@ -257,7 +257,7 @@ class fake_gConfig(object):
     csSection = self.crawlCS(path)
     if not csSection:
       return S_ERROR("Not a valid section")
-    sections = [opt for opt, val in csSection.iteritems() if isinstance(val, dict)]
+    sections = [opt for opt, val in csSection.items() if isinstance(val, dict)]
     return S_OK(sections)
 
 

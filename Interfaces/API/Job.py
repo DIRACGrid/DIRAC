@@ -866,7 +866,7 @@ class Job(API):
 
     if environmentDict:
       environment = []
-      for var, val in environmentDict.iteritems():
+      for var, val in environmentDict.items():
         try:
           environment.append('='.join([str(var), urllib.quote(str(val))]))
         except Exception:
@@ -909,7 +909,7 @@ class Job(API):
     self.log.info('--------------------------------------')
     # print self.workflow.parameters
     # print params.getParametersNames()
-    for name, _props in paramsDict.iteritems():
+    for name, _props in paramsDict.items():
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
       if showType:
@@ -1155,7 +1155,7 @@ class Job(API):
       else:
         self.log.warn('JobConfigArgs defined with null value')
     if self.parametricWFArguments:
-      for name, value in self.parametricWFArguments.iteritems():
+      for name, value in self.parametricWFArguments.items():
         arguments.append("-p %s='%s'" % (name, value))
 
     classadJob.insertAttributeString('Executable', self.executable)
@@ -1214,7 +1214,7 @@ class Job(API):
     classadJob.insertAttributeString('Arguments', ' '.join(arguments))
 
     # Add any JDL parameters to classad obeying lists with ';' rule
-    for name, props in paramsDict.iteritems():
+    for name, props in paramsDict.items():
       ptype = props['type']
       value = props['value']
       if isinstance(value, six.string_types) and re.search(';', value):

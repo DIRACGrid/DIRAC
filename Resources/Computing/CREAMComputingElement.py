@@ -226,7 +226,7 @@ class CREAMComputingElement(ComputingElement):
     running = 0
     waiting = 0
     statusDict = {}
-    for ref, status in resultDict.iteritems():
+    for ref, status in resultDict.items():
       if jobIDList is not None and ref not in jobIDList:
         continue
       if status == 'Scheduled':

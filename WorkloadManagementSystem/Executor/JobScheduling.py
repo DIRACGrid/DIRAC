@@ -185,9 +185,9 @@ class JobScheduling(OptimizerExecutor):
         # Some files do not exist at all... set the job Failed
         # Reverse errors
         reasons = {}
-        for lfn, reason in res['Value']['absentLFNs'].iteritems():
+        for lfn, reason in res['Value']['absentLFNs'].items():
           reasons.setdefault(reason, []).append(lfn)
-        for reason, lfns in reasons.iteritems():
+        for reason, lfns in reasons.items():
           # Some files are missing in the FC or in SEs, fail the job
           self.jobLog.error(reason, ','.join(lfns))
         error = ','.join(reasons)

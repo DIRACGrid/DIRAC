@@ -128,7 +128,7 @@ class TransferCommand(Command):
     if 'data' not in transferResults:
       return S_ERROR('Missing data key')
 
-    transferResults = {channel: strToIntDict(value) for channel, value in transferResults['data'].iteritems()}
+    transferResults = {channel: strToIntDict(value) for channel, value in transferResults['data'].items()}
 
     uniformResult = []
 

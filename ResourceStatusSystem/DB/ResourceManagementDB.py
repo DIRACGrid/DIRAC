@@ -418,7 +418,7 @@ class ResourceManagementDB(SQLAlchemyDB):
 
     try:
       select = Query(table_c, session=session)
-      for columnName, columnValue in params.iteritems():
+      for columnName, columnValue in params.items():
         if not columnValue or columnName not in primaryKeys:
           continue
         column_a = getattr(table_c, columnName.lower())
@@ -440,7 +440,7 @@ class ResourceManagementDB(SQLAlchemyDB):
         params['DateEffective'] = None
 
       # now we assume we need to modify
-      for columnName, columnValue in params.iteritems():
+      for columnName, columnValue in params.items():
         if columnName == 'LastCheckTime' and not columnValue:  # we always update lastCheckTime
           columnValue = datetime.datetime.utcnow().replace(microsecond=0)
         if columnName == 'DateEffective' and not columnValue:  # we always update DateEffective, if there

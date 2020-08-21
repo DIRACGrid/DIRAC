@@ -71,7 +71,7 @@ if cacheReplicaInfo:
   if resStageRequests['Records']:
     stageRequests = resStageRequests['Value']
     outStr += "\n------SRM staging request info--------------"
-    for info in stageRequests.itervalues():
+    for info in stageRequests.values():
       outStr += "\n%s: %s" % ('SRM RequestID'.ljust(8), info['RequestID'].ljust(100))
       outStr += "\n%s: %s" % ('SRM StageStatus'.ljust(8), info['StageStatus'].ljust(100))
       outStr += "\n%s: %s" % ('SRM StageRequestSubmitTime'.ljust(8), str(info['StageRequestSubmitTime']).ljust(100))

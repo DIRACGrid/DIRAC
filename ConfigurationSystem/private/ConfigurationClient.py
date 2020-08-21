@@ -281,7 +281,7 @@ class ConfigurationClient(object):
       if not options['OK']:
         return S_ERROR("getOptionsDict() failed with message: %s" % options['Message'])
 
-      for key, value in options['Value'].iteritems():
+      for key, value in options['Value'].items():
         path = cfgPath(root, key)
         addOption = True
         for substr in filters:

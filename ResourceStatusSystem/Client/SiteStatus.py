@@ -175,7 +175,7 @@ class SiteStatus(object):
     siteStatusDictRes = self.getSiteStatuses(siteNames)
     if not siteStatusDictRes['OK']:
       return siteStatusDictRes
-    siteStatusList = [x[0] for x in siteStatusDictRes['Value'].iteritems() if x[1] in ['Active', 'Degraded']]
+    siteStatusList = [x[0] for x in siteStatusDictRes['Value'].items() if x[1] in ['Active', 'Degraded']]
 
     return S_OK(siteStatusList)
 
@@ -220,7 +220,7 @@ class SiteStatus(object):
       if siteState not in allowedStateList:
         return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
-      siteList = [x[0] for x in siteStatusDictRes['Value'].iteritems() if x[1] == siteState]
+      siteList = [x[0] for x in siteStatusDictRes['Value'].items() if x[1] == siteState]
 
     return S_OK(siteList)
 

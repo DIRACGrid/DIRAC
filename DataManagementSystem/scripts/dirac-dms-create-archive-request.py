@@ -293,7 +293,7 @@ class CreateArchiveRequest(object):
     sLog.notice('Splitting files by Size')
     lfnChunk = []
     totalSize = 0
-    for lfn, info in self.metaData['Successful'].iteritems():
+    for lfn, info in self.metaData['Successful'].items():
       if (totalSize > self.switches['MaxSize'] or len(lfnChunk) >= self.switches['MaxFiles']):
         self.lfnChunks.append(lfnChunk)
         sLog.notice('Created Chunk of %s lfns with %s bytes' % (len(lfnChunk), totalSize))
@@ -486,14 +486,14 @@ class CreateArchiveRequest(object):
     notAt = []
     failed = []
     sourceSE = self.sourceSEs[0]
-    for lfn, replInfo in resReplica['Value']['Successful'].iteritems():
+    for lfn, replInfo in resReplica['Value']['Successful'].items():
       if sourceSE in replInfo:
         atSource.append(lfn)
       else:
         sLog.notice('WARN: LFN %r not found at source, only at: %s' % (lfn, ','.join(replInfo.keys())))
         notAt.append(lfn)
 
-    for lfn, errorMessage in resReplica['Value']['Failed'].iteritems():
+    for lfn, errorMessage in resReplica['Value']['Failed'].items():
       sLog.error('Failed to get replica info', '%s: %s' % (lfn, errorMessage))
       failed.append(lfn)
 

@@ -165,7 +165,7 @@ class ComputingElement(object):
     if result['OK'] and result['Value']:
       localSiteParameters = result['Value']
       self.log.debug('Local site parameters are: %s' % (localSiteParameters))
-      for option, value in localSiteParameters.iteritems():
+      for option, value in localSiteParameters.items():
         if option == 'Architecture':
           self.ceParameters['Platform'] = value
           self.ceParameters['Architecture'] = value
@@ -455,7 +455,7 @@ class ComputingElement(object):
     """
 
     ceDict = {}
-    for option, value in self.ceParameters.iteritems():
+    for option, value in self.ceParameters.items():
       if isinstance(value, list):
         ceDict[option] = value
       elif isinstance(value, six.string_types):

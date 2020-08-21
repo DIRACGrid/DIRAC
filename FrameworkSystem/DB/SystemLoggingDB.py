@@ -189,7 +189,7 @@ class SystemLoggingDB(DB):
 
     tablesInDB = [t[0] for t in retVal['Value']]
     tablesToCreate = {}
-    for tableName, tableDef in self.tableDict.iteritems():
+    for tableName, tableDef in self.tableDict.items():
       if tableName not in tablesInDB:
         tablesToCreate[tableName] = tableDef
 

@@ -35,7 +35,7 @@ def getMQParamsFromCS(mqURI):
   if not result['OK'] or not result['Value']:
     return S_ERROR('Requested destination not found in the CS: %s::%s::%s' % (mqService, mqType, mqName))
   mqDestinationPath = None
-  for path, value in result['Value'].iteritems():
+  for path, value in result['Value'].items():
     if not value and path.endswith(mqName):
       mqDestinationPath = path
 

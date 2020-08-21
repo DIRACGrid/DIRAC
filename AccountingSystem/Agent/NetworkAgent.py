@@ -102,7 +102,7 @@ class NetworkAgent (AgentModule):
       return S_ERROR('Unable to fetch perfSONAR endpoints from CS.')
 
     tmpDict = {}
-    for path, value in result['Value'].iteritems():
+    for path, value in result['Value'].items():
       if value == 'True':
         elements = path.split('/')
         diracName = elements[4]
@@ -211,7 +211,7 @@ class NetworkAgent (AgentModule):
           OWDMax = 0
           total = 0
           count = 0
-          for value, items in metricData.iteritems():
+          for value, items in metricData.items():
             floatValue = float(value)
             total += floatValue * items
             count += items

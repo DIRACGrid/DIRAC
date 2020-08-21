@@ -265,7 +265,7 @@ class GFAL2_StorageBase(StorageBase):
     failed = {}
     successful = {}
 
-    for dest_url, src_file in urls.iteritems():
+    for dest_url, src_file in urls.items():
       if not src_file:
         errStr = "GFAL2_StorageBase.putFile: Source file not set. Argument must be a dictionary \
                                              (or a list of a dictionary) {url : local path}"
@@ -796,7 +796,7 @@ class GFAL2_StorageBase(StorageBase):
 
     failed = {}
     successful = {}
-    for path, token in urls.iteritems():
+    for path, token in urls.items():
 
       res = self.__prestageSingleFileStatus(path, token)
       if not res['OK']:
@@ -929,7 +929,7 @@ class GFAL2_StorageBase(StorageBase):
 
     failed = {}
     successful = {}
-    for path, token in urls.iteritems():
+    for path, token in urls.items():
       res = self.__releaseSingleFile(path, token)
 
       if not res['OK']:
@@ -1193,7 +1193,7 @@ class GFAL2_StorageBase(StorageBase):
 
     directories = []
 
-    for url, isDirectory in res['Value']['Successful'].iteritems():
+    for url, isDirectory in res['Value']['Successful'].items():
       if isDirectory:
         directories.append(url)
       else:
@@ -1438,7 +1438,7 @@ class GFAL2_StorageBase(StorageBase):
 
     successful = {}
     failed = {}
-    for destDir, sourceDir in urls.iteritems():
+    for destDir, sourceDir in urls.items():
       if not sourceDir:
         errStr = 'No source directory set, make sure the input format is correct { dest. dir : source dir }'
         return S_ERROR(errStr)
@@ -1518,7 +1518,7 @@ class GFAL2_StorageBase(StorageBase):
         log.debug('Failed to put files to storage.', res['Message'])
         allSuccessful = False
       else:
-        for fileSize in res['Value']['Successful'].itervalues():
+        for fileSize in res['Value']['Successful'].values():
           filesPut += 1
           sizePut += fileSize
         if res['Value']['Failed']:
@@ -1715,7 +1715,7 @@ class GFAL2_StorageBase(StorageBase):
     directorySize = 0
     directoryFiles = 0
     # itervalues returns a list of values of the dictionnary
-    for fileDict in res['Value']['Files'].itervalues():
+    for fileDict in res['Value']['Files'].values():
       directorySize += fileDict['Size']
       directoryFiles += 1
 

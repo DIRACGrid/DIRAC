@@ -24,12 +24,12 @@ class FullSecurityManager(SecurityManagerBase):
     res = self.db.fileManager.getPathPermissions(paths, credDict)
     if not res['OK']:
       return res
-    for path, mode in res['Value']['Successful'].iteritems():
+    for path, mode in res['Value']['Successful'].items():
       for resolvedPath in toGet[path]:
         permissions[resolvedPath] = mode
       toGet.pop(path)
     # Copying items because toGet is changed in the cycle
-    for path, resolvedPaths in list(toGet.iteritems()):
+    for path, resolvedPaths in list(toGet.items()):
       if path == '/':
         for resolvedPath in resolvedPaths:
           permissions[path] = {'Read': True, 'Write': True, 'Execute': True}
@@ -42,17 +42,17 @@ class FullSecurityManager(SecurityManagerBase):
       res = self.db.dtree.getPathPermissions(paths, credDict)
       if not res['OK']:
         return res
-      for path, mode in res['Value']['Successful'].iteritems():
+      for path, mode in res['Value']['Successful'].items():
         for resolvedPath in toGet[path]:
           permissions[resolvedPath] = mode
         toGet.pop(path)
-      for path, error in res['Value']['Failed'].iteritems():
+      for path, error in res['Value']['Failed'].items():
         if error != 'No such file or directory':
           for resolvedPath in toGet[path]:
             failed[resolvedPath] = error
           toGet.pop(path)
       # Copying items because toGet is changed in the cycle
-      for path, resolvedPaths in list(toGet.iteritems()):
+      for path, resolvedPaths in list(toGet.items()):
         if path == '/':
           for resolvedPath in resolvedPaths:
             permissions[path] = {'Read': True, 'Write': True, 'Execute': True}

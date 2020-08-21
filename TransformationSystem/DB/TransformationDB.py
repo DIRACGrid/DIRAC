@@ -524,7 +524,7 @@ class TransformationDB(DB):
     res = self.__addDataFiles(lfns, connection=connection)
     if not res['OK']:
       return res
-    fileIDs = dict((fileID, lfn) for lfn, fileID in res['Value'].iteritems())
+    fileIDs = dict((fileID, lfn) for lfn, fileID in res['Value'].items())
     # Attach files to transformation
     successful = {}
     if fileIDs:
@@ -556,7 +556,7 @@ class TransformationDB(DB):
         originalFileIDs = res['Value'][0]
         condDict['FileID'] = list(originalFileIDs)
 
-      for val in condDict.itervalues():
+      for val in condDict.values():
         if not val:
           return S_OK([])
 
@@ -619,10 +619,10 @@ class TransformationDB(DB):
 
     # Get fileID and status for each case: error and no error
     statusFileDict = {}
-    for fileID, (status, error) in fileStatusDict.iteritems():
+    for fileID, (status, error) in fileStatusDict.items():
       statusFileDict.setdefault(error, []).append((fileID, status))
 
-    for error, fileIDStatusList in statusFileDict.iteritems():
+    for error, fileIDStatusList in statusFileDict.items():
       req = reqBase + ','.join("(%d, %d, '%s', 0, UTC_TIMESTAMP())" %
                                (transID, fileID, status) for fileID, status in fileIDStatusList)
       if error:
@@ -1234,7 +1234,7 @@ class TransformationDB(DB):
       return res
     lfns = dict(res['Value'])
     # Reverse dictionary
-    fids = dict((fileID, lfn) for lfn, fileID in lfns.iteritems())
+    fids = dict((fileID, lfn) for lfn, fileID in lfns.items())
     return S_OK((fids, lfns))
 
   def __getLfnsForFileIDs(self, fileIDs, connection=False):
@@ -1246,7 +1246,7 @@ class TransformationDB(DB):
       return res
     fids = dict(res['Value'])
     # Reverse dictionary
-    lfns = dict((fileID, lfn) for lfn, fileID in fids.iteritems())
+    lfns = dict((fileID, lfn) for lfn, fileID in fids.items())
     return S_OK((fids, lfns))
 
   def __addDataFiles(self, lfns, connection=False):
@@ -1511,7 +1511,7 @@ class TransformationDB(DB):
       # Add the files to the transformations
       gLogger.info('Files to add to transformations:', filesToAdd)
       if filesToAdd:
-        for transID, lfns in transFiles.iteritems():
+        for transID, lfns in transFiles.items():
           res = self.addFilesToTransformation(transID, lfns)
           if not res['OK']:
             gLogger.error("Failed to add files to transformation", "%s %s" % (transID, res['Message']))
@@ -1639,7 +1639,7 @@ class TransformationDB(DB):
     # Add the files to the transformations
     gLogger.info('Files to add to transformations:', filesToAdd)
     if filesToAdd:
-      for transID, lfns in transFiles.iteritems():
+      for transID, lfns in transFiles.items():
         res = self.addFilesToTransformation(transID, lfns)
         if not res['OK']:
           gLogger.error("Failed to add files to transformation", "%s %s" % (transID, res['Message']))

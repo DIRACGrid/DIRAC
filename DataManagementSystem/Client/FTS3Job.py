@@ -261,7 +261,7 @@ class FTS3Job(JSerializable):
     if not res['OK']:
       return res
 
-    for lfn, reason in res['Value']['Failed'].iteritems():
+    for lfn, reason in res['Value']['Failed'].items():
       failedLFNs.add(lfn)
       log.error("Could not get source SURL", "%s %s" % (lfn, reason))
 
@@ -410,7 +410,7 @@ class FTS3Job(JSerializable):
     if not res['OK']:
       return res
 
-    for lfn, reason in res['Value']['Failed'].iteritems():
+    for lfn, reason in res['Value']['Failed'].items():
       failedLFNs.add(lfn)
       log.error("Could not get target SURL", "%s %s" % (lfn, reason))
 

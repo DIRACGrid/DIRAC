@@ -116,7 +116,7 @@ def test__Standard_Data_G1(setup):
   pluginStandard.setInputData(data)
   res = pluginStandard.run()
   assert res['OK']
-  sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.iteritems()])
+  sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.items()])
   assert res['Value'], sortedData
 
 
@@ -128,7 +128,7 @@ def test__Standard_Flush_G1(setup):
   pluginStandard.setParameters(params)
   pluginStandard.setInputData(data)
   res = pluginStandard.run()
-  sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.iteritems()])
+  sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.items()])
   assert res['OK']
   assert res['Value'] == sortedData
 
@@ -146,7 +146,7 @@ def test__Broadcast_Active_G1(setup):
   # sort returned values by first lfn in LFNs
   sortedReturn = [(SE, lfns) for SE, lfns in sorted(res['Value'], key=lambda t: t[1][0])]
   # sort data by lfn
-  expected = [('SE2', [lfn]) for lfn, SEs in sorted(data.iteritems(), key=lambda t: t[0]) if 'SE1' in SEs]
+  expected = [('SE2', [lfn]) for lfn, SEs in sorted(data.items(), key=lambda t: t[0]) if 'SE1' in SEs]
   assert res['OK']
   assert sortedReturn == expected
 
@@ -179,6 +179,6 @@ def test__Broadcast_Active_G1_NoSource(setup):
   # sort returned values by first lfn in LFNs
   sortedReturn = [(SE, lfns) for SE, lfns in sorted(res['Value'], key=lambda t: t[1][0])]
   # sort data by lfn
-  expected = [('SE2', [lfn]) for lfn, _SEs in sorted(data.iteritems(), key=lambda t: t[0])]
+  expected = [('SE2', [lfn]) for lfn, _SEs in sorted(data.items(), key=lambda t: t[0])]
   assert res['OK']
   assert sortedReturn == expected

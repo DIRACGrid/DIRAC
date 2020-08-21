@@ -135,7 +135,7 @@ class Transformation(API):
         raise TypeError("Expected string, but first entry in tuple %r is %s" % (tup, type(tup[0])))
       if not isinstance(tup[1], dict):
         raise TypeError("Expected dictionary, but second entry in tuple %r is %s" % (tup, type(tup[0])))
-      for par, val in tup[1].iteritems():
+      for par, val in tup[1].items():
         if not isinstance(par, six.string_types):
           raise TypeError("Expected string, but key in dictionary %r is %s" % (par, type(par)))
         if par not in Operation.ATTRIBUTE_NAMES:

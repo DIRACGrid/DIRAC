@@ -169,7 +169,7 @@ class SSHBatchComputingElement(SSHComputingElement):
       hostDict[host].append(job)
 
     failed = []
-    for host, jobIDList in hostDict.iteritems():
+    for host, jobIDList in hostDict.items():
       result = self._killJobOnHost(jobIDList, host)
       if not result['OK']:
         failed.extend(jobIDList)
@@ -213,7 +213,7 @@ class SSHBatchComputingElement(SSHComputingElement):
 
     resultDict = {}
     failed = []
-    for host, jobIDList in hostDict.iteritems():
+    for host, jobIDList in hostDict.items():
       result = self._getJobStatusOnHost(jobIDList, host)
       if not result['OK']:
         failed.extend(jobIDList)

@@ -60,9 +60,9 @@ def jobexec(jobxml, wfParameters):
     workflow.setValue(pName, pValue)
 
   # Propagate the command line parameters to the workflow module instances of each step
-  for stepdefinition in workflow.step_definitions.itervalues():
+  for stepdefinition in workflow.step_definitions.values():
     for moduleInstance in stepdefinition.module_instances:
-      for pName, pValue in wfParameters.iteritems():
+      for pName, pValue in wfParameters.items():
         if moduleInstance.parameters.find(pName):
           moduleInstance.parameters.setValue(pName, pValue)
 

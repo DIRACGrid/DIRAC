@@ -129,15 +129,15 @@ class RemoveReplica(DMSRequestOperationsBase):
       # # report removal status for successful files
       if self.rmsMonitoring:
         self.rmsMonitoringReporter.addRecord(
-            self.createRMSRecord("Successful", len(([opFile for opFile in toRemoveDict.itervalues()
+            self.createRMSRecord("Successful", len(([opFile for opFile in toRemoveDict.values()
                                                      if not opFile.Error])))
         )
       else:
-        gMonitor.addMark("RemoveReplicaOK", len([opFile for opFile in toRemoveDict.itervalues() if not opFile.Error]))
+        gMonitor.addMark("RemoveReplicaOK", len([opFile for opFile in toRemoveDict.values() if not opFile.Error]))
 
       # # 2nd step - process the rest again
-      toRetry = dict((lfn, opFile) for lfn, opFile in toRemoveDict.iteritems() if opFile.Error)
-      for lfn, opFile in toRetry.iteritems():
+      toRetry = dict((lfn, opFile) for lfn, opFile in toRemoveDict.items() if opFile.Error)
+      for lfn, opFile in toRetry.items():
         self._removeWithOwnerProxy(opFile, targetSE)
         if opFile.Error:
           if self.rmsMonitoring:
@@ -159,7 +159,7 @@ class RemoveReplica(DMSRequestOperationsBase):
     failed = 0
     for opFile in self.operation:
       if opFile.Status == "Waiting":
-        errors = list(set(error for error in removalStatus[opFile.LFN].itervalues() if error))
+        errors = list(set(error for error in removalStatus[opFile.LFN].values() if error))
         if errors:
           opFile.Error = "\n".join(errors)
           # This seems to be the only unrecoverable error
@@ -184,16 +184,16 @@ class RemoveReplica(DMSRequestOperationsBase):
     :param str targetSE: target SE name
     """
     # Clear the error
-    for opFile in toRemoveDict.itervalues():
+    for opFile in toRemoveDict.values():
       opFile.Error = ''
-    removeReplicas = self.dm.removeReplica(targetSE, toRemoveDict.keys())
+    removeReplicas = self.dm.removeReplica(targetSE, list(toRemoveDict.keys()))
     if not removeReplicas["OK"]:
-      for opFile in toRemoveDict.itervalues():
+      for opFile in toRemoveDict.values():
         opFile.Error = removeReplicas["Message"]
       return removeReplicas
     removeReplicas = removeReplicas["Value"]
     # # filter out failed
-    for lfn, opFile in toRemoveDict.iteritems():
+    for lfn, opFile in toRemoveDict.items():
       if lfn in removeReplicas["Failed"]:
         errorReason = str(removeReplicas['Failed'][lfn])
         # If the reason is that the file does not exist,

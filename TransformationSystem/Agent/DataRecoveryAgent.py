@@ -307,7 +307,7 @@ class DataRecoveryAgent(AgentModule):
     if not transformations['OK']:
       self.log.error("Failure to get transformations", transformations['Message'])
       return S_ERROR("Failure to get transformations")
-    for transID, transInfoDict in transformations['Value'].iteritems():
+    for transID, transInfoDict in transformations['Value'].items():
       if transID in self.transformationsToIgnore:
         self.log.notice('Ignoring Transformation: %s' % transID)
         continue
@@ -485,7 +485,7 @@ class DataRecoveryAgent(AgentModule):
 
   def __resetCounters(self):
     """ reset counters for modified jobs """
-    for _name, checks in self.todo.iteritems():
+    for _name, checks in self.todo.items():
       for do in checks:
         do['Counter'] = 0
 

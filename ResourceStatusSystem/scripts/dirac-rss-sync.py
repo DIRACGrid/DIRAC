@@ -69,7 +69,7 @@ def parseSwitches():
     Script.showHelp(exitCode=1)
 
   subLogger.debug("The switches used are:")
-  map(subLogger.debug, switches.iteritems())
+  map(subLogger.debug, switches.items())
 
   return switches
 
@@ -134,7 +134,7 @@ def initSites():
     subLogger.error(sites['Message'])
     DIRACExit(1)
 
-  for site, elements in sites['Value'].iteritems():
+  for site, elements in sites['Value'].items():
     result = rssClient.addOrModifyStatusElement("Site", "Status",
                                                 name=site,
                                                 statusType='all',
@@ -183,7 +183,7 @@ def initSEs():
     # We copy the list into a new object to remove items INSIDE the loop !
     statusTypesList = statusTypes[:]
 
-    for statusType, status in opts.iteritems():
+    for statusType, status in opts.items():
 
       # Sanity check...
       if statusType not in statusTypesList:

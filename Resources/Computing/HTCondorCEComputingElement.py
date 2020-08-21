@@ -405,7 +405,7 @@ Queue %(nJobs)s
 
       treatCondorHistory(condorHistCall, qList)
 
-    for job, jobID in condorIDs.iteritems():
+    for job, jobID in condorIDs.items():
 
       pilotStatus = parseCondorStatus(qList, jobID)
       if pilotStatus == 'HELD':

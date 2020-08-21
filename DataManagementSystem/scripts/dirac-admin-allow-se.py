@@ -121,7 +121,7 @@ if not res['OK']:
 
 reason = 'Forced with dirac-admin-allow-se by %s' % userName
 
-for se, seOptions in res['Value'].iteritems():
+for se, seOptions in res['Value'].items():
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
   for statusType in STATUS_TYPES:

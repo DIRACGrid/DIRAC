@@ -162,7 +162,7 @@ class RemoveFile(DMSRequestOperationsBase):
           gMonitor.addMark("RemoveFileOK", len(toRemoveDict) - len(bulkRemoval["Value"]))
 
       # # 2nd step - single file removal
-      for lfn, opFile in toRemoveDict.iteritems():
+      for lfn, opFile in toRemoveDict.items():
         self.log.info("removing single file %s" % lfn)
         singleRemoval = self.singleRemoval(opFile)
         if not singleRemoval["OK"]:
@@ -183,7 +183,7 @@ class RemoveFile(DMSRequestOperationsBase):
             gMonitor.addMark("RemoveFileOK", 1)
 
       # # set
-      failedFiles = [(lfn, opFile) for (lfn, opFile) in toRemoveDict.iteritems()
+      failedFiles = [(lfn, opFile) for (lfn, opFile) in toRemoveDict.items()
                      if opFile.Status in ("Failed", "Waiting")]
       if failedFiles:
         self.operation.Error = "failed to remove %d files" % len(failedFiles)
@@ -211,20 +211,20 @@ class RemoveFile(DMSRequestOperationsBase):
       return bulkRemoval
     bulkRemoval = bulkRemoval["Value"]
     # # filter results
-    for lfn, opFile in toRemoveDict.iteritems():
+    for lfn, opFile in toRemoveDict.items():
       if lfn in bulkRemoval["Successful"]:
         opFile.Status = "Done"
       elif lfn in bulkRemoval["Failed"]:
 
         error = bulkRemoval["Failed"][lfn]
         if isinstance(error, dict):
-          error = ";".join(["%s-%s" % (k, v) for k, v in error.iteritems()])
+          error = ";".join(["%s-%s" % (k, v) for k, v in error.items()])
         opFile.Error = error
         if self.reNotExisting.search(opFile.Error):
           opFile.Status = "Done"
 
     # # return files still waiting
-    toRemoveDict = dict((lfn, opFile) for lfn, opFile in toRemoveDict.iteritems() if opFile.Status == "Waiting")
+    toRemoveDict = dict((lfn, opFile) for lfn, opFile in toRemoveDict.items() if opFile.Status == "Waiting")
     return S_OK(toRemoveDict)
 
   def singleRemoval(self, opFile):
@@ -258,7 +258,7 @@ class RemoveFile(DMSRequestOperationsBase):
               if opFile.LFN in removeFile["Failed"]:
                 error = removeFile["Failed"][opFile.LFN]
                 if isinstance(error, dict):
-                  error = ";".join(["%s-%s" % (k, v) for k, v in error.iteritems()])
+                  error = ";".join(["%s-%s" % (k, v) for k, v in error.items()])
                 if self.reNotExisting.search(error):
                   # This should never happen due to the "force" flag
                   opFile.Status = "Done"

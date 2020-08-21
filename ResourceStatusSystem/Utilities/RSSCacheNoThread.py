@@ -153,7 +153,7 @@ class Cache(object):
     :return: dictionary. It is newCache argument.
     """
 
-    for cacheKey, cacheValue in newCache.iteritems():
+    for cacheKey, cacheValue in newCache.items():
       self.__cache.add(cacheKey, self.__lifeTime, value=cacheValue)
 
     # We are assuming nothing will fail while inserting in the cache. There is
@@ -388,7 +388,7 @@ class RSSCache(Cache):
 
     result = {}
 
-    for cacheKey, cacheValue in cacheMatches.iteritems():
+    for cacheKey, cacheValue in cacheMatches.items():
       elementName, _elementType, statusType = cacheKey
       result.setdefault(elementName, {})[statusType] = cacheValue
 

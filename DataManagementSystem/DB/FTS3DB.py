@@ -347,7 +347,7 @@ class FTS3DB(object):
     # However, commiting every time is the recommendation of MySQL
     # (https://dev.mysql.com/doc/refman/5.7/en/innodb-deadlocks-handling.html)
 
-    for fileID, valueDict in fileStatusDict.iteritems():
+    for fileID, valueDict in fileStatusDict.items():
 
       session = self.dbSession()
       try:
@@ -409,7 +409,7 @@ class FTS3DB(object):
     session = self.dbSession()
     try:
 
-      for jobID, valueDict in jobStatusDict.iteritems():
+      for jobID, valueDict in jobStatusDict.items():
 
         updateDict = {FTS3Job.status: valueDict['status']}
 

@@ -485,7 +485,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
         parentDict[parentPath]['DirList'].append(dirID)
         parentDict[parentPath]['OldParentID'] = parentID
 
-    for parentPath, dirDict in parentDict.iteritems():
+    for parentPath, dirDict in parentDict.items():
       dirIDList = dirDict['DirList']
       oldParentID = dirDict['OldParentID']
       result = self.findDir(parentPath)

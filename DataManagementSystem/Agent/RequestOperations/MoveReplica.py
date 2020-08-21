@@ -452,7 +452,7 @@ class MoveReplica(DMSRequestOperationsBase):
     :param str targetSE: target SE name
     :return: toRemoveDict with updated errors
     """
-    removeReplicas = self.dm.removeReplica(targetSE, toRemoveDict.keys())
+    removeReplicas = self.dm.removeReplica(targetSE, list(toRemoveDict.keys()))
 
     if not removeReplicas["OK"]:
       for opFile in toRemoveDict.values():

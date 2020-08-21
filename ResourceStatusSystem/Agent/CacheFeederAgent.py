@@ -135,7 +135,7 @@ class CacheFeederAgent(AgentModule):
     """ Just executes, via `loadCommand`, the commands in self.commands one after the other
     """
 
-    for commandModule, commandList in self.commands.iteritems():
+    for commandModule, commandList in self.commands.items():
 
       self.log.info('%s module initialization' % commandModule)
 

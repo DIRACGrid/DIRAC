@@ -56,7 +56,7 @@ class HTCondorCETests(unittest.TestCase):
                        "104098.3": "HELD",
                        "104098.4": "Unknown"}
 
-    for jobID, expected in expectedResults.iteritems():
+    for jobID, expected in expectedResults.items():
       self.assertEqual(HTCE.parseCondorStatus(statusLines, jobID), expected)
 
   @patch(MODNAME + ".commands.getstatusoutput", new=Mock(side_effect=([(0, "\n".join(STATUS_LINES)),

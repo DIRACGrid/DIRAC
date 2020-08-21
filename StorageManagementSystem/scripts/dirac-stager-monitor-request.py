@@ -50,7 +50,7 @@ outStr += "\n%s: %s" % ('SourceTaskID'.ljust(20), taskInfo[taskID]['SourceTaskID
 outStr += "\n%s: %s" % ('CallBackMethod'.ljust(20), taskInfo[taskID]['CallBackMethod'])
 outStr += "\n%s: %s" % ('SubmitTime'.ljust(20), taskInfo[taskID]['SubmitTime'])
 outStr += "\n%s: %s" % ('CompleteTime'.ljust(20), taskInfo[taskID]['CompleteTime'])
-for lfn, metadata in replicaInfo.iteritems():
+for lfn, metadata in replicaInfo.items():
   outStr += "\n"
   outStr += "\n\t%s: %s" % ('LFN'.ljust(8), lfn.ljust(100))
   outStr += "\n\t%s: %s" % ('SE'.ljust(8), metadata['StorageElement'].ljust(100))

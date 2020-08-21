@@ -102,7 +102,7 @@ class OperationHandlerBase(object):
     csOptionsDict = gConfig.getOptionsDict(self.csPath)
     csOptionsDict = csOptionsDict.get("Value", {})
 
-    for option, value in csOptionsDict.iteritems():
+    for option, value in csOptionsDict.items():
       # # hack to set proper types
       try:
         value = eval(value)

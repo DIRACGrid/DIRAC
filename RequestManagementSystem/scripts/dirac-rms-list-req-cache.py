@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
   reqClient = ReqClient()
 
-  for server, rpcClient in reqClient.requestProxies().iteritems():
+  for server, rpcClient in reqClient.requestProxies().items():
     DIRAC.gLogger.always("Checking request cache at %s" % server)
     reqCache = rpcClient.listCacheDir()
     if not reqCache['OK']:

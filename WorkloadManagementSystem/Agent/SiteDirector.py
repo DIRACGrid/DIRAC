@@ -447,13 +447,13 @@ class SiteDirector(AgentModule):
     self.siteMaskList = result.get('Value', [])
 
     if self.rssFlag:
-      ceNamesList = [queue['CEName'] for queue in self.queueDict.itervalues()]
+      ceNamesList = [queue['CEName'] for queue in self.queueDict.values()]
       result = self.rssClient.getElementStatus(ceNamesList, "ComputingElement")
       if not result['OK']:
         self.log.error("Can not get the status of computing elements",
                        " %s" % result['Message'])
         return result
-      self.ceMaskList = [ceName for ceName in result['Value'].iterkeys() if result['Value'][ceName]
+      self.ceMaskList = [ceName for ceName in result['Value'] if result['Value'][ceName]
                          ['all'] in ('Active', 'Degraded')]
 
     result = self.submitPilots()
@@ -626,7 +626,7 @@ class SiteDirector(AgentModule):
     testSites = set()
     anySite = False
 
-    for tqDescription in matchingTQs.itervalues():
+    for tqDescription in matchingTQs.values():
       siteList = tqDescription.get('Sites', [])
       if siteList:
         jobSites |= set(siteList)
@@ -652,7 +652,7 @@ class SiteDirector(AgentModule):
                                        None)
 
     totalWaitingJobs = 0
-    for tqDescription in matchingTQs.itervalues():
+    for tqDescription in matchingTQs.values():
       totalWaitingJobs += tqDescription['Jobs']
 
     if not result['OK']:
@@ -814,7 +814,7 @@ class SiteDirector(AgentModule):
       self.log.verbose('No matching TQs found',
                        'for %s' % ceDict)
 
-    for tq in taskQueueDict.itervalues():
+    for tq in taskQueueDict.values():
       pilotsWeMayWantToSubmit += tq['Jobs']
 
     return pilotsWeMayWantToSubmit, taskQueueDict
@@ -927,7 +927,7 @@ class SiteDirector(AgentModule):
         tqDict[tqID] = []
       tqDict[tqID].append(pilotID)
 
-    for tqID, pilotsList in tqDict.iteritems():
+    for tqID, pilotsList in tqDict.items():
       result = pilotAgentsDB.addPilotTQReference(pilotsList,
                                                  tqID,
                                                  self.pilotDN,
@@ -1013,7 +1013,7 @@ class SiteDirector(AgentModule):
                             "for queue %s: \n%s" % (queue, result['Message']))
               self.failedQueues[queue] += 1
             else:
-              for _pilotRef, pilotDict in result['Value'].iteritems():
+              for _pilotRef, pilotDict in result['Value'].items():
                 if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
                   totalJobs += 1
                   if pilotDict["Status"] in WAITING_PILOT_STATUS:

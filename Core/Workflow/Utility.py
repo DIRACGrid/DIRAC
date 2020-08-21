@@ -43,7 +43,7 @@ def resolveVariables(varDict):
   ntry = 0
   while ntry < max_tries:
     substFlag = False
-    for var, value in varDict.iteritems():
+    for var, value in list(varDict.items()):
       if isinstance(value, six.string_types):
         substitute_vars = getSubstitute(value)
         for substitute_var in substitute_vars:

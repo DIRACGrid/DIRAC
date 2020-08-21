@@ -76,7 +76,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
     if not res['OK']:
       return res
     successful = {}
-    for dirName, dirDict in res['Value']['Successful'].iteritems():
+    for dirName, dirDict in res['Value']['Successful'].items():
       mode = dirDict['Mode']
       p_uid = dirDict['UID']
       p_gid = dirDict['GID']

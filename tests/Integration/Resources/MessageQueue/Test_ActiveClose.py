@@ -139,7 +139,7 @@ class Test_MQProducers(unittest.TestCase):
   def getFirstConnection(self, mqConnection):
     result = MQComm.connectionManager.getConnector(mqConnection)
     connector = result['Value']
-    return connector.connections.itervalues().next()
+    return connector.connections.values().next()
 
 
 class Test_MQProducers_1(Test_MQProducers):

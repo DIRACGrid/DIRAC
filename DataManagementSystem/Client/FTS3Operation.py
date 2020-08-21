@@ -388,7 +388,7 @@ class FTS3TransferOperation(FTS3Operation):
       return res
     filesGroupedByTarget = res['Value']
 
-    for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
+    for targetSE, ftsFiles in filesGroupedByTarget.items():
 
       res = self._checkSEAccess(targetSE, 'WriteAccess', vo=self.vo)
 
@@ -412,7 +412,7 @@ class FTS3TransferOperation(FTS3Operation):
       uniqueTransfersBySource, failedFiles = res['Value']
 
       # Treat the errors of the failed files
-      for ftsFile, errMsg in failedFiles.iteritems():
+      for ftsFile, errMsg in failedFiles.items():
         log.error("Error when selecting random sources", "%s, %s" % (ftsFile.lfn, errMsg))
         # If the error is that the file does not exist in the catalog
         # fail it !
@@ -421,7 +421,7 @@ class FTS3TransferOperation(FTS3Operation):
           ftsFile.status = 'Defunct'
 
       # We don't need to check the source, since it is already filtered by the DataManager
-      for sourceSE, ftsFiles in uniqueTransfersBySource.iteritems():
+      for sourceSE, ftsFiles in uniqueTransfersBySource.items():
 
         for ftsFilesChunk in breakListIntoChunks(ftsFiles, maxFilesPerJob):
 
@@ -483,7 +483,7 @@ class FTS3TransferOperation(FTS3Operation):
 
     log.info("will create %s 'RegisterReplica' operations" % len(ftsFilesByTarget))
 
-    for target, ftsFileList in ftsFilesByTarget.iteritems():
+    for target, ftsFileList in ftsFilesByTarget.items():
       log.info(
           "creating 'RegisterReplica' operation for targetSE %s with %s files..." %
           (target, len(ftsFileList)))
@@ -533,7 +533,7 @@ class FTS3StagingOperation(FTS3Operation):
     # {targetSE : [FTS3Files] }
     filesGroupedByTarget = FTS3Utilities.groupFilesByTarget(filesToSubmit)
 
-    for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
+    for targetSE, ftsFiles in filesGroupedByTarget.items():
 
       res = self._checkSEAccess(targetSE, 'ReadAccess', vo=self.vo)
       if not res['OK']:

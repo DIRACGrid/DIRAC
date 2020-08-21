@@ -124,7 +124,7 @@ class InputDataByProtocol(object):
     # Problematic files will be returned and can be handled by another module
     failedReplicas = set()
     newReplicasDict = {}
-    for lfn, reps in replicas.iteritems():
+    for lfn, reps in replicas.items():
       if lfn in self.inputData:
         # Check that all replicas are on a valid local SE
         if not [se for se in reps if se in diskSEs.union(tapeSEs)]:
@@ -150,11 +150,11 @@ class InputDataByProtocol(object):
     # IMPORTANT, only add replicas for input data that is requested
     # since this module could have been executed after another.
     seFilesDict = {}
-    for lfn, seList in newReplicasDict.iteritems():
+    for lfn, seList in newReplicasDict.items():
       for seName in seList:
         seFilesDict.setdefault(seName, []).append(lfn)
 
-    sortedSEs = sorted(((len(lfns), seName) for seName, lfns in seFilesDict.iteritems()), reverse=True)
+    sortedSEs = sorted(((len(lfns), seName) for seName, lfns in seFilesDict.items()), reverse=True)
 
     trackLFNs = {}
     for _len, seName in sortedSEs:
@@ -166,13 +166,13 @@ class InputDataByProtocol(object):
                                                 'guid': replicas[lfn]['GUID']})
 
     self.log.debug('Files grouped by SEs are:\n%s' % str(seFilesDict))
-    for seName, lfns in seFilesDict.iteritems():
+    for seName, lfns in seFilesDict.items():
       self.log.info(' %s LFNs found from catalog at SE %s' % (len(lfns), seName))
       self.log.verbose('\n'.join(lfns))
 
     # Can now start to obtain TURLs for files grouped by localSE
     # for requested input data
-    for seName, lfns in seFilesDict.iteritems():
+    for seName, lfns in seFilesDict.items():
       if not lfns:
         continue
       failedReps = set()
@@ -192,7 +192,7 @@ class InputDataByProtocol(object):
           if isinstance(failed, dict):
             self.log.error(failed[lfn], lfn)
           failedReps.add(lfn)
-      for lfn, metadata in result['Value']['Successful'].iteritems():
+      for lfn, metadata in result['Value']['Successful'].items():
         if metadata.get('Lost', False):
           error = "File has been Lost by the StorageElement %s" % seName
         elif metadata.get('Unavailable', False):
@@ -226,7 +226,7 @@ class InputDataByProtocol(object):
       badTURLs = []
       seResult = result['Value']
 
-      for lfn, cause in seResult['Failed'].iteritems():
+      for lfn, cause in seResult['Failed'].items():
         badTURLCount += 1
         badTURLs.append('Failed to obtain TURL for %s: %s' % (lfn, cause))
         failedReps.add(lfn)
@@ -240,7 +240,7 @@ class InputDataByProtocol(object):
           self.log.warn("Error setting job param", result['Message'])
 
       failedReplicas.update(failedReps)
-      for lfn, turl in seResult['Successful'].iteritems():
+      for lfn, turl in seResult['Successful'].items():
         for track in trackLFNs[lfn]:
           if track['se'] == seName:
             track['turl'] = turl

@@ -1212,7 +1212,7 @@ class Dirac(API):
     if not replicaDict['OK']:
       return replicaDict
     if not replicaDict['Value']['Successful']:
-      return self._errorReport(list(replicaDict['Value']['Failed'].iteritems())[0],
+      return self._errorReport(list(replicaDict['Value']['Failed'].items())[0],
                                'Failed to get replica information')
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].items():  # can be an iterator
@@ -2075,7 +2075,7 @@ class Dirac(API):
     """
     options = {'Status': status, 'MinorStatus': minorStatus, 'ApplicationStatus': applicationStatus, 'Owner': owner,
                'Site': site, 'JobGroup': jobGroup, 'OwnerGroup': ownerGroup}
-    conditions = dict((key, str(value)) for key, value in options.iteritems() if value)
+    conditions = dict((key, str(value)) for key, value in options.items() if value)
 
     if date:
       try:

@@ -172,7 +172,7 @@ class TokenAgent(AgentModule):
     adminExpired = []
     adminExpiring = []
 
-    for tokenOwner, tokenLists in self.tokenDict.iteritems():
+    for tokenOwner, tokenLists in self.tokenDict.items():
 
       expired = []
       expiring = []

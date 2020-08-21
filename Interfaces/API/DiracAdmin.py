@@ -657,7 +657,7 @@ class DiracAdmin(API):
     ceDict = result['Value']
     headers = 'CE'.ljust(28)
     i = 0
-    for ce, summary in ceDict.iteritems():
+    for ce, summary in ceDict.items():
       states = summary.keys()
       if len(states) > i:
         i = len(states)
@@ -666,7 +666,7 @@ class DiracAdmin(API):
       headers += 'Status'.ljust(12) + 'Count'.ljust(12)
     gLogger.notice(headers)
 
-    for ce, summary in ceDict.iteritems():
+    for ce, summary in ceDict.items():
       line = ce.ljust(28)
       states = sorted(summary)
       for state in states:
