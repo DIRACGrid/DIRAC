@@ -38,8 +38,8 @@ def test_ExecutorState():
 def test_execQueues():
   """ test of ExecutorQueues
   """
-  for y in xrange(2):
-    for i in xrange(3):
+  for y in range(2):
+    for i in range(3):
       assert eQ.pushTask("type%s" % y, "t%s%s" % (y, i)) == i + 1
   assert "DONE IN"
   assert eQ.pushTask("type0", "t01") == 3
@@ -51,6 +51,6 @@ def test_execQueues():
   assert eQ.getState()
   assert eQ.deleteTask("t02")
   assert eQ.getState()
-  for i in xrange(3):
+  for i in range(3):
     assert eQ.popTask("type1")[0] == "t1%s" % i
   assert eQ._internals()

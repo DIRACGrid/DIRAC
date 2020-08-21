@@ -17,7 +17,6 @@ jobs:
           - |
             pytest --no-cov \
                 --ignore=AccountingSystem \
-                --ignore=Core \
                 --ignore=DataManagementSystem \
                 --ignore=FrameworkSystem \
                 --ignore=Interfaces \
@@ -29,7 +28,10 @@ jobs:
                 --ignore=StorageManagementSystem \
                 --ignore=TransformationSystem \
                 --ignore=Workflow \
-                --ignore=WorkloadManagementSystem
+                --ignore=WorkloadManagementSystem \
+                --ignore=Core/DISET/ \
+                --ignore=Core/Utilities/test/Test_DAG.py \
+                --ignore=Core/Utilities/test/Test_Dictionaries.py
 
     steps:
     - uses: actions/checkout@v2

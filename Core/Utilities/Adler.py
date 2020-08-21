@@ -94,7 +94,7 @@ def fileAdler(fileName):
       yield data
 
   try:
-    with open(fileName) as inputFile:
+    with open(fileName, "rb") as inputFile:
       myAdler = 1
       for data in readChunk(inputFile):
         myAdler = adler32(data, myAdler)
@@ -110,7 +110,7 @@ def stringAdler(string):
   :param str string: data
   """
   try:
-    intAdler = adler32(string)
+    intAdler = adler32(string.encode())
     return intAdlerToHex(intAdler)
   except Exception as error:
     print(repr(error).replace(',)', ')'))

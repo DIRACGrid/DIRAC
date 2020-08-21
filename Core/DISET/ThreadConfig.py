@@ -4,9 +4,11 @@ from __future__ import print_function
 
 import threading
 import functools
+import six
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
+@six.add_metaclass(DIRACSingleton)
 class ThreadConfig(threading.local):
   """ This class allows to contain extra information when a call is done on behalf of
       somebody else. Typically, when a host performs the request on behalf of a user.
@@ -18,9 +20,6 @@ class ThreadConfig(threading.local):
       Also, this class has to be populated manually, no Client class will do it for you.
 
   """
-
-  __metaclass__ = DIRACSingleton
-
   def __init__(self):
     self.reset()
 

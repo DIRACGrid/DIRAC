@@ -150,7 +150,7 @@ class DJSONDecoder(json.JSONDecoder):
       obj = cl()
 
       # Set each attribute
-      for attrName, attrValue in dataDict.iteritems():
+      for attrName, attrValue in dataDict.items():
         # If the value is None, do not set it
         # This is needed to play along well with SQLalchemy
         if attrValue is None:
@@ -201,4 +201,4 @@ def strToIntDict(inDict):
 
   """
 
-  return {int(key): value for key, value in inDict.iteritems()}
+  return {int(key): value for key, value in inDict.items()}

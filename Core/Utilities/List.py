@@ -111,7 +111,7 @@ def getChunk(aList, chunkSize):
         process( chunk )
 
   """
-  for i in xrange(0, len(aList), chunkSize):
+  for i in range(0, len(aList), chunkSize):
     yield aList[i:i + chunkSize]
 
 

@@ -10,13 +10,14 @@ __RCSID__ = "$Id$"
 import logging
 import time
 import sys
-
+import six
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
 from DIRAC.Resources.LogBackends.StdoutBackend import StdoutBackend
 from DIRAC.Core.Utilities import DIRACSingleton
 
 
+@six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class LoggingRoot(Logging):
   """
   LoggingRoot is a particular Logging object: the first parent of the chain.
@@ -26,8 +27,6 @@ class LoggingRoot(Logging):
   - It is unique, there is one and only one parent at the top of the chain: this justifies the usage of a Singleton
 
   """
-  __metaclass__ = DIRACSingleton.DIRACSingleton
-
   # Boolean preventing the LoggingRoot to be configured once more
   __configuredLogging = False
 

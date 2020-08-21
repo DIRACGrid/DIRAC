@@ -63,15 +63,15 @@ start = time.time()
 done = False
 
 
-
-def generatePath(depth, withLetters = False):
+def generatePath(depth, withLetters=False):
   # Between 0 and 3 because in generate we have 4 subdirs per dir. Adapt :-)
-  rndTab = [random.randint( 0, 3 ) for _i in xrange( depth ) ]
+  rndTab = [random.randint(0, 3) for _i in range(depth)]
   if withLetters:
-    rndLetters = [random.choice( string.letters ) for _i in xrange( 3 ) ]
+    rndLetters = [random.choice(string.ascii_letters) for _i in range(3)]
     rndTab += rndLetters
   dirPath = '/' + '/'.join(map(str, rndTab))
   return dirPath
+
 
 def doRead(depth):
   dirPath = generatePath(depth)

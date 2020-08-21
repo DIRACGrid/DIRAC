@@ -47,8 +47,8 @@ class AdlerTestCase(unittest.TestCase):
   """
 
   def setUp(self):
-    self.emptyAdler = hex(zlib.adler32("") & 0xffffffff)[2:]
-    self.lettersAdler = hex(zlib.adler32(string.letters) & 0xffffffff)[2:]
+    self.emptyAdler = hex(zlib.adler32(b"") & 0xffffffff)[2:]
+    self.lettersAdler = hex(zlib.adler32(string.ascii_letters.encode()) & 0xffffffff)[2:]
 
   def testStringAdler(self):
     """ stringAdler tests """
@@ -62,7 +62,7 @@ class AdlerTestCase(unittest.TestCase):
     # empty string
     self.assertEqual(int(Adler.stringAdler("")), int(self.emptyAdler))
     # all letters
-    self.assertEqual(Adler.stringAdler(string.letters), self.lettersAdler)
+    self.assertEqual(Adler.stringAdler(string.ascii_letters), self.lettersAdler)
 
   def testConversion(self):
     """ intAdlerToHex and hexAdlerToInt tests """
@@ -93,7 +93,7 @@ class AdlerTestCase(unittest.TestCase):
     # normal operation
     fd, path = tempfile.mkstemp("_adler32", "norewgian_blue")
     self.assertEqual(int(Adler.fileAdler(path)), int(self.emptyAdler))
-    os.write(fd, string.letters)
+    os.write(fd, string.ascii_letters.encode())
     self.assertEqual(Adler.fileAdler(path), self.lettersAdler)
 
   def testCompareAdler(self):
@@ -101,7 +101,7 @@ class AdlerTestCase(unittest.TestCase):
     # same adlers
     self.assertEqual(Adler.compareAdler(Adler.stringAdler(""), Adler.stringAdler("")), True)
     # diff adlers
-    self.assertEqual(Adler.compareAdler(Adler.stringAdler(""), Adler.stringAdler(string.letters)), False)
+    self.assertEqual(Adler.compareAdler(Adler.stringAdler(""), Adler.stringAdler(string.ascii_letters)), False)
 
 
 # test suite execution

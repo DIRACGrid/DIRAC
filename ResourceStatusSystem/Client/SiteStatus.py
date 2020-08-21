@@ -27,6 +27,7 @@ from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 
+@six.add_metaclass(DIRACSingleton)
 class SiteStatus(object):
   """
   RSS helper to interact with the 'Site' family on the DB. It provides the most
@@ -38,9 +39,6 @@ class SiteStatus(object):
   * getUsableSites
   * getSites
   """
-
-  __metaclass__ = DIRACSingleton
-
   def __init__(self):
     """
     Constructor, initializes the rssClient.

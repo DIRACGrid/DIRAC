@@ -53,13 +53,13 @@ done = False
 
 while not done:
   # Between 0 and 3 because in generate we have 4 subdirs per dir. Adapt :-)
-  rndTab = [random.randint( 0, 3 ) for i in xrange( writeDepth ) ]
-  rndLetters = [random.choice(string.letters) for i in xrange(3) ]
+  rndTab = [random.randint(0, 3) for i in range(writeDepth)]
+  rndLetters = [random.choice(string.ascii_letters) for i in range(3)]
   rndTab += rndLetters
   dirPath = '/' + '/'.join(map(str, rndTab))
-  nbOfFiles = random.randint( 1, maxInsert )
+  nbOfFiles = random.randint(1, maxInsert)
   lfnDict = {}
-  for f in xrange(nbOfFiles):
+  for f in range(nbOfFiles):
     filename = "%s.txt"%(f)
     lfn = "%s/%s"%(dirPath, filename)
     size = random.randint(1,1000)

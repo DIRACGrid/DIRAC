@@ -99,7 +99,7 @@ def test_everyBaseTypeIsTested():
   """
   current_module = sys.modules[__name__]
 
-  for encodeFunc in g_dEncodeFunctions.itervalues():
+  for encodeFunc in g_dEncodeFunctions.values():
     testFuncName = ('test_BaseType_%s' % encodeFunc.__name__).replace('encode', '')
     getattr(current_module, testFuncName)
 

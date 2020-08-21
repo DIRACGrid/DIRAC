@@ -21,7 +21,7 @@ set a timeout.
        ( returncode, stdout, stderr ) the tuple will also be available upon
        timeout error or buffer overflow error.
 
-     - pythonCall( iTimeOut, function, \*stArgs, \*\*stKeyArgs )
+     - pythonCall( iTimeOut, function, *stArgs, **stKeyArgs )
        calls function with given arguments within a timeout Wrapper
        should be used to wrap third party python functions
 
@@ -191,7 +191,7 @@ class Subprocess(object):
     dataString = ''
     redBuf = " "
     while len(redBuf) > 0:
-      redBuf = os.read(fd, 8192)
+      redBuf = os.read(fd, 8192).decode()
       dataString += redBuf
       if len(dataString) + baseLength > self.bufferLimit:
         self.log.error('Maximum output buffer length reached',
@@ -212,14 +212,14 @@ class Subprocess(object):
     from DIRAC.Core.Utilities import DEncode
 
     try:
-      os.write(writePipe, DEncode.encode(S_OK(function(*stArgs, **stKeyArgs))))
+      os.write(writePipe, DEncode.encode(S_OK(function(*stArgs, **stKeyArgs))).encode())
     except OSError as x:
       if str(x) == '[Errno 32] Broken pipe':
         # the parent has died
         pass
     except Exception as x:
       self.log.exception('Exception while executing', function.__name__)
-      os.write(writePipe, DEncode.encode(S_ERROR(str(x))))
+      os.write(writePipe, DEncode.encode(S_ERROR(str(x))).encode())
       # HACK: Allow some time to flush logs
       time.sleep(1)
     try:
@@ -377,9 +377,9 @@ class Subprocess(object):
           nB = os.read(fn, self.bufferLimit)
         else:
           nB = fd.read(1)
-        if nB == "":
+        if not nB:
           break
-        dataString += nB
+        dataString += nB.decode()
         # break out of potential infinite loop, indicated by dataString growing beyond reason
         if len(dataString) + baseLength > self.bufferLimit:
           self.log.error("DataString is getting too long (%s): %s " % (len(dataString), dataString[-10000:]))

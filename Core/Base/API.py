@@ -88,6 +88,8 @@ class API(object):
     # because of the thread locks
     if isinstance(state['log'], Logging):
       state['log'] = state['log'].getSubName()
+    # In Python 3 PrettyPrinter can't be pickled
+    del state['pPrint']
     return state
 
   def __setstate__(self, state):
@@ -101,6 +103,7 @@ class API(object):
     # due to the thread locks
     if isinstance(state['log'], six.string_types):
       self.log = gLogger.getSubLogger(state['log'])
+    self.pPrint = pprint.PrettyPrinter()
 
   #############################################################################
 

@@ -4,9 +4,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import types
 import pprint
 
+import six
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -16,21 +16,21 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 
 class ExecutorMindHandler(RequestHandler):
 
-  MSG_DEFINITIONS = {'ProcessTask': {'taskId': (types.IntType, types.LongType),
-                                     'taskStub': types.StringTypes,
-                                     'eType': types.StringTypes},
-                     'TaskDone': {'taskId': (types.IntType, types.LongType),
-                                  'taskStub': types.StringTypes},
-                     'TaskFreeze': {'taskId': (types.IntType, types.LongType),
-                                    'taskStub': types.StringTypes,
-                                    'freezeTime': (types.IntType, types.LongType)},
-                     'TaskError': {'taskId': (types.IntType, types.LongType),
-                                   'errorMsg': types.StringTypes,
-                                   'taskStub': types.StringTypes,
-                                   'eType': types.StringTypes},
-                     'ExecutorError': {'taskId': (types.IntType, types.LongType),
-                                       'errorMsg': types.StringTypes,
-                                       'eType': types.StringTypes}}
+  MSG_DEFINITIONS = {'ProcessTask': {'taskId': six.integer_types,
+                                     'taskStub': six.string_types,
+                                     'eType': six.string_types},
+                     'TaskDone': {'taskId': six.integer_types,
+                                  'taskStub': six.string_types},
+                     'TaskFreeze': {'taskId': six.integer_types,
+                                    'taskStub': six.string_types,
+                                    'freezeTime': six.integer_types},
+                     'TaskError': {'taskId': six.integer_types,
+                                   'errorMsg': six.string_types,
+                                   'taskStub': six.string_types,
+                                   'eType': six.string_types},
+                     'ExecutorError': {'taskId': six.integer_types,
+                                       'errorMsg': six.string_types,
+                                       'eType': six.string_types}}
 
   class MindCallbacks(ExecutorDispatcherCallbacks):
 

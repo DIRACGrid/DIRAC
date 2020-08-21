@@ -342,8 +342,11 @@ def decodeUnicode(data, i):
   return (unicode(data[colon: end], 'utf-8'), end)
 
 
-g_dEncodeFunctions[types.UnicodeType] = encodeUnicode
-g_dDecodeFunctions["u"] = decodeUnicode
+if six.PY2:
+  g_dEncodeFunctions[types.UnicodeType] = encodeUnicode
+  g_dDecodeFunctions["u"] = decodeUnicode
+else:
+  g_dDecodeFunctions["u"] = decodeString
 
 
 def encodeDateTime(oValue, eList):

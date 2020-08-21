@@ -5,6 +5,7 @@ from __future__ import division
 import random
 import time
 import threading
+import six
 from six.moves import _thread as thread
 from hashlib import md5
 
@@ -12,9 +13,8 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
+@six.add_metaclass(DIRACSingleton)
 class LockRing(object):
-  __metaclass__ = DIRACSingleton
-
   def __init__(self):
     random.seed()
     self.__locks = {}

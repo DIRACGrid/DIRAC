@@ -15,5 +15,5 @@ def breakDictionaryIntoChunks(aDict, chunkSize):
       :return: a generator object, that generates chunks of the original dictionary in aDict
   """
   iterDict = iter(aDict)
-  for _ in xrange(0, len(aDict), chunkSize):
+  for _ in range(0, len(aDict), chunkSize):
     yield {k: aDict[k] for k in islice(iterDict, chunkSize)}

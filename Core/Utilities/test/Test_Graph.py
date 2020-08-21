@@ -22,6 +22,7 @@ __RCSID__ = "$Id$"
 # @brief Definition of GraphTests class.
 # # imports
 import unittest
+import six
 # # SUT
 from DIRAC.Core.Utilities.Graph import Node, Edge, Graph, DynamicProps  # , topologicalSort, topoSort
 
@@ -31,13 +32,14 @@ class DynamicPropTests( unittest.TestCase ):
   """
   def testDynamicProps( self ):
     """ test dynamic props """
+    @six.add_metaclass(DynamicProps)
     class TestClass( object ):
       """
       .. class:: TestClass
 
       dummy class
       """
-      __metaclass__ = DynamicProps
+
     # # dummy instance
     testObj = TestClass()
     # # makeProperty in
@@ -207,11 +209,11 @@ class GraphTests( unittest.TestCase ):
 
     # # nodes and edges
     for node in self.nodes:
-      self.assertEqual( node in gr, True )
+      self.assertEqual(node in gr, True)
     for edge in self.edges:
-      self.assertEqual( edge in gr, True )
-    self.assertEqual( sorted( self.nodes ), sorted( gr.nodes() ) )
-    self.assertEqual( sorted( self.edges ), sorted( gr.edges() ) )
+      self.assertEqual(edge in gr, True)
+    self.assertEqual(sorted(self.nodes, key=lambda x: x.name), sorted(gr.nodes(), key=lambda x: x.name))
+    self.assertEqual(sorted(self.edges, key=lambda x: x.name), sorted(gr.edges(), key=lambda x: x.name))
 
     # # getNode
     for node in self.nodes:

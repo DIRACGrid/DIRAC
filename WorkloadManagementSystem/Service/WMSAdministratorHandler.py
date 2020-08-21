@@ -95,7 +95,7 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.getAllSiteMaskStatus()
 
 ##############################################################################
-  types_banSite = [basestring]
+  types_banSite = [six.string_types]
 
   def export_banSite(self, site, comment='No comment'):
     """ Ban the given site in the site mask
@@ -111,7 +111,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
 ##############################################################################
-  types_allowSite = [basestring]
+  types_allowSite = [six.string_types]
 
   def export_allowSite(self, site, comment='No comment'):
     """ Allow the given site in the site mask
@@ -138,7 +138,7 @@ class WMSAdministratorHandler(RequestHandler):
     return jobDB.removeSiteFromMask(None)
 
   ##############################################################################
-  types_getSiteMaskLogging = [(basestring, list)]
+  types_getSiteMaskLogging = [six.string_types + (list,)]
 
   @classmethod
   def export_getSiteMaskLogging(cls, sites):
@@ -184,7 +184,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(siteDict)
 
   ##############################################################################
-  types_getJobPilotOutput = [(basestring, int, long)]
+  types_getJobPilotOutput = [six.string_types + (int, long)]
 
   def export_getJobPilotOutput(self, jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC

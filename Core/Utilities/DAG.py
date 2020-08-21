@@ -50,7 +50,7 @@ class DAG(object):
       gLogger.error("Missing node to where the edge lands")
       return
 
-    for node, toNodes in self.graph.iteritems():
+    for node, toNodes in self.graph.items():
       # This is clearly not enough to assure that it's really acyclic...
       if toNode == node and fromNode in toNodes:
         gLogger.error("Can't insert this edge")
@@ -61,7 +61,7 @@ class DAG(object):
     """ Return a list of index nodes
     """
     notIndexNodes = set()
-    for depNodes in self.graph.itervalues():
+    for depNodes in self.graph.values():
       [notIndexNodes.add(depNode) for depNode in depNodes]
     indexNodes = list(set(self.graph.keys()) - notIndexNodes)
     return [unHashNode(inu) for inu in indexNodes]

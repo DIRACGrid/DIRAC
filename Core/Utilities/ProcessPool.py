@@ -706,7 +706,7 @@ class ProcessPool(object):
     counter = 0
     self.__prListLock.acquire()
     try:
-      counter = len([pid for pid, worker in self.__workersDict.iteritems() if worker.isWorking()])
+      counter = len([pid for pid, worker in self.__workersDict.items() if worker.isWorking()])
     finally:
       self.__prListLock.release()
     return counter
@@ -720,7 +720,7 @@ class ProcessPool(object):
     counter = 0
     self.__prListLock.acquire()
     try:
-      counter = len([pid for pid, worker in self.__workersDict.iteritems() if not worker.isWorking()])
+      counter = len([pid for pid, worker in self.__workersDict.items() if not worker.isWorking()])
     finally:
       self.__prListLock.release()
     return counter
@@ -754,7 +754,7 @@ class ProcessPool(object):
     # # check wounded processes
     self.__prListLock.acquire()
     try:
-      for pid, worker in self.__workersDict.items():
+      for pid, worker in list(self.__workersDict.items()):
         if not worker.is_alive():
           del self.__workersDict[pid]
     finally:
