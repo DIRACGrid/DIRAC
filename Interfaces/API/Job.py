@@ -141,7 +141,7 @@ class Job(API):
        :type parameters: python:list of tuples
     """
     kwargs = {'executable': executable, 'arguments': arguments, 'logFile': logFile}
-    if not isinstance(executable, basestring) or not isinstance(arguments, six.string_types) or \
+    if not isinstance(executable, six.string_types) or not isinstance(arguments, six.string_types) or \
        not isinstance(logFile, six.string_types):
       return self._reportError('Expected strings for executable and arguments', **kwargs)
 

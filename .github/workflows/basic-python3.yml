@@ -19,7 +19,6 @@ jobs:
                 --ignore=AccountingSystem \
                 --ignore=DataManagementSystem \
                 --ignore=FrameworkSystem \
-                --ignore=Interfaces \
                 --ignore=MonitoringSystem \
                 --ignore=ProductionSystem \
                 --ignore=RequestManagementSystem \

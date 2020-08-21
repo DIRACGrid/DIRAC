@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 from past.builtins import long
+import six
 from DIRAC.Core.Workflow.Utility import *
 
 __RCSID__ = "$Id$"
@@ -172,13 +173,13 @@ class Parameter(object):
     return self.typeout
 
   def setInput(self, i):
-    if isinstance(i, str) or isinstance(i, unicode):
+    if isinstance(i, six.string_types):
       self.typein = self.__setBooleanFromString(i)
     else:
       self.typein = bool(i)
 
   def setOutput(self, i):
-    if isinstance(i, str) or isinstance(i, unicode):
+    if isinstance(i, six.string_types):
       self.typeout = self.__setBooleanFromString(i)
     else:
       self.typeout = bool(i)
