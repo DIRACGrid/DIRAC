@@ -447,8 +447,8 @@ class JobMonitoringHandler(RequestHandler):
         return S_OK(resultDict)
 
       # prepare the standard structure now
-      key = summaryDict.keys()[0]
-      paramNames = summaryDict[key].keys()
+      key = list(summaryDict)[0]
+      paramNames = list(summaryDict[key])
 
       records = []
       for jobID, jobDict in summaryDict.items():

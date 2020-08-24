@@ -547,10 +547,9 @@ class DirectoryClosure(DirectoryTreeBase):
     return self._setDirectoryParameter(path, 'Mode', mode, recursive=recursive)
 
   def __getLogicalSize(self, lfns, ps_name, connection):
-    paths = lfns.keys()
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
       result = self.findDir(path)
       if not result['OK'] or not result['Value']:
         failed[path] = "Directory not found"
@@ -591,10 +590,9 @@ class DirectoryClosure(DirectoryTreeBase):
     """ Get the total size of the requested directories
     """
 
-    paths = lfns.keys()
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
       result = self.findDir(path)
       if not result['OK']:
         failed[path] = "Directory not found"

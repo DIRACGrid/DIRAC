@@ -97,7 +97,7 @@ def checkUnusedCEs():
       result = getDIRACSiteName(site)
       if result['OK']:
         diracSite = ','.join(result['Value'])
-      ces = siteDict[site].keys()  # pylint: disable=no-member
+      ces = list(siteDict[site])
       if ces:
         gLogger.notice("  %s, DIRAC site %s" % (site, diracSite))
         for ce in ces:
@@ -120,8 +120,7 @@ def checkUnusedCEs():
   for site in siteDict:
     # Get the country code:
     country = ''
-    ces = siteDict[site].keys()  # pylint: disable=no-member
-    for ce in ces:
+    for ce in siteDict[site]:
       country = ce.strip().split('.')[-1].lower()
       if len(country) == 2:
         break

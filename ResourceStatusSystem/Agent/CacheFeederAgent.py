@@ -112,7 +112,7 @@ class CacheFeederAgent(AgentModule):
        :type commandDict: dict
     """
 
-    commandName = commandDict.keys()[0]
+    commandName = list(commandDict)[0]
     commandArgs = commandDict[commandName]
 
     commandTuple = ('%sCommand' % commandModule, '%sCommand' % commandName)

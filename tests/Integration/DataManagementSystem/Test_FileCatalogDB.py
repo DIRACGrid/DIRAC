@@ -1427,7 +1427,7 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
 
 if __name__ == '__main__':
 
-  managerTypes = MANAGER_TO_TEST.keys()
+  managerTypes = list(MANAGER_TO_TEST)
   all_combinations = list(itertools.product(*MANAGER_TO_TEST.values()))
   numberOfManager = len(managerTypes)
 

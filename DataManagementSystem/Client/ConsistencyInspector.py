@@ -583,7 +583,7 @@ class ConsistencyInspector(object):
     if not res['OK']:
       return res
     catalogMetadata, _missingCatalogFiles, _zeroSizeFiles = res['Value']
-    res = self._getCatalogReplicas(catalogMetadata.keys())
+    res = self._getCatalogReplicas(list(catalogMetadata))
     if not res['OK']:
       return res
     replicas, _zeroReplicaFiles = res['Value']

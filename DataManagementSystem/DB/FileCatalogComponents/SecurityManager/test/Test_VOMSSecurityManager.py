@@ -281,7 +281,7 @@ class BaseCaseMixin(object):
         against all the existing and non existing directories
     """
 
-    self.existingRet = self.securityManager.hasAccess(methodName, directoryTree.keys(), self.credDict)
+    self.existingRet = self.securityManager.hasAccess(methodName, list(directoryTree), self.credDict)
     self.nonExistingRet = self.securityManager.hasAccess(methodName, nonExistingDirectories, self.credDict)
 
   def callForFiles(self, methodName):
@@ -289,7 +289,7 @@ class BaseCaseMixin(object):
         against all the existing and non existing files
     """
 
-    self.existingRet = self.securityManager.hasAccess(methodName, fileTree.keys(), self.credDict)
+    self.existingRet = self.securityManager.hasAccess(methodName, list(fileTree), self.credDict)
     self.nonExistingRet = self.securityManager.hasAccess(methodName, nonExistingFiles, self.credDict)
 
   def compareResult(self):

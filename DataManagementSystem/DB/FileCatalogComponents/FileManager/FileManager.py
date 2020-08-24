@@ -31,7 +31,7 @@ class FileManager(FileManagerBase):
     connection = self._getConnection(connection)
     dirDict = self._getFileDirectories(lfns)
     failed = {}
-    result = self.db.dtree.findDirs(dirDict.keys())
+    result = self.db.dtree.findDirs(list(dirDict))
     if not result['OK']:
       return result
     directoryIDs = result['Value']
@@ -77,7 +77,7 @@ class FileManager(FileManagerBase):
     dirDict = self._getFileDirectories(lfns)
     failed = {}
     successful = {}
-    result = self.db.dtree.findDirs(dirDict.keys())
+    result = self.db.dtree.findDirs(list(dirDict))
     if not result['OK']:
       return result
     directoryIDs = result['Value']
@@ -91,9 +91,8 @@ class FileManager(FileManagerBase):
           failed[fname] = 'No such file or directory'
       else:
         directoryPaths[directoryIDs[dirPath]] = dirPath
-    directoryIDList = directoryIDs.keys()
-    for dirIDs in breakListIntoChunks(directoryIDList, 1000):
 
+    for dirIDs in breakListIntoChunks(list(directoryIDs), 1000):
       wheres = []
       for dirPath in dirIDs:
         fileNames = dirDict[dirPath]
@@ -280,20 +279,20 @@ class FileManager(FileManagerBase):
     if not res['OK']:
       return res
     # Get the fileIDs for the inserted files
-    res = self._findFiles(lfns.keys(), ['FileID'], connection=connection)
+    res = self._findFiles(list(lfns), ['FileID'], connection=connection)
     if not res['OK']:
       for lfn in lfns.keys():
         failed[lfn] = 'Failed post insert check'
         lfns.pop(lfn)
     else:
       failed.update(res['Value']['Failed'])
-      for lfn in res['Value']['Failed'].keys():
+      for lfn in res['Value']['Failed']:
         lfns.pop(lfn)
       for lfn, fileDict in res['Value']['Successful'].items():
         lfns[lfn]['FileID'] = fileDict['FileID']
     insertTuples = []
     toDelete = []
-    for lfn in lfns.keys():
+    for lfn in lfns:
       fileInfo = lfns[lfn]
       fileID = fileInfo['FileID']
       dirID = fileInfo['DirID']
@@ -311,7 +310,7 @@ class FileManager(FileManagerBase):
       res = self.db._update(req)
       if not res['OK']:
         self._deleteFiles(toDelete, connection=connection)
-        for lfn in lfns.keys():
+        for lfn in list(lfns):
           failed[lfn] = res['Message']
           lfns.pop(lfn)
       else:
@@ -359,7 +358,7 @@ class FileManager(FileManagerBase):
       dirIDFileIDs.setdefault(dirID, []).append(fileID)
       fileIDName[fileID] = fileName
 
-    res = self.db.dtree.getDirectoryPaths(dirIDFileIDs.keys())
+    res = self.db.dtree.getDirectoryPaths(list(dirIDFileIDs))
     if not res['OK']:
       return res
 
@@ -393,8 +392,7 @@ class FileManager(FileManagerBase):
     res = self.__getFileIDReplicas(fileIDs, connection=connection)
     if not res['OK']:
       return res
-    repIDs = res['Value'].keys()
-    return self.__deleteReplicas(repIDs, connection=connection)
+    return self.__deleteReplicas(list(res['Value']), connection=connection)
 
   def __deleteFiles(self, fileIDs, connection=False):
     connection = self._getConnection(connection)
@@ -532,7 +530,7 @@ class FileManager(FileManagerBase):
     connection = self._getConnection(connection)
     failed = {}
     successful = {}
-    res = self._findFiles(lfns.keys(), ['DirID', 'FileID', 'Size'], connection=connection)
+    res = self._findFiles(list(lfns), ['DirID', 'FileID', 'Size'], connection=connection)
 
     # If the file does not exist we consider the deletion successful
     for lfn, error in res['Value']['Failed'].items():

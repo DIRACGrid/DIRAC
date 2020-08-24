@@ -262,7 +262,7 @@ class FileManagerBase(object):
           extraLfns[lfn]['SE'] = lfns[lfn]['SE'][1:]
 
     # Check whether the supplied files have been registered already
-    res = self._getExistingMetadata(masterLfns.keys(), connection=connection)
+    res = self._getExistingMetadata(list(masterLfns), connection=connection)
     if not res['OK']:
       return res
     existingMetadata, failed = res['Value']
@@ -270,7 +270,7 @@ class FileManagerBase(object):
       success, fail = self._checkExistingMetadata(existingMetadata, masterLfns)
       successful.update(success)
       failed.update(fail)
-      for lfn in (success.keys() + fail.keys()):
+      for lfn in list(success) + list(fail):
         masterLfns.pop(lfn)
 
     # If GUIDs are supposed to be unique check their pre-existance
@@ -283,7 +283,7 @@ class FileManagerBase(object):
     # If we have files left to register
     if masterLfns:
       # Create the directories for the supplied files and store their IDs
-      directories = self._getFileDirectories(masterLfns.keys())
+      directories = self._getFileDirectories(list(masterLfns))
       for directory, fileNames in directories.items():
         res = self.db.dtree.makeDirectories(directory, credDict)
         if not res['OK']:
@@ -360,7 +360,7 @@ class FileManagerBase(object):
         extraLfns.pop(lfn)
 
     if extraLfns:
-      res = self._findFiles(extraLfns.keys(), ['FileID', 'DirID'], connection=connection)
+      res = self._findFiles(list(extraLfns), ['FileID', 'DirID'], connection=connection)
       if not res['OK']:
         for lfn in lfns.keys():
           failed[lfn] = 'Failed while registering extra replicas'
@@ -368,7 +368,7 @@ class FileManagerBase(object):
           extraLfns.pop(lfn)
       else:
         failed.update(res['Value']['Failed'])
-        for lfn in res['Value']['Failed'].keys():
+        for lfn in res['Value']['Failed']:
           successful.pop(lfn)
           extraLfns.pop(lfn)
         for lfn, fileDict in res['Value']['Successful'].items():
@@ -378,7 +378,7 @@ class FileManagerBase(object):
       if extraLfns:
         res = self._insertReplicas(extraLfns, master=False, connection=connection)
         if not res['OK']:
-          for lfn in extraLfns.keys():  # pylint: disable=consider-iterating-dictionary
+          for lfn in extraLfns:  # pylint: disable=consider-iterating-dictionary
             failed[lfn] = "Failed while registering extra replicas"
             successful.pop(lfn)
         else:
@@ -438,7 +438,7 @@ class FileManagerBase(object):
       for ancestor in ancestorIDs.keys():
         fileIDLFNs[ancestorIDs[ancestor]['FileID']] = ancestor
         toInsert[ancestorIDs[ancestor]['FileID']] = originalDepth
-      res = self._getFileAncestors(fileIDLFNs.keys())
+      res = self._getFileAncestors(list(fileIDLFNs))
       if not res['OK']:
         failed[lfn] = "Failed to obtain all ancestors"
         continue
@@ -504,7 +504,7 @@ class FileManagerBase(object):
     connection = self._getConnection(connection)
     failed = {}
     successful = {}
-    result = self._findFiles(lfns.keys(), connection=connection)
+    result = self._findFiles(list(lfns), connection=connection)
     if not result['OK']:
       return result
     if result['Value']['Failed']:
@@ -528,7 +528,7 @@ class FileManagerBase(object):
     connection = self._getConnection(connection)
     failed = {}
     successful = {}
-    result = self._findFiles(lfns.keys(), connection=connection)
+    result = self._findFiles(list(lfns), connection=connection)
     if not result['OK']:
       return result
     if result['Value']['Failed']:
@@ -542,7 +542,7 @@ class FileManagerBase(object):
     for lfn in result['Value']['Successful']:
       inputIDDict[result['Value']['Successful'][lfn]['FileID']] = lfn
 
-    inputIDs = inputIDDict.keys()
+    inputIDs = list(inputIDDict)
     if relation == 'ancestor':
       result = self._getFileAncestors(inputIDs, depths, connection)
     else:
@@ -556,8 +556,7 @@ class FileManagerBase(object):
     relDict = result['Value']
     for id_ in inputIDs:
       if id_ in relDict:
-        aList = relDict[id_].keys()
-        result = self._getFileLFNs(aList)
+        result = self._getFileLFNs(list(relDict[id_]))
         if not result['OK']:
           failed[inputIDDict[id]] = "Failed to find %s" % relation
         else:
@@ -599,7 +598,7 @@ class FileManagerBase(object):
     for lfn, fileDict in existingLfns.items():
       fileIDLFNs[fileDict['FileID']] = lfn
     # For those that exist get the replicas to determine whether they are already registered
-    res = self._getFileReplicas(fileIDLFNs.keys())
+    res = self._getFileReplicas(list(fileIDLFNs))
     if not res['OK']:
       for lfn in fileIDLFNs.values():
         failed[lfn] = 'Failed checking pre-existing replicas'
@@ -635,7 +634,7 @@ class FileManagerBase(object):
     failed = {}
     for lfn, fileDict in lfns.items():
       guidLFNs[fileDict['GUID']] = lfn
-    res = self._getFileIDFromGUID(guidLFNs.keys(), connection=connection)
+    res = self._getFileIDFromGUID(list(guidLFNs), connection=connection)
     if not res['OK']:
       return dict.fromkeys(lfns, res['Message'])
     for guid, fileID in res['Value'].items():
@@ -667,7 +666,7 @@ class FileManagerBase(object):
     directorySESizeDict = res['Value']
 
     # Now do removal
-    res = self._deleteFiles(fileIDLfns.keys(), connection=connection)
+    res = self._deleteFiles(list(fileIDLfns), connection=connection)
     if not res['OK']:
       for lfn in fileIDLfns.values():
         failed[lfn] = res['Message']
@@ -683,7 +682,7 @@ class FileManagerBase(object):
     fileIDLfns = {}
     for lfn, lfnDict in lfns.items():
       fileIDLfns[lfnDict['FileID']] = lfn
-    res = self._getFileReplicas(fileIDLfns.keys(), connection=connection)
+    res = self._getFileReplicas(list(fileIDLfns), connection=connection)
     if not res['OK']:
       return res
     directorySESizeDict = {}
@@ -750,7 +749,7 @@ class FileManagerBase(object):
         lfns.pop(lfn)
     res = self._addReplicas(lfns, connection=connection)
     if not res['OK']:
-      for lfn in lfns.keys():
+      for lfn in lfns:
         failed[lfn] = res['Message']
     else:
       failed.update(res['Value']['Failed'])
@@ -761,18 +760,18 @@ class FileManagerBase(object):
 
     connection = self._getConnection(connection)
     successful = {}
-    res = self._findFiles(lfns.keys(), ['DirID', 'FileID', 'Size'], connection=connection)
+    res = self._findFiles(list(lfns), ['DirID', 'FileID', 'Size'], connection=connection)
     if not res['OK']:
       return res
     failed = res['Value']['Failed']
-    for lfn in failed.keys():
+    for lfn in failed:
       lfns.pop(lfn)
     lfnFileIDDict = res['Value']['Successful']
     for lfn, fileDict in lfnFileIDDict.items():
       lfns[lfn].update(fileDict)
     res = self._insertReplicas(lfns, connection=connection)
     if not res['OK']:
-      for lfn in lfns.keys():
+      for lfn in lfns:
         failed[lfn] = res['Message']
     else:
       successful = res['Value']['Successful']
@@ -980,7 +979,7 @@ class FileManagerBase(object):
       fields = []
       if not self.db.lfnPfnConvention or self.db.lfnPfnConvention == "Weak":
         fields = ['PFN']
-      res = self._getFileReplicas(fileIDLfnDict.keys(), fields_input=fields,
+      res = self._getFileReplicas(list(fileIDLfnDict), fields_input=fields,
                                   allStatus=allStatus, connection=connection)
       if not res['OK']:
         return res
@@ -1045,7 +1044,7 @@ class FileManagerBase(object):
       fileIDLFNs[fileID] = lfn
     successful = {}
     if fileIDLFNs:
-      res = self._getFileReplicas(fileIDLFNs.keys(), allStatus=True, connection=connection)
+      res = self._getFileReplicas(list(fileIDLFNs), allStatus=True, connection=connection)
       if not res['OK']:
         return res
       for fileID, seDict in res['Value'].items():
@@ -1124,7 +1123,7 @@ class FileManagerBase(object):
       fileIDNames[fileDict['FileID']] = fileName
 
     if verbose:
-      result = self._getFileReplicas(fileIDNames.keys(), connection=connection)
+      result = self._getFileReplicas(list(fileIDNames), connection=connection)
       if not result['OK']:
         return result
       for fileID, seDict in result['Value'].items():

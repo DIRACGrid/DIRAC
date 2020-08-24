@@ -186,7 +186,7 @@ class RemoveReplica(DMSRequestOperationsBase):
     # Clear the error
     for opFile in toRemoveDict.values():
       opFile.Error = ''
-    removeReplicas = self.dm.removeReplica(targetSE, list(toRemoveDict.keys()))
+    removeReplicas = self.dm.removeReplica(targetSE, list(toRemoveDict))
     if not removeReplicas["OK"]:
       for opFile in toRemoveDict.values():
         opFile.Error = removeReplicas["Message"]

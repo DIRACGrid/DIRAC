@@ -186,7 +186,7 @@ class ServiceInterface(object):
         unregisteredActivities.append(acName)
         continue
       gLogger.info("Updating activity", "%s -> %s" % (acName, rrdFile))
-      timeList = sorted(acData.keys())
+      timeList = sorted(acData)
       entries = []
       for instant in timeList:
         entries.append((instant, acData[instant]))

@@ -882,7 +882,7 @@ class StorageManagementDB(DB):
 
   def updateReplicaFailure(self, terminalReplicaIDs):
     """ This method sets the status to Failure with the failure reason for the supplied Replicas. """
-    res = self.updateReplicaStatus(terminalReplicaIDs.keys(), 'Failed')
+    res = self.updateReplicaStatus(list(terminalReplicaIDs), 'Failed')
     if not res['OK']:
       return res
     updated = res['Value']

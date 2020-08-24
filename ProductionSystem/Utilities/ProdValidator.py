@@ -122,7 +122,7 @@ class ProdValidator(object):
     for meta, value in MetaQueryDict.items():
       values = []
       if isinstance(value, dict):
-        operation = value.keys()[0]
+        operation = list(value)[0]
         if operation not in ['=', 'in']:
           msg = 'Operation %s is not supported' % operation
           return S_ERROR(msg)

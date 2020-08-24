@@ -51,7 +51,7 @@ if jobid:
     gLogger.error(result['Message'])
     DIRAC.exit(1)
   gLogger.debug(result['Value'])
-  uuid = result['Value'].keys()[0]
+  uuid = list(result['Value'])[0]
 
 result = PilotManagerClient().getPilotLoggingInfo(uuid)
 if not result['OK']:

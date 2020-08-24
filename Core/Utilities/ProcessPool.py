@@ -991,7 +991,7 @@ class ProcessPool(object):
     :param self: self reference
     """
     while self.__workersDict:
-      pid = self.__workersDict.keys().pop(0)
+      pid = list(self.__workersDict).pop(0)
       worker = self.__workersDict[pid]
       if worker.is_alive():
         os.kill(pid, signal.SIGKILL)

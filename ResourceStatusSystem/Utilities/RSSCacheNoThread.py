@@ -322,7 +322,7 @@ class RSSCache(Cache):
     :return: S_OK() || S_ERROR()
     """
 
-    cacheKeys = validCache.keys()
+    cacheKeys = list(validCache)
 
     if isinstance(elementNames, six.string_types):
       elementNames = [elementNames]

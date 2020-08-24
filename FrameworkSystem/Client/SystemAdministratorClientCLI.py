@@ -202,7 +202,7 @@ class SystemAdministratorClientCLI(CLI):
         rDict = result['Value']
         for compType in rDict:
           for system in rDict[compType]:
-            components = sorted(rDict[compType][system].keys())
+            components = sorted(rDict[compType][system])
             for component in components:
               record = []
               if rDict[compType][system][component]['Installed']:
@@ -399,7 +399,7 @@ class SystemAdministratorClientCLI(CLI):
 
         if result['OK']:
           text = ''
-          headers = [result['Value'][0].keys()]
+          headers = [list(result['Value'][0])]
           for header in headers:
             text += str(header).ljust(15)
           gLogger.notice(text)
@@ -1274,7 +1274,7 @@ class SystemAdministratorClientCLI(CLI):
           if componentType and componentType != compType:
             continue
           for system in rDict[compType]:
-            components = sorted(rDict[compType][system].keys())
+            components = sorted(rDict[compType][system])
             for component in components:
               if componentName and componentName not in component:
                 continue

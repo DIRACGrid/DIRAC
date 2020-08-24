@@ -208,7 +208,7 @@ class StageMonitorAgent(AgentModule):
       seReplicas.setdefault(storageElement, []).append(replicaID)
 
     # RequestID was missing from replicaIDs dictionary BUGGY?
-    res = self.stagerClient.getStageRequests({'ReplicaID': replicaIDs.keys()})
+    res = self.stagerClient.getStageRequests({'ReplicaID': list(replicaIDs)})
     if not res['OK']:
       return res
     if not res['Value']:

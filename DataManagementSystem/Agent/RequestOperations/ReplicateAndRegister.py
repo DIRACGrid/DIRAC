@@ -215,7 +215,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                          if opFile.Status in ("Waiting", "Scheduled")])
     targetSESet = set(self.operation.targetSEList)
 
-    replicas = self.fc.getReplicas(waitingFiles.keys())
+    replicas = self.fc.getReplicas(list(waitingFiles))
     if not replicas["OK"]:
       self.log.error('Failed to get replicas', replicas["Message"])
       return replicas
@@ -252,7 +252,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       self.log.verbose("No files to schedule")
       return S_OK([])
 
-    res = self.fc.getFileMetadata(toSchedule.keys())
+    res = self.fc.getFileMetadata(list(toSchedule))
     if not res['OK']:
       return res
     else:

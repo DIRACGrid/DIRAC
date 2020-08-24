@@ -211,7 +211,7 @@ class SystemLoggingDB(DB):
                  'OwnerDN': 'UserDNs', 'OwnerGroup': 'UserDNs',
                  'ClientIPNumberString': 'ClientIPs',
                  'ClientFQDN': 'ClientIPs', 'SiteName': 'Sites'}
-    tableDictKeys = tableDict.keys()
+    tableDictKeys = list(tableDict)
     tableList = []
 
     conjunction = ' NATURAL JOIN '

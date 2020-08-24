@@ -39,7 +39,7 @@ def resolveVariables(varDict):
   """ Resolve variables defined in terms of others within the same dictionary
   """
   max_tries = 10
-  variables = varDict.keys()
+  variables = list(varDict)
   ntry = 0
   while ntry < max_tries:
     substFlag = False

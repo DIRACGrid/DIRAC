@@ -1026,7 +1026,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
             successful[lfn] = True
           else:
             failed[lfn] = res['Message']
-    lfnRemoved = successful.keys()
+    lfnRemoved = list(successful)
     if len(lfnRemoved) > 0:
       res = self.getReplicas(lfnRemoved, True)
       zeroReplicaFiles = []
@@ -1347,7 +1347,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
       return S_ERROR("Unable to invoke %s, it isn't a member function of LcgFileCatalogClient" % method)
     res = fcn(path)
     if isinstance(path, dict):
-      path = path.keys()[0]
+      path = list(path)[0]
     if not res['OK']:
       return res
     elif path not in res['Value']['Successful']:
@@ -1732,7 +1732,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
     res = self.__getDirectoryContents(datasetName)
     if not res['OK']:
       return res
-    links = res['Value']['Files'].keys()
+    links = list(res['Value']['Files'])
     res = self.removeLink(links)
     if not res['OK']:
       return res
@@ -1779,7 +1779,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
     for username in usernames:
       userDirectory = "/%s/user/%s/%s" % (vo, username[0], username)
       usernameDict[userDirectory] = username
-    res = self.exists(usernameDict.keys())
+    res = self.exists(list(usernameDict))
     if not res['OK']:
       return res
     failed = {}
@@ -1834,7 +1834,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
         successful[username] = True
       else:
         directoriesToRemove[directory] = username
-    res = self.removeDirectory(directoriesToRemove.keys())
+    res = self.removeDirectory(list(directoriesToRemove))
     if not res['OK']:
       return res
     for directory, error in res['Value']['Failed'].items():

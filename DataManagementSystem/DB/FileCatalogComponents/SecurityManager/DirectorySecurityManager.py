@@ -22,7 +22,7 @@ class DirectorySecurityManager(SecurityManagerBase):
     permissions = {}
     failed = {}
     while toGet:
-      res = self.db.dtree.getPathPermissions(toGet.keys(), credDict)
+      res = self.db.dtree.getPathPermissions(list(toGet), credDict)
       if not res['OK']:
         return res
       for path, mode in list(res['Value']['Successful'].items()):

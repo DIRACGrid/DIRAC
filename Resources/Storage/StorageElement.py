@@ -1150,7 +1150,7 @@ class StorageElementItem(object):
     if args:
       log.verbose("args should be empty!%s" % args)
       # because there is normally only one kw argument, I can move it from args to kwargs
-      methDefaultArgs = StorageElementItem.__defaultsArguments.get(self.methodName, {}).keys()
+      methDefaultArgs = list(StorageElementItem.__defaultsArguments.get(self.methodName, {}))
       if methDefaultArgs:
         kwargs[methDefaultArgs[0]] = args[0]
         args = args[1:]

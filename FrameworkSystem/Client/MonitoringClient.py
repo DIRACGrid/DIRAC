@@ -397,7 +397,7 @@ class MonitoringClient(object):
     for acName in self.marksToSend:
       maxBuckets = 86400 / self.activitiesDefinitions[acName]['bucketLength']
       if len(self.marksToSend[acName]) > maxBuckets:
-        timeSlots = sorted(self.marksToSend[acName].keys())
+        timeSlots = sorted(self.marksToSend[acName])
         while len(self.marksToSend[acName]) > maxBuckets:
           del(self.marksToSend[acName][timeSlots.pop(0)])
 

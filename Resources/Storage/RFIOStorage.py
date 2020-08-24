@@ -1002,7 +1002,7 @@ class RFIOStorage(StorageBase):
     elif isinstance(path, list):
       urls = path
     elif isinstance(path, dict):
-      urls = path.keys()
+      urls = list(path)
     else:
       return S_ERROR("RFIOStorage.__checkArgumentFormat: Supplied path is not of the correct format.")
     return S_OK(urls)

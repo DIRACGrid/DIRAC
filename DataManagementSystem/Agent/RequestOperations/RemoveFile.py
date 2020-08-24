@@ -201,7 +201,7 @@ class RemoveFile(DMSRequestOperationsBase):
     :param dict toRemoveDict: { lfn: opFile, ... }
     :return: S_ERROR or S_OK( { lfn: opFile, ... } ) -- dict with files still waiting to be removed
     """
-    bulkRemoval = self.dm.removeFile(toRemoveDict.keys(), force=True)
+    bulkRemoval = self.dm.removeFile(list(toRemoveDict), force=True)
     if not bulkRemoval["OK"]:
       error = bulkRemoval["Message"]
       self.log.error("Bulk file removal failed", error)

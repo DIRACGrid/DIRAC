@@ -193,7 +193,7 @@ class DatasetManager(object):
     dirDict = self._getDatasetDirectories(datasets)
     failed = {}
     successful = {}
-    result = self.db.dtree.findDirs(dirDict.keys())
+    result = self.db.dtree.findDirs(list(dirDict))
     if not result['OK']:
       return result
     directoryIDs = result['Value']
@@ -264,7 +264,7 @@ class DatasetManager(object):
     """
     connection = self._getConnection()
     successful = {}
-    result = self._findDatasets(datasets.keys(), connection)
+    result = self._findDatasets(list(datasets), connection)
     if not result['OK']:
       return result
     failed = result['Value']['Failed']
@@ -296,7 +296,7 @@ class DatasetManager(object):
       for dataset in result['Value']['Failed']:
         failed[dataset] = "Dataset not found"
 
-      idString = ','.join([str(x) for x in dsDict.keys()])
+      idString = ','.join([str(x) for x in dsDict])
       req = "SELECT DatasetID, Annotation FROM FC_DatasetAnnotations WHERE DatasetID in (%s)" % idString
     else:
       req = "SELECT DatasetID, Annotation FROM FC_DatasetAnnotations"
@@ -329,7 +329,7 @@ class DatasetManager(object):
       return S_ERROR('Failed to apply the metaQuery')
 
     idLfnDict = result['Value']
-    lfnIDList = idLfnDict.keys()
+    lfnIDList = list(idLfnDict)
     lfnList = sorted(idLfnDict.values())
     myMd5 = hashlib.md5()
     myMd5.update(str(lfnList).encode())
@@ -570,7 +570,7 @@ class DatasetManager(object):
       datasets[dsName]['Metadata'] = dsDict
 
     if verbose and datasets:
-      result = self.getDatasetAnnotation(datasets.keys())
+      result = self.getDatasetAnnotation(list(datasets))
       if result['OK']:
         for dataset in result['Value']['Successful']:
           datasets[dataset]['Annotation'] = result['Value']['Successful'][dataset]
@@ -712,9 +712,9 @@ class DatasetManager(object):
       return result
 
     lfnDict = result['Value']['Successful']
-    lfnList = [lfnDict[i] for i in lfnDict.keys()]
-    result = S_OK(lfnList)
-    result['FileIDList'] = lfnDict.keys()
+    fileIDList = list(lfnDict)
+    result = S_OK([lfnDict[i] for i in fileIDList])
+    result['FileIDList'] = fileIDList
     return result
 
   def getDatasetFiles(self, datasets, credDict):

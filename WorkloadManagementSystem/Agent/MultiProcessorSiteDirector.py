@@ -66,7 +66,7 @@ class MultiProcessorSiteDirector(SiteDirector):
     """ Go through defined computing elements and submit jobs if necessary
     """
 
-    queues = self.queueDict.keys()
+    queues = list(self.queueDict)
 
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
@@ -120,7 +120,7 @@ class MultiProcessorSiteDirector(SiteDirector):
               testSites.add(site)
       totalWaitingJobs += result['Value'][tqID]['Jobs']
 
-    tqIDList = result['Value'].keys()
+    tqIDList = list(result['Value'])
     self.log.info(tqIDList)
     result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
                                         'Status': WAITING_PILOT_STATUS},
@@ -140,7 +140,7 @@ class MultiProcessorSiteDirector(SiteDirector):
       return result
     siteMaskList = result['Value']
 
-    queues = self.queueDict.keys()
+    queues = list(self.queueDict)
     random.shuffle(queues)
     totalSubmittedPilots = 0
     matchedQueues = 0
@@ -247,7 +247,7 @@ class MultiProcessorSiteDirector(SiteDirector):
       matchedQueues += 1
       totalTQJobs = 0
       totalTQJobsByProcessors = {}
-      tqIDList = taskQueueDict.keys()
+      tqIDList = list(taskQueueDict)
       tqIDListByProcessors = {}
       for tq in taskQueueDict:
         if 'Tags' not in taskQueueDict[tq]:

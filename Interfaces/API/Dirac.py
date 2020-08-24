@@ -149,7 +149,7 @@ class Dirac(API):
     if not self.jobRepo:
       gLogger.warn("No repository is initialised")
       return S_OK()
-    jobIDs = self.jobRepo.readRepository()['Value'].keys()
+    jobIDs = list(self.jobRepo.readRepository()['Value'])
     if printOutput:
       print(self.pPrint.pformat(jobIDs))
     return S_OK(jobIDs)
@@ -168,7 +168,7 @@ class Dirac(API):
       gLogger.warn("No repository is initialised")
       return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
-    jobIDs = jobs.keys()
+    jobIDs = list(jobs)
     res = self.getJobStatus(jobIDs)
     if not res['OK']:
       return self._errorReport(res['Message'], 'Failed to get status of jobs from WMS')
@@ -1269,7 +1269,7 @@ class Dirac(API):
     repsResult = fileResult['Value']
     if repsResult['Failed']:
       # Some entries can be directories
-      dirs = repsResult['Failed'].keys()
+      dirs = list(repsResult['Failed'])
       dirResult = fc.getDirectoryMetadata(dirs)
       if not dirResult['OK']:
         self.log.warn('Failed to retrieve directory metadata from the catalogue')

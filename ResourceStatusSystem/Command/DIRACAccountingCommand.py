@@ -324,7 +324,7 @@ class TransferQualityFromCachedPlotCommand(Command):
 
       num, den = 0, 0
 
-      se = results['data'].keys()[0]
+      se = list(results['data'])[0]
 
       num = num + len(results['data'][se])
       den = den + sum(results['data'][se].values())

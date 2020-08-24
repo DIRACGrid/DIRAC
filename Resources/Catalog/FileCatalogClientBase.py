@@ -91,7 +91,7 @@ class FileCatalogClientBase(Client):
 
       :return: { successful : { lfn : [ ses ] } : failed : { lfn : { se : msg } } }
     """
-    lfns = paths.keys()
+    lfns = list(paths)
     return S_OK({'Failed': {}, 'Successful': dict.fromkeys(lfns, True)})
 
   @checkCatalogArguments

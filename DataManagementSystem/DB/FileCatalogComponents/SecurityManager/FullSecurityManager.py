@@ -38,8 +38,7 @@ class FullSecurityManager(SecurityManagerBase):
       toGet[os.path.dirname(path)] += resolvedPaths
       toGet.pop(path)
     while toGet:
-      paths = toGet.keys()
-      res = self.db.dtree.getPathPermissions(paths, credDict)
+      res = self.db.dtree.getPathPermissions(list(toGet), credDict)
       if not res['OK']:
         return res
       for path, mode in res['Value']['Successful'].items():

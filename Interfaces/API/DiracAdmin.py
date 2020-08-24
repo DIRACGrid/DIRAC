@@ -658,7 +658,7 @@ class DiracAdmin(API):
     headers = 'CE'.ljust(28)
     i = 0
     for ce, summary in ceDict.items():
-      states = summary.keys()
+      states = list(summary)
       if len(states) > i:
         i = len(states)
 

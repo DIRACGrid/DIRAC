@@ -202,7 +202,7 @@ class FileCatalog(object):
       fileInfo, lfnMapDict = result['Value']
       # No need to check the LFNs again in the clients
       kws['LFNChecking'] = False
-      allLfns = fileInfo.keys()
+      allLfns = list(fileInfo.keys())
       parms1 = parms[1:]
 
     for catalogName, oCatalog, master in self.writeCatalogs:

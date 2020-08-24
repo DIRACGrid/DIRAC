@@ -43,7 +43,7 @@ class FileManagerPs(FileManagerBase):
     connection = self._getConnection(connection)
     dirDict = self._getFileDirectories(lfns)
 
-    result = self.db.dtree.findDirs(dirDict.keys())
+    result = self.db.dtree.findDirs(list(dirDict))
     if not result['OK']:
       return result
 
@@ -95,7 +95,7 @@ class FileManagerPs(FileManagerBase):
       filesInDirDict = self._getFileDirectories(lfns)
 
       # We get the directory ids
-      result = self.db.dtree.findDirs(filesInDirDict.keys())
+      result = self.db.dtree.findDirs(list(filesInDirDict))
       if not result['OK']:
         return result
       directoryPathToIds = result['Value']
@@ -617,7 +617,7 @@ class FileManagerPs(FileManagerBase):
     failed = {}
     successful = {}
     # First we get the fileIds from our lfns
-    res = self._findFiles(lfns.keys(), ['FileID'], connection=connection)
+    res = self._findFiles(list(lfns), ['FileID'], connection=connection)
     if not res['OK']:
       return res
 

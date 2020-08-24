@@ -786,7 +786,7 @@ class MySQL(object):
       return S_ERROR(DErrno.EMYSQL, 'Argument is not a dictionary: %s( %s )'
                      % (type(tableDict), tableDict))
 
-    tableList = tableDict.keys()
+    tableList = list(tableDict)
     if len(tableList) == 0:
       return S_OK(0)
     for table in tableList:
@@ -1352,8 +1352,8 @@ class MySQL(object):
         # self.log.debug('updateFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
       try:
-        updateFields += updateDict.keys()
-        updateValues += [updateDict[k] for k in updateDict.keys()]
+        updateFields += list(updateDict)
+        updateValues += [updateDict[k] for k in updateFields]
       except TypeError:
         error = 'updateFields and updateValues must be a list'
         # self.log.debug('updateFields:', error)
@@ -1408,8 +1408,8 @@ class MySQL(object):
         # self.log.debug('insertFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
       try:
-        inFields += inDict.keys()
-        inValues += [inDict[k] for k in inDict.keys()]
+        inFields += list(inDict)
+        inValues += [inDict[k] for k in inFields]
       except TypeError:
         error = 'inFields and inValues must be a list'
         # self.log.debug('insertFields:', error)

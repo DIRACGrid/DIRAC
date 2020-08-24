@@ -45,7 +45,7 @@ if not res['OK']:
   gLogger.error(res['Message'])
 cacheReplicaInfo = res['Value']
 if cacheReplicaInfo:
-  replicaID = cacheReplicaInfo.keys()[0]
+  replicaID = list(cacheReplicaInfo)[0]
   outStr = "\n--------------------"
   outStr += "\n%s: %s" % ('LFN'.ljust(8), cacheReplicaInfo[replicaID]['LFN'].ljust(100))
   outStr += "\n%s: %s" % ('SE'.ljust(8), cacheReplicaInfo[replicaID]['SE'].ljust(100))

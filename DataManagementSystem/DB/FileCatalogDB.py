@@ -791,13 +791,13 @@ class FileCatalogDB(DB):
     for lfn in lfnDict:
       fileIDDict[lfnDict[lfn]['FileID']] = lfn
 
-    result = self.fileManager._getFileMetadataByID(fileIDDict.keys(), connection=connection)
+    result = self.fileManager._getFileMetadataByID(list(fileIDDict), connection=connection)
     if not result['OK']:
       return result
     for fileID in result['Value']:
       resultDict[fileIDDict[fileID]] = result['Value'][fileID]
 
-    result = self.fmeta._getFileUserMetadataByID(fileIDDict.keys(), credDict, connection=connection)
+    result = self.fmeta._getFileUserMetadataByID(list(fileIDDict), credDict, connection=connection)
     if not result['OK']:
       return result
     for fileID in fileIDDict:
@@ -1159,12 +1159,12 @@ class FileCatalogDB(DB):
       return res
     lfns = res['Value']
 
-    res = self.securityManager.hasAccess(operation, lfns.keys(), credDict)
+    res = self.securityManager.hasAccess(operation, list(lfns), credDict)
     if not res['OK']:
       return res
     # Do not consider those paths for which we failed to determine access
     failed = res['Value']['Failed']
-    for lfn in failed.keys():
+    for lfn in failed:
       lfns.pop(lfn)
     # Do not consider those paths for which access is denied
     successful = {}

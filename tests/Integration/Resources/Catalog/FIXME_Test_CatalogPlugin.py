@@ -80,7 +80,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
       return
     res = self.catalog.listDirectory(self.destDir)
     returnValue = self.parseResult(res,self.destDir)
-    toRemove = returnValue['Files'].keys()
+    toRemove = list(returnValue['Files'])
     if toRemove:
       self.purgeFiles(toRemove)
     res = self.catalog.removeDirectory(self.destDir)

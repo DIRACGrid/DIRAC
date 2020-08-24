@@ -395,8 +395,8 @@ def statistics(results, span=None, is_timestamp=False):
   results = dict(results)
   if span is not None:
     parsed_data = {}
-    min_key = min(results.keys())
-    max_key = max(results.keys())
+    min_key = min(results)
+    max_key = max(results)
     for i in range(min_key, max_key + span, span):
       if i in results:
         parsed_data[i] = results[i]
@@ -412,7 +412,7 @@ def statistics(results, span=None, is_timestamp=False):
   data_max = max(values)
   data_avg = numpy.average(values)
   if is_timestamp:
-    current_time = max(parsed_data.keys())
+    current_time = max(parsed_data)
     data_current = parsed_data[current_time]
     return data_min, data_max, data_avg, data_current
   else:
