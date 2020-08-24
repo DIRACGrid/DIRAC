@@ -124,17 +124,18 @@ class PoolComputingElement(ComputingElement):
     if not res['OK']:
       self.log.error("Could not dump cfg to pilot.cfg", res['Message'])
 
+    # Here we define task kwargs: adding complex objects like thread.Lock can trigger errors in the task
+    taskKwargs = {'InnerCESubmissionType': self.innerCESubmissionType}
     if self.innerCESubmissionType == 'Sudo':
       for nUser in range(MAX_NUMBER_OF_SUDO_UNIX_USERS):
         if nUser not in self.userNumberPerTask.values():
           break
-      kwargs['NUser'] = nUser
-      kwargs['PayloadUser'] = os.environ['USER'] + 'p%s' % str(nUser).zfill(2)
-    kwargs['InnerCESubmissionType'] = self.innerCESubmissionType
+      taskKwargs['NUser'] = nUser
+      taskKwargs['PayloadUser'] = os.environ['USER'] + 'p%s' % str(nUser).zfill(2)
 
     result = self.pPool.createAndQueueTask(executeJob,
                                            args=(executableFile, proxy, self.taskID),
-                                           kwargs=kwargs,
+                                           kwargs=taskKwargs,
                                            taskID=self.taskID,
                                            usePoolCallbacks=True)
     self.processorsPerTask[self.taskID] = processorsForJob
