@@ -117,7 +117,7 @@ class ConsistencyInspector(object):
     for chunk in breakListIntoChunks(lfns, chunkSize):
       if printProgress:
         self.__write('.')
-      for _ in xrange(1, 10):
+      for _ in range(1, 10):
         res = self.fileCatalog.getReplicas(chunk)
         if res['OK']:
           present.update(res['Value']['Successful'])

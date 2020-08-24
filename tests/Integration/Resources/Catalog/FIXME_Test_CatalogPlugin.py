@@ -42,7 +42,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
     # Register some files to work with
     self.numberOfFiles = 2
     self.files = []
-    for i in xrange(self.numberOfFiles):
+    for i in range(self.numberOfFiles):
       lfn = "%s/testFile_%d" % (self.destDir,i)
       res = self.registerFile(lfn)
       self.assertTrue(res)

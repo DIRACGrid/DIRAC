@@ -128,7 +128,7 @@ class ElementInspectorAgent(AgentModule):
 
     self.log.info('Needed %d threads to process %d elements' % (numberOfThreads, queueSize))
 
-    for _x in xrange(numberOfThreads):
+    for _x in range(numberOfThreads):
       jobUp = self.threadPool.generateJobAndQueueIt(self._execute)
       if not jobUp['OK']:
         self.log.error(jobUp['Message'])

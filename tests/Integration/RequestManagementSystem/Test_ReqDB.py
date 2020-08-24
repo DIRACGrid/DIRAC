@@ -60,7 +60,7 @@ class ReqDBMix(ReqDBTestCase):
     db = RequestDB()
 
     reqIDs = []
-    for i in xrange(self.stressRequests):
+    for i in range(self.stressRequests):
       request = Request({"RequestName": "test-%d" % i})
       op = Operation({"Type": "RemoveReplica", "TargetSE": "CERN-USER"})
       op += File({"LFN": "/lhcb/user/c/cibak/foo"})
@@ -91,7 +91,7 @@ class ReqDBMix(ReqDBTestCase):
     db = RequestDB()
 
     reqIDs = []
-    for i in xrange(self.stressRequests):
+    for i in range(self.stressRequests):
       request = Request({"RequestName": "test-%d" % i})
       op = Operation({"Type": "RemoveReplica", "TargetSE": "CERN-USER"})
       op += File({"LFN": "/lhcb/user/c/cibak/foo"})
@@ -107,7 +107,7 @@ class ReqDBMix(ReqDBTestCase):
     time.sleep(1)
     startTime = time.time()
 
-    for i in xrange(loops):
+    for i in range(loops):
       get = db.getBulkRequests(self.bulkRequest, True)
       if "Message" in get:
         print(get["Message"])

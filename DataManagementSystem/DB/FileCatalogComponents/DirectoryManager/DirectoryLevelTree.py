@@ -332,7 +332,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     lpaths = result['Value']
 
     lpathSelects = []
-    for lev in xrange(level):
+    for lev in range(level):
       sel = ' AND '.join(["Level=%d" % lev] + ['LPATH%d=%d' % (ll + 1, lpaths[ll]) for ll in range(lev)])
       lpathSelects.append(sel)
     selection = '(' + ') OR ('.join(lpathSelects) + ')'

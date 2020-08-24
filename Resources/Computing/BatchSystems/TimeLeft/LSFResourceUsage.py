@@ -51,7 +51,7 @@ class LSFResourceUsage(ResourceUsage):
 
     lines = str(result['Value']).split('\n')
     self.log.debug('From %s' % cmd, '\n'.join([line if len(line) <= 128 else line[:128] + ' [...]' for line in lines]))
-    for i in xrange(len(lines)):
+    for i in range(len(lines)):
       if re.search('.*CPULIMIT.*', lines[i]):
         info = lines[i + 1].split()
         if len(info) >= 4:
@@ -87,7 +87,7 @@ class LSFResourceUsage(ResourceUsage):
         if len(l1) > len(l2):
           self.log.error("Failed lshost command", "%s:\n %s\n %s" % (cmd, lines[0], lines[0]))
         else:
-          for i in xrange(len(l1)):
+          for i in range(len(l1)):
             if l1[i] == 'cpuf':
               try:
                 self.normRef = float(l2[i])
@@ -175,7 +175,7 @@ class LSFResourceUsage(ResourceUsage):
         if len(l1) > len(l2):
           self.log.error("Failed lshost command", "%s:\n %s\n %s" % (cmd, lines[0], lines[0]))
         else:
-          for i in xrange(len(l1)):
+          for i in range(len(l1)):
             if l1[i] == 'cpuf':
               try:
                 self.hostNorm = float(l2[i])
@@ -220,7 +220,7 @@ class LSFResourceUsage(ResourceUsage):
 
     sCPU = None
     sStart = None
-    for i in xrange(len(l1)):
+    for i in range(len(l1)):
       if l1[i] == 'CPU_USED':
         sCPU = l2[i]
         lCPU = sCPU.split(':')

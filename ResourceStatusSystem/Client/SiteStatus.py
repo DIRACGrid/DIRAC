@@ -63,7 +63,7 @@ class SiteStatus(object):
 
     meta = {'columns': ['Name', 'Status']}
 
-    for ti in xrange(5):
+    for ti in range(5):
       rawCache = self.rsClient.selectStatusElement('Site', 'Status', meta=meta)
       if rawCache['OK']:
         break

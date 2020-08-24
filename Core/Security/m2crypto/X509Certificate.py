@@ -440,7 +440,7 @@ class X509Certificate(object):
       :returns: S_OK( list of tuple (extensionName, extensionValue))
     """
     extList = []
-    for i in xrange(self.__certObj.get_ext_count()):
+    for i in range(self.__certObj.get_ext_count()):
       sn = self.__certObj.get_ext_at(i).get_name()
       try:
         value = self.__certObj.get_ext_at(i).get_value()

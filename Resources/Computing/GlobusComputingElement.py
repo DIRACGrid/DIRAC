@@ -69,7 +69,7 @@ class GlobusComputingElement(ComputingElement):
 
     batchIDList = []
     stampDict = {}
-    for _i in xrange(numberOfJobs):
+    for _i in range(numberOfJobs):
       diracStamp = makeGuid()[:8]
       queueName = '%s/%s' % (self.ceName, self.queue)
       cmd = ['globus-job-submit', queueName, "-s", executableFile]

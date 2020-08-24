@@ -149,7 +149,7 @@ class Condor(object):
     if submittedJobs > 0 and cluster:
       resultDict['Status'] = 0
       resultDict['Jobs'] = []
-      for i in xrange(submittedJobs):
+      for i in range(submittedJobs):
         resultDict['Jobs'].append('.'.join([cluster, str(i)]))
     else:
       resultDict['Status'] = status

@@ -302,7 +302,7 @@ class Job(API):
        :type lfns: Single LFN string or list of LFNs
     """
     if isinstance(lfns, list) and lfns:
-      for i in xrange(len(lfns)):
+      for i in range(len(lfns)):
         lfns[i] = lfns[i].replace('LFN:', '')
       inputData = ['LFN:' + x for x in lfns]
       inputDataStr = ';'.join(inputData)

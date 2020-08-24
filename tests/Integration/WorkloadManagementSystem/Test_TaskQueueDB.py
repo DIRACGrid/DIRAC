@@ -415,7 +415,7 @@ def test_chainWithPlatforms():
   # but here it returns only 1 (those for ANY), by construction
   # so, this should be in theory improved
 
-  for jobId in xrange(1, 8):
+  for jobId in range(1, 8):
     result = tqDB.deleteJob(jobId)
     assert result['OK'] is True
 
@@ -764,7 +764,7 @@ def test_chainWithTagsAndPlatforms():
   res = set([int(x[0]) for x in result['Value']])
   assert res == {tq_job1, tq_job2, tq_job3}
 
-  for jobId in xrange(1, 8):
+  for jobId in range(1, 8):
     result = tqDB.deleteJob(jobId)
     assert result['OK'] is True
 
@@ -976,7 +976,7 @@ def test_ComplexMatching():
   res = set([int(x[0]) for x in result['Value']])
   assert res == {tq_job4, tq_job5}
 
-  for jobId in xrange(1, 8):
+  for jobId in range(1, 8):
     result = tqDB.deleteJob(jobId)
     assert result['OK'] is True
 

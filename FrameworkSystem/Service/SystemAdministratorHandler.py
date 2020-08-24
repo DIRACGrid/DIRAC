@@ -533,7 +533,7 @@ class SystemAdministratorHandler(RequestHandler):
     summary = ''
     _status, output = commands.getstatusoutput('df')
     lines = output.split('\n')
-    for i in xrange(len(lines)):
+    for i in range(len(lines)):
       if lines[i].startswith('/dev'):
         fields = lines[i].split()
         if len(fields) == 1:

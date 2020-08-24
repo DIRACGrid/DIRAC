@@ -55,7 +55,7 @@ def singleDiracBenchmark(iterations=1, measuredCopies=None):
       start = os.times()
 
     # Now the iterations
-    for _j in xrange(n):
+    for _j in range(n):
       t = random.normalvariate(10, 1)
       m += t
       m2 += t * t

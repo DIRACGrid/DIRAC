@@ -105,7 +105,7 @@ def doInsert(depth, maxFile):
   dirPath = generatePath(depth, True)
   nbOfFiles = random.randint(1,maxFile)
   lfnDict = {}  
-  for f in xrange(nbOfFiles):
+  for f in range(nbOfFiles):
     filename = "%s.txt"%(f)
     lfn = "%s/%s"%(dirPath, filename)
     size = random.randint(1,1000)

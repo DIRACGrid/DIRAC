@@ -798,7 +798,7 @@ class DirectoryCase(FileCatalogDBTestCase):
     # We do it two times to make sure that
     # when updating something to the same value
     # returns a success if it is allowed
-    for attempt in xrange(2):
+    for attempt in range(2):
       print("Attempt %s" % (attempt + 1))
 
       # Only admin can change path group
@@ -1433,8 +1433,8 @@ if __name__ == '__main__':
 
   for setup in all_combinations:
     print("Running with:")
-    print(("".join(["\t %s : %s\n" % (managerTypes[i], setup[i]) for i in xrange(numberOfManager)])))
-    for i in xrange(numberOfManager):
+    print(("".join(["\t %s : %s\n" % (managerTypes[i], setup[i]) for i in range(numberOfManager)])))
+    for i in range(numberOfManager):
       DATABASE_CONFIG[managerTypes[i]] = setup[i]
 
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(SECase)

@@ -472,7 +472,7 @@ class TaskQueueDB(DB):
         :param dict tqDefDict: dict for TQ definition
         :returns: S_OK() / S_ERROR
     """
-    for _ in xrange(retries):
+    for _ in range(retries):
       result = self.__findSmallestTaskQueue(tqDefDict, skipDefinitionCheck=skipDefinitionCheck, connObj=connObj)
       if not result['OK']:
         return result
@@ -533,7 +533,7 @@ FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = %s"
     prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` \
 WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     postJobSQL = " ORDER BY `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
-    for _ in xrange(self.__maxMatchRetry):
+    for _ in range(self.__maxMatchRetry):
       noJobsFound = False
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered

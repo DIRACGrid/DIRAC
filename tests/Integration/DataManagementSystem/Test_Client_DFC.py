@@ -735,7 +735,7 @@ class DirectoryCase(DFCTestCase):
     # We do it two times to make sure that
     # when updating something to the same value
     # returns a success if it is allowed
-    for attempt in xrange(2):
+    for attempt in range(2):
       print("Attempt %s" % (attempt + 1))
 
       # Only admin can change path group

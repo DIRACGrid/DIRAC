@@ -37,7 +37,7 @@ else:
 
 f = open("%s/jobIdList.txt"%jobName, 'w')
 
-for i in xrange(nbJobs):
+for i in range(nbJobs):
   j = Job()
   j.setCPUTime(10000)
   j.setExecutable(scriptName)

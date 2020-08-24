@@ -262,7 +262,7 @@ class CREAMComputingElement(ComputingElement):
         if delegationIDs:
           # Renew proxies in batches to avoid timeouts
           chunkSize = 10
-          for i in xrange(0, len(delegationIDs), chunkSize):
+          for i in range(0, len(delegationIDs), chunkSize):
             chunk = delegationIDs[i:i + chunkSize]
             cmd = ['glite-ce-proxy-renew', '-e', self.ceName]
             cmd.extend(chunk)

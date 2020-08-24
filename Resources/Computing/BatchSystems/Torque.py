@@ -48,7 +48,7 @@ class Torque(object):
     status = -1
 
     preamble = kwargs.get("Preamble")
-    for _i in xrange(int(nJobs)):
+    for _i in range(int(nJobs)):
       cmd = '%s; ' % preamble if preamble else ''
       cmd += "qsub -o %(OutputDir)s " \
              "-e %(ErrorDir)s " \

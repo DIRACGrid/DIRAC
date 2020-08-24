@@ -662,7 +662,7 @@ class DiracAdmin(API):
       if len(states) > i:
         i = len(states)
 
-    for i in xrange(i):
+    for i in range(i):
       headers += 'Status'.ljust(12) + 'Count'.ljust(12)
     gLogger.notice(headers)
 

@@ -52,7 +52,7 @@ class LSF(object):
     outputDir = os.path.expandvars(outputDir)
     errorDir = os.path.expandvars(errorDir)
     executable = os.path.expandvars(executable)
-    for _i in xrange(int(nJobs)):
+    for _i in range(int(nJobs)):
       cmd = '%s; ' % preamble if preamble else ''
       cmd += "bsub -o %s -e %s -q %s -J DIRACPilot %s %s" % (outputDir,
                                                              errorDir,

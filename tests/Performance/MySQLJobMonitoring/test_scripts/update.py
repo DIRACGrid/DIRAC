@@ -14,7 +14,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 
 def random_generator(size=6, chars=string.ascii_letters):
-  return ''.join(random.choice(chars) for x in xrange(size))
+  return ''.join(random.choice(chars) for x in range(size))
 
 
 class Transaction(object):
@@ -28,7 +28,7 @@ class Transaction(object):
 
     start_time = time.time()
 
-    for i in xrange(0, random.randint(1000, 3000)):
+    for i in range(0, random.randint(1000, 3000)):
 
       key = random_generator()
       value = random_generator(size=12)

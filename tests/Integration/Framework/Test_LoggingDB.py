@@ -57,7 +57,7 @@ class testDB(TestSystemLoggingDBTestCase):
     self.assertTrue(res['OK'])
 
     gLogger.info('\n Inserting some records\n')
-    for k in xrange(records):
+    for k in range(records):
       result = db.insertMessage(message, site, nodeFQDN, userDN, userGroup, remoteAddress)
       self.assertTrue(result['OK'])
       self.assertEqual(result['lastRowId'], k + 1)

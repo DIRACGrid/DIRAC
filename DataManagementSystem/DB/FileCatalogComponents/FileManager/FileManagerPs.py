@@ -234,7 +234,7 @@ class FileManagerPs(FileManagerBase):
   def __chunks(self, l, n):
     """ Yield successive n-sized chunks from l.
     """
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
       yield l[i:i + n]
 
   def _insertFiles(self, lfns, uid, gid, connection=False):
