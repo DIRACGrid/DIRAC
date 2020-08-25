@@ -245,7 +245,7 @@ class X509Chain(object):
   @staticmethod
   def __certListFromPemString(certString):
     """
-    Create certificates list from string. String sould contain certificates, just like plain text proxy file.
+    Create certificates list from string. String should contain certificates, just like plain text proxy file.
     """
     # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that
     # (constructors are not able to deal with big string)
@@ -291,7 +291,7 @@ class X509Chain(object):
     """
     self._keyObj = None
     try:
-      self._keyObj = M2Crypto.EVP.load_key_string(pemData, lambda x: password)
+      self._keyObj = M2Crypto.EVP.load_key_string(pemData.encode(), lambda x: password)
     except BaseException as e:
       return S_ERROR(DErrno.ECERTREAD, "%s (Probably bad pass phrase?)" % repr(e).replace(',)', ')'))
 
@@ -328,7 +328,6 @@ class X509Chain(object):
 
     :returns: S_OK / S_ERROR
     """
-
     retVal = self.loadChainFromString(pemData)
     if not retVal['OK']:
       return retVal
@@ -463,7 +462,7 @@ class X509Chain(object):
 
     # Generate the proxy string
     proxyString = "%s%s" % (proxyCert.asPem(), proxyKey.as_pem(
-        cipher=None, callback=M2Crypto.util.no_passphrase_callback))
+        cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode())
     for i in range(len(self._certList)):
       crt = self._certList[i]
       proxyString += crt.asPem()
@@ -847,7 +846,7 @@ class X509Chain(object):
     """
     data = self._certList[0].asPem()
     if self._keyObj:
-      data += self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
+      data += self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode()
     for cert in self._certList[1:]:
       data += cert.asPem()
     return S_OK(data)
@@ -900,7 +899,7 @@ class X509Chain(object):
       :returns: S_OK(PEM encoded key)
 
     """
-    return S_OK(self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback))
+    return S_OK(self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode())
 
   def __str__(self):
     """ String representation

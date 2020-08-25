@@ -22,7 +22,6 @@ jobs:
                 --ignore=MonitoringSystem \
                 --ignore=ProductionSystem \
                 --ignore=RequestManagementSystem \
-                --ignore=Resources \
                 --ignore=ResourceStatusSystem \
                 --ignore=StorageManagementSystem \
                 --ignore=TransformationSystem \

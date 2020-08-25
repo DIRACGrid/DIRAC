@@ -110,6 +110,7 @@ import os
 import signal
 from six.moves import queue as Queue
 import errno
+import six
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -517,7 +518,7 @@ class ProcessTask(object):
 
     :param self: self reference
     """
-    from types import FunctionType, ClassType
+    from types import FunctionType
 
     self.__done = True
     try:
@@ -525,7 +526,7 @@ class ProcessTask(object):
       if isinstance(self.__taskFunction, FunctionType):
         self.__taskResult = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
       # # or a class?
-      elif isinstance(self.__taskFunction, (type, ClassType)):
+      elif isinstance(self.__taskFunction, (type, six.class_types)):
         # # create new instance
         taskObj = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
         # ## check if it is callable, raise TypeError if not

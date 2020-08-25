@@ -685,7 +685,7 @@ class StorageElementItem(object):
     return self.__getAllProtocols('OutputProtocols')
 
   def generateTransferURLsBetweenSEs(self, lfns, sourceSE, protocols=None):
-    """ This negociate the URLs to be used for third party copy.
+    """ This negotiate the URLs to be used for third party copy.
         This is mostly useful for FTS. If protocols is given,
         it restricts the list of plugins to use
 
@@ -822,7 +822,7 @@ class StorageElementItem(object):
     log = self.log.getSubLogger('negociateProtocolWithOtherSE', child=True)
 
     log.debug(
-        "Negociating protocols between %s and %s (protocols %s)" %
+        "Negotiating protocols between %s and %s (protocols %s)" %
         (sourceSE.name, self.name, protocols))
 
     # Take all the protocols the destination can accept as input
@@ -844,9 +844,8 @@ class StorageElementItem(object):
       protocolList = list(protocols)
       commonProtocols = sorted(
           commonProtocols & set(protocolList),
-          key=lambda x: getIndexInList(
-              x,
-              protocolList))
+          key=lambda x: getIndexInList(x, protocolList)
+      )
 
     log.debug("Common protocols %s" % commonProtocols)
 

@@ -127,7 +127,7 @@ def breakListIntoChunks(aList, chunkSize):
   """
   if chunkSize < 1:
     raise RuntimeError("chunkSize cannot be less than 1")
-  if isinstance(aList, (set, dict, tuple)):
+  if isinstance(aList, (set, dict, tuple, six.moves.collections_abc.Iterable)):
     aList = list(aList)
   return [chunk for chunk in getChunk(aList, chunkSize)]
 
@@ -141,7 +141,10 @@ def getIndexInList(anItem, aList):
 
       :return: the index or sys.maxint
   """
-  try:
+  # try:
+  if anItem in aList:
     return aList.index(anItem)
-  except ValueError:
+  else:
     return sys.maxsize
+  # except ValueError:
+  #   return sys.maxsize

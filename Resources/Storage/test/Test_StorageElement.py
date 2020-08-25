@@ -602,49 +602,49 @@ class TestBase(unittest.TestCase):
       This makes it necessary to add gsiftp as third party option to write to ECHO
 
     """
-
     thirdPartyProtocols = ['root', 'gsiftp', 'srm']
+    rankedProtocols = ['root', 'gsiftp', 'gsidcap', 'dcap', 'file', 'srm', 'rfio']
 
     lfn = '/lhcb/fake/lfn'
 
     # RAL -> GRIDKA
     # We should read using root and write through srm
-    res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seX)
+    res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seX, protocols=rankedProtocols)
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('root:%s' % lfn, 'srm:%s' % lfn))
 
     # RAL -> CERN
     # We should read using root and write directly with it
-    res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seX)
+    res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seX, protocols=rankedProtocols)
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('root:%s' % lfn, 'root:%s' % lfn))
 
     # GRIDKA -> RAL
     # We should read using gsiftp and write directly with it
-    res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seY)
+    res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seY, protocols=rankedProtocols)
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('gsiftp:%s' % lfn, 'gsiftp:%s' % lfn))
 
     # GRIDKA -> CERN
     # We should read using srm and write with root
-    res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seY)
+    res = self.seZ.generateTransferURLsBetweenSEs(lfn, self.seY, protocols=rankedProtocols)
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('srm:%s' % lfn, 'root:%s' % lfn))
 
     # CERN -> RAL
     # We should read using srm and write with gsiftp
-    res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seZ)
+    res = self.seX.generateTransferURLsBetweenSEs(lfn, self.seZ, protocols=rankedProtocols)
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('srm:%s' % lfn, 'gsiftp:%s' % lfn))
 
     # CERN -> GRIDKA
     # We should read using root and write directly with srm
-    res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seZ)
+    res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seZ, protocols=rankedProtocols)
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
 

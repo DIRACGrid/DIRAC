@@ -9,6 +9,8 @@ import os
 import sys
 import json
 
+import six
+
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.File import mkDir
 
@@ -57,7 +59,7 @@ def createJobWrapper(jobID, jobParams, resourceParams, optimizerParams,
 
   jobWrapperJsonFile = jobWrapperFile + '.json'
   with io.open(jobWrapperJsonFile, 'w', encoding='utf8') as jsonFile:
-    json.dump(unicode(arguments), jsonFile, ensure_ascii=False)
+    json.dump(six.text_type(arguments), jsonFile, ensure_ascii=False)
 
   with open(jobWrapperFile, "w") as wrapper:
     wrapper.write(wrapperTemplate)
@@ -108,7 +110,7 @@ def createRelocatedJobWrapper(wrapperPath, rootLocation,
 
   jobWrapperJsonFile = jobWrapperFile + '.json'
   with io.open(jobWrapperJsonFile, 'w', encoding='utf8') as jsonFile:
-    json.dump(unicode(arguments), jsonFile, ensure_ascii=False)
+    json.dump(six.text_type(arguments), jsonFile, ensure_ascii=False)
 
   with open(jobWrapperFile, "w") as wrapper:
     wrapper.write(wrapperTemplate)

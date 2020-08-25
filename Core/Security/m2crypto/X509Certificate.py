@@ -469,7 +469,7 @@ class X509Certificate(object):
 
       :returns: pem string
     """
-    return self.__certObj.as_pem()
+    return self.__certObj.as_pem().decode()
 
   @executeOnlyIfCertLoaded
   def getExtension(self, name):
