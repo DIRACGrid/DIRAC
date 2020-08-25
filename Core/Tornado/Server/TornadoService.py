@@ -13,6 +13,7 @@ from io import open
 
 import os
 import time
+import threading
 from datetime import datetime
 from six.moves import http_client
 from tornado.web import RequestHandler, HTTPError
@@ -112,7 +113,9 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
   """
 
   # Because we initialize at first request, we use a flag to know if it's already done
-  __FLAG_INIT_DONE = False
+  __init_done = False
+  # Lock to make sure that two threads are not initializing at the same time
+  __init_lock = threading.RLock()
 
   # MonitoringClient, we don't use gMonitor which is not thread-safe
   # We also need to add specific attributes for each service
@@ -122,6 +125,8 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
   def _initMonitoring(cls, serviceName, fullUrl):
     """
       Initialize the monitoring specific to this handler
+      This has to be called only by :py:meth:`.__initializeService`
+      to ensure thread safety and unicity of the call.
 
       :param serviceName: relative URL ``/<System>/<Component>``
       :param fullUrl: full URl like ``https://<host>:<port>/<System>/<Component>``
@@ -154,39 +159,52 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
   @classmethod
   def __initializeService(cls, relativeUrl, absoluteUrl):
     """
-      Initialize a service, called at first request
+      Initialize a service.
+      The work is only perform once at the first request.
 
       :param relativeUrl: relative URL, e.g. ``/<System>/<Component>``
       :param absoluteUrl: full URL e.g. ``https://<host>:<port>/<System>/<Component>``
 
-      .. warning::
-        This method is not thread safe nor re-entrant, while it should be.
-        TODO for Chris: do it !!!
+      :returns: S_OK
     """
-    # Url starts with a "/", we just remove it
-    serviceName = relativeUrl[1:]
+    # If the initialization was already done successfuly,
+    # we can just return
+    if cls.__init_done:
+      return S_OK()
 
-    cls._startTime = datetime.utcnow()
-    sLog.info("First use of %s, initializing service..." % relativeUrl)
-    cls._authManager = AuthManager("%s/Authorization" % PathFinder.getServiceSection(serviceName))
+    # Otherwise, do the work but with a lock
+    with cls.__init_lock:
 
-    cls._initMonitoring(serviceName, absoluteUrl)
+      # Check again that the initialization was not done by another thread
+      # while we were waiting for the lock
+      if cls.__init_done:
+        return S_OK()
 
-    cls._serviceName = serviceName
-    cls._validNames = [serviceName]
-    serviceInfo = {'serviceName': serviceName,
-                   'serviceSectionPath': PathFinder.getServiceSection(serviceName),
-                   'csPaths': [PathFinder.getServiceSection(serviceName)],
-                   'URL': absoluteUrl
-                   }
-    cls._serviceInfoDict = serviceInfo
+      # Url starts with a "/", we just remove it
+      serviceName = relativeUrl[1:]
 
-    cls.__monitorLastStatsUpdate = time.time()
+      cls._startTime = datetime.utcnow()
+      sLog.info("First use of %s, initializing service..." % relativeUrl)
+      cls._authManager = AuthManager("%s/Authorization" % PathFinder.getServiceSection(serviceName))
 
-    cls.initializeHandler(serviceInfo)
+      cls._initMonitoring(serviceName, absoluteUrl)
 
-    cls.__FLAG_INIT_DONE = True
-    return S_OK()
+      cls._serviceName = serviceName
+      cls._validNames = [serviceName]
+      serviceInfo = {'serviceName': serviceName,
+                     'serviceSectionPath': PathFinder.getServiceSection(serviceName),
+                     'csPaths': [PathFinder.getServiceSection(serviceName)],
+                     'URL': absoluteUrl
+                     }
+      cls._serviceInfoDict = serviceInfo
+
+      cls.__monitorLastStatsUpdate = time.time()
+
+      cls.initializeHandler(serviceInfo)
+
+      cls.__init_done = True
+
+      return S_OK()
 
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
@@ -212,12 +230,10 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     """
       Initialize the handler, called at every request.
 
-      If it is the first time this handler is instantiated, it will
-      call :py:meth:`.__initializeService`
+      It just calls :py:meth:`.__initializeService`
 
       If anything goes wrong, the client will get ``Connection aborted``
       error. See details inside the method.
-
 
       ..warning::
         DO NOT REWRITE THIS FUNCTION IN YOUR HANDLER
@@ -225,7 +241,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     """
 
     # Only initialized once
-    if not self.__FLAG_INIT_DONE:
+    if not self.__init_done:
       # Ideally, if something goes wrong, we would like to return a Server Error 500
       # but this method cannot write back to the client as per the
       # `tornado doc <https://www.tornadoweb.org/en/stable/guide/structure.html#overriding-requesthandler-methods>`_.

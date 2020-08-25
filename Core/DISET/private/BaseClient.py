@@ -9,10 +9,8 @@ __RCSID__ = "$Id$"
 
 import six
 import time
-try:
-  import thread
-except ImportError:  # python 3 compatibility
-  import _thread as thread
+
+from six.moves import _thread as thread
 
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict

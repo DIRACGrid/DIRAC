@@ -574,8 +574,9 @@ class TornadoBaseClient(object):
         # if it is something else, retry
         raise
 
+    # Whatever exception we have here, we deem worth retrying
     except Exception as e:
-      # CHRIS TODO review this part: catch specific exceptions
+      # CHRIS TODO review this part: retry logic is fishy
       # self.__bannedUrls is emptied in findServiceURLs
       if url not in self.__bannedUrls:
         self.__bannedUrls += [url]
