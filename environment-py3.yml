@@ -33,6 +33,7 @@ dependencies:
   - stomp.py =4.1.23
   - suds-jurko >=0.6
   - xmltodict
+  - pycurl
   # testing and development
   - autopep8
   - caniusepython3
@@ -61,6 +62,7 @@ dependencies:
   - mysqlclient
   - pip:
     - diraccfg
+    - subprocess32
     # This is a fork of tornado with a patch to allow for configurable iostream
     # It should eventually be part of DIRACGrid
     - git+https://github.com/chaen/tornado.git@iostreamConfigurable
