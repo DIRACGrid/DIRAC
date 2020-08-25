@@ -21,12 +21,14 @@ def test_getSubLoggerLogRecord():
 
   # Reinitialize the buffer and send a log with a child of the sublogger
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   sublog.always('message')
   assert " Framework/log/sublog " in capturedBackend.getvalue()
 
   # Generate a new sublogger from sublog
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   subsublog = sublog.getSubLogger('subsublog')
   subsublog.always('message')

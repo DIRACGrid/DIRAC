@@ -47,6 +47,7 @@ def test_createLogRecord(sMsg, sVarMsg, exc_info, expected):
       logExpected = "Framework%s %s: %s\n" % (logInfo, level, expected)
       assert logExpected == logstring
       capturedBackend.truncate(0)
+      capturedBackend.seek(0)
 
 
 def test_showStack():
@@ -65,6 +66,7 @@ def test_showStack():
     logstring = cleaningLog(capturedBackend.getvalue())
     assert logstring == ""
     capturedBackend.truncate(0)
+    capturedBackend.seek(0)
 
   # Set level to debug
   gLogger.setLevel('debug')
@@ -77,3 +79,4 @@ def test_showStack():
     logstring = cleaningLog(capturedBackend.getvalue())
     assert logstring == "Framework%s DEBUG: \n" % logInfo
     capturedBackend.truncate(0)
+    capturedBackend.seek(0)

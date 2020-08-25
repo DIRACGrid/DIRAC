@@ -143,6 +143,7 @@ def test_setLevelShowngLogger(loggerLevel, isSuperiorTo, logRecordLevel):
     assert res
     assert logstring == "Framework %s: message\n" % logRecordLevel.upper()
     capturedBackend.truncate(0)
+    capturedBackend.seek(0)
 
 
 @pytest.mark.parametrize("loggerLevel, isSuperiorTo, logRecordLevel,", [
@@ -183,6 +184,7 @@ def test_setLevelShownLog(loggerLevel, isSuperiorTo, logRecordLevel):
     assert res
     assert logstring == "Framework/log %s: message\n" % logRecordLevel.upper()
     capturedBackend.truncate(0)
+    capturedBackend.seek(0)
 
 
 @pytest.mark.parametrize("loggerLevel, isSuperiorTo, logRecordLevel,", [
@@ -224,3 +226,4 @@ def test_setLevelShownSubLog(loggerLevel, isSuperiorTo, logRecordLevel):
     assert res
     assert logstring == "Framework/log/sublog %s: message\n" % logRecordLevel.upper()
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)

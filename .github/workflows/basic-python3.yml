@@ -16,7 +16,6 @@ jobs:
           - pytest --no-cov --collect-only
           - |
             pytest --no-cov \
-                --ignore=FrameworkSystem \
                 --ignore=ProductionSystem \
                 --ignore=RequestManagementSystem \
                 --ignore=ResourceStatusSystem \
