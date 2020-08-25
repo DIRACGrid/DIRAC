@@ -71,5 +71,5 @@ def test_generateControlScript(batchSystem):
   # Delete the control script and the .pyc file associated
   os.remove(source)
   os.remove(dest)
-  if os.path.isfile('%sc'  % dest):
+  if os.path.isfile('%sc' % dest):
     os.remove('%sc' % dest)

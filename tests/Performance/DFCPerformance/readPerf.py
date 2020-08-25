@@ -50,7 +50,7 @@ done = False
 
 while not done:
   # Between 0 and 3 because in generate we have 4 subdirs per dir. Adapt :-)
-  rndTab = [random.randint( 0, 3 ) for i in range( readDepth ) ]
+  rndTab = [random.randint(0, 3) for i in range(readDepth)]
   dirPath = '/' + '/'.join(map(str,rndTab))
   before = time.time()
   beforeC = time.clock()

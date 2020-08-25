@@ -13,6 +13,7 @@ from  DIRAC.Core.Utilities.DAG import DAG, makeFrozenSet
 
 __RCSID__ = "$Id $"
 
+
 def listToSet(obj):
   """ Convert a list of objects into a set which can be used for comparision """
   result = set()

@@ -141,6 +141,5 @@ class ProdValidator(object):
     :param dict value: a dictionary with meta data values to be compared with the parentValues
     :param dict parentValue: a dictionary with meta data parentValues be compared with values
     """
-    return set(
-        list(value.values())[0]).issubset(set(list(parentValue.values())[0])
-    ) or set(list(parentValue.values())[0]).issubset(set(list(value.values())[0]))
+    return set(list(value.values())[0]).issubset(set(list(parentValue.values())[0])) or \
+        set(list(parentValue.values())[0]).issubset(set(list(value.values())[0]))

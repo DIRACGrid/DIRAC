@@ -28,7 +28,10 @@ def test_clearWaitingPilots(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
+  mocker.patch(
+      "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule._AgentModule__moduleProperties",
+      side_effect=lambda x, y=None: y, create=True
+  )
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.JobDB.__init__", side_effect=mockNone)
   module_str = "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.buildCondition"
@@ -67,7 +70,10 @@ def test_handleOldPilots(mocker, mockReplyInput, expected):
   mockReply.return_value = mockReplyInput
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
+  mocker.patch(
+      "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule._AgentModule__moduleProperties",
+      side_effect=lambda x, y=None: y, create=True
+  )
   module_str = "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.selectPilots"
   mocker.patch(module_str, side_effect=mockReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.__init__", side_effect=mockNone)

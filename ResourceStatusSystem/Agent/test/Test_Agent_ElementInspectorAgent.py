@@ -40,7 +40,10 @@ def test__execute(mocker, elementsToBeCheckedValue):
   """
 
   mocker.patch("DIRAC.ResourceStatusSystem.Agent.ElementInspectorAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.ResourceStatusSystem.Agent.ElementInspectorAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
+  mocker.patch(
+      "DIRAC.ResourceStatusSystem.Agent.ElementInspectorAgent.AgentModule._AgentModule__moduleProperties",
+      side_effect=lambda x, y=None: y, create=True
+  )
 
   elementInspectorAgent = ElementInspectorAgent()
   elementInspectorAgent.log = gLogger

@@ -16,49 +16,61 @@ import errno
 
 # Use side_effect instead of return_value so the dict in the result is copied
 mockObjectSE1 = MagicMock()
-mockObjectSE1.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful': {'/a/lfn/1.txt': {'Accessible':False}}, 'Failed': {}} )
-mockObjectSE1.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE1.getFileMetadata.side_effect = lambda *_: S_OK({
+    'Successful': {'/a/lfn/1.txt': {'Accessible': False}},
+    'Failed': {},
+})
+mockObjectSE1.getStatus.side_effect = lambda *_: S_OK({'DiskSE': False, 'TapeSE': True})
 
 mockObjectSE2 = MagicMock()
-mockObjectSE2.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{'/a/lfn/2.txt':{'Cached':1, 'Accessible':True}},
-                                                    'Failed':{}} )
-mockObjectSE2.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE2.getFileMetadata.side_effect = lambda *_: S_OK({
+    'Successful': {'/a/lfn/2.txt': {'Cached': 1, 'Accessible': True}},
+    'Failed': {},
+})
+mockObjectSE2.getStatus.side_effect = lambda *_: S_OK({'DiskSE': False, 'TapeSE': True})
 
 mockObjectSE3 = MagicMock()
-mockObjectSE3.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{},
-                                                    'Failed':{'/a/lfn/2.txt': 'error'}} )
-mockObjectSE3.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE3.getFileMetadata.side_effect = lambda *_: S_OK({
+    'Successful': {},
+    'Failed': {'/a/lfn/2.txt': 'error'},
+})
+mockObjectSE3.getStatus.side_effect = lambda *_: S_OK({'DiskSE': False, 'TapeSE': True})
 
 mockObjectSE4 = MagicMock()
-mockObjectSE4.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{},
-                                                    'Failed':{'/a/lfn/2.txt':
-                                                              S_ERROR( errno.ENOENT, '' )['Message']}} )
-mockObjectSE4.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE4.getFileMetadata.side_effect = lambda *_: S_OK({
+    'Successful': {},
+    'Failed': {'/a/lfn/2.txt': S_ERROR(errno.ENOENT, '')['Message']}
+})
+mockObjectSE4.getStatus.side_effect = lambda *_: S_OK({'DiskSE': False, 'TapeSE': True})
 
 mockObjectSE5 = MagicMock()
-mockObjectSE5.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{'/a/lfn/1.txt':{'Accessible':False}},
-                                                    'Failed':{}} )
-mockObjectSE5.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': True, 'TapeSE':False} )
+mockObjectSE5.getFileMetadata.side_effect = lambda *_: S_OK({
+    'Successful': {'/a/lfn/1.txt': {'Accessible': False}},
+    'Failed': {}
+})
+mockObjectSE5.getStatus.side_effect = lambda *_: S_OK({'DiskSE': True, 'TapeSE': False})
 
 mockObjectSE6 = MagicMock()
-mockObjectSE6.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{'/a/lfn/2.txt':{'Cached':0, 'Accessible':False}},
-                                                    'Failed':{}} )
-mockObjectSE6.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE6.getFileMetadata.side_effect = lambda *_: S_OK({
+    'Successful': {'/a/lfn/2.txt': {'Cached': 0, 'Accessible': False}},
+    'Failed': {}
+})
+mockObjectSE6.getStatus.side_effect = lambda *_: S_OK({'DiskSE': False, 'TapeSE': True})
 
 
 mockObjectDMSHelper = MagicMock()
-mockObjectDMSHelper.getLocalSiteForSE.side_effect = lambda *_: S_OK( 'mySite' )
-mockObjectDMSHelper.getSitesForSE.side_effect = lambda *_: S_OK( ['mySite'] )
+mockObjectDMSHelper.getLocalSiteForSE.side_effect = lambda *_: S_OK('mySite')
+mockObjectDMSHelper.getSitesForSE.side_effect = lambda *_: S_OK(['mySite'])
 
-class ClientsTestCase( unittest.TestCase ):
+
+class ClientsTestCase(unittest.TestCase):
   """ Base class for the clients test cases
   """
-  def setUp( self ):
-
+  def setUp(self):
     from DIRAC import gLogger
-    gLogger.setLevel( 'DEBUG' )
+    gLogger.setLevel('DEBUG')
 
-  def tearDown( self ):
+  def tearDown(self):
     pass
 
 #############################################################################
@@ -108,11 +120,12 @@ class StorageManagerSuccess( ClientsTestCase ):
     """ Test where the StorageElement will return file is absent
     """
     res = getFilesToStage( ['/a/lfn/2.txt'], checkOnlyTapeSEs = False )
-    self.assertTrue( res['OK'] )
-    self.assertEqual( res['Value']['onlineLFNs'], [] )
-    self.assertEqual( res['Value']['offlineLFNs'], {} )
-    self.assertEqual( res['Value']['absentLFNs'], {'/a/lfn/2.txt': 'No such file or directory ( 2 : File not at SE1,SE2)'} )
-    self.assertEqual( res['Value']['failedLFNs'], [] )
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value']['onlineLFNs'], [])
+    self.assertEqual(res['Value']['offlineLFNs'], {})
+    self.assertEqual(res['Value']['absentLFNs'],
+                     {'/a/lfn/2.txt': 'No such file or directory ( 2 : File not at SE1,SE2)'})
+    self.assertEqual(res['Value']['failedLFNs'], [])
 
   @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )
   @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.StorageElement", return_value = mockObjectSE5 )

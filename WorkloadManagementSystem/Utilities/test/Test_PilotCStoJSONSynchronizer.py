@@ -185,7 +185,7 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
       expectedPJHash = subprocess.check_output(["sha512sum", "pilot.json"], text=True).split(" ")[0]
       expectedHash = subprocess.check_output(["sha512sum", self.testCfgFileName], text=True).split(" ")[0]
 
-    assert checksums.split('\n')[0] == '%s  %s' % (expectedPJHash, 'pilot.json'), 'pilot.json content: ' + pilot_json_content
+    assert checksums.split('\n')[0] == '%s  %s' % (expectedPJHash, 'pilot.json'), pilot_json_content
     assert checksums.split('\n')[1] == '%s  %s' % (expectedHash, self.testCfgFileName)
     # this tests if the checksums file was also "uploaded"
     assert 'checksums.sha512' in list(synchroniser._checksumDict)

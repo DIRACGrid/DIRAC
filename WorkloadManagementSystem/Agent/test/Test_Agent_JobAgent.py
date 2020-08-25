@@ -228,7 +228,10 @@ def test_submitJob(mocker, mockJWInput, expected):
   mockJW.return_value = mockJWInput
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
+  mocker.patch(
+      "DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule._AgentModule__moduleProperties",
+      side_effect=lambda x, y=None: y, create=True
+  )
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", side_effect=mockJW)
 
   jobAgent = JobAgent('Test', 'Test1')
