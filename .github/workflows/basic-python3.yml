@@ -21,7 +21,7 @@ jobs:
       run: .github/workflows/fail-fast.sh
     - name: Prepare environment
       run: |
-        conda env create --name dirac-testing environment-py3.yml
+        conda env create --name dirac-testing --file environment-py3.yml
     - name: Run tests
       run: |
         source "${CONDA}/bin/activate"
