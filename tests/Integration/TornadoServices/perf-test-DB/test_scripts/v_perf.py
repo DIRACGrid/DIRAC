@@ -4,7 +4,7 @@
  Configuration and how to run it are explained in the documentation
 """
 
-from DIRAC.Core.Tornado.Client.RPCClientSelector import RPCClientSelector
+from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from time import time
 from random import random
 import sys

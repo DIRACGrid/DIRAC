@@ -123,7 +123,7 @@ from string import printable
 from hypothesis import given, settings, unlimited
 from hypothesis.strategies import text
 
-from DIRAC.Core.Tornado.Client.RPCClientSelector import RPCClientSelector as RPCClient
+from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector as RPCClient
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC import S_ERROR
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI

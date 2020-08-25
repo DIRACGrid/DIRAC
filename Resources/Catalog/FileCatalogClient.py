@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Tornado.Client.TransferClientSelector import TransferClientSelector as TransferClient
+from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername

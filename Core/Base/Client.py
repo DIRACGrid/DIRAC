@@ -13,7 +13,7 @@ import os
 
 from io import open
 
-from DIRAC.Core.Tornado.Client.RPCClientSelector import RPCClientSelector
+from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
