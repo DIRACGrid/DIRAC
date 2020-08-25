@@ -74,12 +74,9 @@ time.sleep(1)
 from PilotWrapper import pilotWrapperScript  # pylint: disable=import-error
 
 diracInstall = os.path.join(os.getcwd(), 'dirac-install.py')
-with open(diracInstall, "r") as fd:
+with open(diracInstall, "rb") as fd:
   diracInstall = fd.read()
-if sys.version_info >= (3,):
-  diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall.encode(), 9))
-else:
-  diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
+diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9)).decode()
 
 res = pilotWrapperScript(
     pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded},

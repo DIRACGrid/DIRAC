@@ -30,6 +30,18 @@ from collections import defaultdict
 from pprint import pprint
 
 
+def _ord(char):
+  """ Convert a single character string to it's byte value
+
+      In Python 2 a single byte is represented as a string whereas in Python 3
+      it is an integer. This function converts it as appropriate.
+  """
+  if six.PY2:
+    return char
+  else:
+    return ord(char)
+
+
 # This is a hack for Python 3 to make it possible to import DEncode
 # There is not point in porting DEncode to Python 3 as it will be removed as
 # part of the HTTPS transition.
@@ -224,129 +236,134 @@ g_dDecodeFunctions = {}
 def encodeInt(iValue, eList):
   """Encoding ints """
 
-  eList.extend(("i", str(iValue), "e"))
+  eList.extend((b"i", str(iValue).encode(), b"e"))
 
 
 def decodeInt(data, i):
   """Decoding ints """
 
   i += 1
-  end = data.index('e', i)
+  end = data.index(b'e', i)
   value = int(data[i:end])
   return (value, end + 1)
 
 
 g_dEncodeFunctions[types.IntType] = encodeInt
-g_dDecodeFunctions["i"] = decodeInt
+g_dDecodeFunctions[_ord("i")] = decodeInt
 
 
 def encodeLong(iValue, eList):
   """ Encoding longs """
 
   # corrected by KGG   eList.extend( ( "l", str( iValue ), "e" ) )
-  eList.extend(("I", str(iValue), "e"))
+  eList.extend((b"I", str(iValue).encode(), b"e"))
 
 
 def decodeLong(data, i):
   """ Decoding longs """
 
   i += 1
-  end = data.index('e', i)
+  end = data.index(_ord('e'), i)
   value = long(data[i:end])
   return (value, end + 1)
 
 
 g_dEncodeFunctions[types.LongType] = encodeLong
-g_dDecodeFunctions["I"] = decodeLong
+g_dDecodeFunctions[_ord("I")] = decodeLong
 
 
 def encodeFloat(iValue, eList):
   """ Encoding floats """
 
-  eList.extend(("f", str(iValue), "e"))
+  eList.extend((b"f", str(iValue).encode(), b"e"))
 
 
 def decodeFloat(data, i):
   """ Decoding floats """
 
   i += 1
-  end = data.index('e', i)
-  if end + 1 < len(data) and data[end + 1] in ('+', '-'):
+  end = data.index(b'e', i)
+  if end + 1 < len(data) and data[end + 1] in (_ord('+'), _ord('-')):
     eI = end
-    end = data.index('e', end + 1)
-    value = float(data[i:eI]) * 10 ** int(data[eI + 1:end])
+    end = data.index(b'e', end + 1)
+    value = float(data[i:eI].decode()) * 10 ** int(data[eI + 1:end].decode())
   else:
-    value = float(data[i:end])
+    value = float(data[i:end].decode())
   return (value, end + 1)
 
 
 g_dEncodeFunctions[types.FloatType] = encodeFloat
-g_dDecodeFunctions["f"] = decodeFloat
+g_dDecodeFunctions[_ord("f")] = decodeFloat
 
 
 def encodeBool(bValue, eList):
   """ Encoding booleans """
 
   if bValue:
-    eList.append("b1")
+    eList.append(b"b1")
   else:
-    eList.append("b0")
+    eList.append(b"b0")
 
 
 def decodeBool(data, i):
   """ Decoding booleans """
 
-  if data[i + 1] == "0":
+  if data[i + 1] == _ord("0"):
     return (False, i + 2)
   else:
     return (True, i + 2)
 
 
 g_dEncodeFunctions[types.BooleanType] = encodeBool
-g_dDecodeFunctions["b"] = decodeBool
+g_dDecodeFunctions[_ord("b")] = decodeBool
 
 
 def encodeString(sValue, eList):
   """ Encoding strings """
-  eList.extend(('s', str(len(sValue)), ':', sValue))
+  if not six.PY2:
+    sValue = sValue.encode()
+  eList.extend((b's', str(len(sValue)).encode(), b':', sValue))
 
 
 def decodeString(data, i):
   """ Decoding strings """
   i += 1
-  colon = data.index(":", i)
-  value = int(data[i: colon])
+  colon = data.index(b":", i)
+  value = int(data[i: colon].decode())
   colon += 1
   end = colon + value
-  return (data[colon: end], end)
+  if six.PY2:
+    return (data[colon: end], end)
+  else:
+    return (data[colon: end].decode(), end)
 
 
 g_dEncodeFunctions[types.StringType] = encodeString
-g_dDecodeFunctions["s"] = decodeString
+g_dDecodeFunctions[_ord("s")] = decodeString
 
 
 def encodeUnicode(sValue, eList):
   """ Encoding unicode strings """
   valueStr = sValue.encode('utf-8')
-  eList.extend(('u', str(len(valueStr)), ':', valueStr))
+  eList.extend((b'u', str(len(valueStr)).encode(), b':', valueStr))
 
 
 def decodeUnicode(data, i):
   """ Decoding unicode strings """
 
   i += 1
-  colon = data.index(":", i)
+  colon = data.index(b":", i)
   value = int(data[i: colon])
   colon += 1
   end = colon + value
-  return (unicode(data[colon: end], 'utf-8'), end)
+  return (six.text_type(data[colon: end].decode('utf-8')), end)
 
 
 if six.PY2:
   g_dEncodeFunctions[types.UnicodeType] = encodeUnicode
-  g_dDecodeFunctions["u"] = decodeUnicode
+  g_dDecodeFunctions[_ord("u")] = decodeUnicode
 else:
-  g_dDecodeFunctions["u"] = decodeString
+  g_dDecodeFunctions[_ord("u")] = decodeString
 
 
 def encodeDateTime(oValue, eList):
@@ -356,17 +373,17 @@ def encodeDateTime(oValue, eList):
     tDateTime = (oValue.year, oValue.month, oValue.day,
                  oValue.hour, oValue.minute, oValue.second,
                  oValue.microsecond, oValue.tzinfo)
-    eList.append("za")
+    eList.append(b"za")
     # corrected by KGG encode( tDateTime, eList )
     g_dEncodeFunctions[type(tDateTime)](tDateTime, eList)
   elif isinstance(oValue, _dateType):
     tData = (oValue.year, oValue.month, oValue. day)
-    eList.append("zd")
+    eList.append(b"zd")
     # corrected by KGG encode( tData, eList )
     g_dEncodeFunctions[type(tData)](tData, eList)
   elif isinstance(oValue, _timeType):
     tTime = (oValue.hour, oValue.minute, oValue.second, oValue.microsecond, oValue.tzinfo)
-    eList.append("zt")
+    eList.append(b"zt")
     # corrected by KGG encode( tTime, eList )
     g_dEncodeFunctions[type(tTime)](tTime, eList)
   else:
@@ -380,11 +397,11 @@ def decodeDateTime(data, i):
   dataType = data[i]
   # corrected by KGG tupleObject, i = decode( data, i + 1 )
   tupleObject, i = g_dDecodeFunctions[data[i + 1]](data, i + 1)
-  if dataType == 'a':
+  if dataType == _ord('a'):
     dtObject = datetime.datetime(*tupleObject)
-  elif dataType == 'd':
+  elif dataType == _ord('d'):
     dtObject = datetime.date(*tupleObject)
-  elif dataType == 't':
+  elif dataType == _ord('t'):
     dtObject = datetime.time(*tupleObject)
   else:
     raise Exception("Unexpected type %s while decoding a datetime object" % dataType)
@@ -394,13 +411,13 @@ def decodeDateTime(data, i):
 g_dEncodeFunctions[_dateTimeType] = encodeDateTime
 g_dEncodeFunctions[_dateType] = encodeDateTime
 g_dEncodeFunctions[_timeType] = encodeDateTime
-g_dDecodeFunctions['z'] = decodeDateTime
+g_dDecodeFunctions[_ord("z")] = decodeDateTime
 
 
 def encodeNone(_oValue, eList):
   """ Encoding None """
 
-  eList.append("n")
+  eList.append(b"n")
 
 
 def decodeNone(_data, i):
@@ -410,16 +427,16 @@ def decodeNone(_data, i):
 
 
 g_dEncodeFunctions[types.NoneType] = encodeNone
-g_dDecodeFunctions['n'] = decodeNone
+g_dDecodeFunctions[_ord("n")] = decodeNone
 
 
 def encodeList(lValue, eList):
   """ Encoding list """
 
-  eList.append("l")
+  eList.append(b"l")
   for uObject in lValue:
     g_dEncodeFunctions[type(uObject)](uObject, eList)
-  eList.append("e")
+  eList.append(b"e")
 
 
 def decodeList(data, i):
@@ -427,14 +444,14 @@ def decodeList(data, i):
 
   oL = []
   i += 1
-  while data[i] != "e":
+  while data[i] != _ord("e"):
     ob, i = g_dDecodeFunctions[data[i]](data, i)
     oL.append(ob)
   return(oL, i + 1)
 
 
 g_dEncodeFunctions[types.ListType] = encodeList
-g_dDecodeFunctions["l"] = decodeList
+g_dDecodeFunctions[_ord("l")] = decodeList
 
 
 def encodeTuple(lValue, eList):
@@ -443,10 +460,10 @@ def encodeTuple(lValue, eList):
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
     printDebugCallstack('Encoding tuples')
 
-  eList.append("t")
+  eList.append(b"t")
   for uObject in lValue:
     g_dEncodeFunctions[type(uObject)](uObject, eList)
-  eList.append("e")
+  eList.append(b"e")
 
 
 def decodeTuple(data, i):
@@ -460,7 +477,7 @@ def decodeTuple(data, i):
 
 
 g_dEncodeFunctions[types.TupleType] = encodeTuple
-g_dDecodeFunctions["t"] = decodeTuple
+g_dDecodeFunctions[_ord("t")] = decodeTuple
 
 
 def encodeDict(dValue, eList):
@@ -471,11 +488,11 @@ def encodeDict(dValue, eList):
     if any([isinstance(x, six.integer_types + (float,)) for x in dValue]):
       printDebugCallstack("Encoding dict with numeric keys")
 
-  eList.append("d")
+  eList.append(b"d")
   for key in sorted(dValue):
     g_dEncodeFunctions[type(key)](key, eList)
     g_dEncodeFunctions[type(dValue[key])](dValue[key], eList)
-  eList.append("e")
+  eList.append(b"e")
 
 
 def decodeDict(data, i):
@@ -483,11 +500,11 @@ def decodeDict(data, i):
 
   oD = {}
   i += 1
-  while data[i] != "e":
+  while data[i] != _ord("e"):
 
     if DIRAC_DEBUG_DENCODE_CALLSTACK:
       # If we have numbers as keys
-      if data[i] in ('i', 'I', 'f'):
+      if data[i] in (_ord('i'), _ord('I'), _ord('f')):
         printDebugCallstack("Decoding dict with numeric keys")
 
     k, i = g_dDecodeFunctions[data[i]](data, i)
@@ -496,31 +513,24 @@ def decodeDict(data, i):
 
 
 g_dEncodeFunctions[types.DictType] = encodeDict
-g_dDecodeFunctions["d"] = decodeDict
+g_dDecodeFunctions[_ord("d")] = decodeDict
 
 
 # Encode function
 def encode(uObject):
   """ Generic encoding function """
-
-  try:
-    eList = []
-    # print "ENCODE FUNCTION : %s" % g_dEncodeFunctions[ type( uObject ) ]
-    g_dEncodeFunctions[type(uObject)](uObject, eList)
-    return "".join(eList)
-  except Exception:
-    raise
+  eList = []
+  # print("ENCODE FUNCTION : %s" % g_dEncodeFunctions[ type( uObject ) ])
+  g_dEncodeFunctions[type(uObject)](uObject, eList)
+  return b"".join(eList)
 
 
 def decode(data):
   """ Generic decoding function """
   if not data:
     return data
-  try:
-    # print "DECODE FUNCTION : %s" % g_dDecodeFunctions[ sStream [ iIndex ] ]
-    return g_dDecodeFunctions[data[0]](data, 0)
-  except Exception:
-    raise
+  # print("DECODE FUNCTION : %s" % g_dDecodeFunctions[ sStream [ iIndex ] ])
+  return g_dDecodeFunctions[data[0]](data, 0)
 
 
 if __name__ == "__main__":

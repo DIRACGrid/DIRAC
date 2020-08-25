@@ -127,7 +127,8 @@ def breakListIntoChunks(aList, chunkSize):
   """
   if chunkSize < 1:
     raise RuntimeError("chunkSize cannot be less than 1")
-  if isinstance(aList, (set, dict, tuple, six.moves.collections_abc.Iterable)):
+  if isinstance(aList, (set, dict, tuple, {}.keys().__class__,
+                        {}.items().__class__, {}.values().__class__)):
     aList = list(aList)
   return [chunk for chunk in getChunk(aList, chunkSize)]
 

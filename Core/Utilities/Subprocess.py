@@ -21,7 +21,7 @@ set a timeout.
        ( returncode, stdout, stderr ) the tuple will also be available upon
        timeout error or buffer overflow error.
 
-     - pythonCall( iTimeOut, function, *stArgs, **stKeyArgs )
+     - pythonCall( iTimeOut, function, \\*stArgs, \\*\\*stKeyArgs )
        calls function with given arguments within a timeout Wrapper
        should be used to wrap third party python functions
 
@@ -212,14 +212,14 @@ class Subprocess(object):
     from DIRAC.Core.Utilities import DEncode
 
     try:
-      os.write(writePipe, DEncode.encode(S_OK(function(*stArgs, **stKeyArgs))).encode())
+      os.write(writePipe, DEncode.encode(S_OK(function(*stArgs, **stKeyArgs))))
     except OSError as x:
       if str(x) == '[Errno 32] Broken pipe':
         # the parent has died
         pass
     except Exception as x:
       self.log.exception('Exception while executing', function.__name__)
-      os.write(writePipe, DEncode.encode(S_ERROR(str(x))).encode())
+      os.write(writePipe, DEncode.encode(S_ERROR(str(x))))
       # HACK: Allow some time to flush logs
       time.sleep(1)
     try:
@@ -344,7 +344,7 @@ class Subprocess(object):
             dataStub = retDict['Value']
             if not dataStub:
               return S_ERROR("Error decoding data coming from call")
-            retObj, stubLen = DEncode.decode(dataStub)
+            retObj, stubLen = DEncode.decode(dataStub.encode())
             if stubLen == len(dataStub):
               return retObj
             return S_ERROR("Error decoding data coming from call")

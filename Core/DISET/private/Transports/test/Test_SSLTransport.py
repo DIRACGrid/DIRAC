@@ -109,8 +109,9 @@ class DummyServiceReactor(object):
 
     try:
       _inList, _outList, _exList = select.select(sockets, [], [], 2)
-
-      clientTransport = self.transport.acceptConnection()['Value']
+      result = self.transport.acceptConnection()
+      assert result["OK"], result
+      clientTransport = result['Value']
 
       self.handleConnection(clientTransport)
 
@@ -189,14 +190,14 @@ def ping_server(clientTransport):
   """
 
   clientTransport.setSocketTimeout(5)
-  clientTransport.sendData(MAGIC_QUESTION)
+  result = clientTransport.sendData(MAGIC_QUESTION)
+  assert result["OK"]
   serverReturn = clientTransport.receiveData()
   return serverReturn
 
 
 def test_simpleMessage(create_serverAndClient):
   """ Send a message, wait for an answer """
-
   serv, client = create_serverAndClient
   serverAnswer = ping_server(client)
   assert serv.receivedMessage == MAGIC_QUESTION

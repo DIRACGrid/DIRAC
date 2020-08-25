@@ -163,7 +163,7 @@ class SSLTransport(BaseTransport):
     # a server session ID in the context
     host = self.stServerAddress[0]
     port = self.stServerAddress[1]
-    self.__ctx.set_session_id_ctx("DIRAC-%s-%s" % (host, port))
+    self.__ctx.set_session_id_ctx(("DIRAC-%s-%s" % (host, port)).encode())
     self.oSocket = self.__getConnection()
     # Make sure reuse address is set correctly
     if self.bAllowReuseAddress:

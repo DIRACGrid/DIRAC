@@ -16,7 +16,7 @@ try:
   # Python 2: "reload" is built-in
   reload
 except NameError:
-  from importlib import reload
+  from importlib import reload  # pylint: disable=no-name-in-module
 
 
 class VOBOXAvailabilityCommand_TestCase( unittest.TestCase ):

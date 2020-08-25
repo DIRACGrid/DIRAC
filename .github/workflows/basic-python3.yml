@@ -15,8 +15,7 @@ jobs:
           # Only collect tests for now
           - pytest --no-cov --collect-only
           - |
-            pytest --no-cov \
-                --ignore=Core/DISET/
+            pytest --no-cov
 
     steps:
     - uses: actions/checkout@v2

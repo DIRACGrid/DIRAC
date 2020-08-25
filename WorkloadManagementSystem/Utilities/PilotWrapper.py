@@ -115,7 +115,7 @@ except Exception as x:
   logger.error(x)
   shutil.rmtree(pilotWorkingDirectory)
   sys.exit(3)
-""" % {'encodedPf': encodedPf,
+""" % {'encodedPf': encodedPf.decode() if hasattr(encodedPf, "decode") else encodedPf,
        'pfName': pfName}
 
   envVariablesString = ""
@@ -125,7 +125,7 @@ os.environ[\"%(name)s\"]=\"%(value)s\"
 """ % {'name': name,
        'value': value}
 
-  # add X509_USER_PROXY to establish pilot env in Cluster WNs
+  # add X509_USER_PROXY to etablish pilot env in Cluster WNs
   if 'proxy' in pilotFilesCompressedEncodedDict:
     envVariablesString += """
 os.environ['X509_USER_PROXY'] = os.path.join(pilotWorkingDirectory, 'proxy')
