@@ -107,7 +107,8 @@ class Request(object):
       # The JSON module forces the use of UTF-8, which is not properly
       # taken into account in DIRAC.
       # One would need to replace all the '== str' with 'in six.string_types'
-      if isinstance(value, six.string_types):
+      # This is converting `unicode` to `str` and doesn't make sense in Python 3
+      if six.PY2 and isinstance(value, six.string_types):
         value = value.encode()
 
       if value:
@@ -258,10 +259,13 @@ class Request(object):
     """ return index of subReq (execution order) """
     return self.__operations__.index(subReq) if subReq in self else -1
 
-  def __nonzero__(self):
+  def __bool__(self):
     """ for comparisons
     """
     return True
+
+  # For Python 2 compatibility
+  __nonzero__ = __bool__
 
   def __len__(self):
     """ nb of subRequests """
@@ -479,9 +483,9 @@ class Request(object):
           optimized = True
           insertBefore = self.__operations__[i] if i < len(self.__operations__) else None
           # print 'Insert new operations before', insertBefore
-          for op in \
-              [op for _targetSE, op in sorted(repAndRegList)] + \
-                  [op for _targetSE, op in sorted(removeRepList)]:
+          ops = [op for _, op in sorted(repAndRegList, key=lambda x: x[0])]
+          ops += [op for _, op in sorted(removeRepList, key=lambda x: x[0])]
+          for op in ops:
             _res = self.insertBefore(op, insertBefore) if insertBefore else self.addOperation(op)
             # Skip the newly inserted operation
             i += 1

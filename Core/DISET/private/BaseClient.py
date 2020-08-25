@@ -645,8 +645,11 @@ and this is thread %s
       del newKwargs['useCertificates']
     return [self._destinationSrv, newKwargs]
 
-  def __nonzero__(self):
+  def __bool__(self):
     return True
+
+  # For Python 2 compatibility
+  __nonzero__ = __bool__
 
   def __str__(self):
     return "<DISET Client %s %s>" % (self.serviceURL, self.__extraCredentials)

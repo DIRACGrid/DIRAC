@@ -289,4 +289,4 @@ class StringsList(TypedList):
     :param self: self reference
     :param mixed iterable: initial values
     """
-    TypedList.__init__(self, iterable, allowedTypes=(str, unicode))
+    TypedList.__init__(self, iterable, allowedTypes=six.string_types)
