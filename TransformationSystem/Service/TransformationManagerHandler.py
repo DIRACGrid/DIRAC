@@ -196,7 +196,7 @@ class TransformationManagerHandler(RequestHandler):
     if not dictOfNewFilesStatus:
       return S_OK({})
 
-    statusSample = dictOfNewFilesStatus.values()[0]
+    statusSample = list(dictOfNewFilesStatus.values())[0]
     if isinstance(statusSample, (list, tuple)) and len(statusSample) == 2:
       newStatusForFileIDs = dictOfNewFilesStatus
     else:

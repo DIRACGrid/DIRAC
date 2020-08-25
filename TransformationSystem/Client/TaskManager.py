@@ -524,7 +524,7 @@ class WorkflowTasks(TaskBase):
     :return: S_OK/S_ERROR with updated taskDict
     """
     if taskDict:
-      transID = taskDict.values()[0]['TransformationID']
+      transID = list(taskDict.values())[0]['TransformationID']
     else:
       return S_OK({})
 
@@ -665,7 +665,7 @@ class WorkflowTasks(TaskBase):
     :return:  S_OK/S_ERROR with updated taskDict
     """
     if taskDict:
-      transID = taskDict.values()[0]['TransformationID']
+      transID = list(taskDict.values())[0]['TransformationID']
     else:
       return S_OK({})
 
@@ -919,7 +919,7 @@ class WorkflowTasks(TaskBase):
 
     oJob = taskDict.pop('BulkJobObject')
     # we can only do this, once the job has been popped, or we _might_ crash
-    transID = taskDict.values()[0]['TransformationID']
+    transID = list(taskDict.values())[0]['TransformationID']
     if oJob is None:
       self._logError('no bulk Job object found', transID=transID, method=method)
       return S_ERROR(ETSUKN, 'No bulk job object provided for submission')

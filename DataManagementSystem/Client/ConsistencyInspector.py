@@ -322,7 +322,7 @@ class ConsistencyInspector(object):
       fileTypes = []
     # and loop on the original dictionaries
     for ancestor in lfnDict:
-      for desc in lfnDict[ancestor].keys():
+      for desc in list(lfnDict[ancestor]):
         ft = lfnDict[ancestor][desc]['FileType']
         if ft in fileTypesExcluded or (fileTypes and ft not in fileTypes):
           ancDict[ancestor].pop(desc)

@@ -127,7 +127,7 @@ class ProdValidator(object):
           msg = 'Operation %s is not supported' % operation
           return S_ERROR(msg)
         else:
-          if not isinstance(value.values()[0], list):
+          if not isinstance(list(value.values())[0], list):
             MetaQueryDict[meta] = {"in": value.values()}
       else:
         values.append(value)
@@ -142,7 +142,5 @@ class ProdValidator(object):
     :param dict parentValue: a dictionary with meta data parentValues be compared with values
     """
     return set(
-        value.values()[0]).issubset(
-        set(parentValue.values()[0])) or set(
-        parentValue.values()[0]).issubset(
-        set(value.values()[0]))
+        list(value.values())[0]).issubset(set(list(parentValue.values())[0])
+    ) or set(list(parentValue.values())[0]).issubset(set(list(value.values())[0]))

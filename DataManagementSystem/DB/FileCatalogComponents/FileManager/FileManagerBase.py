@@ -226,7 +226,7 @@ class FileManagerBase(object):
     connection = self._getConnection(connection)
     successful = {}
     failed = {}
-    for lfn, info in lfns.items():
+    for lfn, info in list(lfns.items()):
       res = self._checkInfo(info, ['PFN', 'SE', 'Size', 'Checksum'])
       if not res['OK']:
         failed[lfn] = res['Message']
@@ -742,7 +742,7 @@ class FileManagerBase(object):
     connection = self._getConnection(connection)
     successful = {}
     failed = {}
-    for lfn, info in lfns.items():
+    for lfn, info in list(lfns.items()):
       res = self._checkInfo(info, ['PFN', 'SE'])
       if not res['OK']:
         failed[lfn] = res['Message']
@@ -783,7 +783,7 @@ class FileManagerBase(object):
     connection = self._getConnection(connection)
     successful = {}
     failed = {}
-    for lfn, info in lfns.items():
+    for lfn, info in list(lfns.items()):
       res = self._checkInfo(info, ['SE'])
       if not res['OK']:
         failed[lfn] = res['Message']

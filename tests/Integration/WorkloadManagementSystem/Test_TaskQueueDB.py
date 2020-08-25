@@ -74,8 +74,14 @@ def test_chainWithParameter():
   assert result['Value'] is False
   result = tqDB.retrieveTaskQueues()
   assert result['OK'] is True
-  assert result['Value'].values()[0] == {'OwnerDN': '/my/DN', 'Jobs': 2, 'OwnerGroup': 'myGroup',
-                                         'Setup': 'aSetup', 'CPUTime': 86400, 'Priority': 1.0}
+  assert list(result['Value'].values())[0] == {
+      'OwnerDN': '/my/DN',
+      'Jobs': 2,
+      'OwnerGroup': 'myGroup',
+      'Setup': 'aSetup',
+      'CPUTime': 86400,
+      'Priority': 1.0
+  }
 
   # now we will try to delete
   result = tqDB.deleteJob(123)
@@ -997,8 +1003,14 @@ def test_TQ():
   assert result['Value'] == 1
   result = tqDB.retrieveTaskQueues()
   assert result['OK'] is True
-  assert result['Value'].values()[0] == {'OwnerDN': '/my/DN', 'Jobs': 1, 'OwnerGroup': 'myGroup',
-                                         'Setup': 'aSetup', 'CPUTime': 86400, 'Priority': 1.0}
+  assert list(result['Value'].values())[0] == {
+      'OwnerDN': '/my/DN',
+      'Jobs': 1,
+      'OwnerGroup': 'myGroup',
+      'Setup': 'aSetup',
+      'CPUTime': 86400,
+      'Priority': 1.0,
+  }
   result = tqDB.findOrphanJobs()
   assert result['OK'] is True
   result = tqDB.recalculateTQSharesForAll()
