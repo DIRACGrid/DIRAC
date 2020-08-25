@@ -16,9 +16,7 @@ jobs:
           - pytest --no-cov --collect-only
           - |
             pytest --no-cov \
-                --ignore=Core/DISET/ \
-                --ignore=Core/Utilities/test/Test_DAG.py \
-                --ignore=Core/Utilities/test/Test_Dictionaries.py
+                --ignore=Core/DISET/
 
     steps:
     - uses: actions/checkout@v2

@@ -472,7 +472,7 @@ class MonitoringClient(object):
         return False
       condVal = condDict[key]
       componentVal = component[key]
-      if type(condVal) in (list, tuple):
+      if isinstance(condVal, (list, tuple)):
         if componentVal not in condVal:
           return False
       else:

@@ -31,7 +31,7 @@ class UserProfileClient(object):
     if isinstance(dataObj, six.string_types):
       return "s"
     # Not even trying here...
-    if type(dataObj) in Time._allTypes:
+    if isinstance(dataObj, Time._allTypes):
       return "t"
     if isinstance(dataObj, (list, tuple)):
       return "l%se" % "".join([self.__generateTypeDest(so) for so in dataObj])

@@ -200,7 +200,7 @@ class Transformation(API):
     change = False
     if self.item_called in self.paramTypes:
       if self.paramValues[self.item_called] != value:
-        if type(value) in self.paramTypes[self.item_called]:
+        if isinstance(value, self.paramTypes[self.item_called]):
           change = True
         else:
           raise TypeError("%s %s %s expected one of %s" % (self.item_called, value, type(value),
