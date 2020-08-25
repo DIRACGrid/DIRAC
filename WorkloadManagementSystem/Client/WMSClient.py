@@ -99,7 +99,7 @@ class WMSClient(object):
     if jobDescriptionObject is not None:
       if isinstance(jobDescriptionObject, StringIO):
         stringIOFiles = [jobDescriptionObject]
-        stringIOFilesSize = len(jobDescriptionObject.buf)
+        stringIOFilesSize = len(jobDescriptionObject.getvalue())
         gLogger.debug("Size of the stringIOFiles: " + str(stringIOFilesSize))
       else:
         return S_ERROR(EWMSJDL, "jobDescriptionObject is not a StringIO object")

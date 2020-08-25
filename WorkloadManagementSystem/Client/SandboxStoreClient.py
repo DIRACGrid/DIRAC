@@ -146,7 +146,7 @@ class SandboxStoreClient(object):
           tf.add(os.path.realpath(sFile), os.path.basename(sFile), recursive=True)
         elif isinstance(sFile, BytesIO):
           tarInfo = tarfile.TarInfo(name='jobDescription.xml')
-          tarInfo.size = len(sFile.buf)
+          tarInfo.size = len(sFile.getvalue())
           tf.addfile(tarinfo=tarInfo, fileobj=sFile)
 
     if sizeLimit > 0:

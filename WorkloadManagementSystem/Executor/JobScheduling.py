@@ -400,7 +400,7 @@ class JobScheduling(OptimizerExecutor):
         else:
           maxProcessors = -1
 
-    if nProcessors > 1:
+    if nProcessors and nProcessors > 1:
       tagList.append("%dProcessors" % nProcessors)
       tagList.append("MultiProcessor")
     if maxProcessors == -1 or maxProcessors > 1:

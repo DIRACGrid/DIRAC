@@ -8,6 +8,7 @@ import unittest
 import os
 from mock import patch, MagicMock as Mock
 from diraccfg import CFG
+import six
 
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
@@ -173,9 +174,19 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     synchroniser._syncChecksum()
     assert self.testCfgFileName in synchroniser._checksumDict
     assert synchroniser._checksumDict[self.testCfgFileName] == expectedHash
-    assert open('checksums.sha512', 'rb').read().split('\n')[0] == '%s  %s' % (expectedPJHash, 'pilot.json'), \
-        'pilot.json content: ' + repr(open('pilot.json', 'rb').read())
-    assert open('checksums.sha512', 'rb').read().split('\n')[1] == '%s  %s' % (expectedHash, self.testCfgFileName)
+    with open('checksums.sha512', 'rt') as fp:
+      checksums = fp.read()
+    with open('pilot.json', 'rt') as fp:
+      pilot_json_content = fp.read()
+
+    if not six.PY2:
+      # JSON is a non-deterministic format so hard-coding the SHA512 is unreliable
+      import subprocess
+      expectedPJHash = subprocess.check_output(["sha512sum", "pilot.json"], text=True).split(" ")[0]
+      expectedHash = subprocess.check_output(["sha512sum", self.testCfgFileName], text=True).split(" ")[0]
+
+    assert checksums.split('\n')[0] == '%s  %s' % (expectedPJHash, 'pilot.json'), 'pilot.json content: ' + pilot_json_content
+    assert checksums.split('\n')[1] == '%s  %s' % (expectedHash, self.testCfgFileName)
     # this tests if the checksums file was also "uploaded"
     assert 'checksums.sha512' in list(synchroniser._checksumDict)
 

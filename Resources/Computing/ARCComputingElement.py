@@ -163,7 +163,7 @@ class ARCComputingElement(ComputingElement):
     nProcessors = processors if processors > 1 else self.ceParameters.get('NumberOfProcessors', processors)
 
     xrslMPAdditions = ''
-    if nProcessors > 1:
+    if nProcessors and nProcessors > 1:
       xrslMPAdditions = """
 (count = %(processors)u)
 %(xrslMPExtraString)s

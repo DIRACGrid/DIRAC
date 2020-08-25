@@ -99,7 +99,7 @@ class SandboxStoreTestCaseSuccess(ClientsTestCase):
     ourSSC = importlib.import_module('DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient')
     ourSSC.TransferClient = MagicMock()
     ssc = SandboxStoreClient()
-    fileList = [BytesIO('try')]
+    fileList = [BytesIO(b'try')]
     res = ssc.uploadFilesAsSandbox(fileList)
     print(res)
 
