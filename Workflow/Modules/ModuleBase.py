@@ -469,7 +469,7 @@ class ModuleBase(object):
       stepMask = [stepMask]
 
     if fileMask and fileMask != ['']:
-      for fileName, metadata in candidateFiles.items():
+      for fileName, metadata in list(candidateFiles.items()):
         if metadata['type'].lower() not in fileMask:  # and ( fileName.split( '.' )[-1] not in fileMask ) ):
           del candidateFiles[fileName]
           self.log.info('Output file %s was produced but will not be treated (fileMask is %s)' % (fileName,
@@ -479,7 +479,7 @@ class ModuleBase(object):
 
     if stepMask and stepMask != ['']:
       # This supposes that the LFN contains the step ID
-      for fileName, metadata in candidateFiles.items():
+      for fileName, metadata in list(candidateFiles.items()):
         if fileName.split('_')[-1].split('.')[0] not in stepMask:
           del candidateFiles[fileName]
           self.log.info('Output file %s was produced but will not be treated (stepMask is %s)' % (fileName,

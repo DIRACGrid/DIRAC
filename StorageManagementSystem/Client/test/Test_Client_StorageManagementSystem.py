@@ -14,41 +14,41 @@ from DIRAC.StorageManagementSystem.Client.StorageManagerClient import getFilesTo
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 import errno
 
+# Use side_effect instead of return_value so the dict in the result is copied
 mockObjectSE1 = MagicMock()
-mockObjectSE1.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Accessible':False}},
-                                                    'Failed':{}} )
-mockObjectSE1.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE1.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful': {'/a/lfn/1.txt': {'Accessible':False}}, 'Failed': {}} )
+mockObjectSE1.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE2 = MagicMock()
-mockObjectSE2.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/2.txt':{'Cached':1, 'Accessible':True}},
+mockObjectSE2.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{'/a/lfn/2.txt':{'Cached':1, 'Accessible':True}},
                                                     'Failed':{}} )
-mockObjectSE2.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE2.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE3 = MagicMock()
-mockObjectSE3.getFileMetadata.return_value = S_OK( {'Successful':{},
+mockObjectSE3.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{},
                                                     'Failed':{'/a/lfn/2.txt': 'error'}} )
-mockObjectSE3.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE3.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE4 = MagicMock()
-mockObjectSE4.getFileMetadata.return_value = S_OK( {'Successful':{},
+mockObjectSE4.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{},
                                                     'Failed':{'/a/lfn/2.txt':
                                                               S_ERROR( errno.ENOENT, '' )['Message']}} )
-mockObjectSE4.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE4.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 mockObjectSE5 = MagicMock()
-mockObjectSE5.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Accessible':False}},
+mockObjectSE5.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{'/a/lfn/1.txt':{'Accessible':False}},
                                                     'Failed':{}} )
-mockObjectSE5.getStatus.return_value = S_OK( {'DiskSE': True, 'TapeSE':False} )
+mockObjectSE5.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': True, 'TapeSE':False} )
 
 mockObjectSE6 = MagicMock()
-mockObjectSE6.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/2.txt':{'Cached':0, 'Accessible':False}},
+mockObjectSE6.getFileMetadata.side_effect = lambda *_: S_OK( {'Successful':{'/a/lfn/2.txt':{'Cached':0, 'Accessible':False}},
                                                     'Failed':{}} )
-mockObjectSE6.getStatus.return_value = S_OK( {'DiskSE': False, 'TapeSE':True} )
+mockObjectSE6.getStatus.side_effect = lambda *_: S_OK( {'DiskSE': False, 'TapeSE':True} )
 
 
 mockObjectDMSHelper = MagicMock()
-mockObjectDMSHelper.getLocalSiteForSE.return_value = S_OK( 'mySite' )
-mockObjectDMSHelper.getSitesForSE.return_value = S_OK( ['mySite'] )
+mockObjectDMSHelper.getLocalSiteForSE.side_effect = lambda *_: S_OK( 'mySite' )
+mockObjectDMSHelper.getSitesForSE.side_effect = lambda *_: S_OK( ['mySite'] )
 
 class ClientsTestCase( unittest.TestCase ):
   """ Base class for the clients test cases
@@ -111,7 +111,7 @@ class StorageManagerSuccess( ClientsTestCase ):
     self.assertTrue( res['OK'] )
     self.assertEqual( res['Value']['onlineLFNs'], [] )
     self.assertEqual( res['Value']['offlineLFNs'], {} )
-    self.assertEqual( res['Value']['absentLFNs'], {'/a/lfn/2.txt': 'No such file or directory ( 2 : File not at SE2)'} )
+    self.assertEqual( res['Value']['absentLFNs'], {'/a/lfn/2.txt': 'No such file or directory ( 2 : File not at SE1,SE2)'} )
     self.assertEqual( res['Value']['failedLFNs'], [] )
 
   @patch( "DIRAC.StorageManagementSystem.Client.StorageManagerClient.DataManager", return_value = dm_mock )

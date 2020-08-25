@@ -194,9 +194,9 @@ def _checkFilesToStage(seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
     offlineLFNs.pop(lfn)
 
   # If the file was found staged, ignore possible errors, but print out errors
-  for se, failedLfns in failed.items():
+  for se, failedLfns in list(failed.items()):
     logger.error("Errors when getting files metadata", 'at %s' % se)
-    for lfn, reason in failedLfns.items():
+    for lfn, reason in list(failedLfns.items()):
       if lfn in onlineLFNs:
         logger.warn(reason, 'for %s, but there is an online replica' % lfn)
         failed[se].pop(lfn)
@@ -215,7 +215,7 @@ def _checkFilesToStage(seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
   for lfn in absentLFNs:
     seList = absentLFNs[lfn]
     # FIXME: it is not possible to return here an S_ERROR(), return the message only
-    absentLFNs[lfn] = S_ERROR(errno.ENOENT, "File not at %s" % ','.join(seList))['Message']
+    absentLFNs[lfn] = S_ERROR(errno.ENOENT, "File not at %s" % ','.join(sorted(seList)))['Message']
   # Format the error for absent files
   return S_OK()
 
