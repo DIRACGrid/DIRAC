@@ -32,21 +32,21 @@ class Transformation(API):
     """
     super(Transformation, self).__init__()
 
-    self.paramTypes = {'TransformationID': [types.IntType, types.LongType],
-                       'TransformationName': types.StringTypes,
-                       'Status': types.StringTypes,
-                       'Description': types.StringTypes,
-                       'LongDescription': types.StringTypes,
-                       'Type': types.StringTypes,
-                       'Plugin': types.StringTypes,
-                       'AgentType': types.StringTypes,
-                       'FileMask': types.StringTypes,
-                       'TransformationGroup': types.StringTypes,
-                       'GroupSize': [types.IntType, types.LongType, types.FloatType],
-                       'InheritedFrom': [types.IntType, types.LongType],
-                       'Body': types.StringTypes,
-                       'MaxNumberOfTasks': [types.IntType, types.LongType],
-                       'EventsPerTask': [types.IntType, types.LongType]}
+    self.paramTypes = {'TransformationID': six.integer_types,
+                       'TransformationName': six.string_types,
+                       'Status': six.string_types,
+                       'Description': six.string_types,
+                       'LongDescription': six.string_types,
+                       'Type': six.string_types,
+                       'Plugin': six.string_types,
+                       'AgentType': six.string_types,
+                       'FileMask': six.string_types,
+                       'TransformationGroup': six.string_types,
+                       'GroupSize': six.integer_types + (float,),
+                       'InheritedFrom': six.integer_types,
+                       'Body': six.string_types,
+                       'MaxNumberOfTasks': six.integer_types,
+                       'EventsPerTask': six.integer_types}
     self.paramValues = {'TransformationID': 0,
                         'TransformationName': '',
                         'Status': 'New',
@@ -140,7 +140,7 @@ class Transformation(API):
           raise TypeError("Expected string, but key in dictionary %r is %s" % (par, type(par)))
         if par not in Operation.ATTRIBUTE_NAMES:
           raise ValueError("Unknown attribute for Operation: %s" % par)
-        if not isinstance(val, (basestring, int, long, float, list, tuple, dict)):
+        if not isinstance(val, six.string_types + six.integer_types + (float, list, tuple, dict)):
           raise TypeError("Cannot encode %r, in json" % (val))
       return self.__setParam(json.dumps(body))
 

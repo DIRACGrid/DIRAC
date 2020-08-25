@@ -241,7 +241,7 @@ def test_findAllDescendants(tiFixture):
                                                                                  "lfnD1": ["lfnDD1", "lfnDD2"],
                                                                                  }}))
   descList = tiFixture._TransformationInfo__findAllDescendants(lfnList=[])
-  assert descList == ["lfnDD1", "lfnDD2", "lfnD1", "lfnD2"]
+  assert set(descList) == {"lfnDD1", "lfnDD2", "lfnD1", "lfnD2"}
 
   tiFixture.fcClient.getFileDescendents = Mock(return_value=S_ERROR("Cannot get descendants"))
   descList = tiFixture._TransformationInfo__findAllDescendants(lfnList=[])

@@ -16,7 +16,6 @@ jobs:
           - pytest --no-cov --collect-only
           - |
             pytest --no-cov \
-                --ignore=TransformationSystem \
                 --ignore=Core/DISET/ \
                 --ignore=Core/Utilities/test/Test_DAG.py \
                 --ignore=Core/Utilities/test/Test_Dictionaries.py

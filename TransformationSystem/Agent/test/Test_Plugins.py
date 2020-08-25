@@ -90,14 +90,14 @@ def test__Standard_Flush_G10(setup):
   pluginStandard.setParameters(params)
   pluginStandard.setInputData(data)
   res = pluginStandard.run()
-  sortedData = [('SE1', ['/this/is/at.1']),
-                ('SE1,SE2', ['/this/is/also/at.12', '/this/is/at.12']),
-                ('SE1,SE2,SE3', ['/this/is/at_123']),
-                ('SE2', ['/this/is/als/at.2', '/this/is/at.2']),
-                ('SE2,SE3', ['/this/is/at_23']),
-                ('SE4', ['/this/is/at_4'])]
+  sortedData = [('SE1', {'/this/is/at.1'}),
+                ('SE1,SE2', {'/this/is/also/at.12', '/this/is/at.12'}),
+                ('SE1,SE2,SE3', {'/this/is/at_123'}),
+                ('SE2', {'/this/is/als/at.2', '/this/is/at.2'}),
+                ('SE2,SE3', {'/this/is/at_23'}),
+                ('SE4', {'/this/is/at_4'})]
   assert res['OK']
-  assert res['Value'] == sortedData
+  assert [(a, set(b)) for a, b in res['Value']] == sortedData
 
 
 def test__Standard_G1(setup):
@@ -130,7 +130,7 @@ def test__Standard_Flush_G1(setup):
   res = pluginStandard.run()
   sortedData = sorted([(",".join(SEs), [lfn]) for lfn, SEs in data.items()])
   assert res['OK']
-  assert res['Value'] == sortedData
+  assert sorted(res['Value']) == sorted(sortedData)
 
 
 def test__Broadcast_Active_G1(setup):
