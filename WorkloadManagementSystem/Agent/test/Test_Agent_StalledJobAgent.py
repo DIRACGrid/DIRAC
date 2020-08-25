@@ -24,7 +24,7 @@ def test__failSubmittingJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
@@ -45,7 +45,7 @@ def test__kickStuckJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
@@ -66,7 +66,7 @@ def test__failStalledJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
@@ -87,7 +87,7 @@ def test__markStalledJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 

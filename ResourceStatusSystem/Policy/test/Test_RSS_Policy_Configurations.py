@@ -41,7 +41,7 @@ class Configurations_Success( Configurations_TestCase ):
     policiesMeta = self.moduleTested.POLICIESMETA
 
     for _policyName, policyMeta in policiesMeta.items():
-      self.assertEqual( [ 'args', 'command', 'description', 'module' ], policyMeta.keys() )
+      self.assertEqual({'args', 'command', 'description', 'module'}, set(policyMeta))
 
 
 

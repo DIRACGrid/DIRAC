@@ -34,7 +34,7 @@ def test__getAllowedJobTypes(mocker, mockReplyInput, expected):
   mockReply.return_value = mockReplyInput
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
   mocker.patch(
       "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getDistinctJobAttributes",
       side_effect=mockReply)
@@ -68,7 +68,7 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
   mockReply.return_value = mockReplyInput
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)

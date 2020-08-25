@@ -12,7 +12,12 @@ import DIRAC.ResourceStatusSystem.Command.VOBOXAvailabilityCommand as moduleTest
 
 __RCSID__ = '$Id:  $'
 
-################################################################################
+try:
+  # Python 2: "reload" is built-in
+  reload
+except NameError:
+  from importlib import reload
+
 
 class VOBOXAvailabilityCommand_TestCase( unittest.TestCase ):
 

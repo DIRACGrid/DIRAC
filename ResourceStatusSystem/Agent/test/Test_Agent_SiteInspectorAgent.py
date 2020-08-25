@@ -40,7 +40,7 @@ def test__execute(mocker, sitesToBeCheckedValue):
   """
 
   mocker.patch("DIRAC.ResourceStatusSystem.Agent.SiteInspectorAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.ResourceStatusSystem.Agent.SiteInspectorAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.ResourceStatusSystem.Agent.SiteInspectorAgent.AgentModule._AgentModule__moduleProperties", side_effect=lambda x, y=None: y, create=True)
 
   siteInspectorAgent = SiteInspectorAgent()
   siteInspectorAgent.log = gLogger
