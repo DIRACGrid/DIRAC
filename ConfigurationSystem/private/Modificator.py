@@ -9,6 +9,7 @@ import difflib
 
 from diraccfg import CFG
 from DIRAC.Core.Utilities import List, Time
+from DIRAC.Core.Utilities.Dictionaries import bytesKeysToStrings
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
@@ -39,10 +40,11 @@ class Modificator(object):
     self.rpcClient = rpcClient
 
   def loadFromRemote(self):
-    retVal = self.rpcClient.getCompressedData()
+    retVal = self.rpcClient.getCompressedData(forceBytes=True)
+    retVal = bytesKeysToStrings(retVal)
     if retVal['OK']:
       self.cfgData = CFG()
-      self.cfgData.loadFromBuffer(zlib.decompress(retVal['Value']))
+      self.cfgData.loadFromBuffer(zlib.decompress(retVal['Value']).decode())
     return retVal
 
   def getCFG(self):
@@ -249,26 +251,29 @@ class Modificator(object):
     return []
 
   def showCurrentDiff(self):
-    retVal = self.rpcClient.getCompressedData()
+    retVal = self.rpcClient.getCompressedData(forceBytes=True)
+    retVal = bytesKeysToStrings(retVal)
     if retVal['OK']:
-      remoteData = zlib.decompress(retVal['Value']).splitlines()
+      remoteData = zlib.decompress(retVal['Value']).decode().splitlines()
       localData = str(self.cfgData).splitlines()
       return difflib.ndiff(remoteData, localData)
     return []
 
   def getVersionDiff(self, fromDate, toDate):
-    retVal = self.rpcClient.getVersionContents([fromDate, toDate])
+    retVal = self.rpcClient.getVersionContents([fromDate, toDate], forceBytes=True)
+    retVal = bytesKeysToStrings(retVal)
     if retVal['OK']:
-      fromData = zlib.decompress(retVal['Value'][0])
-      toData = zlib.decompress(retVal['Value'][1])
+      fromData = zlib.decompress(retVal['Value'][0].decode())
+      toData = zlib.decompress(retVal['Value'][1].decode())
       return difflib.ndiff(fromData.split("\n"), toData.split("\n"))
     return []
 
   def mergeWithServer(self):
-    retVal = self.rpcClient.getCompressedData()
+    retVal = self.rpcClient.getCompressedData(forceBytes=True)
+    retVal = bytesKeysToStrings(retVal)
     if retVal['OK']:
       remoteCFG = CFG()
-      remoteCFG.loadFromBuffer(zlib.decompress(retVal['Value']))
+      remoteCFG.loadFromBuffer(zlib.decompress(retVal['Value']).decode())
       serverVersion = gConfigurationData.getVersion(remoteCFG)
       self.cfgData = remoteCFG.mergeWith(self.cfgData)
       gConfigurationData.setVersion(serverVersion, self.cfgData)
