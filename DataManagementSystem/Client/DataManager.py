@@ -1727,22 +1727,19 @@ class DataManager(object):
       for lfn in catalogReplicas:
         catalogReplicas[lfn] = dict.fromkeys(catalogReplicas[lfn], True)
     elif not self.useCatalogPFN:
-      if res['OK']:
-        se_lfn = {}
+      se_lfn = {}
 
-        # We group the query to getURL by storage element to gain in speed
-        for lfn in catalogReplicas:
-          for se in catalogReplicas[lfn]:
-            se_lfn.setdefault(se, []).append(lfn)
+      # We group the query to getURL by storage element to gain in speed
+      for lfn in catalogReplicas:
+        for se in catalogReplicas[lfn]:
+          se_lfn.setdefault(se, []).append(lfn)
 
-        for se in se_lfn:
-          seObj = StorageElement(se, vo=self.voName)
-          succPfn = seObj.getURL(se_lfn[se],
-                                 protocol=self.registrationProtocol).get('Value', {}).get('Successful', {})
-          for lfn in succPfn:
-            # catalogReplicas still points res["value"]["Successful"] so res
-            # will be updated
-            catalogReplicas[lfn][se] = succPfn[lfn]
+      for se in se_lfn:
+        seObj = StorageElement(se, vo=self.voName)
+        succPfn = seObj.getURL(se_lfn[se],
+                                protocol=self.registrationProtocol).get('Value', {}).get('Successful', {})
+        for lfn in succPfn:
+          catalogReplicas[lfn][se] = succPfn[lfn]
 
     result = {'Successful': catalogReplicas, 'Failed': failed}
     if active:
