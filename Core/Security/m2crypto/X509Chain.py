@@ -290,6 +290,8 @@ class X509Chain(object):
       :returns: S_OK / S_ERROR
     """
     self._keyObj = None
+    if password:
+      password = password.encode()
     try:
       self._keyObj = M2Crypto.EVP.load_key_string(pemData.encode(), lambda x: password)
     except BaseException as e:
