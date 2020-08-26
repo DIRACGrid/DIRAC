@@ -339,7 +339,7 @@ class X509Certificate(object):
       :returns: S_OK(group name/bool)
     """
     try:
-      return S_OK(asn1_utils.decodeDIRACGroup(self.__certObj))
+      return S_OK(asn1_utils.decodeDIRACGroup(self.__certObj).decode())
     except LookupError:
       pass
 
