@@ -129,7 +129,7 @@ def printTable(fields, records, sortField='', numbering=True,
       return out
 
   if sortField:
-    recordList.sort(None, lambda x: x[fieldList.index(sortField)])
+    recordList.sort(key=lambda x: x[fieldList.index(sortField)])
 
   # Compute the maximum width for each field
   fieldWidths = []

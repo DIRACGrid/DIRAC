@@ -13,7 +13,7 @@ import tarfile
 import hashlib
 import tempfile
 import re
-from six import BytesIO
+from six import BytesIO, StringIO
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 
@@ -126,7 +126,7 @@ class SandboxStoreClient(object):
           else:
             errorFiles.append(sFile)
 
-      elif isinstance(sFile, BytesIO):
+      elif isinstance(sFile, (BytesIO, StringIO)):
         files2Upload.append(sFile)
       else:
         return S_ERROR("Objects of type %s can't be part of InputSandbox" % type(sFile))
