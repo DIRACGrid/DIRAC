@@ -8,7 +8,8 @@ from __future__ import print_function
 import time
 from subprocess import Popen
 
-# sut
+from flaky import flaky
+
 from DIRAC.Core.Utilities.Profiler import Profiler
 
 
@@ -71,6 +72,7 @@ def test_base():
   assert resWC['Value'] >= res['Value']
 
 
+@flaky(max_runs=10, min_passes=2)
 def test_cpuUsage():
   mainProcess = Popen(['python', 'tests/Utilities/ProcessesCreator_withChildren.py'])
   time.sleep(2)

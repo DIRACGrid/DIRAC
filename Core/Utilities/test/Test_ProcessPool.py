@@ -24,10 +24,13 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import os
+import sys
 import unittest
 import random
 import time
 import threading
+
+import pytest
 
 ## from DIRAC
 # from DIRAC.Core.Base import Script
@@ -35,6 +38,15 @@ import threading
 from DIRAC import gLogger
 ## SUT
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+
+
+@pytest.fixture(autouse=True)
+def capture_wrap():
+  """ Avoid https://github.com/pytest-dev/pytest/issues/5502 """
+  sys.stderr.close = lambda *args: None
+  sys.stdout.close = lambda *args: None
+  yield
+
 
 def ResultCallback( task, taskResult ):
   """ dummy result callback """

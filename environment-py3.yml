@@ -48,6 +48,7 @@ dependencies:
   - pytest-cov >=2.2.0
   - pytest-mock
   - shellcheck
+  - flaky
   # docs
   - pygments >=1.5
   - sphinx
