@@ -1737,7 +1737,7 @@ class DataManager(object):
       for se in se_lfn:
         seObj = StorageElement(se, vo=self.voName)
         succPfn = seObj.getURL(se_lfn[se],
-                                protocol=self.registrationProtocol).get('Value', {}).get('Successful', {})
+                               protocol=self.registrationProtocol).get('Value', {}).get('Successful', {})
         for lfn in succPfn:
           catalogReplicas[lfn][se] = succPfn[lfn]
 
