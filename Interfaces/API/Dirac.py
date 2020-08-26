@@ -19,23 +19,24 @@ from __future__ import absolute_import
 from __future__ import division
 __RCSID__ = "$Id$"
 
+import glob
+import io
+import os
+import re
+import shlex
+import shutil
+import sys
+import tarfile
+import tempfile
+import time
+import urllib
+
 from past.builtins import long
 import six
-import re
-import os
-import sys
-import time
-import shutil
-import tempfile
-import glob
-import tarfile
-import urllib
-import shlex
 from six import StringIO
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -64,6 +65,13 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStor
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 COMPONENT_NAME = 'DiracAPI'
+
+try:
+    # Python 2: "file" is built-in
+    file_types = file, io.IOBase
+except NameError:
+    # Python 3: "file" fully replaced with IOBase
+    file_types = (io.IOBase,)
 
 
 def parseArguments(args):
@@ -993,7 +1001,7 @@ class Dirac(API):
           print(message, file=sys.stderr)
         else:
           print(message)
-      elif isinstance(fd, file):
+      elif isinstance(fd, file_types):
         print(message, file=fd)
     else:
       print(message)

@@ -3,16 +3,25 @@ from __future__ import division
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-import six
-import os
 import hashlib
-import threading
-from six import StringIO
+import io
+import os
 import tarfile
 import tempfile
+import threading
+
+import six
+from six import StringIO
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
+try:
+    # Python 2: "file" is built-in
+    file_types = file, io.IOBase
+except NameError:
+    # Python 3: "file" fully replaced with IOBase
+    file_types = (io.IOBase,)
 
 gLogger = gLogger.getSubLogger("FileTransmissionHelper")
 
@@ -273,7 +282,7 @@ class FileHelper(object):
       except IOError:
         return S_ERROR("%s can't be opened" % uFile)
       iFD = self.oFile.fileno()
-    elif isinstance(uFile, file):
+    elif isinstance(uFile, file_types):
       iFD = uFile.fileno()
     elif isinstance(uFile, int):
       iFD = uFile
@@ -291,7 +300,7 @@ class FileHelper(object):
         oFile = open(uFile, "wb")
       except IOError:
         return S_ERROR("%s can't be opened" % uFile)
-    elif isinstance(uFile, file):
+    elif isinstance(uFile, file_types):
       oFile = uFile
       closeAfter = False
     elif isinstance(uFile, int):
