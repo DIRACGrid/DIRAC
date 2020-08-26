@@ -46,7 +46,7 @@ class BundleDeliveryClient(Client):
   def __setHash(self, bundleID, dirToSyncTo, bdHash):
     try:
       fileName = os.path.join(dirToSyncTo, ".dab.%s" % bundleID)
-      with io.open(fileName, "wb") as fd:
+      with open(fileName, "wt") as fd:
         fd.write(bdHash)
     except Exception as e:
       self.log.error("Could not save hash after synchronization", "%s: %s" % (fileName, str(e)))
@@ -116,7 +116,7 @@ class BundleDeliveryClient(Client):
       # if we can not found the file, we return the directory, where the file should be
       transferClient = self.__getTransferClient()
       casFile = os.path.join(os.path.dirname(retVal['Message']), "cas.pem")
-      with io.open(casFile, "w") as fd:
+      with open(casFile, "w") as fd:
         result = transferClient.receiveFile(fd, 'CAs')
         if not result['OK']:
           return result
@@ -134,7 +134,7 @@ class BundleDeliveryClient(Client):
       # if we can not found the file, we return the directory, where the file should be
       transferClient = self.__getTransferClient()
       casFile = os.path.join(os.path.dirname(retVal['Message']), "crls.pem")
-      with io.open(casFile, "w") as fd:
+      with open(casFile, "w") as fd:
         result = transferClient.receiveFile(fd, 'CRLs')
         if not result['OK']:
           return result
