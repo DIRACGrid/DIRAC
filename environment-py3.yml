@@ -34,6 +34,8 @@ dependencies:
   - suds-jurko >=0.6
   - xmltodict
   - pycurl
+  - voms
+  - python-gfal2
   # testing and development
   - autopep8
   - caniusepython3
