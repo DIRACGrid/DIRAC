@@ -239,7 +239,7 @@ def encodeInt(iValue, eList):
   eList.extend((b"i", str(iValue).encode(), b"e"))
 
 
-def decodeInt(data, i):
+def decodeInt(data, i, forceBytes=False):
   """Decoding ints """
 
   i += 1
@@ -259,7 +259,7 @@ def encodeLong(iValue, eList):
   eList.extend((b"I", str(iValue).encode(), b"e"))
 
 
-def decodeLong(data, i):
+def decodeLong(data, i, forceBytes=False):
   """ Decoding longs """
 
   i += 1
@@ -278,7 +278,7 @@ def encodeFloat(iValue, eList):
   eList.extend((b"f", str(iValue).encode(), b"e"))
 
 
-def decodeFloat(data, i):
+def decodeFloat(data, i, forceBytes=False):
   """ Decoding floats """
 
   i += 1
@@ -305,7 +305,7 @@ def encodeBool(bValue, eList):
     eList.append(b"b0")
 
 
-def decodeBool(data, i):
+def decodeBool(data, i, forceBytes=False):
   """ Decoding booleans """
 
   if data[i + 1] == _ord("0"):
@@ -320,25 +320,26 @@ g_dDecodeFunctions[_ord("b")] = decodeBool
 
 def encodeString(sValue, eList):
   """ Encoding strings """
-  if not six.PY2:
+  if six.PY3 and not isinstance(sValue, bytes):
     sValue = sValue.encode()
   eList.extend((b's', str(len(sValue)).encode(), b':', sValue))
 
 
-def decodeString(data, i):
+def decodeString(data, i, forceBytes=False):
   """ Decoding strings """
   i += 1
   colon = data.index(b":", i)
   value = int(data[i: colon].decode())
   colon += 1
   end = colon + value
-  if six.PY2:
-    return (data[colon: end], end)
-  else:
-    return (data[colon: end].decode(), end)
+  retVal = data[colon: end]
+  if six.PY3 and not forceBytes:
+    retVal = retVal.decode()
+  return (retVal, end)
 
 
 g_dEncodeFunctions[types.StringType] = encodeString
+g_dEncodeFunctions[bytes] = encodeString
 g_dDecodeFunctions[_ord("s")] = decodeString
 
 
@@ -348,7 +349,7 @@ def encodeUnicode(sValue, eList):
   eList.extend((b'u', str(len(valueStr)).encode(), b':', valueStr))
 
 
-def decodeUnicode(data, i):
+def decodeUnicode(data, i, forceBytes=False):
   """ Decoding unicode strings """
 
   i += 1
@@ -390,13 +391,13 @@ def encodeDateTime(oValue, eList):
     raise Exception("Unexpected type %s while encoding a datetime object" % str(type(oValue)))
 
 
-def decodeDateTime(data, i):
+def decodeDateTime(data, i, forceBytes=False):
   """ Decoding datetime """
 
   i += 1
   dataType = data[i]
   # corrected by KGG tupleObject, i = decode( data, i + 1 )
-  tupleObject, i = g_dDecodeFunctions[data[i + 1]](data, i + 1)
+  tupleObject, i = g_dDecodeFunctions[data[i + 1]](data, i + 1, forceBytes=forceBytes)
   if dataType == _ord('a'):
     dtObject = datetime.datetime(*tupleObject)
   elif dataType == _ord('d'):
@@ -420,7 +421,7 @@ def encodeNone(_oValue, eList):
   eList.append(b"n")
 
 
-def decodeNone(_data, i):
+def decodeNone(_data, i, forceBytes=False):
   """ Decoding None """
 
   return (None, i + 1)
@@ -439,13 +440,13 @@ def encodeList(lValue, eList):
   eList.append(b"e")
 
 
-def decodeList(data, i):
+def decodeList(data, i, forceBytes=False):
   """ Decoding list """
 
   oL = []
   i += 1
   while data[i] != _ord("e"):
-    ob, i = g_dDecodeFunctions[data[i]](data, i)
+    ob, i = g_dDecodeFunctions[data[i]](data, i, forceBytes=forceBytes)
     oL.append(ob)
   return(oL, i + 1)
 
@@ -466,7 +467,7 @@ def encodeTuple(lValue, eList):
   eList.append(b"e")
 
 
-def decodeTuple(data, i):
+def decodeTuple(data, i, forceBytes=False):
   """ Decoding tuple """
 
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
@@ -495,7 +496,7 @@ def encodeDict(dValue, eList):
   eList.append(b"e")
 
 
-def decodeDict(data, i):
+def decodeDict(data, i, forceBytes=False):
   """ Decoding dictionary """
 
   oD = {}
@@ -507,8 +508,8 @@ def decodeDict(data, i):
       if data[i] in (_ord('i'), _ord('I'), _ord('f')):
         printDebugCallstack("Decoding dict with numeric keys")
 
-    k, i = g_dDecodeFunctions[data[i]](data, i)
-    oD[k], i = g_dDecodeFunctions[data[i]](data, i)
+    k, i = g_dDecodeFunctions[data[i]](data, i, forceBytes=forceBytes)
+    oD[k], i = g_dDecodeFunctions[data[i]](data, i, forceBytes=forceBytes)
   return (oD, i + 1)
 
 
@@ -525,12 +526,12 @@ def encode(uObject):
   return b"".join(eList)
 
 
-def decode(data):
+def decode(data, forceBytes=False):
   """ Generic decoding function """
   if not data:
     return data
   # print("DECODE FUNCTION : %s" % g_dDecodeFunctions[ sStream [ iIndex ] ])
-  return g_dDecodeFunctions[data[0]](data, 0)
+  return g_dDecodeFunctions[data[0]](data, 0, forceBytes=forceBytes)
 
 
 if __name__ == "__main__":

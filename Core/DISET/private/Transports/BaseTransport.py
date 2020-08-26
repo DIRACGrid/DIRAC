@@ -190,7 +190,7 @@ class BaseTransport(object):
     sCodedData = None
     return S_OK()
 
-  def receiveData(self, maxBufferSize=0, blockAfterKeepAlive=True, idleReceive=False):
+  def receiveData(self, maxBufferSize=0, blockAfterKeepAlive=True, idleReceive=False, forceBytes=False):
     self.__updateLastActionTimestamp()
     if self.receivedMessages:
       return self.receivedMessages.pop(0)
@@ -258,7 +258,7 @@ class BaseTransport(object):
           data = pkgMem.read(pkgSize)
           self.byteStream = pkgMem.read()
       try:
-        data = MixedEncode.decode(data)[0]
+        data = MixedEncode.decode(data, forceBytes=forceBytes)[0]
       except Exception as e:
         return S_ERROR("Could not decode received data: %s" % str(e))
       if idleReceive:

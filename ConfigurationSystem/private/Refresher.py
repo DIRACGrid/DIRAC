@@ -15,6 +15,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List, LockRing
+from DIRAC.Core.Utilities.Dictionaries import bytesKeysToStrings
 from DIRAC.Core.Utilities.EventDispatcher import gEventDispatcher
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
@@ -22,14 +23,16 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 def _updateFromRemoteLocation(serviceClient):
   gLogger.debug("", "Trying to refresh from %s" % serviceClient.serviceURL)
   localVersion = gConfigurationData.getVersion()
-  retVal = serviceClient.getCompressedDataIfNewer(localVersion)
+  retVal = serviceClient.getCompressedDataIfNewer(localVersion, forceBytes=True)
+  retVal = bytesKeysToStrings(retVal)
   if retVal['OK']:
-    dataDict = retVal['Value']
-    if localVersion < dataDict['newestVersion']:
-      gLogger.debug("New version available", "Updating to version %s..." % dataDict['newestVersion'])
+    dataDict = bytesKeysToStrings(retVal['Value'])
+    newestVersion = dataDict['newestVersion'].decode()
+    if localVersion < newestVersion:
+      gLogger.debug("New version available", "Updating to version %s..." % newestVersion)
       gConfigurationData.loadRemoteCFGFromCompressedMem(dataDict['data'])
       gLogger.debug("Updated to version %s" % gConfigurationData.getVersion())
-      gEventDispatcher.triggerEvent("CSNewVersion", dataDict['newestVersion'], threaded=True)
+      gEventDispatcher.triggerEvent("CSNewVersion", newestVersion, threaded=True)
     return S_OK()
   return retVal
 

@@ -20,7 +20,7 @@ def encode(inData):
   return DEncode.encode(inData)
 
 
-def decode(encodedData):
+def decode(encodedData, forceBytes=False):
   """ Decode the encoded string
 
       :param encodedData: encoded string
@@ -36,7 +36,7 @@ def decode(encodedData):
       # but the length of the decoded string will not be correct
       if encodedData == 'null':
         raise Exception
-      return DEncode.decode(encodedData)
+      return DEncode.decode(encodedData, forceBytes=forceBytes)
     except Exception:
       return JEncode.decode(encodedData)
-  return DEncode.decode(encodedData)
+  return DEncode.decode(encodedData, forceBytes=forceBytes)

@@ -13,6 +13,7 @@ import threading
 import six
 from six import StringIO
 
+from DIRAC.Core.Utilities.Dictionaries import bytesKeysToStrings
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
@@ -87,8 +88,10 @@ class FileHelper(object):
     self.__finishedTransmission()
     return S_OK()
 
-  def receiveData(self, maxBufferSize=0):
-    retVal = self.oTransport.receiveData(maxBufferSize=maxBufferSize)
+  def receiveData(self, maxBufferSize=0, forceBytes=False):
+    retVal = self.oTransport.receiveData(maxBufferSize=maxBufferSize, forceBytes=forceBytes)
+    if forceBytes:
+      retVal = bytesKeysToStrings(retVal)
     if 'AbortTransfer' in retVal and retVal['AbortTransfer']:
       self.oTransport.sendData(S_OK())
       self.__finishedTransmission()
@@ -103,7 +106,7 @@ class FileHelper(object):
       self.oTransport.sendData(S_OK())
     else:
       self.bReceivedEOF = True
-      if self.__checkMD5 and not self.__oMD5.hexdigest() == stBuffer[1]:
+      if self.__checkMD5 and not self.__oMD5.hexdigest() == stBuffer[1].decode():
         self.bErrorInMD5 = True
       self.__finishedTransmission()
       return S_OK("")
@@ -165,7 +168,7 @@ class FileHelper(object):
     self.bErrorInMD5 = False
     receivedBytes = 0
     try:
-      result = self.receiveData(maxBufferSize=maxFileSize)
+      result = self.receiveData(maxBufferSize=maxFileSize, forceBytes=True)
       if not result['OK']:
         return result
       strBuffer = result['Value']
@@ -175,7 +178,7 @@ class FileHelper(object):
           self.sendError("Exceeded maximum file size")
           return S_ERROR("Received file exceeded maximum size of %s bytes" % (maxFileSize))
         dataSink.write(strBuffer)
-        result = self.receiveData(maxBufferSize=(maxFileSize - len(strBuffer)))
+        result = self.receiveData(maxBufferSize=(maxFileSize - len(strBuffer)), forceBytes=True)
         if not result['OK']:
           return result
         strBuffer = result['Value']

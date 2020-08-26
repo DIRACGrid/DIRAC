@@ -34,14 +34,13 @@ class _MagicMethod(object):
     """
     return _MagicMethod(self.__doRPCFunc, "%s.%s" % (self.__remoteFuncName, remoteFuncName))
 
-  def __call__(self, *args):
+  def __call__(self, *args, **kwargs):
     """ Triggers the call.
         it uses the RPC calling function given by RPCClient,
         and gives as argument the remote function name and whatever
         arguments given.
     """
-
-    return self.__doRPCFunc(self.__remoteFuncName, args)
+    return self.__doRPCFunc(self.__remoteFuncName, args, **kwargs)
 
   def __str__(self):
     return "<RPCClient method %s>" % self.__remoteFuncName
@@ -79,7 +78,7 @@ class RPCClient(object):
     """
     self.__innerRPCClient = InnerRPCClient(*args, **kwargs)
 
-  def __doRPC(self, sFunctionName, args):
+  def __doRPC(self, sFunctionName, args, **kwargs):
     """
       Execute the RPC action. This is given as an attribute
       to MagicMethod
@@ -87,10 +86,10 @@ class RPCClient(object):
       :param sFunctionName: name of the remote function
       :param args: arguments to pass to the function
     """
-    return self.__innerRPCClient.executeRPC(sFunctionName, args)
+    return self.__innerRPCClient.executeRPC(sFunctionName, args, **kwargs)
 
   def __getattr__(self, attrName):
-    """ Function for emulating the existance of functions.
+    """ Function for emulating the existence of functions.
 
            In literature this is usually called a "stub function".
          If the attribute exists in InnerRPCClient, return it,

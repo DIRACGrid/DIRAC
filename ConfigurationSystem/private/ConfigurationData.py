@@ -87,7 +87,7 @@ class ConfigurationData(object):
     return S_OK()
 
   def loadRemoteCFGFromCompressedMem(self, data):
-    sUncompressedData = zlib.decompress(data)
+    sUncompressedData = zlib.decompress(data).decode()
     self.loadRemoteCFGFromMem(sUncompressedData)
 
   def loadRemoteCFGFromMem(self, data):
