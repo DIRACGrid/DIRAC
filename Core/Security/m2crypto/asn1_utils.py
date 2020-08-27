@@ -260,7 +260,7 @@ def decodeVOMSExtension(m2cert):
   fqanObj, _rest = der_decode(fqanAttrObj['values'][0], asn1Spec=rfc3281.IetfAttrSyntax())
 
   # We retrieve the VO and the VOMS server
-  voName, _vomsServer, _vomsPort = fqanObj['policyAuthority'][0]['uniformResourceIdentifier'].asOctets().decode().split(':')
+  voName, _, _ = fqanObj['policyAuthority'][0]['uniformResourceIdentifier'].asOctets().decode().split(':')
 
   vomsExtensionDict['vo'] = voName
 
@@ -290,7 +290,8 @@ def decodeVOMSExtension(m2cert):
 
     # TODO in principle, we should check that this value
     # and the one of the policyAuthority of the fqan are the same
-    # _tagPolicyAuthority = tagContainersObj[0][0]['policyAuthority'][0]['uniformResourceIdentifier'].asOctets().decode()
+    # _tagPolicyAuthority = tagContainersObj[0][0]['policyAuthority'][0]['uniformResourceIdentifier'] \
+    #     .asOctets().decode()
     ######
 
     for tagContainer in tagContainersObj:
