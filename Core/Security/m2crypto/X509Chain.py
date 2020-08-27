@@ -871,7 +871,7 @@ class X509Chain(object):
       else:
         fd = os.open(filename, os.O_RDWR | os.O_CREAT)
 
-      os.write(fd, pemData)
+      os.write(fd, pemData.encode())
       os.close(fd)
     except BaseException as e:
       return S_ERROR(DErrno.EWF, "%s :%s" % (filename, repr(e).replace(',)', ')')))
