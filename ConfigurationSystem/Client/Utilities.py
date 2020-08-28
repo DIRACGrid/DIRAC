@@ -274,8 +274,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
         if submissionMode == "Unknown" and newSubmissionMode:
           addToChangeSet((ceSection, 'SubmissionMode', submissionMode, newSubmissionMode), changeSet)
 
-        for queue in ceInfo['Queues'].keys():
-          queueInfo = ceInfo['Queues'][queue]
+        for queue, queueInfo in ceInfo['Queues'].items():
           queueStatus = queueInfo['GlueCEStateStatus']
           queueSection = cfgPath(ceSection, 'Queues', queue)
           queueDict = {}

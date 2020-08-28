@@ -55,3 +55,4 @@ multi-mechanize>=1.2.0
 tornado>=5.0.0
 caniusepython3
 subprocess32
+flaky

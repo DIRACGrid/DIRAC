@@ -102,15 +102,16 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import errno
+import inspect
 import multiprocessing
-import sys
-import time
-import threading
 import os
 import signal
+import sys
+import threading
+import time
+
 from six.moves import queue as Queue
-import errno
-import six
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -518,15 +519,13 @@ class ProcessTask(object):
 
     :param self: self reference
     """
-    from types import FunctionType
-
     self.__done = True
     try:
       # # it's a function?
-      if isinstance(self.__taskFunction, FunctionType):
+      if inspect.isfunction(self.__taskFunction):
         self.__taskResult = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
       # # or a class?
-      elif isinstance(self.__taskFunction, (type, six.class_types)):
+      elif inspect.isclass(self.__taskFunction):
         # # create new instance
         taskObj = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
         # ## check if it is callable, raise TypeError if not

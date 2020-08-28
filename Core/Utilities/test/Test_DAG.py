@@ -14,12 +14,12 @@ from  DIRAC.Core.Utilities.DAG import DAG, makeFrozenSet
 __RCSID__ = "$Id $"
 
 
-def listToSet(obj):
-  """ Convert a list of objects into a set which can be used for comparision """
+def listToSet(obj, recursive=False):
+  """ Convert a list of objects into a set which can be used for comparison """
   result = set()
-  for x in result:
-    if isinstance(x, list):
-      x = tuple(x)
+  for x in obj:
+    if isinstance(x, (list, tuple)):
+      x = frozenset(x) if recursive else tuple(x)
     elif isinstance(x, dict):
       x = tuple(map(tuple, sorted(x.items())))
     result.add(x)
@@ -260,7 +260,10 @@ class DAGFull(DAGTestCase):
                     )
 
     i_n = dag.getIndexNodes()
-    self.assertEqual(listToSet(i_n), listToSet(['A', l, d1, l1]))
+    self.assertEqual(
+        listToSet(i_n, recursive=True),
+        listToSet(['A', l, d1, l1], recursive=True)
+    )
 
     s1 = set()
     dag.addNode(s1)
