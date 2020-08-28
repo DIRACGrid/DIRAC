@@ -70,7 +70,7 @@ class TornadoClient(TornadoBaseClient):
 
   def receiveFile(self, destFile, *args):
     """
-      Equivalent of :py:meth`~DIRAC.Core.DISET.TransferClient.TransferClient.receiveFile
+      Equivalent of :py:meth:`~DIRAC.Core.DISET.TransferClient.TransferClient.receiveFile`
 
       In practice, it calls the remote method `streamToClient` and stores the raw result in a file
 

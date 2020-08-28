@@ -1,11 +1,3 @@
-"""
-  Custom TornadoClient for Configuration System
-  Used like a normal client, should be instanciated if and only if we use the configuration service
-
-  because JSON cannot ship binary data, we encode it in base64
-
-"""
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -21,7 +13,7 @@ from DIRAC.Core.Base.Client import Client
 
 class CSJSONClient(TornadoClient):
   """
-    The specific client for configuration system.
+    The specific Tornado client for configuration system.
     To avoid JSON limitation the HTTPS handler encode data in base64
     before sending them, this class only decode the base64
 
