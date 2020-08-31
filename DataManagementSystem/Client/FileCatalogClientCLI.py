@@ -1361,7 +1361,7 @@ File Catalog Client $Revision: 1.17 $Date:
     lfn = self.getPath(path)
     pathDict = {}
     # treat mode as octal
-    pathDict[lfn] = eval('0' + mode)
+    pathDict[lfn] = int(mode, base=8)
 
     try:
       result = self.fc.changePathMode(pathDict, recursive)

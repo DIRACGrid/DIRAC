@@ -207,7 +207,7 @@ class FileCatalogClient(FileCatalogClientBase):
     for entryType in ['Files', 'SubDirs', 'Links']:
       for path in result['Value']['Successful']:
         entryDict = result['Value']['Successful'][path][entryType]
-        for fname in entryDict.keys():
+        for fname in list(entryDict):
           detailsDict = entryDict.pop(fname)
           lfn = os.path.join(path, os.path.basename(fname))
           entryDict[lfn] = detailsDict

@@ -441,7 +441,7 @@ class S3Storage(StorageBase):
         if not cks:
           log.warn("Cannot get ADLER32 checksum for %s" % src_file)
 
-        with open(src_file) as src_fd:
+        with open(src_file, "rb") as src_fd:
           self.s3_client.put_object(
               Body=src_fd,
               Bucket=self.bucketName,

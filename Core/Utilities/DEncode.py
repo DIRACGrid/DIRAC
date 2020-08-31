@@ -268,7 +268,8 @@ def decodeLong(data, i, forceBytes=False):
   return (value, end + 1)
 
 
-g_dEncodeFunctions[types.LongType] = encodeLong
+if not six.PY3:
+  g_dEncodeFunctions[types.LongType] = encodeLong
 g_dDecodeFunctions[_ord("I")] = decodeLong
 
 
