@@ -36,6 +36,9 @@ dependencies:
   - pycurl
   - voms
   - python-gfal2
+  - mysqlclient
+  - diraccfg
+  - subprocess32
   # testing and development
   - autopep8
   - caniusepython3
@@ -61,11 +64,7 @@ dependencies:
   - simplejson >=3.8.1
   #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
-  - openssl
-  - mysqlclient
   - pip:
-    - diraccfg
-    - subprocess32
     # This is a fork of tornado with a patch to allow for configurable iostream
     # It should eventually be part of DIRACGrid
     - git+https://github.com/chaen/tornado.git@iostreamConfigurable

@@ -157,10 +157,6 @@ except ImportError:
   # Fall back to Python 2's urllib2
   from urllib2 import urlopen, HTTPError, URLError
 try:
-  long
-except NameError:
-  long = int
-try:
   str_type = basestring
 except NameError:
   str_type = str
@@ -223,7 +219,7 @@ cliParams = Params()
 
 class ReleaseConfig(object):
 
-  class CFG:
+  class CFG(object):
 
     def __init__(self, cfgData=""):
       """ c'tor
@@ -1380,7 +1376,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0, retries=3):
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
-      expectedBytes = long(remoteFD.info()['Content-Length'])
+      expectedBytes = int(remoteFD.info()['Content-Length'])
     except Exception:
       logWARN('Content-Length parameter not returned, skipping expectedBytes check')
 
@@ -2381,9 +2377,9 @@ def __getTerminfoLocations(defaultLocation=None):
 
 def installDiracOS(releaseConfig):
   """
-  Install the DIRAC os.
+  Install DIRAC OS.
 
-  :param str releaseConfig: the version of the DIRAC OS
+  :param ReleaseConfig releaseConfig: The ReleaseConfig object for configuring the installation
   """
   diracos, diracOSVersion = releaseConfig.getDiracOSVersion(cliParams.diracOSVersion)
   if not diracOSVersion:
