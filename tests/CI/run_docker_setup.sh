@@ -150,8 +150,6 @@ prepareEnvironment() {
     done
   fi
 
-  echo "Generated config file is:"
-  cat "${SERVERCONFIG}"
   cp "${SERVERCONFIG}" "${CLIENTCONFIG}"
 
   if [[ -n "${SERVER_USE_M2CRYPTO+x}" ]]; then
@@ -163,6 +161,21 @@ prepareEnvironment() {
     echo "export DIRAC_USE_M2CRYPTO=${CLIENT_USE_M2CRYPTO}" >> "${CLIENTCONFIG}"
     echo "export DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes" >> "${CLIENTCONFIG}"
   fi
+
+  if [[ "${SERVER_USE_PYTHON3:-}" == "Yes" ]]; then
+    echo "INSTALLOPTIONS+=(\"--pythonVersion=3\")" >> "${SERVERCONFIG}"
+  fi
+
+  echo "${CLIENT_USE_PYTHON3}"
+  if [[ "${CLIENT_USE_PYTHON3:-}" == "Yes" ]]; then
+    echo "INSTALLOPTIONS+=(\"--pythonVersion=3\")" >> "${CLIENTCONFIG}"
+  fi
+
+  echo "Generated server config file is:"
+  cat "${SERVERCONFIG}"
+
+  echo "Generated client config file is:"
+  cat "${CLIENTCONFIG}"
 
   docker-compose -f ./docker-compose.yml up -d
 

@@ -14,6 +14,8 @@ jobs:
       MATRIX_DEFAULT_USE_NEWTHREADPOOL: default
       MATRIX_DEFAULT_SERVER_USE_M2CRYPTO: Yes
       MATRIX_DEFAULT_CLIENT_USE_M2CRYPTO: Yes
+      MATRIX_DEFAULT_SERVER_USE_PYTHON3: No
+      MATRIX_DEFAULT_CLIENT_USE_PYTHON3: No
 
     strategy:
       fail-fast: False
@@ -38,6 +40,10 @@ jobs:
             CLIENT_USE_M2CRYPTO: Yes
           - SERVER_USE_M2CRYPTO: No
             CLIENT_USE_M2CRYPTO: No
+          ###### Python 3
+          # IMPLICIT: - SERVER_USE_PYTHON3: No
+          #             CLIENT_USE_PYTHON3: No
+          - CLIENT_USE_PYTHON3: Yes
 
     steps:
     - uses: actions/checkout@v2
@@ -61,6 +67,8 @@ jobs:
         if [[ "${{ matrix.USE_NEWTHREADPOOL || env.MATRIX_DEFAULT_USE_NEWTHREADPOOL }}" != "default" ]]; then echo -n "-e DIRAC_USE_NEWTHREADPOOL=${{ matrix.USE_NEWTHREADPOOL || env.MATRIX_DEFAULT_USE_NEWTHREADPOOL }} " >> run_in_container; fi
         echo -n "-e SERVER_USE_M2CRYPTO=${{ matrix.SERVER_USE_M2CRYPTO || env.MATRIX_DEFAULT_SERVER_USE_M2CRYPTO }} " >> run_in_container
         echo -n "-e CLIENT_USE_M2CRYPTO=${{ matrix.CLIENT_USE_M2CRYPTO || env.MATRIX_DEFAULT_CLIENT_USE_M2CRYPTO }} " >> run_in_container
+        echo -n "-e SERVER_USE_PYTHON3=${{ matrix.SERVER_USE_PYTHON3 || env.MATRIX_DEFAULT_SERVER_USE_PYTHON3 }} " >> run_in_container
+        echo -n "-e CLIENT_USE_PYTHON3=${{ matrix.CLIENT_USE_PYTHON3 || env.MATRIX_DEFAULT_CLIENT_USE_PYTHON3 }} " >> run_in_container
         # Finish wrapper script
         echo -n "dirac-testing-host \"\$@\"" >> run_in_container
         chmod +x run_in_container
