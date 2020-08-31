@@ -152,16 +152,6 @@ prepareEnvironment() {
 
   cp "${SERVERCONFIG}" "${CLIENTCONFIG}"
 
-  if [[ -n "${SERVER_USE_M2CRYPTO+x}" ]]; then
-    echo "export DIRAC_USE_M2CRYPTO=${SERVER_USE_M2CRYPTO}" >> "${SERVERCONFIG}"
-    echo "export DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes" >> "${SERVERCONFIG}"
-  fi
-
-  if [[ -n "${CLIENT_USE_M2CRYPTO+x}" ]]; then
-    echo "export DIRAC_USE_M2CRYPTO=${CLIENT_USE_M2CRYPTO}" >> "${CLIENTCONFIG}"
-    echo "export DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes" >> "${CLIENTCONFIG}"
-  fi
-
   if [[ "${SERVER_USE_PYTHON3:-}" == "Yes" ]]; then
     echo "INSTALLOPTIONS+=(\"--pythonVersion=3\")" >> "${SERVERCONFIG}"
   fi
