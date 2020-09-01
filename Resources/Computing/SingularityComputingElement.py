@@ -54,6 +54,9 @@ chmod 644 retcode
 echo "Finishing inner container wrapper scripts at `date`."
 
 """
+# Path to a directory on CVMFS to use as a fallback if no
+# other version found: Only used if node has user namespaces
+FALLBACK_SINGULARITY = "/cvmfs/oasis.opensciencegrid.org/mis/singularity/current/bin"
 
 
 class SingularityComputingElement(ComputingElement):
@@ -75,6 +78,20 @@ class SingularityComputingElement(ComputingElement):
 
     self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
 
+  def __hasUserNS(self):
+    """ Detect if this node has user namespaces enabled.
+        Returns True if they are enabled, False otherwise.
+    """
+    try:
+      with open("/proc/sys/user/max_user_namespaces", "r") as proc_fd:
+        maxns = int(proc_fd.readline().strip())
+        # Any "reasonable number" of namespaces is sufficient
+        return (maxns > 100)
+    except Exception:
+      # Any failure, missing file, doesn't contain a number, etc. and we
+      # assume they are disabled.
+      return False
+    return False
   def __hasSingularity(self):
     """ Search the current PATH for an exectuable named singularity.
         Returns True if it is found, False otherwise.
@@ -87,12 +104,17 @@ class SingularityComputingElement(ComputingElement):
         return True
     if "PATH" not in os.environ:
       return False  # Hmm, PATH not set? How unusual...
-    for searchPath in os.environ["PATH"].split(os.pathsep):
+    searchPaths = os.environ["PATH"].split(os.pathsep)
+    # We can use CVMFS as a last resort if userNS is enabled
+    if self.__hasUserNS():
+      searchPaths.append(FALLBACK_SINGULARITY)
+    for searchPath in searchPaths:
       binPath = os.path.join(searchPath, 'singularity')
       if os.path.isfile(binPath):
         # File found, check it's exectuable to be certain:
         if os.access(binPath, os.X_OK):
-          self.log.debug('Find singularity from PATH "%s"' % binPath)
+          self.log.debug('Found singularity at "%s"' % binPath)
+          self.__singularityBin = binPath
           return True
     # No suitable binaries found
     return False
@@ -344,6 +366,8 @@ class SingularityComputingElement(ComputingElement):
     cmd = [self.__singularityBin, "exec"]
     cmd.extend(["-c", "-i", "-p"])
     cmd.extend(["-W", baseDir])
+    if self.__hasUserNS():
+      cmd.append("--userns")
     if withCVMFS:
       cmd.extend(["-B", "/cvmfs"])
     if 'ContainerBind' in self.ceParameters:
