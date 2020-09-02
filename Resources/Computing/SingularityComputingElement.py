@@ -91,7 +91,6 @@ class SingularityComputingElement(ComputingElement):
       # Any failure, missing file, doesn't contain a number, etc. and we
       # assume they are disabled.
       return False
-    return False
   def __hasSingularity(self):
     """ Search the current PATH for an exectuable named singularity.
         Returns True if it is found, False otherwise.
