@@ -172,7 +172,7 @@ class BundleDeliveryClient(Client):
       return retVal
 
   def getCLRs(self):
-    """ This method can be used to create the CAs. If the file can not be created,
+    """ This method can be used to create the CRLs. If the file can not be created,
         it will be downloaded from the server.
 
         :return: S_OK(str)/S_ERROR()
