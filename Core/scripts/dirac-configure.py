@@ -400,9 +400,13 @@ if not skipCADownload:
     result = bdc.syncCAs()
     if result['OK']:
       result = bdc.syncCRLs()
-  except BaseException:
+    if not result['OK']:
+      DIRAC.gLogger.warn('Failed to sync CAs and CRLs: %s' % result['Message'])
+  except ImportError:
     DIRAC.gLogger.exception('Could not import BundleDeliveryClient')
-    pass
+  except Exception as e:
+    DIRAC.gLogger.warn('Failed to sync CAs and CRLs: %s' % str(e))
+
   if not skipCAChecks:
     Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
 
