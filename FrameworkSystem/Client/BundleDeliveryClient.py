@@ -10,7 +10,7 @@ import getpass
 import tarfile
 import cStringIO
 
-from DIRAC import S_OK, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Security import Locations, Utilities
