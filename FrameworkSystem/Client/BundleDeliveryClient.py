@@ -109,6 +109,11 @@ class BundleDeliveryClient(Client):
         try:
           tF.extract(tarinfo, dirToSyncTo)
         except OSError as e:
+          self.log.error("Could not sync dir:", str(e))
+          if dirCreated:
+            self.log.info("Removing dir %s" % dirToSyncTo)
+            os.unlink(dirToSyncTo)
+          buff.close()
           return S_ERROR("Certificates directory update failed: %s" % str(e))
 
     buff.close()
