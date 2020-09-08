@@ -81,6 +81,7 @@ class BundleDeliveryClient(Client):
     if os.path.isdir(dirToSyncTo):
       for p in [os.W_OK, os.R_OK]:
         if not os.access(dirToSyncTo, p):
+          self.log.error('%s does not have the permissions to update %s' % (getpass.getuser(), dirToSyncTo))
           return S_ERROR('%s does not have the permissions to update %s' % (getpass.getuser(), dirToSyncTo))
     else:
       self.log.info("Creating dir %s" % dirToSyncTo)

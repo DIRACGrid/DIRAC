@@ -75,6 +75,7 @@ from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 
 __RCSID__ = "$Id$"
@@ -395,17 +396,12 @@ if not skipCADownload:
     DIRAC.gLogger.fatal('Fail to create directory:', dirName)
     DIRAC.exit(-1)
   try:
-    from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
     bdc = BundleDeliveryClient()
     result = bdc.syncCAs()
     if result['OK']:
       result = bdc.syncCRLs()
-    if not result['OK']:
-      DIRAC.gLogger.warn('Failed to sync CAs and CRLs: %s' % result['Message'])
-  except ImportError:
-    DIRAC.gLogger.exception('Could not import BundleDeliveryClient')
   except Exception as e:
-    DIRAC.gLogger.warn('Failed to sync CAs and CRLs: %s' % str(e))
+    DIRAC.gLogger.error('Failed to sync CAs and CRLs: %s' % str(e))
 
   if not skipCAChecks:
     Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
