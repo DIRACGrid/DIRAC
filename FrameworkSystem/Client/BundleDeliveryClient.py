@@ -1,5 +1,8 @@
 """ Client for interacting with Framework/BundleDelivery service
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 import io
@@ -27,12 +30,23 @@ class BundleDeliveryClient(Client):
     self.log = gLogger.getSubLogger("BundleDelivery")
 
   def __getTransferClient(self):
+    """ Get transfer client
+
+        :return: TransferClient()
+    """
     if self.transferClient:
       return self.transferClient
     return TransferClient("Framework/BundleDelivery",
                           skipCACheck=skipCACheck())
 
   def __getHash(self, bundleID, dirToSyncTo):
+    """ Get hash for bundle in directory
+
+        :param str bundleID: bundle ID
+        :param str dirToSyncTo: path to sync directory
+
+        :return: str
+    """
     try:
       with io.open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "rb") as fd:
         bdHash = fd.read().strip()
@@ -41,6 +55,12 @@ class BundleDeliveryClient(Client):
       return ""
 
   def __setHash(self, bundleID, dirToSyncTo, bdHash):
+    """ Set hash for bundle in directory
+
+        :param str bundleID: bundle ID
+        :param str dirToSyncTo: path to sync directory
+        :param str bdHash: new hash
+    """
     try:
       fileName = os.path.join(dirToSyncTo, ".dab.%s" % bundleID)
       with io.open(fileName, "wb") as fd:
@@ -49,6 +69,13 @@ class BundleDeliveryClient(Client):
       self.log.error("Could not save hash after synchronization", "%s: %s" % (fileName, str(e)))
 
   def syncDir(self, bundleID, dirToSyncTo):
+    """ Synchronize directory
+
+        :param str bundleID: bundle ID
+        :param str dirToSyncTo: path to sync directory
+
+        :return: S_OK(bool)/S_ERROR()
+    """
     dirCreated = False
     if not os.path.isdir(dirToSyncTo):
       self.log.info("Creating dir %s" % dirToSyncTo)
@@ -74,13 +101,23 @@ class BundleDeliveryClient(Client):
     self.log.info("Synchronizing dir with remote bundle")
     with tarfile.open(name='dummy', mode="r:gz", fileobj=buff) as tF:
       for tarinfo in tF:
-        tF.extract(tarinfo, dirToSyncTo)
+        try:
+          tF.extract(tarinfo, dirToSyncTo)
+        except OSError as e:
+          if e.errno != errno.EROFS:
+            raise e
+          self.log.warn("%s are read only, not synching." % dirToSyncTo)
+
     buff.close()
     self.__setHash(bundleID, dirToSyncTo, newHash)
     self.log.info("Dir has been synchronized")
     return S_OK(True)
 
   def syncCAs(self):
+    """ Synchronize CAs
+
+        :return: S_OK(bool)/S_ERROR()
+    """
     X509_CERT_DIR = False
     if 'X509_CERT_DIR' in os.environ:
       X509_CERT_DIR = os.environ['X509_CERT_DIR']
@@ -94,6 +131,10 @@ class BundleDeliveryClient(Client):
     return result
 
   def syncCRLs(self):
+    """ Synchronize CRLs
+
+        :return: S_OK(bool)/S_ERROR()
+    """
     X509_CERT_DIR = False
     if 'X509_CERT_DIR' in os.environ:
       X509_CERT_DIR = os.environ['X509_CERT_DIR']
@@ -104,9 +145,10 @@ class BundleDeliveryClient(Client):
     return result
 
   def getCAs(self):
-    """
-    This method can be used to create the CAs. If the file can not be created, it will be downloaded from
-    the server.
+    """ This method can be used to create the CAs. If the file can not be created,
+        it will be downloaded from the server.
+
+        :return: S_OK(str)/S_ERROR()
     """
     retVal = Utilities.generateCAFile()
     if not retVal['OK']:
@@ -122,9 +164,10 @@ class BundleDeliveryClient(Client):
       return retVal
 
   def getCLRs(self):
-    """
-    This method can be used to create the CAs. If the file can not be created, it will be downloaded from
-    the server.
+    """ This method can be used to create the CAs. If the file can not be created,
+        it will be downloaded from the server.
+
+        :return: S_OK(str)/S_ERROR()
     """
     retVal = Utilities.generateRevokedCertsFile()
     if not retVal['OK']:
