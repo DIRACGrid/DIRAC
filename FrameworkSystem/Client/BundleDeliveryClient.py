@@ -78,7 +78,7 @@ class BundleDeliveryClient(Client):
         :return: S_OK(bool)/S_ERROR()
     """
     dirCreated = False
-    if so.path.isdir(dirToSyncTo):
+    if os.path.isdir(dirToSyncTo):
       for p in [os.W_OK, os.R_OK]:
         if not os.access(dirToSyncTo, p):
           return S_ERROR('%s have no access to update %s' % (getpass.getuser(), dirToSyncTo))
@@ -106,7 +106,10 @@ class BundleDeliveryClient(Client):
     self.log.info("Synchronizing dir with remote bundle")
     with tarfile.open(name='dummy', mode="r:gz", fileobj=buff) as tF:
       for tarinfo in tF:
-        tF.extract(tarinfo, dirToSyncTo)
+        try:
+          tF.extract(tarinfo, dirToSyncTo)
+        except OSError as e:
+          return S_ERROR("Certificates directory update failed: %s" % str(e))
 
     buff.close()
     self.__setHash(bundleID, dirToSyncTo, newHash)
