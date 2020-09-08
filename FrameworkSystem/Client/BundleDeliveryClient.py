@@ -77,7 +77,13 @@ class BundleDeliveryClient(Client):
     self.log.info("Synchronizing dir with remote bundle")
     with tarfile.open(name='dummy', mode="r:gz", fileobj=buff) as tF:
       for tarinfo in tF:
-        tF.extract(tarinfo, dirToSyncTo)
+        try:
+          tF.extract(tarinfo, dirToSyncTo)
+        except OSError as e:
+          if e.errno != errno.EROFS:
+            raise e
+          self.log.warn("%s are read only, not synching." % dirToSyncTo)
+
     buff.close()
     self.__setHash(bundleID, dirToSyncTo, newHash)
     self.log.info("Dir has been synchronized")
