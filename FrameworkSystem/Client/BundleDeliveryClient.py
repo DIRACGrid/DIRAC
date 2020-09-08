@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import os
 import io
+import getpass
 import tarfile
 import cStringIO
 
@@ -77,7 +78,11 @@ class BundleDeliveryClient(Client):
         :return: S_OK(bool)/S_ERROR()
     """
     dirCreated = False
-    if not os.path.isdir(dirToSyncTo):
+    if so.path.isdir(dirToSyncTo):
+      for p in [os.W_OK, os.R_OK]:
+        if not os.access(dirToSyncTo, p):
+          return S_ERROR('%s have no access to update %s' % (getpass.getuser(), dirToSyncTo))
+    else:
       self.log.info("Creating dir %s" % dirToSyncTo)
       mkDir(dirToSyncTo)
       dirCreated = True
@@ -101,12 +106,7 @@ class BundleDeliveryClient(Client):
     self.log.info("Synchronizing dir with remote bundle")
     with tarfile.open(name='dummy', mode="r:gz", fileobj=buff) as tF:
       for tarinfo in tF:
-        try:
-          tF.extract(tarinfo, dirToSyncTo)
-        except OSError as e:
-          if e.errno != errno.EROFS:
-            raise e
-          self.log.warn("%s are read only, not synching." % dirToSyncTo)
+        tF.extract(tarinfo, dirToSyncTo)
 
     buff.close()
     self.__setHash(bundleID, dirToSyncTo, newHash)
