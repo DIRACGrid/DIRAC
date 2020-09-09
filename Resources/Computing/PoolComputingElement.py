@@ -131,7 +131,8 @@ class PoolComputingElement(ComputingElement):
         if nUser not in self.userNumberPerTask.values():
           break
       taskKwargs['NUser'] = nUser
-      taskKwargs['PayloadUser'] = os.environ['USER'] + 'p%s' % str(nUser).zfill(2)
+      if 'USER' in os.environ:
+        taskKwargs['PayloadUser'] = os.environ['USER'] + 'p%s' % str(nUser).zfill(2)
 
     result = self.pPool.createAndQueueTask(executeJob,
                                            args=(executableFile, proxy, self.taskID),
