@@ -147,7 +147,7 @@ class JobDB(DB):
       retDict = {}
       for retValues in res['Value']:
         jobID = retValues[0]
-        jobDict = {'JobID': jobID}
+        jobDict = {'JobID': int(jobID)}
         # Make a dict from the list of attributes names and values
         for name, value in zip(attr_tmp_list, retValues[1:]):
           try:
@@ -313,7 +313,7 @@ class JobDB(DB):
               res_value = res_value.tostring()
             except BaseException:
               pass
-            resultDict.setdefault(res_jobID, {})[res_name] = res_value
+            resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
 
         return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
       else:
@@ -329,7 +329,7 @@ class JobDB(DB):
           res_value = res_value.tostring()
         except BaseException:
           pass
-        resultDict.setdefault(res_jobID, {})[res_name] = res_value
+        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
 
       return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
@@ -1704,15 +1704,15 @@ class JobDB(DB):
         if resSite['OK']:
           if resSite['Value']:
             site, status, lastUpdate, author, comment = resSite['Value'][0]
-            resultDict[site] = [(status, str(lastUpdate), author, comment)]
+            resultDict[site] = [[status, str(lastUpdate), author, comment]]
           else:
-            resultDict[site] = [('Unknown', '', '', 'Site not present in logging table')]
+            resultDict[site] = [['Unknown', '', '', 'Site not present in logging table']]
 
     for row in result['Value']:
       site, status, utime, author, comment = row
       if site not in resultDict:
         resultDict[site] = []
-      resultDict[site].append((status, str(utime), author, comment))
+      resultDict[site].append([status, str(utime), author, comment])
 
     return S_OK(resultDict)
 
