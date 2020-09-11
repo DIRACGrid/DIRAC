@@ -346,7 +346,7 @@ class GOCDBClient(object):
         urls = []
         for epElement in affectedEndpoints[0].childNodes:
           urls.append(_parseSingleElement(epElement, ['URL'])['URL'])
-      except IndexError:
+      except (IndexError, KeyError):
         pass
 
       try:
