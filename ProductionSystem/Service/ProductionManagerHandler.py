@@ -3,20 +3,18 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, S_OK, S_ERROR
+import six
+
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.ProductionSystem.DB.ProductionDB import ProductionDB
 
-prodTypes = [basestring, int]
-transTypes = [basestring, int, list]
+prodTypes = [six.string_types, int]
+transTypes = [six.string_types, int, list]
 
 
 class ProductionManagerHandlerBase(RequestHandler):
-
-  def _parseRes(self, res):
-    if not res['OK']:
-      gLogger.error('ProductionManager failure', res['Message'])
-    return res
 
   def setDatabase(self, oDatabase):
     global database
@@ -27,7 +25,7 @@ class ProductionManagerHandlerBase(RequestHandler):
   # These are the methods to manipulate the Productions table
   #
 
-  types_addProduction = [basestring, basestring]
+  types_addProduction = [six.string_types, six.string_types]
 
   def export_addProduction(self, prodName, prodDescription):
     credDict = self.getRemoteCredentials()
@@ -36,15 +34,14 @@ class ProductionManagerHandlerBase(RequestHandler):
     res = database.addProduction(prodName, prodDescription, authorDN, authorGroup)
     if res['OK']:
       gLogger.info("Added production %d" % res['Value'])
-    return self._parseRes(res)
+    return res
 
   types_deleteProduction = [prodTypes]
 
   def export_deleteProduction(self, prodName):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
-    res = database.deleteProduction(prodName, author=authorDN)
-    return self._parseRes(res)
+    return database.deleteProduction(prodName, author=authorDN)
 
   types_getProductions = []
 
@@ -52,38 +49,38 @@ class ProductionManagerHandlerBase(RequestHandler):
                             orderAttribute=None, limit=None, offset=None):
     if not condDict:
       condDict = {}
-    res = database.getProductions(condDict=condDict,
-                                  older=older,
-                                  newer=newer,
-                                  timeStamp=timeStamp,
-                                  orderAttribute=orderAttribute,
-                                  limit=limit,
-                                  offset=offset)
-    return self._parseRes(res)
+    return database.getProductions(condDict=condDict,
+                                   older=older,
+                                   newer=newer,
+                                   timeStamp=timeStamp,
+                                   orderAttribute=orderAttribute,
+                                   limit=limit,
+                                   offset=offset)
 
   types_getProduction = [prodTypes]
 
-  def export_getProduction(self, prodName):
-    res = database.getProduction(prodName)
-    return self._parseRes(res)
+  @classmethod
+  def export_getProduction(cls, prodName):
+    return database.getProduction(prodName)
 
-  types_getProductionParameters = [prodTypes, [basestring, list, tuple]]
+  types_getProductionParameters = [prodTypes, [six.string_types, list, tuple]]
 
-  def export_getProductionParameters(self, prodName, parameters):
-    res = database.getProductionParameters(prodName, parameters)
-    return self._parseRes(res)
+  @classmethod
+  def export_getProductionParameters(cls, prodName, parameters):
+    return database.getProductionParameters(prodName, parameters)
 
-  types_setProductionStatus = [prodTypes, basestring]
+  types_setProductionStatus = [prodTypes, six.string_types]
 
-  def export_setProductionStatus(self, prodName, status):
-    res = database.setProductionStatus(prodName, status)
-    return self._parseRes(res)
+  @classmethod
+  def export_setProductionStatus(cls, prodName, status):
+    return database.setProductionStatus(prodName, status)
 
   types_startProduction = [prodTypes]
 
-  def export_startProduction(self, prodName):
-    res = database.startProduction(prodName)
-    return self._parseRes(res)
+  @classmethod
+  @ignoreEncodeWarning
+  def export_startProduction(cls, prodName):
+    return database.startProduction(prodName)
 
   ####################################################################
   #
@@ -92,36 +89,33 @@ class ProductionManagerHandlerBase(RequestHandler):
 
   types_addTransformationsToProduction = [prodTypes, transTypes, transTypes]
 
-  def export_addTransformationsToProduction(self, prodName, transIDs, parentTransIDs):
-    res = database.addTransformationsToProduction(prodName, transIDs, parentTransIDs=parentTransIDs)
-    return self._parseRes(res)
+  @classmethod
+  def export_addTransformationsToProduction(cls, prodName, transIDs, parentTransIDs):
+    return database.addTransformationsToProduction(prodName, transIDs, parentTransIDs=parentTransIDs)
 
   types_getProductionTransformations = []
 
-  def export_getProductionTransformations(
-          self,
-          prodName,
-          condDict=None,
-          older=None,
-          newer=None,
-          timeStamp='CreationTime',
-          orderAttribute=None,
-          limit=None,
-          offset=None):
+  @classmethod
+  def export_getProductionTransformations(cls,
+                                          prodName,
+                                          condDict=None,
+                                          older=None,
+                                          newer=None,
+                                          timeStamp='CreationTime',
+                                          orderAttribute=None,
+                                          limit=None,
+                                          offset=None):
 
     if not condDict:
       condDict = {}
-    res = database.getProductionTransformations(
-        prodName,
-        condDict=condDict,
-        older=older,
-        newer=newer,
-        timeStamp=timeStamp,
-        orderAttribute=orderAttribute,
-        limit=limit,
-        offset=offset)
-
-    return self._parseRes(res)
+    return database.getProductionTransformations(prodName,
+                                                 condDict=condDict,
+                                                 older=older,
+                                                 newer=newer,
+                                                 timeStamp=timeStamp,
+                                                 orderAttribute=orderAttribute,
+                                                 limit=limit,
+                                                 offset=offset)
 
   ####################################################################
   #
@@ -145,13 +139,12 @@ class ProductionManagerHandlerBase(RequestHandler):
                                      stepAgentType, stepGroupSize, stepInputQuery, stepOutputQuery)
     if res['OK']:
       gLogger.info("Added production step %d" % res['Value'])
-    return self._parseRes(res)
+    return res
 
   types_getProductionStep = [int]
 
   def export_getProductionStep(self, stepID):
-    res = database.getProductionStep(stepID)
-    return self._parseRes(res)
+    return database.getProductionStep(stepID)
 
   ####################################################################
   #
