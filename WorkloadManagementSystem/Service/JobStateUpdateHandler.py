@@ -18,6 +18,7 @@ import time
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
@@ -312,6 +313,7 @@ class JobStateUpdateHandler(RequestHandler):
   ###########################################################################
   types_setJobsParameter = [dict]
 
+  @ignoreEncodeWarning
   def export_setJobsParameter(self, jobsParameterDict):
     """ Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
@@ -337,7 +339,9 @@ class JobStateUpdateHandler(RequestHandler):
   ###########################################################################
   types_setJobParameters = [[six.string_types, int], list]
 
-  def export_setJobParameters(self, jobID, parameters):
+  @classmethod
+  @ignoreEncodeWarning
+  def export_setJobParameters(cls, jobID, parameters):
     """ Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
     """
