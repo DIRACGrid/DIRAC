@@ -16,9 +16,10 @@ import six
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -246,20 +247,20 @@ class JobManagerHandler(RequestHandler):
     result = gJobDB.getAttributesForJobList(jobList, ['Status', 'MinorStatus'])
     if not result['OK']:
       return S_ERROR(EWMSSUBM, 'Requested jobs for bulk transaction are not valid')
-    jobStatusDict = result['Value']
+    js_dict = strToIntDict(result['Value'])
 
     # Check if the jobs are already activated
     jobEnabledList = [jobID for jobID in jobList
-                      if jobStatusDict[jobID]['Status'] in [JobStatus.RECEIVED,
-                                                            JobStatus.CHECKING,
-                                                            JobStatus.WAITING,
-                                                            JobStatus.MATCHED,
-                                                            JobStatus.RUNNING]]
+                      if js_dict[jobID]['Status'] in [JobStatus.RECEIVED,
+                                                      JobStatus.CHECKING,
+                                                      JobStatus.WAITING,
+                                                      JobStatus.MATCHED,
+                                                      JobStatus.RUNNING]]
     if set(jobEnabledList) == set(jobList):
       return S_OK(jobList)
 
     # Check that requested job are in Submitting status
-    jobUpdateStatusList = list(jobID for jobID in jobList if jobStatusDict[jobID]['Status'] == JobStatus.SUBMITTING)
+    jobUpdateStatusList = list(jobID for jobID in jobList if js_dict[jobID]['Status'] == JobStatus.SUBMITTING)
     if set(jobUpdateStatusList) != set(jobList):
       return S_ERROR(EWMSSUBM, 'Requested jobs for bulk transaction are not valid')
 
@@ -444,7 +445,7 @@ class JobManagerHandler(RequestHandler):
     deleteJobList = []
     markKilledJobList = []
     stagingJobList = []
-    for jobID, sDict in result['Value'].items():
+    for jobID, sDict in result['Value'].items():  # can be an iterator
       if sDict['Status'] in (JobStatus.RUNNING, JobStatus.MATCHED, JobStatus.STALLED):
         killJobList.append(jobID)
       elif sDict['Status'] in (JobStatus.DONE, JobStatus.FAILED, JobStatus.KILLED):

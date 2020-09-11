@@ -147,7 +147,7 @@ class JobDB(DB):
       retDict = {}
       for retValues in res['Value']:
         jobID = retValues[0]
-        jobDict = {'JobID': int(jobID)}
+        jobDict = {'JobID': jobID}
         # Make a dict from the list of attributes names and values
         for name, value in zip(attr_tmp_list, retValues[1:]):
           try:
@@ -329,7 +329,7 @@ class JobDB(DB):
           res_value = res_value.tostring()
         except BaseException:
           pass
-        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
+        resultDict.setdefault(res_jobID, {})[res_name] = res_value
 
       return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
