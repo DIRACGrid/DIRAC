@@ -12,8 +12,9 @@ Glossary
 * *CE* : Computing Element
 * *CRL* : Certifcate Revocation List
 * *CS* : Confguration Service
-* *DISET* : DIRAC In-House service protocol
+* *DISET* : DIRAC (DIrac SEcure Transport) In-House client/service protocol
 * *DN* : Distinguished Name
+* *DMS* : Data Management System
 * *DST* : Data Summary Tape
 * *FTS* : File Transfer Service
 * *GFAL* : Grid File Access Library
