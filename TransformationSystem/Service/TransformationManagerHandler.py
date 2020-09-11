@@ -3,6 +3,7 @@
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -37,11 +38,6 @@ class TransformationManagerHandler(RequestHandler):
     self.setDatabase(database)
     super(TransformationManagerHandler, self).__init__(*args, **kargs)
 
-  def _parseRes(self, res):
-    if not res['OK']:
-      self.log.error('TransformationManager failure', res['Message'])
-    return res
-
   def setDatabase(self, oDatabase):
     global database
     database = oDatabase
@@ -49,8 +45,7 @@ class TransformationManagerHandler(RequestHandler):
   types_getCounters = [basestring, list, dict]
 
   def export_getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None):
-    res = database.getCounters(table, attrList, condDict, older=older, newer=newer, timeStamp=timeStamp)
-    return self._parseRes(res)
+    return database.getCounters(table, attrList, condDict, older=older, newer=newer, timeStamp=timeStamp)
 
   ####################################################################
   #
@@ -87,7 +82,7 @@ class TransformationManagerHandler(RequestHandler):
                                      outputMetaQuery=outputMetaQuery)
     if res['OK']:
       self.log.info("Added transformation", res['Value'])
-    return self._parseRes(res)
+    return res
 
   types_deleteTransformation = [transTypes]
 
@@ -95,8 +90,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.deleteTransformation(transName, author=authorDN)
-    return self._parseRes(res)
+    return database.deleteTransformation(transName, author=authorDN)
 
   types_cleanTransformation = [transTypes]
 
@@ -104,8 +98,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.cleanTransformation(transName, author=authorDN)
-    return self._parseRes(res)
+    return database.cleanTransformation(transName, author=authorDN)
 
   types_setTransformationParameter = [transTypes, basestring]
 
@@ -113,8 +106,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.setTransformationParameter(transName, paramName, paramValue, author=authorDN)
-    return self._parseRes(res)
+    return database.setTransformationParameter(transName, paramName, paramValue, author=authorDN)
 
   types_deleteTransformationParameter = [transTypes, basestring]
 
@@ -122,8 +114,7 @@ class TransformationManagerHandler(RequestHandler):
     # credDict = self.getRemoteCredentials()
     # authorDN = credDict[ 'DN' ]
     # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.deleteTransformationParameter(transName, paramName)
-    return self._parseRes(res)
+    return database.deleteTransformationParameter(transName, paramName)
 
   types_getTransformations = []
 
@@ -131,33 +122,29 @@ class TransformationManagerHandler(RequestHandler):
                                 orderAttribute=None, limit=None, extraParams=False, offset=None):
     if not condDict:
       condDict = {}
-    res = database.getTransformations(condDict=condDict,
-                                      older=older,
-                                      newer=newer,
-                                      timeStamp=timeStamp,
-                                      orderAttribute=orderAttribute,
-                                      limit=limit,
-                                      extraParams=extraParams,
-                                      offset=offset)
-    return self._parseRes(res)
+    return database.getTransformations(condDict=condDict,
+                                       older=older,
+                                       newer=newer,
+                                       timeStamp=timeStamp,
+                                       orderAttribute=orderAttribute,
+                                       limit=limit,
+                                       extraParams=extraParams,
+                                       offset=offset)
 
   types_getTransformation = [transTypes]
 
   def export_getTransformation(self, transName, extraParams=False):
-    res = database.getTransformation(transName, extraParams=extraParams)
-    return self._parseRes(res)
+    return database.getTransformation(transName, extraParams=extraParams)
 
-  types_getTransformationParameters = [transTypes, [basestring, list, tuple]]
+  types_getTransformationParameters = [transTypes, [basestring, list]]
 
   def export_getTransformationParameters(self, transName, parameters):
-    res = database.getTransformationParameters(transName, parameters)
-    return self._parseRes(res)
+    return database.getTransformationParameters(transName, parameters)
 
   types_getTransformationWithStatus = [[basestring, list, tuple]]
 
   def export_getTransformationWithStatus(self, status):
-    res = database.getTransformationWithStatus(status)
-    return self._parseRes(res)
+    return database.getTransformationWithStatus(status)
 
   ####################################################################
   #
@@ -167,14 +154,12 @@ class TransformationManagerHandler(RequestHandler):
   types_addFilesToTransformation = [transTypes, [list, tuple]]
 
   def export_addFilesToTransformation(self, transName, lfns):
-    res = database.addFilesToTransformation(transName, lfns)
-    return self._parseRes(res)
+    return database.addFilesToTransformation(transName, lfns)
 
   types_addTaskForTransformation = [transTypes]
 
   def export_addTaskForTransformation(self, transName, lfns=[], se='Unknown'):
-    res = database.addTaskForTransformation(transName, lfns=lfns, se=se)
-    return self._parseRes(res)
+    return database.addTaskForTransformation(transName, lfns=lfns, se=se)
 
   def _wasFileInError(self, newStatus, currentStatus):
     """ Tells whether the file was Assigned and failed, i.e. was not Processed """
@@ -182,7 +167,9 @@ class TransformationManagerHandler(RequestHandler):
 
   types_setFileStatusForTransformation = [transTypes, dict]
 
-  def export_setFileStatusForTransformation(self, transName, dictOfNewFilesStatus):
+  @classmethod
+  @ignoreEncodeWarning
+  def export_setFileStatusForTransformation(cls, transName, dictOfNewFilesStatus):
     """ Sets the file status for the transformation.
 
         The dictOfNewFilesStatus is a dictionary with the form:
@@ -205,20 +192,17 @@ class TransformationManagerHandler(RequestHandler):
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
 
-    res = database.setFileStatusForTransformation(transID, newStatusForFileIDs, connection=connection)
-    return self._parseRes(res)
+    return database.setFileStatusForTransformation(transID, newStatusForFileIDs, connection=connection)
 
   types_getTransformationStats = [transTypes]
 
   def export_getTransformationStats(self, transName):
-    res = database.getTransformationStats(transName)
-    return self._parseRes(res)
+    return database.getTransformationStats(transName)
 
   types_getTransformationFilesCount = [transTypes, basestring]
 
   def export_getTransformationFilesCount(self, transName, field, selection={}):
-    res = database.getTransformationFilesCount(transName, field, selection=selection)
-    return self._parseRes(res)
+    return database.getTransformationFilesCount(transName, field, selection=selection)
 
   types_getTransformationFiles = []
 
@@ -226,10 +210,9 @@ class TransformationManagerHandler(RequestHandler):
                                     orderAttribute=None, limit=None, offset=None):
     if not condDict:
       condDict = {}
-    res = database.getTransformationFiles(condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
-                                          orderAttribute=orderAttribute, limit=limit, offset=offset,
-                                          connection=False)
-    return self._parseRes(res)
+    return database.getTransformationFiles(condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
+                                           orderAttribute=orderAttribute, limit=limit, offset=offset,
+                                           connection=False)
 
   ####################################################################
   #
@@ -242,28 +225,24 @@ class TransformationManagerHandler(RequestHandler):
                                     orderAttribute=None, limit=None, inputVector=False, offset=None):
     if not condDict:
       condDict = {}
-    res = database.getTransformationTasks(condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
-                                          orderAttribute=orderAttribute, limit=limit, inputVector=inputVector,
-                                          offset=offset)
-    return self._parseRes(res)
+    return database.getTransformationTasks(condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
+                                           orderAttribute=orderAttribute, limit=limit, inputVector=inputVector,
+                                           offset=offset)
 
   types_setTaskStatus = [transTypes, [list, int, long], basestring]
 
   def export_setTaskStatus(self, transName, taskID, status):
-    res = database.setTaskStatus(transName, taskID, status)
-    return self._parseRes(res)
+    return database.setTaskStatus(transName, taskID, status)
 
   types_setTaskStatusAndWmsID = [transTypes, [long, int], basestring, basestring]
 
   def export_setTaskStatusAndWmsID(self, transName, taskID, status, taskWmsID):
-    res = database.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
-    return self._parseRes(res)
+    return database.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
 
   types_getTransformationTaskStats = [transTypes]
 
   def export_getTransformationTaskStats(self, transName):
-    res = database.getTransformationTaskStats(transName)
-    return self._parseRes(res)
+    return database.getTransformationTaskStats(transName)
 
   types_deleteTasks = [transTypes, [long, int], [long, int]]
 
@@ -271,8 +250,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.deleteTasks(transName, taskMin, taskMax, author=authorDN)
-    return self._parseRes(res)
+    return database.deleteTasks(transName, taskMin, taskMax, author=authorDN)
 
   types_extendTransformation = [transTypes, [long, int]]
 
@@ -280,8 +258,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.extendTransformation(transName, nTasks, author=authorDN)
-    return self._parseRes(res)
+    return database.extendTransformation(transName, nTasks, author=authorDN)
 
   types_getTasksToSubmit = [transTypes, [long, int]]
 
@@ -289,17 +266,17 @@ class TransformationManagerHandler(RequestHandler):
     """ Get information necessary for submission for a given number of tasks for a given transformation """
     res = database.getTransformation(transName)
     if not res['OK']:
-      return self._parseRes(res)
+      return res
     transDict = res['Value']
     submitDict = {}
     res = database.getTasksForSubmission(transName, numTasks=numTasks, site=site, statusList=['Created'])
     if not res['OK']:
-      return self._parseRes(res)
+      return res
     tasksDict = res['Value']
     for taskID, taskDict in tasksDict.items():
       res = database.reserveTask(transName, long(taskID))
       if not res['OK']:
-        return self._parseRes(res)
+        return res
       else:
         submitDict[taskID] = taskDict
     transDict['JobDictionary'] = submitDict
@@ -316,21 +293,18 @@ class TransformationManagerHandler(RequestHandler):
   def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
-    res = database.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
-    return self._parseRes(res)
+    return database.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
 
   types_deleteTransformationMetaQuery = [transTypes, basestring]
 
   def export_deleteTransformationMetaQuery(self, transName, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
-    res = database.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
-    return self._parseRes(res)
+    return database.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
 
   types_getTransformationMetaQuery = [transTypes, basestring]
 
   def export_getTransformationMetaQuery(self, transName, queryType):
-    # Here not calling _parseRes of the result because it should not log an error
     return database.getTransformationMetaQuery(transName, queryType)
 
   ####################################################################
@@ -341,8 +315,7 @@ class TransformationManagerHandler(RequestHandler):
   types_getTransformationLogging = [transTypes]
 
   def export_getTransformationLogging(self, transName):
-    res = database.getTransformationLogging(transName)
-    return self._parseRes(res)
+    return database.getTransformationLogging(transName)
 
   ####################################################################
   #
@@ -352,8 +325,7 @@ class TransformationManagerHandler(RequestHandler):
   types_getAdditionalParameters = [transTypes]
 
   def export_getAdditionalParameters(self, transName):
-    res = database.getAdditionalParameters(transName)
-    return self._parseRes(res)
+    return database.getAdditionalParameters(transName)
 
   ####################################################################
   #
@@ -363,28 +335,24 @@ class TransformationManagerHandler(RequestHandler):
   types_getFileSummary = [list]
 
   def export_getFileSummary(self, lfns):
-    res = database.getFileSummary(lfns)
-    return self._parseRes(res)
+    return database.getFileSummary(lfns)
 
   types_addDirectory = [basestring]
 
   def export_addDirectory(self, path, force=False):
-    res = database.addDirectory(path, force=force)
-    return self._parseRes(res)
+    return database.addDirectory(path, force=force)
 
   types_exists = [list]
 
   def export_exists(self, lfns):
-    res = database.exists(lfns)
-    return self._parseRes(res)
+    return database.exists(lfns)
 
   types_addFile = [[list, dict, basestring]]
 
   def export_addFile(self, fileDicts, force=False):
     """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
     """
-    res = database.addFile(fileDicts, force=force)
-    return self._parseRes(res)
+    return database.addFile(fileDicts, force=force)
 
   types_removeFile = [[list, dict]]
 
@@ -393,16 +361,14 @@ class TransformationManagerHandler(RequestHandler):
     """
     if isinstance(lfns, dict):
       lfns = list(lfns)
-    res = database.removeFile(lfns)
-    return self._parseRes(res)
+    return database.removeFile(lfns)
 
   types_setMetadata = [basestring, dict]
 
   def export_setMetadata(self, path, querydict):
     """ Set metadata to a file or to a directory (path)
     """
-    res = database.setMetadata(path, querydict)
-    return self._parseRes(res)
+    return database.setMetadata(path, querydict)
 
   ####################################################################
   #
@@ -415,21 +381,20 @@ class TransformationManagerHandler(RequestHandler):
   def export_getDistinctAttributeValues(self, attribute, selectDict):
     res = database.getTableDistinctAttributeValues('Transformations', [attribute], selectDict)
     if not res['OK']:
-      return self._parseRes(res)
+      return res
     return S_OK(res['Value'][attribute])
 
   types_getTableDistinctAttributeValues = [basestring, list, dict]
 
   def export_getTableDistinctAttributeValues(self, table, attributes, selectDict):
-    res = database.getTableDistinctAttributeValues(table, attributes, selectDict)
-    return self._parseRes(res)
+    return database.getTableDistinctAttributeValues(table, attributes, selectDict)
 
   types_getTransformationStatusCounters = []
 
   def export_getTransformationStatusCounters(self):
     res = database.getCounters('Transformations', ['Status'], {})
     if not res['OK']:
-      return self._parseRes(res)
+      return res
     statDict = {}
     for attrDict, count in res['Value']:
       statDict[attrDict['Status']] = count
@@ -441,7 +406,7 @@ class TransformationManagerHandler(RequestHandler):
     """ Get the summary of the currently existing transformations """
     res = database.getTransformations()
     if not res['OK']:
-      return self._parseRes(res)
+      return res
     transList = res['Value']
     resultDict = {}
     for transDict in transList:
@@ -490,7 +455,7 @@ class TransformationManagerHandler(RequestHandler):
                                     statusColumn=tableStatusColumn[table])
     if not res['OK']:
       self.log.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
-      return self._parseRes(res)
+      return res
     resDict[table] = res['Value']
     selections = res['Value']['Selections']
     tableSelection = {}
@@ -508,7 +473,7 @@ class TransformationManagerHandler(RequestHandler):
                                       statusColumn=tableStatusColumn[table])
       if not res['OK']:
         self.log.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
-        return self._parseRes(res)
+        return res
       resDict[table] = res['Value']
     return S_OK(resDict)
 
@@ -558,7 +523,7 @@ class TransformationManagerHandler(RequestHandler):
     res = fcn(condDict=selectDict, older=toDate, newer=fromDate, timeStamp=timeStamp,
               orderAttribute=orderAttribute)
     if not res['OK']:
-      return self._parseRes(res)
+      return res
 
     # The full list of columns in contained here
     allRows = res['Records']
@@ -630,7 +595,7 @@ class TransformationManagerHandler(RequestHandler):
     res = database.getTransformations(condDict=selectDict, older=toDate, newer=fromDate,
                                       orderAttribute=orderAttribute)
     if not res['OK']:
-      return self._parseRes(res)
+      return res
 
     ops = Operations()
     # Prepare the standard structure now within the resultDict dictionary
