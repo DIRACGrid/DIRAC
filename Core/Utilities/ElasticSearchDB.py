@@ -84,13 +84,13 @@ class ElasticSearchDB(object):
       else:
         casFile = retVal['Value']
 
-      self.__client = Elasticsearch(self.__url,
-                                    timeout=self.__timeout,
-                                    use_ssl=True,
-                                    verify_certs=True,
-                                    ca_certs=casFile)
+      self.client = Elasticsearch(self.__url,
+                                  timeout=self.__timeout,
+                                  use_ssl=True,
+                                  verify_certs=True,
+                                  ca_certs=casFile)
     else:
-      self.__client = Elasticsearch(self.__url, timeout=self.__timeout)
+      self.client = Elasticsearch(self.__url, timeout=self.__timeout)
 
     self.__tryToConnect()
 
@@ -110,7 +110,7 @@ class ElasticSearchDB(object):
 
     """
     try:
-      esDSLQueryResult = self.__client.search(index=index, body=query)
+      esDSLQueryResult = self.client.search(index=index, body=query)
       return S_OK(esDSLQueryResult)
     except RequestError as re:
       return S_ERROR(re)
@@ -134,9 +134,9 @@ class ElasticSearchDB(object):
 
     try:
       if updateByQuery:
-        esDSLQueryResult = self.__client.update_by_query(index=index, doc_type=doctype, body=query)
+        esDSLQueryResult = self.client.update_by_query(index=index, doc_type=doctype, body=query)
       else:
-        esDSLQueryResult = self.__client.index(index=index, doc_type=doctype, body=query, id=id)
+        esDSLQueryResult = self.client.index(index=index, doc_type=doctype, body=query, id=id)
       return S_OK(esDSLQueryResult)
     except RequestError as re:
       return S_ERROR(re)
@@ -145,7 +145,7 @@ class ElasticSearchDB(object):
     """
     it returns the object which can be used for reatriving ceratin value from the DB
     """
-    return Search(using=self.__client, index=indexname)
+    return Search(using=self.client, index=indexname)
 
   ########################################################################
   def _Q(self, name_or_query='match', **params):
@@ -169,9 +169,9 @@ class ElasticSearchDB(object):
 
     """
     try:
-      if self.__client.ping():
+      if self.client.ping():
         # Returns True if the cluster is running, False otherwise
-        result = self.__client.info()
+        result = self.client.info()
         self.clusterName = result.get("cluster_name", " ")  # pylint: disable=no-member
         sLog.info("Database info", result)
         self._connected = True
@@ -189,7 +189,7 @@ class ElasticSearchDB(object):
     """
 
     # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
-    return [index for index in self.__client.indices.get_alias("%s*" % self.__indexPrefix)]
+    return [index for index in self.client.indices.get_alias("%s*" % self.__indexPrefix)]
 
   ########################################################################
   def getDocTypes(self, indexName):
@@ -200,7 +200,7 @@ class ElasticSearchDB(object):
     result = []
     try:
       sLog.debug("Getting mappings for ", indexName)
-      result = self.__client.indices.get_mapping(indexName)
+      result = self.client.indices.get_mapping(indexName)
     except Exception as e:  # pylint: disable=broad-except
       sLog.error(e)
     doctype = ''
@@ -226,11 +226,11 @@ class ElasticSearchDB(object):
 
     :param str indexName: the name of the index
     """
-    return self.__client.indices.exists(indexName)
+    return self.client.indices.exists(indexName)
 
   ########################################################################
 
-  def createIndex(self, indexPrefix, mapping, period=None):
+  def createIndex(self, indexPrefix, mapping=None, period='day'):
     """
     :param str indexPrefix: it is the index name.
     :param dict mapping: the configuration of the index.
@@ -238,13 +238,21 @@ class ElasticSearchDB(object):
                        Currently only daily and monthly indexes are supported.
 
     """
-    fullIndex = self.generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
+    if period is not None:
+      fullIndex = self.generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
+    else:
+      sLog.warn("The period is not provided, so using non-periodic indices")
+      fullIndex = indexPrefix
+
     if self.exists(fullIndex):
       return S_OK(fullIndex)
 
     try:
-      sLog.info("Create index: ", fullIndex + str(mapping))
-      self.__client.indices.create(fullIndex, body={'mappings': mapping})
+      sLog.info("Create index: ", fullIndex)
+      if mapping:
+        self.client.indices.create(index=fullIndex, body={'mappings': mapping})
+      else:
+        self.client.indices.create(index=fullIndex)
       return S_OK(fullIndex)
     except Exception as e:  # pylint: disable=broad-except
       sLog.error("Can not create the index:", repr(e))
@@ -255,7 +263,7 @@ class ElasticSearchDB(object):
     :param str indexName: the name of the index to be deleted...
     """
     try:
-      retVal = self.__client.indices.delete(indexName)
+      retVal = self.client.indices.delete(indexName)
     except NotFoundError as e:
       return S_ERROR(DErrno.EELNOFOUND, e)
     except ValueError as e:
@@ -282,10 +290,10 @@ class ElasticSearchDB(object):
       return S_ERROR("Missing index or body")
 
     try:
-      res = self.__client.index(index=indexName,
-                                doc_type=doc_type,
-                                body=body,
-                                id=docID)
+      res = self.client.index(index=indexName,
+                              doc_type=doc_type,
+                              body=body,
+                              id=docID)
     except TransportError as e:
       return S_ERROR(e)
 
@@ -295,7 +303,7 @@ class ElasticSearchDB(object):
 
     return S_ERROR(res)
 
-  def bulk_index(self, indexprefix, doc_type='_doc', data=None, mapping=None, period=None):
+  def bulk_index(self, indexprefix, doc_type='_doc', data=None, mapping=None, period='day'):
     """
     :param str indexPrefix: index name.
     :param str doc_type: the type of the document
@@ -308,7 +316,10 @@ class ElasticSearchDB(object):
     if mapping is None:
       mapping = {}
 
-    indexName = self.generateFullIndexName(indexprefix, period)
+    if period is not None:
+      indexName = self.generateFullIndexName(indexprefix, period)
+    else:
+      indexName = indexprefix
     sLog.debug("Bulk indexing into %s/%s of %s" % (indexName, doc_type, data))
 
     if not self.exists(indexName):
@@ -343,7 +354,7 @@ class ElasticSearchDB(object):
         body['_source']['timestamp'] = int(Time.toEpoch()) * 1000
       docs += [body]
     try:
-      res = bulk(self.__client, docs, chunk_size=self.__chunk_size)
+      res = bulk(self.client, docs, chunk_size=self.__chunk_size)
     except BulkIndexError as e:
       return S_ERROR(e)
 
@@ -409,7 +420,7 @@ class ElasticSearchDB(object):
     """
     connected = False
     try:
-      connected = self.__client.ping()
+      connected = self.client.ping()
     except ConnectionError as e:
       sLog.error("Cannot connect to the db", repr(e))
     return S_OK(connected)
@@ -422,14 +433,14 @@ class ElasticSearchDB(object):
     :param str query: the query that we want to issue the delete on
     """
     try:
-      self.__client.delete_by_query(index=indexName, body=query)
+      self.client.delete_by_query(index=indexName, body=query)
     except Exception as inst:
       sLog.error("ERROR: Couldn't delete data")
       return S_ERROR(inst)
     return S_OK('Successfully deleted data from index %s' % indexName)
 
   @staticmethod
-  def generateFullIndexName(indexName, period=None):
+  def generateFullIndexName(indexName, period):
     """
     Given an index prefix we create the actual index name. Each day an index is created.
 
@@ -437,10 +448,6 @@ class ElasticSearchDB(object):
     :param str period: We can specify, which kind of indexes will be created.
         Currently only daily and monthly indexes are supported.
     """
-
-    if period is None:
-      sLog.warn("Daily indexes are used, because the period is not provided!")
-      period = 'day'
 
     today = datetime.today().strftime("%Y-%m-%d")
     index = ''
