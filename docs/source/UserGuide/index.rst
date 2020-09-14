@@ -18,3 +18,4 @@ User Guide
    commands
    Tutorials/index
    HowTo/index
+   glossary

@@ -353,6 +353,8 @@ class JobScheduling(OptimizerExecutor):
     """
     basePath = "/Resources/Sites"
     filteredSites = set()
+
+    # FIXME: can use Resources().getSiteCEMapping()
     for site in userSites:
       if "." not in site:
         # Invalid site name: Doesn't contain a dot!

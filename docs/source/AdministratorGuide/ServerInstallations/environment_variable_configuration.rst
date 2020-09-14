@@ -37,9 +37,6 @@ DIRAC_M2CRYPTO_SPLIT_HANDSHAKE
 DIRAC_NO_CFG
   If set to anything, cfg files on the command line must be passed to the command using the --cfg option.
 
-DIRAC_USE_M2CRYPTO
-  If ``true`` or ``yes`` DIRAC uses m2crypto instead of pyGSI for handling certificates, proxies, etc.
-
 DIRAC_VOMSES
   Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
 

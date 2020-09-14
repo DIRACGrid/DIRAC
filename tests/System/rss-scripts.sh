@@ -20,7 +20,7 @@ declare -a commands=(
 'dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 --severity=OUTAGE --description="just a test DT" add --startDate="2019-06-12 15:00:00" --endDate="2020-06-12 15:00:00" -dd'
 'test $( dirac-rss-query-dtcache --name=dtest123 select | grep dtest123 | wc -l ) = 1'
 'test $( dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 delete -dd | grep "successfully executed" | wc -l ) = 1'
-'test $( dirac-rss-query-dtcache --name=dtest123 select | grep "request successfully executed" | grep "number: 0" )'
+'test $( dirac-rss-query-dtcache --name=dtest123 select | grep "request successfully executed" | grep "number: 0" | wc -l ) = 1'
 )
 
 for command in "${commands[@]}"

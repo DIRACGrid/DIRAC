@@ -13,12 +13,16 @@
     See the Configuration/Resources/Computing documention for details on
     where to set the option parameters.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 import io
 import shutil
 import tempfile
 import json
+import six
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -37,7 +41,11 @@ DIRAC_INSTALL = os.path.join(DIRAC.rootPath, 'DIRAC', 'Core', 'scripts', 'dirac-
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm3"
 CONTAINER_WORKDIR = "DIRAC_containers"
 CONTAINER_INNERDIR = "/tmp"
-CONTAINER_WRAPPER = """#!/bin/bash
+
+
+# What is executed inside the container (2 options given)
+
+CONTAINER_WRAPPER_INSTALL = """#!/bin/bash
 
 echo "Starting inner container wrapper scripts at `date`."
 set -x
@@ -58,6 +66,22 @@ echo "Finishing inner container wrapper scripts at `date`."
 # other version found: Only used if node has user namespaces
 FALLBACK_SINGULARITY = "/cvmfs/oasis.opensciencegrid.org/mis/singularity/current/bin"
 
+CONTAINER_WRAPPER_NO_INSTALL = """#!/bin/bash
+
+echo "Starting inner container wrapper scripts at `date`."
+set -x
+cd /tmp
+# In any case we need to find a bashrc, and a pilot.cfg, both created by the pilot
+source bashrc
+# Run next wrapper (to start actual job)
+bash %(next_wrapper)s
+# Write the payload errorcode to a file for the outer scripts
+echo $? > retcode
+chmod 644 retcode
+echo "Finishing inner container wrapper scripts at `date`."
+
+"""
+
 
 class SingularityComputingElement(ComputingElement):
   """ A Computing Element for running a job within a Singularity container.
@@ -75,6 +99,10 @@ class SingularityComputingElement(ComputingElement):
     self.__workdir = CONTAINER_WORKDIR
     self.__innerdir = CONTAINER_INNERDIR
     self.__singularityBin = 'singularity'
+    self.__installDIRACInContainer = self.ceParameters.get('InstallDIRACInContainer', True)
+    if isinstance(self.__installDIRACInContainer, six.string_types) and \
+       self.__installDIRACInContainer.lower() in ('false', 'no'):
+      self.__installDIRACInContainer = False
 
     self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
 
@@ -228,12 +256,7 @@ class SingularityComputingElement(ComputingElement):
     else:
       self.log.warn("No user proxy")
 
-    # dirac-install.py
-    install_loc = os.path.join(tmpDir, "dirac-install.py")
-    shutil.copyfile(DIRAC_INSTALL, install_loc)
-    os.chmod(install_loc, 0o755)
-
-    # Job Wrapper (Standard-ish DIRAC wrapper)
+    # Relocated Job Wrapper (Standard-ish DIRAC wrapper, moved inside the container)
     result = createRelocatedJobWrapper(wrapperPath=tmpDir,
                                        rootLocation=self.__innerdir,
                                        jobID=jobDesc.get('jobID', 0),
@@ -247,16 +270,30 @@ class SingularityComputingElement(ComputingElement):
       return result
     wrapperPath = result['Value']
 
-    infoDict = None
-    if os.path.isfile('pilot.json'):  # if this is a pilot 3 this file should be found
-      with io.open('pilot.json') as pj:
-        infoDict = json.load(pj)
+    if self.__installDIRACInContainer:
+      # dirac-install.py
+      install_loc = os.path.join(tmpDir, "dirac-install.py")
+      shutil.copyfile(DIRAC_INSTALL, install_loc)
+      os.chmod(install_loc, 0o755)
 
-    # Extra Wrapper (Container DIRAC installer)
-    wrapSubs = {'next_wrapper': wrapperPath,
-                'install_args': self.__getInstallFlags(infoDict),
-                'config_args': self.__getConfigFlags(infoDict),
-                }
+      infoDict = None
+      if os.path.isfile('pilot.json'):  # if this is a pilot 3 this file should be found
+        with io.open('pilot.json') as pj:
+          infoDict = json.load(pj)
+
+      # Extra Wrapper (Container DIRAC installer)
+      wrapSubs = {'next_wrapper': wrapperPath,
+                  'install_args': self.__getInstallFlags(infoDict),
+                  'config_args': self.__getConfigFlags(infoDict),
+                  }
+      CONTAINER_WRAPPER = CONTAINER_WRAPPER_INSTALL
+
+    else:  # In case we don't (re)install DIRAC
+      shutil.copyfile('bashrc', os.path.join(tmpDir, 'bashrc'))
+      shutil.copyfile('pilot.cfg', os.path.join(tmpDir, 'pilot.cfg'))
+      wrapSubs = {'next_wrapper': wrapperPath}
+      CONTAINER_WRAPPER = CONTAINER_WRAPPER_NO_INSTALL
+
     wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
     rawfd = os.open(wrapLoc, os.O_WRONLY | os.O_CREAT, 0o700)
     fd = os.fdopen(rawfd, "w")
@@ -363,16 +400,20 @@ class SingularityComputingElement(ComputingElement):
     withCVMFS = os.path.isdir("/cvmfs")
     innerCmd = os.path.join(self.__innerdir, "dirac_container.sh")
     cmd = [self.__singularityBin, "exec"]
-    cmd.extend(["-c", "-i", "-p"])
-    cmd.extend(["-W", baseDir])
+    cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
+    cmd.extend(["--ipc", "--pid"])  # run container in new IPC and PID namespaces
+    cmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
     if self.__hasUserNS():
       cmd.append("--userns")
     if withCVMFS:
-      cmd.extend(["-B", "/cvmfs"])
+      cmd.extend(["--bind", "/cvmfs"])
     if 'ContainerBind' in self.ceParameters:
       bindPaths = self.ceParameters['ContainerBind'].split(',')
       for bindPath in bindPaths:
-        cmd.extend(["-B", bindPath.strip()])
+        if len(bindPath.split(':::')) == 1:
+          cmd.extend(["--bind", bindPath.strip()])
+        elif len(bindPath.split(':::')) in [2, 3]:
+          cmd.extend(["--bind", ":".join([bp.strip() for bp in bindPath.split(':::')])])
     if 'ContainerOptions' in self.ceParameters:
       containerOpts = self.ceParameters['ContainerOptions'].split(',')
       for opt in containerOpts:
