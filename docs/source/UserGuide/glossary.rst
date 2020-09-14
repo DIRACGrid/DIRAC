@@ -6,15 +6,15 @@ Glossary
 
 (a very limited/partial glossary)
 
-* *ARC* : Advance Resource Connector
+* *ARC* : Advanced Resource Connector
 * *BDII* : Berkeley Database Information Index
 * *CA* : Certification Authority
 * *CE* : Computing Element
 * *CRL* : Certifcate Revocation List
 * *CS* : Confguration Service
 * *DISET* : DIRAC (DIrac SEcure Transport) In-House client/service protocol
-* *DN* : Distinguished Name
 * *DMS* : Data Management System
+* *DN* : Distinguished Name
 * *DST* : Data Summary Tape
 * *FTS* : File Transfer Service
 * *GFAL* : Grid File Access Library
