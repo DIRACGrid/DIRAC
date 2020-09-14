@@ -1,3 +1,37 @@
+[v7r1p12]
+
+*Core:
+FIX: (#4724) correctly pass the argument to the new ThreadPool in MessageBroker
+FIX: (#4737) modify logging when CAs & CRLs sync
+
+*Framework
+FIX: (#4728) Fix hashing of local CA and CRL bundles
+FIX: (#4737) add check of availability of directories for sync CAs in BundleDeliveryClient
+
+*Production
+FIX: (#4739) Fixes for JSON serialization
+
+*WMS
+FIX: (#4739) Fixes for JSON serialization
+
+*Transformation
+FIX: (#4739) TransformationManagerHandler: fixes for JSON serialization
+
+
+*ResourceStatusSystem
+CHANGE: (#4720) add a VO column to all tables as apart of the primary key and a default value='all'
+
+*Resources
+NEW: (#4721) SingularityCE: singularityCE: added possibility to run without re-installing DIRAC inside the container
+CHANGE: (#4733) SingularityComputingElement: Enable userns option in singularity if possible.
+CHANGE: (#4733) SingularityComputingElement: Use CVMFS as singularity fallback location if userns is enabled.
+
+*docs:
+CHANGE: (#4721) improved doc for SingularityCE options
+
+*tests
+FIX: (#4724) fix rss-scripts syntax
+
 [v7r1p11]
 
 *WMS
