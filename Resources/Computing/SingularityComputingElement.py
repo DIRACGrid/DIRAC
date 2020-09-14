@@ -388,9 +388,9 @@ class SingularityComputingElement(ComputingElement):
       bindPaths = self.ceParameters['ContainerBind'].split(',')
       for bindPath in bindPaths:
         if len(bindPath.split(':::')) == 1:
-          cmd.extend(["--bind", bindPath.split(':::')[0].strip()])
-        elif len(bindPath.split(':::')) == 2:
-          cmd.extend(["--bind", bindPath.split(':::')[0].strip(), bindPath.split(':::')[0].strip()])
+          cmd.extend(["--bind", bindPath.strip()])
+        elif len(bindPath.split(':::')) in [2, 3]:
+          cmd.extend(["--bind", ":".join([bp.strip() for bp in bindPath.split(':::')])])
     if 'ContainerOptions' in self.ceParameters:
       containerOpts = self.ceParameters['ContainerOptions'].split(',')
       for opt in containerOpts:
