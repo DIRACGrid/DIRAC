@@ -51,13 +51,14 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() in ("s", "site"):
     site = switch[1]
 
-# from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+# imports
 from DIRAC import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 if not (read or write or check or remove):
   # No switch was specified, means we need all of them
@@ -69,13 +70,11 @@ if not (read or write or check or remove):
 
 ses = resolveSEGroup(ses)
 diracAdmin = DiracAdmin()
-exitCode = 0
 errorList = []
 setup = gConfig.getValue('/DIRAC/Setup', '')
 if not setup:
   print('ERROR: Could not contact Configuration Service')
-  exitCode = 2
-  DIRAC.exit(exitCode)
+  DIRAC.exit(2)
 
 res = getProxyInfo()
 if not res['OK']:
@@ -88,8 +87,11 @@ if not userName:
   DIRAC.exit(2)
 
 if site:
-  res = gConfig.getOptionsDict('/Resources/Sites/LCG/%s' % site)
+  res = getSites()
   if not res['OK']:
+    gLogger.error(res['Message'])
+    DIRAC.exit(-1)
+  if site not in res['Value']:
     gLogger.error('The provided site (%s) is not known.' % site)
     DIRAC.exit(-1)
   ses.extend(res['Value']['SE'].replace(' ', '').split(','))
@@ -119,7 +121,7 @@ if not res['OK']:
 
 reason = 'Forced with dirac-admin-allow-se by %s' % userName
 
-for se, seOptions in res['Value'].iteritems():
+for se, seOptions in res['Value'].items():  # can be an iterator
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
   for statusType in STATUS_TYPES:

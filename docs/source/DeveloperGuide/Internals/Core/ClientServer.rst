@@ -189,7 +189,7 @@ Client must send ('FileTransfer', direction) instead of ('RPC', method), directi
 About timeout
 *************
 
-.. warning:: This section is true when using M2Crypto. When using pyGSI, good luck.
+.. warning:: This section is true when using M2Crypto. If you are still using pyGSI, good luck.
 
 Timeouts are in general a very delicate topic. The way DIRAC handles them for client/server interactions is through socket timeouts. Basically, each blocking operation of a socket has a timeout. However, executing an RPC call requires multiple socket operations (see diagram above). A lot more details are available in :py:mod:`~DIRAC.Core.DISET.private.Transports.M2SSLTransport` but important information are summarized here.
 

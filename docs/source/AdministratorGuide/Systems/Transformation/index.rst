@@ -627,6 +627,39 @@ Actions on transformations
 * **Complete:** The transformation can be archived by the TransformationCleaningAgent. Archived means that the data produced stay, but not the entries in the TransformationDB
 * **Clean:** The transformation is cleaned by the TransformationCleaningAgent: jobs are killed and removed from WMS. Produced and stored files are removed from the Storage Elements, when "OutputDirectories" parameter is set for the transformation.
 
+------
+HowTos
+------
+
+How to derive a production
+--------------------------
+
+**Example of use case**: when a production is running, and a new version of the application is released, which should substitute the current one. So, the input files are the same, but we want that the input files that have not yet been processed by the current production will be picked up by the new one.
+
+When a new production is derived all *Unused* files of the parent will be picked up by the derived production. This happens ONLY at the moment of deriving the production, so this process is static. So, in case a production needs to be derived e.g. because of an improved version of the application the procedure should be the following:
+
+1. Stop the "parent" production.
+2. Create a new duplicate production with the improved application version
+3. Wait for the parent production to have no more files in *Assigned*
+4. Reset all files in the parent which are NOT in Status *Processed* (e.g. *MaxReset*) to *Unused*
+5. Create a new production and in addition use *setInheritedFrom* to set the *InheritedFrom* transformation parameter to inherit the input file statuses:
+
+  ::
+
+    from DIRAC.TransformationSystem.Client.Transformation import Transformation
+
+    ...
+
+    t = Transformation()
+    t.setTransformationName("derived_123") # this must be unique
+    t.setInheritedFrom(123)
+   # create transformation as usual
+    ...
+
+The status of 123 will be changed to status *Completing* and the new one *Active*. The files already assigned to the old one, will be processed by the old one. If a job fails, the input file is reset as Unused and will be picked up by the new one.
+
+Important: if the old production has some files already in MaxReset status, then they should be set as Unused, so they will be picked up by the new production.
+
 .. _trans-multi-vo:
 
 ----------------------
