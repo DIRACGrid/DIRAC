@@ -339,9 +339,9 @@ class JobStateUpdateHandler(RequestHandler):
   ###########################################################################
   types_setJobParameters = [[six.string_types, int], list]
 
-  @classmethod
+  @staticmethod
   @ignoreEncodeWarning
-  def export_setJobParameters(cls, jobID, parameters):
+  def export_setJobParameters(jobID, parameters):
     """ Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
     """

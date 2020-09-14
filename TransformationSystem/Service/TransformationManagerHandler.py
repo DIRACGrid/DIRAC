@@ -44,7 +44,8 @@ class TransformationManagerHandler(RequestHandler):
 
   types_getCounters = [basestring, list, dict]
 
-  def export_getCounters(self, table, attrList, condDict, older=None, newer=None, timeStamp=None):
+  @staticmethod
+  def export_getCounters(table, attrList, condDict, older=None, newer=None, timeStamp=None):
     return database.getCounters(table, attrList, condDict, older=older, newer=newer, timeStamp=timeStamp)
 
   ####################################################################
@@ -110,7 +111,8 @@ class TransformationManagerHandler(RequestHandler):
 
   types_deleteTransformationParameter = [transTypes, basestring]
 
-  def export_deleteTransformationParameter(self, transName, paramName):
+  @staticmethod
+  def export_deleteTransformationParameter(transName, paramName):
     # credDict = self.getRemoteCredentials()
     # authorDN = credDict[ 'DN' ]
     # authorDN = self._clientTransport.peerCredentials['DN']
@@ -118,7 +120,8 @@ class TransformationManagerHandler(RequestHandler):
 
   types_getTransformations = []
 
-  def export_getTransformations(self, condDict=None, older=None, newer=None, timeStamp='CreationDate',
+  @staticmethod
+  def export_getTransformations(condDict=None, older=None, newer=None, timeStamp='CreationDate',
                                 orderAttribute=None, limit=None, extraParams=False, offset=None):
     if not condDict:
       condDict = {}
@@ -133,17 +136,20 @@ class TransformationManagerHandler(RequestHandler):
 
   types_getTransformation = [transTypes]
 
-  def export_getTransformation(self, transName, extraParams=False):
+  @staticmethod
+  def export_getTransformation(transName, extraParams=False):
     return database.getTransformation(transName, extraParams=extraParams)
 
   types_getTransformationParameters = [transTypes, [basestring, list]]
 
-  def export_getTransformationParameters(self, transName, parameters):
+  @staticmethod
+  def export_getTransformationParameters(transName, parameters):
     return database.getTransformationParameters(transName, parameters)
 
   types_getTransformationWithStatus = [[basestring, list, tuple]]
 
-  def export_getTransformationWithStatus(self, status):
+  @staticmethod
+  def export_getTransformationWithStatus(status):
     return database.getTransformationWithStatus(status)
 
   ####################################################################
@@ -153,23 +159,21 @@ class TransformationManagerHandler(RequestHandler):
 
   types_addFilesToTransformation = [transTypes, [list, tuple]]
 
-  def export_addFilesToTransformation(self, transName, lfns):
+  @staticmethod
+  def export_addFilesToTransformation(transName, lfns):
     return database.addFilesToTransformation(transName, lfns)
 
   types_addTaskForTransformation = [transTypes]
 
-  def export_addTaskForTransformation(self, transName, lfns=[], se='Unknown'):
+  @staticmethod
+  def export_addTaskForTransformation(transName, lfns=[], se='Unknown'):
     return database.addTaskForTransformation(transName, lfns=lfns, se=se)
-
-  def _wasFileInError(self, newStatus, currentStatus):
-    """ Tells whether the file was Assigned and failed, i.e. was not Processed """
-    return currentStatus.lower() == 'assigned' and newStatus.lower() != 'processed'
 
   types_setFileStatusForTransformation = [transTypes, dict]
 
-  @classmethod
+  @staticmethod
   @ignoreEncodeWarning
-  def export_setFileStatusForTransformation(cls, transName, dictOfNewFilesStatus):
+  def export_setFileStatusForTransformation(transName, dictOfNewFilesStatus):
     """ Sets the file status for the transformation.
 
         The dictOfNewFilesStatus is a dictionary with the form:
@@ -196,17 +200,20 @@ class TransformationManagerHandler(RequestHandler):
 
   types_getTransformationStats = [transTypes]
 
-  def export_getTransformationStats(self, transName):
+  @staticmethod
+  def export_getTransformationStats(transName):
     return database.getTransformationStats(transName)
 
   types_getTransformationFilesCount = [transTypes, basestring]
 
-  def export_getTransformationFilesCount(self, transName, field, selection={}):
+  @staticmethod
+  def export_getTransformationFilesCount(transName, field, selection={}):
     return database.getTransformationFilesCount(transName, field, selection=selection)
 
   types_getTransformationFiles = []
 
-  def export_getTransformationFiles(self, condDict=None, older=None, newer=None, timeStamp='LastUpdate',
+  @staticmethod
+  def export_getTransformationFiles(condDict=None, older=None, newer=None, timeStamp='LastUpdate',
                                     orderAttribute=None, limit=None, offset=None):
     if not condDict:
       condDict = {}
@@ -221,7 +228,8 @@ class TransformationManagerHandler(RequestHandler):
 
   types_getTransformationTasks = []
 
-  def export_getTransformationTasks(self, condDict=None, older=None, newer=None, timeStamp='CreationTime',
+  @staticmethod
+  def export_getTransformationTasks(condDict=None, older=None, newer=None, timeStamp='CreationTime',
                                     orderAttribute=None, limit=None, inputVector=False, offset=None):
     if not condDict:
       condDict = {}
@@ -231,17 +239,20 @@ class TransformationManagerHandler(RequestHandler):
 
   types_setTaskStatus = [transTypes, [list, int, long], basestring]
 
-  def export_setTaskStatus(self, transName, taskID, status):
+  @staticmethod
+  def export_setTaskStatus(transName, taskID, status):
     return database.setTaskStatus(transName, taskID, status)
 
   types_setTaskStatusAndWmsID = [transTypes, [long, int], basestring, basestring]
 
-  def export_setTaskStatusAndWmsID(self, transName, taskID, status, taskWmsID):
+  @staticmethod
+  def export_setTaskStatusAndWmsID(transName, taskID, status, taskWmsID):
     return database.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
 
   types_getTransformationTaskStats = [transTypes]
 
-  def export_getTransformationTaskStats(self, transName):
+  @staticmethod
+  def export_getTransformationTaskStats(transName):
     return database.getTransformationTaskStats(transName)
 
   types_deleteTasks = [transTypes, [long, int], [long, int]]
