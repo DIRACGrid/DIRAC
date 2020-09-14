@@ -256,7 +256,12 @@ class SingularityComputingElement(ComputingElement):
     else:
       self.log.warn("No user proxy")
 
-    # Relocated Job Wrapper (Standard-ish DIRAC wrapper, moved inside the container)
+    # dirac-install.py
+    install_loc = os.path.join(tmpDir, "dirac-install.py")
+    shutil.copyfile(DIRAC_INSTALL, install_loc)
+    os.chmod(install_loc, 0o755)
+
+    # Job Wrapper (Standard-ish DIRAC wrapper)
     result = createRelocatedJobWrapper(wrapperPath=tmpDir,
                                        rootLocation=self.__innerdir,
                                        jobID=jobDesc.get('jobID', 0),

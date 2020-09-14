@@ -254,6 +254,21 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p34]
+
+*Core
+NEW: (#4391) Make M2Crypto TLS implementation compatible with openssl 1.1 series
+
+*DataManagement
+FIX: (#4729) Allow no LFNs to be passed to getReplicas
+
+*RSS
+FIX: (#4722) GOCDBClient: fix for different forms of XML answer from GOC
+
+*Resources
+FIX: (#4725) create "task kwargs" with the required arguments in PoolCE before passing them to the ProcessPool
+FIX: (#4738) create chunks before using the Arc.JobSupervisor
+
 [v7r0p33]
 
 *Interfaces
