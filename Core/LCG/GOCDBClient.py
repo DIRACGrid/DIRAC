@@ -10,7 +10,6 @@ import six
 import time
 import socket
 import requests
-import six
 
 from datetime import datetime, timedelta
 from xml.dom import minidom
