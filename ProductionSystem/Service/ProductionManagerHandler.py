@@ -45,7 +45,8 @@ class ProductionManagerHandlerBase(RequestHandler):
 
   types_getProductions = []
 
-  def export_getProductions(self, condDict=None, older=None, newer=None, timeStamp='CreationDate',
+  @staticmethod
+  def export_getProductions(condDict=None, older=None, newer=None, timeStamp='CreationDate',
                             orderAttribute=None, limit=None, offset=None):
     if not condDict:
       condDict = {}
@@ -59,27 +60,27 @@ class ProductionManagerHandlerBase(RequestHandler):
 
   types_getProduction = [prodTypes]
 
-  @classmethod
-  def export_getProduction(cls, prodName):
+  @staticmethod
+  def export_getProduction(prodName):
     return database.getProduction(prodName)
 
   types_getProductionParameters = [prodTypes, [six.string_types, list, tuple]]
 
-  @classmethod
-  def export_getProductionParameters(cls, prodName, parameters):
+  @staticmethod
+  def export_getProductionParameters(prodName, parameters):
     return database.getProductionParameters(prodName, parameters)
 
   types_setProductionStatus = [prodTypes, six.string_types]
 
-  @classmethod
-  def export_setProductionStatus(cls, prodName, status):
+  @staticmethod
+  def export_setProductionStatus(prodName, status):
     return database.setProductionStatus(prodName, status)
 
   types_startProduction = [prodTypes]
 
-  @classmethod
+  @staticmethod
   @ignoreEncodeWarning
-  def export_startProduction(cls, prodName):
+  def export_startProduction(prodName):
     return database.startProduction(prodName)
 
   ####################################################################
@@ -89,15 +90,14 @@ class ProductionManagerHandlerBase(RequestHandler):
 
   types_addTransformationsToProduction = [prodTypes, transTypes, transTypes]
 
-  @classmethod
-  def export_addTransformationsToProduction(cls, prodName, transIDs, parentTransIDs):
+  @staticmethod
+  def export_addTransformationsToProduction(prodName, transIDs, parentTransIDs):
     return database.addTransformationsToProduction(prodName, transIDs, parentTransIDs=parentTransIDs)
 
   types_getProductionTransformations = []
 
-  @classmethod
-  def export_getProductionTransformations(cls,
-                                          prodName,
+  @staticmethod
+  def export_getProductionTransformations(prodName,
                                           condDict=None,
                                           older=None,
                                           newer=None,
@@ -124,7 +124,8 @@ class ProductionManagerHandlerBase(RequestHandler):
 
   types_addProductionStep = [dict]
 
-  def export_addProductionStep(self, prodStep):
+  @staticmethod
+  def export_addProductionStep(prodStep):
     stepName = prodStep['name']
     stepDescription = prodStep['description']
     stepLongDescription = prodStep['longDescription']
@@ -143,20 +144,9 @@ class ProductionManagerHandlerBase(RequestHandler):
 
   types_getProductionStep = [int]
 
-  def export_getProductionStep(self, stepID):
+  @staticmethod
+  def export_getProductionStep(stepID):
     return database.getProductionStep(stepID)
-
-  ####################################################################
-  #
-  # These are the methods for production logging manipulation
-  #
-
-  ####################################################################
-  #
-  # These are the methods used for web monitoring
-  #
-
-  ###########################################################################
 
 
 database = False

@@ -654,7 +654,4 @@ def getAttributesForJobList(*args, **kwargs):
   res = gJobDB.getAttributesForJobList(*args, **kwargs)
   if not res['OK']:
     return res
-  attribs = res['Value']
-  # can be an iterator
-  attribs_c = strToIntDict(attribs)
-  return S_OK(attribs_c)
+  return S_OK(strToIntDict(res['Value']))
