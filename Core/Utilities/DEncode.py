@@ -1,4 +1,3 @@
-# $HeadURL$
 """
 Encoding and decoding for dirac, Ids:
  i -> int

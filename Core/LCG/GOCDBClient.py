@@ -13,7 +13,6 @@ import six
 import time
 import socket
 import requests
-import six
 
 from datetime import datetime, timedelta
 from xml.dom import minidom
@@ -350,7 +349,7 @@ class GOCDBClient(object):
         urls = []
         for epElement in affectedEndpoints[0].childNodes:
           urls.append(_parseSingleElement(epElement, ['URL'])['URL'])
-      except IndexError:
+      except (IndexError, KeyError):
         pass
 
       try:

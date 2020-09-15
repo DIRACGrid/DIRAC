@@ -67,7 +67,8 @@ def test_submitJobWrapper():
                      jobDesc={"jobParams": jobParams,
                               "resourceParams": resourceParams,
                               "optimizerParams": optimizerParams})
-  assert res['OK'] is False
+
+  assert res['OK'] is False  # This is False because the image can't be found
   assert res['ReschedulePayload'] is True
 
   res = ce.getCEStatus()

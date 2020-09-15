@@ -399,7 +399,7 @@ class TransformationClient(Client):
     newStatuses = {}
     if tsFiles:
       # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
-      tsFilesAsDict = dict((tsFile['LFN'], (tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']))
+      tsFilesAsDict = dict((tsFile['LFN'], [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']])
                            for tsFile in tsFiles)
 
       # applying the state machine to the proposed status
@@ -409,7 +409,7 @@ class TransformationClient(Client):
         # Key to the service is fileIDs
         # The value is a tuple with the new status and a flag that says if ErrorCount should be incremented
         newStatusForFileIDs = dict((tsFilesAsDict[lfn][2],
-                                    (newStatuses[lfn], self._wasFileInError(newStatuses[lfn], tsFilesAsDict[lfn][0])))
+                                    [newStatuses[lfn], self._wasFileInError(newStatuses[lfn], tsFilesAsDict[lfn][0])])
                                    for lfn in newStatuses)
         res = rpcClient.setFileStatusForTransformation(transName, newStatusForFileIDs)
         if not res['OK']:

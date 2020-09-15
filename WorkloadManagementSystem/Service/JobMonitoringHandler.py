@@ -15,6 +15,7 @@ from datetime import timedelta
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -284,8 +285,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobsParameters(jobIDs, parameters):
     if not (jobIDs and parameters):
       return S_OK({})
-    return gJobDB.getAttributesForJobList(jobIDs, parameters)
-
+    return getAttributesForJobList(jobIDs, parameters)
 
 ##############################################################################
   types_getJobsStatus = [list]
@@ -294,7 +294,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobsStatus(jobIDs):
     if not jobIDs:
       return S_OK({})
-    return gJobDB.getAttributesForJobList(jobIDs, ['Status'])
+    return getAttributesForJobList(jobIDs, ['Status'])
 
 ##############################################################################
   types_getJobsMinorStatus = [list]
@@ -302,7 +302,7 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobsMinorStatus(jobIDs):
 
-    return gJobDB.getAttributesForJobList(jobIDs, ['MinorStatus'])
+    return getAttributesForJobList(jobIDs, ['MinorStatus'])
 
 ##############################################################################
   types_getJobsApplicationStatus = [list]
@@ -310,7 +310,7 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobsApplicationStatus(jobIDs):
 
-    return gJobDB.getAttributesForJobList(jobIDs, ['ApplicationStatus'])
+    return getAttributesForJobList(jobIDs, ['ApplicationStatus'])
 
 ##############################################################################
   types_getJobsSites = [list]
@@ -318,7 +318,7 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobsSites(jobIDs):
 
-    return gJobDB.getAttributesForJobList(jobIDs, ['Site'])
+    return getAttributesForJobList(jobIDs, ['Site'])
 
 ##############################################################################
   types_getJobSummary = [int]
@@ -343,7 +343,7 @@ class JobMonitoringHandler(RequestHandler):
     if not jobIDs:
       return S_ERROR('JobMonitoring.getJobsSummary: Received empty job list')
 
-    result = gJobDB.getAttributesForJobList(jobIDs, SUMMARY)
+    result = getAttributesForJobList(jobIDs, SUMMARY)
     # return result
     restring = str(result['Value'])
     return S_OK(restring)
@@ -414,7 +414,7 @@ class JobMonitoringHandler(RequestHandler):
                                                                                            RIGHT_GET_INFO)
         summaryJobList = validJobs
 
-      result = gJobDB.getAttributesForJobList(summaryJobList, SUMMARY)
+      result = getAttributesForJobList(summaryJobList, SUMMARY)
       if not result['OK']:
         return S_ERROR('Failed to get job summary: ' + result['Message'])
 
@@ -497,7 +497,7 @@ class JobMonitoringHandler(RequestHandler):
 
   @staticmethod
   def export_getJobsPrimarySummary(jobIDs):
-    return gJobDB.getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
+    return getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
 
 ##############################################################################
   types_getJobParameter = [[basestring, int, long], basestring]
@@ -646,3 +646,14 @@ class JobMonitoringHandler(RequestHandler):
     Return Distinct Values of OwnerGroup from the JobsDB
     """
     return gJobDB.getDistinctJobAttributes('OwnerGroup')
+
+
+##############################################################################
+
+def getAttributesForJobList(*args, **kwargs):
+  """ Utility function for unpacking
+  """
+  res = gJobDB.getAttributesForJobList(*args, **kwargs)
+  if not res['OK']:
+    return res
+  return S_OK(strToIntDict(res['Value']))
