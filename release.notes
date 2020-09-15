@@ -1,4 +1,4 @@
-[v7r2-pre13]
+[v7r2-pre14]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -14,6 +14,7 @@ NEW: (#4497) add histogram support to the Graph package.
 NEW: (#4497) adapt Graph package to python3
 CHANGE: (#4581) Replace DIRAC.Core.Utilities.CFG with independent diraccfg module
 CHANGE: (#4671) Add an example for DIRAC_NO_CFG to bashrc.
+FIX: (#4736) dirac-install: use system tar command for extracting tarballs, fixes #4246
 
 *Accounting
 NEW: (#4537) Add histogram of CPU usage to Job accounting
@@ -27,6 +28,9 @@ CHANGE: (#4577) Removed the Pilot2
 
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
+
+*docs
+FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
