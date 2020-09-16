@@ -174,7 +174,7 @@ class ElasticSearchDB(object):
   @ifConnected
   def _Search(self, indexname):
     """
-    it returns the object which can be used for reatriving ceratin value from the DB
+    it returns the object which can be used for retreiving certain value from the DB
     """
     return Search(using=self.client, index=indexname)
 

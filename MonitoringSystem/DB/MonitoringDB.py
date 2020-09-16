@@ -33,13 +33,8 @@ class MonitoringDB(ElasticDB):
     super(MonitoringDB, self).__init__('MonitoringDB', name, indexPrefix)
     self.__readonly = readOnly
     self.__documents = {}
-    self.__loadIndexes()
 
-  def __loadIndexes(self):
-    """
-    It loads all monitoring indexes and types.
-    """
-
+    # loads all monitoring indexes and types.
     objectsLoaded = TypeLoader('Monitoring').getTypes()
 
     # Load the files
@@ -73,12 +68,12 @@ class MonitoringDB(ElasticDB):
 
     return S_ERROR("Type %s is not defined" % typeName)
 
-  def registerType(self, index, mapping, period=None):
+  def registerType(self, index, mapping, period):
     """
-    It register the type and index, if does not exists
+    It registers the type and index, in case they do not exist
 
     :param str index: name of the index
-    :param dict mapping: mapping used to create the index.
+    :param dict mapping: mapping used to create the index
     :param str period: We can specify, which kind of indexes will be created.
                        Currently only daily and monthly indexes are supported.
 
@@ -91,7 +86,7 @@ class MonitoringDB(ElasticDB):
       if indexes:
         actualindexName = self.generateFullIndexName(index, period)
         if self.exists(actualindexName):
-          self.log.info("The index is exists:", actualindexName)
+          self.log.info("The index exists:", actualindexName)
         else:
           result = self.createIndex(index, mapping, period)
           if not result['OK']:
@@ -99,7 +94,7 @@ class MonitoringDB(ElasticDB):
             return result
           self.log.info("The index is created", actualindexName)
     else:
-      # in that case no index exists
+      # in case the index does not exist
       result = self.createIndex(index, mapping, period)
       if not result['OK']:
         self.log.error(result['Message'])
@@ -157,7 +152,6 @@ class MonitoringDB(ElasticDB):
     if metainfo and metainfo.get('metric', 'sum') == 'avg':
       isAvgAgg = True
 
-    indexName = "%s*" % (retVal['Value'])
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
@@ -172,6 +166,7 @@ class MonitoringDB(ElasticDB):
           query = self._Q('match', **kwargs)
       q += [query]
 
+    indexName = "%s*" % (retVal['Value'])
     s = self._Search(indexName)
     s = s.filter('bool', must=q)
 
@@ -207,7 +202,7 @@ class MonitoringDB(ElasticDB):
       for j in retVal.aggregations[str(i)].buckets:
         if isAvgAgg:
           if j.key not in result:
-            if len(selectFields) == 1:  # for backword compatibility
+            if len(selectFields) == 1:  # for backward compatibility
               result[j.key] = j.avg_total_jobs.value
             else:
               result[j.key] = [j.avg_total_jobs.value]
@@ -219,7 +214,7 @@ class MonitoringDB(ElasticDB):
             result[site] = {}
           for k in j.end_data.buckets:
             if (k.key / 1000) not in result[site]:
-              if len(selectFields) == 1:  # for backword compatibility
+              if len(selectFields) == 1:  # for backward compatibility
                 result[site][k.key / 1000] = k.avg_monthly_sales.value
               else:
                 result[site][k.key / 1000] = [k.avg_monthly_sales.value]
