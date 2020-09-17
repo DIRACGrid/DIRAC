@@ -162,7 +162,7 @@ class GOCDB2CSAgent (AgentModule):
 
     # get current configuration
     currentConfiguration = {}
-    for option in options.keys():
+    for option in options:
       result = gConfig.getConfigurationTree(rootPath, extPath + '/', '/' + option)
       if not result['OK']:
         log.error("getConfigurationTree() failed with message: %s" % result['Message'])
