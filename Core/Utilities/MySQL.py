@@ -161,16 +161,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.Core.Utilities import DErrno
 
-# The mysql_server_init function called here is deprecated and not used by mysqlclient
-# https://dev.mysql.com/doc/c-api/8.0/en/mysql-server-init.html
-# TODO: Check if any changes are needed
-if six.PY2:
-  # This is for proper initialization of embedded server, it should only be called once
-  try:
-    MySQLdb.server_init(['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'])
-  except MySQLdb.ProgrammingError:
-    pass
-
 gInstancesCount = 0
 
 __RCSID__ = "$Id$"
