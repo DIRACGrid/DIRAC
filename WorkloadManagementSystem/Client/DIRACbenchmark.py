@@ -28,6 +28,7 @@ from past.builtins import long
 import os
 import sys
 import random
+import six
 from six.moves.urllib.request import urlopen
 import multiprocessing
 
@@ -55,7 +56,7 @@ def singleDiracBenchmark(iterations=1, measuredCopies=None):
       start = os.times()
 
     # Now the iterations
-    for _j in range(n):
+    for _j in six.moves.range(n):
       t = random.normalvariate(10, 1)
       m += t
       m2 += t * t
