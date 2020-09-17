@@ -15,7 +15,7 @@ from __future__ import print_function
 
 import os
 import sys
-# TODO: This should be moderised to use subprocess(32)
+# TODO: This should be modernised to use subprocess(32)
 try:
   import commands
 except ImportError:

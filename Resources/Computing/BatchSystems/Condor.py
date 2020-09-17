@@ -14,11 +14,11 @@ from __future__ import absolute_import
 from __future__ import division
 import re
 import tempfile
-# TODO: This should be moderised to use subprocess(32)
+# TODO: This should be modernised to use subprocess(32)
 try:
   import commands
 except ImportError:
-  # Python 3's subprocess module contains a compatability layer
+  # Python 3's subprocess module contains a compatibility layer
   import subprocess as commands
 import os
 
