@@ -202,7 +202,7 @@ class PilotManagerHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilots = [six.string_types + (int, long)]
+  types_getPilots = [six.string_types + six.integer_types]
 
   @classmethod
   def export_getPilots(cls, jobID):
@@ -272,7 +272,7 @@ class PilotManagerHandler(RequestHandler):
     return S_OK()
 
   ##############################################################################
-  types_setJobForPilot = [six.string_types + (int, long), six.string_types]
+  types_setJobForPilot = [six.string_types + six.integer_types, six.string_types]
 
   @classmethod
   def export_setJobForPilot(cls, jobID, pilotRef, destination=None):

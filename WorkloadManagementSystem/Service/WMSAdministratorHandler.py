@@ -184,7 +184,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(siteDict)
 
   ##############################################################################
-  types_getJobPilotOutput = [six.string_types + (int, long)]
+  types_getJobPilotOutput = [six.string_types + six.integer_types]
 
   def export_getJobPilotOutput(self, jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC

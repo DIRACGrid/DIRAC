@@ -501,7 +501,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
 
 ##############################################################################
-  types_getJobParameter = [six.string_types + (int, long), six.string_types]
+  types_getJobParameter = [six.string_types + six.integer_types, six.string_types]
 
   @staticmethod
   def export_getJobParameter(jobID, parName):
@@ -529,7 +529,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobOptParameters(jobID)
 
 ##############################################################################
-  types_getJobParameters = [six.string_types + (int, long, list)]
+  types_getJobParameters = [six.string_types + six.integer_types + (list,)]
 
   @staticmethod
   def export_getJobParameters(jobIDs, parName=None):
