@@ -119,6 +119,7 @@ class SingularityComputingElement(ComputingElement):
       # Any failure, missing file, doesn't contain a number, etc. and we
       # assume they are disabled.
       return False
+
   def __hasSingularity(self):
     """ Search the current PATH for an exectuable named singularity.
         Returns True if it is found, False otherwise.
@@ -163,7 +164,7 @@ class SingularityComputingElement(ComputingElement):
     setup = str(setup)
 
     installationName = str(infoDict.get('Installation'))
-    if not installationName:
+    if not installationName or installationName == 'None':
       installationName = Operations.Operations(setup=setup).getValue("Pilot/Installation", "")
     if installationName:
       instOpts.append('-V %s' % installationName)
