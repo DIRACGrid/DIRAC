@@ -264,11 +264,12 @@ class ElasticSearchDB(object):
       return S_OK(fullIndex)
 
     try:
-      sLog.info("Create index: ", fullIndex)
-      if mapping:
-        self.client.indices.create(index=fullIndex, body={'mappings': mapping})
-      else:
-        self.client.indices.create(index=fullIndex)
+      sLog.info("Create index: ", fullIndex + str(mapping))
+      try:
+        self.__client.indices.create(index=fullIndex, body={'mappings': {'_doc': mapping}})  # ES6
+      except RequestError as re:
+        if re.error == 'mapper_parsing_exception':
+          self.__client.indices.create(index=fullIndex, body={'mappings': mapping})  # ES7
       return S_OK(fullIndex)
     except Exception as e:  # pylint: disable=broad-except
       sLog.error("Can not create the index:", repr(e))

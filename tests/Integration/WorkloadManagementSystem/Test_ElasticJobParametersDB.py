@@ -43,6 +43,8 @@ def test_setAndGetJobFromDB():
   res = elasticJobParametersDB.setJobParameter(100, 'someKey', 'someValue')
   assert res['OK']
   time.sleep(SLEEP_DELAY)
+
+  # now search
   res = elasticJobParametersDB.getJobParameters(100)
   assert res['OK']
   assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
@@ -55,3 +57,45 @@ def test_setAndGetJobFromDB():
   assert res['OK']
   assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
   assert res['Value'][100]['someKey'] == 'someValue'
+
+  # another one + search
+  res = elasticJobParametersDB.setJobParameter(100, 'someOtherKey', 'someOtherValue')
+  assert res['OK']
+  time.sleep(SLEEP_DELAY)
+  res = elasticJobParametersDB.getJobParameters(100)
+  assert res['OK']
+  assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
+  assert res['Value'][100]['someKey'] == 'someValue'
+  assert res['Value'][100]['someOtherKey'] == 'someOtherValue'
+  res = elasticJobParametersDB.getJobParameters(100, ['DIRAC', 'someKey', 'someOtherKey'])
+  assert res['OK']
+  assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
+  assert res['Value'][100]['someKey'] == 'someValue'
+  assert res['Value'][100]['someOtherKey'] == 'someOtherValue'
+
+  # another job
+  res = elasticJobParametersDB.setJobParameter(101, 'DIRAC', 'dirac@cern')
+  assert res['OK']
+  res = elasticJobParametersDB.setJobParameter(101, 'key101', 'value101')
+  assert res['OK']
+  res = elasticJobParametersDB.setJobParameter(101, 'someKey', 'value101')
+  assert res['OK']
+  res = elasticJobParametersDB.setJobParameter(101, 'key101', 'someValue')
+  assert res['OK']
+  time.sleep(SLEEP_DELAY)
+  res = elasticJobParametersDB.getJobParameters(100)
+  assert res['OK']
+  assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
+  assert res['Value'][100]['someKey'] == 'someValue'
+  assert res['Value'][100]['someOtherKey'] == 'someOtherValue'
+  assert len(res['Value']) == 1
+  assert len(res['Value'][100]) == 3
+  res = elasticJobParametersDB.getJobParameters(101)
+  assert res['OK']
+  assert res['Value'][101]['DIRAC'] == 'dirac@cern'
+  assert res['Value'][101]['key101'] == 'someValue'
+  assert res['Value'][101]['someKey'] == 'value101'
+  assert len(res['Value']) == 1
+  assert len(res['Value'][101]) == 3
+
+  # delete

@@ -40,18 +40,26 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
-from DIRAC.Core.Base.ElasticDB import ElasticDB as DB
+from DIRAC.Core.Base.ElasticDB import ElasticDB
 
 
-indexName = 'ElasticJobParametersDB'
+name = 'ElasticJobParametersDB'
 
 mapping = {
-    "JobID": {"type": "long"},
-    "Name": {"type": "keyword"},
-    "Value": {"type": "text"}
+    "properties": {
+        "JobID": {
+            "type": "long"
+        },
+        "Name": {
+            "type": "keyword"
+        },
+        "Value": {
+            "type": "text"
+        }
+    }
 }
 
-class ElasticJobParametersDB(DB):
+class ElasticJobParametersDB(ElasticDB):
 
   def __init__(self):
     """ Standard Constructor
@@ -60,17 +68,15 @@ class ElasticJobParametersDB(DB):
     section = getDatabaseSection("WorkloadManagement/ElasticJobParametersDB")
     indexPrefix = gConfig.getValue("%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
 
-    self.indexName = "%s_%s" % (self.getIndexPrefix(), indexName)
-
     # Connecting to the ES cluster
-    super(ElasticJobParametersDB, self).__init__(indexName, 'WorkloadManagement/ElasticJobParametersDB', indexPrefix)
+    super(ElasticJobParametersDB, self).__init__(name, 'WorkloadManagement/ElasticJobParametersDB', indexPrefix)
 
+    self.indexName = "%s_%s" % (self.getIndexPrefix(), name.lower())
     # Verifying if the index is there, and if not create it
     if not self.exists(self.indexName):
-      result = self.createIndex(self.indexName, {"properties": mapping}, period=None)
+      result = self.createIndex(self.indexName, mapping, period=None)
       if not result['OK']:
         self.log.error(result['Message'])
-        return result
       self.log.always("Index created:", self.indexName)
 
   def getJobParameters(self, jobID, paramList=None):
