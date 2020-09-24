@@ -2221,7 +2221,7 @@ exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
     Result should be something like::
 
        {'MonitoringDB': {'Type': 'ES', 'System': 'Monitoring', 'Extension': ''},
-        'ElasticJobDB': {'Type': 'ES', 'System': 'WorkloadManagement', 'Extension': ''}}
+        'ElasticJobParametersDB': {'Type': 'ES', 'System': 'WorkloadManagement', 'Extension': ''}}
 
     :param list extensions: list of DIRAC extensions
     :return: dict of ES DBs

@@ -98,8 +98,7 @@ class MonitoringDB(ElasticDB):
       result = self.createIndex(index, mapping, period)
       if not result['OK']:
         self.log.error(result['Message'])
-      else:
-        return result
+      return result
 
   def getKeyValues(self, typeName):
     """

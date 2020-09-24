@@ -21,14 +21,14 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 # This is a global instance of the JobDB class
 jobDB = False
 logDB = False
-elasticJobDB = False
+elasticJobParametersDB = False
 
 
 def initializeJobStateUpdateHandler(serviceInfo):
@@ -49,11 +49,11 @@ class JobStateUpdateHandler(RequestHandler):
 
     Determines the switching of ElasticSearch and MySQL backends
     """
-    global elasticJobDB
+    global elasticJobParametersDB
 
     useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
-      elasticJobDB = ElasticJobDB()
+      elasticJobParametersDB = ElasticJobParametersDB()
       self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
@@ -305,8 +305,8 @@ class JobStateUpdateHandler(RequestHandler):
         for job specified by its JobId
     """
 
-    if elasticJobDB:
-      return elasticJobDB.setJobParameter(int(jobID), name, value)
+    if elasticJobParametersDB:
+      return elasticJobParametersDB.setJobParameter(int(jobID), name, value)
 
     return jobDB.setJobParameter(int(jobID), name, value)
 
@@ -320,12 +320,12 @@ class JobStateUpdateHandler(RequestHandler):
     """
     for jobID in jobsParameterDict:
 
-      if elasticJobDB:
-        res = elasticJobDB.setJobParameter(jobID,
-                                           str(jobsParameterDict[jobID][0]),
-                                           str(jobsParameterDict[jobID][1]))
+      if elasticJobParametersDB:
+        res = elasticJobParametersDB.setJobParameter(jobID,
+                                                     str(jobsParameterDict[jobID][0]),
+                                                     str(jobsParameterDict[jobID][1]))
         if not res['OK']:
-          self.log.error('Failed to add Job Parameter to elasticJobDB', res['Message'])
+          self.log.error('Failed to add Job Parameter to elasticJobParametersDB', res['Message'])
 
       else:
         res = jobDB.setJobParameter(jobID,
