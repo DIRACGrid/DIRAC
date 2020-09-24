@@ -84,7 +84,7 @@ done < TransformationSystemTest/LFNlist.txt >> ./LFNlistNew.txt
 
 dirac-dms-add-file LFNlistNew.txt -ddd
 
-cat TransformationSystemTest/LFNlist.txt | awk '{print ${1}}' | sort > ./LFNstoTS.txt
+cat TransformationSystemTest/LFNlist.txt | awk '{print $1}' | sort > ./LFNstoTS.txt
 
 
 echo "Checking if files have been uploaded"
