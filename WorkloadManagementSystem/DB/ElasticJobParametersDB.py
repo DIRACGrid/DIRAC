@@ -73,8 +73,6 @@ class ElasticJobParametersDB(DB):
         return result
       self.log.always("Index created:", self.indexName)
 
-
-
   def getJobParameters(self, jobID, paramList=None):
     """ Get Job Parameters defined for jobID.
       Returns a dictionary with the Job Parameters.
@@ -124,22 +122,26 @@ class ElasticJobParametersDB(DB):
 
     return S_OK({jobID: resultDict})
 
-  def setJobParameter(self, jobID, key, value, **kwargs):
+  def setJobParameter(self, jobID, key, value):
     """
-    Inserts data into specified index using data given in argument
+    Inserts data into ElasticJobParametersDB index
+
+    :param self: self reference
+    :param int jobID: Job ID
+    :param str key: parameter key
+    :param str value: parameter value
 
     :returns: S_OK/S_ERROR as result of indexing
     """
-    typeName = 'JobParameters'
-
     data = {"JobID": jobID,
             "Name": key,
             "Value": value}
 
-    self.log.debug('Inserting data in %s:%s' % (self.indexName, typeName))
-    self.log.debug(data)
+    self.log.debug('Inserting data in %s:%s' % (self.indexName, data))
 
-    result = self.index(self.indexName, typeName, data, docID=str(jobID) + key)
+    result = self.index(self.indexName, body=data, docID=str(jobID) + key)
     if not result['OK']:
       self.log.error("ERROR: Couldn't insert data", result['Message'])
     return result
+
+  # TODO: add deleteJobParameter()
