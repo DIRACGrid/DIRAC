@@ -98,4 +98,22 @@ def test_setAndGetJobFromDB():
   assert len(res['Value']) == 1
   assert len(res['Value'][101]) == 3
 
-  # delete
+  # deleting
+  res = elasticJobParametersDB.deleteJobParameters(100)
+  assert res['OK']
+  time.sleep(SLEEP_DELAY)
+  res = elasticJobParametersDB.getJobParameters(100)
+  assert res['OK']
+  assert len(res['Value'][100]) == 0
+  res = elasticJobParametersDB.deleteJobParameters(101, 'someKey')
+  assert res['OK']
+  time.sleep(SLEEP_DELAY)
+  res = elasticJobParametersDB.getJobParameters(101)
+  assert res['OK']
+  assert len(res['Value'][101]) == 2
+  res = elasticJobParametersDB.deleteJobParameters(101, 'someKey,key101')
+  assert res['OK']
+  time.sleep(SLEEP_DELAY)
+  res = elasticJobParametersDB.getJobParameters(101)
+  assert res['OK']
+  assert len(res['Value'][101]) == 1

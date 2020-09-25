@@ -103,11 +103,21 @@ class ElasticJobParametersDB(ElasticDB):
           "query": {
               "bool": {
                   "must": [
-                      {"match": {"JobID": jobID}}, {"match": {"Name": ','.join(paramList)}}]}},
-          "_source": ["Name", "Value"]}
+                      {"match": {"JobID": jobID}},
+                      {"match": {"Name": ','.join(paramList)}}
+                  ]
+              }
+          },
+          "_source": ["Name", "Value"]
+      }
 
     else:
-      query = {"query": {"match": {"JobID": jobID}}, "_source": ["Name", "Value"]}
+      query = {
+          "query": {
+              "match": {"JobID": jobID}
+          },
+          "_source": ["Name", "Value"]
+      }
 
     result = self.query(self.indexName, query)
 
@@ -150,4 +160,45 @@ class ElasticJobParametersDB(ElasticDB):
       self.log.error("ERROR: Couldn't insert data", result['Message'])
     return result
 
-  # TODO: add deleteJobParameter()
+  def deleteJobParameters(self, jobID, paramList=None):
+    """ delete Job Parameters defined for jobID.
+      Returns a dictionary with the Job Parameters.
+      If paramList is empty - all the parameters for the job are removed
+
+    :param self: self reference
+    :param int jobID: Job ID
+    :param list paramList: list of parameters to be returned (also a string is treated)
+
+    :return: dict with all Job Parameter values
+    """
+
+    self.log.debug('JobDB.getParameters: Deleting Parameters for job %s' % jobID)
+
+    if paramList:
+      if isinstance(paramList, six.string_types):
+        paramList = paramList.replace(' ', '').split(',')
+
+      query = {
+          "query": {
+              "bool": {
+                  "must": [
+                      {"match": {"JobID": jobID}},
+                      {"match": {"Name": ','.join(paramList)}}
+                  ]
+              }
+          }
+      }
+
+    else:
+      query = {
+          "query": {
+              "match": {"JobID": jobID}
+          }
+      }
+
+    result = self.deleteByQuery(self.indexName, query)
+
+    return result
+
+
+  # TODO: Add query by value (e.g. query which values are in a certain patter)
