@@ -22,8 +22,8 @@ class BaseType(object):
   :param int dataToKeep: Data retention. We keep all data by default.
   :param dict mapping: We can specify the mapping of the documents. It is used during the creation of an index.
                        Note: If you do not want to be analysed a string, you have to set the mapping
-  :param str period: We can configure the elasticsearch index type.
-                     By default we use daily indexes, but we can use monthly indexes.
+  :param str period: We can configure the elasticsearch index name with a period.
+                     By default we use daily indexes, but we can also use monthly indexes.
                      Supported values: day, month
 
   """

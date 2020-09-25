@@ -67,7 +67,7 @@ Using ElasticSearch DB for Job Parameters
 ElasticJobParametersDB is a DB class which is used to interact with an ElasticSearch backend. It contains methods
 to retreive (get) information about the Job Parameters along with updating and creating those parameters.
 
-The class consists of two main methods:
+The class exposes two methods:
 
   * getJobParameters(JobID, ParamList (optional)): 
     This method can be used to get information of the Job Parameters based on the JobID. Returns name and value.

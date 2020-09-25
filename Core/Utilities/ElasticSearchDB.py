@@ -29,6 +29,8 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 def ifConnected(method):
+  """ Decorator for checking that the connection is established.
+  """
   @functools.wraps(method)
   def wrapper_decorator(self, *args, **kwargs):
     if self._connected:
@@ -257,7 +259,7 @@ class ElasticSearchDB(object):
     if period is not None:
       fullIndex = self.generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
     else:
-      sLog.warn("The period is not provided, so using non-periodic indices")
+      sLog.warn("The period is not provided, so using non-periodic indexes names")
       fullIndex = indexPrefix
 
     if self.exists(fullIndex):
@@ -266,10 +268,10 @@ class ElasticSearchDB(object):
     try:
       sLog.info("Create index: ", fullIndex + str(mapping))
       try:
-        self.__client.indices.create(index=fullIndex, body={'mappings': {'_doc': mapping}})  # ES6
+        self.__client.indices.create(index=fullIndex, body={'mappings': mapping})  # ES7
       except RequestError as re:
         if re.error == 'mapper_parsing_exception':
-          self.__client.indices.create(index=fullIndex, body={'mappings': mapping})  # ES7
+          self.__client.indices.create(index=fullIndex, body={'mappings': {'_doc': mapping}})  # ES6
       return S_OK(fullIndex)
     except Exception as e:  # pylint: disable=broad-except
       sLog.error("Can not create the index:", repr(e))
@@ -329,7 +331,7 @@ class ElasticSearchDB(object):
     :param str doc_type: the type of the document
     :param list data: contains a list of dictionary
     :param dict mapping: the mapping used by elasticsearch
-    :param str period: We can specify which kind of indices will be created.
+    :param str period: We can specify which kind of indexes will be created.
                        Currently only daily and monthly indexes are supported.
     """
     sLog.verbose("Bulk indexing", "%d records will be inserted" % len(data))
