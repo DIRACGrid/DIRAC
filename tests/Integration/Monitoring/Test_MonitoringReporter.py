@@ -73,10 +73,10 @@ class MonitoringTestCase(unittest.TestCase):
     self.wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
     self.componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
 
-    self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'timestamp': 1458130176,
-                  u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset',
-                  u'Site': u'LCG.GRIDKA.de', u'Reschedules': 0, u'ApplicationStatus': u'unset',
-                  u'User': u'phicharp', u'JobGroup': u'00049848', u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'},
+    self.data = [{"Status": "Waiting", "Jobs": 2, "timestamp": 1458130176,
+                  "JobSplitType": "MCStripping", "MinorStatus": "unset",
+                  "Site": "LCG.GRIDKA.de", "Reschedules": 0, "ApplicationStatus": "unset",
+                  "User": "phicharp", "JobGroup": "00049848", "UserGroup": "lhcb_mc", "metric": "WMSHistory"},
                  {u'Status': u'Waiting', 'Jobs': 1, u'timestamp': 1458130176,
                   u'JobSplitType': u'User', u'MinorStatus': u'unset', u'Site': u'LCG.PIC.es',
                   u'Reschedules': 0, u'ApplicationStatus': u'unset', u'User': u'olupton',
@@ -243,12 +243,12 @@ class MonitoringReporterAdd(MonitoringTestCase):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], len(self.data))
 
-  def test_addComponentRecords(self):
-    for record in self.data:
-      self.componentMonitoringReporter.addRecord(record)
-    result = self.componentMonitoringReporter.commit()
-    self.assertTrue(result['OK'])
-    self.assertEqual(result['Value'], len(self.data))
+  # def test_addComponentRecords(self):
+  #   for record in self.data:
+  #     self.componentMonitoringReporter.addRecord(record)
+  #   result = self.componentMonitoringReporter.commit()
+  #   self.assertTrue(result['OK'])
+  #   self.assertEqual(result['Value'], len(self.data))
 
 
 class MonitoringDeleteChain(MonitoringTestCase):

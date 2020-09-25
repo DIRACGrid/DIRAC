@@ -77,6 +77,7 @@ class ElasticJobParametersDB(ElasticDB):
       result = self.createIndex(self.indexName, mapping, period=None)
       if not result['OK']:
         self.log.error(result['Message'])
+        raise RuntimeError(result['Message'])
       self.log.always("Index created:", self.indexName)
 
   def getJobParameters(self, jobID, paramList=None):
@@ -200,5 +201,4 @@ class ElasticJobParametersDB(ElasticDB):
 
     return result
 
-
-  # TODO: Add query by value (e.g. query which values are in a certain patter)
+  # TODO: Add query by value (e.g. query which values are in a certain pattern)

@@ -154,7 +154,7 @@ class ElasticTestChain(ElasticTestCase):
     self.elasticSearchDB = ElasticSearchDB(host=elHost,
                                            port=elPort,
                                            useSSL=False)
-    result = self.elasticSearchDB.generateFullIndexName('integrationtest')
+    result = self.elasticSearchDB.generateFullIndexName('integrationtest', 'day')
     self.assertTrue(len(result) > len('integrationtest'))
     self.index_name = result
 
@@ -189,7 +189,7 @@ class ElasticTestChain(ElasticTestCase):
     indexName = 'test'
     today = datetime.datetime.today().strftime("%Y-%m-%d")
     expected = "%s-%s" % (indexName, today)
-    result = self.elasticSearchDB.generateFullIndexName(indexName)
+    result = self.elasticSearchDB.generateFullIndexName(indexName, 'day')
     self.assertEqual(result, expected)
 
   def test_generateFullIndexName2(self):

@@ -268,10 +268,10 @@ class ElasticSearchDB(object):
     try:
       sLog.info("Create index: ", fullIndex + str(mapping))
       try:
-        self.__client.indices.create(index=fullIndex, body={'mappings': mapping})  # ES7
+        self.client.indices.create(index=fullIndex, body={'mappings': mapping})  # ES7
       except RequestError as re:
         if re.error == 'mapper_parsing_exception':
-          self.__client.indices.create(index=fullIndex, body={'mappings': {'_doc': mapping}})  # ES6
+          self.client.indices.create(index=fullIndex, body={'mappings': {'_doc': mapping}})  # ES6
       return S_OK(fullIndex)
     except Exception as e:  # pylint: disable=broad-except
       sLog.error("Can not create the index:", repr(e))
@@ -352,7 +352,6 @@ class ElasticSearchDB(object):
     for row in data:
       body = {
           '_index': indexName,
-          '_type': doc_type,
           '_source': {}
       }
       body['_source'] = row
@@ -376,9 +375,16 @@ class ElasticSearchDB(object):
         body['_source']['timestamp'] = int(Time.toEpoch()) * 1000
       docs += [body]
     try:
-      res = bulk(self.client, docs, chunk_size=self.__chunk_size)
-    except BulkIndexError as e:
-      return S_ERROR(e)
+      res = bulk(self.client, docs, chunk_size=self.__chunk_size)  # ES7
+    except RequestError as e:
+      try:
+        docsWithType = []
+        for doc in docs:
+          doc['_type'] = '_doc'
+          docsWithType.append(doc)
+        res = bulk(self.client, docsWithType, chunk_size=self.__chunk_size)  # ES6
+      except (BulkIndexError, RequestError) as e:
+        return S_ERROR(e)
 
     if res[0] == len(docs):
       # we have inserted all documents...

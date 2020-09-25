@@ -14,7 +14,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
@@ -50,9 +50,27 @@ class MonitoringDB(ElasticDB):
                                     'monitoringFields': monfields,
                                     'period': period}
       if self.__readonly:
-        gLogger.info("Read only mode is okay")
+        self.log.info("Read only mode is okay")
       else:
-        self.registerType(indexName, mapping, period)
+        if self.exists("%s-*" % indexName):
+          indexes = self.getIndexes()
+          if indexes:
+            actualindexName = self.generateFullIndexName(indexName, period)
+            if self.exists(actualindexName):
+              self.log.info("The index exists:", actualindexName)
+            else:
+              result = self.createIndex(indexName, mapping[doc_type], period)
+              if not result['OK']:
+                self.log.error(result['Message'])
+                raise RuntimeError(result['Message'])
+              self.log.info("The index is created", actualindexName)
+        else:
+          # in case the index does not exist
+          result = self.createIndex(indexName, mapping[doc_type], period)
+          if not result['OK']:
+            self.log.error(result['Message'])
+            raise RuntimeError(result['Message'])
+          self.log.info("The index is created", indexName)
 
   def getIndexName(self, typeName):
     """
@@ -79,27 +97,6 @@ class MonitoringDB(ElasticDB):
 
     """
 
-    all_index = "%s-*" % index
-
-    if self.exists(all_index):
-      indexes = self.getIndexes()
-      if indexes:
-        actualindexName = self.generateFullIndexName(index, period)
-        if self.exists(actualindexName):
-          self.log.info("The index exists:", actualindexName)
-        else:
-          result = self.createIndex(index, mapping, period)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
-          self.log.info("The index is created", actualindexName)
-    else:
-      # in case the index does not exist
-      result = self.createIndex(index, mapping, period)
-      if not result['OK']:
-        self.log.error(result['Message'])
-      return result
-
   def getKeyValues(self, typeName):
     """
     Get all values for a given key field in a type
@@ -114,7 +111,7 @@ class MonitoringDB(ElasticDB):
     if not retVal['OK']:
       return retVal
     docs = retVal['Value']
-    gLogger.debug("Doc types", docs)
+    self.log.debug("Doc types", docs)
     monfields = self.__documents[typeName]['monitoringFields']
 
     if typeName not in docs:
@@ -190,10 +187,10 @@ class MonitoringDB(ElasticDB):
       s.aggs.bucket(str(i), a1)
 
     #  s.fields( ['timestamp'] + selectFields )
-    gLogger.debug('Query:', s.to_dict())
+    self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
-    gLogger.debug("Query result", len(retVal))
+    self.log.debug("Query result", len(retVal))
 
     result = {}
 #    for i in retVal.aggregations['2'].buckets:
@@ -307,7 +304,7 @@ class MonitoringDB(ElasticDB):
     #  s.fields( ['timestamp'] + selectFields )
     s = s.extra(size=self.RESULT_SIZE)  # do not get the hits!
 
-    gLogger.debug('Query:', s.to_dict())
+    self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
     result = {}
@@ -353,12 +350,11 @@ class MonitoringDB(ElasticDB):
     """
     It is used to insert the data to El.
 
-    :param records: it is a list of documents (dictionary)
+    :param list records: it is a list of documents (dictionary)
     :param str monitoringType: is the type of the monitoring
-    :type records: python:list
     """
     mapping = self.getMapping(monitoringType)
-    gLogger.debug("Mapping used to create an index:", mapping)
+    self.log.always("Mapping used to create an index:", mapping)
     period = self.__documents[monitoringType].get('period')
     res = self.getIndexName(monitoringType)
     if not res['OK']:
@@ -448,7 +444,7 @@ class MonitoringDB(ElasticDB):
       try:
         paramNames.remove(u'metric')
       except KeyError as e:
-        gLogger.warn("metric is not in the Result", e)
+        self.log.warn("metric is not in the Result", e)
       for resObj in hits['hits']:
         records.append(dict([(paramName, getattr(resObj['_source'], paramName)) for paramName in paramNames]))
       return S_OK(records)
