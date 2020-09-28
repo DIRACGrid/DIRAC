@@ -6,6 +6,8 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 
 @createClient('WorkloadManagement/JobMonitoring')
@@ -23,3 +25,12 @@ class JobMonitoringClient(Client):
   @deprecated("Unused")
   def traceJobParameter(self, site, localID, parameter, date=None, until=None):
     return self._getRPC().traceJobParameter(site, localID, parameter, date, until)
+
+  @ignoreEncodeWarning
+  def getJobsStatus(self, jobIDs):
+    res = self._getRPC().getJobsStatus(jobIDs)
+
+    # Cast the str keys to int
+    if res['OK']:
+      res['Value'] = strToIntDict(res['Value'])
+    return res

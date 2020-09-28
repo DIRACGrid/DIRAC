@@ -13,6 +13,7 @@ from datetime import timedelta
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -289,6 +290,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsStatus(jobIDs):
     if not jobIDs:
       return S_OK({})
