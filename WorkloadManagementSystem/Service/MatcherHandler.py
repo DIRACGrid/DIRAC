@@ -25,6 +25,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 gJobDB = False
 gTaskQueueDB = False
+gLimiter = False
 
 
 def initializeMatcherHandler(serviceInfo):
@@ -35,11 +36,13 @@ def initializeMatcherHandler(serviceInfo):
   global gTaskQueueDB
   global jlDB
   global pilotAgentsDB
+  global gLimiter
 
   gJobDB = JobDB()
   gTaskQueueDB = TaskQueueDB()
   jlDB = JobLoggingDB()
   pilotAgentsDB = PilotAgentsDB()
+  gLimiter = Limiter(jobDB=gJobDB)
 
   gMonitor.registerActivity('matchTime', "Job matching time",
                             'Matching', "secs", gMonitor.OP_MEAN, 300)
@@ -70,7 +73,7 @@ def sendNumTaskQueues():
 class MatcherHandler(RequestHandler):
 
   def initialize(self):
-    self.limiter = Limiter(jobDB=gJobDB)
+    self.limiter = gLimiter
 
 ##############################################################################
   types_requestJob = [[basestring, dict]]
@@ -89,7 +92,9 @@ class MatcherHandler(RequestHandler):
                         jobDB=gJobDB,
                         tqDB=gTaskQueueDB,
                         jlDB=jlDB,
-                        opsHelper=opsHelper)
+                        opsHelper=opsHelper,
+                        limiter=gLimiter)
+
       result = matcher.selectJob(resourceDescription, credDict)
     except RuntimeError as rte:
       self.log.error("Error requesting job: ", rte)

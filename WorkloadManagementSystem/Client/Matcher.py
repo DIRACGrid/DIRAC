@@ -27,7 +27,7 @@ class Matcher(object):
   """ Logic for matching
   """
 
-  def __init__(self, pilotAgentsDB=None, jobDB=None, tqDB=None, jlDB=None, opsHelper=None):
+  def __init__(self, pilotAgentsDB=None, jobDB=None, tqDB=None, jlDB=None, opsHelper=None, limiter=None):
     """ c'tor
     """
     if pilotAgentsDB:
@@ -54,7 +54,10 @@ class Matcher(object):
 
     self.log = gLogger.getSubLogger("Matcher")
 
-    self.limiter = Limiter(jobDB=self.jobDB, opsHelper=self.opsHelper)
+    if limiter:
+      self.limiter = limiter
+    else:
+      self.limiter = Limiter(jobDB=self.jobDB, opsHelper=self.opsHelper)
 
     self.siteClient = SiteStatus()
 
