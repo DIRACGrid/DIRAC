@@ -22,7 +22,7 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdate
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping, getDIRACSiteName
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 
 
@@ -73,13 +73,14 @@ def checkUnusedCEs():
 
   gLogger.notice('looking for new computing resources in the BDII database...')
 
-  res = getSiteCEMapping()
+  res = getQueues(community=vo)
   if not res['OK']:
     gLogger.error('ERROR: failed to get CEs from CS', res['Message'])
     DIRACExit(-1)
+
   knownCEs = []
-  for site in res['Value']:
-    knownCEs = knownCEs + res['Value'][site]
+  for _site, ces in res['Value'].items():
+    knownCEs.extend(ces.keys())
 
   result = getGridCEs(vo, ceBlackList=knownCEs, hostURL=hostURL, glue2=glue2)
   if not result['OK']:
@@ -89,7 +90,7 @@ def checkUnusedCEs():
 
   siteDict = result['Value']
   if siteDict:
-    gLogger.notice('New resources available:\n')
+    gLogger.notice('New resources available:')
     for site in siteDict:
       diracSite = 'Unknown'
       result = getDIRACSiteName(site)

@@ -101,6 +101,7 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
       :return: S_OK(set)/S_ERROR()
   """
   knownCEs = set()
+  cesInInformation = set()
   if ceBlackList is not None:
     knownCEs = knownCEs.union(set(ceBlackList))
 
@@ -114,6 +115,7 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
   siteDict = {}
   for site in ceBdiiDict:
     siteCEs = set(ceBdiiDict[site]['CEs'].keys())
+    cesInInformation.update(siteCEs)
     newCEs = siteCEs - knownCEs
     if not newCEs:
       continue
@@ -146,6 +148,20 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
 
   result = S_OK(siteDict)
   result['BdiiInfo'] = ceBdiiDict
+
+  gLogger.notice("CEsinINfo: %s" % cesInInformation)
+  gLogger.notice("Known: %s" % knownCEs)
+  gLogger.notice("no Info %s" % (knownCEs - cesInInformation))
+
+  unknownCEs = knownCEs - cesInInformation
+  gLogger.notice(unknownCEs)
+  if unknownCEs:
+    gLogger.notice("There is currently no information for the following CEs:")
+    for ce in sorted(unknownCEs):
+      gLogger.notice("   ", ce)
+  else:
+    gLogger.notice("We know it all.")
+
   return result
 
 
