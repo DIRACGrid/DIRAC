@@ -10,6 +10,7 @@ import time
 import sys
 import getopt
 
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -331,19 +332,34 @@ File Catalog Client $Revision: 1.17 $Date:
     return result
     
   def do_rmdir(self,args):
-    """ Remove directory from the storage and from the File Catalog
+    """ Remove directory from the File Catalog. Note, this method does not remove physical replicas
     
         usage:
-          rmdir <path>
-          
-        NB: this method is not fully implemented !  
-    """  
-    # Not yet really implemented yet
+          rmdir [-r] [-f] <path>
+
+        -r flag to remove directories recursively
+        -f flag to force removing files also in the directories to be removed
+
+    """
     argss = args.split()
+    recursive = False
+    if '-r' in argss:
+      recursive = True
+      argss.remove('-r')
+    forceNonEmpty = False
+    if '-f' in argss:
+      forceNonEmpty = True
+      argss.remove('-f')
+    if '-rf' in argss:
+      recursive = True
+      forceNonEmpty = True
+      argss.remove('-rf')
     if len(argss) != 1:
       print(self.do_rmdir.__doc__)
       return
-    self.removeDirectory(argss)  
+    path = argss[0]
+    lfn = self.getPath( path )
+    self.removeDirectory(lfn, recursive, forceNonEmpty)
 
   def complete_rmdir(self, text, line, begidx, endidx):
     result = []
@@ -412,14 +428,49 @@ File Catalog Client $Revision: 1.17 $Date:
     except Exception as x:
       print("Error: rm failed with exception: ", x)
       
-  def removeDirectory(self,args):
-    """ Remove file from the catalog
-    """  
-    
-    path = args[0]
-    lfn = self.getPath(path)
-    print("lfn:", lfn)
+  def removeDirectory(self,lfn, recursive=False, forceNonEmpty=False):
+    """ Remove a given directory from the catalog. Remove multiple directories
+        recursively if recursive flag is True. Remove contained files if forceNonEmpty
+        flag is true.
+    """
+
+    if recursive or forceNonEmpty:
+      resultListDirectory = self.fc.listDirectory(lfn, False)
+      if not resultListDirectory['OK']:
+        print('Failed to look up the directory contents')
+        return S_ERROR('Failed to look up the directory contents')
+
+      # Remove subdirectories first
+      dirDict = resultListDirectory['Value']['Successful'][lfn]['SubDirs']
+      dirList = dirDict.keys()
+      if dirList:
+        if recursive:
+          for dirLfn in dirList:
+            result = self.removeDirectory(dirLfn, recursive, forceNonEmpty)
+            if not result['OK']:
+              print('Error: failed to remove directory', dirLfn)
+              return S_ERROR('Failed to remove directory')
+        else:
+          print('Error: failed to remove non empty directory')
+          return S_ERROR("Failed to remove non empty directory")
+
+      # Remove files
+      fileDict = resultListDirectory['Value']['Successful'][lfn]['Files']
+      fileList = fileDict.keys()
+      if fileList:
+        if forceNonEmpty:
+          print("Removing", len(fileList),"files in",lfn)
+          result = self.fc.removeFile(fileList)
+          if not result['OK']:
+            print("Error:", result['Message'])
+            return result
+        else:
+          print('Error: failed to remove non empty directory')
+          return S_ERROR("Failed to remove non empty directory")
+
+    # Removing the directory now
     try:
+      print("Removing directory", lfn)
       result =  self.fc.removeDirectory(lfn)
       if result['OK']:
         if result['Value']['Successful']:
@@ -429,8 +480,10 @@ File Catalog Client $Revision: 1.17 $Date:
       else:
         print("Failed to remove directory from the catalog")
         print(result['Message'])
+      return result
     except Exception as x:
-      print("Error: rm failed with exception: ", x)
+      print("Error: rmdir failed with exception: ", x)
+      return S_ERROR('Exception: %s' % str(x))
       
   def do_replicate(self,args):
     """ Replicate a given file to a given SE
@@ -440,7 +493,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     argss = args.split()
     if len(argss) < 2:
-      print("Error: unsufficient number of arguments")
+      print("Error: insufficient number of arguments")
       return
     lfn = argss[0]
     lfn = self.getPath(lfn)
