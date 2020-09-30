@@ -51,6 +51,8 @@ def getGlue2CEInfo(vo, host):
   listOfSitesWithPolicies = set()
   shareFilter = ''
   for policyValues in polRes:
+    if 'GLUE2DomainID' not in policyValues['attr']['dn']:
+      continue
     shareID = policyValues['attr'].get('GLUE2MappingPolicyShareForeignKey', None)
     policyID = policyValues['attr']['GLUE2PolicyID']
     siteName = policyValues['attr']['dn'].split('GLUE2DomainID=')[1].split(',', 1)[0]
@@ -69,6 +71,8 @@ def getGlue2CEInfo(vo, host):
     return shareRes
   shareInfoLists = {}
   for shareInfo in shareRes['Value']:
+    if 'GLUE2DomainID' not in shareInfo['attr']['dn']:
+      continue
     if 'GLUE2ComputingShare' not in shareInfo['objectClass']:
       gLogger.debug('Share %r is not a ComputingShare: \n%s' % (shareID, pformat(shareInfo)))
       continue
