@@ -98,7 +98,8 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
       :param str hostURL: host URL
       :param bool glue2: use glue2
 
-      :return: S_OK(set)/S_ERROR()
+
+      :return: Dictionary with keys: OK, Value, BdiiInfo, UnknownCEs
   """
   knownCEs = set()
   cesInInformation = set()
@@ -149,19 +150,8 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
   result = S_OK(siteDict)
   result['BdiiInfo'] = ceBdiiDict
 
-  gLogger.notice("CEsinINfo: %s" % cesInInformation)
-  gLogger.notice("Known: %s" % knownCEs)
-  gLogger.notice("no Info %s" % (knownCEs - cesInInformation))
-
   unknownCEs = knownCEs - cesInInformation
-  gLogger.notice(unknownCEs)
-  if unknownCEs:
-    gLogger.notice("There is currently no information for the following CEs:")
-    for ce in sorted(unknownCEs):
-      gLogger.notice("   ", ce)
-  else:
-    gLogger.notice("We know it all.")
-
+  result['UnknownCEs'] = unknownCEs
   return result
 
 
