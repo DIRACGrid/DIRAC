@@ -19,6 +19,7 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.File import makeGuid
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
@@ -293,10 +294,12 @@ class ARCComputingElement(ComputingElement):
       jobs.append(self.__getARCJob(jobID))
 
     # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
-    job_supervisor = arc.JobSupervisor(self.usercfg, jobs)
-    if not job_supervisor.Cancel():
-      errorString = ' - '.join(jobList).strip()
-      return S_ERROR('Failed to kill at least one of these jobs: %s. CE(?) not reachable?' % errorString)
+    # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
+    for chunk in breakListIntoChunks(jobs, 100):
+      job_supervisor = arc.JobSupervisor(self.usercfg, chunk)
+      if not job_supervisor.Cancel():
+        errorString = ' - '.join(jobList).strip()
+        return S_ERROR('Failed to kill at least one of these jobs: %s. CE(?) not reachable?' % errorString)
 
     return S_OK()
 
@@ -393,9 +396,12 @@ class ARCComputingElement(ComputingElement):
       jobs.append(self.__getARCJob(jobID))
 
     # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
-    job_supervisor = arc.JobSupervisor(self.usercfg, jobs)
-    job_supervisor.Update()
-    jobsUpdated = job_supervisor.GetAllJobs()
+    # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
+    jobsUpdated = []
+    for chunk in breakListIntoChunks(jobs, 100):
+      job_supervisor = arc.JobSupervisor(self.usercfg, chunk)
+      job_supervisor.Update()
+      jobsUpdated.extend(job_supervisor.GetAllJobs())
 
     resultDict = {}
     jobsToRenew = []
@@ -429,13 +435,16 @@ class ARCComputingElement(ComputingElement):
       self.log.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
 
     # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
-    job_supervisor_renew = arc.JobSupervisor(self.usercfg, jobsToRenew)
-    if not job_supervisor_renew.Renew():
-      self.log.warn('At least one of the jobs failed to renew its credentials')
+    # We still need to create chunks to avoid timeout in the case there are too many jobs to supervise
+    for chunk in breakListIntoChunks(jobsToRenew, 100):
+      job_supervisor_renew = arc.JobSupervisor(self.usercfg, chunk)
+      if not job_supervisor_renew.Renew():
+        self.log.warn('At least one of the jobs failed to renew its credentials')
 
-    job_supervisor_cancel = arc.JobSupervisor(self.usercfg, jobsToCancel)
-    if not job_supervisor_cancel.Cancel():
-      self.log.warn('At least one of the jobs failed to be cancelled')
+    for chunk in breakListIntoChunks(jobsToCancel, 100):
+      job_supervisor_cancel = arc.JobSupervisor(self.usercfg, chunk)
+      if not job_supervisor_cancel.Cancel():
+        self.log.warn('At least one of the jobs failed to be cancelled')
 
     if not resultDict:
       return S_ERROR('No job statuses returned')

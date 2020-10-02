@@ -40,21 +40,32 @@ from DIRAC import gLogger, S_OK, S_ERROR
 def generateCAFile(location=None):
   """
 
-  Generate a single CA file with all the PEMs
+  Generate/find a single CA file with all the PEMs
 
-  :param str location: we can specify a specific location in CS
-  :return: file cas.pem which contains all certificates
+  :param str location: we can specify a specific CS location
+                       where it's written a directory where to find the CAs and CRLs
+  :return: directory where the file cas.pem which contains all certificates is created
 
   """
   caDir = Locations.getCAsLocation()
-  for fn in (os.path.join(os.path.dirname(caDir), "cas.pem"),
-             os.path.join(os.path.dirname(Locations.getHostCertificateAndKeyLocation(location)[0]), "cas.pem"),
+  if not caDir:
+    return S_ERROR('No CAs dir found')
+
+  if os.path.isfile(os.path.join(os.path.dirname(caDir), "cas.pem")):
+    casFile = os.path.join(os.path.dirname(caDir), "cas.pem")
+    chain = X509Chain.X509Chain()
+    chain.loadChainFromFile(casFile)
+    expired = chain.hasExpired()
+    if expired['OK'] and not expired['Value']:
+      return S_OK(os.path.join(os.path.dirname(caDir), "cas.pem"))
+
+  for fn in (os.path.join(os.path.dirname(Locations.getHostCertificateAndKeyLocation(location)[0]),
+                          "cas.pem"),
              False):
     if not fn:
       fn = tempfile.mkstemp(prefix="cas.", suffix=".pem")[1]
 
     try:
-
       with open(fn, "w") as fd:
         for caFile in os.listdir(caDir):
           caFile = os.path.join(caDir, caFile)
@@ -73,7 +84,7 @@ def generateCAFile(location=None):
     except IOError as err:
       gLogger.warn(err)
 
-  return S_ERROR(caDir)
+  return S_ERROR("Could not find/generate CAs")
 
 
 def generateRevokedCertsFile(location=None):
@@ -81,13 +92,25 @@ def generateRevokedCertsFile(location=None):
 
   Generate a single CA file with all the PEMs
 
-  :param str location: we can specify a specific location in CS
-  :return: file crls.pem which contains all revoked certificates
+  :param str location: we can specify a specific CS location
+                       where it's written a directory where to find the CAs and CRLs
+  :return: directory where the file crls.pem which contains all CRLs is created
 
   """
   caDir = Locations.getCAsLocation()
-  for fn in (os.path.join(os.path.dirname(caDir), "crls.pem"),
-             os.path.join(os.path.dirname(Locations.getHostCertificateAndKeyLocation(location)[0]), "crls.pem"),
+  if not caDir:
+    return S_ERROR('No CAs dir found')
+
+  if os.path.isfile(os.path.join(os.path.dirname(caDir), "crls.pem")):
+    crlsFile = os.path.join(os.path.dirname(caDir), "crls.pem")
+    chain = X509Chain.X509Chain()
+    chain.loadChainFromFile(crlsFile)
+    expired = chain.hasExpired()
+    if expired['OK'] and not expired['Value']:
+      return S_OK(os.path.join(os.path.dirname(caDir), "crls.pem"))
+
+  for fn in (os.path.join(os.path.dirname(Locations.getHostCertificateAndKeyLocation(location)[0]),
+                          "crls.pem"),
              False):
     if not fn:
       fn = tempfile.mkstemp(prefix="crls", suffix=".pem")[1]
@@ -104,4 +127,4 @@ def generateRevokedCertsFile(location=None):
     except IOError:
       continue
 
-  return S_ERROR(caDir)
+  return S_ERROR("Could not find/generate CRLs")

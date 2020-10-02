@@ -60,7 +60,7 @@ class ElasticTestCase(unittest.TestCase):
 
 
 class ElasticBulkCreateChain(ElasticTestCase):
-  """ Chain for creating indices
+  """ Chain for creating indexes
   """
 
   def test_bulkindex(self):
@@ -72,9 +72,9 @@ class ElasticBulkCreateChain(ElasticTestCase):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 10)
     time.sleep(5)
-    indices = self.elasticSearchDB.getIndexes()
-    self.assertEqual(type(indices), list)
-    for index in indices:
+    indexes = self.elasticSearchDB.getIndexes()
+    self.assertEqual(type(indexes), list)
+    for index in indexes:
       res = self.elasticSearchDB.deleteIndex(index)
       self.assertTrue(res['OK'])
 
@@ -88,9 +88,9 @@ class ElasticBulkCreateChain(ElasticTestCase):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 10)
     time.sleep(5)
-    indices = self.elasticSearchDB.getIndexes()
-    self.assertEqual(type(indices), list)
-    for index in indices:
+    indexes = self.elasticSearchDB.getIndexes()
+    self.assertEqual(type(indexes), list)
+    for index in indexes:
       res = self.elasticSearchDB.deleteIndex(index)
       self.assertTrue(res['OK'])
 
@@ -154,7 +154,7 @@ class ElasticTestChain(ElasticTestCase):
     self.elasticSearchDB = ElasticSearchDB(host=elHost,
                                            port=elPort,
                                            useSSL=False)
-    result = self.elasticSearchDB.generateFullIndexName('integrationtest')
+    result = self.elasticSearchDB.generateFullIndexName('integrationtest', 'day')
     self.assertTrue(len(result) > len('integrationtest'))
     self.index_name = result
 
@@ -168,7 +168,7 @@ class ElasticTestChain(ElasticTestCase):
     self.elasticSearchDB.deleteIndex(self.index_name)
 
   def test_getIndexes(self):
-    """ test fail if no indices are present
+    """ test fail if no indexes are present
     """
     self.elasticSearchDB.deleteIndex(self.index_name)
     result = self.elasticSearchDB.getIndexes()
@@ -189,7 +189,7 @@ class ElasticTestChain(ElasticTestCase):
     indexName = 'test'
     today = datetime.datetime.today().strftime("%Y-%m-%d")
     expected = "%s-%s" % (indexName, today)
-    result = self.elasticSearchDB.generateFullIndexName(indexName)
+    result = self.elasticSearchDB.generateFullIndexName(indexName, 'day')
     self.assertEqual(result, expected)
 
   def test_generateFullIndexName2(self):

@@ -109,6 +109,16 @@ def getM2SSLContext(ctx=None, **kwargs):
       raise RuntimeError("CA path (%s) is not a valid directory" % caPath)
     ctx.load_verify_locations(capath=caPath)
 
+  # If the version of M2Crypto is recent enough, there is an API
+  # to accept proxy certificate, and we do not need to rely on
+  # OPENSSL_ALLOW_PROXY_CERT environment variable
+  # which was removed as of openssl 1.1
+  # We need this to be merged in M2Crypto: https://gitlab.com/m2crypto/m2crypto/merge_requests/236
+  # We set the proper verify flag to the X509Store of the context
+  # as described here https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html
+  if hasattr(SSL, 'verify_allow_proxy_certs'):
+    ctx.get_cert_store().set_flags(SSL.verify_allow_proxy_certs)  # pylint: disable=no-member
+
   # Other parameters
   sslMethod = kwargs.get('sslMethod', None)
   if sslMethod:
