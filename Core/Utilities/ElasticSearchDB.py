@@ -181,7 +181,6 @@ class ElasticSearchDB(object):
     return Search(using=self.client, index=indexname)
 
   ########################################################################
-  @ifConnected
   def _Q(self, name_or_query='match', **params):
     """
     It is a wrapper to ElasticDSL Query module used to create a query object.
@@ -189,7 +188,6 @@ class ElasticSearchDB(object):
     """
     return Q(name_or_query, **params)
 
-  @ifConnected
   def _A(self, name_or_agg, aggsfilter=None, **params):
     """
     It is a wrapper to ElasticDSL aggregation module, used to create an aggregation
@@ -311,8 +309,15 @@ class ElasticSearchDB(object):
       return S_ERROR("Missing index or body")
 
     try:
+      # ES 6
       res = self.client.index(index=indexName,
                               doc_type=doc_type,
+                              body=body,
+                              id=docID)
+    except RequestError:
+      # ES 7
+      res = self.client.index(index=indexName,
+                              doc_type='_doc',
                               body=body,
                               id=docID)
     except TransportError as e:
@@ -457,10 +462,10 @@ class ElasticSearchDB(object):
   @ifConnected
   def deleteByQuery(self, indexName, query):
     """
-    Delete data by query
+    Delete data by query (careful!)
 
     :param str indexName: the name of the index
-    :param str query: the query that we want to issue the delete on
+    :param str query: the JSON-formatted query for which we want to issue the delete
     """
     try:
       self.client.delete_by_query(index=indexName, body=query)

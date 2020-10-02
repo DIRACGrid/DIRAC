@@ -30,6 +30,7 @@
     The following class methods are provided for public usage::
       - getJobParameters()
       - setJobParameter()
+      - deleteJobParameters()
 """
 
 from __future__ import absolute_import
@@ -37,7 +38,7 @@ import six
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.ElasticDB import ElasticDB
@@ -58,6 +59,7 @@ mapping = {
         }
     }
 }
+
 
 class ElasticJobParametersDB(ElasticDB):
 
@@ -80,6 +82,8 @@ class ElasticJobParametersDB(ElasticDB):
         raise RuntimeError(result['Message'])
       self.log.always("Index created:", self.indexName)
 
+    self.dslSearch = self._Search(self.indexName)
+
   def getJobParameters(self, jobID, paramList=None):
     """ Get Job Parameters defined for jobID.
       Returns a dictionary with the Job Parameters.
@@ -92,50 +96,37 @@ class ElasticJobParametersDB(ElasticDB):
     :return: dict with all Job Parameter values
     """
 
+    if paramList:
+      if isinstance(paramList, six.string_types):
+        paramList = paramList.replace(' ', '').split(',')
+    else:
+       paramList = []
+
     self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
 
     resultDict = {}
 
-    if paramList:
-      if isinstance(paramList, six.string_types):
-        paramList = paramList.replace(' ', '').split(',')
-
-      query = {
-          "query": {
-              "bool": {
-                  "must": [
-                      {"match": {"JobID": jobID}},
-                      {"match": {"Name": ','.join(paramList)}}
-                  ]
-              }
-          },
-          "_source": ["Name", "Value"]
+    """ the following should be equivalent to
+    {
+      "query": {
+        "bool": {
+          "filter": {  # no scoring
+            "term": {"JobID": jobID}  # term level query, does not pass through the analyzer
+          }
+        }
       }
+    }
+    """
 
-    else:
-      query = {
-          "query": {
-              "match": {"JobID": jobID}
-          },
-          "_source": ["Name", "Value"]
-      }
+    s = self.dslSearch.query("bool", filter=self._Q("term", JobID=jobID))
 
-    result = self.query(self.indexName, query)
+    res = s.execute()
 
-    if not result['OK']:
-      return result
-
-    sources = result['Value']['hits']['hits']
-
-    for source in sources:
-
-      name = source['_source']['Name']
-      value = source['_source']['Value']
-
-      try:
-        resultDict[name] = value.tostring()
-      except Exception:
-        resultDict[name] = value
+    for hit in res:
+      name = hit.Name
+      if paramList and name not in paramList:
+        continue
+      resultDict[name] = hit.Value
 
     return S_OK({jobID: resultDict})
 
@@ -173,32 +164,37 @@ class ElasticJobParametersDB(ElasticDB):
     :return: dict with all Job Parameter values
     """
 
-    self.log.debug('JobDB.getParameters: Deleting Parameters for job %s' % jobID)
+    self.log.debug('JobDB.getParameters: Deleting Parameters %s for job %s' % (paramList, jobID))
 
-    if paramList:
-      if isinstance(paramList, six.string_types):
-        paramList = paramList.replace(' ', '').split(',')
+    jobFilter = self._Q("term", JobID=jobID)
 
-      query = {
-          "query": {
-              "bool": {
-                  "must": [
-                      {"match": {"JobID": jobID}},
-                      {"match": {"Name": ','.join(paramList)}}
-                  ]
-              }
-          }
+    if not paramList:
+      s = self.dslSearch.query("bool", filter=jobFilter)
+      s.delete()
+      return S_OK()
+
+    """ the following should be equivalent to
+    {
+      "query": {
+        "bool": {
+          "filter": [  # no scoring
+            {"term": {"JobID": jobID}},  # term level query, does not pass through the analyzer
+            {"term": {"Name": param}},  # term level query, does not pass through the analyzer
+          ]
+        }
       }
+    }
+    """
+    if isinstance(paramList, six.string_types):
+      paramList = paramList.replace(' ', '').split(',')
 
-    else:
-      query = {
-          "query": {
-              "match": {"JobID": jobID}
-          }
-      }
+    for param in paramList:
+      paramFilter = self._Q("term", Name=param)
+      combinedFilter = jobFilter & paramFilter
 
-    result = self.deleteByQuery(self.indexName, query)
+      s = self.dslSearch.query("bool", filter=combinedFilter)
+      s.delete()
 
-    return result
+    return S_OK()
 
   # TODO: Add query by value (e.g. query which values are in a certain pattern)

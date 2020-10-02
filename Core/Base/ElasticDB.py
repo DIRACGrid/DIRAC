@@ -30,15 +30,15 @@ class ElasticDB(ElasticSearchDB):
       raise RuntimeError('Cannot get database parameters: %s' % result['Message'])
 
     dbParameters = result['Value']
-    self.__dbHost = dbParameters['Host']
-    self.__dbPort = dbParameters['Port']
+    self._dbHost = dbParameters['Host']
+    self._dbPort = dbParameters['Port']
     # we can have db which does not have any authentication...
     self.__user = dbParameters.get('User', '')
     self.__dbPassword = dbParameters.get('Password', '')
     self.__useSSL = dbParameters.get('SSL', True)
 
-    super(ElasticDB, self).__init__(self.__dbHost,
-                                    self.__dbPort,
+    super(ElasticDB, self).__init__(self._dbHost,
+                                    self._dbPort,
                                     self.__user,
                                     self.__dbPassword,
                                     indexPrefix,
@@ -47,9 +47,9 @@ class ElasticDB(ElasticSearchDB):
       raise RuntimeError('Can not connect to ES cluster %s, exiting...' % self.clusterName)
 
     self.log.info("================= ElasticSearch ==================")
-    self.log.info("Host: %s " % self.__dbHost)
-    if self.__dbPort:
-      self.log.info("Port: %d " % self.__dbPort)
+    self.log.info("Host: %s " % self._dbHost)
+    if self._dbPort:
+      self.log.info("Port: %d " % self._dbPort)
     else:
       self.log.info("Port: Not specified, assuming URL points to right location")
     self.log.info("Connecting with %s, %s:%s" % ('SSL' if self.__useSSL else 'no SSL',
@@ -57,38 +57,3 @@ class ElasticDB(ElasticSearchDB):
                                                  'with password' if self.__dbPassword else 'no password'))
     self.log.info("ClusterName: %s   " % self.clusterName)
     self.log.info("==================================================")
-
-  ########################################################################
-  def setDbHost(self, hostName):
-    """
-     It is used to set the cluster host
-
-    :param str hostname: it is the host name of the elasticsearch
-    """
-    self.__dbHost = hostName
-
-  ########################################################################
-  def getDbHost(self):
-    """
-     It returns the elasticsearch database host
-    """
-    return self.__dbHost
-
-  ########################################################################
-  def setDbPort(self, port):
-    """
-     It is used to set the cluster port
-
-      :param self: self reference
-      :param str port: the port of the elasticsearch.
-    """
-    self.__dbPort = port
-
-  ########################################################################
-  def getDbPort(self):
-    """
-       It returns the database port
-
-      :param self: self reference
-    """
-    return self.__dbPort
