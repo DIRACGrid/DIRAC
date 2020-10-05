@@ -315,11 +315,14 @@ class ElasticSearchDB(object):
                               body=body,
                               id=docID)
     except RequestError:
-      # ES 7
-      res = self.client.index(index=indexName,
-                              doc_type='_doc',
-                              body=body,
-                              id=docID)
+      # is it ES 7?
+      try:
+        res = self.client.index(index=indexName,
+                                doc_type='_doc',
+                                body=body,
+                                id=docID)
+      except (RequestError, TransportError) as e:
+        return S_ERROR(e)
     except TransportError as e:
       return S_ERROR(e)
 

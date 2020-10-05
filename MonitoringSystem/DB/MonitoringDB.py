@@ -86,17 +86,6 @@ class MonitoringDB(ElasticDB):
 
     return S_ERROR("Type %s is not defined" % typeName)
 
-  def registerType(self, index, mapping, period):
-    """
-    It registers the type and index, in case they do not exist
-
-    :param str index: name of the index
-    :param dict mapping: mapping used to create the index
-    :param str period: We can specify, which kind of indexes will be created.
-                       Currently only daily and monthly indexes are supported.
-
-    """
-
   def getKeyValues(self, typeName):
     """
     Get all values for a given key field in a type
