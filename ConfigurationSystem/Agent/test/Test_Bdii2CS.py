@@ -23,12 +23,13 @@ ALTBDII = { 'site2': {'CEs': { 'ce2': { 'Queues': { 'queue2': "SomeOtherValues" 
 class Bdii2CSTests( unittest.TestCase ):
 
   def setUp( self ):
-    with patch( "DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.AgentModule.__init__", new=Mock() ):
-      self.agent = Bdii2CSAgent.Bdii2CSAgent( agentName="Configuration/testing", loadName="Configuration/testing" )
-
-      ## as we ignore the init from the baseclass some agent variables might not be present so we set them here
-      ## in any case with this we can check that log is called with proper error messages
-      self.agent.log = Mock()
+    with patch("DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.AgentModule.__init__", new=Mock()), \
+         patch("DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.AgentModule.am_getModuleParam",
+               new=Mock(return_value='fullName')):
+      self.agent = Bdii2CSAgent.Bdii2CSAgent(agentName="Configuration/testing", loadName="Configuration/testing")
+    # as we ignore the init from the baseclass some agent variables might not be present so we set them here
+    # in any case with this we can check that log is called with proper error messages
+    self.agent.log = Mock()
 
 
   def tearDown( self ):
