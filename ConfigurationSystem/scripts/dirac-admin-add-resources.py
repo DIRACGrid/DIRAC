@@ -88,6 +88,11 @@ def checkUnusedCEs():
     DIRACExit(-1)
   ceBdiiDict = result['BdiiInfo']
 
+  unknownCEs = result['UnknownCEs']
+  if unknownCEs:
+    gLogger.notice('There is no (longer) information about the following CEs for the %s VO:' % vo)
+    gLogger.notice('\n'.join(sorted(unknownCEs)))
+
   siteDict = result['Value']
   if siteDict:
     gLogger.notice('New resources available:')
