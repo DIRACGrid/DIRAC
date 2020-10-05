@@ -172,10 +172,14 @@ def __getGlue2ShareInfo(host, shareInfoLists):
             if otherInfo.startswith('CREAMCEId'):
               queueName = otherInfo.split('/', 1)[1]
 
-        # cern HTCondorCE
-        elif ceType.endswith('HTCondorCE'):
+        # HTCondorCE, htcondorce
+        elif ceType.lower().endswith('htcondorce'):
           ceType = 'HTCondorCE'
           queueName = 'condor'
+
+        else:
+          sLog.error('Unknown CE Type, please check the available information', ceType)
+          continue
 
         queueInfo['GlueCEImplementationName'] = ceType
         ceName = endpoint.split('_', 1)[0]
