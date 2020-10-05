@@ -155,7 +155,7 @@ class Bdii2CSAgent(AgentModule):
         self.log.error('Failed to get unused CEs', result['Message'])
         continue  # next VO
       siteDict = result['Value']
-      unknownCEs = result['UnknownCEs']
+      unknownCEs = set(result['UnknownCEs']) - set(bannedCEs)
 
       body = ''
       for site in siteDict:
