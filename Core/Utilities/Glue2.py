@@ -85,7 +85,7 @@ def getGlue2CEInfo(vo, host):
 
   siteInfo = __getGlue2ShareInfo(host, shareInfoLists)
   if not siteInfo['OK']:
-    sLog.error("Could not get CE info for %s:" % shareID, siteInfo['Message'])
+    sLog.error("Could not get CE info for", shareID + "  " + siteInfo['Message'])
     return siteInfo
   siteDict = siteInfo['Value']
   sLog.debug("Found Sites:\n%s" % pformat(siteDict))
@@ -93,7 +93,7 @@ def getGlue2CEInfo(vo, host):
   if sitesWithoutShares:
     sLog.error("Found some sites without any shares", pformat(sitesWithoutShares))
   else:
-    sLog.notice("All good")
+    sLog.notice("Found information for all known sites")
   return S_OK(siteDict)
 
 
@@ -113,8 +113,8 @@ def __getGlue2ShareInfo(host, shareInfoLists):
       executionEnvironments.extend(executionEnvironment)
   resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironments)
   if not resExeInfo['OK']:
-    sLog.error("Cannot get execution environment info for %r" % str(executionEnvironments)[:100],
-               resExeInfo['Message'])
+    sLog.error("Cannot get execution environment info for:",
+               str(executionEnvironments)[:100] + "  " + resExeInfo['Message'])
     return resExeInfo
   exeInfos = resExeInfo['Value']
 
@@ -141,7 +141,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
 
       exeInfo = resExeInfo.get('Value')
       if not exeInfo:
-        sLog.error('Did not find information for execution environment %s, using dummy values' % siteName)
+        sLog.error('Using dummy values. Did not find information for execution environment', siteName)
         exeInfo = {'GlueHostMainMemoryRAMSize': '1999',  # intentionally identifiably dummy value
                    'GlueHostOperatingSystemVersion': '',
                    'GlueHostOperatingSystemName': '',
@@ -151,7 +151,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                    'MANAGER': 'manager:unknownBatchSystem',  # need some value for ARC
                    }
       else:
-        sLog.error('Found information for execution environment for %s' % siteName)
+        sLog.info('Found information for execution environment for', siteName)
 
       # sometimes the time is still in hours
       maxCPUTime = int(queueInfo['GlueCEPolicyMaxCPUTime'])
@@ -200,7 +200,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
           ceInfo['Queues'] = existingQueues
           cesDict[ceName].update(ceInfo)
       except Exception:
-        sLog.error('Exception in ARC part for %s' % siteName)
+        sLog.error('Exception in ARC part for site:', siteName)
       siteDict[siteName]['CEs'].update(cesDict)
 
   return S_OK(siteDict)
