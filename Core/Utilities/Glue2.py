@@ -22,6 +22,9 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 __RCSID__ = "$Id$"
 
 
+sLog = gLogger.getSubLogger(__name__)
+
+
 def __ldapsearchBDII(*args, **kwargs):
   """ wrap `DIRAC.Core.Utilities.Grid.ldapsearchBDII` to avoid circular import """
   from DIRAC.Core.Utilities.Grid import ldapsearchBDII
@@ -45,7 +48,7 @@ def getGlue2CEInfo(vo, host):
     return S_ERROR("Failed to get policies for this VO")
   polRes = polRes['Value']
 
-  gLogger.notice("Found %s policies for this VO %s" % (len(polRes), vo))
+  sLog.notice("Found %s policies for this VO %s" % (len(polRes), vo))
   # get all shares for this policy
   # create an or'ed list of all the shares and then call the search
   listOfSitesWithPolicies = set()
@@ -58,39 +61,39 @@ def getGlue2CEInfo(vo, host):
     siteName = policyValues['attr']['dn'].split('GLUE2DomainID=')[1].split(',', 1)[0]
     listOfSitesWithPolicies.add(siteName)
     if shareID is None:  # policy not pointing to ComputingInformation
-      gLogger.debug("Policy %s does not point to computing information" % (policyID,))
+      sLog.debug("Policy %s does not point to computing information" % (policyID,))
       continue
-    gLogger.verbose("%s policy %s pointing to %s " % (siteName, policyID, shareID))
-    gLogger.debug("Policy values:\n%s" % pformat(policyValues))
+    sLog.verbose("%s policy %s pointing to %s " % (siteName, policyID, shareID))
+    sLog.debug("Policy values:\n%s" % pformat(policyValues))
     shareFilter += '(GLUE2ShareID=%s)' % shareID
 
   filt = '(&(objectClass=GLUE2Share)(|%s))' % shareFilter
   shareRes = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
   if not shareRes['OK']:
-    gLogger.error("Could not get share information", shareRes['Message'])
+    sLog.error("Could not get share information", shareRes['Message'])
     return shareRes
   shareInfoLists = {}
   for shareInfo in shareRes['Value']:
     if 'GLUE2DomainID' not in shareInfo['attr']['dn']:
       continue
     if 'GLUE2ComputingShare' not in shareInfo['objectClass']:
-      gLogger.debug('Share %r is not a ComputingShare: \n%s' % (shareID, pformat(shareInfo)))
+      sLog.debug('Share %r is not a ComputingShare: \n%s' % (shareID, pformat(shareInfo)))
       continue
-    gLogger.debug("Found computing share:\n%s" % pformat(shareInfo))
+    sLog.debug("Found computing share:\n%s" % pformat(shareInfo))
     siteName = shareInfo['attr']['dn'].split('GLUE2DomainID=')[1].split(',', 1)[0]
     shareInfoLists.setdefault(siteName, []).append(shareInfo['attr'])
 
   siteInfo = __getGlue2ShareInfo(host, shareInfoLists)
   if not siteInfo['OK']:
-    gLogger.error("Could not get CE info for %s:" % shareID, siteInfo['Message'])
+    sLog.error("Could not get CE info for %s:" % shareID, siteInfo['Message'])
     return siteInfo
   siteDict = siteInfo['Value']
-  gLogger.debug("Found Sites:\n%s" % pformat(siteDict))
+  sLog.debug("Found Sites:\n%s" % pformat(siteDict))
   sitesWithoutShares = set(siteDict) - listOfSitesWithPolicies
   if sitesWithoutShares:
-    gLogger.error("Found some sites without any shares", pformat(sitesWithoutShares))
+    sLog.error("Found some sites without any shares", pformat(sitesWithoutShares))
   else:
-    gLogger.notice("All good")
+    sLog.notice("All good")
   return S_OK(siteDict)
 
 
@@ -110,8 +113,8 @@ def __getGlue2ShareInfo(host, shareInfoLists):
       executionEnvironments.extend(executionEnvironment)
   resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironments)
   if not resExeInfo['OK']:
-    gLogger.error("SCHEMA PROBLEM: Cannot get execution environment info for %r" % str(executionEnvironments)[:100],
-                  resExeInfo['Message'])
+    sLog.error("Cannot get execution environment info for %r" % str(executionEnvironments)[:100],
+               resExeInfo['Message'])
     return resExeInfo
   exeInfos = resExeInfo['Value']
 
@@ -138,7 +141,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
 
       exeInfo = resExeInfo.get('Value')
       if not exeInfo:
-        gLogger.warn('Did not find information for execution environment %s, using dummy values' % siteName)
+        sLog.error('Did not find information for execution environment %s, using dummy values' % siteName)
         exeInfo = {'GlueHostMainMemoryRAMSize': '1999',  # intentionally identifiably dummy value
                    'GlueHostOperatingSystemVersion': '',
                    'GlueHostOperatingSystemName': '',
@@ -147,6 +150,8 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                    'GlueHostBenchmarkSI00': '2500',  # needed for the queue to be used by the sitedirector
                    'MANAGER': '',
                    }
+      else:
+        sLog.error('Found information for execution environment for %s' % siteName)
 
       # sometimes the time is still in hours
       maxCPUTime = int(queueInfo['GlueCEPolicyMaxCPUTime'])
@@ -181,30 +186,32 @@ def __getGlue2ShareInfo(host, shareInfoLists):
         cesDict[ceName].update(ceInfo)
 
       # ARC CEs do not have endpoints, we have to try something else to get the information about the queue etc.
-      if not shareEndpoints and shareInfoDict['GLUE2ShareID'].startswith('urn:ogf'):
-        exeInfo = dict(exeInfo)  # silence pylint about tuples
-        queueInfo['GlueCEImplementationName'] = 'ARC'
-        managerName = exeInfo.pop('MANAGER', '').split(' ', 1)[0].rsplit(':', 1)[1]
-        managerName = managerName.capitalize() if managerName == 'condor' else managerName
-        queueName = 'nordugrid-%s-%s' % (managerName, shareInfoDict['GLUE2ComputingShareMappingQueue'])
-        ceName = shareInfoDict['GLUE2ShareID'].split('ComputingShare:')[1].split(':')[0]
-        cesDict.setdefault(ceName, {})
-        existingQueues = dict(cesDict[ceName].get('Queues', {}))
-        existingQueues[queueName] = queueInfo
-        ceInfo['Queues'] = existingQueues
-        cesDict[ceName].update(ceInfo)
-
+      try:
+        if not shareEndpoints and shareInfoDict['GLUE2ShareID'].startswith('urn:ogf'):
+          exeInfo = dict(exeInfo)  # silence pylint about tuples
+          queueInfo['GlueCEImplementationName'] = 'ARC'
+          managerName = exeInfo.pop('MANAGER', '').split(' ', 1)[0].rsplit(':', 1)[1]
+          managerName = managerName.capitalize() if managerName == 'condor' else managerName
+          queueName = 'nordugrid-%s-%s' % (managerName, shareInfoDict['GLUE2ComputingShareMappingQueue'])
+          ceName = shareInfoDict['GLUE2ShareID'].split('ComputingShare:')[1].split(':')[0]
+          cesDict.setdefault(ceName, {})
+          existingQueues = dict(cesDict[ceName].get('Queues', {}))
+          existingQueues[queueName] = queueInfo
+          ceInfo['Queues'] = existingQueues
+          cesDict[ceName].update(ceInfo)
+      except Exception:
+        sLog.error('Exception in ARC part for %s' % siteName)
       siteDict[siteName]['CEs'].update(cesDict)
 
   return S_OK(siteDict)
 
 
 def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironments):
-  """ get the information about OS version, architecture, memory from GLUE2 ExecutionEnvironment
+  """Find all the executionEnvironments.
 
   :param str host: BDII host to query
   :param list executionEnvironments: list of the execution environments to get some information from
-  :returns: result structure with information in Glue1 schema to be consumed later elsewhere
+  :returns: result of the ldapsearch for all executionEnvironments, Glue2 schema
   """
   exeFilter = ''
   for execEnv in executionEnvironments:
@@ -217,16 +224,23 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironments):
     return S_ERROR("No information found for %s" % executionEnvironments)
   return response
 
+
 def __getGlue2ExecutionEnvironmentInfoForSite(sitename, foreignKeys, exeInfos):
-  """Get the information about the execution environment for a specific site or ce or something."""
+  """Get the information about the execution environment for a specific site or ce or something.
+
+  :param str sitename: Name of the site we are looking at
+  :param list foreignKeys: list of ExecutionEnvironmentForeignkeys linked by the site
+  :param list exeInfos: bdii list of dictionaries containing all the ExecutionEnvironment information for all sites
+  :return: Dictionary with the information as required by the Bdii2CSagent for this site
+  """
   # filter those that we want
   exeInfos = [exeInfo for exeInfo in exeInfos if exeInfo['attr']['GLUE2ResourceID'] in foreignKeys]
   # take the CE with the lowest MainMemory
   exeInfo = sorted(exeInfos, key=lambda k: int(k['attr']['GLUE2ExecutionEnvironmentMainMemorySize']))
   if not exeInfo:
-    gLogger.error('Did not find execution info for', sitename)
+    sLog.error('SCHEMA PROBLEM: Did not find execution info for site', sitename + ' and keys: ' + ' '.join(foreignKeys))
     return S_OK()
-  gLogger.debug("Found ExecutionEnvironments", pformat(exeInfo[0]))
+  sLog.debug("Found ExecutionEnvironments", pformat(exeInfo[0]))
   exeInfo = exeInfo[0]['attr']  # pylint: disable=unsubscriptable-object
   maxRam = exeInfo.get('GLUE2ExecutionEnvironmentMainMemorySize', '')
   architecture = exeInfo.get('GLUE2ExecutionEnvironmentPlatform', '')
