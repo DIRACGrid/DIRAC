@@ -232,6 +232,7 @@ def __getGlue2ExecutionEnvironmentInfoForSite(sitename, foreignKeys, exeInfos):
   architecture = exeInfo.get('GLUE2ExecutionEnvironmentPlatform', '')
   architecture = 'x86_64' if architecture == 'amd64' else architecture
   architecture = 'x86_64' if architecture == 'UNDEFINEDVALUE' else architecture
+  architecture = 'x86_64' if "Intel(R) Xeon(R)" in architecture else architecture
   osFamily = exeInfo.get('GLUE2ExecutionEnvironmentOSFamily', '')  # e.g. linux
   osName = exeInfo.get('GLUE2ExecutionEnvironmentOSName', '')
   osVersion = exeInfo.get('GLUE2ExecutionEnvironmentOSVersion', '')

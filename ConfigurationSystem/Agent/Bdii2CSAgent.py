@@ -191,9 +191,9 @@ class Bdii2CSAgent(AgentModule):
         body += "dirac-admin-add-resources --vo %s --ce\n" % vo
 
       if unknownCEs:
-        body += '\n ================================== \n'
+        body += '\n\n'
         body += 'There is no (longer) information about the following CEs for the %s VO.\n' % vo
-        body += '\n'.join(unknownCEs)
+        body += '\n'.join(sorted(unknownCEs))
         body += '\n\n'
 
       if body:
@@ -335,7 +335,8 @@ class Bdii2CSAgent(AgentModule):
       body = '\n'.join(["%s/%s %s -> %s" % entry for entry in changeList])
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()
-        result = notification.sendMail(self.addressTo, self.subject, body, self.addressFrom, localAttempt=False)
+        result = notification.sendMail(self.addressTo, self.subject, body, self.addressFrom, localAttempt=False,
+                                       avoidSpam=True)
 
       if body:
         self.log.info('The following configuration changes were detected:')
