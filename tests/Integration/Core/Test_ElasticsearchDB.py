@@ -67,7 +67,6 @@ class ElasticBulkCreateChain(ElasticTestCase):
     """ bulk_index test
     """
     result = self.elasticSearchDB.bulk_index('integrationtest',
-                                             'test',
                                              self.data)
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 10)
@@ -82,7 +81,6 @@ class ElasticBulkCreateChain(ElasticTestCase):
     """ bulk_index test (month)
     """
     result = self.elasticSearchDB.bulk_index(indexprefix='integrationtestmontly',
-                                             doc_type='test',
                                              data=self.data,
                                              period='month')
     self.assertTrue(result['OK'])
@@ -110,7 +108,7 @@ class ElasticCreateChain(ElasticTestCase):
     self.index_name = result['Value']
 
     for i in self.data:
-      result = self.elasticSearchDB.index(self.index_name, 'test', i)
+      result = self.elasticSearchDB.index(self.index_name, i)
       self.assertTrue(result['OK'])
 
   def test_wrongdataindex(self):
@@ -119,15 +117,15 @@ class ElasticCreateChain(ElasticTestCase):
     result = self.elasticSearchDB.createIndex('dsh63tsdgad', {})
     self.assertTrue(result['OK'])
     index_name = result['Value']
-    result = self.elasticSearchDB.index(index_name, 'test', {"Color": "red",
-                                                             "quantity": 1,
-                                                             "Product": "a",
-                                                             "timestamp": 1458226213})
+    result = self.elasticSearchDB.index(index_name, {"Color": "red",
+                                                     "quantity": 1,
+                                                     "Product": "a",
+                                                     "timestamp": 1458226213})
     self.assertTrue(result['OK'])
-    result = self.elasticSearchDB.index(index_name, 'test', {"Color": "red",
-                                                             "quantity": 1,
-                                                             "Product": "a",
-                                                             "timestamp": "2015-02-09T16:15:00Z"})
+    result = self.elasticSearchDB.index(index_name, {"Color": "red",
+                                                     "quantity": 1,
+                                                     "Product": "a",
+                                                     "timestamp": "2015-02-09T16:15:00Z"})
     self.assertFalse(result['OK'])
     self.assertTrue(result['Message'])
     result = self.elasticSearchDB.deleteIndex(index_name)
@@ -158,10 +156,10 @@ class ElasticTestChain(ElasticTestCase):
     self.assertTrue(len(result) > len('integrationtest'))
     self.index_name = result
 
-    result = self.elasticSearchDB.index(self.index_name, 'test', {"Color": "red",
-                                                                  "quantity": 1,
-                                                                  "Product": "a",
-                                                                  "timestamp": 1458226213})
+    result = self.elasticSearchDB.index(self.index_name, {"Color": "red",
+                                                          "quantity": 1,
+                                                          "Product": "a",
+                                                          "timestamp": 1458226213})
     self.assertTrue(result['OK'])
 
   def tearDown(self):
@@ -179,7 +177,7 @@ class ElasticTestChain(ElasticTestCase):
     """
     result = self.elasticSearchDB.getDocTypes(self.index_name)
     self.assertTrue(result)
-    self.assertEqual(result['Value']['test']['properties'].keys(), [u'Color', u'timestamp', u'Product', u'quantity'])
+    self.assertEqual(list(result['Value']['_doc']['properties']), [u'Color', u'timestamp', u'Product', u'quantity'])
 
   def test_exists(self):
     result = self.elasticSearchDB.exists(self.index_name)
@@ -224,7 +222,7 @@ class ElasticTestChain(ElasticTestCase):
     self.elasticSearchDB.deleteIndex(self.index_name)
     # inserting 10 entries
     for i in self.moreData:
-      result = self.elasticSearchDB.index(self.index_name, 'test', i)
+      result = self.elasticSearchDB.index(self.index_name, i)
       self.assertTrue(result['OK'])
     time.sleep(10)  # giving ES some time for indexing
 
@@ -346,7 +344,7 @@ class ElasticTestChain(ElasticTestCase):
     self.elasticSearchDB.deleteIndex(self.index_name)
     # inserting 10 entries
     for i in self.moreData:
-      result = self.elasticSearchDB.index(self.index_name, 'test', i)
+      result = self.elasticSearchDB.index(self.index_name, i)
       self.assertTrue(result['OK'])
     time.sleep(10)  # giving ES some time for indexing
 

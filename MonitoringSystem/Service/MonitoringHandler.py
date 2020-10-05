@@ -243,7 +243,7 @@ class MonitoringHandler(RequestHandler):
 
   types_addMonitoringRecords = [basestring, basestring, list]
 
-  def export_addMonitoringRecords(self, monitoringtype, doc_type, data):
+  def export_addMonitoringRecords(self, monitoringtype, data):
     """
     It is used to insert data directly to the given monitoring type
 
@@ -257,11 +257,11 @@ class MonitoringHandler(RequestHandler):
       return retVal
     prefix = retVal['Value']
     gLogger.debug("addMonitoringRecords:", prefix)
-    return self.__db.bulk_index(prefix, doc_type, data)
+    return self.__db.bulk_index(prefix, data)
 
   types_addRecords = [basestring, basestring, list]
 
-  def export_addRecords(self, indexname, doc_type, data):
+  def export_addRecords(self, indexname, monitoringType, data):
     """
     It is used to insert data directly to the database... The data will be inserted to the given index.
 
@@ -273,9 +273,9 @@ class MonitoringHandler(RequestHandler):
     setup = self.serviceInfoDict.get('clientSetup', '')
     indexname = "%s_%s" % (setup.lower(), indexname)
     gLogger.debug("Bulk index:", indexname)
-    mapping = self.__db.getMapping(doc_type)
+    mapping = self.__db.getMapping(monitoringType)
     gLogger.debug("Mapping:", mapping)
-    return self.__db.bulk_index(indexname, doc_type, data, mapping)
+    return self.__db.bulk_index(indexname, data, mapping)
 
   types_deleteIndex = [basestring]
 

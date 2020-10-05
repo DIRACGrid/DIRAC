@@ -32,7 +32,7 @@ class MonitoringDB(ElasticDB):
     indexPrefix = gConfig.getValue("%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
     super(MonitoringDB, self).__init__('MonitoringDB', name, indexPrefix)
     self.__readonly = readOnly
-    self.__documents = {}
+    self.documentTypes = {}
 
     # loads all monitoring indexes and types.
     objectsLoaded = TypeLoader('Monitoring').getTypes()
@@ -41,14 +41,14 @@ class MonitoringDB(ElasticDB):
     for pythonClassName in sorted(objectsLoaded):
       typeClass = objectsLoaded[pythonClassName]
       indexName = "%s_%s" % (self.getIndexPrefix(), typeClass()._getIndex())
-      doc_type = typeClass()._getDocType()
+      monitoringType = typeClass().__class__.__name__
       mapping = typeClass().mapping
       monfields = typeClass().monitoringFields
       period = typeClass().period
-      self.__documents[doc_type] = {'indexName': indexName,
-                                    'mapping': mapping,
-                                    'monitoringFields': monfields,
-                                    'period': period}
+      self.documentTypes[monitoringType] = {'indexName': indexName,
+                                            'mapping': mapping,
+                                            'monitoringFields': monfields,
+                                            'period': period}
       if self.__readonly:
         self.log.info("Read only mode is okay")
       else:
@@ -59,14 +59,18 @@ class MonitoringDB(ElasticDB):
             if self.exists(actualindexName):
               self.log.info("The index exists:", actualindexName)
             else:
-              result = self.createIndex(indexName, mapping[doc_type], period)
+              result = self.createIndex(indexName,
+                                        self.documentTypes[monitoringType]['mapping'],
+                                        period)
               if not result['OK']:
                 self.log.error(result['Message'])
                 raise RuntimeError(result['Message'])
               self.log.info("The index is created", actualindexName)
         else:
           # in case the index does not exist
-          result = self.createIndex(indexName, mapping[doc_type], period)
+          result = self.createIndex(indexName,
+                                    self.documentTypes[monitoringType]['mapping'],
+                                    period)
           if not result['OK']:
             self.log.error(result['Message'])
             raise RuntimeError(result['Message'])
@@ -74,25 +78,25 @@ class MonitoringDB(ElasticDB):
 
   def getIndexName(self, typeName):
     """
-    :param str typeName: doc_type and type name is equivalent
+    :param str typeName: monitoring type
     """
     indexName = None
 
-    if typeName in self.__documents:
-      indexName = self.__documents.get(typeName).get("indexName", None)
+    if typeName in self.documentTypes:
+      indexName = self.documentTypes.get(typeName).get("indexName", None)
 
     if indexName:
       return S_OK(indexName)
 
     return S_ERROR("Type %s is not defined" % typeName)
 
-  def getKeyValues(self, typeName):
+  def getKeyValues(self, monitoringType):
     """
     Get all values for a given key field in a type
     """
     keyValuesDict = {}
 
-    retVal = self.getIndexName(typeName)
+    retVal = self.getIndexName(monitoringType)
     if not retVal['OK']:
       return retVal
     indexName = "%s*" % (retVal['Value'])
@@ -101,13 +105,17 @@ class MonitoringDB(ElasticDB):
       return retVal
     docs = retVal['Value']
     self.log.debug("Doc types", docs)
-    monfields = self.__documents[typeName]['monitoringFields']
+    monfields = self.documentTypes[monitoringType]['monitoringFields']
 
-    if typeName not in docs:
-      # this is only happen when we the index is created and we were not able to send records to the index.
-      # There is no data in the index we can not create the plot.
-      return S_ERROR("%s empty and can not retrive the Type of the index" % indexName)
-    for i in docs[typeName]['properties']:
+    try:
+      properties = docs[monitoringType]['properties']  # "old" way, with ES types == Monitoring types
+    except KeyError:
+      try:
+        properties = docs['_doc']['properties']  # "ES6" way, with ES types == '_doc'
+      except KeyError:
+        properties = docs['properties']  # "ES7" way, no types
+
+    for i in properties:
       if i not in monfields and not i.startswith('time') and i != 'metric':
         retVal = self.getUniqueValue(indexName, i)
         if not retVal['OK']:
@@ -344,14 +352,13 @@ class MonitoringDB(ElasticDB):
     """
     mapping = self.getMapping(monitoringType)
     self.log.always("Mapping used to create an index:", mapping)
-    period = self.__documents[monitoringType].get('period')
+    period = self.documentTypes[monitoringType].get('period')
     res = self.getIndexName(monitoringType)
     if not res['OK']:
       return res
     indexName = res['Value']
 
     return self.bulk_index(indexprefix=indexName,
-                           doc_type=monitoringType,
                            data=records,
                            mapping=mapping,
                            period=period)
@@ -364,8 +371,8 @@ class MonitoringDB(ElasticDB):
     :return: an empty dictionary if there is no mapping defenied.
     """
     mapping = {}
-    if monitoringType in self.__documents:
-      mapping = self.__documents[monitoringType].get("mapping", {})
+    if monitoringType in self.documentTypes:
+      mapping = self.documentTypes[monitoringType].get("mapping", {})
     return mapping
 
   def __getRawData(self, typeName, condDict, size=-1):

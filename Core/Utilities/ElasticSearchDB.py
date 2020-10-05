@@ -147,28 +147,27 @@ class ElasticSearchDB(object):
       return S_ERROR(re)
 
   @ifConnected
-  def update(self, index, doctype='_doc', query=None, updateByQuery=True, id=None):
+  def update(self, index, query=None, updateByQuery=True, id=None):
     """ Executes an update of a document, and returns S_OK/S_ERROR
 
     :param self: self reference
     :param str index: index name
-    :param str doctype: type of document
     :param dict query: It is the query in ElasticSearch DSL language
     :param bool updateByQuery: A bool to determine update by query or index values using index function.
     :param int id: ID for the document to be created.
 
     """
 
-    sLog.debug("Updating %s/%s with %s, updateByQuery=%s, id=%s" % (index, doctype, query, updateByQuery, id))
+    sLog.debug("Updating %s with %s, updateByQuery=%s, id=%s" % (index, query, updateByQuery, id))
 
     if not index or not query:
       return S_ERROR("Missing index or query")
 
     try:
       if updateByQuery:
-        esDSLQueryResult = self.client.update_by_query(index=index, doc_type=doctype, body=query)
+        esDSLQueryResult = self.client.update_by_query(index=index, body=query)
       else:
-        esDSLQueryResult = self.client.index(index=index, doc_type=doctype, body=query, id=id)
+        esDSLQueryResult = self.client.index(index=index, doc_type='_doc', body=query, id=id)
       return S_OK(esDSLQueryResult)
     except RequestError as re:
       return S_ERROR(re)
@@ -293,37 +292,26 @@ class ElasticSearchDB(object):
 
     return S_ERROR(retVal)
 
-  @ifConnected
-  def index(self, indexName, doc_type='_doc', body=None, docID=None):
+  def index(self, indexName, body=None, docID=None):
     """
     :param str indexName: the name of the index to be used
-    :param str doc_type: the type of the document
     :param dict body: the data which will be indexed (basically the JSON)
     :param int id: optional document id
     :return: the index name in case of success.
     """
 
-    sLog.debug("Indexing %s/%s with %s, id=%s" % (indexName, doc_type, body, docID))
+    sLog.debug("Indexing in %s body %s, id=%s" % (indexName, body, docID))
 
     if not indexName or not body:
       return S_ERROR("Missing index or body")
 
     try:
-      # ES 6
       res = self.client.index(index=indexName,
-                              doc_type=doc_type,
+                              doc_type='_doc',
                               body=body,
                               id=docID)
-    except RequestError:
-      # is it ES 7?
-      try:
-        res = self.client.index(index=indexName,
-                                doc_type='_doc',
-                                body=body,
-                                id=docID)
-      except (RequestError, TransportError) as e:
-        return S_ERROR(e)
-    except TransportError as e:
+    except (RequestError, TransportError) as e:
+      sLog.exception()
       return S_ERROR(e)
 
     if res.get('created') or res.get('result') in ('created', 'updated'):
@@ -333,10 +321,9 @@ class ElasticSearchDB(object):
     return S_ERROR(res)
 
   @ifConnected
-  def bulk_index(self, indexprefix, doc_type='_doc', data=None, mapping=None, period='day'):
+  def bulk_index(self, indexprefix, data=None, mapping=None, period='day'):
     """
     :param str indexPrefix: index name.
-    :param str doc_type: the type of the document
     :param list data: contains a list of dictionary
     :param dict mapping: the mapping used by elasticsearch
     :param str period: We can specify which kind of indexes will be created.
@@ -350,7 +337,7 @@ class ElasticSearchDB(object):
       indexName = self.generateFullIndexName(indexprefix, period)
     else:
       indexName = indexprefix
-    sLog.debug("Bulk indexing into %s/%s of %s" % (indexName, doc_type, data))
+    sLog.debug("Bulk indexing into %s of %s" % (indexName, data))
 
     if not self.exists(indexName):
       retVal = self.createIndex(indexprefix, mapping, period)
@@ -360,7 +347,8 @@ class ElasticSearchDB(object):
     for row in data:
       body = {
           '_index': indexName,
-          '_source': {}
+          '_source': {},
+          '_type': '_doc'
       }
       body['_source'] = row
 
@@ -383,16 +371,10 @@ class ElasticSearchDB(object):
         body['_source']['timestamp'] = int(Time.toEpoch()) * 1000
       docs += [body]
     try:
-      res = bulk(self.client, docs, chunk_size=self.__chunk_size)  # ES7
-    except RequestError as e:
-      try:
-        docsWithType = []
-        for doc in docs:
-          doc['_type'] = '_doc'
-          docsWithType.append(doc)
-        res = bulk(self.client, docsWithType, chunk_size=self.__chunk_size)  # ES6
-      except (BulkIndexError, RequestError) as e:
-        return S_ERROR(e)
+      res = bulk(self.client, docs, chunk_size=self.__chunk_size)
+    except (BulkIndexError, RequestError) as e:
+      sLog.exception()
+      return S_ERROR(e)
 
     if res[0] == len(docs):
       # we have inserted all documents...
