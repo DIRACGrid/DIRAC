@@ -148,7 +148,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                    'GlueHostOperatingSystemRelease': '',
                    'GlueHostArchitecturePlatformType': 'x86_64',
                    'GlueHostBenchmarkSI00': '2500',  # needed for the queue to be used by the sitedirector
-                   'MANAGER': '',
+                   'MANAGER': 'manager:unknownBatchSystem',  # need some value for ARC
                    }
       else:
         sLog.error('Found information for execution environment for %s' % siteName)
