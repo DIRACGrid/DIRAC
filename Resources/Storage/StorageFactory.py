@@ -121,15 +121,7 @@ class StorageFactory(object):
     res = self._getConfigStorageOptions(storageName, derivedStorageName=derivedStorageName,
                                         seConfigPath=seConfigPath)
     if not res['OK']:
-      # This is for the backward compatibility and to invite developer to move their BaseSE in the correct section
-      gLogger.warn("Deprecated configuration, you can ignore the error message above."
-                   " Please move the baseSE in the correct section: ", SE_BASE_CONFIG_PATH)
-      # We change the value of seConfigPath to avoid other errors due to the bad SE_BASE_CONFIG_PATH
-      seConfigPath = SE_CONFIG_PATH
-      res = self._getConfigStorageOptions(storageName, derivedStorageName=derivedStorageName,
-                                          seConfigPath=seConfigPath)
-      if not res['OK']:
-        return res
+      return res
     self.options = res['Value']
 
     # Get the protocol specific details
@@ -205,11 +197,12 @@ class StorageFactory(object):
     if referenceType in res['Value']:
       configPath = cfgPath(seConfigPath, storageName, referenceType)
       referenceName = gConfig.getValue(configPath)
+      # We first look into the BaseStorageElements section.
+      # If not, we look into the StorageElements section
+      # (contrary to BaseSE, it's OK for an Alias to be in the StorageElements section)
       result = self._getConfigStorageName(referenceName, 'Alias', seConfigPath=SE_BASE_CONFIG_PATH)
       if not result['OK']:
-        # This is for the backward compatibility and to invite developer to move their BaseSE in the correct section
-        gLogger.warn("Deprecated configuration, you can ignore the error message above."
-                     " Please move the baseSE in the correct section: ", SE_BASE_CONFIG_PATH)
+        # Since it is not in the StorageElementBases section, check in the StorageElements section
         result = self._getConfigStorageName(referenceName, 'Alias', seConfigPath=SE_CONFIG_PATH)
         if not result['OK']:
           return result
