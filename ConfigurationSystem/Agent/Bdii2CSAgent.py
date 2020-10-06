@@ -143,8 +143,8 @@ class Bdii2CSAgent(AgentModule):
 
       knownCEs = set()
       for _site, ces in res['Value'].items():
-        knownCEs.union(ces.keys())
-      knownCEs = knownCEs.union(set(bannedCEs))
+        knownCEs.update(ces)
+      knownCEs.update(bannedCEs)
 
       result = self.__getBdiiCEInfo(vo)
       if not result['OK']:
@@ -371,7 +371,7 @@ class Bdii2CSAgent(AgentModule):
     if not result['OK']:
       return result
     knownSEs = set(result['Value'])
-    knownSEs = knownSEs.union(set(bannedSEs))
+    knownSEs.update(bannedSEs)
 
     for vo in self.voName:
       result = self.__getBdiiSEInfo(vo)

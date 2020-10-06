@@ -78,9 +78,9 @@ def checkUnusedCEs():
     gLogger.error('ERROR: failed to get CEs from CS', res['Message'])
     DIRACExit(-1)
 
-  knownCEs = []
+  knownCEs = set()
   for _site, ces in res['Value'].items():
-    knownCEs.extend(ces.keys())
+    knownCEs.update(ces)
 
   result = getGridCEs(vo, ceBlackList=knownCEs, hostURL=hostURL, glue2=glue2)
   if not result['OK']:
