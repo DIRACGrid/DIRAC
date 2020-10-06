@@ -35,7 +35,8 @@ def processScriptSwitches():
   Script.registerSwitch("C", "ce", "Process Computing Elements")
   Script.registerSwitch("S", "se", "Process Storage Elements")
   Script.registerSwitch("H:", "host=", "use this url for information querying")
-  Script.registerSwitch("G", "glue2", "query GLUE2 information schema")
+  Script.registerSwitch("G", "glue2", "DEPRECATED: query GLUE2 information schema")
+  Script.registerSwitch("g", "glue1", "query GLUE1 information schema")
 
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                     'WARNING: StorageElements only for SRM-style'
@@ -61,7 +62,9 @@ def processScriptSwitches():
     if sw[0] in ("H", "host"):
       hostURL = sw[1]
     if sw[0] in ("G", "glue2"):
-      glue2 = True
+      gLogger.notice(" The '-G' flag is deprecated, Glue2 is the default now")
+    if sw[0] in ("g", "glue1"):
+      glue2 = False
 
 
 ceBdiiDict = None
