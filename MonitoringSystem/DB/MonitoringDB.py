@@ -88,7 +88,7 @@ class MonitoringDB(ElasticDB):
     if indexName:
       return S_OK(indexName)
 
-    return S_ERROR("Type %s is not defined" % typeName)
+    return S_ERROR("Monitoring type %s is not defined" % typeName)
 
   def getKeyValues(self, monitoringType):
     """

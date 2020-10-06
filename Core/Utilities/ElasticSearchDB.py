@@ -208,6 +208,8 @@ class ElasticSearchDB(object):
   @ifConnected
   def getDocTypes(self, indexName):
     """
+    Returns mappings, by index.
+
     :param str indexName: is the name of the index...
     :return: S_OK or S_ERROR
     """
@@ -216,7 +218,9 @@ class ElasticSearchDB(object):
       sLog.debug("Getting mappings for ", indexName)
       result = self.client.indices.get_mapping(indexName)
     except Exception as e:  # pylint: disable=broad-except
-      sLog.error(e)
+      sLog.exception()
+      return S_ERROR(e)
+
     doctype = ''
     for indexConfig in result:
       if not result[indexConfig].get('mappings'):
@@ -226,7 +230,7 @@ class ElasticSearchDB(object):
         continue
       if result[indexConfig].get('mappings'):
         doctype = result[indexConfig]['mappings']
-        break  # we supose the mapping of all indexes are the same...
+        break  # we suppose the mapping of all indexes are the same...
 
     if not doctype:
       return S_ERROR("%s does not exists!" % indexName)

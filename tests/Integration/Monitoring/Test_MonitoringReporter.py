@@ -243,12 +243,12 @@ class MonitoringReporterAdd(MonitoringTestCase):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], len(self.data))
 
-  # def test_addComponentRecords(self):
-  #   for record in self.data:
-  #     self.componentMonitoringReporter.addRecord(record)
-  #   result = self.componentMonitoringReporter.commit()
-  #   self.assertTrue(result['OK'])
-  #   self.assertEqual(result['Value'], len(self.data))
+  def test_addComponentRecords(self):
+    for record in self.data:
+      self.componentMonitoringReporter.addRecord(record)
+    result = self.componentMonitoringReporter.commit()
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], len(self.data))
 
 
 class MonitoringDeleteChain(MonitoringTestCase):
