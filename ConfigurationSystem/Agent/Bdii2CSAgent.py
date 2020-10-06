@@ -44,7 +44,7 @@ class Bdii2CSAgent(AgentModule):
     self.voBdiiSEDict = {}
     self.host = 'lcg-bdii.cern.ch:2170'
     self.glue2URLs = []
-    self.glue2Only = False
+    self.glue2Only = True
 
     self.csAPI = None
 
