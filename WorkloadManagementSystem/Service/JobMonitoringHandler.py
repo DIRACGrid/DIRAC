@@ -281,6 +281,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsParameters = [list, list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsParameters(jobIDs, parameters):
     if not (jobIDs and parameters):
       return S_OK({})
@@ -300,6 +301,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsMinorStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsMinorStatus(jobIDs):
 
     return getAttributesForJobList(jobIDs, ['MinorStatus'])
@@ -308,6 +310,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsApplicationStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsApplicationStatus(jobIDs):
 
     return getAttributesForJobList(jobIDs, ['ApplicationStatus'])
@@ -316,6 +319,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsSites = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsSites(jobIDs):
 
     return getAttributesForJobList(jobIDs, ['Site'])
@@ -496,6 +500,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsPrimarySummary = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsPrimarySummary(jobIDs):
     return getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
 
@@ -531,6 +536,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobParameters = [[basestring, int, long, list]]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobParameters(jobIDs, parName=None):
     """
     :param str/int/long/list jobIDs: one single job ID or a list of them

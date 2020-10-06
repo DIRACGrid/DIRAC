@@ -34,3 +34,57 @@ class JobMonitoringClient(Client):
     if res['OK']:
       res['Value'] = strToIntDict(res['Value'])
     return res
+
+  @ignoreEncodeWarning
+  def getJobParameters(self, jobIDs, parName=None):
+    res = self._getRPC().getJobParameters(jobIDs, parName)
+
+    # Cast the str keys to int
+    if res['OK']:
+      res['Value'] = strToIntDict(res['Value'])
+    return res
+
+  @ignoreEncodeWarning
+  def getJobsParameters(self, jobIDs, parameters):
+    res = self._getRPC().getJobsParameters(jobIDs, parameters)
+
+    # Cast the str keys to int
+    if res['OK']:
+      res['Value'] = strToIntDict(res['Value'])
+    return res
+
+  @ignoreEncodeWarning
+  def getJobsMinorStatus(self, jobIDs):
+    res = self._getRPC().getJobsMinorStatus(jobIDs)
+
+    # Cast the str keys to int
+    if res['OK']:
+      res['Value'] = strToIntDict(res['Value'])
+    return res
+
+  @ignoreEncodeWarning
+  def getJobsApplicationStatus(self, jobIDs):
+    res = self._getRPC().getJobsApplicationStatus(jobIDs)
+
+    # Cast the str keys to int
+    if res['OK']:
+      res['Value'] = strToIntDict(res['Value'])
+    return res
+
+  @ignoreEncodeWarning
+  def getJobsSites(self, jobIDs):
+    res = self._getRPC().getJobsSites(jobIDs)
+
+    # Cast the str keys to int
+    if res['OK']:
+      res['Value'] = strToIntDict(res['Value'])
+    return res
+
+  @ignoreEncodeWarning
+  def getJobsPrimarySummary(self, jobIDs):
+    res = self._getRPC().getJobsPrimarySummary(jobIDs)
+
+    # Cast the str keys to int
+    if res['OK']:
+      res['Value'] = strToIntDict(res['Value'])
+    return res
