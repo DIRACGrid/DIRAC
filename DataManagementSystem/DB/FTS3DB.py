@@ -464,6 +464,7 @@ class FTS3DB(object):
           .filter(FTS3Operation.status.in_(['Active', 'Processed']))\
           .filter(FTS3Operation.assignment.is_(None))\
           .filter(FTS3Job.assignment.is_(None))\
+          .order_by(FTS3Operation.lastUpdate.asc())\
           .limit(limit)\
           .distinct()
 
