@@ -13,6 +13,7 @@ from datetime import timedelta
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -280,6 +281,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsParameters = [list, list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsParameters(jobIDs, parameters):
     if not (jobIDs and parameters):
       return S_OK({})
@@ -289,6 +291,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsStatus(jobIDs):
     if not jobIDs:
       return S_OK({})
@@ -298,6 +301,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsMinorStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsMinorStatus(jobIDs):
 
     return getAttributesForJobList(jobIDs, ['MinorStatus'])
@@ -306,6 +310,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsApplicationStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsApplicationStatus(jobIDs):
 
     return getAttributesForJobList(jobIDs, ['ApplicationStatus'])
@@ -314,6 +319,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsSites = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsSites(jobIDs):
 
     return getAttributesForJobList(jobIDs, ['Site'])
@@ -494,6 +500,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsPrimarySummary = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsPrimarySummary(jobIDs):
     return getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
 
@@ -529,6 +536,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobParameters = [[basestring, int, long, list]]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobParameters(jobIDs, parName=None):
     """
     :param str/int/long/list jobIDs: one single job ID or a list of them

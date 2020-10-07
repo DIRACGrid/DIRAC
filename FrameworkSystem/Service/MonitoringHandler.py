@@ -57,6 +57,8 @@ class MonitoringHandler(RequestHandler):
 
   types_commitMarks = [int, dict]
 
+  # We can ignore encoding warning here because are effectively casting inside the method
+  @DEncode.ignoreEncodeWarning
   def export_commitMarks(self, sourceId, activitiesDict, componentExtraInfo={}):
     """
     Adds marks for activities
