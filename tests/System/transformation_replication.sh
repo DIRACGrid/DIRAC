@@ -14,7 +14,7 @@ fi
 
 TestFilter="False"
 if [[ "$1" = "-test_filter" ]]; then
-   if [[ "$2" == "True" ]] || [ "$2" == "False" ]]; then
+   if [[ "$2" == "True" ]] || [[ "$2" == "False" ]]; then
      TestFilter=$2
    else
      echo "$usage"
@@ -121,7 +121,7 @@ echo ""
 echo "Checking if the files have been added to the transformation"
 dirac-transformation-get-files ${transID} | sort > ./transLFNs.txt
 diff --ignore-space-change LFNstoTS.txt transLFNs.txt
-if [[ "${?}" -ne 0 ]
+if [[ "${?}" -ne 0 ]]
 then
   echo 'Error: files have not been  added to the transformation'
   exit 1

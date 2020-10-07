@@ -13,6 +13,7 @@ import six
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities import Time, Network, ThreadScheduler
@@ -366,6 +367,8 @@ class MonitoringClient(object):
       else:
         self.marksToSend[acName] = acMarks[acName]
 
+  # Decoding was fixed in https://github.com/DIRACGrid/DIRAC/pull/4462
+  @ignoreEncodeWarning
   def __sendData(self, secsTimeout=False):
     """ This method is used to initialize the rpcClient from the server and also to initiate the task
         of registering the activities and committing the marks.

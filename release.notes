@@ -1,4 +1,4 @@
-[v7r2-pre14]
+[v7r2-pre15]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -34,6 +34,20 @@ FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
+
+[v7r1p13]
+
+*WMS
+CHANGE: (#4750) JobMonitoring casts for JSON
+
+*Framework
+CHANGE: (#4750) ignore serialization error for JSON in the Monitoring
+
+*RMS
+CHANGE: (#4750) ignore serialization error in ForwardDISET
+
+tests
+FIX: (#4745, #4746) transformation_replication - fix integration test
 
 [v7r1p12]
 
@@ -290,6 +304,20 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p35]
+
+*Core
+FIX: (#4751) Do not read suspensionReason from VOMS as it's not used anywhere and
+     needs special permissions to give this information
+FIX: (#4756) Fix for silly-formed XMLs from GOCDB
+
+*Framework
+CHANGE: (#4753) NotificationService: if avoidSpam=True the email is now sent immediately
+        and cached for up to one hour, instead of being cached and then sent after up to an hour.
+
+*Resources
+FIX: (#4743) remove dots in xroot virtual username
 
 [v7r0p34]
 
@@ -892,6 +920,11 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p34]
+
+*DMS
+FIX: (#4748) FTS3Agent - Rotate FTS3Operations list to fetch all. Fixes #4727
 
 [v6r22p33]
 

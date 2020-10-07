@@ -37,15 +37,7 @@ gMailCache = DictCache()
 def purgeDelayedEMails():
   """ Purges the emails accumulated in gMailSet
   """
-  while gMailSet:
-    eMail = gMailSet.pop()
-    result = eMail._send()
-    if not result['OK']:
-      gLogger.warn('Could not send mail with the following message:\n%s' % result['Message'])
-      gMailSet.add(eMail)
-    else:
-      gLogger.info('Mail sent successfully')
-      gLogger.debug(result['Value'])
+  gMailSet.clear()
 
 
 class NotificationHandler(RequestHandler):
@@ -111,6 +103,8 @@ class NotificationHandler(RequestHandler):
         gMailCache.add(hash(address + subject + body), 3600 * 24)
         gLogger.info('Mail sent successfully to %s with subject %s' % (address, subject))
         gLogger.debug(result['Value'])
+        if avoidSpam:
+          gMailSet.add(eMail)
 
     return result
 
