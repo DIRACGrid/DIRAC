@@ -318,9 +318,18 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
             if 'CPUScalingReferenceSI00' in cap:
               newSI00 = cap.split('=')[-1]
 
+          # tags, processors
+          tag = queueDict.get('Tag', '')
+          numberOfProcessors = queueDict.get('NumberOfProcessors', '')
+          newNOP = queueInfo.get('NumberOfProcessors', 1)
+
           # Adding queue info to the CS
           addToChangeSet((queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime), changeSet)
           addToChangeSet((queueSection, 'SI00', si00, newSI00), changeSet)
+          if newNOP > 1:
+            addToChangeSet((queueSection, 'NumberOfProcessors', numberOfProcessors, newNOP), changeSet)
+            newTag = ','.join(sorted(set(tag.split(',')).union({'MultiProcessor'}))).strip(',')
+            addToChangeSet((queueSection, 'Tag', tag, newTag), changeSet)
           if maxTotalJobs == "Unknown":
             newTotalJobs = min(1000, int(int(queueInfo.get('GlueCEInfoTotalCPUs', 0)) / 2))
             newWaitingJobs = max(2, int(newTotalJobs * 0.1))

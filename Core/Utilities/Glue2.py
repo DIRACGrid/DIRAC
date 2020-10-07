@@ -16,7 +16,7 @@ published information, like a foreign key pointing to non-existent entry.
 
 from pprint import pformat
 
-from DIRAC import gLogger
+from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
@@ -133,6 +133,20 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                                                           .get('GLUE2ComputingShareMaxWallTime', 86400)) / 60)
       queueInfo['GlueCEInfoTotalCPUs'] = shareInfoDict.get('GLUE2ComputingShareMaxRunningJobs', '10000')
       queueInfo['GlueCECapability'] = ['CPUScalingReferenceSI00=2552']
+
+      try:
+        maxNOPfromCS = gConfig.getValue('/Resources/Computing/CEDefaults/MaxNumberOfProcessors', 8)
+        maxNOPfromGLUE = int(shareInfoDict.get('GLUE2ComputingShareMaxSlotsPerJob', 1))
+        numberOfProcs = min(maxNOPfromGLUE, maxNOPfromCS)
+        queueInfo['NumberOfProcessors'] = numberOfProcs
+        if numberOfProcs != maxNOPfromGLUE:
+          sLog.info('Limited NumberOfProcessors for', '%s from %s to %s' %
+                    (siteName, maxNOPfromGLUE, numberOfProcs))
+      except ValueError:
+        sLog.error("Bad content for GLUE2ComputingShareMaxSlotsPerJob:",
+                   siteName + ' ' + shareInfoDict.get('GLUE2ComputingShareMaxSlotsPerJob'))
+        queueInfo['NumberOfProcessors'] = 1
+
       executionEnvironment = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
       if isinstance(executionEnvironment, basestring):
         executionEnvironment = [executionEnvironment]
@@ -172,6 +186,8 @@ def __getGlue2ShareInfo(host, shareInfoLists):
           for otherInfo in shareInfoDict['GLUE2EntityOtherInfo']:
             if otherInfo.startswith('CREAMCEId'):
               queueName = otherInfo.split('/', 1)[1]
+              # creamCEs are EOL soon, ignore any info they have
+              queueInfo.pop('NumberOfProcessors', None)
 
         # HTCondorCE, htcondorce
         elif ceType.lower().endswith('htcondorce'):
