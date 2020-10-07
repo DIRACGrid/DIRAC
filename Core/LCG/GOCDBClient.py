@@ -345,7 +345,10 @@ class GOCDBClient(object):
         affectedEndpoints = dtElement.getElementsByTagName('AFFECTED_ENDPOINTS')
         urls = []
         for epElement in affectedEndpoints[0].childNodes:
-          urls.append(_parseSingleElement(epElement, ['URL'])['URL'])
+          try:
+            urls.append(_parseSingleElement(epElement, ['URL'])['URL'])
+          except (IndexError, KeyError):
+            pass
       except (IndexError, KeyError):
         pass
 

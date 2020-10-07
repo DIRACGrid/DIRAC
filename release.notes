@@ -268,6 +268,20 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p35]
+
+*Core
+FIX: (#4751) Do not read suspensionReason from VOMS as it's not used anywhere and
+     needs special permissions to give this information
+FIX: (#4756) Fix for silly-formed XMLs from GOCDB
+
+*Framework
+CHANGE: (#4753) NotificationService: if avoidSpam=True the email is now sent immediately
+        and cached for up to one hour, instead of being cached and then sent after up to an hour.
+
+*Resources
+FIX: (#4743) remove dots in xroot virtual username
+
 [v7r0p34]
 
 *Core
@@ -859,6 +873,11 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p34]
+
+*DMS
+FIX: (#4748) FTS3Agent - Rotate FTS3Operations list to fetch all. Fixes #4727
+
 [v6r22p33]
 
 *Core
@@ -1000,7 +1019,7 @@ CHANGE: (#4413) FTS3Agent - change proxy lifetime of FTS3Agent from 2 to 12 hour
 
 *TS
 CHANGE: (#4331) TaskManager - give possibility to run jobs for different problematic productions at
-        different Hospital sites>>>>>>> rel-v6r22
+        different Hospital sites
 
 [v6r22p17]
 
