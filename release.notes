@@ -603,6 +603,11 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p34]
+
+*DMS
+FIX: (#4748) FTS3Agent - Rotate FTS3Operations list to fetch all. Fixes #4727
+
 [v6r22p33]
 
 *Core
@@ -744,7 +749,7 @@ CHANGE: (#4413) FTS3Agent - change proxy lifetime of FTS3Agent from 2 to 12 hour
 
 *TS
 CHANGE: (#4331) TaskManager - give possibility to run jobs for different problematic productions at
-        different Hospital sites>>>>>>> rel-v6r22
+        different Hospital sites
 
 [v6r22p17]
 
