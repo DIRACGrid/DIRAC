@@ -1,3 +1,17 @@
+[v7r0p35]
+
+*Core
+FIX: (#4751) Do not read suspensionReason from VOMS as it's not used anywhere and
+     needs special permissions to give this information
+FIX: (#4756) Fix for silly-formed XMLs from GOCDB
+
+*Framework
+CHANGE: (#4753) NotificationService: if avoidSpam=True the email is now sent immediately
+        and cached for up to one hour, instead of being cached and then sent after up to an hour.
+
+*Resources
+FIX: (#4743) remove dots in xroot virtual username
+
 [v7r0p34]
 
 *Core
