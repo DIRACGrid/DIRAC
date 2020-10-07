@@ -132,7 +132,6 @@ class VOMSService(object):
         resultDict[dn] = user
         resultDict[dn]['CA'] = cert['issuerString']
         resultDict[dn]['certSuspended'] = cert['suspended']
-        resultDict[dn]['certSuspensionReason'] = cert['suspensionReason']
         resultDict[dn]['mail'] = user['emailAddress']
         resultDict[dn]['Roles'] = user['fqans']
         attributes = user.get('attributes')
