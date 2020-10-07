@@ -1,3 +1,17 @@
+[v7r1p13]
+
+*WMS
+CHANGE: (#4750) JobMonitoring casts for JSON
+
+*Framework
+CHANGE: (#4750) ignore serialization error for JSON in the Monitoring
+
+*RMS
+CHANGE: (#4750) ignore serialization error in ForwardDISET
+
+tests
+FIX: (#4745, #4746) transformation_replication - fix integration test
+
 [v7r1p12]
 
 *Core:
