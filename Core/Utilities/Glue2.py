@@ -54,6 +54,7 @@ def getGlue2CEInfo(vo, host):
   listOfSitesWithPolicies = set()
   shareFilter = ''
   for policyValues in polRes:
+    # skip entries without GLUE2DomainID in the DN because we cannot associate them to a site
     if 'GLUE2DomainID' not in policyValues['attr']['dn']:
       continue
     shareID = policyValues['attr'].get('GLUE2MappingPolicyShareForeignKey', None)
