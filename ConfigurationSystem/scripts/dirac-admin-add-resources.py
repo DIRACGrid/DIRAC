@@ -112,13 +112,12 @@ def checkUnusedCEs():
           gLogger.notice('      %s, %s' % (siteDict[site][ce]['CEType'], '%s_%s_%s' % siteDict[site][ce]['System']))
   else:
     gLogger.notice('No new resources available, exiting')
-    DIRACExit(0)
+    return
 
   inp = raw_input("\nDo you want to add sites ? [default=yes] [yes|no]: ")
   inp = inp.strip()
   if not inp and inp.lower().startswith('n'):
-    gLogger.notice('Nothing else to be done, exiting')
-    DIRACExit(0)
+    return
 
   gLogger.notice('\nAdding new sites/CEs interactively\n')
 
@@ -257,9 +256,9 @@ def updateCS(changeSet):
 
 def updateSites():
 
-  global vo, dry, ceBdiiDict
+  global vo, dry, ceBdiiDict, glue2
 
-  result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict)
+  result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, glue2=glue2)
   if not result['OK']:
     gLogger.error('Failed to get site updates', result['Message'])
     DIRACExit(-1)

@@ -155,7 +155,7 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
   return result
 
 
-def getSiteUpdates(vo, bdiiInfo=None, log=None):
+def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
   """ Get all the necessary updates for the already defined sites and CEs
 
       :param str vo: VO name
@@ -180,7 +180,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
 
   ceBdiiDict = bdiiInfo
   if bdiiInfo is None:
-    result = getBdiiCEInfo(vo)
+    result = getBdiiCEInfo(vo, glue2=glue2)
     if not result['OK']:
       return result
     ceBdiiDict = result['Value']
