@@ -321,8 +321,8 @@ Requirements
 ************
 
 Two special python packages are needed:
-* git+https://github.com/chaen/tornado.git@iostreamConfigurable : in place of the standard tornado. This adds configurable feature to tornado
-* git+https://github.com/chaen/tornado_m2crypto.git: this allows to use tornado with M2Crypto
+* git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable : in place of the standard tornado. This adds configurable feature to tornado
+* git+https://github.com/DIRACGrid/tornado_m2crypto.git: this allows to use tornado with M2Crypto
 
 
 Install a service

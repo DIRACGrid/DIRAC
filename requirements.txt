@@ -2,9 +2,8 @@
 fts3-rest
 
 #Patch for tornado
-git+https://gitlab.com/chaen/m2crypto.git@tmpUntilSwigUpdated
-git+https://github.com/chaen/tornado.git@iostreamConfigurable
-git+https://github.com/chaen/tornado_m2crypto.git
+git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
+git+https://github.com/DIRACGrid/tornado_m2crypto.git
 
 # From pypi
 boto3

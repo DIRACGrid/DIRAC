@@ -68,7 +68,7 @@ dependencies:
     - diraccfg
     # This is a fork of tornado with a patch to allow for configurable iostream
     # It should eventually be part of DIRACGrid
-    - git+https://github.com/chaen/tornado.git@iostreamConfigurable
+    - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
     # This is an extension of Tornado to use M2Crypto
     # It should eventually be part of DIRACGrid
-    - git+https://github.com/chaen/tornado_m2crypto
+    - git+https://github.com/DIRACGrid/tornado_m2crypto
