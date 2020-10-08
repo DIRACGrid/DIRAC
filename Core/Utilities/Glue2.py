@@ -187,7 +187,8 @@ def __getGlue2ShareInfo(host, shareInfoLists):
             if otherInfo.startswith('CREAMCEId'):
               queueName = otherInfo.split('/', 1)[1]
               # creamCEs are EOL soon, ignore any info they have
-              queueInfo.pop('NumberOfProcessors', None)
+              if queueInfo.pop('NumberOfProcessors', 1) != 1:
+                sLog.verbose('Ignoring MaxSlotsPerJob option for CreamCE', endpoint)
 
         # HTCondorCE, htcondorce
         elif ceType.lower().endswith('htcondorce'):
