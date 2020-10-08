@@ -135,7 +135,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
       queueInfo['GlueCECapability'] = ['CPUScalingReferenceSI00=2552']
 
       try:
-        maxNOPfromCS = gConfig.getValue('/Resources/Computing/CEDefaults/MaxNumberOfProcessors', 8)
+        maxNOPfromCS = gConfig.getValue('/Resources/Computing/CEDefaults/GLUE2ComputingShareMaxSlotsPerJob_limit', 8)
         maxNOPfromGLUE = int(shareInfoDict.get('GLUE2ComputingShareMaxSlotsPerJob', 1))
         numberOfProcs = min(maxNOPfromGLUE, maxNOPfromCS)
         queueInfo['NumberOfProcessors'] = numberOfProcs
