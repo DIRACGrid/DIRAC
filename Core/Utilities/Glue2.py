@@ -108,7 +108,10 @@ def __getGlue2ShareInfo(host, shareInfoLists):
   executionEnvironments = []
   for _siteName, shareInfoDicts in shareInfoLists.items():
     for shareInfoDict in shareInfoDicts:
-      executionEnvironment = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
+      executionEnvironment = shareInfoDict.get('GLUE2ComputingShareExecutionEnvironmentForeignKey', [])
+      if not executionEnvironment:
+        sLog.error('No entry for GLUE2ComputingShareExecutionEnvironmentForeignKey', pformat(shareInfoDict))
+        continue
       if isinstance(executionEnvironment, basestring):
         executionEnvironment = [executionEnvironment]
       executionEnvironments.extend(executionEnvironment)
@@ -147,7 +150,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                    siteName + ' ' + shareInfoDict.get('GLUE2ComputingShareMaxSlotsPerJob'))
         queueInfo['NumberOfProcessors'] = 1
 
-      executionEnvironment = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
+      executionEnvironment = shareInfoDict.get('GLUE2ComputingShareExecutionEnvironmentForeignKey', [])
       if isinstance(executionEnvironment, basestring):
         executionEnvironment = [executionEnvironment]
       resExeInfo = __getGlue2ExecutionEnvironmentInfoForSite(siteName, executionEnvironment, exeInfos)
