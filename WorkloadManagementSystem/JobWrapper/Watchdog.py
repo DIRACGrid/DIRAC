@@ -315,7 +315,7 @@ class Watchdog(object):
     if 'DiskSpace' not in self.parameters:
       self.parameters['DiskSpace'] = []
 
-    result = self.getDiskSpace()
+    result = self.getDiskSpace(exclude='fuse')
     if not result['OK']:
       self.log.warn("Could not establish DiskSpace", result['Message'])
     else:
