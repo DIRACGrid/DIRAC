@@ -3,23 +3,19 @@
     which is a drop-in replacement for MySQL-based table JobDB.JobParameters.
     While JobDB.JobParameters in MySQL is defined as::
 
-      ```
-      CREATE TABLE `JobParameters` (
-        `JobID` INT(11) UNSIGNED NOT NULL,
-        `Name` VARCHAR(100) NOT NULL,
-        `Value` BLOB NOT NULL,
-        PRIMARY KEY (`JobID`,`Name`),
-        FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-      ```
+    CREATE TABLE `JobParameters` (
+      `JobID` INT(11) UNSIGNED NOT NULL,
+      `Name` VARCHAR(100) NOT NULL,
+      `Value` BLOB NOT NULL,
+      PRIMARY KEY (`JobID`,`Name`),
+      FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
     Here we define a mapping as::
 
-      ```
-      "JobID": {"type": "long"},
-      "Name": {"type": "keyword"},
-      "Value": {"type": "text"}
-      ```
+    "JobID": {"type": "long"},
+    "Name": {"type": "keyword"},
+    "Value": {"type": "text"}
 
     which is an "equivalent" representation.
 
@@ -27,7 +23,7 @@
     capabilities of ES (ES will analyze+index text fields, while MySQL won't do that on BLOB types).
     This results in higher traceability for DIRAC jobs.
 
-    The following class methods are provided for public usage::
+    The following class methods are provided for public usage
       - getJobParameters()
       - setJobParameter()
       - deleteJobParameters()
@@ -106,17 +102,16 @@ class ElasticJobParametersDB(ElasticDB):
 
     resultDict = {}
 
-    """ the following should be equivalent to
-    {
-      "query": {
-        "bool": {
-          "filter": {  # no scoring
-            "term": {"JobID": jobID}  # term level query, does not pass through the analyzer
-          }
-        }
-      }
-    }
-    """
+    # the following should be equivalent to
+    # {
+    #   "query": {
+    #     "bool": {
+    #       "filter": {  # no scoring
+    #         "term": {"JobID": jobID}  # term level query, does not pass through the analyzer
+    #       }
+    #     }
+    #   }
+    # }
 
     s = self.dslSearch.query("bool", filter=self._Q("term", JobID=jobID))
 
@@ -173,18 +168,18 @@ class ElasticJobParametersDB(ElasticDB):
       s.delete()
       return S_OK()
 
-    """ the following should be equivalent to
-    {
-      "query": {
-        "bool": {
-          "filter": [  # no scoring
-            {"term": {"JobID": jobID}},  # term level query, does not pass through the analyzer
-            {"term": {"Name": param}},  # term level query, does not pass through the analyzer
-          ]
-        }
-      }
-    }
-    """
+    # the following should be equivalent to
+    # {
+    #   "query": {
+    #     "bool": {
+    #       "filter": [  # no scoring
+    #         {"term": {"JobID": jobID}},  # term level query, does not pass through the analyzer
+    #         {"term": {"Name": param}},  # term level query, does not pass through the analyzer
+    #       ]
+    #     }
+    #   }
+    # }
+
     if isinstance(paramList, six.string_types):
       paramList = paramList.replace(' ', '').split(',')
 
