@@ -52,12 +52,7 @@ def generateCAFile(location=None):
     return S_ERROR('No CAs dir found')
 
   if os.path.isfile(os.path.join(os.path.dirname(caDir), "cas.pem")):
-    casFile = os.path.join(os.path.dirname(caDir), "cas.pem")
-    chain = X509Chain.X509Chain()
-    chain.loadChainFromFile(casFile)
-    expired = chain.hasExpired()
-    if expired['OK'] and not expired['Value']:
-      return S_OK(os.path.join(os.path.dirname(caDir), "cas.pem"))
+    return S_OK(os.path.join(os.path.dirname(caDir), "cas.pem"))
 
   for fn in (os.path.join(os.path.dirname(Locations.getHostCertificateAndKeyLocation(location)[0]),
                           "cas.pem"),
@@ -102,12 +97,7 @@ def generateRevokedCertsFile(location=None):
     return S_ERROR('No CAs dir found')
 
   if os.path.isfile(os.path.join(os.path.dirname(caDir), "crls.pem")):
-    crlsFile = os.path.join(os.path.dirname(caDir), "crls.pem")
-    chain = X509Chain.X509Chain()
-    chain.loadChainFromFile(crlsFile)
-    expired = chain.hasExpired()
-    if expired['OK'] and not expired['Value']:
-      return S_OK(os.path.join(os.path.dirname(caDir), "crls.pem"))
+    return S_OK(os.path.join(os.path.dirname(caDir), "crls.pem"))
 
   for fn in (os.path.join(os.path.dirname(Locations.getHostCertificateAndKeyLocation(location)[0]),
                           "crls.pem"),
