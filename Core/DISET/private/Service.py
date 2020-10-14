@@ -350,7 +350,7 @@ class Service(object):
       The method stacks openened connection in a queue, another thread
       read this queue and handle connection.
 
-      :param clientTransport: Object wich describe opened connection (PlainTransport or SSLTransport)
+      :param clientTransport: Object which describes opened connection (PlainTransport or SSLTransport)
     """
     self._stats['connections'] += 1
     self._monitor.setComponentExtraParam('queries', self._stats['connections'])
@@ -381,7 +381,7 @@ class Service(object):
     - Receive arguments/file/something else (depending on action) in the RequestHandler
     - Executing the action asked by the client
 
-    :param clientTransport: Object who describe the opened connection (SSLTransport or PlainTransport)
+    :param clientTransport: Object which describe the opened connection (SSLTransport or PlainTransport)
 
     :return: S_OK with "closeTransport" a boolean to indicate if th connection have to be closed
             e.g. after RPC, closeTransport=True

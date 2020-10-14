@@ -360,7 +360,7 @@ def test_getCredentials_on_cert(cert_file, get_X509Chain_class):
   x509Chain = get_X509Chain_class()
   x509Chain.loadChainFromFile(cert_file)
 
-  credentialInfo = ['isLimitedProxy', 'isProxy', 'issuer', 'secondsLeft', 'subject', 'validDN', 'validGroup']
+  credentialInfo = ['DN', 'isLimitedProxy', 'isProxy', 'issuer', 'secondsLeft', 'subject', 'validDN', 'validGroup']
 
   res = x509Chain.getCredentials(ignoreDefault=True)
 

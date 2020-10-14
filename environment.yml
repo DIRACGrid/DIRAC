@@ -60,9 +60,13 @@ dependencies:
   - multi-mechanize >=1.2.0
   # - readline >=6.2.4 in the standard library
   - simplejson >=3.8.1
-  - tornado >=5.0.0,<6.0.0
+  #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
   # Pin OpenSSL to avoid: https://github.com/DIRACGrid/DIRAC/issues/4489
   - openssl <1.1
   - pip:
     - diraccfg
+    # This is a fork of tornado with a patch to allow for configurable iostream
+    - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
+    # This is an extension of Tornado to use M2Crypto
+    - git+https://github.com/DIRACGrid/tornado_m2crypto

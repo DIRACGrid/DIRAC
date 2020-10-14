@@ -1,0 +1,37 @@
+#!/bin/bash
+
+## This script write infos about server, you may redirect the output into a file then read it with plot-DistributedTest.py
+## It takes output from system commands, replace space/tab by ;
+## (In fact it transform output in CSV)
+
+
+# The output contains:
+# epoch; vamstat -a [17 values]; /proc/loadavg [3 values]
+#
+# Example:
+# 1533628489;0;0;0;1549064;1109052;939168;0;0;18;2;28;62;0;0;100;0;0;0.00;0.00;0.00
+#
+# $ vmstat -a
+# procs -----------memory--------------    ---swap--  -----io---- --system-- -----cpu-----
+#  r  b   swpd   free    inact   active    si   so    bi    bo    in   cs us sy id  wa st
+#  0  0   0      1549064 1109052 939168    0    0     18     2    28   62 0  0  100 0  0 <-- we keep these infos
+#
+# $ cat /proc/loadavg
+# 0.00 0.00 0.00 1/369 11332
+
+
+# ---returned--- --ignored--
+vmstat -a -n 1 | while read line;
+do
+   # If line is not a header
+   if [ "$(echo $line | grep -c 0)" -ne "0"  ];
+   then
+     # print timestamp
+     echo -n "$(date +%s)";
+     # print vmstat info
+     echo -n ";$line" | sed -E 's/ +/;/g';
+     # add load info
+     echo ";$(cat /proc/loadavg | awk {'print $1,$2,$3'}|tr ' ' ';')";
+     
+   fi;
+done

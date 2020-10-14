@@ -54,9 +54,11 @@ If a Master Configuration Server is being installed the following Options can be
   /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 
 """
-
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
+
+__RCSID__ = "$Id$"
 
 import os
 import io
@@ -464,7 +466,7 @@ class ComponentInstaller(object):
             centralCfg['Registry']['Groups'][group].addKey(  # pylint: disable=unsubscriptable-object
                 'Properties', '', '')
 
-        properties = centralCfg['Registry']['Groups'][adminGroupName].getOption(  # pylint: disable=unsubscriptable-object
+        properties = centralCfg['Registry']['Groups'][adminGroupName].getOption(  # noqa # pylint: disable=unsubscriptable-object
             'Properties', [])
         for prop in adminGroupProperties:
           if prop not in properties:
@@ -472,7 +474,7 @@ class ComponentInstaller(object):
             centralCfg['Registry']['Groups'][adminGroupName].appendToOption(  # pylint: disable=unsubscriptable-object
                 'Properties', ', %s' % prop)
 
-        properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption(  # pylint: disable=unsubscriptable-object
+        properties = centralCfg['Registry']['Groups'][defaultGroupName].getOption(  # noqa # pylint: disable=unsubscriptable-object
             'Properties', [])
         for prop in defaultGroupProperties:
           if prop not in properties:
@@ -2506,6 +2508,133 @@ exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
     gLogger.verbose(result['Value'][1])
 
     return result
+
+  def installTornado(self):
+    """
+    Install runit directory for the tornado, and add the configuration of the required service
+    """
+    # Check if the Tornado itself is already installed
+    runitCompDir = os.path.join(self.runitDir, 'Tornado', 'Tornado')
+    if os.path.exists(runitCompDir):
+      msg = "Tornado_Tornado already installed"
+      gLogger.notice(msg)
+      return S_OK(runitCompDir)
+
+    # Check the setup for the given system
+    result = gConfig.getOption('DIRAC/Setups/%s/Tornado' % (CSGlobals.getSetup()))
+    if not result['OK']:
+      return result
+    self.instance = result['Value']
+
+    # Now do the actual installation
+    try:
+
+      self._createRunitLog(runitCompDir)
+
+      runFile = os.path.join(runitCompDir, 'run')
+      with io.open(runFile, 'wt') as fd:
+        fd.write(
+            u"""#!/bin/bash
+  rcfile=%(bashrc)s
+  [ -e $rcfile ] && source $rcfile
+  #
+  exec 2>&1
+  #
+  #
+  exec python $DIRAC/DIRAC/Core/Tornado/scripts/tornado-start-all.py -ddd
+  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
+
+      os.chmod(runFile, self.gDefaultPerms)
+
+    except Exception:
+      error = 'Failed to prepare self.setup forTornado'
+      gLogger.exception(error)
+      if self.exitOnError:
+        DIRAC.exit(-1)
+      return S_ERROR(error)
+
+    result = self.execCommand(5, [runFile])
+
+    gLogger.notice(result['Value'][1])
+
+    return S_OK(runitCompDir)
+
+  def addTornadoOptionsToCS(self, gConfig_o):
+    """
+    Add the section with the component options to the CS
+    """
+
+    if gConfig_o:
+      gConfig_o.forceRefresh()
+
+    instanceOption = cfgPath('DIRAC', 'Setups', self.setup, 'Tornado')
+
+    if gConfig_o:
+      compInstance = gConfig_o.getValue(instanceOption, '')
+    else:
+      compInstance = self.localCfg.getOption(instanceOption, '')
+    if not compInstance:
+      return S_ERROR('%s not defined in %s' % (instanceOption, self.cfgFile))
+    tornadoSection = cfgPath('Systems', 'Tornado', compInstance)
+
+    cfg = self.__getCfg(tornadoSection, 'Port', 8443)
+    # cfg.setOption(cfgPath(tornadoSection, 'Password'), self.mysqlPassword)
+    return self._addCfgToCS(cfg)
+
+  def setupTornadoService(self, system, component, extensions,
+                          componentModule='', checkModule=True):
+    """
+    Install and create link in startup
+    """
+
+    # Create the startup entry now
+    # Force the system and component to be 'Tornado' but preserve the interface and the code
+    # just to allow for easier refactoring maybe later
+    system = 'Tornado'
+    component = 'Tornado'
+    componentType = 'Tornado'
+    runitCompDir = os.path.join(self.runitDir, 'Tornado', 'Tornado')
+    startCompDir = os.path.join(self.startDir, '%s_%s' % (system, component))
+    mkDir(self.startDir)
+    if not os.path.lexists(startCompDir):
+      gLogger.notice('Creating startup link at', startCompDir)
+      mkLink(runitCompDir, startCompDir)
+
+      # Wait for the service to be recognised (can't use isfile as supervise/ok is a device)
+      start = time.time()
+      while (time.time() - 10) < start:
+        time.sleep(1)
+        if os.path.exists(os.path.join(startCompDir, 'supervise', 'ok')):
+          break
+      else:
+        return S_ERROR('Failed to find supervise/ok for component %s_%s' % (system, component))
+
+    # Check the runsv status
+    start = time.time()
+    while (time.time() - 20) < start:
+      result = self.getStartupComponentStatus([(system, component)])
+      if not result['OK']:
+        continue
+      if result['Value'] and result['Value']['%s_%s' % (system, component)]['RunitStatus'] == "Run":
+        break
+      time.sleep(1)
+    else:
+      return S_ERROR('Failed to start the component %s_%s' % (system, component))
+
+    resDict = {}
+    resDict['ComponentType'] = componentType
+    resDict['RunitStatus'] = result['Value']['%s_%s' % (system, component)]['RunitStatus']
+
+    return S_OK(resDict)
+
+    # port = compCfg.getOption('Port', 0)
+    # if port and self.host:
+    #   urlsPath = cfgPath('Systems', system, compInstance, 'URLs')
+    #   cfg.createNewSection(urlsPath)
+    #   failoverUrlsPath = cfgPath('Systems', system, compInstance, 'FailoverURLs')
+    #   cfg.createNewSection(failoverUrlsPath)
+    #   cfg.setOption(cfgPath(urlsPath, component),
+    #                 'dips://%s:%d/%s/%s' % (self.host, port, system, component))
 
 
 gComponentInstaller = ComponentInstaller()
