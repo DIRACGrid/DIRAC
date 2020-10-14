@@ -98,9 +98,11 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
       :param str hostURL: host URL
       :param bool glue2: use glue2
 
-      :return: S_OK(set)/S_ERROR()
+
+      :return: Dictionary with keys: OK, Value, BdiiInfo, UnknownCEs
   """
   knownCEs = set()
+  cesInInformation = set()
   if ceBlackList is not None:
     knownCEs = knownCEs.union(set(ceBlackList))
 
@@ -114,6 +116,7 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
   siteDict = {}
   for site in ceBdiiDict:
     siteCEs = set(ceBdiiDict[site]['CEs'].keys())
+    cesInInformation.update(siteCEs)
     newCEs = siteCEs - knownCEs
     if not newCEs:
       continue
@@ -146,10 +149,13 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
 
   result = S_OK(siteDict)
   result['BdiiInfo'] = ceBdiiDict
+
+  unknownCEs = knownCEs - cesInInformation
+  result['UnknownCEs'] = unknownCEs
   return result
 
 
-def getSiteUpdates(vo, bdiiInfo=None, log=None):
+def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
   """ Get all the necessary updates for the already defined sites and CEs
 
       :param str vo: VO name
@@ -174,7 +180,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
 
   ceBdiiDict = bdiiInfo
   if bdiiInfo is None:
-    result = getBdiiCEInfo(vo)
+    result = getBdiiCEInfo(vo, glue2=glue2)
     if not result['OK']:
       return result
     ceBdiiDict = result['Value']
@@ -312,9 +318,18 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
             if 'CPUScalingReferenceSI00' in cap:
               newSI00 = cap.split('=')[-1]
 
+          # tags, processors
+          tag = queueDict.get('Tag', '')
+          numberOfProcessors = queueDict.get('NumberOfProcessors', '')
+          newNOP = queueInfo.get('NumberOfProcessors', 1)
+
           # Adding queue info to the CS
           addToChangeSet((queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime), changeSet)
           addToChangeSet((queueSection, 'SI00', si00, newSI00), changeSet)
+          if newNOP > 1:
+            addToChangeSet((queueSection, 'NumberOfProcessors', numberOfProcessors, newNOP), changeSet)
+            newTag = ','.join(sorted(set(tag.split(',')).union({'MultiProcessor'}))).strip(',')
+            addToChangeSet((queueSection, 'Tag', tag, newTag), changeSet)
           if maxTotalJobs == "Unknown":
             newTotalJobs = min(1000, int(int(queueInfo.get('GlueCEInfoTotalCPUs', 0)) / 2))
             newWaitingJobs = max(2, int(newTotalJobs * 0.1))
