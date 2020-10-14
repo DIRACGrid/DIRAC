@@ -145,7 +145,7 @@ but not too long.
 
 **R8**
    Avoid single characters and meaningless names like "jjj", except for local
-   loops or array indices.
+   loops or array indexes.
 
 **R9**
    Class names must be nouns, or noun phrases. The first letter is capital.

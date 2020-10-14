@@ -367,8 +367,7 @@ class StorageBase(object):
     # TODO comparison to Sandbox below is for backward compatibility, should
     # be removed in the next release
     if voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox":
-
-      return S_ERROR('LFN does not follow the DIRAC naming convention %s' % lfn)
+      return S_ERROR('LFN (%s) path must start with VO name (%s)' % (lfn, self.se.vo))
 
     urlDict = dict(self.protocolParameters)
     urlDict['Options'] = '&'.join("%s=%s" % (optionName, urlDict[paramName])

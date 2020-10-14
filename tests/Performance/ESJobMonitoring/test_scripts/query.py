@@ -9,14 +9,14 @@ from __future__ import division
 import random
 import time
 
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 
 
 class Transaction(object):
 
   def __init__(self):
 
-    self.ElasticJobDB = ElasticJobDB()
+    self.elasticJobParametersDB = ElasticJobParametersDB()
     self.custom_timers = {}
 
   def run(self):
@@ -26,7 +26,7 @@ class Transaction(object):
     for i in xrange(0, random.randint(1000, 3000)):
 
       jobID = random.randint(1, 1000)
-      self.ElasticJobDB.getJobParameters(jobID)
+      self.elasticJobParametersDB.getJobParameters(jobID)
 
     end_time = time.time()
 

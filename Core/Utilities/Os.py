@@ -36,7 +36,7 @@ def uniquePath(path=None):
     return None
 
 
-def getDiskSpace(path='.'):
+def getDiskSpace(path='.', exclude=None):
   """ Get the free disk space in the partition containing the path.
       The disk space is reported in MBytes. Returned 0 in case of any
       error, e.g. path does not exist
@@ -44,7 +44,10 @@ def getDiskSpace(path='.'):
 
   if not os.path.exists(path):
     return -1
-  comm = 'df -P -m %s | tail -1' % path
+  comm = 'df -P -m %s ' % path
+  if exclude:
+    comm += '-x %s ' % exclude
+  comm += '| tail -1'
   resultDF = shellCall(10, comm)
   if resultDF['OK'] and not resultDF['Value'][0]:
     output = resultDF['Value'][1]

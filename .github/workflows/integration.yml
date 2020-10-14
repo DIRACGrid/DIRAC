@@ -11,6 +11,7 @@ jobs:
     env:
       MATRIX_DEFAULT_MYSQL_VER: 5.7
       MATRIX_DEFAULT_HOST_OS: cc7
+      MATRIX_DEFAULT_ES_VER: 6.6.0
       MATRIX_DEFAULT_USE_NEWTHREADPOOL: default
       MATRIX_DEFAULT_DIRACOSVER: default
       MATRIX_DEFAULT_SERVER_USE_M2CRYPTO: Yes
@@ -25,6 +26,9 @@ jobs:
           - MYSQL_VER: 5.6
           # IMPLICIT: - MYSQL_VER: 5.7
           - MYSQL_VER: 8.0
+          ###### ES versions
+          - ES_VER: 7.9.1
+          # IMPLICIT: - ES_VER: 6.6.0
           ###### Host OS
           - HOST_OS: slc6
           # IMPLICIT: - HOST_OS: cc7
