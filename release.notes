@@ -1,3 +1,8 @@
+[v6r22p35]
+
+*WMS
+FIX: (#4759) exclude fuse from df (watchdog checks)
+
 [v6r22p34]
 
 *DMS
