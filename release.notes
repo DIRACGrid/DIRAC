@@ -1,3 +1,25 @@
+[v7r1p14]
+
+*Core
+CHANGE: (#4752) Glue2: the number of ldap searches has been reduced to three making lookups much faster
+CHANGE: (#4752) Glue2: return also unknown sites not found in the information provider for given VO
+CHANGE: (#4752) Glue2: fill value for SI00 for queues as well. Value is fixed at 2500 and will overwrite any existing value.
+CHANGE: (#4752) Glue2: architecture will now always be lowercase.
+CHANGE: (#4752) Glue2: Read the GLUE2ComputingShareMaxSlotsPerJob value and fill the NumberOfProcessors entry for the respective queue. Ignores CREAM CEs. A Ceiling for this number can be set by /Resources/Computing/CEDefaults/MaxNumberOfProcessors, defaults to 8. Solves #3926
+
+*Configuration:
+CHANGE: (#4752) Bdii2CSAgent: change email subject to agent name
+CHANGE: (#4752) Bdii2CSAgent: Make GLUE2Only=True the default
+CHANGE: (#4752) Bdii2CSAgent: Email also information about CEs not found in the specified information, CEs can be ignored with BannedCEs option, solves #1034
+CHANGE: (#4752) dirac-admin-add-resources: printout CEs that are not known at the given information provider
+CHANGE: (#4752) dirac-admin-add-resources: default to Glue2, deprecate -G flag. Add -g flag to use glue1
+FIX: (#4752) dirac-admin-add-resources: Do not exit if no new CEs are found, still look for changes of existing CEs
+
+*Resources
+
+CHANGE: (#4755) remove backward compatibility for BaseSE defined in StorageElements section (issue #3516)
+CHANGE: (#4755) Clearer error message related to LFN convention (issue #2790)
+
 [v7r1p13]
 
 *WMS
