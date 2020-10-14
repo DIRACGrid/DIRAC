@@ -55,9 +55,9 @@ class MonitoringDB(ElasticDB):
         if self.exists("%s-*" % indexName):
           indexes = self.getIndexes()
           if indexes:
-            actualindexName = self.generateFullIndexName(indexName, period)
-            if self.exists(actualindexName):
-              self.log.info("The index exists:", actualindexName)
+            actualIndexName = self.generateFullIndexName(indexName, period)
+            if self.exists(actualIndexName):
+              self.log.info("The index exists:", actualIndexName)
             else:
               result = self.createIndex(indexName,
                                         self.documentTypes[monitoringType]['mapping'],
@@ -65,7 +65,7 @@ class MonitoringDB(ElasticDB):
               if not result['OK']:
                 self.log.error(result['Message'])
                 raise RuntimeError(result['Message'])
-              self.log.info("The index is created", actualindexName)
+              self.log.info("The index is created", actualIndexName)
         else:
           # in case the index does not exist
           result = self.createIndex(indexName,
@@ -358,7 +358,7 @@ class MonitoringDB(ElasticDB):
       return res
     indexName = res['Value']
 
-    return self.bulk_index(indexprefix=indexName,
+    return self.bulk_index(indexPrefix=indexName,
                            data=records,
                            mapping=mapping,
                            period=period)

@@ -325,7 +325,7 @@ class ElasticSearchDB(object):
     return S_ERROR(res)
 
   @ifConnected
-  def bulk_index(self, indexprefix, data=None, mapping=None, period='day'):
+  def bulk_index(self, indexPrefix, data=None, mapping=None, period='day'):
     """
     :param str indexPrefix: index name.
     :param list data: contains a list of dictionary
@@ -338,13 +338,13 @@ class ElasticSearchDB(object):
       mapping = {}
 
     if period is not None:
-      indexName = self.generateFullIndexName(indexprefix, period)
+      indexName = self.generateFullIndexName(indexPrefix, period)
     else:
-      indexName = indexprefix
+      indexName = indexPrefix
     sLog.debug("Bulk indexing into %s of %s" % (indexName, data))
 
     if not self.exists(indexName):
-      retVal = self.createIndex(indexprefix, mapping, period)
+      retVal = self.createIndex(indexPrefix, mapping, period)
       if not retVal['OK']:
         return retVal
     docs = []

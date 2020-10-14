@@ -80,7 +80,7 @@ class ElasticBulkCreateChain(ElasticTestCase):
   def test_bulkindexMonthly(self):
     """ bulk_index test (month)
     """
-    result = self.elasticSearchDB.bulk_index(indexprefix='integrationtestmontly',
+    result = self.elasticSearchDB.bulk_index(indexPrefix='integrationtestmontly',
                                              data=self.data,
                                              period='month')
     self.assertTrue(result['OK'])
