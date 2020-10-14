@@ -607,6 +607,11 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p35]
+
+*WMS
+FIX: (#4759) exclude fuse from df (watchdog checks)
+
 [v6r22p34]
 
 *DMS
