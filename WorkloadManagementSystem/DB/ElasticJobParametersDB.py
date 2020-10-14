@@ -3,19 +3,19 @@
     which is a drop-in replacement for MySQL-based table JobDB.JobParameters.
     While JobDB.JobParameters in MySQL is defined as::
 
-    CREATE TABLE `JobParameters` (
-      `JobID` INT(11) UNSIGNED NOT NULL,
-      `Name` VARCHAR(100) NOT NULL,
-      `Value` BLOB NOT NULL,
-      PRIMARY KEY (`JobID`,`Name`),
-      FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+      CREATE TABLE `JobParameters` (
+        `JobID` INT(11) UNSIGNED NOT NULL,
+        `Name` VARCHAR(100) NOT NULL,
+        `Value` BLOB NOT NULL,
+        PRIMARY KEY (`JobID`,`Name`),
+        FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
     Here we define a mapping as::
 
-    "JobID": {"type": "long"},
-    "Name": {"type": "keyword"},
-    "Value": {"type": "text"}
+      "JobID": {"type": "long"},
+      "Name": {"type": "keyword"},
+      "Value": {"type": "text"}
 
     which is an "equivalent" representation.
 
