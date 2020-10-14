@@ -80,11 +80,11 @@ class WatchdogLinux(Watchdog):
     return S_OK(float(mem))
 
   #############################################################################
-  def getDiskSpace(self):
+  def getDiskSpace(self, exclude=None):
     """Obtains the disk space used.
     """
     result = S_OK()
-    diskSpace = getDiskSpace()
+    diskSpace = getDiskSpace(exclude=exclude)
 
     if diskSpace == -1:
       result = S_ERROR('Could not obtain disk usage')

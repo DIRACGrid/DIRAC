@@ -309,7 +309,9 @@ class Watchdog(object):
       self.parameters['RSS'].append(rss)
       msg += "Job Vsize: %.1f kb " % vsize
       msg += "Job RSS: %.1f kb " % rss
-    result = self.getDiskSpace()
+    # We exclude fuse so that mountpoints can be cleaned up by automount after a period unused
+    # (specific request from CERN batch service).
+    result = self.getDiskSpace(exclude='fuse')
     if not result['OK']:
       self.log.warn("Could not establish DiskSpace", result['Message'])
     else:
@@ -749,7 +751,9 @@ class Watchdog(object):
     self.parameters['Vsize'] = []
     self.parameters['RSS'] = []
 
-    result = self.getDiskSpace()
+    # We exclude fuse so that mountpoints can be cleaned up by automount after a period unused
+    # (specific request from CERN batch service).
+    result = self.getDiskSpace(exclude='fuse')
     self.log.verbose('DiskSpace: %s' % (result))
     if not result['OK']:
       self.log.warn("Could not establish DiskSpace")
@@ -961,7 +965,7 @@ class Watchdog(object):
     return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
 
   #############################################################################
-  def getDiskSpace(self):
+  def getDiskSpace(self, exclude=None):
     """ Attempts to get the available disk space, should be overridden in a subclass"""
     methodName = 'getDiskSpace'
     self.log.warn('Watchdog: ' + methodName + ' method should be implemented in a subclass')
