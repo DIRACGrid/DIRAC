@@ -5,7 +5,11 @@ CHANGE: (#4752) Glue2: the number of ldap searches has been reduced to three mak
 CHANGE: (#4752) Glue2: return also unknown sites not found in the information provider for given VO
 CHANGE: (#4752) Glue2: fill value for SI00 for queues as well. Value is fixed at 2500 and will overwrite any existing value.
 CHANGE: (#4752) Glue2: architecture will now always be lowercase.
-CHANGE: (#4752) Glue2: Read the GLUE2ComputingShareMaxSlotsPerJob value and fill the NumberOfProcessors entry for the respective queue. Ignores CREAM CEs. A Ceiling for this number can be set by /Resources/Computing/CEDefaults/MaxNumberOfProcessors, defaults to 8. Solves #3926
+CHANGE: (#4752) Glue2: Read the GLUE2ComputingShareMaxSlotsPerJob value and fill the NumberOfProcessors entry for
+                the respective queue. Ignores CREAM CEs. A Ceiling for this number can be set by
+                /Resources/Computing/CEDefaults/MaxNumberOfProcessors, defaults to 8. Solves #3926
+CHANGE: (#4747) Added support for ElasticSearch 7.
+CHANGE: (#4747)  Find cas.pem and crls.pem if they are local, before generating them.
 
 *Configuration:
 CHANGE: (#4752) Bdii2CSAgent: change email subject to agent name
@@ -14,6 +18,14 @@ CHANGE: (#4752) Bdii2CSAgent: Email also information about CEs not found in the 
 CHANGE: (#4752) dirac-admin-add-resources: printout CEs that are not known at the given information provider
 CHANGE: (#4752) dirac-admin-add-resources: default to Glue2, deprecate -G flag. Add -g flag to use glue1
 FIX: (#4752) dirac-admin-add-resources: Do not exit if no new CEs are found, still look for changes of existing CEs
+
+*Monitoring
+CHANGE: (#4747) Eliminate types from MonitoringDB for support for ElasticSearch 7
+
+*WMS
+CHANGE: (#4747) renamed ElasticJobDB.py in ElasticJobParametersDB.py
+CHANGE: (#4747) Eliminate types from ElasticJobParametersDB.py for support for ElasticSearch 7
+CHANGE: (#4747) Use ES query DSL for searches in ElasticJobParametersDB.py, also for deleting entries
 
 *Resources
 
