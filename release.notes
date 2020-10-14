@@ -1,4 +1,4 @@
-[v7r2-pre15]
+[v7r2-pre16]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -15,6 +15,8 @@ NEW: (#4497) adapt Graph package to python3
 CHANGE: (#4581) Replace DIRAC.Core.Utilities.CFG with independent diraccfg module
 CHANGE: (#4671) Add an example for DIRAC_NO_CFG to bashrc.
 FIX: (#4736) dirac-install: use system tar command for extracting tarballs, fixes #4246
+NEW: (#4677) X509Chain returns DN entry
+NEW: (#4677) introduction of Tornado based services
 
 *Accounting
 NEW: (#4537) Add histogram of CPU usage to Job accounting
@@ -34,6 +36,8 @@ FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
+FIX: (#4677) Ignore tornado services and test DBs
+NEW: (#4677) new integration tests for Tornado based services
 
 [v7r1p13]
 
