@@ -31,12 +31,7 @@ def uniquePath(path=None):
   except Exception:
     return None
 
-
-<<<<<<< HEAD
-def getDiskSpace(path='.'):
-=======
 def getDiskSpace(path='.', exclude=None):
->>>>>>> rel-v6r22
   """ Get the free disk space in the partition containing the path.
       The disk space is reported in MBytes. Returned 0 in case of any
       error, e.g. path does not exist
@@ -44,16 +39,11 @@ def getDiskSpace(path='.', exclude=None):
 
   if not os.path.exists(path):
     return -1
-<<<<<<< HEAD
-  comm = 'df -P -m %s | tail -1' % path
-  resultDF = shellCall(10, comm)
-=======
   comm = 'df -P -m %s ' % path
   if exclude:
     comm += '-x %s ' % exclude
   comm += '| tail -1'
   resultDF = shellCall( 10, comm )
->>>>>>> rel-v6r22
   if resultDF['OK'] and not resultDF['Value'][0]:
     output = resultDF['Value'][1]
     if output.find(' /afs') >= 0:    # AFS disk space
