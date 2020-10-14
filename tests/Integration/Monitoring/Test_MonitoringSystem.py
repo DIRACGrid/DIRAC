@@ -168,7 +168,7 @@ class MonitoringTestCase(unittest.TestCase):
 
 class MonitoringInsertData(MonitoringTestCase):
   def test_addMonitoringRecords(self):
-    result = self.client.addMonitoringRecords('moni', 'WMSHistory', self.data)
+    result = self.client.addMonitoringRecords('moni', self.data)
     self.assertTrue(result['Message'])
 
   def test_bulkinsert(self):

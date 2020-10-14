@@ -32,6 +32,7 @@ For all DIRAC installations any number of client installations is possible.
 
 .. _server_requirements:
 
+
 Requirements
 ------------
 
@@ -219,7 +220,7 @@ MySQL database preparation
 --------------------------
 
 Before proceeding with the primary server installation, a MYSQL server must be available.
-DIRAC supports MySQL versions 5.6 and 5.7 (8.0 support in preparation).
+DIRAC supports MySQL versions 5.6, 5.7, 8.0.
 In addition to the root/admin user(s) the following users must be created, with the same PASSWORD::
 
    CREATE USER 'Dirac'@'%' IDENTIFIED BY '[PASSWORD]';

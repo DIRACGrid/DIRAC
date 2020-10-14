@@ -4,7 +4,7 @@ ComponentMonitoring type used to monitor DIRAC components.
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ########################################################################
 
@@ -24,13 +24,19 @@ class ComponentMonitoring(BaseType):
     :param self: self reference
     """
 
-    self.keyFields = ['host', 'component', 'pid', 'status']
+    self.keyFields = ['host',
+                      'component',
+                      'pid',
+                      'status']
 
-    self.monitoringFields = ['runningTime', 'memoryUsage', 'threads', 'cpuUsage']
+    self.monitoringFields = ['runningTime',
+                             'memoryUsage',
+                             'threads',
+                             'cpuUsage']
 
-    self.doc_type = "ComponentMonitoring"
-
-    self.addMapping({"host": {"type": "keyword"}, "component": {"type": "keyword"}, "status": {"type": "keyword"}})
+    self.addMapping({"host": {"type": "keyword"},
+                     "component": {"type": "keyword"},
+                     "status": {"type": "keyword"}})
 
     self.dataToKeep = 86400 * 30  # we need to define...
 

@@ -48,7 +48,7 @@ For example::
 
   Possible metadata types: int,float,string,date
 
-How to show existing metadata indices
+How to show existing metadata indexes
 -------------------------------------
 
 From the CLI::

@@ -161,6 +161,7 @@ class BundleDeliveryClient(Client):
     """
     retVal = Utilities.generateCAFile()
     if not retVal['OK']:
+      self.log.warn("Could not generate/find CA file", retVal['Message'])
       # if we can not found the file, we return the directory, where the file should be
       transferClient = self.__getTransferClient()
       casFile = os.path.join(os.path.dirname(retVal['Message']), "cas.pem")

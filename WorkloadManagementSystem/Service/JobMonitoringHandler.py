@@ -18,14 +18,14 @@ from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
 # These are global instances of the DB classes
 gJobDB = False
-gElasticJobDB = False
+gElasticJobParametersDB = False
 gJobLoggingDB = False
 gTaskQueueDB = False
 
@@ -65,9 +65,9 @@ class JobMonitoringHandler(RequestHandler):
     self.jobPolicy.jobDB = gJobDB
 
     useESForJobParametersFlag = operations.getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
-    global gElasticJobDB
+    global gElasticJobParametersDB
     if useESForJobParametersFlag:
-      gElasticJobDB = ElasticJobDB()
+      gElasticJobParametersDB = ElasticJobParametersDB()
       self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
@@ -513,8 +513,8 @@ class JobMonitoringHandler(RequestHandler):
     :param str/int/long jobID: one single Job ID
     :param str parName: one single parameter name
     """
-    if gElasticJobDB:
-      res = gElasticJobDB.getJobParameters(jobID, [parName])
+    if gElasticJobParametersDB:
+      res = gElasticJobParametersDB.getJobParameters(jobID, [parName])
       if not res['OK']:
         return res
       if res['Value'].get(int(jobID)):
@@ -542,12 +542,12 @@ class JobMonitoringHandler(RequestHandler):
     :param str/int/long/list jobIDs: one single job ID or a list of them
     :param str parName: one single parameter name, or None (meaning all of them)
     """
-    if gElasticJobDB:
+    if gElasticJobParametersDB:
       if not isinstance(jobIDs, list):
         jobIDs = [jobIDs]
       parameters = {}
       for jobID in jobIDs:
-        res = gElasticJobDB.getJobParameters(jobID, parName)
+        res = gElasticJobParametersDB.getJobParameters(jobID, parName)
         if not res['OK']:
           return res
         parameters.update(res['Value'])

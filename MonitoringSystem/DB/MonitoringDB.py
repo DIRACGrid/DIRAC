@@ -5,8 +5,8 @@ Wrapper on top of ElasticDB. It is used to manage the DIRAC monitoring types.
 
 The following options can be set in ``Systems/Monitoring/<Setup>/Databases/MonitoringDB``
 
-* *IndexPrefix*:  Prefix used to prepend to indices created in the ES instance. If this
-                  is not present in the CS, the indices are prefixed with the setup name.
+* *IndexPrefix*:  Prefix used to prepend to indexes created in the ES instance. If this
+                  is not present in the CS, the indexes are prefixed with the setup name.
 
 """
 
@@ -14,7 +14,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
@@ -32,87 +32,71 @@ class MonitoringDB(ElasticDB):
     indexPrefix = gConfig.getValue("%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
     super(MonitoringDB, self).__init__('MonitoringDB', name, indexPrefix)
     self.__readonly = readOnly
-    self.__documents = {}
-    self.__loadIndexes()
+    self.documentTypes = {}
 
-  def __loadIndexes(self):
-    """
-    It loads all monitoring indexes and types.
-    """
-
+    # loads all monitoring indexes and types.
     objectsLoaded = TypeLoader('Monitoring').getTypes()
 
     # Load the files
     for pythonClassName in sorted(objectsLoaded):
       typeClass = objectsLoaded[pythonClassName]
       indexName = "%s_%s" % (self.getIndexPrefix(), typeClass()._getIndex())
-      doc_type = typeClass()._getDocType()
+      monitoringType = typeClass().__class__.__name__
       mapping = typeClass().mapping
       monfields = typeClass().monitoringFields
       period = typeClass().period
-      self.__documents[doc_type] = {'indexName': indexName,
-                                    'mapping': mapping,
-                                    'monitoringFields': monfields,
-                                    'period': period}
+      self.documentTypes[monitoringType] = {'indexName': indexName,
+                                            'mapping': mapping,
+                                            'monitoringFields': monfields,
+                                            'period': period}
       if self.__readonly:
-        gLogger.info("Read only mode is okay")
+        self.log.info("Read only mode is okay")
       else:
-        self.registerType(indexName, mapping, period)
+        if self.exists("%s-*" % indexName):
+          indexes = self.getIndexes()
+          if indexes:
+            actualIndexName = self.generateFullIndexName(indexName, period)
+            if self.exists(actualIndexName):
+              self.log.info("The index exists:", actualIndexName)
+            else:
+              result = self.createIndex(indexName,
+                                        self.documentTypes[monitoringType]['mapping'],
+                                        period)
+              if not result['OK']:
+                self.log.error(result['Message'])
+                raise RuntimeError(result['Message'])
+              self.log.info("The index is created", actualIndexName)
+        else:
+          # in case the index does not exist
+          result = self.createIndex(indexName,
+                                    self.documentTypes[monitoringType]['mapping'],
+                                    period)
+          if not result['OK']:
+            self.log.error(result['Message'])
+            raise RuntimeError(result['Message'])
+          self.log.info("The index is created", indexName)
 
   def getIndexName(self, typeName):
     """
-    :param str typeName: doc_type and type name is equivalent
+    :param str typeName: monitoring type
     """
     indexName = None
 
-    if typeName in self.__documents:
-      indexName = self.__documents.get(typeName).get("indexName", None)
+    if typeName in self.documentTypes:
+      indexName = self.documentTypes.get(typeName).get("indexName", None)
 
     if indexName:
       return S_OK(indexName)
 
-    return S_ERROR("Type %s is not defined" % typeName)
+    return S_ERROR("Monitoring type %s is not defined" % typeName)
 
-  def registerType(self, index, mapping, period=None):
-    """
-    It register the type and index, if does not exists
-
-    :param str index: name of the index
-    :param dict mapping: mapping used to create the index.
-    :param str period: We can specify, which kind of indexes will be created.
-                       Currently only daily and monthly indexes are supported.
-
-    """
-
-    all_index = "%s-*" % index
-
-    if self.exists(all_index):
-      indexes = self.getIndexes()
-      if indexes:
-        actualindexName = self.generateFullIndexName(index, period)
-        if self.exists(actualindexName):
-          self.log.info("The index is exists:", actualindexName)
-        else:
-          result = self.createIndex(index, mapping, period)
-          if not result['OK']:
-            self.log.error(result['Message'])
-            return result
-          self.log.info("The index is created", actualindexName)
-    else:
-      # in that case no index exists
-      result = self.createIndex(index, mapping, period)
-      if not result['OK']:
-        self.log.error(result['Message'])
-      else:
-        return result
-
-  def getKeyValues(self, typeName):
+  def getKeyValues(self, monitoringType):
     """
     Get all values for a given key field in a type
     """
     keyValuesDict = {}
 
-    retVal = self.getIndexName(typeName)
+    retVal = self.getIndexName(monitoringType)
     if not retVal['OK']:
       return retVal
     indexName = "%s*" % (retVal['Value'])
@@ -120,14 +104,18 @@ class MonitoringDB(ElasticDB):
     if not retVal['OK']:
       return retVal
     docs = retVal['Value']
-    gLogger.debug("Doc types", docs)
-    monfields = self.__documents[typeName]['monitoringFields']
+    self.log.debug("Doc types", docs)
+    monfields = self.documentTypes[monitoringType]['monitoringFields']
 
-    if typeName not in docs:
-      # this is only happen when we the index is created and we were not able to send records to the index.
-      # There is no data in the index we can not create the plot.
-      return S_ERROR("%s empty and can not retrive the Type of the index" % indexName)
-    for i in docs[typeName]['properties']:
+    try:
+      properties = docs[monitoringType]['properties']  # "old" way, with ES types == Monitoring types
+    except KeyError:
+      try:
+        properties = docs['_doc']['properties']  # "ES6" way, with ES types == '_doc'
+      except KeyError:
+        properties = docs['properties']  # "ES7" way, no types
+
+    for i in properties:
       if i not in monfields and not i.startswith('time') and i != 'metric':
         retVal = self.getUniqueValue(indexName, i)
         if not retVal['OK']:
@@ -157,7 +145,6 @@ class MonitoringDB(ElasticDB):
     if metainfo and metainfo.get('metric', 'sum') == 'avg':
       isAvgAgg = True
 
-    indexName = "%s*" % (retVal['Value'])
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
@@ -172,6 +159,7 @@ class MonitoringDB(ElasticDB):
           query = self._Q('match', **kwargs)
       q += [query]
 
+    indexName = "%s*" % (retVal['Value'])
     s = self._Search(indexName)
     s = s.filter('bool', must=q)
 
@@ -196,10 +184,10 @@ class MonitoringDB(ElasticDB):
       s.aggs.bucket(str(i), a1)
 
     #  s.fields( ['timestamp'] + selectFields )
-    gLogger.debug('Query:', s.to_dict())
+    self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
-    gLogger.debug("Query result", len(retVal))
+    self.log.debug("Query result", len(retVal))
 
     result = {}
 #    for i in retVal.aggregations['2'].buckets:
@@ -207,7 +195,7 @@ class MonitoringDB(ElasticDB):
       for j in retVal.aggregations[str(i)].buckets:
         if isAvgAgg:
           if j.key not in result:
-            if len(selectFields) == 1:  # for backword compatibility
+            if len(selectFields) == 1:  # for backward compatibility
               result[j.key] = j.avg_total_jobs.value
             else:
               result[j.key] = [j.avg_total_jobs.value]
@@ -219,7 +207,7 @@ class MonitoringDB(ElasticDB):
             result[site] = {}
           for k in j.end_data.buckets:
             if (k.key / 1000) not in result[site]:
-              if len(selectFields) == 1:  # for backword compatibility
+              if len(selectFields) == 1:  # for backward compatibility
                 result[site][k.key / 1000] = k.avg_monthly_sales.value
               else:
                 result[site][k.key / 1000] = [k.avg_monthly_sales.value]
@@ -313,7 +301,7 @@ class MonitoringDB(ElasticDB):
     #  s.fields( ['timestamp'] + selectFields )
     s = s.extra(size=self.RESULT_SIZE)  # do not get the hits!
 
-    gLogger.debug('Query:', s.to_dict())
+    self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
     result = {}
@@ -359,20 +347,18 @@ class MonitoringDB(ElasticDB):
     """
     It is used to insert the data to El.
 
-    :param records: it is a list of documents (dictionary)
+    :param list records: it is a list of documents (dictionary)
     :param str monitoringType: is the type of the monitoring
-    :type records: python:list
     """
     mapping = self.getMapping(monitoringType)
-    gLogger.debug("Mapping used to create an index:", mapping)
-    period = self.__documents[monitoringType].get('period')
+    self.log.always("Mapping used to create an index:", mapping)
+    period = self.documentTypes[monitoringType].get('period')
     res = self.getIndexName(monitoringType)
     if not res['OK']:
       return res
     indexName = res['Value']
 
-    return self.bulk_index(indexprefix=indexName,
-                           doc_type=monitoringType,
+    return self.bulk_index(indexPrefix=indexName,
                            data=records,
                            mapping=mapping,
                            period=period)
@@ -385,8 +371,8 @@ class MonitoringDB(ElasticDB):
     :return: an empty dictionary if there is no mapping defenied.
     """
     mapping = {}
-    if monitoringType in self.__documents:
-      mapping = self.__documents[monitoringType].get("mapping", {})
+    if monitoringType in self.documentTypes:
+      mapping = self.documentTypes[monitoringType].get("mapping", {})
     return mapping
 
   def __getRawData(self, typeName, condDict, size=-1):
@@ -454,7 +440,7 @@ class MonitoringDB(ElasticDB):
       try:
         paramNames.remove(u'metric')
       except KeyError as e:
-        gLogger.warn("metric is not in the Result", e)
+        self.log.warn("metric is not in the Result", e)
       for resObj in hits['hits']:
         records.append(dict([(paramName, getattr(resObj['_source'], paramName)) for paramName in paramNames]))
       return S_OK(records)
