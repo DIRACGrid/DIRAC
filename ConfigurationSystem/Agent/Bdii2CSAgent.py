@@ -307,11 +307,16 @@ class Bdii2CSAgent(AgentModule):
       if not ces:
         self.log.error("No CE information for site:", site)
         continue
-      res = getCESiteMapping(ces[0])
-      if not res['OK']:
-        self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ces[0], res['Message']))
-        continue
-      siteInCS = res['Value'][ces[0]]
+      siteInCS = 'Not_In_CS'
+      for ce in ces:
+        res = getCESiteMapping(ce)
+        if not res['OK']:
+          self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ce, res['Message']))
+          continue
+        # if the ce is not in the CS the returned value will be empty
+        if ce in res['Value']:
+          siteInCS = res['Value'][ce]
+          break
       self.log.debug("Checking site %s (%s), aka %s" % (site, ces, siteInCS))
       if siteInCS in self.selectedSites:
         continue
