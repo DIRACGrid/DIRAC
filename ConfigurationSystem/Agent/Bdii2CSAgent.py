@@ -250,6 +250,8 @@ class Bdii2CSAgent(AgentModule):
       totalResult = S_ERROR(message)
     else:
       self.voBdiiCEDict[vo] = totalResult['Value']
+      self.__purgeSites(totalResult['Value'])
+
     return totalResult
 
   def __getBdiiSEInfo(self, vo):
@@ -285,7 +287,6 @@ class Bdii2CSAgent(AgentModule):
       if not result['OK']:
         continue
       ceBdiiDict = result['Value']
-      self.__purgeSites(ceBdiiDict)
       result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, log=self.log)
       if not result['OK']:
         continue
