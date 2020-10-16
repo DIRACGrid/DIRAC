@@ -194,7 +194,7 @@ class Bdii2CSAgent(AgentModule):
         if self.addressTo and self.addressFrom:
           notification = NotificationClient()
           result = notification.sendMail(self.addressTo, self.subject, body, self.addressFrom,
-                                         localAttempt=False, avoidSpam=True)
+                                         localAttempt=False)
           if not result['OK']:
             self.log.error('Can not send new site notification mail', result['Message'])
 
@@ -312,8 +312,7 @@ class Bdii2CSAgent(AgentModule):
       body = '\n'.join(["%s/%s %s -> %s" % entry for entry in changeList])
       if body and self.addressTo and self.addressFrom:
         notification = NotificationClient()
-        result = notification.sendMail(self.addressTo, self.subject, body, self.addressFrom, localAttempt=False,
-                                       avoidSpam=True)
+        result = notification.sendMail(self.addressTo, self.subject, body, self.addressFrom, localAttempt=False)
 
       if body:
         self.log.info('The following configuration changes were detected:')
