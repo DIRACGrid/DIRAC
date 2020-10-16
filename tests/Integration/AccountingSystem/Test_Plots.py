@@ -3,10 +3,7 @@
 
 # pylint: disable=invalid-name,wrong-import-position
 
-import unittest
-
 import os
-import sys
 import math
 import operator
 from PIL import Image
@@ -37,48 +34,39 @@ def compare(file1Path, file2Path):
   return rms
 
 
-class PlotsTestCase(unittest.TestCase):
+filename = "plot.png"
+
+
+def test_histogram():
   """
-  It is used to test different plots.
+  test histogram
   """
 
-  def setUp(self):
-    """
-    Setup the test case
-    """
+  res = generateHistogram(filename, [2, 2, 3, 4, 5, 5], {})
+  assert res['OK'] is True
 
-    self.filename = "plot.png"
+  res = compare(filename, os.path.join(plots_directory, 'histogram1.png'))
+  assert res == 0.0
 
-  def test_histogram(self):
-    """
-    test histogram
-    """
+  res = generateHistogram(filename,
+			  [{'a': [1, 2, 3, 1, 2, 2, 4, 2]}, {'b': [2, 2, 2, 4, 4, 1, 1]}], {'plot_grid': '2:1'})
+  assert res['OK'] is True
 
-    res = generateHistogram(self.filename, [2, 2, 3, 4, 5, 5], {})
-    self.assertEqual(res['OK'], True)
+  res = compare(filename, os.path.join(plots_directory, 'histogram2.png'))
+  assert res == 0.0
 
-    res = compare(self.filename, os.path.join(plots_directory, 'histogram1.png'))
-    self.assertEqual(0.0, res)
+  res = generateHistogram(filename, [{'a': [1]}, {'b': [2, 3, 3, 5, 5]}], {})
+  assert res['OK'] is True
 
-    res = generateHistogram(self.filename,
-                            [{'a': [1, 2, 3, 1, 2, 2, 4, 2]}, {'b': [2, 2, 2, 4, 4, 1, 1]}], {'plot_grid': '2:1'})
-    self.assertEqual(res['OK'], True)
+  res = compare(filename, os.path.join(plots_directory, 'histogram3.png'))
+  assert res == 0.0
 
-    res = compare(self.filename, os.path.join(plots_directory, 'histogram2.png'))
-    self.assertEqual(0.0, res)
-
-    res = generateHistogram(self.filename, [{'a': [1]}, {'b': [2, 3, 3, 5, 5]}], {})
-    self.assertEqual(res['OK'], True)
-
-    res = compare(self.filename, os.path.join(plots_directory, 'histogram3.png'))
-    self.assertEqual(0.0, res)
-
-  def test_stackedlineplots(self):
+  def test_stackedlineplots():
     """
     test stacked line plot
     """
 
-    res = generateStackedLinePlot(self.filename,
+    res = generateStackedLinePlot(filename,
                                   {'LCG.Zoltan.hu': {1584460800: 1.0,
                                                      1584489600: 2.0,
                                                      1584511200: 1.0,
@@ -114,27 +102,27 @@ class PlotsTestCase(unittest.TestCase):
                                                      1584468000: 1.0,
                                                      1584486000: 1.1}}, {})
 
-    self.assertEqual(res['OK'], True)
+    assert res['OK'] is True
 
-    res = compare(self.filename, os.path.join(plots_directory, 'stackedline.png'))
-    self.assertEqual(0.0, res)
+    res = compare(filename, os.path.join(plots_directory, 'stackedline.png'))
+    assert res == 0.0
 
-  def test_piechartplot(self):
+  def test_piechartplot():
     """
     test pie chart plots
     """
-    res = generatePiePlot(self.filename, {'a': 16.0, 'b': 56.0, 'c': 15, 'd': 20}, {})
-    self.assertEqual(res['OK'], True)
+    res = generatePiePlot(filename, {'a': 16.0, 'b': 56.0, 'c': 15, 'd': 20}, {})
+    assert res['OK'] is True
 
-    res = compare(self.filename, os.path.join(plots_directory, 'piechart.png'))
-    self.assertEqual(0.0, res)
+    res = compare(filename, os.path.join(plots_directory, 'piechart.png'))
+    assert res == 0.0
 
-  def test_cumulativeplot(self):
+  def test_cumulativeplot():
     """
     test cumulative stracked line plot
     """
 
-    res = generateCumulativePlot(self.filename,
+    res = generateCumulativePlot(filename,
                                  {'User': {1584460800: 0.0,
                                            1584489600: 0.0,
                                            1584511200: 0.0,
@@ -167,28 +155,28 @@ class PlotsTestCase(unittest.TestCase):
                                   'sort_labels': 'max_value',
                                   'endtime': 1584543726})
 
-    self.assertEqual(res['OK'], True)
+    assert res['OK'] is True
 
-    res = compare(self.filename, os.path.join(plots_directory, 'cumulativeplot.png'))
-    self.assertEqual(0.0, res)
+    res = compare(filename, os.path.join(plots_directory, 'cumulativeplot.png'))
+    assert res == 0.0
 
-  def test_qualityplot(self):
+  def test_qualityplot():
     """
     Test quality plot
     """
 
-    res = generateQualityPlot(self.filename, {
+    res = generateQualityPlot(filename, {
         'User': {
             1584543600: 37.5,
             1584547200: 37.5,
             1584619200: 33.33333333333333,
             1584601200: 36.53846153846153}}, {})
-    self.assertEqual(res['OK'], True)
+    assert res['OK'] is True
 
-    res = compare(self.filename, os.path.join(plots_directory, 'qualityplot1.png'))
-    self.assertEqual(0.0, res)
+    res = compare(filename, os.path.join(plots_directory, 'qualityplot1.png'))
+    assert res == 0.0
 
-    res = generateQualityPlot(self.filename,
+    res = generateQualityPlot(filename,
                               {'User': {1584543600: 37.5,
                                         1584547200: 37.5,
                                         1584619200: 33.33333333333333,
@@ -197,16 +185,16 @@ class PlotsTestCase(unittest.TestCase):
                                'span': 3600,
                                'starttime': 1584541364,
                                'title': 'Job CPU efficiency by JobType'})
-    self.assertEqual(res['OK'], True)
+    assert res['OK'] is True
 
-    res = compare(self.filename, os.path.join(plots_directory, 'qualityplot2.png'))
-    self.assertEqual(0.0, res)
+    res = compare(filename, os.path.join(plots_directory, 'qualityplot2.png'))
+    assert res == 0.0
 
-  def test_timestackedbarplot(self):
+  def test_timestackedbarplot():
     """
     test timed stacked bar plot
     """
-    res = generateTimedStackedBarPlot(self.filename,
+    res = generateTimedStackedBarPlot(filename,
                                       {'LCG.Cern.cern': {1584662400: 0.0,
                                                          1584691200: 0.0,
                                                          1584637200: 15.9593220339,
@@ -262,39 +250,30 @@ class PlotsTestCase(unittest.TestCase):
                                        'span': 3600,
                                        'starttime': 1584614444,
                                        'title': 'Jobs by Site'})
-    self.assertEqual(res['OK'], True)
+    assert res['OK'] is True
 
-    res = compare(self.filename, os.path.join(plots_directory, 'timedstackedbarplot.png'))
-    self.assertEqual(0.0, res)
+    res = compare(filename, os.path.join(plots_directory, 'timedstackedbarplot.png'))
+    assert res == 0.0
 
-  def test_nodataplot(self):
+  def test_nodataplot():
     """
     Test no data plot
     """
 
-    res = generateNoDataPlot(self.filename, {}, {'title': 'Test plot'})
-    self.assertEqual(res['OK'], True)
-    res = compare(self.filename, os.path.join(plots_directory, 'nodata.png'))
-    self.assertEqual(0.0, res)
+    res = generateNoDataPlot(filename, {}, {'title': 'Test plot'})
+    assert res['OK'] is True
+    res = compare(filename, os.path.join(plots_directory, 'nodata.png'))
+    assert res == 0.0
 
-  def test_error(self):
+  def test_error():
     """
     Test error message plot
     """
 
     res = generateErrorMessagePlot("testing error message")
-    self.assertEqual(res['OK'], True)
-    with open(self.filename, 'wb') as out:
+    assert res['OK'] is True
+    with open(filename, 'wb') as out:
       out.write(res['Value'])
 
-    res = compare(self.filename, os.path.join(plots_directory, 'error.png'))
-    self.assertEqual(0.0, res)
-
-
-#############################################################################
-# Test Suite run
-#############################################################################
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(PlotsTestCase)
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-  sys.exit(not testResult.wasSuccessful())
+    res = compare(filename, os.path.join(plots_directory, 'error.png'))
+    assert res == 0.0
