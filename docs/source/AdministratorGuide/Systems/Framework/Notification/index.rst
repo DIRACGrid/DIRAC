@@ -7,9 +7,7 @@ The Framework/Notification service
 
 The Framework/Notification service is responsible for notification, like as send mail, sms or alarm window on DIRAC portal.
 Send an email with supplied body to the specified address using the Mail utility.
-If avoidSpam is True, then emails are first added to a set so that duplicates are removed, 
-and sent every hour.
-
+Emails with the same address, subject, and content are only sent once every 24h.
 
 Configure
 ---------
