@@ -7,7 +7,6 @@ from __future__ import division
 from __future__ import print_function
 import unittest
 
-import sys
 import math
 import operator
 from PIL import Image

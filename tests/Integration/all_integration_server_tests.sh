@@ -9,6 +9,10 @@ echo -e '****************************************'
 echo -e '*******' "integration server tests" '*******\n'
 
 #-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** Accounting TESTS ****\n"
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/AccountingSystem/Test_Plots.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+
+#-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Configuration TESTS ****\n"
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/ConfigurationSystem/Test_Helpers.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
@@ -82,6 +86,7 @@ pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/RequestManagementSystem/Test
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_MonitoringReporter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_Plotter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"
