@@ -40,8 +40,6 @@ for job in parseArguments(args):
   if not result['OK']:
     errorList.append((job, result['Message']))
     exitCode = 2
-  else:
-    gLogger.notice(result['Value'])
 
 for error in errorList:
   print("ERROR %s: %s" % error)
