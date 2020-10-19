@@ -2,38 +2,20 @@
     the proper working of the plotter.
 """
 
+# pylint: disable=invalid-name,wrong-import-position
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import math
-import operator
-from PIL import Image
+import os
 
+from DIRAC.tests.Integration.AccountingSystem.Test_Plots import compare
+
+# sut
 from DIRAC.MonitoringSystem.private.Plotters.ComponentMonitoringPlotter import ComponentMonitoringPlotter
-from functools import reduce
-from six.moves import map
 
-
-def compare(file1Path, file2Path):
-  """
-  Function used to compare two plots.
-
-  :type file1Path: string
-  :param file1Path: Path to the file1.
-  :type file2Path: string
-  :param file2Path: Path to the file2.
-
-  :return: float value rms.
-  """
-  # Crops image to remove the "Generated on xxxx UTC" string
-  image1 = Image.open(file1Path).crop((0, 0, 800, 570))
-  image2 = Image.open(file2Path).crop((0, 0, 800, 570))
-  h1 = image1.histogram()
-  h2 = image2.histogram()
-  rms = math.sqrt(reduce(operator.add,
-                         list(map(lambda a, b: (a - b) ** 2, h1, h2))) / len(h1))
-  return rms
+plots_directory = os.path.join(os.path.dirname(__file__), 'plots')
 
 
 def test_plotRunningThreads():
@@ -72,7 +54,8 @@ def test_plotRunningThreads():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
 
 
@@ -110,7 +93,8 @@ def test_plotCpuUsage():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
 
 
@@ -150,7 +134,8 @@ def test_plotMemoryUsage():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
 
 
@@ -190,7 +175,8 @@ def test_plotRunningTime():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
 
 
@@ -230,7 +216,8 @@ def test_plotConnections():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
 
 
@@ -270,7 +257,8 @@ def test_plotActiveQueries():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
 
 
@@ -310,7 +298,8 @@ def test_plotPendingQueries():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
 
 
@@ -351,7 +340,8 @@ def test_plotMaxFD():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
 
 
@@ -392,5 +382,6 @@ def test_plotActivityRunningThreads():
   assert res['OK'] is True
   assert res['Value'] == {'plot': True, 'thumbnail': False}
 
-  res = compare('%s.png' % plotName, 'tests/Integration/Monitoring/png/%s.png' % plotName)
+  res = compare('%s.png' % plotName,
+		'%s.png' % os.path.join(plots_directory, plotName))
   assert res == 0.0
