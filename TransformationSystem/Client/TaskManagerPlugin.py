@@ -123,7 +123,7 @@ class TaskManagerPlugin(PluginBase):
     if 'WithStorage' in autoAddedSites:
       # Add all sites with storage, such that jobs can run wherever data is
       autoAddedSites.remove('WithStorage')
-      autoAddedSites += DMSHelpers().getTiers(withStorage=True, tier=(0, 1, 2))
+      autoAddedSites += DMSHelpers().getTiers(withStorage=True)
 
     # 3. removing sites in Exclude
     if not excludedSites:
