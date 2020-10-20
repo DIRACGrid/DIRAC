@@ -69,7 +69,7 @@ class DataStoreClient(Client):
     if gConfig.getValue('/LocalSite/DisableAccounting', False):
       return S_OK()
 
-    self.__registersList.append(copy.deepcopy(register.getValues()))
+    self.__registersList.append(copy.deepcopy(list(register.getValues())))
 
     return S_OK()
 
