@@ -69,7 +69,7 @@ class JobMonitoringHandler(RequestHandler):
 
     useESForJobParametersFlag = operations.getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
     global gElasticJobParametersDB
-    if useESForJobParametersFlag:
+    if useESForJobParametersFlag and not gElasticJobParametersDB:
       gElasticJobParametersDB = ElasticJobParametersDB()
       self.log.verbose("Using ElasticSearch for JobParameters")
 
@@ -511,6 +511,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobParameter = [six.string_types + six.integer_types, six.string_types]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobParameter(jobID, parName):
     """
     :param str/int/long jobID: one single Job ID

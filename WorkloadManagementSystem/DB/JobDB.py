@@ -308,7 +308,7 @@ class JobDB(DB):
           res_value = res_value.tostring()
         except Exception:
           pass
-        resultDict.setdefault(res_jobID, {})[res_name] = res_value
+        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
 
       return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
