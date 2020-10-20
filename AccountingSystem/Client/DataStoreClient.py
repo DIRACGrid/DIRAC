@@ -12,7 +12,7 @@ import copy
 import threading
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -22,6 +22,7 @@ from DIRAC.Core.Utilities.DErrno import ERMSUKN
 random.seed()
 
 
+@createClient("Accounting/DataStore")
 class DataStoreClient(Client):
   """
     Class providing front end access to DIRAC Accounting DataStore Service
