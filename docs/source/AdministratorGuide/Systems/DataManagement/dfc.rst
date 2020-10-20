@@ -15,7 +15,7 @@ The DFC can be used also as a Metadata catalog.
 Metadata is the information describing the user data in order to easily select the data sets of interest
 for user applications. In the DIRAC File Catalog metadata can be associated with any directory. It is important
 that subdirectories are inheriting the metadata of their parents, this allows to reduce the number of the
-stored metadata values. Some metadata variables can be declared as indices. Only indexed metadata can be
+stored metadata values. Some metadata variables can be declared as indexes. Only indexed metadata can be
 used in data selections. 
 One can declare ancestor files for a given file. This is often needed
 in order to keep track of the derived data provenance path. 

@@ -12,8 +12,9 @@ The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databas
 
 """
 
-from __future__ import print_function, absolute_import, division
-from past.builtins import long
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 
 import six
 import zlib
@@ -23,6 +24,11 @@ import operator
 
 __RCSID__ = "$Id$"
 
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
+from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -30,12 +36,8 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Base.DB import DB
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 #############################################################################
@@ -129,12 +131,12 @@ class JobDB(DB):
         for name, value in zip(attr_tmp_list, retValues[1:]):
           try:
             value = value.tostring()
-          except BaseException:
+          except Exception:
             value = str(value)
           jobDict[name] = value
         retDict[int(jobID)] = jobDict
       return S_OK(retDict)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(e))
 
 #############################################################################
@@ -170,7 +172,7 @@ class JobDB(DB):
         localIDs = [int(localID) for localID in localIDs]
       else:
         localIDs = [int(localIDs)]
-    except BaseException:
+    except Exception:
       return S_ERROR("localIDs must be integers")
     now = datetime.datetime.utcnow()
     if until:
@@ -179,7 +181,7 @@ class JobDB(DB):
       else:
         try:
           until = datetime.datetime.strptime(until, '%Y-%m-%d')
-        except BaseException:
+        except Exception:
           return S_ERROR("Error in format for 'until', expected '%Y-%m-%d'")
     if not date:
       until = now
@@ -190,7 +192,7 @@ class JobDB(DB):
         try:
           since = datetime.datetime.strptime(date, dFormat)
           break
-        except BaseException:
+        except Exception:
           exactTime = True
       if not since:
         return S_ERROR('Error in date format')
@@ -258,7 +260,7 @@ class JobDB(DB):
         If parameterList is empty - all the parameters are returned.
     """
 
-    if isinstance(jobID, (basestring, int, long)):
+    if isinstance(jobID, (six.string_types, six.integer_types)):
       jobID = [jobID]
 
     jobIDList = []
@@ -288,9 +290,9 @@ class JobDB(DB):
           for res_jobID, res_name, res_value in result['Value']:
             try:
               res_value = res_value.tostring()
-            except BaseException:
+            except Exception:
               pass
-            resultDict.setdefault(res_jobID, {})[res_name] = res_value
+            resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
 
         return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
       else:
@@ -304,7 +306,7 @@ class JobDB(DB):
       for res_jobID, res_name, res_value in result['Value']:
         try:
           res_value = res_value.tostring()
-        except BaseException:
+        except Exception:
           pass
         resultDict.setdefault(res_jobID, {})[res_name] = res_value
 
@@ -347,7 +349,7 @@ class JobDB(DB):
         for name, value, counter in result['Value']:
           try:
             value = value.tostring()
-          except BaseException:
+          except Exception:
             pass
           resultDict.setdefault(counter, {})[name] = value
 
@@ -459,7 +461,7 @@ class JobDB(DB):
         for name, value in result['Value']:
           try:
             value = value.tostring()
-          except BaseException:
+          except Exception:
             pass
           resultDict[name] = value
 
@@ -1687,15 +1689,15 @@ class JobDB(DB):
         if resSite['OK']:
           if resSite['Value']:
             site, status, lastUpdate, author, comment = resSite['Value'][0]
-            resultDict[site] = [(status, str(lastUpdate), author, comment)]
+            resultDict[site] = [[status, str(lastUpdate), author, comment]]
           else:
-            resultDict[site] = [('Unknown', '', '', 'Site not present in logging table')]
+            resultDict[site] = [['Unknown', '', '', 'Site not present in logging table']]
 
     for row in result['Value']:
       site, status, utime, author, comment = row
       if site not in resultDict:
         resultDict[site] = []
-      resultDict[site].append((status, str(utime), author, comment))
+      resultDict[site].append([status, str(utime), author, comment])
 
     return S_OK(resultDict)
 
@@ -1758,8 +1760,6 @@ class JobDB(DB):
     paramNames = ['Site', 'GridType', 'Country', 'Tier', 'MaskStatus']
     paramNames += JobStatus.JOB_STATES
     paramNames += ['Efficiency', 'Status']
-    # FIXME: hack!!!
-    siteT1List = ['CERN', 'IN2P3', 'NIKHEF', 'SARA', 'PIC', 'CNAF', 'RAL', 'GRIDKA', 'RRCKI']
 
     # Sort out records as requested
     sortItem = -1
@@ -1826,13 +1826,15 @@ class JobDB(DB):
     for siteFullName in resultDict:
       siteDict = resultDict[siteFullName]
       if siteFullName.count('.') == 2:
-        grid, site, country = siteFullName.split('.')
+        grid, _, country = siteFullName.split('.')
       else:
-        grid, site, country = 'Unknown', 'Unknown', 'Unknown'
+        grid, _, country = 'Unknown', 'Unknown', 'Unknown'
 
-      tier = 'Tier-2'
-      if site in siteT1List:
-        tier = 'Tier-1'
+      res = getSiteTier(siteFullName)
+      if not res['OK']:
+        self.log.error(res['Message'])
+        continue
+      tier = res['Value']
 
       if country not in countryCounts:
         countryCounts[country] = {}

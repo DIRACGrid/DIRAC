@@ -1,4 +1,4 @@
-[v7r2-pre13]
+[v7r2-pre16]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -14,6 +14,9 @@ NEW: (#4497) add histogram support to the Graph package.
 NEW: (#4497) adapt Graph package to python3
 CHANGE: (#4581) Replace DIRAC.Core.Utilities.CFG with independent diraccfg module
 CHANGE: (#4671) Add an example for DIRAC_NO_CFG to bashrc.
+FIX: (#4736) dirac-install: use system tar command for extracting tarballs, fixes #4246
+NEW: (#4677) X509Chain returns DN entry
+NEW: (#4677) introduction of Tornado based services
 
 *Accounting
 NEW: (#4537) Add histogram of CPU usage to Job accounting
@@ -28,8 +31,95 @@ CHANGE: (#4577) Removed the Pilot2
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
 
+*docs
+FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
+
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
+FIX: (#4677) Ignore tornado services and test DBs
+NEW: (#4677) new integration tests for Tornado based services
+
+[v7r1p14]
+
+*Core
+CHANGE: (#4752) Glue2: the number of ldap searches has been reduced to three making lookups much faster
+CHANGE: (#4752) Glue2: return also unknown sites not found in the information provider for given VO
+CHANGE: (#4752) Glue2: fill value for SI00 for queues as well. Value is fixed at 2500 and will overwrite any existing value.
+CHANGE: (#4752) Glue2: architecture will now always be lowercase.
+CHANGE: (#4752) Glue2: Read the GLUE2ComputingShareMaxSlotsPerJob value and fill the NumberOfProcessors entry for
+                the respective queue. Ignores CREAM CEs. A Ceiling for this number can be set by
+                /Resources/Computing/CEDefaults/MaxNumberOfProcessors, defaults to 8. Solves #3926
+CHANGE: (#4747) Added support for ElasticSearch 7.
+CHANGE: (#4747)  Find cas.pem and crls.pem if they are local, before generating them.
+
+*Configuration:
+CHANGE: (#4752) Bdii2CSAgent: change email subject to agent name
+CHANGE: (#4752) Bdii2CSAgent: Make GLUE2Only=True the default
+CHANGE: (#4752) Bdii2CSAgent: Email also information about CEs not found in the specified information, CEs can be ignored with BannedCEs option, solves #1034
+CHANGE: (#4752) dirac-admin-add-resources: printout CEs that are not known at the given information provider
+CHANGE: (#4752) dirac-admin-add-resources: default to Glue2, deprecate -G flag. Add -g flag to use glue1
+FIX: (#4752) dirac-admin-add-resources: Do not exit if no new CEs are found, still look for changes of existing CEs
+
+*Monitoring
+CHANGE: (#4747) Eliminate types from MonitoringDB for support for ElasticSearch 7
+
+*WMS
+CHANGE: (#4747) renamed ElasticJobDB.py in ElasticJobParametersDB.py
+CHANGE: (#4747) Eliminate types from ElasticJobParametersDB.py for support for ElasticSearch 7
+CHANGE: (#4747) Use ES query DSL for searches in ElasticJobParametersDB.py, also for deleting entries
+
+*Resources
+
+CHANGE: (#4755) remove backward compatibility for BaseSE defined in StorageElements section (issue #3516)
+CHANGE: (#4755) Clearer error message related to LFN convention (issue #2790)
+
+[v7r1p13]
+
+*WMS
+CHANGE: (#4750) JobMonitoring casts for JSON
+
+*Framework
+CHANGE: (#4750) ignore serialization error for JSON in the Monitoring
+
+*RMS
+CHANGE: (#4750) ignore serialization error in ForwardDISET
+
+tests
+FIX: (#4745, #4746) transformation_replication - fix integration test
+
+[v7r1p12]
+
+*Core:
+FIX: (#4724) correctly pass the argument to the new ThreadPool in MessageBroker
+FIX: (#4737) modify logging when CAs & CRLs sync
+
+*Framework
+FIX: (#4728) Fix hashing of local CA and CRL bundles
+FIX: (#4737) add check of availability of directories for sync CAs in BundleDeliveryClient
+
+*Production
+FIX: (#4739) Fixes for JSON serialization
+
+*WMS
+FIX: (#4739) Fixes for JSON serialization
+
+*Transformation
+FIX: (#4739) TransformationManagerHandler: fixes for JSON serialization
+
+
+*ResourceStatusSystem
+CHANGE: (#4720) add a VO column to all tables as apart of the primary key and a default value='all'
+
+*Resources
+NEW: (#4721) SingularityCE: singularityCE: added possibility to run without re-installing DIRAC inside the container
+CHANGE: (#4733) SingularityComputingElement: Enable userns option in singularity if possible.
+CHANGE: (#4733) SingularityComputingElement: Use CVMFS as singularity fallback location if userns is enabled.
+
+*docs:
+CHANGE: (#4721) improved doc for SingularityCE options
+
+*tests
+FIX: (#4724) fix rss-scripts syntax
 
 [v7r1p11]
 
@@ -252,6 +342,39 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p36]
+
+FIX: fixes from v6r22p35 patch release
+
+[v7r0p35]
+
+*Core
+FIX: (#4751) Do not read suspensionReason from VOMS as it's not used anywhere and
+     needs special permissions to give this information
+FIX: (#4756) Fix for silly-formed XMLs from GOCDB
+
+*Framework
+CHANGE: (#4753) NotificationService: if avoidSpam=True the email is now sent immediately
+        and cached for up to one hour, instead of being cached and then sent after up to an hour.
+
+*Resources
+FIX: (#4743) remove dots in xroot virtual username
+
+[v7r0p34]
+
+*Core
+NEW: (#4391) Make M2Crypto TLS implementation compatible with openssl 1.1 series
+
+*DataManagement
+FIX: (#4729) Allow no LFNs to be passed to getReplicas
+
+*RSS
+FIX: (#4722) GOCDBClient: fix for different forms of XML answer from GOC
+
+*Resources
+FIX: (#4725) create "task kwargs" with the required arguments in PoolCE before passing them to the ProcessPool
+FIX: (#4738) create chunks before using the Arc.JobSupervisor
 
 [v7r0p33]
 
@@ -839,6 +962,16 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p35]
+
+*WMS
+FIX: (#4759) exclude fuse from df (watchdog checks)
+
+[v6r22p34]
+
+*DMS
+FIX: (#4748) FTS3Agent - Rotate FTS3Operations list to fetch all. Fixes #4727
 
 [v6r22p33]
 

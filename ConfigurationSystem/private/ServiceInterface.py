@@ -1,155 +1,45 @@
-""" Threaded implementation of services
+""" Threaded implementation of service interface
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import time
+import threading
+from DIRAC import gLogger, S_OK
+
+from DIRAC.ConfigurationSystem.private.ServiceInterfaceBase import ServiceInterfaceBase
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+
 __RCSID__ = "$Id$"
 
-import os
-import time
-import re
-import threading
-import zipfile
-import zlib
-import requests
 
-import DIRAC
-from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData, ConfigurationData
-from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
-
-
-class ServiceInterface(threading.Thread):
+class ServiceInterface(ServiceInterfaceBase, threading.Thread):
+  """
+    Service interface, manage Slave/Master server for CS
+    Thread components
+  """
 
   def __init__(self, sURL):
     threading.Thread.__init__(self)
-    self.sURL = sURL
-    gLogger.info("Initializing Configuration Service", "URL is %s" % sURL)
-    self.__modificationsIgnoreMask = ['/DIRAC/Configuration/Servers', '/DIRAC/Configuration/Version']
-    gConfigurationData.setAsService()
-    if not gConfigurationData.isMaster():
-      gLogger.info("Starting configuration service as slave")
-      gRefresher.autoRefreshAndPublish(self.sURL)
-    else:
-      gLogger.info("Starting configuration service as master")
-      gRefresher.disable()
-      self.__loadConfigurationData()
-      self.dAliveSlaveServers = {}
-      self.__launchCheckSlaves()
+    ServiceInterfaceBase.__init__(self, sURL)
 
-    self.__updateResultDict = {"Successful": {}, "Failed": {}}
-
-  def isMaster(self):
-    return gConfigurationData.isMaster()
-
-  def __launchCheckSlaves(self):
+  def _launchCheckSlaves(self):
+    """
+      Start loop which check if slaves are alive
+    """
     gLogger.info("Starting purge slaves thread")
     self.setDaemon(1)
     self.start()
 
-  def __loadConfigurationData(self):
-    mkDir(os.path.join(DIRAC.rootPath, "etc", "csbackup"))
-    gConfigurationData.loadConfigurationData()
-    if gConfigurationData.isMaster():
-      bBuiltNewConfiguration = False
-      if not gConfigurationData.getName():
-        DIRAC.abort(10, "Missing name for the configuration to be exported!")
-      gConfigurationData.exportName()
-      sVersion = gConfigurationData.getVersion()
-      if sVersion == "0":
-        gLogger.info("There's no version. Generating a new one")
-        gConfigurationData.generateNewVersion()
-        bBuiltNewConfiguration = True
+  def run(self):
+    while True:
+      iWaitTime = gConfigurationData.getSlavesGraceTime()
+      time.sleep(iWaitTime)
+      self._checkSlavesStatus()
 
-      if self.sURL not in gConfigurationData.getServers():
-        gConfigurationData.setServers(self.sURL)
-        bBuiltNewConfiguration = True
-
-      gConfigurationData.setMasterServer(self.sURL)
-
-      if bBuiltNewConfiguration:
-        gConfigurationData.writeRemoteConfigurationToDisk()
-
-  def __generateNewVersion(self):
-    if gConfigurationData.isMaster():
-      gConfigurationData.generateNewVersion()
-      gConfigurationData.writeRemoteConfigurationToDisk()
-
-  def publishSlaveServer(self, sSlaveURL):
-    if not gConfigurationData.isMaster():
-      return S_ERROR("Configuration modification is not allowed in this server")
-    gLogger.info("Pinging slave %s" % sSlaveURL)
-    rpcClient = RPCClient(sSlaveURL, timeout=10, useCertificates=True)
-    retVal = rpcClient.ping()
-    if not retVal['OK']:
-      gLogger.info("Slave %s didn't reply" % sSlaveURL)
-      return
-    if retVal['Value']['name'] != 'Configuration/Server':
-      gLogger.info("Slave %s is not a CS serveR" % sSlaveURL)
-      return
-    bNewSlave = False
-    if sSlaveURL not in self.dAliveSlaveServers:
-      bNewSlave = True
-      gLogger.info("New slave registered", sSlaveURL)
-    self.dAliveSlaveServers[sSlaveURL] = time.time()
-    if bNewSlave:
-      gConfigurationData.setServers("%s, %s" % (self.sURL,
-                                                ", ".join(self.dAliveSlaveServers.keys())))
-      self.__generateNewVersion()
-
-  def __checkSlavesStatus(self, forceWriteConfiguration=False):
-    gLogger.info("Checking status of slave servers")
-    iGraceTime = gConfigurationData.getSlavesGraceTime()
-    bModifiedSlaveServers = False
-    for sSlaveURL in self.dAliveSlaveServers.keys():
-      if time.time() - self.dAliveSlaveServers[sSlaveURL] > iGraceTime:
-        gLogger.info("Found dead slave", sSlaveURL)
-        del self.dAliveSlaveServers[sSlaveURL]
-        bModifiedSlaveServers = True
-    if bModifiedSlaveServers or forceWriteConfiguration:
-      gConfigurationData.setServers("%s, %s" % (self.sURL,
-                                                ", ".join(self.dAliveSlaveServers.keys())))
-      self.__generateNewVersion()
-
-  @staticmethod
-  def __forceServiceUpdate(url, fromMaster):
-    """
-    Force updating configuration on a given service
-
-    :param str url: service URL
-    :param bool fromMaster: flag to force updating from the master CS
-    :return: S_OK/S_ERROR
-    """
-    gLogger.info('Updating service configuration on', url)
-    if url.startswith('dip'):
-      rpc = RPCClient(url)
-      result = rpc.refreshConfiguration(fromMaster)
-    elif url.startswith('http'):
-      hostCertTuple = getHostCertificateAndKeyLocation()
-      resultRequest = requests.get(url,
-                                   headers={'X-RefreshConfiguration': "True"},
-                                   cert=hostCertTuple,
-                                   verify=False)
-      result = S_OK()
-      if resultRequest.status_code != 200:
-        result = S_ERROR("Status code returned %d" % resultRequest.status_code)
-    result['URL'] = url
-    return result
-
-  def __processResults(self, id_, result):
-    if result['OK']:
-      self.__updateResultDict['Successful'][result['URL']] = True
-    else:
-      gLogger.warn("Failed to update configuration on", result['URL'] + ':' + result['Message'])
-      self.__updateResultDict['Failed'][result['URL']] = result['Message']
-
-  def __updateServiceConfiguration(self, urlSet, fromMaster=False):
+  def _updateServiceConfiguration(self, urlSet, fromMaster=False):
     """
     Update configuration in a set of service in parallel
 
@@ -159,210 +49,13 @@ class ServiceInterface(threading.Thread):
     """
     pool = ThreadPool(len(urlSet))
     for url in urlSet:
-      pool.generateJobAndQueueIt(self.__forceServiceUpdate,
+      pool.generateJobAndQueueIt(self._forceServiceUpdate,
                                  args=[url, fromMaster],
                                  kwargs={},
                                  oCallback=self.__processResults)
     pool.processAllResults()
-    return S_OK(self.__updateResultDict)
-
-  def forceSlavesUpdate(self):
-    """
-    Force updating configuration on all the slave configuration servers
-
-    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
-    """
-    gLogger.info("Updating configuration on slave servers")
-    iGraceTime = gConfigurationData.getSlavesGraceTime()
-    self.__updateResultDict = {"Successful": {}, "Failed": {}}
-    urlSet = set()
-    for slaveURL in self.dAliveSlaveServers:
-      if time.time() - self.dAliveSlaveServers[slaveURL] <= iGraceTime:
-        urlSet.add(slaveURL)
-    return self.__updateServiceConfiguration(urlSet, fromMaster=True)
-
-  def forceGlobalUpdate(self):
-    """
-    Force updating configuration of all the registered services
-
-    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
-    """
-    gLogger.info("Updating services configuration")
-    # Get URLs of all the services except for Configuration services
-    cfg = gConfigurationData.remoteCFG.getAsDict()['Systems']
-    urlSet = set()
-    for system_ in cfg:
-      for instance in cfg[system_]:
-        for url in cfg[system_][instance]['URLs']:
-          urlSet = urlSet.union(set([u.strip() for u in cfg[system_][instance]['URLs'][url].split(',')
-                                     if 'Configuration/Server' not in u]))
-    return self.__updateServiceConfiguration(urlSet)
-
-  def updateConfiguration(self, sBuffer, committer="", updateVersionOption=False):
-    """
-    Update the master configuration with the newly received changes
-
-    :param str sBuffer: newly received configuration data
-    :param str committer: the user name of the committer
-    :param bool updateVersionOption: flag to update the current configuration version
-    :return: S_OK/S_ERROR of the write-to-disk of the new configuration
-    """
-    if not gConfigurationData.isMaster():
-      return S_ERROR("Configuration modification is not allowed in this server")
-    # Load the data in a ConfigurationData object
-    oRemoteConfData = ConfigurationData(False)
-    oRemoteConfData.loadRemoteCFGFromCompressedMem(sBuffer)
-    if updateVersionOption:
-      oRemoteConfData.setVersion(gConfigurationData.getVersion())
-    # Test that remote and new versions are the same
-    sRemoteVersion = oRemoteConfData.getVersion()
-    sLocalVersion = gConfigurationData.getVersion()
-    gLogger.info("Checking versions\nremote: %s\nlocal:  %s" % (sRemoteVersion, sLocalVersion))
-    if sRemoteVersion != sLocalVersion:
-      if not gConfigurationData.mergingEnabled():
-        return S_ERROR("Local and remote versions differ (%s vs %s). Cannot commit." % (sLocalVersion, sRemoteVersion))
-      else:
-        gLogger.info("AutoMerging new data!")
-        if updateVersionOption:
-          return S_ERROR("Cannot AutoMerge! version was overwritten")
-        result = self.__mergeIndependentUpdates(oRemoteConfData)
-        if not result['OK']:
-          gLogger.warn("Could not AutoMerge!", result['Message'])
-          return S_ERROR("AutoMerge failed: %s" % result['Message'])
-        requestedRemoteCFG = result['Value']
-        gLogger.info("AutoMerge successful!")
-        oRemoteConfData.setRemoteCFG(requestedRemoteCFG)
-    # Test that configuration names are the same
-    sRemoteName = oRemoteConfData.getName()
-    sLocalName = gConfigurationData.getName()
-    if sRemoteName != sLocalName:
-      return S_ERROR("Names differ: Server is %s and remote is %s" % (sLocalName, sRemoteName))
-    # Update and generate a new version
-    gLogger.info("Committing new data...")
-    gConfigurationData.lock()
-    gLogger.info("Setting the new CFG")
-    gConfigurationData.setRemoteCFG(oRemoteConfData.getRemoteCFG())
-    gConfigurationData.unlock()
-    gLogger.info("Generating new version")
-    gConfigurationData.generateNewVersion()
-    # self.__checkSlavesStatus( forceWriteConfiguration = True )
-    gLogger.info("Writing new version to disk")
-    retVal = gConfigurationData.writeRemoteConfigurationToDisk("%s@%s" % (committer, gConfigurationData.getVersion()))
-    gLogger.info("New version", gConfigurationData.getVersion())
-
-    # Attempt to update the configuration on currently registered slave services
-    if gConfigurationData.getAutoSlaveSync():
-      result = self.forceSlavesUpdate()
-      if not result['OK']:
-        gLogger.warn('Failed to update slave servers')
-
-    return retVal
-
-  def getCompressedConfigurationData(self):
-    return gConfigurationData.getCompressedData()
-
-  def getVersion(self):
-    return gConfigurationData.getVersion()
-
-  def getCommitHistory(self):
-    files = self.__getCfgBackups(gConfigurationData.getBackupDir())
-    backups = [".".join(fileName.split(".")[1:-1]).split("@") for fileName in files]
-    return backups
-
-  def run(self):
-    while True:
-      iWaitTime = gConfigurationData.getSlavesGraceTime()
-      time.sleep(iWaitTime)
-      self.__checkSlavesStatus()
-
-  def getVersionContents(self, date):
-    backupDir = gConfigurationData.getBackupDir()
-    files = self.__getCfgBackups(backupDir, date)
-    for fileName in files:
-      with zipfile.ZipFile("%s/%s" % (backupDir, fileName), "r") as zFile:
-        cfgName = zFile.namelist()[0]
-        retVal = S_OK(zlib.compress(zFile.read(cfgName), 9))
-      return retVal
-    return S_ERROR("Version %s does not exist" % date)
-
-  def __getCfgBackups(self, basePath, date="", subPath=""):
-    rs = re.compile(r"^%s\..*%s.*\.zip$" % (gConfigurationData.getName(), date))
-    fsEntries = os.listdir("%s/%s" % (basePath, subPath))
-    fsEntries.sort(reverse=True)
-    backupsList = []
-    for entry in fsEntries:
-      entryPath = "%s/%s/%s" % (basePath, subPath, entry)
-      if os.path.isdir(entryPath):
-        backupsList.extend(self.__getCfgBackups(basePath, date, "%s/%s" % (subPath, entry)))
-      elif os.path.isfile(entryPath):
-        if rs.search(entry):
-          backupsList.append("%s/%s" % (subPath, entry))
-    return backupsList
-
-  def __getPreviousCFG(self, oRemoteConfData):
-    backupsList = self.__getCfgBackups(gConfigurationData.getBackupDir(), date=oRemoteConfData.getVersion())
-    if not backupsList:
-      return S_ERROR("Could not AutoMerge. Could not retrieve original committer's version")
-    prevRemoteConfData = ConfigurationData()
-    backFile = backupsList[0]
-    if backFile[0] == "/":
-      backFile = os.path.join(gConfigurationData.getBackupDir(), backFile[1:])
-    try:
-      prevRemoteConfData.loadConfigurationData(backFile)
-    except Exception as e:
-      return S_ERROR("Could not load original committer's version: %s" % str(e))
-    gLogger.info("Loaded client original version %s" % prevRemoteConfData.getVersion())
-    return S_OK(prevRemoteConfData.getRemoteCFG())
-
-  def _checkConflictsInModifications(self, realModList, reqModList, parentSection=""):
-    realModifiedSections = dict([(modAc[1], modAc[3])
-                                 for modAc in realModList if modAc[0].find('Sec') == len(modAc[0]) - 3])
-    reqOptionsModificationList = dict([(modAc[1], modAc[3])
-                                       for modAc in reqModList if modAc[0].find('Opt') == len(modAc[0]) - 3])
-    for modAc in reqModList:
-      action = modAc[0]
-      objectName = modAc[1]
-      if action == "addSec":
-        if objectName in realModifiedSections:
-          return S_ERROR("Section %s/%s already exists" % (parentSection, objectName))
-      elif action == "delSec":
-        if objectName in realModifiedSections:
-          return S_ERROR("Section %s/%s cannot be deleted. It has been modified." % (parentSection, objectName))
-      elif action == "modSec":
-        if objectName in realModifiedSections:
-          result = self._checkConflictsInModifications(realModifiedSections[objectName],
-                                                       modAc[3], "%s/%s" % (parentSection, objectName))
-          if not result['OK']:
-            return result
-    for modAc in realModList:
-      action = modAc[0]
-      objectName = modAc[1]
-      if action.find("Opt") == len(action) - 3:
-        return S_ERROR(
-            "Section %s cannot be merged. Option %s/%s has been modified" %
-            (parentSection, parentSection, objectName))
     return S_OK()
 
-  def __mergeIndependentUpdates(self, oRemoteConfData):
-    # return S_ERROR( "AutoMerge is still not finished.
-    # Meanwhile... why don't you get the newest conf and update from there?" )
-    # Get all the CFGs
-    curSrvCFG = gConfigurationData.getRemoteCFG().clone()
-    curCliCFG = oRemoteConfData.getRemoteCFG().clone()
-    result = self.__getPreviousCFG(oRemoteConfData)
+  def __processResults(self, _id, result):
     if not result['OK']:
-      return result
-    prevCliCFG = result['Value']
-    # Try to merge curCli with curSrv. To do so we check the updates from
-    # prevCli -> curSrv VS prevCli -> curCli
-    prevCliToCurCliModList = prevCliCFG.getModifications(curCliCFG)
-    prevCliToCurSrvModList = prevCliCFG.getModifications(curSrvCFG)
-    result = self._checkConflictsInModifications(prevCliToCurSrvModList,
-                                                 prevCliToCurCliModList)
-    if not result['OK']:
-      return S_ERROR("Cannot AutoMerge: %s" % result['Message'])
-    # Merge!
-    result = curSrvCFG.applyModifications(prevCliToCurCliModList)
-    if not result['OK']:
-      return result
-    return S_OK(curSrvCFG)
+      gLogger.warn("Failed to update configuration on", result['URL'] + ':' + result['Message'])

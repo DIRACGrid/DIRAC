@@ -16,7 +16,6 @@ class BaseType(object):
   """
   .. class:: BaseType
 
-  :param str doc_type: Each document belong to a category. For example: WMSHistory
   :param str index: we use daily indexes for example:wmshistory_index-2015-10-09
   :param keyFields: The attributes what we monitor.
   :type keyFields: python:list
@@ -25,7 +24,8 @@ class BaseType(object):
   :param int dataToKeep: Data retention. We keep all data by default.
   :param dict mapping: We can specify the mapping of the documents. It is used during the creation of an index.
                        Note: If you do not want to be analysed a string, you have to set the mapping
-  :param str period: We can configure the elasticsearch index type. By default we use daily indexes. But we can use monthly indexes.
+  :param str period: We can configure the elasticsearch index name with a period.
+                     By default we use daily indexes, but we can also use monthly indexes.
                      Supported values: day, month
 
   """
@@ -36,7 +36,6 @@ class BaseType(object):
 
     :param self: self reference
     """
-    self.doc_type = None
     self.keyFields = []
     self.mapping = {}  # by default we do not have mapping
     self.timeType = {'properties': {'timestamp': {'type': 'date'}}}  # we use timestamp for all monitoring types.
@@ -72,24 +71,9 @@ class BaseType(object):
     return index
 
   ########################################################################
-  def _getDocType(self):
-    """
-    It returns the corresponding category. The type of a document.
-    """
-    doctype = ''
-    if self.doc_type is None:
-      fullName = self.__class__.__name__
-      doctype = fullName
-    else:
-      doctype = self.doc_type
-    return doctype
-
-  ########################################################################
-
   def addMapping(self, mapping):
     """
     :param dict mapping: the mapping used by elasticsearch
     """
-    docType = self._getDocType()
-    self.mapping.setdefault(docType, self.timeType)
-    self.mapping[docType]['properties'].update(mapping)
+    self.mapping = self.timeType
+    self.mapping['properties'].update(mapping)

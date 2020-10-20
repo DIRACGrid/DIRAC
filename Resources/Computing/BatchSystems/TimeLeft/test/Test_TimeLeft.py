@@ -9,9 +9,11 @@ from __future__ import print_function
 import pytest
 from six.moves import reload_module
 
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft, enoughTimeLeft
 
+
+gLogger.setLevel('DEBUG')
 
 SGE_OUT = """==============================================================
 job_number:                 12345
@@ -48,8 +50,8 @@ PBS_OUT = "bla"
 
 LSF_OUT = "JOBID     USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME  PROJ_NAME CPU_USED MEM"\
           " SWAP PIDS START_TIME FINISH_TIME\n"\
-          "12345 user RUN   q1  host1 p01 job1 10/12-20:51:42 default"\
-          "    00:00:60.00 6267 40713 25469,14249 10/12-20:52:00 -"
+          "12345 user RUN   q1  host1 p01 job1 12/31-20:51:42 default"\
+          "    00:00:60.00 6267 40713 25469,14249 12/31-20:52:00 -"
 
 MJF_OUT = "0"
 

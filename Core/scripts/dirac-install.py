@@ -1529,24 +1529,11 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
   #  tf.extract( member )
   # os.chdir(cwd)
   if not isSource:
-    try:
-      with closing(tarfile.open(tarPath, mode="r:*")) as tar:
-        for tarinfo in tar:  # pylint: disable=not-an-iterable
-          try:
-            tar.extract(tarinfo, cliParams.targetPath)  # pylint: disable=no-member
-          except IOError:
-            os.remove(tarinfo.name)
-            tar.extract(tarinfo, cliParams.targetPath)  # pylint: disable=no-member
-          finally:
-            try:
-              os.chmod(tarinfo.name, tarinfo.mode)
-            except OSError:  # the file can be a link
-              pass
-    except Exception as e:
-      logWARN("Trying do extract using system tar: %s" % repr(e))
-      tarCmd = "tar xzf '%s' -C '%s'" % (tarPath, cliParams.targetPath)
-      os.system(tarCmd)
-
+    logNOTICE("Extract using system tar: %s" % tarPath)
+    tarCmd = "tar xzf '%s' -C '%s'" % (tarPath, cliParams.targetPath)
+    if os.system(tarCmd):
+      logERROR("Extraction of tarball %s failed" % tarPath)
+      raise RuntimeError("Failed to extract tarball")
     # Delete tar
     if cache:
       if not os.path.isdir(cacheDir):

@@ -54,6 +54,9 @@ class ForwardDISET(OperationHandlerBase):
     # # call base class c'tor
     OperationHandlerBase.__init__(self, operation, csPath)
 
+  # We can ignore the warnings here because we are just
+  # replaying something that ought to be sanitized already
+  @DEncode.ignoreEncodeWarning
   def __call__(self):
     """ execute RPC stub """
     # # decode arguments

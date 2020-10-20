@@ -55,7 +55,7 @@ def getCAsLocation():
   casPath = "%s/etc/grid-security/certificates" % DIRAC.rootPath
   if os.path.isdir(casPath):
     return casPath
-  #/etc/grid-security/certificates
+  # /etc/grid-security/certificates
   casPath = "/etc/grid-security/certificates"
   if os.path.isdir(casPath):
     return casPath
@@ -95,7 +95,7 @@ def getHostCertificateAndKeyLocation(specificLocation=None):
       if retVal['OK']:
         paths.append(retVal['Value'])
       paths.append("%s/etc/grid-security/" % DIRAC.rootPath)
-      #paths.append( os.path.expanduser( "~/.globus" ) )
+      # paths.append( os.path.expanduser( "~/.globus" ) )
       for path in paths:
         filePath = os.path.realpath("%s/%s%s.pem" % (path, filePrefix, fileType))
         if os.path.isfile(filePath):
@@ -104,7 +104,7 @@ def getHostCertificateAndKeyLocation(specificLocation=None):
           break
       if fileFound:
         break
-  if "cert" not in fileDict.keys() or "key" not in fileDict.keys():
+  if "cert" not in fileDict or "key" not in fileDict:
     return False
   # we can specify a location outside /opt/dirac/etc/grid-security directory
   if specificLocation:

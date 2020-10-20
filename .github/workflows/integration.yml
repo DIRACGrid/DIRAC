@@ -11,7 +11,10 @@ jobs:
     env:
       MATRIX_DEFAULT_MYSQL_VER: 5.7
       MATRIX_DEFAULT_HOST_OS: cc7
+      MATRIX_DEFAULT_ES_VER: 6.6.0
       MATRIX_DEFAULT_USE_NEWTHREADPOOL: default
+      MATRIX_DEFAULT_DIRACOSVER: default
+      MATRIX_DEFAULT_TEST_HTTPS: No
       MATRIX_DEFAULT_SERVER_USE_PYTHON3: No
       MATRIX_DEFAULT_CLIENT_USE_PYTHON3: No
 
@@ -26,6 +29,10 @@ jobs:
           # IMPLICIT: - MYSQL_VER: 5.7
           - TEST_NAME: "MySQL 8.0"
             MYSQL_VER: 8.0
+          ###### ES versions
+          - TEST_NAME: "Elasticsearch 7.9.1"
+            ES_VER: 7.9.1
+          # IMPLICIT: - ES_VER: 6.6.0
           ###### Host OS
           - TEST_NAME: "SLC 6"
             HOST_OS: slc6
@@ -34,6 +41,12 @@ jobs:
           # IMPLICIT: - USE_NEWTHREADPOOL: default
           - TEST_NAME: "New thread pool"
             USE_NEWTHREADPOOL: No
+          ###### HTTPS tests
+          # IMPLICIT: - DIRACOSVER: default
+          #             TEST_HTTPS: No
+          - TEST_NAME: "HTTPS"
+            TEST_HTTPS: Yes
+            DIRACOSVER: https
           ###### Python 3
           # IMPLICIT: - SERVER_USE_PYTHON3: No
           #             CLIENT_USE_PYTHON3: No
@@ -60,6 +73,8 @@ jobs:
         echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER || env.MATRIX_DEFAULT_MYSQL_VER }} " >> run_in_container
         echo -n "-e ES_VER=${{ matrix.ES_VER || env.MATRIX_DEFAULT_ES_VER }} " >> run_in_container
         if [[ "${{ matrix.USE_NEWTHREADPOOL || env.MATRIX_DEFAULT_USE_NEWTHREADPOOL }}" != "default" ]]; then echo -n "-e DIRAC_USE_NEWTHREADPOOL=${{ matrix.USE_NEWTHREADPOOL || env.MATRIX_DEFAULT_USE_NEWTHREADPOOL }} " >> run_in_container; fi
+        if [[ "${{ matrix.DIRACOSVER || env.MATRIX_DEFAULT_DIRACOSVER }}" != "default" ]]; then echo -n "-e DIRACOSVER=${{ matrix.DIRACOSVER || env.MATRIX_DEFAULT_DIRACOSVER }} " >> run_in_container; fi
+        echo -n "-e TEST_HTTPS=${{ matrix.TEST_HTTPS || env.MATRIX_DEFAULT_TEST_HTTPS }} " >> run_in_container
         echo -n "-e SERVER_USE_PYTHON3=${{ matrix.SERVER_USE_PYTHON3 || env.MATRIX_DEFAULT_SERVER_USE_PYTHON3 }} " >> run_in_container
         echo -n "-e CLIENT_USE_PYTHON3=${{ matrix.CLIENT_USE_PYTHON3 || env.MATRIX_DEFAULT_CLIENT_USE_PYTHON3 }} " >> run_in_container
         # Finish wrapper script

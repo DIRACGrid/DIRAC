@@ -20,16 +20,17 @@ import time
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 # This is a global instance of the JobDB class
 jobDB = False
 logDB = False
-elasticJobDB = False
+elasticJobParametersDB = False
 
 
 def initializeJobStateUpdateHandler(serviceInfo):
@@ -50,11 +51,11 @@ class JobStateUpdateHandler(RequestHandler):
 
     Determines the switching of ElasticSearch and MySQL backends
     """
-    global elasticJobDB
+    global elasticJobParametersDB
 
     useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
-      elasticJobDB = ElasticJobDB()
+      elasticJobParametersDB = ElasticJobParametersDB()
       self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
@@ -306,26 +307,27 @@ class JobStateUpdateHandler(RequestHandler):
         for job specified by its JobId
     """
 
-    if elasticJobDB:
-      return elasticJobDB.setJobParameter(int(jobID), name, value)
+    if elasticJobParametersDB:
+      return elasticJobParametersDB.setJobParameter(int(jobID), name, value)
 
     return jobDB.setJobParameter(int(jobID), name, value)
 
   ###########################################################################
   types_setJobsParameter = [dict]
 
+  @ignoreEncodeWarning
   def export_setJobsParameter(self, jobsParameterDict):
     """ Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
     """
     for jobID in jobsParameterDict:
 
-      if elasticJobDB:
-        res = elasticJobDB.setJobParameter(jobID,
-                                           str(jobsParameterDict[jobID][0]),
-                                           str(jobsParameterDict[jobID][1]))
+      if elasticJobParametersDB:
+        res = elasticJobParametersDB.setJobParameter(jobID,
+                                                     str(jobsParameterDict[jobID][0]),
+                                                     str(jobsParameterDict[jobID][1]))
         if not res['OK']:
-          self.log.error('Failed to add Job Parameter to elasticJobDB', res['Message'])
+          self.log.error('Failed to add Job Parameter to elasticJobParametersDB', res['Message'])
 
       else:
         res = jobDB.setJobParameter(jobID,
@@ -339,7 +341,9 @@ class JobStateUpdateHandler(RequestHandler):
   ###########################################################################
   types_setJobParameters = [[six.string_types, int], list]
 
-  def export_setJobParameters(self, jobID, parameters):
+  @staticmethod
+  @ignoreEncodeWarning
+  def export_setJobParameters(jobID, parameters):
     """ Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
     """

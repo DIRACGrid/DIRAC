@@ -54,10 +54,6 @@ dict_cs = {
                     "Access": "remote",
                 }
             },
-        },
-        "StorageElements": {
-            # This SE must be in the section above but we put it here to test
-            # backward compatibility
             "CERN-BASE": {
                 "BackendType": "Eos",
                 "SEType": "T0D1",
@@ -71,6 +67,37 @@ dict_cs = {
                     "SpaceToken": "LHCb-EOS",
                     "WSUrl": "/srm/v2/server?SFN:",
                 }
+            },
+        },
+        "StorageElements": {
+            # This SE must be in the section above. We kept the backward
+            # compatibility for a while, but now it is time to remove it
+            "CERN-BASE-WRONGLOCATION": {
+                "BackendType": "Eos",
+                "SEType": "T0D1",
+                "AccessProtocol.1": {
+                    "Host": "srm-eoslhcb.cern.ch",
+                    "Port": 8443,
+                    "PluginName": "GFAL2_SRM2",
+                    "Protocol": "srm",
+                    "Path": "/eos/lhcb/grid/prod",
+                    "Access": "remote",
+                    "SpaceToken": "LHCb-EOS",
+                    "WSUrl": "/srm/v2/server?SFN:",
+                }
+            },
+            # This should not work anymore because
+            # CERN-BASE-WRONGLOCATION is in StorageElements
+            "CERN-WRONGLOCATION": {
+                "BaseSE": "CERN-BASE-WRONGLOCATION",
+                "AccessProtocol.1": {
+                    "PluginName": "GFAL2_SRM2",
+                    "Path": "/eos/lhcb/grid/prod",
+                }
+            },
+            # Alias in StorageElements location should still work
+            "CERN-WRONGLOCATION-ALIAS": {
+                "Alias": "CERN-BASE-WRONGLOCATION"
             },
             "CERN-SIMPLE": {
                 "BackendType": "Eos",
@@ -674,6 +701,27 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     }]
 
     self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
+
+  def test_baseSE_in_SEDefinition(self, _sf_generateStorageObject, _rss_getSEStatus):
+    """ In this test, a storage inherits from a baseSE which is declared in the
+        StorageElements section instead of the BaseStorageElements section.
+        It used to be possible, but we remove this compatibility layer.
+    """
+
+    sf = StorageFactory(vo='lhcb')
+    storages = sf.getStorages('CERN-WRONGLOCATION')
+
+    self.assertFalse(storages['OK'], storages)
+
+  def test_aliasSE_in_SEDefinition(self, _sf_generateStorageObject, _rss_getSEStatus):
+    """ In this test, a storage aliases a baseSE which is declared in the
+        StorageElements section. That should remain possible
+    """
+
+    sf = StorageFactory(vo='lhcb')
+    storages = sf.getStorages('CERN-WRONGLOCATION-ALIAS')
+
+    self.assertTrue(storages['OK'], storages)
 
 
 @mock.patch('DIRAC.Resources.Storage.StorageFactory.gConfig', new=sf_gConfig)

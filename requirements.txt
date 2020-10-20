@@ -1,6 +1,10 @@
 # From repo
 fts3-rest
 
+#Patch for tornado
+git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
+git+https://github.com/DIRACGrid/tornado_m2crypto.git
+
 # From pypi
 boto3
 #asn1
@@ -52,7 +56,6 @@ typing==3.6.6
 hypothesis
 python-json-logger>=0.1.8
 multi-mechanize>=1.2.0
-tornado>=5.0.0
 caniusepython3
 subprocess32
 flaky

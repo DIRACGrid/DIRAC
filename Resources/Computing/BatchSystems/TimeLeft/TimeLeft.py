@@ -76,8 +76,8 @@ class TimeLeft(object):
     return 0
 
   def getTimeLeft(self, cpuConsumed=0.0, processors=1):
-    """ Returns the CPU Time Left for supported batch systems.  The CPUConsumed
-        is the current raw total CPU.
+    """ Returns the CPU Time Left for supported batch systems.
+        The CPUConsumed is the current raw total CPU.
     """
     # Quit if no scale factor available
     if not self.scaleFactor:

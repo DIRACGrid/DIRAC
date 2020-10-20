@@ -196,8 +196,8 @@ class ResourceManagementClientChain(TestClientResourceManagementTestCase):
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectPilotCache('TestName12345')
-    # check if the result has changed
-    self.assertEqual(res['Value'][0][2], 'newStatus')
+    # check if the result has changed. New schema, vo column added, hence pos 3.
+    self.assertEqual(res['Value'][0][3], 'newStatus')
 
     # TEST deletePilotCache
     # ...............................................................................
@@ -233,8 +233,8 @@ class ResourceManagementClientChain(TestClientResourceManagementTestCase):
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
-    # check if the result has changed
-    self.assertEqual(res['Value'][0][4], 'newStatus')
+    # check if the result has changed.
+    self.assertEqual(res['Value'][0][5], 'newStatus')
 
     # TEST deletePolicyResult
     # ...............................................................................

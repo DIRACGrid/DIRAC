@@ -37,11 +37,8 @@ import logging
 import textwrap
 import requests
 from distutils.version import LooseVersion
-
-try:
-  from configparser import ConfigParser  # python3
-except ImportError:
-  from ConfigParser import SafeConfigParser as ConfigParser  # python2
+import six
+from six.moves.configparser import SafeConfigParser as ConfigParser
 
 
 G_ERROR = textwrap.dedent("""
@@ -540,12 +537,12 @@ class GithubInterface(object):
       return releaseNotes
 
     prMarker = '#' if self.useGithub else '!'
-    for baseBranch, pr in prs.iteritems():
+    for baseBranch, pr in six.iteritems(prs):
       releaseNotes += '[%s]\n\n' % baseBranch
       if headerMessage:
         releaseNotes += '%s\n\n' % headerMessage
       systemChangesDict = defaultdict(list)
-      for prid, content in pr.iteritems():
+      for prid, content in six.iteritems(pr):
         notes = content['comment']
         system = ''
         for line in notes.splitlines():
@@ -558,7 +555,7 @@ class GithubInterface(object):
               line = '%s: (%s%s) %s' % (splitline[0], prMarker, prid, splitline[1].strip())
             systemChangesDict[system].append(line)
 
-      for system, changes in systemChangesDict.iteritems():
+      for system, changes in six.iteritems(systemChangesDict):
         if system:
           releaseNotes += "*%s\n\n" % system
         releaseNotes += "\n".join(changes)

@@ -9,7 +9,9 @@ __RCSID__ = "$Id$"
 
 import six
 import time
+
 from six.moves import _thread as thread
+
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -250,7 +252,7 @@ class BaseClient(object):
 
         :return: S_OK()/S_ERROR()
     """
-    # Wich extra credentials to use?
+    # which extra credentials to use?
     self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST if self.__useCertificates else ""
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]

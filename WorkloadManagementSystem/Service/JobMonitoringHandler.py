@@ -16,17 +16,19 @@ from datetime import timedelta
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
 # These are global instances of the DB classes
 gJobDB = False
-gElasticJobDB = False
+gElasticJobParametersDB = False
 gJobLoggingDB = False
 gTaskQueueDB = False
 
@@ -66,9 +68,9 @@ class JobMonitoringHandler(RequestHandler):
     self.jobPolicy.jobDB = gJobDB
 
     useESForJobParametersFlag = operations.getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
-    global gElasticJobDB
+    global gElasticJobParametersDB
     if useESForJobParametersFlag:
-      gElasticJobDB = ElasticJobDB()
+      gElasticJobParametersDB = ElasticJobParametersDB()
       self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
@@ -282,44 +284,48 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsParameters = [list, list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsParameters(jobIDs, parameters):
     if not (jobIDs and parameters):
       return S_OK({})
-    return gJobDB.getAttributesForJobList(jobIDs, parameters)
-
+    return getAttributesForJobList(jobIDs, parameters)
 
 ##############################################################################
   types_getJobsStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsStatus(jobIDs):
     if not jobIDs:
       return S_OK({})
-    return gJobDB.getAttributesForJobList(jobIDs, ['Status'])
+    return getAttributesForJobList(jobIDs, ['Status'])
 
 ##############################################################################
   types_getJobsMinorStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsMinorStatus(jobIDs):
 
-    return gJobDB.getAttributesForJobList(jobIDs, ['MinorStatus'])
+    return getAttributesForJobList(jobIDs, ['MinorStatus'])
 
 ##############################################################################
   types_getJobsApplicationStatus = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsApplicationStatus(jobIDs):
 
-    return gJobDB.getAttributesForJobList(jobIDs, ['ApplicationStatus'])
+    return getAttributesForJobList(jobIDs, ['ApplicationStatus'])
 
 ##############################################################################
   types_getJobsSites = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsSites(jobIDs):
 
-    return gJobDB.getAttributesForJobList(jobIDs, ['Site'])
+    return getAttributesForJobList(jobIDs, ['Site'])
 
 ##############################################################################
   types_getJobSummary = [int]
@@ -344,7 +350,7 @@ class JobMonitoringHandler(RequestHandler):
     if not jobIDs:
       return S_ERROR('JobMonitoring.getJobsSummary: Received empty job list')
 
-    result = gJobDB.getAttributesForJobList(jobIDs, SUMMARY)
+    result = getAttributesForJobList(jobIDs, SUMMARY)
     # return result
     restring = str(result['Value'])
     return S_OK(restring)
@@ -415,7 +421,7 @@ class JobMonitoringHandler(RequestHandler):
                                                                                            RIGHT_GET_INFO)
         summaryJobList = validJobs
 
-      result = gJobDB.getAttributesForJobList(summaryJobList, SUMMARY)
+      result = getAttributesForJobList(summaryJobList, SUMMARY)
       if not result['OK']:
         return S_ERROR('Failed to get job summary: ' + result['Message'])
 
@@ -497,8 +503,9 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsPrimarySummary = [list]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobsPrimarySummary(jobIDs):
-    return gJobDB.getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
+    return getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
 
 ##############################################################################
   types_getJobParameter = [six.string_types + six.integer_types, six.string_types]
@@ -509,8 +516,8 @@ class JobMonitoringHandler(RequestHandler):
     :param str/int/long jobID: one single Job ID
     :param str parName: one single parameter name
     """
-    if gElasticJobDB:
-      res = gElasticJobDB.getJobParameters(jobID, [parName])
+    if gElasticJobParametersDB:
+      res = gElasticJobParametersDB.getJobParameters(jobID, [parName])
       if not res['OK']:
         return res
       if res['Value'].get(int(jobID)):
@@ -532,17 +539,18 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobParameters = [six.string_types + six.integer_types + (list,)]
 
   @staticmethod
+  @ignoreEncodeWarning
   def export_getJobParameters(jobIDs, parName=None):
     """
     :param str/int/long/list jobIDs: one single job ID or a list of them
     :param str parName: one single parameter name, or None (meaning all of them)
     """
-    if gElasticJobDB:
+    if gElasticJobParametersDB:
       if not isinstance(jobIDs, list):
         jobIDs = [jobIDs]
       parameters = {}
       for jobID in jobIDs:
-        res = gElasticJobDB.getJobParameters(jobID, parName)
+        res = gElasticJobParametersDB.getJobParameters(jobID, parName)
         if not res['OK']:
           return res
         parameters.update(res['Value'])
@@ -647,3 +655,14 @@ class JobMonitoringHandler(RequestHandler):
     Return Distinct Values of OwnerGroup from the JobsDB
     """
     return gJobDB.getDistinctJobAttributes('OwnerGroup')
+
+
+##############################################################################
+
+def getAttributesForJobList(*args, **kwargs):
+  """ Utility function for unpacking
+  """
+  res = gJobDB.getAttributesForJobList(*args, **kwargs)
+  if not res['OK']:
+    return res
+  return S_OK(strToIntDict(res['Value']))

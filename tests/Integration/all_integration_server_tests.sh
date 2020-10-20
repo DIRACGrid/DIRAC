@@ -33,7 +33,7 @@ echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobParametersDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 python "${SERVERINSTALLDIR}/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py" --cfg "${WORKSPACE}/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
@@ -60,6 +60,7 @@ diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Restart the DFC service\n" |& tee -a "${SERVER_TEST_OUTPUT}"
 dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Run it with the admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
 echo -e "*** $(date -u)  getting the prod role again\n" |& tee -a "${SERVER_TEST_OUTPUT}"

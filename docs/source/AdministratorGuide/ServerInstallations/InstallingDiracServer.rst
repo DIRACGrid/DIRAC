@@ -32,6 +32,7 @@ For all DIRAC installations any number of client installations is possible.
 
 .. _server_requirements:
 
+
 Requirements
 ------------
 
@@ -192,6 +193,13 @@ Server Certificates
 Server certificates are used for validating the identity of the host a given client is connecting to. We follow the RFC 6125.
 Basically, that means that the DNS name used to contact the host must be present in the ``SubjectAlternativeName``. 
 
+Couple notes:
+
+* SAN in your certificates: if you are contacting a machine using its aliases, make sure that all the aliases are in the SubjectAlternativeName (SAN) field of the certificates
+* FQDN in the configuration: SAN normally contains only FQDN, so make sure you use the FQDN in the CS as well (e.g. ``mymachine.cern.ch`` and not ``mymachine``)
+
+.. _using_own_CA:
+
 -----------------
 Using your own CA
 -----------------
@@ -214,7 +222,7 @@ MySQL database preparation
 --------------------------
 
 Before proceeding with the primary server installation, a MYSQL server must be available.
-DIRAC supports MySQL versions 5.6 and 5.7 (8.0 support in preparation).
+DIRAC supports MySQL versions 5.6, 5.7, 8.0.
 In addition to the root/admin user(s) the following users must be created, with the same PASSWORD::
 
    CREATE USER 'Dirac'@'%' IDENTIFIED BY '[PASSWORD]';

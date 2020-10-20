@@ -143,6 +143,7 @@ class FileCase(DFCTestCase):
                                           'GUID': '1000',
                                           'Checksum': '0'}})
     self.assertTrue(result['OK'], "addFile failed when adding new file %s" % result)
+    self.assertTrue(testFile in result['Value'].get('Successful', {}), result)
 
     result = self.dfc.exists(testFile)
     self.assertTrue(result['OK'])

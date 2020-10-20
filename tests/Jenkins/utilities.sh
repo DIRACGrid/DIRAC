@@ -178,11 +178,12 @@ findDatabases() {
   #
   # We are avoiding, FileCatalogDB FileCatalogWithFkAndPsDB that is installed in other ways
   #  and InstalledComponentsDB which is installed at the beginning
+  # We also ignore all the DBs in tests directory
   #
   if [[ -n "${DBstoExclude}" ]]; then
-    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "${DBstoExclude}" | grep -v 'DIRAC' | sort -u > databases
+    find ./*DIRAC/ -path "*/tests/*" -prune -o -name "*DB.sql" -print  | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "${DBstoExclude}" | grep -v 'DIRAC' | sort | uniq > databases
   else
-    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "${DBstoSearch}" | grep -v 'DIRAC' | sort -u > databases
+    find ./*DIRAC/ -path "*/tests/*" -prune -o -name "*DB.sql" -print  | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "${DBstoSearch}" | grep -v 'DIRAC' | sort | uniq > databases
   fi
 
   echo "found $(wc -l databases)"
@@ -751,7 +752,8 @@ diracAddSite() {
 diracServices(){
   echo '==> [diracServices]'
 
-  local services=$(cut -d '.' -f 1 < services | grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  # Ignore tornado services
+  local services=$(cut -d '.' -f 1 < services | grep -v Tornado |  grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -801,7 +803,8 @@ diracUninstallServices(){
 
   findServices
 
-  local services=$(cut -d '.' -f 1 <services | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  # Ignore tornado services
+  local services=$(cut -d '.' -f 1 <services | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | grep -v Tornado | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'

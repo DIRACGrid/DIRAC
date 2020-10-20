@@ -7,6 +7,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
+import six
 import time
 import psutil
 import six
@@ -345,7 +346,7 @@ class RequestHandler(object):
 #
 ####
 
-  __connectionCallbackTypes = {'new': list(six.string_types) + [dict],
+  __connectionCallbackTypes = {'new': [six.string_types, dict],
                                'connected': [],
                                'drop': []}
 
@@ -499,6 +500,18 @@ class RequestHandler(object):
                           }
 
     return S_OK(dInfo)
+
+  types_whoami = []
+  auth_whoami = ['all']
+
+  def export_whoami(self):
+    """
+      A simple whoami, returns all credential dictionary, except certificate chain object.
+    """
+    credDict = self.srv_getRemoteCredentials()
+    if 'x509Chain' in credDict:
+      del credDict['x509Chain']
+    return S_OK(credDict)
 
   types_echo = [six.string_types]
 

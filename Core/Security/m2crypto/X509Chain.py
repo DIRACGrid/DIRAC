@@ -23,6 +23,8 @@ import re
 
 import M2Crypto
 
+from io import open
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf, deprecated
@@ -216,7 +218,7 @@ class X509Chain(object):
       :returns: S_OK/S_ERROR
     """
     try:
-      with open(chainLocation) as fd:
+      with open(chainLocation, 'rb') as fd:
         pemData = fd.read()
     except IOError as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -274,7 +276,7 @@ class X509Chain(object):
         :returns: S_OK / S_ERROR
     """
     try:
-      with open(chainLocation) as fd:
+      with open(chainLocation, 'rb') as fd:
         pemData = fd.read()
     except BaseException as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -316,7 +318,7 @@ class X509Chain(object):
       :returns: S_OK  / S_ERROR
     """
     try:
-      with open(chainLocation) as fd:
+      with open(chainLocation, 'rb') as fd:
         pemData = fd.read()
     except BaseException as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -487,7 +489,7 @@ class X509Chain(object):
     if not retVal['OK']:
       return retVal
     try:
-      with open(filePath, 'w') as fd:
+      with open(filePath, 'wb') as fd:
         fd.write(retVal['Value'])
     except BaseException as e:
       return S_ERROR(DErrno.EWF, "%s :%s" % (filePath, repr(e).replace(',)', ')')))
@@ -965,6 +967,7 @@ class X509Chain(object):
                   * isLimitedProxy: boolean (see :py:meth:`.isLimitedProxy`)
                   * validDN: boolean if the DN is known to DIRAC
                   * validGroup: False (see further definition)
+                  * DN: either the DN of the host, or the DN of the user corresponding to the proxy
 
 
                 Only for proxy:
@@ -995,8 +998,14 @@ class X509Chain(object):
                 'isLimitedProxy': self.__isProxy and self.__isLimitedProxy,
                 'validDN': False,
                 'validGroup': False}
+
+    # Add the DN entry as the subject.
+    credDict['DN'] = credDict['subject']
     if self.__isProxy:
       credDict['identity'] = str(self._certList[self.__firstProxyStep + 1].getSubjectDN()['Value'])  # ['Value'] :(
+      # if the chain is a proxy, then the DN we want to work with is the real one of the
+      # user, not the one of his proxy
+      credDict['DN'] = credDict['identity']
 
       # Check if we have the PUSP case
       result = self.isPUSP()

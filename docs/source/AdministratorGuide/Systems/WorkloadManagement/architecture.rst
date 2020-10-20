@@ -29,7 +29,10 @@ All the DBs above are MySQL DBs, and should be installed using the :ref:`system 
 
 
 .. versionadded:: v7r0
-   The JobDB MySQL table *JobParameters* can be replaced by an JobParameters backend built in ElasticSearch. To enable it, set the following flag: /Operations/[Defaults | Setup]/Services/JobMonitoring/useESForJobParametersFlag=True
+   The JobDB MySQL table *JobParameters* can be replaced by an JobParameters backend built in ElasticSearch.
+   To enable it, set the following flag::
+
+      /Operations/[Defaults | Setup]/Services/JobMonitoring/useESForJobParametersFlag=True
 
 
 Services

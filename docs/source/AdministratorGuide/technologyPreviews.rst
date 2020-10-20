@@ -8,24 +8,6 @@ The reason might be that it is not completely mature yet, or that it can be dist
 They are meant to stay optional for a couple of releases, and then they become the default.
 This page keeps a list of such technologies.
 
-M2Crypto
-========
-
-We aim at replacing the home made wrapper of openssl pyGSI with the standard M2Crypto library. It is by default disabled.
-You can enable it by setting the environment variable ``DIRAC_USE_M2CRYPTO`` to ``Yes``.
-When answering a call, the service main thread delegates the work and the SSL handshake to a task thread. This is how it should be for high performance. However, this behavior was added a bit late with respect to testing, so if you want to SSL handshake to happen in the main thread, you can set `DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=No`. Note that this possibility will disappear soon.
-
-Possible issues
----------------
-
-M2Crypto (or any standard tool that respects TLS..) will be stricter than PyGSI. So you may need to adapt your environment a bit. Here are a few hints:
-
-* SAN in your certificates: if you are contacting a machine using its aliases, make sure that all the aliases are in the SubjectAlternativeName (SAN) field of the certificates
-* FQDN in the configuration: SAN normally contains only FQDN, so make sure you use the FQDN in the CS as well (e.g. ``mymachine.cern.ch`` and not ``mymachine``)
-* ComponentInstaller screwed: like any change you do on your hosts, the ComponentInstaller will duplicate the entry. So if you change the CS to put FQDN, the machine will appear twice. 
-
-In case your services are not fast enough, and the socket backlog is full (``ss -pnl``), try setting ``DIRAC_M2CRYPTO_SPLIT_HANDSHAKE`` to ``Yes``.
-
 .. _jsonSerialization:
 
 JSON Serialization
@@ -45,3 +27,7 @@ The changes from one stage to the next is controlled by environment variables, a
 
 The last stage (JSON only) will be the default of the following release, so before upgrading you will have to go through the previous steps.
 
+HTTPS Services
+==============
+
+The aim is to replace the DISET services with HTTPS services. The changes should be almost transparent for users/admins. However, because it is still very much in the state of preview, we do not yet describe how/what to change. If you really want to play around, please check :ref:`httpsTornado`.

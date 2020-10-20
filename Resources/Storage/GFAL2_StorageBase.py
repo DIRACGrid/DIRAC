@@ -1780,7 +1780,7 @@ class GFAL2_StorageBase(StorageBase):
     """ Get all the available extended attributes of path
 
     :param self: self reference
-    :param str path: path of which we wan't extended attributes
+    :param str path: path of which we want extended attributes
     :param str list attributes: list of extended attributes we want to receive
     :return: S_OK( attributeDict ) if successful.
             Where the keys of the dict are the attributes and values the respective values

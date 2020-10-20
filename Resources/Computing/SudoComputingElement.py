@@ -7,6 +7,7 @@ from __future__ import print_function
 import os
 import pwd
 import stat
+import errno
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -67,6 +68,11 @@ class SudoComputingElement(ComputingElement):
           baseCounter = int(baseUsername[-2:])
           self.log.info("Base username from BaseUsername in ceParameters : %s" % baseUsername)
         except Exception:
+          # Last chance to get PayloadUsername
+          if 'USER' not in os.environ:
+            self.log.error('PayloadUser, BaseUsername and os.environ["USER"] are not properly defined')
+            return S_ERROR(errno.EINVAL, 'No correct payload username provided')
+
           baseUsername = os.environ['USER'] + '00p00'
           baseCounter = 0
           self.log.info('Base username from $USER + 00p00 : %s' % baseUsername)
@@ -135,7 +141,7 @@ class SudoComputingElement(ComputingElement):
     # Run the executable (the wrapper in fact)
     cmd = "/usr/bin/sudo -u %s " % payloadUsername
     cmd += "PATH=$PATH "
-    cmd += "DIRACSYSCONFIG=/scratch/%s/pilot.cfg " % os.environ['USER']
+    cmd += "DIRACSYSCONFIG=/scratch/%s/pilot.cfg " % os.environ.get('USER', '')
     cmd += "LD_LIBRARY_PATH=$LD_LIBRARY_PATH "
     cmd += "PYTHONPATH=$PYTHONPATH "
     cmd += "X509_CERT_DIR=$X509_CERT_DIR "

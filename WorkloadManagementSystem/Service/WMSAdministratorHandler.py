@@ -7,12 +7,11 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
 import six
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
@@ -54,8 +53,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     credDict = self.getRemoteCredentials()
     maskList = [(site, 'Active') for site in siteList]
-    result = jobDB.setSiteMask(maskList, credDict['DN'], 'No comment')
-    return result
+    return jobDB.setSiteMask(maskList, credDict['DN'], 'No comment')
 
 ##############################################################################
   types_getSiteMask = []
@@ -107,8 +105,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     credDict = self.getRemoteCredentials()
     author = credDict['username'] if credDict['username'] != 'anonymous' else credDict['DN']
-    result = jobDB.banSiteInMask(site, author, comment)
-    return result
+    return jobDB.banSiteInMask(site, author, comment)
 
 ##############################################################################
   types_allowSite = [six.string_types]
@@ -123,8 +120,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     credDict = self.getRemoteCredentials()
     author = credDict['username'] if credDict['username'] != 'anonymous' else credDict['DN']
-    result = jobDB.allowSiteInMask(site, author, comment)
-    return result
+    return jobDB.allowSiteInMask(site, author, comment)
 
 ##############################################################################
   types_clearMask = []
@@ -163,16 +159,10 @@ class WMSAdministratorHandler(RequestHandler):
         :return: S_OK(dict)/S_ERROR()
     """
     # Get all the configured site names
-    result = gConfig.getSections('/Resources/Sites')
-    if not result['OK']:
-      return result
-    grids = result['Value']
-    sites = []
-    for grid in grids:
-      result = gConfig.getSections('/Resources/Sites/%s' % grid)
-      if not result['OK']:
-        return result
-      sites += result['Value']
+    res = getSites()
+    if not res['OK']:
+      return res
+    sites = res['Value']
 
     # Get the current mask status
     result = jobDB.getSiteMaskStatus()
@@ -229,8 +219,7 @@ class WMSAdministratorHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    result = jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
-    return result
+    return jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
 
 ##############################################################################
   types_getSiteSummarySelectors = []
@@ -247,17 +236,10 @@ class WMSAdministratorHandler(RequestHandler):
     maskStatus = ['Active', 'Banned', 'NoMask', 'Reduced']
     resultDict['MaskStatus'] = maskStatus
 
-    gridTypes = []
-    result = gConfig.getSections('Resources/Sites/', [])
-    if result['OK']:
-      gridTypes = result['Value']
-
-    resultDict['GridType'] = gridTypes
-    siteList = []
-    for grid in gridTypes:
-      result = gConfig.getSections('Resources/Sites/%s' % grid, [])
-      if result['OK']:
-        siteList += result['Value']
+    res = getSites()
+    if not res['OK']:
+      return res
+    siteList = res['Value']
 
     countryList = []
     for site in siteList:

@@ -14,10 +14,6 @@ Arguments::
 
   CE:       Name of the CE
 
-Options::
-
-  -G  --Grid <value>           : Define the Grid where to look (Default: LCG)
-
 Example::
   
 

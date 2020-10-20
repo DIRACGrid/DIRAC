@@ -34,7 +34,6 @@ class WMSHistory(BaseType):
     self.monitoringFields = ['Jobs', 'Reschedules']
 
     self.index = 'wmshistory_index'
-    self.doc_type = "WMSHistory"
 
     self.addMapping({'Status': {'type': 'keyword'},
                      'Site': {'type': 'keyword'},

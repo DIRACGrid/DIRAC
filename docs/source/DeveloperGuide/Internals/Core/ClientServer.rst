@@ -167,7 +167,7 @@ Complete path of packages are not on the diagram for readability:
 
 
 You can see that the client sends a proposalTuple, proposalTuple contain (service, setup, ClientVO) then (typeOfCall, method) and finaly extra-credentials.
-e.g::
+e.g.::
 
   (('Framework/serviceName', 'DeveloperSetup', 'unknown'), ('RPC', 'methodName'), '')
 
@@ -189,7 +189,7 @@ Client must send ('FileTransfer', direction) instead of ('RPC', method), directi
 About timeout
 *************
 
-.. warning:: This section is true when using M2Crypto. When using pyGSI, good luck.
+.. warning:: This section is true when using M2Crypto. If you are still using pyGSI, good luck.
 
 Timeouts are in general a very delicate topic. The way DIRAC handles them for client/server interactions is through socket timeouts. Basically, each blocking operation of a socket has a timeout. However, executing an RPC call requires multiple socket operations (see diagram above). A lot more details are available in :py:mod:`~DIRAC.Core.DISET.private.Transports.M2SSLTransport` but important information are summarized here.
 

@@ -25,7 +25,7 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdate
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping, getDIRACSiteName
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 
 
@@ -38,9 +38,11 @@ def processScriptSwitches():
   Script.registerSwitch("C", "ce", "Process Computing Elements")
   Script.registerSwitch("S", "se", "Process Storage Elements")
   Script.registerSwitch("H:", "host=", "use this url for information querying")
-  Script.registerSwitch("G", "glue2", "query GLUE2 information schema")
+  Script.registerSwitch("G", "glue2", "DEPRECATED: query GLUE2 information schema")
+  Script.registerSwitch("g", "glue1", "query GLUE1 information schema")
 
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'WARNING: StorageElements only for SRM-style'
                                     'Usage:',
                                     '  %s [option|cfgfile]' % Script.scriptName]))
   Script.parseCommandLine(ignoreErrors=True)
@@ -63,7 +65,9 @@ def processScriptSwitches():
     if sw[0] in ("H", "host"):
       hostURL = sw[1]
     if sw[0] in ("G", "glue2"):
-      glue2 = True
+      gLogger.notice(" The '-G' flag is deprecated, Glue2 is the default now")
+    if sw[0] in ("g", "glue1"):
+      glue2 = False
 
 
 ceBdiiDict = None
@@ -75,13 +79,14 @@ def checkUnusedCEs():
 
   gLogger.notice('looking for new computing resources in the BDII database...')
 
-  res = getSiteCEMapping()
+  res = getQueues(community=vo)
   if not res['OK']:
     gLogger.error('ERROR: failed to get CEs from CS', res['Message'])
     DIRACExit(-1)
-  knownCEs = []
-  for site in res['Value']:
-    knownCEs = knownCEs + res['Value'][site]
+
+  knownCEs = set()
+  for _site, ces in res['Value'].items():
+    knownCEs.update(ces)
 
   result = getGridCEs(vo, ceBlackList=knownCEs, hostURL=hostURL, glue2=glue2)
   if not result['OK']:
@@ -89,9 +94,14 @@ def checkUnusedCEs():
     DIRACExit(-1)
   ceBdiiDict = result['BdiiInfo']
 
+  unknownCEs = result['UnknownCEs']
+  if unknownCEs:
+    gLogger.notice('There is no (longer) information about the following CEs for the %s VO:' % vo)
+    gLogger.notice('\n'.join(sorted(unknownCEs)))
+
   siteDict = result['Value']
   if siteDict:
-    gLogger.notice('New resources available:\n')
+    gLogger.notice('New resources available:')
     for site in siteDict:
       diracSite = 'Unknown'
       result = getDIRACSiteName(site)
@@ -105,13 +115,12 @@ def checkUnusedCEs():
           gLogger.notice('      %s, %s' % (siteDict[site][ce]['CEType'], '%s_%s_%s' % siteDict[site][ce]['System']))
   else:
     gLogger.notice('No new resources available, exiting')
-    DIRACExit(0)
+    return
 
   inp = raw_input("\nDo you want to add sites ? [default=yes] [yes|no]: ")
   inp = inp.strip()
   if not inp and inp.lower().startswith('n'):
-    gLogger.notice('Nothing else to be done, exiting')
-    DIRACExit(0)
+    return
 
   gLogger.notice('\nAdding new sites/CEs interactively\n')
 
@@ -249,9 +258,9 @@ def updateCS(changeSet):
 
 def updateSites():
 
-  global vo, dry, ceBdiiDict
+  global vo, dry, ceBdiiDict, glue2
 
-  result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict)
+  result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, glue2=glue2)
   if not result['OK']:
     gLogger.error('Failed to get site updates', result['Message'])
     DIRACExit(-1)

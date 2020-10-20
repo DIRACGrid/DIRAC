@@ -83,22 +83,25 @@ General Parameters
 
 These parameters are valid for all types of computing elements
 
-+---------------------------------+-------------------------------------------------+-----------------------------------------------+
-| **Name**                        | **Description**                                 | **Example**                                   |
-+---------------------------------+-------------------------------------------------+-----------------------------------------------+
-| GridEnv                         | Default environment file sourced before calling | /opt/dirac/gridenv                            |
-|                                 | grid commands, without extension '.sh'.         | (when the file is gridenv.sh)                 |
-+---------------------------------+-------------------------------------------------+-----------------------------------------------+
-| SharedArea                      | Will be added to the pilot configuration        | /cvmfs/lhcb.cern.ch/lib                       |
-|                                 | as /LocalSite/SharedArea                        |                                               |
-+---------------------------------+-------------------------------------------------+-----------------------------------------------+
-| ExtraPilotOptions               | For adding some generic pilot options.          | --userEnvVariables DIRACSYSCONFIG:::pilot.cfg |
-|                                 | (only for pilots submitted by SiteDirectors)    | will add the environment variable             |
-|                                 |                                                 | DIRACSYSCONFIG                                |
-|                                 |                                                 | (see :ref:`bashrc_variables`)                 |
-+---------------------------------+-------------------------------------------------+-----------------------------------------------+
-
-
++-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
+| **Name**                                | **Description**                                       | **Example**                                  |
++-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
+| GridEnv                                 | Default environment file sourced before calling       | /opt/dirac/gridenv                           |
+|                                         | grid commands, without extension '.sh'.               | (when the file is gridenv.sh)                |
+|                                         |                                                       |                                              |
++-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
+| SharedArea                              | Will be added to the pilot configuration              | /cvmfs/lhcb.cern.ch/lib                      |
+|                                         | as /LocalSite/SharedArea                              |                                              |
++-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
+| ExtraPilotOptions                       | For adding some generic pilot options.                | --userEnvVariables DIRACSYSCONFIG:::pilot.cfg|
+|                                         | (only for pilots submitted by SiteDirectors)          | will add the environment variable            |
+|                                         |                                                       | DIRACSYSCONFIG                               |
+|                                         |                                                       | (see :ref:`bashrc_variables`)                |
++-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
+| GLUE2ComputingShareMaxSlotsPerJob_limit | The upper limit for the NumberOfProcessors queue      | 8                                            |
+|                                         | parameter set by the                                  |                                              |
+|                                         | :mod:`~DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent`. |                                              |
++-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
 
 
 ARC CE Parameters
@@ -123,16 +126,23 @@ ARC CE Parameters
 Singularity CE Parameters
 -------------------------
 
-+------------------------+--------+----------------------------------------------------------+---------------------------------------------+
-| **Name**               | **Description**                                                   |  **Example**                                |
-+------------------------+--------+----------------------------------------------------------+---------------------------------------------+
-| ContainerRoot          | The root image location for the container to use.                 |  /cvmfs/cernvm-prod.cern.ch/cvm3            |
-+------------------------+--------+----------------------------------------------------------+---------------------------------------------+
-| ContainerExtraOpts     | Extra options for dirac-install within the container.             |  -u 'http://other.host/instdir' -g 'v13r0'  |
-+------------------------+--------+----------------------------------------------------------+---------------------------------------------+
-| KeepWorkArea           | If set to True container work area won't be deleted at end of job |  True (Default: False)                      |
-+------------------------+--------+----------------------------------------------------------+---------------------------------------------+
-
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
+| **Name**                | **Description**                                                   |  **Example**                                                                 |
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
+| ContainerRoot           | The root image location for the container to use.                 |  /cvmfs/cernvm-prod.cern.ch/cvm4 (Default: /cvmfs/cernvm-prod.cern.ch/cvm3)  |
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
+| ContainerBin            | The binary to start the container                                 |  /opt/extras/bin/singularity (default: singularity)                          |
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
+| ContainerBind           | List of directories to bind                                       |  /etc/grid-security,someDir:::BoundHere                                      |
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
+| ContainerOptions        | Extra options for starting the container                          |  --cleanenv                                                                  |
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
+| InstallDIRACInContainer | Flag for re-installing, or not, DIRAC in the container            |  False (default: True)                                                       |
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
+| ContainerExtraOpts      | Extra options for dirac-install within the container.             |  -u 'http://other.host/instdir'                                              |
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
+| KeepWorkArea            | If set to True container work area won't be deleted at end of job |  True (Default: False)                                                       |
++-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
 
 
 .. _res-comp-htcondor:

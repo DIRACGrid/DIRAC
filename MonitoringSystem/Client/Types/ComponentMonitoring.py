@@ -7,7 +7,7 @@ from __future__ import print_function
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ########################################################################
 
@@ -34,8 +34,6 @@ class ComponentMonitoring(BaseType):
                              'Connections', 'PendingQueries', 'ActiveQueries',
                              'RunningThreads', 'MaxFD', 'ServiceResponseTime',
                              'cycleDuration', 'cycles']
-
-    self.doc_type = "ComponentMonitoring"
 
     self.addMapping({"host": {"type": "keyword"}, "component": {"type": "keyword"}, "status": {"type": "keyword"},
                      "componentType": {"type": "keyword"}, "componentLocation": {"type": "keyword"}})
