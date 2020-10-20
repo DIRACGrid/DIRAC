@@ -50,6 +50,9 @@ CONTAINER_WRAPPER_INSTALL = """#!/bin/bash
 echo "Starting inner container wrapper scripts at `date`."
 set -x
 cd /tmp
+# Avoid using the host's DIRAC(OS) installation
+unset DIRAC
+unset DIRACOS
 # Install DIRAC
 ./dirac-install.py %(install_args)s
 source bashrc
