@@ -96,7 +96,7 @@ This sections contains some details that are particularly relevant to DIRAC.
 **bytes vs str**
   The most difficult change when moving Python 3 is the splitting of the `str` type one for text and one for true binary data.
   This exposes subtle issues in Python 2 that were likely never noticed and an automatic conversion to fix this is inherently impossible.
-  More details about this can be found `here <https://portingguide.readthedocs.io/en/latest/strings.html>`_.
+  More details about this can be found `here <https://portingguide.readthedocs.io/en/latest/strings.html>`_ and in slide 6 to slide 13 of the Python 3 presentation that was given at the `BiLD on 8th October 2020 <https://indico.cern.ch/event/956902/contributions/4021427/>`_.
 
   In most situations DIRAC is only dealing with ascii or unicode strings and therefore nothing needs to change.
   However many libraries choose to be independent of the character encoding used and therefore return a ``bytes`` object in Python 3 instead of ``str``
@@ -150,6 +150,9 @@ This sections contains some details that are particularly relevant to DIRAC.
     # Good: Prefix the "\n" to make it a bytes object
     with open("my_file.txt", "rb") as fp:
        data = fp.read().split(b"\n")
+
+  While many guides recommend the use of ``io.open`` this is not suitable for DIRAC as unicode is not handled correctly in all cases.
+  See slide 6 from the `aforementioned BiLD meeting <https://indico.cern.ch/event/956902/contributions/4021427/>`_ for more details.
 
 **Dictionaries**
   In Python 3 ``my_dict.keys()``, ``my_dict.values()`` and ``my_dict.items()`` now return an iterator instead of a list.
