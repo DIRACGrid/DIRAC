@@ -66,7 +66,7 @@ class X509Request(object):
     if not self.__valid:
       return S_ERROR(DErrno.ENOCERT)
     try:
-      reqStr = self.__reqObj.as_pem().decode()
+      reqStr = self.__reqObj.as_pem()
     except Exception as e:
       return S_ERROR(DErrno.EX509, "Can't serialize request: %s" % e)
     return S_OK(reqStr)
@@ -95,7 +95,7 @@ class X509Request(object):
     if not self.__valid:
       return S_ERROR(DErrno.ENOCERT)
     try:
-      pkeyStr = self.__pkeyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode()
+      pkeyStr = self.__pkeyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
     except Exception as e:
       return S_ERROR(DErrno.EX509, "Can't serialize pkey: %s" % e)
     return S_OK(pkeyStr)
@@ -177,8 +177,8 @@ class X509Request(object):
     chainPubKey = lastCert.getPublicKey()
     if not chainPubKey['OK']:
       return chainPubKey
-    chainPubKey = chainPubKey['Value'].as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode()
-    reqPubKey = self.__reqObj.get_pubkey().as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode()
+    chainPubKey = chainPubKey['Value'].as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
+    reqPubKey = self.__reqObj.get_pubkey().as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
     if not chainPubKey == reqPubKey:
       return S_ERROR(DErrno.EX509, "Public keys do not match")
 

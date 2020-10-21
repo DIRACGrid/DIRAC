@@ -301,9 +301,9 @@ def decodeVOMSExtension(m2cert):
         for tag in tagList:
           # This gives a string like
           # nickname = chaen (lhcb)
-          tagDescriptions.append('%s = %s (%s)' % (tag['name'].asOctets().decode().decode(),
-                                                   tag['value'].asOctets().decode().decode(),
-                                                   tag['qualifier'].asOctets().decode().decode().decode()))
+          tagDescriptions.append('%s = %s (%s)' % (tag['name'].asOctets().decode(),
+                                                   tag['value'].asOctets().decode(),
+                                                   tag['qualifier'].asOctets().decode()))
 
     vomsExtensionDict['attribute'] = ','.join(tagDescriptions)
 

@@ -32,7 +32,7 @@ def writeToProxyFile(proxyContents, fileName=False):
       return S_ERROR(DErrno.ECTMPF)
     fileName = proxyLocation
   try:
-    with open(fileName, 'w') as fd:
+    with open(fileName, 'wb') as fd:
       fd.write(proxyContents)
   except Exception as e:
     return S_ERROR(DErrno.EWF, " %s: %s" % (fileName, repr(e).replace(',)', ')')))

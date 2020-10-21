@@ -54,7 +54,7 @@ class X509CRL(object):
     except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(',)', ')'))
     self.__loadedCert = True
-    with open(crlLocation, 'r') as crlFile:
+    with open(crlLocation, 'rb') as crlFile:
       pemData = crlFile.read()
     self.__pemData = pemData
     return S_OK()
@@ -85,7 +85,7 @@ class X509CRL(object):
         os.write(fd, str(self))
         os.close(fd)
       else:
-        with open(filename, "w") as fd:
+        with open(filename, "wb") as fd:
           fd.write(str(self))
     except Exception as e:
       return S_ERROR(DErrno.EWF, "%s: %s" % (filename, repr(e).replace(',)', ')')))
@@ -100,7 +100,8 @@ class X509CRL(object):
       return S_ERROR("No certificate loaded")
     # XXX It sould be done better, for now M2Crypto doesn't offer access to fields like Next Update
     txt = self.__revokedCert.as_text()
-    dateStr = re.search(r"Next Update: (?P<nextUpdate>.*)\n", txt).group('nextUpdate')
+    pattern = r"Next Update: (?P<nextUpdate>.*)\n"
+    dateStr = re.search(pattern.encode("utf-8"), txt).group('nextUpdate')
     nextUpdate = datetime.datetime.strptime(dateStr, "%b %d %H:%M:%S %Y GMT")
     return S_OK(datetime.datetime.now() > nextUpdate)
 
@@ -109,7 +110,8 @@ class X509CRL(object):
       return S_ERROR("No certificate loaded")
     # XXX It sould be done better, for now M2Crypto doesn't offer access to fields like Issuer
     txt = self.__revokedCert.as_text()
-    return S_OK(re.search(r"Issuer: (?P<issuer>.*)\n", txt).group('issuer'))
+    pattern = r"Issuer: (?P<issuer>.*)\n"
+    return S_OK(re.search(pattern.encode("utf-8"), txt).group('issuer'))
 
   def __repr__(self):
     repStr = "<X509CRL"
