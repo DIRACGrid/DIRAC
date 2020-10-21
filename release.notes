@@ -366,6 +366,21 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p37]
+
+*TS
+CHANGE: (#4769) consider all sites when getting sites with storage (not only LCG sites with Tier0, 1 or 2
+
+*WMS
+FIX: (#4769) dirac-wms-job-parameters: output was printed twice
+
+*Resources
+FIX: (#4773) Mount the host's DIRAC installation in the container when using SingularityCE
+     without InstallDIRACInContainer
+
+*docs
+NEW: (#4771) admin tutorial on how to install the WorkloadManagementSystem
+
 [v7r0p36]
 
 FIX: fixes from v6r22p35 patch release
