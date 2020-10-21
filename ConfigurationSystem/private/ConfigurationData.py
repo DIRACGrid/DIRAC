@@ -7,6 +7,7 @@ from __future__ import division
 import os.path
 import zlib
 import zipfile
+import six
 from six.moves import _thread as thread
 import time
 import DIRAC
@@ -87,6 +88,8 @@ class ConfigurationData(object):
     return S_OK()
 
   def loadRemoteCFGFromCompressedMem(self, data):
+    if six.PY3 and isinstance(data, str):
+      data = data.encode(errors="surrogateescape")
     sUncompressedData = zlib.decompress(data).decode()
     self.loadRemoteCFGFromMem(sUncompressedData)
 

@@ -26,7 +26,7 @@ class InnerRPCClient(BaseClient):
   # The connection retry is handled by BaseClient
   __retry = 0
 
-  def executeRPC(self, functionName, args, forceBytes=False):
+  def executeRPC(self, functionName, args):
     """ Perform the RPC call, connect before and disconnect after.
 
         :param functionName: name of the function
@@ -57,7 +57,7 @@ class InnerRPCClient(BaseClient):
         else:  # we have network problem or the service is not responding
           if self.__retry < 3:
             self.__retry += 1
-            return self.executeRPC(functionName, args, forceBytes=forceBytes)
+            return self.executeRPC(functionName, args)
           else:
             retVal['rpcStub'] = stub
             return retVal
@@ -74,7 +74,7 @@ class InnerRPCClient(BaseClient):
       # Note that the RPC timeout basically ticks here, since
       # the client waits for data for as long as the server side
       # processes the request.
-      receivedData = transport.receiveData(forceBytes=forceBytes)
+      receivedData = transport.receiveData()
       if isinstance(receivedData, dict):
         receivedData['rpcStub'] = stub
       return receivedData

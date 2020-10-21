@@ -17,16 +17,3 @@ def breakDictionaryIntoChunks(aDict, chunkSize):
   iterDict = iter(aDict)
   for _ in range(0, len(aDict), chunkSize):
     yield {k: aDict[k] for k in islice(iterDict, chunkSize)}
-
-
-def bytesKeysToStrings(aDict):
-  """ Decode dictionary keys from bytes to str
-
-      Primarily useful for supporting Python 3 in DEncode. When forceBytes=True
-      is passed to a RPC call all dictionary keys will be bytes. This converts
-      them to be more easy to use in Python 3.
-
-      :param dict aDict: the dictionary with keys to decode
-      :return: a copy of the dictionary with decoded keys
-  """
-  return {k.decode() if isinstance(k, bytes) else k: v for k, v in aDict.items()}

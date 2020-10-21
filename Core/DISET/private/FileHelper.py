@@ -13,7 +13,6 @@ import threading
 import six
 from six import StringIO
 
-from DIRAC.Core.Utilities.Dictionaries import bytesKeysToStrings
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
@@ -66,6 +65,8 @@ class FileHelper(object):
     return self.__fileBytes
 
   def sendData(self, sBuffer):
+    if six.PY3 and isinstance(sBuffer, str):
+      sBuffer = sBuffer.encode(errors="surrogateescape")
     if self.__checkMD5:
       self.__oMD5.update(sBuffer)
     retVal = self.oTransport.sendData(S_OK([True, sBuffer]))
@@ -88,10 +89,8 @@ class FileHelper(object):
     self.__finishedTransmission()
     return S_OK()
 
-  def receiveData(self, maxBufferSize=0, forceBytes=False):
-    retVal = self.oTransport.receiveData(maxBufferSize=maxBufferSize, forceBytes=forceBytes)
-    if forceBytes:
-      retVal = bytesKeysToStrings(retVal)
+  def receiveData(self, maxBufferSize=0):
+    retVal = self.oTransport.receiveData(maxBufferSize=maxBufferSize)
     if 'AbortTransfer' in retVal and retVal['AbortTransfer']:
       self.oTransport.sendData(S_OK())
       self.__finishedTransmission()
@@ -101,12 +100,14 @@ class FileHelper(object):
       return retVal
     stBuffer = retVal['Value']
     if stBuffer[0]:
+      if six.PY3 and isinstance(stBuffer[1], str):
+        stBuffer[1] = stBuffer[1].encode(errors="surrogateescape")
       if self.__checkMD5:
         self.__oMD5.update(stBuffer[1])
       self.oTransport.sendData(S_OK())
     else:
       self.bReceivedEOF = True
-      if self.__checkMD5 and not self.__oMD5.hexdigest() == stBuffer[1].decode():
+      if self.__checkMD5 and not self.__oMD5.hexdigest() == stBuffer[1]:
         self.bErrorInMD5 = True
       self.__finishedTransmission()
       return S_OK("")
@@ -167,26 +168,30 @@ class FileHelper(object):
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
     receivedBytes = 0
-    try:
-      result = self.receiveData(maxBufferSize=maxFileSize, forceBytes=True)
+    # try:
+    result = self.receiveData(maxBufferSize=maxFileSize)
+    if not result['OK']:
+      return result
+    strBuffer = result['Value']
+    if six.PY3 and isinstance(strBuffer, str):
+      strBuffer = strBuffer.encode(errors="surrogateescape")
+    receivedBytes += len(strBuffer)
+    while not self.receivedEOF():
+      if maxFileSize > 0 and receivedBytes > maxFileSize:
+        self.sendError("Exceeded maximum file size")
+        return S_ERROR("Received file exceeded maximum size of %s bytes" % (maxFileSize))
+      dataSink.write(strBuffer)
+      result = self.receiveData(maxBufferSize=(maxFileSize - len(strBuffer)))
       if not result['OK']:
         return result
       strBuffer = result['Value']
+      if six.PY3 and isinstance(strBuffer, str):
+        strBuffer = strBuffer.encode(errors="surrogateescape")
       receivedBytes += len(strBuffer)
-      while not self.receivedEOF():
-        if maxFileSize > 0 and receivedBytes > maxFileSize:
-          self.sendError("Exceeded maximum file size")
-          return S_ERROR("Received file exceeded maximum size of %s bytes" % (maxFileSize))
-        dataSink.write(strBuffer)
-        result = self.receiveData(maxBufferSize=(maxFileSize - len(strBuffer)), forceBytes=True)
-        if not result['OK']:
-          return result
-        strBuffer = result['Value']
-        receivedBytes += len(strBuffer)
-      if strBuffer:
-        dataSink.write(strBuffer)
-    except Exception as e:
-      return S_ERROR("Error while receiving file, %s" % str(e))
+    if strBuffer:
+      dataSink.write(strBuffer)
+    # except Exception as e:
+    #   return S_ERROR("Error while receiving file, %s" % str(e))
     if self.errorInTransmission():
       return S_ERROR("Error in the file CRC")
     self.__fileBytes = receivedBytes
