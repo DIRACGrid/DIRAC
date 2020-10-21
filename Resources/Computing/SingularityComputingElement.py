@@ -50,6 +50,9 @@ CONTAINER_WRAPPER_INSTALL = """#!/bin/bash
 echo "Starting inner container wrapper scripts at `date`."
 set -x
 cd /tmp
+# Avoid using the host's DIRAC(OS) installation
+unset DIRAC
+unset DIRACOS
 # Install DIRAC
 ./dirac-install.py %(install_args)s
 source bashrc
@@ -146,6 +149,10 @@ class SingularityComputingElement(ComputingElement):
           return True
     # No suitable binaries found
     return False
+
+  @staticmethod
+  def __findInstallBaseDir():
+    return os.readlink(os.path.join(DIRAC.rootPath, "bashrc"))
 
   def __getInstallFlags(self, infoDict=None):
     """ Get the flags to pass to dirac-install.py inside the container.
@@ -295,7 +302,10 @@ class SingularityComputingElement(ComputingElement):
       CONTAINER_WRAPPER = CONTAINER_WRAPPER_INSTALL
 
     else:  # In case we don't (re)install DIRAC
-      shutil.copyfile('bashrc', os.path.join(tmpDir, 'bashrc'))
+      shutil.copyfile(
+          os.path.join(self.__findInstallBaseDir(), 'bashrc'),
+          os.path.join(tmpDir, 'bashrc'),
+      )
       shutil.copyfile('pilot.cfg', os.path.join(tmpDir, 'pilot.cfg'))
       wrapSubs = {'next_wrapper': wrapperPath}
       CONTAINER_WRAPPER = CONTAINER_WRAPPER_NO_INSTALL
@@ -413,6 +423,8 @@ class SingularityComputingElement(ComputingElement):
       cmd.append("--userns")
     if withCVMFS:
       cmd.extend(["--bind", "/cvmfs"])
+    if not self.__installDIRACInContainer:
+      cmd.extend(["--bind", "{0}:{0}:ro".format(self.__findInstallBaseDir())])
     if 'ContainerBind' in self.ceParameters:
       bindPaths = self.ceParameters['ContainerBind'].split(',')
       for bindPath in bindPaths:
