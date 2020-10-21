@@ -27,6 +27,7 @@ yum localinstall -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2
 
 cat > /opt/dirac/sbin/runsvdir-start <<'EOF'
 # START runsvdir-start
+#!/bin/bash
 cd /opt/dirac
 RUNSVCTRL='/sbin/runsvctrl'
 chpst -u dirac $RUNSVCTRL d /opt/dirac/startup/*
@@ -35,6 +36,10 @@ RUNSVDIR='/sbin/runsvdir'
 exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
 # END runsvdir-start
 EOF
+
+# runsvdir-start can fail to start/restart if it does not contain the shebang at the top of the file
+# we remove the first line of the script
+sed -i '1d' /opt/dirac/sbin/runsvdir-start
 
 cat > /lib/systemd/system/runsvdir-start.service <<EOF
 # START systemd-runsvdir
@@ -99,7 +104,7 @@ cat > install.cfg <<EOF
 LocalInstallation
 {
   #  DIRAC release version to install
-  Release = v6r21p5
+  Release = v7r0p36
   #  Installation type
   InstallType = server
   #  Each DIRAC update will be installed in a separate directory, not overriding the previous ones
@@ -222,7 +227,7 @@ cat > InstallDiracClient <<EOF
 mkdir -p ~/DiracInstallation && cd ~/DiracInstallation
 curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py
 chmod +x dirac-install.py
-./dirac-install.py -r v6r21p5 --dirac-os
+./dirac-install.py -r v7r0p36 --dirac-os
 # END installClient1
 # START installClient2
 mkdir -p ~/DiracInstallation/etc/grid-security/
