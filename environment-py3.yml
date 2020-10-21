@@ -67,10 +67,10 @@ dependencies:
   - pip:
     # This is a fork of tornado with a patch to allow for configurable iostream
     # It should eventually be part of DIRACGrid
-    - git+https://github.com/chaen/tornado.git@iostreamConfigurable
+    - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
     # This is an extension of Tornado to use M2Crypto
     # It should eventually be part of DIRACGrid
-    - git+https://github.com/chaen/tornado_m2crypto
+    - git+https://github.com/DIRACGrid/tornado_m2crypto
     # fts-rest doesn't support Python 3, this branch changed has just enough to
     # make it importing possible
     - git+https://gitlab.cern.ch/cburr/fts-rest.git@python3
