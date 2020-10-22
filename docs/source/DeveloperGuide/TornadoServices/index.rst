@@ -15,7 +15,7 @@ This page summarizes the changes between DISET and HTTPS. You can all also see t
 
 - `Presentation of HTTPS in DIRAC  <https://docs.google.com/presentation/d/1t0hVpceXgV8W8R0ef5raMK3sUgXWnKdCmJUrG_5LsT4/edit?usp=sharing>`_.
 - `Presentation of HTTPS migration <https://docs.google.com/presentation/d/1NZ8iKRv3c0OL1_RTXL21hP6YsAUXcKSCqDL2uhkf8Oc/edit?usp=sharing>`_.
-- `Summary presentation (latest) <https://indico.cern.ch/event/945474/>`.
+- `Summary presentation (latest) <https://indico.cern.ch/event/945474/>`_.
 
 
 
@@ -48,7 +48,7 @@ Internal structure
 ******************
 
 - :py:class:`~DIRAC.Core.DISET.ServiceReactor` is now :py:class:`~DIRAC.Core.Tornado.Server.TornadoServer`
-- :py:class:`~DIRAC.Core.DISET.private.Service` and :py:class:`~DIRAC.Core.DISET.RequestHandler` are now merge into :py:class:`~DIRAC.Core.Tornado.Server.TornadoService`
+- :py:class:`~DIRAC.Core.DISET.private.Service` and :py:mod:`~DIRAC.Core.DISET.RequestHandler` are now merge into :py:class:`~DIRAC.Core.Tornado.Server.TornadoService`
 - CallStack from S_ERROR are deleted when they are returned to client.
 - Common config for all services, there is no more specific config/service. But you can still give extra config files in the command line when you start a HTTPS server.
 - Server returns HTTP status codes like ``200 OK`` or ``401 Forbidden``. Not used by client for now but open possibility for usage with external services (like a REST API)
@@ -84,6 +84,7 @@ Main changes in tornado are:
 - Auth attributes are still there (``auth_yourMethod``).
 
 The interface of the DISET request handler was preserved, in particular:
+
 * ``getCSOption``
 * ``getRemoteAddress``
 * ``getRemoteCredentials``
@@ -178,7 +179,7 @@ Simply becomes::
 
 From the client side, no change is needed since :py:meth:`DIRAC.Core.Tornado.Client.TornadoClient.TornadoClient.receiveFile` keeps the interface
 
-This procedure is not optimized server side (see commented ``export_streamToClient`` implementation in :py:class`DIRAC.Core.Tornado.Server.TornadoService.TornadoService`). 
+This procedure is not optimized server side (see commented ``export_streamToClient`` implementation in :py:class:`DIRAC.Core.Tornado.Server.TornadoService.TornadoService`). 
 
 The ``transfer_fromClient`` equivalent has not yet been implemented as it concerns only very few cases (basically DIRAC SE and SandboxStore)
 
@@ -321,6 +322,7 @@ Requirements
 ************
 
 Two special python packages are needed:
+
 * git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable : in place of the standard tornado. This adds configurable feature to tornado
 * git+https://github.com/DIRACGrid/tornado_m2crypto.git: this allows to use tornado with M2Crypto
 
