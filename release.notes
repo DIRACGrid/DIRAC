@@ -1,8 +1,9 @@
-[v7r2-pre16]
+[v7r2-pre17]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
 CHANGE: (#4586) Use __future__ imports to get Python 3 like behaviour for imports, division and printing
+
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -17,6 +18,7 @@ CHANGE: (#4671) Add an example for DIRAC_NO_CFG to bashrc.
 FIX: (#4736) dirac-install: use system tar command for extracting tarballs, fixes #4246
 NEW: (#4677) X509Chain returns DN entry
 NEW: (#4677) introduction of Tornado based services
+NEW: (#4732) Support installing Python 3 clients using by passing --pythonVersion=3 to ./dirac-install.py
 
 *Accounting
 NEW: (#4537) Add histogram of CPU usage to Job accounting
