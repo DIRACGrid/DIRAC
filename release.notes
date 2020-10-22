@@ -30,6 +30,9 @@ NEW: (#4367) Added option "CompressJDLs" to JobDB, which compresses JDLs before 
 CHANGE: (#4428) removed the watchdog for mac, simplified linux
 CHANGE: (#4577) Removed the Pilot2
 
+*Monitoring
+FIX: (#4768) Adapting RMSMonitoring type to ES7
+
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
 
