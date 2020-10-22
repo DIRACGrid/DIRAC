@@ -3,7 +3,7 @@
 Depending on what is the status of a job and its input and output files different actions are performed.
 
 .. warning:: Before fully enabling this agent make sure that your transformation jobs fulfill the assumptions of the
-  agent.  Otherwise it might delete some of your data! Do not set ``Enable`` to True before letting the agent run
+  agent.  Otherwise it might delete some of your data! Do not set ``EnableFlag`` to True before letting the agent run
   through a few times and read the messages it produces.
 
 .. note::  Use the :ref:`admin_dirac-transformation-recover-data` script for checking individual transformations
@@ -26,7 +26,7 @@ Requirements/Assumptions:
 
 - JobParameters:
 
-  - ProductionOutputData: with the list semi-colon separated list of expected output files, stored as a Job Parameter
+  - ProductionOutputData: with the semi-colon separated list of expected output files, stored as a Job Parameter
       This parameter needs to be set by the production UploadOutputData tool _before_ uploading files
   - JobName of the form: TransformationID_TaskID obtained as a  JobAttribute
   - InputData from the JobMonitor.getInputData
