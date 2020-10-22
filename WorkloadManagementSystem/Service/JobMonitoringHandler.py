@@ -16,6 +16,7 @@ import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
@@ -370,6 +371,21 @@ class JobMonitoringHandler(RequestHandler):
     endDate = selectDict.get('ToDate', None)
     if endDate:
       del selectDict['ToDate']
+
+    # Provide JobID bound to a specific PilotJobReference
+    # There is no reason to have both PilotJobReference and JobID in selectDict
+    # If that occurs, use the JobID instead of the PilotJobReference
+    pilotJobRefs = selectDict.get('PilotJobReference')
+    if pilotJobRefs:
+      del selectDict['PilotJobReference']
+      if 'JobID' not in selectDict or not selectDict['JobID']:
+        if not isinstance(pilotJobRefs, list):
+          pilotJobRefs = [pilotJobRefs]
+        selectDict['JobID'] = []
+        for pilotJobRef in pilotJobRefs:
+          res = PilotManagerClient().getPilotInfo(pilotJobRef)
+          if res['OK'] and 'Jobs' in res['Value'][pilotJobRef]:
+            selectDict['JobID'].extend(res['Value'][pilotJobRef]['Jobs'])
 
     result = self.jobPolicy.getControlledUsers(RIGHT_GET_INFO)
     if not result['OK']:
