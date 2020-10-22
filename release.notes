@@ -374,12 +374,9 @@ CHANGE: (#4769) consider all sites when getting sites with storage (not only LCG
 *WMS
 FIX: (#4769) dirac-wms-job-parameters: output was printed twice
 
-*Resources
-FIX: (#4773) Mount the host's DIRAC installation in the container when using SingularityCE
-     without InstallDIRACInContainer
-
 *docs
 NEW: (#4771) admin tutorial on how to install the WorkloadManagementSystem
+CHANGE: (#4780) mock the MySQLDB python module as we cannot install it in RTD any longer
 
 [v7r0p36]
 
