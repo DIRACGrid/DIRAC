@@ -2162,7 +2162,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print(dName)
     else:
       fields = ['Key', 'Value']
-      datasets = list(datasetDict.keys())
+      datasets = list(datasetDict)
       dsAnnotations = {}
       resultAnno = returnSingleResult(self.fc.getDatasetAnnotation(datasets))
       if resultAnno['OK']:
