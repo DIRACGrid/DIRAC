@@ -39,6 +39,7 @@ pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/ResourceStatusSystem/Test_Re
 pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/ResourceStatusSystem/Test_ResourceStatus.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/ResourceStatusSystem/Test_SiteStatus.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/ResourceStatusSystem/Test_Publisher.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest "${CLIENTINSTALLDIR}/DIRAC/tests/Integration/ResourceStatusSystem/Test_EmailActionAgent.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 
 #-------------------------------------------------------------------------------#

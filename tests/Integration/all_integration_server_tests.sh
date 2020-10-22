@@ -9,6 +9,10 @@ echo -e '****************************************'
 echo -e '*******' "integration server tests" '*******\n'
 
 #-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** Accounting TESTS ****\n"
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/AccountingSystem/Test_Plots.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+
+#-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Configuration TESTS ****\n"
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/ConfigurationSystem/Test_Helpers.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
@@ -23,6 +27,10 @@ pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Framework/Test_InstalledComp
 python "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Framework/Test_ProxyDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 #pytest ${SERVERINSTALLDIR}/DIRAC/tests/Integration/Framework/Test_LoggingDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
+#-------------------------------------------------------------------------------#
+echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_MonitoringReporter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_Plotter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RSS TESTS ****\n"
@@ -78,10 +86,6 @@ pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/DataManagementSystem/Test_Cl
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RMS TESTS ****\n"
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/RequestManagementSystem/Test_ReqDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-
-#-------------------------------------------------------------------------------#
-echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
-pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_MonitoringReporter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"

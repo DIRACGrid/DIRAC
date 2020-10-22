@@ -9,23 +9,20 @@ from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 __RCSID__ = "$Id$"
 
-########################################################################
-
 
 class WMSHistory(BaseType):
 
   """
   .. class:: WMSMonitorType
   """
-  ########################################################################
 
   def __init__(self):
-    super(WMSHistory, self).__init__()
-
     """ c'tor
 
     :param self: self reference
     """
+
+    super(WMSHistory, self).__init__()
 
     self.keyFields = ['Status', 'Site', 'User', 'UserGroup',
                       'JobGroup', 'MinorStatus', 'ApplicationStatus',
