@@ -41,6 +41,27 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p15]
+
+*Configuration
+FIX: (#4766) Bdii2CSAgent: Fix exception if selectedSites was set, but some unknown Sites were found by the agent
+CHANGE: Bdii2CSAgent: if selectedSites is configured, also remove all CEs from unknown sites from the results
+
+*Framework
+CHANGE: (#4766) NotificationHandler: sendMail: the avoidSpam parameter is deprecated. All emails (same subject, address,
+        body) are now only sent once per 24h
+
+*Resources
+FIX: (#4777) Mount the host's DIRAC installation in the container when using SingularityCE without
+     InstallDIRACInContainer
+
+*RSS
+CHANGE: (#4767) SummarizeLogAgent uses list instead of tuples
+
+*WorkloadManagement
+CHANGE: (#4767) JobMonitoring uses cls/self attributes instead of global variable
+CHANGE: (#4772) JobMonitoring.getJobPageSummaryWeb can provide jobIDs according to the pilotJobReferences
+
 [v7r1p14]
 
 *Core
