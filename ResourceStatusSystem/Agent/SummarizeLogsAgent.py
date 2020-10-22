@@ -91,7 +91,7 @@ class SummarizeLogsAgent(AgentModule):
       if lastID is not None:
         self.log.info('Deleting %sLog till ID %s' % (element, lastID))
         deleteResult = self.rsClient.deleteStatusElement(element, 'Log',
-                                                         meta={'older': ('ID', lastID)})
+                                                         meta={'older': ['ID', lastID]})
         if not deleteResult['OK']:
           self.log.error(deleteResult['Message'])
           continue

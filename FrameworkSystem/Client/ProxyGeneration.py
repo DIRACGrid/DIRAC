@@ -318,7 +318,7 @@ def generateProxy(params):
   retVal = chain.loadKeyFromFile(keyLoc, password=params.userPasswd)
   if not retVal['OK']:
     gLogger.warn(retVal['Message'])
-    if 'bad decrypt' in retVal['Message']:
+    if 'bad decrypt' in retVal['Message'] or 'bad pass phrase' in retVal['Message']:
       return S_ERROR("Bad passphrase")
     return S_ERROR("Can't load %s" % keyLoc)
 

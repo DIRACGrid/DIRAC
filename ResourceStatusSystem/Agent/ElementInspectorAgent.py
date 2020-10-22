@@ -182,8 +182,9 @@ class ElementInspectorAgent(AgentModule):
       # be there, but in any case, it is not a big problem.
 
       lowerElementDict = {'element': self.elementType}
-      for key, value in elemDict.items():
-        lowerElementDict[key[0].lower() + key[1:]] = value
+      for key, value in elemDict.iteritems():
+        if len(key) > 2:
+          lowerElementDict[key[0].lower() + key[1:]] = value
 
       # We add lowerElementDict to the queue
       toBeChecked.put(lowerElementDict)

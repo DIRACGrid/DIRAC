@@ -9,11 +9,12 @@ __RCSID__ = "$Id$"
 import tempfile
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 
 
+@createClient("Accounting/ReportGenerator")
 class ReportsClient(Client):
 
   def __init__(self, transferClient=None, **kwargs):
