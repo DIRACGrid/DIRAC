@@ -10,7 +10,6 @@ future
 futures
 matplotlib
 mock
-mysql-python
 numpy
 pandas
 psutil

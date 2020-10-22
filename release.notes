@@ -323,6 +323,18 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p37]
+
+*TS
+CHANGE: (#4769) consider all sites when getting sites with storage (not only LCG sites with Tier0, 1 or 2
+
+*WMS
+FIX: (#4769) dirac-wms-job-parameters: output was printed twice
+
+*docs
+NEW: (#4771) admin tutorial on how to install the WorkloadManagementSystem
+CHANGE: (#4780) mock the MySQLDB python module as we cannot install it in RTD any longer
+
 [v7r0p36]
 
 FIX: fixes from v6r22p35 patch release

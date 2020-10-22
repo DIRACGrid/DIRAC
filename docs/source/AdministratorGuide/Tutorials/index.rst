@@ -17,3 +17,4 @@ Each of this tutorial is a step by step guide.
    installRMS
    installTS
    dmsWithTs
+   installWMS

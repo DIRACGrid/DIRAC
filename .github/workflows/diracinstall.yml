@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   diracInstall:
     runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
 
     strategy:
       fail-fast: False

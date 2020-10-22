@@ -1,3 +1,5 @@
+.. _user_jobs_api:
+
 ==========================
 Jobs with DIRAC Python API
 ==========================
