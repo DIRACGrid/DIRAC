@@ -42,11 +42,11 @@ class RMSMonitoring(BaseType):
     self.monitoringFields = ["nbObject"]
 
     self.addMapping({"host": {"type": "keyword"},
-		     "objectType": {"type": "keyword"},
-		     "operationType": {"type": "keyword"},
-		     "status": {"type": "keyword"},
-		     "objectID": {"type": "long"},
-		     "parentID": {"type": "long"}})
+                     "objectType": {"type": "keyword"},
+                     "operationType": {"type": "keyword"},
+                     "status": {"type": "keyword"},
+                     "objectID": {"type": "long"},
+                     "parentID": {"type": "long"}})
 
     self.dataToKeep = 86400 * 30  # we need to define...
 

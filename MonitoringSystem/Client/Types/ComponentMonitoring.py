@@ -32,10 +32,10 @@ class ComponentMonitoring(BaseType):
                              'cycleDuration', 'cycles']
 
     self.addMapping({"host": {"type": "keyword"},
-		     "component": {"type": "keyword"},
-		     "status": {"type": "keyword"},
-		     "componentType": {"type": "keyword"},
-		     "componentLocation": {"type": "keyword"}})
+                     "component": {"type": "keyword"},
+                     "status": {"type": "keyword"},
+                     "componentType": {"type": "keyword"},
+                     "componentLocation": {"type": "keyword"}})
 
     self.dataToKeep = 86400 * 30  # we need to define...
 

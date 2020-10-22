@@ -20,27 +20,27 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 
 name = 'LogStatusAction'
 decisionParams = {'status': 'Banned', 'reason': 'test', 'tokenOwner': None,
-		  'active': 'Active', 'name': 'ProductionSandboxSE', 'element': 'Resource',
-		  'elementType': 'StorageElement', 'statusType': 'ReadAccess'}
+                  'active': 'Active', 'name': 'ProductionSandboxSE', 'element': 'Resource',
+                  'elementType': 'StorageElement', 'statusType': 'ReadAccess'}
 
 enforcementResult = {'Status': 'Banned', 'Reason': 'test ###',
-		     'PolicyAction': [('LogStatusAction', 'LogStatusAction'),
-				      ('LogPolicyResultAction', 'LogPolicyResultAction')]}
+                     'PolicyAction': [('LogStatusAction', 'LogStatusAction'),
+                                      ('LogPolicyResultAction', 'LogPolicyResultAction')]}
 
 singlePolicyResults = [{'Status': 'Banned', 'Policy': {'command': ('DowntimeCommand', 'DowntimeCommand'),
-						       'name': 'DT_END',
-						       'args': {'hours': 0, 'onlyCache': True},
-						       'type': 'DTOngoing',
-						       'module': 'DowntimePolicy',
-						       'description': 'Ongoing and scheduled down-times'},
-			'Reason': 'test'},
-		       {'Status': 'Active', 'Policy': {'command': None,
-						       'name': 'AlwaysActiveForResource',
-						       'args': None,
-						       'type': 'AlwaysActive',
-						       'module': 'AlwaysActivePolicy',
-						       'description': 'A Policy that always returns Active'},
-			'Reason': 'AlwaysActive'}]
+                                                       'name': 'DT_END',
+                                                       'args': {'hours': 0, 'onlyCache': True},
+                                                       'type': 'DTOngoing',
+                                                       'module': 'DowntimePolicy',
+                                                       'description': 'Ongoing and scheduled down-times'},
+                        'Reason': 'test'},
+                       {'Status': 'Active', 'Policy': {'command': None,
+                                                       'name': 'AlwaysActiveForResource',
+                                                       'args': None,
+                                                       'type': 'AlwaysActive',
+                                                       'module': 'AlwaysActivePolicy',
+                                                       'description': 'A Policy that always returns Active'},
+                        'Reason': 'AlwaysActive'}]
 
 
 action = EmailAction(name, decisionParams, enforcementResult, singlePolicyResults)

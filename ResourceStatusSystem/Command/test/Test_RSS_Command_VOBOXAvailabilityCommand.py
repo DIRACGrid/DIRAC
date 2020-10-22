@@ -19,7 +19,6 @@ except NameError:
   from importlib import reload  # pylint: disable=no-name-in-module
 
 
-
 class VOBOXAvailabilityCommand_TestCase(unittest.TestCase):
 
   def setUp(self):
@@ -94,8 +93,8 @@ class VOBOXAvailabilityCommand_Success(VOBOXAvailabilityCommand_TestCase):
 
     mock_RPC = mock.Mock()
     mock_RPC.ping.return_value = {'OK': True,
-				  'Value': {'service uptime': 1,
-					    'host uptime': 2}}
+                                  'Value': {'service uptime': 1,
+                                            'host uptime': 2}}
 
     self.moduleTested.RPCClient.return_value = mock_RPC
     command = self.testClass(args={'serviceURL': 'protocol://site:port/path1/path2'})
