@@ -87,10 +87,10 @@ def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, e
                                            bulkSubmissionFlag=bulkSubmissionFlag)
   assert res['OK'] == result
   if res['OK']:
-    for key, value in res['Value'].iteritems():
+    for key, value in res['Value'].items():
       if key != 'BulkJobObject':
         assert key in expectedRes['Value']
-        for tKey, tValue in value.iteritems():
+        for tKey, tValue in value.items():
           assert tKey in expectedRes['Value'][key]
           if tKey == 'TaskObject' and tValue:
             assert isinstance(tValue, Job)

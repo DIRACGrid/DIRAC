@@ -215,13 +215,13 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                          if opFile.Status in ("Waiting", "Scheduled")])
     targetSESet = set(self.operation.targetSEList)
 
-    replicas = self.fc.getReplicas(waitingFiles.keys())
+    replicas = self.fc.getReplicas(list(waitingFiles))
     if not replicas["OK"]:
       self.log.error('Failed to get replicas', replicas["Message"])
       return replicas
 
     reMissing = re.compile(r".*such file.*")
-    for failedLFN, errStr in replicas["Value"]["Failed"].iteritems():
+    for failedLFN, errStr in replicas["Value"]["Failed"].items():
       waitingFiles[failedLFN].Error = errStr
       if reMissing.search(errStr.lower()):
         self.log.error("File does not exists", failedLFN)
@@ -233,7 +233,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
           gMonitor.addMark("ReplicateFail", len(targetSESet))
         waitingFiles[failedLFN].Status = "Failed"
 
-    for successfulLFN, reps in replicas["Value"]["Successful"].iteritems():
+    for successfulLFN, reps in replicas["Value"]["Successful"].items():
       if targetSESet.issubset(set(reps)):
         self.log.info("file replicated to all targets", successfulLFN)
         waitingFiles[successfulLFN].Status = "Done"
@@ -252,7 +252,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       self.log.verbose("No files to schedule")
       return S_OK([])
 
-    res = self.fc.getFileMetadata(toSchedule.keys())
+    res = self.fc.getFileMetadata(list(toSchedule))
     if not res['OK']:
       return res
     else:
@@ -263,7 +263,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     filesToSchedule = {}
 
-    for lfn, lfnMetadata in metadata.iteritems():
+    for lfn, lfnMetadata in metadata.items():
       opFileToSchedule = toSchedule[lfn][0]
       opFileToSchedule.GUID = lfnMetadata['GUID']
       # In principle this is defined already in filterReplicas()
@@ -703,7 +703,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     if delayExecution:
       self.log.info("Delay execution of the request by %d minutes" % delayExecution)
       self.request.delayNextExecution(delayExecution)
-    for error, count in errors.iteritems():
+    for error, count in errors.items():
       self.log.error(error, 'for %d files' % count)
 
     if self.rmsMonitoring:

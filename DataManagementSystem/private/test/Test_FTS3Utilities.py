@@ -88,7 +88,7 @@ class TestFileGrouping(unittest.TestCase):
     # There should be only f1,f2 and f3
     allReturnedFiles = []
     existingFiles = [self.f1, self.f2, self.f3]
-    for _srcSe, ftsFiles in uniqueSources.iteritems():
+    for _srcSe, ftsFiles in uniqueSources.items():
       allReturnedFiles.extend(ftsFiles)
 
     # No files should be duplicated and all files should be there, except the non existing one

@@ -139,7 +139,7 @@ class Test_MQProducers(unittest.TestCase):
   def getFirstConnection(self, mqConnection):
     result = MQComm.connectionManager.getConnector(mqConnection)
     connector = result['Value']
-    return connector.connections.itervalues().next()
+    return connector.connections.values().next()
 
 
 class Test_MQProducers_1(Test_MQProducers):
@@ -187,7 +187,7 @@ class Test_MQProducers_2(Test_MQProducers):
     self.assertTrue(conn1.is_connected())
 
     producers = []
-    for i in xrange(20):
+    for i in range(20):
       result = createProducer(mqURI='mardirac3.in2p3.fr::Queue::test1')
       self.assertTrue(result['OK'])
       producer = result['Value']
@@ -217,7 +217,7 @@ class Test_MQProducers_3(Test_MQProducers):
 
     conn1 = None
     # creating and closing
-    for i in xrange(20):
+    for i in range(20):
       result = createProducer(mqURI='mardirac3.in2p3.fr::Queue::test1')
       if i == 1:
         conn1 = self.getFirstConnection('mardirac3.in2p3.fr')
@@ -270,7 +270,7 @@ class Test_MQProducers_4(Test_MQProducers):
     self.assertFalse(Test_MQProducers.reconnectWasCalled)
     result = producer.close()
     self.assertFalse(Test_MQProducers.reconnectWasCalled)
-    for _ in xrange(20):
+    for _ in range(20):
       result = createProducer(mqURI='mardirac3.in2p3.fr::Queue::test1')
       self.assertTrue(result['OK'])
       producer = result['Value']

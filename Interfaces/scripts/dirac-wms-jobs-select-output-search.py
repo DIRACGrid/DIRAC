@@ -106,7 +106,7 @@ for job in jobs:
     errorList.append((job, result['Message']))
     exitCode = 2
 
-for result in resultDict.iteritems():
+for result in resultDict.items():
   print(result)
 
 

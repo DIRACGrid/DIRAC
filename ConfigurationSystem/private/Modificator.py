@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import zlib
 import difflib
+import six
 
 from diraccfg import CFG
 from DIRAC.Core.Utilities import List, Time
@@ -42,7 +43,10 @@ class Modificator(object):
     retVal = self.rpcClient.getCompressedData()
     if retVal['OK']:
       self.cfgData = CFG()
-      self.cfgData.loadFromBuffer(zlib.decompress(retVal['Value']))
+      data = retVal['Value']
+      if six.PY3 and isinstance(data, str):
+        data = data.encode(errors="surrogateescape")
+      self.cfgData.loadFromBuffer(zlib.decompress(data).decode())
     return retVal
 
   def getCFG(self):
@@ -251,7 +255,10 @@ class Modificator(object):
   def showCurrentDiff(self):
     retVal = self.rpcClient.getCompressedData()
     if retVal['OK']:
-      remoteData = zlib.decompress(retVal['Value']).splitlines()
+      data = retVal['Value']
+      if six.PY3 and isinstance(data, str):
+        data = data.encode(errors="surrogateescape")
+      remoteData = zlib.decompress(data).decode().splitlines()
       localData = str(self.cfgData).splitlines()
       return difflib.ndiff(remoteData, localData)
     return []
@@ -259,8 +266,16 @@ class Modificator(object):
   def getVersionDiff(self, fromDate, toDate):
     retVal = self.rpcClient.getVersionContents([fromDate, toDate])
     if retVal['OK']:
-      fromData = zlib.decompress(retVal['Value'][0])
-      toData = zlib.decompress(retVal['Value'][1])
+      fromData = retVal['Value'][0]
+      if six.PY3 and isinstance(fromData, str):
+        fromData = fromData.encode(errors="surrogateescape")
+      fromData = zlib.decompress(fromData).decode()
+
+      toData = retVal['Value'][1]
+      if six.PY3 and isinstance(toData, str):
+        toData = toData.encode(errors="surrogateescape")
+      toData = zlib.decompress(toData).decode()
+
       return difflib.ndiff(fromData.split("\n"), toData.split("\n"))
     return []
 
@@ -268,7 +283,10 @@ class Modificator(object):
     retVal = self.rpcClient.getCompressedData()
     if retVal['OK']:
       remoteCFG = CFG()
-      remoteCFG.loadFromBuffer(zlib.decompress(retVal['Value']))
+      data = retVal['Value']
+      if six.PY3 and isinstance(data, str):
+        data = data.encode(errors="surrogateescape")
+      remoteCFG.loadFromBuffer(zlib.decompress(data).decode())
       serverVersion = gConfigurationData.getVersion(remoteCFG)
       self.cfgData = remoteCFG.mergeWith(self.cfgData)
       gConfigurationData.setVersion(serverVersion, self.cfgData)

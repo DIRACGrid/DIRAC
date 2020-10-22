@@ -59,7 +59,7 @@ except Exception:
           lib = 'libc'
         elif glibc:
           glibcversion_parts = glibcversion.split('.')
-          for i in xrange(len(glibcversion_parts)):
+          for i in range(len(glibcversion_parts)):
             try:
               glibcversion_parts[i] = int(glibcversion_parts[i])
             except ValueError:
@@ -106,7 +106,7 @@ except Exception:
       newest_lib = [0, 0, 0]
       for lib in libs:
         lib_parts = libc_ver(lib)[1].split('.')
-        for i in xrange(len(lib_parts)):
+        for i in range(len(lib_parts)):
           try:
             lib_parts[i] = int(lib_parts[i])
           except ValueError:

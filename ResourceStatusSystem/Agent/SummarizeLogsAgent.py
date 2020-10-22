@@ -81,7 +81,7 @@ class SummarizeLogsAgent(AgentModule):
 
       # logElements is a dictionary of key-value pairs as follows:
       # ( name, statusType ) : list( logs )
-      for key, logs in logElements.iteritems():
+      for key, logs in logElements.items():
 
         sumResult = self._registerLogs(element, key, logs)
         if not sumResult['OK']:

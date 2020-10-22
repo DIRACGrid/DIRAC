@@ -116,7 +116,7 @@ class DBUtils (object):
     bucketSeconds = {}
     try:
       # Convert intervals into seconds
-      for interval, binUnit in self.__esbucket.iteritems():
+      for interval, binUnit in self.__esbucket.items():
         bucketSeconds[_convertToSeconds(interval)] = (binUnit, _convertToSeconds(binUnit))
       # Determine bin size according to time span
       for interval in sorted(bucketSeconds):

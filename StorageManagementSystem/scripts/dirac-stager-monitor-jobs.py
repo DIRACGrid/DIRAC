@@ -57,7 +57,7 @@ for jobID in jobIDs:
     gLogger.notice('No info on files for the job = %s, that is odd' % jobID)
     continue
   else:
-    for lfn, metadata in replicaInfo.iteritems():
+    for lfn, metadata in replicaInfo.items():
       outStr += "\n\t--------------------"
       outStr += "\n\t%s: %s" % ('LFN'.ljust(8), lfn.ljust(100))
       outStr += "\n\t%s: %s" % ('SE'.ljust(8), metadata['StorageElement'].ljust(100))

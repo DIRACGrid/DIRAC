@@ -33,7 +33,7 @@ import re
 import os
 import urllib
 import shlex
-import StringIO
+from six import StringIO
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.API import API
@@ -141,7 +141,7 @@ class Job(API):
        :type parameters: python:list of tuples
     """
     kwargs = {'executable': executable, 'arguments': arguments, 'logFile': logFile}
-    if not isinstance(executable, basestring) or not isinstance(arguments, six.string_types) or \
+    if not isinstance(executable, six.string_types) or not isinstance(arguments, six.string_types) or \
        not isinstance(logFile, six.string_types):
       return self._reportError('Expected strings for executable and arguments', **kwargs)
 
@@ -302,7 +302,7 @@ class Job(API):
        :type lfns: Single LFN string or list of LFNs
     """
     if isinstance(lfns, list) and lfns:
-      for i in xrange(len(lfns)):
+      for i in range(len(lfns)):
         lfns[i] = lfns[i].replace('LFN:', '')
       inputData = ['LFN:' + x for x in lfns]
       inputDataStr = ';'.join(inputData)
@@ -866,7 +866,7 @@ class Job(API):
 
     if environmentDict:
       environment = []
-      for var, val in environmentDict.iteritems():
+      for var, val in environmentDict.items():
         try:
           environment.append('='.join([str(var), urllib.quote(str(val))]))
         except Exception:
@@ -909,7 +909,7 @@ class Job(API):
     self.log.info('--------------------------------------')
     # print self.workflow.parameters
     # print params.getParametersNames()
-    for name, _props in paramsDict.iteritems():
+    for name, _props in paramsDict.items():
       ptype = paramsDict[name]['type']
       value = paramsDict[name]['value']
       if showType:
@@ -1127,7 +1127,7 @@ class Job(API):
             self.log.warn("Job description XML file not found")
       self.addToInputSandbox.append(scriptName)
 
-    elif isinstance(jobDescriptionObject, StringIO.StringIO):
+    elif isinstance(jobDescriptionObject, StringIO):
       self.log.verbose("jobDescription is passed in as a StringIO object")
 
     else:
@@ -1155,7 +1155,7 @@ class Job(API):
       else:
         self.log.warn('JobConfigArgs defined with null value')
     if self.parametricWFArguments:
-      for name, value in self.parametricWFArguments.iteritems():
+      for name, value in self.parametricWFArguments.items():
         arguments.append("-p %s='%s'" % (name, value))
 
     classadJob.insertAttributeString('Executable', self.executable)
@@ -1214,7 +1214,7 @@ class Job(API):
     classadJob.insertAttributeString('Arguments', ' '.join(arguments))
 
     # Add any JDL parameters to classad obeying lists with ';' rule
-    for name, props in paramsDict.iteritems():
+    for name, props in paramsDict.items():
       ptype = props['type']
       value = props['value']
       if isinstance(value, six.string_types) and re.search(';', value):

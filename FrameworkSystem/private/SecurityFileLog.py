@@ -6,7 +6,7 @@ import os
 import re
 import time
 import gzip
-import Queue
+from six.moves import queue as Queue
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler

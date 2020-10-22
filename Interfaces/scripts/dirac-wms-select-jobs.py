@@ -115,7 +115,7 @@ else:
     gLogger.error("Can't select jobs: ", res['Message'])
 
 
-conds = ['%s = %s' % (n, v) for n, v in conditions.iteritems() if v]
+conds = ['%s = %s' % (n, v) for n, v in conditions.items() if v]
 if maxJobs and len(jobs) > maxJobs:
   jobs = jobs[:maxJobs]
   constrained = ' (first %d shown) ' % maxJobs

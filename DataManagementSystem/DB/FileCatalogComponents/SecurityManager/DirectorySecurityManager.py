@@ -22,19 +22,19 @@ class DirectorySecurityManager(SecurityManagerBase):
     permissions = {}
     failed = {}
     while toGet:
-      res = self.db.dtree.getPathPermissions(toGet.keys(), credDict)
+      res = self.db.dtree.getPathPermissions(list(toGet), credDict)
       if not res['OK']:
         return res
-      for path, mode in list(res['Value']['Successful'].iteritems()):
+      for path, mode in list(res['Value']['Successful'].items()):
         for resolvedPath in toGet[path]:
           permissions[resolvedPath] = mode
         toGet.pop(path)
-      for path, error in list(res['Value']['Failed'].iteritems()):
+      for path, error in list(res['Value']['Failed'].items()):
         if error != 'No such file or directory':
           for resolvedPath in toGet[path]:
             failed[resolvedPath] = error
           toGet.pop(path)
-      for path, resolvedPaths in list(toGet.iteritems()):
+      for path, resolvedPaths in list(toGet.items()):
         if path == '/':
           for resolvedPath in resolvedPaths:
             permissions[path] = {'Read': True, 'Write': True, 'Execute': True}

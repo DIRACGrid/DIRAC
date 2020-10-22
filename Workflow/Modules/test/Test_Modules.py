@@ -425,7 +425,7 @@ class ModuleBaseSuccess(ModulesTestCase):
                 }
                )
 
-    for fileMask, result, stepMask in itertools.izip(fileMasks, results, stepMasks):
+    for fileMask, result, stepMask in zip(fileMasks, results, stepMasks):
       res = self.mb._applyMask(candidateFiles, fileMask, stepMask)
       self.assertEqual(res, result)
 

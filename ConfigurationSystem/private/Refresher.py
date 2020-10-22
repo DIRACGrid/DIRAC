@@ -31,11 +31,12 @@ def _updateFromRemoteLocation(serviceClient):
   retVal = serviceClient.getCompressedDataIfNewer(localVersion)
   if retVal['OK']:
     dataDict = retVal['Value']
-    if localVersion < dataDict['newestVersion']:
-      gLogger.debug("New version available", "Updating to version %s..." % dataDict['newestVersion'])
+    newestVersion = dataDict['newestVersion']
+    if localVersion < newestVersion:
+      gLogger.debug("New version available", "Updating to version %s..." % newestVersion)
       gConfigurationData.loadRemoteCFGFromCompressedMem(dataDict['data'])
       gLogger.debug("Updated to version %s" % gConfigurationData.getVersion())
-      gEventDispatcher.triggerEvent("CSNewVersion", dataDict['newestVersion'], threaded=True)
+      gEventDispatcher.triggerEvent("CSNewVersion", newestVersion, threaded=True)
     return S_OK()
   return retVal
 

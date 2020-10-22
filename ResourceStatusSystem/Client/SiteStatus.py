@@ -27,6 +27,7 @@ from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
 
+@six.add_metaclass(DIRACSingleton)
 class SiteStatus(object):
   """
   RSS helper to interact with the 'Site' family on the DB. It provides the most
@@ -38,9 +39,6 @@ class SiteStatus(object):
   * getUsableSites
   * getSites
   """
-
-  __metaclass__ = DIRACSingleton
-
   def __init__(self):
     """
     Constructor, initializes the rssClient.
@@ -65,7 +63,7 @@ class SiteStatus(object):
 
     meta = {'columns': ['Name', 'Status']}
 
-    for ti in xrange(5):
+    for ti in range(5):
       rawCache = self.rsClient.selectStatusElement('Site', 'Status', meta=meta)
       if rawCache['OK']:
         break
@@ -177,7 +175,7 @@ class SiteStatus(object):
     siteStatusDictRes = self.getSiteStatuses(siteNames)
     if not siteStatusDictRes['OK']:
       return siteStatusDictRes
-    siteStatusList = [x[0] for x in siteStatusDictRes['Value'].iteritems() if x[1] in ['Active', 'Degraded']]
+    siteStatusList = [x[0] for x in siteStatusDictRes['Value'].items() if x[1] in ['Active', 'Degraded']]
 
     return S_OK(siteStatusList)
 
@@ -222,7 +220,7 @@ class SiteStatus(object):
       if siteState not in allowedStateList:
         return S_ERROR(errno.EINVAL, 'Not a valid status, parameter rejected')
 
-      siteList = [x[0] for x in siteStatusDictRes['Value'].iteritems() if x[1] == siteState]
+      siteList = [x[0] for x in siteStatusDictRes['Value'].items() if x[1] == siteState]
 
     return S_OK(siteList)
 

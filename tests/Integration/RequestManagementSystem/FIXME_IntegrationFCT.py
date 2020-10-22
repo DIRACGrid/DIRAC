@@ -111,14 +111,14 @@ class FullChainTest( object ):
   def files( self, userName, userGroup ):
     """ get list of files in user domain """
     files = []
-    for i in xrange( 10 ):
+    for i in range(10):
       fname = "/tmp/testUserFile-%s" % i
       if userGroup == "dteam_user":
         lfn = "/lhcb/user/%s/%s/%s" % ( userName[0], userName, fname.split( "/" )[-1] )
       else:
         lfn = "/lhcb/certification/test/rmsdms/%s" % fname.split( "/" )[-1]
       fh = open( fname, "w+" )
-      for i in xrange( 100 ):
+      for i in range(100):
         fh.write( str( random.randint( 0, i ) ) )
       fh.close()
       size = os.stat( fname ).st_size

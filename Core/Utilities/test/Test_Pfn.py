@@ -69,7 +69,7 @@ class PfnTests( unittest.TestCase ):
     :param self: self reference
     """
 
-    for pfn, result in self.srm_pfns.iteritems():
+    for pfn, result in self.srm_pfns.items():
       parseResult = pfnparse( pfn )
       self.assertEqual( parseResult['OK'], result['OK'] )
       if result['OK']:
@@ -82,7 +82,7 @@ class PfnTests( unittest.TestCase ):
     :param self: self reference
     """
 
-    for pfn, result in self.default_pfns.iteritems():
+    for pfn, result in self.default_pfns.items():
       parseResult = pfnparse( pfn, srmSpecific = False )
       self.assertEqual( parseResult['OK'], result['OK'] )
       if result['OK']:

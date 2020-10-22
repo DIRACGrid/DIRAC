@@ -79,11 +79,12 @@ class File(object):
         else json.loads(fromDict) if isinstance(fromDict, six.string_types)\
         else {}
 
-    for attrName, attrValue in fromDict.iteritems():
+    for attrName, attrValue in fromDict.items():
       # The JSON module forces the use of UTF-8, which is not properly
       # taken into account in DIRAC.
       # One would need to replace all the '== str' with 'in six.string_types'
-      if isinstance(attrValue, six.string_types):
+      # This is converting `unicode` to `str` and doesn't make sense in Python 3
+      if six.PY2 and isinstance(attrValue, six.string_types):
         attrValue = attrValue.encode()
       if attrValue:
         setattr(self, attrName, attrValue)

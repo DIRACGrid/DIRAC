@@ -189,7 +189,7 @@ class SystemLoggingDB(DB):
 
     tablesInDB = [t[0] for t in retVal['Value']]
     tablesToCreate = {}
-    for tableName, tableDef in self.tableDict.iteritems():
+    for tableName, tableDef in self.tableDict.items():
       if tableName not in tablesInDB:
         tablesToCreate[tableName] = tableDef
 
@@ -211,7 +211,7 @@ class SystemLoggingDB(DB):
                  'OwnerDN': 'UserDNs', 'OwnerGroup': 'UserDNs',
                  'ClientIPNumberString': 'ClientIPs',
                  'ClientFQDN': 'ClientIPs', 'SiteName': 'Sites'}
-    tableDictKeys = tableDict.keys()
+    tableDictKeys = list(tableDict)
     tableList = []
 
     conjunction = ' NATURAL JOIN '

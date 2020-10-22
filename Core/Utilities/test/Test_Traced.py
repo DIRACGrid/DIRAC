@@ -29,6 +29,7 @@ __RCSID__ = "$Id $"
 
 ## imports 
 import unittest
+import six
 ## SUT
 from DIRAC.Core.Utilities.Traced import Traced, TracedDict, TracedList
 
@@ -38,17 +39,19 @@ class TracedTests(unittest.TestCase):
   .. class:: TracedTests
   
   """
-  def setUp( self ):
+  def setUp(self):
     """c'tor
 
     :param self: self reference
     """
-    self.tracedDict = TracedDict( { 1 : 1 } )
-    self.tracedList = TracedList( [ 1 ] )
-    class TracedClass( object ):
-      __metaclass__ = Traced 
+    self.tracedDict = TracedDict({1: 1})
+    self.tracedList = TracedList([1])
+
+    @six.add_metaclass(Traced)
+    class TracedClass(object):
       classArg = None
-      def __init__( self ):
+
+      def __init__(self):
         instanceArg = None
     self.tracedClass = TracedClass()
 

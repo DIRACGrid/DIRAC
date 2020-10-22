@@ -405,7 +405,7 @@ class ReqClient(Client):
     ret = readReqsForJobs["Value"]
     # # create Requests out of JSONs for successful reads
     # Do not forget to cast back str keys to int
-    successful = {int(jobID): Request(jsonReq) for jobID, jsonReq in ret['Successful'].iteritems()}
+    successful = {int(jobID): Request(jsonReq) for jobID, jsonReq in ret['Successful'].items()}
     failed = strToIntDict(ret['Failed'])
 
     return S_OK({'Successful': successful, 'Failed': failed})

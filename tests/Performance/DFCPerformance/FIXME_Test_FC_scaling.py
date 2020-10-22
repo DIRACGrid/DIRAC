@@ -146,7 +146,7 @@ def listDirectory(n_queries):
 
   startTotal = time.time()
 
-  for i in xrange(n_queries):
+  for i in range(n_queries):
 
     start = time.time()
     result = fc.listDirectory(testDir)
@@ -183,7 +183,7 @@ def getBulkReplicas(n_queries):
 
   startTotal = time.time()
 
-  for i in xrange(n_queries):
+  for i in range(n_queries):
 
     start = time.time()
     result = fc.getReplicas(lfnList)
@@ -226,7 +226,7 @@ def getDirectoryReplicas(n_queries):
 
   startTotal = time.time()
 
-  for i in xrange(n_queries):
+  for i in range(n_queries):
 
     start = time.time()
     result = fc.getDirectoryReplicas(testDir)
@@ -283,7 +283,7 @@ def runTest():
 
   testFunction = eval(testType)
 
-  for c in xrange(nClients):
+  for c in range(nClients):
     pp.createAndQueueTask(testFunction, [nQueries],
                           callback=finalize,
                           exceptionCallback=doException)

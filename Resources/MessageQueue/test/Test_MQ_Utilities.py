@@ -7,7 +7,7 @@ from __future__ import print_function
 
 import DIRAC.Resources.MessageQueue.Utilities as module
 import unittest
-import Queue
+from six.moves import queue as Queue
 
 from mock import MagicMock
 

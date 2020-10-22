@@ -17,7 +17,7 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 import math
-import Queue
+from six.moves import queue as Queue
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -114,7 +114,7 @@ class SiteInspectorAgent(AgentModule):
 
     self.log.info('Needed %d threads to process %d elements' % (numberOfThreads, queueSize))
 
-    for _x in xrange(numberOfThreads):
+    for _x in range(numberOfThreads):
       jobUp = self.threadPool.generateJobAndQueueIt(self._execute)
       if not jobUp['OK']:
         self.log.error(jobUp['Message'])

@@ -41,7 +41,7 @@ class FileManagerFlat(FileManagerBase):
         for fileName in fileNames:
           failed['%s/%s' % (dirPath, fileName)] = error
       else:
-        for fileName, fileDict in res['Value'].iteritems():
+        for fileName, fileDict in res['Value'].items():
           successful["%s/%s" % (dirPath, fileName)] = fileDict
     return S_OK({"Successful": successful, "Failed": failed})
 
@@ -103,14 +103,14 @@ class FileManagerFlat(FileManagerBase):
     if not res['OK']:
       return res
     # Get the fileIDs for the inserted files
-    res = self._findFiles(lfns.keys(), ['FileID'], connection=connection)
+    res = self._findFiles(list(lfns), ['FileID'], connection=connection)
     if not res['OK']:
-      for lfn in lfns.keys():
+      for lfn in list(lfns):
         failed[lfn] = 'Failed post insert check'
         lfns.pop(lfn)
     else:
       failed.update(res['Value']['Failed'])
-      for lfn, fileDict in res['Value']['Successful'].iteritems():
+      for lfn, fileDict in res['Value']['Successful'].items():
         lfns[lfn]['FileID'] = fileDict['FileID']
     return S_OK({'Successful': lfns, 'Failed': failed})
 
@@ -245,12 +245,12 @@ class FileManagerFlat(FileManagerBase):
   def _deleteReplicas(self, lfns, connection=False):
     connection = self._getConnection(connection)
     successful = {}
-    res = self._findFiles(lfns.keys(), ['DirID', 'FileID', 'Size'], connection=connection)
+    res = self._findFiles(list(lfns), ['DirID', 'FileID', 'Size'], connection=connection)
     failed = res['Value']['Failed']
     lfnFileIDDict = res['Value']['Successful']
     toRemove = []
     directorySESizeDict = {}
-    for lfn, fileDict in lfnFileIDDict.iteritems():
+    for lfn, fileDict in lfnFileIDDict.items():
       fileID = fileDict['FileID']
       se = lfns[lfn]['SE']
       toRemove.append((fileID, se))

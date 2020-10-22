@@ -121,7 +121,7 @@ class FTS3ServerPolicy(object):
     self.log = gLogger.getSubLogger("FTS3ServerPolicy")
 
     self._serverDict = serverDict
-    self._serverList = serverDict.keys()
+    self._serverList = list(serverDict)
     self._maxAttempts = len(self._serverList)
     self._nextServerID = 0
     self._resourceStatus = ResourceStatus()

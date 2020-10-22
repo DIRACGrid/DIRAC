@@ -11,7 +11,12 @@ import socket
 import os
 import re
 import time
-import commands
+# TODO: This should be modernised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatibility layer
+  import subprocess as commands
 import getpass
 import importlib
 import shutil
@@ -528,7 +533,7 @@ class SystemAdministratorHandler(RequestHandler):
     summary = ''
     _status, output = commands.getstatusoutput('df')
     lines = output.split('\n')
-    for i in xrange(len(lines)):
+    for i in range(len(lines)):
       if lines[i].startswith('/dev'):
         fields = lines[i].split()
         if len(fields) == 1:
@@ -566,7 +571,7 @@ class SystemAdministratorHandler(RequestHandler):
       result.update(infoResult['Value'])
       # the infoResult value is {"Extensions":{'a1':'v1',a2:'v2'}; we convert to a string
       result.update({"Extensions": ";".join(["%s:%s" % (key, value)
-                                             for (key, value) in infoResult["Value"].get('Extensions').iteritems()])})
+                                             for (key, value) in infoResult["Value"].get('Extensions').items()])})
 
     # Host certificate properties
     certFile, _keyFile = getHostCertificateAndKeyLocation()

@@ -1,0 +1,42 @@
+name: Python 3 tests
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: False
+      matrix:
+        command:
+          # TODO These three tests fail on Python 3:
+          #   * `test_BaseType_Unicode` and `test_nestedStructure` fail due to
+          #     DISET's string and unicode types being poorly defined
+          #   * `testLockedClass` deadlocks frequently due to the use of
+          #     self.__processThread._Thread__stop(). Officially "threads
+          #     cannot be destroyed, stopped, suspended, resumed, or
+          #     interrupted" so the code should be rewritten to follow the
+          #     supported alternative: "If you want your threads to stop
+          #     gracefully, make them non-daemonic and use a suitable
+          #     signalling mechanism such as an Event."
+          - pytest --no-cov -k 'not test_BaseType_Unicode and not test_nestedStructure and not testLockedClass'
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Fail-fast for outdated pipelines
+      run: .github/workflows/fail-fast.sh
+    - name: Prepare environment
+      run: |
+        conda env create --name dirac-testing --file environment-py3.yml
+    - name: Run tests
+      run: |
+        source "${CONDA}/bin/activate"
+        conda activate dirac-testing
+        set -euxo pipefail
+        export PYTHONPATH=${PWD%/*}
+        ${{ matrix.command }}
+      env:
+        REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}

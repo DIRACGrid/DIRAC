@@ -7,7 +7,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import pytest
-import StringIO
+from six import StringIO
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -42,7 +42,7 @@ def test_basicJob():
     with open('./Interfaces/API/test/testWFSIO.jdl') as fd:
       expected = fd.read()
 
-  jdlSIO = job._toJDL(jobDescriptionObject=StringIO.StringIO(job._toXML()))
+  jdlSIO = job._toJDL(jobDescriptionObject=StringIO(job._toXML()))
   assert jdlSIO == expected
 
 

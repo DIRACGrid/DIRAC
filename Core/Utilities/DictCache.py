@@ -235,8 +235,7 @@ class DictCache(object):
     if useLock:
       self.lock.acquire()
     try:
-      keys = self.__cache.keys()
-      for cKey in keys:
+      for cKey in list(self.__cache):
         if self.__deleteFunction:
           self.__deleteFunction(self.__cache[cKey]['value'])
         del self.__cache[cKey]

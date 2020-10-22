@@ -246,7 +246,7 @@ class basicTest(unittest.TestCase):
     fileAdlers = {}
     fileSizes = {}
 
-    for lfn, localFn in isFile.iteritems():
+    for lfn, localFn in isFile.items():
       fileAdlers[lfn] = fileAdler(localFn)
       fileSizes[lfn] = getSize(localFn)
 
@@ -274,7 +274,7 @@ class basicTest(unittest.TestCase):
     # time.sleep(5)
     res = self.readSE.isFile(isFile)
     self.assertEqual(res['OK'], True)
-    self.assertTrue(all([x for x in res['Value']['Successful'].itervalues()]))
+    self.assertTrue(all([x for x in res['Value']['Successful'].values()]))
     # self.assertEqual( res['Value']['Successful'][isFile[0]], True )
     # self.assertEqual( res['Value']['Successful'][isFile[1]], True )
 

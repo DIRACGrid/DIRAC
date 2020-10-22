@@ -20,7 +20,7 @@ from __future__ import print_function
 
 
 import sys
-import cStringIO
+from six import BytesIO
 import os
 
 # TODO: Remove ThreadPool later
@@ -312,7 +312,7 @@ class TransferRelay(TransferClient):
     gLogger.error("[%s] %s" % (self.__currentMethod, msg), dynMsg)
 
   def getDataFromClient(self, clientFileHelper):
-    sIO = cStringIO.StringIO()
+    sIO = BytesIO()
     self.infoMsg("About to get data from client")
     result = clientFileHelper.networkToDataSink(sIO, self.__transferBytesLimit)
     if not result['OK']:
@@ -363,7 +363,7 @@ class TransferRelay(TransferClient):
     _, srvTransport = result['Value']
     srvFileHelper = FileHelper(srvTransport)
     srvFileHelper.setDirection("receive")
-    sIO = cStringIO.StringIO()
+    sIO = BytesIO()
     result = srvFileHelper.networkToDataSink(sIO, self.__transferBytesLimit)
     if not result['OK']:
       self.errMsg("Could not receive data from server", result['Message'])

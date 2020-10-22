@@ -260,7 +260,7 @@ class fake_gConfig(object):
     csSection = self.crawlCS(path)
     if not csSection:
       return S_ERROR("Not a valid section")
-    options = dict((opt, val) for opt, val in csSection.iteritems() if not isinstance(val, dict))
+    options = dict((opt, val) for opt, val in csSection.items() if not isinstance(val, dict))
     return S_OK(options)
 
   def getOptions(self, path):
@@ -272,7 +272,7 @@ class fake_gConfig(object):
     csSection = self.crawlCS(path)
     if not csSection:
       return S_ERROR("Not a valid section")
-    options = [opt for opt, val in csSection.iteritems() if not isinstance(val, dict)]
+    options = [opt for opt, val in csSection.items() if not isinstance(val, dict)]
     return S_OK(options)
 
   def getSections(self, path):
@@ -284,7 +284,7 @@ class fake_gConfig(object):
     csSection = self.crawlCS(path)
     if not csSection:
       return S_ERROR("Not a valid section")
-    sections = [opt for opt, val in csSection.iteritems() if isinstance(val, dict)]
+    sections = [opt for opt, val in csSection.items() if isinstance(val, dict)]
     return S_OK(sections)
 
 
@@ -346,7 +346,10 @@ class StorageFactoryStandaloneTestCase(unittest.TestCase):
     self.assertEqual(len(storages['ProtocolOptions']), len(allProtocols))
     self.assertEqual(len(storages['StorageObjects']), len(allProtocols))
 
-    self.assertListEqual(sorted(allProtocols), sorted(storages['ProtocolOptions']))
+    self.assertListEqual(
+        sorted(allProtocols, key=lambda x: x["Host"]),
+        sorted(storages['ProtocolOptions'], key=lambda x: x["Host"])
+    )
     self.assertDictEqual(storages['StorageOptions'], {'BackendType': 'Eos', 'SEType': 'T0D1'})
 
 
@@ -639,7 +642,7 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
     self.assertTrue(storages['OK'], storages)
     storages = storages['Value']
 
-    self.assertListEqual(storages['RemotePlugins'], ['Extra', 'GFAL2_SRM2'])
+    self.assertSetEqual(set(storages['RemotePlugins']), set(['Extra', 'GFAL2_SRM2']))
 
     expectedProtocols = [{
         'Access': 'remote',
@@ -661,7 +664,10 @@ class StorageFactoryWeirdDefinition(unittest.TestCase):
         'WSUrl': '/srm/v2/server?SFN:'
     }]
 
-    self.assertListEqual(storages['ProtocolOptions'], expectedProtocols)
+    self.assertListEqual(
+        sorted(storages['ProtocolOptions'], key=lambda x: x["PluginName"]),
+        expectedProtocols,
+    )
 
   def test_child_inherit_from_base_with_two_same_plugins(self, _sf_generateStorageObject, _rss_getSEStatus):
     """ In this test, we load a storage element CERN-CHILD-INHERIT-FROM-BASE-WITH-TWO-SAME-PLUGINS that inherits

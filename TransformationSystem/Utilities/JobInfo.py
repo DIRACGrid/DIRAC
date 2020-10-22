@@ -4,7 +4,8 @@ from __future__ import division
 from __future__ import print_function
 
 from pprint import pformat
-from itertools import izip_longest
+import six
+from six.moves import zip_longest
 
 from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -55,14 +56,14 @@ class JobInfo(object):
     if self.otherTasks:
       info += ' (Last task %s)' % self.otherTasks
     if self.inputFiles:
-      ifInfo = ['<<< %s (%s, %s, Errors %s)' % _ for _ in izip_longest(self.inputFiles,
+      ifInfo = ['<<< %s (%s, %s, Errors %s)' % _ for _ in zip_longest(self.inputFiles,
                                                                        self.inputFilesExist,
                                                                        self.transFileStatus,
                                                                        self.errorCounts)]
       info += '\n'.join(ifInfo)
     if self.outputFiles:
       info += "\n::: OutputFiles: "
-      efInfo = ["%s (%s)" % _ for _ in izip_longest(self.outputFiles, self.outputFileStatus)]
+      efInfo = ["%s (%s)" % _ for _ in zip_longest(self.outputFiles, self.outputFileStatus)]
       info += ", ".join(efInfo)
     if self.pendingRequest:
       info += "\n PENDING REQUEST IGNORE THIS JOB!!!"
@@ -211,14 +212,14 @@ class JobInfo(object):
   def __getOutputFiles(self, jdlParameters):
     """get the Production Outputfiles for the given Job"""
     lfns = jdlParameters.get('ProductionOutputData', [])
-    if isinstance(lfns, basestring):
+    if isinstance(lfns, six.string_types):
       lfns = [lfns]
     self.outputFiles = lfns
 
   def __getInputFile(self, jdlParameters):
     """get the Inputdata for the given job"""
     lfn = jdlParameters.get('InputData', None)
-    if isinstance(lfn, basestring):
+    if isinstance(lfn, six.string_types):
       self.inputFiles.append(lfn)
       return
     if isinstance(lfn, list):
@@ -227,7 +228,7 @@ class JobInfo(object):
 
   def __getTaskID(self, jdlParameters):
     """Get the taskID."""
-    if isinstance(jdlParameters, basestring):
+    if isinstance(jdlParameters, six.string_types):
       self.taskID = int(jdlParameters.split('_')[1])
     if 'TaskID' not in jdlParameters:
       return

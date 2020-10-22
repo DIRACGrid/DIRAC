@@ -9,6 +9,7 @@ from __future__ import absolute_import
 from __future__ import division
 __RCSID__ = "$Id$"
 
+import six
 from past.builtins import long
 from datetime import timedelta
 
@@ -452,8 +453,8 @@ class JobMonitoringHandler(RequestHandler):
         return S_OK(resultDict)
 
       # prepare the standard structure now
-      key = summaryDict.keys()[0]
-      paramNames = summaryDict[key].keys()
+      key = list(summaryDict)[0]
+      paramNames = list(summaryDict[key])
 
       records = []
       for jobID, jobDict in summaryDict.items():
@@ -469,7 +470,7 @@ class JobMonitoringHandler(RequestHandler):
     return S_OK(resultDict)
 
 ##############################################################################
-  types_getJobStats = [basestring, dict]
+  types_getJobStats = [six.string_types, dict]
 
   @staticmethod
   def export_getJobStats(attribute, selectDict):
@@ -507,7 +508,7 @@ class JobMonitoringHandler(RequestHandler):
     return getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
 
 ##############################################################################
-  types_getJobParameter = [[basestring, int, long], basestring]
+  types_getJobParameter = [six.string_types + six.integer_types, six.string_types]
 
   @staticmethod
   def export_getJobParameter(jobID, parName):
@@ -535,7 +536,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobOptParameters(jobID)
 
 ##############################################################################
-  types_getJobParameters = [[basestring, int, long, list]]
+  types_getJobParameters = [six.string_types + six.integer_types + (list,)]
 
   @staticmethod
   @ignoreEncodeWarning
@@ -572,18 +573,18 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobParameters(jobIDs, parName)
 
 ##############################################################################
-  types_traceJobParameter = [basestring, [basestring, int, long, list],
-                             basestring, [basestring, None],
-                             [basestring, None]]
+  types_traceJobParameter = [six.string_types, six.string_types + (int, long, list),
+                             six.string_types, six.string_types + (None,),
+                             six.string_types + (None,)]
 
   @staticmethod
   def export_traceJobParameter(site, localID, parameter, date, until):
     return gJobDB.traceJobParameter(site, localID, parameter, date, until)
 
 ##############################################################################
-  types_traceJobParameters = [basestring, [basestring, int, long, list],
+  types_traceJobParameters = [six.string_types, six.string_types + (int, long, list),
                               [list, None], [list, None],
-                              [basestring, None], [basestring, None]]
+                              six.string_types + (None,), six.string_types + (None,)]
 
   @staticmethod
   def export_traceJobParameters(site, localID, parameterList, attributeList, date, until):
@@ -610,7 +611,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobAttributes(jobID)
 
 ##############################################################################
-  types_getJobAttribute = [int, basestring]
+  types_getJobAttribute = [int, six.string_types]
 
   @staticmethod
   def export_getJobAttribute(jobID, attribute):

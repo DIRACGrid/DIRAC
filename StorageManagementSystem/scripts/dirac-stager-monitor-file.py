@@ -45,7 +45,7 @@ if not res['OK']:
   gLogger.error(res['Message'])
 cacheReplicaInfo = res['Value']
 if cacheReplicaInfo:
-  replicaID = cacheReplicaInfo.keys()[0]
+  replicaID = list(cacheReplicaInfo)[0]
   outStr = "\n--------------------"
   outStr += "\n%s: %s" % ('LFN'.ljust(8), cacheReplicaInfo[replicaID]['LFN'].ljust(100))
   outStr += "\n%s: %s" % ('SE'.ljust(8), cacheReplicaInfo[replicaID]['SE'].ljust(100))
@@ -71,7 +71,7 @@ if cacheReplicaInfo:
   if resStageRequests['Records']:
     stageRequests = resStageRequests['Value']
     outStr += "\n------SRM staging request info--------------"
-    for info in stageRequests.itervalues():
+    for info in stageRequests.values():
       outStr += "\n%s: %s" % ('SRM RequestID'.ljust(8), info['RequestID'].ljust(100))
       outStr += "\n%s: %s" % ('SRM StageStatus'.ljust(8), info['StageStatus'].ljust(100))
       outStr += "\n%s: %s" % ('SRM StageRequestSubmitTime'.ljust(8), str(info['StageRequestSubmitTime']).ljust(100))

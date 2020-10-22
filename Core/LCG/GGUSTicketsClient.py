@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import urllib2
+from six.moves.urllib_error import URLError
 
 from suds import WebFault
 from suds.client import Client
@@ -76,7 +76,7 @@ class GGUSTicketsClient(object):
       ticketList = self.gclient.service.TicketGetList(query)
     except WebFault as e:
       return S_ERROR(e)
-    except urllib2.URLError as e:
+    except URLError as e:
       return S_ERROR(e)
 
     return self.globalStatistics(ticketList)

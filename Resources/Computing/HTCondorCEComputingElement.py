@@ -48,7 +48,12 @@ from __future__ import print_function
 import six
 import os
 import tempfile
-import commands
+# TODO: This should be modernised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatibility layer
+  import subprocess as commands
 import errno
 
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -253,7 +258,7 @@ Queue %(nJobs)s
     self.outputURL = self.ceParameters.get('OutputURL', 'gsiftp://localhost')
     self.gridEnv = self.ceParameters.get('GridEnv')
     self.daysToKeepLogs = self.ceParameters.get('DaysToKeepLogs', DEFAULT_DAYSTOKEEPLOGS)
-    self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
+    self.extraSubmitString = str(self.ceParameters.get('ExtraSubmitString', '').encode().decode('unicode_escape'))
     self.useLocalSchedd = self.ceParameters.get('UseLocalSchedd', self.useLocalSchedd)
     if isinstance(self.useLocalSchedd, six.string_types):
       if self.useLocalSchedd == "False":
@@ -400,7 +405,7 @@ Queue %(nJobs)s
 
       treatCondorHistory(condorHistCall, qList)
 
-    for job, jobID in condorIDs.iteritems():
+    for job, jobID in condorIDs.items():
 
       pilotStatus = parseCondorStatus(qList, jobID)
       if pilotStatus == 'HELD':

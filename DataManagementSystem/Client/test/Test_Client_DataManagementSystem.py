@@ -41,7 +41,7 @@ class ConsistencyInspectorSuccess(UtilitiesTestCase):
 
   def test_getReplicasPresence(self):
     res = self.ci.getReplicasPresence(['/this/is/dir1/file1.txt', '/this/is/dir1/file2.foo.bar'])
-    self.assertEqual(res, (['/this/is/dir1/file1.txt', '/this/is/dir1/file2.foo.bar'], []))
+    self.assertEqual(tuple(map(set, res)), ({'/this/is/dir1/file1.txt', '/this/is/dir1/file2.foo.bar'}, set()))
 
   def test__selectByFileType(self):
     lfnDict = {'aa.raw': {'bb.raw': {'FileType': 'RAW', 'RunNumber': 97019},

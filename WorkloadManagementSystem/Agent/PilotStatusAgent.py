@@ -222,7 +222,7 @@ class PilotStatusAgent(AgentModule):
 
     accountingSent = False
     if accountingFlag:
-      retVal = self.pilotDB.getPilotInfo(list(pilotsToAccount.keys()), conn=connection)
+      retVal = self.pilotDB.getPilotInfo(list(pilotsToAccount), conn=connection)
       if not retVal['OK']:
         self.log.error('Fail to retrieve Info for pilots', retVal['Message'])
         return retVal

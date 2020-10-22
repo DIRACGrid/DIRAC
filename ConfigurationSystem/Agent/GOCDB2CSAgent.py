@@ -58,7 +58,7 @@ class GOCDB2CSAgent (AgentModule):
     """
 
     # __functionMap is at the end of the class definition
-    for option, functionCall in GOCDB2CSAgent.__functionMap.iteritems():
+    for option, functionCall in GOCDB2CSAgent.__functionMap.items():
       optionValue = self.am_getOption(option, True)
       if optionValue:
         result = functionCall(self)
@@ -157,12 +157,12 @@ class GOCDB2CSAgent (AgentModule):
 
       split = endpoint['DIRACSITENAME'].split('.')
       path = cfgPath(rootPath, split[0], endpoint['DIRACSITENAME'], extPath, endpoint['HOSTNAME'])
-      for name, defaultValue in options.iteritems():
+      for name, defaultValue in options.items():
         newConfiguration[cfgPath(path, name)] = defaultValue
 
     # get current configuration
     currentConfiguration = {}
-    for option in options.iterkeys():
+    for option in options:
       result = gConfig.getConfigurationTree(rootPath, extPath + '/', '/' + option)
       if not result['OK']:
         log.error("getConfigurationTree() failed with message: %s" % result['Message'])
@@ -242,7 +242,7 @@ class GOCDB2CSAgent (AgentModule):
     log.debug('Begin function ...')
 
     # assure existence and proper value of a section or an option
-    for path, value in setElements.iteritems():
+    for path, value in setElements.items():
 
       if value is None:
         section = path

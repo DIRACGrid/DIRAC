@@ -72,7 +72,7 @@ class ArchiveFiles(OperationHandlerBase):
     self.parameterDict = DEncode.decode(self.operation.Arguments)[0]  # tuple: dict, number of characters
     self.cacheFolder = os.path.join(self.cacheFolder, self.request.RequestName)
     self._checkArchiveLFN()
-    for parameter, value in self.parameterDict.iteritems():
+    for parameter, value in self.parameterDict.items():
       self.log.info('Parameters: %s = %s' % (parameter, value))
     self.log.info('Cache folder: %r' % self.cacheFolder)
     self.waitingFiles = self.getWaitingFilesList()
@@ -103,14 +103,14 @@ class ArchiveFiles(OperationHandlerBase):
     notAt = []
     failed = []
     sourceSE = self.parameterDict['SourceSE']
-    for lfn, replInfo in resReplica['Value']['Successful'].iteritems():
+    for lfn, replInfo in resReplica['Value']['Successful'].items():
       if sourceSE in replInfo:
         atSource.append(lfn)
       else:
         self.log.warn('LFN %r not found at source, only at: %s' % (lfn, ','.join(replInfo.keys())))
         notAt.append(lfn)
 
-    for lfn, errorMessage in resReplica['Value']['Failed'].iteritems():
+    for lfn, errorMessage in resReplica['Value']['Failed'].items():
       self.log.warn('Failed to get replica info', '%s: %s' % (lfn, errorMessage))
       if 'No such file or directory' in errorMessage:
         continue

@@ -19,23 +19,24 @@ from __future__ import absolute_import
 from __future__ import division
 __RCSID__ = "$Id$"
 
+import glob
+import io
+import os
+import re
+import shlex
+import shutil
+import sys
+import tarfile
+import tempfile
+import time
+import urllib
+
 from past.builtins import long
 import six
-import re
-import os
-import sys
-import time
-import shutil
-import tempfile
-import glob
-import tarfile
-import urllib
-import shlex
-import StringIO
+from six import StringIO
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -64,6 +65,13 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStor
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 COMPONENT_NAME = 'DiracAPI'
+
+try:
+    # Python 2: "file" is built-in
+    file_types = file, io.IOBase
+except NameError:
+    # Python 3: "file" fully replaced with IOBase
+    file_types = (io.IOBase,)
 
 
 def parseArguments(args):
@@ -149,7 +157,7 @@ class Dirac(API):
     if not self.jobRepo:
       gLogger.warn("No repository is initialised")
       return S_OK()
-    jobIDs = self.jobRepo.readRepository()['Value'].keys()
+    jobIDs = list(self.jobRepo.readRepository()['Value'])
     if printOutput:
       print(self.pPrint.pformat(jobIDs))
     return S_OK(jobIDs)
@@ -168,7 +176,7 @@ class Dirac(API):
       gLogger.warn("No repository is initialised")
       return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
-    jobIDs = jobs.keys()
+    jobIDs = list(jobs)
     res = self.getJobStatus(jobIDs)
     if not res['OK']:
       return self._errorReport(res['Message'], 'Failed to get status of jobs from WMS')
@@ -353,7 +361,7 @@ class Dirac(API):
         self.log.error(msg)
         return S_ERROR(msg)
 
-      jobDescriptionObject = StringIO.StringIO(job._toXML())  # pylint: disable=protected-access
+      jobDescriptionObject = StringIO(job._toXML())  # pylint: disable=protected-access
       jdlAsString = job._toJDL(jobDescriptionObject=jobDescriptionObject)  # pylint: disable=protected-access
 
     if mode.lower() == 'local':
@@ -993,7 +1001,7 @@ class Dirac(API):
           print(message, file=sys.stderr)
         else:
           print(message)
-      elif isinstance(fd, file):
+      elif isinstance(fd, file_types):
         print(message, file=fd)
     else:
       print(message)
@@ -1212,7 +1220,7 @@ class Dirac(API):
     if not replicaDict['OK']:
       return replicaDict
     if not replicaDict['Value']['Successful']:
-      return self._errorReport(list(replicaDict['Value']['Failed'].iteritems())[0],
+      return self._errorReport(list(replicaDict['Value']['Failed'].items())[0],
                                'Failed to get replica information')
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].items():  # can be an iterator
@@ -1269,7 +1277,7 @@ class Dirac(API):
     repsResult = fileResult['Value']
     if repsResult['Failed']:
       # Some entries can be directories
-      dirs = repsResult['Failed'].keys()
+      dirs = list(repsResult['Failed'])
       dirResult = fc.getDirectoryMetadata(dirs)
       if not dirResult['OK']:
         self.log.warn('Failed to retrieve directory metadata from the catalogue')
@@ -2075,7 +2083,7 @@ class Dirac(API):
     """
     options = {'Status': status, 'MinorStatus': minorStatus, 'ApplicationStatus': applicationStatus, 'Owner': owner,
                'Site': site, 'JobGroup': jobGroup, 'OwnerGroup': ownerGroup}
-    conditions = dict((key, str(value)) for key, value in options.iteritems() if value)
+    conditions = dict((key, str(value)) for key, value in options.items() if value)
 
     if date:
       try:

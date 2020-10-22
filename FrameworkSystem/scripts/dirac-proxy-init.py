@@ -101,7 +101,9 @@ class ProxyInit(object):
 
     gLogger.notice("Added VOMS attribute %s" % vomsAttr)
     chain = resultVomsAttributes['Value']
-    chain.dumpAllToFile(self.__proxyGenerated)
+    result = chain.dumpAllToFile(self.__proxyGenerated)
+    if not result["OK"]:
+      return result
     return S_OK()
 
   def createProxy(self):

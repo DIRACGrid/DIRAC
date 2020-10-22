@@ -246,7 +246,7 @@ class MonitoringTestChain(MonitoringTestCase):
             'grouping': ['Site']}, 'Site', {})
     result = self.client.getReport(*params)
     self.assertTrue(result['OK'])
-    result['Value']['data'] = {site: strToIntDict(value) for site, value in result['Value']['data'].iteritems()}
+    result['Value']['data'] = {site: strToIntDict(value) for site, value in result['Value']['data'].items()}
     self.assertDictEqual(result['Value'],
                          {'data': {u'Multiple': {1458198000: 227.0},
                                    u'LCG.RRCKI.ru': {1458225000: 3.0},

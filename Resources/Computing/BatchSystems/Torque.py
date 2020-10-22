@@ -12,7 +12,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-import commands
+# TODO: This should be modernised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatibility layer
+  import subprocess as commands
 import os
 
 __RCSID__ = "$Id$"
@@ -43,7 +48,7 @@ class Torque(object):
     status = -1
 
     preamble = kwargs.get("Preamble")
-    for _i in xrange(int(nJobs)):
+    for _i in range(int(nJobs)):
       cmd = '%s; ' % preamble if preamble else ''
       cmd += "qsub -o %(OutputDir)s " \
              "-e %(ErrorDir)s " \

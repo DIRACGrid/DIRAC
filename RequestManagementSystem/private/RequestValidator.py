@@ -62,6 +62,7 @@ __RCSID__ = "$Id$"
 # @brief Definition of RequestValidator class.
 # # import
 import inspect
+import six
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION
@@ -70,6 +71,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 
 
 ########################################################################
+@six.add_metaclass(DIRACSingleton)
 class RequestValidator(object):
   """
   .. class:: RequestValidator
@@ -77,9 +79,6 @@ class RequestValidator(object):
   This class validates newly created requests (before saving them in RequestDB) for
   required attributes.
   """
-  # # one to rule them all
-  __metaclass__ = DIRACSingleton
-
   # # dict with required attrs
   reqAttrs = {
       "ForwardDISET": {

@@ -650,8 +650,7 @@ and this is thread %s
   def __bool__(self):
     return True
 
-  # python 2 and 3 compatibility
-  # https://portingguide.readthedocs.io/en/latest/core-obj-misc.html#customizing-truthiness-bool
+  # For Python 2 compatibility
   __nonzero__ = __bool__
 
   def __str__(self):

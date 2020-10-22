@@ -23,8 +23,8 @@ from DIRAC.Core.Utilities.MixedEncode import encode as mixEncode, decode as mixD
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import builds, integers, lists, recursive, floats, text,\
     booleans, none, dictionaries, tuples, datetimes
-
-from pytest import mark, approx, raises, fixture
+import six
+from pytest import mark, approx, raises, fixture, skip
 parametrize = mark.parametrize
 
 
@@ -99,7 +99,7 @@ def test_everyBaseTypeIsTested():
   """
   current_module = sys.modules[__name__]
 
-  for encodeFunc in g_dEncodeFunctions.itervalues():
+  for encodeFunc in g_dEncodeFunctions.values():
     testFuncName = ('test_BaseType_%s' % encodeFunc.__name__).replace('encode', '')
     getattr(current_module, testFuncName)
 
@@ -314,3 +314,23 @@ def test_nestedSerializable(data):
   subObj = Serializable(instAttr=data)
   objData = Serializable(instAttr=subObj)
   agnosticTestFunction(jsonTuple, objData)
+
+
+def test_types():
+  """ Ensure that the DEncode types object matches the Python 2 types module
+  """
+  if not six.PY2:
+    skip("This test only makes sense on Python 2")
+  import types as pythonTypes
+  from DIRAC.Core.Utilities.DEncode import types as DIRACTypes
+
+  assert DIRACTypes.IntType is pythonTypes.IntType
+  assert DIRACTypes.LongType is pythonTypes.LongType
+  assert DIRACTypes.FloatType is pythonTypes.FloatType
+  assert DIRACTypes.BooleanType is pythonTypes.BooleanType
+  assert DIRACTypes.StringType is pythonTypes.StringType
+  assert DIRACTypes.UnicodeType is pythonTypes.UnicodeType
+  assert DIRACTypes.NoneType is pythonTypes.NoneType
+  assert DIRACTypes.ListType is pythonTypes.ListType
+  assert DIRACTypes.TupleType is pythonTypes.TupleType
+  assert DIRACTypes.DictType is pythonTypes.DictType

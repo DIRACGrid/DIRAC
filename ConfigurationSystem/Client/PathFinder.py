@@ -6,7 +6,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import urlparse
+from six.moves.urllib import parse as urlparse
 
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData

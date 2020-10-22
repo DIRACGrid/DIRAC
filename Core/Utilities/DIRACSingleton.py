@@ -36,9 +36,10 @@ class DIRACSingleton(type):
   If you want make your class a singleton, just set its  __metaclass__ to
   DIRACSingleton, i.e.::
 
+    import six
     from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-    class CheesShop( object ):
-      __metaclass__ = DIRACSingleton
+    @six.add_metaclass(DIRACSingleton)
+    class CheesShop(object):
       ...
   """
   def __init__(cls, name, bases, dic):

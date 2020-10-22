@@ -8,7 +8,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import socket
-import urlparse
+from six.moves.urllib import parse as urlparse
 import os
 import struct
 import array

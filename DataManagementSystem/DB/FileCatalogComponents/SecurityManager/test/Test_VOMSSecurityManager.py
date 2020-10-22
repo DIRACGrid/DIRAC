@@ -6,7 +6,6 @@ from __future__ import print_function
 
 # pylint: disable=protected-access,missing-docstring,invalid-name,too-many-lines
 
-from types import ListType
 import unittest
 import stat
 
@@ -146,7 +145,7 @@ class mock_FileManager(object):
     return S_OK({'Successful': dict((lfn, lfn in fileTree) for lfn in lfns), 'Failed': {}})
 
   def getFileMetadata(self, lfns):
-    if not isinstance(lfns, ListType):
+    if not isinstance(lfns, list):
       lfns = [lfns]
 
     retParam = ['Size', 'Checksum', 'ChecksumType', 'UID',
@@ -170,7 +169,7 @@ class mock_FileManager(object):
     return S_OK({'Successful': successful, 'Failed': failed})
 
   def getPathPermissions(self, lfns, credDict):
-    if not isinstance(lfns, ListType):
+    if not isinstance(lfns, list):
       lfns = [lfns]
 
     successful = {}
@@ -282,7 +281,7 @@ class BaseCaseMixin(object):
         against all the existing and non existing directories
     """
 
-    self.existingRet = self.securityManager.hasAccess(methodName, directoryTree.keys(), self.credDict)
+    self.existingRet = self.securityManager.hasAccess(methodName, list(directoryTree), self.credDict)
     self.nonExistingRet = self.securityManager.hasAccess(methodName, nonExistingDirectories, self.credDict)
 
   def callForFiles(self, methodName):
@@ -290,7 +289,7 @@ class BaseCaseMixin(object):
         against all the existing and non existing files
     """
 
-    self.existingRet = self.securityManager.hasAccess(methodName, fileTree.keys(), self.credDict)
+    self.existingRet = self.securityManager.hasAccess(methodName, list(fileTree), self.credDict)
     self.nonExistingRet = self.securityManager.hasAccess(methodName, nonExistingFiles, self.credDict)
 
   def compareResult(self):

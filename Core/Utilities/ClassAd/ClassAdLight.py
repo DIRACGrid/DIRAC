@@ -254,7 +254,7 @@ class ClassAd(object):
     """
 
     result = ''
-    for name, value in self.contents.items():
+    for name, value in sorted(self.contents.items()):
       if value[0:1] == "{":
         result = result + 4 * ' ' + name + " = \n"
         result = result + 8 * ' ' + '{\n'

@@ -1232,7 +1232,7 @@ class ProxyDB(DB):
     numUses = max(1, min(numUses, maxUses))
     m = hashlib.md5()
     rndData = "%s.%s.%s.%s" % (time.time(), random.random(), numUses, lifeTime)
-    m.update(rndData)
+    m.update(rndData.encode())
     token = m.hexdigest()
     fieldsSQL = ", ".join(("Token", "RequesterDN", "RequesterGroup", "ExpirationTime", "UsesLeft"))
     valuesSQL = ", ".join((self._escapeString(token)['Value'],

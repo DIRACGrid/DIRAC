@@ -187,7 +187,7 @@ class X509Certificate(object):
       :returns: S_OK / S_ERROR
     """
     try:
-      self.__certObj = M2Crypto.X509.load_cert_string(str(pemData), M2Crypto.X509.FORMAT_PEM)
+      self.__certObj = M2Crypto.X509.load_cert_string(pemData, M2Crypto.X509.FORMAT_PEM)
     except BaseException as e:
       return S_ERROR(DErrno.ECERTREAD, "Can't load pem data: %s" % e)
 
@@ -441,7 +441,7 @@ class X509Certificate(object):
       :returns: S_OK( list of tuple (extensionName, extensionValue))
     """
     extList = []
-    for i in xrange(self.__certObj.get_ext_count()):
+    for i in range(self.__certObj.get_ext_count()):
       sn = self.__certObj.get_ext_at(i).get_name()
       try:
         value = self.__certObj.get_ext_at(i).get_value()

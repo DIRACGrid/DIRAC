@@ -142,6 +142,7 @@ import signal
 import time
 import stat
 import shutil
+import subprocess
 import ssl
 import hashlib
 import tarfile
@@ -155,10 +156,6 @@ try:
 except ImportError:
   # Fall back to Python 2's urllib2
   from urllib2 import urlopen, HTTPError, URLError
-try:
-  long
-except NameError:
-  long = int
 try:
   str_type = basestring
 except NameError:
@@ -222,7 +219,7 @@ cliParams = Params()
 
 class ReleaseConfig(object):
 
-  class CFG:
+  class CFG(object):
 
     def __init__(self, cfgData=""):
       """ c'tor
@@ -1379,7 +1376,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0, retries=3):
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
-      expectedBytes = long(remoteFD.info()['Content-Length'])
+      expectedBytes = int(remoteFD.info()['Content-Length'])
     except Exception:
       logWARN('Content-Length parameter not returned, skipping expectedBytes check')
 
@@ -2367,9 +2364,9 @@ def __getTerminfoLocations(defaultLocation=None):
 
 def installDiracOS(releaseConfig):
   """
-  Install the DIRAC os.
+  Install DIRAC OS.
 
-  :param str releaseConfig: the version of the DIRAC OS
+  :param ReleaseConfig releaseConfig: The ReleaseConfig object for configuring the installation
   """
   diracos, diracOSVersion = releaseConfig.getDiracOSVersion(cliParams.diracOSVersion)
   if not diracOSVersion:
@@ -2387,6 +2384,20 @@ def installDiracOS(releaseConfig):
   fixBuildPaths()
   logNOTICE("Running externals post install...")
   checkPlatformAliasLink()
+  return True
+
+
+def installDiracOSPython3(releaseConfig):
+  """
+  Install DIRAC OS for Python 3.
+
+  :param ReleaseConfig releaseConfig: The ReleaseConfig object for configuring the installation
+  """
+  url = "https://github.com/chrisburr/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
+  installerFn = os.path.join(cliParams.basePath, "DIRACOS-Linux-x86_64.sh")
+  if not urlretrieveTimeout(url, installerFn, cliParams.timeout):
+    raise Exception("Failed to download DIRACOS from " + url)
+  subprocess.check_call(["bash", installerFn, "-b", "-p", os.path.join(cliParams.basePath, "diracos")])
   return True
 
 
@@ -2679,8 +2690,12 @@ if __name__ == "__main__":
      or list(releaseConfig.prjRelCFG['DIRAC'])[0][1] not in '0123456789' \
      or int(list(releaseConfig.prjRelCFG['DIRAC'])[0][1]) > 6:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
-    if not installDiracOS(releaseConfig):
-      sys.exit(1)
+    if cliParams.pythonVersion.startswith("3"):
+      if not installDiracOSPython3(releaseConfig):
+        sys.exit(1)
+    else:
+      if not installDiracOS(releaseConfig):
+        sys.exit(1)
     if not createBashrcForDiracOS():
       sys.exit(1)
   else:

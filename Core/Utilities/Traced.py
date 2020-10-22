@@ -22,6 +22,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id: $"
 
+import six
 ##
 # @file Traced.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -100,11 +101,11 @@ class Traced(type):
     return type.__new__(cls, cls_name, bases, classdict)
 
 
+@six.add_metaclass(Traced)
 class TracedDict(dict):
   """ traced dict """
-  __metaclass__ = Traced
 
 
+@six.add_metaclass(Traced)
 class TracedList(list):
   """ traced list """
-  __metaclass__ = Traced

@@ -43,7 +43,7 @@ class FileManagerPs(FileManagerBase):
     connection = self._getConnection(connection)
     dirDict = self._getFileDirectories(lfns)
 
-    result = self.db.dtree.findDirs(dirDict.keys())
+    result = self.db.dtree.findDirs(list(dirDict))
     if not result['OK']:
       return result
 
@@ -56,7 +56,7 @@ class FileManagerPs(FileManagerBase):
       res = self._getDirectoryFiles(directoryIDs[dirPath], fileNames, metadata,
                                     allStatus=allStatus, connection=connection)
 
-      for fileName, fileDict in res.get('Value', {}).iteritems():
+      for fileName, fileDict in res.get('Value', {}).items():
         fname = os.path.join(dirPath, fileName)
         successful[fname] = fileDict
 
@@ -95,7 +95,7 @@ class FileManagerPs(FileManagerBase):
       filesInDirDict = self._getFileDirectories(lfns)
 
       # We get the directory ids
-      result = self.db.dtree.findDirs(filesInDirDict.keys())
+      result = self.db.dtree.findDirs(list(filesInDirDict))
       if not result['OK']:
         return result
       directoryPathToIds = result['Value']
@@ -234,7 +234,7 @@ class FileManagerPs(FileManagerBase):
   def __chunks(self, l, n):
     """ Yield successive n-sized chunks from l.
     """
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
       yield l[i:i + n]
 
   def _insertFiles(self, lfns, uid, gid, connection=False):
@@ -617,19 +617,19 @@ class FileManagerPs(FileManagerBase):
     failed = {}
     successful = {}
     # First we get the fileIds from our lfns
-    res = self._findFiles(lfns.keys(), ['FileID'], connection=connection)
+    res = self._findFiles(list(lfns), ['FileID'], connection=connection)
     if not res['OK']:
       return res
 
     # If the file does not exist we consider the deletion successful
-    for lfn, error in res['Value']['Failed'].iteritems():
+    for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         successful[lfn] = True
       else:
         failed[lfn] = error
 
     lfnFileIDDict = res['Value']['Successful']
-    for lfn, fileDict in lfnFileIDDict.iteritems():
+    for lfn, fileDict in lfnFileIDDict.items():
       fileID = fileDict['FileID']
 
       # Then we get our StorageElement Id (cached in seManager)

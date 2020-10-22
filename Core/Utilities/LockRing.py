@@ -5,26 +5,27 @@ from __future__ import division
 import random
 import time
 import threading
-import thread
+import six
+from six.moves import _thread as thread
 from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
+@six.add_metaclass(DIRACSingleton)
 class LockRing(object):
-  __metaclass__ = DIRACSingleton
-
   def __init__(self):
     random.seed()
     self.__locks = {}
     self.__events = {}
 
   def __genName(self, container):
-    name = md5(str(time.time() + random.random())).hexdigest()
+    # TODO: Shouldn't this be a UUID?
+    name = md5(str(time.time() + random.random()).encode()).hexdigest()
     retries = 10
     while name in container and retries:
-      name = md5(str(time.time() + random.random())).hexdigest()
+      name = md5(str(time.time() + random.random()).encode()).hexdigest()
       retries -= 1
     return name
 

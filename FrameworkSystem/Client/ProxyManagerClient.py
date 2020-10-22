@@ -25,9 +25,8 @@ gProxiesSync = ThreadSafe.Synchronizer()
 gVOMSProxiesSync = ThreadSafe.Synchronizer()
 
 
+@six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class ProxyManagerClient(object):
-  __metaclass__ = DIRACSingleton.DIRACSingleton
-
   def __init__(self):
     self.__usersCache = DictCache()
     self.__proxiesCache = DictCache()

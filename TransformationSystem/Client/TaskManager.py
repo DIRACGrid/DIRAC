@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 
 import six
 import time
-import StringIO
+from six import StringIO
 import json
 import copy
 import os
@@ -79,7 +79,7 @@ class TaskBase(TransformationAgentsUtilities):
     """
     updated = 0
     startTime = time.time()
-    for taskID, task in taskDict.iteritems():
+    for taskID, task in taskDict.items():
       transID = task['TransformationID']
       if task['Success']:
         res = self.transClient.setTaskStatusAndWmsID(transID, taskID, 'Submitted',
@@ -192,7 +192,7 @@ class RequestTasks(TaskBase):
     :returns: None
     """
     failedTasks = []
-    for taskID, task in taskDict.items():
+    for taskID, task in list(taskDict.items()):
       transID = task['TransformationID']
       if not task.get('InputData'):
         self._logError("Error creating request for task", "%s, No input data" % taskID, transID=transID)
@@ -210,7 +210,7 @@ class RequestTasks(TaskBase):
       for operationTuple in transJson:
         op = Operation()
         op.Type = operationTuple[0]
-        for parameter, value in operationTuple[1].iteritems():
+        for parameter, value in operationTuple[1].items():
           setattr(op, parameter, value)
 
         for lfn in files:
@@ -246,7 +246,7 @@ class RequestTasks(TaskBase):
         pass
     failedTasks = []
     # Do not remove sorted, we might pop elements in the loop
-    for taskID, task in taskDict.iteritems():
+    for taskID, task in taskDict.items():
 
       transID = task['TransformationID']
 
@@ -308,7 +308,7 @@ class RequestTasks(TaskBase):
     failed = 0
     startTime = time.time()
     method = 'submitTransformationTasks'
-    for task in taskDict.itervalues():
+    for task in taskDict.values():
       # transID is the same for all tasks, so pick it up every time here
       transID = task['TransformationID']
       if not task['TaskObject']:
@@ -406,14 +406,14 @@ class RequestTasks(TaskBase):
         requestFiles[externalID] = taskFiles[taskID]
 
     updateDict = {}
-    for requestID, lfnList in requestFiles.iteritems():
+    for requestID, lfnList in requestFiles.items():
       statusDict = self.requestClient.getRequestFileStatus(requestID, lfnList)
       if not statusDict['OK']:
         log = self._logVerbose if 'not exist' in statusDict['Message'] else self._logWarn
         log("Failed to get files status for request", statusDict['Message'],
             transID=transID, method='getSubmittedFileStatus')
       else:
-        for lfn, newStatus in statusDict['Value'].iteritems():
+        for lfn, newStatus in statusDict['Value'].items():
           if newStatus == 'Done':
             updateDict[lfn] = 'Processed'
           elif newStatus == 'Failed':
@@ -524,7 +524,7 @@ class WorkflowTasks(TaskBase):
     :return: S_OK/S_ERROR with updated taskDict
     """
     if taskDict:
-      transID = taskDict.values()[0]['TransformationID']
+      transID = list(taskDict.values())[0]['TransformationID']
     else:
       return S_OK({})
 
@@ -607,7 +607,7 @@ class WorkflowTasks(TaskBase):
         self._logError("Invalid mixture of jobs with and without input data")
         return S_ERROR(ETSDATA, "Invalid mixture of jobs with and without input data")
 
-      for paramName, paramValue in paramsDict.iteritems():
+      for paramName, paramValue in paramsDict.items():
         if paramName not in ('InputData', 'Site', 'TargetSE'):
           if paramValue:
             self._logVerbose('Setting %s to %s' % (paramName, paramValue),
@@ -623,7 +623,7 @@ class WorkflowTasks(TaskBase):
           self._logError("Failed to generate output data", res['Message'],
                          transID=transID, method=method)
           continue
-        for name, output in res['Value'].iteritems():
+        for name, output in res['Value'].items():
           seqDict[name] = output
           outputParameterList.append(name)
           if oJob.workflow.findParameter(name):
@@ -635,10 +635,10 @@ class WorkflowTasks(TaskBase):
                                "%%(%s)s" % name,
                                name)
 
-      for pName, seq in seqDict.iteritems():
+      for pName, seq in seqDict.items():
         paramSeqDict.setdefault(pName, []).append(seq)
 
-    for paramName, paramSeq in paramSeqDict.iteritems():
+    for paramName, paramSeq in paramSeqDict.items():
       if paramName in ['JOB_ID', 'PRODUCTION_ID', 'InputData'] + outputParameterList:
         res = oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
       else:
@@ -665,7 +665,7 @@ class WorkflowTasks(TaskBase):
     :return:  S_OK/S_ERROR with updated taskDict
     """
     if taskDict:
-      transID = taskDict.values()[0]['TransformationID']
+      transID = list(taskDict.values())[0]['TransformationID']
     else:
       return S_OK({})
 
@@ -685,7 +685,7 @@ class WorkflowTasks(TaskBase):
     templateOK = False
     getOutputDataTiming = 0.
 
-    for taskID, paramsDict in taskDict.iteritems():
+    for taskID, paramsDict in taskDict.items():
       # Create a job for each task and add it to the taskDict
       if not templateOK:
         templateOK = True
@@ -760,7 +760,7 @@ class WorkflowTasks(TaskBase):
           self._logError("Failed to generate output data", res['Message'],
                          transID=transID, method=method)
           continue
-        for name, output in res['Value'].iteritems():
+        for name, output in res['Value'].items():
           oJob._addJDLParameter(name, ';'.join(output))
       paramsDict['TaskObject'] = oJob
     if taskDict:
@@ -823,7 +823,7 @@ class WorkflowTasks(TaskBase):
     """ add as JDL parameters all the other parameters that are not for inputs or destination
     """
     transID = paramsDict['TransformationID']
-    for paramName, paramValue in paramsDict.iteritems():
+    for paramName, paramValue in paramsDict.items():
       if paramName not in ('InputData', 'Site', 'TargetSE'):
         if paramValue:
           self._logDebug('Setting %s to %s' % (paramName, paramValue),
@@ -919,7 +919,7 @@ class WorkflowTasks(TaskBase):
 
     oJob = taskDict.pop('BulkJobObject')
     # we can only do this, once the job has been popped, or we _might_ crash
-    transID = taskDict.values()[0]['TransformationID']
+    transID = list(taskDict.values())[0]['TransformationID']
     if oJob is None:
       self._logError('no bulk Job object found', transID=transID, method=method)
       return S_ERROR(ETSUKN, 'No bulk job object provided for submission')
@@ -952,7 +952,7 @@ class WorkflowTasks(TaskBase):
     submitted = 0
     failed = 0
     startTime = time.time()
-    for task in taskDict.itervalues():
+    for task in taskDict.values():
       transID = task['TransformationID']
       if not task['TaskObject']:
         task['Success'] = False
@@ -991,7 +991,7 @@ class WorkflowTasks(TaskBase):
       self._logError("No valid job description found")
       return S_ERROR("No valid job description found")
 
-    workflowFileObject = StringIO.StringIO(oJob._toXML())
+    workflowFileObject = StringIO(oJob._toXML())
     jdl = oJob._toJDL(jobDescriptionObject=workflowFileObject)
     return self.submissionClient.submitJob(jdl, workflowFileObject)
 
@@ -1077,7 +1077,7 @@ class WorkflowTasks(TaskBase):
 
     updateDict = {}
     for jobName in noTasks:
-      for lfn, oldStatus in taskFiles[jobName].iteritems():
+      for lfn, oldStatus in taskFiles[jobName].items():
         if oldStatus != 'Unused':
           updateDict[lfn] = 'Unused'
 
@@ -1087,13 +1087,13 @@ class WorkflowTasks(TaskBase):
                     transID=transID, method=method)
       return res
     statusDict = res['Value']
-    for jobName, wmsID in taskNameIDs.iteritems():
+    for jobName, wmsID in taskNameIDs.items():
       jobStatus = statusDict.get(wmsID, {}).get('Status')
       newFileStatus = {'Done': 'Processed',
                        'Completed': 'Processed',
                        'Failed': 'Unused'}.get(jobStatus)
       if newFileStatus:
-        for lfn, oldStatus in taskFiles[jobName].iteritems():
+        for lfn, oldStatus in taskFiles[jobName].items():
           if newFileStatus != oldStatus:
             updateDict[lfn] = newFileStatus
     return S_OK(updateDict)

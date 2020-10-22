@@ -6,7 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import StringIO
+from six import StringIO
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -97,9 +97,9 @@ class WMSClient(object):
     stringIOFiles = []
     stringIOFilesSize = 0
     if jobDescriptionObject is not None:
-      if isinstance(jobDescriptionObject, StringIO.StringIO):
+      if isinstance(jobDescriptionObject, StringIO):
         stringIOFiles = [jobDescriptionObject]
-        stringIOFilesSize = len(jobDescriptionObject.buf)
+        stringIOFilesSize = len(jobDescriptionObject.getvalue())
         gLogger.debug("Size of the stringIOFiles: " + str(stringIOFilesSize))
       else:
         return S_ERROR(EWMSJDL, "jobDescriptionObject is not a StringIO object")
@@ -188,7 +188,7 @@ class WMSClient(object):
         if len(jobIDList) == nJobs:
           # Confirm the submitted jobs
           confirmed = False
-          for _attempt in xrange(3):
+          for _attempt in range(3):
             result = self.jobManager.confirmBulkSubmission(jobIDList)
             if result['OK']:
               confirmed = True

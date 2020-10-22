@@ -11,7 +11,7 @@ from __future__ import division
 __RCSID__ = '$Id$'
 
 import six
-import StringIO
+from six import StringIO
 
 
 def int_with_commas(inputValue):
@@ -129,7 +129,7 @@ def printTable(fields, records, sortField='', numbering=True,
       return out
 
   if sortField:
-    recordList.sort(None, lambda x: x[fieldList.index(sortField)])
+    recordList.sort(key=lambda x: x[fieldList.index(sortField)])
 
   # Compute the maximum width for each field
   fieldWidths = []
@@ -159,7 +159,7 @@ def printTable(fields, records, sortField='', numbering=True,
     totalLength += (numberWidth + separatorWidth)
 
   # Accumulate the table output in the stringBuffer now
-  stringBuffer = StringIO.StringIO()
+  stringBuffer = StringIO()
   topLength = (numberWidth + separatorWidth) if numbering else 0
   stringBuffer.write(' ' * (topLength))
 

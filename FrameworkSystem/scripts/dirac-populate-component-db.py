@@ -150,7 +150,7 @@ for host in finalSet:
     if componentType and componentType != compType:
       continue
     for system in rDict[compType]:
-      components = sorted(rDict[compType][system].keys())
+      components = sorted(rDict[compType][system])
       for component in components:
         record = {'Installation': {}, 'Component': {}, 'Host': {}}
         if rDict[compType][system][component]['Installed'] and \

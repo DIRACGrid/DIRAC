@@ -39,7 +39,7 @@ def _getMetaNameDict(metaDict, credDict):
   """
 
   fMetaDict = {}
-  for meta, value in metaDict.iteritems():
+  for meta, value in metaDict.items():
     fMetaDict[_getMetaName(meta, credDict)] = value
   return fMetaDict
 
@@ -65,7 +65,7 @@ def _stripSuffix(metaDict, credDict):
   """
 
   suffix = _getMetaNameSuffix(credDict)
-  smetaDict = {key.rsplit(suffix, 1)[0]: value for key, value in metaDict.iteritems()
+  smetaDict = {key.rsplit(suffix, 1)[0]: value for key, value in metaDict.items()
                if key.endswith(suffix)}
   return smetaDict
 

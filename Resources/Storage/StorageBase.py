@@ -371,7 +371,7 @@ class StorageBase(object):
 
     urlDict = dict(self.protocolParameters)
     urlDict['Options'] = '&'.join("%s=%s" % (optionName, urlDict[paramName])
-                                  for paramName, optionName in self.DYNAMIC_OPTIONS.iteritems()
+                                  for paramName, optionName in self.DYNAMIC_OPTIONS.items()
                                   if urlDict.get(paramName))
     if not withWSUrl:
       urlDict['WSUrl'] = ''

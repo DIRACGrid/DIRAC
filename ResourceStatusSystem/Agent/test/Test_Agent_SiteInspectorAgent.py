@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import Queue
+from six.moves import queue as Queue
 
 # imports
 import pytest
@@ -40,7 +40,10 @@ def test__execute(mocker, sitesToBeCheckedValue):
   """
 
   mocker.patch("DIRAC.ResourceStatusSystem.Agent.SiteInspectorAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.ResourceStatusSystem.Agent.SiteInspectorAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch(
+      "DIRAC.ResourceStatusSystem.Agent.SiteInspectorAgent.AgentModule._AgentModule__moduleProperties",
+      side_effect=lambda x, y=None: y, create=True
+  )
 
   siteInspectorAgent = SiteInspectorAgent()
   siteInspectorAgent.log = gLogger

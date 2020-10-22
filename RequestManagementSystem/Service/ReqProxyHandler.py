@@ -152,7 +152,7 @@ class ReqProxyHandler(RequestHandler):
     :param str requestJSON:  request serialized to JSON format
     """
     try:
-      requestFile = os.path.join(self.cacheDir(), md5(requestJSON).hexdigest())
+      requestFile = os.path.join(self.cacheDir(), md5(requestJSON.encode()).hexdigest())
       with open(requestFile, "w+") as request:
         request.write(requestJSON)
       return S_OK(requestFile)

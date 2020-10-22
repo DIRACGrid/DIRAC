@@ -186,7 +186,7 @@ class StompMQConnector(MQConnector):
       connections = self.connections
 
     connected = False
-    for ip, connection in connections.iteritems():
+    for ip, connection in connections.items():
       try:
         listener = connection.get_listener('ReconnectListener')
         if listener is None:
@@ -210,7 +210,7 @@ class StompMQConnector(MQConnector):
     """
     log = LOG.getSubLogger('disconnect')
     fail = False
-    for ip, connection in self.connections.iteritems():
+    for ip, connection in self.connections.items():
       try:
         if connection.get_listener('ReconnectListener'):
           connection.remove_listener('ReconnectListener')
@@ -244,7 +244,7 @@ class StompMQConnector(MQConnector):
       log.error("No callback specified!")
 
     fail = False
-    for connection in self.connections.itervalues():
+    for connection in self.connections.values():
       try:
         listener = StompListener(callback, acknowledgement, connection, mId)
         connection.set_listener('StompListener', listener)
@@ -265,7 +265,7 @@ class StompMQConnector(MQConnector):
     dest = parameters.get('destination', '')
     mId = parameters.get('messengerId', '')
     fail = False
-    for ip, connection in self.connections.iteritems():
+    for ip, connection in self.connections.items():
       try:
         connection.unsubscribe(destination=dest, id=mId)
       except Exception as e:

@@ -9,14 +9,13 @@ import os
 import types
 import threading
 import time
-
+import six
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
+@six.add_metaclass(DIRACSingleton)
 class Devloader(object):
-  __metaclass__ = DIRACSingleton
-
   def __init__(self):
     self.__log = gLogger.getSubLogger("Devloader")
     self.__reloaded = False

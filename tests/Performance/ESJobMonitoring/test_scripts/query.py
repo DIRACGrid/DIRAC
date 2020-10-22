@@ -23,7 +23,7 @@ class Transaction(object):
 
     start_time = time.time()
 
-    for i in xrange(0, random.randint(1000, 3000)):
+    for i in range(0, random.randint(1000, 3000)):
 
       jobID = random.randint(1, 1000)
       self.elasticJobParametersDB.getJobParameters(jobID)

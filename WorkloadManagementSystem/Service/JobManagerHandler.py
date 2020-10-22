@@ -128,7 +128,7 @@ class JobManagerHandler(RequestHandler):
     """
     return S_OK(self.maxParametricJobs)
 
-  types_submitJob = [basestring]
+  types_submitJob = [six.string_types]
 
   def export_submitJob(self, jobDesc):
     """ Submit a job to DIRAC WMS.

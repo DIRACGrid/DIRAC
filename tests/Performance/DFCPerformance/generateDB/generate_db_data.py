@@ -89,7 +89,7 @@ def loop ( index, cur, parentId ):
 
   if index >= len ( config.hierarchySize ):
     return
-  for i in xrange( config.hierarchySize[index] ):
+  for i in range(config.hierarchySize[index]):
     uid = random.randint( 1, len( config.users ) )
     gid = random.randint( 1, len( config.groups ) )
     next = cur + [i]
@@ -109,7 +109,7 @@ def loop ( index, cur, parentId ):
 
     # generate files
     if nbFiles:
-      for f in xrange( nbFiles ):
+      for f in range(nbFiles):
         filename = "%s.txt" % ( f )
         size = random.randint( 1, 1000 )
         statusid = 2

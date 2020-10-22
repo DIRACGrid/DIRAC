@@ -219,7 +219,7 @@ class glexecComputingElement(ComputingElement):
     self.log.info('glexec stderr:\n%s' % stdError)
 
     error = None
-    for code, msg in codes.iteritems():
+    for code, msg in codes.items():
       self.log.verbose('Exit code %s => %s' % (code, msg))
       if status == code:
         error = msg

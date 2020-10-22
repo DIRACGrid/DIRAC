@@ -6,7 +6,12 @@ from __future__ import absolute_import
 from __future__ import division
 __RCSID__ = "$Id$"
 
-import commands
+# TODO: This should be modernised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatibility layer
+  import subprocess as commands
 import os.path
 import time
 import sys
@@ -1356,7 +1361,7 @@ File Catalog Client $Revision: 1.17 $Date:
     lfn = self.getPath(path)
     pathDict = {}
     # treat mode as octal
-    pathDict[lfn] = eval('0' + mode)
+    pathDict[lfn] = int(mode, base=8)
 
     try:
       result = self.fc.changePathMode(pathDict, recursive)
@@ -2157,7 +2162,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print(dName)
     else:
       fields = ['Key', 'Value']
-      datasets = datasetDict.keys()
+      datasets = list(datasetDict)
       dsAnnotations = {}
       resultAnno = returnSingleResult(self.fc.getDatasetAnnotation(datasets))
       if resultAnno['OK']:

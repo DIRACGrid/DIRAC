@@ -19,7 +19,7 @@ __RCSID__ = '$Id$'
 
 import datetime
 import math
-import Queue
+from six.moves import queue as Queue
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -128,7 +128,7 @@ class ElementInspectorAgent(AgentModule):
 
     self.log.info('Needed %d threads to process %d elements' % (numberOfThreads, queueSize))
 
-    for _x in xrange(numberOfThreads):
+    for _x in range(numberOfThreads):
       jobUp = self.threadPool.generateJobAndQueueIt(self._execute)
       if not jobUp['OK']:
         self.log.error(jobUp['Message'])
@@ -182,7 +182,7 @@ class ElementInspectorAgent(AgentModule):
       # be there, but in any case, it is not a big problem.
 
       lowerElementDict = {'element': self.elementType}
-      for key, value in elemDict.iteritems():
+      for key, value in elemDict.items():
         lowerElementDict[key[0].lower() + key[1:]] = value
 
       # We add lowerElementDict to the queue

@@ -220,7 +220,7 @@ class DataStoreHandler(RequestHandler):
     for entry in entriesList:
       if len(entry) != 4:
         return S_ERROR("Invalid records")
-      for i in xrange(len(entry)):
+      for i in range(len(entry)):
         if not isinstance(entry[i], expectedTypes[i]):
           return S_ERROR("%s field in the records should be %s" % (i, expectedTypes[i]))
     ok = 0

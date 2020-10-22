@@ -87,7 +87,7 @@ def parseSwitches():
     Script.showHelp(exitCode=1)
 
   subLogger.debug("The switches used are:")
-  map(subLogger.debug, switches.iteritems())
+  map(subLogger.debug, switches.items())
 
   return switches
 

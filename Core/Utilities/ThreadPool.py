@@ -75,7 +75,7 @@ __RCSID__ = "$Id$"
 
 import time
 import sys
-import Queue
+from six.moves import queue as Queue
 import threading
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger

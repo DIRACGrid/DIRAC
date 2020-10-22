@@ -102,15 +102,16 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import errno
+import inspect
 import multiprocessing
-import sys
-import time
-import threading
 import os
 import signal
-import Queue
-import errno
-from types import FunctionType, TypeType, ClassType
+import sys
+import threading
+import time
+
+from six.moves import queue as Queue
 
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -521,10 +522,10 @@ class ProcessTask(object):
     self.__done = True
     try:
       # # it's a function?
-      if isinstance(self.__taskFunction, FunctionType):
+      if inspect.isfunction(self.__taskFunction):
         self.__taskResult = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
       # # or a class?
-      elif isinstance(self.__taskFunction, (type, ClassType)):
+      elif inspect.isclass(self.__taskFunction):
         # # create new instance
         taskObj = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
         # ## check if it is callable, raise TypeError if not
@@ -705,7 +706,7 @@ class ProcessPool(object):
     counter = 0
     self.__prListLock.acquire()
     try:
-      counter = len([pid for pid, worker in self.__workersDict.iteritems() if worker.isWorking()])
+      counter = len([pid for pid, worker in self.__workersDict.items() if worker.isWorking()])
     finally:
       self.__prListLock.release()
     return counter
@@ -719,7 +720,7 @@ class ProcessPool(object):
     counter = 0
     self.__prListLock.acquire()
     try:
-      counter = len([pid for pid, worker in self.__workersDict.iteritems() if not worker.isWorking()])
+      counter = len([pid for pid, worker in self.__workersDict.items() if not worker.isWorking()])
     finally:
       self.__prListLock.release()
     return counter
@@ -753,7 +754,7 @@ class ProcessPool(object):
     # # check wounded processes
     self.__prListLock.acquire()
     try:
-      for pid, worker in self.__workersDict.items():
+      for pid, worker in list(self.__workersDict.items()):
         if not worker.is_alive():
           del self.__workersDict[pid]
     finally:
@@ -990,7 +991,7 @@ class ProcessPool(object):
     :param self: self reference
     """
     while self.__workersDict:
-      pid = self.__workersDict.keys().pop(0)
+      pid = list(self.__workersDict).pop(0)
       worker = self.__workersDict[pid]
       if worker.is_alive():
         os.kill(pid, signal.SIGKILL)

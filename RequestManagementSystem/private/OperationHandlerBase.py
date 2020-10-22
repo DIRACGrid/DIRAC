@@ -53,6 +53,7 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
+import six
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_ERROR, S_OK
 from DIRAC.Core.Utilities.Graph import DynamicProps
@@ -64,17 +65,14 @@ from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities import Time, Network
 
-########################################################################
 
-
+@six.add_metaclass(DynamicProps)
 class OperationHandlerBase(object):
   """
   .. class:: OperationHandlerBase
 
   request operation handler base class
   """
-  __metaclass__ = DynamicProps
-
   # # private data logging client
 #   __dataLoggingClient = None
   # # private ResourceStatusClient
@@ -104,7 +102,7 @@ class OperationHandlerBase(object):
     csOptionsDict = gConfig.getOptionsDict(self.csPath)
     csOptionsDict = csOptionsDict.get("Value", {})
 
-    for option, value in csOptionsDict.iteritems():
+    for option, value in csOptionsDict.items():
       # # hack to set proper types
       try:
         value = eval(value)

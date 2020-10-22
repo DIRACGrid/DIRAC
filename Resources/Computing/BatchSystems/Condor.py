@@ -14,7 +14,12 @@ from __future__ import absolute_import
 from __future__ import division
 import re
 import tempfile
-import commands
+# TODO: This should be modernised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatibility layer
+  import subprocess as commands
 import os
 
 __RCSID__ = "$Id$"
@@ -144,7 +149,7 @@ class Condor(object):
     if submittedJobs > 0 and cluster:
       resultDict['Status'] = 0
       resultDict['Jobs'] = []
-      for i in xrange(submittedJobs):
+      for i in range(submittedJobs):
         resultDict['Jobs'].append('.'.join([cluster, str(i)]))
     else:
       resultDict['Status'] = status

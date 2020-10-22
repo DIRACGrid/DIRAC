@@ -200,8 +200,8 @@ class RRDManager(object):
     Generates a random name
     """
     m = hashlib.md5()
-    m.update(str(args))
-    m.update(str(kwargs))
+    m.update(str(args).encode())
+    m.update(str(kwargs).encode())
     return m.hexdigest()
 
   def __generateRRDGraphVar(self, entryName, activity, timeSpan, plotWidth):

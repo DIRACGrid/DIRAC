@@ -86,7 +86,7 @@ class PilotManagerHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##########################################################################################
-  types_addPilotTQReference = [list, six.integer_types, basestring, basestring]
+  types_addPilotTQReference = [list, six.integer_types, six.string_types, six.string_types]
 
   @classmethod
   def export_addPilotTQReference(cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
@@ -97,7 +97,7 @@ class PilotManagerHandler(RequestHandler):
                                        broker, gridType, pilotStampDict)
 
   ##############################################################################
-  types_getPilotOutput = [basestring]
+  types_getPilotOutput = [six.string_types]
 
   def export_getPilotOutput(self, pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
@@ -107,7 +107,7 @@ class PilotManagerHandler(RequestHandler):
     return getGridJobOutput(pilotReference)
 
   ##############################################################################
-  types_getPilotInfo = [(list, basestring)]
+  types_getPilotInfo = [(list,) + six.string_types]
 
   @classmethod
   def export_getPilotInfo(cls, pilotReference):
@@ -125,7 +125,7 @@ class PilotManagerHandler(RequestHandler):
     return pilotDB.selectPilots(condDict)
 
   ##############################################################################
-  types_storePilotOutput = [basestring, basestring, basestring]
+  types_storePilotOutput = [six.string_types, six.string_types, six.string_types]
 
   @classmethod
   def export_storePilotOutput(cls, pilotReference, output, error):
@@ -134,7 +134,7 @@ class PilotManagerHandler(RequestHandler):
     return pilotDB.storePilotOutput(pilotReference, output, error)
 
   ##############################################################################
-  types_getPilotLoggingInfo = [basestring]
+  types_getPilotLoggingInfo = [six.string_types]
 
   @classmethod
   def export_getPilotLoggingInfo(cls, pilotReference):
@@ -202,7 +202,7 @@ class PilotManagerHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilots = [(basestring, int, long)]
+  types_getPilots = [six.string_types + six.integer_types]
 
   @classmethod
   def export_getPilots(cls, jobID):
@@ -236,7 +236,7 @@ class PilotManagerHandler(RequestHandler):
     return pilotDB.getPilotInfo(pilotID=pilots)
 
   ##############################################################################
-  types_killPilot = [(basestring, list)]
+  types_killPilot = [six.string_types + (list,)]
 
   @classmethod
   def export_killPilot(cls, pilotRefList):
@@ -272,7 +272,7 @@ class PilotManagerHandler(RequestHandler):
     return S_OK()
 
   ##############################################################################
-  types_setJobForPilot = [(basestring, int, long), basestring]
+  types_setJobForPilot = [six.string_types + six.integer_types, six.string_types]
 
   @classmethod
   def export_setJobForPilot(cls, jobID, pilotRef, destination=None):
@@ -291,7 +291,7 @@ class PilotManagerHandler(RequestHandler):
     return result
 
   ##########################################################################################
-  types_setPilotBenchmark = [basestring, float]
+  types_setPilotBenchmark = [six.string_types, float]
 
   @classmethod
   def export_setPilotBenchmark(cls, pilotRef, mark):
@@ -300,7 +300,7 @@ class PilotManagerHandler(RequestHandler):
     return pilotDB.setPilotBenchmark(pilotRef, mark)
 
   ##########################################################################################
-  types_setAccountingFlag = [basestring]
+  types_setAccountingFlag = [six.string_types]
 
   @classmethod
   def export_setAccountingFlag(cls, pilotRef, mark='True'):
@@ -309,7 +309,7 @@ class PilotManagerHandler(RequestHandler):
     return pilotDB.setAccountingFlag(pilotRef, mark)
 
   ##########################################################################################
-  types_setPilotStatus = [basestring, basestring]
+  types_setPilotStatus = [six.string_types, six.string_types]
 
   def export_setPilotStatus(self, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None):
     """ Set the pilot agent status
@@ -329,7 +329,7 @@ class PilotManagerHandler(RequestHandler):
     return pilotDB.countPilots(condDict, older, newer, timeStamp)
 
   ##########################################################################################
-  types_getCounters = [basestring, list, dict]
+  types_getCounters = [six.string_types, list, dict]
 
   @classmethod
   def export_getCounters(cls, table, keys, condDict, newer=None, timeStamp='SubmissionTime'):
@@ -339,7 +339,7 @@ class PilotManagerHandler(RequestHandler):
     return pilotDB.getCounters(table, keys, condDict, newer=newer, timeStamp=timeStamp)
 
 ##############################################################################
-  types_getPilotStatistics = [basestring, dict]
+  types_getPilotStatistics = [six.string_types, dict]
 
   @staticmethod
   def export_getPilotStatistics(attribute, selectDict):
@@ -376,7 +376,7 @@ class PilotManagerHandler(RequestHandler):
     return S_OK(statistics)
 
   ##############################################################################
-  types_deletePilots = [(list, int, long, basestring)]
+  types_deletePilots = [(list, int, long) + six.string_types]
 
   def export_deletePilots(self, pilotIDs):
 

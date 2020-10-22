@@ -8,7 +8,7 @@ import os
 import io
 import getpass
 import tarfile
-import cStringIO
+from six import BytesIO
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
@@ -49,7 +49,7 @@ class BundleDeliveryClient(Client):
         :return: str
     """
     try:
-      with io.open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "rb") as fd:
+      with open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "r") as fd:
         bdHash = fd.read().strip()
         return bdHash
     except BaseException:
@@ -89,7 +89,7 @@ class BundleDeliveryClient(Client):
       dirCreated = True
     currentHash = self.__getHash(bundleID, dirToSyncTo)
     self.log.info("Current hash for bundle %s in dir %s is '%s'" % (bundleID, dirToSyncTo, currentHash))
-    buff = cStringIO.StringIO()
+    buff = BytesIO()
     transferClient = self.__getTransferClient()
     result = transferClient.receiveFile(buff, [bundleID, currentHash])
     if not result['OK']:

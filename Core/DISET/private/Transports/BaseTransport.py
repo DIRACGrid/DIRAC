@@ -25,7 +25,8 @@ __RCSID__ = "$Id$"
 
 import time
 import select
-import cStringIO
+import six
+from six import BytesIO
 from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
@@ -43,19 +44,19 @@ class BaseTransport(object):
   # you may want to read the man page before tuning it...
   iListenQueueSize = 128
   iReadTimeout = 600
-  keepAliveMagic = "dka"
+  keepAliveMagic = b"dka"
 
   def __init__(self, stServerAddress, bServerMode=False, **kwargs):
     self.bServerMode = bServerMode
     self.extraArgsDict = kwargs
-    self.byteStream = ""
+    self.byteStream = b""
     self.packetSize = 1048576  # 1MiB
     self.stServerAddress = stServerAddress
     self.peerCredentials = {}
     self.remoteAddress = False
     self.appData = ""
     self.startedKeepAlives = set()
-    self.keepAliveId = md5(str(stServerAddress) + str(bServerMode)).hexdigest()
+    self.keepAliveId = md5((str(stServerAddress) + str(bServerMode)).encode()).hexdigest()
     self.receivedMessages = []
     self.sentKeepAlives = 0
     self.waitingForKeepAlivePong = False
@@ -165,13 +166,12 @@ class BaseTransport(object):
   def _write(self, buf):
     return S_OK(self.oSocket.send(buf))
 
-  def sendData(self, uData, prefix=False):
+  def sendData(self, uData, prefix=b""):
     self.__updateLastActionTimestamp()
     sCodedData = MixedEncode.encode(uData)
-    if prefix:
-      dataToSend = "%s%s:%s" % (prefix, len(sCodedData), sCodedData)
-    else:
-      dataToSend = "%s:%s" % (len(sCodedData), sCodedData)
+    if isinstance(sCodedData, six.text_type):
+      sCodedData = sCodedData.encode()
+    dataToSend = b"".join([prefix, str(len(sCodedData)).encode(), b":", sCodedData])
     for index in range(0, len(dataToSend), self.packetSize):
       bytesToSend = min(self.packetSize, len(dataToSend) - index)
       packSentBytes = 0
@@ -198,7 +198,7 @@ class BaseTransport(object):
     maxBufferSize = max(maxBufferSize, 0)
     try:
       # Look either for message length of keep alive magic string
-      iSeparatorPosition = self.byteStream.find(":", 0, 10)
+      iSeparatorPosition = self.byteStream.find(b":", 0, 10)
       keepAliveMagicLen = len(BaseTransport.keepAliveMagic)
       isKeepAlive = self.byteStream.find(BaseTransport.keepAliveMagic, 0, keepAliveMagicLen) == 0
       # While not found the message length or the ka, keep receiving
@@ -213,7 +213,7 @@ class BaseTransport(object):
         # New data!
         self.byteStream += retVal['Value']
         # Look again for either message length of ka magic string
-        iSeparatorPosition = self.byteStream.find(":", 0, 10)
+        iSeparatorPosition = self.byteStream.find(b":", 0, 10)
         isKeepAlive = self.byteStream.find(BaseTransport.keepAliveMagic, 0, keepAliveMagicLen) == 0
         # Over the limit?
         if maxBufferSize and len(self.byteStream) > maxBufferSize and iSeparatorPosition == -1:
@@ -235,7 +235,7 @@ class BaseTransport(object):
         self.byteStream = pkgData[pkgSize:]
       else:
         # If we still need to read stuff
-        pkgMem = cStringIO.StringIO()
+        pkgMem = BytesIO()
         pkgMem.write(pkgData)
         # Receive while there's still data to be received
         while readSize < pkgSize:
@@ -252,7 +252,7 @@ class BaseTransport(object):
         # Data is here! take it out from the bytestream, dencode and return
         if readSize == pkgSize:
           data = pkgMem.getvalue()
-          self.byteStream = ""
+          self.byteStream = b""
         else:  # readSize > pkgSize:
           pkgMem.seek(0, 0)
           data = pkgMem.read(pkgSize)

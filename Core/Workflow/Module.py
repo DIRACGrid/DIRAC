@@ -162,7 +162,7 @@ class DefinitionsPool(dict):
     dict.__init__(self)
     self.parent = parent  # this is a cache value, we propagate it into next level
     if isinstance(pool, DefinitionsPool):
-      for k in pool.keys():
+      for k in pool:
         v = pool[k]
         if isinstance(v, ModuleDefinition):
           obj = ModuleDefinition(None, v, self.parent)
@@ -198,9 +198,9 @@ class DefinitionsPool(dict):
     if len(s) != len(self):
       return False  # checkin size
     # we need to compare the keys of dictionaries
-    if self.keys() != s.keys():
+    if set(self) != set(s):
       return False
-    for k in self.keys():
+    for k in self:
       if (k not in s) or (not self[k].compare(s[k])):
         return False
     return True
@@ -208,7 +208,7 @@ class DefinitionsPool(dict):
   def __str__(self):
     ret = str(type(self)) + ': number of Definitions:' + str(len(self)) + '\n'
     index = 0
-    for k in self.keys():
+    for k in self:
       ret = ret + 'definition(' + str(index) + ')=' + str(self[k]) + '\n'
       index = index + 1
     return ret
@@ -216,7 +216,7 @@ class DefinitionsPool(dict):
   def setParent(self, parent):
     self.parent = parent
     # we need to propagate it just in case it was different one
-    for k in self.keys():
+    for k in self:
       self[k].setParent(parent)
 
   def getParent(self):
@@ -224,24 +224,24 @@ class DefinitionsPool(dict):
 
   def updateParents(self, parent):
     self.parent = parent
-    for k in self.keys():
+    for k in self:
       self[k].updateParents(parent)
 
   def toXML(self):
     ret = ''
-    for k in self.keys():
+    for k in self:
       ret = ret + self[k].toXML()
     return ret
 
   def createCode(self):
     str = ''
-    for k in self.keys():
+    for k in self:
       # str=str+indent(2)+'# flush code for instance\n'
       str = str + self[k].createCode()
     return str
 
   def loadCode(self):
-    for k in self.keys():
+    for k in self:
       # load code of the modules
       self[k].loadCode()
 

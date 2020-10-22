@@ -17,7 +17,7 @@ __RCSID__ = "$Id$"
 
 import re
 import socket
-from urlparse import urlparse
+from six.moves.urllib.parse import urlparse
 
 import six
 
@@ -280,9 +280,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
         if submissionMode == "Unknown" and newSubmissionMode:
           addToChangeSet((ceSection, 'SubmissionMode', submissionMode, newSubmissionMode), changeSet)
 
-        queues = ceInfo['Queues'].keys()
-        for queue in queues:
-          queueInfo = ceInfo['Queues'][queue]
+        for queue, queueInfo in ceInfo['Queues'].items():
           queueStatus = queueInfo['GlueCEStateStatus']
           queueSection = cfgPath(ceSection, 'Queues', queue)
           queueDict = {}
@@ -470,8 +468,7 @@ def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):
 
   srmSeDict = {}
   for site in siteSRMDict:
-    srms = siteSRMDict[site].keys()
-    for srm in srms:
+    for srm in siteSRMDict[site]:
       if seBdiiDict.get(site, {}).get('SEs', {}).get(srm, {}):
         srmSeDict.setdefault(site, {})
         srmSeDict[site].setdefault(srm, {})

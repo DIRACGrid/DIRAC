@@ -91,7 +91,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         :return: S_OK()/S_ERROR()
     """
     for k, v in parameters.items():
-      if not isinstance(v, list) and k in ['Match', 'Supplied', 'Optional', 'DNOrder'] + self.fields2nid.keys():
+      if not isinstance(v, list) and k in ['Match', 'Supplied', 'Optional', 'DNOrder'] + list(self.fields2nid):
         parameters[k] = v.replace(', ', ',').split(',')
     self.parameters = parameters
     # If CA configuration file exist
@@ -118,7 +118,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     # Set defaults for distridutes names
     self.nid2defField = {}
-    for field, value in self.parameters.items():
+    for field, value in list(self.parameters.items()):
       if field in self.fields2nid and self.fields2nid[field] in allFields:
         self.parameters[self.fields2nid[field]] = value
         self.nid2defField[self.fields2nid[field]] = field
@@ -355,7 +355,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     """
     for value in values:
       if value and m2.x509_name_set_by_nid(self.__X509Name.x509_name,  # pylint: disable=no-member
-                                           self.fields2nid[field], value) == 0:
+                                           self.fields2nid[field], value.encode()) == 0:
         if not self.__X509Name.add_entry_by_txt(field=field, type=ASN1.MBSTRING_ASC,
                                                 entry=value, len=-1, loc=-1, set=0) == 1:
           return S_ERROR('Cannot set "%s" field.' % field)
@@ -392,7 +392,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     caCert = X509.load_cert_string(caCertStr)
     userCert.set_issuer(caCert.get_subject())
     # Use CA key
-    with open(self.parameters['KeyFile']) as cf:
+    with open(self.parameters['KeyFile'], "rb") as cf:
       caKeyStr = cf.read()
     pkey = EVP.PKey()
     pkey.assign_rsa(RSA.load_key_string(caKeyStr, callback=util.no_passphrase_callback))

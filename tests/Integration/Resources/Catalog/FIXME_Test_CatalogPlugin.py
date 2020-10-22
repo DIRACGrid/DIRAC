@@ -42,7 +42,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
     # Register some files to work with
     self.numberOfFiles = 2
     self.files = []
-    for i in xrange(self.numberOfFiles):
+    for i in range(self.numberOfFiles):
       lfn = "%s/testFile_%d" % (self.destDir,i)
       res = self.registerFile(lfn)
       self.assertTrue(res)
@@ -80,7 +80,7 @@ class CatalogPlugInTestCase(unittest.TestCase):
       return
     res = self.catalog.listDirectory(self.destDir)
     returnValue = self.parseResult(res,self.destDir)
-    toRemove = returnValue['Files'].keys()
+    toRemove = list(returnValue['Files'])
     if toRemove:
       self.purgeFiles(toRemove)
     res = self.catalog.removeDirectory(self.destDir)

@@ -599,7 +599,7 @@ class Watchdog(object):
     """
     cpuValue = 0
     cpuHMS = cputime.split(':')
-    # for i in xrange( len( cpuHMS ) ):
+    # for i in range( len( cpuHMS ) ):
     #   cpuHMS[i] = cpuHMS[i].replace( '00', '0' )
 
     try:

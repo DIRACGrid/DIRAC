@@ -191,7 +191,7 @@ def setuptest(request):
                           'Workflow/File3'): os.path.join(local_path,
                                                           'Workflow/File3')}
 
-  isFile = putFile.keys()
+  isFile = list(putFile)
 
   listDir = [os.path.join(DESTINATION_PATH, 'Workflow'),
              os.path.join(DESTINATION_PATH, 'Workflow/FolderA'),
@@ -244,7 +244,7 @@ def test_uploadDirectory_shouldFail(setuptest):
   """ uploading directories is not possible with Echo"""
   res = se.putDirectory(putDir)
   assert res['OK']
-  assert res['Value']['Failed'].keys() == putDir.keys()
+  assert list(res['Value']['Failed']) == list(putDir)
 
   # Need to sleep for echo to update ?
   # time.sleep(1)

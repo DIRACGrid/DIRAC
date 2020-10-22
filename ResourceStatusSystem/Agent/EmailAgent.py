@@ -69,7 +69,7 @@ class EmailAgent(AgentModule):
     columnNames = result['Columns']
     result = self._groupBySiteName(result)
 
-    for site, records in result.iteritems():
+    for site, records in result.items():
 
       email = ""
       html_body = ""

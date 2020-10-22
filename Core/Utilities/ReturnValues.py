@@ -126,7 +126,7 @@ def returnSingleResult(dictRes):
     return dictRes
   # if there is a Failed, we return the first one in an S_ERROR
   if "Failed" in dictRes['Value'] and len(dictRes['Value']['Failed']):
-    errorMessage = dictRes['Value']['Failed'].values()[0]
+    errorMessage = list(dictRes['Value']['Failed'].values())[0]
     if isinstance(errorMessage, dict):
       if isReturnStructure(errorMessage):
         return errorMessage
@@ -135,6 +135,6 @@ def returnSingleResult(dictRes):
     return S_ERROR(errorMessage)
   # if there is a Successful, we return the first one in an S_OK
   elif "Successful" in dictRes['Value'] and len(dictRes['Value']['Successful']):
-    return S_OK(dictRes['Value']['Successful'].values()[0])
+    return S_OK(list(dictRes['Value']['Successful'].values())[0])
   else:
     return S_ERROR("returnSingleResult: Failed and Successful dictionaries are empty")

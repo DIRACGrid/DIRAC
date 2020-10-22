@@ -10,6 +10,7 @@ from __future__ import print_function
 from datetime import datetime, timedelta
 import math
 from time import sleep
+import six
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
@@ -22,15 +23,13 @@ from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 from DIRAC.Core.Utilities import DErrno
 
 
+@six.add_metaclass(DIRACSingleton)
 class ResourceStatus(object):
   """
   ResourceStatus helper that connects to CS if RSS flag is not Active. It keeps
   the connection to the db / server as an object member, to avoid creating a new
   one massively.
   """
-
-  __metaclass__ = DIRACSingleton
-
   def __init__(self, rssFlag=None):
     """
     Constructor, initializes the rssClient.

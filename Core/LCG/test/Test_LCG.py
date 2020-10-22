@@ -311,7 +311,7 @@ XML_node_ongoing_and_other_node_starting_in_24_hours += '</DOWNTIME></ROOT>\n'
 def test__downTimeXMLParsing_affected():
 
   res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Resource')
-  assert list(res)[0] == '109962G0 lhcbsrm-kit.gridka.deSRM'
+  assert set(res) == {'109962G0 lhcbsrm-kit.gridka.deSRM'}
   assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['HOSTNAME'] == 'lhcbsrm-kit.gridka.de'
   assert res['109962G0 lhcbsrm-kit.gridka.deSRM']['URL'] == 'lhcbsrm-disk-kit.gridka.de'
   res = GOCCli._downTimeXMLParsing(xml_endpoint_and_affected_ongoing, 'Site')
@@ -340,11 +340,11 @@ def test__downTimeXMLParsing_affected():
 def test__downTimeXMLParsing():
 
   res = GOCCli._downTimeXMLParsing(XML_site_ongoing, 'Site')
-  assert list(res)[0] == '28490G0 GRISU-ENEA-GRID'
+  assert set(res) == {'28490G0 GRISU-ENEA-GRID'}
   assert res['28490G0 GRISU-ENEA-GRID']['SITENAME'] == 'GRISU-ENEA-GRID'
 
   res = GOCCli._downTimeXMLParsing(XML_node_ongoing, 'Resource')
-  assert list(res)[0] == '28490G0 egse-cresco.portici.enea.it'
+  assert set(res) == {'28490G0 egse-cresco.portici.enea.it'}
   assert res['28490G0 egse-cresco.portici.enea.it']['HOSTNAME'] == 'egse-cresco.portici.enea.it'
   assert res['28490G0 egse-cresco.portici.enea.it']['HOSTED_BY'] == 'GRISU-ENEA-GRID'
 
@@ -355,12 +355,12 @@ def test__downTimeXMLParsing():
 
   res = GOCCli._downTimeXMLParsing(XML_nodesite_ongoing, 'Site')
   assert len(res) == 1
-  assert list(res)[0] == '28490G0 GRISU-ENEA-GRID'
+  assert set(res) == {'28490G0 GRISU-ENEA-GRID'}
   assert res['28490G0 GRISU-ENEA-GRID']['SITENAME'] == 'GRISU-ENEA-GRID'
 
   res = GOCCli._downTimeXMLParsing(XML_nodesite_ongoing, 'Resource')
   assert len(res) == 1
-  assert list(res)[0] == '28490G0 egse-cresco.portici.enea.it'
+  assert set(res) == {'28490G0 egse-cresco.portici.enea.it'}
   assert res['28490G0 egse-cresco.portici.enea.it']['HOSTNAME'] == 'egse-cresco.portici.enea.it'
 
   res = GOCCli._downTimeXMLParsing(XML_site_startingIn8h, 'Site', None, now)
@@ -369,7 +369,7 @@ def test__downTimeXMLParsing():
   assert res == {}
 
   res = GOCCli._downTimeXMLParsing(XML_site_ongoing_and_site_starting_in_24_hours, 'Site', None, now)
-  assert list(res)[0] == '28490G1 GRISU-ENEA-GRID'
+  assert set(res) == {'28490G1 GRISU-ENEA-GRID'}
   assert res['28490G1 GRISU-ENEA-GRID']['SITENAME'] == 'GRISU-ENEA-GRID'
 
   res = GOCCli._downTimeXMLParsing(XML_site_ongoing_and_site_starting_in_24_hours, 'Resource', None, now)
@@ -378,7 +378,7 @@ def test__downTimeXMLParsing():
   assert res == {}
 
   res = GOCCli._downTimeXMLParsing(XML_site_startingIn24h_and_site_startingIn50h, 'Site', None, tomorrow)
-  assert list(res)[0] == '28490G1 GRISU-ENEA-GRID'
+  assert set(res) == {'28490G1 GRISU-ENEA-GRID'}
   assert res['28490G1 GRISU-ENEA-GRID']['SITENAME'] == 'GRISU-ENEA-GRID'
 
   res = GOCCli._downTimeXMLParsing(
@@ -394,23 +394,23 @@ def test__downTimeXMLParsing():
   assert res['28490G1 GRISU-ENEA-GRID']['SITENAME'] == 'GRISU-ENEA-GRID'
   assert res['28490G0 CERN-PROD']['SITENAME'] == 'CERN-PROD'
   res = GOCCli._downTimeXMLParsing(XML_site_ongoing_and_other_site_starting_in_24_hours, 'Site', 'CERN-PROD')
-  assert list(res)[0] == '28490G0 CERN-PROD'
+  assert set(res) == {'28490G0 CERN-PROD'}
   assert res['28490G0 CERN-PROD']['SITENAME'] == 'CERN-PROD'
   res = GOCCli._downTimeXMLParsing(XML_site_ongoing_and_other_site_starting_in_24_hours, 'Site', 'CNAF-T1')
   assert res == {}
 
   res = GOCCli._downTimeXMLParsing(XML_site_ongoing_and_other_site_starting_in_24_hours,
                                    'Site', ['GRISU-ENEA-GRID', 'CERN-PROD'], now)
-  assert list(res)[0] == '28490G1 GRISU-ENEA-GRID'
+  assert set(res) == {'28490G1 GRISU-ENEA-GRID'}
   assert res['28490G1 GRISU-ENEA-GRID']['SITENAME'] == 'GRISU-ENEA-GRID'
   res = GOCCli._downTimeXMLParsing(XML_site_ongoing_and_other_site_starting_in_24_hours,
                                    'Site', ['GRISU-ENEA-GRID', 'CERN-PROD'], inAWeek)
-  assert list(res)[0] == '28490G0 CERN-PROD'
+  assert set(res) == {'28490G0 CERN-PROD', '28490G1 GRISU-ENEA-GRID'}
   assert res['28490G0 CERN-PROD']['SITENAME'] == 'CERN-PROD'
 
   res = GOCCli._downTimeXMLParsing(XML_node_ongoing_and_other_node_starting_in_24_hours, 'Resource',
                                    ['egse-cresco.portici.enea.it'])
-  assert list(res)[0] == '28490G1 egse-cresco.portici.enea.it'
+  assert set(res) == {'28490G1 egse-cresco.portici.enea.it'}
   assert res['28490G1 egse-cresco.portici.enea.it']['HOSTNAME'] == 'egse-cresco.portici.enea.it'
   res = GOCCli._downTimeXMLParsing(XML_node_ongoing_and_other_node_starting_in_24_hours,
                                    'Resource', ['egse-cresco.portici.enea.it', 'ce112.cern.ch'])
@@ -422,7 +422,7 @@ def test__downTimeXMLParsing():
       XML_node_ongoing_and_other_node_starting_in_24_hours,
       'Resource',
       'ce112.cern.ch')
-  assert list(res)[0] == '28490G0 ce112.cern.ch'
+  assert set(res) == {'28490G0 ce112.cern.ch'}
   assert res['28490G0 ce112.cern.ch']['HOSTNAME'] == 'ce112.cern.ch'
   res = GOCCli._downTimeXMLParsing(
       XML_node_ongoing_and_other_node_starting_in_24_hours,
@@ -437,5 +437,5 @@ def test__downTimeXMLParsing():
   assert res['28490G1 egse-cresco.portici.enea.it']['HOSTNAME'] == 'egse-cresco.portici.enea.it'
   res = GOCCli._downTimeXMLParsing(XML_node_ongoing_and_other_node_starting_in_24_hours,
                                    'Resource', ['egse-cresco.portici.enea.it', 'ce112.cern.ch'], inAWeek)
-  assert list(res)[0] == '28490G0 ce112.cern.ch'
+  assert set(res) == {'28490G1 egse-cresco.portici.enea.it', '28490G0 ce112.cern.ch'}
   assert res['28490G0 ce112.cern.ch']['HOSTNAME'] == 'ce112.cern.ch'

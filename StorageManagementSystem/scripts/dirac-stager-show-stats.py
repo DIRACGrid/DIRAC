@@ -49,7 +49,7 @@ outStr += "  %s" % ("NumberOfFiles".ljust(20))
 outStr += "  %s" % ("Size(GB)".ljust(20))
 outStr += " \n--------------------------------------------------------------------------\n"
 if stagerInfo:
-  for info in stagerInfo.itervalues():
+  for info in stagerInfo.values():
     outStr += "  %s" % (info['Status'].ljust(20))
     outStr += "  %s" % (info['SE'].ljust(20))
     outStr += "  %s" % (str(info['NumFiles']).ljust(20))

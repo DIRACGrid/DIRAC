@@ -58,7 +58,7 @@ def test__applySiteFilter(sites, banned, expected):
 ])
 def test__getTagsFromManifest(manifestOptions, expected):
   manifest = JobManifest()
-  for varName, varValue in manifestOptions.iteritems():
+  for varName, varValue in manifestOptions.items():
     manifest.setOption(varName, varValue)
 
   js = JobScheduling()
@@ -93,7 +93,7 @@ def test__getInputSandbox(mocker, manifestOptions, expected):
   js.setAttribute('JobType', 'User')
 
   manifest = JobManifest()
-  for varName, varValue in manifestOptions.iteritems():
+  for varName, varValue in manifestOptions.items():
     manifest.setOption(varName, varValue)
 
   js.setManifest(manifest)

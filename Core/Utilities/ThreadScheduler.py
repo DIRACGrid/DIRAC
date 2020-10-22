@@ -45,7 +45,7 @@ class ThreadScheduler(object):
             'func': taskFunc,
             'args': taskArgs,
             }
-    md.update(str(task))
+    md.update(str(task).encode())
     taskId = md.hexdigest()
     if taskId in self.__taskDict:
       return S_ERROR("Task %s is already added" % taskId)

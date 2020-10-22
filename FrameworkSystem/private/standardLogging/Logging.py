@@ -151,7 +151,7 @@ class Logging(object):
       self._options[optionName] = value
 
       # propagate in the children
-      for child in self._children.itervalues():
+      for child in self._children.values():
         child._setOption(optionName, value, directCall=False)  # pylint: disable=protected-access
     finally:
       self._lockOptions.release()

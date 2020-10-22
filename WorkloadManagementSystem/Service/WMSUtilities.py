@@ -162,7 +162,7 @@ def killPilotsInQueues(pilotRefDict):
 
   ceFactory = ComputingElementFactory()
   failed = []
-  for key, pilotDict in pilotRefDict.iteritems():
+  for key, pilotDict in pilotRefDict.items():
 
     owner, group, site, ce, queue = key.split('@@@')
     result = getQueue(site, ce, queue)

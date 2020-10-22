@@ -663,7 +663,7 @@ class StorageManagementDB(DB):
     # Get the Replicas which already exist in the CacheReplicas table
     allReplicaIDs = []
     taskStates = []
-    for se, lfns in lfnDict.iteritems():
+    for se, lfns in lfnDict.items():
       if isinstance(lfns, six.string_types):
         lfns = [lfns]
       res = self._getExistingReplicas(se, lfns, connection=connection)
@@ -882,7 +882,7 @@ class StorageManagementDB(DB):
 
   def updateReplicaFailure(self, terminalReplicaIDs):
     """ This method sets the status to Failure with the failure reason for the supplied Replicas. """
-    res = self.updateReplicaStatus(terminalReplicaIDs.keys(), 'Failed')
+    res = self.updateReplicaStatus(list(terminalReplicaIDs), 'Failed')
     if not res['OK']:
       return res
     updated = res['Value']
@@ -995,7 +995,7 @@ class StorageManagementDB(DB):
 
   def insertStageRequest(self, requestDict, pinLifeTime):
     req = "INSERT INTO StageRequests (ReplicaID,RequestID,StageRequestSubmitTime,PinLength) VALUES "
-    for requestID, replicaIDs in requestDict.iteritems():
+    for requestID, replicaIDs in requestDict.items():
       for replicaID in replicaIDs:
         replicaString = "(%s,'%s',UTC_TIMESTAMP(),%d)," % (replicaID, requestID, pinLifeTime)
         req = "%s %s" % (req, replicaString)
@@ -1007,7 +1007,7 @@ class StorageManagementDB(DB):
           res['Message'])
       return res
 
-    for requestID, replicaIDs in requestDict.iteritems():
+    for requestID, replicaIDs in requestDict.items():
       for replicaID in replicaIDs:
         # fix, no individual queries
         reqSelect = "SELECT * FROM StageRequests WHERE ReplicaID = %s AND RequestID = '%s';" % (

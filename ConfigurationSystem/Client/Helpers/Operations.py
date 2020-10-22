@@ -74,7 +74,7 @@ from __future__ import division
 from __future__ import print_function
 
 import six
-import thread
+from six.moves import _thread as thread
 import os
 from diraccfg import CFG
 from DIRAC import S_OK, S_ERROR, gConfig

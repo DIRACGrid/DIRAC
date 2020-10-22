@@ -247,12 +247,13 @@ class X509Chain(object):
   @staticmethod
   def __certListFromPemString(certString):
     """
-    Create certificates list from string. String sould contain certificates, just like plain text proxy file.
+    Create certificates list from string. String should contain certificates, just like plain text proxy file.
     """
     # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that
     # (constructors are not able to deal with big string)
     certList = []
-    for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString):
+    pattern = r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)"
+    for cert in re.findall(pattern.encode("utf-8"), certString):
       certList.append(X509Certificate(certString=cert[0]))
     return certList
 
@@ -292,6 +293,8 @@ class X509Chain(object):
       :returns: S_OK / S_ERROR
     """
     self._keyObj = None
+    if password:
+      password = password.encode()
     try:
       self._keyObj = M2Crypto.EVP.load_key_string(pemData, lambda x: password)
     except BaseException as e:
@@ -330,7 +333,6 @@ class X509Chain(object):
 
     :returns: S_OK / S_ERROR
     """
-
     retVal = self.loadChainFromString(pemData)
     if not retVal['OK']:
       return retVal
@@ -464,7 +466,7 @@ class X509Chain(object):
     proxyCert.sign(self._keyObj, 'sha256')
 
     # Generate the proxy string
-    proxyString = "%s%s" % (proxyCert.asPem(), proxyKey.as_pem(
+    proxyString = b"%s%s" % (proxyCert.asPem(), proxyKey.as_pem(
         cipher=None, callback=M2Crypto.util.no_passphrase_callback))
     for i in range(len(self._certList)):
       crt = self._certList[i]

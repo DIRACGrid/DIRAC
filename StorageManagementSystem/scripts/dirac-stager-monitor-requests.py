@@ -72,7 +72,7 @@ def parseSwitches():
     Script.showHelp(exitCode=1)
 
   subLogger.debug("The switches used are:")
-  map(subLogger.debug, switches.iteritems())
+  map(subLogger.debug, switches.items())
 
   return switches
 
@@ -117,7 +117,7 @@ def run():
     outStr += " %s" % ("PinLength(sec)".ljust(15))
     outStr += "\n"
 
-    for crid, info in replicas.iteritems():
+    for crid, info in replicas.items():
       outStr += " %s" % (info['Status'].ljust(15))
       outStr += " %s" % (str(info['LastUpdate']).ljust(20))
       outStr += " %s" % (info['LFN'].ljust(30))
@@ -143,7 +143,7 @@ def run():
         gLogger.error(resStageRequests['Message'])
       if resStageRequests['Records']:
         stageRequests = resStageRequests['Value']
-        for info in stageRequests.itervalues():
+        for info in stageRequests.values():
           outStr += " %s" % (str(info['PinExpiryTime']).ljust(20))
           outStr += " %s" % (str(info['PinLength']).ljust(10))
       outStr += "\n"

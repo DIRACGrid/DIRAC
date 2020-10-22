@@ -100,7 +100,8 @@ class Operation(object):
       # The JSON module forces the use of UTF-8, which is not properly
       # taken into account in DIRAC.
       # One would need to replace all the '== str' with 'in six.string_types'
-      if isinstance(value, six.string_types):
+      # This is converting `unicode` to `str` and doesn't make sense in Python 3
+      if six.PY2 and isinstance(value, six.string_types):
         value = value.encode()
       if value:
         setattr(self, key, value)
@@ -191,10 +192,13 @@ class Operation(object):
     """ get list of files statuses """
     return [subFile.Status for subFile in self]
 
-  def __nonzero__(self):
+  def __bool__(self):
     """ for comparisons
     """
     return True
+
+  # For Python 2 compatibility
+  __nonzero__ = __bool__
 
   def __len__(self):
     """ nb of subFiles """
@@ -218,16 +222,16 @@ class Operation(object):
   @Catalog.setter
   def Catalog(self, value):
     """ catalog setter """
-    if type(value) not in (str, unicode, list):
+    if not isinstance(value, six.string_types + (list,)):
       raise TypeError("wrong type for value")
-    if type(value) in (str, unicode):
+    if isinstance(value, six.string_types):
       value = value.split(',')
 
     value = ",".join(list(set([str(item).strip() for item in value if str(item).strip()])))
 
     if len(value) > 255:
       raise ValueError("Catalog list too long")
-    self._Catalog = value.encode() if value else ""
+    self._Catalog = value if value else ""
 
   @property
   def catalogList(self):

@@ -9,7 +9,12 @@ import os
 import re
 import sys
 import shutil
-import commands
+# TODO: This should be modernised to use subprocess(32)
+try:
+  import commands
+except ImportError:
+  # Python 3's subprocess module contains a compatibility layer
+  import subprocess as commands
 import unittest
 import tempfile
 

@@ -76,11 +76,11 @@ class SystemLoggingReportHandler(RequestHandler):
     if 'groupField' in selectionDict:
       groupField = selectionDict['groupField']
       if groupField not in selectionDict:
-        groupField = selectionDict.keys()[0]
+        groupField = list(selectionDict)[0]
       del selectionDict['groupField']
     elif countMessages:
       if selectionDict:
-        groupField = selectionDict.keys()[0]
+        groupField = list(selectionDict)[0]
       elif sortList:
         groupField = sortList[0][0]
       else:
@@ -89,7 +89,7 @@ class SystemLoggingReportHandler(RequestHandler):
       groupField = None
 
     if selectionDict:
-      fieldList = selectionDict.keys()
+      fieldList = list(selectionDict)
       fieldList.append(dateField)
       if not ('LogLevel' in selectionDict and
               selectionDict['LogLevel']):

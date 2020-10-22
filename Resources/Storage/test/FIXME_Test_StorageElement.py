@@ -124,7 +124,7 @@ class FileTestCases(StorageElementTestCase):
           '################\n\n\t\t\tExists test\n')
     destinationFilePath = '%s/testFile.%s' % (self.destDirectory, time.time())
     # pfnForLfnRes = self.storageElement.getURL( destinationFilePath )
-    # destinationPfn = pfnForLfnRes['Value']['Successful'].values()[0]
+    # destinationPfn = list(pfnForLfnRes['Value']['Successful'].values())[0]
     fileDict = {destinationFilePath: self.localSourceFile}
     putFileRes = returnSingleResult(self.storageElement.putFile(fileDict))
     # File exists

@@ -19,6 +19,7 @@ __RCSID__ = "$Id$"
 
 import errno
 # from DIRAC
+import six
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -93,7 +94,7 @@ class S3GatewayHandler(RequestHandler):
 
     return returnSingleResult(self._fc.hasAccess(lfn, opType))
 
-  types_createPresignedUrl = [basestring, basestring, (dict, list), (int, long)]
+  types_createPresignedUrl = [basestring, basestring, (dict, list), six.integer_types]
 
   def export_createPresignedUrl(self, storageName, s3_method, urls, expiration):
     """ Generate a presigned URL for a given object, given method, and given storage

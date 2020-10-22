@@ -382,8 +382,7 @@ class PlotData(object):
   def __init__(self, data, single=True, key_type=None):
 
     self.key_type = "unknown"
-    keys = data.keys()
-    if not keys:
+    if not data:
       print("PlotData Error: empty data")
       return
 
@@ -460,7 +459,7 @@ class PlotData(object):
         self.parsed_data[k] = 0.
 
     self.sorted_keys = []
-    self.keys = self.parsed_data.keys()
+    self.keys = list(self.parsed_data)
     self.initialize()
 
   def sortKeys(self, sort_type='alpha'):
@@ -543,7 +542,7 @@ class PlotData(object):
     if key_type:
       self.key_type = key_type
     else:
-      self.key_type = get_key_type(self.data.keys())
+      self.key_type = get_key_type(list(self.data))
     new_parsed_data = {}
     new_passed_errors = {}
     for key, data in self.data.items():
@@ -555,7 +554,7 @@ class PlotData(object):
     self.parsed_data = new_parsed_data
     self.parsed_errors = new_passed_errors
 
-    self.keys = self.parsed_data.keys()
+    self.keys = list(self.parsed_data)
 
   def makeCumulativePlot(self):
 

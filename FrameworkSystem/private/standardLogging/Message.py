@@ -21,7 +21,7 @@ def tupleToMessage(varTuple):
 class Message:
 
   def __init__(self, systemName, level, time, msgText, variableText, frameInfo, subSystemName=''):
-    import thread
+    from six.moves import _thread as thread
     self.systemName = systemName
     self.level = level
     self.time = time

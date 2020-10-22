@@ -129,7 +129,7 @@ def showInfo(result, info):
     if info == 'site-se' or info == 'all':
       print("SE: %s \n{" % element.get('GlueSEUniqueID', 'Unknown'))
 
-    for item in element.iteritems():
+    for item in element.items():
       print("  %s: %s" % item)
     print("}")
 

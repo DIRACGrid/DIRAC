@@ -74,8 +74,14 @@ def test_chainWithParameter():
   assert result['Value'] is False
   result = tqDB.retrieveTaskQueues()
   assert result['OK'] is True
-  assert result['Value'].values()[0] == {'OwnerDN': '/my/DN', 'Jobs': 2, 'OwnerGroup': 'myGroup',
-                                         'Setup': 'aSetup', 'CPUTime': 86400, 'Priority': 1.0}
+  assert list(result['Value'].values())[0] == {
+      'OwnerDN': '/my/DN',
+      'Jobs': 2,
+      'OwnerGroup': 'myGroup',
+      'Setup': 'aSetup',
+      'CPUTime': 86400,
+      'Priority': 1.0
+  }
 
   # now we will try to delete
   result = tqDB.deleteJob(123)
@@ -415,7 +421,7 @@ def test_chainWithPlatforms():
   # but here it returns only 1 (those for ANY), by construction
   # so, this should be in theory improved
 
-  for jobId in xrange(1, 8):
+  for jobId in range(1, 8):
     result = tqDB.deleteJob(jobId)
     assert result['OK'] is True
 
@@ -764,7 +770,7 @@ def test_chainWithTagsAndPlatforms():
   res = set([int(x[0]) for x in result['Value']])
   assert res == {tq_job1, tq_job2, tq_job3}
 
-  for jobId in xrange(1, 8):
+  for jobId in range(1, 8):
     result = tqDB.deleteJob(jobId)
     assert result['OK'] is True
 
@@ -976,7 +982,7 @@ def test_ComplexMatching():
   res = set([int(x[0]) for x in result['Value']])
   assert res == {tq_job4, tq_job5}
 
-  for jobId in xrange(1, 8):
+  for jobId in range(1, 8):
     result = tqDB.deleteJob(jobId)
     assert result['OK'] is True
 
@@ -997,8 +1003,14 @@ def test_TQ():
   assert result['Value'] == 1
   result = tqDB.retrieveTaskQueues()
   assert result['OK'] is True
-  assert result['Value'].values()[0] == {'OwnerDN': '/my/DN', 'Jobs': 1, 'OwnerGroup': 'myGroup',
-                                         'Setup': 'aSetup', 'CPUTime': 86400, 'Priority': 1.0}
+  assert list(result['Value'].values())[0] == {
+      'OwnerDN': '/my/DN',
+      'Jobs': 1,
+      'OwnerGroup': 'myGroup',
+      'Setup': 'aSetup',
+      'CPUTime': 86400,
+      'Priority': 1.0,
+  }
   result = tqDB.findOrphanJobs()
   assert result['OK'] is True
   result = tqDB.recalculateTQSharesForAll()

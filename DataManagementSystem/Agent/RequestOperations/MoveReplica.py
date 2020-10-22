@@ -163,7 +163,7 @@ class MoveReplica(DMSRequestOperationsBase):
     targetSESet = set(self.operation.targetSEList)
 
     # Check replicas
-    res = self.ci._getCatalogReplicas(waitingFiles.keys())
+    res = self.ci._getCatalogReplicas(list(waitingFiles))
 
     if not res["OK"]:
       self.log.error('Failed to get catalog replicas', res["Message"])
@@ -171,7 +171,7 @@ class MoveReplica(DMSRequestOperationsBase):
 
     allReplicas = res['Value'][0]
 
-    replicas = self.ci.compareChecksum(waitingFiles.keys())
+    replicas = self.ci.compareChecksum(list(waitingFiles))
 
     if not replicas["OK"]:
       self.log.error('Failed to check replicas', replicas["Message"])
@@ -452,7 +452,7 @@ class MoveReplica(DMSRequestOperationsBase):
     :param str targetSE: target SE name
     :return: toRemoveDict with updated errors
     """
-    removeReplicas = self.dm.removeReplica(targetSE, toRemoveDict.keys())
+    removeReplicas = self.dm.removeReplica(targetSE, list(toRemoveDict))
 
     if not removeReplicas["OK"]:
       for opFile in toRemoveDict.values():

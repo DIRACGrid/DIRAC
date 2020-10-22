@@ -123,7 +123,7 @@ class PilotAgentsDB(DB):
 #     # Building the request with "ON DUPLICATE KEY UPDATE"
 #     reqBase = "INSERT INTO PilotAgents (PilotJobReference, Status, StatusReason) VALUES "
 
-#     for pilotJobReference, status in pilotRefsStatusDict.iteritems():
+#     for pilotJobReference, status in pilotRefsStatusDict.items():
 #       req = reqBase + ','.join("('%s', '%s', '%s')" % (pilotJobReference, status, statusReason))
 #       req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),StatusReason=VALUES(StatusReason)"
 

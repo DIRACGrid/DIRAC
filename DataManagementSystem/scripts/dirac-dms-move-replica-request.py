@@ -90,7 +90,10 @@ if __name__ == "__main__":
     count += 1
 
     request = Request()
-    request.RequestName = "%s_%s" % (md5(repr(time.time())).hexdigest()[:16], md5(repr(time.time())).hexdigest()[:16])
+    request.RequestName = "%s_%s" % (
+        md5(repr(time.time()).encode()).hexdigest()[:16],
+        md5(repr(time.time()).encode()).hexdigest()[:16],
+    )
 
     moveReplica = Operation()
     moveReplica.Type = 'MoveReplica'

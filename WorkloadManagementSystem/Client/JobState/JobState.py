@@ -103,7 +103,7 @@ class JobState(object):
       self.__checkType(jobLog, (list, tuple))
     except TypeError as excp:
       return S_ERROR(str(excp))
-    result = self.getAttributes(initialState.keys())
+    result = self.getAttributes(list(initialState))
     if not result['OK']:
       return result
     if not result['Value'] == initialState:

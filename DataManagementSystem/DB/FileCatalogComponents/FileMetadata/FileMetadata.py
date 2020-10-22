@@ -150,7 +150,7 @@ class FileMetadata(object):
     else:
       return S_ERROR('File %s not found' % path)
 
-    for metaName, metaValue in metaDict.iteritems():
+    for metaName, metaValue in metaDict.items():
       if metaName not in metaFields:
         result = self.__setFileMetaParameter(fileID, metaName, metaValue, credDict)
       else:
@@ -457,7 +457,7 @@ class FileMetadata(object):
         query = '( $s )' % ', '.join(result['Value'])
         queryList.append(('IN', query))
     elif isinstance(value, dict):
-      for operation, operand in value.iteritems():
+      for operation, operand in value.items():
 
         # Prepare the escaped operand first
         if isinstance(operand, list):
@@ -526,7 +526,7 @@ class FileMetadata(object):
       return S_OK([])
     resultList = []
     leftJoinTables = []
-    for meta, value in userMetaDict.iteritems():
+    for meta, value in userMetaDict.items():
       table = 'FC_FileMeta_%s' % meta
 
       result = self.__createMetaSelection(value)
@@ -552,7 +552,7 @@ class FileMetadata(object):
     table = 'FC_Files'
     queriesFiles = []
     queriesFileInfo = []
-    for infield, invalue in standardMetaDict.iteritems():
+    for infield, invalue in standardMetaDict.items():
       value = invalue
       if infield in FILES_TABLE_METAKEYS:
         if infield == 'User':
@@ -608,7 +608,7 @@ class FileMetadata(object):
     standardMetaDict = {}
     userMetaDict = {}
     leftJoinTables = []
-    for meta, value in metaDict.iteritems():
+    for meta, value in metaDict.items():
       if meta == "SE":
         if isinstance(value, dict):
           storageElements = value.get('in', [])
@@ -710,7 +710,7 @@ class FileMetadata(object):
     if not result['OK']:
       return result
     fileMetaKeys = list(result['Value']) + list(FILE_STANDARD_METAKEYS)
-    fileMetaDict = dict(item for item in metaDict.iteritems() if item[0] in fileMetaKeys)
+    fileMetaDict = dict(item for item in metaDict.items() if item[0] in fileMetaKeys)
 
     fileList = []
     idLfnDict = {}

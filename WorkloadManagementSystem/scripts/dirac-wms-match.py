@@ -91,7 +91,7 @@ if __name__ == '__main__':
   fields = ('Site', 'CE', 'Queue', 'Status', 'Match', 'Reason')
   records = []
 
-  for queue, queueInfo in queueDict.iteritems():
+  for queue, queueInfo in queueDict.items():
     site = queueInfo['Site']
     ce = queueInfo['CEName']
     siteStatus = "Active" if site in siteMaskList else "InActive"

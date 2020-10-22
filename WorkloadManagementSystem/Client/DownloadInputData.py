@@ -83,7 +83,7 @@ class DownloadInputData(object):
     # disk-based replicas are favoured.
     downloadReplicas = {}
 
-    for lfn, reps in replicas.iteritems():
+    for lfn, reps in replicas.items():
       if lfn not in self.inputData:
         self.log.verbose('LFN %s is not in requested input data to download')
         failedReplicas.add(lfn)
@@ -118,7 +118,7 @@ class DownloadInputData(object):
 
     totalSize = 0
     verbose = self.log.verbose('Replicas to download are:')
-    for lfn, reps in downloadReplicas.iteritems():
+    for lfn, reps in downloadReplicas.items():
       self.log.verbose(lfn)
       if not reps['SE']:
         self.log.info('Failed to find data at local SEs, will try to download from anywhere', lfn)
@@ -157,7 +157,7 @@ class DownloadInputData(object):
 
     resolvedData = {}
     localSECount = 0
-    for lfn, info in downloadReplicas.iteritems():
+    for lfn, info in downloadReplicas.items():
       seName = info['SE']
       guid = info['GUID']
       reps = replicas.get(lfn, {})

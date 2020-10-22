@@ -232,7 +232,7 @@ class TestWrite(unittest.TestCase):
     res = fc.write1(lfn)
     self.assertTrue(res['OK'])
     self.assertTrue(lfn in res['Value']['Successful'])
-    self.assertEqual(sorted(['c1', 'c2']), sorted(res['Value']['Successful'][lfn].keys()))
+    self.assertEqual(sorted(['c1', 'c2']), sorted(res['Value']['Successful'][lfn]))
     self.assertTrue(not res['Value']['Failed'])
 
     # Test a write method that only the master has
@@ -240,7 +240,7 @@ class TestWrite(unittest.TestCase):
     res = fc.write2(lfn)
     self.assertTrue(res['OK'])
     self.assertTrue(lfn in res['Value']['Successful'])
-    self.assertEqual(['c1'], res['Value']['Successful'][lfn].keys())
+    self.assertEqual(['c1'], sorted(res['Value']['Successful'][lfn]))
     self.assertTrue(not res['Value']['Failed'])
 
     # Test a write method that makes an error for master
@@ -255,23 +255,23 @@ class TestWrite(unittest.TestCase):
     res = fc.write1(lfn)
     self.assertTrue(res['OK'])
     self.assertTrue(not res['Value']['Successful'])
-    self.assertEqual(['c1'], res['Value']['Failed'][lfn].keys())
+    self.assertEqual(['c1'], sorted(res['Value']['Failed'][lfn]))
 
     # Test a write method that makes an error for non master
     # The lfn should be in failed for non master and successful for the master
     lfn = '/lhcb/c2/Error'
     res = fc.write1(lfn)
     self.assertTrue(res['OK'])
-    self.assertEqual(['c1'], res['Value']['Successful'][lfn].keys())
-    self.assertEqual(['c2'], res['Value']['Failed'][lfn].keys())
+    self.assertEqual(['c1'], sorted(res['Value']['Successful'][lfn]))
+    self.assertEqual(['c2'], sorted(res['Value']['Failed'][lfn]))
 
     # Test a write method that fails for non master
     # The lfn should be in failed for non master and successful for the master
     lfn = '/lhcb/c2/Failed'
     res = fc.write1(lfn)
     self.assertTrue(res['OK'])
-    self.assertEqual(['c1'], res['Value']['Successful'][lfn].keys())
-    self.assertEqual(['c2'], res['Value']['Failed'][lfn].keys())
+    self.assertEqual(['c1'], sorted(res['Value']['Successful'][lfn]))
+    self.assertEqual(['c2'], sorted(res['Value']['Failed'][lfn]))
 
   @mock.patch.object(
       DIRAC.Resources.Catalog.FileCatalog.FileCatalog,
@@ -380,7 +380,7 @@ class TestRead(unittest.TestCase):
     res = fc.write1(lfn)
     self.assertTrue(res['OK'])
     self.assertTrue(lfn in res['Value']['Successful'])
-    self.assertEqual(sorted(['c1', 'c2']), sorted(res['Value']['Successful'][lfn].keys()))
+    self.assertEqual(sorted(['c1', 'c2']), sorted(res['Value']['Successful'][lfn]))
     self.assertTrue(not res['Value']['Failed'])
 
     # Test a write method that only the master has
@@ -388,7 +388,7 @@ class TestRead(unittest.TestCase):
     res = fc.write2(lfn)
     self.assertTrue(res['OK'])
     self.assertTrue(lfn in res['Value']['Successful'])
-    self.assertEqual(['c1'], res['Value']['Successful'][lfn].keys())
+    self.assertEqual(['c1'], sorted(res['Value']['Successful'][lfn]))
     self.assertTrue(not res['Value']['Failed'])
 
     # Test a write method that makes an error for master
@@ -403,23 +403,23 @@ class TestRead(unittest.TestCase):
     res = fc.write1(lfn)
     self.assertTrue(res['OK'])
     self.assertTrue(not res['Value']['Successful'])
-    self.assertEqual(['c1'], res['Value']['Failed'][lfn].keys())
+    self.assertEqual(['c1'], sorted(res['Value']['Failed'][lfn]))
 
     # Test a write method that makes an error for non master
     # The lfn should be in failed for non master and successful for the master
     lfn = '/lhcb/c2/Error'
     res = fc.write1(lfn)
     self.assertTrue(res['OK'])
-    self.assertEqual(['c1'], res['Value']['Successful'][lfn].keys())
-    self.assertEqual(['c2'], res['Value']['Failed'][lfn].keys())
+    self.assertEqual(['c1'], sorted(res['Value']['Successful'][lfn]))
+    self.assertEqual(['c2'], sorted(res['Value']['Failed'][lfn]))
 
     # Test a write method that fails for non master
     # The lfn should be in failed for non master and successful for the master
     lfn = '/lhcb/c2/Failed'
     res = fc.write1(lfn)
     self.assertTrue(res['OK'])
-    self.assertEqual(['c1'], res['Value']['Successful'][lfn].keys())
-    self.assertEqual(['c2'], res['Value']['Failed'][lfn].keys())
+    self.assertEqual(['c1'], sorted(res['Value']['Successful'][lfn]))
+    self.assertEqual(['c2'], sorted(res['Value']['Failed'][lfn]))
 
 
 if __name__ == '__main__':

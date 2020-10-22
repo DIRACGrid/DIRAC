@@ -411,7 +411,7 @@ class NotificationDB(DB):
       msg.append(" On       : %s" % data['timestamp'].strftime("%Y/%m/%d %H:%M:%S"))
       if 'modifications' in data:
         mods = data['modifications']
-        keys = sorted(mods.keys())
+        keys = sorted(mods)
         msg.append(" Modificaitons:")
         for key in keys:
           msg.append("   %s -> %s" % (key, mods[key]))

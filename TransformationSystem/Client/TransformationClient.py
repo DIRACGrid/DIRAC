@@ -141,7 +141,7 @@ class TransformationClient(Client):
       timeStamp = 'LastUpdate'
     # getting transformationFiles - incrementally
     if 'LFN' in condDict:
-      if isinstance(condDict['LFN'], basestring):
+      if isinstance(condDict['LFN'], six.string_types):
         lfnList = [condDict['LFN']]
       else:
         lfnList = sorted(condDict['LFN'])

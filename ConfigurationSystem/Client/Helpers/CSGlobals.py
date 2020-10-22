@@ -11,12 +11,12 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import imp
+import six
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
+@six.add_metaclass(DIRACSingleton)
 class Extensions(object):
-  __metaclass__ = DIRACSingleton
-
   def __init__(self):
     self.__modules = {}
     self.__orderedExtNames = []

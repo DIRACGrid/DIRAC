@@ -46,8 +46,8 @@ class MainReporter(object):
       epoch = requestToHash[key]
       requestToHash[key] = epoch - epoch % granularity
     md5Hash = hashlib.md5()
-    md5Hash.update(repr(requestToHash))
-    md5Hash.update(self.setup)
+    md5Hash.update(repr(requestToHash).encode())
+    md5Hash.update(self.setup.encode())
     return md5Hash.hexdigest()
 
   def generate(self, reportRequest, credDict):

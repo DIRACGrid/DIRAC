@@ -82,7 +82,7 @@ class StageRequestAgent(AgentModule):
 
     if seReplicas:
       gLogger.info("StageRequest.submitStageRequests: Completing partially Staged Tasks")
-    for storageElement, seReplicaIDs in seReplicas.iteritems():
+    for storageElement, seReplicaIDs in seReplicas.items():
       gLogger.debug('Staging at %s:' % storageElement, seReplicaIDs)
       self._issuePrestageRequests(storageElement, seReplicaIDs, allReplicaInfo)
 
@@ -106,12 +106,12 @@ class StageRequestAgent(AgentModule):
       return res
 
     # Merge info from both results
-    for storageElement, seReplicaIDs in res['Value']['SEReplicas'].iteritems():
+    for storageElement, seReplicaIDs in res['Value']['SEReplicas'].items():
       seReplicas.setdefault(storageElement, []).extend(seReplicaIDs)
     allReplicaInfo.update(res['Value']['AllReplicaInfo'])
 
     gLogger.info("StageRequest.submitStageRequests: Obtained %s replicas for staging." % len(allReplicaInfo))
-    for storageElement, seReplicaIDs in seReplicas.iteritems():
+    for storageElement, seReplicaIDs in seReplicas.items():
       gLogger.debug('Staging at %s:' % storageElement, seReplicaIDs)
       self._issuePrestageRequests(storageElement, seReplicaIDs, allReplicaInfo)
     return S_OK()
@@ -134,7 +134,7 @@ class StageRequestAgent(AgentModule):
 
     allReplicaInfo = res['Value']['AllReplicaInfo']
     replicasToStage = []
-    for seReplicaIDs in res['Value']['SEReplicas'].itervalues():
+    for seReplicaIDs in res['Value']['SEReplicas'].values():
       # Consider all SEs
       replicasToStage += seReplicaIDs
 
@@ -165,7 +165,7 @@ class StageRequestAgent(AgentModule):
       return res
     gLogger.info("StageRequest._getOnlineReplicas: Obtained %s replicas Waiting for staging." % len(allReplicaInfo))
     replicasToStage = []
-    for storageElement, seReplicaIDs in res['Value']['SEReplicas'].iteritems():
+    for storageElement, seReplicaIDs in res['Value']['SEReplicas'].items():
       if not self.__usage(storageElement) < self.__cache(storageElement):
         gLogger.info(
             'StageRequest._getOnlineReplicas: Skipping %s, current usage above limit ( %s GB )' %
@@ -211,7 +211,7 @@ class StageRequestAgent(AgentModule):
       return res
     gLogger.info("StageRequest._getOfflineReplicas: Obtained %s replicas Offline for staging." % len(allReplicaInfo))
     replicasToStage = []
-    for storageElement, seReplicaIDs in res['Value']['SEReplicas'].iteritems():
+    for storageElement, seReplicaIDs in res['Value']['SEReplicas'].items():
       if not self.__usage(storageElement) < self.__cache(storageElement):
         gLogger.info(
             'StageRequest._getOfflineReplicas: Skipping %s, current usage above limit ( %s GB )' %
@@ -284,7 +284,7 @@ class StageRequestAgent(AgentModule):
             "StageRequest._issuePrestageRequests: Completely failed to submit stage requests for replicas.",
             res['Message'])
       else:
-        for lfn, requestID in res['Value']['Successful'].iteritems():
+        for lfn, requestID in res['Value']['Successful'].items():
           stageRequestMetadata.setdefault(requestID, []).append(lfnRepIDs[lfn])
           updatedLfnIDs.append(lfnRepIDs[lfn])
     if stageRequestMetadata:
@@ -304,7 +304,7 @@ class StageRequestAgent(AgentModule):
 
     seReplicas = {}
     replicaIDs = {}
-    for replicaID, info in replicaDict.iteritems():
+    for replicaID, info in replicaDict.items():
       lfn = info['LFN']
       storageElement = info['SE']
       size = info['Size']
@@ -370,7 +370,7 @@ class StageRequestAgent(AgentModule):
       return res
     addReplicas = {'Offline': {}, 'Waiting': {}}
     replicaIDs = {}
-    for replicaID, info in res['Value'].iteritems():
+    for replicaID, info in res['Value'].items():
       lfn = info['LFN']
       storageElement = info['SE']
       size = info['Size']
@@ -386,7 +386,7 @@ class StageRequestAgent(AgentModule):
     allReplicaInfo.update(newReplicaInfo)
 
     # First handle Waiting Replicas for which metadata is to be checked
-    for storageElement, seReplicaIDs in waitingReplicas.iteritems():
+    for storageElement, seReplicaIDs in waitingReplicas.items():
       for replicaID in list(seReplicaIDs):
         if replicaID in replicasToStage:
           seReplicaIDs.remove(replicaID)
@@ -403,7 +403,7 @@ class StageRequestAgent(AgentModule):
         replicasToStage.extend(res['Value']['Offline'])
 
     # Then handle Offline Replicas for which metadata is already checked
-    for storageElement, seReplicaIDs in offlineReplicas.iteritems():
+    for storageElement, seReplicaIDs in offlineReplicas.items():
       for replicaID in sorted(seReplicaIDs):
         if replicaID in replicasToStage:
           seReplicaIDs.remove(replicaID)
@@ -455,7 +455,7 @@ class StageRequestAgent(AgentModule):
     terminalReplicaIDs = {}
     onlineReplicaIDs = []
     offlineReplicaIDs = []
-    for lfn, metadata in res['Value']['Successful'].iteritems():
+    for lfn, metadata in res['Value']['Successful'].items():
 
       if metadata['Size'] != allReplicaInfo[lfnRepIDs[lfn]]['Size']:
         gLogger.error("StageRequest.__checkIntegrity: LFN StorageElement size does not match FileCatalog", lfn)
@@ -475,7 +475,7 @@ class StageRequestAgent(AgentModule):
       else:
         offlineReplicaIDs.append(lfnRepIDs[lfn])
 
-    for lfn, reason in res['Value']['Failed'].iteritems():
+    for lfn, reason in res['Value']['Failed'].items():
       if re.search('File does not exist', reason):
         gLogger.error("StageRequest.__checkIntegrity: LFN does not exist in the StorageElement", lfn)
         terminalReplicaIDs[lfnRepIDs[lfn]] = 'LFN does not exist in the StorageElement'

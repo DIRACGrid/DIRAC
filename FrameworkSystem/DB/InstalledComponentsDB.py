@@ -271,7 +271,7 @@ class HostLogging(componentsBase):
     self.hostName = host
     fields = dir(self)
 
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
       if key in fields and not re.match('_.*', key):
         setattr(self, key, value)
 
@@ -285,7 +285,7 @@ class HostLogging(componentsBase):
       dictionary['DIRAC'] = dictionary.get('DIRACVersion')
 
     try:
-      for key, value in dictionary.iteritems():
+      for key, value in dictionary.items():
         if key in fields and not re.match('_.*', key):
           setattr(self, key, value)
     except Exception as e:
@@ -489,17 +489,17 @@ class InstalledComponentsDB(object):
       matchFields = {}
     componentKeys = {}
 
-    for (key, val) in matchFields.iteritems():
+    for (key, val) in matchFields.items():
       if 'Component.' in key:
         componentKeys[key.replace('Component.', '')] = val
 
     hostKeys = {}
-    for (key, val) in matchFields.iteritems():
+    for (key, val) in matchFields.items():
       if 'Host.' in key:
         hostKeys[key.replace('Host.', '')] = val
 
     selfKeys = {}
-    for (key, val) in matchFields.iteritems():
+    for (key, val) in matchFields.items():
       if 'Component.' not in key and 'Host.' not in key:
         selfKeys[key] = val
 

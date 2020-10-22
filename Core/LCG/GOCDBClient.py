@@ -36,7 +36,7 @@ def _parseSingleElement(element, attributes=None):
     if child.nodeName == "SCOPES":
       for subchild in child.childNodes:
         if subchild.childNodes:
-          handler.setdefault('SCOPES', []).append(subchild.childNodes[0].nodeValue.encode('utf-8'))
+          handler.setdefault('SCOPES', []).append(subchild.childNodes[0].nodeValue)
       continue
 
     if child.nodeName == "EXTENSIONS":
@@ -45,13 +45,12 @@ def _parseSingleElement(element, attributes=None):
           dct = {}
           for subsubchild in subchild.childNodes:
             if subsubchild.childNodes:
-              dct[subsubchild.nodeName.encode('utf-8')] = subsubchild.childNodes[0].nodeValue.encode('utf-8')
+              dct[subsubchild.nodeName] = subsubchild.childNodes[0].nodeValue
           handler.setdefault('EXTENSIONS', []).append(dct)
       continue
 
     try:
-      nodeValue = child.childNodes[0].nodeValue
-      attrValue = nodeValue.encode('utf-8')
+      attrValue = child.childNodes[0].nodeValue
     except IndexError:
       continue
     handler[attrName] = attrValue
@@ -333,7 +332,6 @@ class GOCDBClient(object):
   def _downTimeXMLParsing(self, dt, siteOrRes, entities=None, startDateMax=None):
     """ Performs xml parsing from the dt string (returns a dictionary)
     """
-    dt = dt.encode('utf-8')
     doc = minidom.parseString(dt)
 
     downtimeElements = doc.getElementsByTagName("DOWNTIME")

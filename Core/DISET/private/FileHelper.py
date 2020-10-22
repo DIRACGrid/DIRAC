@@ -3,16 +3,25 @@ from __future__ import division
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-import six
-import os
 import hashlib
-import threading
-import cStringIO
+import io
+import os
 import tarfile
 import tempfile
+import threading
+
+import six
+from six import StringIO
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
+try:
+    # Python 2: "file" is built-in
+    file_types = file, io.IOBase
+except NameError:
+    # Python 3: "file" fully replaced with IOBase
+    file_types = (io.IOBase,)
 
 gLogger = gLogger.getSubLogger("FileTransmissionHelper")
 
@@ -56,6 +65,8 @@ class FileHelper(object):
     return self.__fileBytes
 
   def sendData(self, sBuffer):
+    if six.PY3 and isinstance(sBuffer, str):
+      sBuffer = sBuffer.encode(errors="surrogateescape")
     if self.__checkMD5:
       self.__oMD5.update(sBuffer)
     retVal = self.oTransport.sendData(S_OK([True, sBuffer]))
@@ -89,6 +100,8 @@ class FileHelper(object):
       return retVal
     stBuffer = retVal['Value']
     if stBuffer[0]:
+      if six.PY3 and isinstance(stBuffer[1], str):
+        stBuffer[1] = stBuffer[1].encode(errors="surrogateescape")
       if self.__checkMD5:
         self.__oMD5.update(stBuffer[1])
       self.oTransport.sendData(S_OK())
@@ -132,7 +145,7 @@ class FileHelper(object):
     """ Receive the input from a DISET client and return it as a string
     """
 
-    stringIO = cStringIO.StringIO()
+    stringIO = StringIO()
     result = self.networkToDataSink(stringIO, maxFileSize=maxFileSize)
     if not result['OK']:
       return result
@@ -155,26 +168,30 @@ class FileHelper(object):
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
     receivedBytes = 0
-    try:
-      result = self.receiveData(maxBufferSize=maxFileSize)
+    # try:
+    result = self.receiveData(maxBufferSize=maxFileSize)
+    if not result['OK']:
+      return result
+    strBuffer = result['Value']
+    if six.PY3 and isinstance(strBuffer, str):
+      strBuffer = strBuffer.encode(errors="surrogateescape")
+    receivedBytes += len(strBuffer)
+    while not self.receivedEOF():
+      if maxFileSize > 0 and receivedBytes > maxFileSize:
+        self.sendError("Exceeded maximum file size")
+        return S_ERROR("Received file exceeded maximum size of %s bytes" % (maxFileSize))
+      dataSink.write(strBuffer)
+      result = self.receiveData(maxBufferSize=(maxFileSize - len(strBuffer)))
       if not result['OK']:
         return result
       strBuffer = result['Value']
+      if six.PY3 and isinstance(strBuffer, str):
+        strBuffer = strBuffer.encode(errors="surrogateescape")
       receivedBytes += len(strBuffer)
-      while not self.receivedEOF():
-        if maxFileSize > 0 and receivedBytes > maxFileSize:
-          self.sendError("Exceeded maximum file size")
-          return S_ERROR("Received file exceeded maximum size of %s bytes" % (maxFileSize))
-        dataSink.write(strBuffer)
-        result = self.receiveData(maxBufferSize=(maxFileSize - len(strBuffer)))
-        if not result['OK']:
-          return result
-        strBuffer = result['Value']
-        receivedBytes += len(strBuffer)
-      if strBuffer:
-        dataSink.write(strBuffer)
-    except Exception as e:
-      return S_ERROR("Error while receiving file, %s" % str(e))
+    if strBuffer:
+      dataSink.write(strBuffer)
+    # except Exception as e:
+    #   return S_ERROR("Error while receiving file, %s" % str(e))
     if self.errorInTransmission():
       return S_ERROR("Error in the file CRC")
     self.__fileBytes = receivedBytes
@@ -184,7 +201,7 @@ class FileHelper(object):
     """ Send a given string to the DISET client over the network
     """
 
-    stringIO = cStringIO.StringIO(stringVal)
+    stringIO = StringIO(stringVal)
 
     iPacketSize = self.packetSize
     ioffset = 0
@@ -234,7 +251,7 @@ class FileHelper(object):
     return S_OK()
 
   def BufferToNetwork(self, stringToSend):
-    sIO = cStringIO.StringIO(stringToSend)
+    sIO = StringIO(stringToSend)
     try:
       return self.DataSourceToNetwork(sIO)
     finally:
@@ -273,7 +290,7 @@ class FileHelper(object):
       except IOError:
         return S_ERROR("%s can't be opened" % uFile)
       iFD = self.oFile.fileno()
-    elif isinstance(uFile, file):
+    elif isinstance(uFile, file_types):
       iFD = uFile.fileno()
     elif isinstance(uFile, int):
       iFD = uFile
@@ -291,7 +308,7 @@ class FileHelper(object):
         oFile = open(uFile, "wb")
       except IOError:
         return S_ERROR("%s can't be opened" % uFile)
-    elif isinstance(uFile, file):
+    elif isinstance(uFile, file_types):
       oFile = uFile
       closeAfter = False
     elif isinstance(uFile, int):

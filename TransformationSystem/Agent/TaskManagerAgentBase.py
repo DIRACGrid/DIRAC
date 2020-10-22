@@ -15,7 +15,7 @@ __RCSID__ = "$Id$"
 
 import time
 import datetime
-from Queue import Queue
+from six.moves.queue import Queue
 
 from DIRAC import S_OK
 
@@ -103,7 +103,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
     self.log.verbose("Multithreaded with %d threads" % maxNumberOfThreads)
 
-    for i in xrange(maxNumberOfThreads):
+    for i in range(maxNumberOfThreads):
       threadPool.generateJobAndQueueIt(self._execute, [i])
 
     return S_OK()
@@ -240,7 +240,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     """ Just fill the queue with the operation to be done on a certain transformation
     """
     count = 0
-    for transID, bodyAndOps in operationsOnTransformationsDict.iteritems():
+    for transID, bodyAndOps in operationsOnTransformationsDict.items():
       if transID not in self.transInQueue:
         count += 1
         self.transInQueue.append(transID)
@@ -395,7 +395,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                          method=method, transID=transID)
 
       # Set status for tasks that changes
-      for status, taskIDs in statusDict.iteritems():
+      for status, taskIDs in statusDict.items():
         self._logVerbose("%4d: Updating %d task(s) to %s" % (nb, len(taskIDs), status),
                          method=method, transID=transID)
         setTaskStatus = clients['TransformationClient'].setTaskStatus(transID, taskIDs, status)
@@ -405,7 +405,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
           return setTaskStatus
         updated[status] = updated.setdefault(status, 0) + len(taskIDs)
 
-    for status, nb in updated.iteritems():
+    for status, nb in updated.items():
       self._logInfo("Updated %d tasks to status %s" % (nb, status),
                     method=method, transID=transID)
     return S_OK()
@@ -461,7 +461,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
       # Set the status of files
       fileReport = FileReport(server=clients['TransformationClient'].getServer())
-      for lfn, status in statusDict.iteritems():
+      for lfn, status in statusDict.items():
         updated[status] = updated.setdefault(status, 0) + 1
         setFileStatus = fileReport.setFileStatus(transID, lfn, status)
         if not setFileStatus['OK']:
@@ -475,7 +475,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         self._logVerbose("%4d: Updated the states of %d files" % (nb, len(commit['Value'])),
                          method=method, transID=transID)
 
-    for status, nb in updated.iteritems():
+    for status, nb in updated.items():
       self._logInfo("Updated %d files to status %s" % (nb, status),
                     method=method, transID=transID)
     return S_OK()

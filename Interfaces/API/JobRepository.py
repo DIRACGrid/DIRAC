@@ -54,7 +54,7 @@ class JobRepository(object):
   def resetRepository(self, jobIDs=[]):
     if not jobIDs:
       jobs = self.readRepository()['Value']
-      jobIDs = jobs.keys()
+      jobIDs = list(jobs)
     paramDict = {'State': 'Submitted',
                  'Retrieved': 0,
                  'OutputData': 0}

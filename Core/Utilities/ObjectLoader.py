@@ -11,6 +11,7 @@ import re
 import imp
 import pkgutil
 import collections
+import six
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -18,6 +19,7 @@ from DIRAC.Core.Utilities import List, DIRACSingleton
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 
+@six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class ObjectLoader(object):
   """ Class for loading objects. Example:
 
@@ -25,8 +27,6 @@ class ObjectLoader(object):
       ol = ObjectLoader()
       ol.loadObject('TransformationSystem.Client.TransformationClient')
   """
-  __metaclass__ = DIRACSingleton.DIRACSingleton
-
   def __init__(self, baseModules=False):
     """ init
     """
@@ -100,7 +100,7 @@ class ObjectLoader(object):
       if impData[0]:
         impData[0].close()
     except ImportError as excp:
-      if str(excp).find("No module named %s" % modName[0]) == 0:
+      if "No module named" in str(excp) and modName[0] in str(excp):
         return S_OK(None)
       errMsg = "Can't load %s in %s" % (".".join(modName), parentModule.__path__[0])
       if not hideExceptions:

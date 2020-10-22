@@ -9,9 +9,10 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import ast
+from io import open
 import os
 
-from io import open
+import six
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
@@ -187,10 +188,10 @@ def createClient(serviceName):
           funcName = member.name[len('export_'):]
           if funcName in attrDict:
             continue
-          # FIXME: this is not python3 compatible. I think this needs to be a.arg instead of a.id in python3
-          # see https://greentreesnakes.readthedocs.io/en/latest/nodes.html?highlight=arguments#arg
-          # and https://stackoverflow.com/questions/51271587/how-do-i-list-a-functions-parameters-using-ast
-          arguments = [a.id for a in member.args.args]
+          if six.PY2:
+            arguments = [a.id for a in member.args.args]
+          else:
+            arguments = [a.arg for a in member.args.args]
           # add the implementation of the function to the class attributes
           attrDict[funcName] = genFunc(funcName, arguments, fullHandlerClassPath, ast.get_docstring(member))
 

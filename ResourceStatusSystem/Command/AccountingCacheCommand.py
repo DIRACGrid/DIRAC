@@ -85,9 +85,9 @@ class SuccessfullJobsBySiteSplittedCommand(Command):
 
     singlePlots = {}
 
-    successfulJobs['data'] = {site: strToIntDict(value) for site, value in successfulJobs['data'].iteritems()}
+    successfulJobs['data'] = {site: strToIntDict(value) for site, value in successfulJobs['data'].items()}
 
-    for site, value in successfulJobs['data'].iteritems():
+    for site, value in successfulJobs['data'].items():
       if site in sites:
         plot = {}
         plot['data'] = {site: value}
@@ -160,11 +160,11 @@ class FailedJobsBySiteSplittedCommand(Command):
     if 'granularity' not in failedJobs:
       return S_ERROR('Missing granularity key')
 
-    failedJobs['data'] = {site: strToIntDict(value) for site, value in failedJobs['data'].iteritems()}
+    failedJobs['data'] = {site: strToIntDict(value) for site, value in failedJobs['data'].items()}
 
     singlePlots = {}
 
-    for site, value in failedJobs['data'].iteritems():
+    for site, value in failedJobs['data'].items():
       if site in sites:
         plot = {}
         plot['data'] = {site: value}
@@ -237,11 +237,11 @@ class SuccessfullPilotsBySiteSplittedCommand(Command):
     if 'granularity' not in succesfulPilots:
       return S_ERROR('Missing granularity key')
 
-    succesfulPilots['data'] = {site: strToIntDict(value) for site, value in succesfulPilots['data'].iteritems()}
+    succesfulPilots['data'] = {site: strToIntDict(value) for site, value in succesfulPilots['data'].items()}
 
     singlePlots = {}
 
-    for site, value in succesfulPilots['data'].iteritems():
+    for site, value in succesfulPilots['data'].items():
       if site in sites:
         plot = {}
         plot['data'] = {site: value}
@@ -314,11 +314,11 @@ class FailedPilotsBySiteSplittedCommand(Command):
     if 'granularity' not in failedPilots:
       return S_ERROR('Missing granularity key')
 
-    failedPilots['data'] = {site: strToIntDict(value)for site, value in failedPilots['data'].iteritems()}
+    failedPilots['data'] = {site: strToIntDict(value)for site, value in failedPilots['data'].items()}
 
     singlePlots = {}
 
-    for site, value in failedPilots['data'].iteritems():
+    for site, value in failedPilots['data'].items():
       if site in sites:
         plot = {}
         plot['data'] = {site: value}
@@ -393,11 +393,11 @@ class SuccessfullPilotsByCESplittedCommand(Command):
     if 'granularity' not in successfulPilots:
       return S_ERROR('Missing granularity key')
 
-    successfulPilots['data'] = {site: strToIntDict(value) for site, value in successfulPilots['data'].iteritems()}
+    successfulPilots['data'] = {site: strToIntDict(value) for site, value in successfulPilots['data'].items()}
 
     singlePlots = {}
 
-    for ce, value in successfulPilots['data'].iteritems():
+    for ce, value in successfulPilots['data'].items():
       if ce in ces:
         plot = {}
         plot['data'] = {ce: value}
@@ -479,11 +479,11 @@ class FailedPilotsByCESplittedCommand(Command):
     if 'granularity' not in failedPilots:
       return S_ERROR('Missing granularity key')
 
-    failedPilots['data'] = {site: strToIntDict(value) for site, value in failedPilots['data'].iteritems()}
+    failedPilots['data'] = {site: strToIntDict(value) for site, value in failedPilots['data'].items()}
 
     singlePlots = {}
 
-    for ce, value in failedPilots['data'].iteritems():
+    for ce, value in failedPilots['data'].items():
       if ce in ces:
         plot = {}
         plot['data'] = {ce: value}
@@ -561,11 +561,11 @@ class RunningJobsBySiteSplittedCommand(Command):
     if 'granularity' not in runJobs:
       return S_ERROR('Missing granularity key')
 
-    runJobs['data'] = {site: strToIntDict(value) for site, value in runJobs['data'].iteritems()}
+    runJobs['data'] = {site: strToIntDict(value) for site, value in runJobs['data'].items()}
 
     singlePlots = {}
 
-    for site, value in runJobs['data'].iteritems():
+    for site, value in runJobs['data'].items():
       if site in sites:
         plot = {}
         plot['data'] = {site: value}

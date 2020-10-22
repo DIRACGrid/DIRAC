@@ -324,7 +324,7 @@ class ResourceStatusDB(SQLAlchemyDB):
 
     try:
       select = Query(table_c, session=session)
-      for columnName, columnValue in params.iteritems():
+      for columnName, columnValue in params.items():
         if not columnValue or columnName not in primaryKeys:
           continue
         column_a = getattr(table_c, columnName.lower())
@@ -353,7 +353,7 @@ class ResourceStatusDB(SQLAlchemyDB):
         if params.get('Status') != res.status:  # we update dateEffective iff we change the status
           changeDE = True
 
-      for columnName, columnValue in params.iteritems():
+      for columnName, columnValue in params.items():
         if columnName == 'LastCheckTime' and not columnValue:  # we always update lastCheckTime
           columnValue = datetime.datetime.utcnow().replace(microsecond=0)
         if changeDE and columnName == 'DateEffective' and not columnValue:
@@ -394,7 +394,7 @@ class ResourceStatusDB(SQLAlchemyDB):
 
     try:
       select = Query(table_c, session=session)
-      for columnName, columnValue in params.iteritems():
+      for columnName, columnValue in params.items():
         if not columnValue or columnName not in primaryKeys:
           continue
         column_a = getattr(table_c, columnName.lower())

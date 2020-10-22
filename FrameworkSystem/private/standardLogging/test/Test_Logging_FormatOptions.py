@@ -4,7 +4,7 @@ Test properties of log records
 
 __RCSID__ = "$Id$"
 
-import thread
+from six.moves import _thread as thread
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import gLogger, gLoggerReset
@@ -35,14 +35,17 @@ def test_showFormatOptionsInit():
   gLogger.notice("me")
   logstring = cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   log.notice("ss")
   logstring += cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   sublog.notice("age")
   logstring += cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   assert logstring == "Framework NOTICE: me\nFramework/log NOTICE: ss\nFramework/log/sublog NOTICE: age\n"
 
@@ -131,18 +134,21 @@ def test_showFormatOptionsgLogger(header, threadID, timeStamp, context, msg,
   assert ('UTC' in logValue) == isTimeStampAvailable
   logstring = cleaningLog(logValue)
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   log.notice(msg)
   logValue = capturedBackend.getvalue()
   assert ('UTC' in logValue) == isTimeStampAvailable
   logstring += cleaningLog(logValue)
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   sublog.notice(msg)
   logValue = capturedBackend.getvalue()
   assert ('UTC' in logValue) == isTimeStampAvailable
   logstring += cleaningLog(logValue)
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   # check that threadID is present in the log when it should be present
   threadIDValue = str(thread.get_ident())
@@ -185,14 +191,17 @@ def test_showFormatOptionsLog(header, threadID, msg, expectedLog, isThreadIDAvai
   gLogger.notice(msg)
   logstring = cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   log.notice(msg)
   logstring += cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   sublog.notice(msg)
   logstring += cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   expectedLog = "Framework NOTICE: message\n" + expectedLog
 
@@ -238,14 +247,17 @@ def test_showFormatOptionsSubLog(header, threadID, msg, expectedLog, isThreadIDA
   gLogger.notice(msg)
   logstring = cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   log.notice(msg)
   logstring += cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   sublog.notice(msg)
   logstring += cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   expectedLog = 'Framework NOTICE: message\nmessage\n' + expectedLog
 
@@ -284,14 +296,17 @@ def test_showFormatOptionsPropag():
   gLogger.notice("me")
   logstring = cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   log.notice("ss")
   logstring += cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   sublog.notice("age")
   logstring += cleaningLog(capturedBackend.getvalue())
   capturedBackend.truncate(0)
+  capturedBackend.seek(0)
 
   threadID = str(thread.get_ident())
   expectedLog = "Framework [%s] NOTICE: me\nss\nage\n" % threadID

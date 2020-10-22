@@ -126,11 +126,11 @@ class X509Request(object):
         :returns: S_OK()
     """
     try:
-      self.__reqObj = M2Crypto.X509.load_request_string(pemData)
+      self.__reqObj = M2Crypto.X509.load_request_string(pemData.encode())
     except Exception as e:
       return S_ERROR(DErrno.ENOCERT, str(e))
     try:
-      self.__pkeyObj = M2Crypto.EVP.load_key_string(pemData)
+      self.__pkeyObj = M2Crypto.EVP.load_key_string(pemData.encode())
     except Exception as e:
       return S_ERROR(DErrno.ENOPKEY, str(e))
     self.__valid = True

@@ -77,7 +77,7 @@ class MatcherHandler(RequestHandler):
     self.limiter = Limiter(jobDB=gJobDB)
 
 ##############################################################################
-  types_requestJob = [[basestring, dict]]
+  types_requestJob = [six.string_types + (dict,)]
 
   def export_requestJob(self, resourceDescription):
     """ Serve a job to the request of an agent which is the highest priority

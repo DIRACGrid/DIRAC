@@ -14,6 +14,18 @@ from  DIRAC.Core.Utilities.DAG import DAG, makeFrozenSet
 __RCSID__ = "$Id $"
 
 
+def listToSet(obj, recursive=False):
+  """ Convert a list of objects into a set which can be used for comparison """
+  result = set()
+  for x in obj:
+    if isinstance(x, (list, tuple)):
+      x = frozenset(x) if recursive else tuple(x)
+    elif isinstance(x, dict):
+      x = tuple(map(tuple, sorted(x.items())))
+    result.add(x)
+  return result
+
+
 ########################################################################
 class DAGTestCase( unittest.TestCase ):
   """ Test case for DIRAC.Core.Utilities.DAG module
@@ -121,7 +133,7 @@ class DAGFull(DAGTestCase):
     dag.addEdge('A', 'B')
     self.assertEqual(dag.graph, {'A': {'B'}, 'B': set()})
     l = dag.getList()
-    self.assertEqual(l, ['A', 'B'])
+    self.assertEqual(set(l), {'A', 'B'})
     dag.addEdge('A', 'B')
     self.assertEqual(dag.graph, {'A': {'B'}, 'B': set()})
     dag.addEdge('A', 'C')
@@ -135,10 +147,10 @@ class DAGFull(DAGTestCase):
     self.assertEqual(dag.graph, {'A': {'B', 'C'}, 'B': set(), 'C': set()})
     dag.addNode('D')
     i_n = dag.getIndexNodes()
-    self.assertEqual(i_n, ['A', 'D'])
+    self.assertEqual(set(i_n), {'A', 'D'})
     dag.addNode('E')
     i_n = dag.getIndexNodes()
-    self.assertEqual(sorted(i_n), sorted(['A', 'D', 'E']))
+    self.assertEqual(listToSet(i_n), listToSet(['A', 'D', 'E']))
     dag.addEdge('A', 'D')
     dag.addEdge('D', 'E')
     self.assertEqual(dag.graph, {'A': {'B', 'C', 'D'}, 'B': set(), 'C': set(), 'D': {'E'}, 'E': set()} )
@@ -222,7 +234,7 @@ class DAGFull(DAGTestCase):
                     )
 
     i_n = dag.getIndexNodes()
-    self.assertEqual(i_n, ['A', l])
+    self.assertEqual(listToSet(i_n), listToSet(['A', l]))
 
     d1 = {'a':'b'}
     dag.addNode(d1)
@@ -248,7 +260,10 @@ class DAGFull(DAGTestCase):
                     )
 
     i_n = dag.getIndexNodes()
-    self.assertEqual(sorted(i_n), sorted(['A', l, d1, l1]))
+    self.assertEqual(
+        listToSet(i_n, recursive=True),
+        listToSet(['A', l, d1, l1], recursive=True)
+    )
 
     s1 = set()
     dag.addNode(s1)

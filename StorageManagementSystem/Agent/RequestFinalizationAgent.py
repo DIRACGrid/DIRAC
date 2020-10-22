@@ -54,7 +54,7 @@ class RequestFinalizationAgent(AgentModule):
       gLogger.info("RequestFinalization.clearFailedTasks: No tasks to remove.")
       return S_OK()
     gLogger.info("RequestFinalization.clearFailedTasks: Removing %s tasks..." % len(failedTasks))
-    res = self.stagerClient.removeTasks(failedTasks.keys())
+    res = self.stagerClient.removeTasks(list(failedTasks))
     if not res['OK']:
       gLogger.error("RequestFinalization.clearFailedTasks: Failed to remove tasks.", res['Message'])
       return res
@@ -80,7 +80,7 @@ class RequestFinalizationAgent(AgentModule):
     if not doneTasks:
       gLogger.info("RequestFinalization.callbackDoneTasks: No tasks to update to Done.")
       return S_OK()
-    res = self.stagerClient.removeTasks(doneTasks.keys())
+    res = self.stagerClient.removeTasks(list(doneTasks))
     if not res['OK']:
       gLogger.fatal("RequestFinalization.callbackDoneTasks: Failed to remove Done tasks.", res['Message'])
     return res
@@ -110,8 +110,8 @@ class RequestFinalizationAgent(AgentModule):
       gLogger.info("RequestFinalization.callbackStagedTasks: No tasks to update to Done.")
       return S_OK()
     # Daniela: Why is the line below commented out?
-    # res = self.stagerClient.setTasksDone(stagedTasks.keys())
-    res = self.stagerClient.removeTasks(stagedTasks.keys())
+    # res = self.stagerClient.setTasksDone(list(stagedTasks))
+    res = self.stagerClient.removeTasks(list(stagedTasks))
     if not res['OK']:
       gLogger.fatal("RequestFinalization.callbackStagedTasks: Failed to remove staged Tasks.", res['Message'])
     return res
@@ -152,7 +152,7 @@ class RequestFinalizationAgent(AgentModule):
       return res
     stagedTasks = res['Value']
     gLogger.info("RequestFinalization.clearReleasedTasks: Removing %s tasks..." % len(stagedTasks))
-    res = self.stagerClient.removeTasks(stagedTasks.keys())
+    res = self.stagerClient.removeTasks(list(stagedTasks))
     if not res['OK']:
       gLogger.error("RequestFinalization.clearReleasedTasks: Failed to remove tasks.", res['Message'])
       return res

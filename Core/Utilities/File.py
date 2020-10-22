@@ -78,13 +78,13 @@ def makeGuid(fileName=None):
   myMd5 = hashlib.md5()
   if fileName:
     try:
-      with open(fileName, 'r') as fd:
+      with open(fileName, 'rb') as fd:
         data = fd.read(10 * 1024 * 1024)
         myMd5.update(data)
     except BaseException:
       return None
   else:
-    myMd5.update(str(random.getrandbits(128)))
+    myMd5.update(str(random.getrandbits(128)).encode())
 
   md5HexString = myMd5.hexdigest().upper()
   return generateGuid(md5HexString, "MD5")
@@ -112,7 +112,7 @@ def generateGuid(checksum, checksumtype):
 
   # Failed to use the check sum, generate a new guid
   myMd5 = hashlib.md5()
-  myMd5.update(str(random.getrandbits(128)))
+  myMd5.update(str(random.getrandbits(128)).encode())
   md5HexString = myMd5.hexdigest()
   guid = "%s-%s-%s-%s-%s" % (md5HexString[0:8],
                              md5HexString[8:12],

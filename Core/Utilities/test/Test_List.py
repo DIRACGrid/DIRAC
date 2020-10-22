@@ -138,11 +138,11 @@ class ListTestCase(unittest.TestCase):
       self.assertEqual(isinstance(val, RuntimeError), True)
       self.assertEqual(str(val), "chunkSize cannot be less than 1")
 
-    # normal behaviour
-    aList = range(10)
+    # normal behavior
+    aList = list(range(10))
     self.assertEqual(List.breakListIntoChunks(aList, 5), [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]])
     # and once again this time with a rest
-    aList = range(10)
+    aList = list(range(10))
     self.assertEqual(List.breakListIntoChunks(aList, 4), [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9]])
     # almost empty list, too many chunks
     aList = [1]

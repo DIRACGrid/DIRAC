@@ -117,7 +117,7 @@ class ConsistencyInspector(object):
     for chunk in breakListIntoChunks(lfns, chunkSize):
       if printProgress:
         self.__write('.')
-      for _ in xrange(1, 10):
+      for _ in range(1, 10):
         res = self.fileCatalog.getReplicas(chunk)
         if res['OK']:
           present.update(res['Value']['Successful'])
@@ -322,7 +322,7 @@ class ConsistencyInspector(object):
       fileTypes = []
     # and loop on the original dictionaries
     for ancestor in lfnDict:
-      for desc in lfnDict[ancestor].keys():
+      for desc in list(lfnDict[ancestor]):
         ft = lfnDict[ancestor][desc]['FileType']
         if ft in fileTypesExcluded or (fileTypes and ft not in fileTypes):
           ancDict[ancestor].pop(desc)
@@ -583,7 +583,7 @@ class ConsistencyInspector(object):
     if not res['OK']:
       return res
     catalogMetadata, _missingCatalogFiles, _zeroSizeFiles = res['Value']
-    res = self._getCatalogReplicas(catalogMetadata.keys())
+    res = self._getCatalogReplicas(list(catalogMetadata))
     if not res['OK']:
       return res
     replicas, _zeroReplicaFiles = res['Value']
@@ -605,8 +605,8 @@ class ConsistencyInspector(object):
     gLogger.info("Performing the FC->SE check")
     gLogger.info("-" * 40)
     seLfns = {}
-    for lfn, replicaDict in replicas.iteritems():
-      for se, _url in replicaDict.iteritems():
+    for lfn, replicaDict in replicas.items():
+      for se, _url in replicaDict.items():
         if (ses) and (se not in ses):
           continue
         seLfns.setdefault(se, []).append(lfn)
@@ -622,7 +622,7 @@ class ConsistencyInspector(object):
       if not res['OK']:
         gLogger.error('Failed to get physical file metadata.', res['Message'])
         return res
-      for lfn, metadata in res['Value'].iteritems():
+      for lfn, metadata in res['Value'].items():
         if lfn in catalogMetadata:
           # and ( metadata['Size'] != 0 ):
           if metadata['Size'] != catalogMetadata[lfn]['Size']:
@@ -647,7 +647,7 @@ class ConsistencyInspector(object):
     pfnMetadata = res['Value']['Successful']
     # If the replicas are completely missing
     missingReplicas = []
-    for lfn, reason in res['Value']['Failed'].iteritems():
+    for lfn, reason in res['Value']['Failed'].items():
       if re.search('File does not exist', reason):
         missingReplicas.append((lfn, 'deprecatedUrl', se, 'PFNMissing'))
     if missingReplicas:
@@ -656,7 +656,7 @@ class ConsistencyInspector(object):
     unavailableReplicas = []
     zeroSizeReplicas = []
     # If the files are not accessible
-    for lfn, metadata in pfnMetadata.iteritems():
+    for lfn, metadata in pfnMetadata.items():
       if metadata.get('Lost'):
         lostReplicas.append((lfn, 'deprecatedUrl', se, 'PFNLost'))
       if metadata.get('Unavailable') or not metadata['Accessible']:
@@ -753,7 +753,7 @@ class ConsistencyInspector(object):
       gLogger.error('Failed to get catalog replicas', res['Message'])
       return res
     allReplicas = res['Value']['Successful']
-    for lfn, error in res['Value']['Failed'].iteritems():
+    for lfn, error in res['Value']['Failed'].items():
       if re.search('File has zero replicas', error):
         zeroReplicaFiles.append(lfn)
     gLogger.info('Obtaining the replicas for files complete')
@@ -773,7 +773,7 @@ class ConsistencyInspector(object):
       gLogger.error('Failed to get catalog metadata', res['Message'])
       return res
     allMetadata = res['Value']['Successful']
-    for lfn, error in res['Value']['Failed'].iteritems():
+    for lfn, error in res['Value']['Failed'].items():
       if re.search('No such file or directory', error):
         missingCatalogFiles.append(lfn)
     gLogger.info('Obtaining the catalog metadata complete')

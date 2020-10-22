@@ -143,7 +143,7 @@ class TransferQualityCommand(Command):
     if not results['OK']:
       return results
 
-    pr_q_d = {channel: strToIntDict(value) for channel, value in results['Value']['data'].iteritems()}
+    pr_q_d = {channel: strToIntDict(value) for channel, value in results['Value']['data'].items()}
 
     # FIXME: WHAT the hell is this doing ?
     values = []
@@ -324,7 +324,7 @@ class TransferQualityFromCachedPlotCommand(Command):
 
       num, den = 0, 0
 
-      se = results['data'].keys()[0]
+      se = list(results['data'])[0]
 
       num = num + len(results['data'][se])
       den = den + sum(results['data'][se].values())

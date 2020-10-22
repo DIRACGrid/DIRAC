@@ -47,10 +47,10 @@ for lfnList in breakListIntoChunks(lfns, 100):
     DIRAC.exit(-2)
   for lfn, r in res['Value']['Failed'].items():
     reason = str(r)
-    if reason not in errorReasons.keys():
+    if reason not in errorReasons:
       errorReasons[reason] = []
     errorReasons[reason].append(lfn)
-  successfullyRemoved += len(res['Value']['Successful'].keys())
+  successfullyRemoved += len(res['Value']['Successful'])
 
 for reason, lfns in errorReasons.items():
   gLogger.notice("Failed to remove %d files with error: %s" % (len(lfns), reason))

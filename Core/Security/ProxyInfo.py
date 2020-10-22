@@ -74,7 +74,6 @@ def getProxyInfo(proxy=False, disableVOMS=False):
       infoDict['VOMS'] = retVal['Value']
     else:
       infoDict['VOMSError'] = retVal['Message'].strip()
-
   return S_OK(infoDict)
 
 

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import Queue
+from six.moves import queue as Queue
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
@@ -35,7 +35,7 @@ def getMQParamsFromCS(mqURI):
   if not result['OK'] or not result['Value']:
     return S_ERROR('Requested destination not found in the CS: %s::%s::%s' % (mqService, mqType, mqName))
   mqDestinationPath = None
-  for path, value in result['Value'].iteritems():
+  for path, value in result['Value'].items():
     if not value and path.endswith(mqName):
       mqDestinationPath = path
 

@@ -161,12 +161,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.Core.Utilities import DErrno
 
-# This is for proper initialization of embedded server, it should only be called once
-try:
-  MySQLdb.server_init(['--defaults-file=/opt/dirac/etc/my.cnf', '--datadir=/opt/mysql/db'], ['mysqld'])
-except MySQLdb.ProgrammingError:
-  pass
-
 gInstancesCount = 0
 
 __RCSID__ = "$Id$"
@@ -709,12 +703,12 @@ class MySQL(object):
     if force:
       # gLogger.debug(viewsDict)
 
-      for viewName, viewDict in viewsDict.iteritems():
+      for viewName, viewDict in viewsDict.items():
 
         viewQuery = ["CREATE OR REPLACE VIEW `%s`.`%s` AS" % (self.__dbName, viewName)]
 
         columns = ",".join(["%s AS %s" % (colDef, colName)
-                            for colName, colDef in viewDict.get("Fields", {}).iteritems()])
+                            for colName, colDef in viewDict.get("Fields", {}).items()])
         tables = viewDict.get("SelectFrom", "")
         if columns and tables:
           viewQuery.append("SELECT %s FROM %s" % (columns, tables))
@@ -782,7 +776,7 @@ class MySQL(object):
       return S_ERROR(DErrno.EMYSQL, 'Argument is not a dictionary: %s( %s )'
                      % (type(tableDict), tableDict))
 
-    tableList = tableDict.keys()
+    tableList = list(tableDict)
     if len(tableList) == 0:
       return S_OK(0)
     for table in tableList:
@@ -812,7 +806,7 @@ class MySQL(object):
         thisTable = tableDict[table]
         if 'ForeignKeys' in thisTable:
           thisKeys = thisTable['ForeignKeys']
-          for key, auxTable in thisKeys.iteritems():
+          for key, auxTable in thisKeys.items():
             forTable = auxTable.split('.')[0]
             forKey = key
             if forTable != auxTable:
@@ -867,7 +861,7 @@ class MySQL(object):
             cmdList.append('UNIQUE INDEX `%s` ( `%s` )' % (index, indexedFields))
         if 'ForeignKeys' in thisTable:
           thisKeys = thisTable['ForeignKeys']
-          for key, auxTable in thisKeys.iteritems():
+          for key, auxTable in thisKeys.items():
 
             forTable = auxTable.split('.')[0]
             forKey = key
@@ -1081,7 +1075,7 @@ class MySQL(object):
     conjunction = "WHERE"
 
     if condDict is not None:
-      for aName, attrValue in condDict.iteritems():
+      for aName, attrValue in condDict.items():
         if isinstance(aName, six.string_types):
           attrName = _quotedList([aName])
         elif isinstance(aName, tuple):
@@ -1147,7 +1141,7 @@ class MySQL(object):
                                           escapeInValue)
 
     if isinstance(greater, dict):
-      for attrName, attrValue in greater.iteritems():
+      for attrName, attrValue in greater.items():
         attrName = _quotedList([attrName])
         if not attrName:
           error = 'Invalid greater argument'
@@ -1167,7 +1161,7 @@ class MySQL(object):
           conjunction = "AND"
 
     if isinstance(smaller, dict):
-      for attrName, attrValue in smaller.iteritems():
+      for attrName, attrValue in smaller.items():
         attrName = _quotedList([attrName])
         if not attrName:
           error = 'Invalid smaller argument'
@@ -1348,8 +1342,8 @@ class MySQL(object):
         # self.log.debug('updateFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
       try:
-        updateFields += updateDict.keys()
-        updateValues += [updateDict[k] for k in updateDict.keys()]
+        updateFields += list(updateDict)
+        updateValues += [updateDict[k] for k in updateFields]
       except TypeError:
         error = 'updateFields and updateValues must be a list'
         # self.log.debug('updateFields:', error)
@@ -1404,8 +1398,8 @@ class MySQL(object):
         # self.log.debug('insertFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
       try:
-        inFields += inDict.keys()
-        inValues += [inDict[k] for k in inDict.keys()]
+        inFields += list(inDict)
+        inValues += [inDict[k] for k in inFields]
       except TypeError:
         error = 'inFields and inValues must be a list'
         # self.log.debug('insertFields:', error)

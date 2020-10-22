@@ -38,8 +38,11 @@ class OptimizerExecutor(ExecutorModule):
       self.__jid = jid
       self.__log = log
 
-    def __nonzero__(self):
+    def __bool__(self):
       return True
+
+    # For Python 2 compatibility
+    __nonzero__ = __bool__
 
     def __getattr__(self, name):
       return self.LogWrap(self.__log, self.__jid, name)

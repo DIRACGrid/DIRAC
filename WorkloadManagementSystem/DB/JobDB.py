@@ -1345,7 +1345,7 @@ class JobDB(DB):
     result = self.getJobParameters(jobID)
     if result['OK']:
       parDict = result['Value']
-      for key, value in parDict.get(jobID, {}).iteritems():
+      for key, value in parDict.get(jobID, {}).items():
         result = self.setAtticJobParameter(jobID, key, value, rescheduleCounter - 1)
         if not result['OK']:
           break

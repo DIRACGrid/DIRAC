@@ -169,7 +169,7 @@ def executeOnlyIf(attrName, returnedError, attrVal=None):
 
   """
   def specificOnlyIf(meth):
-    """ onlyIf method aplied to a specigic case """
+    """ onlyIf method applied to a specific case """
 
     # This utilities allow to preserve the original help
     # Of the method being decorated

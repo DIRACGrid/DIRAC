@@ -13,7 +13,7 @@ __RCSID__ = "$Id$"
 
 import pprint
 import sys
-import urlparse
+from six.moves.urllib import parse as urlparse
 import cgi
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script

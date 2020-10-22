@@ -85,7 +85,7 @@ class RequestPreparationAgent(AgentModule):
           len(terminal))
 
     # Obtain the replicas from the FileCatalog
-    res = self.__getFileReplicas(fileSizes.keys())
+    res = self.__getFileReplicas(list(fileSizes))
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])

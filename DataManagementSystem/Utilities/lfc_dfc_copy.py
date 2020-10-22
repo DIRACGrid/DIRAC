@@ -152,7 +152,7 @@ def processDir(initPath, writerQueue, recursive=False, host=None, fcInit=None, d
         lfns[lfn]['Owner'] = owner
 
       if info['Replicas']:
-        seList = info['Replicas'].keys()
+        seList = list(info['Replicas'])
         lfns[lfn]['SE'] = seList
 
     p_files = time.time() - s
@@ -226,7 +226,7 @@ def processDir(initPath, writerQueue, recursive=False, host=None, fcInit=None, d
     resultDict['NumberOfDirectories'] = nDir
     resultDict['NumberOfReplicas'] = nRep
     resultDict['Path'] = initPath
-    resultDict['Directories'] = dirDict.keys()
+    resultDict['Directories'] = list(dirDict)
 
     # print "AT >>> processDir",initPath,"done %.2f" % (time.time()-start)
 

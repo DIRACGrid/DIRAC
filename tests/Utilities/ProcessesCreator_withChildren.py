@@ -17,10 +17,6 @@ def do_sum(li):
   sum(li)
   proc_name = current_process().name
   print(proc_name)
-  p = Process(target=f, args=(10, ))
-  p.daemon = False
-  p.start()
-  p.join()
 
 
 my_list = range(150000000)
@@ -31,3 +27,10 @@ pool.map(do_sum, [my_list[:50000000],
                   my_list[100000000:]])
 pool.close()
 pool.join()
+
+# Generate system CPU usage
+for i in range(1000):
+  p = Process(target=f, args=(0.001, ))
+  p.daemon = False
+  p.start()
+  p.join()

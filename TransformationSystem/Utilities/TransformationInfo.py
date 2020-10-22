@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 from collections import OrderedDict, defaultdict
-from itertools import izip_longest
+from six.moves import zip_longest
 
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Utilities.List import breakListIntoChunks
@@ -131,7 +131,7 @@ class TransformationInfo(object):
     descendants = self.__findAllDescendants(jobInfo.outputFiles)
     existingOutputFiles = [
         lfn for lfn,
-        status in izip_longest(
+        status in zip_longest(
             jobInfo.outputFiles,
             jobInfo.outputFileStatus) if status == "Exists"]
     filesToDelete = existingOutputFiles + descendants

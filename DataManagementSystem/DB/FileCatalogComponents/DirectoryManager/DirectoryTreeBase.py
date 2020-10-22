@@ -196,10 +196,9 @@ class DirectoryTreeBase(object):
   def isDirectory(self, paths):
     """ Checking for existence of directories
     """
-    dirs = paths.keys()
     successful = {}
     failed = {}
-    for dir in dirs:
+    for dir in paths:
       result = self.existsDir(dir)
       if not result['OK']:
         failed[dir] = result['Message']
@@ -265,9 +264,8 @@ class DirectoryTreeBase(object):
     for d in dirs:
       if d not in dirDict:
         successful[d] = "Directory does not exist"
-    dirList = dirDict.keys()
 
-    for dir in dirList:
+    for dir in dirDict:
       result = self.isEmpty(dir)
       if not result['OK']:
         return result
@@ -453,7 +451,7 @@ class DirectoryTreeBase(object):
     arguments = paths
     successful = {}
     failed = {}
-    for path, attribute in arguments.iteritems():
+    for path, attribute in arguments.items():
       result = directoryFunction(path, attribute)
       if not result['OK']:
         failed[path] = result['Message']
@@ -692,10 +690,9 @@ class DirectoryTreeBase(object):
   def listDirectory(self, lfns, verbose=False):
     """ Get the directory listing
     """
-    paths = lfns.keys()
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
       result = self._getDirectoryContents(path, details=verbose)
       if not result['OK']:
         failed[path] = result['Message']
@@ -707,10 +704,9 @@ class DirectoryTreeBase(object):
   def getDirectoryReplicas(self, lfns, allStatus=False):
     """ Get replicas for files in the given directories
     """
-    paths = lfns.keys()
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
       result = self.findDir(path)
       if not result['OK']:
         failed[path] = result['Message']
@@ -774,10 +770,9 @@ class DirectoryTreeBase(object):
   def _getDirectoryLogicalSizeFromUsage(self, lfns, connection):
     """ Get the total "logical" size of the requested directories
     """
-    paths = lfns.keys()
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
       result = self.findDir(path)
       if not result['OK']:
         failed[path] = "Directory not found"
@@ -810,11 +805,10 @@ class DirectoryTreeBase(object):
   def _getDirectoryLogicalSize(self, lfns, connection):
     """ Get the total "logical" size of the requested directories
     """
-    paths = lfns.keys()
     successful = {}
     failed = {}
     treeTable = self.getTreeTable()
-    for path in paths:
+    for path in lfns:
 
       if path == "/":
         req = "SELECT SUM(Size),COUNT(*) FROM FC_Files"
@@ -859,10 +853,9 @@ class DirectoryTreeBase(object):
   def _getDirectoryPhysicalSizeFromUsage(self, lfns, connection):
     """ Get the total size of the requested directories
     """
-    paths = lfns.keys()
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
       result = self.findDir(path)
       if not result['OK']:
         failed[path] = "Directory not found"
@@ -904,10 +897,9 @@ class DirectoryTreeBase(object):
   def _getDirectoryPhysicalSizeFromUsage_old(self, lfns, connection):
     """ Get the total size of the requested directories
     """
-    paths = lfns.keys()
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
 
       if path == '/':
         req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
@@ -956,10 +948,9 @@ class DirectoryTreeBase(object):
   def _getDirectoryPhysicalSize(self, lfns, connection):
     """ Get the total size of the requested directories
     """
-    paths = lfns.keys()
     successful = {}
     failed = {}
-    for path in paths:
+    for path in lfns:
       if path == '/':
         req = "SELECT SUM(F.Size),COUNT(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S "
         req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID "
