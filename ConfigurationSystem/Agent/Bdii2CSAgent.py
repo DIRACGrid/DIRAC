@@ -247,6 +247,8 @@ class Bdii2CSAgent(AgentModule):
       totalResult = S_ERROR(message)
     else:
       self.voBdiiCEDict[vo] = totalResult['Value']
+      self.__purgeSites(totalResult['Value'])
+
     return totalResult
 
   def __getBdiiSEInfo(self, vo):
@@ -282,7 +284,6 @@ class Bdii2CSAgent(AgentModule):
       if not result['OK']:
         continue
       ceBdiiDict = result['Value']
-      self.__purgeSites(ceBdiiDict)
       result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, log=self.log)
       if not result['OK']:
         continue
@@ -304,11 +305,16 @@ class Bdii2CSAgent(AgentModule):
       if not ces:
         self.log.error("No CE information for site:", site)
         continue
-      res = getCESiteMapping(ces[0])
-      if not res['OK']:
-        self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ces[0], res['Message']))
-        continue
-      siteInCS = res['Value'][ces[0]]
+      siteInCS = 'Not_In_CS'
+      for ce in ces:
+        res = getCESiteMapping(ce)
+        if not res['OK']:
+          self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ce, res['Message']))
+          continue
+        # if the ce is not in the CS the returned value will be empty
+        if ce in res['Value']:
+          siteInCS = res['Value'][ce]
+          break
       self.log.debug("Checking site %s (%s), aka %s" % (site, ces, siteInCS))
       if siteInCS in self.selectedSites:
         continue
