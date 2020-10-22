@@ -40,7 +40,11 @@ class JobMonitoringHandler(RequestHandler):
     cls.gJobDB = JobDB()
     cls.gJobLoggingDB = JobLoggingDB()
     cls.gTaskQueueDB = TaskQueueDB()
+
     cls.gElasticJobParametersDB = None
+    useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
+    if useESForJobParametersFlag:
+      cls.gElasticJobParametersDB = ElasticJobParametersDB()
     return S_OK()
 
   def initialize(self):
@@ -57,11 +61,6 @@ class JobMonitoringHandler(RequestHandler):
     self.globalJobsInfo = operations.getValue('/Services/JobMonitoring/GlobalJobsInfo', True)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = self.gJobDB
-
-    useESForJobParametersFlag = operations.getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
-    if useESForJobParametersFlag and not self.gElasticJobParametersDB:
-      self.gElasticJobParametersDB = ElasticJobParametersDB()
-      self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
 
@@ -510,20 +509,21 @@ class JobMonitoringHandler(RequestHandler):
 ##############################################################################
   types_getJobParameter = [six.string_types + six.integer_types, six.string_types]
 
+  @classmethod
   @ignoreEncodeWarning
-  def export_getJobParameter(self, jobID, parName):
+  def export_getJobParameter(cls, jobID, parName):
     """
     :param str/int/long jobID: one single Job ID
     :param str parName: one single parameter name
     """
-    if self.gElasticJobParametersDB:
-      res = self.gElasticJobParametersDB.getJobParameters(jobID, [parName])
+    if cls.gElasticJobParametersDB:
+      res = cls.gElasticJobParametersDB.getJobParameters(jobID, [parName])
       if not res['OK']:
         return res
       if res['Value'].get(int(jobID)):
         return S_OK(res['Value'][int(jobID)])
 
-    res = self.gJobDB.getJobParameters(jobID, [parName])
+    res = cls.gJobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
       return res
     return S_OK(res['Value'].get(int(jobID), {}))
@@ -538,24 +538,25 @@ class JobMonitoringHandler(RequestHandler):
 ##############################################################################
   types_getJobParameters = [six.string_types + six.integer_types + (list,)]
 
+  @classmethod
   @ignoreEncodeWarning
-  def export_getJobParameters(self, jobIDs, parName=None):
+  def export_getJobParameters(cls, jobIDs, parName=None):
     """
     :param str/int/long/list jobIDs: one single job ID or a list of them
     :param str parName: one single parameter name, or None (meaning all of them)
     """
-    if self.gElasticJobParametersDB:
+    if cls.gElasticJobParametersDB:
       if not isinstance(jobIDs, list):
         jobIDs = [jobIDs]
       parameters = {}
       for jobID in jobIDs:
-        res = self.gElasticJobParametersDB.getJobParameters(jobID, parName)
+        res = cls.gElasticJobParametersDB.getJobParameters(jobID, parName)
         if not res['OK']:
           return res
         parameters.update(res['Value'])
 
       # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
-      res = self.gJobDB.getJobParameters(jobIDs, parName)
+      res = cls.gJobDB.getJobParameters(jobIDs, parName)
       if not res['OK']:
         return res
       parametersM = res['Value']
@@ -569,7 +570,7 @@ class JobMonitoringHandler(RequestHandler):
           final[jobID] = parameters[jobID]
       return S_OK(final)
 
-    return self.gJobDB.getJobParameters(jobIDs, parName)
+    return cls.gJobDB.getJobParameters(jobIDs, parName)
 
 ##############################################################################
   types_traceJobParameter = [six.string_types, six.string_types + (int, long, list),
@@ -625,7 +626,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getSiteSummary = []
 
   @classmethod
-  def export_getSiteSummary(cls, ):
+  def export_getSiteSummary(cls):
     return cls.gJobDB.getSiteSummary()
 
 ##############################################################################
@@ -649,7 +650,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getOwnerGroup = []
 
   @classmethod
-  def export_getOwnerGroup(cls, ):
+  def export_getOwnerGroup(cls):
     """
     Return Distinct Values of OwnerGroup from the JobsDB
     """
