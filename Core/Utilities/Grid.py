@@ -147,7 +147,7 @@ def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="
 def ldapSite(site, attr=None, host=None):
   """ Site information from bdii.
 
-:param  site: Site as it defined in GOCDB or part of it with globing, for example: \\UKI-*
+:param  site: Site as it defined in GOCDB or part of it with globing, for example: UKI-*
 :return: standard DIRAC answer with Value equals to list of sites.
 
 Each site is dictionary which contains attributes of site.
