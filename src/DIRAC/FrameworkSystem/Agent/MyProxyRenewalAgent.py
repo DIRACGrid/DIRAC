@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK
@@ -34,31 +35,6 @@ class MyProxyRenewalAgent(AgentModule):
     retVal = self.proxyDB.renewFromMyProxy(userDN,
                                            userGroup,
                                            lifeTime=lifeTime)
-    if not retVal['OK']:
-      gLogger.error("Failed to renew proxy", "for %s@%s : %s" % (userDN, userGroup, retVal['Message']))
-    else:
-      gLogger.info("Renewed proxy for %s@%s" % (userDN, userGroup))
-
-  def __treatRenewalCallback(self, oTJ, exceptionList):
-    gLogger.exception(lException=exceptionList)
-    requiredLifeTime = self.am_getOption("MinimumLifeTime", 3600)
-    renewedLifeTime = self.am_getOption("RenewedLifeTime", 54000)
-    self.proxyDB = ProxyDB(useMyProxy=True)
-
-    gLogger.info("Minimum Life time      : %s" % requiredLifeTime)
-    gLogger.info("Life time on renew     : %s" % renewedLifeTime)
-    gLogger.info("MyProxy server         : %s" % self.proxyDB.getMyProxyServer())
-    gLogger.info("MyProxy max proxy time : %s" % self.proxyDB.getMyProxyMaxLifeTime())
-
-    self.__threadPool = ThreadPool(1, 10)
-    return S_OK()
-
-  def __renewProxyForCredentials(self, userDN, userGroup):
-    lifeTime = self.am_getOption("RenewedLifeTime", 54000)
-    gLogger.info("Renewing for %s@%s %s secs" % (userDN, userGroup, lifeTime))
-    retVal = self.proxyDB.renewFromMyProxy(userDN,
-					   userGroup,
-					   lifeTime=lifeTime)
     if not retVal['OK']:
       gLogger.error("Failed to renew proxy", "for %s@%s : %s" % (userDN, userGroup, retVal['Message']))
     else:
