@@ -78,12 +78,7 @@ class LoggingRoot(Logging):
     """
     Configure the root Logging.
     It can be possible to :
-<<<<<<< HEAD
-
     - attach it some backends : LogBackends = stdout,stderr,file,server
-=======
-    - attach it some backends : LogBackends = stdout,stderr,file,...
->>>>>>> adjusting LogBackends doc
     - attach backend options : BackendOptions { FileName = /tmp/file.log }
     - add colors and the path of the call : LogColor = True, LogShowLine = True
     - precise a level : LogLevel = DEBUG
