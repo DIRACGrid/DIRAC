@@ -149,15 +149,15 @@ class TransferQualityCommand(Command):
     values = []
     if len(pr_q_d) == 1:
 
-      for k in pr_q_d.keys():
+      for k in pr_q_d:
         for n in pr_q_d[k].values():
           values.append(n)
-      res = sum(values) / len(values)
+      res = sum(values) / len(values)  # FIXME: should convert to int?
 
     else:
       for n in pr_q_d['Total'].values():
         values.append(n)
-      res = sum(values) / len(values)
+      res = sum(values) / len(values)  # FIXME: should convert to int?
 
     return S_OK(res)
 

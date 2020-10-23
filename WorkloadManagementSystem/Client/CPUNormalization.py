@@ -207,7 +207,7 @@ def getCPUTime(cpuNormalizationFactor):
     if not cpuNormalizationFactor:  # if cpuNormalizationFactor passed in is 0, try get it from the local cfg
       cpuNormalizationFactor = gConfig.getValue('/LocalSite/CPUNormalizationFactor', 0.0)
     if cpuNormalizationFactor:
-      cpuTimeLeft = cpuWorkLeft / cpuNormalizationFactor  # this is a float
+      cpuTimeLeft = cpuWorkLeft / cpuNormalizationFactor
 
   if not cpuTimeLeft:
     # now we know that we have to find the CPUTimeLeft by looking in the CS

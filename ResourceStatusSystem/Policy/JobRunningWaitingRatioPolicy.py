@@ -58,9 +58,9 @@ class JobRunningWaitingRatioPolicy(PolicyBase):
       result['Reason'] = 'No values to take a decision'
       return S_OK(result)
 
-    running = float(commandResult['Running'])
-    waiting = float(commandResult['Waiting'])
-    staging = float(commandResult['Staging'])
+    running = commandResult['Running']
+    waiting = commandResult['Waiting']
+    staging = commandResult['Staging']
 
     total = running + waiting + staging
 

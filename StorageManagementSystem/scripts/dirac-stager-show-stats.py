@@ -66,7 +66,7 @@ storageElementUsage = res['Value']
 if storageElementUsage:
   for storageElement in storageElementUsage.keys():
     seDict = storageElementUsage[storageElement]
-    seDict['TotalSize'] = seDict['TotalSize'] / (1000 * 1000 * 1000.0)
+    seDict['TotalSize'] = int(seDict['TotalSize'] / (1000 * 1000 * 1000.0))
     outStr += " \n %s: %s replicas with a size of %.3f GB." % (
         storageElement.ljust(15), str(seDict['Replicas']).rjust(6), seDict['TotalSize'])
 else:

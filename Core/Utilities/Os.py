@@ -6,7 +6,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from past.builtins import long
+
 import six
 import os
 import distutils.spawn  # pylint: disable=no-name-in-module,import-error
@@ -57,8 +57,8 @@ def getDiskSpace(path='.', exclude=None):
       if resultAFS['OK'] and not resultAFS['Value'][0]:
         output = resultAFS['Value'][1]
         fields = output.split()
-        quota = long(fields[1])
-        used = long(fields[2])
+        quota = int(fields[1])
+        used = int(fields[2])
         space = (quota - used) / 1024
         return int(space)
       else:

@@ -122,7 +122,7 @@ def process_data(results, serverStats):
 def getRequestTimeAndCount(data, time):
   reqCount = 0
   errorCount = 0
-  totalRequest = 0.0
+  totalRequest = 0
 
   for result in results:
     i = 0
@@ -135,13 +135,13 @@ def getRequestTimeAndCount(data, time):
       # Get infos for present
       while int(result[i][2]) == time:
         reqCount += 1
-        totalRequest += float(result[i][4])
+        totalRequest += result[i][4]
         if result[i][5] != '':
           errorCount += 1
         i += 1
     except IndexError:
       pass
-  return (totalRequest / reqCount if reqCount > 0 else 0, reqCount, errorCount)
+  return (int(totalRequest / reqCount) if reqCount > 0 else 0, reqCount, errorCount)
 
 
 def displayGraph(results, serverStats):

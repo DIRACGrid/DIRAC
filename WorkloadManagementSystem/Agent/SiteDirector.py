@@ -550,7 +550,7 @@ class SiteDirector(AgentModule):
 
       if manyWaitingPilotsFlag:
         # Throttle submission of extra pilots to empty sites
-        pilotsToSubmit = self.maxPilotsToSubmit / 10 + 1
+        pilotsToSubmit = int(self.maxPilotsToSubmit / 10) + 1
       else:
         pilotsToSubmit = max(0, min(totalSlots, pilotsWeMayWantToSubmit - totalWaitingPilots))
         self.log.info('%s: Slots=%d, TQ jobs(pilotsWeMayWantToSubmit)=%d, Pilots: waiting %d, to submit=%d' %
@@ -1125,7 +1125,7 @@ class SiteDirector(AgentModule):
     # with numberOfUses tokens we can submit at most:
     #    numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
     # pilots
-    newPilotsToSubmit = numberOfUses / min(numberOfUses, self.maxJobsInFillMode)
+    newPilotsToSubmit = int(numberOfUses / min(numberOfUses, self.maxJobsInFillMode))
     if newPilotsToSubmit != pilotsToSubmit:
       self.log.info("Number of pilots to submit is changed",
                     "to %d after getting the proxy token" % newPilotsToSubmit)

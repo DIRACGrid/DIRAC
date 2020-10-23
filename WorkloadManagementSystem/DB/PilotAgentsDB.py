@@ -777,7 +777,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         itemList.append(total)
         # Add pilot submission efficiency evaluation
         if (done - empty) > 0:
-          eff = float(done) / float(done - empty)
+          eff = done / (done - empty)
         elif done == 0:
           eff = 0.
         elif empty == done:
@@ -787,7 +787,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         itemList.append('%.2f' % eff)
         # Add pilot job efficiency evaluation
         if total > 0:
-          eff = float(total - aborted) / float(total) * 100.
+          eff = (total - aborted) / total * 100
         else:
           eff = 100.
         itemList.append('%.2f' % eff)
@@ -822,7 +822,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
 
         # Add pilot submission efficiency evaluation
         if (done - empty) > 0:
-          eff = float(done) / float(done - empty)
+          eff = done / (done - empty)
         elif done == 0:
           eff = 0.
         elif empty == done:
@@ -832,7 +832,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         itemList.append('%.2f' % eff)
         # Add pilot job efficiency evaluation
         if total > 0:
-          eff = float(total - aborted) / float(total) * 100.
+          eff = (total - aborted) / total * 100
         else:
           eff = 100.
         itemList.append('%.2f' % eff)
@@ -904,7 +904,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
 
     # Add pilot submission efficiency evaluation
     if (done - empty) > 0:
-      eff = float(done) / float(done - empty)
+      eff = done / (done - empty)
     elif done == 0:
       eff = 0.
     elif empty == done:
@@ -914,7 +914,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     siteSumDict['PilotsPerJob'] = '%.2f' % eff
     # Add pilot job efficiency evaluation
     if total > 0:
-      eff = float(total - aborted) / float(total) * 100.
+      eff = (total - aborted) / total * 100
     else:
       eff = 100.
     siteSumDict['PilotJobEff'] = '%.2f' % eff

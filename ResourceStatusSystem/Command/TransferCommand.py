@@ -143,7 +143,7 @@ class TransferCommand(Command):
       channelDict['SourceName'] = source
       channelDict['DestinationName'] = destination
       channelDict['Metric'] = metric
-      channelDict['Value'] = sum(elementDict.values()) / len(elementDict.values())
+      channelDict['Value'] = int(sum(elementDict.values()) / len(elementDict.values()))
 
       uniformResult.append(channelDict)
 
