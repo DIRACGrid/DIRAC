@@ -329,7 +329,7 @@ def test_getExtensions_on_cert(cert_file, get_X509Certificate_class):
 
   extensionDict = dict(extTuple for extTuple in res['Value'])
 
-  assert sorted(extensionDict.keys()) == sorted(getCertOption(cert_file, 'availableExtensions'))
+  assert sorted(extensionDict) == sorted(getCertOption(cert_file, 'availableExtensions'))
 
   # Test a few of them
   for ext in ('basicConstraints', 'extendedKeyUsage'):

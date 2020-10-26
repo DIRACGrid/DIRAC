@@ -605,7 +605,7 @@ class ExecutorDispatcher:
     return result
 
   def getTaskIds(self):
-    return self.__tasks.keys()
+    return list(self.__tasks)
 
   def getExecutorsConnected(self):
     return dict(self.__execTypes)

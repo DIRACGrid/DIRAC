@@ -222,7 +222,7 @@ class StepInstance(AttributeCollection):
     """ Step execution method. step_exec_attr is array to hold parameters belong to this Step,
         filled above in the workflow
     """
-    print('Executing StepInstance', self.getName(), 'of type', self.getType(), definitions.keys())
+    print('Executing StepInstance', self.getName(), 'of type', self.getType(), list(definitions))
     # Report the Application state if the corresponding tool is supplied
     if 'JobReport' in self.workflow_commons:
       if self.parent.workflowStatus['OK']:
@@ -318,7 +318,7 @@ class StepInstance(AttributeCollection):
               # print 'Module Output Parameter:', parameter.getName(), step_exec_attr[parameter.getName()]
 
           # Get output values to the step_commons dictionary
-          for key in result.keys():
+          for key in result:
             if key != "OK":
               if key != "Value":
                 self.step_commons[key] = result[key]
