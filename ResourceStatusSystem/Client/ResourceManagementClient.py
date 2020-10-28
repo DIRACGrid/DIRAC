@@ -1,12 +1,11 @@
 """ ResourceManagementClient
 
-  Client to interact with the ResourceManagementDB.
-
+  Client to interact with the ResourceManagement service and from it with the DB.
 """
 
 __RCSID__ = '$Id$'
 
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 
 
 def uppercase_first_letter(key):
@@ -15,6 +14,7 @@ def uppercase_first_letter(key):
   return key[0].upper() + key[1:]
 
 
+@createClient('ResourceStatus/ResourceManagement')
 class ResourceManagementClient(Client):
   """
   The :class:`ResourceManagementClient` class exposes the :mod:`DIRAC.ResourceManagement`
