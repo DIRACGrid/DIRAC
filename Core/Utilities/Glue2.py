@@ -134,9 +134,10 @@ def __getGlue2ShareInfo(host, shareInfoLists):
       ceInfo['Queues'] = {}
       queueInfo = {}
       queueInfo['GlueCEStateStatus'] = shareInfoDict['GLUE2ComputingShareServingState']
-      queueInfo['GlueCEPolicyMaxCPUTime'] = str(int(shareInfoDict.get('GLUE2ComputingShareMaxCPUTime', 86400)) / 60)
-      queueInfo['GlueCEPolicyMaxWallClockTime'] = str(int(shareInfoDict
-                                                          .get('GLUE2ComputingShareMaxWallTime', 86400)) / 60)
+      queueInfo['GlueCEPolicyMaxCPUTime'] = str(int(int(
+          shareInfoDict.get('GLUE2ComputingShareMaxCPUTime', 86400)) / 60))
+      queueInfo['GlueCEPolicyMaxWallClockTime'] = str(int(int(
+          shareInfoDict.get('GLUE2ComputingShareMaxWallTime', 86400)) / 60))
       queueInfo['GlueCEInfoTotalCPUs'] = shareInfoDict.get('GLUE2ComputingShareMaxRunningJobs', '10000')
       queueInfo['GlueCECapability'] = ['CPUScalingReferenceSI00=2552']
 

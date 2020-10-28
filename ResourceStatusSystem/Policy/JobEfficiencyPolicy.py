@@ -58,9 +58,9 @@ class JobEfficiencyPolicy(PolicyBase):
       result['Reason'] = 'No values to take a decision'
       return S_OK(result)
 
-    completed = float(commandResult['Completed'])
-    done = float(commandResult['Done'])
-    failed = float(commandResult['Failed'])
+    completed = commandResult['Completed']
+    done = commandResult['Done']
+    failed = commandResult['Failed']
 
     total = completed + done + failed
 

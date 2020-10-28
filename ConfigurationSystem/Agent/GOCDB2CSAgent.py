@@ -173,7 +173,7 @@ class GOCDB2CSAgent (AgentModule):
     removedElements = set(currentConfiguration) - set(newConfiguration)
     newElements = set(newConfiguration) - set(currentConfiguration)
 
-    addedEndpoints = len(newElements) / len(options)
+    addedEndpoints = int(len(newElements) / len(options))
     disabledEndpoints = 0
     for path in removedElements:
       if baseOptionName in path:

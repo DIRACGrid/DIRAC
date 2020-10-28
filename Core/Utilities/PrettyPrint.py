@@ -68,7 +68,7 @@ def printTable(fields, records, sortField='', numbering=True,
       if margin <= 1:
         output = value.ljust(length) + columnSeparator
       else:
-        m1 = margin / 2
+        m1 = int(margin / 2)
         m2 = margin - m1
         output = " " * m1 + value + " " * m2 + columnSeparator
     if lastColumn:

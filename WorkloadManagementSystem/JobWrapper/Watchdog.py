@@ -574,7 +574,7 @@ class Watchdog(object):
         self.log.warn('Wallclock time should not be negative or zero, Ignore')
         return S_OK()
 
-      ratio = (cpuTime / wallClockTime) * 100.
+      ratio = (cpuTime / wallClockTime) * 100
 
       self.log.info("CPU/Wallclock ratio is %.2f%%" % ratio)
       # in case of error cpuTime might be 0, exclude this
@@ -636,7 +636,7 @@ class Watchdog(object):
       return S_OK('Not possible to determine current CPU consumed')
 
     if consumedCPU:
-      limit = self.jobCPUTime + self.jobCPUTime * (self.jobCPUMargin / 100)
+      limit = int(self.jobCPUTime + self.jobCPUTime * (self.jobCPUMargin / 100))
       cpuConsumed = float(currentCPU)
       if cpuConsumed > limit:
         self.log.info(
@@ -850,7 +850,7 @@ class Watchdog(object):
     if 'LoadAverage' in self.parameters:
       laList = self.parameters['LoadAverage']
       if laList:
-        summary['LoadAverage'] = float(sum(laList)) / float(len(laList))
+        summary['LoadAverage'] = sum(laList) / len(laList)
       else:
         summary['LoadAverage'] = 'Could not be estimated'
 

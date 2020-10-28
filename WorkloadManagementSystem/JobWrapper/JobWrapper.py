@@ -1022,7 +1022,7 @@ class JobWrapper(object):
           outputPath = outputPath[1:]
       else:
         # By default the output path is constructed from the job id
-        subdir = str(self.jobID / 1000)
+        subdir = str(int(self.jobID / 1000))
         outputPath = subdir + '/' + str(self.jobID)
       lfn = os.path.join(basePath, outputPath, os.path.basename(localfile))
     else:

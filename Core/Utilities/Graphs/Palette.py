@@ -107,7 +107,7 @@ class Palette(object):
 
   def getColor(self, label):
 
-    if label in self.palette.keys():
+    if label in self.palette:
       return self.palette[label]
     else:
       return self.generateColor(label)

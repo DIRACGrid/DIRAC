@@ -15,14 +15,14 @@ class ColorGenerator:
   def __equalColors(self, c1, c2):
     return c1[0] == c2[0] and c1[1] == c2[1] and c1[2] == c2[2]
 
-  def __equalColorInList(self, c, l):
-    for cl in l:
-      if self.__equalColors(c, cl):
+  def __equalColorInList(self, c1, cl2):
+    for c2 in cl2:
+      if self.__equalColors(c1, c2):
         return True
     return False
 
   def __toHex(self, n):
-    d1 = n / 16
+    d1 = int(n / 16)
     d2 = (n - d1 * 16)
     return "%s%s" % (self.sHexDigits[d1], self.sHexDigits[d2])
 

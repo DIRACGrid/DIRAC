@@ -141,7 +141,7 @@ class MJF(object):
     try:
       mjfUrl = urlopen(url=url, context=self.context)
       # HTTP return codes other than 2xx mean failure
-      if mjfUrl.getcode() / 100 != 2:
+      if int(mjfUrl.getcode() / 100) != 2:
         return None
       return mjfUrl.read().strip()
     except BaseException:

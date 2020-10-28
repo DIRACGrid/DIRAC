@@ -1,13 +1,13 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-# $HeadURL$
+
 __RCSID__ = "$Id$"
 
 import threading
 
 
-class LockManager:
+class LockManager(object):
 
   def __init__(self, iMaxThreads=None):
     self.iMaxThreads = iMaxThreads
@@ -19,7 +19,7 @@ class LockManager:
     self.dSubManagers = {}
 
   def createLock(self, sLockName, iMaxThreads):
-    if sLockName in self.dLocks.keys():
+    if sLockName in self.dLocks:
       raise RuntimeError("%s lock already exists" % sLockName)
     if iMaxThreads < 1:
       return

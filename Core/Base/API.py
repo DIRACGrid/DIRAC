@@ -44,7 +44,7 @@ def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
   for field in fields[1:]:
     headString = "%s %s" % (headString, field.ljust(fieldWidths[field] + 5))
   print(headString)
-  for orderValue in sorted(orderDict.keys()):
+  for orderValue in sorted(orderDict):
     uniqueFields = orderDict[orderValue]
     for uniqueField in sorted(uniqueFields):
       myDict = dictFields[uniqueField]
