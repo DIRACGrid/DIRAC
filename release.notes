@@ -1,4 +1,4 @@
-[v7r2-pre17]
+[v7r2-pre18]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -19,6 +19,9 @@ FIX: (#4736) dirac-install: use system tar command for extracting tarballs, fixe
 NEW: (#4677) X509Chain returns DN entry
 NEW: (#4677) introduction of Tornado based services
 NEW: (#4732) Support installing Python 3 clients using by passing --pythonVersion=3 to ./dirac-install.py
+
+*Framework
+CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
 
 *Accounting
 NEW: (#4537) Add histogram of CPU usage to Job accounting
