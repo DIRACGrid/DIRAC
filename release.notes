@@ -1,3 +1,8 @@
+[v7r1p16]
+
+*Resources
+FIX: (#4786) FileCatalogClient: correctly returning error in getReplicas() call
+
 [v7r1p15]
 
 *Configuration
