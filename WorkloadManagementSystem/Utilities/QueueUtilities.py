@@ -175,7 +175,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
   # 5. RAM
   ram = job.getAttributeInt('RAM')
   # If MaxRAM is not specified in the queue description, assume 2GB
-  if ram and ram > int(queueDict.get('MaxRAM', 2048)) / 1024:
+  if ram and ram > int(queueDict.get('MaxRAM', 2048) / 1024):
     noMatchReasons.append('Job RAM %d requirement not satisfied' % ram)
     if not fullMatch:
       return S_OK({'Match': False, 'Reason': noMatchReasons[0]})

@@ -405,10 +405,10 @@ class ProxyDB(DB):
     # Check if its limited
     if chain.isLimitedProxy()['Value']:
       return S_ERROR("Limited proxies are not allowed to be stored")
-    dLeft = remainingSecs / 86400
-    hLeft = remainingSecs / 3600 - dLeft * 24
-    mLeft = remainingSecs / 60 - hLeft * 60 - dLeft * 1440
-    sLeft = remainingSecs - hLeft * 3600 - mLeft * 60 - dLeft * 86400
+    dLeft = int(remainingSecs / 86400)
+    hLeft = int(remainingSecs / 3600 - dLeft * 24)
+    mLeft = int(remainingSecs / 60 - hLeft * 60 - dLeft * 1440)
+    sLeft = int(remainingSecs - hLeft * 3600 - mLeft * 60 - dLeft * 86400)
     self.log.info("Storing proxy for credentials %s (%d:%02d:%02d:%02d left)" %
                   (proxyIdentityDN, dLeft, hLeft, mLeft, sLeft))
 

@@ -174,7 +174,7 @@ class FTS3Job(JSerializable):
 
     total = len(filesInfoList)
     completed = sum([statusSummary.get(state, 0) for state in FTS3File.FTS_FINAL_STATES])
-    self.completeness = 100 * completed / total
+    self.completeness = int(100 * completed / total)
 
     return S_OK(filesStatus)
 

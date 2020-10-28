@@ -100,7 +100,7 @@ def _mul(txt):
   """ Multiply the input text enough time so that we
       reach the expected file size
   """
-  return txt * (max(1, FILE_SIZE / len(txt)))
+  return txt * (max(1, int(FILE_SIZE / len(txt))))
 
 
 def clearDirectory(se, local_path, target_path):

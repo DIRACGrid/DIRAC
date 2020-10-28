@@ -52,8 +52,8 @@ class CLIParams(object):
     return DIRAC.S_OK()
 
   def getProxyLifeTime(self):
-    hours = self.proxyLifeTime / 3600
-    mins = self.proxyLifeTime / 60 - hours * 60
+    hours = int(self.proxyLifeTime / 3600)
+    mins = int(self.proxyLifeTime / 60 - hours * 60)
     return "%s:%s" % (hours, mins)
 
   def getProxyRemainingSecs(self):

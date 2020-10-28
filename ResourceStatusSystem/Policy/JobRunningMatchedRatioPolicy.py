@@ -58,10 +58,10 @@ class JobRunningMatchedRatioPolicy(PolicyBase):
       result['Reason'] = 'No values to take a decision'
       return S_OK(result)
 
-    running = float(commandResult['Running'])
-    matched = float(commandResult['Matched'])
-    received = float(commandResult['Received'])
-    checking = float(commandResult['Checking'])
+    running = commandResult['Running']
+    matched = commandResult['Matched']
+    received = commandResult['Received']
+    checking = commandResult['Checking']
 
     total = running + matched + received + checking
 

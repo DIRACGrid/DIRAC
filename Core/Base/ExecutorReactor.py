@@ -89,7 +89,7 @@ class ExecutorReactor(object):
       self.__msgClient = MessageClient(self.__mindName)
       self.__msgClient.subscribeToMessage('ProcessTask', self.__processTask)
       self.__msgClient.subscribeToDisconnect(self.__disconnected)
-      result = self.__msgClient.connect(executorTypes=list(self.__modules.keys()),
+      result = self.__msgClient.connect(executorTypes=list(self.__modules),
                                         maxTasks=self.__maxTasks,
                                         extraArgs=self.__extraArgs)
       if result['OK']:
@@ -101,7 +101,7 @@ class ExecutorReactor(object):
       retryCount = 0
       while True:
         gLogger.notice("Trying to reconnect to %s" % self.__mindName)
-        result = self.__msgClient.connect(executorTypes=list(self.__modules.keys()),
+        result = self.__msgClient.connect(executorTypes=list(self.__modules),
                                           maxTasks=self.__maxTasks,
                                           extraArgs=self.__extraArgs)
 

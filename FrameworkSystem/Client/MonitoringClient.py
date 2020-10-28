@@ -406,7 +406,7 @@ class MonitoringClient(object):
     """ This basically prunes the marks which exceed the bucket length.
     """
     for acName in self.marksToSend:
-      maxBuckets = 86400 / self.activitiesDefinitions[acName]['bucketLength']
+      maxBuckets = int(86400 / self.activitiesDefinitions[acName]['bucketLength'])
       if len(self.marksToSend[acName]) > maxBuckets:
         timeSlots = sorted(self.marksToSend[acName])
         while len(self.marksToSend[acName]) > maxBuckets:

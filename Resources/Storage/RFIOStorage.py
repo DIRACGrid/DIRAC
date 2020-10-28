@@ -254,7 +254,7 @@ class RFIOStorage(StorageBase):
       return S_ERROR(res['Message'])
     remoteSize = res['Value']
     MIN_BANDWIDTH = 1024 * 100  # 100 KB/s
-    timeout = remoteSize / MIN_BANDWIDTH + 300
+    timeout = int(remoteSize / MIN_BANDWIDTH + 300)
     gLogger.debug("RFIOStorage.getFile: Executing transfer of %s to %s" % (src_url, dest_file))
     comm = "rfcp %s %s" % (src_url, dest_file)
     res = shellCall(timeout, comm)

@@ -1853,7 +1853,7 @@ class JobDB(DB):
       for state in JobStatus.JOB_FINAL_STATES:
         total_finished += resultDict[siteFullName][state]
       if total_finished > 0:
-        efficiency = float(siteDict['Done'] + siteDict['Completed']) / float(total_finished)
+        efficiency = siteDict['Done'] + siteDict['Completed'] / total_finished
       rList.append('%.1f' % (efficiency * 100.))
       # Estimate the site verbose status
       if efficiency > 0.95:

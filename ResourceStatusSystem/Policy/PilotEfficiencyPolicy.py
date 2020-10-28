@@ -53,10 +53,10 @@ class PilotEfficiencyPolicy(PolicyBase):
       result['Reason'] = 'No values to take a decision'
       return S_OK(result)
 
-    aborted = float(commandResult['Aborted'])
+    aborted = commandResult['Aborted']
     # deleted = float( commandResult[ 'Deleted' ] )
-    done = float(commandResult['Done'])
-    failed = float(commandResult['Failed'])
+    done = commandResult['Done']
+    failed = commandResult['Failed']
 
     # total     = aborted + deleted + done + failed
     total = aborted + done + failed

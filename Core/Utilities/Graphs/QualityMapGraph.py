@@ -73,7 +73,7 @@ class QualityMapGraph(PlotBase):
       self.cbValues = list()
 
       # ColorbarBase needs sorted data
-      for boundary in sorted(self.prefs['scale_data'].keys()):
+      for boundary in sorted(self.prefs['scale_data']):
         self.cbBoundaries.append(boundary)
         self.cbValues.append(self.prefs['scale_data'][boundary])
     else:

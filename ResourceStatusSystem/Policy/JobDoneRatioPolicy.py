@@ -58,8 +58,8 @@ class JobDoneRatioPolicy(PolicyBase):
       result['Reason'] = 'No values to take a decision'
       return S_OK(result)
 
-    completed = float(commandResult['Completed'])
-    done = float(commandResult['Done'])
+    completed = commandResult['Completed']
+    done = commandResult['Done']
 
     total = completed + done
 
