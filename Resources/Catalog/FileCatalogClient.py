@@ -8,7 +8,6 @@ import os
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
-from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
@@ -103,16 +102,15 @@ class FileCatalogClient(FileCatalogClientBase):
     self.serverURL = 'DataManagement/FileCatalog' if not url else url
     super(FileCatalogClient, self).__init__(self.serverURL, **kwargs)
 
-##################################################################################
-#
-##################################################################################
-
   @checkCatalogArguments
   def getReplicas(self, lfns, allStatus=False, timeout=120):
     """ Get the replicas of the given files
     """
     rpcClient = self._getRPC(timeout=timeout)
     result = rpcClient.getReplicas(lfns, allStatus)
+
+    if not result['OK']:
+      return result
 
     # If there is no PFN returned, just set the LFN instead
     lfnDict = result['Value']

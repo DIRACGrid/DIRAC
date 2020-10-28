@@ -47,6 +47,11 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p16]
+
+*Resources
+FIX: (#4786) FileCatalogClient: correctly returning error in getReplicas() call
+
 [v7r1p15]
 
 *Configuration
