@@ -1,8 +1,9 @@
-""" ProxyManagemerClient has the function to "talk" to the ProxyManagemer service
+""" ProxyManagemerClient has the function to "talk" to the ProxyManager service
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import six
 import os
 import datetime
@@ -475,6 +476,16 @@ class ProxyManagerClient(object):
     self.__filesCache.delete(chain)
     return S_OK()
 
+  def deleteProxyBundle(self, idList):
+    """ delete a list of id's
+
+        :param list,tuple idList: list of identity numbers
+
+        :return: S_OK(int)/S_ERROR()
+    """
+    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+    return rpcClient.deleteProxyBundle(idList)
+
   def requestToken(self, requesterDN, requesterGroup, numUses=1):
     """ Request a number of tokens. usesList must be a list of integers and each integer is the number of uses a token
         must have
@@ -560,7 +571,7 @@ class ProxyManagerClient(object):
 
     return S_OK(chain)
 
-  def getDBContents(self, condDict={}):
+  def getDBContents(self, condDict={}, sorting=[['UserDN', 'DESC']], start=0, limit=0):
     """ Get the contents of the db
 
         :param dict condDict: search condition
@@ -568,7 +579,7 @@ class ProxyManagerClient(object):
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    return rpcClient.getContents(condDict, [['UserDN', 'DESC']], 0, 0)
+    return rpcClient.getContents(condDict, sorting, start, limit)
 
   def getVOMSAttributes(self, chain):
     """ Get the voms attributes for a chain

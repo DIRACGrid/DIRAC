@@ -5,7 +5,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import io
 import getpass
 import tarfile
 from six import BytesIO
