@@ -368,6 +368,7 @@ class ReqClient(Client):
 
     return S_OK(newJobStatus)
 
+  @ignoreEncodeWarning
   def getRequestIDsForJobs(self, jobIDs):
     """ get the request ids for the supplied jobIDs.
 
