@@ -1244,7 +1244,7 @@ class ProxyDB(DB):
     insertSQL = "INSERT INTO `ProxyDB_Tokens` ( %s ) VALUES ( %s )" % (fieldsSQL, valuesSQL)
     result = self._update(insertSQL)
     if result['OK']:
-      return S_OK((token, numUses))
+      return S_OK([token, numUses])
     if result['Message'].find("uplicate entry") > -1:
       if retries:
         return self.generateToken(numUses, lifeTime, retries - 1)
