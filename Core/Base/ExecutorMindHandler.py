@@ -17,20 +17,20 @@ from DIRAC.Core.Utilities.ExecutorDispatcher import ExecutorDispatcher, Executor
 class ExecutorMindHandler(RequestHandler):
 
   MSG_DEFINITIONS = {'ProcessTask': {'taskId': six.integer_types,
-                                     'taskStub': six.string_types,
-                                     'eType': six.string_types},
+                                     'taskStub': six.string_types + (str, ),
+                                     'eType': six.string_types + (str, )},
                      'TaskDone': {'taskId': six.integer_types,
-                                  'taskStub': six.string_types},
-                     'TaskFreeze': {'taskId': six.integer_types,
-                                    'taskStub': six.string_types,
+                                  'taskStub': six.string_types + (str, )},
+                     'TaskFreeze': {'taskId': six.integer_types + (str, ),
+                                    'taskStub': six.string_types + (str, ),
                                     'freezeTime': six.integer_types},
                      'TaskError': {'taskId': six.integer_types,
-                                   'errorMsg': six.string_types,
-                                   'taskStub': six.string_types,
-                                   'eType': six.string_types},
+                                   'errorMsg': six.string_types + (str, ),
+                                   'taskStub': six.string_types + (str, ),
+                                   'eType': six.string_types + (str, )},
                      'ExecutorError': {'taskId': six.integer_types,
-                                       'errorMsg': six.string_types,
-                                       'eType': six.string_types}}
+                                       'errorMsg': six.string_types + (str, ),
+                                       'eType': six.string_types + (str, )}}
 
   class MindCallbacks(ExecutorDispatcherCallbacks):
 
