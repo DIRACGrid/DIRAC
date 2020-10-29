@@ -39,7 +39,6 @@ from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.Core.DISET.RequestHandler import getServiceOption
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -131,6 +130,9 @@ class Service(object):
         getServiceOption(self._serviceInfoDict, "EnableActivityMonitoring", False)
     )
     if self.activityMonitoring:
+      # The import needs to be here because of the CS must be initialized before importing
+      # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
+      from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
       gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
     elif self._standalone:
