@@ -7,6 +7,8 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client, createClient
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 
 @createClient('WorkloadManagement/Matcher')
@@ -25,3 +27,25 @@ class MatcherClient(Client):
 
     super(MatcherClient, self).__init__(**kwargs)
     self.setServer('WorkloadManagement/Matcher')
+
+  @ignoreEncodeWarning
+  def getMatchingTaskQueues(self, resourceDict):
+    """ Return all task queues that match the resourceDict
+    """
+    res = self._getRPC().getMatchingTaskQueues(resourceDict)
+
+    if res["OK"]:
+      # Cast the string back to int
+      res['Value'] = strToIntDict(res['Value'])
+    return res
+
+  @ignoreEncodeWarning
+  def getActiveTaskQueues(self):
+    """ Return all active task queues
+    """
+    res = self._getRPC().getActiveTaskQueues()
+
+    if res["OK"]:
+      # Cast the string back to int
+      res['Value'] = strToIntDict(res['Value'])
+    return res
