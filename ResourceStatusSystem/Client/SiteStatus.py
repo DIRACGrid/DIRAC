@@ -1,6 +1,8 @@
 """ SiteStatus helper
 
-  Provides methods to easily interact with the CS and/or RSS to get the site status
+Module that acts as a helper for knowing the status of a site.
+It takes care of switching between the CS and the RSS.
+The status is kept in the RSSCache object, which is a small wrapper on top of DictCache
 
 """
 

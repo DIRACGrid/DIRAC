@@ -1,6 +1,8 @@
 """ ResourceStatus
 
-  Module use to switch between the CS and the RSS.
+Module that acts as a helper for knowing the status of a resource.
+It takes care of switching between the CS and the RSS.
+The status is kept in the RSSCache object, which is a small wrapper on top of DictCache
 
 """
 
@@ -9,20 +11,20 @@ import math
 from time import sleep
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
-from DIRAC.Core.Utilities import DErrno
 
 
 class ResourceStatus(object):
   """
-  ResourceStatus helper that connects to CS if RSS flag is not Active. It keeps
-  the connection to the db / server as an object member, to avoid creating a new
+  ResourceStatus helper that connects to CS if RSS flag is not Active.
+  It keeps the connection to the db / server as an object member, to avoid creating a new
   one massively.
   """
 
