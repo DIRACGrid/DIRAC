@@ -16,7 +16,6 @@ import six
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
 
 
@@ -59,14 +58,6 @@ class Client(object):
         :param url: url of the service
     """
     self.serverURL = url
-
-  @deprecated("Please use self._getRPC(timeout) or self.timeout=<value>")
-  def setTimeout(self, timeout):
-    """ Specify the timeout of the call. Forwarded to RPCClient
-
-        :param int timeout: timeout for the RPC calls
-    """
-    self.timeout = timeout
 
   def getServer(self):
     """ Getter for the server url. Useful ?

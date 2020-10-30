@@ -71,8 +71,6 @@ from DIRAC.Core.Utilities.Subprocess import Subprocess
 
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
 
-from DIRAC.Core.Utilities.Decorators import deprecated
-
 __RCSID__ = "$Id$"
 
 CE_NAME = 'HTCondorCE'
@@ -88,18 +86,6 @@ def logDir(ceName, stamp):
   :param str stamp: pilot stamp from/for jobRef
   """
   return os.path.join(ceName, stamp[0], stamp[1:3])
-
-
-@deprecated("Please use condorIDAndPathToResultFromJobRef")
-def condorIDFromJobRef(jobRef):
-  """Extract tuple of jobURL and jobID from the jobRef string.
-
-:param str jobRef: PilotJobReference of the following form: ``htcondorce://<ceName>/<pathToResult>-<condorID>``
-
-:return: tuple composed of the jobURL and the condorID of the given jobRef
-  """
-  jobURL, _, condorID = condorIDAndPathToResultFromJobRef(jobRef)
-  return jobURL, condorID
 
 
 def condorIDAndPathToResultFromJobRef(jobRef):
