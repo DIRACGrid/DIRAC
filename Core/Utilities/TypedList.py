@@ -1,5 +1,6 @@
+"""  UNUSED UNUSED UNUSED UNUSED UNUSED
+"""
 ########################################################################
-# $HeadURL $
 # File: TypedList.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/19 08:21:16

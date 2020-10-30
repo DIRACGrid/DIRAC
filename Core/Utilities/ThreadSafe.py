@@ -1,11 +1,10 @@
-# $HeadURL$
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import threading
 
 
-class Synchronizer:
+class Synchronizer(object):
   """ Class encapsulating a lock
   allowing it to be used as a synchronizing
   decorator making the call thread-safe"""
@@ -36,8 +35,8 @@ class Synchronizer:
     return self.__lock.release()
 
 
-# FIXME: not used
-class WORM:
+# FIXME: not used UNUSED
+class WORM(object):
   """
   Write One - Read Many
   """

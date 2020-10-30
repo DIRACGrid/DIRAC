@@ -1,5 +1,3 @@
-# $HeadURL$
-
 """
 :mod: Pfn
 
@@ -11,7 +9,7 @@
 
 """
 
-__RCSID__ = "$Id:$"
+__RCSID__ = "$Id$"
 
 # # imports
 import os
