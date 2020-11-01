@@ -89,7 +89,7 @@ class ProxyManagerHandler(RequestHandler):
 
   # WARN: Since v7r1 requestDelegationUpload method use only first argument!
   # WARN:   Second argument for compatibility with older versions
-  types_requestDelegationUpload = [six.integer_types, [six.string_types, bool, type(None)]]
+  types_requestDelegationUpload = [six.integer_types]
 
   def export_requestDelegationUpload(self, requestedUploadTime, diracGroup=None):
     """ Request a delegation. Send a delegation request to client
@@ -99,28 +99,14 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK(dict)/S_ERROR() -- dict contain id and proxy as string of the request
     """
     if diracGroup:
-      # WARN: Since v7r1, DIRAC has implemented the ability to store only one proxy and
-      # WARN:   dynamically add a group at the request of a proxy. This means that group extensions
-      # WARN:   doesn't need for storing proxies.
-      self.log.warn("Proxy with DIRAC group or VOMS extensions must be not allowed to be uploaded.")
+      self.log.warn("Since v7r1 requestDelegationUpload method use only first argument!")
     credDict = self.getRemoteCredentials()
-    userDN = credDict['DN']
-    userName = credDict['username']
-    userGroup = diracGroup or credDict['group']
-    retVal = Registry.getGroupsForUser(credDict['username'])
-    if not retVal['OK']:
-      return retVal
-    groupsAvailable = retVal['Value']
-    if userGroup not in groupsAvailable:
-      return S_ERROR("%s is not a valid group for user %s" % (userGroup, userName))
-    clientChain = credDict['x509Chain']
-    clientSecs = clientChain.getIssuerCert()['Value'].getRemainingSecs()['Value']
-    requestedUploadTime = min(requestedUploadTime, clientSecs)  # FIXME: this is useless now...
-    result = self.__proxyDB.generateDelegationRequest(credDict['x509Chain'], userDN)
+    user = '%s:%s' % (credDict['username'], credDict['group'])
+    result = self.__proxyDB.generateDelegationRequest(credDict['x509Chain'], credDict['DN'])
     if result['OK']:
-      gLogger.info("Upload request by %s:%s given id %s" % (userName, userGroup, result['Value']['id']))
+      gLogger.info("Upload request by %s given id %s" % (user, result['Value']['id']))
     else:
-      gLogger.error("Upload request failed", "by %s:%s : %s" % (userName, userGroup, result['Message']))
+      gLogger.error("Upload request failed", "by %s : %s" % (user, result['Message']))
     return result
 
   types_completeDelegationUpload = [six.integer_types, six.string_types]
