@@ -22,8 +22,10 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdate
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getDIRACSiteName, getStorageElements
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
 def processScriptSwitches():
@@ -264,6 +266,30 @@ def updateSites():
   changeSet = result['Value']
 
   updateCS(changeSet)
+
+
+def getStorageElements(vo=None):
+  """
+  Get storage elements list, vo-dependent.
+
+  :param str vo: select SE's for the given VO (default: None, meaning all VOs)
+
+  :return: S_OK/S_ERROR, list of vo's SEs
+  """
+
+  dms_H = DMSHelpers(vo)
+  sesList = dms_H.getStorageElements()  # this will get the full list of SEs, not only the vo's ones.
+
+  if not vo:
+    return S_OK(sesList)
+
+  seVOList = list()
+  for seName in sesList:
+    se = StorageElement(seName)
+    if se.vo and vo in se.vo.strip().split(',') or not se.vo:
+      seVOList.append(seName)
+
+  return S_OK(seVOList)
 
 
 def checkUnusedSEs():

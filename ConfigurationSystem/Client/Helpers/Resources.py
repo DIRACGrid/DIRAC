@@ -310,60 +310,6 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
   return S_OK(resultDict)
 
 
-def getStorageElements(vo=None):
-  """
-  Get configuration of storage elements
-
-  :param str vo: select SE's for the given VO
-
-  :return: S_OK/S_ERROR, Value SE information dictionary
-  """
-
-  result = gConfig.getSections('Resources/StorageElements')
-  if not result['OK']:
-    return result
-  storageElements = result['Value']
-  baseSEs = {}
-  for se in storageElements:
-    for option in ('BaseSE', 'Alias'):
-      originalSE = gConfig.getValue('Resources/StorageElements/%s/%s' % (se, option))
-      if originalSE:
-        baseSEs.setdefault(originalSE, []).append(se)
-        break
-    else:
-      baseSEs.setdefault(se, [])
-
-  seDict = {}
-  for se in baseSEs:
-    result = gConfig.getOptionsDict('Resources/StorageElementBases/%s' % se)
-    if not result['OK']:
-      result = gConfig.getOptionsDict('Resources/StorageElements/%s' % se)
-    if vo:
-      seVOs = gConfig.getValue('Resources/StorageElementBases/%s/VO' % se, [])
-      if not seVOs:
-	seVOs = gConfig.getValue('Resources/StorageElements/%s/VO' % se, [])
-      if seVOs and vo not in seVOs:
-        continue
-    result = gConfig.getOptionsDict('Resources/StorageElements/%s' % se)
-    if not result['OK']:
-      continue
-    seDict[se] = result['Value']
-    seDict[se]['Aliases'] = baseSEs[se]
-    protocols = []
-    result = gConfig.getSections('Resources/StorageElementBases/%s' % se)
-    if not result['OK']:
-      result = gConfig.getSections('Resources/StorageElements/%s' % se)
-    for pluginSection in result['Value']:
-      protocol = gConfig.getValue('Resources/StorageElementBases/%s/%s/Protocol' % (se, pluginSection))
-      if not protocol:
-	protocol = gConfig.getValue('Resources/StorageElements/%s/%s/Protocol' % (se, pluginSection))
-      if protocol:
-        protocols.append(protocol)
-    seDict[se]['Protocols'] = protocols
-
-  return S_OK(seDict)
-
-
 def getCompatiblePlatforms(originalPlatforms):
   """ Get a list of platforms compatible with the given list
   """

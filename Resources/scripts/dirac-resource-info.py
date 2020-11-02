@@ -49,6 +49,7 @@ Script.parseCommandLine(ignoreErrors=True)
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -101,17 +102,14 @@ def printCEInfo(voName):
 
 def printSEInfo(voName):
 
-  result = Resources.getStorageElements(vo=voName)
-  if not result['OK']:
-    gLogger.error('Failed to get SE information')
-    DIRACExit(-1)
-  seDict = result['Value']
-
   fields = ('SE', 'Status', 'Protocols', 'Aliases')
   records = []
 
-  for se in seDict:
+  for se in DMSHelpers(voName).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
     seObject = StorageElement(se)
+    if not (seObject.vo and voName in seObject.vo.strip().split(',') or not seObject.voName):
+      continue
+
     result = seObject.status()
     status = []
     for statusType in ['Write', 'Read']:
@@ -124,8 +122,7 @@ def printSEInfo(voName):
       status = "InActive"
 
     records.append((se, status,
-                    ",".join(seDict[se]["Protocols"]),
-                    ",".join(seDict[se]["Aliases"])))
+		    ",".join([seProtocol['Protocol'] for seProtocol in seObject.protocolOptions])))
 
   gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
   return S_OK()

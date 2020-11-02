@@ -25,6 +25,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
 class Bdii2CSAgent(AgentModule):
@@ -368,15 +369,32 @@ class Bdii2CSAgent(AgentModule):
       self.log.info("No changes found")
       return S_OK()
 
+  def __getStorageElements(self, vo):
+    """
+    Get storage elements list, vo-dependent.
+
+    :param str vo: select SE's for the given VO (default: None, meaning all VOs)
+
+    :return: S_OK/S_ERROR, list of vo's SEs
+    """
+
+    seVOList = list()
+    for seName in DMSHelpers(vo).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
+      se = StorageElement(seName)
+      if se.vo and vo in se.vo.strip().split(',') or not se.vo:
+	seVOList.append(seName)
+
+    return seVOList
+
   def __lookForNewSEs(self):
     """ Look up BDII for SEs not yet present in the DIRAC CS
     """
 
     bannedSEs = self.am_getOption('BannedSEs', [])
-    knownSEs = set(DMSHelpers().getStorageElements()).union(set(bannedSEs))
     # knownSEs is a list of pure DIRAC SEs names
 
     for vo in self.voName:
+      knownSEs = set(self.__getStorageElements(vo=vo)).union(set(bannedSEs))
       result = self.__getBdiiSEInfo(vo)
       if not result['OK']:
         continue
