@@ -1,13 +1,10 @@
-#####################################################################
-#
-#  Utilities for pretty printing table data and more
-#  Author: A.Tsaregorodtsev
-#
-#####################################################################
-
+""" Utilities for pretty printing table data and more
+    Author: A.Tsaregorodtsev
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = '$Id$'
 
 import six
@@ -55,7 +52,7 @@ def printTable(fields, records, sortField='', numbering=True,
       # try casting to int and then align to the right, if it fails align to the left
       justification = "r"
       try:
-        _val = int("".join(value.split(",")))
+        _ = int("".join(value.split(",")))
       except ValueError:
         justification = "l"
 

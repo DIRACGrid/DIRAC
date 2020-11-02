@@ -245,7 +245,7 @@ def fromString(myDate=None):
   return None
 
 
-class timeInterval:
+class timeInterval(object):
   """
      Simple class to define a timeInterval object able to check if a given
      dateTime is inside

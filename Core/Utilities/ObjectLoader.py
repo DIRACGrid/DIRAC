@@ -11,7 +11,6 @@ import re
 import imp
 import pkgutil
 import collections
-import six
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno

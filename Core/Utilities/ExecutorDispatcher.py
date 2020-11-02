@@ -142,7 +142,7 @@ class ExecutorState(object):
       self.__lock.release()
 
 
-class ExecutorQueues:
+class ExecutorQueues(object):
 
   def __init__(self, log=False):
     if log:
@@ -247,7 +247,7 @@ class ExecutorQueues:
       self.__lock.release()
 
 
-class ExecutorDispatcherCallbacks:
+class ExecutorDispatcherCallbacks(object):
 
   def cbDispatch(self, taskId, taskObj, pathExecuted):
     return S_ERROR("No dispatch callback defined")
@@ -268,9 +268,9 @@ class ExecutorDispatcherCallbacks:
     return S_OK()
 
 
-class ExecutorDispatcher:
+class ExecutorDispatcher(object):
 
-  class ETask:
+  class ETask(object):
 
     def __init__(self, taskId, taskObj):
       self.taskId = taskId

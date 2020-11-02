@@ -16,7 +16,7 @@ __RCSID__ = "$Id$"
 
 class ComponentMonitoringDB(DB):
 
-  def __init__(self, requireVoms=False, useMyProxy=False):
+  def __init__(self):
     """ c'tor
 
         Initialize the DB
@@ -407,7 +407,7 @@ class ComponentMonitoringDB(DB):
                  self.__mainFields[1:] + self.__versionFields + ('Status', 'Message')))
 
 
-class StatusSet:
+class StatusSet(object):
   """
   This class is used to set component status as required and this method is used only by the
   ComponentMonitoringDB class.

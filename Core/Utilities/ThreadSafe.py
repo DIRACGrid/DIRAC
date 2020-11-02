@@ -1,13 +1,11 @@
-# $HeadURL$
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
-import threading
 
-
-class Synchronizer:
+class Synchronizer(object):
   """ Class encapsulating a lock
   allowing it to be used as a synchronizing
   decorator making the call thread-safe"""

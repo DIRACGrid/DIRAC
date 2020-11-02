@@ -13,7 +13,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 
 
-class PlottingClient:
+class PlottingClient(object):
 
   def __init__(self, rpcClient=None, transferClient=None):
     self.serviceName = "Framework/Plotting"

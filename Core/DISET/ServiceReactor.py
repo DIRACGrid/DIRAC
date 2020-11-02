@@ -252,7 +252,7 @@ class ServiceReactor(object):
         lc['transport'].close()
 
 
-class ReactorStats:
+class ReactorStats(object):
 
   def __init__(self):
     self.__connections = 0
