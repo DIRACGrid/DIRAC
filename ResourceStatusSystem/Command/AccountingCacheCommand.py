@@ -16,7 +16,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
@@ -359,17 +359,10 @@ class SuccessfullPilotsByCESplittedCommand(Command):
     if 'ces' in self.args:
       ces = self.args['ces']
     if ces is None:
-      # FIXME: pointing to the CSHelper instead
-      #      meta = {'columns':'ResourceName'}
-      #      CEs = self.rsClient.getResource( resourceType = [ 'CE','CREAMCE' ], meta = meta )
-      #      if not CEs['OK']:
-      #        return CEs
-      #      CEs = [ ce[0] for ce in CEs['Value'] ]
-
-      ces = CSHelpers.getComputingElements()
-      if not ces['OK']:
-        return ces
-      ces = ces['Value']
+      res = getCESiteMapping()
+      if not res['OK']:
+	return res
+      ces = list(res['Value'])
 
     if not ces:
       return S_ERROR('CEs is empty')
@@ -445,17 +438,10 @@ class FailedPilotsByCESplittedCommand(Command):
     if 'ces' in self.args:
       ces = self.args['ces']
     if ces is None:
-      # FIXME: pointing to the CSHelper instead
-      #      meta = {'columns':'ResourceName'}
-      #      CEs = self.rsClient.getResource( resourceType = [ 'CE','CREAMCE' ], meta = meta )
-      #      if not CEs['OK']:
-      #        return CEs
-      #      CEs = [ ce[0] for ce in CEs['Value'] ]
-
-      ces = CSHelpers.getComputingElements()
-      if not ces['OK']:
-        return ces
-      ces = ces['Value']
+      res = getCESiteMapping()
+      if not res['OK']:
+	return res
+      ces = list(res['Value'])
 
     if not ces:
       return S_ERROR('CEs is empty')
