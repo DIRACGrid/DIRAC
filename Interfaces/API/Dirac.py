@@ -38,7 +38,6 @@ from six import StringIO
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.API import API
-from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.File import mkDir
@@ -49,13 +48,10 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Utilities.Decorators import deprecated
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.Interfaces.API.JobRepository import JobRepository
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -321,8 +317,7 @@ class Dirac(API):
        :param job: Instance of Job class or JDL string
        :type job: ~DIRAC.Interfaces.API.Job.Job or str
        :param mode: Submit job to WMS with mode = 'wms' (default),
-                    'local' to run the workflow locally,
-                    and 'agent' to run full Job Wrapper locally
+		    'local' to run the workflow locally
        :type mode: str
        :returns: S_OK,S_ERROR
     """
@@ -367,10 +362,6 @@ class Dirac(API):
     if mode.lower() == 'local':
       result = self.runLocal(job)
 
-    elif mode.lower() == 'agent':
-      self.log.info('Executing workflow locally with full WMS submission and DIRAC Job Agent')
-      result = self.runLocalAgent(jdlAsString, jobDescriptionObject)
-
     elif mode.lower() == 'wms':
       self.log.verbose('Will submit job to WMS')  # this will happen by default anyway
       result = WMSClient(useCertificates=self.useCertificates).submitJob(jdlAsString, jobDescriptionObject)
@@ -407,199 +398,6 @@ class Dirac(API):
        method should be overridden in a derived VO-specific Dirac class.
     """
     return S_OK('Nothing to do')
-
-  #############################################################################
-  def runLocalAgent(self, jdl, jobDescriptionObject):
-    """Internal function.  This method is equivalent to submitJob(job,mode='Agent').
-       All output files are written to a <jobID> directory where <jobID> is the
-       result of submission to the WMS.  Please note that the job must be eligible to the
-       site it is submitted from.
-    """
-
-    jdl = self.__forceLocal(jdl)
-
-    jobID = WMSClient(useCertificates=self.useCertificates).submitJob(jdl, jobDescriptionObject)
-
-    if not jobID['OK']:
-      self.log.error('Job submission failure', jobID['Message'])
-      return S_ERROR('Could not submit job to WMS')
-
-    jobID = int(jobID['Value'])
-    self.log.info('The job has been submitted to the WMS with jobID = %s, monitoring starts.' % jobID)
-    result = self.__monitorSubmittedJob(jobID)
-    if not result['OK']:
-      self.log.info(result['Message'])
-      return result
-
-    self.log.info('Job %s is now eligible to be picked up from the WMS by a local job agent' % jobID)
-
-    # now run job agent targetted to pick up this job
-    result = self.__runJobAgent(jobID)
-
-    return result
-
-  @staticmethod
-  def __forceLocal(job):
-    """Update Job description to avoid pilot submission by WMS
-    """
-    if os.path.exists(job):
-      with open(job, 'r') as jdlFile:
-        jdl = jdlFile.read()
-    else:
-      jdl = job
-
-    if '[' not in jdl:
-      jdl = '[' + jdl + ']'
-    classAdJob = ClassAd(jdl)
-
-    classAdJob.insertAttributeString('Site', DIRAC.siteName())
-    classAdJob.insertAttributeString('SubmitPools', 'Local')
-    classAdJob.insertAttributeString('PilotTypes', 'private')
-
-    return classAdJob.asJDL()
-
-  #############################################################################
-  def __runJobAgent(self, jobID):
-    """ This internal method runs a tailored job agent for the local execution
-        of a previously submitted WMS job. The type of CEUniqueID can be overridden
-        via the configuration.
-    """
-    agentName = 'WorkloadManagement/JobAgent'
-    self.log.verbose('In case being booted from a DIRAC script,'
-                     ' now resetting sys arguments to null from: \n%s' % (sys.argv))
-    sys.argv = []
-    localCfg = LocalConfiguration()
-    ceType = gConfig.getValue('/LocalSite/LocalCE', 'InProcess')
-    localCfg.addDefaultEntry('CEUniqueID', ceType)
-    localCfg.addDefaultEntry('ControlDirectory', os.getcwd())
-    localCfg.addDefaultEntry('MaxCycles', 1)
-    localCfg.addDefaultEntry('/LocalSite/WorkingDirectory', os.getcwd())
-    localCfg.addDefaultEntry('/LocalSite/CPUTime', 300000)
-    localCfg.addDefaultEntry('/LocalSite/OwnerGroup', self.__getCurrentGroup())
-    # Running twice in the same process, the second time it use the initial JobID.
-    (fd, jobidCfg) = tempfile.mkstemp('.cfg', 'DIRAC_JobId', text=True)
-    os.write(fd, 'AgentJobRequirements\n {\n  JobID = %s\n }\n' % jobID)
-    os.close(fd)
-    gConfig.loadFile(jobidCfg)
-    self.__cleanTmp(jobidCfg)
-    localCfg.addDefaultEntry('/AgentJobRequirements/PilotType', 'private')
-    ownerDN = self.__getCurrentDN()
-    ownerGroup = self.__getCurrentGroup()
-#    localCfg.addDefaultEntry('OwnerDN',ownerDN)
-#    localCfg.addDefaultEntry('OwnerGroup',ownerGroup)
-#    localCfg.addDefaultEntry('JobID',jobID)
-    localCfg.addDefaultEntry('/AgentJobRequirements/OwnerDN', ownerDN)
-    localCfg.addDefaultEntry('/AgentJobRequirements/OwnerGroup', ownerGroup)
-    localCfg.addDefaultEntry('/Resources/Computing/%s/PilotType' % ceType, 'private')
-    localCfg.addDefaultEntry('/Resources/Computing/%s/OwnerDN' % ceType, ownerDN)
-    localCfg.addDefaultEntry('/Resources/Computing/%s/OwnerGroup' % ceType, ownerGroup)
-    # localCfg.addDefaultEntry('/Resources/Computing/%s/JobID' %ceType,jobID)
-
-    # SKP can add compatible platforms here
-    localCfg.setConfigurationForAgent(agentName)
-    result = localCfg.loadUserData()
-    if not result['OK']:
-      self.log.error('There were errors when loading configuration', result['Message'])
-      return S_ERROR('Could not start DIRAC Job Agent')
-
-    agent = AgentReactor(agentName)
-    result = agent.runNumCycles(agentName, numCycles=1)
-    if not result['OK']:
-      self.log.error('Job Agent execution completed with errors', result['Message'])
-
-    return result
-
-  #############################################################################
-  def __getCurrentGroup(self):
-    """Simple function to return current DIRAC group.
-    """
-    proxy = Locations.getProxyLocation()
-    if not proxy:
-      return S_ERROR('No proxy found in local environment')
-    else:
-      self.log.verbose('Current proxy is %s' % proxy)
-
-    chain = X509Chain()
-    result = chain.loadProxyFromFile(proxy)
-    if not result['OK']:
-      return result
-
-    result = chain.getDIRACGroup()
-    if not result['OK']:
-      return result
-    group = result['Value']
-    self.log.verbose('Current group is %s' % group)
-    return group
-
-  #############################################################################
-  def __getCurrentDN(self):
-    """Simple function to return current DN.
-    """
-    proxy = Locations.getProxyLocation()
-    if not proxy:
-      return S_ERROR('No proxy found in local environment')
-    else:
-      self.log.verbose('Current proxy is %s' % proxy)
-
-    chain = X509Chain()
-    result = chain.loadProxyFromFile(proxy)
-    if not result['OK']:
-      return result
-
-    result = chain.getIssuerCert()
-    if not result['OK']:
-      return result
-    issuerCert = result['Value']
-    dn = issuerCert.getSubjectDN()['Value']
-    return dn
-
-  #############################################################################
-  def _runLocalJobAgent(self, jobID):
-    """Developer function.  In case something goes wrong with 'agent' submission, after
-       successful WMS submission, this takes the jobID and allows to retry the job agent
-       running.
-    """
-
-    result = self.__monitorSubmittedJob(jobID)
-    if not result['OK']:
-      self.log.info(result['Message'])
-      return result
-
-    self.log.info('Job %s is now eligible to be picked up from the WMS by a local job agent' % jobID)
-    # now run job agent targetted to pick up this job
-    result = self.__runJobAgent(jobID)
-    return result
-
-  #############################################################################
-  def __monitorSubmittedJob(self, jobID):
-    """Internal function.  Monitors a submitted job until it is eligible to be
-       retrieved or enters a failed state.
-    """
-    pollingTime = 10  # seconds
-    maxWaitingTime = 600  # seconds
-
-    start = time.time()
-    finalState = False
-    while not finalState:
-      jobStatus = self.getJobStatus(jobID)
-      self.log.verbose(jobStatus)
-      if not jobStatus['OK']:
-        self.log.error('Could not monitor job status, will retry in %s seconds' % pollingTime, jobStatus['Message'])
-      else:
-        jobStatus = jobStatus['Value'][jobID]['Status']
-        if jobStatus.lower() == 'waiting':
-          finalState = True
-          return S_OK('Job is eligible to be picked up')
-        if jobStatus.lower() == 'failed':
-          finalState = True
-          return S_ERROR('Problem with job %s definition, WMS status is Failed' % jobID)
-        self.log.info('Current status for job %s is %s will retry in %s seconds' % (jobID, jobStatus, pollingTime))
-      current = time.time()
-      if current - start > maxWaitingTime:
-        finalState = True
-        return S_ERROR('Exceeded max waiting time of %s seconds for job %s to enter Waiting state,'
-                       ' exiting.' % (maxWaitingTime, jobID))
-      time.sleep(pollingTime)
 
   #############################################################################
   @staticmethod
@@ -2532,7 +2330,9 @@ class Dirac(API):
        :returns: S_OK,S_ERROR
     """
 
-    if not isinstance(system, basestring) and isinstance(service, basestring) and not isinstance(url, six.string_types):
+    if not isinstance(system, six.string_types) \
+	and isinstance(service, six.string_types) and \
+	    not isinstance(url, six.string_types):
       return self._errorReport('Expected string for system and service or a url to ping()')
     result = S_ERROR()
     try:
