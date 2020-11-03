@@ -777,9 +777,6 @@ class SiteDirector(AgentModule):
     if self.voGroups:
       ceDict['OwnerGroup'] = self.voGroups
 
-    # This is a hack to get rid of !
-    ceDict['SubmitPool'] = self.defaultSubmitPools
-
     if self.checkPlatform:
       result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]['Platform'])
       if not result['OK']:
@@ -1160,10 +1157,6 @@ class SiteDirector(AgentModule):
 
     if "ExtraPilotOptions" in queueDict:
       pilotOptions.append(queueDict['ExtraPilotOptions'])
-
-    # Hack
-    if self.defaultSubmitPools:
-      pilotOptions.append('-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools)
 
     if self.group:
       pilotOptions.append('-G %s' % self.group)

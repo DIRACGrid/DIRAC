@@ -10,7 +10,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL
-from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import getSubmitPools
 
 
 class JobManifest(object):
@@ -171,15 +170,6 @@ class JobManifest(object):
       return result
 
     result = self.__checkNumericalVar("Priority", 1, 0, 10)
-    if not result['OK']:
-      return result
-
-    allowedSubmitPools = getSubmitPools(self.__manifest['OwnerGroup'])
-    result = self.__checkMultiChoice("SubmitPools", list(set(allowedSubmitPools)))
-    if not result['OK']:
-      return result
-
-    result = self.__checkMultiChoice("PilotTypes", ['private'])
     if not result['OK']:
       return result
 
