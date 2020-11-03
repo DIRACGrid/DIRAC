@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 class DataOperation(BaseAccountingType):
 
   def __init__(self):
-    BaseAccountingType.__init__(self)
+    super(DataOperation, self).__init__()
     self.definitionKeyFields = [('OperationType', "VARCHAR(32)"),
                                 ('User', "VARCHAR(64)"),
                                 ('ExecutionSite', 'VARCHAR(256)'),

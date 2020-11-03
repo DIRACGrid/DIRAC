@@ -1,5 +1,7 @@
-"""
-This class is a helper to create the proper index and insert the proper values....
+""" Definition for WMSHistory Monitoring type.
+    Drop-in replacement for the Accounting/WMSHistory accounting type.
+
+    Filled by the agent "WorkloadManagement/StatesMonitoringAgent"
 """
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType

@@ -1,3 +1,9 @@
+""" MySQL based WMSHistory accounting.
+    It's suggested to replace this with the ElasticSearch based WMSHistory monitoring.
+
+    Filled by the agent "WorkloadManagement/StatesAccountingAgent"
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
@@ -6,7 +12,7 @@ from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountin
 class WMSHistory(BaseAccountingType):
 
   def __init__(self):
-    BaseAccountingType.__init__(self)
+    super(WMSHistory, self).__init__()
     self.definitionKeyFields = [('Status', "VARCHAR(128)"),
                                 ('Site', 'VARCHAR(128)'),
                                 ('User', 'VARCHAR(128)'),

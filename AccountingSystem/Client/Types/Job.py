@@ -1,3 +1,8 @@
+""" Job accounting type.
+
+    Filled by the JobWrapper (by the jobs) and by the agent "WorloadManagement/StalledJobAgent"
+"""
+
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 import DIRAC
 
@@ -7,7 +12,7 @@ __RCSID__ = "$Id$"
 class Job(BaseAccountingType):
 
   def __init__(self):
-    BaseAccountingType.__init__(self)
+    super(Job, self).__init__()
     self.definitionKeyFields = [('User', 'VARCHAR(64)'),
                                 ('UserGroup', 'VARCHAR(32)'),
                                 ('JobGroup', "VARCHAR(64)"),
@@ -18,9 +23,9 @@ class Job(BaseAccountingType):
                                 ('FinalMajorStatus', 'VARCHAR(32)'),
                                 ('FinalMinorStatus', 'VARCHAR(256)')
                                 ]
-    self.definitionAccountingFields = [('CPUTime', "INT UNSIGNED"),
-                                       ('NormCPUTime', "INT UNSIGNED"),
-                                       ('ExecTime', "INT UNSIGNED"),
+    self.definitionAccountingFields = [('CPUTime', "INT UNSIGNED"),  # utime + stime + cutime + cstime
+                                       ('NormCPUTime', "INT UNSIGNED"),  # CPUTime * CPUNormalizationFactor
+                                       ('ExecTime', "INT UNSIGNED"),  # elapsed_time (wall time)
                                        ('InputDataSize', 'BIGINT UNSIGNED'),
                                        ('OutputDataSize', 'BIGINT UNSIGNED'),
                                        ('InputDataFiles', 'INT UNSIGNED'),
