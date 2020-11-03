@@ -346,7 +346,7 @@ class Watchdog(object):
     else:
       msg += 'WallClock: %.2f s ' % (result['Value'])
       self.parameters.setdefault('WallClockTime', list()).append(result['Value'])
-      heartBeatDict['WallClockTime'] = result['Value']
+      heartBeatDict['WallClockTime'] = result['Value'] * self.processors
     self.log.info(msg)
 
     result = self._checkProgress()
@@ -865,7 +865,7 @@ class Watchdog(object):
       summary['ScaledCPUTime(s)'] = 0
     else:
       wallClock = result['Value']
-      summary['WallClockTime(s)'] = wallClock
+      summary['WallClockTime(s)'] = wallClock * self.processors
       summary['ScaledCPUTime(s)'] = wallClock * self.scaleFactor * self.processors
 
     self.__reportParameters(summary, 'UsageSummary', True)

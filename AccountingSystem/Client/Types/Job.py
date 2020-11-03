@@ -3,8 +3,8 @@
     Filled by the JobWrapper (by the jobs) and by the agent "WorloadManagement/StalledJobAgent"
 """
 
-from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 import DIRAC
+from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
 __RCSID__ = "$Id$"
 
@@ -25,7 +25,7 @@ class Job(BaseAccountingType):
                                 ]
     self.definitionAccountingFields = [('CPUTime', "INT UNSIGNED"),  # utime + stime + cutime + cstime
                                        ('NormCPUTime', "INT UNSIGNED"),  # CPUTime * CPUNormalizationFactor
-                                       ('ExecTime', "INT UNSIGNED"),  # elapsed_time (wall time)
+                                       ('ExecTime', "INT UNSIGNED"),  # elapsed_time (wall time) * numberOfProcessors
                                        ('InputDataSize', 'BIGINT UNSIGNED'),
                                        ('OutputDataSize', 'BIGINT UNSIGNED'),
                                        ('InputDataFiles', 'INT UNSIGNED'),
@@ -33,7 +33,7 @@ class Job(BaseAccountingType):
                                        ('DiskSpace', 'BIGINT UNSIGNED'),
                                        ('InputSandBoxSize', 'BIGINT UNSIGNED'),
                                        ('OutputSandBoxSize', 'BIGINT UNSIGNED'),
-                                       ('ProcessedEvents', 'INT UNSIGNED')
+                                       ('ProcessedEvents', 'INT UNSIGNED')  # unused (normally not filled)
                                        ]
     self.bucketsLength = [(86400 * 8, 3600),  # <1w+1d = 1h
                           (86400 * 35, 3600 * 4),  # <35d = 4h

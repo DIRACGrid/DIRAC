@@ -1,3 +1,5 @@
+""" Recipes on how to create job plots
+"""
 
 from DIRAC import S_OK
 from DIRAC.AccountingSystem.Client.Types.Job import Job
