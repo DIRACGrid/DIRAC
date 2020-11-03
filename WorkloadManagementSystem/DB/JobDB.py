@@ -1206,14 +1206,9 @@ class JobDB(DB):
     # CPU time
     cpuTime = classAdJob.getAttributeInt('CPUTime')
     if cpuTime is None:
-      # Just in case check for MaxCPUTime for backward compatibility
-      cpuTime = classAdJob.getAttributeInt('MaxCPUTime')
-      if cpuTime is not None:
-        classAdJob.insertAttributeInt('CPUTime', cpuTime)
-      else:
-        opsHelper = Operations(group=ownerGroup,
-                               setup=diracSetup)
-        cpuTime = opsHelper.getValue('JobDescription/DefaultCPUTime', 86400)
+      opsHelper = Operations(group=ownerGroup,
+			     setup=diracSetup)
+      cpuTime = opsHelper.getValue('JobDescription/DefaultCPUTime', 86400)
     classAdReq.insertAttributeInt('CPUTime', cpuTime)
 
     # platform(s)

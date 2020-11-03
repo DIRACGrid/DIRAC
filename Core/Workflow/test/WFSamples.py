@@ -1,11 +1,11 @@
-# $Id$
 """
     This is a comment
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-__RCSID__ = "$Revision: 1.16 $"
+
+__RCSID__ = "$Id$"
 
 # $Source: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/Core/Workflow/test/WFSamples.py,v $
 
@@ -14,8 +14,6 @@ from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import *
 from DIRAC.Core.Workflow.WorkflowReader import *
-
-import time
 
 """ Collection of objects for the testing"""
 

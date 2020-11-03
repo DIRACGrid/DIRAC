@@ -90,7 +90,6 @@ class TestJI(unittest.TestCase):
         'DIRACSetup': "ILC-Production",
         'StdError': "std.err",
         'IS_PROD': "True",
-        'CPUTime': 300000,
         'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
         'JobGroup': 0o0006326,
         'OutputSandbox': [
@@ -107,7 +106,6 @@ class TestJI(unittest.TestCase):
         'Site': "ANY",
                 'OwnerGroup': "ilc_prod",
                 'Owner': "sailer",
-                'MaxCPUTime': 300000,
                 'LogFilePath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/000",
                 'InputData': "/ilc/prod/clic/500gev/yyveyx_o/ILD/SIM/00006325/000/yyveyx_o_sim_6325_17.slcio",
     }
@@ -165,7 +163,6 @@ class TestJI(unittest.TestCase):
         'DIRACSetup': "ILC-Production",
         'StdError': "std.err",
         'IS_PROD': "True",
-        'CPUTime': 300000,
         'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
         'JobGroup': 0o0006326,
         'OutputSandbox': [
@@ -182,7 +179,6 @@ class TestJI(unittest.TestCase):
         'Site': "ANY",
                 'OwnerGroup': "ilc_prod",
                 'Owner': "sailer",
-                'MaxCPUTime': 300000,
                 'LogFilePath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/000",
                 'InputData': "/ilc/prod/clic/500gev/yyveyx_o/ILD/SIM/00006325/000/yyveyx_o_sim_6325_17.slcio",
     }
@@ -244,7 +240,6 @@ class TestJI(unittest.TestCase):
         'DIRACSetup': "ILC-Production",
         'StdError': "std.err",
         'IS_PROD': "True",
-        'CPUTime': 300000,
         'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
         'JobGroup': '00006301',
         'OutputSandbox': [
@@ -258,7 +253,6 @@ class TestJI(unittest.TestCase):
         'Site': "ANY",
                 'OwnerGroup': "ilc_prod",
                 'Owner': "sailer",
-                'MaxCPUTime': 300000,
                 'LogFilePath': "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/LOG/010",
                 'InputData': "/ilc/prod/clic/3tev/e1e1_o/gen/00006300/004/e1e1_o_gen_6300_4077.stdhep",
     }
@@ -309,7 +303,6 @@ class TestJI(unittest.TestCase):
         'DIRACSetup': "ILC-Production",
         'StdError': "std.err",
         'IS_PROD': "True",
-        'CPUTime': 300000,
         'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
         'JobGroup': '00006498',
         'OutputSandbox': [
@@ -323,7 +316,6 @@ class TestJI(unittest.TestCase):
         'Site': "ANY",
         'OwnerGroup': "ilc_prod",
         'Owner': "sailer",
-        'MaxCPUTime': 300000,
         'LogFilePath': "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/LOG/001",
         'InputData': "",
     }
