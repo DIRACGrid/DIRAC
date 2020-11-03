@@ -20,6 +20,8 @@ import json
 import ast
 import os
 import errno
+import time
+import signal
 
 sitePython = "@SITEPYTHON@"
 if sitePython:
@@ -154,18 +156,39 @@ def execute(arguments):
       gLogger.warn("Asked to reschedule job")
       rescheduleResult = rescheduleFailedJob(jobID, 'JobWrapper execution', gJobReport)
       job.sendJobAccounting(rescheduleResult, 'JobWrapper execution')
+      # Giving the JobWrapper some time to complete possible tasls, then trying to kill the process
+      time.sleep(60)
+      os.kill(job.currentPID, signal.SIGTERM)
+      # # wait for half a minute and if worker is still alive use REAL silencer
+      time.sleep(30)
+      # # now you're dead
+      os.kill(job.currentPID, signal.SIGKILL)
       return 1
     gLogger.exception('Job failed in execution phase')
     gJobReport.setJobParameter('Error Message', str(exc), sendFlag=False)
     gJobReport.setJobStatus(
         'Failed', 'Exception During Execution', sendFlag=False)
     job.sendFailoverRequest('Failed', 'Exception During Execution')
+    # Giving the JobWrapper some time to complete possible tasls, then trying to kill the process
+    time.sleep(60)
+    os.kill(job.currentPID, signal.SIGTERM)
+    # # wait for half a minute and if worker is still alive use REAL silencer
+    time.sleep(30)
+    # # now you're dead
+    os.kill(job.currentPID, signal.SIGKILL)
     return 1
   except Exception as exc:  # pylint: disable=broad-except
     gLogger.exception('Job raised exception during execution phase', lException=exc)
     gJobReport.setJobParameter('Error Message', str(exc), sendFlag=False)
     gJobReport.setJobStatus('Failed', 'Exception During Execution', sendFlag=False)
     job.sendFailoverRequest('Failed', 'Exception During Execution')
+    # Giving the JobWrapper some time to complete possible tasls, then trying to kill the process
+    time.sleep(60)
+    os.kill(job.currentPID, signal.SIGTERM)
+    # # wait for half a minute and if worker is still alive use REAL silencer
+    time.sleep(30)
+    # # now you're dead
+    os.kill(job.currentPID, signal.SIGKILL)
     return 1
 
   if 'OutputSandbox' in arguments['Job'] or 'OutputData' in arguments['Job']:
