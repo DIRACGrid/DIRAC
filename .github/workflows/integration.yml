@@ -9,7 +9,7 @@ jobs:
     timeout-minutes: 45
 
     env:
-      MATRIX_DEFAULT_MYSQL_VER: 5.7
+      MATRIX_DEFAULT_MYSQL_VER: 8.0
       MATRIX_DEFAULT_HOST_OS: cc7
       MATRIX_DEFAULT_ES_VER: 6.6.0
       MATRIX_DEFAULT_USE_NEWTHREADPOOL: default
@@ -24,18 +24,16 @@ jobs:
         # TEST_NAME is a dummy variable used to make it easier to read the web interface
         include:
           ###### MySQL versions
-          - TEST_NAME: "MySQL 5.6"
-            MYSQL_VER: 5.6
-          # IMPLICIT: - MYSQL_VER: 5.7
-          - TEST_NAME: "MySQL 8.0"
-            MYSQL_VER: 8.0
+          - TEST_NAME: "MySQL 5.7"
+            MYSQL_VER: 5.7
+          # IMPLICIT: - MYSQL_VER: 8.0
           ###### ES versions
           - TEST_NAME: "Elasticsearch 7.9.1"
             ES_VER: 7.9.1
           # IMPLICIT: - ES_VER: 6.6.0
           ###### Host OS
-          - TEST_NAME: "SLC 6"
-            HOST_OS: slc6
+          # - TEST_NAME: "SLC 6"
+          #   HOST_OS: slc6
           # IMPLICIT: - HOST_OS: cc7
           ###### Thread pool
           # IMPLICIT: - USE_NEWTHREADPOOL: default
