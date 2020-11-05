@@ -122,7 +122,7 @@ def printSEInfo(voName):
       status = "InActive"
 
     records.append((se, status,
-		    ",".join([seProtocol['Protocol'] for seProtocol in seObject.protocolOptions])))
+                    ",".join([seProtocol['Protocol'] for seProtocol in seObject.protocolOptions])))
 
   gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
   return S_OK()

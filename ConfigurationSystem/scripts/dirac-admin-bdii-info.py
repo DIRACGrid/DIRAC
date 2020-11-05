@@ -7,7 +7,9 @@
   Check info on BDII for a given CE or site
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -28,7 +30,7 @@ def registerSwitches():
                                     'Arguments:',
                                     '  Site:     Name of the Site (i.e. CERN-PROD)',
                                     '  CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)',
-                                    '  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site|site-se)']))
+                                    '  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site)']))
 
 
 def parseSwitches():
@@ -58,7 +60,7 @@ def parseSwitches():
 
   if params['info'] in ['ce', 'ce-state', 'ce-cluster', 'ce-vo']:
     params['ce'] = args[1]
-  elif params['info']in ['site', 'site-se']:
+  elif params['info'] in ['site']:
     params['site'] = args[1]
   else:
     Script.gLogger.error('Wrong argument value')
@@ -91,8 +93,6 @@ def getInfo(params):
     result = diracAdmin.getBDIICEVOView(params['ce'], useVO=params['vo'], host=params['host'])
   if params['info'] == 'site':
     result = diracAdmin.getBDIISite(params['site'], host=params['host'])
-  if params['info'] == 'site-se':
-    result = diracAdmin.getBDIISE(params['site'], useVO=params['vo'], host=params['host'])
 
   if not result['OK']:
     print(result['Message'])
@@ -123,9 +123,6 @@ def showInfo(result, info):
 
     if info == 'site' or info == 'all':
       print("Site: %s \n{" % element.get('GlueSiteName', 'Unknown'))
-
-    if info == 'site-se' or info == 'all':
-      print("SE: %s \n{" % element.get('GlueSEUniqueID', 'Unknown'))
 
     for item in element.iteritems():
       print("  %s: %s" % item)

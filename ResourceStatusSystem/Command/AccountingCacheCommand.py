@@ -361,7 +361,7 @@ class SuccessfullPilotsByCESplittedCommand(Command):
     if ces is None:
       res = getCESiteMapping()
       if not res['OK']:
-	return res
+        return res
       ces = list(res['Value'])
 
     if not ces:
@@ -440,7 +440,7 @@ class FailedPilotsByCESplittedCommand(Command):
     if ces is None:
       res = getCESiteMapping()
       if not res['OK']:
-	return res
+        return res
       ces = list(res['Value'])
 
     if not ces:

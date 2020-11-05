@@ -19,7 +19,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
-from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView, ldapSE
+from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -914,12 +914,5 @@ class DiracAdmin(API):
     Get information about ce voview from BDII at host
     """
     return ldapCEVOView(ce, useVO, host=host)
-
-  #############################################################################
-  def getBDIISE(self, site, useVO=voName, host=None):
-    """
-    Get information about SA  from BDII at host
-    """
-    return ldapSE(site, useVO, host=host)
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
