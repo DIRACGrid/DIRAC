@@ -35,7 +35,6 @@ def test__getJDLParameters(mocker):
 
   jdl = """
         [
-            Origin = "DIRAC";
             Executable = "$DIRACROOT/scripts/dirac-jobexec";
             StdError = "std.err";
             LogLevel = "info";
@@ -72,7 +71,6 @@ def test__getJDLParameters(mocker):
   result = jobAgent._getJDLParameters(jdl)
 
   assert result['OK']
-  assert result['Value']['Origin'] == 'DIRAC'
   assert result['Value']['NumberOfProcessors'] == '16'
   assert result['Value']['Tags'] == ['16Processors', 'MultiProcessor']
 

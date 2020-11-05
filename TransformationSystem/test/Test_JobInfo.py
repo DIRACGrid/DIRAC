@@ -95,7 +95,6 @@ class TestJI(unittest.TestCase):
             "std.out",
         ],
         'JobID': 15756436,
-        'Origin': "DIRAC",
         'VirtualOrganization': "ilc",
         'ProductionOutputData': [
             "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/000/yyveyx_o_rec_6326_15.slcio",
@@ -166,7 +165,6 @@ class TestJI(unittest.TestCase):
             "std.out",
         ],
         'JobID': 15756436,
-        'Origin': "DIRAC",
         'VirtualOrganization': "ilc",
         'ProductionOutputData': [
             "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/000/yyveyx_o_rec_6326_15.slcio",
@@ -241,7 +239,6 @@ class TestJI(unittest.TestCase):
             "std.out",
         ],
         'JobID': 15756456,
-        'Origin': "DIRAC",
         'VirtualOrganization': "ilc",
         'ProductionOutputData': "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/010/e1e1_o_sim_6301_10256.slcio",
         'Site': "ANY",
@@ -302,7 +299,6 @@ class TestJI(unittest.TestCase):
             "std.out",
         ],
         'JobID': 15762268,
-        'Origin': "DIRAC",
         'VirtualOrganization': "ilc",
         'ProductionOutputData': "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/001/ea_qqqqnu_gen_6498_1307.stdhep",
         'Site': "ANY",
