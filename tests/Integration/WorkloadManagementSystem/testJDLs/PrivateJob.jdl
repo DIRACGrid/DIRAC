@@ -9,5 +9,4 @@
     StdError = "std.err";
     StdOutput = "std.out";
     CPUTime = "10";
-    PilotType = "private";
 ]
