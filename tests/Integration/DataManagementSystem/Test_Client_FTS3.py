@@ -264,7 +264,7 @@ class TestClientFTS3(unittest.TestCase):
 
     # isTotallyProcessed does not return S_OK struct
     filesToSubmit = op._getFilesToSubmit()
-    self.assertEquals(filesToSubmit, [op.ftsFiles[0]])
+    self.assertEqual(filesToSubmit, [op.ftsFiles[0]])
 
   def test_04_job_monitoring_solve_racecondition(self):
     """ We used to have a race condition resulting in duplicated transfers for a file.
@@ -362,7 +362,7 @@ class TestClientFTS3(unittest.TestCase):
 
     # isTotallyProcessed does not return S_OK struct
     filesToSubmit = op._getFilesToSubmit()
-    self.assertEquals(filesToSubmit, [])
+    self.assertEqual(filesToSubmit, [])
 
   def test_05_cancelNotFoundJob(self):
     """ When a job disappears from the server, we need to cancel it

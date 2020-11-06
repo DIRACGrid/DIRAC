@@ -179,7 +179,7 @@ class TestFTS3ServerPolicy (unittest.TestCase):
 
     obj = FTS3ServerPolicy(self.fakeServerDict, "Failover")
     for i in range(len(self.fakeServerDict)):
-      self.assertEquals('server_%d' % i, obj._failoverServerPolicy(i))
+      self.assertEqual('server_%d' % i, obj._failoverServerPolicy(i))
 
   @mock.patch(
       'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus',
@@ -190,9 +190,9 @@ class TestFTS3ServerPolicy (unittest.TestCase):
     obj = FTS3ServerPolicy(self.fakeServerDict, "Sequence")
 
     for i in range(len(self.fakeServerDict)):
-      self.assertEquals('server_%d' % i, obj._sequenceServerPolicy(i))
+      self.assertEqual('server_%d' % i, obj._sequenceServerPolicy(i))
 
-    self.assertEquals('server_0', obj._sequenceServerPolicy(i))
+    self.assertEqual('server_0', obj._sequenceServerPolicy(i))
 
   @mock.patch(
       'DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus',
@@ -206,7 +206,7 @@ class TestFTS3ServerPolicy (unittest.TestCase):
     for i in range(len(self.fakeServerDict)):
       serverSet.add(obj._randomServerPolicy(i))
 
-    self.assertEquals(len(serverSet), len(self.fakeServerDict))
+    self.assertEqual(len(serverSet), len(self.fakeServerDict))
 
 
 if __name__ == '__main__':

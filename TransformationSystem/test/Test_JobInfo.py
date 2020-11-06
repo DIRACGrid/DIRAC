@@ -428,7 +428,7 @@ class TestJI(unittest.TestCase):
     self.jbi.inputFiles = ['otherLFN']
     tasksDict = {1234: [dict(FileID=123456, LFN='lfn', Status='Processed', ErrorCount=23)]}
     lfnTaskDict = {}
-    with self.assertRaisesRegexp(TaskInfoException, "InputFiles do not agree"):
+    with self.assertRaisesRegex(TaskInfoException, "InputFiles do not agree"):
       self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   # def test_getTaskInfo_4(self):
@@ -438,7 +438,7 @@ class TestJI(unittest.TestCase):
   #   self.jbi.inputFiles = []
   #   tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
   #   lfnTaskDict = {}
-  #   with self.assertRaisesRegexp(KeyError, ""):
+  #   with self.assertRaisesRegex(KeyError, ""):
   #     self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   def test_getTaskInfo_5(self):
@@ -448,7 +448,7 @@ class TestJI(unittest.TestCase):
     self.jbi.inputFiles = []
     tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
     lfnTaskDict = {}
-    with self.assertRaisesRegexp(TaskInfoException, "InputFiles is empty"):
+    with self.assertRaisesRegex(TaskInfoException, "InputFiles is empty"):
       self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   def test_getJobInformation(self):
