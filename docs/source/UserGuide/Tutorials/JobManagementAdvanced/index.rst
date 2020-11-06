@@ -394,7 +394,6 @@ Let's perform this exercise in the python shell.
 
           $ python Test-API-JDL.py 
  
-              Origin = "DIRAC";
               Priority = "1";
               Executable = "$DIRACROOT/scripts/dirac-jobexec";
               ExecutionEnvironment = "MYVARIABLE=TEST";
@@ -420,7 +419,7 @@ Let's perform this exercise in the python shell.
                       "std.err",
                       "std.out"
                   };
-              MaxCPUTime = "21600";
+	      CPUTime = "21600";
               JobName = "APItoJDL";
               InputData = 
                   {

@@ -8,7 +8,7 @@
         };
     StdError = "std.err";
     StdOutput = "std.out";
-    MaxCPUTime = "10";
+    CPUTime = "10";
     OutputData = "std.out";
     OutputPath = "DIRAC/OutputPath";
 ]

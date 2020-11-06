@@ -5,7 +5,6 @@
     JobName = jobName;
     JobType = jobType;
     LogLevel = info;
-    Origin = DIRAC;
     OutputSandbox = 
         {
             Script1_CodeOutput.log,
