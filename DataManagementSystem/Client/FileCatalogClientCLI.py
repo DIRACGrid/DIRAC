@@ -473,9 +473,7 @@ File Catalog Client $Revision: 1.17 $Date:
       print("Removing directory", lfn)
       result =  self.fc.removeDirectory(lfn)
       if result['OK']:
-        if result['Value']['Successful']:
-          print("Directory", lfn, "removed from the catalog")
-        elif result['Value']['Failed']:
+        if result['Value']['Failed']:
           print("ERROR:", result['Value']['Failed'][lfn])
       else:
         print("Failed to remove directory from the catalog")
@@ -2268,19 +2266,20 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Repair catalog inconsistencies
     
         Usage:
-           repair catalog
+           repair
     """
     
-    argss = args.split()
-    _option = argss[0]
     start = time.time()
     result = self.fc.repairCatalog()
     if not result['OK']:
       print("Error:", result['Message'])
       return 
-      
+
+    for repType, repResult in result["Value"].items():
+      print("%s repair: %s" % (repType, repResult))
+
     total = time.time() - start
-    print("Catalog repaired in %.2f sec" % total)
+    print("Catalog repair operation done in %.2f sec" % total)
       
 if __name__ == "__main__":
   
