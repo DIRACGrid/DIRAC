@@ -1021,14 +1021,21 @@ class FileCatalogDB(DB):
     result = self.dtree._rebuildDirectoryUsage()
     return result
 
-  def repairCatalog(self, directoryFlag=True, credDict={}):
+  def repairCatalog(self, credDict={}):
     """ Repair catalog inconsistencies
     """
-    result = S_OK()
-    if directoryFlag:
-      result = self.dtree.recoverOrphanDirectories(credDict)
 
-    return result
+    result = self.securityManager.hasAdminAccess(credDict)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR('Not authorized to perform catalog repairs')
+
+    resultDict = {}
+    resultDict['RecoverOrphanDirectories'] = self.dtree.recoverOrphanDirectories(credDict)
+    resultDict['RepairFileTables'] = self.fileManager.repairFileTables()
+
+    return S_OK(resultDict)
 
   #######################################################################
   #
