@@ -460,7 +460,7 @@ class JobScheduling(OptimizerExecutor):
         reqKey = "JobTypes"
       elif key == "GridRequiredCEs" or key == "GridCE":  # Remove obsolete GridRequiredCEs
         reqKey = "GridCEs"
-      elif key == "SubmitPools" or key == "SubmitPool":  # Check: obsolete?
+      elif key == "SubmitPools" or key == "SubmitPool":  # Check: one of these 2 is obsolete
         reqKey = "SubmitPools"
       if key in jobManifest:
         reqCfg.setOption(reqKey, ", ".join(jobManifest.getOption(key, [])))

@@ -156,12 +156,12 @@ def execute(arguments):
       gLogger.warn("Asked to reschedule job")
       rescheduleResult = rescheduleFailedJob(jobID, 'JobWrapper execution', gJobReport)
       job.sendJobAccounting(rescheduleResult, 'JobWrapper execution')
-      # Giving the JobWrapper some time to complete possible tasls, then trying to kill the process
+      # Giving the JobWrapper some time to complete possible tasks, then trying to kill the process
       time.sleep(60)
       os.kill(job.currentPID, signal.SIGTERM)
-      # # wait for half a minute and if worker is still alive use REAL silencer
+      # wait for half a minute and if worker is still alive use REAL silencer
       time.sleep(30)
-      # # now you're dead
+      # now you're dead
       os.kill(job.currentPID, signal.SIGKILL)
       return 1
     gLogger.exception('Job failed in execution phase')
@@ -169,12 +169,12 @@ def execute(arguments):
     gJobReport.setJobStatus(
         'Failed', 'Exception During Execution', sendFlag=False)
     job.sendFailoverRequest('Failed', 'Exception During Execution')
-    # Giving the JobWrapper some time to complete possible tasls, then trying to kill the process
+    # Giving the JobWrapper some time to complete possible tasks, then trying to kill the process
     time.sleep(60)
     os.kill(job.currentPID, signal.SIGTERM)
-    # # wait for half a minute and if worker is still alive use REAL silencer
+    # wait for half a minute and if worker is still alive use REAL silencer
     time.sleep(30)
-    # # now you're dead
+    # now you're dead
     os.kill(job.currentPID, signal.SIGKILL)
     return 1
   except Exception as exc:  # pylint: disable=broad-except
@@ -182,12 +182,12 @@ def execute(arguments):
     gJobReport.setJobParameter('Error Message', str(exc), sendFlag=False)
     gJobReport.setJobStatus('Failed', 'Exception During Execution', sendFlag=False)
     job.sendFailoverRequest('Failed', 'Exception During Execution')
-    # Giving the JobWrapper some time to complete possible tasls, then trying to kill the process
+    # Giving the JobWrapper some time to complete possible tasks, then trying to kill the process
     time.sleep(60)
     os.kill(job.currentPID, signal.SIGTERM)
-    # # wait for half a minute and if worker is still alive use REAL silencer
+    # wait for half a minute and if worker is still alive use REAL silencer
     time.sleep(30)
-    # # now you're dead
+    # now you're dead
     os.kill(job.currentPID, signal.SIGKILL)
     return 1
 

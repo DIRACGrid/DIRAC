@@ -483,7 +483,6 @@ class Job(API):
     return S_OK()
 
   #############################################################################
-  @deprecated("Not useful")
   def setSubmitPool(self, backend):
     """Developer function.
 
