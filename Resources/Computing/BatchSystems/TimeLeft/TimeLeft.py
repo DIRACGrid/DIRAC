@@ -64,9 +64,9 @@ class TimeLeft(object):
     resourceDict = self.batchPlugin.getResourceUsage()
 
     if 'Value' in resourceDict:
-      if resourceDict['Value']['CPU']:
+      if resourceDict['Value'].get('CPU'):
         return resourceDict['Value']['CPU'] * self.scaleFactor
-      elif resourceDict['Value']['WallClock']:
+      elif resourceDict['Value'].get('WallClock'):
         # When CPU value missing, guess from WallClock and number of processors
         return resourceDict['Value']['WallClock'] * self.scaleFactor * processors
 
@@ -90,20 +90,20 @@ class TimeLeft(object):
 
     resources = resourceDict['Value']
     self.log.debug("self.batchPlugin.getResourceUsage(): %s" % str(resources))
-    if not resources['CPULimit'] and not resources['WallClockLimit']:
+    if not resources.get('CPULimit') and not resources.get('WallClockLimit'):
       # This should never happen
       return S_ERROR('No CPU or WallClock limit obtained')
 
     # if one of CPULimit or WallClockLimit is missing, compute a reasonable value
-    if not resources['CPULimit']:
+    if not resources.get('CPULimit'):
       resources['CPULimit'] = resources['WallClockLimit'] * processors
-    elif not resources['WallClockLimit']:
+    elif not resources.get('WallClockLimit'):
       resources['WallClockLimit'] = resources['CPULimit'] / processors
 
     # if one of CPU or WallClock is missing, compute a reasonable value
-    if not resources['CPU']:
+    if not resources.get('CPU'):
       resources['CPU'] = resources['WallClock'] * processors
-    elif not resources['WallClock']:
+    elif not resources.get('WallClock'):
       resources['WallClock'] = resources['CPU'] / processors
 
     timeLeft = 0.
@@ -156,7 +156,8 @@ class TimeLeft(object):
         'PBS': 'PBS_JOBID',
         'BQS': 'QSUB_REQNAME',
         'SGE': 'SGE_TASK_ID',
-        'SLURM': 'SLURM_JOB_ID'}  # more to be added later
+        'SLURM': 'SLURM_JOB_ID',
+        'HTCondor': '_CONDOR_JOB_AD'}  # more to be added later
     name = None
     for batchSystem, envVar in batchSystems.items():
       if envVar in os.environ:
