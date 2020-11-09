@@ -1,9 +1,9 @@
-[v7r2-pre18]
+[v7r2-pre19]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
 CHANGE: (#4586) Use __future__ imports to get Python 3 like behaviour for imports, division and printing
-
+CHANGE: (#4796, #4797) removed obsoleted codes
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
