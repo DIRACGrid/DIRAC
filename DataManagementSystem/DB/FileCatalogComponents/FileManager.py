@@ -833,7 +833,7 @@ class FileManager(FileManagerBase):
       fileIDsToAdd.append(f1)
 
     if not fileIDsToAdd:
-      return S_OK( 0 )
+      return S_OK(0)
 
     nFiles = len(fileIDsToAdd)
     insertTuples = []
