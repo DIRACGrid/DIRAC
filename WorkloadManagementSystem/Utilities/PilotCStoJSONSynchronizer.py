@@ -104,6 +104,9 @@ class PilotCStoJSONSynchronizer(object):
       return res
     self.log.notice('-- Synchronizing the pilot scripts with the content of the repository --',
                     '(%s)' % self.pilotRepo)
+    if self.pilotVORepo:
+      self.log.notice('-- Synchronizing the VO extended pilot scripts with the content of the repository --',
+                      '(%s)' % self.pilotVORepo)
     self._syncScripts()
     self._syncChecksum()
 

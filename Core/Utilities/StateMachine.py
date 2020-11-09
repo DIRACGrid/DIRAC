@@ -17,6 +17,7 @@ state machine
 
 __RCSID__ = "$Id$"
 
+
 class State(object):
   """
   .. class:: State
