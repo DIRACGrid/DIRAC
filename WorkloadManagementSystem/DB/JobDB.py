@@ -785,6 +785,11 @@ class JobDB(DB):
 #############################################################################
   def setJobParameters(self, jobID, parameters):
     """ Set parameters specified by a list of name/value pairs for the job JobID
+
+        :param int jobID: Job ID
+        :param list parameters: list of tuples (name, value) pairs
+
+        :return: S_OK/S_ERROR
     """
 
     if not parameters:

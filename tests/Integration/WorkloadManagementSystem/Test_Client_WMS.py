@@ -30,6 +30,7 @@ from __future__ import print_function
 import unittest
 import sys
 import datetime
+import time
 import tempfile
 # from mock import Mock
 
@@ -240,6 +241,7 @@ class JobMonitoring(TestWMSTestCase):
     res = jobStateUpdate.setJobStatus(jobID, 'Matched', 'matching', 'source')
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobParameters(jobID, [('par1', 'par1Value'), ('par2', 'par2Value')])
+    time.sleep(5)
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobApplicationStatus(jobID, 'app status', 'source')
     self.assertTrue(res['OK'], res.get('Message'))
@@ -349,7 +351,7 @@ class JobMonitoringMore(TestWMSTestCase):
     res = jobMonitor.getSites()
     print(res)
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch'})
+    self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch'}, msg="Got %s" % res['Value'])
     res = jobMonitor.getJobTypes()
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(sorted(res['Value']), sorted(types), msg="Got %s" % str(sorted(res['Value'])))

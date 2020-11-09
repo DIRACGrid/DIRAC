@@ -318,6 +318,8 @@ class JobStateUpdateHandler(RequestHandler):
     """ Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
     """
+    failed = False
+
     for jobID in jobsParameterDict:
 
       if elasticJobParametersDB:
@@ -326,6 +328,8 @@ class JobStateUpdateHandler(RequestHandler):
                                                      str(jobsParameterDict[jobID][1]))
         if not res['OK']:
           self.log.error('Failed to add Job Parameter to elasticJobParametersDB', res['Message'])
+          failed = True
+          message = res['Message']
 
       else:
         res = jobDB.setJobParameter(jobID,
@@ -333,24 +337,41 @@ class JobStateUpdateHandler(RequestHandler):
                                     str(jobsParameterDict[jobID][1]))
         if not res['OK']:
           self.log.error('Failed to add Job Parameter to MySQL', res['Message'])
+          failed = True
+          message = res['Message']
 
+    if failed:
+      return S_ERROR(message)
     return S_OK()
 
   ###########################################################################
   types_setJobParameters = [[six.string_types, int], list]
 
-  @staticmethod
   @ignoreEncodeWarning
-  def export_setJobParameters(jobID, parameters):
+  def export_setJobParameters(self, jobID, parameters):
     """ Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
     """
+    failed = False
 
-    result = jobDB.setJobParameters(int(jobID), parameters)
-    if not result['OK']:
-      return S_ERROR('Failed to store some of the parameters')
+    if elasticJobParametersDB:
+      for key, value in parameters:  # FIXME: should use a bulk method
+        res = elasticJobParametersDB.setJobParameter(jobID, key, value)
+        if not res['OK']:
+          self.log.error('Failed to add Job Parameters to elasticJobParametersDB', res['Message'])
+          failed = True
+          message = res['Message']
 
-    return S_OK('All parameters stored for job')
+    else:
+      result = jobDB.setJobParameters(int(jobID), parameters)
+      if not result['OK']:
+        self.log.error('Failed to add Job Parameters to MySQL', res['Message'])
+        failed = True
+        message = res['Message']
+
+    if failed:
+      return S_ERROR(message)
+    return S_OK()
 
   ###########################################################################
   types_sendHeartBeat = [[six.string_types, int], dict, dict]
