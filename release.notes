@@ -346,6 +346,23 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p38]
+
+*Configuration
+FIX: (#4807) --cfg option supports tilde
+FIX: (#4813) Show username when deleting users
+
+*DMS
+CHANGE: (#4807) FTS3 gives priority to disk replicas
+
+*Resources
+NEW: (#4807) CTA compatible Storage plugin
+FIX: (#4812) get SSH hostname from the CE config instead of the job ID to get the job output
+
+*tests
+FIX: (#4803) Use GitHub Container registry due to pull limit on dockerhub
+CHANGE: (#4806) Remove obsolete gitlab integration
+
 [v7r0p37]
 
 *TS
