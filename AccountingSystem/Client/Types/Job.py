@@ -1,8 +1,14 @@
+""" Job accounting type.
+
+    Filled by the JobWrapper (by the jobs) and by the agent "WorloadManagement/StalledJobAgent"
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
+
 import DIRAC
+from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
 __RCSID__ = "$Id$"
 
@@ -10,7 +16,7 @@ __RCSID__ = "$Id$"
 class Job(BaseAccountingType):
 
   def __init__(self):
-    BaseAccountingType.__init__(self)
+    super(Job, self).__init__()
     self.definitionKeyFields = [('User', 'VARCHAR(64)'),
                                 ('UserGroup', 'VARCHAR(32)'),
                                 ('JobGroup', "VARCHAR(64)"),
@@ -21,9 +27,9 @@ class Job(BaseAccountingType):
                                 ('FinalMajorStatus', 'VARCHAR(32)'),
                                 ('FinalMinorStatus', 'VARCHAR(256)')
                                 ]
-    self.definitionAccountingFields = [('CPUTime', "INT UNSIGNED"),
-                                       ('NormCPUTime', "INT UNSIGNED"),
-                                       ('ExecTime', "INT UNSIGNED"),
+    self.definitionAccountingFields = [('CPUTime', "INT UNSIGNED"),  # utime + stime + cutime + cstime
+                                       ('NormCPUTime', "INT UNSIGNED"),  # CPUTime * CPUNormalizationFactor
+                                       ('ExecTime', "INT UNSIGNED"),  # elapsed_time (wall time) * numberOfProcessors
                                        ('InputDataSize', 'BIGINT UNSIGNED'),
                                        ('OutputDataSize', 'BIGINT UNSIGNED'),
                                        ('InputDataFiles', 'INT UNSIGNED'),
@@ -31,7 +37,7 @@ class Job(BaseAccountingType):
                                        ('DiskSpace', 'BIGINT UNSIGNED'),
                                        ('InputSandBoxSize', 'BIGINT UNSIGNED'),
                                        ('OutputSandBoxSize', 'BIGINT UNSIGNED'),
-                                       ('ProcessedEvents', 'INT UNSIGNED')
+                                       ('ProcessedEvents', 'INT UNSIGNED')  # unused (normally not filled)
                                        ]
     self.bucketsLength = [(86400 * 8, 3600),  # <1w+1d = 1h
                           (86400 * 35, 3600 * 4),  # <35d = 4h
@@ -49,12 +55,6 @@ class Job(BaseAccountingType):
     if not result['OK']:
       return result
     execTime = result['Value']
-    result = self.getValue("CPUTime")
-    if not result['OK']:
-      return result
-    cpuTime = result['Value']
-    if cpuTime > execTime * 100:
-      return DIRAC.S_ERROR("OOps. CPUTime seems to be more than 100 times the ExecTime. Smells fishy!")
     if execTime > 33350400:  # 1 year
       return DIRAC.S_ERROR("OOps. More than 1 year of cpu time smells fishy!")
     return DIRAC.S_OK()

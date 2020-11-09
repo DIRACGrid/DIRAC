@@ -221,7 +221,7 @@ class ARCComputingElement(ComputingElement):
     batchIDList = []
     stampDict = {}
 
-    endpoint = arc.Endpoint(self.ceHost + ":2811/jobs", arc.Endpoint.JOBSUBMIT,
+    endpoint = arc.Endpoint(str(self.ceHost + ":2811/jobs"), arc.Endpoint.JOBSUBMIT,
                             "org.nordugrid.gridftpjob")
 
     # Submit jobs iteratively for now. Tentatively easier than mucking around with the JobSupervisor class
@@ -329,7 +329,7 @@ class ARCComputingElement(ComputingElement):
     if not vo:
       # Presumably the really proper way forward once the infosys-discuss WG comes up with a solution
       # and it is implemented. Needed for DIRAC instances which use robot certificates for pilots.
-      endpoints = [arc.Endpoint("ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid",
+      endpoints = [arc.Endpoint(str("ldap://" + self.ceHost + "/MDS-Vo-name=local,o=grid"),
                                 arc.Endpoint.COMPUTINGINFO, 'org.nordugrid.ldapng')]
       retriever = arc.ComputingServiceRetriever(self.usercfg, endpoints)
       retriever.wait()  # Takes a bit of time to get and parse the ldap information

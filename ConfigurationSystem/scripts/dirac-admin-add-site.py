@@ -75,9 +75,10 @@ if __name__ == "__main__":
         gLogger.error('ERROR: Site with GOC name %s is already defined as %s' % (gridSiteName, diracCSSite))
         DIRACExit(-1)
 
+  csAPI = CSAPI()
+
   if newSite:
     gLogger.notice("Site to CS: %s" % diracSiteName)
-    csAPI = CSAPI()
     res = csAPI.addSite(diracSiteName, {"Name": gridSiteName})
     if not res['OK']:
       gLogger.error("Failed adding site to CS", res['Message'])

@@ -293,7 +293,7 @@ class CSAPI(object):
     usersData = self.describeUsers(users)['Value']
     for username in users:
       if username not in usersData:
-        gLogger.warn("User %s does not exist")
+        gLogger.warn("User %s does not exist" % username)
         continue
       userGroups = usersData[username]['Groups']
       for group in userGroups:

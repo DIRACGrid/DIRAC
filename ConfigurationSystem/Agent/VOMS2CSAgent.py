@@ -58,6 +58,7 @@ class VOMS2CSAgent(AgentModule):
     self.makeFCEntry = False
     self.autoLiftSuspendedStatus = True
     self.mailFrom = 'noreply@dirac.system'
+    self.syncPluginName = None
 
   def initialize(self):
     """ Initialize the default parameters
@@ -71,6 +72,7 @@ class VOMS2CSAgent(AgentModule):
     self.autoDeleteUsers = self.am_getOption('AutoDeleteUsers', self.autoDeleteUsers)
     self.autoLiftSuspendedStatus = self.am_getOption('AutoLiftSuspendedStatus', self.autoLiftSuspendedStatus)
     self.makeFCEntry = self.am_getOption('MakeHomeDirectory', self.makeFCEntry)
+    self.syncPluginName = self.am_getOption('SyncPluginName', self.syncPluginName)
 
     self.detailedReport = self.am_getOption('DetailedReport', self.detailedReport)
     self.mailFrom = self.am_getOption('MailFrom', self.mailFrom)
@@ -103,12 +105,14 @@ class VOMS2CSAgent(AgentModule):
       autoModifyUsers = getVOOption(vo, "AutoModifyUsers", self.autoModifyUsers)
       autoDeleteUsers = getVOOption(vo, "AutoDeleteUsers", self.autoDeleteUsers)
       autoLiftSuspendedStatus = getVOOption(vo, "AutoLiftSuspendedStatus", self.autoLiftSuspendedStatus)
+      syncPluginName = getVOOption(vo, 'SyncPluginName', self.syncPluginName)
 
       vomsSync = VOMS2CSSynchronizer(vo,
                                      autoAddUsers=autoAddUsers,
                                      autoModifyUsers=autoModifyUsers,
                                      autoDeleteUsers=autoDeleteUsers,
-                                     autoLiftSuspendedStatus=autoLiftSuspendedStatus)
+                                     autoLiftSuspendedStatus=autoLiftSuspendedStatus,
+                                     syncPluginName=syncPluginName)
 
       result = self.__syncCSWithVOMS(vomsSync,  # pylint: disable=unexpected-keyword-arg
                                      proxyUserName=voAdminUser,

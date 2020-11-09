@@ -17,6 +17,7 @@ dependencies:
   - fts-rest
   - future
   - gitpython >=2.1.0
+  - ldap3
   - m2crypto >=0.36
   - matplotlib >=2.1.0,<3.0
   - mysql-python

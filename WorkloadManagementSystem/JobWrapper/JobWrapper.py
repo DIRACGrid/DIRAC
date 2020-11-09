@@ -181,6 +181,7 @@ class JobWrapper(object):
     self.outputSandboxSize = 0
     self.outputDataSize = 0
     self.processedEvents = 0
+    self.numberOfProcessors = 1
     self.jobAccountingSent = False
 
     self.jobArgs = {}
@@ -310,7 +311,7 @@ class JobWrapper(object):
       self.log.info('Job has no CPU time limit specified, ',
                     'applying default of %s to %s' % (self.defaultCPUTime, self.jobID))
       jobCPUTime = self.defaultCPUTime
-    processors = int(self.jobArgs.get('NumberOfProcessors', 1))
+    self.numberOfProcessors = int(self.jobArgs.get('NumberOfProcessors', 1))
 
     jobMemory = 0.
     if "Memory" in self.jobArgs:
@@ -1190,7 +1191,7 @@ class JobWrapper(object):
               'CPUTime': cpuTime,
               # Based on the factor to convert raw CPU to Normalized units (based on the CPU Model)
               'NormCPUTime': cpuTime * self.cpuNormalizationFactor,
-              'ExecTime': execTime,
+              'ExecTime': execTime * self.numberOfProcessors,
               'InputDataSize': self.inputDataSize,
               'OutputDataSize': self.outputDataSize,
               'InputDataFiles': self.inputDataFiles,

@@ -1,22 +1,19 @@
-''' ResourceStatusClient
+""" ResourceStatusClient
 
-  Client to interact with the ResourceStatusDB.
-
-'''
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+  Client to interact with the ResourceStatus service and from it with the DB.
+"""
 
 # pylint: disable=unused-argument
 
 __RCSID__ = '$Id$'
 
 from DIRAC import S_OK
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import prepareDict
 
+@createClient('ResourceStatus/ResourceStatus')
 class ResourceStatusClient(Client):
   """
   The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus`
@@ -80,7 +77,7 @@ class ResourceStatusClient(Client):
   def insertStatusElement(self, element, tableType, name, statusType, status,
                           elementType, reason, dateEffective, lastCheckTime,
                           tokenOwner, tokenExpiration=None):
-    '''
+    """
     Inserts on <element><tableType> a new row with the arguments given.
 
     :Parameters:
@@ -111,7 +108,7 @@ class ResourceStatusClient(Client):
         time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
@@ -123,7 +120,7 @@ class ResourceStatusClient(Client):
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None,
                           tokenOwner=None, tokenExpiration=None, meta=None):
-    '''
+    """
     Gets from <element><tableType> all rows that match the parameters given.
 
     :Parameters:
@@ -157,7 +154,7 @@ class ResourceStatusClient(Client):
         For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
@@ -169,7 +166,7 @@ class ResourceStatusClient(Client):
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None,
                           tokenOwner=None, tokenExpiration=None, meta=None):
-    '''
+    """
     Deletes from <element><tableType> all rows that match the parameters given.
 
     :Parameters:
@@ -202,7 +199,7 @@ class ResourceStatusClient(Client):
         metadata for the mysql query
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
@@ -216,7 +213,7 @@ class ResourceStatusClient(Client):
                                elementType=None, reason=None,
                                dateEffective=None, lastCheckTime=None,
                                tokenOwner=None, tokenExpiration=None):
-    '''
+    """
     Adds or updates-if-duplicated from <element><tableType> and also adds a log
     if flag is active.
 
@@ -248,7 +245,7 @@ class ResourceStatusClient(Client):
         time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
@@ -260,7 +257,7 @@ class ResourceStatusClient(Client):
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None, tokenOwner=None,
                           tokenExpiration=None):
-    '''
+    """
     Updates from <element><tableType> and also adds a log if flag is active.
 
     :Parameters:
@@ -291,7 +288,7 @@ class ResourceStatusClient(Client):
         time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
@@ -304,7 +301,7 @@ class ResourceStatusClient(Client):
                                  elementType=None, reason=None,
                                  dateEffective=None, lastCheckTime=None,
                                  tokenOwner=None, tokenExpiration=None):
-    '''
+    """
     Adds if-not-duplicated from <element><tableType> and also adds a log if flag
     is active.
 
@@ -336,7 +333,7 @@ class ResourceStatusClient(Client):
         time-stamp setting validity of token ownership
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
@@ -348,15 +345,15 @@ class ResourceStatusClient(Client):
   # Protected methods - Use carefully !!
 
   def notify(self, request, params):
-    ''' Send notification for a given request with its params to the diracAdmin
-    '''
+    """ Send notification for a given request with its params to the diracAdmin
+    """
     address = Operations().getValue('ResourceStatus/Notification/DebugGroup/Users')
     msg = 'Matching parameters: ' + str(params)
     sbj = '[NOTIFICATION] DIRAC ResourceStatusDB: ' + request + ' entry'
     NotificationClient().sendMail(address, sbj, msg, address)
 
   def _extermineStatusElement(self, element, name, keepLogs=True):
-    '''
+    """
     Deletes from <element>Status,
                  <element>History
                  <element>Log
@@ -373,14 +370,14 @@ class ResourceStatusClient(Client):
         if active, logs are kept in the database
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
     return self.__extermineStatusElement(element, name, keepLogs)
 
   def __extermineStatusElement(self, element, name, keepLogs):
-    '''
+    """
       This method iterates over the three ( or four ) table types - depending
       on the value of keepLogs - deleting all matches of `name`.
-    '''
+    """
 
     tableTypes = ['Status', 'History']
     if keepLogs is False:

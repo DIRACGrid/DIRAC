@@ -1,7 +1,6 @@
 """ ResourceManagementClient
 
-  Client to interact with the ResourceManagementDB.
-
+  Client to interact with the ResourceManagement service and from it with the DB.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -9,7 +8,7 @@ from __future__ import print_function
 
 __RCSID__ = '$Id$'
 
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 
 
 def prepareDict(columnNames, columnValues):
@@ -31,6 +30,7 @@ def prepareDict(columnNames, columnValues):
 
   return paramsDict
 
+@createClient('ResourceStatus/ResourceManagement')
 class ResourceManagementClient(Client):
   """
   The :class:`ResourceManagementClient` class exposes the :mod:`DIRAC.ResourceManagement`

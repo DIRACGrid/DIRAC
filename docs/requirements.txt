@@ -9,6 +9,7 @@ diraccfg
 elasticsearch_dsl
 future
 futures
+ldap3
 matplotlib
 mock
 numpy

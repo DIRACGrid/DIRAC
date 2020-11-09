@@ -170,7 +170,7 @@ def checkAgentOptions(getOptionMock, systemName, agentName,
       continue
     LOG.info("Looking for call to option %r with value %r, (%s)", option, value, type(value))
     if not isinstance(value, bool) and not value:  # empty string, list, dict ...
-      assert any(call(option, null) in getOptionMock.call_args_list for null in ({}, set(), [], '', 0))
+      assert any(call(option, null) in getOptionMock.call_args_list for null in ({}, set(), [], '', 0, None))
     else:
       assert call(option, value) in getOptionMock.call_args_list or \
           call(option, [value]) in getOptionMock.call_args_list

@@ -13,16 +13,18 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 
-def _checkSourceReplicas(ftsFiles):
+def _checkSourceReplicas(ftsFiles, preferDisk=True):
   """ Check the active replicas
 
       :params ftsFiles: list of FT3Files
+      :param preferDisk: (default True) prefer disk replicas if available
+                          (see :py:meth:`DIRAC.DataManagementSystem.Client.DataManager.DataManager.getActiveReplicas`)
 
       :returns: Successful/Failed {lfn : { SE1 : PFN1, SE2 : PFN2 } , ... }
   """
 
   lfns = list(set([f.lfn for f in ftsFiles]))
-  res = DataManager().getActiveReplicas(lfns)
+  res = DataManager().getActiveReplicas(lfns, getUrl=False, preferDisk=preferDisk)
 
   return res
 
@@ -48,7 +50,8 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
   groupBySource = {}
 
   # For all files, check which possible sources they have
-  res = _checkSourceReplicas(ftsFiles)
+  # If we specify allowedSources, don't restrict the choice to disk replicas
+  res = _checkSourceReplicas(ftsFiles, preferDisk=not allowedSources)
   if not res['OK']:
     return res
 

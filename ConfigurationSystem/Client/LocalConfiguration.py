@@ -265,14 +265,14 @@ class LocalConfiguration(object):
         self.showHelp()
         sys.exit(2)
       if opt == '--cfg':
-        self.cliAdditionalCFGFiles.append(val)
+        self.cliAdditionalCFGFiles.append(os.path.expanduser(val))
 
     # environment variable to ensure smooth transition
     if os.getenv("DIRAC_NO_CFG", None):
       self.commandArgList = args
     else:
       # to avoid issuing the warning for correctly passed cfg files
-      extraCfg = [arg for arg in args if arg.endswith(".cfg")]
+      extraCfg = [os.path.expanduser(arg) for arg in args if arg.endswith(".cfg")]
       self.cliAdditionalCFGFiles.extend(extraCfg)
       self.commandArgList = [arg for arg in args if not arg.endswith(".cfg")]
       if extraCfg:

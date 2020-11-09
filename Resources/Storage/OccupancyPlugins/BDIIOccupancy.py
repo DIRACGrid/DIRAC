@@ -9,8 +9,7 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC import gLogger, gConfig
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Core.Utilities.Grid import ldapsearchBDII
 
 

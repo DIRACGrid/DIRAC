@@ -714,8 +714,7 @@ class SSHComputingElement(ComputingElement):
       localOutputFile = 'Memory'
       localErrorFile = 'Memory'
 
-    host = urlparse(jobID).hostname
-    ssh = SSH(parameters=self.ceParameters, host=host)
+    ssh = SSH(parameters=self.ceParameters)
     result = ssh.scpCall(30, localOutputFile, outputFile, upload=False)
     if not result['OK']:
       return result

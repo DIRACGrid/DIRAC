@@ -83,7 +83,7 @@ jobs:
         cat run_in_container
     - name: Prepare environment
       run: |
-        docker run --name dirac-testing-host -v $PWD:/repo/DIRAC --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm diracgrid/docker-compose-dirac:latest bash -c 'sleep 100000000'
+        docker run --name dirac-testing-host -v $PWD:/repo/DIRAC --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm ghcr.io/diracgrid/management/docker-compose-dirac:latest bash -c 'sleep 100000000'
         ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && prepareEnvironment'
     - name: Install server
       run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && installServer'

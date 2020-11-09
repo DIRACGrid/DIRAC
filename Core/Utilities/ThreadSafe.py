@@ -34,3 +34,4 @@ class Synchronizer(object):
 
   def unlock(self):
     return self.__lock.release()
+

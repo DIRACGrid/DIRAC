@@ -17,7 +17,7 @@ from DIRAC.DataManagementSystem.private.FTS3Utilities import groupFilesByTarget,
     FTS3ServerPolicy
 
 
-def mock__checkSourceReplicas(ftsFiles):
+def mock__checkSourceReplicas(ftsFiles, preferDisk=False):
   succ = {}
   failed = {}
 

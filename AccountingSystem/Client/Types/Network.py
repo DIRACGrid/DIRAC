@@ -1,21 +1,24 @@
-'''
-Accounting class to stores network metrics gathered by perfSONARs.
-'''
+""" Accounting class to stores network metrics gathered by perfSONARs.
+
+    Filled by "Accounting/Network" agent
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
 
 class Network(BaseAccountingType):
-  '''
+  """
   Accounting type to stores network metrics gathered by perfSONARs.
-  '''
+  """
 
   def __init__(self):
-    BaseAccountingType.__init__(self)
+    super(Network, self).__init__()
 
     # IPv6 address has up to 45 chars
     self.definitionKeyFields = [

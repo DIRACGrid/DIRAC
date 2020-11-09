@@ -176,7 +176,7 @@ class MonitoringInsertData(MonitoringTestCase):
 
   def test_bulkinsert(self):
     result = self.client.addRecords("wmshistory_index", "WMSHistory", self.data)
-    self.assertTrue(result['OK'])
+    self.assertTrue(result['OK'], result.get('Message'))
     self.assertEqual(result['Value'], len(self.data))
     time.sleep(10)
 
@@ -185,7 +185,7 @@ class MonitoringTestChain(MonitoringTestCase):
 
   def test_listReports(self):
     result = self.client.listReports('WMSHistory')
-    self.assertTrue(result['OK'])
+    self.assertTrue(result['OK'], result.get('Message'))
     self.assertEqual(result['Value'], ['AverageNumberOfJobs', 'NumberOfJobs', 'NumberOfReschedules'])
 
   def test_listUniqueKeyValues(self):
@@ -245,7 +245,7 @@ class MonitoringTestChain(MonitoringTestCase):
             2016, 3, 17, 19, 29, 0, 0), {
             'grouping': ['Site']}, 'Site', {})
     result = self.client.getReport(*params)
-    self.assertTrue(result['OK'])
+    self.assertTrue(result['OK'], result.get('Message'))
     result['Value']['data'] = {site: strToIntDict(value) for site, value in result['Value']['data'].items()}
     self.assertDictEqual(result['Value'],
                          {'data': {u'Multiple': {1458198000: 227.0},
@@ -363,19 +363,19 @@ class MonitoringTestChain(MonitoringTestCase):
   def test_getLastDayData(self):
     params = {'Status': 'Running', 'Site': 'LCG.NIKHEF.nl'}
     result = self.client.getLastDayData('WMSHistory', params)
-    self.assertTrue(result['OK'])
+    self.assertTrue(result['OK'], result.get('Message'))
     self.assertEqual(len(result['Value']), 2)
-    self.assertEqual(sorted(result['Value'][0].keys()), sorted([u'Status',
-                                                                u'Jobs',
-                                                                u'JobSplitType',
-                                                                u'timestamp',
-                                                                u'MinorStatus',
-                                                                u'Site',
-                                                                u'Reschedules',
-                                                                u'ApplicationStatus',
-                                                                u'User',
-                                                                u'JobGroup',
-                                                                u'UserGroup']))
+    self.assertEqual(sorted(result['Value'][0]), sorted([u'Status',
+                                                         u'Jobs',
+                                                         u'JobSplitType',
+                                                         u'timestamp',
+                                                         u'MinorStatus',
+                                                         u'Site',
+                                                         u'Reschedules',
+                                                         u'ApplicationStatus',
+                                                         u'User',
+                                                         u'JobGroup',
+                                                         u'UserGroup']))
 
 
 class MonitoringDeleteChain(MonitoringTestCase):
@@ -388,7 +388,7 @@ class MonitoringDeleteChain(MonitoringTestCase):
     today = datetime.today().strftime("%Y-%m-%d")
     result = "%s-%s" % ('wmshistory_index', today)
     res = self.client.deleteIndex(result)
-    self.assertTrue(res['OK'])
+    self.assertTrue(res['OK'], res.get('Message'))
     self.assertTrue('_index-%s' % today in res['Value'])
 
 

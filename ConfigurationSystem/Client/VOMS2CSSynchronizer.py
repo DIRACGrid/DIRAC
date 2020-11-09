@@ -13,6 +13,7 @@ from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 
 from DIRAC.Core.Security.VOMSService import VOMSService
 from DIRAC.Core.Utilities.List import fromChar
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getVOMSRoleGroupMapping, \
@@ -118,7 +119,8 @@ def _getUserNameFromSurname(name, surname):
 class VOMS2CSSynchronizer(object):
 
   def __init__(self, vo, autoModifyUsers=True, autoAddUsers=True,
-               autoDeleteUsers=False, autoLiftSuspendedStatus=False):
+               autoDeleteUsers=False, autoLiftSuspendedStatus=False,
+               syncPluginName=None):
     """ VOMS2CSSynchronizer class constructor
 
     :param str vo: VO to be synced
@@ -126,6 +128,8 @@ class VOMS2CSSynchronizer(object):
     :param autoAddUsers: flag to automatically add new users to CS
     :param autoDeleteUsers: flag to automatically delete users from CS if no more in VOMS
     :param autoLiftSuspendedStatus: flag to automatically remove Suspended status in CS
+    :param syncPluginName: name of the plugin to validate or extend users' info
+
     :return: None
     """
 
@@ -142,13 +146,26 @@ class VOMS2CSSynchronizer(object):
     self.autoDeleteUsers = autoDeleteUsers
     self.autoLiftSuspendedStatus = autoLiftSuspendedStatus
     self.voChanged = False
+    self.syncPlugin = None
+
+    if syncPluginName:
+      objLoader = ObjectLoader()
+      _class = objLoader.loadObject(
+          'ConfigurationSystem.Client.SyncPlugins.%sSyncPlugin' %
+          syncPluginName, '%sSyncPlugin' % syncPluginName)
+
+      if not _class['OK']:
+        raise Exception(_class['Message'])
+
+      self.syncPlugin = _class['Value']()
 
   def syncCSWithVOMS(self):
     """ Performs the synchronization of the DIRAC registry with the VOMS data. The resulting
         CSAPI object containing modifications is returned as part of the output dictionary.
         Those changes can be applied by the caller depending on the mode (dry or a real run)
 
-    :return: S_OK with a dictionary containing the results of the synchronization operation
+
+      :return: S_OK with a dictionary containing the results of the synchronization operation
     """
     resultDict = defaultdict(list)
 
@@ -271,6 +288,16 @@ class VOMS2CSSynchronizer(object):
               if group not in noSyncVOMSGroups:
                 groupsWithRole.append(group)
           userDict['Groups'] = list(set(groupsWithRole + [defaultVOGroup]))
+
+          # Run the sync plugins for extra info and/or validations
+          if self.syncPlugin:
+            try:
+              self.syncPlugin.verifyAndUpdateUserInfo(newDiracName, userDict)
+            except ValueError as e:
+              self.log.error("Error validating new user", "nickname %s\n error %s" % (newDiracName, e))
+              self.adminMsgs['Errors'].append('Error validating new user %s: %s\n  %s' % (newDiracName, userDict, e))
+              continue
+
           message = "\n  Added new user %s:\n" % newDiracName
           for key in userDict:
             message += "    %s: %s\n" % (key, str(userDict[key]))
