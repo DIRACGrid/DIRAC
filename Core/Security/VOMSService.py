@@ -7,11 +7,9 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import requests
-import os
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Security.Locations import getProxyLocation, getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
@@ -45,14 +43,6 @@ class VOMSService(object):
       gLogger.error("Section '/Registry/VO/%s/VOMSServers' not found" % self.vo)
 
     self.userDict = None
-
-  @deprecated("Unused")
-  def admGetVOName(self):
-    """ Get VOMS VO name, kept for backward compatibility
-
-    :return: S_OK with Value: VOMS VO name
-    """
-    return S_OK(self.vo)
 
   def attGetUserNickname(self, dn, _ca=None):
     """ Get user nickname for a given DN if any

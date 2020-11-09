@@ -15,7 +15,7 @@ from DIRAC import S_OK
 from DIRAC.Core.Base import Script
 
 
-class Params:
+class Params(object):
 
   def __init__(self):
     self.exitOnError = False

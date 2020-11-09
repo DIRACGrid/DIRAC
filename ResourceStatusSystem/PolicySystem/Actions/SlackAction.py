@@ -31,11 +31,13 @@ __RCSID__ = '$Id$'
 
 import json
 import requests
+import six
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 
 
 class SlackAction(BaseAction):
@@ -95,7 +97,12 @@ class SlackAction(BaseAction):
       if elementType == 'StorageElement':
         siteName = getSitesForSE(name)
       elif elementType == 'ComputingElement':
-        siteName = getSiteForCE(name)
+        res = getCESiteMapping(name)
+        if not res['OK']:
+          self.log.error("Failure getting Site2CE mapping", res['Message'])
+          siteName = 'ERROR'
+        else:
+          siteName = res
       else:
         siteName = {'OK': True, 'Value': 'Unassigned'}
 
@@ -105,7 +112,7 @@ class SlackAction(BaseAction):
       elif not siteName['Value']:
         siteName = "Unassigned Resources"
       else:
-        siteName = siteName['Value'] if isinstance(siteName['Value'], basestring) else siteName['Value'][0]
+        siteName = siteName['Value'] if isinstance(siteName['Value'], six.string_types) else siteName['Value'][0]
 
     message = "*{name}* _{statusType}_ --> _{status}_ \n{reason}".format(name=name,
                                                                          statusType=statusType,

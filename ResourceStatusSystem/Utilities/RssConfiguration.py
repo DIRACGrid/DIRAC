@@ -19,7 +19,7 @@ from DIRAC.ResourceStatusSystem.Utilities import Utils
 _rssConfigPath = 'ResourceStatus'
 
 
-class RssConfiguration:
+class RssConfiguration(object):
   """
   RssConfiguration::
 

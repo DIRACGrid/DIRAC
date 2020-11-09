@@ -71,6 +71,7 @@ soon as the requests have finished. To enable this mode call::
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import time
@@ -114,7 +115,7 @@ class WorkingThread(threading.Thread):
         self.__resultsQueue.put(oJob, block=True)
 
 
-class ThreadedJob:
+class ThreadedJob(object):
 
   def __init__(self,
                oCallable,

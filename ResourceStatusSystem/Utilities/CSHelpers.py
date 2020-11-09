@@ -12,7 +12,6 @@ __RCSID__ = '$Id$'
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -142,15 +141,6 @@ def getComputingElements():
   ces = list(set(ces))
 
   return S_OK(ces)
-
-
-@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getSiteCEMapping")
-def getSiteComputingElements(siteName):
-  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping
-  res = getSiteCEMapping()
-  if not res['OK']:
-    return res
-  return res['Value'][siteName]
 
 
 def getSiteElements(siteName):

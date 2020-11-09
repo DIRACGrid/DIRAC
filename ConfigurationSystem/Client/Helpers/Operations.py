@@ -1,5 +1,6 @@
 """ This helper looks in the /Operations section of the CS, considering its specific nature:
-    the /Operations section is designed in a way that each configuration can be specific to a Setup, while maintaining a default.
+    the /Operations section is designed in a way that each configuration can be specific to a Setup,
+    while maintaining a default.
 
     So, for example, given the following /Operations section::
 
@@ -82,7 +83,6 @@ from DIRAC.Core.Utilities import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
-from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 class Operations(object):
@@ -158,27 +158,6 @@ class Operations(object):
         Operations.__cacheLock.release()
       except thread.error:
         pass
-
-  @deprecated("unused")
-  def setVO(self, vo):
-    """ False to auto detect VO
-    """
-    self.__uVO = vo
-    self.__discoverSettings()
-
-  @deprecated("unused")
-  def setGroup(self, group):
-    """ False to auto detect VO
-    """
-    self.__uGroup = group
-    self.__discoverSettings()
-
-  @deprecated("unused")
-  def setSetup(self, setup):
-    """ False to auto detect
-    """
-    self.__uSetup = setup
-    self.__discoverSettings()
 
   def __getSearchPaths(self):
     paths = ["/Operations/Defaults", "/Operations/%s" % self.__setup]

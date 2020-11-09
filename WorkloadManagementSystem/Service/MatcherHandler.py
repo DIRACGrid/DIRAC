@@ -13,7 +13,6 @@ import six
 from DIRAC import gLogger, S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -133,13 +132,3 @@ class MatcherHandler(RequestHandler):
     resourceDescriptionDict = matcher._processResourceDescription(resourceDict)
     return gTaskQueueDB.getMatchingTaskQueues(resourceDescriptionDict,
                                               negativeCond=negativeCond)
-
-##############################################################################
-  types_matchAndGetTaskQueue = [dict]
-
-  @staticmethod
-  @deprecated("Unused")
-  def export_matchAndGetTaskQueue(resourceDict):
-    """ Return matching task queues
-    """
-    return gTaskQueueDB.matchAndGetTaskQueue(resourceDict)
