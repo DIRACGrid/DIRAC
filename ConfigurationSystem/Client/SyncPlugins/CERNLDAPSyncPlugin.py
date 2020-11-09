@@ -9,7 +9,7 @@ class CERNLDAPSyncPlugin(object):
   """Synchronization plugin for mapping new users to CERN accounts.
 
   This plugin results in new users having two additional fields in the CS,
-  CERNAccountType and PrimaryCERNAccount. If the new nickname does have a
+  CERNAccountType and PrimaryCERNAccount. If the new nickname does not have a
   corresponding CERN account it will be rejected.
   """
   def __init__(self):
