@@ -343,7 +343,10 @@ class PublisherHandler(RequestHandler):
 
   def export_setStatus(self, element, name, statusType, status, elementType, username, lastCheckTime):
 
-    lastCheckTime = datetime.strptime(lastCheckTime, '%Y-%m-%d %H:%M:%S')
+    if not lastCheckTime:
+      lastCheckTime = None
+    else:
+      lastCheckTime = datetime.strptime(lastCheckTime, '%Y-%m-%d %H:%M:%S')
 
     credentials = self.getRemoteCredentials()
     self.log.info(credentials)

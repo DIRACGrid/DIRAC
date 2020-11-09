@@ -374,19 +374,21 @@ installDIRAC() {
 # it needs the following environment variables:
 # ${DIRACUSERDN} for the DN of the user used to submit the job
 # ${DIRACUSERROLE} for the role of the proxy of the user used to submit the job
-# $DIRACSETUP for the setup
+# ${DIRACSETUP} for the setup
 
 submitJob() {
-  echo -e "==> Submitting a simple job"
   #This has to be executed from the ${CLIENTINSTALLDIR}
+
+  echo -e "==> Submitting a simple job"
   if ! cd "${CLIENTINSTALLDIR}"; then
     echo "ERROR: cannot change to ${CLIENTINSTALLDIR}" >&2
     exit 1
   fi
 
   export PYTHONPATH=${TESTCODE}:${PYTHONPATH}
-  #Get a proxy and submit the job: this job will go to the certification setup, so we suppose the JobManager there is accepting jobs
-  getUserProxy #this won't really download the proxy, so that's why the next command is needed
+  # Get a proxy and submit the job: this job will go to the certification setup,
+  # so we suppose the JobManager there is accepting jobs
+  getUserProxy # this won't really download the proxy, so that's why the next command is needed
   cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-proxy-download.py" "."
   python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup="${DIRACSETUP}" -ddd
   cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-test-job.py" "."

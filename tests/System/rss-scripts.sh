@@ -8,7 +8,7 @@
 declare -a commands=(
 'dirac-admin-get-banned-sites'
 'dirac-admin-get-site-mask'
-'test $( dirac-admin-site-info LCG.CERN.cern | wc -l ) = 7'
+'test $( dirac-admin-site-info LCG.CERN.cern | wc -l ) = 6'
 'dirac-dms-show-se-status'
 'dirac-rss-list-status --element=Site'
 'dirac-rss-list-status --element=Resource --name=RAL-SE'
