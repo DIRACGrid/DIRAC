@@ -4,6 +4,10 @@
 FIX: (#4807) --cfg option supports tilde
 FIX: (#4813) Show username when deleting users
 
+*FrameworkSystem
+NEW: (#4800) new tool dirac-admin-update-instance to update all servers of a dirac instance from command line
+NEW: (#4800) new tool dirac-admin-update-pilot to update version of pilot in CS from command line
+
 *DMS
 CHANGE: (#4807) FTS3 gives priority to disk replicas
 
