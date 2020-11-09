@@ -444,10 +444,9 @@ File Catalog Client $Revision: 1.17 $Date:
 
       # Remove subdirectories first
       dirDict = resultListDirectory['Value']['Successful'][lfn]['SubDirs']
-      dirList = list(dirDict)
-      if dirList:
+      if dirDict:
         if recursive:
-          for dirLfn in dirList:
+          for dirLfn in dirDict:
             result = self.removeDirectory(dirLfn, recursive, forceNonEmpty)
             if not result['OK']:
               print('Error: failed to remove directory', dirLfn)
