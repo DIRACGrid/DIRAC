@@ -1,3 +1,21 @@
+[v7r1p17]
+
+*Configuration
+NEW: (#4784) VOMS2CSAgent introduce SyncPlugins to add extra or validate user information information
+NEW: (#4809) Add CERNLDAPSyncPlugin for VOMS2CSAgent
+
+*Accounting
+CHANGE: (#4798) multiply wallclock per the number of processors used
+
+*WMS
+FIX: (#4816) JobStateUpdateHandler - Fix bug when using elasticJobParametersDB
+
+*Resources
+FIX: (#4792) Initialisation of arc.Endpoint in ARCComputingElement
+
+*RSS
+FIX: (#4790) use createClient decorator for RSS clients
+
 [v7r1p16]
 
 *Resources
