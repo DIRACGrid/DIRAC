@@ -444,7 +444,7 @@ File Catalog Client $Revision: 1.17 $Date:
 
       # Remove subdirectories first
       dirDict = resultListDirectory['Value']['Successful'][lfn]['SubDirs']
-      dirList = dirDict.keys()
+      dirList = list(dirDict)
       if dirList:
         if recursive:
           for dirLfn in dirList:
@@ -458,7 +458,7 @@ File Catalog Client $Revision: 1.17 $Date:
 
       # Remove files
       fileDict = resultListDirectory['Value']['Successful'][lfn]['Files']
-      fileList = fileDict.keys()
+      fileList = list(fileDict)
       if fileList:
         if forceNonEmpty:
           print("Removing", len(fileList), "files in", lfn)

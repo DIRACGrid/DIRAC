@@ -829,7 +829,7 @@ class FileManager(FileManagerBase):
       return result
 
     fileIDsToAdd = []
-    for f1, f2 in result['Value']:
+    for f1, _ in result['Value']:
       fileIDsToAdd.append(f1)
 
     if not fileIDsToAdd:
