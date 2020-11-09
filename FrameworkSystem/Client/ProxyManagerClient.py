@@ -196,9 +196,7 @@ class ProxyManagerClient(object):
 
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
-    # WARN: Since v7r1 requestDelegationUpload method use only first argument!
-    # WARN:   Second argument for compatibility with older versions
-    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'], None)
+    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'])
     if not result['OK']:
       return result
     reqDict = result['Value']
