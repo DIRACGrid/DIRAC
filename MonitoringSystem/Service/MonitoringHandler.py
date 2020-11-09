@@ -3,9 +3,9 @@
 It is used to create plots using Elasticsearch
 
 """
-from past.builtins import long
 import datetime
 import os
+import six
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -31,12 +31,12 @@ class MonitoringHandler(RequestHandler):
 
   """
 
-  __reportRequestDict = {'typeName': basestring,
-                         'reportName': basestring,
+  __reportRequestDict = {'typeName': six.string_types,
+                         'reportName': six.string_types,
                          'startTime': Time._allDateTypes,
                          'endTime': Time._allDateTypes,
                          'condDict': dict,
-                         'grouping': basestring,
+                         'grouping': six.string_types,
                          'extraArgs': dict}
 
   __db = None
@@ -50,7 +50,7 @@ class MonitoringHandler(RequestHandler):
     mkDir(dataPath)
     try:
       testFile = "%s/moni.plot.test" % dataPath
-      with open(testFile, "w") as _fd:
+      with open(testFile, "w") as _:
         os.unlink(testFile)
     except IOError as err:
       gLogger.fatal("Can't write to %s" % dataPath, err)
@@ -59,7 +59,7 @@ class MonitoringHandler(RequestHandler):
 
     return S_OK()
 
-  types_listUniqueKeyValues = [basestring]
+  types_listUniqueKeyValues = [six.string_types]
 
   def export_listUniqueKeyValues(self, typeName):
     """
@@ -73,7 +73,7 @@ class MonitoringHandler(RequestHandler):
     # NOTE: we can apply some policies if it will be needed!
     return self.__db.getKeyValues(typeName)
 
-  types_listReports = [basestring]
+  types_listReports = [six.string_types]
 
   def export_listReports(self, typeName):
     """
@@ -176,7 +176,7 @@ class MonitoringHandler(RequestHandler):
     # Check sliding plots
     if 'lastSeconds' in reportRequestExtra:
       try:
-        lastSeconds = long(reportRequestExtra['lastSeconds'])
+        lastSeconds = int(reportRequestExtra['lastSeconds'])
       except ValueError:
         gLogger.error("lastSeconds key must be a number")
         return S_ERROR("Value Error")
@@ -241,7 +241,7 @@ class MonitoringHandler(RequestHandler):
     reportRequest['generatePlot'] = False
     return reporter.generate(reportRequest, self.getRemoteCredentials())
 
-  types_addMonitoringRecords = [basestring, basestring, list]
+  types_addMonitoringRecords = [six.string_types, six.string_types, list]
 
   def export_addMonitoringRecords(self, monitoringtype, data):
     """
@@ -259,7 +259,7 @@ class MonitoringHandler(RequestHandler):
     gLogger.debug("addMonitoringRecords:", prefix)
     return self.__db.bulk_index(prefix, data)
 
-  types_addRecords = [basestring, basestring, list]
+  types_addRecords = [six.string_types, six.string_types, list]
 
   def export_addRecords(self, indexname, monitoringType, data):
     """
@@ -277,7 +277,7 @@ class MonitoringHandler(RequestHandler):
     gLogger.debug("Mapping:", mapping)
     return self.__db.bulk_index(indexname, data, mapping)
 
-  types_deleteIndex = [basestring]
+  types_deleteIndex = [six.string_types]
 
   def export_deleteIndex(self, indexName):
     """
@@ -291,7 +291,7 @@ class MonitoringHandler(RequestHandler):
     gLogger.debug("delete index:", indexName)
     return self.__db.deleteIndex(indexName)
 
-  types_getLastDayData = [basestring, dict]
+  types_getLastDayData = [six.string_types, dict]
 
   def export_getLastDayData(self, typeName, condDict):
     """
@@ -306,7 +306,7 @@ class MonitoringHandler(RequestHandler):
 
     return self.__db.getLastDayData(typeName, condDict)
 
-  types_getLimitedDat = [basestring, dict, int]
+  types_getLimitedDat = [six.string_types, dict, int]
 
   def export_getLimitedData(self, typeName, condDict, size):
     '''
@@ -323,7 +323,7 @@ class MonitoringHandler(RequestHandler):
     '''
     return self.__db.getLimitedData(typeName, condDict, size)
 
-  types_getDataForAGivenPeriod = [basestring, dict, basestring, basestring]
+  types_getDataForAGivenPeriod = [six.string_types, dict, six.string_types, six.string_types]
 
   def export_getDataForAGivenPeriod(self, typeName, condDict, initialDate='', endDate=''):
     """
@@ -342,7 +342,7 @@ class MonitoringHandler(RequestHandler):
     """
     return self.__db.getDataForAGivenPeriod(typeName, condDict, initialDate, endDate)
 
-  types_put = [list, basestring]
+  types_put = [list, six.string_types]
 
   def export_put(self, recordsToInsert, monitoringType):
     """

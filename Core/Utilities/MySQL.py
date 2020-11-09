@@ -1055,7 +1055,7 @@ class MySQL(object):
     except Exception as exc:
       return S_ERROR(DErrno.EMYSQL, exc)
 
-    cmd = 'SELECT  DISTINCT( %s ) FROM %s %s ORDER BY %s' % (attributeName, table, cond, attributeName)
+    cmd = 'SELECT DISTINCT( %s ) FROM %s %s ORDER BY %s' % (attributeName, table, cond, attributeName)
     res = self._query(cmd, connection)
     if not res['OK']:
       return res
