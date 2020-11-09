@@ -151,6 +151,8 @@ Other commands:
     dirac-proxy-destroy
 
     dirac-admin-sysadmin-cli
+    dirac-admin-update-instance
+    dirac-admin-update-pilot    
 
     dirac-admin-sort-cs-sites
 
