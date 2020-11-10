@@ -30,6 +30,7 @@ def prepareDict(columnNames, columnValues):
 
   return paramsDict
 
+
 @createClient('ResourceStatus/ResourceManagement')
 class ResourceManagementClient(Client):
   """

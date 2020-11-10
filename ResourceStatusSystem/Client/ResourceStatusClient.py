@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import prepareDict
 
+
 @createClient('ResourceStatus/ResourceStatus')
 class ResourceStatusClient(Client):
   """
@@ -206,7 +207,6 @@ class ResourceStatusClient(Client):
                     lastCheckTime, tokenOwner, tokenExpiration, meta]
 
     return self._getRPC().delete(element + tableType, prepareDict(columnNames, columnValues))
-
 
   def addOrModifyStatusElement(self, element, tableType, name=None,
                                statusType=None, status=None,
