@@ -81,7 +81,7 @@ class MatcherTestCase(ClientsTestCase):
                    'PilotBenchmark': 9.5,
                    'Platform': 'x86_64-slc6',
                    'Site': 'DIRAC.Jenkins.ch',
-		   'GridCE': 'jenkins.cern.ch'}
+                   'GridCE': 'jenkins.cern.ch'}
 
     self.assertEqual(res, resExpected)
 

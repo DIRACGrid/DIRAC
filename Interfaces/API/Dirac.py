@@ -17,6 +17,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import glob
@@ -317,7 +318,7 @@ class Dirac(API):
        :param job: Instance of Job class or JDL string
        :type job: ~DIRAC.Interfaces.API.Job.Job or str
        :param mode: Submit job to WMS with mode = 'wms' (default),
-		    'local' to run the workflow locally
+                    'local' to run the workflow locally
        :type mode: str
        :returns: S_OK,S_ERROR
     """
@@ -2331,8 +2332,8 @@ class Dirac(API):
     """
 
     if not isinstance(system, six.string_types) \
-	and isinstance(service, six.string_types) and \
-	    not isinstance(url, six.string_types):
+        and isinstance(service, six.string_types) and \
+            not isinstance(url, six.string_types):
       return self._errorReport('Expected string for system and service or a url to ping()')
     result = S_ERROR()
     try:

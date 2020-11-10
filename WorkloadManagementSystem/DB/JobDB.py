@@ -1207,7 +1207,7 @@ class JobDB(DB):
     cpuTime = classAdJob.getAttributeInt('CPUTime')
     if cpuTime is None:
       opsHelper = Operations(group=ownerGroup,
-			     setup=diracSetup)
+                             setup=diracSetup)
       cpuTime = opsHelper.getValue('JobDescription/DefaultCPUTime', 86400)
     classAdReq.insertAttributeInt('CPUTime', cpuTime)
 

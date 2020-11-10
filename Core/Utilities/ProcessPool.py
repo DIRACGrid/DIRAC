@@ -1,6 +1,3 @@
-#################################################################
-# $HeadURL$
-#################################################################
 """
 .. module:: Pfn
 
@@ -205,9 +202,9 @@ class WorkingProcess(multiprocessing.Process):
       # parent is dead,  commit suicide
       if os.getppid() == 1:
         os.kill(self.pid, signal.SIGTERM)
-	# wait for half a minute and if worker is still alive use REAL silencer
+        # wait for half a minute and if worker is still alive use REAL silencer
         time.sleep(30)
-	# now you're dead
+        # now you're dead
         os.kill(self.pid, signal.SIGKILL)
       # wake me up in 5 seconds
       time.sleep(5)
@@ -276,9 +273,9 @@ class WorkingProcess(multiprocessing.Process):
       try:
         task = self.__pendingQueue.get(block=True, timeout=10)
       except Queue.Empty:
-	# idle loop?
+        # idle loop?
         idleLoopCount += 1
-	# 10th idle loop - exit, nothing to do
+        # 10th idle loop - exit, nothing to do
         if idleLoopCount == 10 and not self.__keepRunning:
           return
         continue
@@ -525,7 +522,7 @@ class ProcessTask(object):
         self.__taskResult = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
       # or a class?
       elif inspect.isclass(self.__taskFunction):
-	# create new instance
+        # create new instance
         taskObj = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
         # ## check if it is callable, raise TypeError if not
         if not callable(taskObj):

@@ -17,14 +17,14 @@ module2.addParameter(Parameter("DataType", "", "string", "self", "DataType", Tru
 module2.addParameter(Parameter("CONFIG_NAME", "", "string", "self", "CONFIG_NAME", True, False, "Configuration Name"))
 module2.addParameter(
     Parameter(
-	"CONFIG_VERSION",
-	"",
-	"string",
-	"self",
-	"CONFIG_VERSION",
-	True,
-	False,
-	"Configuration Version"))
+        "CONFIG_VERSION",
+        "",
+        "string",
+        "self",
+        "CONFIG_VERSION",
+        True,
+        False,
+        "Configuration Version"))
 module2.addParameter(Parameter("EVENTTYPE", "", "string", "self", "EVENTTYPE", True, False, "Event Type"))
 module2.addParameter(Parameter("appName", "", "string", "self", "appName", True, False, "Application Name"))
 module2.addParameter(Parameter("appVersion", "", "string", "self", "appVersion", True, False, "Application Version"))
@@ -34,26 +34,26 @@ module2.addParameter(Parameter("inputData", "", "jdl", "self", "inputData", True
 module2.addParameter(Parameter("inputDataType", "", "string", "self", "inputDataType", True, False, "Input Data Type"))
 module2.addParameter(
     Parameter(
-	"NUMBER_OF_EVENTS",
-	"",
-	"string",
-	"self",
-	"NUMBER_OF_EVENTS",
-	True,
-	False,
-	"number of events requested"))
+        "NUMBER_OF_EVENTS",
+        "",
+        "string",
+        "self",
+        "NUMBER_OF_EVENTS",
+        True,
+        False,
+        "number of events requested"))
 module2.addParameter(Parameter("optionsFile", "", "string", "self", "optionsFile", True, False, "Options File"))
 module2.addParameter(
     Parameter(
-	"optionsLine",
-	"",
-	"string",
-	"self",
-	"optionsLine",
-	True,
-	False,
-	"Number of Event",
-	"option"))
+        "optionsLine",
+        "",
+        "string",
+        "self",
+        "optionsLine",
+        True,
+        False,
+        "Number of Event",
+        "option"))
 module2.addParameter(Parameter("systemConfig", "", "string", "self", "systemConfig", True, False, "Job Platform"))
 module2.addParameter(Parameter("poolXMLCatName", "", "string", "self", "poolXMLCatName", True, False, "POOL XML slice"))
 
@@ -68,35 +68,35 @@ module3.addParameter(Parameter("SourceData", "", "string", "self", "SourceData",
 module3.addParameter(Parameter("CONFIG_NAME", "", "string", "self", "CONFIG_NAME", True, False, "Configuration Name"))
 module3.addParameter(
     Parameter(
-	"CONFIG_VERSION",
-	"",
-	"string",
-	"self",
-	"CONFIG_VERSION",
-	True,
-	False,
-	"Configuration Version"))
+        "CONFIG_VERSION",
+        "",
+        "string",
+        "self",
+        "CONFIG_VERSION",
+        True,
+        False,
+        "Configuration Version"))
 module3.addParameter(
     Parameter(
-	"NUMBER_OF_EVENTS",
-	"",
-	"string",
-	"self",
-	"NUMBER_OF_EVENTS",
-	True,
-	False,
-	"number of events requested"))
+        "NUMBER_OF_EVENTS",
+        "",
+        "string",
+        "self",
+        "NUMBER_OF_EVENTS",
+        True,
+        False,
+        "number of events requested"))
 module3.addParameter(Parameter("NUMBER_OF_EVENTS_INPUT", "", "string", "", "", True, True, "number of events as input"))
 module3.addParameter(
     Parameter(
-	"NUMBER_OF_EVENTS_OUTPUT",
-	"",
-	"string",
-	"",
-	"",
-	False,
-	True,
-	"number of events as input"))
+        "NUMBER_OF_EVENTS_OUTPUT",
+        "",
+        "string",
+        "",
+        "",
+        False,
+        True,
+        "number of events as input"))
 module3.addParameter(Parameter("appName", "", "string", "self", "appName", True, False, "Application Name"))
 module3.addParameter(Parameter("appVersion", "", "string", "self", "appVersion", True, False, "Application Version"))
 module3.addParameter(Parameter("appType", "", "string", "self", "appType", True, False, "Application Version"))
@@ -105,14 +105,14 @@ module3.addParameter(Parameter("poolXMLCatName", "", "string", "self", "poolXMLC
 module3.addParameter(Parameter("inputData", "", "string", "self", "inputData", True, False, "InputData"))
 module3.addParameter(
     Parameter(
-	"OUTPUT_MAX",
-	"",
-	"string",
-	"self",
-	"OUTPUT_MAX",
-	True,
-	False,
-	"nb max of output to keep"))
+        "OUTPUT_MAX",
+        "",
+        "string",
+        "self",
+        "OUTPUT_MAX",
+        True,
+        False,
+        "nb max of output to keep"))
 module3.addParameter(Parameter("EMAIL", "@{EMAILNAME}", "string", "", "", True, False, "EMAIL adress"))
 
 # define module 4
@@ -122,46 +122,46 @@ module4.setBody('from WorkflowLib.Module.BookkeepingReport import * \n')
 module4.addParameter(Parameter("STEP_ID", "", "string", "self", "STEP_ID", True, False, "EMAIL adress"))
 module4.addParameter(
     Parameter(
-	"NUMBER_OF_EVENTS",
-	"",
-	"string",
-	"self",
-	"NUMBER_OF_EVENTS",
-	True,
-	False,
-	"number of events requested"))
+        "NUMBER_OF_EVENTS",
+        "",
+        "string",
+        "self",
+        "NUMBER_OF_EVENTS",
+        True,
+        False,
+        "number of events requested"))
 module4.addParameter(
     Parameter(
-	"NUMBER_OF_EVENTS_INPUT",
-	"",
-	"string",
-	"",
-	"",
-	True,
-	False,
-	"number of events as input"))
+        "NUMBER_OF_EVENTS_INPUT",
+        "",
+        "string",
+        "",
+        "",
+        True,
+        False,
+        "number of events as input"))
 module4.addParameter(
     Parameter(
-	"NUMBER_OF_EVENTS_OUTPUT",
-	"",
-	"string",
-	"",
-	"",
-	True,
-	False,
-	"number of events as input"))
+        "NUMBER_OF_EVENTS_OUTPUT",
+        "",
+        "string",
+        "",
+        "",
+        True,
+        False,
+        "number of events as input"))
 module4.addParameter(Parameter("DataType", "", "string", "self", "DataType", True, False, "data type"))
 module4.addParameter(Parameter("CONFIG_NAME", "", "string", "self", "CONFIG_NAME", True, False, "Configuration Name"))
 module4.addParameter(
     Parameter(
-	"CONFIG_VERSION",
-	"",
-	"string",
-	"self",
-	"CONFIG_VERSION",
-	True,
-	False,
-	"Configuration Version"))
+        "CONFIG_VERSION",
+        "",
+        "string",
+        "self",
+        "CONFIG_VERSION",
+        True,
+        False,
+        "Configuration Version"))
 module4.addParameter(Parameter("appName", "", "string", "self", "appName", True, False, "Application Name"))
 module4.addParameter(Parameter("appVersion", "", "string", "self", "appVersion", True, False, "Application Version"))
 module4.addParameter(Parameter("inputData", "", "string", "self", "inputData", True, False, "InputData"))
@@ -236,14 +236,14 @@ step1.addParameterLinked(module2.parameters)
 # and we can add additional parameter which will be used as a global
 step1.addParameter(
     Parameter(
-	"STEP_ID",
-	"@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}",
-	"string",
-	"",
-	"",
-	True,
-	False,
-	"Temporary fix"))
+        "STEP_ID",
+        "@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}",
+        "string",
+        "",
+        "",
+        True,
+        False,
+        "Temporary fix"))
 step1.addParameter(Parameter("EVENTTYPE", "30000000", "string", "", "", True, False, "Event Type"))
 step1.addParameter(Parameter("outputData", "@{STEP_ID}.root", "string", "", "", True, False, "etc name"))
 step1.addParameter(Parameter("etcf", "SETC_@{STEP_ID}.root", "string", "", "", True, False, "etc name"))
@@ -301,7 +301,7 @@ stepInstance1 = workflow1.createStepInstance('Gaudi_App_Step', 'Step1')
 stepInstance1.linkUp(stepInstance1.parameters, step1_prefix)
 stepInstance1.setLink("systemConfig", "self", "SystemConfig")  # capital letter corrected
 stepInstance1.unlink(["listoutput", "STEP_ID", "optionsFile", "optionsLine", "appLog",
-		      "appName", "etcf", "appType", "outputData", "EVENTTYPE"])
+                      "appName", "etcf", "appType", "outputData", "EVENTTYPE"])
 stepInstance1.setValue("appName", "DaVinci")
 stepInstance1.setValue("appType", "root")
 stepInstance1.setValue("outputData", "@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.@{appType}")
@@ -314,7 +314,7 @@ stepInstance1.linkUp("SourceData")
 stepInstance1.linkUp("poolXMLCatName")
 stepInstance1.setLink("inputData", "self", "InputData")  # KGG linked with InputData of the Workflow
 list1_out = [{"outputDataName": "@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.@{appType}",
-	      "outputType": "FETC", "outputDataSE": "Tier1_M-DST"}]
+              "outputType": "FETC", "outputDataSE": "Tier1_M-DST"}]
 stepInstance1.setValue("listoutput", list1_out)
 
 step2_prefix = "step2_"
@@ -324,7 +324,7 @@ stepInstance2.linkUp(stepInstance2.parameters, step2_prefix)
 stepInstance2.setLink("systemConfig", "self", "SystemConfig")  # capital letter corrected
 # except "STEP_ID", "appLog"
 stepInstance2.unlink(["listoutput", "STEP_ID", "optionsFile", "outputData",
-		      "optionsLine", "appLog", "appName", "appType", "etcf", "EVENTTYPE"])
+                      "optionsLine", "appLog", "appName", "appType", "etcf", "EVENTTYPE"])
 stepInstance2.setValue("appName", "Brunel")
 stepInstance2.setValue("appType", "dst")
 stepInstance2.setValue("outputData", "@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.@{appType}")
@@ -339,11 +339,11 @@ stepInstance2.linkUp("SourceData")
 stepInstance2.linkUp("poolXMLCatName")
 stepInstance2.setLink("inputData", stepInstance1.getName(), "outputData")
 list2_out = [{"outputDataName": "@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.@{appType}",
-	      "outputType": "dst",
-	      "outputDataSE": "Tier1_M-DST"},
-	     {"outputDataName": "SETC_@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.root",
-	      "outputType": "SETC",
-	      "outputDataSE": "Tier1_M-DST"}]
+              "outputType": "dst",
+              "outputDataSE": "Tier1_M-DST"},
+             {"outputDataName": "SETC_@{PRODUCTION_ID}_@{JOB_ID}_@{STEP_NUMBER}.root",
+              "outputType": "SETC",
+              "outputDataSE": "Tier1_M-DST"}]
 stepInstance2.setValue("listoutput", list2_out)
 
 workflow1.addStep(step3)
@@ -383,14 +383,14 @@ workflow1.removeParameter(step2_prefix + "systemConfig")
 #workflow1.addParameter(Parameter("systemConfig","slc4_ia32_gcc34","string","","",True, False, "Application Name"))
 workflow1.addParameter(
     Parameter(
-	"SystemConfig",
-	"x86_64-slc5-gcc43-opt",
-	"JDLReqt",
-	"",
-	"",
-	True,
-	False,
-	"Application Name"))
+        "SystemConfig",
+        "x86_64-slc5-gcc43-opt",
+        "JDLReqt",
+        "",
+        "",
+        True,
+        False,
+        "Application Name"))
 
 # Now lets define parameters on the top
 #indata = "LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_1.sim;LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_2.sim;LFN:/lhcb/production/DC06/phys-v2-lumi2/00001820/SIM/0000/00001820_00000001_3.sim"
@@ -420,26 +420,26 @@ workflow1.addParameter(Parameter("PRODUCTION_ID", "00003033", "string", "", "", 
 workflow1.addParameter(Parameter("JOB_ID", "00000011", "string", "", "", True, False, "Temporary fix"))
 workflow1.addParameter(
     Parameter(
-	"EMAILNAME",
-	"joel.closier@cern.ch",
-	"string",
-	"",
-	"",
-	True,
-	False,
-	"Email to send a report from the LogCheck module"))
+        "EMAILNAME",
+        "joel.closier@cern.ch",
+        "string",
+        "",
+        "",
+        True,
+        False,
+        "Email to send a report from the LogCheck module"))
 workflow1.addParameter(Parameter("DataType", "DATA", "string", "", "", True, False, "type of Datatype"))
 workflow1.addParameter(Parameter("SourceData", indata, "string", "", "", True, False, "Application Name"))
 workflow1.addParameter(
     Parameter(
-	"poolXMLCatName",
-	"pool_xml_catalog.xml",
-	"string",
-	"",
-	"",
-	True,
-	False,
-	"Application Name"))
+        "poolXMLCatName",
+        "pool_xml_catalog.xml",
+        "string",
+        "",
+        "",
+        True,
+        False,
+        "Application Name"))
 workflow1.addParameter(Parameter("CONFIG_NAME", "LHCb", "string", "", "", True, False, "Configuration Name"))
 workflow1.addParameter(Parameter("CONFIG_VERSION", "CCRC08", "string", "", "", True, False, "Configuration Version"))
 #workflow1.addParameter(Parameter("NUMBER_OF_EVENTS","5","string","","",True, False, "number of events requested"))
