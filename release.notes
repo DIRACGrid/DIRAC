@@ -1,3 +1,10 @@
+[v7r0p39]
+
+NEW: (#4814) FileManager, FileCatalogDB - added repairFilesTable function to fix differencies between FC_Files
+     and FC_FileInfo tables
+NEW: (#4814) FileCatalog CLI - rmdir command can perform recursive directory removal
+NEW: (#4814) FileCatalog CLI - repair command adapted to multiple repair operations
+
 [v7r0p38]
 
 *Configuration
@@ -10,10 +17,6 @@ NEW: (#4800) new tool dirac-admin-update-pilot to update version of pilot in CS 
 
 *DMS
 CHANGE: (#4807) FTS3 gives priority to disk replicas
-NEW: (#4814) FileManager, FileCatalogDB - added repairFilesTable function to fix differencies between FC_Files
-     and FC_FileInfo tables
-NEW: (#4814) FileCatalog CLI - rmdir command can perform recursive directory removal
-NEW: (#4814) FileCatalog CLI - repair command adapted to multiple repair operations
 
 *Resources
 NEW: (#4807) CTA compatible Storage plugin
