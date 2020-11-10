@@ -382,7 +382,7 @@ class JobWrapper(object):
                         spObject=spObject,
                         jobCPUTime=jobCPUTime,
                         memoryLimit=jobMemory,
-                        processors=processors,
+                        processors=self.numberOfProcessors,
                         jobArgs=self.jobArgs)
 
     self.log.verbose('Initializing Watchdog instance')
