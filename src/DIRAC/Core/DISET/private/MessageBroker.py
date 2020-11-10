@@ -10,7 +10,6 @@ import threading
 import select
 import time
 import socket
-import os
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -277,7 +276,7 @@ class MessageBroker(object):
 
   def __sendResponse(self, trid, msgId, msgResult):
     msgResponse = {'request': False, 'id': msgId, 'result': msgResult}
-    _result = self.__trPool.send(trid, S_OK(msgResponse))
+    self.__trPool.send(trid, S_OK(msgResponse))
 
   def sendMessage(self, trid, msgObj):
     if not msgObj.isOK():

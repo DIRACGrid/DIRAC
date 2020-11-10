@@ -16,12 +16,12 @@ __RCSID__ = "$Id$"
 import time
 import datetime
 from six.moves.queue import Queue
+from concurrent.futures import ThreadPoolExecutor
 
 from DIRAC import S_OK
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Dictionaries import breakDictionaryIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -100,11 +100,10 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       return resCred
     # setting up the threading
     maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', 15)
-    threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
     self.log.verbose("Multithreaded with %d threads" % maxNumberOfThreads)
 
-    for i in range(maxNumberOfThreads):
-      threadPool.generateJobAndQueueIt(self._execute, [i])
+    with ThreadPoolExecutor(max_workers=maxNumberOfThreads) as executor:
+      executor.map(self._execute, list(range(maxNumberOfThreads)))
 
     return S_OK()
 
@@ -278,6 +277,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     clients = self._getClients() if self.shifterProxy else \
         self._getClients(ownerGroup=self.credTuple[1], ownerDN=self.credTuple[2]) if self.credentials \
         else None
+
     method = '_execute'
     operation = 'None'
 
@@ -291,7 +291,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         transID = list(transIDOPBody)[0]
         operations = transIDOPBody[transID]['Operations']
         if transID not in self.transInQueue:
-          self._logWarn("Got a transf not in transInQueue...?",
+	  self._logWarn("Got a transformation not in transInQueue...?",
                         method=method, transID=transID)
           break
         if not (self.credentials or self.shifterProxy):

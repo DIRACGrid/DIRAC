@@ -18,12 +18,11 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 import datetime
-import math
 from six.moves import queue as Queue
+from concurrent.futures import ThreadPoolExecutor
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 
@@ -38,11 +37,7 @@ class ElementInspectorAgent(AgentModule):
 
   This Agent takes care of the Elements. In order to do so, it gathers
   the eligible ones and then evaluates their statuses with the PEP.
-
   """
-
-  # Max number of worker threads by default
-  __maxNumberOfThreads = 15
 
   # Inspection freqs, defaults, the lower, the higher priority to be checked.
   # Error state usually means there is a glitch somewhere, so it has the highest
@@ -63,16 +58,12 @@ class ElementInspectorAgent(AgentModule):
     # ElementType, to be defined among Resource or Node
     self.elementType = 'Resource'
     self.elementsToBeChecked = None
-    self.threadPool = None
     self.rsClient = None
     self.clients = {}
 
   def initialize(self):
     """ Standard initialize.
     """
-
-    maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', self.__maxNumberOfThreads)
-    self.threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
 
     self.elementType = self.am_getOption('elementType', self.elementType)
 
@@ -95,17 +86,17 @@ class ElementInspectorAgent(AgentModule):
     if not self.elementType:
       return S_ERROR('Missing elementType')
 
+    maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', 15)
+    with ThreadPoolExecutor(max_workers=maxNumberOfThreads) as executor:
+      executor.map(self._execute, list(range(maxNumberOfThreads)))
+
     return S_OK()
 
   def execute(self):
     """ execute
 
-    This is the main method of the agent. It gets the elements from the Database
-    which are eligible to be re-checked, calculates how many threads should be
-    started and spawns them. Each thread will get an element from the queue until
-    it is empty. At the end, the method will join the queue such that the agent
-    will not terminate a cycle until all elements have been processed.
-
+    This is the main method of the agent.
+    It gets the elements from the Database which are eligible to be re-checked.
     """
 
     # Gets elements to be checked (returns a Queue)
@@ -114,27 +105,6 @@ class ElementInspectorAgent(AgentModule):
       self.log.error(elementsToBeChecked['Message'])
       return elementsToBeChecked
     self.elementsToBeChecked = elementsToBeChecked['Value']
-
-    queueSize = self.elementsToBeChecked.qsize()
-    pollingTime = self.am_getPollingTime()
-
-    # Assigns number of threads on the fly such that we exhaust the PollingTime
-    # without having to spawn too many threads. We assume 10 seconds per element
-    # to be processed ( actually, it takes something like 1 sec per element ):
-    # numberOfThreads = elements * 10(s/element) / pollingTime
-    numberOfThreads = int(math.ceil(queueSize * 10. / pollingTime))
-
-    self.log.info('Needed %d threads to process %d elements' % (numberOfThreads, queueSize))
-
-    for _x in range(numberOfThreads):
-      jobUp = self.threadPool.generateJobAndQueueIt(self._execute)
-      if not jobUp['OK']:
-        self.log.error(jobUp['Message'])
-
-    self.log.info('blocking until all elements have been processed')
-    # block until all tasks are done
-    self.elementsToBeChecked.join()
-    self.log.info('done')
 
     return S_OK()
 
@@ -195,34 +165,29 @@ class ElementInspectorAgent(AgentModule):
 
   def _execute(self):
     """
-      Method run by the thread pool. It enters a loop until there are no elements
+      Method run by the ThreadPool. It enters a loop until there are no elements
       on the queue. On each iteration, it evaluates the policies for such element
-      and enforces the necessary actions. If there are no more elements in the
-      queue, the loop is finished.
+      and enforces the necessary actions.
     """
 
     pep = PEP(clients=self.clients)
 
     while True:
-
-      try:
-        element = self.elementsToBeChecked.get_nowait()
-      except Queue.Empty:
-        return S_OK()
-
-      self.log.verbose('%s ( VO=%s / status=%s / statusType=%s ) being processed' % (element['name'],
-                                                                                     element['vO'],
-                                                                                     element['status'],
-                                                                                     element['statusType']))
+      element = self.elementsToBeChecked.get()
+      self.log.verbose(
+	  '%s ( VO=%s / status=%s / statusType=%s ) being processed' % (
+	      element['name'],
+	      element['vO'],
+	      element['status'],
+	      element['statusType']))
 
       try:
         resEnforce = pep.enforce(element)
-      except Exception as e:
+      except Exception:
         self.log.exception('Exception during enforcement')
         resEnforce = S_ERROR('Exception during enforcement')
       if not resEnforce['OK']:
         self.log.error('Failed policy enforcement', resEnforce['Message'])
-        self.elementsToBeChecked.task_done()
         continue
 
       resEnforce = resEnforce['Value']
@@ -238,6 +203,3 @@ class ElementInspectorAgent(AgentModule):
                                                                newStatus,
                                                                reason,
                                                                oldStatus))
-
-      # Used together with join !
-      self.elementsToBeChecked.task_done()

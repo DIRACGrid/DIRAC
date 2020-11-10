@@ -16,11 +16,10 @@ import time
 import os
 import datetime
 import pickle
-from six.moves import queue as Queue
+import concurrent.futures
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.Core.Utilities.List import breakListIntoChunks, randomize
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -52,10 +51,6 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
 
     # clients (out of the threads)
     self.transfClient = None
-
-    # parameters for the threading
-    self.transQueue = Queue.Queue()
-    self.transInQueue = []
 
     # parameters for caching
     self.workDirectory = ''
@@ -112,13 +107,10 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
 
     self.noUnusedDelay = self.am_getOption('NoUnusedDelay', 6)
 
-    # Get it threaded
-    maxNumberOfThreads = self.am_getOption('maxThreadsInPool', 1)
-    threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
+    # Instantiating the ThreadPoolExecutor
+    maxNumberOfThreads = self.am_getOption('maxThreadsInPool', 15)
     self.log.info("Multithreaded with %d threads" % maxNumberOfThreads)
-
-    for i in range(maxNumberOfThreads):
-      threadPool.generateJobAndQueueIt(self._execute, [i])
+    self.threadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=maxNumberOfThreads)
 
     self.log.info("Will treat the following transformation types: %s" % str(self.transformationTypes))
 
@@ -127,21 +119,16 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
   def finalize(self):
     """ graceful finalization
     """
+
     method = 'finalize'
-    if self.transInQueue:
-      self.transInQueue = []
-      self._logInfo("Wait for threads to get empty before terminating the agent (%d tasks)" %
-                    len(self.transInThread), method=method)
-      self._logInfo('Remaining transformations:',
-                    ','.join(str(transID) for transID in self.transInThread), method=method)
-      while self.transInThread:
-        time.sleep(2)
-      self._logInfo("Threads are empty, terminating the agent...", method=method)
+    self._logInfo("Wait for threads to get empty before terminating the agent", method=method)
+    self.threadPoolExecutor.shutdown()
+    self._logInfo("Threads are empty, terminating the agent...", method=method)
     self.__writeCache()
     return S_OK()
 
   def execute(self):
-    """ Just puts transformations in the queue
+    """ Just puts transformations in the queue, and spawns threads if there's work to do.
     """
     # Get the transformations to process
     res = self.getTransformations()
@@ -150,6 +137,8 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
       return S_OK()
     # Process the transformations
     count = 0
+    future_to_transID = {}
+
     for transDict in res['Value']:
       transID = int(transDict['TransformationID'])
       if transDict.get('InheritedFrom'):
@@ -163,11 +152,20 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             self._logInfo("Successfully moved files from %d to %d:" % (parentProd, transID), transID=transID)
             for status, val in movedFiles.items():
               self._logInfo("\t%d files to status %s" % (val, status), transID=transID)
-      if transID not in self.transInQueue:
-        count += 1
-        self.transInQueue.append(transID)
-        self.transQueue.put(transDict)
+      count += 1
+      future = self.threadPoolExecutor.submit(self._execute, transDict)
+      future_to_transID[future] = transID
     self._logInfo("Out of %d transformations, %d put in thread queue" % (len(res['Value']), count))
+
+    for future in concurrent.futures.as_completed(future_to_transID):
+      transID = future_to_transID[future]
+      try:
+	future.result()
+      except Exception as exc:
+	self._logERROR('%d generated an exception: %s' % (transID, exc))
+      else:
+	self._logInfo('Processed %d' % transID)
+
     return S_OK()
 
   def getTransformations(self):
@@ -207,36 +205,30 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     return {'TransformationClient': threadTransformationClient,
             'DataManager': threadDataManager}
 
-  def _execute(self, threadID):
-    """ thread - does the real job: processing the transformations to be processed
+  def _execute(self, transDict):
+    """ thread - does the real job: processing the transformation to be processed
     """
+
+    self._logDebug('Starting _execute')
 
     # Each thread will have its own clients
     clients = self._getClients()
 
-    while True:
-      transDict = self.transQueue.get()
-      try:
-        transID = int(transDict['TransformationID'])
-        if transID not in self.transInQueue:
-          break
-        self.transInThread[transID] = ' [Thread%d] [%s] ' % (threadID, str(transID))
-        self._logInfo("Processing transformation %s." % transID, transID=transID)
-        startTime = time.time()
-        res = self.processTransformation(transDict, clients)
-        if not res['OK']:
-          self._logInfo("Failed to process transformation:", res['Message'], transID=transID)
-      except Exception as x:  # pylint: disable=broad-except
-        self._logException('Exception in plugin', lException=x, transID=transID)
-      finally:
-        if not transID:
-          transID = 'None'
-        self._logInfo("Processed transformation in %.1f seconds" % (time.time() - startTime), transID=transID)
-        if transID in self.transInQueue:
-          self.transInQueue.remove(transID)
-        self.transInThread.pop(transID, None)
-        self._logVerbose("%d transformations still in queue" % len(self.transInQueue))
-    return S_OK()
+    try:
+      transID = int(transDict['TransformationID'])
+      self._logInfo("Processing transformation %s." % transID, transID=transID)
+      startTime = time.time()
+      res = self.processTransformation(transDict, clients)
+      if not res['OK']:
+	self._logInfo("Failed to process transformation:", res['Message'], transID=transID)
+    except Exception as x:  # pylint: disable=broad-except
+      self._logException('Exception in plugin', lException=x, transID=transID)
+    finally:
+      if not transID:
+	transID = 'None'
+      self._logInfo("Processed transformation in %.1f seconds" % (time.time() - startTime), transID=transID)
+
+    self._logDebug('Exiting _execute')
 
   def processTransformation(self, transDict, clients):
     """ process a single transformation (in transDict)
@@ -563,8 +555,6 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     """ Add replicas to the cache
     """
     self.replicaCache.setdefault(transID, {})[datetime.datetime.utcnow()] = newReplicas
-#    if len( newReplicas ) > 5000:
-#      self.__writeCache( transID )
 
   def __clearCacheForTrans(self, transID):
     """ Remove all replicas for a transformation

@@ -16,12 +16,11 @@ from __future__ import print_function
 
 __RCSID__ = '$Id$'
 
-import math
 from six.moves import queue as Queue
+from concurrent.futures import ThreadPoolExecutor
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 
@@ -33,7 +32,6 @@ class SiteInspectorAgent(AgentModule):
 
   The SiteInspectorAgent agent is an agent that is used to get the all the site names
   and trigger PEP to evaluate their status.
-
   """
 
   # Max number of worker threads by default
@@ -55,16 +53,12 @@ class SiteInspectorAgent(AgentModule):
 
     # ElementType, to be defined among Site, Resource or Node
     self.sitesToBeChecked = None
-    self.threadPool = None
     self.siteClient = None
     self.clients = {}
 
   def initialize(self):
     """ Standard initialize.
     """
-
-    maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', self.__maxNumberOfThreads)
-    self.threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
 
     res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus')
     if not res['OK']:
@@ -81,6 +75,10 @@ class SiteInspectorAgent(AgentModule):
     self.siteClient = siteStatusClass()
     self.clients['SiteStatus'] = siteStatusClass()
     self.clients['ResourceManagementClient'] = rmClass()
+
+    maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', 15)
+    with ThreadPoolExecutor(max_workers=maxNumberOfThreads) as executor:
+      executor.map(self._execute, list(range(maxNumberOfThreads)))
 
     return S_OK()
 
@@ -100,27 +98,6 @@ class SiteInspectorAgent(AgentModule):
       self.log.error("Failure getting sites to be checked", sitesToBeChecked['Message'])
       return sitesToBeChecked
     self.sitesToBeChecked = sitesToBeChecked['Value']
-
-    queueSize = self.sitesToBeChecked.qsize()
-    pollingTime = self.am_getPollingTime()
-
-    # Assigns number of threads on the fly such that we exhaust the PollingTime
-    # without having to spawn too many threads. We assume 10 seconds per element
-    # to be processed ( actually, it takes something like 1 sec per element ):
-    # numberOfThreads = elements * 10(s/element) / pollingTime
-    numberOfThreads = int(math.ceil(queueSize * 10. / pollingTime))
-
-    self.log.info('Needed %d threads to process %d elements' % (numberOfThreads, queueSize))
-
-    for _x in range(numberOfThreads):
-      jobUp = self.threadPool.generateJobAndQueueIt(self._execute)
-      if not jobUp['OK']:
-        self.log.error(jobUp['Message'])
-
-    self.log.info('blocking until all sites have been processed')
-    # block until all tasks are done
-    self.sitesToBeChecked.join()
-    self.log.info('done')
 
     return S_OK()
 
@@ -157,32 +134,45 @@ class SiteInspectorAgent(AgentModule):
 
     return S_OK(toBeChecked)
 
-  # Private methods ............................................................
-
   def _execute(self):
     """
       Method run by each of the thread that is in the ThreadPool.
       It enters a loop until there are no sites on the queue.
 
       On each iteration, it evaluates the policies for such site
-      and enforces the necessary actions. If there are no more sites in the
-      queue, the loop is finished.
+      and enforces the necessary actions.
     """
 
     pep = PEP(clients=self.clients)
 
     while True:
-
-      try:
-        site = self.sitesToBeChecked.get_nowait()
-      except Queue.Empty:
-        return S_OK()
+      site = self.sitesToBeChecked.get()
+      self.log.verbose(
+	  '%s ( VO=%s / status=%s / statusType=%s ) being processed' % (
+	      site['name'],
+	      site['vO'],
+	      site['status'],
+	      site['statusType']))
 
       try:
         resEnforce = pep.enforce(site)
-        if not resEnforce['OK']:
-          self.log.error('Failed policy enforcement', resEnforce['Message'])
-      except Exception as e:
+      except Exception:
         self.log.exception('Exception during enforcement')
-      # Used together with join !
-      self.sitesToBeChecked.task_done()
+	resEnforce = S_ERROR('Exception during enforcement')
+      if not resEnforce['OK']:
+	self.log.error('Failed policy enforcement', resEnforce['Message'])
+	continue
+
+      resEnforce = resEnforce['Value']
+
+      oldStatus = resEnforce['decisionParams']['status']
+      statusType = resEnforce['decisionParams']['statusType']
+      newStatus = resEnforce['policyCombinedResult']['Status']
+      reason = resEnforce['policyCombinedResult']['Reason']
+
+      if oldStatus != newStatus:
+	self.log.info('%s (%s) is now %s ( %s ), before %s' % (site['name'],
+							       statusType,
+							       newStatus,
+							       reason,
+							       oldStatus))
