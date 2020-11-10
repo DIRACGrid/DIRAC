@@ -188,13 +188,14 @@ class ResourceManagementClientChain(TestClientResourceManagementTestCase):
     self.assertTrue(res['OK'])
     # check if the name that we got is equal to the previously added 'TestName12345'
     self.assertEqual(res['Value'][0][0], 'TestName12345')
+    self.assertEqual(res['Value'][0][6], 'all')  # default value for vo, as the last element
 
     res = self.rmClient.addOrModifyPilotCache('TestName12345', status='newStatus')
     self.assertTrue(res['OK'])
 
     res = self.rmClient.selectPilotCache('TestName12345')
-    # check if the result has changed. New schema, vo column added, hence pos 3.
-    self.assertEqual(res['Value'][0][3], 'newStatus')
+    # check if the result has changed.
+    self.assertEqual(res['Value'][0][2], 'newStatus')
 
     # TEST deletePilotCache
     # ...............................................................................
@@ -224,6 +225,7 @@ class ResourceManagementClientChain(TestClientResourceManagementTestCase):
     self.assertTrue(res['OK'])
     # check if the name that we got is equal to the previously added 'TestName12345'
     self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][0][8], 'all')  # default value for vo, as the last element
 
     res = self.rmClient.addOrModifyPolicyResult('element', 'TestName12345', 'policyName', 'statusType',
                                                 status='newStatus')
@@ -231,7 +233,7 @@ class ResourceManagementClientChain(TestClientResourceManagementTestCase):
 
     res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
     # check if the result has changed.
-    self.assertEqual(res['Value'][0][5], 'newStatus')
+    self.assertEqual(res['Value'][0][4], 'newStatus')
 
     # TEST deletePolicyResult
     # ...............................................................................
