@@ -47,6 +47,11 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p18]
+
+*RSS
+FIX: (#4815) Fix a problem with vo being returned in a middle to a list in toList
+
 [v7r1p17]
 
 *Configuration
@@ -394,6 +399,13 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p39]
+
+NEW: (#4814) FileManager, FileCatalogDB - added repairFilesTable function to fix differencies between FC_Files
+     and FC_FileInfo tables
+NEW: (#4814) FileCatalog CLI - rmdir command can perform recursive directory removal
+NEW: (#4814) FileCatalog CLI - repair command adapted to multiple repair operations
 
 [v7r0p38]
 

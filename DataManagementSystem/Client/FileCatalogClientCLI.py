@@ -4,7 +4,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-__RCSID__ = "$Id$"
 
 # TODO: This should be modernised to use subprocess(32)
 try:
@@ -17,6 +16,7 @@ import time
 import sys
 import getopt
 
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -26,6 +26,8 @@ from DIRAC.DataManagementSystem.Client.DirectoryListing import DirectoryListing
 from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD_METAKEYS
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
+
+__RCSID__ = "$Id$"
 
 
 class FileCatalogClientCLI(CLI):
@@ -48,10 +50,6 @@ class FileCatalogClientCLI(CLI):
         server = xmlrpclib.Server(xmlrpc_url)
         server.exported_function(args)
   """
-
-  intro = """
-File Catalog Client $Revision: 1.17 $Date:
-            """
 
   def __init__(self, client):
     CLI.__init__(self)
@@ -340,19 +338,34 @@ File Catalog Client $Revision: 1.17 $Date:
     return result
 
   def do_rmdir(self, args):
-    """ Remove directory from the storage and from the File Catalog
+    """ Remove directory from the File Catalog. Note, this method does not remove physical replicas
 
         usage:
-          rmdir <path>
+          rmdir [-r] [-f] <path>
 
-        NB: this method is not fully implemented !
+        -r flag to remove directories recursively
+        -f flag to force removing files also in the directories to be removed
+
     """
-    # Not yet really implemented yet
     argss = args.split()
+    recursive = False
+    if '-r' in argss:
+      recursive = True
+      argss.remove('-r')
+    forceNonEmpty = False
+    if '-f' in argss:
+      forceNonEmpty = True
+      argss.remove('-f')
+    if '-rf' in argss:
+      recursive = True
+      forceNonEmpty = True
+      argss.remove('-rf')
     if len(argss) != 1:
       print(self.do_rmdir.__doc__)
       return
-    self.removeDirectory(argss)
+    path = argss[0]
+    lfn = self.getPath(path)
+    self.removeDirectory(lfn, recursive, forceNonEmpty)
 
   def complete_rmdir(self, text, line, begidx, endidx):
     result = []
@@ -421,25 +434,59 @@ File Catalog Client $Revision: 1.17 $Date:
     except Exception as x:
       print("Error: rm failed with exception: ", x)
 
-  def removeDirectory(self, args):
-    """ Remove file from the catalog
+  def removeDirectory(self, lfn, recursive=False, forceNonEmpty=False):
+    """ Remove a given directory from the catalog. Remove multiple directories
+        recursively if recursive flag is True. Remove contained files if forceNonEmpty
+        flag is true.
     """
 
-    path = args[0]
-    lfn = self.getPath(path)
-    print("lfn:", lfn)
+    if recursive or forceNonEmpty:
+      resultListDirectory = self.fc.listDirectory(lfn, False)
+      if not resultListDirectory['OK']:
+        print('Failed to look up the directory contents')
+        return S_ERROR('Failed to look up the directory contents')
+
+      # Remove subdirectories first
+      dirDict = resultListDirectory['Value']['Successful'][lfn]['SubDirs']
+      if dirDict:
+        if recursive:
+          for dirLfn in dirDict:
+            result = self.removeDirectory(dirLfn, recursive, forceNonEmpty)
+            if not result['OK']:
+              print('Error: failed to remove directory', dirLfn)
+              return S_ERROR('Failed to remove directory')
+        else:
+          print('Error: failed to remove non empty directory')
+          return S_ERROR("Failed to remove non empty directory")
+
+      # Remove files
+      fileDict = resultListDirectory['Value']['Successful'][lfn]['Files']
+      fileList = list(fileDict)
+      if fileList:
+        if forceNonEmpty:
+          print("Removing", len(fileList), "files in", lfn)
+          result = self.fc.removeFile(fileList)
+          if not result['OK']:
+            print("Error:", result['Message'])
+            return result
+          if result['Value']['Failed']:
+            print('Error: failed to remove %d files' % len(result['Value']['Failed']))
+            return S_ERROR("Failed to remove files")
+        else:
+          print('Error: failed to remove non empty directory')
+          return S_ERROR("Failed to remove non empty directory")
+
+    # Removing the directory now
     try:
-      result = self.fc.removeDirectory(lfn)
-      if result['OK']:
-        if result['Value']['Successful']:
-          print("Directory", lfn, "removed from the catalog")
-        elif result['Value']['Failed']:
-          print("ERROR:", result['Value']['Failed'][lfn])
-      else:
+      print("Removing directory", lfn)
+      result = returnSingleResult(self.fc.removeDirectory(lfn))
+      if not result['OK']:
         print("Failed to remove directory from the catalog")
         print(result['Message'])
+      return result
     except Exception as x:
-      print("Error: rm failed with exception: ", x)
+      print("Error: rmdir failed with exception: ", x)
+      return S_ERROR('Exception: %s' % str(x))
 
   def do_replicate(self, args):
     """ Replicate a given file to a given SE
@@ -449,7 +496,7 @@ File Catalog Client $Revision: 1.17 $Date:
     """
     argss = args.split()
     if len(argss) < 2:
-      print("Error: unsufficient number of arguments")
+      print("Error: insufficient number of arguments")
       return
     lfn = argss[0]
     lfn = self.getPath(lfn)
@@ -2221,19 +2268,20 @@ File Catalog Client $Revision: 1.17 $Date:
     """ Repair catalog inconsistencies
 
         Usage:
-           repair catalog
+           repair
     """
 
-    argss = args.split()
-    _option = argss[0]
     start = time.time()
     result = self.fc.repairCatalog()
     if not result['OK']:
       print("Error:", result['Message'])
       return
 
+    for repType, repResult in result["Value"].items():
+      print("%s repair: %s" % (repType, repResult))
+
     total = time.time() - start
-    print("Catalog repaired in %.2f sec" % total)
+    print("Catalog repair operation done in %.2f sec" % total)
 
 
 if __name__ == "__main__":

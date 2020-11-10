@@ -243,7 +243,7 @@ class PilotCache(rmsBase):
   def toList(self):
     """ Simply returns a list of column values
     """
-    return [self.site, self.ce, self.vo, self.status, self.pilotjobeff, self.pilotsperjob, self.lastchecktime]
+    return [self.site, self.ce, self.status, self.pilotjobeff, self.pilotsperjob, self.lastchecktime, self.vo]
 
 
 class PolicyResult(rmsBase):
@@ -290,7 +290,7 @@ class PolicyResult(rmsBase):
     """ Simply returns a list of column values
     """
     return [self.policyname, self.statustype, self.element, self.name,
-            self.vo, self.status, self.reason, self.dateeffective, self.lastchecktime]
+            self.status, self.reason, self.dateeffective, self.lastchecktime, self.vo]
 
 
 class SpaceTokenOccupancyCache(rmsBase):

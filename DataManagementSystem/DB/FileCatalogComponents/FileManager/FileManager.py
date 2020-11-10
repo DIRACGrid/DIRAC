@@ -13,6 +13,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManager
 from DIRAC.Core.Utilities.List import stringListToString, \
     intListToString, \
     breakListIntoChunks
+from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import getIDSelectString
 
 DEBUG = 0
@@ -817,3 +818,35 @@ class FileManager(FileManagerBase):
 
     result = self.db._query(req, connection)
     return result
+
+  def repairFileTables(self, connection=False):
+    """ Repair FC_FileInfo table by adding missing records as compaired to the FC_Files table
+    """
+
+    req = "SELECT F1.FileID, F2.FileID from FC_Files as F1 LEFT JOIN FC_FileInfo as F2 "
+    req += "ON F1.FileID=F2.FileID WHERE F2.FileID IS NULL"
+    result = self.db._query(req, connection)
+    if not result['OK']:
+      return result
+
+    fileIDsToAdd = []
+    for f1, _ in result['Value']:
+      fileIDsToAdd.append(f1)
+
+    if not fileIDsToAdd:
+      return S_OK(0)
+
+    nFiles = len(fileIDsToAdd)
+    insertTuples = []
+    for fileID in fileIDsToAdd:
+      guid = makeGuid()
+      insertTuples.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" %
+                          (int(fileID), guid, self.db.umask))
+
+    fields = 'FileID,GUID,CreationDate,ModificationDate,Mode'
+    req = "INSERT INTO FC_FileInfo (%s) VALUES %s" % (fields, ','.join(insertTuples))
+    result = self.db._update(req)
+    if not result['OK']:
+      return result
+
+    return S_OK(nFiles)

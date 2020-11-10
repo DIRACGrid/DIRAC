@@ -5,9 +5,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-__RCSID__ = "$Id:  $"
 
-import DIRAC
+__RCSID__ = "$Id$"
+
 from DIRAC.Core.Base import Script
 from DIRAC import exit as dexit
 from DIRAC import gLogger
