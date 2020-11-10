@@ -188,6 +188,7 @@ class ResourceManagementClientChain(TestClientResourceManagementTestCase):
     self.assertTrue(res['OK'])
     # check if the name that we got is equal to the previously added 'TestName12345'
     self.assertEqual(res['Value'][0][0], 'TestName12345')
+    self.assertEqual(res['Value'][0][6], 'all')  # default value for vo, as the last element
 
     res = self.rmClient.addOrModifyPilotCache('TestName12345', status='newStatus')
     self.assertTrue(res['OK'])
@@ -224,6 +225,7 @@ class ResourceManagementClientChain(TestClientResourceManagementTestCase):
     self.assertTrue(res['OK'])
     # check if the name that we got is equal to the previously added 'TestName12345'
     self.assertEqual(res['Value'][0][1], 'statusType')
+    self.assertEqual(res['Value'][0][8], 'all')  # default value for vo, as the last element
 
     res = self.rmClient.addOrModifyPolicyResult('element', 'TestName12345', 'policyName', 'statusType',
                                                 status='newStatus')

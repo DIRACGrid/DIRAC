@@ -64,6 +64,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     self.assertEqual(res['Value'][0][0], 'TestName1234')
     self.assertEqual(res['Value'][0][1], 'statusType')
     self.assertEqual(res['Value'][0][2], 'Active')
+    self.assertEqual(res['Value'][0][9], 'all')  # vo value at the end of the list
 
     # try to select the previously entered element from the Log table (it should NOT be there)
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234')
