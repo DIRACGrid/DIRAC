@@ -2,7 +2,6 @@
 """ File Catalog Client Command Line Interface. """
 
 from __future__ import print_function
-__RCSID__ = "$Id$"
 
 import commands
 import os.path
@@ -21,6 +20,7 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
+__RCSID__ = "$Id$"
 
 class FileCatalogClientCLI(CLI):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
@@ -42,10 +42,6 @@ class FileCatalogClientCLI(CLI):
         server = xmlrpclib.Server(xmlrpc_url)
         server.exported_function(args)
   """
-
-  intro = """
-File Catalog Client $Revision: 1.17 $Date:
-            """
 
   def __init__(self, client):
     CLI.__init__(self)
@@ -465,6 +461,9 @@ File Catalog Client $Revision: 1.17 $Date:
           if not result['OK']:
             print("Error:", result['Message'])
             return result
+          if result['Value']['Failed']:
+            print('Error: failed to remove %d files' % len(result['Value']['Failed']))
+            return S_ERROR("Failed to remove files")
         else:
           print('Error: failed to remove non empty directory')
           return S_ERROR("Failed to remove non empty directory")
@@ -472,11 +471,8 @@ File Catalog Client $Revision: 1.17 $Date:
     # Removing the directory now
     try:
       print("Removing directory", lfn)
-      result = self.fc.removeDirectory(lfn)
-      if result['OK']:
-        if result['Value']['Failed']:
-          print("ERROR:", result['Value']['Failed'][lfn])
-      else:
+      result = returnSingleResult(self.fc.removeDirectory(lfn))
+      if not result['OK']:
         print("Failed to remove directory from the catalog")
         print(result['Message'])
       return result
@@ -1090,7 +1086,7 @@ File Catalog Client $Revision: 1.17 $Date:
       os.chdir(localDir)
       newDir = os.getcwd()
       print("Local directory: %s" % newDir)
-    except BaseException:
+    except Exception:
       print("%s seems not a directory" % localDir)
 
   def complete_lcd(self, text, line, begidx, endidx):
