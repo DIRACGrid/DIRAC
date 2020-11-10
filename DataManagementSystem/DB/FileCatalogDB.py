@@ -107,7 +107,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR(errno.EACCES, errno.EACCES, "Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.seManager.addSE(seName)
 
   def deleteSE(self, seName, credDict):
