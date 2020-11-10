@@ -1,3 +1,8 @@
+[v7r1p18]
+
+*RSS
+FIX: (#4815) Fix a problem with vo being returned in a middle to a list in toList
+
 [v7r1p17]
 
 *Configuration
