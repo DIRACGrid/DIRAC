@@ -22,6 +22,7 @@ from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion impo
 
 __RCSID__ = "$Id$"
 
+
 class FileCatalogClientCLI(CLI):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
 
