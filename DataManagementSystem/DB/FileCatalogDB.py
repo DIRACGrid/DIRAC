@@ -2,6 +2,8 @@
 
 __RCSID__ = "$Id$"
 
+import errno
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Resources.Catalog.Utilities import checkArgumentFormat
@@ -109,7 +111,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.seManager.addSE(seName)
 
   def deleteSE(self, seName, credDict):
@@ -123,7 +125,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.seManager.deleteSE(seName)
 
   ########################################################################
@@ -142,7 +144,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.ugManager.addUser(userName)
 
   def deleteUser(self, userName, credDict):
@@ -156,7 +158,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.ugManager.deleteUser(userName)
 
   def addGroup(self, groupName, credDict):
@@ -170,7 +172,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.ugManager.addGroup(groupName)
 
   def deleteGroup(self, groupName, credDict):
@@ -184,7 +186,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.ugManager.deleteGroup(groupName)
 
   ########################################################################
@@ -203,7 +205,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.ugManager.getUsers()
 
   def getGroups(self, credDict):
@@ -218,7 +220,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     return self.ugManager.getGroups()
 
   ########################################################################
@@ -1023,14 +1025,21 @@ class FileCatalogDB(DB):
     result = self.dtree._rebuildDirectoryUsage()
     return result
 
-  def repairCatalog(self, directoryFlag=True, credDict={}):
+  def repairCatalog(self, credDict={}):
     """ Repair catalog inconsistencies
     """
-    result = S_OK()
-    if directoryFlag:
-      result = self.dtree.recoverOrphanDirectories(credDict)
 
-    return result
+    result = self._checkAdminPermission(credDict)
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR(errno.EACCES, 'Not authorized to perform catalog repairs')
+
+    resultDict = {}
+    resultDict['RecoverOrphanDirectories'] = self.dtree.recoverOrphanDirectories(credDict)
+    resultDict['RepairFileTables'] = self.fileManager.repairFileTables()
+
+    return S_OK(resultDict)
 
   #######################################################################
   #
@@ -1044,9 +1053,9 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']['Successful']:
-      return S_ERROR('Permission denied')
+      return S_ERROR(errno.EACCES, 'Permission denied')
     if not res['Value']['Successful'][path]:
-      return S_ERROR('Permission denied')
+      return S_ERROR(errno.EACCES, 'Permission denied')
 
     result = self.dtree.isDirectory({path: True})
     if not result['OK']:
@@ -1122,7 +1131,7 @@ class FileCatalogDB(DB):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR("Permission denied")
+      return S_ERROR(errno.EACCES, "Permission denied")
     # res = self.dtree.getDirectoryCounters()
     # if not res['OK']:
     #  return res
