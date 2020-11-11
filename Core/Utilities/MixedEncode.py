@@ -28,7 +28,7 @@ def decode(encodedData):
       :return: the decoded objects, encoded object length
 
   """
-  if os.getenv('DIRAC_USE_JSON_DECODE', 'NO').lower() in ('yes', 'true'):
+  if os.getenv('DIRAC_USE_JSON_DECODE', 'Yes').lower() in ('yes', 'true'):
     try:
       # 'null' is a special case.
       # None is encoded as 'null' as JSON
