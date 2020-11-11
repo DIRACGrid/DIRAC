@@ -120,11 +120,12 @@ def getDIRACSiteName(gocSiteName):
     return res
   sitesList = res['Value']
 
-  tmpList = [(site, gConfig.getValue(cfgPath(gBaseResourcesSection,
-                                             'Sites',
-                                             site.split('.')[0],
-                                             site,
-                                             'Name'))) for site in sitesList]
+  tmpList = [(site, gConfig.getValue(
+      cfgPath(gBaseResourcesSection,
+              'Sites',
+              site.split('.')[0],
+              site,
+              'Name'))) for site in sitesList]
 
   diracSites = [dirac for (dirac, goc) in tmpList if goc == gocSiteName]
 
@@ -142,7 +143,8 @@ def getGOCFTSName(diracFTSName):
   :returns: S_OK/S_ERROR structure
   """
 
-  gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, 'FTSEndpoints', 'FTS3', diracFTSName))
+  gocFTSName = gConfig.getValue(
+      cfgPath(gBaseResourcesSection, 'FTSEndpoints', 'FTS3', diracFTSName))
   if not gocFTSName:
     return S_ERROR("No GOC FTS server name for %s in CS (Not a grid site ?)" % diracFTSName)
   return S_OK(gocFTSName)
@@ -171,7 +173,8 @@ def getFTS3Servers(hostOnly=False):
 def getFTS3ServerDict():
   """:returns: dict of key = server name and value = server url
   """
-  return gConfig.getOptionsDict(cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3"))
+  return gConfig.getOptionsDict(
+      cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3"))
 
 
 def getSiteTier(site):
@@ -210,13 +213,15 @@ def getQueue(site, ce, queue):
   """ Get parameters of the specified queue
   """
   grid = site.split('.')[0]
-  result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs/%s' % (grid, site, ce))
+  result = gConfig.getOptionsDict(
+      '/Resources/Sites/%s/%s/CEs/%s' % (grid, site, ce))
   if not result['OK']:
     return result
   resultDict = result['Value']
 
   # Get queue defaults
-  result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % (grid, site, ce, queue))
+  result = gConfig.getOptionsDict(
+      '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % (grid, site, ce, queue))
   if not result['OK']:
     return result
   resultDict.update(result['Value'])
@@ -442,7 +447,8 @@ def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
     return gConfig.getSections('%s/%sProviders' % (gBaseResourcesSection, of))
   if not option or option == 'all':
     if not section:
-      return gConfig.getOptionsDict("%s/%sProviders/%s" % (gBaseResourcesSection, of, providerName))
+      return gConfig.getOptionsDict(
+          "%s/%sProviders/%s" % (gBaseResourcesSection, of, providerName))
     elif section == "all":
       resDict = {}
       relPath = "%s/%sProviders/%s/" % (gBaseResourcesSection, of, providerName)
@@ -454,7 +460,9 @@ def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
           resDict[key.replace(relPath, '')] = value
       return S_OK(resDict)
     else:
-      return gConfig.getSections('%s/%sProviders/%s/%s/' % (gBaseResourcesSection, of, providerName, section))
+      return gConfig.getSections(
+          '%s/%sProviders/%s/%s/' % (gBaseResourcesSection, of, providerName, section))
   else:
-    return S_OK(gConfig.getValue('%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, of, providerName,
-                                                              section, option)))
+    return S_OK(gConfig.getValue(
+        '%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, of, providerName,
+                                     section, option)))
