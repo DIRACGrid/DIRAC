@@ -129,7 +129,8 @@ def checkUnusedCEs():
   for site in siteDict:
     # Get the country code:
     country = ''
-    for ce in siteDict[site]:
+    ces = siteDict[site]
+    for ce in ces:
       country = ce.strip().split('.')[-1].lower()
       if len(country) == 2:
         break
