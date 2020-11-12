@@ -169,7 +169,7 @@ def checkUnusedCEs():
         if ce in addedCEs:
           continue
         yn = raw_input("Add CE %s of type %s to %s? [default yes] [yes|no]: " % (ce, ceType, diracSite))
-        if yn == '' or yn.lower() == 'y':
+        if yn == '' or yn.lower().startswith('y'):
           newCEs.setdefault(diracSite, [])
           newCEs[diracSite].append(ce)
           addedCEs.append(ce)
@@ -179,7 +179,7 @@ def checkUnusedCEs():
         cmd = "dirac-admin-add-site %s %s %s" % (diracSite, site, ' '.join(newCEs[diracSite]))
         gLogger.notice("\nNew site/CEs will be added with command:\n%s" % cmd)
         yn = raw_input("Add it ? [default yes] [yes|no]: ")
-        if not (yn == '' or yn.lower() == 'y'):
+        if not (yn == '' or yn.lower().startswith('y')):
           continue
 
         if dry:
