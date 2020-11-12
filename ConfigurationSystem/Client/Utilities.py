@@ -219,8 +219,8 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
       addToChangeSet((siteSection, 'Mail', mail, newmail), changeSet)
       addToChangeSet((siteSection, 'Description', description, newdescription), changeSet)
 
-      ces = gConfig.getValue(cfgPath(siteSection, 'CE'), [])
-      for ce in ces:
+      ces = gConfig.getSections(cfgPath(siteSection, 'CEs'))
+      for ce in ces.get('Value', []):
         ceSection = cfgPath(siteSection, 'CEs', ce)
         ceDict = {}
         result = gConfig.getOptionsDict(ceSection)
