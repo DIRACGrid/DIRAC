@@ -111,8 +111,10 @@ def getGroupsForVO(vo):
 
       :return: S_OK(list)/S_ERROR()
   """
-  if getVO():
+  if getVO():  # tries to get default VO in /DIRAC/VirtualOrganization
     return gConfig.getSections("%s/Groups" % gBaseRegistrySection)
+  if not vo:
+    return S_ERROR("No VO requested")
   return __getGroupsWithAttr('VO', vo)
 
 
