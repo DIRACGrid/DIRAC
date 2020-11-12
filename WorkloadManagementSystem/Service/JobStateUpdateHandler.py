@@ -39,6 +39,10 @@ def initializeJobStateUpdateHandler(serviceInfo):
   global logDB
   jobDB = JobDB()
   logDB = JobLoggingDB()
+  try:
+    elasticJobParametersDB = ElasticJobParametersDB()
+  except RuntimeError:
+    elasticJobParametersDB = False
   return S_OK()
 
 
@@ -53,10 +57,10 @@ class JobStateUpdateHandler(RequestHandler):
     """
     global elasticJobParametersDB
 
-    useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
-    if useESForJobParametersFlag:
-      elasticJobParametersDB = ElasticJobParametersDB()
-      self.log.verbose("Using ElasticSearch for JobParameters")
+    self.useESForJobParametersFlag = Operations().getValue(
+	'/Services/JobMonitoring/useESForJobParametersFlag', False)
+    if self.useESForJobParametersFlag:  # this assumes that we can create the DB
+      self.log.debug("Using ElasticSearch for JobParameters")
 
     return S_OK()
 
@@ -307,7 +311,7 @@ class JobStateUpdateHandler(RequestHandler):
         for job specified by its JobId
     """
 
-    if elasticJobParametersDB:
+    if self.useESForJobParametersFlag:
       return elasticJobParametersDB.setJobParameter(int(jobID), name, value)
 
     return jobDB.setJobParameter(int(jobID), name, value)
@@ -324,7 +328,7 @@ class JobStateUpdateHandler(RequestHandler):
 
     for jobID in jobsParameterDict:
 
-      if elasticJobParametersDB:
+      if self.useESForJobParametersFlag:
         res = elasticJobParametersDB.setJobParameter(jobID,
                                                      str(jobsParameterDict[jobID][0]),
                                                      str(jobsParameterDict[jobID][1]))
@@ -356,7 +360,7 @@ class JobStateUpdateHandler(RequestHandler):
     """
     failed = False
 
-    if elasticJobParametersDB:
+    if self.useESForJobParametersFlag:
       for key, value in parameters:  # FIXME: should use a bulk method
         res = elasticJobParametersDB.setJobParameter(jobID, key, value)
         if not res['OK']:
