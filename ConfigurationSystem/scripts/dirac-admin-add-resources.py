@@ -49,7 +49,7 @@ def processScriptSwitches():
   doCEs = False
   doSEs = False
   hostURL = None
-  glue2 = False
+  glue2 = True
   for sw in Script.getUnprocessedSwitches():
     if sw[0] in ("V", "vo"):
       vo = sw[1]
