@@ -57,7 +57,7 @@ class JobMonitoringHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     ownerDN = credDict['DN']
     ownerGroup = credDict['group']
-    operations = Operations(group=self.ownerGroup)
+    operations = Operations(group=ownerGroup)
     self.globalJobsInfo = operations.getValue(
 	'/Services/JobMonitoring/GlobalJobsInfo', True)
     self.jobPolicy = JobPolicy(ownerDN, ownerGroup, self.globalJobsInfo)
@@ -351,9 +351,7 @@ class JobMonitoringHandler(RequestHandler):
       return S_ERROR('JobMonitoring.getJobsSummary: Received empty job list')
 
     result = cls.getAttributesForJobList(jobIDs, SUMMARY)
-    # return result
-    restring = str(result['Value'])
-    return S_OK(restring)
+    return S_OK(str(result['Value']))
 
 ##############################################################################
   types_getJobPageSummaryWeb = [dict, list, int, int]
@@ -661,7 +659,6 @@ class JobMonitoringHandler(RequestHandler):
     """
     return cls.gJobDB.getInputData(jobID)
 
-
 ##############################################################################
   types_getOwnerGroup = []
 
@@ -671,6 +668,5 @@ class JobMonitoringHandler(RequestHandler):
     Return Distinct Values of OwnerGroup from the JobsDB
     """
     return cls.gJobDB.getDistinctJobAttributes('OwnerGroup')
-
 
 ##############################################################################

@@ -1102,8 +1102,9 @@ class SiteDirector(AgentModule):
       self.log.info('DIRAC project will be installed by pilots')
 
     # Pilot Logging defined?
-    pilotLogging = opsHelper.getValue("Pilot/PilotLogging", "false")
-    if pilotLogging.lower() in ['true', 'yes', 'y']:
+    pilotLogging = opsHelper.getValue(
+	"/Services/JobMonitoring/usePilotsLoggingFlag", False)
+    if pilotLogging:
       pilotOptions.append('-z ')
 
     ownerDN = self.pilotDN
