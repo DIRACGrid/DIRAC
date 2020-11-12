@@ -7,6 +7,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import six
@@ -27,8 +28,6 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
-SUMMARY = ['JobType', 'Site', 'JobName', 'Owner', 'SubmissionTime',
-           'LastUpdateTime', 'Status', 'MinorStatus', 'ApplicationStatus']
 SUMMARY = []
 PRIMARY_SUMMARY = []
 FINAL_STATES = ['Done', 'Completed', 'Stalled', 'Failed', 'Killed']
@@ -38,29 +37,30 @@ class JobMonitoringHandler(RequestHandler):
 
   @classmethod
   def initializeHandler(cls, svcInfoDict):
+    """ initialize DBs
+    """
     cls.gJobDB = JobDB()
     cls.gJobLoggingDB = JobLoggingDB()
     cls.gTaskQueueDB = TaskQueueDB()
 
     cls.gElasticJobParametersDB = None
-    useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
+    useESForJobParametersFlag = Operations().getValue(
+	'/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
       cls.gElasticJobParametersDB = ElasticJobParametersDB()
     return S_OK()
 
   def initialize(self):
-    """
-    Flags useESForJobParametersFlag (in /Operations/[]/Services/JobMonitoring/) have bool value (True/False)
-    and determines the switching of backends from MySQL to ElasticSearch for the JobParameters DB table.
-    For version v7r0, the MySQL backend is (still) the default.
+    """ initialize jobPolicy
     """
 
     credDict = self.getRemoteCredentials()
-    self.ownerDN = credDict['DN']
-    self.ownerGroup = credDict['group']
+    ownerDN = credDict['DN']
+    ownerGroup = credDict['group']
     operations = Operations(group=self.ownerGroup)
-    self.globalJobsInfo = operations.getValue('/Services/JobMonitoring/GlobalJobsInfo', True)
-    self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.globalJobsInfo)
+    self.globalJobsInfo = operations.getValue(
+	'/Services/JobMonitoring/GlobalJobsInfo', True)
+    self.jobPolicy = JobPolicy(ownerDN, ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = self.gJobDB
 
     return S_OK()
