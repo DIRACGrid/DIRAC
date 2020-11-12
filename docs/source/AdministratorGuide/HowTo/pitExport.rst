@@ -31,7 +31,7 @@ Old LHCb solution
 
 The LHCb solution was based on the basic DIRAC setup detailed earlier. The Online software was instrumented to create just ``PutAndRegister`` operations. However, the operation did not register the file in our central FileCatalog, but in an LHCbDIRAC specific database declared as a FileCatalog: the ``RawIntegrityDB``. When a file entered this DB, the ``RawIntegrityAgent`` would start monitoring the file to see if it had been properly migrated to tape. Once this is confirmed, the deletion signal was sent to the Online software.
 
-A more complete documentation is available here: https://lhcb-dirac.readthedocs.io/en/latest/AdministratorGuide/Online.html#workflow
+A more complete documentation is available in the `LHCbDIRAC documentation <https://lhcb-dirac.readthedocs.io/en/latest/AdministratorGuide/pitExport.html#workflow>`_.
 
 This setup was used for many years.
 
