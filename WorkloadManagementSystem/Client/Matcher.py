@@ -218,7 +218,8 @@ class Matcher(object):
     if 'Tag' in resourceDict:
       resourceDict['Tag'] = list(set(resourceDict['Tag']))
 
-    for k in ('DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
+    for k in ('DIRACVersion', 'ReleaseVersion', 'ReleaseProject',
+	      'VirtualOrganization',
               'PilotReference', 'PilotBenchmark', 'PilotInfoReportedFlag'):
       if k in resourceDescription:
         resourceDict[k] = resourceDescription[k]
@@ -311,8 +312,8 @@ class Matcher(object):
       # You can only match groups in the same VO
       if credDict['group'] == "hosts":
         # for the host case the VirtualOrganization parameter
-        # is mandatory in resourceDict
-        vo = resourceDict.get('VirtualOrganization', '')
+	# is mandatory in credDict
+	vo = credDict.get('VirtualOrganization', '')
       else:
         vo = Registry.getVOForGroup(credDict['group'])
       if 'OwnerGroup' not in resourceDict:

@@ -118,7 +118,7 @@ class BaseTransport(object):
        - 'group' (optional): Dirac group attached to the client
        - 'extraCredentials' (optional): Extra credentials if exists
 
-      Before the handshake, dictionnary is empty
+      Before the handshake, dictionary is empty
     """
     return self.peerCredentials
 
