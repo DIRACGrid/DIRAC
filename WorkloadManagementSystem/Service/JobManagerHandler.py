@@ -46,6 +46,8 @@ class JobManagerHandler(RequestHandler):
 
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
+    """ Initialization of DB objects and OptimizationMind
+    """
     cls.gJobDB = JobDB()
     cls.gJobLoggingDB = JobLoggingDB()
     cls.gTaskQueueDB = TaskQueueDB()
