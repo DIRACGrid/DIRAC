@@ -4,13 +4,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import six
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-transTypes = [basestring, int, long]
+transTypes = [six.string_types, int, long]
 
 __RCSID__ = "$Id$"
 
@@ -45,7 +47,7 @@ class TransformationManagerHandler(RequestHandler):
     global database
     database = oDatabase
 
-  types_getCounters = [basestring, list, dict]
+  types_getCounters = [six.string_types, list, dict]
 
   @staticmethod
   def export_getCounters(table, attrList, condDict, older=None, newer=None, timeStamp=None):
@@ -56,7 +58,7 @@ class TransformationManagerHandler(RequestHandler):
   # These are the methods to manipulate the transformations table
   #
 
-  types_addTransformation = [basestring, basestring, basestring, basestring, basestring, basestring, basestring]
+  types_addTransformation = [six.string_types, six.string_types, six.string_types, six.string_types, six.string_types, six.string_types, six.string_types]
 
   def export_addTransformation(self, transName, description, longDescription, transType, plugin, agentType, fileMask,
                                transformationGroup='General',
@@ -104,7 +106,7 @@ class TransformationManagerHandler(RequestHandler):
     # authorDN = self._clientTransport.peerCredentials['DN']
     return database.cleanTransformation(transName, author=authorDN)
 
-  types_setTransformationParameter = [transTypes, basestring]
+  types_setTransformationParameter = [transTypes, six.string_types]
 
   def export_setTransformationParameter(self, transName, paramName, paramValue):
     credDict = self.getRemoteCredentials()
@@ -112,7 +114,7 @@ class TransformationManagerHandler(RequestHandler):
     # authorDN = self._clientTransport.peerCredentials['DN']
     return database.setTransformationParameter(transName, paramName, paramValue, author=authorDN)
 
-  types_deleteTransformationParameter = [transTypes, basestring]
+  types_deleteTransformationParameter = [transTypes, six.string_types]
 
   @staticmethod
   def export_deleteTransformationParameter(transName, paramName):
@@ -143,13 +145,13 @@ class TransformationManagerHandler(RequestHandler):
   def export_getTransformation(transName, extraParams=False):
     return database.getTransformation(transName, extraParams=extraParams)
 
-  types_getTransformationParameters = [transTypes, [basestring, list]]
+  types_getTransformationParameters = [transTypes, [six.string_types, list]]
 
   @staticmethod
   def export_getTransformationParameters(transName, parameters):
     return database.getTransformationParameters(transName, parameters)
 
-  types_getTransformationWithStatus = [[basestring, list, tuple]]
+  types_getTransformationWithStatus = [[six.string_types, list, tuple]]
 
   @staticmethod
   def export_getTransformationWithStatus(status):
@@ -207,7 +209,7 @@ class TransformationManagerHandler(RequestHandler):
   def export_getTransformationStats(transName):
     return database.getTransformationStats(transName)
 
-  types_getTransformationFilesCount = [transTypes, basestring]
+  types_getTransformationFilesCount = [transTypes, six.string_types]
 
   @staticmethod
   def export_getTransformationFilesCount(transName, field, selection={}):
@@ -240,13 +242,13 @@ class TransformationManagerHandler(RequestHandler):
                                            orderAttribute=orderAttribute, limit=limit, inputVector=inputVector,
                                            offset=offset)
 
-  types_setTaskStatus = [transTypes, [list, int, long], basestring]
+  types_setTaskStatus = [transTypes, [list, int, long], six.string_types]
 
   @staticmethod
   def export_setTaskStatus(transName, taskID, status):
     return database.setTaskStatus(transName, taskID, status)
 
-  types_setTaskStatusAndWmsID = [transTypes, [long, int], basestring, basestring]
+  types_setTaskStatusAndWmsID = [transTypes, [long, int], six.string_types, six.string_types]
 
   @staticmethod
   def export_setTaskStatusAndWmsID(transName, taskID, status, taskWmsID):
@@ -302,21 +304,21 @@ class TransformationManagerHandler(RequestHandler):
   # for the old TransformationInputDataQuery table
   #
 
-  types_createTransformationMetaQuery = [transTypes, dict, basestring]
+  types_createTransformationMetaQuery = [transTypes, dict, six.string_types]
 
   def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     return database.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
 
-  types_deleteTransformationMetaQuery = [transTypes, basestring]
+  types_deleteTransformationMetaQuery = [transTypes, six.string_types]
 
   def export_deleteTransformationMetaQuery(self, transName, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     return database.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
 
-  types_getTransformationMetaQuery = [transTypes, basestring]
+  types_getTransformationMetaQuery = [transTypes, six.string_types]
 
   def export_getTransformationMetaQuery(self, transName, queryType):
     return database.getTransformationMetaQuery(transName, queryType)
@@ -351,7 +353,7 @@ class TransformationManagerHandler(RequestHandler):
   def export_getFileSummary(self, lfns):
     return database.getFileSummary(lfns)
 
-  types_addDirectory = [basestring]
+  types_addDirectory = [six.string_types]
 
   def export_addDirectory(self, path, force=False):
     return database.addDirectory(path, force=force)
@@ -361,7 +363,7 @@ class TransformationManagerHandler(RequestHandler):
   def export_exists(self, lfns):
     return database.exists(lfns)
 
-  types_addFile = [[list, dict, basestring]]
+  types_addFile = [[list, dict, six.string_types]]
 
   def export_addFile(self, fileDicts, force=False):
     """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
@@ -377,7 +379,7 @@ class TransformationManagerHandler(RequestHandler):
       lfns = list(lfns)
     return database.removeFile(lfns)
 
-  types_setMetadata = [basestring, dict]
+  types_setMetadata = [six.string_types, dict]
 
   def export_setMetadata(self, path, querydict):
     """ Set metadata to a file or to a directory (path)
@@ -390,7 +392,7 @@ class TransformationManagerHandler(RequestHandler):
   #
 
   # TODO Get rid of this (talk to Matvey)
-  types_getDistinctAttributeValues = [basestring, dict]
+  types_getDistinctAttributeValues = [six.string_types, dict]
 
   def export_getDistinctAttributeValues(self, attribute, selectDict):
     res = database.getTableDistinctAttributeValues('Transformations', [attribute], selectDict)
@@ -398,7 +400,7 @@ class TransformationManagerHandler(RequestHandler):
       return res
     return S_OK(res['Value'][attribute])
 
-  types_getTableDistinctAttributeValues = [basestring, list, dict]
+  types_getTableDistinctAttributeValues = [six.string_types, list, dict]
 
   def export_getTableDistinctAttributeValues(self, table, attributes, selectDict):
     return database.getTableDistinctAttributeValues(table, attributes, selectDict)
@@ -438,7 +440,7 @@ class TransformationManagerHandler(RequestHandler):
       resultDict[transID] = transDict
     return S_OK(resultDict)
 
-  types_getTabbedSummaryWeb = [basestring, dict, dict, list, int, int]
+  types_getTabbedSummaryWeb = [six.string_types, dict, dict, list, int, int]
 
   def export_getTabbedSummaryWeb(self, table, requestedTables, selectDict, sortList, startItem, maxItems):
     tableDestinations = {'Transformations': {'TransformationFiles': ['TransformationID'],
