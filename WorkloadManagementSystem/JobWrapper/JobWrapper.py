@@ -781,11 +781,11 @@ class JobWrapper(object):
             uploadOutputDataInAnyCase = True
           else:
             outputData.append(outputSandboxData)
-	  self.jobReport.setJobParameter(
-	      'OutputSandbox', 'Sandbox uploaded to grid storage', sendFlag=False)
-	  self.jobReport.setJobParameter(
-	      'OutputSandboxLFN',
-	      self.__getLFNfromOutputFile(outputSandboxData)[0], sendFlag=False)
+          self.jobReport.setJobParameter(
+              'OutputSandbox', 'Sandbox uploaded to grid storage', sendFlag=False)
+          self.jobReport.setJobParameter(
+              'OutputSandboxLFN',
+              self.__getLFNfromOutputFile(outputSandboxData)[0], sendFlag=False)
         else:
           self.log.info('Could not get SandboxFileName to attempt upload to Grid storage')
           return S_ERROR('Output sandbox upload failed and no file name supplied for failover to Grid storage')
@@ -970,7 +970,7 @@ class JobWrapper(object):
           report += ', %s' % result['Value']['UploadedOutputData']
 
       self.jobReport.setJobParameter(
-	  'UploadedOutputData', report, sendFlag=False)
+          'UploadedOutputData', report, sendFlag=False)
 
     # TODO Notify the user of any output data / output sandboxes
     if missing:
@@ -1341,12 +1341,11 @@ class JobWrapper(object):
     if minorStatus:
       self.wmsMinorStatus = minorStatus
     jobStatus = self.jobReport.setJobStatus(
-	status=status, minor=minorStatus, sendFlag=sendFlag)
+        status=status, minor=minorStatus, sendFlag=sendFlag)
     if not jobStatus['OK']:
       self.log.warn(jobStatus['Message'])
     if self.jobID:
-      self.log.verbose(
-	  'setJobStatus(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
+      self.log.verbose('setJobStatus(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
 
     return jobStatus
 
@@ -1355,7 +1354,7 @@ class JobWrapper(object):
     """Wraps around setJobParameter of JobReport client
     """
     jobParam = self.jobReport.setJobParameter(
-	str(name), str(value), sendFlag)
+        str(name), str(value), sendFlag)
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])
     if self.jobID:
