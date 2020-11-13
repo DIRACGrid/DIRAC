@@ -24,9 +24,6 @@ from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 class PilotsLoggingHandler(RequestHandler):
   """Server side functions for Pilots Logging service"""
 
-  consumerSet = None
-  pilotsLoggingDB = None
-
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
     """Initialization of Pilots Logging service
