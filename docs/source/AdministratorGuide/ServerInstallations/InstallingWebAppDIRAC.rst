@@ -158,35 +158,40 @@ The structure of the web.cfg file is the following::
       {
         Balancer = None #[nginx] in case you have installed nginx
         #NumProcesses = 1
-        #SSLProrocol = "" [PROTOCOL_SSLv2, PROTOCOL_SSLv23, PROTOCOL_SSLv3, PROTOCOL_TLSv1] in case you do not want to use the default protocol
+        #SSLProtocol = "" [PROTOCOL_SSLv2, PROTOCOL_SSLv23, PROTOCOL_SSLv3, PROTOCOL_TLSv1] in case you do not want to use the default protocol
         Theme = tabs #[desktop]
+
         Schema
         {
-          Tools{
-           Proxy Upload = DIRAC.ProxyUpload
-           Job Launchpad = DIRAC.JobLaunchpad
-           Notepad = DIRAC.Notepad
-          }
-          OldPortal{
-            Request Manager = link|https://lhcb-web-dirac.cern.ch/DIRAC/LHCb-Production/lhcb_user/Production/ProductionRequest/display
+          Help = link|http://dirac.readthedocs.io/en/latest/UserGuide/index.html
+          Tools
+          {
+            Application Wizard = DIRAC.ApplicationWizard
+            Job Launchpad = DIRAC.JobLaunchpad
+            Notepad = DIRAC.Notepad
+            Proxy Upload = DIRAC.ProxyUpload
           }
           Applications
           {
-            Public State Manager = DIRAC.PublicStateManager
-            Job Monitor = DIRAC.JobMonitor
-            Pilot Monitor = DIRAC.PilotMonitor
-            Accounting = DIRAC.AccountingPlot
-            Configuration Manager = DIRAC.ConfigurationManager
-            Registry Manager = DIRAC.RegistryManager
-            File Catalog = DIRAC.FileCatalog
-            System Administration = DIRAC.SystemAdministration
+            Accounting = DIRAC.Accounting
             Activity Monitor = DIRAC.ActivityMonitor
-            Transformation Monitor = DIRAC.TransformationMonitor
-            Request Monitor = DIRAC.RequestMonitor
+            Component History = DIRAC.ComponentHistory
+            Configuration Manager = DIRAC.ConfigurationManager
+            Downtimes = DIRAC.Downtimes
+            File Catalog = DIRAC.FileCatalog
+            Job Monitor = DIRAC.JobMonitor
+            Job Summary = DIRAC.JobSummary
+            Pilot Monitor = DIRAC.PilotMonitor
             Pilot Summary = DIRAC.PilotSummary
+            Proxy Manager = DIRAC.ProxyManager
+            Public State Manager = DIRAC.PublicStateManager
+            Registry Manager = DIRAC.RegistryManager
+            Request Monitor = DIRAC.RequestMonitor
             Resource Summary = DIRAC.ResourceSummary
             Site Summary = DIRAC.SiteSummary
-            Proxy Manager = DIRAC.ProxyManager
+            Space Occupancy = DIRAC.SpaceOccupancy
+            System Administration = DIRAC.SystemAdministration
+            Transformation Monitor = DIRAC.TransformationMonitor
             #ExampleApp = DIRAC.ExampleApp
           }
           DIRAC = link|http://diracgrid.org
@@ -256,50 +261,99 @@ Install and configure NGINX
 Note: you can run NGINX in a separate machine.
 
 The official site of NGINX is the following: `<http://nginx.org/>`_
-The required NGINX version has to be grater than 1.4.
+The required NGINX version has to be grater than 1.4 and WebDAV nginx module to serve static files.
 
-  * Install Nginx using package manager::
+* Prepare, needed the development repository to compile the WebDAV dynamic module for Nginx::
 
-         yum install nginx
+      yum update -y
+      yum groupinstall "Development Tools" -y
+      yum install yum-utils pcre-devel zlib-devel libxslt-devel libxml2-devel -y
 
+* Install Nginx using package manager. At this point, you should be able to install the pre-built Nginx package with dynamic module support::
+
+      yum install nginx -y
+      systemctl enable nginx
+      systemctl start nginx
 
 If your version is not grater than 1.4 you have to install NGINX manually.
 
 * Manual install::
 
-     vim /etc/yum.repos.d/nginx.repo
+      vim /etc/yum.repos.d/nginx.repo
 
 CentOS::
 
-      [nginx]
-      name=nginx repo
+      [nginx-stable]
+      name=nginx stable repo
       baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
-      gpgcheck=0
+      gpgcheck=1
       enabled=1
+      gpgkey=https://nginx.org/keys/nginx_signing.key
+      module_hotfixes=true
+
+      [nginx-mainline]
+      name=nginx mainline repo
+      baseurl=http://nginx.org/packages/mainline/centos/$releasever/$basearch/
+      gpgcheck=1
+      enabled=0
+      gpgkey=https://nginx.org/keys/nginx_signing.key
+      module_hotfixes=true
 
 RHEL::
 
-      [nginx]
-      name=nginx repo
+      [nginx-stable]
+      name=nginx stable repo
       baseurl=http://nginx.org/packages/rhel/$releasever/$basearch/
-      gpgcheck=0
+      gpgcheck=1
       enabled=1
+      gpgkey=https://nginx.org/keys/nginx_signing.key
+      module_hotfixes=true
+
+      [nginx-mainline]
+      name=nginx mainline repo
+      baseurl=http://nginx.org/packages/mainline/rhel/$releasever/$basearch/
+      gpgcheck=1
+      enabled=0
+      gpgkey=https://nginx.org/keys/nginx_signing.key
+      module_hotfixes=true
 
 Due to differences between how CentOS, RHEL, and Scientific Linux populate the $releasever variable, it is necessary to manually replace $releasever with either 5 (for 5.x) or 6 (for 6.x),
 depending upon your OS version. For example::
 
-   [nginx]
-   name=nginx repo
-   baseurl=http://nginx.org/packages/rhel/6/$basearch/
-   gpgcheck=0
-   enabled=1
+      [nginx]
+      ...
+      baseurl=http://nginx.org/packages/rhel/6/$basearch/
+      ...
 
 If it is successful installed::
 
-    Verifying  : nginx-1.10.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
-   Installed:
+    Verifying: nginx-1.10.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
+    Installed:
       nginx.x86_64 0:1.10.1-1.el6.ngx
 
+* Compile Module::
+
+    Download the Nginx and the module source code, and you need to determine which Nginx version is running on your server.
+
+    Determine running Nginx version:
+
+    nginx -v
+    nginx version: nginx/1.16.1
+
+    Download the source code corresponding to the installed version:
+
+    wget http://nginx.org/download/nginx-1.16.1.tar.gz
+
+    Clone the module repository:
+
+    git clone https://github.com/arut/nginx-dav-ext-module
+
+    Change to the Nginx source code directory, compile the module, and copy it to the standard directory for the Nginx modules.
+
+    cd nginx-1.16.1
+    ./configure --with-compat --with-http_dav_module --add-dynamic-module=../nginx-dav-ext-module/
+    make modules
+    cp objs/ngx_http_dav_ext_module.so /etc/nginx/modules/
 
 * Configure NGINX
 
@@ -307,7 +361,7 @@ If it is successful installed::
 
     vim /etc/nginx/nginx.conf
 
-  If the file contains 'include /etc/nginx/conf.d/\*.conf;' line, you have to create a site.conf under /etc/nginx/conf.d/ otherwise you have to do: 'include /etc/nginx/site.conf'
+  Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a site.conf under /etc/nginx/conf.d/.
 
 The content of the site.conf (please modify it!!!)::
 
@@ -319,18 +373,106 @@ The content of the site.conf (please modify it!!!)::
    }
 
    server {
-     listen 80;
+     # Use always HTTPS
+     listen 80 default_server;
+     listen [::]:80 default_server;
+     # Your server name if you have weird network config. Otherwise leave commented
+     #server_name dzmathe.cern.ch;
+     return 301 https://$server_name$request_uri;
+   }
 
-     #Your server name if you have weird network config. Otherwise leave commented
-     #server_name  lbvobox33.cern.ch;
-     server_name dzmathe.cern.ch;
+   server {
+     # Enabling HTTP/2
+     listen 443 ssl http2 default_server;      # For IPv4
+     listen [::]:443 ssl http2 default_server; # For IPv6
+     server_name dzmathe.cern.ch;              # Server domain name
+
+     ssl_prefer_server_ciphers On;
+     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+     ssl_ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS;
+
+     # Certs that will be shown to the user connecting to the web.
+     # Preferably NOT grid certs. Use something that the user cert will not complain about
+     ssl_certificate     /opt/dirac/etc/grid-security/hostcert.pem;
+     ssl_certificate_key /opt/dirac/etc/grid-security/hostkey.pem;
+
+     ssl_session_tickets off;
+
+     # Diffie-Hellman parameter for DHE ciphersuites, recommended 2048 bits
+     # Generate your DH parameters with OpenSSL:
+     # ~ cd /etc/nginx/ssl
+     # ~ openssl dhparam -out dhparam.pem 4096 
+     ssl_dhparam /etc/nginx/ssl/dhparam.pem;
+
+     # HSTS (ngx_http_headers_module is required) (15768000 seconds = 6 months)
+     add_header Strict-Transport-Security max-age=15768000;
+
+     # To secure NGINX from Click-jacking attack
+     add_header X-Frame-Options SAMEORIGIN always;
+
+     # OCSP Stapling --- fetch OCSP records from URL in ssl_certificate and cache them
+     ssl_stapling on;
+     ssl_stapling_verify on;
+
+     # DNS resolver for stapling so that the resolver defaults to Google’s DNS
+     resolver 8.8.4.4 8.8.8.8;
+
+     ssl_client_certificate /opt/dirac/pro/etc/grid-security/cas.pem;
+     # ssl_crl /opt/dirac/pro/etc/grid-security/allRevokedCerts.pem;
+     ssl_verify_client optional;
+     ssl_verify_depth 10;
+     ssl_session_cache shared:SSL:10m;
 
      root /opt/dirac/pro;
 
+     location /webdav {
+      # Check client certificate
+      if ($ssl_client_verify = NONE) {
+        return 403;
+      }
+      if ($ssl_client_verify != SUCCESS) {
+        return 403;
+      }
+
+      # Webdav sever
+      error_page 418 = @webdav;
+      return 418;
+    }
+
+    location @webdav {
+        # Access rules
+        satisfy any;
+
+        # For download access for all
+        limit_except GET {
+          # Add allowed IP
+          #allow XXX.XXX.XXX.XXX;
+          deny  all;
+        }
+
+        client_max_body_size 1g;
+        root /path/to/static/files;
+
+        # Access settings
+        dav_access group:rw all:rw;
+
+        # Allow all posible methods
+        dav_methods PUT DELETE MKCOL COPY MOVE;
+
+        # For webdav clients (Cyberduck and Monosnap)
+        dav_ext_methods   PROPFIND OPTIONS;
+
+        # Clients can create paths
+        create_full_put_path on;
+        charset utf-8;
+        autoindex on;
+        break;
+    }
+
      location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+\.(jpg|jpeg|gif|png|bmp|ico|pdf))$ {
        alias /opt/dirac/pro/;
-       #Add one more for every static path. For instance for LHCbWebDIRAC:
-       #try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
+       # Add one more for every static path. For instance for LHCbWebDIRAC:
+       # try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
        try_files WebAppDIRAC/WebApp/static/$2 /;
        expires 10d;
        gzip_static on;
@@ -341,8 +483,8 @@ The content of the site.conf (please modify it!!!)::
 
      location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+)$ {
        alias /opt/dirac/pro/;
-       #Add one more for every static path. For instance for LHCbWebDIRAC:
-       #try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
+       # Add one more for every static path. For instance for LHCbWebDIRAC:
+       # try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
        try_files WebAppDIRAC/WebApp/static/$2 /;
        expires 1d;
        gzip_static on;
@@ -361,81 +503,9 @@ The content of the site.conf (please modify it!!!)::
        proxy_read_timeout 3600;
        proxy_send_timeout 3600;
 
-       gzip on;
-       gzip_proxied any;
-       gzip_comp_level 9;
-       gzip_types text/plain text/css application/javascript application/xml application/json;
-
-      # WebSocket support (nginx 1.4)
-      proxy_http_version 1.1;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection "upgrade";
-
-      break;
-     }
-     location / {
-      rewrite ^ http://$server_name/DIRAC/ permanent;
-      }
-    }
-   server {
-     listen 443 default ssl; ## listen for ipv4
-
-     #server_name  lbvobox33.cern.ch;
-     server_name  dzmathe.cern.ch;
-
-     ssl_prefer_server_ciphers On;
-     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-     ssl_ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS;
-
-     #Certs that will be shown to the user connecting to the web.
-     #Preferably NOT grid certs. Use something that the user cert will not complain about
-     ssl_certificate    /opt/dirac/etc/grid-security/hostcert.pem;
-     ssl_certificate_key /opt/dirac/etc/grid-security/hostkey.pem;
-
-     ssl_client_certificate /opt/dirac/pro/etc/grid-security/cas.pem;
-   #  ssl_crl /opt/dirac/pro/etc/grid-security/allRevokedCerts.pem;
-     ssl_verify_client on;
-     ssl_verify_depth 10;
-     ssl_session_cache shared:SSL:10m;
-
-     root /opt/dirac/pro;
-
-     location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+\.(jpg|jpeg|gif|png|bmp|ico|pdf))$ {
-       alias /opt/dirac/pro/;
-       #Add one more for every static path. For instance for LHCbWebDIRAC:
-       #try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
-       try_files WebAppDIRAC/WebApp/static/$2 /;
-       expires 10d;
-       gzip_static on;
-       gzip_disable "MSIE [1-6]\.";
-       add_header Cache-Control public;
-       break;
-     }
-
-     location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+)$ {
-       alias /opt/dirac/pro/;
-       #Add one more for every static path. For instance for LHCbWebDIRAC:
-       #try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
-       try_files WebAppDIRAC/WebApp/static/$2 /;
-       expires 1d;
-       gzip_static on;
-       gzip_disable "MSIE [1-6]\.";
-       add_header Cache-Control public;
-       break;
-     }
-     location ~ /DIRAC/ {
-      proxy_pass_header Server;
-      proxy_set_header Host $http_host;
-      proxy_redirect off;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Scheme $scheme;
-      proxy_pass http://tornadoserver;
-      proxy_read_timeout 3600;
-      proxy_send_timeout 3600;
-
-      proxy_set_header X-Ssl_client_verify $ssl_client_verify;
-      proxy_set_header X-Ssl_client_s_dn $ssl_client_s_dn;
-      proxy_set_header X-Ssl_client_i_dn $ssl_client_i_dn;
+       proxy_set_header X-Ssl_client_verify $ssl_client_verify;
+       proxy_set_header X-Ssl_client_s_dn $ssl_client_s_dn;
+       proxy_set_header X-Ssl_client_i_dn $ssl_client_i_dn;
 
        gzip on;
        gzip_proxied any;

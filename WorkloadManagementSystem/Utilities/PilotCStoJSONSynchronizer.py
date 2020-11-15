@@ -8,14 +8,14 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = '$Id$'
 
-import json
-
-import hashlib
-import shutil
 import os
 import glob
+import json
+import shutil
+import hashlib
 import tarfile
 import requests
 
@@ -392,22 +392,21 @@ class PilotCStoJSONSynchronizer(object):
           script = psf.read()
 
       for pfServer in self.pilotFileServer.replace(' ', '').split(','):
+        if not pfServer.startswith('http'):
+          pfServer = 'https://%s' % pfServer
+        if not pfServer.endswith('/'):
+          pfServer += '/'
+        pfServer += os.path.basename(filename)
         try:
-          data = {'filename': os.path.basename(filename), 'data': script}
-          resp = requests.post('https://%s/DIRAC/upload' % pfServer,
-                               data=data,
-                               verify=self.casLocation,
-                               cert=self.certAndKeyLocation)
+          resp = requests.put(pfServer, data=script, verify=self.casLocation, cert=self.certAndKeyLocation)
           self._checksumFile(pilotScript if pilotScript else filename)
-          # This POST works iff the webserver implements the upload function
-          # Which is done in WebAppDIRAC.WebApp.handler.RooHandler.RootHandler.web_upload()
-          # So, this location is specific to DIRAC WebApp.
-          if resp.status_code != 200:
-            self.log.error("Status code != 200", "%s returned when POSTing on %s" % (resp.text, pfServer))
+          # This PUT works with webdav file server.
+          if resp.status_code not in [200, 201, 204]:
+            self.log.error("Status code is not 200, 201 or 204", "%s returned when PUT on %s" % (resp.text, pfServer))
 
         except requests.ConnectionError:
-          # if we are here it is probably because we are trying to upload to a WS that does not expose a POST API
-          self.log.error("Can't issue POST", "on %s" % pfServer)
+          # if we are here it is probably because we are trying to upload to a fileserver that does not expose a webdav
+          self.log.error("Can't issue PUT", "on %s" % pfServer)
 
   def _checksumFile(self, filePath):
     """Calculate the checksum for the file and add to self._checkSumDict.
