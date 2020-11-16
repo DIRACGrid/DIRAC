@@ -12,7 +12,8 @@ __RCSID__ = '$Id$'
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
+from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getCESiteMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
@@ -40,9 +41,9 @@ def getResources():
   if fc['OK']:
     resources = resources + fc['Value']
 
-  ce = getComputingElements()
-  if ce['OK']:
-    resources = resources + ce['Value']
+  res = getCESiteMapping()
+  if res['OK']:
+    resources = resources + list(res['Value'])
 
   return S_OK(resources)
 
@@ -109,6 +110,7 @@ def getFileCatalogs():
   return fileCatalogs
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getCESiteMapping")
 def getComputingElements():
   """
     Gets all computing elements from /Resources/Sites/<>/<>/CEs

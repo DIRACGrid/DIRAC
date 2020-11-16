@@ -77,7 +77,7 @@ class ResourceStatusClient(Client):
 
   def insertStatusElement(self, element, tableType, name, statusType, status,
                           elementType, reason, dateEffective, lastCheckTime,
-                          tokenOwner, tokenExpiration=None):
+                          tokenOwner, tokenExpiration=None, vo='all'):
     """
     Inserts on <element><tableType> a new row with the arguments given.
 
@@ -120,7 +120,7 @@ class ResourceStatusClient(Client):
   def selectStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None,
-                          tokenOwner=None, tokenExpiration=None, meta=None):
+                          tokenOwner=None, tokenExpiration=None, meta=None, vo='all'):
     """
     Gets from <element><tableType> all rows that match the parameters given.
 
@@ -166,7 +166,7 @@ class ResourceStatusClient(Client):
   def deleteStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None,
-                          tokenOwner=None, tokenExpiration=None, meta=None):
+                          tokenOwner=None, tokenExpiration=None, meta=None, vo='all'):
     """
     Deletes from <element><tableType> all rows that match the parameters given.
 
@@ -212,7 +212,7 @@ class ResourceStatusClient(Client):
                                statusType=None, status=None,
                                elementType=None, reason=None,
                                dateEffective=None, lastCheckTime=None,
-                               tokenOwner=None, tokenExpiration=None):
+                               tokenOwner=None, tokenExpiration=None, vo='all'):
     """
     Adds or updates-if-duplicated from <element><tableType> and also adds a log
     if flag is active.
@@ -256,7 +256,7 @@ class ResourceStatusClient(Client):
   def modifyStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None, tokenOwner=None,
-                          tokenExpiration=None):
+                          tokenExpiration=None, vo='all'):
     """
     Updates from <element><tableType> and also adds a log if flag is active.
 
@@ -300,7 +300,7 @@ class ResourceStatusClient(Client):
                                  statusType=None, status=None,
                                  elementType=None, reason=None,
                                  dateEffective=None, lastCheckTime=None,
-                                 tokenOwner=None, tokenExpiration=None):
+                                 tokenOwner=None, tokenExpiration=None, vo='all'):
     """
     Adds if-not-duplicated from <element><tableType> and also adds a log if flag
     is active.

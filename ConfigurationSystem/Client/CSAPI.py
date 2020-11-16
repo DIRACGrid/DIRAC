@@ -126,14 +126,18 @@ class CSAPI(object):
     if not self.__initialized['OK']:
       return self.__initialized
 
-    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites'))
-    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0]))
-    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0], siteName))
+    self.__csMod.createSection(
+        cfgPath(self.__baseResources, 'Sites'))
+    self.__csMod.createSection(
+        cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0]))
+    self.__csMod.createSection(
+        cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0], siteName))
     # add options if requested
-    if optionsDict is not None:
+    if optionsDict:
       for option, optionValue in optionsDict.items():  # can be an iterator
-        self.__csMod.setOptionValue(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0], option),
-                                    optionValue)
+        self.__csMod.setOptionValue(
+            cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0], siteName, option),
+            optionValue)
     self.csModified = True
     return S_OK(True)
 

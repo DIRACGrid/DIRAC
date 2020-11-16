@@ -16,7 +16,7 @@ __RCSID__ = '$Id$'
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.SiteSEMapping import getStorageElementsHosts
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTS3Servers, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -213,9 +213,9 @@ class Synchronizer(object):
     if ftsServer['OK']:
       resources.extend(ftsServer['Value'])
 
-    ce = CSHelpers.getComputingElements()
-    if ce['OK']:
-      resources.extend(ce['Value'])
+    res = getCESiteMapping()
+    if res['OK']:
+      resources.extend(list(res['Value']))
 
     downtimes = self.rManagement.selectDowntimeCache()
 
@@ -240,10 +240,10 @@ class Synchronizer(object):
       Sync ComputingElements: compares CS with DB and does the necessary modifications.
     '''
 
-    cesCS = CSHelpers.getComputingElements()
-    if not cesCS['OK']:
-      return cesCS
-    cesCS = cesCS['Value']
+    res = getCESiteMapping()
+    if not res['OK']:
+      return res
+    cesCS = list(res['Value'])
 
     gLogger.verbose('%s Computing elements found in CS' % len(cesCS))
 

@@ -275,77 +275,6 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
   return S_OK(views)
 
 
-def ldapSE(site, vo, attr=None, host=None):
-  """ SE/SA information from bdii.
-
-:param  site: site with globing, for example, "ce0?.tier2.hep.manchester*" or just "*"
-:param  vo: VO name with globing, "*" if all VOs
-:return: standard DIRAC answer with Value equals to list of SE/SA merged items.
-
-Each SE is dictionary which contains attributes of SE and corresponding SA.
-For example result['Value'][0]['GlueSESizeFree']
-  """
-  voFilters = '(GlueSAAccessControlBaseRule=VOMS:/%s/*)' % vo
-  voFilters += '(GlueSAAccessControlBaseRule=VOMS:/%s)' % vo
-  voFilters += '(GlueSAAccessControlBaseRule=VO:%s)' % vo
-  filt = '(&(objectClass=GlueSA)(|%s))' % voFilters
-  result = ldapsearchBDII(filt, attr, host)
-  if not result['OK']:
-    return result
-  sas = result['Value']
-
-  saDict = {}
-
-  seIDFilter = ''
-  for sa in sas:
-    chunk = sa['attr'].get('GlueChunkKey', '')
-    if chunk:
-      seID = sa['attr']['GlueChunkKey'].replace('GlueSEUniqueID=', '')
-      saDict[seID] = sa['attr']
-      seIDFilter += '(GlueSEUniqueID=%s)' % seID
-
-  if vo == "*":
-    filt = '(&(objectClass=GlueSE)(GlueForeignKey=GlueSiteUniqueID=%s))' % site
-  else:
-    filt = '(&(objectClass=GlueSE)(|%s)(GlueForeignKey=GlueSiteUniqueID=%s))' % (seIDFilter, site)
-  result = ldapsearchBDII(filt, attr, host)
-  if not result['OK']:
-    return result
-  ses = result['Value']
-
-  seDict = {}
-  for se in ses:
-    seID = se['attr']['GlueSEUniqueID']
-    seDict[seID] = se['attr']
-    siteName = se['attr']['GlueForeignKey'].replace('GlueSiteUniqueID=', '')
-    seDict[seID]['GlueSiteUniqueID'] = siteName
-    if seID in saDict:
-      seDict[seID].update(saDict[seID])
-
-  seList = seDict.values()
-  return S_OK(seList)
-
-
-def ldapSEAccessProtocol(se, attr=None, host=None):
-  """ SE access protocol information from bdii
-
-      :param  se: se or part of it with globing, for example, "ce0?.tier2.hep.manchester*"
-      :return: standard DIRAC answer with Value equals to list of access protocols.
-
-  """
-  filt = '(&(objectClass=GlueSEAccessProtocol)(GlueChunkKey=GlueSEUniqueID=%s))' % se
-  result = ldapsearchBDII(filt, attr, host)
-
-  if not result['OK']:
-    return result
-
-  protocols = []
-  for value in result['Value']:
-    protocols.append(value['attr'])
-
-  return S_OK(protocols)
-
-
 def ldapService(serviceID='*', serviceType='*', vo='*', attr=None, host=None):
   """ Service BDII info for a given VO
 
@@ -367,25 +296,6 @@ def ldapService(serviceID='*', serviceType='*', vo='*', attr=None, host=None):
     services.append(value['attr'])
 
   return S_OK(services)
-
-
-def ldapSEVOInfo(vo, seID, attr=["GlueVOInfoPath", "GlueVOInfoAccessControlBaseRule"], host=None):
-  """ VOInfo for a given SE
-  """
-  filt = '(GlueChunkKey=GlueSEUniqueID=%s)' % seID
-  filt += '(GlueVOInfoAccessControlBaseRule=VO:%s*)' % vo
-  filt += '(objectClass=GlueVOInfo)'
-  filt = '(&%s)' % filt
-
-  result = ldapsearchBDII(filt, attr, host)
-
-  if not result['OK']:
-    return result
-  voInfo = []
-  for value in result['Value']:
-    voInfo.append(value['attr'])
-
-  return S_OK(voInfo)
 
 
 def getBdiiCEInfo(vo, host=None, glue2=False):
@@ -456,59 +366,5 @@ def getBdiiCEInfo(vo, host=None, glue2=False):
     siteDict[siteID]['CEs'][ceID].setdefault('Queues', {})
     queueName = re.split(r':\d+/', queueDict[queueID]['GlueCEUniqueID'])[1]
     siteDict[siteID]['CEs'][ceID]['Queues'][queueName] = queueDict[queueID]
-
-  return S_OK(siteDict)
-
-
-def getBdiiSEInfo(vo, host=None):
-  """ Get information for all the SEs for a given VO
-
-:param vo: BDII VO name
-:return result structure: result['Value'][siteID]['SEs'][seID]. For
-               each siteID, seIDall the BDII/Glue SE/SA parameters are retrieved
-  """
-  result = ldapSE('*', vo, host=host)
-  if not result['OK']:
-    return result
-
-  ses = result['Value']
-
-  pathDict = {}
-  result = ldapSEVOInfo(vo, '*')
-  if result['OK']:
-    for entry in result['Value']:
-      voPath = entry['GlueVOInfoPath']
-      seID = ''
-      for en in entry['dn'].split(','):
-        if en.startswith('GlueSEUniqueID='):
-          seID = en.replace('GlueSEUniqueID=', '')
-          break
-      if seID:
-        pathDict[seID] = voPath
-
-  siteDict = {}
-  for se in ses:
-    siteName = se['GlueSiteUniqueID']
-    siteDict.setdefault(siteName, {"SEs": {}})
-    seID = se['GlueSEUniqueID']
-    siteDict[siteName]["SEs"][seID] = se
-    result = ldapSEAccessProtocol(seID, host=host)
-    siteDict[siteName]["SEs"][seID]['AccessProtocols'] = {}
-    if result['OK']:
-      for entry in result['Value']:
-        apType = entry['GlueSEAccessProtocolType']
-        if apType in siteDict[siteName]["SEs"][seID]['AccessProtocols']:
-          count = 0
-          for p in siteDict[siteName]["SEs"][seID]['AccessProtocols']:
-            if p.startswith(apType + '.'):
-              count += 1
-          apType = '%s.%d' % (apType, count + 1)
-          siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry
-        else:
-          siteDict[siteName]["SEs"][seID]['AccessProtocols'][apType] = entry
-    else:
-      continue
-    if seID in pathDict:
-      siteDict[siteName]["SEs"][seID]['VOPath'] = pathDict[seID]
 
   return S_OK(siteDict)

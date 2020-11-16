@@ -20,6 +20,7 @@ from __future__ import print_function
 from pprint import pformat
 
 from DIRAC import gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getGOCSiteName
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
@@ -98,7 +99,20 @@ def getGlue2CEInfo(vo, host):
     sLog.error("Found some sites without any shares", pformat(sitesWithoutShares))
   else:
     sLog.notice("Found information for all known sites")
-  return S_OK(siteDict)
+
+  # remap siteDict to assign CEs to known sites, in case their names differ from the "gocdb name" in
+  # the CS.
+  newSiteDict = {}
+  ceSiteMapping = getCESiteMapping().get('Value', {})
+  # FIXME: pylint thinks siteDict is a tuple, so we cast
+  for siteName, infoDict in dict(siteDict).items():
+    for ce, ceInfo in infoDict.get('CEs', {}).items():
+      ceSiteName = ceSiteMapping.get(ce, siteName)
+      gocSiteName = getGOCSiteName(ceSiteName).get('Value', siteName)
+      newSiteDict.setdefault(gocSiteName, {}).setdefault('CEs', {})[ce] = ceInfo
+
+  return S_OK(newSiteDict)
+
 
 
 def __getGlue2ShareInfo(host, shareInfoLists):
