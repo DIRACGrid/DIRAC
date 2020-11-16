@@ -224,6 +224,7 @@ class SummarizeLogsAgent(AgentModule):
 
     name = elementDict.get('Name')
     statusType = elementDict.get('StatusType')
+    # vo = elementDict.get('VO')  # FIXME: not sure about it
     status = elementDict.get('Status')
     elementType = elementDict.get('ElementType')
     reason = elementDict.get('Reason')
@@ -232,9 +233,12 @@ class SummarizeLogsAgent(AgentModule):
     tokenOwner = elementDict.get('TokenOwner')
     tokenExpiration = elementDict.get('TokenExpiration')
 
-    self.log.info('  %s %s %s %s' % (status, dateEffective, tokenOwner, reason))
+    self.log.info('  %s %s %s %s' % (
+        status, dateEffective, tokenOwner, reason))
 
-    return self.rsClient.insertStatusElement(element, 'History', name, statusType,
-                                             status, elementType, reason,
-                                             dateEffective, lastCheckTime,
-                                             tokenOwner, tokenExpiration)
+    return self.rsClient.insertStatusElement(
+        element=element, tableType='History',
+        name=name, statusType=statusType,
+        status=status, elementType=elementType, reason=reason,
+        dateEffective=dateEffective, lastCheckTime=lastCheckTime,
+        tokenOwner=tokenOwner, tokenExpiration=tokenExpiration)
