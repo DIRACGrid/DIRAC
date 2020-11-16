@@ -369,6 +369,11 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p40]
+
+*docs
+FIX: (#4826) correct link to LHCb documentation
+
 [v7r0p39]
 
 NEW: (#4814) FileManager, FileCatalogDB - added repairFilesTable function to fix differencies between FC_Files
