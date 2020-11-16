@@ -1,3 +1,21 @@
+[v7r1p19]
+
+FIX: Fixes from v7r0p40
+
+*Configuration
+FIX: (#4821) Bdii2CSAgent: Updating CE information wasn't working because the list of
+     CEs wasn't picked up from the right place (Site/CE option, instead of Site/CES/<CE_Sections>)
+FIX: (#4821) Glue2: fix association of CEs to sites if the CE associated sitename in the BDII differs
+     from the Name given in the CS
+FIX: (#4821) dirac-admin-add-resources: Fix bug preventing the use of GLUE2 mode
+CHANGE: (#4636) BDII2CSAgent: stop looking for SEs in BDII
+
+*Resources
+FIX: (#4827) SingularityCE: Create pilot.cfg as part of the inner DIRAC install.
+
+*RSS
+FIX: (#4830) added vo field to ResourceStatusClient calls
+
 [v7r1p18]
 
 *RSS
