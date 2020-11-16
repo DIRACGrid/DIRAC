@@ -317,12 +317,12 @@ RHEL::
       gpgkey=https://nginx.org/keys/nginx_signing.key
       module_hotfixes=true
 
-Due to differences between how CentOS, RHEL, and Scientific Linux populate the $releasever variable, it is necessary to manually replace $releasever with either 5 (for 5.x) or 6 (for 6.x),
-depending upon your OS version. For example::
+Due to differences between how CentOS, RHEL, and Scientific Linux populate the $releasever variable, it is necessary to manually replace $releasever with
+your OS version. For example::
 
       [nginx]
       ...
-      baseurl=http://nginx.org/packages/rhel/6/$basearch/
+      baseurl=http://nginx.org/packages/rhel/7/$basearch/
       ...
 
 If it is successful installed::
@@ -377,7 +377,7 @@ The content of the site.conf (please modify it!!!)::
      listen 80 default_server;
      listen [::]:80 default_server;
      # Your server name if you have weird network config. Otherwise leave commented
-     #server_name dzmathe.cern.ch;
+     #server_name your.server.domain;
      return 301 https://$server_name$request_uri;
    }
 
@@ -385,7 +385,7 @@ The content of the site.conf (please modify it!!!)::
      # Enabling HTTP/2
      listen 443 ssl http2 default_server;      # For IPv4
      listen [::]:443 ssl http2 default_server; # For IPv6
-     server_name dzmathe.cern.ch;              # Server domain name
+     server_name your.server.domain;              # Server domain name
 
      ssl_prefer_server_ciphers On;
      ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
@@ -546,11 +546,11 @@ You have to add to the web.cfg the following lines in order to use NGINX::
        NumProcesses = 1
 
 In that case one process will be used and this process is listening on 8000 port.
- You can try to use the web portal. For example: http://dzmathe.cern.ch/DIRAC/
+ You can try to use the web portal. For example: http://your.server.domain/DIRAC/
  If you get 502 Bad Gateway error, you need to generate rules for SE linus.
  You can see the error in tail -200f /var/log/nginx/error.log::
 
-     016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: 128.141.170.23, server: dzmathe.cern.ch, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "dzmathe.cern.ch"
+     016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: 128.141.170.23, server: your.server.domain, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "dzmathe.cern.ch"
 
 * Generate the the rule::
    - grep nginx /var/log/audit/audit.log | audit2allow -M nginx
