@@ -59,7 +59,7 @@ class MessageClient(BaseClient):
     try:
       trid, transport = self.__checkResult(self._connect())
       self.__checkResult(self._proposeAction(transport, ("Connection", 'new')))
-      self.__checkResult(transport.sendData(S_OK((self.__uniqueName, self.__connectExtraParams))))
+      self.__checkResult(transport.sendData(S_OK([self.__uniqueName, self.__connectExtraParams])))
       self.__checkResult(transport.receiveData())
       self.__checkResult(self.__msgBroker.addTransportId(trid, self._serviceName,
                                                          receiveMessageCallback=self.__cbRecvMsg,

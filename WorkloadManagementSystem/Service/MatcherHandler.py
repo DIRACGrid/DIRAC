@@ -14,6 +14,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
@@ -109,15 +110,18 @@ class MatcherHandler(RequestHandler):
 ##############################################################################
   types_getActiveTaskQueues = []
 
-  @staticmethod
-  def export_getActiveTaskQueues():
+  @classmethod
+  @ignoreEncodeWarning
+  def export_getActiveTaskQueues(cls):
     """ Return all task queues
     """
     return gTaskQueueDB.retrieveTaskQueues()
 
 ##############################################################################
   types_getMatchingTaskQueues = [dict]
+  # int keys are cast into str
 
+  @ignoreEncodeWarning
   def export_getMatchingTaskQueues(self, resourceDict):
     """ Return all task queues that match the resourceDict
     """

@@ -157,7 +157,7 @@ class Message(object):
 
   def dumpAttrs(self):
     try:
-      return S_OK((self.__waitForAck, tuple(self.__values[k] for k in self.__order)))
+      return S_OK([self.__waitForAck, [self.__values[k] for k in self.__order]])
     except Exception as e:
       return S_ERROR("Could not dump message: %s doesn't have a value" % e)
 

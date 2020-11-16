@@ -26,7 +26,6 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
@@ -316,6 +315,9 @@ class AgentModule(object):
         self.am_getOption("EnableActivityMonitoring", False)
     )
     if self.activityMonitoring:
+      # The import needs to be here because of the CS must be initialized before importing
+      # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
+      from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
       # With the help of this periodic task we commit the data to ES at an interval of 100 seconds.
       gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
