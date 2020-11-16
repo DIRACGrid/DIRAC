@@ -16,11 +16,10 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers, getGOCSiteName,\
-    getGOCSites, getGOCFTSName
+    getGOCSites, getGOCFTSName, getCESiteMapping
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities.CSHelpers import getComputingElements
 
 
 class DowntimeCommand(Command):
@@ -364,9 +363,9 @@ class DowntimeCommand(Command):
     # if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
 
-    ce = getComputingElements()
-    if ce['OK'] and ce['Value']:
-      resources.extend(ce['Value'])
+    res = getCESiteMapping()
+    if res['OK'] and res['Value']:
+      resources.extend(list(res['Value']))
 
     self.log.verbose('Processing Sites', ', '.join(gocSites if gocSites else ['NONE']))
 
