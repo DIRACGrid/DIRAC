@@ -29,25 +29,6 @@ ResourceManagementClient = getattr(
     'ResourceManagementClient')
 
 
-# RSS Clients
-rsClient = None
-rmClient = None
-
-
-def initializePublisherHandler(_serviceInfo):
-  """
-  Handler initialization in the usual horrible way.
-  """
-
-  global rsClient
-  rsClient = ResourceStatusClient()
-
-  global rmClient
-  rmClient = ResourceManagementClient()
-
-  return S_OK()
-
-
 class PublisherHandler(RequestHandler):
   """
   RPCServer used to deliver data to the web portal.
@@ -61,6 +42,15 @@ class PublisherHandler(RequestHandler):
     super(PublisherHandler, self).__init__(*args, **kwargs)
 
   # ResourceStatusClient .......................................................
+
+  @classmethod
+  def initializeHandler(cls, serviceInfoDict):
+    """Initialization of client objects
+    """
+    cls.gRSClient = ResourceStatusClient()
+    cls.gRMClient = ResourceManagementClient()
+
+    return S_OK()
 
   types_getSites = []
 
@@ -127,48 +117,52 @@ class PublisherHandler(RequestHandler):
                               (six.string_types, list, types.NoneType),
                               (six.string_types, list, types.NoneType)]
 
-  def export_getElementStatuses(self, element, name, elementType, statusType, status, tokenOwner):
+  @classmethod
+  def export_getElementStatuses(cls, element, name, elementType, statusType, status, tokenOwner):
     """
     Returns element statuses from the ResourceStatusDB
     """
 
-    return rsClient.selectStatusElement(element, 'Status', name=name, elementType=elementType,
-                                        statusType=statusType, status=status,
-                                        tokenOwner=tokenOwner)
+    return cls.gRSClient.selectStatusElement(
+	element, 'Status', name=name, elementType=elementType,
+	statusType=statusType, status=status, tokenOwner=tokenOwner)
 
   types_getElementHistory = [six.string_types,
                              (six.string_types, list, types.NoneType),
                              (six.string_types, list, types.NoneType),
                              (six.string_types, list, types.NoneType)]
 
-  def export_getElementHistory(self, element, name, elementType, statusType):
+  @classmethod
+  def export_getElementHistory(cls, element, name, elementType, statusType):
     """
     Returns element history from ResourceStatusDB
     """
 
     columns = ['Status', 'DateEffective', 'Reason']
-    return rsClient.selectStatusElement(element, 'History', name=name, elementType=elementType,
-                                        statusType=statusType,
-                                        meta={'columns': columns})
+    return cls.gRSClient.selectStatusElement(
+	element, 'History', name=name, elementType=elementType,
+	statusType=statusType, meta={'columns': columns})
 
   types_getElementPolicies = [six.string_types,
                               (six.string_types, list, types.NoneType),
                               (six.string_types, list, types.NoneType)]
 
-  def export_getElementPolicies(self, element, name, statusType):
+  @classmethod
+  def export_getElementPolicies(cls, element, name, statusType):
     """
     Returns policies for a given element
     """
 
     columns = ['Status', 'PolicyName', 'DateEffective', 'LastCheckTime', 'Reason']
-    return rmClient.selectPolicyResult(element=element, name=name,
-                                       statusType=statusType,
-                                       meta={'columns': columns})
+    return cls.gRMClient.selectPolicyResult(element=element, name=name,
+					    statusType=statusType,
+					    meta={'columns': columns})
 
   types_getNodeStatuses = []
 
-  def export_getNodeStatuses(self):
-    return rsClient.selectStatusElement('Node', 'Status')
+  @classmethod
+  def export_getNodeStatuses(cls):
+    return cls.gRSClient.selectStatusElement('Node', 'Status')
 
   types_getTree = [six.string_types, six.string_types]
 
@@ -182,8 +176,8 @@ class PublisherHandler(RequestHandler):
     if not site:
       return S_ERROR('No site')
 
-    siteStatus = rsClient.selectStatusElement('Site', 'Status', name=site,
-                                              meta={'columns': ['StatusType', 'Status']})
+    siteStatus = self.gRSClient.selectStatusElement(
+	'Site', 'Status', name=site, meta={'columns': ['StatusType', 'Status']})
     if not siteStatus['OK']:
       return siteStatus
 
@@ -193,8 +187,9 @@ class PublisherHandler(RequestHandler):
     if not result['OK']:
       return result
     ces = result['Value'][site]
-    cesStatus = rsClient.selectStatusElement('Resource', 'Status', name=ces,
-                                             meta={'columns': ['Name', 'StatusType', 'Status']})
+    cesStatus = self.gRSClient.selectStatusElement(
+	'Resource', 'Status',
+	name=ces, meta={'columns': ['Name', 'StatusType', 'Status']})
     if not cesStatus['OK']:
       return cesStatus
 
@@ -203,8 +198,9 @@ class PublisherHandler(RequestHandler):
       self.log.error('Could not get site to SE mapping', res['Message'])
       return S_OK()
     ses = res['Value'][1].get(site, [])
-    sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
-                                             meta={'columns': ['Name', 'StatusType', 'Status']})
+    sesStatus = self.gRSClient.selectStatusElement(
+	'Resource', 'Status', name=list(ses),
+	meta={'columns': ['Name', 'StatusType', 'Status']})
     if not sesStatus['OK']:
       return sesStatus
 
@@ -234,10 +230,10 @@ class PublisherHandler(RequestHandler):
     credentials = self.getRemoteCredentials()
     self.log.info(credentials)
 
-    elementInDB = rsClient.selectStatusElement(element, 'Status', name=name,
-                                               statusType=statusType,
-                                               elementType=elementType,
-                                               lastCheckTime=lastCheckTime)
+    elementInDB = self.gRSClient.selectStatusElement(
+	element, 'Status',
+	name=name, statusType=statusType,
+	elementType=elementType, lastCheckTime=lastCheckTime)
     if not elementInDB['OK']:
       return elementInDB
     elif not elementInDB['Value']:
@@ -254,12 +250,10 @@ class PublisherHandler(RequestHandler):
 
     reason = 'Token %sd by %s ( web )' % (token, username)
 
-    newStatus = rsClient.addOrModifyStatusElement(element, 'Status', name=name,
-                                                  statusType=statusType,
-                                                  elementType=elementType,
-                                                  reason=reason,
-                                                  tokenOwner=tokenOwner,
-                                                  tokenExpiration=tokenExpiration)
+    newStatus = self.gRSClient.addOrModifyStatusElement(
+	element, 'Status',
+	name=name, statusType=statusType, elementType=elementType,
+	reason=reason, tokenOwner=tokenOwner, tokenExpiration=tokenExpiration)
     if not newStatus['OK']:
       return newStatus
 
@@ -286,7 +280,8 @@ class PublisherHandler(RequestHandler):
 
       for site in sites['Value']:
 
-        elements = gConfig.getValue('Resources/Sites/%s/%s/%s' % (domainName, site, elementType), '')
+	elements = gConfig.getValue(
+	    'Resources/Sites/%s/%s/%s' % (domainName, site, elementType), '')
         if elementName in elements:
           return site
 
@@ -296,7 +291,8 @@ class PublisherHandler(RequestHandler):
 
   types_getDowntimes = [six.string_types, six.string_types, six.string_types]
 
-  def export_getDowntimes(self, element, elementType, name):
+  @classmethod
+  def export_getDowntimes(cls, element, elementType, name):
 
     if elementType == 'StorageElement':
       res = getSEHosts(name)
@@ -306,10 +302,9 @@ class PublisherHandler(RequestHandler):
     else:
       names = name
 
-    return rmClient.selectDowntimeCache(element=element, name=names,
-                                        meta={'columns': ['StartDate', 'EndDate',
-                                                          'Link', 'Description',
-                                                          'Severity']})
+    return cls.gRMClient.selectDowntimeCache(
+	element=element, name=names,
+	meta={'columns': ['StartDate', 'EndDate', 'Link', 'Description', 'Severity']})
 
   types_getCachedDowntimes = [(six.string_types, types.NoneType, list),
                               (six.string_types, types.NoneType, list),
@@ -328,8 +323,8 @@ class PublisherHandler(RequestHandler):
 
     columns = ['Element', 'Name', 'StartDate', 'EndDate', 'Severity', 'Description', 'Link']
 
-    res = rmClient.selectDowntimeCache(element=element, name=names, severity=severity,
-                                       meta={'columns': columns})
+    res = self.gRMClient.selectDowntimeCache(
+	element=element, name=names, severity=severity, meta={'columns': columns})
     if not res['OK']:
       self.log.error("Error selecting downtime cache", res['Message'])
       return res
@@ -351,11 +346,10 @@ class PublisherHandler(RequestHandler):
     credentials = self.getRemoteCredentials()
     self.log.info(credentials)
 
-    elementInDB = rsClient.selectStatusElement(element, 'Status', name=name,
-                                               statusType=statusType,
-                                               # status = status,
-                                               elementType=elementType,
-                                               lastCheckTime=lastCheckTime)
+    elementInDB = self.gRSClient.selectStatusElement(
+	element, 'Status',
+	name=name, statusType=statusType,  # status = status,
+	elementType=elementType, lastCheckTime=lastCheckTime)
     if not elementInDB['OK']:
       self.log.error("Error selecting status elements", elementInDB['Message'])
       return elementInDB
@@ -365,13 +359,11 @@ class PublisherHandler(RequestHandler):
     reason = 'Status %s forced by %s ( web )' % (status, username)
     tokenExpiration = datetime.utcnow() + timedelta(days=1)
 
-    newStatus = rsClient.addOrModifyStatusElement(element, 'Status', name=name,
-                                                  statusType=statusType,
-                                                  status=status,
-                                                  elementType=elementType,
-                                                  reason=reason,
-                                                  tokenOwner=username,
-                                                  tokenExpiration=tokenExpiration)
+    newStatus = self.gRSClient.addOrModifyStatusElement(
+	element, 'Status',
+	name=name, statusType=statusType, status=status,
+	elementType=elementType, reason=reason,
+	tokenOwner=username, tokenExpiration=tokenExpiration)
     if not newStatus['OK']:
       self.log.error("Error setting status", newStatus['Message'])
       return newStatus
