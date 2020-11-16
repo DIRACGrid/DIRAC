@@ -29,7 +29,7 @@ At every configuration update, the pilot.json file content will also be updated.
 
 
 Starting with web portal version v4r2, the file uploads is completely on the balancer side.
-Make sure your balancer is set to load files by following the instructions :ref:`configure_nginx`.
+Make sure your balancer is set to load files by following the :ref:`instructions <configure_nginx>`.
 
   
 
