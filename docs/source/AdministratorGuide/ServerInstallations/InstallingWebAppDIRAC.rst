@@ -356,6 +356,7 @@ If it is successful installed::
     cp objs/ngx_http_dav_ext_module.so /etc/nginx/modules/
 
 .. _configure_nginx:
+
 * Configure NGINX
 
   You have to find the nginx.conf file. You can see which configuration used in /etc/init.d/nginx. For example::
