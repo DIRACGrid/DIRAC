@@ -83,7 +83,7 @@ They can also be accessed by other services/agents, e.g. for syncing purposes.
 Inside this section, you should define the following options, and give them a meaningful value (here, an example is given)::
 
    # Needed by the SiteDirector:
-   Version = v6r20p14  # DIRAC version(s)
+   Version = v7r2p1  # DIRAC version(s)
    Project = myVO  # Your project name: this will end up in the /LocalSite/ReleaseProject option of the pilot cfg, and will be used at matching time
    Extensions = myVO # The DIRAC extension (if any)
    Installation = mycfg.cfg # For an optional configuration file, used by the installation script.
@@ -152,6 +152,11 @@ Pilots started when not controlled by the SiteDirector
 ======================================================
 
 You should keep reading if your resources include IAAS and IAAC type of resources, like Virtual Machines.
+If this is the case, then you need to:
+- provide a certificate, or a proxy, to start the pilot;
+- such certificate/proxy should have the `GenericPilot` property;
+- in case of multi-VO environment, and when using certificates, such certificate should have the "VirtualOrganization" option defined in CS;
+- find a way to start the pilots: VMDIRAC extension will make sure to create VirtualMachine contextualized to start Pilot3.
 
 We have introduced a special command named "GetPilotVersion" that you should use,
 and possibly extend, in case you want to send/start pilots that don't know beforehand the (VO)DIRAC version they are going to install.
