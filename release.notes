@@ -1,3 +1,8 @@
+[v7r0p40]
+
+*docs
+FIX: (#4826) correct link to LHCb documentation
+
 [v7r0p39]
 
 NEW: (#4814) FileManager, FileCatalogDB - added repairFilesTable function to fix differencies between FC_Files
