@@ -6,6 +6,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 from past.builtins import long
 import six
 from DIRAC.Core.Workflow.Utility import *
@@ -285,12 +286,8 @@ class ParameterCollection(list):
     else:
       raise TypeError(
           'Can not append object type ' +
-          str(
-              type(opt)) +
-          ' to the ' +
-          str(
-              type(self)) +
-          '. Parameter type appendable only')
+          str(type(opt)) + ' to the ' +
+          str(type(self)) + '. Parameter type appendable only')
 
   def appendCopy(self, opt, prefix="", postfix=""):
     if isinstance(opt, ParameterCollection):
@@ -301,12 +298,8 @@ class ParameterCollection(list):
     else:
       raise TypeError(
           'Can not append object type ' +
-          str(
-              type(opt)) +
-          ' to the ' +
-          str(
-              type(self)) +
-          '. Parameter type appendable only')
+          str(type(opt)) + ' to the ' +
+          str(type(self)) + '. Parameter type appendable only')
 
   def appendCopyLinked(self, opt, prefix="", postfix=""):
     if isinstance(opt, ParameterCollection):
@@ -319,12 +312,8 @@ class ParameterCollection(list):
     else:
       raise TypeError(
           'Can not append object type ' +
-          str(
-              type(opt)) +
-          ' to the ' +
-          str(
-              type(self)) +
-          '. Parameter type appendable only')
+          str(type(opt)) + ' to the ' +
+          str(type(self)) + '. Parameter type appendable only')
 
   def setValue(self, name, value, vtype=None):
     """ Method finds parameter with the name "name" and if exists its set value
@@ -496,7 +485,7 @@ class ParameterCollection(list):
           return v
       return None
 
-    elif isinstance(name_or_ind, int) or isinstance(name_or_ind, long):  # we given index
+    elif isinstance(name_or_ind, (int, long)):  # we given index
       return self[name_or_ind]
     return self[int(name_or_ind)]
 

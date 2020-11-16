@@ -76,7 +76,6 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['Mess
           ('DIRAC.WorkloadManagementSystem.Agent.StatesMonitoringAgent', {}),
           ('DIRAC.WorkloadManagementSystem.Agent.SiteDirector',
            {'SpecialMocks': {'findGenericPilotCredentials': S_OK(('a', 'b'))}}),
-          # ('DIRAC.WorkloadManagementSystem.Agent.MultiProcessorSiteDirector', {}),  # not inheriting from AgentModule
           ]
 
 

@@ -5,13 +5,16 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import os
 import unittest
 import importlib
+
 from six import BytesIO
 
 from mock import MagicMock
 
+# sut
 from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 
@@ -43,9 +46,6 @@ class ClientsTestCase(unittest.TestCase):
     except OSError:
       pass
 
-#############################################################################
-
-
 
 class MatcherTestCase(ClientsTestCase):
 
@@ -60,7 +60,6 @@ class MatcherTestCase(ClientsTestCase):
                            'DIRACVersion': 'v8r0p1',
                            'FileCatalog': 'LcgFileCatalogCombined',
                            'GridCE': 'jenkins.cern.ch',
-                           'GridMiddleware': 'DIRAC',
                            'LocalSE': ['CERN-SWTEST'],
                            'MaxTotalJobs': 100,
                            'MaxWaitingJobs': 10,
@@ -68,7 +67,6 @@ class MatcherTestCase(ClientsTestCase):
                            'PilotBenchmark': 9.5,
                            'PilotReference': 'somePilotReference',
                            'Platform': 'x86_64-slc6',
-                           'ReleaseProject': 'LHCb',
                            'ReleaseVersion': 'v8r0p1',
                            'Setup': 'LHCb-Certification',
                            'Site': 'DIRAC.Jenkins.ch',
@@ -81,11 +79,9 @@ class MatcherTestCase(ClientsTestCase):
                    'DIRACVersion': 'v8r0p1',
                    'PilotReference': 'somePilotReference',
                    'PilotBenchmark': 9.5,
-                   'ReleaseProject': 'LHCb',
                    'Platform': 'x86_64-slc6',
                    'Site': 'DIRAC.Jenkins.ch',
-                   'GridCE': 'jenkins.cern.ch',
-                   'GridMiddleware': 'DIRAC'}
+                   'GridCE': 'jenkins.cern.ch'}
 
     self.assertEqual(res, resExpected)
 
