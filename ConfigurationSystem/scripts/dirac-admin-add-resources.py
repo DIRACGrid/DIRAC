@@ -49,7 +49,7 @@ def processScriptSwitches():
   doCEs = False
   doSEs = False
   hostURL = None
-  glue2 = False
+  glue2 = True
   for sw in Script.getUnprocessedSwitches():
     if sw[0] in ("V", "vo"):
       vo = sw[1]
@@ -104,10 +104,9 @@ def checkUnusedCEs():
       result = getDIRACSiteName(site)
       if result['OK']:
         diracSite = ','.join(result['Value'])
-      ces = siteDict[site].keys()  # pylint: disable=no-member
-      if ces:
+      if siteDict[site]:
         gLogger.notice("  %s, DIRAC site %s" % (site, diracSite))
-        for ce in ces:
+        for ce in siteDict[site]:
           gLogger.notice(' ' * 4 + ce)
           gLogger.notice('      %s, %s' % (siteDict[site][ce]['CEType'], '%s_%s_%s' % siteDict[site][ce]['System']))
   else:
@@ -126,8 +125,7 @@ def checkUnusedCEs():
   for site in siteDict:
     # Get the country code:
     country = ''
-    ces = siteDict[site].keys()  # pylint: disable=no-member
-    for ce in ces:
+    for ce in siteDict[site]:
       country = ce.strip().split('.')[-1].lower()
       if len(country) == 2:
         break
@@ -165,13 +163,13 @@ def checkUnusedCEs():
 
     newCEs = {}
     addedCEs = []
-    for ce in ces:
+    for ce in siteDict[site]:
       ceType = siteDict[site][ce]['CEType']
       for diracSite in diracSites:
         if ce in addedCEs:
           continue
         yn = raw_input("Add CE %s of type %s to %s? [default yes] [yes|no]: " % (ce, ceType, diracSite))
-        if yn == '' or yn.lower() == 'y':
+        if yn == '' or yn.lower().startswith('y'):
           newCEs.setdefault(diracSite, [])
           newCEs[diracSite].append(ce)
           addedCEs.append(ce)
@@ -181,7 +179,7 @@ def checkUnusedCEs():
         cmd = "dirac-admin-add-site %s %s %s" % (diracSite, site, ' '.join(newCEs[diracSite]))
         gLogger.notice("\nNew site/CEs will be added with command:\n%s" % cmd)
         yn = raw_input("Add it ? [default yes] [yes|no]: ")
-        if not (yn == '' or yn.lower() == 'y'):
+        if not (yn == '' or yn.lower().startswith('y')):
           continue
 
         if dry:
