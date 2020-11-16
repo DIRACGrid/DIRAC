@@ -29,58 +29,8 @@ At every configuration update, the pilot.json file content will also be updated.
 
 
 Starting with web portal version v4r2, the file uploads is completely on the balancer side.
-Then to ensure file uploads do the following:
+Make sure your balancer is set to load files by following the instructions :ref:`configure_nginx`.
 
-- make sure your balancer is set up, for nginx::
-
-    location /webdav {
-      # Check client certificate
-      if ($ssl_client_verify = NONE) {
-        return 403;
-      }
-      if ($ssl_client_verify != SUCCESS) {
-        return 403;
-      }
-
-      # Webdav sever
-      error_page 418 = @webdav;
-      return 418;
-    }
-
-    location @webdav {
-        # Access rules
-        satisfy any;
-
-        # For download access for all
-        limit_except GET {
-          # Add allowed IPs
-          #allow XXX.XXX.XXX.XXX;
-          deny  all;
-        }
-
-        client_max_body_size 1g;
-        root /path/to/static/files;
-
-        # Access settings
-        dav_access group:rw all:rw;
-
-        # Allow all posible methods
-        dav_methods PUT DELETE MKCOL COPY MOVE;
-
-        # For webdav clients
-        dav_ext_methods PROPFIND OPTIONS;
-
-        # Clients can create paths
-        create_full_put_path on;
-        charset utf-8;
-        autoindex on;
-        break;
-    }
-
-
-- create the following directory in the fileserver machine::
-   
-    mkdir /path/to/static/files
   
 
 Other options that can be set also in the Operations part of the CS include:
