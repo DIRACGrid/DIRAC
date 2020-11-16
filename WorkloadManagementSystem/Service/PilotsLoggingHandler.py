@@ -59,7 +59,8 @@ class PilotsLoggingHandler(RequestHandler):
   types_addPilotsLogging = [six.string_types, six.string_types, six.string_types,
                             six.string_types, six.string_types, six.string_types]
 
-  def export_addPilotsLogging(self, pilotUUID, timestamp, source, phase, status, messageContent):
+  @classmethod
+  def export_addPilotsLogging(cls, pilotUUID, timestamp, source, phase, status, messageContent):
     """
     Add new Pilots Logging entry
 
@@ -70,27 +71,29 @@ class PilotsLoggingHandler(RequestHandler):
     :param source: Source of statu information
     """
 
-    return PilotsLoggingHandler.pilotsLoggingDB.addPilotsLogging(
+    return cls.gPilotsLoggingDB.addPilotsLogging(
 	pilotUUID, timestamp, source, phase, status, messageContent)
 
   types_getPilotsLogging = [six.string_types]
 
-  def export_getPilotsLogging(self, pilotUUID):
+  @classmethod
+  def export_getPilotsLogging(cls, pilotUUID):
     """
     Get all Logging entries for Pilot
 
     :param pilotUUID: Pilot reference
     """
 
-    return PilotsLoggingHandler.pilotsLoggingDB.getPilotsLogging(pilotUUID)
+    return cls.gPilotsLoggingDB.getPilotsLogging(pilotUUID)
 
   types_deletePilotsLogging = [six.string_types + (list,)]
 
-  def export_deletePilotsLogging(self, pilotUUID):
+  @classmethod
+  def export_deletePilotsLogging(cls, pilotUUID):
     """
     Delete all Logging entries for Pilot
 
     :param pilotUUID: Pilot reference
     """
 
-    return PilotsLoggingHandler.pilotsLoggingDB.deletePilotsLogging(pilotUUID)
+    return cls.gPilotsLoggingDB.deletePilotsLogging(pilotUUID)
