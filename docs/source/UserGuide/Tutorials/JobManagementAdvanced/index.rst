@@ -419,7 +419,7 @@ Let's perform this exercise in the python shell.
                       "std.err",
                       "std.out"
                   };
-	      CPUTime = "21600";
+              CPUTime = "21600";
               JobName = "APItoJDL";
               InputData = 
                   {

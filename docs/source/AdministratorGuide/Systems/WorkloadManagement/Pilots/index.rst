@@ -153,6 +153,7 @@ Pilots started when not controlled by the SiteDirector
 
 You should keep reading if your resources include IAAS and IAAC type of resources, like Virtual Machines.
 If this is the case, then you need to:
+
 - provide a certificate, or a proxy, to start the pilot;
 - such certificate/proxy should have the `GenericPilot` property;
 - in case of multi-VO environment, the Pilot should set the `/Resources/Computing/CEDefaults/VirtualOrganization` (as done e.g. by `VMDIRAC <https://github.com/DIRACGrid/VMDIRAC/blob/9c6ef192d400686431e42c09de7086d49dda7575/VMDIRAC/WorkloadManagementSystem/Bootstrap/vm-pilot#L124>`_);

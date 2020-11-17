@@ -63,7 +63,7 @@ Finally, the State Machine utility prevents forbidden transitions between differ
       +------------------------------+
       | Tables_in_ProductionDB       |
       +------------------------------+ 
-      | Productions           	     |
+      | Productions                  |
       | ProductionTransformations    |
       | ProductionTransformationLinks|
       +------------------------------+
@@ -83,74 +83,74 @@ In this example we assume that a number of meta fields (*e.g.* metaA, metaB, met
 * Example:
 
   ::
-  
-		import json
-		from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
-		from DIRAC.ProductionSystem.Client.Production import Production
-		from DIRAC.ProductionSystem.Client.ProductionStep import ProductionStep
-		from DIRAC.Interfaces.API.Job import Job
 
-		# Define the production
-		prod = Production()
-    
-		# Define the first ProductionStep    
-		# Note that there is no InputQuery, since jobs created by this steps don't require any InputData
-		prodStep1 = ProductionStep()
-		prodStep1.Name = 'Sim_prog'
-		prodStep1.Type = 'MCSimulation' # This corresponds to the Transformation Type
-		prodStep1.Outputquery = {"metaA": "valA", "metaB": {'in': ["valB1", "valB2"]}}
-    
-		# Here define the job description (i.e. Name, Executable, etc.) to be associated to the first ProductionStep, as done when using the TS
-		job1 = Job()
-		...
-		prodStep1.Body(job1.workflow.toXML())
+                import json
+                from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
+                from DIRAC.ProductionSystem.Client.Production import Production
+                from DIRAC.ProductionSystem.Client.ProductionStep import ProductionStep
+                from DIRAC.Interfaces.API.Job import Job
 
-		# Add the step to the production
-		prod.addStep(prodStep1)
-	
-		# Define the second ProductionStep
-		prodStep2 = ProductionStep()
-		prodStep2.Name = 'Reco_prog'
-		prodStep2.Type = 'DataProcessing' # This corresponds to the Transformation Type
-		prodStep2.ParentStep = prodStep1
-		prodStep2.Inputquery = {"metaA": "valA", "metaB": "valB1"}
-		prodStep2.Outputquery = {"metaA": "valA", "metaB": "valB1", "metaC": "valC", "metaD": {'in': ["valD1", "valD2"]}}
-    
-		# Here define the job description to be associated to the second ProductionStep
-		job2 = Job()
-		...
-		prodStep2.Body(job2.workflow.toXML())
+                # Define the production
+                prod = Production()
 
-		# Add the step to the production
-		prod.addStep(prodStep2)
+                # Define the first ProductionStep    
+                # Note that there is no InputQuery, since jobs created by this steps don't require any InputData
+                prodStep1 = ProductionStep()
+                prodStep1.Name = 'Sim_prog'
+                prodStep1.Type = 'MCSimulation' # This corresponds to the Transformation Type
+                prodStep1.Outputquery = {"metaA": "valA", "metaB": {'in': ["valB1", "valB2"]}}
 
-		# Define the third step of the production
-		prodStep3 = ProductionStep()
-		prodStep3.Name = 'Analyis_prog'
-		prodStep3.Type = 'DataProcessing'
-		prodStep3.ParentStep = prodStep2
+                # Here define the job description (i.e. Name, Executable, etc.) to be associated to the first ProductionStep, as done when using the TS
+                job1 = Job()
+                ...
+                prodStep1.Body(job1.workflow.toXML())
 
-		prodStep3.Inputquery = {"metaA": "valA", "metaB": "valB1", "metaC": "valC", "metaD": "metaD2"}
-		prodStep3.Outputquery = {"metaA": "valA", "metaB": "valB1", "metaC": "valCb", "metaD": "metaD2"}
-    
-		# Here define the job description to be associated to the third ProductionStep
-		job3 = Job()
-		...
-		prodStep3.Body(job3.workflow.toXML())
-    
-		# Add the step to the production
-		prod.addStep(prodStep3)
+                # Add the step to the production
+                prod.addStep(prodStep1)
 
-		# Get the production description
-		prodDescription = prod.prodDescription
+                # Define the second ProductionStep
+                prodStep2 = ProductionStep()
+                prodStep2.Name = 'Reco_prog'
+                prodStep2.Type = 'DataProcessing' # This corresponds to the Transformation Type
+                prodStep2.ParentStep = prodStep1
+                prodStep2.Inputquery = {"metaA": "valA", "metaB": "valB1"}
+                prodStep2.Outputquery = {"metaA": "valA", "metaB": "valB1", "metaC": "valC", "metaD": {'in': ["valD1", "valD2"]}}
 
-		# Create the production
-		prodClient.addProduction('SeqProd', json.dumps(prodDescription))
-    
-		# Start the production, i.e. instatiate the transformation steps
-		prodClient.startProduction('SeqProd')
-	
-	
+                # Here define the job description to be associated to the second ProductionStep
+                job2 = Job()
+                ...
+                prodStep2.Body(job2.workflow.toXML())
+
+                # Add the step to the production
+                prod.addStep(prodStep2)
+
+                # Define the third step of the production
+                prodStep3 = ProductionStep()
+                prodStep3.Name = 'Analyis_prog'
+                prodStep3.Type = 'DataProcessing'
+                prodStep3.ParentStep = prodStep2
+
+                prodStep3.Inputquery = {"metaA": "valA", "metaB": "valB1", "metaC": "valC", "metaD": "metaD2"}
+                prodStep3.Outputquery = {"metaA": "valA", "metaB": "valB1", "metaC": "valCb", "metaD": "metaD2"}
+
+                # Here define the job description to be associated to the third ProductionStep
+                job3 = Job()
+                ...
+                prodStep3.Body(job3.workflow.toXML())
+
+                # Add the step to the production
+                prod.addStep(prodStep3)
+
+                # Get the production description
+                prodDescription = prod.prodDescription
+
+                # Create the production
+                prodClient.addProduction('SeqProd', json.dumps(prodDescription))
+
+                # Start the production, i.e. instatiate the transformation steps
+                prodClient.startProduction('SeqProd')
+
+
 Other types of workflows, with different connections between the transformations can be built by choosing different Input/Output Queries.
 
 
@@ -159,14 +159,14 @@ Command Line Interface
 Once the production is created it can be monitored using the CLI:
 
   ::
-  
+
     dirac-prod-get [prodID]
 
 
 The CLI provides commands to monitor/start/stop/delete productions. Transformations can also be added to existing productions using:
 
   ::
-  
+
     dirac-prod-add-trans prodID transID [parentTransID]
-    
+
 All CLI commands to interact with PS start with dirac-prod*.

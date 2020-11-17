@@ -244,7 +244,7 @@ And here for ``CheeseShopClient`` class:
 
        # is it really cheese, you're asking for?
        if not isinstance(cheese, Cheese):
-	 raise SpanishInquisitionError("It's stone dead!")
+         raise SpanishInquisitionError("It's stone dead!")
 
        # and the owner is in?
        if not self.shopOwner:
@@ -257,12 +257,12 @@ And here for ``CheeseShopClient`` class:
 
        # and you are not asking for too much?
        if quantity > res["Value"]["Quantity"]:
-	 return S_ERROR("Not enough %s, sorry!" % cheese.name)
+         return S_ERROR("Not enough %s, sorry!" % cheese.name)
 
        # and you have got enough money perhaps?
        price = quantity * res["Value"]["Price"]
        if self.__money < price:
-	 return S_ERROR("Not enough money in your pocket, get lost!")
+         return S_ERROR("Not enough money in your pocket, get lost!")
 
        # so we're buying
        res = self.shopOwner.buyCheese(cheese.name, quantity)
@@ -285,7 +285,7 @@ Now for our test suite we will assume that there is a 20 lbs of Cheddar priced 9
 1 lb of Cheddar (the main success scenario) having at least 9.95 pounds in a wallet:
 
   - input: ``Cheese("Cheddar")``, 1.0 lb, 9.95 pounds in your pocket
-  - expected output: ``S_OK = { "OK" : True, "Value" : 0.0 }``
+  - expected output: ``S_OK = {"OK" : True, "Value" : 0.0 }``
 
 Other scenarios are:
 
@@ -304,22 +304,22 @@ Other scenarios are:
 3. The shop is closed:
 
   - input: ``Cheese("Cheddar")``
-  - expected output: ``S_ERROR = { "OK" : False, "Message" : "Shop is closed!" }``
+  - expected output: ``S_ERROR = {"OK" : False, "Message": "Shop is closed!"}``
 
 4. Asking for any other cheese:
 
   - input: ``Cheese("Greek feta")``, 1.0 lb
-  - expected output: ``S_ERROR = { "OK" : False, "Message" : "Ah, not as such!" }``
+  - expected output: ``S_ERROR = {"OK" : False, "Message": "Ah, not as such!"}``
 
 5. Asking for too much of Cheddar:
 
   - input: ``Cheese("Cheddar")``, 21.0 lb
-  - expected output: ``S_ERROR = { "OK" : False, "Message" : "Not enough Cheddar, sorry!" }``
+  - expected output: ``S_ERROR = {"OK" : False, "Message": "Not enough Cheddar, sorry!"}``
 
 6. No money on you to pay the bill:
 
   - input: ``Cheese("Cheddar")``, 1.0 lb, 8.0 pounds in your pocket
-  - expected output: ``S_ERROR = { "OK" : False, "Message" : "Not enough money in your pocket, get lost!" }``
+  - expected output: ``S_ERROR = {"OK" : False, "Message": "Not enough money in your pocket, get lost!"}``
 
 7. Some other unexpected problems in underlying components, which by the way we are not going to be test or explore here. *You just can't test everything,
 keep track on testing your code!*
@@ -348,7 +348,7 @@ The test suite code itself follows:
        # real object to use
        self.shopOwner = CheeseShopOwner("CheeseShop/CheeseShopOwner")
        # but with mocking of isThere
-       self.shopOwner.isThere = Mock(return_value = S_OK({ "Price" : 9.95, "Quantity" : 20.0 }))
+       self.shopOwner.isThere = Mock(return_value = S_OK({"Price" : 9.95, "Quantity" : 20.0}))
        # and buyCheese methods
        self.shopOwner.buyCheese = Mock()
 
@@ -359,21 +359,21 @@ The test suite code itself follows:
        del self.cheese
 
      def test_buy(self):
-	client = CheeseShopClient(money = self.money, shopOwner = self.shopOwner)
+        client = CheeseShopClient(money = self.money, shopOwner = self.shopOwner)
         # check if test object has been created
-	self.assertEqual(isinstance(client, CheeseShopClient), True)
+        self.assertEqual(isinstance(client, CheeseShopClient), True)
         # and works as expected
-	self.assertEqual(client.buy(self.cheese, self.amount), { "OK" : True, "Value" : 0.0 })
+        self.assertEqual(client.buy(self.cheese, self.amount), {"OK" : True, "Value" : 0.0})
         ## and now for mocked objects
         # asking for cheese
-	self.shopOwner.isThere.assert_called_once_with(self.cheese.name)
+        self.shopOwner.isThere.assert_called_once_with(self.cheese.name)
         # and buying it
-	self.shopOwner.buyCheese.assert_called_once_with(self.cheese.name, self.amount)
+        self.shopOwner.buyCheese.assert_called_once_with(self.cheese.name, self.amount)
 
 
    if __name__ == "__main__":
      unittest.main()
-     #testSuite = unittest.TestSuite([ "CheeseClientMainSuccessScenario" ])
+     #testSuite = unittest.TestSuite(["CheeseClientMainSuccessScenario"])
 
 
 Conventions
