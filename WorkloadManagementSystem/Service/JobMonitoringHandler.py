@@ -45,7 +45,7 @@ class JobMonitoringHandler(RequestHandler):
 
     cls.gElasticJobParametersDB = None
     useESForJobParametersFlag = Operations().getValue(
-	'/Services/JobMonitoring/useESForJobParametersFlag', False)
+        '/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
       cls.gElasticJobParametersDB = ElasticJobParametersDB()
     return S_OK()
@@ -59,7 +59,7 @@ class JobMonitoringHandler(RequestHandler):
     ownerGroup = credDict['group']
     operations = Operations(group=ownerGroup)
     self.globalJobsInfo = operations.getValue(
-	'/Services/JobMonitoring/GlobalJobsInfo', True)
+        '/Services/JobMonitoring/GlobalJobsInfo', True)
     self.jobPolicy = JobPolicy(ownerDN, ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = self.gJobDB
 

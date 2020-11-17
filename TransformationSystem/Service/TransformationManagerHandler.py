@@ -33,7 +33,7 @@ TASKS_STATE_NAMES = [
     'Rescheduled',
     'Scheduled']
 FILES_STATE_NAMES = ['PercentProcessed', 'Processed', 'Unused',
-		     'Assigned', 'Total', 'Problematic',
+                     'Assigned', 'Total', 'Problematic',
                      'ApplicationCrash', 'MaxReset']
 
 
@@ -58,13 +58,13 @@ class TransformationManagerHandler(RequestHandler):
   #
 
   types_addTransformation = [six.string_types, six.string_types,
-			     six.string_types, six.string_types,
-			     six.string_types, six.string_types,
-			     six.string_types]
+                             six.string_types, six.string_types,
+                             six.string_types, six.string_types,
+                             six.string_types]
 
   def export_addTransformation(self,
-			       transName, description, longDescription,
-			       transType, plugin, agentType, fileMask,
+                               transName, description, longDescription,
+                               transType, plugin, agentType, fileMask,
                                transformationGroup='General',
                                groupSize=1,
                                inheritedFrom=0,
@@ -80,18 +80,18 @@ class TransformationManagerHandler(RequestHandler):
     authorDN = credDict.get('DN', credDict.get('CN'))
     authorGroup = credDict.get('group')
     res = self.gTransformationDB.addTransformation(
-	transName, description, longDescription,
-	authorDN, authorGroup, transType, plugin,
-	agentType, fileMask,
-	transformationGroup=transformationGroup,
-	groupSize=groupSize,
-	inheritedFrom=inheritedFrom,
-	body=body,
-	maxTasks=maxTasks,
-	eventsPerTask=eventsPerTask,
-	addFiles=addFiles,
-	inputMetaQuery=inputMetaQuery,
-	outputMetaQuery=outputMetaQuery)
+        transName, description, longDescription,
+        authorDN, authorGroup, transType, plugin,
+        agentType, fileMask,
+        transformationGroup=transformationGroup,
+        groupSize=groupSize,
+        inheritedFrom=inheritedFrom,
+        body=body,
+        maxTasks=maxTasks,
+        eventsPerTask=eventsPerTask,
+        addFiles=addFiles,
+        inputMetaQuery=inputMetaQuery,
+        outputMetaQuery=outputMetaQuery)
     if res['OK']:
       self.log.info("Added transformation", res['Value'])
     return res
@@ -137,14 +137,14 @@ class TransformationManagerHandler(RequestHandler):
     if not condDict:
       condDict = {}
     return cls.gTransformationDB.getTransformations(
-	condDict=condDict,
-	older=older,
-	newer=newer,
-	timeStamp=timeStamp,
-	orderAttribute=orderAttribute,
-	limit=limit,
-	extraParams=extraParams,
-	offset=offset)
+        condDict=condDict,
+        older=older,
+        newer=newer,
+        timeStamp=timeStamp,
+        orderAttribute=orderAttribute,
+        limit=limit,
+        extraParams=extraParams,
+        offset=offset)
 
   types_getTransformation = [transTypes]
 
@@ -180,7 +180,7 @@ class TransformationManagerHandler(RequestHandler):
   @classmethod
   def export_addTaskForTransformation(cls, transName, lfns=[], se='Unknown'):
     return cls.gTransformationDB.addTaskForTransformation(
-	transName, lfns=lfns, se=se)
+        transName, lfns=lfns, se=se)
 
   types_setFileStatusForTransformation = [transTypes, dict]
 
@@ -231,9 +231,9 @@ class TransformationManagerHandler(RequestHandler):
     if not condDict:
       condDict = {}
     return cls.gTransformationDB.getTransformationFiles(
-	condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
-	orderAttribute=orderAttribute, limit=limit, offset=offset,
-	connection=False)
+        condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
+        orderAttribute=orderAttribute, limit=limit, offset=offset,
+        connection=False)
 
   ####################################################################
   #
@@ -248,9 +248,9 @@ class TransformationManagerHandler(RequestHandler):
     if not condDict:
       condDict = {}
     return cls.gTransformationDB.getTransformationTasks(
-	condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
-	orderAttribute=orderAttribute, limit=limit, inputVector=inputVector,
-	offset=offset)
+        condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
+        orderAttribute=orderAttribute, limit=limit, inputVector=inputVector,
+        offset=offset)
 
   types_setTaskStatus = [transTypes, [list, int, long], six.string_types]
 
@@ -515,23 +515,26 @@ class TransformationManagerHandler(RequestHandler):
   types_getTransformationsSummaryWeb = [dict, list, int, int]
 
   def export_getTransformationsSummaryWeb(self, selectDict, sortList, startItem, maxItems):
-    return self.__getTableSummaryWeb('Transformations', selectDict, sortList, startItem, maxItems,
-                                     selectColumns=['TransformationID', 'AgentType', 'Type', 'Group', 'Plugin'],
-                                     timeStamp='CreationDate', statusColumn='Status')
+    return self.__getTableSummaryWeb(
+        'Transformations', selectDict, sortList, startItem, maxItems,
+        selectColumns=['TransformationID', 'AgentType', 'Type', 'Group', 'Plugin'],
+        timeStamp='CreationDate', statusColumn='Status')
 
   types_getTransformationTasksSummaryWeb = [dict, list, int, int]
 
   def export_getTransformationTasksSummaryWeb(self, selectDict, sortList, startItem, maxItems):
-    return self.__getTableSummaryWeb('TransformationTasks', selectDict, sortList, startItem, maxItems,
-                                     selectColumns=['TransformationID', 'ExternalStatus', 'TargetSE'],
-                                     timeStamp='CreationTime', statusColumn='ExternalStatus')
+    return self.__getTableSummaryWeb(
+        'TransformationTasks', selectDict, sortList, startItem, maxItems,
+        selectColumns=['TransformationID', 'ExternalStatus', 'TargetSE'],
+        timeStamp='CreationTime', statusColumn='ExternalStatus')
 
   types_getTransformationFilesSummaryWeb = [dict, list, int, int]
 
   def export_getTransformationFilesSummaryWeb(self, selectDict, sortList, startItem, maxItems):
-    return self.__getTableSummaryWeb('TransformationFiles', selectDict, sortList, startItem, maxItems,
-                                     selectColumns=['TransformationID', 'Status', 'UsedSE', 'TargetSE'],
-                                     timeStamp='LastUpdate', statusColumn='Status')
+    return self.__getTableSummaryWeb(
+        'TransformationFiles', selectDict, sortList, startItem, maxItems,
+        selectColumns=['TransformationID', 'Status', 'UsedSE', 'TargetSE'],
+        timeStamp='LastUpdate', statusColumn='Status')
 
   def __getTableSummaryWeb(self, table, selectDict, sortList, startItem, maxItems, selectColumns=[],
                            timeStamp=None, statusColumn='Status'):
@@ -554,7 +557,7 @@ class TransformationManagerHandler(RequestHandler):
     if hasattr(self.gTransformationDB, fcnName) and callable(getattr(self.gTransformationDB, fcnName)):
       fcn = getattr(self.gTransformationDB, fcnName)
     if not fcn:
-      return S_ERROR("Unable to invoke self.gTransformationDB.%s, it isn't a member function" % fcnName)
+      return S_ERROR("Unable to invoke gTransformationDB.%s, it isn't a member function" % fcnName)
     res = fcn(condDict=selectDict, older=toDate, newer=fromDate, timeStamp=timeStamp,
               orderAttribute=orderAttribute)
     if not res['OK']:
@@ -594,7 +597,7 @@ class TransformationManagerHandler(RequestHandler):
 
     # Obtain the distinct values of the selection parameters
     res = self.gTransformationDB.getTableDistinctAttributeValues(
-	table, selectColumns, selectDict, older=toDate, newer=fromDate)
+        table, selectColumns, selectDict, older=toDate, newer=fromDate)
     distinctSelections = zip(selectColumns, [])
     if res['OK']:
       distinctSelections = res['Value']
@@ -629,8 +632,8 @@ class TransformationManagerHandler(RequestHandler):
 
     # Get the transformations that match the selection
     res = self.gTransformationDB.getTransformations(
-	condDict=selectDict, older=toDate, newer=fromDate,
-	orderAttribute=orderAttribute)
+        condDict=selectDict, older=toDate, newer=fromDate,
+        orderAttribute=orderAttribute)
     if not res['OK']:
       return res
 
@@ -692,7 +695,7 @@ class TransformationManagerHandler(RequestHandler):
       if transType.lower() in extendableTranfs:
         fileDict['PercentProcessed'] = '-'
       else:
-	res = self.gTransformationDB.getTransformationStats(transID)
+        res = self.gTransformationDB.getTransformationStats(transID)
         if res['OK']:
           fileDict = res['Value']
           total = fileDict['Total']

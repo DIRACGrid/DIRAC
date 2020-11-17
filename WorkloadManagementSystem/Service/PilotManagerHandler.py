@@ -36,7 +36,7 @@ class PilotManagerHandler(RequestHandler):
 
     cls.gPilotsLoggingDB = None
     enablePilotsLogging = Operations().getValue(
-	'/Services/JobMonitoring/usePilotsLoggingFlag', False)
+        '/Services/JobMonitoring/usePilotsLoggingFlag', False)
     if enablePilotsLogging:
       cls.gPilotsLoggingDB = PilotsLoggingDB()
 
@@ -52,13 +52,13 @@ class PilotManagerHandler(RequestHandler):
     """
 
     result = cls.gPilotAgentsDB.getCounters(
-	'PilotAgents', ['Status'], attrDict, timeStamp='LastUpdateTime')
+        'PilotAgents', ['Status'], attrDict, timeStamp='LastUpdateTime')
     if not result['OK']:
       return result
     last_update = Time.dateTime() - Time.day
     resultDay = cls.gPilotAgentsDB.getCounters(
-	'PilotAgents', ['Status'], attrDict,
-	newer=last_update, timeStamp='LastUpdateTime')
+        'PilotAgents', ['Status'], attrDict,
+        newer=last_update, timeStamp='LastUpdateTime')
     if not resultDay['OK']:
       return resultDay
 
@@ -80,12 +80,12 @@ class PilotManagerHandler(RequestHandler):
 
   @classmethod
   def export_addPilotTQReference(cls, pilotRef, taskQueueID, ownerDN, ownerGroup,
-				 broker='Unknown', gridType='DIRAC', pilotStampDict={}):
+                                 broker='Unknown', gridType='DIRAC', pilotStampDict={}):
     """ Add a new pilot job reference
     """
     return cls.gPilotAgentsDB.addPilotTQReference(
-	pilotRef, taskQueueID, ownerDN, ownerGroup,
-	broker, gridType, pilotStampDict)
+        pilotRef, taskQueueID, ownerDN, ownerGroup,
+        broker, gridType, pilotStampDict)
 
   ##############################################################################
   types_getPilotOutput = [six.string_types]
@@ -214,7 +214,7 @@ class PilotManagerHandler(RequestHandler):
       if result['OK'] and result['Value']:
         taskQueueID = result['Value']
       if taskQueueID:
-	result = cls.gPilotAgentsDB.getPilotsForTaskQueue(taskQueueID, limit=10)
+        result = cls.gPilotAgentsDB.getPilotsForTaskQueue(taskQueueID, limit=10)
         if not result['OK']:
           return S_ERROR('Failed to get pilot: ' + result['Message'])
         pilots += result['Value']
@@ -306,8 +306,8 @@ class PilotManagerHandler(RequestHandler):
     """
 
     return cls.gPilotAgentsDB.setPilotStatus(
-	pilotRef, status, destination=destination,
-	statusReason=reason, gridSite=gridSite, queue=queue)
+        pilotRef, status, destination=destination,
+        statusReason=reason, gridSite=gridSite, queue=queue)
 
   ##########################################################################################
   types_countPilots = [dict]
@@ -350,8 +350,8 @@ class PilotManagerHandler(RequestHandler):
       del selectDict['ToDate']
 
     result = cls.gPilotAgentsDB.getCounters(
-	'PilotAgents', [attribute], selectDict,
-	newer=startDate, older=endDate, timeStamp='LastUpdateTime')
+        'PilotAgents', [attribute], selectDict,
+        newer=startDate, older=endDate, timeStamp='LastUpdateTime')
     statistics = {}
     if result['OK']:
       for status, count in result['Value']:

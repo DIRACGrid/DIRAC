@@ -1036,12 +1036,12 @@ class X509Chain(object):
         credDict['hostname'] = retVal['Value']
         credDict['validDN'] = True
         credDict['validGroup'] = True
-	credDict['groupProperties'] = Registry.getHostOption(credDict['hostname'],
-							     'Properties')
-	vo = Registry.getHostOption(credDict['hostname'], 'VirtualOrganization',
-				    '')
-	if vo:
-	  credDict['VirtualOrganization'] = vo
+        credDict['groupProperties'] = Registry.getHostOption(credDict['hostname'],
+                                                             'Properties')
+        vo = Registry.getHostOption(credDict['hostname'], 'VirtualOrganization',
+                                    '')
+        if vo:
+          credDict['VirtualOrganization'] = vo
 
       retVal = Registry.getUsernameForDN(credDict['subject'])
       if retVal['OK']:

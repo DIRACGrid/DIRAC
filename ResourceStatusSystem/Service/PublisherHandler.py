@@ -124,8 +124,8 @@ class PublisherHandler(RequestHandler):
     """
 
     return cls.gRSClient.selectStatusElement(
-	element, 'Status', name=name, elementType=elementType,
-	statusType=statusType, status=status, tokenOwner=tokenOwner)
+        element, 'Status', name=name, elementType=elementType,
+        statusType=statusType, status=status, tokenOwner=tokenOwner)
 
   types_getElementHistory = [six.string_types,
                              (six.string_types, list, types.NoneType),
@@ -140,8 +140,8 @@ class PublisherHandler(RequestHandler):
 
     columns = ['Status', 'DateEffective', 'Reason']
     return cls.gRSClient.selectStatusElement(
-	element, 'History', name=name, elementType=elementType,
-	statusType=statusType, meta={'columns': columns})
+        element, 'History', name=name, elementType=elementType,
+        statusType=statusType, meta={'columns': columns})
 
   types_getElementPolicies = [six.string_types,
                               (six.string_types, list, types.NoneType),
@@ -155,8 +155,8 @@ class PublisherHandler(RequestHandler):
 
     columns = ['Status', 'PolicyName', 'DateEffective', 'LastCheckTime', 'Reason']
     return cls.gRMClient.selectPolicyResult(element=element, name=name,
-					    statusType=statusType,
-					    meta={'columns': columns})
+                                            statusType=statusType,
+                                            meta={'columns': columns})
 
   types_getNodeStatuses = []
 
@@ -177,7 +177,7 @@ class PublisherHandler(RequestHandler):
       return S_ERROR('No site')
 
     siteStatus = self.gRSClient.selectStatusElement(
-	'Site', 'Status', name=site, meta={'columns': ['StatusType', 'Status']})
+        'Site', 'Status', name=site, meta={'columns': ['StatusType', 'Status']})
     if not siteStatus['OK']:
       return siteStatus
 
@@ -188,8 +188,8 @@ class PublisherHandler(RequestHandler):
       return result
     ces = result['Value'][site]
     cesStatus = self.gRSClient.selectStatusElement(
-	'Resource', 'Status',
-	name=ces, meta={'columns': ['Name', 'StatusType', 'Status']})
+        'Resource', 'Status',
+        name=ces, meta={'columns': ['Name', 'StatusType', 'Status']})
     if not cesStatus['OK']:
       return cesStatus
 
@@ -199,8 +199,8 @@ class PublisherHandler(RequestHandler):
       return S_OK()
     ses = res['Value'][1].get(site, [])
     sesStatus = self.gRSClient.selectStatusElement(
-	'Resource', 'Status', name=list(ses),
-	meta={'columns': ['Name', 'StatusType', 'Status']})
+        'Resource', 'Status', name=list(ses),
+        meta={'columns': ['Name', 'StatusType', 'Status']})
     if not sesStatus['OK']:
       return sesStatus
 
@@ -231,9 +231,9 @@ class PublisherHandler(RequestHandler):
     self.log.info(credentials)
 
     elementInDB = self.gRSClient.selectStatusElement(
-	element, 'Status',
-	name=name, statusType=statusType,
-	elementType=elementType, lastCheckTime=lastCheckTime)
+        element, 'Status',
+        name=name, statusType=statusType,
+        elementType=elementType, lastCheckTime=lastCheckTime)
     if not elementInDB['OK']:
       return elementInDB
     elif not elementInDB['Value']:
@@ -251,9 +251,9 @@ class PublisherHandler(RequestHandler):
     reason = 'Token %sd by %s ( web )' % (token, username)
 
     newStatus = self.gRSClient.addOrModifyStatusElement(
-	element, 'Status',
-	name=name, statusType=statusType, elementType=elementType,
-	reason=reason, tokenOwner=tokenOwner, tokenExpiration=tokenExpiration)
+        element, 'Status',
+        name=name, statusType=statusType, elementType=elementType,
+        reason=reason, tokenOwner=tokenOwner, tokenExpiration=tokenExpiration)
     if not newStatus['OK']:
       return newStatus
 
@@ -280,8 +280,8 @@ class PublisherHandler(RequestHandler):
 
       for site in sites['Value']:
 
-	elements = gConfig.getValue(
-	    'Resources/Sites/%s/%s/%s' % (domainName, site, elementType), '')
+        elements = gConfig.getValue(
+            'Resources/Sites/%s/%s/%s' % (domainName, site, elementType), '')
         if elementName in elements:
           return site
 
@@ -303,8 +303,8 @@ class PublisherHandler(RequestHandler):
       names = name
 
     return cls.gRMClient.selectDowntimeCache(
-	element=element, name=names,
-	meta={'columns': ['StartDate', 'EndDate', 'Link', 'Description', 'Severity']})
+        element=element, name=names,
+        meta={'columns': ['StartDate', 'EndDate', 'Link', 'Description', 'Severity']})
 
   types_getCachedDowntimes = [(six.string_types, types.NoneType, list),
                               (six.string_types, types.NoneType, list),
@@ -324,7 +324,7 @@ class PublisherHandler(RequestHandler):
     columns = ['Element', 'Name', 'StartDate', 'EndDate', 'Severity', 'Description', 'Link']
 
     res = self.gRMClient.selectDowntimeCache(
-	element=element, name=names, severity=severity, meta={'columns': columns})
+        element=element, name=names, severity=severity, meta={'columns': columns})
     if not res['OK']:
       self.log.error("Error selecting downtime cache", res['Message'])
       return res
@@ -347,9 +347,9 @@ class PublisherHandler(RequestHandler):
     self.log.info(credentials)
 
     elementInDB = self.gRSClient.selectStatusElement(
-	element, 'Status',
-	name=name, statusType=statusType,  # status = status,
-	elementType=elementType, lastCheckTime=lastCheckTime)
+        element, 'Status',
+        name=name, statusType=statusType,  # status = status,
+        elementType=elementType, lastCheckTime=lastCheckTime)
     if not elementInDB['OK']:
       self.log.error("Error selecting status elements", elementInDB['Message'])
       return elementInDB
@@ -360,10 +360,10 @@ class PublisherHandler(RequestHandler):
     tokenExpiration = datetime.utcnow() + timedelta(days=1)
 
     newStatus = self.gRSClient.addOrModifyStatusElement(
-	element, 'Status',
-	name=name, statusType=statusType, status=status,
-	elementType=elementType, reason=reason,
-	tokenOwner=username, tokenExpiration=tokenExpiration)
+        element, 'Status',
+        name=name, statusType=statusType, status=status,
+        elementType=elementType, reason=reason,
+        tokenOwner=username, tokenExpiration=tokenExpiration)
     if not newStatus['OK']:
       self.log.error("Error setting status", newStatus['Message'])
       return newStatus

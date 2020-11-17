@@ -53,8 +53,8 @@ class PilotsLoggingHandler(RequestHandler):
     # verify received message format
     if set(message) == set(['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']):
       cls.gPilotsLoggingDB.addPilotsLogging(
-	  message['pilotUUID'], message['timestamp'], message['source'],
-	  message['phase'], message['status'], message['messageContent'])
+          message['pilotUUID'], message['timestamp'], message['source'],
+          message['phase'], message['status'], message['messageContent'])
 
   types_addPilotsLogging = [six.string_types, six.string_types, six.string_types,
                             six.string_types, six.string_types, six.string_types]
@@ -72,7 +72,7 @@ class PilotsLoggingHandler(RequestHandler):
     """
 
     return cls.gPilotsLoggingDB.addPilotsLogging(
-	pilotUUID, timestamp, source, phase, status, messageContent)
+        pilotUUID, timestamp, source, phase, status, messageContent)
 
   types_getPilotsLogging = [six.string_types]
 
