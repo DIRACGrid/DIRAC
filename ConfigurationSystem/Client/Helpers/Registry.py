@@ -3,11 +3,11 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import six
 import errno
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 

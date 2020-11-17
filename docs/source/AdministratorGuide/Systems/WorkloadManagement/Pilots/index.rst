@@ -155,7 +155,7 @@ You should keep reading if your resources include IAAS and IAAC type of resource
 If this is the case, then you need to:
 - provide a certificate, or a proxy, to start the pilot;
 - such certificate/proxy should have the `GenericPilot` property;
-- in case of multi-VO environment, and when using certificates, such certificate should have the "VirtualOrganization" option defined in CS;
+- in case of multi-VO environment, the Pilot should set the `/Resources/Computing/CEDefaults/VirtualOrganization` (as done e.g. by `VMDIRAC <https://github.com/DIRACGrid/VMDIRAC/blob/9c6ef192d400686431e42c09de7086d49dda7575/VMDIRAC/WorkloadManagementSystem/Bootstrap/vm-pilot#L124>`_);
 - find a way to start the pilots: VMDIRAC extension will make sure to create VirtualMachine contextualized to start Pilot3.
 
 We have introduced a special command named "GetPilotVersion" that you should use,

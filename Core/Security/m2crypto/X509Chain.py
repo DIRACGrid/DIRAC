@@ -10,6 +10,7 @@ here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import six
@@ -1038,10 +1039,6 @@ class X509Chain(object):
         credDict['validGroup'] = True
         credDict['groupProperties'] = Registry.getHostOption(credDict['hostname'],
                                                              'Properties')
-        vo = Registry.getHostOption(credDict['hostname'], 'VirtualOrganization',
-                                    '')
-        if vo:
-          credDict['VirtualOrganization'] = vo
 
       retVal = Registry.getUsernameForDN(credDict['subject'])
       if retVal['OK']:
