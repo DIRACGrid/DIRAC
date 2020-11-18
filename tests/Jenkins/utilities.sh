@@ -299,7 +299,7 @@ getCFGFile() {
 ####################################################
 # This installs the DIRAC client
 # it needs a $DIRAC_RELEASE env var defined
-# it also wants the env variables DIRACSETUP and CSURLS
+# it also wants the env variables $DIRACSETUP and $CSURL
 #
 # dirac-install also accepts a env variable $INSTALLOPTIONS (e.g. useful for extensions)
 # dirac-configure also accepts a env variable $CONFIGUREOPTIONS
