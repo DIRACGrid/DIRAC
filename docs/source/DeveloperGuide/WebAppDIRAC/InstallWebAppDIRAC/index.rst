@@ -46,7 +46,7 @@ For example::
 
 Note: It is an LHCb specific configuration. You have to use your Configuration servers
 
-**NOTE: If you don't want to use Balancer, open WebAppDIRAC/WebApp/web.cfg and uncomment this line: #Balancer = None.**
+**NOTE: If you don't want to use Balancer, comment following parameter in configuration: /WebApp/Balancer=None.**
 
 
 Quick install
@@ -61,4 +61,4 @@ Start the web framework
 -----------------------
 
 #. You need the grid-certificates under etc directory. If you do not known about it, please ask the appropriate developer.
-#. python WebAppDIRAC/scripts/dirac-webapp-run.py -ddd Use firefox/safari/chrome… and open the following url: `<https://localhost:8443/DIRAC>`_
+#. python WebAppDIRAC/scripts/dirac-webapp-run.py /path/to/configuration/file.cfg -ddd Use firefox/safari/chrome… and open the following url: `<https://localhost:8443/DIRAC>`_

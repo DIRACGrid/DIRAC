@@ -117,7 +117,7 @@ Make sure that the portal is listening in the correct port::
    2016-06-02 12:35:46 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
 
 
-If you are not using NGINX and the web server is listening on 8000, please open vim /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg and add Balancer=None.
+If you are not using NGINX and the web server is listening on 8000, please edit configuration to add /WebApp/Balancer=None.
 Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. It contains Extensions = WebApp. For example::
 
    DIRAC
@@ -148,11 +148,11 @@ Make sure that the configuration /opt/dirac/pro/etc/dirac.cfg file is correct. I
          * update version of DIRAC, for example v8r1
 
 
-Web configuration file
-----------------------
+Web configuration
+-----------------
 
-We use **web.cfg** configuration file, which is used to configure the web framework. It also contains the schema of the menu under Schema section, which is used by the users. 
-The structure of the web.cfg file is the following::
+To configure the web framework use **WebApp** configuration section. It also contains the schema of the menu under Schema section, which is used by the users. 
+Section has the following structure::
 
       WebApp
       {
@@ -209,13 +209,9 @@ Define external links::
        }
    }
 
-The default location of the configuration file is /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg. This is the default configuration file which provided by
-by the developer. If you want to change the default configuration file, you have to add the web.cfg to the directory where the dirac.cfg is found, for example: /opt/dirac/etc
+The example of the configuration which provided by the developer present in /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg location.
 
-If the web.cfg file exists in /opt/dirac/etc directory, this file will be used.
-
-Note: The Web framework uses the Schema section for creating the menu. It shows the Schema content, without manipulating it for example: sorting the applications, or creating some structure. 
-Consequently, if you want to sort the menu, you have to create your own configuration file and place the directory where dirac.cfg exists.   
+Note: To use the web portal, please fill in the configuration, namely the WebApp section, according to the example above.
 
 Running multiple web instances
 ------------------------------
@@ -223,7 +219,7 @@ Running multiple web instances
 If you want to run more than one instance, you have to use NGIX. The configuration of the NGINX is 
 described in the next section.
 
-You can define the number of processes in the configuration file:  /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg
+You can define the number of processes in the configuration:
 
 NumProcesses = x (by default the NumProcesses is 1), where x the number of instances, you want to run
 Balancer = nginx
@@ -539,7 +535,7 @@ You can start NGINX now.
    /etc/init.d/nginx start|stop|restart
 
 
-You have to add to the web.cfg the following lines in order to use NGINX::
+You have to add to the /WebApp section the following lines in order to use NGINX::
 
        DevelopMode = False
        Balancer = nginx
@@ -550,7 +546,7 @@ In that case one process will be used and this process is listening on 8000 port
  If you get 502 Bad Gateway error, you need to generate rules for SE linus.
  You can see the error in tail -200f /var/log/nginx/error.log::
 
-     016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: 128.141.170.23, server: your.server.domain, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "dzmathe.cern.ch"
+     016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: xxx.xxx.xxx.xxx, server: your.server.domain, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "your.server.domain"
 
 * Generate the the rule::
    - grep nginx /var/log/audit/audit.log | audit2allow -M nginx

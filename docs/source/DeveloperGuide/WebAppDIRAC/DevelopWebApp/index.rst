@@ -489,8 +489,8 @@ by the server is shown in the textarea.
     requires:   ['Ext.panel.Panel', 'Ext.form.field.TextArea', 'Ext.Button', 'Ext.toolbar.Toolbar', 'Ext.data.JsonStore', 'Ext.grid.Panel']
 
 
-6. In order to have the application within the list of applications, you have to open the **web.cfg** file
-   located into the root. There you have to add new registration line within the **Schema/Applications** section:
+6. In order to have the application within the list of applications, you have to edit DIRAC configuration file **dirac.cfg**
+   located into the root. There you have to add new registration line within the **/WebApp/Schema/Applications** section:
 
   .. code-block:
 
@@ -524,7 +524,7 @@ In Chrome you can use developer tools.
 
 DIRAC web framework provides two modes of working regarding the CS. One is the development mode, which means that the JavaScripts are loaded as are, so that they can be easily debugged. The other mode is the production mode where JavaScripts are minimized and compiled before loaded. Those JavaScripts are lighter in memory but almost useless regarding the debugging process.
 
-In order to set up the production mode, you have to set the ``DevelopMode`` parameter into the ``web.cfg`` file as shown as follows (by default this parameter is set to ``True``):
+In order to set up the production mode, you have to set the ``DevelopMode`` parameter into the ``/WebApp`` configuration section as shown as follows (by default this parameter is set to ``True``):
 
 .. code-block:
 
