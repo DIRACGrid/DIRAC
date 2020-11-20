@@ -5,6 +5,7 @@ import io
 import os
 import sys
 import json
+import six
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.File import mkDir
@@ -17,6 +18,8 @@ def createJobWrapper(jobID, jobParams, resourceParams, optimizerParams,
   """ This method creates a job wrapper filled with the CE and Job parameters to execute the job.
       Main user is the JobAgent
   """
+  if isinstance(extraOptions, six.string_types) and extraOptions.endswith('.cfg'):
+    extraOptions = '--cfg %s' % extraOptions
 
   arguments = {'Job': jobParams,
                'CE': resourceParams,
@@ -78,6 +81,8 @@ def createRelocatedJobWrapper(wrapperPath, rootLocation,
   """ This method creates a job wrapper for a specific job in wrapperPath,
       but assumes this has been reloated to rootLocation before running it.
   """
+  if isinstance(extraOptions, six.string_types) and extraOptions.endswith('.cfg'):
+    extraOptions = '--cfg %s' % extraOptions
 
   arguments = {'Job': jobParams,
                'CE': resourceParams,
