@@ -411,7 +411,7 @@ class SiteDirector(AgentModule):
               architecture = ceDict.get('architecture', 'x86_64')
               platform = '_'.join([architecture, ceDict['OS']])
             if platform:
-              # Upadte self.platforms, keeping entries unique and squashing lists
+              # Update self.platforms, keeping entries unique and squashing lists
               oldPlatforms = set(self.platforms)
               if isinstance(platform, list):
                 oldPlatforms.update(set(platform))
