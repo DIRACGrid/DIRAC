@@ -183,13 +183,20 @@ class JobStateUpdateHandler(RequestHandler):
     lastTime = Time.toString(Time.fromEpoch(lastTime))
 
     dates = sorted(statusDict)
+    log = self.log.getSubLogger('JobStatusBulk/PhC/Job-%s' % jobID)
+    log.verbose("*** New call *** Last update time %s - Sorted new times %s" % (lastTime, dates))
+    # Remove useless items in order to make it simpler later
+    for sDict in statusDict.values():
+      for item in ('Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationCounter'):
+        if not sDict.get(item):
+          sDict.pop(item, None)
     # Pick up start and end times from all updates, if they don't exist
     for date in dates:
       sDict = statusDict[date]
-      status = sDict.get('Status', status)
+      status = sDict.get('Status', '')
       if status in JobStatus.JOB_FINAL_STATES and not endTime:
         endTime = date
-      minor = sDict.get('MinorStatus', minor)
+      minor = sDict.get('MinorStatus', '')
       # Pick up the start date
       if minor == "Application" and status == JobStatus.RUNNING and not startTime:
         startTime = date
@@ -197,13 +204,17 @@ class JobStateUpdateHandler(RequestHandler):
     # We should only update the status if its time stamp is more recent than the last update
     if dates[-1] >= lastTime:
       # Get the last status values
-      for date in [date for date in dates if date >= lastTime]:
+      for date in [dt for dt in dates if dt >= lastTime]:
         sDict = statusDict[date]
+        log.verbose("\tTime %s - Statuses %s" % (date, str(sDict)))
         status = sDict.get('Status', status)
         minor = sDict.get('MinorStatus', minor)
         application = sDict.get('ApplicationStatus', application)
         appCounter = sDict.get('ApplicationCounter', appCounter)
 
+      log.verbose(
+          "Final statuses: status '%s', minor '%s', application '%s', appCounter '%s'" %
+          (status, minor, application, appCounter))
       attrNames = []
       attrValues = []
       if status:
@@ -231,9 +242,9 @@ class JobStateUpdateHandler(RequestHandler):
     # Update the JobLoggingDB records
     for date in dates:
       sDict = statusDict[date]
-      status = sDict['Status'] if sDict['Status'] else 'idem'
-      minor = sDict['MinorStatus'] if sDict['MinorStatus'] else 'idem'
-      application = sDict['ApplicationStatus'] if sDict['ApplicationStatus'] else 'idem'
+      status = sDict.get('Status', 'idem')
+      minor = sDict.get('MinorStatus', 'idem')
+      application = sDict.get('ApplicationStatus', 'idem')
       source = sDict['Source']
       result = logDB.addLoggingRecord(jobID, status, minor, application, date, source)
       if not result['OK']:
