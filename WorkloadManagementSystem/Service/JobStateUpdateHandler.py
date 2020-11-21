@@ -183,7 +183,7 @@ class JobStateUpdateHandler(RequestHandler):
     lastTime = Time.toString(Time.fromEpoch(lastTime))
 
     dates = sorted(statusDict)
-    log = self.log.getSubLogger('JobStatusBulk/PhC/Job-%s' % jobID)
+    log = self.log.getSubLogger('JobStatusBulk/Job-%s' % jobID)
     log.verbose("*** New call *** Last update time %s - Sorted new times %s" % (lastTime, dates))
     # Remove useless items in order to make it simpler later
     for sDict in statusDict.values():
