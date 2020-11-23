@@ -144,7 +144,7 @@ class SingularityComputingElement(ComputingElement):
     for searchPath in searchPaths:
       binPath = os.path.join(searchPath, 'singularity')
       if os.path.isfile(binPath):
-        # File found, check it's exectuable to be certain:
+        # File found, check it's executable to be certain:
         if os.access(binPath, os.X_OK):
           self.log.debug('Found singularity at "%s"' % binPath)
           self.__singularityBin = binPath
@@ -154,7 +154,11 @@ class SingularityComputingElement(ComputingElement):
 
   @staticmethod
   def __findInstallBaseDir():
-    return os.readlink(os.path.join(DIRAC.rootPath, "bashrc"))
+    """Find the path to root of the current DIRAC installation"""
+    candidate = os.path.join(DIRAC.rootPath, "bashrc")
+    if not os.path.exists(candidate):
+      raise NotImplementedError("Failed to find a candidate bashrc")
+    return os.path.dirname(os.readlink(candidate))
 
   def __getInstallFlags(self, infoDict=None):
     """ Get the flags to pass to dirac-install.py inside the container.
