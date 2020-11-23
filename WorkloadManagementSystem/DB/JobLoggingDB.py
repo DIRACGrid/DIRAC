@@ -9,8 +9,8 @@
 
 __RCSID__ = "$Id$"
 
-import six
 import time
+import six
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
@@ -37,7 +37,7 @@ class JobLoggingDB(DB):
                        status='idem',
                        minor='idem',
                        application='idem',
-                       date='',
+                       date=None,
                        source='Unknown'):
     """ Add a new entry to the JobLoggingDB table. One, two or all the three status
         components (major, minor, application) can be specified.
@@ -50,38 +50,27 @@ class JobLoggingDB(DB):
     event = 'status/minor/app=%s/%s/%s' % (status, minor, application)
     self.log.info("Adding record for job ", str(jobID) + ": '" + event + "' from " + source)
 
-    if not date:
-      # Make the UTC datetime string and float
-      _date = Time.dateTime()
-      epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER
-      time_order = round(epoc, 3)
-    else:
-      try:
-        if isinstance(date, six.string_types):
-          # The date is provided as a string in UTC
-          _date = Time.fromString(date)
-          epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER
-          time_order = round(epoc, 3)
-        elif isinstance(date, Time._dateTimeType):
-          _date = date
-          epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000. - \
-              MAGIC_EPOC_NUMBER  # pylint: disable=no-member
-          time_order = round(epoc, 3)
-        else:
-          self.log.error('Incorrect date for the logging record')
-          _date = Time.dateTime()
-          epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
-          time_order = round(epoc, 3)
-      except BaseException:
-        self.log.exception('Exception while date evaluation')
+    try:
+      if not date:
+        # Make the UTC datetime string and float
         _date = Time.dateTime()
-        epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
-        time_order = round(epoc, 3)
+      elif isinstance(date, six.string_types):
+        # The date is provided as a string in UTC
+        _date = Time.fromString(date)
+      elif isinstance(date, Time._dateTimeType):
+        _date = date
+      else:
+        self.log.error('Incorrect date for the logging record')
+        _date = Time.dateTime()
+    except BaseException:
+      self.log.exception('Exception while date evaluation')
+      _date = Time.dateTime()
+    epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER
 
     cmd = "INSERT INTO LoggingInfo (JobId, Status, MinorStatus, ApplicationStatus, " + \
           "StatusTime, StatusTimeOrder, StatusSource) VALUES (%d,'%s','%s','%s','%s',%f,'%s')" % \
         (int(jobID), status, minor, application[:255],
-         str(_date), time_order, source[:32])
+         str(_date), epoc, source[:32])
 
     return self._update(cmd)
 
