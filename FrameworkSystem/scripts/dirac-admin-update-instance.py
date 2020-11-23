@@ -23,6 +23,8 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                        )
 Script.registerSwitch("", "hosts=", "Comma separated list of hosts or file containing row wise list of hosts"
                                     " targeted for update (leave empty for all)")
+Script.registerSwitch("", "retry=", "Number of retry attempts on hosts that have failed to update")
+
 Script.parseCommandLine(ignoreErrors=False)
 
 args = Script.getPositionalArgs()
@@ -30,15 +32,19 @@ if len(args) < 1 or len(args) > 2:
   Script.showHelp()
 
 version = args[0]
+retry = 0
+hosts = []
 
-hosts = Script.getUnprocessedSwitches()
-
-if hosts:
-  hosts = hosts[0][1]
+for switch in Script.getUnprocessedSwitches():
+  if switch[0] == "hosts":
+    hosts = switch[1]
+  if switch[0] == "retry":
+    retry = int(switch[1])
 
 try:
   with open(hosts, 'r') as f:
     hosts = f.read().splitlines()
+    hosts = [str(host) for host in hosts]
 except Exception:
   pass
 
@@ -69,7 +75,7 @@ def parseHostname(hostName):
   """
   Separate the hostname from the port
 
-  :param hostName: hostname you want to parse
+  :param str hostName: hostname you want to parse
   """
   hostList = hostName.split(':')
   host = hostList[0]
@@ -84,8 +90,8 @@ def updateHost(hostName, version):
   """
   Apply update to specific host
 
-  :param hostName: name of the host you want to update
-  :param version: version vArBpC you want to update to
+  :param str hostName: name of the host you want to update
+  :param str version: version vArBpC you want to update to
   """
   host, port = parseHostname(hostName)
 
@@ -102,12 +108,12 @@ def updateHost(hostName, version):
   return S_OK()
 
 
-def updateHosts(version, hosts=None):
+def updateHosts(version, hosts=[]):
   """
   Apply update to all hosts
 
-  :param version: version vArBpC you want to update to
-  :param hosts: list of hosts to be updated
+  :param str version: version vArBpC you want to update to
+  :param list[str] hosts: list of hosts to be updated, defaults to []
   """
   if not hosts:
     result = getListOfHosts()
@@ -133,29 +139,28 @@ def updateHosts(version, hosts=None):
     gLogger.notice("!!! Successfully updated all hosts !!!")
     gLogger.notice("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     return S_OK([updateSuccess, updateFail])
-  elif not updateSuccess:
+  if not updateSuccess:
     gLogger.notice("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
     gLogger.notice("XXXXX Failed to update all hosts XXXXX")
     gLogger.notice("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-    return S_ERROR('Failed to update all hosts')
-  else:
-    gLogger.notice("X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!")
-    gLogger.notice("X!X!X Partially updated hosts X!X!X!")
-    gLogger.notice("Succeeded to update:")
-    for host in updateSuccess:
-      gLogger.notice(" + %s" % host)
-    gLogger.notice("Failed to update:")
-    for host in updateFail:
-      gLogger.notice(" - %s" % host)
-    gLogger.notice("X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!")
     return S_OK([updateSuccess, updateFail])
+  gLogger.notice("X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!")
+  gLogger.notice("X!X!X Partially updated hosts X!X!X!")
+  gLogger.notice("Succeeded to update:")
+  for host in updateSuccess:
+    gLogger.notice(" + %s" % host)
+  gLogger.notice("Failed to update:")
+  for host in updateFail:
+    gLogger.notice(" - %s" % host)
+  gLogger.notice("X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!X!")
+  return S_OK([updateSuccess, updateFail])
 
 
 def restartHost(hostName):
   """
   Restart all systems and components of a host
 
-  :param hostName: name of the host you want to restart
+  :param str hostName: name of the host you want to restart
   """
   host, port = parseHostname(hostName)
 
@@ -179,12 +184,13 @@ def restartHost(hostName):
   return result
 
 
-def updateInstance(version, hosts):
+def updateInstance(version, hosts, retry):
   """
   Update each server of an instance and restart them
 
-  :param version: version vArBpC you want to update to
-  :param hosts: list of hosts to be updated
+  :param str version: version vArBpC you want to update to
+  :param list[str] hosts: list of hosts to be updated
+  :param int retry: number of retry attempts on hosts that have failed to update
   """
   result = updateHosts(version, hosts)
   if not result['OK']:
@@ -219,11 +225,20 @@ def updateInstance(version, hosts):
   for host in restartFail:
     gLogger.notice(" - %s" % host)
   gLogger.notice("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
+  if retry > 0:
+    retryHosts = list(set(updateFail + restartFail))
+    gLogger.notice("Retrying update on (%s attempts remaining):" % retry)
+    for host in retryHosts:
+      gLogger.notice(" - %s" % host)
+    gLogger.notice("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+    return updateInstance(version, retryHosts, retry - 1)
+
   return S_ERROR("Update failed!")
 
 
 if __name__ == "__main__":
-  result = updateInstance(version, hosts)
+  result = updateInstance(version, hosts, retry)
   if not result['OK']:
     gLogger.fatal(result['Message'])
     DIRAC.exit(1)
