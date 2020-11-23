@@ -159,7 +159,6 @@ class JobStateUpdateHandler(RequestHandler):
     status = ''
     minor = ''
     application = ''
-    appCounter = ''
     jobID = int(jobID)
 
     result = jobDB.getJobAttributes(jobID, ['Status', 'StartExecTime', 'EndExecTime'])
@@ -185,9 +184,9 @@ class JobStateUpdateHandler(RequestHandler):
     dates = sorted(statusDict)
     log = self.log.getSubLogger('JobStatusBulk/Job-%s' % jobID)
     log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, dates))
-    # Remove useless items in order to make it simpler later
+    # Remove useless items in order to make it simpler later, although should not be there
     for sDict in statusDict.values():
-      for item in ('Status', 'MinorStatus', 'ApplicationStatus', 'ApplicationCounter'):
+      for item in ('Status', 'MinorStatus', 'ApplicationStatus'):
         if not sDict.get(item):
           sDict.pop(item, None)
     # Pick up start and end times from all updates, if they don't exist
@@ -210,10 +209,9 @@ class JobStateUpdateHandler(RequestHandler):
         status = sDict.get('Status', status)
         minor = sDict.get('MinorStatus', minor)
         application = sDict.get('ApplicationStatus', application)
-        appCounter = sDict.get('ApplicationCounter', appCounter)
 
-      log.debug("Final statuses:", "status '%s', minor '%s', application '%s', appCounter '%s'" %
-                (status, minor, application, appCounter))
+      log.debug("Final statuses:", "status '%s', minor '%s', application '%s'" %
+                (status, minor, application))
       attrNames = []
       attrValues = []
       if status:
@@ -225,9 +223,6 @@ class JobStateUpdateHandler(RequestHandler):
       if application:
         attrNames.append('ApplicationStatus')
         attrValues.append(application)
-      if appCounter:
-        attrNames.append('ApplicationCounter')
-        attrValues.append(appCounter)
       result = jobDB.setJobAttributes(jobID, attrNames, attrValues, update=True)
       if not result['OK']:
         return result

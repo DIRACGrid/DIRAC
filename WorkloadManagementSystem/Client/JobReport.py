@@ -107,15 +107,20 @@ class JobReport(object):
 
     statusDict = {}
     for status, minor, dtime in self.jobStatusInfo:
-      statusDict[dtime] = {'Status': status,
-                           'MinorStatus': minor,
-                           'ApplicationStatus': '',
-                           'Source': self.source}
+      # No need to send empty items in dictionary
+      sDict = {}
+      if status:
+        sDict['Status'] = status
+      if minor:
+        sDict['MinorStatus'] = minor
+      if sDict:
+        sDict['Source'] = self.source
+        statusDict[dtime] = sDict
     for appStatus, dtime in self.appStatusInfo:
-      statusDict[dtime] = {'Status': '',
-                           'MinorStatus': '',
-                           'ApplicationStatus': appStatus,
-                           'Source': self.source}
+      # No need to send empty items in dictionary
+      if appStatus:
+        statusDict[dtime] = {'ApplicationStatus': appStatus,
+                             'Source': self.source}
 
     if statusDict:
       result = JobStateUpdateClient().setJobStatusBulk(self.jobID, statusDict)
