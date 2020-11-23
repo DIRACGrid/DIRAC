@@ -421,7 +421,7 @@ The content of the site.conf (please modify it!!!)::
 
      root /opt/dirac/pro;
 
-    # The same directory must be exist with 'rw' permissions for all
+    # The same directory must exist with 'rw' permissions for all
     location /files {
       # Access for GET requests without certificate
       if ($request_method = GET) {
