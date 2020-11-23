@@ -137,20 +137,12 @@ class JobReport(object):
     """ Send the job parameters stored in the internal cache
     """
 
-    parameters = []
-    for pname, value in self.jobParameters.items():
-      pvalue, _timeStamp = value
-      parameters.append([pname, pvalue])
-
+    parameters = [[pname, value[0]] for pname, value in self.jobParameters.items()]
     if parameters:
       result = JobStateUpdateClient().setJobParameters(self.jobID, parameters)
-      if not result['OK']:
-        return result
-
       if result['OK']:
         # Empty the internal parameter container
         self.jobParameters = {}
-
       return result
     else:
       return S_OK('Empty')
@@ -161,11 +153,9 @@ class JobReport(object):
 
     success = True
     result = self.sendStoredStatusInfo()
-    if not result['OK']:
-      success = False
+    success &= result['OK']
     result = self.sendStoredJobParameters()
-    if not result['OK']:
-      success = False
+    success &= result['OK']
 
     if success:
       return S_OK()
