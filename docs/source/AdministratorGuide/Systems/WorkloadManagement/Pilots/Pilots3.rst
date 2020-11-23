@@ -28,7 +28,7 @@ The pilot.json file is always kept in sync with the content of the Configuration
 At every configuration update, the pilot.json file content will also be updated.
 
 
-Starting with DIRAC version v7r2, the file uploads is completely on the balancer side.
+Starting with DIRAC version v7r2, the file uploads is completely on the balancer (nginx) side.
 Make sure your balancer is set to load files by following the :ref:`instructions <configure_nginx>`.
 
   
@@ -94,5 +94,4 @@ DIRAC_JOB_PROCESSORS
 
 DIRAC_WHOLENODE
   A boolean flag indicating the pilot is exploiting the whole node (normally, False)
-
 
