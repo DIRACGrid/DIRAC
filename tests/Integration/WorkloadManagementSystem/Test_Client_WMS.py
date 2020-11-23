@@ -423,7 +423,7 @@ class JobMonitoringMore(TestWMSTestCase):
     res = jobStateUpdate.setJobsParameter({jobID: ['Status', 'Running']})
     self.assertTrue(res['OK'], res.get('Message'))
 
-    res = jobMonitor.getJobsSummary(int(jobID))
+    res = jobMonitor.getJobSummary(int(jobID))
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(res['Value']['Status'], 'Completed')
     self.assertEqual(res['Value']['MinorStatus'], 'MinorStatus')
