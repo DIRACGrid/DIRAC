@@ -62,7 +62,7 @@ class JobLoggingDB(DB):
       else:
         self.log.error('Incorrect date for the logging record')
         _date = Time.dateTime()
-    except BaseException:
+    except Exception:
       self.log.exception('Exception while date evaluation')
       _date = Time.dateTime()
     epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER
