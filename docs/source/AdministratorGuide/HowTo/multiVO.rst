@@ -67,6 +67,8 @@ Add superb_user group
      DefaultGroup = superb_user
    }
 
+.. _multi_vo_dirac_regVO:
+
 Registry/VO
 -----------
 ::
@@ -91,6 +93,8 @@ Registry/VO
        }
      }
    }
+
+.. _multi_vo_dirac_regGroup:
 
 Registry/Groups
 ---------------

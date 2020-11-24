@@ -1,5 +1,10 @@
-""" ProxyManager is the implementation of the ProxyManagement service
-    in the DISET framework
+""" ProxyManager is the implementation of the ProxyManagement service in the DISET framework
+
+    .. literalinclude:: ../ConfigTemplate.cfg
+      :start-after: ##BEGIN ProxyManager
+      :end-before: ##END
+      :dedent: 2
+      :caption: ProxyManager options
 """
 
 __RCSID__ = "$Id$"
