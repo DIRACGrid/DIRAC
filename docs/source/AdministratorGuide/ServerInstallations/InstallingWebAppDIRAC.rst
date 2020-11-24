@@ -261,71 +261,21 @@ The required NGINX version has to be grater than 1.4 and WebDAV nginx module to 
 
 * Prepare, needed the development repository to compile the WebDAV dynamic module for Nginx::
 
-      yum update -y
-      yum groupinstall "Development Tools" -y
-      yum install yum-utils pcre-devel zlib-devel libxslt-devel libxml2-devel -y
+    yum update -y
+    yum groupinstall "Development Tools" -y
+    yum install yum-utils pcre-devel zlib-devel libxslt-devel libxml2-devel -y
 
 * Install Nginx using package manager. At this point, you should be able to install the pre-built Nginx package with dynamic module support::
 
-      yum install nginx -y
-      systemctl enable nginx
-      systemctl start nginx
-
-If your version is not grater than 1.4 you have to install NGINX manually.
-
-* Manual install::
-
-      vim /etc/yum.repos.d/nginx.repo
-
-CentOS::
-
-      [nginx-stable]
-      name=nginx stable repo
-      baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
-      gpgcheck=1
-      enabled=1
-      gpgkey=https://nginx.org/keys/nginx_signing.key
-      module_hotfixes=true
-
-      [nginx-mainline]
-      name=nginx mainline repo
-      baseurl=http://nginx.org/packages/mainline/centos/$releasever/$basearch/
-      gpgcheck=1
-      enabled=0
-      gpgkey=https://nginx.org/keys/nginx_signing.key
-      module_hotfixes=true
-
-RHEL::
-
-      [nginx-stable]
-      name=nginx stable repo
-      baseurl=http://nginx.org/packages/rhel/$releasever/$basearch/
-      gpgcheck=1
-      enabled=1
-      gpgkey=https://nginx.org/keys/nginx_signing.key
-      module_hotfixes=true
-
-      [nginx-mainline]
-      name=nginx mainline repo
-      baseurl=http://nginx.org/packages/mainline/rhel/$releasever/$basearch/
-      gpgcheck=1
-      enabled=0
-      gpgkey=https://nginx.org/keys/nginx_signing.key
-      module_hotfixes=true
-
-Due to differences between how CentOS, RHEL, and Scientific Linux populate the $releasever variable, it is necessary to manually replace $releasever with
-your OS version. For example::
-
-      [nginx]
-      ...
-      baseurl=http://nginx.org/packages/rhel/7/$basearch/
-      ...
+    yum install nginx -y
+    systemctl enable nginx
+    systemctl start nginx
 
 If it is successful installed::
 
-    Verifying: nginx-1.10.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
+    Verifying: nginx-1.16.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
     Installed:
-      nginx.x86_64 0:1.10.1-1.el6.ngx
+      nginx.x86_64 0:1.16.1-1.el6.ngx
 
 * Compile Module::
 
@@ -447,7 +397,8 @@ The content of the site.conf (please modify it!!!)::
         satisfy any;
         # Read access for all
         limit_except GET {
-          # Add allowed IP for not GET requests
+          # Here need to add hosts IPs that allowed to make requests, except GET
+          # First, need to add the IP host used by the master CS. 
           #allow XXX.XXX.XXX.XXX;
           deny  all;
         }
