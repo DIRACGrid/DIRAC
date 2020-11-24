@@ -156,8 +156,6 @@ class SingularityComputingElement(ComputingElement):
   def __findInstallBaseDir():
     """Find the path to root of the current DIRAC installation"""
     candidate = os.path.join(DIRAC.rootPath, "bashrc")
-    if not os.path.exists(candidate):
-      raise NotImplementedError("Failed to find a candidate bashrc")
     return os.path.dirname(os.readlink(candidate))
 
   def __getInstallFlags(self, infoDict=None):
