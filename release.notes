@@ -1,3 +1,15 @@
+[v7r0p41]
+
+*Core
+FIX: (#4845) Fix hashing SubjectName in X509Chain
+
+*FrameworkSystem
+FIX: (#4833) pilot update script, update global CS not the local one
+NEW: (#4840) Add option to retry to update hosts in dirac-admin-update-instance
+
+*WorkloadManagementSystem
+FIX: (#4838) SiteDirector - Flatten platform list avoid crash if CheckPlatform=True
+
 [v7r0p40]
 
 *docs
