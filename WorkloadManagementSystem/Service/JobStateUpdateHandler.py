@@ -244,7 +244,12 @@ class JobStateUpdateHandler(RequestHandler):
       minor = sDict.get('MinorStatus', 'idem')
       application = sDict.get('ApplicationStatus', 'idem')
       source = sDict.get('Source', 'Unknown')
-      result = logDB.addLoggingRecord(jobID, status, minor, application, date, source)
+      result = logDB.addLoggingRecord(jobID,
+                                      status=status,
+                                      minor=minor,
+                                      application=application,
+                                      date=date,
+                                      source=source)
       if not result['OK']:
         return result
 
@@ -387,8 +392,8 @@ class JobStateUpdateHandler(RequestHandler):
       return S_ERROR('Job %d not found' % jobID)
 
     status = result['Value']['Status']
-    if status == "Stalled" or status == "Matched":
-      result = jobDB.setJobAttribute(jobID, 'Status', 'Running', True)
+    if status in (JobStatus.STALLED, JobStatus.MATCHED):
+      result = jobDB.setJobAttribute(jobID, 'Status', JobStatus.RUNNING, True)
       if not result['OK']:
         self.log.warn('Failed to restore the job status to Running')
 
