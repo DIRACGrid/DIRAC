@@ -616,12 +616,13 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobAttributes = [int]
 
   @classmethod
-  def export_getJobAttributes(cls, jobID):
+  def export_getJobAttributes(cls, jobID, attrList=None):
     """
     :param int jobID: one single Job ID
+    :param list attrList: optional list of attributes
     """
 
-    return cls.gJobDB.getJobAttributes(jobID)
+    return cls.gJobDB.getJobAttributes(jobID, attrList=attrList)
 
 ##############################################################################
   types_getJobAttribute = [int, basestring]
