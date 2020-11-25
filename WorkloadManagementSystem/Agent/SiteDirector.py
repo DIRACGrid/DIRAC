@@ -411,8 +411,14 @@ class SiteDirector(AgentModule):
             elif "OS" in ceDict:
               architecture = ceDict.get('architecture', 'x86_64')
               platform = '_'.join([architecture, ceDict['OS']])
-            if platform and platform not in self.platforms:
-              self.platforms.append(platform)
+            if platform:
+              # Update self.platforms, keeping entries unique and squashing lists
+              oldPlatforms = set(self.platforms)
+              if isinstance(platform, list):
+                oldPlatforms.update(set(platform))
+              else:
+                oldPlatforms.add(platform)
+              self.platforms = list(oldPlatforms)
 
             if "Platform" not in self.queueDict[queueName]['ParametersDict'] and platform:
               result = self.resourcesModule.getDIRACPlatform(platform)
