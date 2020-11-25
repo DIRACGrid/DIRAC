@@ -351,7 +351,7 @@ class JobMonitoringMore(TestWMSTestCase):
     res = jobMonitor.getSites()
     print(res)
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch'}, msg="Got %s" % res['Value'])
+    self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch', 'Site'}, msg="Got %s" % res['Value'])
     res = jobMonitor.getJobTypes()
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(sorted(res['Value']), sorted(types), msg="Got %s" % str(sorted(res['Value'])))
