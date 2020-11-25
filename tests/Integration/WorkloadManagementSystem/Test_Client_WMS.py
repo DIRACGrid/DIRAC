@@ -292,6 +292,8 @@ class JobMonitoring(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getAtticJobParameters(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
+    res = jobStateUpdate.setJobStatus(jobID, 'Done', 'MinorStatus', 'Unknown')
+    self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobSummary(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(res['Value']['Status'], 'Done', msg="Got %s" % str(res['Value']['Status']))
