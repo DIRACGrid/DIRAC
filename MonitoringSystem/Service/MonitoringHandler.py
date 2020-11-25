@@ -164,7 +164,6 @@ class MonitoringHandler(RequestHandler):
     It check the plot attributes. We have to make sure that all attributes which are needed are provided.
 
     :param dict reportRequest: contains the plot attributes.
-
     """
     # If extraArgs is not there add it
     if 'extraArgs' not in reportRequest:
@@ -196,9 +195,8 @@ class MonitoringHandler(RequestHandler):
         return S_ERROR('Missing mandatory field %s in plot request' % key)
 
       if not isinstance(reportRequest[key], self.__reportRequestDict[key]):
-        return S_ERROR("Type mismatch for field %s (%s), required one of %s" % (key,
-                                                                                str(type(reportRequest[key])),
-                                                                                str(self.__reportRequestDict[key])))
+        return S_ERROR("Type mismatch for field %s (%s), required one of %s" % (
+            key, str(type(reportRequest[key])), str(self.__reportRequestDict[key])))
       if key in ('startTime', 'endTime'):
         reportRequest[key] = int(Time.toEpoch(reportRequest[key]))
 
@@ -223,16 +221,17 @@ class MonitoringHandler(RequestHandler):
 
   def export_getReport(self, reportRequest):
     """
-    It is used to get the raw data used to create a plot. The reportRequest has the following parameters:
+    It is used to get the raw data used to create a plot. The reportRequest has the following keys:
 
-    :param str typeName: the type of the monitoring
-    :param str reportName: the name of the plotter used to create the plot for example:  NumberOfJobs
-    :param int startTime: epoch time, start time of the plot
-    :param int endTime: epoch time, end time of the plot
-    :param dict condDict: is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
-    :param str grouping: is the grouping of the data for example: 'Site'
-    :param dict extraArgs: epoch time which can be last day, last week, last month
-    :return: S_OK or S_ERROR S_OK value is a dictionary which contains all values used to create the plot
+    str typeName: the type of the monitoring
+    str reportName: the name of the plotter used to create the plot for example: NumberOfJobs
+    int startTime: epoch time, start time of the plot
+    int endTime: epoch time, end time of the plot
+    dict condDict: is the conditions used to gnerate the plot: {'Status':['Running'],'grouping': ['Site'] }
+    str grouping: is the grouping of the data for example: 'Site'
+    dict extraArgs: epoch time which can be last day, last week, last month
+
+    :returns: S_OK or S_ERROR S_OK value is a dictionary which contains all values used to create the plot
     """
     retVal = self.__checkPlotRequest(reportRequest)
     if not retVal['OK']:
@@ -265,10 +264,9 @@ class MonitoringHandler(RequestHandler):
     """
     It is used to insert data directly to the database... The data will be inserted to the given index.
 
-    :param str indexname:
-    :param data:
-    :type data: python:list
-
+    :param str indexname: name of the index
+    :param str monitoringType: type of the monitoring
+    :param list data: data to insert
     """
     setup = self.serviceInfoDict.get('clientSetup', '')
     indexname = "%s_%s" % (setup.lower(), indexname)
@@ -284,7 +282,7 @@ class MonitoringHandler(RequestHandler):
     It is used to delete an index!
     Note this is for experienced users!!!
 
-    :param str indexName:
+    :param str indexName: name of the index
     """
     setup = self.serviceInfoDict.get('clientSetup', '')
     indexName = "%s_%s" % (setup.lower(), indexName)
@@ -351,7 +349,6 @@ class MonitoringHandler(RequestHandler):
     :param recordsToInsert: records to be inserted to the db
     :param str monitoringType: monitoring type...
     :type recordsToInsert: python:list
-
     """
 
     return self.__db.put(recordsToInsert, monitoringType)

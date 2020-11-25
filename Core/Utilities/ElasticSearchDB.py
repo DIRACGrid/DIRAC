@@ -194,17 +194,17 @@ class ElasticSearchDB(object):
     return A(name_or_agg, aggsfilter, **params)
 
   ########################################################################
-
   @ifConnected
-  def getIndexes(self):
+  def getIndexes(self, indexName=None):
     """
     It returns the available indexes...
     """
+    if not indexName:
+      indexName = self.__indexPrefix
     # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
-    return list(self.client.indices.get_alias("%s*" % self.__indexPrefix))
+    return list(self.client.indices.get_alias("%s*" % indexName))
 
   ########################################################################
-
   @ifConnected
   def getDocTypes(self, indexName):
     """
