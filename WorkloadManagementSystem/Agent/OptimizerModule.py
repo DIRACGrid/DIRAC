@@ -141,7 +141,7 @@ class OptimizerModule(AgentModule):
     if 'jdl' in jobDef and 'classad' not in jobDef:
       try:
         classad = ClassAd(jobDef['jdl'])
-      except BaseException:
+      except Exception:
         self.log.debug("Cannot load JDL")
         return S_ERROR('Illegal Job JDL')
       if not classad.isOK():
@@ -165,7 +165,7 @@ class OptimizerModule(AgentModule):
       else:
         try:
           return S_OK(eval(value))
-        except BaseException as x:
+        except Exception as x:
           return S_ERROR('Could not evaluate optimizer parameters: %s' % repr(x))
 
     return result

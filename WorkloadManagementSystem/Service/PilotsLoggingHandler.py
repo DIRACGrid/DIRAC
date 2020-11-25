@@ -24,15 +24,12 @@ from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 class PilotsLoggingHandler(RequestHandler):
   """Server side functions for Pilots Logging service"""
 
-  consumerSet = None
-  pilotsLoggingDB = None
-
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
     """Initialization of Pilots Logging service
     """
     cls.consumersSet = set()
-    cls.pilotsLoggingDB = PilotsLoggingDB()
+    cls.gPilotsLoggingDB = PilotsLoggingDB()
     queue = cls.srv_getCSOption("PilotsLoggingQueue")
     # This is pretty awful hack. Somehow, for uknown reason, I cannot access CS with srv_getCSOption.
     # The only way is using full CS path, so I'm using it as a backup solution.
@@ -55,13 +52,15 @@ class PilotsLoggingHandler(RequestHandler):
     """
     # verify received message format
     if set(message) == set(['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']):
-      cls.pilotsLoggingDB.addPilotsLogging(message['pilotUUID'], message['timestamp'], message['source'],
-                                           message['phase'], message['status'], message['messageContent'])
+      cls.gPilotsLoggingDB.addPilotsLogging(
+          message['pilotUUID'], message['timestamp'], message['source'],
+          message['phase'], message['status'], message['messageContent'])
 
   types_addPilotsLogging = [six.string_types, six.string_types, six.string_types,
                             six.string_types, six.string_types, six.string_types]
 
-  def export_addPilotsLogging(self, pilotUUID, timestamp, source, phase, status, messageContent):
+  @classmethod
+  def export_addPilotsLogging(cls, pilotUUID, timestamp, source, phase, status, messageContent):
     """
     Add new Pilots Logging entry
 
@@ -72,27 +71,29 @@ class PilotsLoggingHandler(RequestHandler):
     :param source: Source of statu information
     """
 
-    return PilotsLoggingHandler.pilotsLoggingDB.addPilotsLogging(pilotUUID, timestamp, source, phase, status,
-                                                                 messageContent)
+    return cls.gPilotsLoggingDB.addPilotsLogging(
+        pilotUUID, timestamp, source, phase, status, messageContent)
 
   types_getPilotsLogging = [six.string_types]
 
-  def export_getPilotsLogging(self, pilotUUID):
+  @classmethod
+  def export_getPilotsLogging(cls, pilotUUID):
     """
     Get all Logging entries for Pilot
 
     :param pilotUUID: Pilot reference
     """
 
-    return PilotsLoggingHandler.pilotsLoggingDB.getPilotsLogging(pilotUUID)
+    return cls.gPilotsLoggingDB.getPilotsLogging(pilotUUID)
 
   types_deletePilotsLogging = [six.string_types + (list,)]
 
-  def export_deletePilotsLogging(self, pilotUUID):
+  @classmethod
+  def export_deletePilotsLogging(cls, pilotUUID):
     """
     Delete all Logging entries for Pilot
 
     :param pilotUUID: Pilot reference
     """
 
-    return PilotsLoggingHandler.pilotsLoggingDB.deletePilotsLogging(pilotUUID)
+    return cls.gPilotsLoggingDB.deletePilotsLogging(pilotUUID)

@@ -3,11 +3,11 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import six
 import errno
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
@@ -111,8 +111,10 @@ def getGroupsForVO(vo):
 
       :return: S_OK(list)/S_ERROR()
   """
-  if getVO():
+  if getVO():  # tries to get default VO in /DIRAC/VirtualOrganization
     return gConfig.getSections("%s/Groups" % gBaseRegistrySection)
+  if not vo:
+    return S_ERROR("No VO requested")
   return __getGroupsWithAttr('VO', vo)
 
 

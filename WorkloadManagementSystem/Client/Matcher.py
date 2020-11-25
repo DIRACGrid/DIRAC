@@ -218,7 +218,8 @@ class Matcher(object):
     if 'Tag' in resourceDict:
       resourceDict['Tag'] = list(set(resourceDict['Tag']))
 
-    for k in ('DIRACVersion', 'ReleaseVersion', 'ReleaseProject', 'VirtualOrganization',
+    for k in ('DIRACVersion', 'ReleaseVersion', 'ReleaseProject',
+              'VirtualOrganization',
               'PilotReference', 'PilotBenchmark', 'PilotInfoReportedFlag'):
       if k in resourceDescription:
         resourceDict[k] = resourceDescription[k]

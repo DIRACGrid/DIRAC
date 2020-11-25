@@ -27,54 +27,42 @@ from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-gJobDB = False
-gTaskQueueDB = False
-
-
-def initializeMatcherHandler(serviceInfo):
-  """  Matcher Service initialization
-  """
-
-  global gJobDB
-  global gTaskQueueDB
-  global jlDB
-  global pilotAgentsDB
-
-  gJobDB = JobDB()
-  gTaskQueueDB = TaskQueueDB()
-  jlDB = JobLoggingDB()
-  pilotAgentsDB = PilotAgentsDB()
-
-  gMonitor.registerActivity('matchTime', "Job matching time",
-                            'Matching', "secs", gMonitor.OP_MEAN, 300)
-  gMonitor.registerActivity('matchesDone', "Job Match Request",
-                            'Matching', "matches", gMonitor.OP_RATE, 300)
-  gMonitor.registerActivity('matchesOK', "Matched jobs",
-                            'Matching', "matches", gMonitor.OP_RATE, 300)
-  gMonitor.registerActivity('numTQs', "Number of Task Queues",
-                            'Matching', "tqsk queues", gMonitor.OP_MEAN, 300)
-
-  gTaskQueueDB.recalculateTQSharesForAll()
-  gThreadScheduler.addPeriodicTask(120, gTaskQueueDB.recalculateTQSharesForAll)
-  gThreadScheduler.addPeriodicTask(60, sendNumTaskQueues)
-
-  sendNumTaskQueues()
-
-  return S_OK()
-
-
-def sendNumTaskQueues():
-  result = gTaskQueueDB.getNumTaskQueues()
-  if result['OK']:
-    gMonitor.addMark('numTQs', result['Value'])
-  else:
-    gLogger.error("Cannot get the number of task queues", result['Message'])
-
 
 class MatcherHandler(RequestHandler):
 
-  def initialize(self):
-    self.limiter = Limiter(jobDB=gJobDB)
+  @classmethod
+  def initializeHandler(cls, serviceInfoDict):
+    cls.gJobDB = JobDB()
+    cls.gJobLoggingDB = JobLoggingDB()
+    cls.gTaskQueueDB = TaskQueueDB()
+    cls.gPilotAgentsDB = PilotAgentsDB()
+    cls.limiter = Limiter(jobDB=cls.gJobDB)
+
+    cls.gTaskQueueDB.recalculateTQSharesForAll()
+
+    gMonitor.registerActivity('matchTime', "Job matching time",
+                              'Matching', "secs", gMonitor.OP_MEAN, 300)
+    gMonitor.registerActivity('matchesDone', "Job Match Request",
+                              'Matching', "matches", gMonitor.OP_RATE, 300)
+    gMonitor.registerActivity('matchesOK', "Matched jobs",
+                              'Matching', "matches", gMonitor.OP_RATE, 300)
+    gMonitor.registerActivity('numTQs', "Number of Task Queues",
+                              'Matching', "tqsk queues", gMonitor.OP_MEAN, 300)
+
+    gThreadScheduler.addPeriodicTask(120, cls.gTaskQueueDB.recalculateTQSharesForAll)
+    gThreadScheduler.addPeriodicTask(60, cls.sendNumTaskQueues)
+
+    cls.sendNumTaskQueues()
+    return S_OK()
+
+  @classmethod
+  def sendNumTaskQueues(cls):
+    result = cls.gTaskQueueDB.getNumTaskQueues()
+    if result['OK']:
+      gMonitor.addMark('numTQs', result['Value'])
+    else:
+      gLogger.error("Cannot get the number of task queues", result['Message'])
+
 
 ##############################################################################
   types_requestJob = [six.string_types + (dict,)]
@@ -89,10 +77,10 @@ class MatcherHandler(RequestHandler):
 
     try:
       opsHelper = Operations(group=credDict['group'])
-      matcher = Matcher(pilotAgentsDB=pilotAgentsDB,
-                        jobDB=gJobDB,
-                        tqDB=gTaskQueueDB,
-                        jlDB=jlDB,
+      matcher = Matcher(pilotAgentsDB=self.gPilotAgentsDB,
+                        jobDB=self.gJobDB,
+                        tqDB=self.gTaskQueueDB,
+                        jlDB=self.gJobLoggingDB,
                         opsHelper=opsHelper)
       result = matcher.selectJob(resourceDescription, credDict)
     except RuntimeError as rte:
@@ -115,24 +103,25 @@ class MatcherHandler(RequestHandler):
   def export_getActiveTaskQueues(cls):
     """ Return all task queues
     """
-    return gTaskQueueDB.retrieveTaskQueues()
+    return cls.gTaskQueueDB.retrieveTaskQueues()
 
 ##############################################################################
   types_getMatchingTaskQueues = [dict]
   # int keys are cast into str
 
+  @classmethod
   @ignoreEncodeWarning
-  def export_getMatchingTaskQueues(self, resourceDict):
+  def export_getMatchingTaskQueues(cls, resourceDict):
     """ Return all task queues that match the resourceDict
     """
     if 'Site' in resourceDict and isinstance(resourceDict['Site'], six.string_types):
-      negativeCond = self.limiter.getNegativeCondForSite(resourceDict['Site'])
+      negativeCond = cls.limiter.getNegativeCondForSite(resourceDict['Site'])
     else:
-      negativeCond = self.limiter.getNegativeCond()
-    matcher = Matcher(pilotAgentsDB=pilotAgentsDB,
-                      jobDB=gJobDB,
-                      tqDB=gTaskQueueDB,
-                      jlDB=jlDB)
+      negativeCond = cls.limiter.getNegativeCond()
+    matcher = Matcher(pilotAgentsDB=cls.gPilotAgentsDB,
+                      jobDB=cls.gJobDB,
+                      tqDB=cls.gTaskQueueDB,
+                      jlDB=cls.gJobLoggingDB)
     resourceDescriptionDict = matcher._processResourceDescription(resourceDict)
-    return gTaskQueueDB.getMatchingTaskQueues(resourceDescriptionDict,
-                                              negativeCond=negativeCond)
+    return cls.gTaskQueueDB.getMatchingTaskQueues(resourceDescriptionDict,
+                                                  negativeCond=negativeCond)

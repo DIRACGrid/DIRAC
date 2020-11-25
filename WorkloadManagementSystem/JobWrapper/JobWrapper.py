@@ -781,9 +781,11 @@ class JobWrapper(object):
             uploadOutputDataInAnyCase = True
           else:
             outputData.append(outputSandboxData)
-          self.jobReport.setJobParameter('OutputSandbox', 'Sandbox uploaded to grid storage', sendFlag=False)
-          self.jobReport.setJobParameter('OutputSandboxLFN',
-                                         self.__getLFNfromOutputFile(outputSandboxData)[0], sendFlag=False)
+          self.jobReport.setJobParameter(
+              'OutputSandbox', 'Sandbox uploaded to grid storage', sendFlag=False)
+          self.jobReport.setJobParameter(
+              'OutputSandboxLFN',
+              self.__getLFNfromOutputFile(outputSandboxData)[0], sendFlag=False)
         else:
           self.log.info('Could not get SandboxFileName to attempt upload to Grid storage')
           return S_ERROR('Output sandbox upload failed and no file name supplied for failover to Grid storage')
@@ -967,7 +969,8 @@ class JobWrapper(object):
         if 'UploadedOutputData' in result['Value']:
           report += ', %s' % result['Value']['UploadedOutputData']
 
-      self.jobReport.setJobParameter('UploadedOutputData', report, sendFlag=False)
+      self.jobReport.setJobParameter(
+          'UploadedOutputData', report, sendFlag=False)
 
     # TODO Notify the user of any output data / output sandboxes
     if missing:
@@ -1331,25 +1334,28 @@ class JobWrapper(object):
 
   #############################################################################
   def __report(self, status='', minorStatus='', sendFlag=False):
-    """Wraps around setJobStatus of state update client
+    """Wraps around setJobStatus of JobReport client
     """
     if status:
       self.wmsMajorStatus = status
     if minorStatus:
       self.wmsMinorStatus = minorStatus
-    jobStatus = self.jobReport.setJobStatus(status=status, minor=minorStatus, sendFlag=sendFlag)
+    jobStatus = self.jobReport.setJobStatus(
+        status=status, minor=minorStatus, sendFlag=sendFlag)
     if not jobStatus['OK']:
       self.log.warn(jobStatus['Message'])
     if self.jobID:
-      self.log.verbose('setJobStatus(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
+      self.log.verbose(
+          'setJobStatus(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
 
     return jobStatus
 
   #############################################################################
   def __setJobParam(self, name, value, sendFlag=False):
-    """Wraps around setJobParameter of state update client
+    """Wraps around setJobParameter of JobReport client
     """
-    jobParam = self.jobReport.setJobParameter(str(name), str(value), sendFlag)
+    jobParam = self.jobReport.setJobParameter(
+        str(name), str(value), sendFlag)
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])
     if self.jobID:
@@ -1359,7 +1365,7 @@ class JobWrapper(object):
 
   #############################################################################
   def __setJobParamList(self, value, sendFlag=False):
-    """Wraps around setJobParameters of state update client
+    """Wraps around setJobParameters of JobReport client
     """
     jobParam = self.jobReport.setJobParameters(value, sendFlag)
     if not jobParam['OK']:

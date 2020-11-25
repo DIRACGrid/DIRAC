@@ -26,20 +26,19 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
-sandboxDB = False
-
-
-def initializeSandboxStoreHandler(serviceInfo):
-  global sandboxDB
-  sandboxDB = SandboxMetadataDB()
-  return S_OK()
-
 
 class SandboxStoreHandler(RequestHandler):
 
   __purgeCount = -1
   __purgeLock = threading.Lock()
   __purgeWorking = False
+
+  @classmethod
+  def initializeHandler(cls, serviceInfoDict):
+    """ Initialization of DB object
+    """
+    cls.gSandboxDB = SandboxMetadataDB()
+    return S_OK()
 
   def initialize(self):
     self.__backend = self.getCSOption("Backend", "local")
@@ -108,7 +107,7 @@ class SandboxStoreHandler(RequestHandler):
       return result
     seName, sePFN = result['Value']
 
-    result = sandboxDB.getSandboxId(seName, sePFN, credDict['username'], credDict['group'])
+    result = self.gSandboxDB.getSandboxId(seName, sePFN, credDict['username'], credDict['group'])
     if result['OK']:
       gLogger.info("Sandbox already exists. Skipping upload")
       fileHelper.markAsTransferred()
@@ -145,8 +144,9 @@ class SandboxStoreHandler(RequestHandler):
       sbPath = result['Value'][1]
     # Register!
     gLogger.info("Registering sandbox in the DB with", "SB:%s|%s" % (self.__seNameToUse, sbPath))
-    result = sandboxDB.registerAndGetSandbox(credDict['username'], credDict['DN'], credDict['group'],
-                                             self.__seNameToUse, sbPath, fileHelper.getTransferedBytes())
+    result = self.gSandboxDB.registerAndGetSandbox(
+        credDict['username'], credDict['DN'], credDict['group'],
+        self.__seNameToUse, sbPath, fileHelper.getTransferedBytes())
     if not result['OK']:
       self.__secureUnlinkFile(hdPath)
       return result
@@ -178,12 +178,14 @@ class SandboxStoreHandler(RequestHandler):
     seName, sePFN = result['Value']
     # Register in DB
     credDict = self.getRemoteCredentials()
-    result = sandboxDB.getSandboxId(seName, sePFN, credDict['username'], credDict['group'])
+    result = self.gSandboxDB.getSandboxId(
+        seName, sePFN, credDict['username'], credDict['group'])
     if result['OK']:
       return S_OK("SB:%s|%s" % (seName, sePFN))
 
-    result = sandboxDB.registerAndGetSandbox(credDict['username'], credDict['DN'], credDict['group'],
-                                             seName, sePFN, fileHelper.getTransferedBytes())
+    result = self.gSandboxDB.registerAndGetSandbox(
+        credDict['username'], credDict['DN'], credDict['group'],
+        seName, sePFN, fileHelper.getTransferedBytes())
     if not result['OK']:
       self.__secureUnlinkFile(tmpFilePath)
       return result
@@ -321,8 +323,9 @@ class SandboxStoreHandler(RequestHandler):
     if not entitySetup:
       entitySetup = self.serviceInfoDict['clientSetup']
     credDict = self.getRemoteCredentials()
-    return sandboxDB.assignSandboxesToEntities(enDict, credDict['username'], credDict['group'], entitySetup,
-                                               ownerName, ownerGroup)
+    return self.gSandboxDB.assignSandboxesToEntities(
+        enDict, credDict['username'], credDict['group'], entitySetup,
+        ownerName, ownerGroup)
 
   ##################
   # Unassign sbs to jobs
@@ -336,7 +339,8 @@ class SandboxStoreHandler(RequestHandler):
     if not entitiesSetup:
       entitiesSetup = self.serviceInfoDict['clientSetup']
     credDict = self.getRemoteCredentials()
-    return sandboxDB.unassignEntities({entitiesSetup: entitiesList}, credDict['username'], credDict['group'])
+    return self.gSandboxDB.unassignEntities(
+        {entitiesSetup: entitiesList}, credDict['username'], credDict['group'])
 
   ##################
   # Getting assigned sandboxes
@@ -350,8 +354,9 @@ class SandboxStoreHandler(RequestHandler):
     if not entitySetup:
       entitySetup = self.serviceInfoDict['clientSetup']
     credDict = self.getRemoteCredentials()
-    result = sandboxDB.getSandboxesAssignedToEntity(entityId, entitySetup,
-                                                    credDict['username'], credDict['group'])
+    result = self.gSandboxDB.getSandboxesAssignedToEntity(
+        entityId, entitySetup,
+        credDict['username'], credDict['group'])
     if not result['OK']:
       return result
     sbDict = {}
@@ -371,7 +376,8 @@ class SandboxStoreHandler(RequestHandler):
         If no size is specified, terabytes will be used by default.
     """
 
-    return getDiskSpace(self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"))
+    return getDiskSpace(
+        self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"))
 
   types_getTotalDiskSpace = []
 
@@ -379,7 +385,8 @@ class SandboxStoreHandler(RequestHandler):
     """ Get the total disk space of the storage element
         If no size is specified, terabytes will be used by default.
     """
-    return getDiskSpace(self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"), total=True)
+    return getDiskSpace(
+        self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"), total=True)
 
   ##################
   # Download sandboxes
@@ -392,11 +399,11 @@ class SandboxStoreHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     serviceURL = self.serviceInfoDict['URL']
     filePath = fileID.replace(serviceURL, '')
-    result = sandboxDB.getSandboxId(self.__localSEName, filePath, credDict['username'], credDict['group'])
+    result = self.gSandboxDB.getSandboxId(self.__localSEName, filePath, credDict['username'], credDict['group'])
     if not result['OK']:
       return result
     sbId = result['Value']
-    sandboxDB.accessedSandboxById(sbId)
+    self.gSandboxDB.accessedSandboxById(sbId)
     # If it's a local file
     hdPath = self.__sbToHDPath(filePath)
     if not os.path.isfile(hdPath):
@@ -425,7 +432,7 @@ class SandboxStoreHandler(RequestHandler):
       SandboxStoreHandler.__purgeLock.release()
 
     gLogger.info("Purging sandboxes")
-    result = sandboxDB.getUnusedSandboxes()
+    result = self.gSandboxDB.getUnusedSandboxes()
     if not result['OK']:
       gLogger.error("Error while retrieving sandboxes to purge", result['Message'])
       SandboxStoreHandler.__purgeWorking = False
@@ -443,7 +450,7 @@ class SandboxStoreHandler(RequestHandler):
     if not result['OK']:
       gLogger.error("Cannot delete sandbox from backend", result['Message'])
       return
-    result = sandboxDB.deleteSandboxes([sbId])
+    result = self.gSandboxDB.deleteSandboxes([sbId])
     if not result['OK']:
       gLogger.error("Cannot delete sandbox from DB", result['Message'])
 
@@ -492,7 +499,7 @@ class SandboxStoreHandler(RequestHandler):
         hostDN = hostCert.getSubjectDN().get('Value')
 
         # use the host authentication to fetch the data
-        result = sandboxDB.getSandboxOwner(SEName, SEPFN, hostDN, 'hosts')
+        result = self.gSandboxDB.getSandboxOwner(SEName, SEPFN, hostDN, 'hosts')
         if not result['OK']:
           return result
         _owner, ownerDN, ownerGroup = result['Value']

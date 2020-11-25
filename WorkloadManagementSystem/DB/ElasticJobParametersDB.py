@@ -30,6 +30,9 @@
 """
 
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import six
 
 __RCSID__ = "$Id$"
@@ -63,11 +66,17 @@ class ElasticJobParametersDB(ElasticDB):
     """ Standard Constructor
     """
 
-    section = getDatabaseSection("WorkloadManagement/ElasticJobParametersDB")
-    indexPrefix = gConfig.getValue("%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
+    try:
+      section = getDatabaseSection("WorkloadManagement/ElasticJobParametersDB")
+      indexPrefix = gConfig.getValue(
+          "%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
 
-    # Connecting to the ES cluster
-    super(ElasticJobParametersDB, self).__init__(name, 'WorkloadManagement/ElasticJobParametersDB', indexPrefix)
+      # Connecting to the ES cluster
+      super(ElasticJobParametersDB, self).__init__(
+          name, 'WorkloadManagement/ElasticJobParametersDB', indexPrefix)
+    except Exception as ex:
+      self.log.error("Can't connect to ElasticJobParametersDB", repr(ex))
+      raise RuntimeError("Can't connect to ElasticJobParametersDB")
 
     self.indexName = "%s_%s" % (self.getIndexPrefix(), name.lower())
     # Verifying if the index is there, and if not create it

@@ -187,6 +187,8 @@ for ``CheeseShopOwner``:
 
 .. code-block:: python
 
+   import six
+
    from DIRAC import S_OK, S_ERROR, gLogger, gConfig
    from DIRAC.Core.DISET.RequestHandler import RequestHandler
    from DIRAC.CheeseShopSystem.DB.CheeseShopDB import CheeseShopDB
@@ -195,25 +197,25 @@ for ``CheeseShopOwner``:
    cheeseShopDB = False
 
    # initialize it first
-   def initializeCheeseShopOwner( serviceInfo ):
+   def initializeCheeseShopOwner(serviceInfo):
      global cheeseShopDB
      cheeseShopDB = CheeseShopDB()
      return S_OK()
 
-   class CheeseShopOwner( RequestHandler ):
+   class CheeseShopOwner(RequestHandler):
 
-     types_isThere = [ basestring ]
-     def export_isThere( self, cheese ):
-       return cheeseShopDB.isThere( cheese )
+     types_isThere = [six.string_types]
+     def export_isThere(self, cheese):
+       return cheeseShopDB.isThere(cheese)
 
-     types_buyCheese = [ basestring, float ]
-     def export_buyCheese( self, cheese, quantity ):
-       return cheeseShopDB.buyCheese( cheese, quantity )
+     types_buyCheese = [six.string_types, float]
+     def export_buyCheese(self, cheese, quantity):
+       return cheeseShopDB.buyCheese(cheese, quantity)
 
      # ... and so on, so on and so on, i.e:
-     types_insertCheese = [ basestring, float, float ]
-     def export_insertCheese( self, cheeseName, price, quantity ):
-       return cheeseShopDB.insertCheese( cheeseName, price, quantity )
+     types_insertCheese = [six.string_types, float, float]
+     def export_insertCheese(self, cheeseName, price, quantity):
+       return cheeseShopDB.insertCheese(cheeseName, price, quantity)
 
 
 
@@ -224,52 +226,52 @@ And here for ``CheeseShopClient`` class:
    from DIRAC import S_OK, S_ERROR, gLogger, gConfig
    from DIRAC.Core.Base.Client import Client
 
-   class Cheese( object ):
+   class Cheese(object):
 
-     def __init__( self, name ):
+     def __init__(self, name):
        self.name = name
 
-   class SpanishInquisitionError( Exception ):
+   class SpanishInquisitionError(Exception):
      pass
 
-   class CheeseShopClient( Client ):
+   class CheeseShopClient(Client):
 
-     def __init__( self, money, shopOwner = None ):
+     def __init__(self, money, shopOwner = None):
        self.__money = money
        self.shopOwner = shopOwner
 
-     def buy( self, cheese, quantity = 1.0 ):
+     def buy(self, cheese, quantity = 1.0):
 
        # is it really cheese, you're asking for?
-       if not isinstance( cheese, Cheese ):
-         raise SpanishInquisitionError( "It's stone dead!" )
+       if not isinstance(cheese, Cheese):
+         raise SpanishInquisitionError("It's stone dead!")
 
        # and the owner is in?
        if not self.shopOwner:
          return S_ERROR("Shop is closed!")
 
        # and cheese is in the shop depot?
-       res = self.shopOwner.isThere( cheese.name )
+       res = self.shopOwner.isThere(cheese.name)
        if not res["OK"]:
          return res
 
        # and you are not asking for too much?
        if quantity > res["Value"]["Quantity"]:
-         return S_ERROR( "Not enough %s, sorry!" % cheese.name )
+         return S_ERROR("Not enough %s, sorry!" % cheese.name)
 
        # and you have got enough money perhaps?
        price = quantity * res["Value"]["Price"]
        if self.__money < price:
-         return S_ERROR( "Not enough money in your pocket, get lost!")
+         return S_ERROR("Not enough money in your pocket, get lost!")
 
        # so we're buying
-       res = self.shopOwner.buyCheese( cheese.name, quantity )
+       res = self.shopOwner.buyCheese(cheese.name, quantity)
        if not res["OK"]:
          return res
        self.__money -= price
 
        # finally transaction is over
-       return S_OK( self.__money )
+       return S_OK(self.__money)
 
 This maybe oversimplified code example already has several hot spots of failure for chess buying task: first of all, your input parameters
 could be wrong (i.e. you want to buy rather parrot, not cheese); the shop owner could be out; they haven't got cheese you are asking for in the store;
@@ -283,7 +285,7 @@ Now for our test suite we will assume that there is a 20 lbs of Cheddar priced 9
 1 lb of Cheddar (the main success scenario) having at least 9.95 pounds in a wallet:
 
   - input: ``Cheese("Cheddar")``, 1.0 lb, 9.95 pounds in your pocket
-  - expected output: ``S_OK = { "OK" : True, "Value" : 0.0 }``
+  - expected output: ``S_OK = {"OK" : True, "Value" : 0.0 }``
 
 Other scenarios are:
 
@@ -302,22 +304,22 @@ Other scenarios are:
 3. The shop is closed:
 
   - input: ``Cheese("Cheddar")``
-  - expected output: ``S_ERROR = { "OK" : False, "Message" : "Shop is closed!" }``
+  - expected output: ``S_ERROR = {"OK" : False, "Message": "Shop is closed!"}``
 
 4. Asking for any other cheese:
 
   - input: ``Cheese("Greek feta")``, 1.0 lb
-  - expected output: ``S_ERROR = { "OK" : False, "Message" : "Ah, not as such!" }``
+  - expected output: ``S_ERROR = {"OK" : False, "Message": "Ah, not as such!"}``
 
 5. Asking for too much of Cheddar:
 
   - input: ``Cheese("Cheddar")``, 21.0 lb
-  - expected output: ``S_ERROR = { "OK" : False, "Message" : "Not enough Cheddar, sorry!" }``
+  - expected output: ``S_ERROR = {"OK" : False, "Message": "Not enough Cheddar, sorry!"}``
 
 6. No money on you to pay the bill:
 
   - input: ``Cheese("Cheddar")``, 1.0 lb, 8.0 pounds in your pocket
-  - expected output: ``S_ERROR = { "OK" : False, "Message" : "Not enough money in your pocket, get lost!" }``
+  - expected output: ``S_ERROR = {"OK" : False, "Message": "Not enough money in your pocket, get lost!"}``
 
 7. Some other unexpected problems in underlying components, which by the way we are not going to be test or explore here. *You just can't test everything,
 keep track on testing your code!*
@@ -334,44 +336,44 @@ The test suite code itself follows:
    from DIRAC.CheeseShopSystem.Client.CheeseShopClient import Cheese, CheeseShopClient
    from DIRAC.CheeseShopSystem.Service.CheeseShopOwner import CheeseShopOwner
 
-   class CheeseClientMainSuccessScenario( unittest.TestCase ):
+   class CheeseClientMainSuccessScenario(unittest.TestCase):
 
-     def setUp( self ):
+     def setUp(self):
        # stub, as we are going to use it's name but nothing else
-       self.cheese = Chesse( "Cheddar" )
+       self.cheese = Chesse("Cheddar")
        # money, dummy
        self.money = 9.95
        # amount, dummy
        self.amount = 1.0
        # real object to use
-       self.shopOwner = CheeseShopOwner( "CheeseShop/CheeseShopOwner" )
+       self.shopOwner = CheeseShopOwner("CheeseShop/CheeseShopOwner")
        # but with mocking of isThere
-       self.shopOwner.isThere = Mock( return_value = S_OK( { "Price" : 9.95, "Quantity" : 20.0 } ) )
+       self.shopOwner.isThere = Mock(return_value = S_OK({"Price" : 9.95, "Quantity" : 20.0}))
        # and buyCheese methods
        self.shopOwner.buyCheese = Mock()
 
-     def tearDown( self ):
+     def tearDown(self):
        del self.shopOwner
        del self.money
        del self.amount
        del self.cheese
 
-     def test_buy( self ):
-        client = CheeseShopClient( money = self.money, shopOwner = self.shopOwner )
+     def test_buy(self):
+        client = CheeseShopClient(money = self.money, shopOwner = self.shopOwner)
         # check if test object has been created
-        self.assertEqual( isinstance( client, CheeseShopClient), True )
+        self.assertEqual(isinstance(client, CheeseShopClient), True)
         # and works as expected
-        self.assertEqual( client.buy( self.cheese, self.amount ), { "OK" : True, "Value" : 0.0 } )
+        self.assertEqual(client.buy(self.cheese, self.amount), {"OK" : True, "Value" : 0.0})
         ## and now for mocked objects
         # asking for cheese
-        self.shopOwner.isThere.assert_called_once_with( self.cheese.name )
+        self.shopOwner.isThere.assert_called_once_with(self.cheese.name)
         # and buying it
-        self.shopOwner.buyCheese.assert_called_once_with( self.cheese.name, self.amount )
+        self.shopOwner.buyCheese.assert_called_once_with(self.cheese.name, self.amount)
 
 
    if __name__ == "__main__":
      unittest.main()
-     #testSuite = unittest.TestSuite( [ "CheeseClientMainSuccessScenario" ] )
+     #testSuite = unittest.TestSuite(["CheeseClientMainSuccessScenario"])
 
 
 Conventions

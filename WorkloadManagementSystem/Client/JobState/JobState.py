@@ -1,8 +1,9 @@
 """ This object is a wrapper for setting and getting jobs states
 """
 
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import
 from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id"
 

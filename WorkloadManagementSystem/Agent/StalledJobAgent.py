@@ -9,19 +9,19 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import six
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Time import fromString, toEpoch, dateTime, second
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.Client.Types.Job import Job
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.Time import fromString, toEpoch, dateTime, second
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
 
 class StalledJobAgent(AgentModule):

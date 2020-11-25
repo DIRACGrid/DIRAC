@@ -23,10 +23,10 @@ DIRAC_GFAL_GRIDFTP_SESSION_REUSE
   installations. See the information in the :ref:`resourcesStorageElement` page.
 
 DIRAC_USE_JSON_DECODE
-  Controls the transition to JSON serialization. See the information in :ref:`jsonSerialization` page
+  Controls the transition to JSON serialization. See the information in :ref:`jsonSerialization` page (default=Yes since v7r2)
 
 DIRAC_USE_JSON_ENCODE
-  Controls the transition to JSON serialization. See the information in :ref:`jsonSerialization` page
+  Controls the transition to JSON serialization. See the information in :ref:`jsonSerialization` page (default=No)
 
 DIRAC_USE_M2CRYPTO
   If anything else than ``true`` or ``yes`` (default) DIRAC will revert back to using pyGSI instead of m2crypto for handling certificates, proxies, etc.
@@ -42,7 +42,7 @@ DIRAC_VOMSES
   Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
 
 DIRAC_USE_NEWTHREADPOOL
-  If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used.
+  If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used (default=Yes)
 
 DIRACSYSCONFIG
   If set, its value should be (the full location on the file system of) a DIRAC cfg file, whose content will be used for the DIRAC configuration

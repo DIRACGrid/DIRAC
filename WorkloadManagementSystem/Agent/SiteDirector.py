@@ -1102,8 +1102,9 @@ class SiteDirector(AgentModule):
       self.log.info('DIRAC project will be installed by pilots')
 
     # Pilot Logging defined?
-    pilotLogging = opsHelper.getValue("Pilot/PilotLogging", "false")
-    if pilotLogging.lower() in ['true', 'yes', 'y']:
+    pilotLogging = opsHelper.getValue(
+        "/Services/JobMonitoring/usePilotsLoggingFlag", False)
+    if pilotLogging:
       pilotOptions.append('-z ')
 
     ownerDN = self.pilotDN
@@ -1187,7 +1188,7 @@ class SiteDirector(AgentModule):
     try:
       pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict([DIRAC_INSTALL],
                                                                            proxy)
-    except BaseException as be:
+    except Exception as be:
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
     location = Operations().getValue("Pilot/pilotFileServer", '')

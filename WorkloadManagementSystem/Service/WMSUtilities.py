@@ -176,7 +176,7 @@ def killPilotsInQueues(pilotRefDict):
     ce = result['Value']
 
     # FIXME: quite hacky. Should be either removed, or based on some flag
-    if gridType in ["LCG", "CREAM", "ARC", "Globus", "HTCondorCE"]:
+    if gridType in ["CREAM", "ARC", "Globus", "HTCondorCE"]:
       group = getGroupOption(group, 'VOMSRole', group)
       ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
       if not ret['OK']:
