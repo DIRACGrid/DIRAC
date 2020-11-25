@@ -1040,7 +1040,7 @@ class X509Chain(object):
       return S_OK(self.__hash)
     sha1 = hashlib.sha1()
     for cert in self._certList:
-      sha1.update(str(cert.getSubjectNameObject()))
+      sha1.update(str(cert.getSubjectNameObject()["Value"]))
     sha1.update(str(self.getRemainingSecs()['Value'] / 3600))
     sha1.update(self.getDIRACGroup()['Value'])
     if self.isVOMS():
