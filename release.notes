@@ -61,6 +61,33 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p20]
+
+*Core
+CHANGE: (#4842) TLS: read proxy flag from M2Crypto.X509
+
+*Framework
+CHANGE: (#4832) NotificationHandler: sendMail: the avoidSpam parameter is deprecated.
+        All emails (same subject, address, body) are now only sent once per 24h
+
+*WorkloadManagementSystem
+FIX: (#4839) There was a bug handling the bulk status updates that was not updating
+             correctly the job status although the job logging information was correct).
+             This PR fixes this bug. It was tested in certification as a hotfix
+CHANGE: (#4839) internally always call the setJobStatusBulk() method in order to be consistent
+CHANGE: (#4839) in JobReport, only send statuses that are not empty, and remove handling of
+                ApplicationCounter that is never sent nor used anywhere
+CHANGE: (#4834) JobStateUpdateHandler: use class variables instead of global
+
+*Resources
+FIX: (#4841) Fix using SingularityComputingElement with the host's DIRAC installation
+
+*Interfaces
+FIX: (#4834) Job.py: use --cfg option for JobConfigArgs
+
+*RSS
+FIX: (#4834) Added one field for retrieving the corrected order of columns
+
 [v7r1p19]
 
 FIX: Fixes from v7r0p40
@@ -431,6 +458,18 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p41]
+
+*Core
+FIX: (#4845) Fix hashing SubjectName in X509Chain
+
+*FrameworkSystem
+FIX: (#4833) pilot update script, update global CS not the local one
+NEW: (#4840) Add option to retry to update hosts in dirac-admin-update-instance
+
+*WorkloadManagementSystem
+FIX: (#4838) SiteDirector - Flatten platform list avoid crash if CheckPlatform=True
 
 [v7r0p40]
 

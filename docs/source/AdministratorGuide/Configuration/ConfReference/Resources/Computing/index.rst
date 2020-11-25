@@ -83,25 +83,25 @@ General Parameters
 
 These parameters are valid for all types of computing elements
 
-+-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
-| **Name**                                | **Description**                                       | **Example**                                  |
-+-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
-| GridEnv                                 | Default environment file sourced before calling       | /opt/dirac/gridenv                           |
-|                                         | grid commands, without extension '.sh'.               | (when the file is gridenv.sh)                |
-|                                         |                                                       |                                              |
-+-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
-| SharedArea                              | Will be added to the pilot configuration              | /cvmfs/lhcb.cern.ch/lib                      |
-|                                         | as /LocalSite/SharedArea                              |                                              |
-+-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
-| ExtraPilotOptions                       | For adding some generic pilot options.                | --userEnvVariables DIRACSYSCONFIG:::pilot.cfg|
-|                                         | (only for pilots submitted by SiteDirectors)          | will add the environment variable            |
-|                                         |                                                       | DIRACSYSCONFIG                               |
-|                                         |                                                       | (see :ref:`bashrc_variables`)                |
-+-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
-| GLUE2ComputingShareMaxSlotsPerJob_limit | The upper limit for the NumberOfProcessors queue      | 8                                            |
-|                                         | parameter set by the                                  |                                              |
-|                                         | :mod:`~DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent`. |                                              |
-+-----------------------------------------+-------------------------------------------------------+----------------------------------------------+
++-----------------------------------------+-------------------------------------------------------+-----------------------------------------------+
+| **Name**                                | **Description**                                       | **Example**                                   |
++-----------------------------------------+-------------------------------------------------------+-----------------------------------------------+
+| GridEnv                                 | Default environment file sourced before calling       | /opt/dirac/gridenv                            |
+|                                         | grid commands, without extension '.sh'.               | (when the file is gridenv.sh)                 |
+|                                         |                                                       |                                               |
++-----------------------------------------+-------------------------------------------------------+-----------------------------------------------+
+| SharedArea                              | Will be added to the pilot configuration              | /cvmfs/lhcb.cern.ch/lib                       |
+|                                         | as /LocalSite/SharedArea                              |                                               |
++-----------------------------------------+-------------------------------------------------------+-----------------------------------------------+
+| ExtraPilotOptions                       | For adding some generic pilot options.                | --userEnvVariables DIRACSYSCONFIG:::pilot.cfg |
+|                                         | (only for pilots submitted by SiteDirectors)          | will add the environment variable             |
+|                                         |                                                       | DIRACSYSCONFIG                                |
+|                                         |                                                       | (see :ref:`bashrc_variables`)                 |
++-----------------------------------------+-------------------------------------------------------+-----------------------------------------------+
+| GLUE2ComputingShareMaxSlotsPerJob_limit | The upper limit for the NumberOfProcessors queue      | 8                                             |
+|                                         | parameter set by the                                  |                                               |
+|                                         | :mod:`~DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent`. |                                               |
++-----------------------------------------+-------------------------------------------------------+-----------------------------------------------+
 
 
 ARC CE Parameters
@@ -118,7 +118,7 @@ ARC CE Parameters
 | Host                            | The host for the ARC CE, used to overwrite the    |                                                             |
 |                                 | ce name                                           |                                                             |
 +---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
-| WorkingDirectory                | Directory where the pilot log files are stored    |   /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc   |
+| WorkingDirectory                | Directory where the pilot log files are stored    | /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc     |
 |                                 | locally.                                          |                                                             |
 +---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
 

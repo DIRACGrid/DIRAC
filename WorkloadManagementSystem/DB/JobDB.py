@@ -369,8 +369,12 @@ class JobDB(DB):
       return ret
     jobID = ret['Value']
 
+    # If no list is given, return all attributes
+    if not attrList:
+      attrList = self.jobAttributeNames
+
     attrNameList = []
-    for x in attrList if attrList else self.jobAttributeNames:
+    for x in attrList:
       ret = self._escapeString(x)
       if not ret['OK']:
         return ret
@@ -390,7 +394,7 @@ class JobDB(DB):
     values = res['Value'][0]
 
     attributes = {}
-    for name, value in zip(attrList if attrList else self.jobAttributeNames, values):
+    for name, value in zip(attrList, values):
       attributes[name] = str(value)
 
     return S_OK(attributes)

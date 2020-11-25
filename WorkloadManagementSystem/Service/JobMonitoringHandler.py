@@ -557,7 +557,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobParameters(cls, jobIDs, parName=None):
     """
     :param str/int/long/list jobIDs: one single job ID or a list of them
-    :param str parName: one single parameter name, or None (meaning all of them)
+    :param str parName: one single parameter name, a list or None (meaning all of them)
     """
     if cls.gElasticJobParametersDB:
       if not isinstance(jobIDs, list):
@@ -577,8 +577,10 @@ class JobMonitoringHandler(RequestHandler):
 
       # and now combine
       final = dict(parametersM)
-      for jobID in parametersM:
+      # if job in JobDB, update with parameters from ES if any
+      for jobID in final:
         final[jobID].update(parameters.get(jobID, {}))
+      # if job in ES and not in JobDB, take ES
       for jobID in parameters:
         if jobID not in final:
           final[jobID] = parameters[jobID]
@@ -617,12 +619,13 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobAttributes = [int]
 
   @classmethod
-  def export_getJobAttributes(cls, jobID):
+  def export_getJobAttributes(cls, jobID, attrList=None):
     """
     :param int jobID: one single Job ID
+    :param list attrList: optional list of attributes
     """
 
-    return cls.gJobDB.getJobAttributes(jobID)
+    return cls.gJobDB.getJobAttributes(jobID, attrList=attrList)
 
 ##############################################################################
   types_getJobAttribute = [int, six.string_types]

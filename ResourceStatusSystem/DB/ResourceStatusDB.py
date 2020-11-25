@@ -94,7 +94,6 @@ class ResourceStatusCache(rssBase):
 class ElementStatusBase(object):
   """
   Prototype for tables.
-  Schema change - add a VO column.
   """
 
   __table_args__ = {'mysql_engine': 'InnoDB',
@@ -110,6 +109,10 @@ class ElementStatusBase(object):
   elementtype = Column('ElementType', String(32), nullable=False, server_default='')
   lastchecktime = Column('LastCheckTime', DateTime, nullable=False, server_default='1000-01-01 00:00:00')
   tokenowner = Column('TokenOwner', String(16), nullable=False, server_default='rs_svc')
+
+  columnsOrder = ['Name', 'StatusType', 'Status', 'Reason',
+                  'DateEffective', 'TokenExpiration', 'ElementType',
+                  'LastCheckTime', 'TokenOwner', 'VO']
 
   def fromDict(self, dictionary):
     """
@@ -165,6 +168,10 @@ class ElementStatusBaseWithID(ElementStatusBase):
   elementtype = Column('ElementType', String(32), nullable=False, server_default='')
   lastchecktime = Column('LastCheckTime', DateTime, nullable=False, server_default='1000-01-01 00:00:00')
   tokenowner = Column('TokenOwner', String(16), nullable=False, server_default='rs_svc')
+
+  columnsOrder = ['ID', 'Name', 'StatusType', 'Status', 'Reason',
+                  'DateEffective', 'TokenExpiration', 'ElementType',
+                  'LastCheckTime', 'TokenOwner', 'VO']
 
   def fromDict(self, dictionary):
     """

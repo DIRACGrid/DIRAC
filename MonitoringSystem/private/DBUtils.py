@@ -27,7 +27,7 @@ def _convertToSeconds(interval):
   raise ValueError("Invalid time interval '%s'" % interval)
 
 
-class DBUtils (object):
+class DBUtils(object):
 
   """
   .. class:: DBUtils
@@ -107,8 +107,11 @@ class DBUtils (object):
                                             metainfo=metadataDict)
 
   def _determineBucketSize(self, start, end):
-    """
-    It is used to determine the bucket size using _esUnits
+    """ It is used to determine the bucket size using _esUnits
+
+        :param int start: epoch time
+        :param int end: epoch time
+        :return: S_OK/S_ERROR with tuple of (binUnit, seconds)
     """
     diff = end - start
 

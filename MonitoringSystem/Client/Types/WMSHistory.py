@@ -42,6 +42,7 @@ class WMSHistory(BaseType):
                      'User': {'type': 'keyword'},
                      'JobGroup': {'type': 'keyword'},
                      'UserGroup': {'type': 'keyword'}})
+    # {'timestamp': {'type': 'date'}} will be added for all monitoring types
 
     self.dataToKeep = 86400 * 30
 

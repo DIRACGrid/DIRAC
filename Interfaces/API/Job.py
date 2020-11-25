@@ -1142,7 +1142,7 @@ class Job(API):
         self.log.warn('Job DIRACSetup defined with null value')
     if 'JobConfigArgs' in paramsDict:
       if paramsDict['JobConfigArgs']['value']:
-        arguments.append('%s' % (paramsDict['JobConfigArgs']['value']))
+        arguments.append('--cfg %s' % (paramsDict['JobConfigArgs']['value']))
       else:
         self.log.warn('JobConfigArgs defined with null value')
     if self.parametricWFArguments:

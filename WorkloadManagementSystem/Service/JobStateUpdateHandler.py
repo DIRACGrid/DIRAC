@@ -11,12 +11,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import time
 import six
 from six.moves import range
 
 __RCSID__ = "$Id$"
-
-import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -27,6 +26,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 class JobStateUpdateHandler(RequestHandler):
@@ -80,7 +80,7 @@ class JobStateUpdateHandler(RequestHandler):
       return S_OK('Job is not in Staging after %d seconds' % trials)
 
     result = cls.__setJobStatus(
-        int(jobID), jobStatus, minorStatus, 'StagerSystem', None)
+        int(jobID), status=jobStatus, minorStatus=minorStatus, source='StagerSystem')
     if not result['OK']:
       if result['Message'].find('does not exist') != -1:
         return S_OK()
@@ -97,65 +97,64 @@ class JobStateUpdateHandler(RequestHandler):
         Set optionally the status date and source component which sends the
         status information.
     """
-    return cls.__setJobStatus(int(jobID), status, minorStatus, source, datetime)
+    return cls.__setJobStatus(
+        int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime)
 
   ###########################################################################
   types_setJobsStatus = [list]
 
   @classmethod
+  @deprecated("unused")
   def export_setJobsStatus(cls, jobIDs, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
     """
     for jobID in jobIDs:
-      cls.__setJobStatus(int(jobID), status, minorStatus, source, datetime)
+      cls.__setJobStatus(
+          int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime)
     return S_OK()
 
   @classmethod
-  def __setJobStatus(cls, jobID, status, minorStatus, source, datetime):
-    """ update the job status. """
-    result = cls.gJobDB.setJobStatus(jobID, status, minorStatus)
-    if not result['OK']:
-      return result
-
-    if status in JobStatus.JOB_FINAL_STATES:
-      result = cls.gJobDB.setEndExecTime(jobID)
-
-    if status == 'Running' and minorStatus == 'Application':
-      result = cls.gJobDB.setStartExecTime(jobID)
-
-    result = cls.gJobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      return S_ERROR('Job %d does not exist' % int(jobID))
-
-    status = result['Value']['Status']
-    minorStatus = result['Value']['MinorStatus']
-    if datetime:
-      result = cls.gJobLoggingDB.addLoggingRecord(
-          jobID, status, minorStatus, datetime, source)
-    else:
-      result = cls.gJobLoggingDB.addLoggingRecord(
-          jobID, status, minorStatus, source=source)
-    return result
+  def __setJobStatus(cls, jobID, status=None, minorStatus=None, appStatus=None, source=None, datetime=None):
+    """ update the job provided statuses (major, minor and application)
+        If sets also the source and the time stamp (or current time)
+        This method calls the bulk method internally
+    """
+    sDict = {}
+    if status:
+      sDict['Status'] = status
+    if minorStatus:
+      sDict['MinorStatus'] = minorStatus
+    if appStatus:
+      sDict['ApplicationStatus'] = appStatus
+    if sDict:
+      if source:
+        sDict['Source'] = source
+      if not datetime:
+        datetime = Time.toString()
+      return cls.__setJobStatusBulk(jobID, {datetime: sDict})
+    return S_OK()
 
   ###########################################################################
   types_setJobStatusBulk = [[six.string_types, int], dict]
 
   @classmethod
   def export_setJobStatusBulk(cls, jobID, statusDict):
+    """ Set various job status fields with a time stamp and a source
+    """
+    return cls.__setJobStatusBulk(jobID, statusDict)
+
+  @classmethod
+  def __setJobStatusBulk(cls, jobID, statusDict):
     """ Set various status fields for job specified by its JobId.
         Set only the last status in the JobDB, updating all the status
         logging information in the JobLoggingDB. The statusDict has datetime
         as a key and status information dictionary as values
     """
-
     status = ''
     minor = ''
     application = ''
-    appCounter = ''
     jobID = int(jobID)
 
     result = cls.gJobDB.getJobAttributes(
@@ -167,10 +166,16 @@ class JobStateUpdateHandler(RequestHandler):
       # if there is no matching Job it returns an empty dictionary
       return S_ERROR('No Matching Job')
     # If the current status is Stalled and we get an update, it should probably be "Running"
-    if result['Value']['Status'] == JobStatus.STALLED:
+    currentStatus = result['Value']['Status']
+    if currentStatus == JobStatus.STALLED:
       status = JobStatus.RUNNING
-    startTime = result['Value'].get('StartExecTime', '')
-    endTime = result['Value'].get('EndExecTime', '')
+    startTime = result['Value'].get('StartExecTime')
+    endTime = result['Value'].get('EndExecTime')
+    # getJobAttributes only returns strings :(
+    if startTime == 'None':
+      startTime = None
+    if endTime == 'None':
+      endTime = None
 
     # Get the latest WN time stamps of status updates
     result = cls.gJobLoggingDB.getWMSTimeStamps(int(jobID))
@@ -180,27 +185,39 @@ class JobStateUpdateHandler(RequestHandler):
     lastTime = Time.toString(Time.fromEpoch(lastTime))
 
     dates = sorted(statusDict)
+    log = gLogger.getSubLogger('JobStatusBulk/Job-%s' % jobID)
+    log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, dates))
+    # Remove useless items in order to make it simpler later, although should not be there
+    for sDict in statusDict.values():
+      for item in ('Status', 'MinorStatus', 'ApplicationStatus'):
+        if not sDict.get(item):
+          sDict.pop(item, None)
     # Pick up start and end times from all updates, if they don't exist
+    newStat = status
     for date in dates:
       sDict = statusDict[date]
-      status = sDict.get('Status', status)
-      if status in JobStatus.JOB_FINAL_STATES and not endTime:
+      newStat = sDict.get('Status', newStat)
+      if newStat in JobStatus.JOB_FINAL_STATES and not endTime:
         endTime = date
-      minor = sDict.get('MinorStatus', minor)
-      # Pick up the start date
-      if minor == "Application" and status == JobStatus.RUNNING and not startTime:
+      # Pick up the start date if not existing
+      if sDict.get('MinorStatus') == "Application" and newStat == JobStatus.RUNNING and not startTime:
         startTime = date
+      # This is to recover Matched jobs that get the application status: they are running!
+      if sDict.get('ApplicationStatus') and currentStatus == JobStatus.MATCHED:
+        sDict['Status'] = JobStatus.RUNNING
 
     # We should only update the status if its time stamp is more recent than the last update
     if dates[-1] >= lastTime:
       # Get the last status values
-      for date in [date for date in dates if date >= lastTime]:
+      for date in [dt for dt in dates if dt >= lastTime]:
         sDict = statusDict[date]
+        log.debug("\t", "Time %s - Statuses %s" % (date, str(sDict)))
         status = sDict.get('Status', status)
         minor = sDict.get('MinorStatus', minor)
         application = sDict.get('ApplicationStatus', application)
-        appCounter = sDict.get('ApplicationCounter', appCounter)
 
+      log.debug("Final statuses:", "status '%s', minor '%s', application '%s'" %
+                (status, minor, application))
       attrNames = []
       attrValues = []
       if status:
@@ -212,9 +229,6 @@ class JobStateUpdateHandler(RequestHandler):
       if application:
         attrNames.append('ApplicationStatus')
         attrValues.append(application)
-      if appCounter:
-        attrNames.append('ApplicationCounter')
-        attrValues.append(appCounter)
       result = cls.gJobDB.setJobAttributes(jobID, attrNames, attrValues, update=True)
       if not result['OK']:
         return result
@@ -222,22 +236,39 @@ class JobStateUpdateHandler(RequestHandler):
     # Update start and end time if needed
     if endTime:
       result = cls.gJobDB.setEndExecTime(jobID, endTime)
+      if not result['OK']:
+        return result
     if startTime:
       result = cls.gJobDB.setStartExecTime(jobID, startTime)
+      if not result['OK']:
+        return result
 
     # Update the JobLoggingDB records
     for date in dates:
       sDict = statusDict[date]
-      status = sDict['Status'] if sDict['Status'] else 'idem'
-      minor = sDict['MinorStatus'] if sDict['MinorStatus'] else 'idem'
-      application = sDict['ApplicationStatus'] if sDict['ApplicationStatus'] else 'idem'
-      source = sDict['Source']
-      result = cls.gJobLoggingDB.addLoggingRecord(
-          jobID, status, minor, application, date, source)
+      status = sDict.get('Status', 'idem')
+      minor = sDict.get('MinorStatus', 'idem')
+      application = sDict.get('ApplicationStatus', 'idem')
+      source = sDict.get('Source', 'Unknown')
+      result = cls.gJobLoggingDB.addLoggingRecord(jobID,
+                                                  status=status,
+                                                  minor=minor,
+                                                  application=application,
+                                                  date=date,
+                                                  source=source)
       if not result['OK']:
         return result
 
     return S_OK()
+
+  ###########################################################################
+  types_setJobAttribute = [[six.string_types, int], six.string_types, six.string_types]
+
+  @classmethod
+  def export_setJobAttribute(cls, jobID, attribute, value):
+    """Set a job attribute
+    """
+    return cls.gJobDB.setJobAttribute(int(jobID), attribute, value)
 
   ###########################################################################
   types_setJobSite = [[six.string_types, int], six.string_types]
@@ -272,31 +303,9 @@ class JobStateUpdateHandler(RequestHandler):
   @classmethod
   def export_setJobApplicationStatus(cls, jobID, appStatus, source='Unknown'):
     """ Set the application status for job specified by its JobId.
+        Internally calling the bulk method
     """
-
-    result = cls.gJobDB.getJobAttributes(int(jobID), ['Status', 'MinorStatus'])
-    if not result['OK']:
-      return result
-
-    if not result['Value']:
-      # if there is no matching Job it returns an empty dictionary
-      return S_ERROR('No Matching Job')
-
-    status = result['Value']['Status']
-    if status == "Stalled" or status == "Matched":
-      newStatus = 'Running'
-    else:
-      newStatus = status
-    minorStatus = result['Value']['MinorStatus']
-
-    result = cls.gJobDB.setJobStatus(
-        int(jobID), status=newStatus, minor=minorStatus, application=appStatus)
-    if not result['OK']:
-      return result
-
-    result = cls.gJobLoggingDB.addLoggingRecord(
-        int(jobID), newStatus, minorStatus, appStatus, source=source)
-    return result
+    return cls.__setJobStatus(jobID, appStatus=appStatus, source=source)
 
   ###########################################################################
   types_setJobParameter = [[six.string_types, int], six.string_types, six.string_types]
@@ -399,8 +408,8 @@ class JobStateUpdateHandler(RequestHandler):
       return S_ERROR('Job %d not found' % jobID)
 
     status = result['Value']['Status']
-    if status == "Stalled" or status == "Matched":
-      result = cls.gJobDB.setJobAttribute(jobID, 'Status', 'Running', True)
+    if status in (JobStatus.STALLED, JobStatus.MATCHED):
+      result = cls.gJobDB.setJobAttribute(jobID, 'Status', JobStatus.RUNNING, True)
       if not result['OK']:
         gLogger.warn('Failed to restore the job status to Running')
 
