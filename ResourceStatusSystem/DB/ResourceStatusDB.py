@@ -71,8 +71,8 @@ class ElementStatusBase(object):
   tokenowner = Column('TokenOwner', String(16), nullable=False, server_default='rs_svc')
 
   columnsOrder = ['Name', 'StatusType', 'Status', 'Reason',
-		  'DateEffective', 'TokenExpiration', 'ElementType',
-		  'LastCheckTime', 'TokenOwner', 'VO']
+                  'DateEffective', 'TokenExpiration', 'ElementType',
+                  'LastCheckTime', 'TokenOwner', 'VO']
 
   def fromDict(self, dictionary):
     """
@@ -130,8 +130,8 @@ class ElementStatusBaseWithID(ElementStatusBase):
   tokenowner = Column('TokenOwner', String(16), nullable=False, server_default='rs_svc')
 
   columnsOrder = ['ID', 'Name', 'StatusType', 'Status', 'Reason',
-		  'DateEffective', 'TokenExpiration', 'ElementType',
-		  'LastCheckTime', 'TokenOwner', 'VO']
+                  'DateEffective', 'TokenExpiration', 'ElementType',
+                  'LastCheckTime', 'TokenOwner', 'VO']
 
   def fromDict(self, dictionary):
     """
@@ -425,7 +425,7 @@ class ResourceStatusDB(object):
       # setting up the select query
       if not columnNames:  # query on the whole table
         wholeTable = True
-	columnNames = table_c.columnsOrder
+        columnNames = table_c.columnsOrder
         select = Query(table_c, session=session)
       else:  # query only the selected columns
         wholeTable = False

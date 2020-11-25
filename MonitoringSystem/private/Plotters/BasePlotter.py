@@ -139,7 +139,7 @@ class BasePlotter(DBUtils):
       reportRequest['reportName'] = self.__reportNameMapping[reportName]
 
     gLogger.info("Retrieving data for %s:%s" % (
-	reportRequest['typeName'], reportRequest['reportName']))
+        reportRequest['typeName'], reportRequest['reportName']))
     sT = time.time()
     retVal = self.__retrieveReportData(reportRequest, reportHash)
     reportGenerationTime = time.time() - sT
@@ -149,7 +149,7 @@ class BasePlotter(DBUtils):
       return retVal
     reportData = retVal['Value']
     gLogger.info("Plotting data for %s:%s" % (
-	reportRequest['typeName'], reportRequest['reportName']))
+        reportRequest['typeName'], reportRequest['reportName']))
     sT = time.time()
     retVal = self.__generatePlotForReport(reportRequest, reportHash, reportData)
     plotGenerationTime = time.time() - sT
@@ -159,7 +159,7 @@ class BasePlotter(DBUtils):
          reportRequest['reportName'],
          reportGenerationTime,
          plotGenerationTime,
-	 ((reportGenerationTime * 100 / plotGenerationTime) if plotGenerationTime else 0.)))
+         ((reportGenerationTime * 100 / plotGenerationTime) if plotGenerationTime else 0.)))
     if not retVal['OK']:
       return retVal
     plotDict = retVal['Value']

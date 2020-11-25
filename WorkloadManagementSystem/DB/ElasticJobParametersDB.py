@@ -66,11 +66,11 @@ class ElasticJobParametersDB(ElasticDB):
     try:
       section = getDatabaseSection("WorkloadManagement/ElasticJobParametersDB")
       indexPrefix = gConfig.getValue(
-	  "%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
+          "%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
 
       # Connecting to the ES cluster
       super(ElasticJobParametersDB, self).__init__(
-	  name, 'WorkloadManagement/ElasticJobParametersDB', indexPrefix)
+          name, 'WorkloadManagement/ElasticJobParametersDB', indexPrefix)
     except Exception as ex:
       self.log.error("Can't connect to ElasticJobParametersDB", repr(ex))
       raise RuntimeError("Can't connect to ElasticJobParametersDB")

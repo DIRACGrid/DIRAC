@@ -402,22 +402,22 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
 
     res = jobStateUpdate.setJobStatusBulk(
-	jobID,
-	{str(datetime.datetime.utcnow()): {
-	    'Status': 'Matched',
-	    'MinorStatus': 'MinorStatus',
-	    'ApplicationStatus': 'ApplicationStatus',
-	    'Source': 'Unknown'},
-	 str(datetime.datetime.utcnow() + datetime.timedelta(hours=1)): {
-	    'Status': 'Running',
-	    'MinorStatus': 'MinorStatus',
-	    'ApplicationStatus': 'ApplicationStatus',
-	    'Source': 'Unknown'},
-	 str(datetime.datetime.utcnow() + datetime.timedelta(hours=2)): {
-	    'Status': 'Completed',
-	    'MinorStatus': 'MinorStatus',
-	    'ApplicationStatus': 'ApplicationStatus',
-	    'Source': 'Unknown'}}
+        jobID,
+        {str(datetime.datetime.utcnow()): {
+            'Status': 'Matched',
+            'MinorStatus': 'MinorStatus',
+            'ApplicationStatus': 'ApplicationStatus',
+            'Source': 'Unknown'},
+         str(datetime.datetime.utcnow() + datetime.timedelta(hours=1)): {
+            'Status': 'Running',
+            'MinorStatus': 'MinorStatus',
+            'ApplicationStatus': 'ApplicationStatus',
+            'Source': 'Unknown'},
+         str(datetime.datetime.utcnow() + datetime.timedelta(hours=2)): {
+            'Status': 'Completed',
+            'MinorStatus': 'MinorStatus',
+            'ApplicationStatus': 'ApplicationStatus',
+            'Source': 'Unknown'}}
     )
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobsParameter({jobID: ['Status', 'Running']})

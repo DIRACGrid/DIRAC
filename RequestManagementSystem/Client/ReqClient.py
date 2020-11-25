@@ -350,17 +350,17 @@ class ReqClient(Client):
           newJobStatus = 'Done'
         elif jobMinorStatus == "Application Finished With Errors":
           newJobStatus = 'Failed'
-	else:
-	  self.log.error("finalizeRequest: Unexpected jobMinorStatus",
-			 "(got %s)" % jobMinorStatus)
-	  return S_ERROR("Unexpected jobMinorStatus")
+        else:
+          self.log.error("finalizeRequest: Unexpected jobMinorStatus",
+                         "(got %s)" % jobMinorStatus)
+          return S_ERROR("Unexpected jobMinorStatus")
 
       if newJobStatus:
         self.log.info("finalizeRequest: Updating job status for %d to %s/Requests done" % (jobID, newJobStatus))
       else:
         self.log.info(
             "finalizeRequest: Updating job minor status",
-	    "for %d to 'Requests done' (current status is %s)" % (jobID, jobStatus))
+            "for %d to 'Requests done' (current status is %s)" % (jobID, jobStatus))
       stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", 'RMS')
       if jobAppStatus and stateUpdate['OK']:
         stateUpdate = stateServer.setJobApplicationStatus(jobID, jobAppStatus, 'RMS')

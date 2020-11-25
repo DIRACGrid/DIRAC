@@ -97,8 +97,8 @@ class TokenAgent(AgentModule):
     tokenExpLimit = datetime.utcnow() + timedelta(hours=self.notifyHours)
 
     tokenElements = self.rsClient.selectStatusElement(
-	element, 'Status',
-	meta={'older': ['TokenExpiration', tokenExpLimit]})
+        element, 'Status',
+        meta={'older': ['TokenExpiration', tokenExpLimit]})
 
     if not tokenElements['OK']:
       return tokenElements

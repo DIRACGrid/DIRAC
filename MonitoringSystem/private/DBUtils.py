@@ -106,9 +106,9 @@ class DBUtils(object):
   def _determineBucketSize(self, start, end):
     """ It is used to determine the bucket size using _esUnits
 
-	:param int start: epoch time
-	:param int end: epoch time
-	:return: S_OK/S_ERROR with tuple of (binUnit, seconds)
+        :param int start: epoch time
+        :param int end: epoch time
+        :return: S_OK/S_ERROR with tuple of (binUnit, seconds)
     """
     diff = end - start
 

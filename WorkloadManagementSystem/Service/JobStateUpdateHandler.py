@@ -101,8 +101,8 @@ class JobStateUpdateHandler(RequestHandler):
   ###########################################################################
   types_setJobsStatus = [list]
 
-  @deprecated("unused")
   @classmethod
+  @deprecated("unused")
   def export_setJobsStatus(cls, jobIDs, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
