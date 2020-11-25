@@ -169,10 +169,11 @@ class JobStateUpdateHandler(RequestHandler):
       # if there is no matching Job it returns an empty dictionary
       return S_ERROR('No Matching Job')
     # If the current status is Stalled and we get an update, it should probably be "Running"
-    if result['Value']['Status'] == JobStatus.STALLED:
+    currentStatus = result['Value']['Status']
+    if currentStatus == JobStatus.STALLED:
       status = JobStatus.RUNNING
-    startTime = result['Value'].get('StartExecTime', '')
-    endTime = result['Value'].get('EndExecTime', '')
+    startTime = result['Value'].get('StartExecTime')
+    endTime = result['Value'].get('EndExecTime')
     # getJobAttributes only returns strings :(
     if startTime == 'None':
       startTime = None
@@ -195,15 +196,18 @@ class JobStateUpdateHandler(RequestHandler):
         if not sDict.get(item):
           sDict.pop(item, None)
     # Pick up start and end times from all updates, if they don't exist
+    newStat = status
     for date in dates:
       sDict = statusDict[date]
-      status = sDict.get('Status', '')
-      if status in JobStatus.JOB_FINAL_STATES and not endTime:
+      newStat = sDict.get('Status', newStat)
+      if newStat in JobStatus.JOB_FINAL_STATES and not endTime:
         endTime = date
-      minor = sDict.get('MinorStatus', '')
-      # Pick up the start date
-      if minor == "Application" and status == JobStatus.RUNNING and not startTime:
+      # Pick up the start date if not existing
+      if sDict.get('MinorStatus') == "Application" and newStat == JobStatus.RUNNING and not startTime:
         startTime = date
+      # This is to recover Matched jobs that get the application status: they are running!
+      if sDict.get('ApplicationStatus') and currentStatus == JobStatus.MATCHED:
+        sDict['Status'] = JobStatus.RUNNING
 
     # We should only update the status if its time stamp is more recent than the last update
     if dates[-1] >= lastTime:
