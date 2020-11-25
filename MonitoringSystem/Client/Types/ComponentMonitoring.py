@@ -37,6 +37,7 @@ class ComponentMonitoring(BaseType):
     self.addMapping({"host": {"type": "keyword"},
                      "component": {"type": "keyword"},
                      "status": {"type": "keyword"}})
+    # {'timestamp': {'type': 'date'}} will be added for all monitoring types
 
     self.dataToKeep = 86400 * 30  # we need to define...
 

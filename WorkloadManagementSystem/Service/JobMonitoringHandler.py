@@ -40,7 +40,8 @@ class JobMonitoringHandler(RequestHandler):
     cls.gTaskQueueDB = TaskQueueDB()
 
     cls.gElasticJobParametersDB = None
-    useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
+    useESForJobParametersFlag = Operations().getValue(
+        '/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
       cls.gElasticJobParametersDB = ElasticJobParametersDB()
     return S_OK()

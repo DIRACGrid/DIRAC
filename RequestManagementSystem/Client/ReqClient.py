@@ -290,6 +290,7 @@ class ReqClient(Client):
     :param str requestID: request id
     :param int jobID: job id
     """
+    # FIXME: use JobStateUpdateClient
     stateServer = RPCClient("WorkloadManagement/JobStateUpdate", useCertificates=useCertificates)
 
     # Checking if to update the job status - we should fail here, so it will be re-tried later
@@ -304,6 +305,7 @@ class ReqClient(Client):
                      (requestID, res['Value']))
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
+    # FIXME: use JobMonitoringClient
     monitorServer = RPCClient("WorkloadManagement/JobMonitoring", useCertificates=useCertificates)
     res = monitorServer.getJobSummary(int(jobID))
     if not res["OK"]:
@@ -348,14 +350,18 @@ class ReqClient(Client):
           newJobStatus = 'Done'
         elif jobMinorStatus == "Application Finished With Errors":
           newJobStatus = 'Failed'
+        else:
+          self.log.error("finalizeRequest: Unexpected jobMinorStatus",
+                         "(got %s)" % jobMinorStatus)
+          return S_ERROR("Unexpected jobMinorStatus")
 
       if newJobStatus:
         self.log.info("finalizeRequest: Updating job status for %d to %s/Requests done" % (jobID, newJobStatus))
       else:
         self.log.info(
             "finalizeRequest: Updating job minor status",
-            "for %d to Requests done (current status is %s)" % (jobID, jobStatus))
-      stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", "", 'RMS')
+            "for %d to 'Requests done' (current status is %s)" % (jobID, jobStatus))
+      stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", 'RMS')
       if jobAppStatus and stateUpdate['OK']:
         stateUpdate = stateServer.setJobApplicationStatus(jobID, jobAppStatus, 'RMS')
       if not stateUpdate["OK"]:

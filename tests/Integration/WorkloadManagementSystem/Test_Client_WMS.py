@@ -401,14 +401,32 @@ class JobMonitoringMore(TestWMSTestCase):
     res = jobMonitor.getJobPageSummaryWeb({}, [], 0, 100)
     self.assertTrue(res['OK'], res.get('Message'))
 
-    res = jobStateUpdate.setJobStatusBulk(jobID,
-                                          {str(datetime.datetime.utcnow()): {'Status': 'Running',
-                                                                             'MinorStatus': 'MinorStatus',
-                                                                             'ApplicationStatus': 'ApplicationStatus',
-                                                                             'Source': 'Unknown'}})
+    res = jobStateUpdate.setJobStatusBulk(
+        jobID,
+        {str(datetime.datetime.utcnow()): {
+            'Status': 'Matched',
+            'MinorStatus': 'MinorStatus',
+            'ApplicationStatus': 'ApplicationStatus',
+            'Source': 'Unknown'},
+         str(datetime.datetime.utcnow() + datetime.timedelta(hours=1)): {
+            'Status': 'Running',
+            'MinorStatus': 'MinorStatus',
+            'ApplicationStatus': 'ApplicationStatus',
+            'Source': 'Unknown'},
+         str(datetime.datetime.utcnow() + datetime.timedelta(hours=2)): {
+            'Status': 'Completed',
+            'MinorStatus': 'MinorStatus',
+            'ApplicationStatus': 'ApplicationStatus',
+            'Source': 'Unknown'}}
+    )
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobsParameter({jobID: ['Status', 'Running']})
     self.assertTrue(res['OK'], res.get('Message'))
+
+    res = jobMonitor.getJobSummary(int(jobID))
+    self.assertTrue(res['OK'], res.get('Message'))
+    self.assertEqual(res['Value']['Status'], 'Completed')
+    self.assertEqual(res['Value']['MinorStatus'], 'MinorStatus')
 
     # delete the jobs - this will just set its status to "deleted"
     wmsClient.deleteJob(jobIDs)

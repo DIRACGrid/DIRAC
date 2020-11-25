@@ -128,8 +128,8 @@ class MonitoringDB(ElasticDB):
     Get data from the DB
 
     :param str typeName: name of the monitoring type
-    :param int startTime:  epoch objects.
-    :param int endtime: epoch objects.
+    :param int startTime:  epoch object
+    :param int endtime: epoch object
     :param dict condDict: conditions for the query
 
                    * key -> name of the field
