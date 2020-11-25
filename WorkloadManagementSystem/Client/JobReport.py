@@ -107,15 +107,20 @@ class JobReport(object):
 
     statusDict = {}
     for status, minor, dtime in self.jobStatusInfo:
-      statusDict[dtime] = {'Status': status,
-                           'MinorStatus': minor,
-                           'ApplicationStatus': '',
-                           'Source': self.source}
+      # No need to send empty items in dictionary
+      sDict = {}
+      if status:
+        sDict['Status'] = status
+      if minor:
+        sDict['MinorStatus'] = minor
+      if sDict:
+        sDict['Source'] = self.source
+        statusDict[dtime] = sDict
     for appStatus, dtime in self.appStatusInfo:
-      statusDict[dtime] = {'Status': '',
-                           'MinorStatus': '',
-                           'ApplicationStatus': appStatus,
-                           'Source': self.source}
+      # No need to send empty items in dictionary
+      if appStatus:
+        statusDict[dtime] = {'ApplicationStatus': appStatus,
+                             'Source': self.source}
 
     if statusDict:
       result = JobStateUpdateClient().setJobStatusBulk(self.jobID, statusDict)
@@ -132,20 +137,12 @@ class JobReport(object):
     """ Send the job parameters stored in the internal cache
     """
 
-    parameters = []
-    for pname, value in self.jobParameters.items():
-      pvalue, _timeStamp = value
-      parameters.append([pname, pvalue])
-
+    parameters = [[pname, value[0]] for pname, value in self.jobParameters.items()]
     if parameters:
       result = JobStateUpdateClient().setJobParameters(self.jobID, parameters)
-      if not result['OK']:
-        return result
-
       if result['OK']:
         # Empty the internal parameter container
         self.jobParameters = {}
-
       return result
     else:
       return S_OK('Empty')
@@ -156,11 +153,9 @@ class JobReport(object):
 
     success = True
     result = self.sendStoredStatusInfo()
-    if not result['OK']:
-      success = False
+    success &= result['OK']
     result = self.sendStoredJobParameters()
-    if not result['OK']:
-      success = False
+    success &= result['OK']
 
     if success:
       return S_OK()
