@@ -22,17 +22,19 @@ from diraccfg import CFG
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
-from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import rescheduleFailedJob
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
@@ -127,7 +129,7 @@ class JobAgent(AgentModule):
     self.stopOnApplicationFailure = self.am_getOption('StopOnApplicationFailure', self.stopOnApplicationFailure)
     self.stopAfterFailedMatches = self.am_getOption('StopAfterFailedMatches', self.stopAfterFailedMatches)
     self.extraOptions = gConfig.getValue('/AgentJobRequirements/ExtraOptions', self.extraOptions)
-    # Timeleft
+    # Utilities
     self.timeLeftUtil = TimeLeft()
     return S_OK()
 
@@ -254,18 +256,22 @@ class JobAgent(AgentModule):
     # Reset the Counter
     self.matchFailedCount = 0
 
+    # If we are here it is because we matched a job
     matcherInfo = jobRequest['Value']
     if not self.pilotInfoReportedFlag:
       # Check the flag after the first access to the Matcher
       self.pilotInfoReportedFlag = matcherInfo.get('PilotInfoReportedFlag', False)
     jobID = matcherInfo['JobID']
+    jobReport = JobReport(jobID, 'JobAgent@%s' % self.siteName)
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if param not in matcherInfo:
-        self.__report(jobID, 'Failed', 'Matcher did not return %s' % (param))
+        jobReport.setJobStatus(status='Failed',
+                               minor='Matcher did not return %s' % (param))
         return self.__finish('Matcher Failed')
       elif not matcherInfo[param]:
-        self.__report(jobID, 'Failed', 'Matcher returned null %s' % (param))
+        jobReport.setJobStatus(status='Failed',
+                               minor='Matcher returned null %s' % (param))
         return self.__finish('Matcher Failed')
       else:
         self.log.verbose('Matcher returned', '%s = %s ' % (param, matcherInfo[param]))
@@ -281,14 +287,15 @@ class JobAgent(AgentModule):
 
     parameters = self._getJDLParameters(jobJDL)
     if not parameters['OK']:
-      self.__report(jobID, 'Failed', 'Could Not Extract JDL Parameters')
+      jobReport.setJobStatus(status='Failed',
+                             minor='Could Not Extract JDL Parameters')
       self.log.warn('Could Not Extract JDL Parameters', parameters['Message'])
       return self.__finish('JDL Problem')
 
     params = parameters['Value']
     if 'JobID' not in params:
       msg = 'Job has not JobID defined in JDL parameters'
-      self.__report(jobID, 'Failed', msg)
+      jobReport.setJobStatus(status='Failed', minor=msg)
       self.log.warn(msg)
       return self.__finish('JDL Problem')
     else:
@@ -305,7 +312,8 @@ class JobAgent(AgentModule):
 
     # Job requirements for determining the number of processors
     # the minimum number of processors requested
-    processors = int(params.get('NumberOfProcessors', int(params.get('MinNumberOfProcessors', 1))))
+    processors = int(params.get('NumberOfProcessors',
+                                int(params.get('MinNumberOfProcessors', 1))))
     # the maximum number of processors allowed to the payload
     maxNumberOfProcessors = int(params.get('MaxNumberOfProcessors', 0))
     # need or not the whole node for the job
@@ -321,34 +329,50 @@ class JobAgent(AgentModule):
                   'JobID=%s, JobType=%s, OwnerDN=%s, JobGroup=%s' % (jobID, jobType, ownerDN, jobGroup))
     self.jobCount += 1
     try:
-      jobReport = JobReport(jobID, 'JobAgent@%s' % self.siteName)
-      jobReport.setJobParameter('MatcherServiceTime', str(matchTime), sendFlag=False)
+      jobReport.setJobParameter(par_name='MatcherServiceTime',
+                                par_value=str(matchTime),
+                                sendFlag=False)
 
       if 'BOINC_JOB_ID' in os.environ:
         # Report BOINC environment
         for thisp in ('BoincUserID', 'BoincHostID', 'BoincHostPlatform', 'BoincHostName'):
-          jobReport.setJobParameter(thisp, gConfig.getValue('/LocalSite/%s' % thisp, 'Unknown'), sendFlag=False)
+          jobReport.setJobParameter(par_name=thisp,
+                                    par_value=gConfig.getValue('/LocalSite/%s' % thisp, 'Unknown'),
+                                    sendFlag=False)
 
-      jobReport.setJobStatus('Matched', 'Job Received by Agent')
+      jobReport.setJobStatus(status='Matched',
+                             minor='Job Received by Agent',
+                             sendFlag=False)
       result = self._setupProxy(ownerDN, jobGroup)
       if not result['OK']:
-        return self._rescheduleFailedJob(jobID, result['Message'], self.stopOnApplicationFailure)
+        return self._rescheduleFailedJob(
+            jobID, result['Message'], self.stopOnApplicationFailure)
       proxyChain = result.get('Value')
 
       # Save the job jdl for external monitoring
       self.__saveJobJDLRequest(jobID, jobJDL)
 
-      software = self._checkInstallSoftware(jobID, params, ceDict)
+      software = self._checkInstallSoftware(jobID, params, ceDict, jobReport)
       if not software['OK']:
         self.log.error('Failed to install software for job', '%s' % (jobID))
         errorMsg = software['Message']
         if not errorMsg:
           errorMsg = 'Failed software installation'
-        return self._rescheduleFailedJob(jobID, errorMsg, self.stopOnApplicationFailure)
+        return self._rescheduleFailedJob(
+            jobID, errorMsg, self.stopOnApplicationFailure)
 
       self.log.debug('Before self._submitJob() (%sCE)' % (self.ceName))
-      result = self._submitJob(jobID, params, ceDict, optimizerParams, proxyChain,
-                               processors, wholeNode, maxNumberOfProcessors, mpTag)
+      result = self._submitJob(
+          jobID=jobID,
+          jobParams=params,
+          resourceParams=ceDict,
+          optimizerParams=optimizerParams,
+          proxyChain=proxyChain,
+          jobReport=jobReport,
+          processors=processors,
+          wholeNode=wholeNode,
+          maxNumberOfProcessors=maxNumberOfProcessors,
+          mpTag=mpTag)
       if not result['OK']:
         return self.__finish(result['Message'])
       elif 'PayloadFailed' in result:
@@ -459,7 +483,7 @@ class JobAgent(AgentModule):
     return S_OK(chain)
 
   #############################################################################
-  def _checkInstallSoftware(self, jobID, jobParams, resourceParams):
+  def _checkInstallSoftware(self, jobID, jobParams, resourceParams, jobReport):
     """Checks software requirement of job and whether this is already present
        before installing software locally.
     """
@@ -468,7 +492,9 @@ class JobAgent(AgentModule):
       self.log.verbose(msg)
       return S_OK(msg)
 
-    self.__report(jobID, 'Matched', 'Installing Software')
+    jobReport.setJobStatus(status='Matched',
+                           minorStatus='Installing Software',
+                           sendFlag=False)
     softwareDist = jobParams['SoftwareDistModule']
     self.log.verbose('Found VO Software Distribution module', ': %s' % (softwareDist))
     argumentsDict = {'Job': jobParams, 'CE': resourceParams}
@@ -482,7 +508,7 @@ class JobAgent(AgentModule):
 
   #############################################################################
   def _submitJob(self, jobID, jobParams, resourceParams, optimizerParams,
-                 proxyChain,
+                 proxyChain, jobReport,
                  processors=1, wholeNode=False, maxNumberOfProcessors=0, mpTag=False):
     """ Submit job to the Computing Element instance after creating a custom
         Job Wrapper with the available job parameters.
@@ -508,7 +534,9 @@ class JobAgent(AgentModule):
       return result
 
     wrapperFile = result['Value']
-    self.__report(jobID, 'Matched', 'Submitted To CE')
+    jobReport.setJobStatus(status='Matched',
+                           minor='Could Not Extract JDL Parameters',
+                           sendFlag=False)
 
     self.log.info('Submitting JobWrapper',
                   '%s to %sCE' % (os.path.basename(wrapperFile), self.ceName))
@@ -528,18 +556,19 @@ class JobAgent(AgentModule):
                                                  jobDesc=jobDesc,
                                                  log=self.log,
                                                  logLevel=logLevel)
-    ret = S_OK('Job submitted')
+    submissionResult = S_OK('Job submitted')
 
     if submission['OK']:
       batchID = submission['Value']
       self.log.info('Job submitted', '(DIRAC JobID: %s; Batch ID: %s' % (jobID, batchID))
       if 'PayloadFailed' in submission:
-        ret['PayloadFailed'] = submission['PayloadFailed']
-        return ret
+        submissionResult['PayloadFailed'] = submission['PayloadFailed']
       time.sleep(self.jobSubmissionDelay)
     else:
       self.log.error('Job submission failed', jobID)
-      self.__setJobParam(jobID, 'ErrorMessage', '%s CE Submission Error' % (self.ceName))
+      jobReport.setJobParameter(par_name='ErrorMessage',
+                                par_value='%s CE Submission Error' % (self.ceName),
+                                sendFlag=False)
       if 'ReschedulePayload' in submission:
         rescheduleFailedJob(jobID, submission['Message'])
         return S_OK()  # Without this, the job is marked as failed
@@ -548,9 +577,27 @@ class JobAgent(AgentModule):
           self.log.error('Error in DIRAC JobWrapper or inner CE execution:',
                          'exit code = %s' % (str(submission['Value'])))
       self.log.error("CE Error", "%s : %s" % (self.ceName, submission['Message']))
-      return submission
+      submissionResult = submission
 
-    return ret
+    # Committing the JobReport
+    res = jobReport.commit()
+    if not res['OK']:
+      resFD = jobReport.generateForwardDISET()
+      if not resFD['OK']:
+        self.log.error("Error generating ForwardDISET operation", resFD['Message'])
+      else:
+        # Here we create the Request.
+        op = resFD['Value']
+        request = Request()
+        requestName = 'jobAgent_%s' % jobID
+        request.RequestName = requestName.replace('"', '')
+        request.JobID = jobID
+        request.SourceComponent = "JobAgent_%s" % jobID
+        request.addOperation(op)
+        # This might fail, but only a message would be printed.
+        self._sendFailoverRequest(request)
+
+    return submissionResult
 
   #############################################################################
   def _getJDLParameters(self, jdl):
@@ -583,30 +630,6 @@ class JobAgent(AgentModule):
       return S_ERROR('Exception while extracting JDL parameters for job')
 
   #############################################################################
-  def __report(self, jobID, status, minorStatus):
-    """Wraps around setJobStatus of state update client
-    """
-    jobStatus = JobStateUpdateClient().setJobStatus(int(jobID), status, minorStatus, 'JobAgent@%s' % self.siteName)
-    self.log.verbose('Setting job status',
-                     'setJobStatus(%s,%s,%s,%s)' % (jobID, status, minorStatus, 'JobAgent@%s' % self.siteName))
-    if not jobStatus['OK']:
-      self.log.warn('Issue setting the job status', jobStatus['Message'])
-
-    return jobStatus
-
-  #############################################################################
-  def __setJobParam(self, jobID, name, value):
-    """Wraps around setJobParameter of state update client
-    """
-    jobParam = JobStateUpdateClient().setJobParameter(int(jobID), str(name), str(value))
-    self.log.verbose('Setting job parameter',
-                     'setJobParameter(%s,%s,%s)' % (jobID, name, value))
-    if not jobParam['OK']:
-      self.log.warn('Issue setting the job parameter', jobParam['Message'])
-
-    return jobParam
-
-  #############################################################################
   def __finish(self, message, stop=True):
     """Force the JobAgent to complete gracefully.
     """
@@ -615,8 +638,7 @@ class JobAgent(AgentModule):
                     'with message "%s", execution complete.' % message)
       self.am_stopExecution()
       return S_ERROR(message)
-    else:
-      return S_OK(message)
+    return S_OK(message)
 
   #############################################################################
   def _rescheduleFailedJob(self, jobID, message, stop=True):
@@ -647,14 +669,45 @@ class JobAgent(AgentModule):
     return self.__finish('Job Rescheduled', stop)
 
   #############################################################################
+  def _sendFailoverRequest(self, request):
+    """ Send failover reques per Job.
+        This request would basically be a DISET request for setting the job status.
+
+        If this fails, it only prints a message.
+
+        :param Request request: Request() object
+        :return: None
+    """
+    if len(request):
+      self.log.info("Trying to send the failover request")
+      # The request is ready, send it now
+      isValid = RequestValidator().validate(request)
+      if not isValid["OK"]:
+        self.log.error("Failover request is not valid", isValid["Message"])
+        self.log.error("Printing out the content of the request")
+        reqToJSON = request.toJSON()
+        if reqToJSON['OK']:
+          print(str(reqToJSON['Value']))
+        else:
+          self.log.error(
+              "Something went wrong creating the JSON from request",
+              reqToJSON['Message'])
+      else:
+        # Now trying to send the request
+        requestClient = ReqClient()
+        result = requestClient.putRequest(request)
+        if not result['OK']:
+          self.log.error('Failed to set failover request', result['Message'])
+
   def finalize(self):
     """ Job Agent finalization method
     """
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
-    result = PilotManagerClient().setPilotStatus(str(self.pilotReference), 'Done', gridCE,
-                                                 'Report from JobAgent', self.siteName, queue)
+    result = PilotManagerClient().setPilotStatus(
+        str(self.pilotReference), 'Done', gridCE,
+        'Report from JobAgent', self.siteName, queue)
     if not result['OK']:
       self.log.warn('Issue setting the pilot status', result['Message'])
 

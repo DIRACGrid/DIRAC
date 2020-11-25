@@ -1,11 +1,11 @@
-"""
-  JobReport class encapsulates various methods of the job status reporting blah, blah, blah...
-
+""" JobReport class encapsulates various methods of the job status reporting.
+    It's an interface to JobStateUpdateClient, used when bulk submission is needed.
 """
 
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -21,21 +21,14 @@ class JobReport(object):
 
   def __init__(self, jobid, source=''):
     """ c'tor
-
-
     """
-    self.jobStatusInfo = []
-    self.appStatusInfo = []
+    self.jobStatusInfo = []  # where job status updates are cumulated
+    self.appStatusInfo = []  # where application status updates are cumulated
     self.jobParameters = {}
     self.jobID = int(jobid)
     self.source = source
     if not source:
       self.source = 'Job_%d' % self.jobID
-
-  def setJob(self, jobID):
-    """ Set the job ID for which to send reports
-    """
-    self.jobID = jobID
 
   def setJobStatus(self, status='', minor='', application='', sendFlag=True):
     """ Send job status information to the JobState service for jobID

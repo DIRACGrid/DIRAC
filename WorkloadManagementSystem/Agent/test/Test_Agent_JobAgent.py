@@ -211,7 +211,7 @@ def test__checkInstallSoftware(mocker):
   jobAgent.log = gLogger
   jobAgent.log.setLevel('DEBUG')
 
-  result = jobAgent._checkInstallSoftware(101, {}, {})
+  result = jobAgent._checkInstallSoftware(101, {}, {}, MagicMock())
 
   assert result['OK']
   assert result['Value'] == 'Job has no software installation requirement'
