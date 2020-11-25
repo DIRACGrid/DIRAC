@@ -8,12 +8,12 @@
 """
 
 from __future__ import absolute_import
+import time
 import six
 from six.moves import range
 
 __RCSID__ = "$Id$"
 
-import time
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
