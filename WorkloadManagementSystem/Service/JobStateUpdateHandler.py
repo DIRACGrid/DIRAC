@@ -24,6 +24,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 # This is a global instance of the JobDB class
 jobDB = False
@@ -90,7 +91,7 @@ class JobStateUpdateHandler(RequestHandler):
     if status != 'Staging':
       return S_OK('Job is not in Staging after %d seconds' % trials)
 
-    result = self.__setJobStatus(int(jobID), jobStatus, minorStatus, 'StagerSystem', None)
+    result = self.__setJobStatus(int(jobID), status=jobStatus, minorStatus=minorStatus, source='StagerSystem')
     if not result['OK']:
       if result['Message'].find('does not exist') != -1:
         return S_OK()
@@ -106,56 +107,55 @@ class JobStateUpdateHandler(RequestHandler):
         Set optionally the status date and source component which sends the
         status information.
     """
-    return self.__setJobStatus(int(jobID), status, minorStatus, source, datetime)
+    return self.__setJobStatus(int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime)
 
   ###########################################################################
   types_setJobsStatus = [list]
 
+  @deprecated("unused")
   def export_setJobsStatus(self, jobIDs, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
     """
     for jobID in jobIDs:
-      self.__setJobStatus(int(jobID), status, minorStatus, source, datetime)
+      self.__setJobStatus(int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime)
     return S_OK()
 
-  def __setJobStatus(self, jobID, status, minorStatus, source, datetime):
-    """ update the job status. """
-    result = jobDB.setJobStatus(jobID, status, minorStatus)
-    if not result['OK']:
-      return result
-
-    if status in JobStatus.JOB_FINAL_STATES:
-      result = jobDB.setEndExecTime(jobID)
-
-    if status == 'Running' and minorStatus == 'Application':
-      result = jobDB.setStartExecTime(jobID)
-
-    result = jobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      return S_ERROR('Job %d does not exist' % int(jobID))
-
-    status = result['Value']['Status']
-    minorStatus = result['Value']['MinorStatus']
-    if datetime:
-      result = logDB.addLoggingRecord(jobID, status, minorStatus, datetime, source)
-    else:
-      result = logDB.addLoggingRecord(jobID, status, minorStatus, source=source)
-    return result
+  def __setJobStatus(self, jobID, status=None, minorStatus=None, appStatus=None, source=None, datetime=None):
+    """ update the job provided statuses (major, minor and application)
+        If sets also the source and the time stamp (or current time)
+        This method calls the bulk method internally
+    """
+    sDict = {}
+    if status:
+      sDict['Status'] = status
+    if minorStatus:
+      sDict['MinorStatus'] = minorStatus
+    if appStatus:
+      sDict['ApplicationStatus'] = appStatus
+    if sDict:
+      if source:
+        sDict['Source'] = source
+      if not datetime:
+        datetime = Time.toString()
+      return self.__setJobStatusBulk(jobID, {datetime: sDict})
+    return S_OK()
 
   ###########################################################################
   types_setJobStatusBulk = [[six.string_types, int], dict]
 
   def export_setJobStatusBulk(self, jobID, statusDict):
+    """ Set various job status fields with a time stamp and a source
+    """
+    return self.__setJobStatusBulk(jobID, statusDict)
+
+  def __setJobStatusBulk(self, jobID, statusDict):
     """ Set various status fields for job specified by its JobId.
         Set only the last status in the JobDB, updating all the status
         logging information in the JobLoggingDB. The statusDict has datetime
         as a key and status information dictionary as values
     """
-
     status = ''
     minor = ''
     application = ''
@@ -230,8 +230,12 @@ class JobStateUpdateHandler(RequestHandler):
     # Update start and end time if needed
     if endTime:
       result = jobDB.setEndExecTime(jobID, endTime)
+      if not result['OK']:
+        return result
     if startTime:
       result = jobDB.setStartExecTime(jobID, startTime)
+      if not result['OK']:
+        return result
 
     # Update the JobLoggingDB records
     for date in dates:
@@ -239,7 +243,7 @@ class JobStateUpdateHandler(RequestHandler):
       status = sDict.get('Status', 'idem')
       minor = sDict.get('MinorStatus', 'idem')
       application = sDict.get('ApplicationStatus', 'idem')
-      source = sDict['Source']
+      source = sDict.get('Source', 'Unknown')
       result = logDB.addLoggingRecord(jobID, status, minor, application, date, source)
       if not result['OK']:
         return result
@@ -278,29 +282,9 @@ class JobStateUpdateHandler(RequestHandler):
 
   def export_setJobApplicationStatus(self, jobID, appStatus, source='Unknown'):
     """ Set the application status for job specified by its JobId.
+        Internally calling the bulk method
     """
-
-    result = jobDB.getJobAttributes(int(jobID), ['Status', 'MinorStatus'])
-    if not result['OK']:
-      return result
-
-    if not result['Value']:
-      # if there is no matching Job it returns an empty dictionary
-      return S_ERROR('No Matching Job')
-
-    status = result['Value']['Status']
-    if status == "Stalled" or status == "Matched":
-      newStatus = 'Running'
-    else:
-      newStatus = status
-    minorStatus = result['Value']['MinorStatus']
-
-    result = jobDB.setJobStatus(int(jobID), status=newStatus, minor=minorStatus, application=appStatus)
-    if not result['OK']:
-      return result
-
-    result = logDB.addLoggingRecord(int(jobID), newStatus, minorStatus, appStatus, source=source)
-    return result
+    return self.__setJobStatus(jobID, appStatus=appStatus, source=source)
 
   ###########################################################################
   types_setJobParameter = [[six.string_types, int], six.string_types, six.string_types]
