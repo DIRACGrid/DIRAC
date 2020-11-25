@@ -234,7 +234,7 @@ class X509Chain(object):
     """
     try:
       self._certList = self.__certListFromPemString(data)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s" % repr(e).replace(',)', ')'))
 
     if not self._certList:
@@ -252,6 +252,9 @@ class X509Chain(object):
     # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that
     # (constructors are not able to deal with big string)
     certList = []
+    # If the certificate is downloaded from the server it will be a str in Python 3
+    if six.PY3 and isinstance(certString, six.string_types):
+      certString = certString.encode()
     pattern = r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)"
     for cert in re.findall(pattern.encode("utf-8"), certString):
       certList.append(X509Certificate(certString=cert[0]))
@@ -1050,20 +1053,20 @@ class X509Chain(object):
 
         :returns: S_OK(string hash)
     """
-
     if self.__hash:
       return S_OK(self.__hash)
     sha1 = hashlib.sha1()
     for cert in self._certList:
-      sha1.update(str(cert.getSubjectNameObject()["Value"]))
-    sha1.update(str(self.getRemainingSecs()['Value'] / 3600))
-    sha1.update(self.getDIRACGroup()['Value'])
+      sha1.update(cert.getSubjectNameObject()["Value"].as_text().encode())
+    sha1.update(str(self.getRemainingSecs()['Value'] / 3600).encode())
+    sha1.update(self.getDIRACGroup()['Value'].encode())
     if self.isVOMS():
-      sha1.update("VOMS")
+      sha1.update(b"VOMS")
       from DIRAC.Core.Security.VOMS import VOMS
       result = VOMS().getVOMSAttributes(self)
       if result['OK']:
-        sha1.update(str(result['Value']))
+        for attribute in result['Value']:
+          sha1.update(attribute.encode())
     self.__hash = sha1.hexdigest()
     return S_OK(self.__hash)
 
