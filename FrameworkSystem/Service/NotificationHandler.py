@@ -27,14 +27,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 __RCSID__ = "$Id$"
 
 gNotDB = None
-gMailSet = set()
 gMailCache = DictCache()
-
-
-def purgeDelayedEMails():
-  """ Purges the emails accumulated in gMailSet
-  """
-  gMailSet.clear()
 
 
 class NotificationHandler(RequestHandler):
@@ -47,7 +40,6 @@ class NotificationHandler(RequestHandler):
     gNotDB = NotificationDB()
     gThreadScheduler.addPeriodicTask(3600, gNotDB.purgeExpiredNotifications)
     gThreadScheduler.addPeriodicTask(3600, gMailCache.purgeExpired())
-    gThreadScheduler.addPeriodicTask(3600, purgeDelayedEMails)
     return S_OK()
 
   def initialize(self):
@@ -67,13 +59,12 @@ class NotificationHandler(RequestHandler):
         :param basestring subject: subject of letter
         :param basestring body: body of letter
         :param basestring fromAddress: sender address, if None, will be used default from CS
-        :param bool avoidSpam: if True, then emails are first added to a set so that duplicates are removed,
-               and sent every hour.
+        :param bool avoidSpam: Deprecated
 
         :return: S_OK(basestring)/S_ERROR() -- basestring is status message
     """
     gLogger.verbose('Received signal to send the following mail to %s:\nSubject = %s\n%s' % (address, subject, body))
-    if gMailCache.exists(hash(address + subject + body)) and not avoidSpam:
+    if gMailCache.exists(hash(address + subject + body)):
       return S_OK('Email with the same content already sent today to current addresses, come back tomorrow')
     eMail = Mail()
     notificationSection = PathFinder.getServiceSection("Framework/Notification")
@@ -89,18 +80,13 @@ class NotificationHandler(RequestHandler):
     if not fromAddress == 'None':
       eMail._fromAddress = fromAddress
     eMail._fromAddress = gConfig.getValue('%s/FromAddress' % csSection) or eMail._fromAddress
-    if avoidSpam and eMail in gMailSet:
-      return S_OK("Mail already sent")
+    result = eMail._send()
+    if not result['OK']:
+      gLogger.warn('Could not send mail with the following message:\n%s' % result['Message'])
     else:
-      result = eMail._send()
-      if not result['OK']:
-        gLogger.warn('Could not send mail with the following message:\n%s' % result['Message'])
-      else:
-        gMailCache.add(hash(address + subject + body), 3600 * 24)
-        gLogger.info('Mail sent successfully to %s with subject %s' % (address, subject))
-        gLogger.debug(result['Value'])
-        if avoidSpam:
-          gMailSet.add(eMail)
+      gMailCache.add(hash(address + subject + body), 3600 * 24)
+      gLogger.info('Mail sent successfully to %s with subject %s' % (address, subject))
+      gLogger.debug(result['Value'])
 
     return result
 
