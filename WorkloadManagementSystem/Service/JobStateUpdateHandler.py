@@ -251,13 +251,20 @@ class JobStateUpdateHandler(RequestHandler):
     return S_OK()
 
   ###########################################################################
+  types_setJobAttribute = [[six.string_types, int], six.string_types, six.string_types]
+
+  def export_setJobAttribute(self, jobID, attribute, value):
+    """Set a job attribute
+    """
+    return jobDB.setJobAttribute(int(jobID), attribute, value)
+
+  ###########################################################################
   types_setJobSite = [[six.string_types, int], six.string_types]
 
   def export_setJobSite(self, jobID, site):
     """Allows the site attribute to be set for a job specified by its jobID.
     """
-    result = jobDB.setJobAttribute(int(jobID), 'Site', site)
-    return result
+    return jobDB.setJobAttribute(int(jobID), 'Site', site)
 
   ###########################################################################
   types_setJobFlag = [[six.string_types, int], six.string_types]
@@ -265,8 +272,7 @@ class JobStateUpdateHandler(RequestHandler):
   def export_setJobFlag(self, jobID, flag):
     """ Set job flag for job with jobID
     """
-    result = jobDB.setJobAttribute(int(jobID), flag, 'True')
-    return result
+    return jobDB.setJobAttribute(int(jobID), flag, 'True')
 
   ###########################################################################
   types_unsetJobFlag = [[six.string_types, int], six.string_types]
@@ -274,8 +280,7 @@ class JobStateUpdateHandler(RequestHandler):
   def export_unsetJobFlag(self, jobID, flag):
     """ Unset job flag for job with jobID
     """
-    result = jobDB.setJobAttribute(int(jobID), flag, 'False')
-    return result
+    return jobDB.setJobAttribute(int(jobID), flag, 'False')
 
   ###########################################################################
   types_setJobApplicationStatus = [[six.string_types, int], six.string_types, six.string_types]
