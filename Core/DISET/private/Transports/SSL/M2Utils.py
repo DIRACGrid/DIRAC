@@ -4,7 +4,7 @@ Utilities for using M2Crypto SSL with DIRAC.
 """
 
 import os
-from M2Crypto import SSL, m2
+from M2Crypto import SSL, m2, X509
 
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
@@ -118,6 +118,12 @@ def getM2SSLContext(ctx=None, **kwargs):
   # as described here https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html
   if hasattr(SSL, 'verify_allow_proxy_certs'):
     ctx.get_cert_store().set_flags(SSL.verify_allow_proxy_certs)  # pylint: disable=no-member
+  # As of M2Crypto 0.37, the `verify_allow_proxy_certs` flag was moved
+  # to X509 (https://gitlab.com/m2crypto/m2crypto/-/merge_requests/238)
+  # It is more consistent with all the other flags,
+  # but pySSL had it in SSL. Well...
+  if hasattr(X509, 'verify_allow_proxy_certs'):
+    ctx.get_cert_store().set_flags(X509.verify_allow_proxy_certs)  # pylint: disable=no-member
 
   # Other parameters
   sslMethod = kwargs.get('sslMethod', None)
