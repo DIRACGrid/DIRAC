@@ -173,6 +173,11 @@ class JobStateUpdateHandler(RequestHandler):
       status = JobStatus.RUNNING
     startTime = result['Value'].get('StartExecTime', '')
     endTime = result['Value'].get('EndExecTime', '')
+    # getJobAttributes only returns strings :(
+    if startTime == 'None':
+      startTime = None
+    if endTime == 'None':
+      endTime = None
 
     # Get the latest WN time stamps of status updates
     result = logDB.getWMSTimeStamps(int(jobID))
