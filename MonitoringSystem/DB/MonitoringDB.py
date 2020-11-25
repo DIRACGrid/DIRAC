@@ -209,13 +209,13 @@ class MonitoringDB(ElasticDB):
           if site not in result:
             result[site] = {}
           for k in j.end_data.buckets:
-            if (k.key / 1000) not in result[site]:
+            if int(k.key / 1000) not in result[site]:
               if len(selectFields) == 1:  # for backward compatibility
-                result[site][k.key / 1000] = k.avg_monthly_sales.value
+                result[site][int(k.key / 1000)] = k.avg_monthly_sales.value
               else:
-                result[site][k.key / 1000] = [k.avg_monthly_sales.value]
+                result[site][int(k.key / 1000)] = [k.avg_monthly_sales.value]
             else:
-              result[site][k.key / 1000].append(k.avg_monthly_sales.value)
+              result[site][int(k.key / 1000)].append(k.avg_monthly_sales.value)
 
     # the result format is { 'grouping':{timestamp:value, timestamp:value}:
     # value is list if more than one value exist. for example :
@@ -310,7 +310,7 @@ class MonitoringDB(ElasticDB):
     result = {}
     for bucket in retVal.aggregations['end_data'].buckets:
       # each bucket key is a time (unix epoch and usual datetime
-      bucketTime = bucket.key / 1000
+      bucketTime = int(bucket.key / 1000)
       for value in bucket['tt'].buckets:
         # each bucket contains an agregation called tt which sum/avg of the metric.
         if value.key not in result:
