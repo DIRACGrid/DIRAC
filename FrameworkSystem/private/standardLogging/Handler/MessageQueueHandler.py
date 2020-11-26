@@ -37,6 +37,9 @@ class MessageQueueHandler(logging.Handler):
     result = createProducer(queue)
     if result['OK']:
       self.producer = result['Value']
+    else:
+      # print because logging not available
+      print("ERROR initializing MessageQueueHandler: %s" % result)
     self.hostname = socket.gethostname()
 
   def emit(self, record):

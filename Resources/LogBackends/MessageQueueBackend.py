@@ -14,6 +14,9 @@ from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 
 DEFAULT_MQ_LEVEL = 'verbose'
+# These are the standard logging fields that we want to see
+# in the json. All the non default are printed anyway
+DEFAULT_FMT = '%(levelname)s %(message)s %(asctime)s'
 
 
 class MessageQueueBackend(AbstractBackend):
@@ -32,6 +35,13 @@ class MessageQueueBackend(AbstractBackend):
     """
     Initialization of the MessageQueueBackend
     """
+    # The `Format` parameter is passed as `fmt` to libJsonFormatter
+    # which uses it to know which "standard" fields to keep in the
+    # json output. So we need these
+    if not backendParams:
+      backendParams = {}
+    backendParams.setdefault('Format', DEFAULT_FMT)
+
     super(MessageQueueBackend, self).__init__(MessageQueueHandler,
                                               libJsonFormatter,
                                               backendParams,
