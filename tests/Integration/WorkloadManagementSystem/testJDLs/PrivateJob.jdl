@@ -8,6 +8,5 @@
         };
     StdError = "std.err";
     StdOutput = "std.out";
-    MaxCPUTime = "10";
-    PilotType = "private";
+    CPUTime = "10";
 ]

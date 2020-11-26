@@ -2451,21 +2451,7 @@ def createBashrcForDiracOS():
               'export DIRACSCRIPTS=%s' %
               os.path.join(
                   "$DIRAC",
-                  'scripts'),
-              'export TERMINFO=%s' %
-              __getTerminfoLocations(
-                  os.path.join(
-                      "$DIRACOS",
-                      'usr',
-                      'share',
-                      'terminfo')),
-              'export RRD_DEFAULT_FONT=%s' %
-              os.path.join(
-                  "$DIRACOS",
-                  'usr',
-                  'share',
-                  'fonts',
-                  'DejaVuSansMono-Roman.ttf')])
+                  'scripts')])
 
       lines.extend(['# Prepend the PATH and set the PYTHONPATH'])
 
@@ -2476,11 +2462,6 @@ def createBashrcForDiracOS():
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
 
-      # gfal2 requires some environment variables to be set
-      # Note: eventually this line should disappear as already set by diracosrc
-      lines.extend(['# Gfal2 configuration and plugins',
-                    'export GFAL_CONFIG_DIR=$DIRACOS/etc/gfal2.d',
-                    'export  GFAL_PLUGIN_DIR=$DIRACOS/usr/lib64/gfal2-plugins/'])
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend(['# DIRAC platform',
@@ -2489,10 +2470,6 @@ def createBashrcForDiracOS():
       lines.extend(['# IPv6 support',
                     'export GLOBUS_IO_IPV6=TRUE',
                     'export GLOBUS_FTP_CLIENT_IPV6=TRUE'])
-      # Add the lines required for ARC CE support
-      # Note: eventually this line should disappear as already set by diracosrc
-      lines.extend(['# ARC Computing Element',
-                    'export ARC_PLUGIN_PATH=$DIRACOS/usr/lib64/arc'])
 
       # Add the lines required for fork support for xrootd
       lines.extend(['# Fork support for xrootd',

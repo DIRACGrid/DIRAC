@@ -10,5 +10,5 @@
         };
     StdError = "std.err";
     StdOutput = "std.out";
-    MaxCPUTime = "10";
+    CPUTime = "10";
 ]

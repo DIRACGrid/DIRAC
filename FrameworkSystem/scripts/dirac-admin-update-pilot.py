@@ -37,6 +37,7 @@ for switch in Script.getUnprocessedSwitches():
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 
 def updatePilot(version, vo):
@@ -60,7 +61,12 @@ def updatePilot(version, vo):
 
   pilotVersion.pop()
   pilotVersion.insert(0, version)
-  gConfig.setOptionValue('Operations/%s/Pilot/Version' % setup, ", ".join(pilotVersion))
+  api = CSAPI()
+  api.setOption('Operations/%s/Pilot/Version' % setup, ", ".join(pilotVersion))
+  result = api.commit()
+  if not result['OK']:
+    gLogger.fatal('Could not commit new version of pilot!')
+    return result
 
   newVersion = gConfig.getValue('Operations/%s/Pilot/Version' % setup)
   return S_OK("New version of pilot set to %s" % newVersion)

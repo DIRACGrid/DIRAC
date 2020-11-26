@@ -123,11 +123,12 @@ def getDIRACSiteName(gocSiteName):
     return res
   sitesList = res['Value']
 
-  tmpList = [(site, gConfig.getValue(cfgPath(gBaseResourcesSection,
-                                             'Sites',
-                                             site.split('.')[0],
-                                             site,
-                                             'Name'))) for site in sitesList]
+  tmpList = [(site, gConfig.getValue(
+      cfgPath(gBaseResourcesSection,
+              'Sites',
+              site.split('.')[0],
+              site,
+              'Name'))) for site in sitesList]
 
   diracSites = [dirac for (dirac, goc) in tmpList if goc == gocSiteName]
 
@@ -145,7 +146,8 @@ def getGOCFTSName(diracFTSName):
   :returns: S_OK/S_ERROR structure
   """
 
-  gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, 'FTSEndpoints', 'FTS3', diracFTSName))
+  gocFTSName = gConfig.getValue(
+      cfgPath(gBaseResourcesSection, 'FTSEndpoints', 'FTS3', diracFTSName))
   if not gocFTSName:
     return S_ERROR("No GOC FTS server name for %s in CS (Not a grid site ?)" % diracFTSName)
   return S_OK(gocFTSName)
@@ -174,7 +176,8 @@ def getFTS3Servers(hostOnly=False):
 def getFTS3ServerDict():
   """:returns: dict of key = server name and value = server url
   """
-  return gConfig.getOptionsDict(cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3"))
+  return gConfig.getOptionsDict(
+      cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3"))
 
 
 def getSiteTier(site):
@@ -213,13 +216,15 @@ def getQueue(site, ce, queue):
   """ Get parameters of the specified queue
   """
   grid = site.split('.')[0]
-  result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs/%s' % (grid, site, ce))
+  result = gConfig.getOptionsDict(
+      '/Resources/Sites/%s/%s/CEs/%s' % (grid, site, ce))
   if not result['OK']:
     return result
   resultDict = result['Value']
 
   # Get queue defaults
-  result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % (grid, site, ce, queue))
+  result = gConfig.getOptionsDict(
+      '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % (grid, site, ce, queue))
   if not result['OK']:
     return result
   resultDict.update(result['Value'])
@@ -311,53 +316,6 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
           resultDict[site][ce]['Queues'][queue] = queueOptionsDict
 
   return S_OK(resultDict)
-
-
-def getStorageElements(vo=None):
-  """
-  Get configuration of storage elements
-
-  :param str vo: select SE's for the given VO
-
-  :return: S_OK/S_ERROR, Value SE information dictionary
-  """
-
-  result = gConfig.getSections('Resources/StorageElements')
-  if not result['OK']:
-    return result
-  storageElements = result['Value']
-  baseSEs = {}
-  for se in storageElements:
-    for option in ('BaseSE', 'Alias'):
-      originalSE = gConfig.getValue('Resources/StorageElements/%s/%s' % (se, option))
-      if originalSE:
-        baseSEs.setdefault(originalSE, []).append(se)
-        break
-    else:
-      baseSEs.setdefault(se, [])
-
-  seDict = {}
-  for se in baseSEs:
-    if vo:
-      seVOs = gConfig.getValue('Resources/StorageElements/%s/VO' % se, [])
-      if seVOs and vo not in seVOs:
-        continue
-    result = gConfig.getOptionsDict('Resources/StorageElements/%s' % se)
-    if not result['OK']:
-      continue
-    seDict[se] = result['Value']
-    seDict[se]['Aliases'] = baseSEs[se]
-    protocols = []
-    result = gConfig.getSections('Resources/StorageElements/%s' % se)
-    if not result['OK']:
-      return result
-    for pluginSection in result['Value']:
-      protocol = gConfig.getValue('Resources/StorageElements/%s/%s/Protocol' % (se, pluginSection))
-      if protocol:
-        protocols.append(protocol)
-    seDict[se]['Protocols'] = protocols
-
-  return S_OK(seDict)
 
 
 def getCompatiblePlatforms(originalPlatforms):
@@ -492,7 +450,8 @@ def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
     return gConfig.getSections('%s/%sProviders' % (gBaseResourcesSection, of))
   if not option or option == 'all':
     if not section:
-      return gConfig.getOptionsDict("%s/%sProviders/%s" % (gBaseResourcesSection, of, providerName))
+      return gConfig.getOptionsDict(
+          "%s/%sProviders/%s" % (gBaseResourcesSection, of, providerName))
     elif section == "all":
       resDict = {}
       relPath = "%s/%sProviders/%s/" % (gBaseResourcesSection, of, providerName)
@@ -504,7 +463,9 @@ def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
           resDict[key.replace(relPath, '')] = value
       return S_OK(resDict)
     else:
-      return gConfig.getSections('%s/%sProviders/%s/%s/' % (gBaseResourcesSection, of, providerName, section))
+      return gConfig.getSections(
+          '%s/%sProviders/%s/%s/' % (gBaseResourcesSection, of, providerName, section))
   else:
-    return S_OK(gConfig.getValue('%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, of, providerName,
-                                                              section, option)))
+    return S_OK(gConfig.getValue(
+        '%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, of, providerName,
+                                     section, option)))

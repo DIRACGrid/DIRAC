@@ -61,12 +61,12 @@ def test__getPilotOptions(mocker):
                                                 'Community': 'lhcb',
                                                 'OwnerGroup': ['lhcb_user'],
                                                 'Setup': 'LHCb-Production',
-                                                'Site': 'LCG.CERN.cern',
-                                                'SubmitPool': ''}}}
+                                                'Site': 'LCG.CERN.cern'}}}
   res = sd._getPilotOptions('aQueue', 10)
   assert res[0] == ['-S TestSetup', '-V 123', '-l 123',
-                    '-o /Security/ProxyToken=token', '-M 1', '-C T,e,s,t,S,e,t,u,p',
-                    '-e 1,2,3', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern']
+                    '-z ', '-o /Security/ProxyToken=token', '-M 1',
+                    '-C T,e,s,t,S,e,t,u,p', '-e 1,2,3',
+                    '-N aCE', '-Q aQueue', '-n LCG.CERN.cern']
   assert res[1] == 1
 
 
@@ -134,8 +134,7 @@ def test__allowedToSubmit(mocker):
                                                 'Community': 'lhcb',
                                                 'OwnerGroup': ['lhcb_user'],
                                                 'Setup': 'LHCb-Production',
-                                                'Site': 'LCG.CERN.cern',
-                                                'SubmitPool': ''}}}
+                                                'Site': 'LCG.CERN.cern'}}}
   submit = sd._allowedToSubmit('aQueue', True, set(['LCG.CERN.cern']), set())
   assert submit is False
 
@@ -174,8 +173,7 @@ def test__submitPilotsToQueue(mocker):
                                                 'Community': 'lhcb',
                                                 'OwnerGroup': ['lhcb_user'],
                                                 'Setup': 'LHCb-Production',
-                                                'Site': 'LCG.CERN.cern',
-                                                'SubmitPool': ''}}}
+                                                'Site': 'LCG.CERN.cern'}}}
   sd.queueSlots = {'aQueue': {'AvailableSlots': 10}}
   res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')
   assert res['OK'] is True

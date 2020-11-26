@@ -6,7 +6,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id"
 
-from past.builtins import long
 import six
 import random
 import string
@@ -26,12 +25,12 @@ TQ_MIN_SHARE = 0.001
 
 # For checks at insertion time, and not only
 singleValueDefFields = ('OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime')
-multiValueDefFields = ('Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
-                       'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes', 'Tags')
+multiValueDefFields = ('Sites', 'GridCEs', 'BannedSites',
+                       'Platforms', 'SubmitPools', 'JobTypes', 'Tags')
 
 # Used for matching
-multiValueMatchFields = ('GridCE', 'Site', 'GridMiddleware', 'Platform',
-                         'PilotType', 'SubmitPool', 'JobType', 'Tag')
+multiValueMatchFields = ('GridCE', 'Site', 'Platform',
+                         'SubmitPool', 'JobType', 'Tag')
 bannedJobMatchFields = ('Site', )
 mandatoryMatchFields = ('Setup', 'CPUTime')
 priorityIgnoredFields = ('Sites', 'BannedSites')
@@ -356,7 +355,7 @@ class TaskQueueDB(DB):
         :returns: S_OK() / S_ERROR
     """
     try:
-      long(jobId)
+      int(jobId)
     except ValueError:
       return S_ERROR("JobId is not a number!")
     retVal = self._getConnection()

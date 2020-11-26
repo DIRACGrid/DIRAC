@@ -7,6 +7,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import six
@@ -27,8 +28,6 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
-SUMMARY = ['JobType', 'Site', 'JobName', 'Owner', 'SubmissionTime',
-           'LastUpdateTime', 'Status', 'MinorStatus', 'ApplicationStatus']
 SUMMARY = []
 PRIMARY_SUMMARY = []
 FINAL_STATES = ['Done', 'Completed', 'Stalled', 'Failed', 'Killed']
@@ -38,29 +37,30 @@ class JobMonitoringHandler(RequestHandler):
 
   @classmethod
   def initializeHandler(cls, svcInfoDict):
+    """ initialize DBs
+    """
     cls.gJobDB = JobDB()
     cls.gJobLoggingDB = JobLoggingDB()
     cls.gTaskQueueDB = TaskQueueDB()
 
     cls.gElasticJobParametersDB = None
-    useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
+    useESForJobParametersFlag = Operations().getValue(
+        '/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
       cls.gElasticJobParametersDB = ElasticJobParametersDB()
     return S_OK()
 
   def initialize(self):
-    """
-    Flags useESForJobParametersFlag (in /Operations/[]/Services/JobMonitoring/) have bool value (True/False)
-    and determines the switching of backends from MySQL to ElasticSearch for the JobParameters DB table.
-    For version v7r0, the MySQL backend is (still) the default.
+    """ initialize jobPolicy
     """
 
     credDict = self.getRemoteCredentials()
-    self.ownerDN = credDict['DN']
-    self.ownerGroup = credDict['group']
-    operations = Operations(group=self.ownerGroup)
-    self.globalJobsInfo = operations.getValue('/Services/JobMonitoring/GlobalJobsInfo', True)
-    self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.globalJobsInfo)
+    ownerDN = credDict['DN']
+    ownerGroup = credDict['group']
+    operations = Operations(group=ownerGroup)
+    self.globalJobsInfo = operations.getValue(
+        '/Services/JobMonitoring/GlobalJobsInfo', True)
+    self.jobPolicy = JobPolicy(ownerDN, ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = self.gJobDB
 
     return S_OK()
@@ -351,9 +351,7 @@ class JobMonitoringHandler(RequestHandler):
       return S_ERROR('JobMonitoring.getJobsSummary: Received empty job list')
 
     result = cls.getAttributesForJobList(jobIDs, SUMMARY)
-    # return result
-    restring = str(result['Value'])
-    return S_OK(restring)
+    return S_OK(str(result['Value']))
 
 ##############################################################################
   types_getJobPageSummaryWeb = [dict, list, int, int]
@@ -559,7 +557,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobParameters(cls, jobIDs, parName=None):
     """
     :param str/int/long/list jobIDs: one single job ID or a list of them
-    :param str parName: one single parameter name, or None (meaning all of them)
+    :param str parName: one single parameter name, a list or None (meaning all of them)
     """
     if cls.gElasticJobParametersDB:
       if not isinstance(jobIDs, list):
@@ -579,8 +577,10 @@ class JobMonitoringHandler(RequestHandler):
 
       # and now combine
       final = dict(parametersM)
-      for jobID in parametersM:
+      # if job in JobDB, update with parameters from ES if any
+      for jobID in final:
         final[jobID].update(parameters.get(jobID, {}))
+      # if job in ES and not in JobDB, take ES
       for jobID in parameters:
         if jobID not in final:
           final[jobID] = parameters[jobID]
@@ -619,12 +619,13 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobAttributes = [int]
 
   @classmethod
-  def export_getJobAttributes(cls, jobID):
+  def export_getJobAttributes(cls, jobID, attrList=None):
     """
     :param int jobID: one single Job ID
+    :param list attrList: optional list of attributes
     """
 
-    return cls.gJobDB.getJobAttributes(jobID)
+    return cls.gJobDB.getJobAttributes(jobID, attrList=attrList)
 
 ##############################################################################
   types_getJobAttribute = [int, six.string_types]
@@ -661,7 +662,6 @@ class JobMonitoringHandler(RequestHandler):
     """
     return cls.gJobDB.getInputData(jobID)
 
-
 ##############################################################################
   types_getOwnerGroup = []
 
@@ -671,6 +671,5 @@ class JobMonitoringHandler(RequestHandler):
     Return Distinct Values of OwnerGroup from the JobsDB
     """
     return cls.gJobDB.getDistinctJobAttributes('OwnerGroup')
-
 
 ##############################################################################

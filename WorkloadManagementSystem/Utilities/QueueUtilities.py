@@ -1,8 +1,10 @@
 """Utilities to help Computing Element Queues manipulation
 """
 
-from __future__ import absolute_import, division
+from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
+
 import six
 
 from DIRAC import S_OK, S_ERROR
@@ -120,8 +122,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
       return S_OK({'Match': False, 'Reason': noMatchReasons[0]})
 
   # 2. Multi-value match requirements
-  for parameter in ['Site', 'GridCE', 'Platform', 'GridMiddleware',
-                    'PilotType', 'SubmitPool', 'JobType']:
+  for parameter in ['Site', 'GridCE', 'Platform', 'SubmitPool', 'JobType']:
     if parameter in queueDict:
       valueSet = set(job.getListFromExpression(parameter))
       if not valueSet:
@@ -136,8 +137,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
           return S_OK({'Match': False, 'Reason': noMatchReasons[0]})
 
   # 3. Banned multi-value match requirements
-  for par in ['Site', 'GridCE', 'Platform', 'GridMiddleware',
-              'PilotType', 'SubmitPool', 'JobType']:
+  for par in ['Site', 'GridCE', 'Platform', 'JobType']:
     parameter = "Banned%s" % par
     if par in queueDict:
       valueSet = set(job.getListFromExpression(parameter))

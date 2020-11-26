@@ -11,11 +11,10 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
 class PilotCommand(Command):
@@ -157,10 +156,10 @@ class PilotCommand(Command):
       return siteNames
     siteNames = siteNames['Value']
 
-    ces = CSHelpers.getComputingElements()
-    if not ces['OK']:
-      return ces
-    ces = ces['Value']
+    res = getCESiteMapping()
+    if not res['OK']:
+      return res
+    ces = list(res['Value'])
 
     pilotResults = self.doNew(('Site', siteNames))
     if not pilotResults['OK']:

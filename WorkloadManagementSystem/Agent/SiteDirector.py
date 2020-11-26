@@ -398,8 +398,14 @@ class SiteDirector(AgentModule):
             elif "OS" in ceDict:
               architecture = ceDict.get('architecture', 'x86_64')
               platform = '_'.join([architecture, ceDict['OS']])
-            if platform and platform not in self.platforms:
-              self.platforms.append(platform)
+            if platform:
+              # Update self.platforms, keeping entries unique and squashing lists
+              oldPlatforms = set(self.platforms)
+              if isinstance(platform, list):
+                oldPlatforms.update(set(platform))
+              else:
+                oldPlatforms.add(platform)
+              self.platforms = list(oldPlatforms)
 
             if "Platform" not in self.queueDict[queueName]['ParametersDict'] and platform:
               result = self.resourcesModule.getDIRACPlatform(platform)
@@ -777,9 +783,6 @@ class SiteDirector(AgentModule):
     if self.voGroups:
       ceDict['OwnerGroup'] = self.voGroups
 
-    # This is a hack to get rid of !
-    ceDict['SubmitPool'] = self.defaultSubmitPools
-
     if self.checkPlatform:
       result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]['Platform'])
       if not result['OK']:
@@ -1105,8 +1108,9 @@ class SiteDirector(AgentModule):
       self.log.info('DIRAC project will be installed by pilots')
 
     # Pilot Logging defined?
-    pilotLogging = opsHelper.getValue("Pilot/PilotLogging", "false")
-    if pilotLogging.lower() in ['true', 'yes', 'y']:
+    pilotLogging = opsHelper.getValue(
+        "/Services/JobMonitoring/usePilotsLoggingFlag", False)
+    if pilotLogging:
       pilotOptions.append('-z ')
 
     ownerDN = self.pilotDN
@@ -1161,10 +1165,6 @@ class SiteDirector(AgentModule):
     if "ExtraPilotOptions" in queueDict:
       pilotOptions.append(queueDict['ExtraPilotOptions'])
 
-    # Hack
-    if self.defaultSubmitPools:
-      pilotOptions.append('-o /Resources/Computing/CEDefaults/SubmitPool=%s' % self.defaultSubmitPools)
-
     if self.group:
       pilotOptions.append('-G %s' % self.group)
 
@@ -1194,7 +1194,7 @@ class SiteDirector(AgentModule):
     try:
       pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict([DIRAC_INSTALL],
                                                                            proxy)
-    except BaseException as be:
+    except Exception as be:
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
     location = Operations().getValue("Pilot/pilotFileServer", '')

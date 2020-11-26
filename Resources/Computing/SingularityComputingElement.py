@@ -57,6 +57,8 @@ unset DIRACOS
 ./dirac-install.py %(install_args)s
 source bashrc
 dirac-configure -F %(config_args)s -I
+# Add compatibility with pilot3 where config is in pilot.cfg
+ln -s etc/dirac.cfg pilot.cfg
 # Run next wrapper (to start actual job)
 bash %(next_wrapper)s
 # Write the payload errorcode to a file for the outer scripts
@@ -142,7 +144,7 @@ class SingularityComputingElement(ComputingElement):
     for searchPath in searchPaths:
       binPath = os.path.join(searchPath, 'singularity')
       if os.path.isfile(binPath):
-        # File found, check it's exectuable to be certain:
+        # File found, check it's executable to be certain:
         if os.access(binPath, os.X_OK):
           self.log.debug('Found singularity at "%s"' % binPath)
           self.__singularityBin = binPath
@@ -152,7 +154,9 @@ class SingularityComputingElement(ComputingElement):
 
   @staticmethod
   def __findInstallBaseDir():
-    return os.readlink(os.path.join(DIRAC.rootPath, "bashrc"))
+    """Find the path to root of the current DIRAC installation"""
+    candidate = os.path.join(DIRAC.rootPath, "bashrc")
+    return os.path.dirname(os.readlink(candidate))
 
   def __getInstallFlags(self, infoDict=None):
     """ Get the flags to pass to dirac-install.py inside the container.

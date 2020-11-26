@@ -94,7 +94,7 @@ import _strptime
 majorVersion = 7
 minorVersion = 2
 patchLevel = 0
-preVersion = 20
+preVersion = 22
 
 version = "v%sr%s" % (majorVersion, minorVersion)
 if patchLevel:

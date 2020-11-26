@@ -202,7 +202,7 @@ def comma_format(x_orig):
   x = float(x_orig)
   if x >= 1000:
     after_comma = x % 1000
-    before_comma = int(x) / 1000
+    before_comma = int(int(x) / 1000)
     return '%s,%03g' % (comma_format(before_comma), after_comma)
   else:
     return str(x_orig)

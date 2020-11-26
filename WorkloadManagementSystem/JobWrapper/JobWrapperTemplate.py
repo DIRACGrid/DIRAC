@@ -20,6 +20,8 @@ import json
 import ast
 import os
 import errno
+import time
+import signal
 
 sitePython = "@SITEPYTHON@"
 if sitePython:
@@ -51,6 +53,30 @@ class JobWrapperError(Exception):
 
   def __str__(self):
     return str(self.value)
+
+
+def killJobWrapper(job):
+  """ Function that stops and ultimately kills the JobWrapper
+  """
+  # Giving the JobWrapper some time to complete possible tasks, then trying to kill the process
+  time.sleep(60)
+  os.kill(job.currentPID, signal.SIGTERM)
+  # wait for half a minute and if worker is still alive use REAL silencer
+  time.sleep(30)
+  # now you're dead
+  os.kill(job.currentPID, signal.SIGKILL)
+  return 1
+
+
+def sendJobAccounting(job, status, minorStatus):
+  """ safe sending job accounting (always catching exceptions)
+  """
+  try:
+    job.sendJobAccounting(status, minorStatus)
+  except Exception as exc:  # pylint: disable=broad-except
+    gLogger.exception('JobWrapper failed sending job accounting for [status:minorStatus] [%s:%s]' % (status,
+                                                                                                     minorStatus),
+                      lException=exc)
 
 
 def execute(arguments):
@@ -89,10 +115,7 @@ def execute(arguments):
   except Exception as exc:  # pylint: disable=broad-except
     gLogger.exception('JobWrapper failed the initialization phase', lException=exc)
     rescheduleResult = rescheduleFailedJob(jobID, 'Job Wrapper Initialization', gJobReport)
-    try:
-      job.sendJobAccounting(rescheduleResult, 'Job Wrapper Initialization')
-    except Exception as exc:  # pylint: disable=broad-except
-      gLogger.exception('JobWrapper failed sending job accounting', lException=exc)
+    sendJobAccounting(job, rescheduleResult, 'Job Wrapper Initialization')
     return 1
 
   if 'InputSandbox' in arguments['Job']:
@@ -105,12 +128,12 @@ def execute(arguments):
     except JobWrapperError:
       gLogger.exception('JobWrapper failed to download input sandbox')
       rescheduleResult = rescheduleFailedJob(jobID, 'Input Sandbox Download', gJobReport)
-      job.sendJobAccounting(rescheduleResult, 'Input Sandbox Download')
+      sendJobAccounting(job, rescheduleResult, 'Input Sandbox Download')
       return 1
     except Exception as exc:  # pylint: disable=broad-except
       gLogger.exception('JobWrapper raised exception while downloading input sandbox', lException=exc)
       rescheduleResult = rescheduleFailedJob(jobID, 'Input Sandbox Download', gJobReport)
-      job.sendJobAccounting(rescheduleResult, 'Input Sandbox Download')
+      sendJobAccounting(job, rescheduleResult, 'Input Sandbox Download')
       return 1
   else:
     gLogger.verbose('Job has no InputSandbox requirement')
@@ -127,12 +150,12 @@ def execute(arguments):
       except JobWrapperError:
         gLogger.exception('JobWrapper failed to resolve input data')
         rescheduleResult = rescheduleFailedJob(jobID, 'Input Data Resolution', gJobReport)
-        job.sendJobAccounting(rescheduleResult, 'Input Data Resolution')
+        sendJobAccounting(job, rescheduleResult, 'Input Data Resolution')
         return 1
       except Exception as exc:  # pylint: disable=broad-except
         gLogger.exception('JobWrapper raised exception while resolving input data', lException=exc)
         rescheduleResult = rescheduleFailedJob(jobID, 'Input Data Resolution', gJobReport)
-        job.sendJobAccounting(rescheduleResult, 'Input Data Resolution')
+        sendJobAccounting(job, rescheduleResult, 'Input Data Resolution')
         return 1
     else:
       gLogger.verbose('Job has a null InputData requirement:')
@@ -153,20 +176,20 @@ def execute(arguments):
     if exc.value[1] == DErrno.EWMSRESC:
       gLogger.warn("Asked to reschedule job")
       rescheduleResult = rescheduleFailedJob(jobID, 'JobWrapper execution', gJobReport)
-      job.sendJobAccounting(rescheduleResult, 'JobWrapper execution')
-      return 1
+      sendJobAccounting(job, rescheduleResult, 'JobWrapper execution')
+      return killJobWrapper(job)
     gLogger.exception('Job failed in execution phase')
     gJobReport.setJobParameter('Error Message', str(exc), sendFlag=False)
-    gJobReport.setJobStatus(
-        'Failed', 'Exception During Execution', sendFlag=False)
+    gJobReport.setJobStatus('Failed', 'Exception During Execution', sendFlag=False)
     job.sendFailoverRequest('Failed', 'Exception During Execution')
-    return 1
+    # Giving the JobWrapper some time to complete possible tasks, then trying to kill the process
+    return killJobWrapper(job)
   except Exception as exc:  # pylint: disable=broad-except
     gLogger.exception('Job raised exception during execution phase', lException=exc)
     gJobReport.setJobParameter('Error Message', str(exc), sendFlag=False)
     gJobReport.setJobStatus('Failed', 'Exception During Execution', sendFlag=False)
     job.sendFailoverRequest('Failed', 'Exception During Execution')
-    return 1
+    return killJobWrapper(job)
 
   if 'OutputSandbox' in arguments['Job'] or 'OutputData' in arguments['Job']:
     try:
@@ -190,7 +213,7 @@ def execute(arguments):
     gLogger.verbose('Job has no OutputData or OutputSandbox requirement')
 
   try:
-    # Failed jobs will return 1 / successful jobs will return 0
+    # Failed jobs will return !=0 / successful jobs will return 0
     return job.finalize()
   except Exception as exc:  # pylint: disable=broad-except
     gLogger.exception('JobWrapper raised exception during the finalization phase', lException=exc)

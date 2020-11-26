@@ -63,7 +63,7 @@ def getParameterVectorLength(jobClassAd):
 def __updateAttribute(classAd, attribute, parName, parValue):
 
   # If there is something to do:
-  pattern = '%%\(%s\)s' % parName
+  pattern = r'%%\(%s\)s' % parName
   if parName == '0':
     pattern = "%s"
   expr = classAd.get_expression(attribute)

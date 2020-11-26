@@ -1,6 +1,3 @@
-#################################################################
-# $HeadURL$
-#################################################################
 """
 .. module:: Pfn
 
@@ -170,27 +167,27 @@ class WorkingProcess(multiprocessing.Process):
     :type stopEvent: multiprocessing.Event
     """
     multiprocessing.Process.__init__(self)
-    # # daemonize
+    # daemonize
     self.daemon = True
-    # # flag to see if task is being treated
+    # flag to see if task is being treated
     self.__working = multiprocessing.Value('i', 0)
-    # # task counter
+    # task counter
     self.__taskCounter = multiprocessing.Value('i', 0)
-    # # task queue
+    # task queue
     self.__pendingQueue = pendingQueue
-    # # results queue
+    # results queue
     self.__resultsQueue = resultsQueue
-    # # stop event
+    # stop event
     self.__stopEvent = stopEvent
-    # # keep process running until stop event
+    # keep process running until stop event
     self.__keepRunning = keepRunning
-    # # placeholder for watchdog thread
+    # placeholder for watchdog thread
     self.__watchdogThread = None
-    # # placeholder for process thread
+    # placeholder for process thread
     self.__processThread = None
-    # # placeholder for current task
+    # placeholder for current task
     self.task = None
-    # # start yourself at least
+    # start yourself at least
     self.start()
 
   def __watchdog(self):
@@ -202,14 +199,14 @@ class WorkingProcess(multiprocessing.Process):
     :param self: self reference
     """
     while True:
-      # # parent is dead,  commit suicide
+      # parent is dead,  commit suicide
       if os.getppid() == 1:
         os.kill(self.pid, signal.SIGTERM)
-        # # wait for half a minute and if worker is still alive use REAL silencer
+        # wait for half a minute and if worker is still alive use REAL silencer
         time.sleep(30)
-        # # now you're dead
+        # now you're dead
         os.kill(self.pid, signal.SIGKILL)
-      # # wake me up in 5 seconds
+      # wake me up in 5 seconds
       time.sleep(5)
 
   def isWorking(self):
@@ -246,64 +243,63 @@ class WorkingProcess(multiprocessing.Process):
 
     :param self: self reference
     """
-    # # start watchdog thread
+    # start watchdog thread
     self.__watchdogThread = threading.Thread(target=self.__watchdog)
     self.__watchdogThread.daemon = True
     self.__watchdogThread.start()
 
-    # # http://cdn.memegenerator.net/instances/400x/19450565.jpg
     if LockRing:
       # Reset all locks
       lr = LockRing()
       lr._openAll()
       lr._setAllEvents()
 
-    # # zero processed task counter
+    # zero processed task counter
     taskCounter = 0
-    # # zero idle loop counter
+    # zero idle loop counter
     idleLoopCount = 0
 
-    # # main loop
+    # main loop
     while True:
 
-      # # draining, stopEvent is set, exiting
+      # draining, stopEvent is set, exiting
       if self.__stopEvent.is_set():
         return
 
-      # # clear task
+      # clear task
       self.task = None
 
-      # # read from queue
+      # read from queue
       try:
         task = self.__pendingQueue.get(block=True, timeout=10)
       except Queue.Empty:
-        # # idle loop?
+        # idle loop?
         idleLoopCount += 1
-        # # 10th idle loop - exit, nothing to do
+        # 10th idle loop - exit, nothing to do
         if idleLoopCount == 10 and not self.__keepRunning:
           return
         continue
 
-      # # toggle __working flag
+      # toggle __working flag
       self.__working.value = 1
-      # # save task
+      # save task
       self.task = task
-      # # reset idle loop counter
+      # reset idle loop counter
       idleLoopCount = 0
 
-      # # process task in a separate thread
+      # process task in a separate thread
       self.__processThread = threading.Thread(target=self.__processTask)
       self.__processThread.start()
 
       timeout = False
       noResults = False
-      # # join processThread with or without timeout
+      # join processThread with or without timeout
       if self.task.getTimeOut():
         self.__processThread.join(self.task.getTimeOut() + 10)
       else:
         self.__processThread.join()
 
-      # # processThread is still alive? stop it!
+      # processThread is still alive? stop it!
       if self.__processThread.is_alive():
         self.__processThread._Thread__stop()
         self.task.setResult(S_ERROR(errno.ETIME, "Timed out"))
@@ -314,7 +310,7 @@ class WorkingProcess(multiprocessing.Process):
         self.task.setResult(S_ERROR("Task produced no results"))
         noResults = True
 
-      # # check results and callbacks presence, put task to results queue
+      # check results and callbacks presence, put task to results queue
       if self.task.hasCallback() or self.task.hasPoolCallback():
         self.__resultsQueue.put(task)
       if timeout or noResults:
@@ -323,17 +319,17 @@ class WorkingProcess(multiprocessing.Process):
         time.sleep(1)
         os.kill(self.pid, signal.SIGKILL)
         return
-      # # increase task counter
+      # increase task counter
       taskCounter += 1
       self.__taskCounter = taskCounter
-      # # toggle __working flag
+      # toggle __working flag
       self.__working.value = 0
 
 
 class ProcessTask(object):
   """ Defines task to be executed in WorkingProcess together with its callbacks.
   """
-  # # taskID
+  # taskID
   taskID = 0
 
   def __init__(self,
@@ -383,7 +379,7 @@ class ProcessTask(object):
     self.__resultCallback = callback
     self.__exceptionCallback = exceptionCallback
     self.__timeOut = 0
-    # # set time out
+    # set time out
     self.setTimeOut(timeOut)
     self.__done = False
     self.__exceptionRaised = False
@@ -521,12 +517,12 @@ class ProcessTask(object):
     """
     self.__done = True
     try:
-      # # it's a function?
+      # it's a function?
       if inspect.isfunction(self.__taskFunction):
         self.__taskResult = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
-      # # or a class?
+      # or a class?
       elif inspect.isclass(self.__taskFunction):
-        # # create new instance
+        # create new instance
         taskObj = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
         # ## check if it is callable, raise TypeError if not
         if not callable(taskObj):
@@ -607,40 +603,40 @@ class ProcessPool(object):
     :param callable poolCallbak: results callback
     :param callable poolExceptionCallback: exception callback
     """
-    # # min workers
+    # min workers
     self.__minSize = max(1, minSize)
-    # # max workers
+    # max workers
     self.__maxSize = max(self.__minSize, maxSize)
-    # # queue size
+    # queue size
     self.__maxQueuedRequests = maxQueuedRequests
-    # # flag to worker overcommit
+    # flag to worker overcommit
     self.__strictLimits = strictLimits
 
-    # # pool results callback
+    # pool results callback
     self.__poolCallback = poolCallback
-    # # pool exception callback
+    # pool exception callback
     self.__poolExceptionCallback = poolExceptionCallback
 
-    # # pending queue
+    # pending queue
     self.__pendingQueue = multiprocessing.Queue(self.__maxQueuedRequests)
-    # # results queue
+    # results queue
     self.__resultsQueue = multiprocessing.Queue(0)
-    # # stop event
+    # stop event
     self.__stopEvent = multiprocessing.Event()
-    # # keep processes running flag
+    # keep processes running flag
     self.__keepRunning = keepProcessesRunning
-    # # lock
+    # lock
     self.__prListLock = threading.Lock()
 
-    # # workers dict
+    # workers dict
     self.__workersDict = {}
 
-    # # flag to trigger workers draining
+    # flag to trigger workers draining
     self.__draining = False
-    # # placeholder for daemon results processing
+    # placeholder for daemon results processing
     self.__daemonProcess = False
 
-    # # create initial workers
+    # create initial workers
     self.__spawnNeededWorkingProcesses()
 
   def stopProcessing(self, timeout=10):
@@ -751,7 +747,7 @@ class ProcessPool(object):
     """
     Delete references of dead workingProcesses from ProcessPool.__workingProcessList
     """
-    # # check wounded processes
+    # check wounded processes
     self.__prListLock.acquire()
     try:
       for pid, worker in list(self.__workersDict.items()):
@@ -768,7 +764,7 @@ class ProcessPool(object):
     :param self: self reference
     """
     self.__cleanDeadProcesses()
-    # # if we're draining do not spawn new workers
+    # if we're draining do not spawn new workers
     if self.__draining or self.__stopEvent.is_set():
       return
 
@@ -809,7 +805,7 @@ class ProcessPool(object):
       self.__prListLock.release()
 
     self.__spawnNeededWorkingProcesses()
-    # # throttle a bit to allow task state propagation
+    # throttle a bit to allow task state propagation
     time.sleep(0.1)
     return S_OK()
 
@@ -903,10 +899,10 @@ class ProcessPool(object):
         if processed == 0:
           log.debug("Process results, but queue is empty...")
         break
-      # # get task
+      # get task
       task = self.__resultsQueue.get()
       log.debug("__resultsQueue.get", 't=%.2f' % (time.time() - start))
-      # # execute callbacks
+      # execute callbacks
       try:
         task.doExceptionCallback()
         task.doCallback()
@@ -948,16 +944,16 @@ class ProcessPool(object):
     :param self: self reference
     :param timeout: seconds to wait before killing
     """
-    # # start drainig
+    # start drainig
     self.__draining = True
-    # # join deamon process
+    # join deamon process
     if self.__daemonProcess:
       self.__daemonProcess.join(timeout)
-    # # process all tasks
+    # process all tasks
     self.processAllResults(timeout)
-    # # set stop event, all idle workers should be terminated
+    # set stop event, all idle workers should be terminated
     self.__stopEvent.set()
-    # # join idle workers
+    # join idle workers
     start = time.time()
     log = sLog.getSubLogger("finalize")
     nWorkers = 9999999
@@ -969,7 +965,7 @@ class ProcessPool(object):
       if timeout <= 0 or time.time() - start >= timeout:
         break
       time.sleep(0.1)
-    # # second clean up - join and terminate workers
+    # second clean up - join and terminate workers
     if self.__workersDict:
       log.debug("After cleaning dead processes, %d workers still active, timeout = %d" %
                 (len(self.__workersDict), timeout))

@@ -1,9 +1,10 @@
-[v7r2-pre20]
+[v7r2-pre22]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
 CHANGE: (#4586) Use __future__ imports to get Python 3 like behaviour for imports, division and printing
 CHANGE: (#4796, #4797) removed obsoleted codes
+CHANGE: (#4823) Service handlers use class variables instead of global
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -19,9 +20,16 @@ FIX: (#4736) dirac-install: use system tar command for extracting tarballs, fixe
 NEW: (#4677) X509Chain returns DN entry
 NEW: (#4677) introduction of Tornado based services
 NEW: (#4732) Support installing Python 3 clients using by passing --pythonVersion=3 to ./dirac-install.py
+CHANGE: (#4791) dirac-install with diracos: remove TERMINFO, RRD_DEFAULT_FONT, GFAL and ARC paths from bashrc
+FIX: (#4791) Late import of MonitoringReport
+NEW: (#4823) flipped default value of DIRAC_USE_JSON_DECODE env variable
+FIX: (#4843) X509Chain: fix downloading X509 certificates
 
 *Framework
 CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
+
+*Interfaces
+CHANGE: (#4799) remove runLocalAgent method from DIRAC API
 
 *Accounting
 NEW: (#4537) Add histogram of CPU usage to Job accounting
@@ -32,20 +40,71 @@ NEW: (#4367) Added option "CompressJDLs" to JobDB, which compresses JDLs before 
      added to the JobJDLs table
 CHANGE: (#4428) removed the watchdog for mac, simplified linux
 CHANGE: (#4577) Removed the Pilot2
+NEW: (#4799) JobWrapperTemplate kills the JobWrapper in case of Exception during Execution phase
+CHANGE: (#4799) Remove MultiProcessorSiteDirector (use standard SiteDirector)
+CHANGE: (#4799) stop setting JDL requirements MaxCPUTime, SubmitPools, GridRequiredCEs, Origin, JobMode
+CHANGE: (#4823) using JobReport and delayed send for JobStateUpdate
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
+FIX: (#4844) Correct the rounding of integers when computing buckets in MonitoringDB
 
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
 
 *docs
 FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
+CHANGE: (#4823) added some clarifications on starting the pilots
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
+
+[v7r1p20]
+
+*Core
+CHANGE: (#4842) TLS: read proxy flag from M2Crypto.X509
+
+*Framework
+CHANGE: (#4832) NotificationHandler: sendMail: the avoidSpam parameter is deprecated.
+        All emails (same subject, address, body) are now only sent once per 24h
+
+*WorkloadManagementSystem
+FIX: (#4839) There was a bug handling the bulk status updates that was not updating
+             correctly the job status although the job logging information was correct).
+             This PR fixes this bug. It was tested in certification as a hotfix
+CHANGE: (#4839) internally always call the setJobStatusBulk() method in order to be consistent
+CHANGE: (#4839) in JobReport, only send statuses that are not empty, and remove handling of
+                ApplicationCounter that is never sent nor used anywhere
+CHANGE: (#4834) JobStateUpdateHandler: use class variables instead of global
+
+*Resources
+FIX: (#4841) Fix using SingularityComputingElement with the host's DIRAC installation
+
+*Interfaces
+FIX: (#4834) Job.py: use --cfg option for JobConfigArgs
+
+*RSS
+FIX: (#4834) Added one field for retrieving the corrected order of columns
+
+[v7r1p19]
+
+FIX: Fixes from v7r0p40
+
+*Configuration
+FIX: (#4821) Bdii2CSAgent: Updating CE information wasn't working because the list of
+     CEs wasn't picked up from the right place (Site/CE option, instead of Site/CES/<CE_Sections>)
+FIX: (#4821) Glue2: fix association of CEs to sites if the CE associated sitename in the BDII differs
+     from the Name given in the CS
+FIX: (#4821) dirac-admin-add-resources: Fix bug preventing the use of GLUE2 mode
+CHANGE: (#4636) BDII2CSAgent: stop looking for SEs in BDII
+
+*Resources
+FIX: (#4827) SingularityCE: Create pilot.cfg as part of the inner DIRAC install.
+
+*RSS
+FIX: (#4830) added vo field to ResourceStatusClient calls
 
 [v7r1p18]
 
@@ -399,6 +458,23 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p41]
+
+*Core
+FIX: (#4845) Fix hashing SubjectName in X509Chain
+
+*FrameworkSystem
+FIX: (#4833) pilot update script, update global CS not the local one
+NEW: (#4840) Add option to retry to update hosts in dirac-admin-update-instance
+
+*WorkloadManagementSystem
+FIX: (#4838) SiteDirector - Flatten platform list avoid crash if CheckPlatform=True
+
+[v7r0p40]
+
+*docs
+FIX: (#4826) correct link to LHCb documentation
 
 [v7r0p39]
 

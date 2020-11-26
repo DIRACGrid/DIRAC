@@ -6,7 +6,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
 import hashlib
 import threading
 import time
@@ -60,7 +59,7 @@ class ThreadScheduler(object):
 
   def setTaskPeriod(self, taskId, period):
     try:
-      period = long(period)
+      period = int(period)
     except ValueError:
       return S_ERROR("Period must be a number")
     period = max(period, self.__minPeriod)

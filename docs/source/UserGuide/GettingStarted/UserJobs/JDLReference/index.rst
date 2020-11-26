@@ -50,7 +50,9 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
 +---------------------+---------------------------------------------+-----------------------------------------------+
 | *BannedSites*       | Sites where the job must not go             | BannedSites = ``{"EGI.LAPP.fr"};``            |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *Platform*          | Target Operating System                     | Platform = ``"Linux_x86_64_glibc-2.5";``      |
+| *GridCE*            | Job destination CE                          | GridCE = ``{"some.ce.lapp.fr"};``             |
++---------------------+---------------------------------------------+-----------------------------------------------+
+| *Platform*          | Target Operating System                     | Platform = ``"Linux_x86_64_glibc-2.17";``     |
 +---------------------+---------------------------------------------+-----------------------------------------------+
 |                                                                                                                   |
 | :subtitle:`Data`                                                                                                  |
@@ -61,6 +63,8 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
 +---------------------+---------------------------------------------+-----------------------------------------------+
 | *InputData*         | Job input data files                        | InputData = ``{"/dirac/user/a/atsareg/data1", |
 |                     |                                             | "/dirac/user/a/atsareg/data1"};``             |
++---------------------+---------------------------------------------+-----------------------------------------------+
+| *InputDataPolicy*   | Job input data policy                       | InputDataPolicy = ``"Download";``             |
 +---------------------+---------------------------------------------+-----------------------------------------------+
 | *OutputData*        | Job output data files                       | OutputData = ``{"output1","output2"};``       |
 +---------------------+---------------------------------------------+-----------------------------------------------+

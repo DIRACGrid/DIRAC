@@ -12,8 +12,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
-
 import six
 import os
 import datetime
@@ -82,7 +80,7 @@ class ReportGeneratorHandler(RequestHandler):
     # Check sliding plots
     if 'lastSeconds' in reportRequestExtra:
       try:
-        lastSeconds = long(reportRequestExtra['lastSeconds'])
+        lastSeconds = int(reportRequestExtra['lastSeconds'])
       except ValueError:
         gLogger.error("lastSeconds key must be a number")
         return S_ERROR("Value Error")

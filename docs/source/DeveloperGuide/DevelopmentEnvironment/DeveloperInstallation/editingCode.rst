@@ -179,7 +179,7 @@ Some useful conda commands::
 
   conda env create $DEVROOT/DIRAC/environment.yml  # will create a conda environment named
                                                    # dirac-development and install the
-						   # prerequiste packages
+                                                   # prerequiste packages
 
   conda activate dirac-development #  will get you in the dirac-development environment
   # or on conda versions prior to 4.6

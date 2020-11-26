@@ -20,7 +20,6 @@ from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 jdl = """[
-    Origin = "DIRAC";
     Executable = "$DIRACROOT/scripts/dirac-jobexec";
     StdError = "std.err";
     LogLevel = "info";

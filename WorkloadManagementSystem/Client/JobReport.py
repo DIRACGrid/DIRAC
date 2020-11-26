@@ -1,11 +1,11 @@
-"""
-  JobReport class encapsulates various methods of the job status reporting blah, blah, blah...
-
+""" JobReport class encapsulates various methods of the job status reporting.
+    It's an interface to JobStateUpdateClient, used when bulk submission is needed.
 """
 
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -21,21 +21,14 @@ class JobReport(object):
 
   def __init__(self, jobid, source=''):
     """ c'tor
-
-
     """
-    self.jobStatusInfo = []
-    self.appStatusInfo = []
+    self.jobStatusInfo = []  # where job status updates are cumulated
+    self.appStatusInfo = []  # where application status updates are cumulated
     self.jobParameters = {}
     self.jobID = int(jobid)
     self.source = source
     if not source:
       self.source = 'Job_%d' % self.jobID
-
-  def setJob(self, jobID):
-    """ Set the job ID for which to send reports
-    """
-    self.jobID = jobID
 
   def setJobStatus(self, status='', minor='', application='', sendFlag=True):
     """ Send job status information to the JobState service for jobID
@@ -109,15 +102,20 @@ class JobReport(object):
 
     statusDict = {}
     for status, minor, dtime in self.jobStatusInfo:
-      statusDict[dtime] = {'Status': status,
-                           'MinorStatus': minor,
-                           'ApplicationStatus': '',
-                           'Source': self.source}
+      # No need to send empty items in dictionary
+      sDict = {}
+      if status:
+        sDict['Status'] = status
+      if minor:
+        sDict['MinorStatus'] = minor
+      if sDict:
+        sDict['Source'] = self.source
+        statusDict[dtime] = sDict
     for appStatus, dtime in self.appStatusInfo:
-      statusDict[dtime] = {'Status': '',
-                           'MinorStatus': '',
-                           'ApplicationStatus': appStatus,
-                           'Source': self.source}
+      # No need to send empty items in dictionary
+      if appStatus:
+        statusDict[dtime] = {'ApplicationStatus': appStatus,
+                             'Source': self.source}
 
     if statusDict:
       result = JobStateUpdateClient().setJobStatusBulk(self.jobID, statusDict)
@@ -134,20 +132,12 @@ class JobReport(object):
     """ Send the job parameters stored in the internal cache
     """
 
-    parameters = []
-    for pname, value in self.jobParameters.items():
-      pvalue, _timeStamp = value
-      parameters.append([pname, pvalue])
-
+    parameters = [[pname, value[0]] for pname, value in self.jobParameters.items()]
     if parameters:
       result = JobStateUpdateClient().setJobParameters(self.jobID, parameters)
-      if not result['OK']:
-        return result
-
       if result['OK']:
         # Empty the internal parameter container
         self.jobParameters = {}
-
       return result
     else:
       return S_OK('Empty')
@@ -158,11 +148,9 @@ class JobReport(object):
 
     success = True
     result = self.sendStoredStatusInfo()
-    if not result['OK']:
-      success = False
+    success &= result['OK']
     result = self.sendStoredJobParameters()
-    if not result['OK']:
-      success = False
+    success &= result['OK']
 
     if success:
       return S_OK()

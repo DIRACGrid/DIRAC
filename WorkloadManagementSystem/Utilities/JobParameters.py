@@ -25,7 +25,7 @@ def getJobFeatures():
     fname = os.path.join(os.environ['JOBFEATURES'], item)
     try:
       val = urlopen(fname).read()
-    except BaseException:
+    except Exception:
       val = 0
     features[item] = val
   return features
