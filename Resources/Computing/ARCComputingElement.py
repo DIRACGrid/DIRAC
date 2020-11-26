@@ -229,7 +229,8 @@ class ARCComputingElement(ComputingElement):
       xrslString, diracStamp = self.__writeXRSL(executableFile, processors)
       self.log.debug("XRSL string submitted : %s" % xrslString)
       self.log.debug("DIRAC stamp for job : %s" % diracStamp)
-      if not arc.JobDescription_Parse(xrslString, jobdescs):
+      # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
+      if not arc.JobDescription_Parse(str(xrslString), jobdescs):
         self.log.error("Invalid job description")
         break
       # Submit the job
