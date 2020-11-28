@@ -41,7 +41,7 @@ Consider the registration process
 
 User management has been provided by the Registry section of the Configuration System. To manage it you can use:
   * dirac-admin commands to managing Registry
-  * configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <webappdirac_installwebappdirac>`)
+  * configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <installwebappdirac>`)
   * modify local cfg file manually (by default it located in /opt/dirac/etc/dirac.cfg)
   * use the :mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent` to fetch VOMS VO users
 
@@ -52,37 +52,36 @@ You need to log in under this user/group and use the Configuration Manager appli
 First of all, define, if necessary, some attributes at the root of the Registry section, that will be applicable for all the configuration are defined.
 
 .. literalinclude:: ../../../../dirac.cfg
-  :start-after: ##BEGIN Registry
-  :end-before: ##END
+  :start-after: ## Registry options:
+  :end-before: ##
   :dedent: 2
   :caption: Registry options
 
 To begin, consider how to add new VO to the **Registry/VO** section. Having all the necessary attributes VO you need to add it to the configuration.
-One of the mandatory attributes of the VO is the **VOAdmin**(administrator of the VO), it must be registered as a DIRAC user(see the example below).
+One of the mandatory attributes of the VO is the **VOAdmin** (administrator of the VO), it must be registered as a DIRAC user(see the example below).
 If the described VO is a VOMS VO, then it is important to note that the VO administrator should have an administrative role in the VOMS VO,
 it is necessary to obtain relevant information from the VOMS servers regarding VO users.
 In this case, the addition of VOMS VO is considered, respectively, there are attributes specific to VOMS.
 
 .. literalinclude:: ../../../../dirac.cfg
-  :start-after: ##BEGIN RegistryVO
-  :end-before: ##END
+  :start-after: ## VOs
+  :end-before: ##
   :dedent: 2
-  :caption: VO description
+  :caption: Registry section
 
 The next step is to create groups in the  **Registry/Groups** section with the appropriate permissions.
-It is usually necessary to have at least three groups::
-  
-  *for regular users running tasks(e.g.: "dirac_user")
-  *to run pilot tasks(e.g.: "dirac_pilot")
-  *administrative group(e.g.: "dirac_admin")
+It is usually necessary to have at least three groups:
+  * for regular users running tasks(e.g.: "dirac_user")
+  * to run pilot tasks(e.g.: "dirac_pilot")
+  * administrative group(e.g.: "dirac_admin")
 
-Permissions of the group users are determined by "Properties" option. Full description of all supported groups properties: :mod:`~DIRAC.Core.Security.Properties`.
+Permissions of the group users are determined by "Properties" option. Full description of all supported :mod:`~DIRAC.Core.Security.Properties`.
 
 .. literalinclude:: ../../../../dirac.cfg
-  :start-after: ##BEGIN RegistryGroups
-  :end-before: ##END
+  :start-after: ## Groups:
+  :end-before: ##
   :dedent: 2
-  :caption: group description
+  :caption: Registry section
 
 To add a new group you can use special DIRAC command that simplifies this action:
 :ref:`dirac-admin-add-group <admin_dirac-admin-add-group>`.
@@ -90,10 +89,10 @@ To add a new group you can use special DIRAC command that simplifies this action
 Finally, create a user in the **Registry/Users** section:
 
 .. literalinclude:: ../../../../dirac.cfg
-  :start-after: ##BEGIN RegistryUsers
-  :end-before: ##END
+  :start-after: ## Users:
+  :end-before: ##
   :dedent: 2
-  :caption: user description
+  :caption: Registry section
 
 To add a new user you can use special DIRAC command that simplifies this action:
 :ref:`dirac-admin-add-user <admin_dirac-admin-add-user>`.

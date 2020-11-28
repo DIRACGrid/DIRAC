@@ -3,18 +3,13 @@
     This class is a simple, limited CA, its main purpose is to generate a simple proxy for DIRAC users
     who do not have any certificate register on the fly.
 
-    Required parameters in the DIRAC configuration for its implementation::
+    Required parameters in the DIRAC configuration for its implementation:
 
-    <Provider Name> section:
-
-    *  ProviderType = DIRACCA,
-    *  CertFile = <CA sertificate path>,
-    *  KeyFile = <CA key path>,
-    *  Match = <Match DNs>,  # For ex.: 'Match = O, OU'
-    *  Supplied = <Supplied DNs>,
-    *  Optional = <Optional DNs>,
-    *  DNOrder = <Preferred DNs order as list>,  # For ex.: 'DNOrder = O, OU, CN, emailAddress'
-    *  <Some distinguished name type>: <Default value>,  # For ex.: 'OU = CA'
+    .. literalinclude:: ../../../../dirac.cfg
+      :start-after: ## DIRACCA type:
+      :end-before: ##
+      :dedent: 2
+      :caption: /Resources/ProxyProviders section
 
     Also, as an additional feature, this class can read properties from a simple openssl CA configuration file.
     To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
