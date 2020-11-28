@@ -1124,36 +1124,33 @@ class JobWrapper(object):
     # find if there are pending failover requests
     requests = self.__getRequestFiles()
     outputDataRequest = self.failoverTransfer.getRequest()
+    pendingRequests = 'Pending Requests'
 
-    # try to send the failover request
-    res = self.sendFailoverRequest()
-    if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
-      self.__report(JobStatus.FAILED, minorStatus='Failed sending requests')
-      self.__cleanUp()
-      return 1
-
-    requestFlag = res['Value'] or len(requests) > 0 or not outputDataRequest.isEmpty()
-    if requestFlag:
-      self.log.info("Job finished with pending requests")
-      self.__report(minorStatus='Pending Requests')
-    else:
-      self.log.info("Job finished with no pending requests")
+    requestFlag = len(requests) > 0 or not outputDataRequest.isEmpty()
+    self.log.info("Job finished with%s pending requests" % ('' if requestFlag else ' no'))
 
     if self.failedFlag:
       self.log.info("Job finished with errors")
-      self.__report(JobStatus.FAILED)
-      self.__cleanUp()
-      return 1
-
-    self.log.info("Job finished successfully")
-    if requestFlag:
-      self.__report(JobStatus.COMPLETED)
+      self.__report(status=JobStatus.FAILED, minorStatus=pendingRequests if requestFlag else '')
     else:
-      self.__report(minorStatus='Execution Complete')
-      self.__report(JobStatus.DONE)
+      self.log.info("Job finished successfully")
+      if requestFlag:
+        self.__report(status=JobStatus.COMPLETED, minorStatus=pendingRequests if requestFlag else '')
+      else:
+        self.__report(status=JobStatus.DONE, minorStatus='Execution Complete')
+
+    # try to send the failover request if any, and send accounting
+    res = self.sendFailoverRequest()
+    if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
+      self.__report(JobStatus.FAILED, minorStatus='Failed sending requests')
+      failedFlag = True
+    elif res['Value'] and not requestFlag:
+      # A request was created while there were none before, change final status
+      self.__report(status=JobStatus.COMPLETED if self.wmsMajorStatus == JobStatus.DONE else '',
+                    minorStatus=pendingRequests)
 
     self.__cleanUp()
-    return 0
+    return 1 if failedFlag else 0
 
   #############################################################################
   def sendJobAccounting(self, status='', minorStatus=''):
@@ -1344,9 +1341,9 @@ class JobWrapper(object):
       self.wmsMinorStatus = minorStatus
     jobStatus = self.jobReport.setJobStatus(status=status, minor=minorStatus, sendFlag=sendFlag)
     if not jobStatus['OK']:
-      self.log.warn(jobStatus['Message'])
+      self.log.warn('Failed setting job status', jobStatus['Message'])
     if self.jobID:
-      self.log.verbose('setJobStatus(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
+      self.log.verbose('setJobStatus', '(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
 
     return jobStatus
 
@@ -1356,9 +1353,9 @@ class JobWrapper(object):
     """
     jobParam = self.jobReport.setJobParameter(str(name), str(value), sendFlag)
     if not jobParam['OK']:
-      self.log.warn(jobParam['Message'])
+      self.log.warn('Failed setting job parameter', jobParam['Message'])
     if self.jobID:
-      self.log.verbose('setJobParameter(%s,%s,%s)' % (self.jobID, name, value))
+      self.log.verbose('setJobParameter', '(%s,%s,%s)' % (self.jobID, name, value))
 
     return jobParam
 
