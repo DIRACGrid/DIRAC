@@ -1143,14 +1143,14 @@ class JobWrapper(object):
     res = self.sendFailoverRequest()
     if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
       self.__report(JobStatus.FAILED, minorStatus='Failed sending requests')
-      failedFlag = True
+      self.failedFlag = True
     elif res['Value'] and not requestFlag:
       # A request was created while there were none before, change final status
       self.__report(status=JobStatus.COMPLETED if self.wmsMajorStatus == JobStatus.DONE else '',
                     minorStatus=pendingRequests)
 
     self.__cleanUp()
-    return 1 if failedFlag else 0
+    return 1 if self.failedFlag else 0
 
   #############################################################################
   def sendJobAccounting(self, status='', minorStatus=''):
