@@ -190,7 +190,7 @@ class JobStateUpdateHandler(RequestHandler):
     log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, dates))
     # Remove useless items in order to make it simpler later, although there should not be any
     for sDict in statusDict.values():
-      for item in sDict:
+      for item in sorted(sDict):
         if not sDict[item]:
           sDict.pop(item, None)
     # Pick up start and end times from all updates, if they don't exist
