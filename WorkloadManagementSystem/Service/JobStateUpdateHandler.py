@@ -204,9 +204,11 @@ class JobStateUpdateHandler(RequestHandler):
       if newStat == JobStatus.RUNNING and not startTime:
         # Pick up the start date when the job starts running if not existing
         startTime = date
+        log.debug("Set job start time", startTime)
       elif newStat in JobStatus.JOB_FINAL_STATES and not endTime:
         # Pick up the end time when the job is in a final status
         endTime = date
+        log.debug("Set job end time", endTime)
 
     # We should only update the status if its time stamp is more recent than the last update
     if dates[-1] >= lastTime:
