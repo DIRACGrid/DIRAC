@@ -14,4 +14,3 @@ In this section all the physical resources than can be used by DIRAC users are d
    StorageElements/index
    StorageElementsGroups/index
    Computing/index
-   ProxyProviders/index

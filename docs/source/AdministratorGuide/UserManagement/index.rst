@@ -10,6 +10,7 @@ What are the components involved in that.
 -----------------------------------------
 
   * Configuration system
+
    * Registry
    * VOMS2CSAgent
 
@@ -71,6 +72,7 @@ In this case, the addition of VOMS VO is considered, respectively, there are att
 
 The next step is to create groups in the  **Registry/Groups** section with the appropriate permissions.
 It is usually necessary to have at least three groups:
+
   * for regular users running tasks(e.g.: "dirac_user")
   * to run pilot tasks(e.g.: "dirac_pilot")
   * administrative group(e.g.: "dirac_admin")
@@ -96,9 +98,3 @@ Finally, create a user in the **Registry/Users** section:
 
 To add a new user you can use special DIRAC command that simplifies this action:
 :ref:`dirac-admin-add-user <admin_dirac-admin-add-user>`.
-
-.. toctree::
-   :maxdepth: 1
-
-   authentication
-   multiVO

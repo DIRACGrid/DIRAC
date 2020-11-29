@@ -2,13 +2,16 @@
 
     Database contains the following tables::
 
-      *ProxyDB_Requests -- a delegation requests storage table for a given proxy Chain
-      *ProxyDB_CleanProxies -- table for storing proxies in "clean" form, ie without the presence of DIRAC and VOMS extensions.
-      *ProxyDB_Proxies -- obsolete table for storing proxies with already added DIRAC group extension, it is present only for backward compatibility and is used only if ProxyDB_CleanProxies does not have the required proxy.
-      *ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
-      *ProxyDB_Log -- table with logs.
-      *ProxyDB_Tokens -- token storage table for proxy requests.
-      *ProxyDB_ExpNotifs -- a table for accumulating proxy expiration notifications.
+      * ProxyDB_Requests -- a delegation requests storage table for a given proxy Chain
+      * ProxyDB_CleanProxies -- table for storing proxies in "clean" form, ie without
+        the presence of DIRAC and VOMS extensions.
+      * ProxyDB_Proxies -- obsolete table for storing proxies with already added DIRAC
+        group extension, it is present only for backward compatibility and is used only
+        if ProxyDB_CleanProxies does not have the required proxy.
+      * ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
+      * ProxyDB_Log -- table with logs.
+      * ProxyDB_Tokens -- token storage table for proxy requests.
+      * ProxyDB_ExpNotifs -- a table for accumulating proxy expiration notifications.
 """
 
 __RCSID__ = "$Id$"

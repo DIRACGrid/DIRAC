@@ -18,7 +18,6 @@ The detailed configuration options for agents, services, and executors are in th
 
    DiracSection
    Operations/index
-   Registry/index
    Resources/index
    Systems/index
    WebSite/index
