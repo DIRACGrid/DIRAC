@@ -40,6 +40,8 @@ OUTPUT_SANDBOX_UPLOADED = 'Output Sandbox Uploaded'
 #
 UPLOADING_OUTPUT_DATA = 'Uploading Output Data'
 #
+UPLOADING_JOB_OUTPUTS = 'Uploading Outputs'
+#
 OUTPUT_DATA_UPLOADED = 'Output Data Uploaded'
 #
 FAILED_DOWNLOADING_INPUT_SANDBOX = 'Failed Downloading InputSandbox'
