@@ -156,7 +156,7 @@ class SingularityComputingElement(ComputingElement):
   def __findInstallBaseDir():
     """Find the path to root of the current DIRAC installation"""
     candidate = os.path.join(DIRAC.rootPath, "bashrc")
-    return os.path.dirname(os.readlink(candidate))
+    return os.path.dirname(os.path.realpath(candidate))
 
   def __getInstallFlags(self, infoDict=None):
     """ Get the flags to pass to dirac-install.py inside the container.
