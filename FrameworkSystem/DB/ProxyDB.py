@@ -1,6 +1,6 @@
 """ ProxyDB class is a front-end to the ProxyDB MySQL database.
 
-    Database contains the following tables::
+    Database contains the following tables:
 
       * ProxyDB_Requests -- a delegation requests storage table for a given proxy Chain
       * ProxyDB_CleanProxies -- table for storing proxies in "clean" form, ie without
