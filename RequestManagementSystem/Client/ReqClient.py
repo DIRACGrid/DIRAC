@@ -24,6 +24,7 @@ from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
 @createClient('RequestManagement/ReqManager')
@@ -346,10 +347,10 @@ class ReqClient(Client):
                                                                                      digest["Message"]))
       if jobStatus == JobStatus.COMPLETED:
         # What to do? Depends on what we have in the minorStatus
-        if jobMinorStatus == "Pending Requests":
-          newJobStatus = 'Done'
-        elif jobMinorStatus == "Application Finished With Errors":
-          newJobStatus = 'Failed'
+        if jobMinorStatus == JobMinorStatus.PENDING_REQUESTS:
+          newJobStatus = JobStatus.DONE
+        elif jobMinorStatus == JobMinorStatus.APP_ERRORS:
+          newJobStatus = JobStatus.FAILED
         else:
           self.log.error("finalizeRequest: Unexpected jobMinorStatus",
                          "(got %s)" % jobMinorStatus)

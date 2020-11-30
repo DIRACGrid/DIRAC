@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 import hashlib
 
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 job_status_palette = {
     JobStatus.RECEIVED: '#D9E7F8',
@@ -27,22 +28,22 @@ job_status_palette = {
 
 job_minor_status_palette = {
     "AncestorDepth Not Found": '#BAA312',
-    'Application Finished With Errors': '#BC2133',
+    JobMinorStatus.APP_ERRORS: '#BC2133',
     'BK Input Data Not Available': '#E6D600',
     'Can not get Active and Banned Sites from JobDB': '#84CBFF',
     'Chosen site is not eligible': '#B4A243',
     'Error Sending Staging Request': '#B4A243',
     'Exceeded Maximum Dataset Limit (100)': '#BA5C9D',
-    'Exception During Execution': '#AA240C',
-    'Execution Complete': '#338B39',
+    JobMinorStatus.EXCEPTION_DURING_EXEC: '#AA240C',
+    JobMinorStatus.EXEC_COMPLETE: '#338B39',
     'Failed to access database': '#FFE267',
     'File Catalog Access Failure': '#FF8000',
     'Illegal Job JDL': '#D96C00',
     'Impossible Site + InputData Requirement': '#BDA822',
     'Impossible Site Requirement': '#F87500',
     'Input Data Not Available': '#2822A6',
-    'Input Data Resolution': '#FFBE94',
-    'Input Sandbox Download': '#586CFF',
+    JobMinorStatus.INPUT_DATA_RESOLUTION: '#FFBE94',
+    JobMinorStatus.DOWNLOADING_INPUT_SANDBOX: '#586CFF',
     'Input data contains //': '#AB7800',
     'Input data not correctly specified': '#6812D6',
     'Job Wrapper Initialization': '#FFFFCC',
@@ -53,12 +54,11 @@ job_minor_status_palette = {
     'No candidate sites available': '#E2FFBC',
     'No eligible sites for job': '#A8D511',
     'Parameter not found': '#FFB80C',
-    'Pending Requests': '#52FF4F',
+    JobMinorStatus.PENDING_REQUESTS: '#52FF4F',
     'Received Kill signal': '#FF312F',
     'Socket read timeout exceeded': '#B400FE',
-    'Stalled': '#FF655E',
-    'Uploading Job Outputs': '#FE8420',
-    'Watchdog identified this job as stalled': '#FFCC99'
+    JobMinorStatus.UPLOADING_JOB_OUTPUTS: '#FE8420',
+    JobMinorStatus.WATCHDOG_STALLED: '#FFCC99'
 }
 
 miscelaneous_pallette = {

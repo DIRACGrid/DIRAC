@@ -21,6 +21,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
 class StalledJobAgent(AgentModule):
@@ -140,7 +141,7 @@ for the agent restart
       result = self.__checkJobStalled(job, delayTime)
       if result['OK']:
         self.log.verbose('Updating status to Stalled for job %s' % (job))
-        self.__updateJobStatus(job, 'Stalled')
+        self.__updateJobStatus(job, JobStatus.STALLED)
         stalledCounter += 1
       else:
         self.log.verbose(result['Message'])
@@ -162,7 +163,7 @@ for the agent restart
     jobs = result['Value']
 
     failedCounter = 0
-    minorStalledStatuses = ("Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime)
+    minorStalledStatuses = (JobMinorStatus.STALLED_PILOT_NOT_RUNNING, 'Stalling for more than %d sec' % failedTime)
 
     if jobs:
       self.log.info('%d jobs Stalled before %s will be checked for failure' % (len(jobs), str(checkTime)))
@@ -190,7 +191,7 @@ for the agent restart
         # Set the jobs Failed, send them a kill signal in case they are not really dead and send accounting info
         if setFailed:
           self.__sendKillCommand(job)
-          self.__updateJobStatus(job, JobStatus.FAILED, setFailed)
+          self.__updateJobStatus(job, JobStatus.FAILED, minorStatus=setFailed)
           failedCounter += 1
           result = self.__sendAccounting(job)
           if not result['OK']:
