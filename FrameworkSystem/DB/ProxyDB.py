@@ -1,4 +1,4 @@
-""" ProxyDB class is a front-end to the proxy database.
+""" ProxyDB class is a front-end to the ProxyDB MySQL database.
 
     Database contains the following tables::
 
