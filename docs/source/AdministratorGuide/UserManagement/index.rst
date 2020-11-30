@@ -20,7 +20,7 @@ What is the user in DIRAC context?
 
 DIRAC users are entities that can be authenticated. In a fact it's a record in the **/Registry** section of the :ref:`Configuration system <configurationSystem>`.
 Each user has a username as a unique identifier. Username can be created manually by administrator or automaticaly by scripts.
-User contain attributes that desribed in the **/Registry/Users** section. To provide authentication user must have `DN` attribute, read more about :ref:`authentication <manageAuthNAndAuthZ>`.
+User attributes are described in the **/Registry/Users** section. To provide authentication a user must have the `DN` attribute, read more about :ref:`authentication <manageAuthNAndAuthZ>`.
 User has permissions. To describe permissions we use groups.
 
 What is the DIRAC groups?
