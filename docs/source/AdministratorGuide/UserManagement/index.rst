@@ -28,7 +28,7 @@ What is the DIRAC groups?
 
 DIRAC groups collects DIRAC users and are described in the **/Registry/Groups** section, each subsection of the group is a description of the users permissions and rights for various Grid operations and
 is associated with DIRAC Virtual Organization. The name of the DIRAC group usually consists of the DIRAC VO name and a word that describes the permissions for group users,
-for example "dirac_user", "dirac_pilot", "dirac_admin".
+for example "dteam_user", "dteam_pilot", "dteam_admin".
 
 What is the DIRAC Virtual Organization(VO)?
 -------------------------------------------
@@ -41,7 +41,9 @@ Consider the registration process
 ---------------------------------
 
 User management has been provided by the Registry section of the Configuration System. To manage it you can use:
-  * dirac-admin commands to managing Registry
+  * dirac-admin commands to managing Registry:
+    - :ref:`dirac-admin-add-group <admin_dirac-admin-add-group>`
+    - :ref:`dirac-admin-add-user <admin_dirac-admin-add-user>`
   * configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <installwebappdirac>`)
   * modify local cfg file manually (by default it located in /opt/dirac/etc/dirac.cfg)
   * use the :mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent` to fetch VOMS VO users
@@ -73,9 +75,9 @@ In this case, the addition of VOMS VO is considered, respectively, there are att
 The next step is to create groups in the  **Registry/Groups** section with the appropriate permissions.
 It is usually necessary to have at least three groups:
 
-  * for regular users running tasks(e.g.: "dirac_user")
-  * to run pilot tasks(e.g.: "dirac_pilot")
-  * administrative group(e.g.: "dirac_admin")
+  * for regular users running tasks(e.g.: "dteam_user")
+  * to run pilot tasks(e.g.: "dteam_pilot")
+  * administrative group(e.g.: "dteam_admin")
 
 Permissions of the group users are determined by "Properties" option. Full description of all supported :mod:`~DIRAC.Core.Security.Properties`.
 
