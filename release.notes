@@ -62,6 +62,14 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p21]
+
+*ConfigurationSystem
+FIX: (#4854) Fix typo in CERNLDAPSyncPlugin
+
+*Resources
+FIX: (#4848) Fix SingularityComputingElement for non-server-style installations
+
 [v7r1p20]
 
 *Core

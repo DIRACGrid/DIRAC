@@ -31,7 +31,7 @@ class CERNLDAPSyncPlugin(object):
     """
     attributes = self._getUserInfo(username)
     cernAccountType = attributes["cernAccountType"]
-    userDict["CERNAccountType"] = cernAccountType
+    userDict["CERNAccountType"] = cernAccountType[0]
     if cernAccountType == ["Primary"]:
       userDict["PrimaryCERNAccount"] = username
     else:
