@@ -707,7 +707,7 @@ class JobWrapper(object):
       param = '\n'.join(badLFNs)
       self.log.info(param)
       self.__setJobParam('MissingLFNs', param)
-      return S_ERROR('Input Data Not Available')
+      return S_ERROR(JobMinorStatus.INPUT_NOT_AVAILABLE)
 
     # Must retrieve GUIDs from FC for files
     start = time.time()
@@ -1447,15 +1447,15 @@ class ExecutionThread(threading.Thread):
     return S_ERROR('No Job output found')
 
 
-def rescheduleFailedJob(jobID, message, jobReport=None):
-  """ Function for rescheduling a jobID, with a message
+def rescheduleFailedJob(jobID, minorStatus, jobReport=None):
+  """ Function for rescheduling a jobID, setting a minorStatus
   """
 
   rescheduleResult = JobStatus.RESCHEDULED
 
   try:
 
-    gLogger.warn('Failure during %s' % (message))
+    gLogger.warn('Failure during %s' % (minorStatus))
 
     # Setting a job parameter does not help since the job will be rescheduled,
     # instead set the status with the cause and then another status showing the
@@ -1465,8 +1465,8 @@ def rescheduleFailedJob(jobID, message, jobReport=None):
       gLogger.info('Creating a new JobReport Object')
       jobReport = JobReport(int(jobID), 'JobWrapper')
 
-    jobReport.setApplicationStatus('Failed %s ' % message, sendFlag=False)
-    jobReport.setJobStatus(JobStatus.RESCHEDULED, message, sendFlag=False)
+    jobReport.setApplicationStatus('Failed %s ' % minorStatus, sendFlag=False)
+    jobReport.setJobStatus(status=JobStatus.RESCHEDULED, minor=minorStatus, sendFlag=False)
 
     # We must send Job States and Parameters before it gets reschedule
     jobReport.sendStoredStatusInfo()

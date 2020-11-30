@@ -87,9 +87,9 @@ def execute(arguments):
     job.initialize(arguments)  # initialize doesn't return S_OK/S_ERROR
   except Exception as exc:  # pylint: disable=broad-except
     gLogger.exception('JobWrapper failed the initialization phase', lException=exc)
-    rescheduleResult = rescheduleFailedJob(jobID, 'Job Wrapper Initialization', gJobReport)
+    rescheduleResult = rescheduleFailedJob(jobID, JobMinorStatus.JOB_WRAPPER_INITIALIZATION, gJobReport)
     try:
-      job.sendJobAccounting(rescheduleResult, 'Job Wrapper Initialization')
+      job.sendJobAccounting(rescheduleResult, JobMinorStatus.JOB_WRAPPER_INITIALIZATION)
     except Exception as exc:  # pylint: disable=broad-except
       gLogger.exception('JobWrapper failed sending job accounting', lException=exc)
     return 1
@@ -103,13 +103,13 @@ def execute(arguments):
         raise JobWrapperError(result['Message'])
     except JobWrapperError:
       gLogger.exception('JobWrapper failed to download input sandbox')
-      rescheduleResult = rescheduleFailedJob(jobID, 'Input Sandbox Download', gJobReport)
-      job.sendJobAccounting(rescheduleResult, 'Input Sandbox Download')
+      rescheduleResult = rescheduleFailedJob(jobID, JobMinorStatus.DOWNLOADING_INPUT_SANDBOX, gJobReport)
+      job.sendJobAccounting(rescheduleResult, JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
       return 1
     except Exception as exc:  # pylint: disable=broad-except
       gLogger.exception('JobWrapper raised exception while downloading input sandbox', lException=exc)
-      rescheduleResult = rescheduleFailedJob(jobID, 'Input Sandbox Download', gJobReport)
-      job.sendJobAccounting(rescheduleResult, 'Input Sandbox Download')
+      rescheduleResult = rescheduleFailedJob(jobID, JobMinorStatus.DOWNLOADING_INPUT_SANDBOX, gJobReport)
+      job.sendJobAccounting(rescheduleResult, JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
       return 1
   else:
     gLogger.verbose('Job has no InputSandbox requirement')
@@ -125,13 +125,13 @@ def execute(arguments):
           raise JobWrapperError(result['Message'])
       except JobWrapperError:
         gLogger.exception('JobWrapper failed to resolve input data')
-        rescheduleResult = rescheduleFailedJob(jobID, 'Input Data Resolution', gJobReport)
-        job.sendJobAccounting(rescheduleResult, 'Input Data Resolution')
+        rescheduleResult = rescheduleFailedJob(jobID, JobMinorStatus.INPUT_DATA_RESOLUTION, gJobReport)
+        job.sendJobAccounting(rescheduleResult, JobMinorStatus.INPUT_DATA_RESOLUTION)
         return 1
       except Exception as exc:  # pylint: disable=broad-except
         gLogger.exception('JobWrapper raised exception while resolving input data', lException=exc)
-        rescheduleResult = rescheduleFailedJob(jobID, 'Input Data Resolution', gJobReport)
-        job.sendJobAccounting(rescheduleResult, 'Input Data Resolution')
+        rescheduleResult = rescheduleFailedJob(jobID, JobMinorStatus.INPUT_DATA_RESOLUTION, gJobReport)
+        job.sendJobAccounting(rescheduleResult, JobMinorStatus.INPUT_DATA_RESOLUTION)
         return 1
     else:
       gLogger.verbose('Job has a null InputData requirement:')
@@ -151,8 +151,8 @@ def execute(arguments):
       gLogger.verbose('JobWrapper exited with status=0 after execution')
     if exc.value[1] == DErrno.EWMSRESC:
       gLogger.warn("Asked to reschedule job")
-      rescheduleResult = rescheduleFailedJob(jobID, 'JobWrapper execution', gJobReport)
-      job.sendJobAccounting(rescheduleResult, 'JobWrapper execution')
+      rescheduleResult = rescheduleFailedJob(jobID, JobMinorStatus.JOB_WRAPPER_EXECUTION, gJobReport)
+      job.sendJobAccounting(rescheduleResult, JobMinorStatus.JOB_WRAPPER_EXECUTION)
       return 1
     gLogger.exception('Job failed in execution phase')
     gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)

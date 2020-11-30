@@ -40,8 +40,6 @@ OUTPUT_SANDBOX_UPLOADED = 'Output Sandbox Uploaded'
 #
 UPLOADING_OUTPUT_DATA = 'Uploading Output Data'
 #
-UPLOADING_OUTPUTS = 'Uploading Outputs'
-#
 OUTPUT_DATA_UPLOADED = 'Output Data Uploaded'
 #
 FAILED_DOWNLOADING_INPUT_SANDBOX = 'Failed Downloading InputSandbox'
@@ -53,3 +51,25 @@ FAILED_SENDING_REQUESTS = 'Failed sending requests'
 STALLED_PILOT_NOT_RUNNING = 'Job stalled: pilot not running'
 #
 WATCHDOG_STALLED = 'Watchdog identified this job as stalled'
+#
+ILLEGAL_JOB_JDL = 'Illegal Job JDL'
+#
+INPUT_NOT_AVAILABLE = 'Input Data Not Available'
+#
+INPUT_CONTAINS_SLASHES = 'Input data contains //'
+#
+INPUT_INCORRECT = 'Input data not correctly specified'
+#
+JOB_WRAPPER_INITIALIZATION = 'Job Wrapper Initialization'
+#
+JOB_WRAPPER_EXECUTION = 'JobWrapper execution'
+#
+JOB_EXCEEDED_WALL_CLOCK = 'Job has exceeded maximum wall clock time'
+#
+JOB_INSUFFICIENT_DISK = 'Job has insufficient disk space to continue'
+#
+JOB_EXCEEDED_CPU = 'Job has reached the CPU limit of the queue'
+#
+NO_CANDIDATE_SITE_FOUND = 'No candidate sites available'
+#
+RECEIVED_KILL_SIGNAL = 'Received Kill signal'
