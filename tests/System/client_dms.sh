@@ -95,8 +95,8 @@ if [[ "${?}" -ne 0 ]]; then
 fi
 
 echo " "
-echo "====== dirac-dms-remove-files $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE"
-dirac-dms-remove-files $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE
+echo "====== dirac-dms-remove-files $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
+dirac-dms-remove-files $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
