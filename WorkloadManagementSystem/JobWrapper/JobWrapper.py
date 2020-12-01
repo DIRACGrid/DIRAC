@@ -1147,7 +1147,7 @@ class JobWrapper(object):
       self.failedFlag = True
     elif res['Value'] and not requestFlag:
       # A request was created while there were none before, change final minor status
-      self.__report(status='', minorStatus=JobMinorStatus.PENDING_REQUESTS)
+      self.__report(minorStatus=JobMinorStatus.PENDING_REQUESTS)
 
     self.__cleanUp()
     return 1 if self.failedFlag else 0
