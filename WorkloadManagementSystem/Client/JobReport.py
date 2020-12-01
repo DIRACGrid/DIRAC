@@ -38,15 +38,12 @@ class JobReport(object):
   def setJobStatus(self, status='', minorStatus='', applicationStatus='', sendFlag=True):
     """ Send job status information to the JobState service for jobID
     """
-    if not self.jobID:
-      return S_OK('Local execution, jobID is null.')
-
     timeStamp = Time.toString()
     # add job status record
     self.jobStatusInfo.append((status.replace("'", ''), minorStatus.replace("'", ''), timeStamp))
     if applicationStatus:
       self.appStatusInfo.append((applicationStatus.replace("'", ''), timeStamp))
-    if sendFlag:
+    if sendFlag and self.jobID:
       # and send
       return self.sendStoredStatusInfo()
 
@@ -55,15 +52,12 @@ class JobReport(object):
   def setApplicationStatus(self, appStatus, sendFlag=True):
     """ Send application status information to the JobState service for jobID
     """
-    if not self.jobID:
-      return S_OK('Local execution, jobID is null.')
-
     timeStamp = Time.toString()
     # add Application status record
     if not isinstance(appStatus, str):
       appStatus = repr(appStatus)
     self.appStatusInfo.append((appStatus.replace("'", ''), timeStamp))
-    if sendFlag:
+    if sendFlag and self.jobID:
       # and send
       return self.sendStoredStatusInfo()
 
@@ -72,13 +66,10 @@ class JobReport(object):
   def setJobParameter(self, par_name, par_value, sendFlag=True):
     """ Send job parameter for jobID
     """
-    if not self.jobID:
-      return S_OK('Local execution, jobID is null.')
-
     timeStamp = Time.toString()
     # add job parameter record
     self.jobParameters[par_name] = (par_value, timeStamp)
-    if sendFlag:
+    if sendFlag and self.jobID:
       # and send
       return self.sendStoredJobParameters()
 
@@ -87,15 +78,12 @@ class JobReport(object):
   def setJobParameters(self, parameters, sendFlag=True):
     """ Send job parameters for jobID
     """
-    if not self.jobID:
-      return S_OK('Local execution, jobID is null.')
-
     timeStamp = Time.toString()
     # add job parameter record
     for pname, pvalue in parameters:
       self.jobParameters[pname] = (pvalue, timeStamp)
 
-    if sendFlag:
+    if sendFlag and self.jobID:
       # and send
       return self.sendStoredJobParameters()
 

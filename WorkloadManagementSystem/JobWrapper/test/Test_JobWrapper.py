@@ -19,6 +19,8 @@ from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinux
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 getSystemSectionMock = MagicMock()
 getSystemSectionMock.return_value = 'aValue'
@@ -120,7 +122,15 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
     jw.jobArgs = {'Executable': '/bin/ls'}
     res = jw.finalize()
     self.assertTrue(res == 1)  # by default failed flag is True
+    self.assertEqual(jw.jobReport.jobStatusInfo[0][0], JobStatus.FAILED)
 
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable': '/bin/ls'}
+    jw.failedFlag = False
+    res = jw.finalize()
+    self.assertTrue(res == 0)
+    self.assertEqual(jw.jobReport.jobStatusInfo[0][0], JobStatus.DONE)
+    self.assertEqual(jw.jobReport.jobStatusInfo[1][1], JobMinorStatus.EXEC_COMPLETE)
 
 #############################################################################
 # Test Suite run

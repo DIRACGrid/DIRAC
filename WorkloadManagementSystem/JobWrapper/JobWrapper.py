@@ -1132,13 +1132,17 @@ class JobWrapper(object):
 
     if self.failedFlag:
       self.log.info("Job finished with errors")
-      self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.PENDING_REQUESTS if requestFlag else '')
+      self.__report(status=JobStatus.FAILED,
+                    minorStatus=JobMinorStatus.PENDING_REQUESTS if requestFlag else '')
     else:
       self.log.info("Job finished successfully")
       if requestFlag:
-        self.__report(status=JobStatus.COMPLETED, minorStatus=JobMinorStatus.PENDING_REQUESTS)
+        self.__report(status=JobStatus.COMPLETED,
+                      minorStatus=JobMinorStatus.PENDING_REQUESTS)
       else:
-        self.__report(status=JobStatus.DONE, minorStatus=JobMinorStatus.EXEC_COMPLETE)
+        # job is potentially "Done", unless there are failover requests
+        pass
+        # the status and minorStatus will be set below
 
     # try to send the failover request if any, and send accounting
     res = self.sendFailoverRequest()
@@ -1148,6 +1152,12 @@ class JobWrapper(object):
     elif res['Value'] and not requestFlag:
       # A request was created while there were none before, change final minor status
       self.__report(minorStatus=JobMinorStatus.PENDING_REQUESTS)
+      requestFlag = True
+
+    if not self.failedFlag:
+      self.__report(status=JobStatus.DONE)
+    if not requestFlag:
+      self.__report(minorStatus=JobMinorStatus.EXEC_COMPLETE)
 
     self.__cleanUp()
     return 1 if self.failedFlag else 0
@@ -1245,19 +1255,11 @@ class JobWrapper(object):
     else:
       result = self.sendJobAccounting(status, minorStatus)
       if not result['OK']:
-        self.log.warn('JobAccountingFailure', "Could not send job accounting with result: \n%s" % result['Message'])
-        self.log.warn('JobAccountingFailure', "Trying to build a failover request")
-        if 'rpcStub' in result:
-          self.log.verbose("Adding accounting report to failover request object")
-          forwardDISETOp = Operation()
-          forwardDISETOp.Type = "ForwardDISET"
-          forwardDISETOp.Arguments = DEncode.encode(result['rpcStub'])
-          request.addOperation(forwardDISETOp)
-          self.log.verbose("Added accounting report to failover request object")
-        else:
-          self.log.warn('JobAccountingFailure',
-                        "No rpcStub found to construct failover request for job accounting report")
-          self.log.warn('JobAccountingFailure', "The job won't fail, but the accounting for this job won't be sent")
+        # This should be really rare, as the accounting report also sends failover requets
+        self.log.warn('JobAccountingFailure',
+                      "Could not send job accounting with result: \n%s" % result['Message'])
+        self.log.warn('JobAccountingFailure',
+                      "The job won't fail, but the accounting for this job won't be sent")
 
     # Failover transfer requests
     for storedOperation in self.failoverTransfer.request:
@@ -1333,17 +1335,19 @@ class JobWrapper(object):
 
   #############################################################################
   def __report(self, status='', minorStatus='', sendFlag=False):
-    """Wraps around setJobStatus of state update client
+    """Wraps around setJobStatus of jobReport object
     """
+    self.log.verbose('setJobStatus', '(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
+
     if status:
       self.wmsMajorStatus = status
     if minorStatus:
       self.wmsMinorStatus = minorStatus
-    jobStatus = self.jobReport.setJobStatus(status=status, minorStatus=minorStatus, sendFlag=sendFlag)
+    jobStatus = self.jobReport.setJobStatus(status=status,
+                                            minorStatus=minorStatus,
+                                            sendFlag=sendFlag)
     if not jobStatus['OK']:
       self.log.warn('Failed setting job status', jobStatus['Message'])
-    if self.jobID:
-      self.log.verbose('setJobStatus', '(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
 
     return jobStatus
 
