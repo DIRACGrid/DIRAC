@@ -12,7 +12,7 @@ Arguments:
 
 Example:
 
-  $ dirac-admin-add-user -N vhamar -D /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar -M hamar@cppm.in2p3.fr -G dirac_user
+  $ dirac-admin-add-user -N vhamar -D /O=GRID/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar -M hamar@cppm.in2p3.fr -G dirac_user
 """
 __RCSID__ = "$Id$"
 

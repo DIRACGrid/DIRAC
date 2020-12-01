@@ -52,6 +52,7 @@ def setTaskQueueID(optVal):
   taskQueueID = int(optVal)
   return S_OK()
 
+
 Script.setUsageMessage(__doc__)
 Script.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)
 Script.registerSwitch("t:", "taskQueue=", "show this task queue only", setTaskQueueID)
