@@ -1146,9 +1146,8 @@ class JobWrapper(object):
       self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.FAILED_SENDING_REQUESTS)
       self.failedFlag = True
     elif res['Value'] and not requestFlag:
-      # A request was created while there were none before, change final status
-      self.__report(status=JobStatus.COMPLETED if self.wmsMajorStatus == JobStatus.DONE else '',
-                    minorStatus=JobMinorStatus.PENDING_REQUESTS)
+      # A request was created while there were none before, change final minor status
+      self.__report(status='', minorStatus=JobMinorStatus.PENDING_REQUESTS)
 
     self.__cleanUp()
     return 1 if self.failedFlag else 0
