@@ -168,8 +168,9 @@ def execute(arguments):
     gJobReport.setJobStatus(status=JobStatus.FAILED,
                             minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC,
                             sendFlag=False)
-    job.sendFailoverRequest(status=JobStatus.FAILED,
-                            minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
+    job.sendFailoverRequest()
+    job.sendJobAccounting(status=JobStatus.FAILED,
+                          minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
     return 1
   except Exception as exc:  # pylint: disable=broad-except
     gLogger.exception('Job raised exception during execution phase', lException=exc)
@@ -177,8 +178,9 @@ def execute(arguments):
     gJobReport.setJobStatus(status=JobStatus.FAILED,
                             minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC,
                             sendFlag=False)
-    job.sendFailoverRequest(status=JobStatus.FAILED,
-                            minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
+    job.sendFailoverRequest()
+    job.sendJobAccounting(status=JobStatus.FAILED,
+                          minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
     return 1
 
   if 'OutputSandbox' in arguments['Job'] or 'OutputData' in arguments['Job']:
@@ -193,8 +195,10 @@ def execute(arguments):
       gJobReport.setJobStatus(status=JobStatus.FAILED,
                               minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS,
                               sendFlag=False)
-      job.sendFailoverRequest(status=JobStatus.FAILED,
-                              minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
+      job.sendFailoverRequest()
+      job.sendJobAccounting(status=JobStatus.FAILED,
+                            minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
+
       return 2
     except Exception as exc:  # pylint: disable=broad-except
       gLogger.exception('JobWrapper raised exception while processing output files', lException=exc)
@@ -202,8 +206,9 @@ def execute(arguments):
       gJobReport.setJobStatus(status=JobStatus.FAILED,
                               minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS,
                               sendFlag=False)
-      job.sendFailoverRequest(status=JobStatus.FAILED,
-                              minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
+      job.sendFailoverRequest()
+      job.sendJobAccounting(status=JobStatus.FAILED,
+                            minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
       return 2
   else:
     gLogger.verbose('Job has no OutputData or OutputSandbox requirement')

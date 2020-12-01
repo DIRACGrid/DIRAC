@@ -1159,6 +1159,26 @@ class JobWrapper(object):
     if not requestFlag:
       self.__report(minorStatus=JobMinorStatus.EXEC_COMPLETE)
 
+    # Sending the last accounting report
+    if not self.jobID:
+      self.log.debug('No accounting to be sent since running locally')
+    else:
+      for reportLine in reversed(self.jobReport.jobStatusInfo):  # looking for the last status
+        if reportLine[0]:
+          status = reportLine[0]
+          break
+      for reportLine in reversed(self.jobReport.jobStatusInfo):  # looking for the last minorStatus
+        if reportLine[1]:
+          minorStatus = reportLine[1]
+          break
+      result = self.sendJobAccounting(status, minorStatus)
+      if not result['OK']:
+        # This should be really rare, as the accounting report also sends failover requets
+        self.log.warn('JobAccountingFailure',
+                      "Could not send job accounting with result: \n%s" % result['Message'])
+        self.log.warn('JobAccountingFailure',
+                      "The job won't fail, but the accounting for this job won't be sent")
+
     self.__cleanUp()
     return 1 if self.failedFlag else 0
 
@@ -1221,7 +1241,7 @@ class JobWrapper(object):
     return result
 
   #############################################################################
-  def sendFailoverRequest(self, status='', minorStatus=''):
+  def sendFailoverRequest(self):
     """ Create and send a combined job failover request if any
     """
     request = Request()
@@ -1248,18 +1268,6 @@ class JobWrapper(object):
     else:
       self.log.warn('JobReportFailure', "Could not generate a forwardDISET operation: %s" % result['Message'])
       self.log.warn('JobReportFailure', "The job won't fail, but the jobLogging info might be incomplete")
-
-    # Accounting part
-    if not self.jobID:
-      self.log.debug('No accounting to be sent since running locally')
-    else:
-      result = self.sendJobAccounting(status, minorStatus)
-      if not result['OK']:
-        # This should be really rare, as the accounting report also sends failover requets
-        self.log.warn('JobAccountingFailure',
-                      "Could not send job accounting with result: \n%s" % result['Message'])
-        self.log.warn('JobAccountingFailure',
-                      "The job won't fail, but the accounting for this job won't be sent")
 
     # Failover transfer requests
     for storedOperation in self.failoverTransfer.request:
