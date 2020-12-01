@@ -196,7 +196,7 @@ class OptimizerModule(AgentModule):
     """
 
     result = self.logDB.addLoggingRecord(job, status=self.startingMajorStatus,
-                                         minor=self.startingMinorStatus,
+                                         minorStatus=self.startingMinorStatus,
                                          source=self.am_getModuleParam("optimizerName"))
     if not result['OK']:
       self.log.warn("Can't add logging record", result['Message'])
@@ -218,7 +218,7 @@ class OptimizerModule(AgentModule):
     if not result['OK']:
       return result
 
-    result = self.logDB.addLoggingRecord(job, status=status, minor=minorStatus, application=appStatus,
+    result = self.logDB.addLoggingRecord(job, status=status, minorStatus=minorStatus, applicationStatus=appStatus,
                                          source=self.am_getModuleParam('optimizerName'))
     if not result['OK']:
       self.log.warn("Can't add logging record", result['Message'])

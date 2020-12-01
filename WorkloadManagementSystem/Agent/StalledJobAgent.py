@@ -292,7 +292,7 @@ for the agent restart
       return S_OK(latestUpdate)
 
   #############################################################################
-  def __updateJobStatus(self, job, status, minorstatus=None):
+  def __updateJobStatus(self, job, status, minorStatus=None):
     """ This method updates the job status in the JobDB, this should only be
         used to fail jobs due to the optimizer chain.
     """
@@ -304,17 +304,17 @@ for the agent restart
       result = S_OK('DisabledMode')
 
     if result['OK']:
-      if minorstatus:
-        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorstatus))
-        result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorstatus, update=True)
+      if minorStatus:
+        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorStatus))
+        result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorStatus, update=True)
 
-    if not minorstatus:  # Retain last minor status for stalled jobs
+    if not minorStatus:  # Retain last minor status for stalled jobs
       result = self.jobDB.getJobAttributes(job, ['MinorStatus'])
       if result['OK']:
-        minorstatus = result['Value']['MinorStatus']
+        minorStatus = result['Value']['MinorStatus']
 
     logStatus = status
-    result = self.logDB.addLoggingRecord(job, status=logStatus, minor=minorstatus, source='StalledJobAgent')
+    result = self.logDB.addLoggingRecord(job, status=logStatus, minorStatus=minorStatus, source='StalledJobAgent')
     if not result['OK']:
       self.log.warn(result)
 

@@ -1339,7 +1339,7 @@ class JobWrapper(object):
       self.wmsMajorStatus = status
     if minorStatus:
       self.wmsMinorStatus = minorStatus
-    jobStatus = self.jobReport.setJobStatus(status=status, minor=minorStatus, sendFlag=sendFlag)
+    jobStatus = self.jobReport.setJobStatus(status=status, minorStatus=minorStatus, sendFlag=sendFlag)
     if not jobStatus['OK']:
       self.log.warn('Failed setting job status', jobStatus['Message'])
     if self.jobID:
@@ -1465,7 +1465,7 @@ def rescheduleFailedJob(jobID, minorStatus, jobReport=None):
       jobReport = JobReport(int(jobID), 'JobWrapper')
 
     jobReport.setApplicationStatus('Failed %s ' % minorStatus, sendFlag=False)
-    jobReport.setJobStatus(status=JobStatus.RESCHEDULED, minor=minorStatus, sendFlag=False)
+    jobReport.setJobStatus(status=JobStatus.RESCHEDULED, minorStatus=minorStatus, sendFlag=False)
 
     # We must send Job States and Parameters before it gets reschedule
     jobReport.sendStoredStatusInfo()

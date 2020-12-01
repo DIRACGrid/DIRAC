@@ -35,8 +35,8 @@ class JobLoggingDB(DB):
   def addLoggingRecord(self,
                        jobID,
                        status='idem',
-                       minor='idem',
-                       application='idem',
+                       minorStatus='idem',
+                       applicationStatus='idem',
                        date=None,
                        source='Unknown'):
     """ Add a new entry to the JobLoggingDB table. One, two or all the three status
@@ -47,7 +47,7 @@ class JobLoggingDB(DB):
         UTC time is used.
     """
 
-    event = 'status/minor/app=%s/%s/%s' % (status, minor, application)
+    event = 'status/minor/app=%s/%s/%s' % (status, minorStatus, applicationStatus)
     self.log.info("Adding record for job ", str(jobID) + ": '" + event + "' from " + source)
 
     try:
@@ -69,7 +69,7 @@ class JobLoggingDB(DB):
 
     cmd = "INSERT INTO LoggingInfo (JobId, Status, MinorStatus, ApplicationStatus, " + \
           "StatusTime, StatusTimeOrder, StatusSource) VALUES (%d,'%s','%s','%s','%s',%f,'%s')" % \
-        (int(jobID), status, minor, application[:255],
+        (int(jobID), status, minorStatus, applicationStatus[:255],
          str(_date), epoc, source[:32])
 
     return self._update(cmd)

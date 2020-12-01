@@ -581,7 +581,7 @@ class JobDB(DB):
     except ValueError:
       return S_ERROR('The ' + currentOptimizer + ' not found in the chain')
 
-    result = self.setJobStatus(jobID, status=JobStatus.CHECKING, minor=nextOptimizer)
+    result = self.setJobStatus(jobID, status=JobStatus.CHECKING, minorStatus=nextOptimizer)
     if not result['OK']:
       return result
     return S_OK(nextOptimizer)
@@ -702,7 +702,7 @@ class JobDB(DB):
     return self._transaction([cmd])
 
 #############################################################################
-  def setJobStatus(self, jobID, status='', minor='', application=''):
+  def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus=''):
     """ Set status of the job specified by its jobID
     """
 
@@ -716,12 +716,12 @@ class JobDB(DB):
     if status:
       attrNames.append('Status')
       attrValues.append(status)
-    if minor:
+    if minorStatus:
       attrNames.append('MinorStatus')
-      attrValues.append(minor)
-    if application:
+      attrValues.append(minorStatus)
+    if applicationStatus:
       attrNames.append('ApplicationStatus')
-      attrValues.append(application[:255])
+      attrValues.append(applicationStatus[:255])
 
     result = self.setJobAttributes(jobID, attrNames, attrValues, update=update_flag)
     if not result['OK']:
@@ -1357,7 +1357,7 @@ class JobDB(DB):
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
       self.log.warn('Maximum number of reschedulings is reached', 'Job %s' % jobID)
-      res = self.setJobStatus(jobID, status='Failed', minor='Maximum of reschedulings reached')
+      res = self.setJobStatus(jobID, status='Failed', minorStatus='Maximum of reschedulings reached')
       if not res['OK']:
         return res
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)

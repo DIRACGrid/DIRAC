@@ -256,8 +256,8 @@ class JobStateUpdateHandler(RequestHandler):
       source = sDict.get('Source', 'Unknown')
       result = cls.gJobLoggingDB.addLoggingRecord(jobID,
                                                   status=status,
-                                                  minor=minor,
-                                                  application=application,
+                                                  minorStatus=minor,
+                                                  applicationStatus=application,
                                                   date=date,
                                                   source=source)
       if not result['OK']:
