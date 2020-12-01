@@ -535,8 +535,8 @@ class JobAgent(AgentModule):
 
     wrapperFile = result['Value']
     jobReport.setJobStatus(status='Matched',
-			   minor='Submitted To CE',
-                           sendFlag=False)
+			   minor='Submitting To CE',
+			   sendFlag=False)
 
     self.log.info('Submitting JobWrapper',
                   '%s to %sCE' % (os.path.basename(wrapperFile), self.ceName))
