@@ -431,8 +431,8 @@ class JobWrapper(object):
         outputs = threadResult['Value']
     else:  # if the execution thread didn't complete
       self.log.error('Application thread did not complete')
-      self.__report(status='Failed', minorStatus=JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
-      self.__setJobParam('ApplicationError', 'Application thread did not complete', sendFlag=True)
+      self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
+      self.__setJobParam('ApplicationError', JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
       return S_ERROR('No outputs generated from job execution')
 
     if 'CPU' in EXECUTION_RESULT:
@@ -1136,7 +1136,7 @@ class JobWrapper(object):
     else:
       self.log.info("Job finished successfully")
       if requestFlag:
-        self.__report(status=JobStatus.COMPLETED, minorStatus=JobMinorStatus.PENDING_REQUESTS if requestFlag else '')
+        self.__report(status=JobStatus.COMPLETED, minorStatus=JobMinorStatus.PENDING_REQUESTS)
       else:
         self.__report(status=JobStatus.DONE, minorStatus=JobMinorStatus.EXEC_COMPLETE)
 
