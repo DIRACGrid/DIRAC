@@ -156,14 +156,14 @@ def execute(arguments):
       return 1
     gLogger.exception('Job failed in execution phase')
     gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
-    gJobReport.setJobStatus(JobStatus.FAILED, JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False)
-    job.sendFailoverRequest(JobStatus.FAILED, JobMinorStatus.EXCEPTION_DURING_EXEC)
+    gJobReport.setJobStatus(status=JobStatus.FAILED, minor=JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False)
+    job.sendFailoverRequest(status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
     return 1
   except Exception as exc:  # pylint: disable=broad-except
     gLogger.exception('Job raised exception during execution phase', lException=exc)
     gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
-    gJobReport.setJobStatus(JobStatus.FAILED, JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False)
-    job.sendFailoverRequest(JobStatus.FAILED, JobMinorStatus.EXCEPTION_DURING_EXEC)
+    gJobReport.setJobStatus(status=JobStatus.FAILED, minor=JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False)
+    job.sendFailoverRequest(status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
     return 1
 
   if 'OutputSandbox' in arguments['Job'] or 'OutputData' in arguments['Job']:
@@ -175,14 +175,14 @@ def execute(arguments):
     except JobWrapperError as exc:
       gLogger.exception('JobWrapper failed to process output files')
       gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
-      gJobReport.setJobStatus(JobStatus.FAILED, JobMinorStatus.UPLOADING_JOB_OUTPUTS, sendFlag=False)
-      job.sendFailoverRequest(JobStatus.FAILED, JobMinorStatus.UPLOADING_JOB_OUTPUTS)
+      gJobReport.setJobStatus(status=JobStatus.FAILED, minor=JobMinorStatus.UPLOADING_JOB_OUTPUTS, sendFlag=False)
+      job.sendFailoverRequest(status=JobStatus.FAILED, minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
       return 2
     except Exception as exc:  # pylint: disable=broad-except
       gLogger.exception('JobWrapper raised exception while processing output files', lException=exc)
       gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
-      gJobReport.setJobStatus(JobStatus.FAILED, JobMinorStatus.UPLOADING_JOB_OUTPUTS, sendFlag=False)
-      job.sendFailoverRequest(JobStatus.FAILED, JobMinorStatus.UPLOADING_JOB_OUTPUTS)
+      gJobReport.setJobStatus(status=JobStatus.FAILED, minor=JobMinorStatus.UPLOADING_JOB_OUTPUTS, sendFlag=False)
+      job.sendFailoverRequest(status=JobStatus.FAILED, minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
       return 2
   else:
     gLogger.verbose('Job has no OutputData or OutputSandbox requirement')
