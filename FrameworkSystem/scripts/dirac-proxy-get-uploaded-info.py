@@ -3,6 +3,21 @@
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
+"""
+Usage:
+
+  dirac-proxy-get-uploaded-info.py (<options>|<cfgFile>)*
+
+Example:
+
+  $ dirac-proxy-get-uploaded-info
+  Checking for DNs /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  --------------------------------------------------------------------------------------------------------
+  | UserDN                                          | UserGroup   | ExpirationTime      | PersistentFlag |
+  --------------------------------------------------------------------------------------------------------
+  | /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar | dirac_user  | 2011-06-29 12:04:25 | True           |
+  --------------------------------------------------------------------------------------------------------
+"""
 from __future__ import print_function
 
 import sys
@@ -17,6 +32,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 __RCSID__ = "$Id:"
+Script.setUsageMessage(__doc__)
 
 userName = False
 

@@ -4,19 +4,32 @@
 # Author :  Adrian Casajus
 ########################################################################
 """
-  Lists the users in the Configuration. If no group is specified return all users.
+Lists the users in the Configuration. If no group is specified return all users.
+
+Usage:
+
+  dirac-admin-list-users [option|cfgfile] ... [Group] ...
+
+Arguments:
+
+  Group:    Only users from this group (default: all)
+
+Example:
+
+  $ dirac-admin-list-users
+  All users registered:
+  vhamar
+  msapunov
+  atsareg
 """
 from __future__ import print_function
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
+Script.setUsageMessage(__doc__)
 Script.registerSwitch("e", "extended", "Show extended info")
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... [Group] ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  Group:    Only users from this group (default: all)']))
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 

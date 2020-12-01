@@ -3,7 +3,24 @@
 # File :    dirac-proxy-info.py
 # Author :  Adrian Casajus
 ########################################################################
+"""
+Usage:
 
+  dirac-proxy-info.py (<options>|<cfgFile>)*
+
+Example:
+
+  $ dirac-proxy-info
+  subject      : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar/CN=proxy/CN=proxy
+  issuer       : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar/CN=proxy
+  identity     : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  timeleft     : 23:53:55
+  DIRAC group  : dirac_user
+  path         : /tmp/x509up_u40885
+  username     : vhamar
+  VOMS         : True
+  VOMS fqan    : ['/formation']
+"""
 from __future__ import print_function
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK
@@ -59,6 +76,7 @@ params = Params()
 import sys
 
 from DIRAC.Core.Base import Script
+Script.setUsageMessage(__doc__)
 Script.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
 Script.registerSwitch("i", "version", "Print version", params.showVersion)
 Script.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)

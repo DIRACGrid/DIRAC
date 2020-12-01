@@ -41,9 +41,7 @@ Consider the registration process
 ---------------------------------
 
 User management has been provided by the Registry section of the Configuration System. To manage it you can use:
-  * dirac-admin commands to managing Registry:
-    - :ref:`dirac-admin-add-group <admin_dirac-admin-add-group>`
-    - :ref:`dirac-admin-add-user <admin_dirac-admin-add-user>`
+  * :ref:`dirac commands <registry_cmd>` to managing Registry
   * configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <installwebappdirac>`)
   * modify local cfg file manually (by default it located in /opt/dirac/etc/dirac.cfg)
   * use the :mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent` to fetch VOMS VO users

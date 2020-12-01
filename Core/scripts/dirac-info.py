@@ -4,7 +4,19 @@
 # Author :  Andrei Tsaregorodtsev
 ########################################################################
 """
-  Report info about local DIRAC installation
+Report info about local DIRAC installation
+
+Usage:
+
+  dirac-info [option|cfgfile] ... Site
+
+Example:
+
+  $ dirac-info
+         DIRAC version : v5r12
+                 Setup : Dirac-Production
+   ConfigurationServer : ['dips://dirac.in2p3.fr:9135/Configuration/Server']
+   VirtualOrganization : vo.formation.idgrilles.fr
 """
 
 from __future__ import print_function
@@ -19,9 +31,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Site' % Script.scriptName, ]))
+Script.setUsageMessage(__doc__)
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 

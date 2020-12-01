@@ -1,13 +1,25 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-admin-list-users
+# File :    dirac-admin-list-hosts
 # Author :  Adrian Casajus
 ########################################################################
+"""
+Usage:
+
+  dirac-admin-list-hosts (<options>|<cfgFile>)*
+
+Example:
+
+  $ dirac-admin-list-hosts
+  dirac.in2p3.fr
+  host-dirac.in2p3.fr
+"""
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 
+Script.setUsageMessage(__doc__)
 Script.registerSwitch("e", "extended", "Show extended info")
 
 Script.parseCommandLine(ignoreErrors=True)

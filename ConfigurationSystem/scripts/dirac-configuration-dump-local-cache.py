@@ -4,7 +4,15 @@
 # Author : Adria Casajus
 ########################################################################
 """
-  Dump DIRAC Configuration data
+Dump DIRAC Configuration data
+
+Usage:
+
+  dirac-configuration-dump-local-cache [option|cfgfile] ...
+
+Example:
+
+  $ dirac-configuration-dump-local-cache -f /tmp/dump-conf.txt
 """
 from __future__ import print_function
 
@@ -34,11 +42,9 @@ def setRaw(args):
   return DIRAC.S_OK()
 
 
+Script.setUsageMessage(__doc__)
 Script.registerSwitch("f:", "file=", "Dump Configuration data into <file>", setFilename)
 Script.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ...' % Script.scriptName, ]))
 Script.parseCommandLine()
 
 from DIRAC import gConfig, gLogger

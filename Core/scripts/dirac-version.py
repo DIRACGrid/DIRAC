@@ -4,7 +4,12 @@
 # Author : Ricardo Graciani
 ########################################################################
 """
-    print version of current DIRAC installation
+Print version of current DIRAC installation
+
+Example:
+
+  $ dirac-version        
+  v5r12-pre9
 """
 from __future__ import print_function
 

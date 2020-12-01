@@ -4,7 +4,20 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Add Site to Active mask for current Setup
+Add Site to Active mask for current Setup
+
+Usage:
+
+  dirac-admin-allow-site [option|cfgfile] ... Site Comment
+
+Arguments:
+
+  Site:     Name of the Site
+  Comment:  Reason of the action
+
+Example:
+
+  $ dirac-admin-allow-site LCG.IN2P3.fr "FRANCE"
 """
 from __future__ import print_function
 
@@ -13,14 +26,8 @@ __RCSID__ = "$Id$"
 import time
 
 from DIRAC.Core.Base import Script
-
+Script.setUsageMessage(__doc__)
 Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Site Comment' % Script.scriptName,
-                                  'Arguments:',
-                                  '  Site:     Name of the Site',
-                                  '  Comment:  Reason of the action']))
 Script.parseCommandLine(ignoreErrors=True)
 
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

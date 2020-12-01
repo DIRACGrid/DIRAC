@@ -4,7 +4,19 @@
 # Author :  Adrian Casajus
 ########################################################################
 """
-  Sync users in Configuration with the cfg contents.
+Sync users in Configuration with the cfg contents.
+
+Usage:
+
+  dirac-admin-sync-users-from-file [option|cfgfile] ... UserCfg
+
+Arguments:
+
+  UserCfg:  Cfg FileName with Users as sections containing DN, Groups, and other properties as options
+
+Example:
+
+  $ dirac-admin-sync-users-from-file file_users.cfg
 """
 from __future__ import print_function
 
@@ -14,18 +26,9 @@ import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.CFG import CFG
 
+Script.setUsageMessage(__doc__)
 Script.registerSwitch("t", "test", "Only test. Don't commit changes")
-Script.setUsageMessage(
-    '\n'.join(
-        [
-            __doc__.split('\n')[1],
-            'Usage:',
-            '  %s [option|cfgfile] ... UserCfg' %
-            Script.scriptName,
-            'Arguments:',
-            '  UserCfg:  Cfg FileName with Users as sections containing DN, Groups, and other properties as options']))
 Script.parseCommandLine(ignoreErrors=True)
-
 args = Script.getExtraCLICFGFiles()
 
 if len(args) < 1:

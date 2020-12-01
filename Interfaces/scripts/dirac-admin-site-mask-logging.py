@@ -1,25 +1,32 @@
 #!/usr/bin/env python
-"""
-  Retrieves site mask logging information.
-"""
-
 ########################################################################
 # File :    dirac-admin-site-mask-logging
 # Author :  Stuart Paterson
 ########################################################################
+"""
+Retrieves site mask logging information.
 
+Usage:
+
+  dirac-admin-site-mask-logging [option|cfgfile] ... Site ...
+
+Arguments:
+
+  Site:     Name of the Site
+
+Example:
+
+  $ dirac-admin-site-mask-logging LCG.IN2P3.fr
+  Site Mask Logging Info for LCG.IN2P3.fr
+  Active  2010-12-08 21:28:16 ( atsareg )
+"""
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Site ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  Site:     Name of the Site']))
-
+Script.setUsageMessage(__doc__)
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 

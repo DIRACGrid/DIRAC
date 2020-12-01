@@ -7,6 +7,20 @@
   Add a new DIRAC SiteName to DIRAC Configuration, including one or more CEs.
   If site is already in the CS with another name, error message will be produced.
   If site is already in the CS with the right name, only new CEs will be added.
+
+Usage:
+
+  dirac-admin-add-site [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...
+
+Arguments:
+
+  DIRACSiteName:  Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)
+  GridSiteName:   Name of the site in the Grid (ie: CERN-PROD)
+  CE:             Name of the CE to be included in the site (ie: ce111.cern.ch)
+
+Example:
+
+  $ dirac-admin-add-site LCG.IN2P3.fr IN2P3-Site
 """
 __RCSID__ = "$Id$"
 
@@ -18,17 +32,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 if __name__ == "__main__":
 
-  Script.setUsageMessage(
-      '\n'.join(
-          [
-              __doc__.split('\n')[1],
-              'Usage:',
-              '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' %
-              Script.scriptName,
-              'Arguments:',
-              '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
-              '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
-              '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

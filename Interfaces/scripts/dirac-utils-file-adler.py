@@ -3,7 +3,20 @@
 # File :    dirac-utils-file-adler
 ########################################################################
 """
-  Calculate alder32 of the supplied file
+Calculate alder32 of the supplied file
+
+Usage:
+
+  dirac-utils-file-adler [option|cfgfile] ... File ...
+
+Arguments:
+
+  File:     File Name
+
+Example:
+
+  $ dirac-utils-file-adler Example.tgz
+  Example.tgz 88b4ca8b
 """
 from __future__ import print_function
 
@@ -13,11 +26,7 @@ import DIRAC
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... File ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  File:     File Name']))
+Script.setUsageMessage(__doc__)
 Script.parseCommandLine(ignoreErrors=False)
 files = Script.getPositionalArgs()
 if len(files) == 0:

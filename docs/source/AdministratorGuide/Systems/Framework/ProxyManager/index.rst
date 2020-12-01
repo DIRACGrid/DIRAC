@@ -22,11 +22,4 @@ There are also commands and a web portal(:ref:`read how to install it <installwe
 Scripts
 -------
 
-The following commands can be used to interact with this system to manage proxies:
-  * :ref:`dirac-admin-get-proxy <admin_dirac-admin-get-proxy>`
-  * :ref:`dirac-proxy-init <admin_dirac-proxy-init>`
-  * :ref:`dirac-proxy-info <admin_dirac-proxy-info>`
-  * :ref:`dirac-proxy-get-uploaded-info <admin_dirac-proxy-get-uploaded-info>`
-  * :ref:`dirac-admin-users-with-proxy <admin_dirac-admin-users-with-proxy>`
-  * dirac-admin-upload-proxy
-  * dirac-proxy-destroy
+You can be use :ref:`DIRAC commands <proxymanager_cmd>` to interact with this system to manage proxies.

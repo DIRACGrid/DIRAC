@@ -1,13 +1,37 @@
 #!/usr/bin/env python
+"""
+Usage:
 
+  dirac-admin-users-with-proxy.py (<options>|<cfgFile>)*
+
+Example:
+
+  $ dirac-admin-users-with-proxy
+  * vhamar
+  DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  group      : dirac_admin
+  not after  : 2011-06-29 12:04:25
+  persistent : False
+  -
+  DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  group      : dirac_pilot
+  not after  : 2011-06-29 12:04:27
+  persistent : False
+  -
+  DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  group      : dirac_user
+  not after  : 2011-06-29 12:04:30
+  persistent : True
+"""
 from __future__ import print_function
+
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Utilities import Time
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 __RCSID__ = "$Id$"
-
+Script.setUsageMessage(__doc__)
 
 class Params(object):
 
