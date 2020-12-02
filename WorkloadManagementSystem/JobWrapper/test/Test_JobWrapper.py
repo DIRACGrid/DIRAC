@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import os
 import shutil
-
+import pytest
 from mock import MagicMock
 
 from DIRAC import gLogger
@@ -109,8 +109,11 @@ def test_execute(mocker):
   os.remove('std.out')
 
 
-def test_finalize(mocker):
-
+@pytest.mark.parametrize("failedFlag, expectedRes, finalStates", [
+    (True, 1, [JobStatus.FAILED, '']),
+    (False, 0, [JobStatus.DONE, JobMinorStatus.EXEC_COMPLETE]),
+])
+def test_finalize(mocker, failedFlag, expectedRes, finalStates):
   mocker.patch('DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection',
                side_effect=getSystemSectionMock)
   mocker.patch('DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ModuleFactory',
@@ -118,14 +121,10 @@ def test_finalize(mocker):
 
   jw = JobWrapper()
   jw.jobArgs = {'Executable': '/bin/ls'}
-  res = jw.finalize()
-  assert res == 1  # by default failed flag is True
-  assert jw.jobReport.jobStatusInfo[0][0] == JobStatus.FAILED
+  jw.failedFlag = failedFlag
 
-  jw = JobWrapper()
-  jw.jobArgs = {'Executable': '/bin/ls'}
-  jw.failedFlag = False
   res = jw.finalize()
-  assert res == 0
-  assert jw.jobReport.jobStatusInfo[0][0] == JobStatus.DONE
-  assert jw.jobReport.jobStatusInfo[1][1] == JobMinorStatus.EXEC_COMPLETE
+
+  assert res == expectedRes
+  assert jw.jobReport.jobStatusInfo[0][0] == finalStates[0]
+  assert jw.jobReport.jobStatusInfo[0][1] == finalStates[1]

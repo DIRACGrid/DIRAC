@@ -1139,10 +1139,12 @@ class JobWrapper(object):
       self.log.info("Job finished successfully")
       if requestFlag:
         finalStatus = JobStatus.COMPLETED
+        finalMinorStatus = JobMinorStatus.PENDING_REQUESTS
       else:
         finalStatus = JobStatus.DONE
+        finalMinorStatus = JobMinorStatus.EXEC_COMPLETE
 
-    # try to send the failover request if any
+    # try to send the failover request if any (also for failed jobs)
     res = self.sendFailoverRequest()
     if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
       finalStatus = JobStatus.FAILED
