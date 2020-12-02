@@ -8,3 +8,4 @@ Example::
 
   $ dirac-version
   v5r12-pre9
+
