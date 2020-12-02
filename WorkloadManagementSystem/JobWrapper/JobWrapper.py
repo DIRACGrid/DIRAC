@@ -1128,23 +1128,22 @@ class JobWrapper(object):
     outputDataRequest = self.failoverTransfer.getRequest()
 
     requestFlag = len(requests) > 0 or not outputDataRequest.isEmpty()
-    self.log.info("Job finished with%s pending requests" % ('' if requestFlag else ' no'))
 
     finalStatus = ''
     finalMinorStatus = ''
+    prString = "Job finished "
     if self.failedFlag:
-      self.log.info("Job finished with errors")
+      prString += "with errors"
       finalStatus = JobStatus.FAILED
     else:
-      self.log.info("Job finished successfully")
+      prString += "successfully"
       if requestFlag:
         finalStatus = JobStatus.COMPLETED
-        finalMinorStatus = JobMinorStatus.PENDING_REQUESTS
       else:
         finalStatus = JobStatus.DONE
         finalMinorStatus = JobMinorStatus.EXEC_COMPLETE
 
-    # try to send the failover request if any (also for failed jobs)
+    # send the failover request if any (also for failed jobs)
     res = self.sendFailoverRequest()
     if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
       finalStatus = JobStatus.FAILED
@@ -1153,8 +1152,11 @@ class JobWrapper(object):
     elif res['Value']:
       # A request was sent, change the minor status
       finalMinorStatus = JobMinorStatus.PENDING_REQUESTS
+      requestFlag = True
 
     # Set the final status of the job
+    self.log.info(prString, "with%s pending requests" % ('' if requestFlag else ' no'))
+    self.log.info("Final job status", "%s ; %s" % (finalStatus, finalMinorStatus))
     self.__report(status=finalStatus, minorStatus=finalMinorStatus, sendFlag=True)
 
     # Sending the last accounting report
