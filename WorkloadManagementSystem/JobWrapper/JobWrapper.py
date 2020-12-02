@@ -1130,8 +1130,8 @@ class JobWrapper(object):
     requestFlag = len(requests) > 0 or not outputDataRequest.isEmpty()
     self.log.info("Job finished with%s pending requests" % ('' if requestFlag else ' no'))
 
-    finalStatus = None
-    finalMinorStatus = None
+    finalStatus = ''
+    finalMinorStatus = ''
     if self.failedFlag:
       self.log.info("Job finished with errors")
       finalStatus = JobStatus.FAILED
