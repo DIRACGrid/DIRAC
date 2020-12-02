@@ -17,7 +17,7 @@ from __future__ import division
 from __future__ import print_function
 
 import six
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Mail import Mail
@@ -29,9 +29,6 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 
 __RCSID__ = "$Id$"
 
-gNotDB = None
-gMailCache = DictCache()
-
 
 class NotificationHandler(RequestHandler):
 
@@ -39,10 +36,10 @@ class NotificationHandler(RequestHandler):
   def initializeHandler(cls, serviceInfo):
     """ Handler initialization
     """
-    global gNotDB
-    gNotDB = NotificationDB()
-    gThreadScheduler.addPeriodicTask(3600, gNotDB.purgeExpiredNotifications)
-    gThreadScheduler.addPeriodicTask(3600, gMailCache.purgeExpired())
+    cls.gNotDB = NotificationDB()
+    cls.gMailCache = DictCache()
+    gThreadScheduler.addPeriodicTask(3600, cls.gNotDB.purgeExpiredNotifications)
+    gThreadScheduler.addPeriodicTask(3600, cls.gMailCache.purgeExpired())
     return S_OK()
 
   def initialize(self):
@@ -53,21 +50,21 @@ class NotificationHandler(RequestHandler):
     self.client = credDict['username']
 
   ###########################################################################
-  types_sendMail = [basestring, basestring, basestring, basestring, bool]
+  types_sendMail = [six.string_types, six.string_types, six.string_types, six.string_types, bool]
 
   def export_sendMail(self, address, subject, body, fromAddress, avoidSpam=False):
     """ Send an email with supplied body to the specified address using the Mail utility.
 
-        :param basestring address: recipient addresses
-        :param basestring subject: subject of letter
-        :param basestring body: body of letter
-        :param basestring fromAddress: sender address, if None, will be used default from CS
+	:param six.string_types address: recipient addresses
+	:param six.string_types subject: subject of letter
+	:param six.string_types body: body of letter
+	:param six.string_types fromAddress: sender address, if None, will be used default from CS
         :param bool avoidSpam: Deprecated
 
-        :return: S_OK(basestring)/S_ERROR() -- basestring is status message
+	:return: S_OK(six.string_types)/S_ERROR() -- six.string_types is status message
     """
-    gLogger.verbose('Received signal to send the following mail to %s:\nSubject = %s\n%s' % (address, subject, body))
-    if gMailCache.exists(hash(address + subject + body)):
+    self.log.verbose('Received signal to send the following mail to %s:\nSubject = %s\n%s' % (address, subject, body))
+    if self.gMailCache.exists(hash(address + subject + body)):
       return S_OK('Email with the same content already sent today to current addresses, come back tomorrow')
     eMail = Mail()
     notificationSection = PathFinder.getServiceSection("Framework/Notification")
@@ -85,27 +82,27 @@ class NotificationHandler(RequestHandler):
     eMail._fromAddress = gConfig.getValue('%s/FromAddress' % csSection) or eMail._fromAddress
     result = eMail._send()
     if not result['OK']:
-      gLogger.warn('Could not send mail with the following message:\n%s' % result['Message'])
+      self.log.warn('Could not send mail with the following message:\n%s' % result['Message'])
     else:
-      gMailCache.add(hash(address + subject + body), 3600 * 24)
-      gLogger.info('Mail sent successfully to %s with subject %s' % (address, subject))
-      gLogger.debug(result['Value'])
+      self.gMailCache.add(hash(address + subject + body), 3600 * 24)
+      self.log.info('Mail sent successfully to %s with subject %s' % (address, subject))
+      self.log.debug(result['Value'])
 
     return result
 
   ###########################################################################
-  types_sendSMS = [basestring, basestring, basestring]
+  types_sendSMS = [six.string_types, six.string_types, six.string_types]
 
   def export_sendSMS(self, userName, body, fromAddress):
     """ Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
 
-        :param basestring userName: user name
-        :param basestring body: message
-        :param basestring fromAddress: sender address
+	:param six.string_types userName: user name
+	:param six.string_types body: message
+	:param six.string_types fromAddress: sender address
 
         :return: S_OK()/S_ERROR()
     """
-    gLogger.verbose('Received signal to send the following SMS to %s:\n%s' % (userName, body))
+    self.log.verbose('Received signal to send the following SMS to %s:\n%s' % (userName, body))
     mobile = gConfig.getValue('/Registry/Users/%s/Mobile' % userName, '')
     if not mobile:
       return S_ERROR('No registered mobile number for %s' % userName)
@@ -125,10 +122,10 @@ class NotificationHandler(RequestHandler):
       eMail._fromAddress = fromAddress
     result = eMail._send()
     if not result['OK']:
-      gLogger.warn('Could not send SMS to %s with the following message:\n%s' % (userName, result['Message']))
+      self.log.warn('Could not send SMS to %s with the following message:\n%s' % (userName, result['Message']))
     else:
-      gLogger.info('SMS sent successfully to %s ' % (userName))
-      gLogger.debug(result['Value'])
+      self.log.info('SMS sent successfully to %s ' % (userName))
+      self.log.debug(result['Value'])
 
     return result
 
@@ -145,7 +142,7 @@ class NotificationHandler(RequestHandler):
     if 'username' not in credDict:
       return S_ERROR("OOps. You don't have a username! This shouldn't happen :P")
     alarmDefinition['author'] = credDict['username']
-    return gNotDB.newAlarm(alarmDefinition)
+    return self.gNotDB.newAlarm(alarmDefinition)
 
   types_updateAlarm = [dict]
 
@@ -156,76 +153,84 @@ class NotificationHandler(RequestHandler):
     if 'username' not in credDict:
       return S_ERROR("OOps. You don't have a username! This shouldn't happen :P")
     updateDefinition['author'] = credDict['username']
-    return gNotDB.updateAlarm(updateDefinition)
+    return self.gNotDB.updateAlarm(updateDefinition)
 
   types_getAlarmInfo = [six.integer_types]
 
-  def export_getAlarmInfo(self, alarmId):
+  @classmethod
+  def export_getAlarmInfo(cls, alarmId):
     """ Get the extended info of an alarm
     """
-    result = gNotDB.getAlarmInfo(alarmId)
+    result = cls.gNotDB.getAlarmInfo(alarmId)
     if not result['OK']:
       return result
     alarmInfo = result['Value']
-    result = gNotDB.getAlarmLog(alarmId)
+    result = cls.gNotDB.getAlarmLog(alarmId)
     if not result['OK']:
       return result
     return S_OK({'info': alarmInfo, 'log': result['Value']})
 
   types_getAlarms = [dict, list, int, int]
 
-  def export_getAlarms(self, selectDict, sortList, startItem, maxItems):
+  @classmethod
+  def export_getAlarms(cls, selectDict, sortList, startItem, maxItems):
     """ Select existing alarms suitable for the Web monitoring
     """
-    return gNotDB.getAlarms(selectDict, sortList, startItem, maxItems)
+    return cls.gNotDB.getAlarms(selectDict, sortList, startItem, maxItems)
 
   types_deleteAlarmsByAlarmId = [(list, int)]
 
-  def export_deleteAlarmsByAlarmId(self, alarmsIdList):
+  @classmethod
+  def export_deleteAlarmsByAlarmId(cls, alarmsIdList):
     """ Delete alarms by alarmId
     """
-    return gNotDB.deleteAlarmsByAlarmId(alarmsIdList)
+    return cls.gNotDB.deleteAlarmsByAlarmId(alarmsIdList)
 
-  types_deleteAlarmsByAlarmKey = [(basestring, list)]
+  types_deleteAlarmsByAlarmKey = [(six.string_types, list)]
 
-  def export_deleteAlarmsByAlarmKey(self, alarmsKeyList):
+  @classmethod
+  def export_deleteAlarmsByAlarmKey(cls, alarmsKeyList):
     """ Delete alarms by alarmId
     """
-    return gNotDB.deleteAlarmsByAlarmKey(alarmsKeyList)
+    return cls.gNotDB.deleteAlarmsByAlarmKey(alarmsKeyList)
 
   ###########################################################################
   # MANANGE ASSIGNEE GROUPS
   ###########################################################################
 
-  types_setAssigneeGroup = [basestring, list]
+  types_setAssigneeGroup = [six.string_types, list]
 
-  def export_setAssigneeGroup(self, groupName, userList):
+  @classmethod
+  def export_setAssigneeGroup(cls, groupName, userList):
     """ Create a group of users to be used as an assignee for an alarm
     """
-    return gNotDB.setAssigneeGroup(groupName, userList)
+    return cls.gNotDB.setAssigneeGroup(groupName, userList)
 
-  types_getUsersInAssigneeGroup = [basestring]
+  types_getUsersInAssigneeGroup = [six.string_types]
 
-  def export_getUsersInAssigneeGroup(self, groupName):
+  @classmethod
+  def export_getUsersInAssigneeGroup(cls, groupName):
     """ Get users in assignee group
     """
-    return gNotDB.getUserAsignees(groupName)
+    return cls.gNotDB.getUserAsignees(groupName)
 
-  types_deleteAssigneeGroup = [basestring]
+  types_deleteAssigneeGroup = [six.string_types]
 
-  def export_deleteAssigneeGroup(self, groupName):
+  @classmethod
+  def export_deleteAssigneeGroup(cls, groupName):
     """ Delete an assignee group
     """
-    return gNotDB.deleteAssigneeGroup(groupName)
+    return cls.gNotDB.deleteAssigneeGroup(groupName)
 
   types_getAssigneeGroups = []
 
-  def export_getAssigneeGroups(self):
+  @classmethod
+  def export_getAssigneeGroups(cls):
     """ Get all assignee groups and the users that belong to them
     """
-    return gNotDB.getAssigneeGroups()
+    return cls.gNotDB.getAssigneeGroups()
 
-  types_getAssigneeGroupsForUser = [basestring]
+  types_getAssigneeGroupsForUser = [six.string_types]
 
   def export_getAssigneeGroupsForUser(self, user):
     """ Get all assignee groups and the users that belong to them
@@ -233,24 +238,24 @@ class NotificationHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     if Properties.ALARMS_MANAGEMENT not in credDict['properties']:
       user = credDict['username']
-    return gNotDB.getAssigneeGroupsForUser(user)
+    return self.gNotDB.getAssigneeGroupsForUser(user)
 
   ###########################################################################
   # MANAGE NOTIFICATIONS
   ###########################################################################
 
-  types_addNotificationForUser = [basestring, basestring]
+  types_addNotificationForUser = [six.string_types, six.string_types]
 
   def export_addNotificationForUser(self, user, message, lifetime=604800, deferToMail=True):
     """ Create a group of users to be used as an assignee for an alarm
     """
     try:
       lifetime = int(lifetime)
-    except BaseException:
+    except Exception:
       return S_ERROR("Message lifetime has to be a non decimal number")
-    return gNotDB.addNotificationForUser(user, message, lifetime, deferToMail)
+    return self.gNotDB.addNotificationForUser(user, message, lifetime, deferToMail)
 
-  types_removeNotificationsForUser = [basestring, list]
+  types_removeNotificationsForUser = [six.string_types, list]
 
   def export_removeNotificationsForUser(self, user, notIds):
     """ Get users in assignee group
@@ -258,9 +263,9 @@ class NotificationHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     if Properties.ALARMS_MANAGEMENT not in credDict['properties']:
       user = credDict['username']
-    return gNotDB.removeNotificationsForUser(user, notIds)
+    return self.gNotDB.removeNotificationsForUser(user, notIds)
 
-  types_markNotificationsAsRead = [basestring, list]
+  types_markNotificationsAsRead = [six.string_types, list]
 
   def export_markNotificationsAsRead(self, user, notIds):
     """ Delete an assignee group
@@ -268,9 +273,9 @@ class NotificationHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     if Properties.ALARMS_MANAGEMENT not in credDict['properties']:
       user = credDict['username']
-    return gNotDB.markNotificationsSeen(user, True, notIds)
+    return self.gNotDB.markNotificationsSeen(user, True, notIds)
 
-  types_markNotificationsAsNotRead = [basestring, list]
+  types_markNotificationsAsNotRead = [six.string_types, list]
 
   def export_markNotificationsAsNotRead(self, user, notIds):
     """ Delete an assignee group
@@ -278,7 +283,7 @@ class NotificationHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     if Properties.ALARMS_MANAGEMENT not in credDict['properties']:
       user = credDict['username']
-    return gNotDB.markNotificationsSeen(user, False, notIds)
+    return self.gNotDB.markNotificationsSeen(user, False, notIds)
 
   types_getNotifications = [dict, list, int, int]
 
@@ -288,4 +293,4 @@ class NotificationHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     if Properties.ALARMS_MANAGEMENT not in credDict['properties']:
       selectDict['user'] = [credDict['username']]
-    return gNotDB.getNotifications(selectDict, sortList, startItem, maxItems)
+    return self.gNotDB.getNotifications(selectDict, sortList, startItem, maxItems)
