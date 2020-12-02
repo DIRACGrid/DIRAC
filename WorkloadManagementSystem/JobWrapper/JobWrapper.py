@@ -1130,50 +1130,39 @@ class JobWrapper(object):
     requestFlag = len(requests) > 0 or not outputDataRequest.isEmpty()
     self.log.info("Job finished with%s pending requests" % ('' if requestFlag else ' no'))
 
+    finalStatus = None
+    finalMinorStatus = None
     if self.failedFlag:
       self.log.info("Job finished with errors")
-      self.__report(status=JobStatus.FAILED,
-                    minorStatus=JobMinorStatus.PENDING_REQUESTS if requestFlag else '')
+      finalStatus = JobStatus.FAILED
     else:
       self.log.info("Job finished successfully")
       if requestFlag:
-        self.__report(status=JobStatus.COMPLETED,
-                      minorStatus=JobMinorStatus.PENDING_REQUESTS)
+        finalStatus = JobStatus.COMPLETED
       else:
-        # job is potentially "Done", unless there are failover requests
-        pass
-        # the status and minorStatus will be set below
+        finalStatus = JobStatus.DONE
 
-    # try to send the failover request if any, and send accounting
+    # try to send the failover request if any
     res = self.sendFailoverRequest()
     if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
-      self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.FAILED_SENDING_REQUESTS)
+      finalStatus = JobStatus.FAILED
+      finalMinorStatus = JobMinorStatus.FAILED_SENDING_REQUESTS
       self.failedFlag = True
-    elif res['Value'] and not requestFlag:
-      # A request was created while there were none before, change final minor status
-      self.__report(minorStatus=JobMinorStatus.PENDING_REQUESTS)
-      requestFlag = True
+    elif res['Value']:
+      # A request was sent, change the minor status
+      finalMinorStatus = JobMinorStatus.PENDING_REQUESTS
 
-    if not self.failedFlag:
-      self.__report(status=JobStatus.DONE)
-    if not requestFlag:
-      self.__report(minorStatus=JobMinorStatus.EXEC_COMPLETE)
+    # Set the final status of the job
+    self.__report(status=finalStatus, minorStatus=finalMinorStatus, sendFlag=True)
 
     # Sending the last accounting report
     if not self.jobID:
       self.log.debug('No accounting to be sent since running locally')
     else:
-      for reportLine in reversed(self.jobReport.jobStatusInfo):  # looking for the last status
-        if reportLine[0]:
-          status = reportLine[0]
-          break
-      for reportLine in reversed(self.jobReport.jobStatusInfo):  # looking for the last minorStatus
-        if reportLine[1]:
-          minorStatus = reportLine[1]
-          break
-      result = self.sendJobAccounting(status, minorStatus)
+      # Final status and minorStatus are already set
+      result = self.sendJobAccounting()
       if not result['OK']:
-        # This should be really rare, as the accounting report also sends failover requets
+        # This should be really rare, as the accounting report also sends failover requests
         self.log.warn('JobAccountingFailure',
                       "Could not send job accounting with result: \n%s" % result['Message'])
         self.log.warn('JobAccountingFailure',

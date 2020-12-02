@@ -90,7 +90,8 @@ def execute(arguments):
     rescheduleResult = rescheduleFailedJob(jobID=jobID,
                                            minorStatus=JobMinorStatus.JOB_WRAPPER_INITIALIZATION,
                                            jobReport=gJobReport)
-    job.sendJobAccounting(rescheduleResult, JobMinorStatus.JOB_WRAPPER_INITIALIZATION)
+    job.sendJobAccounting(status=rescheduleResult,
+                          minorStatus=JobMinorStatus.JOB_WRAPPER_INITIALIZATION)
     return 1
 
   if 'InputSandbox' in arguments['Job']:
@@ -105,14 +106,16 @@ def execute(arguments):
       rescheduleResult = rescheduleFailedJob(jobID=jobID,
                                              minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX,
                                              jobReport=gJobReport)
-      job.sendJobAccounting(rescheduleResult, JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
+      job.sendJobAccounting(status=rescheduleResult,
+                            minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
       return 1
     except Exception as exc:  # pylint: disable=broad-except
       gLogger.exception('JobWrapper raised exception while downloading input sandbox', lException=exc)
       rescheduleResult = rescheduleFailedJob(jobID=jobID,
                                              minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX,
                                              jobReport=gJobReport)
-      job.sendJobAccounting(rescheduleResult, JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
+      job.sendJobAccounting(status=rescheduleResult,
+                            minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
       return 1
   else:
     gLogger.verbose('Job has no InputSandbox requirement')
@@ -131,14 +134,16 @@ def execute(arguments):
         rescheduleResult = rescheduleFailedJob(jobID=jobID,
                                                minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION,
                                                jobReport=gJobReport)
-        job.sendJobAccounting(rescheduleResult, JobMinorStatus.INPUT_DATA_RESOLUTION)
+        job.sendJobAccounting(status=rescheduleResult,
+                              minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION)
         return 1
       except Exception as exc:  # pylint: disable=broad-except
         gLogger.exception('JobWrapper raised exception while resolving input data', lException=exc)
         rescheduleResult = rescheduleFailedJob(jobID=jobID,
                                                minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION,
                                                jobReport=gJobReport)
-        job.sendJobAccounting(rescheduleResult, JobMinorStatus.INPUT_DATA_RESOLUTION)
+        job.sendJobAccounting(status=rescheduleResult,
+                              minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION)
         return 1
     else:
       gLogger.verbose('Job has a null InputData requirement:')
@@ -161,7 +166,8 @@ def execute(arguments):
       rescheduleResult = rescheduleFailedJob(jobID=jobID,
                                              minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION,
                                              jobReport=gJobReport)
-      job.sendJobAccounting(rescheduleResult, JobMinorStatus.JOB_WRAPPER_EXECUTION)
+      job.sendJobAccounting(status=rescheduleResult,
+                            minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION)
       return 1
     gLogger.exception('Job failed in execution phase')
     gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
