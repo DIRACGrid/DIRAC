@@ -6,6 +6,8 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+from collections import defaultdict
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time, DEncode
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -105,20 +107,19 @@ class JobReport(object):
     """ Send the job status information stored in the internal cache
     """
 
-    statusDict = {}
+    statusDict = defaultdict(lambda: {
+        'Status': '',
+        'MinorStatus': '',
+        'ApplicationStatus': '',
+        'Source': self.source,
+    })
     for status, minor, dtime in self.jobStatusInfo:
-      statusDict[dtime] = {'Status': status,
-                           'MinorStatus': minor,
-                           'ApplicationStatus': '',
-                           'Source': self.source}
+      statusDict[dtime].update({'Status': status, 'MinorStatus': minor})
     for appStatus, dtime in self.appStatusInfo:
-      statusDict[dtime] = {'Status': '',
-                           'MinorStatus': '',
-                           'ApplicationStatus': appStatus,
-                           'Source': self.source}
+      statusDict[dtime].update({'ApplicationStatus': appStatus})
 
     if statusDict:
-      result = JobStateUpdateClient().setJobStatusBulk(self.jobID, statusDict)
+      result = JobStateUpdateClient().setJobStatusBulk(self.jobID, dict(statusDict))
       if result['OK']:
         # Empty the internal status containers
         self.jobStatusInfo = []
