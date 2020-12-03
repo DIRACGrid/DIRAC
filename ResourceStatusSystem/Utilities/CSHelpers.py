@@ -12,7 +12,6 @@ __RCSID__ = '$Id$'
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getCESiteMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -108,41 +107,6 @@ def getFileCatalogs():
 
   fileCatalogs = gConfig.getSections(_basePath)
   return fileCatalogs
-
-
-@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getCESiteMapping")
-def getComputingElements():
-  """
-    Gets all computing elements from /Resources/Sites/<>/<>/CEs
-  """
-  _basePath = 'Resources/Sites'
-
-  ces = []
-
-  domainNames = gConfig.getSections(_basePath)
-  if not domainNames['OK']:
-    return domainNames
-  domainNames = domainNames['Value']
-
-  for domainName in domainNames:
-    domainSites = gConfig.getSections('%s/%s' % (_basePath, domainName))
-    if not domainSites['OK']:
-      return domainSites
-    domainSites = domainSites['Value']
-
-    for site in domainSites:
-      siteCEs = gConfig.getSections('%s/%s/%s/CEs' % (_basePath, domainName, site))
-      if not siteCEs['OK']:
-        # return siteCEs
-        gLogger.error(siteCEs['Message'])
-        continue
-      siteCEs = siteCEs['Value']
-      ces.extend(siteCEs)
-
-  # Remove duplicated ( just in case )
-  ces = list(set(ces))
-
-  return S_OK(ces)
 
 
 def getSiteElements(siteName):

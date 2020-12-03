@@ -30,7 +30,8 @@ class StorageManagerHandler(RequestHandler):
 
   types_updateTaskStatus = []
 
-  def export_updateTaskStatus(self, sourceID, status, successful=[], failed=[]):
+  @classmethod
+  def export_updateTaskStatus(cls, sourceID, status, successful=[], failed=[]):
     """ An example to show the usage of the callbacks. """
     gLogger.info("updateTaskStatus: Received callback information for ID %s" % sourceID)
     gLogger.info("updateTaskStatus: Status = '%s'" % status)
@@ -97,6 +98,7 @@ class StorageManagerHandler(RequestHandler):
 
   types_removeStageRequests = [list]
 
+  @classmethod
   def export_removeStageRequests(cls, replicaIDs):
     res = cls.gStorageManagementDB.removeStageRequests(replicaIDs)
     if not res['OK']:
