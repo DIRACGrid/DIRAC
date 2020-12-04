@@ -294,7 +294,7 @@ class LocalConfiguration(object):
     errorsList = []
     if 'DIRACSYSCONFIG' in os.environ:
       diracSysConfigFiles = os.environ['DIRACSYSCONFIG'].replace(' ', '').split(',')
-      for diracSysConfigFile in diracSysConfigFiles:
+      for diracSysConfigFile in reversed(diracSysConfigFiles):
         gConfigurationData.loadFile(diracSysConfigFile)
     gConfigurationData.loadFile(os.path.expanduser("~/.dirac.cfg"))
     for fileName in self.additionalCFGFiles:
