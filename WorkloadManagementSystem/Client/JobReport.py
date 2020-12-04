@@ -116,8 +116,8 @@ class JobReport(object):
     for appStatus, dtime in self.appStatusInfo:
       # No need to send empty items in dictionary
       if appStatus:
-        statusDict[dtime] = {'ApplicationStatus': appStatus,
-                             'Source': self.source}
+        statusDict.setdefault(dtime, {}).update({'ApplicationStatus': appStatus,
+                                                 'Source': self.source})
 
     if statusDict:
       result = JobStateUpdateClient().setJobStatusBulk(self.jobID, statusDict)
