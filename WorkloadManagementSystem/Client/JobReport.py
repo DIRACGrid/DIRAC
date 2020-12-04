@@ -35,9 +35,16 @@ class JobReport(object):
     """
     self.jobID = jobID
 
-  def setJobStatus(self, status='', minorStatus='', applicationStatus='', sendFlag=True):
+  def setJobStatus(self, status='', minorStatus='', applicationStatus='', sendFlag=True, minor=None, application=None):
     """ Send job status information to the JobState service for jobID
     """
+    # Backward compatibility
+    # FIXME: to remove in next version
+    if minor:
+      minorStatus = minor
+    if application:
+      applicationStatus = application
+
     timeStamp = Time.toString()
     # add job status record
     self.jobStatusInfo.append((status.replace("'", ''), minorStatus.replace("'", ''), timeStamp))

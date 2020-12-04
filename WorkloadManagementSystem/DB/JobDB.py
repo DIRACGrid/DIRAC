@@ -702,9 +702,15 @@ class JobDB(DB):
     return self._transaction([cmd])
 
 #############################################################################
-  def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus=''):
+  def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus='', minor=None, application=None):
     """ Set status of the job specified by its jobID
     """
+    # Backward compatibility
+    # FIXME: to remove in next version
+    if minor:
+      minorStatus = minor
+    if application:
+      applicationStatus = application
 
     # Do not update the LastUpdate time stamp if setting the Stalled status
     update_flag = True
