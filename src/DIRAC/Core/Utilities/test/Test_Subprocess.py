@@ -18,6 +18,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from os.path import dirname, join
+
 # imports
 import time
 import pytest
@@ -55,7 +57,7 @@ def test_calls(timeout, expected):
 def test_getChildrenPIDs():
   import os
   os.system("echo $PWD")
-  mainProcess = Popen(['python', 'Core/Utilities/test/ProcessesCreator.py'])
+  mainProcess = Popen(['python', join(dirname(__file__), 'ProcessesCreator.py')])
   time.sleep(1)
   res = getChildrenPIDs(mainProcess.pid)
   assert len(res) == 3

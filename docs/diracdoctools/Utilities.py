@@ -78,7 +78,7 @@ def setUpReadTheDocsEnvironment(moduleName='DIRAC'):
   """
   LOG.info('Running for READTHEDOCS')
   sys.path.append(os.path.abspath('.'))
-  diracPath = os.path.abspath(os.path.join(os.getcwd(), '../..'))
+  diracPath = os.path.abspath(os.path.join(os.getcwd(), '../src'))
   LOG.info('Path To Module(?): %r', diracPath)
 
   buildfolder = '_build'
@@ -86,13 +86,13 @@ def setUpReadTheDocsEnvironment(moduleName='DIRAC'):
 
   # We need to have the moduleName somewhere, or we cannot import it, as
   # readtheDocs clones the repo into something based on the branchname
-  if not os.path.exists(os.path.join('../../', moduleName)):
+  if not os.path.exists(os.path.join('../src', moduleName)):
     diracLink = os.path.abspath(os.path.join(os.getcwd(), '../', buildfolder, moduleName))
     LOG.info('Link: %r', diracLink)
     if not os.path.exists(diracLink):
       LOG.info('Creating symbolic link %r -> %r', diracPath, diracLink)
       os.symlink(diracPath, diracLink)
-    diracPath = os.path.abspath(os.path.join(diracLink, '..'))
+    diracPath = os.path.abspath(os.path.join(diracLink, 'src'))
 
   sys.path.insert(0, diracPath)
 

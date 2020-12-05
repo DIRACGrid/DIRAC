@@ -49,7 +49,7 @@ if sys.version_info >= (2, 7, 9):
     di = url_library_urlopen(sys.argv[2],
                              context=context)
   except IndexError:
-    di_loc = 'https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py'
+    di_loc = 'https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/dirac-install.py'
     di = url_library_urlopen(di_loc,
                              context=context)
 else:
@@ -57,7 +57,7 @@ else:
   try:  # dirac-install.py location from the args, if provided
     di = url_library_urlopen(sys.argv[2])
   except IndexError:
-    di_loc = 'https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py'
+    di_loc = 'https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/dirac-install.py'
     di = url_library_urlopen(di_loc)
 
 with open('PilotWrapper.py', 'wb') as pj:

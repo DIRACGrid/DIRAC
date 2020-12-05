@@ -60,7 +60,7 @@ def get_proxy(request):
   # When you do the delegation, you call both Request and Proxy generation fixtures.
   # So if you do the cleaning twice, you end up in a terrible mess.
   # So, do not do the cleaning if you are in the test_delegation method
-  if request.function.func_name != 'test_delegation':
+  if request.function.__name__ != 'test_delegation':
     deimportDIRAC()
   x509Class = request.param
 
@@ -335,7 +335,7 @@ def test_dumpChainToString_on_cert(cert_file, get_X509Chain_class):
 
   assert res['OK']
 
-  assert res['Value'] == "%s" % getCertOption(cert_file, 'content')
+  assert res['Value'] == getCertOption(cert_file, 'content')
 
 
 @parametrize('cert_file', CERTS)

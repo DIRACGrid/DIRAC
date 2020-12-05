@@ -6,10 +6,12 @@ from __future__ import division
 from __future__ import print_function
 
 import time
+from os.path import dirname, join
 from subprocess import Popen
 
 from flaky import flaky
 
+import DIRAC
 from DIRAC.Core.Utilities.Profiler import Profiler
 
 
@@ -20,7 +22,10 @@ def test_base():
   res = p.status()
   assert res['OK'] is False
 
-  mainProcess = Popen(['python', 'tests/Utilities/ProcessesCreator_withChildren.py'])
+  mainProcess = Popen([
+      'python',
+      join(dirname(DIRAC.__file__), 'tests/Utilities/ProcessesCreator_withChildren.py'),
+  ])
   time.sleep(1)
   p = Profiler(mainProcess.pid)
   res = p.pid()
@@ -74,7 +79,10 @@ def test_base():
 
 @flaky(max_runs=10, min_passes=2)
 def test_cpuUsage():
-  mainProcess = Popen(['python', 'tests/Utilities/ProcessesCreator_withChildren.py'])
+  mainProcess = Popen([
+      'python',
+      join(dirname(DIRAC.__file__), 'tests/Utilities/ProcessesCreator_withChildren.py'),
+  ])
   time.sleep(2)
   p = Profiler(mainProcess.pid)
   res = p.pid()

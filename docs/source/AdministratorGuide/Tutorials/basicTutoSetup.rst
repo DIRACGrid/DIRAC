@@ -214,7 +214,7 @@ the user's home folder):
 
 The output should look something like this::
 
-  --2019-04-11 08:51:21--  https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py
+  --2019-04-11 08:51:21--  https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/dirac-install.py
   Resolving github.com... 140.82.118.4, 140.82.118.3
   Connecting to github.com|140.82.118.4|:443... connected.
   HTTP request sent, awaiting response... 302 Found

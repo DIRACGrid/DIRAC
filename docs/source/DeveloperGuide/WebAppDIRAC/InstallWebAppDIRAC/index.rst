@@ -19,7 +19,7 @@ continue to install DIRAC `<https://github.com/DIRACGrid/DIRAC/wiki/GitSetup>`_.
 #. Create a directory where you will install DIRAC and WebAppDIRAC: mkdir portal; cd portal
 #. git clone git://github.com/zmathe/DIRAC.git. (NOTE: This works when you forked the DIRAC repository) or execute: git clone https://github.com/DIRACGrid/DIRAC.git
 #. git clone git://github.com/zmathe/WebAppDIRAC.git (NOTE: This works when you forked the WebAppDIRAC repository on github)  or git clone `<https://github.com/DIRACGrid/WebAppDIRAC.git>`_.
-#. ./DIRAC/Core/scripts/dirac-install.py -r v6r21-pre1 -X -t server --dirac-os --dirac-os-version=0.0.6** (You can use the current production version of DIRAC which can found http://diracgrid.org. NOTE: The current version of dirac-os is 0.0.6 but this might change. The available versions can be found at http://lhcbproject.web.cern.ch/lhcbproject/dist/Dirac_project/installSource/.)
+#. ./DIRAC/src/DIRAC/Core/scripts/dirac-install.py -r v6r21-pre1 -X -t server --dirac-os --dirac-os-version=0.0.6** (You can use the current production version of DIRAC which can found http://diracgrid.org. NOTE: The current version of dirac-os is 0.0.6 but this might change. The available versions can be found at http://lhcbproject.web.cern.ch/lhcbproject/dist/Dirac_project/installSource/.)
 #. python DIRAC/Core/scripts/dirac-deploy-scripts.py
 #. ./WebAppDIRAC/dirac-postInstall.py
 #. source bashrc (we have to use the correct python in order to install tornado)
