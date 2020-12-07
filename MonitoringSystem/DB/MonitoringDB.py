@@ -12,7 +12,8 @@ The following options can be set in ``Systems/Monitoring/<Setup>/Databases/Monit
 
 __RCSID__ = "$Id$"
 
-import datetime
+import time
+import calendar
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.ElasticDB import ElasticDB
@@ -123,7 +124,9 @@ class MonitoringDB(ElasticDB):
         keyValuesDict[i] = retVal['Value']
     return S_OK(keyValuesDict)
 
-  def retrieveBucketedData(self, typeName, startTime, endTime, interval, selectFields, condDict, grouping, metainfo):
+  def retrieveBucketedData(self, typeName, startTime, endTime,
+			   interval, selectFields, condDict, grouping,
+			   metainfo=None):
     """
     Get data from the DB
 
@@ -137,18 +140,16 @@ class MonitoringDB(ElasticDB):
 
     """
 
-    retVal = self.getIndexName(typeName)
-    if not retVal['OK']:
-      return retVal
     isAvgAgg = False
-    # the data is used to fill the pie charts. This aggregation is used to average the buckets.
+    # the data is used to fill the pie charts.
+    # This aggregation is used to average the buckets.
     if metainfo and metainfo.get('metric', 'sum') == 'avg':
       isAvgAgg = True
 
+    # building the query incrementally
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
-
     for cond in condDict:
       query = None
       for condValue in condDict[cond]:
@@ -159,6 +160,9 @@ class MonitoringDB(ElasticDB):
           query = self._Q('match', **kwargs)
       q += [query]
 
+    retVal = self.getIndexName(typeName)
+    if not retVal['OK']:
+      return retVal
     indexName = "%s*" % (retVal['Value'])
     s = self._Search(indexName)
     s = s.filter('bool', must=q)
@@ -184,6 +188,7 @@ class MonitoringDB(ElasticDB):
       s.aggs.bucket(str(i), a1)
 
     #  s.fields( ['timestamp'] + selectFields )
+    s = s.source(False)  # don't return any fields, just the metadata
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
@@ -192,20 +197,20 @@ class MonitoringDB(ElasticDB):
     result = {}
 #    for i in retVal.aggregations['2'].buckets:
     for i, field in enumerate(selectFields):
-      for j in retVal.aggregations[str(i)].buckets:
+      for bucket in retVal.aggregations[str(i)].buckets:
         if isAvgAgg:
-          if j.key not in result:
+	  if bucket.key not in result:
             if len(selectFields) == 1:  # for backward compatibility
-              result[j.key] = j.avg_total_jobs.value
+	      result[bucket.key] = bucket.avg_total_jobs.value
             else:
-              result[j.key] = [j.avg_total_jobs.value]
+	      result[bucket.key] = [bucket.avg_total_jobs.value]
           else:
-            result[j.key].append(j.avg_total_jobs.value)
+	    result[bucket.key].append(bucket.avg_total_jobs.value)
         else:
-          site = j.key
+	  site = bucket.key
           if site not in result:
             result[site] = {}
-          for k in j.end_data.buckets:
+	  for k in bucket.end_data.buckets:
             if (k.key / 1000) not in result[site]:
               if len(selectFields) == 1:  # for backward compatibility
                 result[site][k.key / 1000] = k.avg_monthly_sales.value
@@ -240,7 +245,9 @@ class MonitoringDB(ElasticDB):
     # 1474324200: 8.0, 1474354800: 8.0, 1474295400: 8.0, 1474318800: 8.0, 1474299000: 8.0, 1474342200: 8.0}}
     return S_OK(result)
 
-  def retrieveAggregatedData(self, typeName, startTime, endTime, interval, selectFields, condDict, grouping, metainfo):
+  def retrieveAggregatedData(self, typeName, startTime, endTime, interval,
+			     selectFields, condDict, grouping,
+			     metainfo=None):
     """
     Get data from the DB using simple aggregations.
     Note: this method is equivalent to retrieveBucketedData.
@@ -283,15 +290,9 @@ class MonitoringDB(ElasticDB):
     # s = s.filter( 'bool', must = query )
     # s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
 
-    retVal = self.getIndexName(typeName)
-    if not retVal['OK']:
-      return retVal
-    indexName = "%s*" % (retVal['Value'])
-
     # default is average
     aggregator = metainfo.get('metric', 'avg')
 
-    # building the query incrementally
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
@@ -305,18 +306,24 @@ class MonitoringDB(ElasticDB):
           query = self._Q('match', **kwargs)
       q += [query]
 
-    a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
-    a1.metric('m1', aggregator, field=selectFields[0])
+    retVal = self.getIndexName(typeName)
+    if not retVal['OK']:
+      return retVal
+    indexName = "%s*" % (retVal['Value'])
 
     s = self._Search(indexName)
     s = s.filter('bool', must=q)
+
+    a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
+    a1.metric('m1', aggregator, field=selectFields[0])
     s.aggs.bucket('end_data',
                   'date_histogram',
                   field='timestamp',
                   interval=interval).metric('tt', a1)
 
     # s.fields(['timestamp'] + selectFields)
-    s = s.extra(size=self.RESULT_SIZE)  # do not get the hits!
+    s = s.extra(size=self.RESULT_SIZE)  # max size
+    s = s.source(False)  # don't return any fields, just the metadata
 
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
@@ -417,8 +424,7 @@ class MonitoringDB(ElasticDB):
     retVal = self.getIndexName(typeName)
     if not retVal['OK']:
       return retVal
-    date = datetime.datetime.utcnow()
-    indexName = "%s-%s" % (retVal['Value'], date.strftime('%Y-%m-%d'))
+    indexName = "%s-%s" % (retVal['Value'], time.strftime('%Y-%m-%d', time.gmtime()))
 
     # going to create:
     # s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-2016-09-16')
@@ -429,14 +435,15 @@ class MonitoringDB(ElasticDB):
 
     mustClose = []
     for cond in condDict:
-      kwargs = {cond: condDict[cond]}
-      query = self._Q('match', **kwargs)
-      mustClose.append(query)
+      if cond not in ('startTime', 'endTime'):
+	kwargs = {cond: condDict[cond]}
+	query = self._Q('match', **kwargs)
+	mustClose.append(query)
 
     if condDict.get('startTime') and condDict.get('endTime'):
       query = self._Q('range',
-                      timestamp={'lte': condDict.get('endTime'),
-                                 'gte': condDict.get('startTime')})
+		      timestamp={'lte': condDict.get('endTime') * 1000,
+				 'gte': condDict.get('startTime') * 1000})
 
       mustClose.append(query)
 
@@ -447,8 +454,10 @@ class MonitoringDB(ElasticDB):
     if size > 0:
       s = s.extra(size=size)
 
+    self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
     if not retVal:
+      self.log.error("Error getting raw data", str(retVal))
       return S_ERROR(str(retVal))
     hits = retVal['hits']
     if hits and 'hits' in hits and hits['hits']:
@@ -516,12 +525,12 @@ class MonitoringDB(ElasticDB):
       return self.__getRawData(typeName, condDict, 10)
 
     if initialDate:
-      condDict['startTime'] = datetime.datetime.strptime(initialDate, '%d/%m/%Y %H:%M')
+      condDict['startTime'] = calendar.timegm(time.strptime(initialDate, '%d/%m/%Y %H:%M'))
     else:
-      condDict['startTime'] = datetime.datetime.min
+      condDict['startTime'] = 0000000000
     if endDate:
-      condDict['endTime'] = datetime.datetime.strptime(endDate, '%d/%m/%Y %H:%M')
+      condDict['endTime'] = calendar.timegm(time.strptime(endDate, '%d/%m/%Y %H:%M'))
     else:
-      condDict['endTime'] = datetime.datetime.utcnow()
+      condDict['endTime'] = calendar.timegm(time.gmtime())
 
     return self.__getRawData(typeName, condDict)

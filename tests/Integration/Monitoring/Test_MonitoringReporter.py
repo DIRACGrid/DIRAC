@@ -53,7 +53,6 @@ Resources
 
 import unittest
 import sys
-from datetime import datetime
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
@@ -61,7 +60,6 @@ Script.parseCommandLine()
 from DIRAC import gLogger
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 
 
 class MonitoringTestCase(unittest.TestCase):
@@ -69,7 +67,6 @@ class MonitoringTestCase(unittest.TestCase):
   def setUp(self):
     gLogger.setLevel('INFO')
 
-    self.monitoringDB = MonitoringDB()
     self.wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
     self.componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
 
@@ -249,30 +246,9 @@ class MonitoringReporterAdd(MonitoringTestCase):
     self.assertEqual(result['Value'], len(self.data))
 
 
-class MonitoringDeleteChain(MonitoringTestCase):
-
-  def test_deleteWMSIndex(self):
-    result = self.monitoringDB.getIndexName('WMSHistory')
-    self.assertTrue(result['OK'])
-
-    today = datetime.today().strftime("%Y-%m-%d")
-    indexName = "%s-%s" % (result['Value'], today)
-    res = self.monitoringDB.deleteIndex(indexName)
-    self.assertTrue(res['OK'])
-
-  def test_deleteComponentIndex(self):
-    result = self.monitoringDB.getIndexName('ComponentMonitoring')
-    self.assertTrue(result['OK'])
-
-    today = datetime.today().strftime("%Y-%m")
-    indexName = "%s-%s" % (result['Value'], today)
-    res = self.monitoringDB.deleteIndex(indexName)
-    self.assertTrue(res['OK'])
-
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringTestCase)
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringReporterAdd))
-  testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringDeleteChain))
   testResult = unittest.TextTestRunner(verbosity=2).run(testSuite)
   sys.exit(not testResult.wasSuccessful())
