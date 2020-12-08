@@ -8,7 +8,7 @@ Usage:
 
 Arguments:
 
-  Property=<Value>: Other properties to be added to the User like (Responsible=XXX)
+  Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)
 
 Example:
 
