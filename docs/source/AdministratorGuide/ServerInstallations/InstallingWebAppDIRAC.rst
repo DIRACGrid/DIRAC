@@ -277,7 +277,7 @@ If it is successful installed::
     Installed:
       nginx.x86_64 0:1.16.1-1.el6.ngx
 
-* Compile Module::
+* Compile Module:
 
     Download the Nginx and the module source code, and you need to determine which Nginx version is running on your server.
 
