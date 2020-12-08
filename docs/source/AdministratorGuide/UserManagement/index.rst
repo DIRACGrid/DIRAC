@@ -34,7 +34,7 @@ What is the DIRAC Virtual Organization(VO)?
 -------------------------------------------
 
 The VO is a term coming from grid infrastructures where VO parameters are handled by the VOMS services. In DIRAC VO is not necessarily corresponding to some VOMS described VO.
-However, the DIRAC VO describtion can include specific VOMS information. It is not manadatory for the DIRAC VO to have the same name as the corresponding VOMS VO.
+However, the DIRAC VO description can include specific VOMS information. It is not mandatory for the DIRAC VO to have the same name as the corresponding VOMS VO.
 However, having these names the same can avoid confusions at the expense of having names longer than necessary. DIRAC VO must be described in the **/Registry/VO** section.
 
 Consider the registration process
