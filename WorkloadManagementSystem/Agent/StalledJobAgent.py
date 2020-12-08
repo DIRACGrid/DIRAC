@@ -21,6 +21,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
 class StalledJobAgent(AgentModule):
@@ -140,7 +141,7 @@ for the agent restart
       result = self.__checkJobStalled(job, delayTime)
       if result['OK']:
         self.log.verbose('Updating status to Stalled for job %s' % (job))
-        self.__updateJobStatus(job, 'Stalled')
+        self.__updateJobStatus(job, JobStatus.STALLED)
         stalledCounter += 1
       else:
         self.log.verbose(result['Message'])
@@ -162,7 +163,7 @@ for the agent restart
     jobs = result['Value']
 
     failedCounter = 0
-    minorStalledStatuses = ("Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime)
+    minorStalledStatuses = (JobMinorStatus.STALLED_PILOT_NOT_RUNNING, 'Stalling for more than %d sec' % failedTime)
 
     if jobs:
       self.log.info('%d jobs Stalled before %s will be checked for failure' % (len(jobs), str(checkTime)))
@@ -190,7 +191,7 @@ for the agent restart
         # Set the jobs Failed, send them a kill signal in case they are not really dead and send accounting info
         if setFailed:
           self.__sendKillCommand(job)
-          self.__updateJobStatus(job, JobStatus.FAILED, setFailed)
+          self.__updateJobStatus(job, JobStatus.FAILED, minorStatus=setFailed)
           failedCounter += 1
           result = self.__sendAccounting(job)
           if not result['OK']:
@@ -291,7 +292,7 @@ for the agent restart
       return S_OK(latestUpdate)
 
   #############################################################################
-  def __updateJobStatus(self, job, status, minorstatus=None):
+  def __updateJobStatus(self, job, status, minorStatus=None):
     """ This method updates the job status in the JobDB, this should only be
         used to fail jobs due to the optimizer chain.
     """
@@ -303,17 +304,17 @@ for the agent restart
       result = S_OK('DisabledMode')
 
     if result['OK']:
-      if minorstatus:
-        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorstatus))
-        result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorstatus, update=True)
+      if minorStatus:
+        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorStatus))
+        result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorStatus, update=True)
 
-    if not minorstatus:  # Retain last minor status for stalled jobs
+    if not minorStatus:  # Retain last minor status for stalled jobs
       result = self.jobDB.getJobAttributes(job, ['MinorStatus'])
       if result['OK']:
-        minorstatus = result['Value']['MinorStatus']
+        minorStatus = result['Value']['MinorStatus']
 
     logStatus = status
-    result = self.logDB.addLoggingRecord(job, status=logStatus, minor=minorstatus, source='StalledJobAgent')
+    result = self.logDB.addLoggingRecord(job, status=logStatus, minorStatus=minorStatus, source='StalledJobAgent')
     if not result['OK']:
       self.log.warn(result)
 

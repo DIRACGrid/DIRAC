@@ -4,6 +4,7 @@
 """
 
 from __future__ import print_function
+from collections import defaultdict
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -35,18 +36,24 @@ class JobReport(object):
     """
     self.jobID = jobID
 
-  def setJobStatus(self, status='', minor='', application='', sendFlag=True):
+  def setJobStatus(self, status='', minorStatus='', applicationStatus='', sendFlag=True, minor=None, application=None):
     """ Send job status information to the JobState service for jobID
     """
-    if not self.jobID:
-      return S_OK('Local execution, jobID is null.')
+    # Backward compatibility
+    # FIXME: to remove in next version
+    if minor or application:
+      gLogger.warn("Use deprecated argument to setJobStatus()", "minor=%s, application=%s" % (minor, application))
+    if minor is not None:
+      minorStatus = minor
+    if application is not None:
+      applicationStatus = application
 
     timeStamp = Time.toString()
     # add job status record
-    self.jobStatusInfo.append((status.replace("'", ''), minor.replace("'", ''), timeStamp))
-    if application:
-      self.appStatusInfo.append((application.replace("'", ''), timeStamp))
-    if sendFlag:
+    self.jobStatusInfo.append((status.replace("'", ''), minorStatus.replace("'", ''), timeStamp))
+    if applicationStatus:
+      self.appStatusInfo.append((applicationStatus.replace("'", ''), timeStamp))
+    if sendFlag and self.jobID:
       # and send
       return self.sendStoredStatusInfo()
 
@@ -55,15 +62,12 @@ class JobReport(object):
   def setApplicationStatus(self, appStatus, sendFlag=True):
     """ Send application status information to the JobState service for jobID
     """
-    if not self.jobID:
-      return S_OK('Local execution, jobID is null.')
-
     timeStamp = Time.toString()
     # add Application status record
     if not isinstance(appStatus, str):
       appStatus = repr(appStatus)
     self.appStatusInfo.append((appStatus.replace("'", ''), timeStamp))
-    if sendFlag:
+    if sendFlag and self.jobID:
       # and send
       return self.sendStoredStatusInfo()
 
@@ -72,13 +76,10 @@ class JobReport(object):
   def setJobParameter(self, par_name, par_value, sendFlag=True):
     """ Send job parameter for jobID
     """
-    if not self.jobID:
-      return S_OK('Local execution, jobID is null.')
-
     timeStamp = Time.toString()
     # add job parameter record
     self.jobParameters[par_name] = (par_value, timeStamp)
-    if sendFlag:
+    if sendFlag and self.jobID:
       # and send
       return self.sendStoredJobParameters()
 
@@ -87,15 +88,12 @@ class JobReport(object):
   def setJobParameters(self, parameters, sendFlag=True):
     """ Send job parameters for jobID
     """
-    if not self.jobID:
-      return S_OK('Local execution, jobID is null.')
-
     timeStamp = Time.toString()
     # add job parameter record
     for pname, pvalue in parameters:
       self.jobParameters[pname] = (pvalue, timeStamp)
 
-    if sendFlag:
+    if sendFlag and self.jobID:
       # and send
       return self.sendStoredJobParameters()
 
@@ -105,25 +103,20 @@ class JobReport(object):
     """ Send the job status information stored in the internal cache
     """
 
-    statusDict = {}
+    statusDict = defaultdict(lambda: {'Source': self.source})
     for status, minor, dtime in self.jobStatusInfo:
       # No need to send empty items in dictionary
-      sDict = {}
       if status:
-        sDict['Status'] = status
+        statusDict[dtime]['Status'] = status
       if minor:
-        sDict['MinorStatus'] = minor
-      if sDict:
-        sDict['Source'] = self.source
-        statusDict[dtime] = sDict
+        statusDict[dtime]['MinorStatus'] = minor
     for appStatus, dtime in self.appStatusInfo:
       # No need to send empty items in dictionary
       if appStatus:
-        statusDict[dtime] = {'ApplicationStatus': appStatus,
-                             'Source': self.source}
+        statusDict[dtime]['ApplicationStatus'] = appStatus
 
     if statusDict:
-      result = JobStateUpdateClient().setJobStatusBulk(self.jobID, statusDict)
+      result = JobStateUpdateClient().setJobStatusBulk(self.jobID, dict(statusDict))
       if result['OK']:
         # Empty the internal status containers
         self.jobStatusInfo = []

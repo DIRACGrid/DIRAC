@@ -34,6 +34,7 @@ from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
 class Watchdog(object):
@@ -204,7 +205,7 @@ class Watchdog(object):
     if self.littleTimeLeft:
       # if we have gone over enough iterations query again
       if self.littleTimeLeftCount == 0 and self.__timeLeft() == -1:
-        self.checkError = 'Job has reached the CPU limit of the queue'
+        self.checkError = JobMinorStatus.JOB_EXCEEDED_CPU
         self.log.error(self.checkError, self.timeLeft)
         self.__killRunningThread()
         return S_OK()
@@ -449,7 +450,7 @@ class Watchdog(object):
     if isinstance(signalDict, dict):
       if 'Kill' in signalDict:
         self.log.info('Received Kill signal, stopping job via control signal')
-        self.checkError = 'Received Kill signal'
+        self.checkError = JobMinorStatus.RECEIVED_KILL_SIGNAL
         self.__killRunningThread()
       else:
         self.log.info('The following control signal was sent but not understood by the watchdog:')
@@ -670,7 +671,7 @@ class Watchdog(object):
       availSpace = self.parameters['DiskSpace'][-1]
       if availSpace >= 0 and availSpace < self.minDiskSpace:
         self.log.info('Not enough local disk space for job to continue, defined in CS as %s MB' % (self.minDiskSpace))
-        return S_ERROR('Job has insufficient disk space to continue')
+        return S_ERROR(JobMinorStatus.JOB_INSUFFICIENT_DISK)
       else:
         return S_OK('Job has enough disk space available')
     else:
@@ -685,7 +686,7 @@ class Watchdog(object):
       startTime = self.initialValues['StartTime']
       if time.time() - startTime > self.maxWallClockTime:
         self.log.info('Job has exceeded maximum wall clock time of %s seconds' % (self.maxWallClockTime))
-        return S_ERROR('Job has exceeded maximum wall clock time')
+        return S_ERROR(JobMinorStatus.JOB_EXCEEDED_WALL_CLOCK)
       else:
         return S_OK('Job within maximum wall clock time')
     else:
