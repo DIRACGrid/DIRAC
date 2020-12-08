@@ -216,7 +216,7 @@ class BasePlotter(DBUtils):
 
     :param int startTime: epoch time
     :param int endTime: epoch time
-    :param list selectFields: the value what we want to plot
+    :param list selectFields: the value that we want to plot
     :param dict preCondDict: plot attributes
     :param dict metadataDict: extra arguments used to create the plot.
 

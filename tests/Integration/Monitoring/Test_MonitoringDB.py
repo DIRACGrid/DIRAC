@@ -13,7 +13,7 @@ from DIRAC import gLogger
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 
 #  Add a time delay to allow updating the modified index before querying it.
-SLEEP_DELAY = 2
+SLEEP_DELAY = 4
 
 gLogger.setLevel('DEBUG')
 monitoringDB = MonitoringDB()
@@ -73,7 +73,7 @@ def test_putAndGetWMSHistory():
   assert res['OK']
 
 
-def test_aggregations():
+def test_retrieveBucketedData():
   # put
   res = monitoringDB.put(data, 'test')
   assert res['OK']
@@ -83,12 +83,36 @@ def test_aggregations():
   res = monitoringDB.retrieveBucketedData(
       typeName='test',
       startTime=1458100000,
-      endTime=1458300000,
+      endTime=1458500000,
       interval='1h',
-      selectFields='',
+      selectFields=[],
       condDict={},
       grouping='Status')
   assert res['OK']
+  assert not res['Value']  # selectFields is empty
+
+  # delete
+  res = monitoringDB.deleteIndex('test-*')
+  assert res['OK']
+
+
+def test_retrieveAggregatedData():
+  # put
+  res = monitoringDB.put(data, 'test')
+  assert res['OK']
+  time.sleep(SLEEP_DELAY)
+
+  # get
+  res = monitoringDB.retrieveAggregatedData(
+      typeName='test',
+      startTime=1458100000,
+      endTime=1458500000,
+      interval='1h',
+      selectFields=[],
+      condDict={},
+      grouping='Status')
+  assert res['OK']
+  assert not res['Value']  # selectFields is empty
 
   # delete
   res = monitoringDB.deleteIndex('test-*')

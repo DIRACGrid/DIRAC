@@ -126,7 +126,7 @@ class MonitoringDB(ElasticDB):
 
   def retrieveBucketedData(self, typeName, startTime, endTime,
 			   interval, selectFields, condDict, grouping,
-			   metainfo=None):
+			   metainfo={}):
     """
     Get data from the DB
 
@@ -143,35 +143,46 @@ class MonitoringDB(ElasticDB):
     isAvgAgg = False
     # the data is used to fill the pie charts.
     # This aggregation is used to average the buckets.
-    if metainfo and metainfo.get('metric', 'sum') == 'avg':
+    if metainfo.get('metric', 'sum') == 'avg':
       isAvgAgg = True
 
-    # building the query incrementally
-    q = [self._Q('range',
-                 timestamp={'lte': endTime * 1000,
-                            'gte': startTime * 1000})]
-    for cond in condDict:
-      query = None
-      for condValue in condDict[cond]:
-        kwargs = {cond: condValue}
-        if query:
-          query = query | self._Q('match', **kwargs)
-        else:
-          query = self._Q('match', **kwargs)
-      q += [query]
-
+    # Getting the index
     retVal = self.getIndexName(typeName)
     if not retVal['OK']:
       return retVal
     indexName = "%s*" % (retVal['Value'])
     s = self._Search(indexName)
+
+    # building the ES query incrementally
+    # 2 parts:
+    # - query (on which documents are we working on?)
+    # - aggregations (given the documents, on which field are we aggregating?)
+
+    # First: create the query to filter the results
+    # Time range is always present
+    q = [self._Q('range',
+                 timestamp={'lte': endTime * 1000,
+                            'gte': startTime * 1000})]
+    # Additional conditions
+    for cond in condDict:
+      query = None
+      for condValue in condDict[cond]:
+        kwargs = {cond: condValue}
+        if query:
+	  query = query | self._Q('match', **kwargs)  # term?
+        else:
+          query = self._Q('match', **kwargs)
+      q += [query]
+
     s = s.filter('bool', must=q)
 
+    # Second: prepare the aggregations
     for i, field in enumerate(selectFields):
-      a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
+      # This the time-based aggregation of the selected fields
       a2 = self._A('terms', field='timestamp')
-
       a2.metric('total_jobs', 'sum', field=field)
+
+      a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
       a1.bucket('end_data',
                 'date_histogram',
                 field='timestamp',
@@ -188,11 +199,12 @@ class MonitoringDB(ElasticDB):
       s.aggs.bucket(str(i), a1)
 
     #  s.fields( ['timestamp'] + selectFields )
-    s = s.source(False)  # don't return any fields, just the metadata
+    # s = s.source(False)  # don't return any fields (hits), just the metadata
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
-    self.log.debug("Query result", len(retVal))
+    self.log.debug("Query result", retVal)
+    self.log.debug("Query len result", len(retVal))
 
     result = {}
 #    for i in retVal.aggregations['2'].buckets:
@@ -247,7 +259,7 @@ class MonitoringDB(ElasticDB):
 
   def retrieveAggregatedData(self, typeName, startTime, endTime, interval,
 			     selectFields, condDict, grouping,
-			     metainfo=None):
+			     metainfo={}):
     """
     Get data from the DB using simple aggregations.
     Note: this method is equivalent to retrieveBucketedData.
@@ -290,9 +302,15 @@ class MonitoringDB(ElasticDB):
     # s = s.filter( 'bool', must = query )
     # s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
 
-    # default is average
-    aggregator = metainfo.get('metric', 'avg')
 
+    retVal = self.getIndexName(typeName)
+    if not retVal['OK']:
+      return retVal
+    indexName = "%s*" % (retVal['Value'])
+    s = self._Search(indexName)
+
+    # First: create the query to filter the results
+    # Time range is always present
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
@@ -301,20 +319,17 @@ class MonitoringDB(ElasticDB):
       for condValue in condDict[cond]:
         kwargs = {cond: condValue}
         if query:
-          query = query | self._Q('match', **kwargs)
+	  query = query | self._Q('match', **kwargs)  # term?
         else:
           query = self._Q('match', **kwargs)
       q += [query]
 
-    retVal = self.getIndexName(typeName)
-    if not retVal['OK']:
-      return retVal
-    indexName = "%s*" % (retVal['Value'])
-
-    s = self._Search(indexName)
     s = s.filter('bool', must=q)
 
+    # Second: aggregations
     a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
+    # default is average
+    aggregator = metainfo.get('metric', 'avg')
     a1.metric('m1', aggregator, field=selectFields[0])
     s.aggs.bucket('end_data',
                   'date_histogram',
@@ -323,7 +338,7 @@ class MonitoringDB(ElasticDB):
 
     # s.fields(['timestamp'] + selectFields)
     s = s.extra(size=self.RESULT_SIZE)  # max size
-    s = s.source(False)  # don't return any fields, just the metadata
+    # s = s.source(False)  # don't return any fields, just the metadata
 
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
