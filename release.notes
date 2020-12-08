@@ -1,3 +1,8 @@
+[v7r0p42]
+
+*Configuration
+CHANGE: (#4587) Added possibility to load more then one cfg file from DIRACSYSCONFIGFILE env variable
+
 [v7r0p41]
 
 *Core
