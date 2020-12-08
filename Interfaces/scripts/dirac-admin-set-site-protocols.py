@@ -16,7 +16,7 @@ Arguments:
 
 Example:
 
-  $ dirac-admin-set-site-protocols
+  $ dirac-admin-set-site-protocols --Site
 """
 from __future__ import print_function
 

@@ -18,7 +18,7 @@ Arguments:
 
 Example:
 
-  $ dirac-admin-modify-user vhamar group dirac_user
+  $ dirac-admin-modify-user vhamar /C=FR/O=Org/CN=User dirac_user
 """
 from __future__ import print_function
 
