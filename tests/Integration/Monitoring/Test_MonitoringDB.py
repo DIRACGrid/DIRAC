@@ -85,11 +85,23 @@ def test_retrieveBucketedData():
       startTime=1458100000,
       endTime=1458500000,
       interval='1h',
-      selectFields=[],
+      selectField='',
       condDict={},
       grouping='Status')
   assert res['OK']
   assert not res['Value']  # selectFields is empty
+
+  # get
+  res = monitoringDB.retrieveBucketedData(
+      typeName='test',
+      startTime=1458100000,
+      endTime=1458500000,
+      interval='1h',
+      selectField='Jobs',
+      condDict={},
+      grouping='Status')
+  assert res['OK']
+  assert res['Value']
 
   # delete
   res = monitoringDB.deleteIndex('test-*')
@@ -108,7 +120,7 @@ def test_retrieveAggregatedData():
       startTime=1458100000,
       endTime=1458500000,
       interval='1h',
-      selectFields=[],
+      selectField='',
       condDict={},
       grouping='Status')
   assert res['OK']

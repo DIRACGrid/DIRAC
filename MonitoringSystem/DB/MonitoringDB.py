@@ -125,10 +125,10 @@ class MonitoringDB(ElasticDB):
     return S_OK(keyValuesDict)
 
   def retrieveBucketedData(self, typeName, startTime, endTime,
-			   interval, selectFields, condDict, grouping,
+			   interval, selectField, condDict, grouping,
 			   metainfo={}):
     """
-    Get data from the DB
+    Get bucketed data from the DB. This is the standard method used.
 
     :param str typeName: name of the monitoring type
     :param int startTime:  epoch object
@@ -177,28 +177,33 @@ class MonitoringDB(ElasticDB):
     s = s.filter('bool', must=q)
 
     # Second: prepare the aggregations
-    for i, field in enumerate(selectFields):
-      # This the time-based aggregation of the selected fields
-      a2 = self._A('terms', field='timestamp')
-      a2.metric('total_jobs', 'sum', field=field)
 
-      a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
-      a1.bucket('end_data',
-                'date_histogram',
-                field='timestamp',
-                interval=interval).metric('tt', a2).pipeline('avg_monthly_sales',
-                                                             'avg_bucket',
-                                                             buckets_path='tt>total_jobs',
-                                                             gap_policy='insert_zeros')
-      if isAvgAgg:
-        a1.pipeline('avg_total_jobs',
-                    'avg_bucket',
-                    buckets_path='end_data>avg_monthly_sales',
-                    gap_policy='insert_zeros')
+    # This the time-based aggregation of the selected field
+    timeAggregation = self._A('terms', field='timestamp')
+    timeAggregation.metric('total_jobs', 'sum', field=selectField)
 
-      s.aggs.bucket(str(i), a1)
+    groupingAggregation = self._A('terms', field=grouping, size=self.RESULT_SIZE)
+    groupingAggregation.bucket(
+	'end_data',
+	'date_histogram',
+	field='timestamp',
+	interval=interval).metric(
+	    'tt',
+	    timeAggregation).pipeline(
+		'avg_monthly_sales',
+		'avg_bucket',
+		buckets_path='tt>total_jobs',
+		gap_policy='insert_zeros')
+    if isAvgAgg:
+      groupingAggregation.pipeline(
+	  'avg_total_jobs',
+	  'avg_bucket',
+	  buckets_path='end_data>avg_monthly_sales',
+	  gap_policy='insert_zeros')
 
-    #  s.fields( ['timestamp'] + selectFields )
+    s.aggs.bucket('1', groupingAggregation)
+
+    #  s.fields( ['timestamp'] + selectField )
     # s = s.source(False)  # don't return any fields (hits), just the metadata
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
@@ -207,29 +212,21 @@ class MonitoringDB(ElasticDB):
     self.log.debug("Query len result", len(retVal))
 
     result = {}
-#    for i in retVal.aggregations['2'].buckets:
-    for i, field in enumerate(selectFields):
-      for bucket in retVal.aggregations[str(i)].buckets:
-        if isAvgAgg:
-	  if bucket.key not in result:
-            if len(selectFields) == 1:  # for backward compatibility
-	      result[bucket.key] = bucket.avg_total_jobs.value
-            else:
-	      result[bucket.key] = [bucket.avg_total_jobs.value]
-          else:
-	    result[bucket.key].append(bucket.avg_total_jobs.value)
+    for bucket in retVal.aggregations['1'].buckets:
+      if isAvgAgg:
+	if bucket.key not in result:
+	  result[bucket.key] = bucket.avg_total_jobs.value
         else:
-	  site = bucket.key
-          if site not in result:
-            result[site] = {}
-	  for k in bucket.end_data.buckets:
-            if (k.key / 1000) not in result[site]:
-              if len(selectFields) == 1:  # for backward compatibility
-                result[site][k.key / 1000] = k.avg_monthly_sales.value
-              else:
-                result[site][k.key / 1000] = [k.avg_monthly_sales.value]
-            else:
-              result[site][k.key / 1000].append(k.avg_monthly_sales.value)
+	  result[bucket.key].append(bucket.avg_total_jobs.value)
+      else:
+	site = bucket.key
+	if site not in result:
+	  result[site] = {}
+	for k in bucket.end_data.buckets:
+	  if (k.key / 1000) not in result[site]:
+	    result[site][k.key / 1000] = k.avg_monthly_sales.value
+	  else:
+	    result[site][k.key / 1000].append(k.avg_monthly_sales.value)
 
     # the result format is { 'grouping':{timestamp:value, timestamp:value}:
     # value is list if more than one value exist. for example :
@@ -258,7 +255,7 @@ class MonitoringDB(ElasticDB):
     return S_OK(result)
 
   def retrieveAggregatedData(self, typeName, startTime, endTime, interval,
-			     selectFields, condDict, grouping,
+			     selectField, condDict, grouping,
 			     metainfo={}):
     """
     Get data from the DB using simple aggregations.
@@ -270,7 +267,7 @@ class MonitoringDB(ElasticDB):
     :param int startTime: epoch object
     :param int endtime: epoch object
     :param interval:
-    :param selectFields:
+    :param str selectField: the field that we use for aggregation
     :param dict condDict: conditions for the query
     :param str grouping: grouping requested
     :param dict metainfo: dictionary of meta info (e.g. {'metric': 'avg'})
@@ -302,7 +299,6 @@ class MonitoringDB(ElasticDB):
     # s = s.filter( 'bool', must = query )
     # s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
 
-
     retVal = self.getIndexName(typeName)
     if not retVal['OK']:
       return retVal
@@ -330,7 +326,7 @@ class MonitoringDB(ElasticDB):
     a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
     # default is average
     aggregator = metainfo.get('metric', 'avg')
-    a1.metric('m1', aggregator, field=selectFields[0])
+    a1.metric('m1', aggregator, field=selectField)
     s.aggs.bucket('end_data',
                   'date_histogram',
                   field='timestamp',

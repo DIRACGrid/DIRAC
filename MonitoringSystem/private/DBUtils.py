@@ -74,7 +74,7 @@ class DBUtils(object):
     return self.__db.getKeyValues(self.__setup, typeName, condDict)
 
   def _retrieveBucketedData(self, typeName, startTime, endTime, interval,
-                            selectFields, condDict=None, grouping='',
+			    selectField, condDict=None, grouping='',
                             metadataDict=None):
     """
     It is a wrapper class...
@@ -83,13 +83,13 @@ class DBUtils(object):
                                           startTime=startTime,
                                           endTime=endTime,
                                           interval=interval,
-                                          selectFields=selectFields,
+					  selectField=selectField,
                                           condDict=condDict,
                                           grouping=grouping,
                                           metainfo=metadataDict)
 
   def _retrieveAggregatedData(self, typeName, startTime, endTime, interval,
-                              selectFields, condDict=None, grouping='',
+			      selectField, condDict=None, grouping='',
                               metadataDict=None):
     """
     Retrieve data from EL
@@ -98,7 +98,7 @@ class DBUtils(object):
                                             startTime=startTime,
                                             endTime=endTime,
                                             interval=interval,
-                                            selectFields=selectFields,
+					    selectField=selectField,
                                             condDict=condDict,
                                             grouping=grouping,
                                             metainfo=metadataDict)

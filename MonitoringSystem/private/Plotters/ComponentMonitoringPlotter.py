@@ -26,10 +26,9 @@ class ComponentMonitoringPlotter(BasePlotter):
 
   def __reportAllResources(self, reportRequest, metric, unit):
 
-    selectFields = [metric]
     retVal = self._getTimedData(startTime=reportRequest['startTime'],
                                 endTime=reportRequest['endTime'],
-                                selectFields=selectFields,
+				selectField=metric,
                                 preCondDict=reportRequest['condDict'],
                                 metadataDict={'DynamicBucketing': False,
                                               "metric": "avg"})
