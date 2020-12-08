@@ -412,6 +412,11 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p42]
+
+*Configuration
+CHANGE: (#4587) Added possibility to load more then one cfg file from DIRACSYSCONFIGFILE env variable
+
 [v7r0p41]
 
 *Core
