@@ -28,7 +28,7 @@ class ComponentMonitoringPlotter(BasePlotter):
 
     retVal = self._getTimedData(startTime=reportRequest['startTime'],
                                 endTime=reportRequest['endTime'],
-				selectField=metric,
+                                selectField=metric,
                                 preCondDict=reportRequest['condDict'],
                                 metadataDict={'DynamicBucketing': False,
                                               "metric": "avg"})

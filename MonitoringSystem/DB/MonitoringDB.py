@@ -126,19 +126,31 @@ class MonitoringDB(ElasticDB):
 
   def retrieveBucketedData(self, typeName, startTime, endTime,
 			   interval, selectField, condDict, grouping,
-			   metainfo={}):
+			   metainfo=None):
     """
     Get bucketed data from the DB. This is the standard method used.
 
     :param str typeName: name of the monitoring type
-    :param int startTime:  epoch object
-    :param int endtime: epoch object
-    :param dict condDict: conditions for the query
-
-                   * key -> name of the field
-                   * value -> list of possible values
-
+    :param int startTime: start time, expressed as epoch
+    :param int endtime: end time, expressed as epoch
+    :param str interval: interval expressed in ES notation
+    :param str selectField: the field on which we are aggregating (the plot type)
+    :param dict condDict: optional additional conditions for the query
+    :param str grouping: what we are grouping on
+    :param dict metainfo: meta information
+    :returns: S_OK/S_ERROR with dictionary of key/value pairs
     """
+
+    if not selectField:
+      return S_ERROR("Missing the selection field")
+
+    if not grouping:
+      return S_ERROR("Missing the grouping field")
+
+    aggName = '_'.join([selectField, grouping])
+
+    if metainfo is None:
+      metainfo = {}
 
     isAvgAgg = False
     # the data is used to fill the pie charts.
@@ -153,17 +165,19 @@ class MonitoringDB(ElasticDB):
     indexName = "%s*" % (retVal['Value'])
     s = self._Search(indexName)
 
-    # building the ES query incrementally
-    # 2 parts:
-    # - query (on which documents are we working on?)
-    # - aggregations (given the documents, on which field are we aggregating?)
+    # ## building the ES query incrementally
 
-    # First: create the query to filter the results
+    # 2 parts:
+    #
+    # 1) query (on which documents are we working on?)
+    # 2) aggregations (given the documents, on which field are we aggregating?)
+
+    # 1) create the query to filter the results
     # Time range is always present
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
-    # Additional conditions
+    # Optional additional conditions
     for cond in condDict:
       query = None
       for condValue in condDict[cond]:
@@ -176,35 +190,39 @@ class MonitoringDB(ElasticDB):
 
     s = s.filter('bool', must=q)
 
-    # Second: prepare the aggregations
+    # 2) prepare the aggregations
 
-    # This the time-based aggregation of the selected field
+    # This the time-based metric aggregation of the selected field
     timeAggregation = self._A('terms', field='timestamp')
-    timeAggregation.metric('total_jobs', 'sum', field=selectField)
+    timeAggregation.metric(
+	'total',  # name
+	'sum',  # type
+	field=selectField)
 
+    # and now we group with bucket aggregation
     groupingAggregation = self._A('terms', field=grouping, size=self.RESULT_SIZE)
     groupingAggregation.bucket(
-	'end_data',
-	'date_histogram',
+	'end_data',  # name
+	'date_histogram',  # type
 	field='timestamp',
 	interval=interval).metric(
-	    'tt',
+	    'timeAggregation',
 	    timeAggregation).pipeline(
-		'avg_monthly_sales',
+		'timeAggregation_avg_bucket',
 		'avg_bucket',
-		buckets_path='tt>total_jobs',
+		buckets_path='timeAggregation>total',
 		gap_policy='insert_zeros')
     if isAvgAgg:
       groupingAggregation.pipeline(
 	  'avg_total_jobs',
 	  'avg_bucket',
-	  buckets_path='end_data>avg_monthly_sales',
+	  buckets_path='end_data>timeAggregation_avg_bucket',
 	  gap_policy='insert_zeros')
 
-    s.aggs.bucket('1', groupingAggregation)
+    s.aggs.bucket(aggName, groupingAggregation)
 
-    #  s.fields( ['timestamp'] + selectField )
-    # s = s.source(False)  # don't return any fields (hits), just the metadata
+    s = s.source(False)  # don't return any fields (hits), just the metadata
+    s = s[0:0]  # pagination 0, as we are only interested in the aggregations
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
@@ -212,21 +230,20 @@ class MonitoringDB(ElasticDB):
     self.log.debug("Query len result", len(retVal))
 
     result = {}
-    for bucket in retVal.aggregations['1'].buckets:
+    for bucket in retVal.aggregations[aggName].buckets:
       if isAvgAgg:
 	if bucket.key not in result:
 	  result[bucket.key] = bucket.avg_total_jobs.value
-        else:
+	else:
 	  result[bucket.key].append(bucket.avg_total_jobs.value)
       else:
-	site = bucket.key
-	if site not in result:
-	  result[site] = {}
+	if bucket.key not in result:
+	  result[bucket.key] = {}
 	for k in bucket.end_data.buckets:
-	  if (k.key / 1000) not in result[site]:
-	    result[site][k.key / 1000] = k.avg_monthly_sales.value
+	  if (k.key / 1000) not in result[bucket.key]:
+	    result[bucket.key][k.key / 1000] = k.timeAggregation_avg_bucket.value
 	  else:
-	    result[site][k.key / 1000].append(k.avg_monthly_sales.value)
+	    result[bucket.key][k.key / 1000].append(k.timeAggregation_avg_bucket.value)
 
     # the result format is { 'grouping':{timestamp:value, timestamp:value}:
     # value is list if more than one value exist. for example :
@@ -264,13 +281,13 @@ class MonitoringDB(ElasticDB):
     We do not perform dynamic bucketing on the raw data.
 
     :param str typeName: name of the monitoring type
-    :param int startTime: epoch object
-    :param int endtime: epoch object
-    :param interval:
-    :param str selectField: the field that we use for aggregation
-    :param dict condDict: conditions for the query
-    :param str grouping: grouping requested
-    :param dict metainfo: dictionary of meta info (e.g. {'metric': 'avg'})
+    :param int startTime: start time, expressed as epoch
+    :param int endtime: end time, expressed as epoch
+    :param str interval: interval expressed in ES notation
+    :param str selectField: the field on which we are aggregating (the plot type)
+    :param dict condDict: optional additional conditions for the query
+    :param str grouping: what we are grouping on
+    :param dict metainfo: meta information
     :returns: S_OK/S_ERROR with dictionary of key/value pairs
 
     """

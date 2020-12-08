@@ -221,7 +221,8 @@ class MonitoringHandler(RequestHandler):
 
   def export_getReport(self, reportRequest):
     """
-    It is used to get the raw data used to create a plot. The reportRequest has the following keys:
+    It is used to get the raw data used to create a plot.
+    The reportRequest has the following keys:
 
     str typeName: the type of the monitoring
     str reportName: the name of the plotter used to create the plot for example: NumberOfJobs

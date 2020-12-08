@@ -245,7 +245,7 @@ class BasePlotter(DBUtils):
                                           startTime,
                                           endTime,
                                           interval,
-					  selectField,
+                                          selectField,
                                           condDict,
                                           grouping,
                                           metadataDict)
@@ -254,7 +254,7 @@ class BasePlotter(DBUtils):
                                             startTime,
                                             endTime,
                                             interval,
-					    selectField,
+                                            selectField,
                                             condDict,
                                             grouping,
                                             metadataDict)

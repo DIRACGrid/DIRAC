@@ -32,7 +32,7 @@ class WMSHistoryPlotter(BasePlotter):
     """
     retVal = self._getTimedData(startTime=reportRequest['startTime'],
                                 endTime=reportRequest['endTime'],
-				selectField='Jobs',
+                                selectField='Jobs',
                                 preCondDict=reportRequest['condDict'],
                                 metadataDict=None)
     if not retVal['OK']:
@@ -72,7 +72,7 @@ class WMSHistoryPlotter(BasePlotter):
     """
     retVal = self._getTimedData(startTime=reportRequest['startTime'],
                                 endTime=reportRequest['endTime'],
-				selectField='Reschedules',
+                                selectField='Reschedules',
                                 preCondDict=reportRequest['condDict'],
                                 metadataDict=None)
 
