@@ -488,7 +488,7 @@ In that case one process will be used and this process is listening on 8000 port
 SE rules
 ~~~~~~~~
 
-If you get 502 Bad Gateway error, you need to generate rules for SE linus. You can see the error in /var/log/nginx/error.log::
+If you get 502 Bad Gateway error, you need to generate rules for SE linux. You can see the error in /var/log/nginx/error.log::
 
   016/06/02 15:55:24 [crit] 20317#20317: *4 connect() to 127.0.0.1:8000 failed (13: Permission denied) while connecting to upstream, client: xxx.xxx.xxx.xxx, server: your.server.domain, request: "GET /DIRAC/?view=tabs&theme=Grey&url_state=1| HTTP/1.1", upstream: "http://127.0.0.1:8000/DIRAC/?view=tabs&theme=Grey&url_state=1|", host: "your.server.domain"
 
