@@ -256,7 +256,7 @@ class JobStateUpdateHandler(RequestHandler):
       minor = sDict.get('MinorStatus', 'idem')
       application = sDict.get('ApplicationStatus', 'idem')
       source = sDict.get('Source', 'Unknown')
-      result = cls.gJobLoggingDB.addLoggingRecord(jobID,
+      result = cls.jobLoggingDB.addLoggingRecord(jobID,
                                                   status=status,
                                                   minorStatus=minor,
                                                   applicationStatus=application,

@@ -544,7 +544,7 @@ class JobManagerHandler(RequestHandler):
           badIDs.append(jobID)
         else:
           good_ids.append(jobID)
-        self.JobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
+        self.jobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
                                        applicationStatus='Unknown', source='JobManager')
 
     self.__sendJobsToOptimizationMind(good_ids)
