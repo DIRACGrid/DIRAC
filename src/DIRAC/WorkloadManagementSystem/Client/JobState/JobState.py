@@ -181,7 +181,10 @@ class JobState(object):
       self.__checkType(updateTime, datetime.datetime, canBeNone=True)
     except TypeError as excp:
       return S_ERROR(str(excp))
-    result = JobState.__db.jobDB.setJobStatus(self.__jid, majorStatus, minorStatus, appStatus)
+    result = JobState.__db.jobDB.setJobStatus(self.__jid,
+                                              status=majorStatus,
+                                              minorStatus=minorStatus,
+                                              applicationStatus=appStatus)
     if not result['OK']:
       return result
     # HACK: Cause joblogging is crappy
@@ -189,7 +192,10 @@ class JobState(object):
       minorStatus = 'idem'
     if not source:
       source = self.__source
-    return JobState.__db.logDB.addLoggingRecord(self.__jid, majorStatus, minorStatus, appStatus,
+    return JobState.__db.logDB.addLoggingRecord(self.__jid,
+                                                status=majorStatus,
+                                                minorStatus=minorStatus,
+                                                applicationStatus=appStatus,
                                                 date=updateTime, source=source)
 
   right_getMinorStatus = RIGHT_GET_INFO
@@ -200,12 +206,13 @@ class JobState(object):
       self.__checkType(source, basestring, canBeNone=True)
     except TypeError as excp:
       return S_ERROR(str(excp))
-    result = JobState.__db.jobDB.setJobStatus(self.__jid, minor=minorStatus)
+    result = JobState.__db.jobDB.setJobStatus(self.__jid, minorStatus=minorStatus)
     if not result['OK']:
       return result
     if not source:
       source = self.__source
-    return JobState.__db.logDB.addLoggingRecord(self.__jid, minor=minorStatus,
+    return JobState.__db.logDB.addLoggingRecord(self.__jid,
+                                                minorStatus=minorStatus,
                                                 date=updateTime, source=source)
 
   def getStatus(self):
@@ -225,12 +232,13 @@ class JobState(object):
       self.__checkType(source, basestring, canBeNone=True)
     except TypeError as excp:
       return S_ERROR(str(excp))
-    result = JobState.__db.jobDB.setJobStatus(self.__jid, application=appStatus)
+    result = JobState.__db.jobDB.setJobStatus(self.__jid, applicationStatus=appStatus)
     if not result['OK']:
       return result
     if not source:
       source = self.__source
-    return JobState.__db.logDB.addLoggingRecord(self.__jid, application=appStatus,
+    return JobState.__db.logDB.addLoggingRecord(self.__jid,
+                                                applicationStatus=appStatus,
                                                 date=updateTime, source=source)
 
   right_getAppStatus = RIGHT_GET_INFO
@@ -351,7 +359,11 @@ class JobState(object):
     result = JobState.__db.jobDB.rescheduleJob(self.__jid)
     if not result['OK']:
       return S_ERROR("Cannot reschedule in JobDB job %s: %s" % (self.__jid, result['Message']))
-    JobState.__db.logDB.addLoggingRecord(self.__jid, JobStatus.RECEIVED, "", "", source=source)
+    JobState.__db.logDB.addLoggingRecord(self.__jid,
+                                         status=JobStatus.RECEIVED,
+                                         minorStatus='',
+                                         applicationStatus='',
+                                         source=source)
     return S_OK()
 
   right_resetJob = RIGHT_RESET
@@ -366,7 +378,11 @@ class JobState(object):
     result = JobState.__db.jobDB.rescheduleJob(self.__jid)
     if not result['OK']:
       return S_ERROR("Cannot reschedule in JobDB job %s: %s" % (self.__jid, result['Message']))
-    JobState.__db.logDB.addLoggingRecord(self.__jid, JobStatus.RECEIVED, "", "", source=source)
+    JobState.__db.logDB.addLoggingRecord(self.__jid,
+                                         status=JobStatus.RECEIVED,
+                                         minorStatus='',
+                                         applicationStatus='',
+                                         source=source)
     return S_OK()
 
   right_getInputData = RIGHT_GET_INFO

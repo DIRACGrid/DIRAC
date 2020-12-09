@@ -242,7 +242,7 @@ class Matcher(object):
 
     result = self.jlDB.addLoggingRecord(jobID,
                                         status='Matched',
-                                        minor='Assigned',
+                                        minorStatus='Assigned',
                                         source='Matcher')
     if not result['OK']:
       self.log.error("Problem reporting job status",

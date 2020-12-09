@@ -63,6 +63,14 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p22]
+
+*WMS
+NEW: (#4852) new module JobMinorStatus.py to put some standard minor statuses
+CHANGE: (#4852) JobStateUpdateHandler - set startTime of job (in attributes) as from when the
+        (#4852) job is Running (was when the application started). As agreed in a mail discussion...
+CHANGE: (#4852) JobWrapper - send failover requests and accounting information after setting the final status
+
 [v7r1p21]
 
 *ConfigurationSystem
@@ -468,6 +476,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p42]
+
+*Configuration
+CHANGE: (#4587) Added possibility to load more then one cfg file from DIRACSYSCONFIGFILE env variable
 
 [v7r0p41]
 

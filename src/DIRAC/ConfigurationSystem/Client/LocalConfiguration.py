@@ -288,13 +288,17 @@ class LocalConfiguration(object):
 
   def __loadCFGFiles(self):
     """
-    Load ~/.dirac.cfg
-    Load cfg files specified in addCFGFile calls
-    Load cfg files with come from the command line
+    Loads possibly several cfg files, in order:
+    1. ~/.dirac.cfg
+    2. cfg files pointed by DIRACSYSCONFIG env variable (comma-separated)
+    3. cfg files specified in addCFGFile calls
+    4. cfg files that come from the command line
     """
     errorsList = []
     if 'DIRACSYSCONFIG' in os.environ:
-      gConfigurationData.loadFile(os.environ['DIRACSYSCONFIG'])
+      diracSysConfigFiles = os.environ['DIRACSYSCONFIG'].replace(' ', '').split(',')
+      for diracSysConfigFile in reversed(diracSysConfigFiles):
+        gConfigurationData.loadFile(diracSysConfigFile)
     gConfigurationData.loadFile(os.path.expanduser("~/.dirac.cfg"))
     for fileName in self.additionalCFGFiles:
       gLogger.debug("Loading file %s" % fileName)

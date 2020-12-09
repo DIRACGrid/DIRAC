@@ -64,9 +64,9 @@ class ComputingElementFactory(object):
         return result
 
     except Exception as x:
-      msg = 'ComputingElementFactory could not instantiate %s object: %s' % (subClassName, str(x))
+      msg = 'ComputingElementFactory could not instantiate %s object' % subClassName
       self.log.exception()
-      self.log.warn(msg)
-      return S_ERROR(msg)
+      self.log.warn(msg, repr(x))
+      return S_ERROR(repr(x))
 
     return S_OK(computingElement)

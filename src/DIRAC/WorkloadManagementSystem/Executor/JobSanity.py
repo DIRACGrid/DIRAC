@@ -21,6 +21,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
 class JobSanity(OptimizerExecutor):
@@ -101,9 +102,9 @@ class JobSanity(OptimizerExecutor):
 
     for lfn in data:
       if not voRE.match(lfn):
-        return S_ERROR("Input data not correctly specified")
+        return S_ERROR(JobMinorStatus.INPUT_INCORRECT)
       if lfn.find("//") > -1:
-        return S_ERROR("Input data contains //")
+        return S_ERROR(JobMinorStatus.INPUT_CONTAINS_SLASHES)
 
     # only check limit for user jobs
     if jobType == 'user':

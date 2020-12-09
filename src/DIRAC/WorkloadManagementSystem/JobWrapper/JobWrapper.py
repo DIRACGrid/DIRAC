@@ -62,6 +62,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerCli
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 EXECUTION_RESULT = {}
 
@@ -192,7 +193,8 @@ class JobWrapper(object):
   def initialize(self, arguments):
     """ Initializes parameters and environment for job.
     """
-    self.__report(JobStatus.RUNNING, 'Job Initialization')
+    self.__report(status=JobStatus.RUNNING,
+                  minorStatus=JobMinorStatus.JOB_INITIALIZATION)
     self.log.info('Starting Job Wrapper Initialization for Job', self.jobID)
     self.jobArgs = arguments['Job']
     self.log.verbose(self.jobArgs)
@@ -358,7 +360,7 @@ class JobWrapper(object):
 
     if os.path.exists(executable):
       # it's in fact not yet running: it will be in few lines
-      self.__report(JobStatus.RUNNING, 'Application', sendFlag=True)
+      self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.APPLICATION, sendFlag=True)
       spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
       command = executable
       if jobArguments:
@@ -372,7 +374,7 @@ class JobWrapper(object):
       if not payloadPID:
         return S_ERROR('Payload process could not start after 10 seconds')
     else:
-      self.__report(JobStatus.FAILED, 'Application not found', sendFlag=True)
+      self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_NOT_FOUND, sendFlag=True)
       return S_ERROR('Path to executable %s not found' % (executable))
 
     self.__setJobParam('PayloadPID', payloadPID)
@@ -413,7 +415,7 @@ class JobWrapper(object):
       if not threadResult['OK']:
         self.log.error('Failed to execute the payload', threadResult['Message'])
 
-        self.__report(JobStatus.FAILED, 'Application thread failed', sendFlag=True)
+        self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_FAILED, sendFlag=True)
         if 'Value' in threadResult:
           outs = threadResult['Value']
         if outs:
@@ -424,8 +426,8 @@ class JobWrapper(object):
         outputs = threadResult['Value']
     else:  # if the execution thread didn't complete
       self.log.error('Application thread did not complete')
-      self.__report('Failed', 'Application thread did not complete', sendFlag=True)
-      self.__setJobParam('ApplicationError', 'Application thread did not complete', sendFlag=True)
+      self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
+      self.__setJobParam('ApplicationError', JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
       return S_ERROR('No outputs generated from job execution')
 
     if 'CPU' in EXECUTION_RESULT:
@@ -436,7 +438,7 @@ class JobWrapper(object):
       # In this case, the Watchdog has killed the Payload and the ExecutionThread can not get the CPU statistics
       # os.times only reports for waited children
       # Take the CPU from the last value recorded by the Watchdog
-      self.__report(JobStatus.FAILED, watchdog.checkError, sendFlag=True)
+      self.__report(status=JobStatus.FAILED, minorStatus=watchdog.checkError, sendFlag=True)
       if 'CPU' in EXECUTION_RESULT:
         if 'LastUpdateCPU(s)' in watchdog.currentStats:
           EXECUTION_RESULT['CPU'][0] = 0
@@ -456,12 +458,12 @@ class JobWrapper(object):
 
       if not watchdog.checkError and not status:
         self.failedFlag = False
-        self.__report(JobStatus.COMPLETING, 'Application Finished Successfully', sendFlag=True)
+        self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_SUCCESS, sendFlag=True)
       elif not watchdog.checkError:
-        self.__report(JobStatus.COMPLETING, 'Application Finished With Errors', sendFlag=True)
+        self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_ERRORS, sendFlag=True)
         if status in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255):  # the status will be truncated to 0xDE (222)
           self.log.verbose("job will be rescheduled")
-          self.__report(JobStatus.COMPLETING, 'Going to reschedule job', sendFlag=True)
+          self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.GOING_RESCHEDULE, sendFlag=True)
           return S_ERROR(DErrno.EWMSRESC, 'Job will be rescheduled')
 
     else:
@@ -543,7 +545,7 @@ class JobWrapper(object):
   def resolveInputData(self):
     """Input data is resolved here using a VO specific plugin module.
     """
-    self.__report(JobStatus.RUNNING, 'Input Data Resolution', sendFlag=True)
+    self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION, sendFlag=True)
 
     # What is this input data? - and exit if there's no input
     inputData = self.jobArgs['InputData']
@@ -700,7 +702,7 @@ class JobWrapper(object):
       param = '\n'.join(badLFNs)
       self.log.info(param)
       self.__setJobParam('MissingLFNs', param)
-      return S_ERROR('Input Data Not Available')
+      return S_ERROR(JobMinorStatus.INPUT_NOT_AVAILABLE)
 
     # Must retrieve GUIDs from FC for files
     start = time.time()
@@ -746,7 +748,7 @@ class JobWrapper(object):
     if not resolvedSandbox['OK']:
       self.log.warn('Output sandbox file resolution failed:')
       self.log.warn(resolvedSandbox['Message'])
-      self.__report(JobStatus.FAILED, 'Resolving Output Sandbox')
+      self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.RESOLVING_OUTPUT_SANDBOX)
 
     fileList = resolvedSandbox['Value']['Files']
     missingFiles = resolvedSandbox['Value']['Missing']
@@ -760,7 +762,7 @@ class JobWrapper(object):
 
     # Do not overwrite in case of Error
     if not self.failedFlag:
-      self.__report(JobStatus.COMPLETING, 'Uploading Output Sandbox')
+      self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.UPLOADING_OUTPUT_SANDBOX)
 
     uploadOutputDataInAnyCase = False
 
@@ -792,7 +794,7 @@ class JobWrapper(object):
       else:
         # Do not overwrite in case of Error
         if not self.failedFlag:
-          self.__report(JobStatus.COMPLETING, 'Output Sandbox Uploaded')
+          self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.OUTPUT_SANDBOX_UPLOADED)
         self.log.info('Sandbox uploaded successfully')
 
     if (outputData and not self.failedFlag) or uploadOutputDataInAnyCase:
@@ -859,7 +861,7 @@ class JobWrapper(object):
     """ Performs the upload and registration in the File Catalog(s)
     """
     self.log.verbose('Uploading output data files')
-    self.__report(JobStatus.COMPLETING, 'Uploading Output Data')
+    self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.UPLOADING_OUTPUT_DATA)
     self.log.info('Output data files %s to be uploaded to %s SE' % (', '.join(outputData), outputSE))
     missing = []
     uploaded = []
@@ -975,10 +977,10 @@ class JobWrapper(object):
     # TODO Notify the user of any output data / output sandboxes
     if missing:
       self.__setJobParam('OutputData', 'MissingFiles: %s' % ', '.join(missing))
-      self.__report(JobStatus.FAILED, 'Uploading Job OutputData')
+      self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.UPLOADING_OUTPUT_DATA)
       return S_ERROR('Failed to upload OutputData')
 
-    self.__report(JobStatus.COMPLETING, 'Output Data Uploaded')
+    self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.OUTPUT_DATA_UPLOADED)
     return S_OK('OutputData uploaded successfully')
 
   #############################################################################
@@ -1043,7 +1045,7 @@ class JobWrapper(object):
     sandboxFiles = []
     registeredISB = []
     lfns = []
-    self.__report(JobStatus.RUNNING, 'Downloading InputSandbox')
+    self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
     if not isinstance(inputSandbox, (list, tuple)):
       inputSandbox = [inputSandbox]
     for isb in inputSandbox:
@@ -1070,19 +1072,19 @@ class JobWrapper(object):
           self.log.info("Downloading Input SandBox %s" % isb)
           result = SandboxStoreClient().downloadSandbox(isb)
           if not result['OK']:
-            self.__report(JobStatus.RUNNING, 'Failed Downloading InputSandbox')
+            self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.FAILED_DOWNLOADING_INPUT_SANDBOX)
             return S_ERROR("Cannot download Input sandbox %s: %s" % (isb, result['Message']))
           else:
             self.inputSandboxSize += result['Value']
 
     if lfns:
       self.log.info("Downloading Input SandBox LFNs, number of files to get", len(lfns))
-      self.__report(JobStatus.RUNNING, 'Downloading InputSandbox LFN(s)')
+      self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX_LFN)
       lfns = [fname.replace('LFN:', '').replace('lfn:', '') for fname in lfns]
       download = self.dm.getFile(lfns)
       if not download['OK']:
         self.log.warn(download)
-        self.__report(JobStatus.RUNNING, 'Failed Downloading InputSandbox LFN(s)')
+        self.__report(status=JobStatus.RUNNING, minorStatus=JobMinorStatus.FAILED_DOWNLOADING_INPUT_SANDBOX_LFN)
         return S_ERROR(download['Message'])
       failed = download['Value']['Failed']
       if failed:
@@ -1123,35 +1125,53 @@ class JobWrapper(object):
     requests = self.__getRequestFiles()
     outputDataRequest = self.failoverTransfer.getRequest()
 
-    # try to send the failover request
+    requestFlag = len(requests) > 0 or not outputDataRequest.isEmpty()
+
+    finalStatus = ''
+    finalMinorStatus = ''
+    prString = "Job finished "
+    if self.failedFlag:
+      prString += "with errors"
+      finalStatus = JobStatus.FAILED
+    else:
+      prString += "successfully"
+      if requestFlag:
+        finalStatus = JobStatus.COMPLETED
+      else:
+        finalStatus = JobStatus.DONE
+        finalMinorStatus = JobMinorStatus.EXEC_COMPLETE
+
+    # send the failover request if any (also for failed jobs)
     res = self.sendFailoverRequest()
     if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
-      self.__report(JobStatus.FAILED, minorStatus='Failed sending requests')
-      self.__cleanUp()
-      return 1
+      finalStatus = JobStatus.FAILED
+      finalMinorStatus = JobMinorStatus.FAILED_SENDING_REQUESTS
+      self.failedFlag = True
+    elif res['Value']:
+      # A request was sent, change the minor status
+      finalMinorStatus = JobMinorStatus.PENDING_REQUESTS
+      requestFlag = True
 
-    requestFlag = res['Value'] or len(requests) > 0 or not outputDataRequest.isEmpty()
-    if requestFlag:
-      self.log.info("Job finished with pending requests")
-      self.__report(minorStatus='Pending Requests')
+    # Set the final status of the job
+    self.log.info(prString, "with%s pending requests" % ('' if requestFlag else ' no'))
+    self.log.info("Final job status", "%s ; %s" % (finalStatus, finalMinorStatus))
+    self.__report(status=finalStatus, minorStatus=finalMinorStatus, sendFlag=True)
+
+    # Sending the last accounting report
+    if not self.jobID:
+      self.log.debug('No accounting to be sent since running locally')
     else:
-      self.log.info("Job finished with no pending requests")
-
-    if self.failedFlag:
-      self.log.info("Job finished with errors")
-      self.__report(JobStatus.FAILED)
-      self.__cleanUp()
-      return 1
-
-    self.log.info("Job finished successfully")
-    if requestFlag:
-      self.__report(JobStatus.COMPLETED)
-    else:
-      self.__report(minorStatus='Execution Complete')
-      self.__report(JobStatus.DONE)
+      # Final status and minorStatus are already set
+      result = self.sendJobAccounting()
+      if not result['OK']:
+        # This should be really rare, as the accounting report also sends failover requests
+        self.log.warn('JobAccountingFailure',
+                      "Could not send job accounting with result: \n%s" % result['Message'])
+        self.log.warn('JobAccountingFailure',
+                      "The job won't fail, but the accounting for this job won't be sent")
 
     self.__cleanUp()
-    return 0
+    return 1 if self.failedFlag else 0
 
   #############################################################################
   def sendJobAccounting(self, status='', minorStatus=''):
@@ -1212,7 +1232,7 @@ class JobWrapper(object):
     return result
 
   #############################################################################
-  def sendFailoverRequest(self, status='', minorStatus=''):
+  def sendFailoverRequest(self):
     """ Create and send a combined job failover request if any
     """
     request = Request()
@@ -1239,26 +1259,6 @@ class JobWrapper(object):
     else:
       self.log.warn('JobReportFailure', "Could not generate a forwardDISET operation: %s" % result['Message'])
       self.log.warn('JobReportFailure', "The job won't fail, but the jobLogging info might be incomplete")
-
-    # Accounting part
-    if not self.jobID:
-      self.log.debug('No accounting to be sent since running locally')
-    else:
-      result = self.sendJobAccounting(status, minorStatus)
-      if not result['OK']:
-        self.log.warn('JobAccountingFailure', "Could not send job accounting with result: \n%s" % result['Message'])
-        self.log.warn('JobAccountingFailure', "Trying to build a failover request")
-        if 'rpcStub' in result:
-          self.log.verbose("Adding accounting report to failover request object")
-          forwardDISETOp = Operation()
-          forwardDISETOp.Type = "ForwardDISET"
-          forwardDISETOp.Arguments = DEncode.encode(result['rpcStub'])
-          request.addOperation(forwardDISETOp)
-          self.log.verbose("Added accounting report to failover request object")
-        else:
-          self.log.warn('JobAccountingFailure',
-                        "No rpcStub found to construct failover request for job accounting report")
-          self.log.warn('JobAccountingFailure', "The job won't fail, but the accounting for this job won't be sent")
 
     # Failover transfer requests
     for storedOperation in self.failoverTransfer.request:
@@ -1334,19 +1334,19 @@ class JobWrapper(object):
 
   #############################################################################
   def __report(self, status='', minorStatus='', sendFlag=False):
-    """Wraps around setJobStatus of JobReport client
+    """Wraps around setJobStatus of jobReport object
     """
+    self.log.verbose('setJobStatus', '(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
+
     if status:
       self.wmsMajorStatus = status
     if minorStatus:
       self.wmsMinorStatus = minorStatus
-    jobStatus = self.jobReport.setJobStatus(
-        status=status, minor=minorStatus, sendFlag=sendFlag)
+    jobStatus = self.jobReport.setJobStatus(status=status,
+                                            minorStatus=minorStatus,
+                                            sendFlag=sendFlag)
     if not jobStatus['OK']:
-      self.log.warn(jobStatus['Message'])
-    if self.jobID:
-      self.log.verbose(
-          'setJobStatus(%s,%s,%s,%s)' % (self.jobID, status, minorStatus, 'JobWrapper'))
+      self.log.warn('Failed setting job status', jobStatus['Message'])
 
     return jobStatus
 
@@ -1357,9 +1357,9 @@ class JobWrapper(object):
     jobParam = self.jobReport.setJobParameter(
         str(name), str(value), sendFlag)
     if not jobParam['OK']:
-      self.log.warn(jobParam['Message'])
+      self.log.warn('Failed setting job parameter', jobParam['Message'])
     if self.jobID:
-      self.log.verbose('setJobParameter(%s,%s,%s)' % (self.jobID, name, value))
+      self.log.verbose('setJobParameter', '(%s,%s,%s)' % (self.jobID, name, value))
 
     return jobParam
 
@@ -1450,15 +1450,15 @@ class ExecutionThread(threading.Thread):
     return S_ERROR('No Job output found')
 
 
-def rescheduleFailedJob(jobID, message, jobReport=None):
-  """ Function for rescheduling a jobID, with a message
+def rescheduleFailedJob(jobID, minorStatus, jobReport=None):
+  """ Function for rescheduling a jobID, setting a minorStatus
   """
 
   rescheduleResult = JobStatus.RESCHEDULED
 
   try:
 
-    gLogger.warn('Failure during %s' % (message))
+    gLogger.warn('Failure during %s' % (minorStatus))
 
     # Setting a job parameter does not help since the job will be rescheduled,
     # instead set the status with the cause and then another status showing the
@@ -1468,8 +1468,8 @@ def rescheduleFailedJob(jobID, message, jobReport=None):
       gLogger.info('Creating a new JobReport Object')
       jobReport = JobReport(int(jobID), 'JobWrapper')
 
-    jobReport.setApplicationStatus('Failed %s ' % message, sendFlag=False)
-    jobReport.setJobStatus('Rescheduled', message, sendFlag=False)
+    jobReport.setApplicationStatus('Failed %s ' % minorStatus, sendFlag=False)
+    jobReport.setJobStatus(status=JobStatus.RESCHEDULED, minorStatus=minorStatus, sendFlag=False)
 
     # We must send Job States and Parameters before it gets reschedule
     jobReport.sendStoredStatusInfo()

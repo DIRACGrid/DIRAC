@@ -656,7 +656,7 @@ class JobAgent(AgentModule):
     # reschedule operation.
 
     jobReport.setJobStatus(status='Rescheduled',
-                           application=message,
+                           applicationStatus=message,
                            sendFlag=True)
 
     self.log.info('Job will be rescheduled')

@@ -19,6 +19,7 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
 
 class InputData(OptimizerExecutor):
@@ -346,13 +347,13 @@ class InputData(OptimizerExecutor):
       lfnSEs[lfn] = siteSet
 
     if not lfnSEs:
-      return S_ERROR("No candidate sites available")
+      return S_ERROR(JobMinorStatus.NO_CANDIDATE_SITE_FOUND)
 
     # This makes an intersection of all sets in the dictionary and returns a set with it
     siteCandidates = set.intersection(*[lfnSEs[lfn] for lfn in lfnSEs])
 
     if not siteCandidates:
-      return S_ERROR('No candidate sites available')
+      return S_ERROR(JobMinorStatus.NO_CANDIDATE_SITE_FOUND)
 
     # In addition, check number of files on tape and disk for each site
     # for optimizations during scheduling

@@ -19,6 +19,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
@@ -143,10 +144,10 @@ class OptimizerModule(AgentModule):
         classad = ClassAd(jobDef['jdl'])
       except Exception:
         self.log.debug("Cannot load JDL")
-        return S_ERROR('Illegal Job JDL')
+        return S_ERROR(JobMinorStatus.ILLEGAL_JOB_JDL)
       if not classad.isOK():
         self.log.debug("Warning: illegal JDL for job %s, will be marked problematic" % (job))
-        return S_ERROR('Illegal Job JDL')
+        return S_ERROR(JobMinorStatus.ILLEGAL_JOB_JDL)
       jobDef['classad'] = classad
     return S_OK(jobDef)
 
@@ -198,7 +199,7 @@ class OptimizerModule(AgentModule):
     """
 
     result = self.logDB.addLoggingRecord(job, status=self.startingMajorStatus,
-                                         minor=self.startingMinorStatus,
+                                         minorStatus=self.startingMinorStatus,
                                          source=self.am_getModuleParam("optimizerName"))
     if not result['OK']:
       self.log.warn("Can't add logging record", result['Message'])
@@ -220,7 +221,7 @@ class OptimizerModule(AgentModule):
     if not result['OK']:
       return result
 
-    result = self.logDB.addLoggingRecord(job, status=status, minor=minorStatus, application=appStatus,
+    result = self.logDB.addLoggingRecord(job, status=status, minorStatus=minorStatus, applicationStatus=appStatus,
                                          source=self.am_getModuleParam('optimizerName'))
     if not result['OK']:
       self.log.warn("Can't add logging record", result['Message'])

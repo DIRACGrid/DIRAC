@@ -34,22 +34,22 @@ class JobLoggingCase(JobLoggingDBTestCase):
   def test_JobStatus(self):
 
     result = self.jlogDB.addLoggingRecord(1, status="testing",
-                                          minor='date=datetime.datetime.utcnow()',
+                                          minorStatus='date=datetime.datetime.utcnow()',
                                           date=datetime.datetime.utcnow(),
                                           source='Unittest')
     self.assertTrue(result['OK'], result.get('Message'))
     date = '2006-04-25 14:20:17'
     result = self.jlogDB.addLoggingRecord(1, status="testing",
-                                          minor='2006-04-25 14:20:17',
+                                          minorStatus='2006-04-25 14:20:17',
                                           date=date,
                                           source='Unittest')
     self.assertTrue(result['OK'], result.get('Message'))
     result = self.jlogDB.addLoggingRecord(1, status="testing",
-                                          minor='No date 1',
+                                          minorStatus='No date 1',
                                           source='Unittest')
     self.assertTrue(result['OK'], result.get('Message'))
     result = self.jlogDB.addLoggingRecord(1, status="testing",
-                                          minor='No date 2',
+                                          minorStatus='No date 2',
                                           source='Unittest')
     self.assertTrue(result['OK'], result.get('Message'))
     result = self.jlogDB.getJobLoggingInfo(1)

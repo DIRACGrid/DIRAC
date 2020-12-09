@@ -185,26 +185,32 @@ class JobStateUpdateHandler(RequestHandler):
     lastTime = Time.toString(Time.fromEpoch(lastTime))
 
     dates = sorted(statusDict)
+    # If real updates, start from the current status
+    if dates[0] >= lastTime and not status:
+      status = currentStatus
     log = gLogger.getSubLogger('JobStatusBulk/Job-%s' % jobID)
     log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, dates))
-    # Remove useless items in order to make it simpler later, although should not be there
+    # Remove useless items in order to make it simpler later, although there should not be any
     for sDict in statusDict.values():
-      for item in ('Status', 'MinorStatus', 'ApplicationStatus'):
-        if not sDict.get(item):
+      for item in sorted(sDict):
+        if not sDict[item]:
           sDict.pop(item, None)
     # Pick up start and end times from all updates, if they don't exist
     newStat = status
     for date in dates:
       sDict = statusDict[date]
-      newStat = sDict.get('Status', newStat)
-      if newStat in JobStatus.JOB_FINAL_STATES and not endTime:
-        endTime = date
-      # Pick up the start date if not existing
-      if sDict.get('MinorStatus') == "Application" and newStat == JobStatus.RUNNING and not startTime:
-        startTime = date
-      # This is to recover Matched jobs that get the application status: they are running!
-      if sDict.get('ApplicationStatus') and currentStatus == JobStatus.MATCHED:
+      # This is to recover Matched jobs that set the application status: they are running!
+      if sDict.get('ApplicationStatus') and newStat == JobStatus.MATCHED:
         sDict['Status'] = JobStatus.RUNNING
+      newStat = sDict.get('Status', newStat)
+      if newStat == JobStatus.RUNNING and not startTime:
+        # Pick up the start date when the job starts running if not existing
+        startTime = date
+        log.debug("Set job start time", startTime)
+      elif newStat in JobStatus.JOB_FINAL_STATES and not endTime:
+        # Pick up the end time when the job is in a final status
+        endTime = date
+        log.debug("Set job end time", endTime)
 
     # We should only update the status if its time stamp is more recent than the last update
     if dates[-1] >= lastTime:
@@ -250,12 +256,12 @@ class JobStateUpdateHandler(RequestHandler):
       minor = sDict.get('MinorStatus', 'idem')
       application = sDict.get('ApplicationStatus', 'idem')
       source = sDict.get('Source', 'Unknown')
-      result = cls.jobLoggingDB.addLoggingRecord(jobID,
-                                                 status=status,
-                                                 minor=minor,
-                                                 application=application,
-                                                 date=date,
-                                                 source=source)
+      result = cls.gJobLoggingDB.addLoggingRecord(jobID,
+                                                  status=status,
+                                                  minorStatus=minor,
+                                                  applicationStatus=application,
+                                                  date=date,
+                                                  source=source)
       if not result['OK']:
         return result
 
@@ -379,9 +385,9 @@ class JobStateUpdateHandler(RequestHandler):
     else:
       result = cls.jobDB.setJobParameters(int(jobID), parameters)
       if not result['OK']:
-        gLogger.error('Failed to add Job Parameters to MySQL', res['Message'])
+        gLogger.error('Failed to add Job Parameters to MySQL', result['Message'])
         failed = True
-        message = res['Message']
+        message = result['Message']
 
     if failed:
       return S_ERROR(message)

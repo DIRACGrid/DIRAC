@@ -270,7 +270,7 @@ class BasePlotter(DBUtils):
 
   def _getSummaryData(self, startTime, endTime, selectFields, preCondDict, metadataDict=None):
     """
-    It returns the adat used to create the pie chart plot.
+    It returns the data used to create the pie chart plot.
 
     :param int startTime: epoch time
     :param int endTime: epoch time

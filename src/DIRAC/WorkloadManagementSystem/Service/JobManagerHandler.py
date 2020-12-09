@@ -329,8 +329,8 @@ class JobManagerHandler(RequestHandler):
       self.log.debug(str(result))
       if not result['OK']:
         return result
-      self.jobLoggingDB.addLoggingRecord(result['JobID'], result['Status'], result['MinorStatus'],
-                                         application='Unknown', source='JobManager')
+      cls.jobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
+                                     applicationStatus='Unknown', source='JobManager')
 
     if invalidJobList or nonauthJobList:
       result = S_ERROR('Some jobs failed reschedule')
@@ -544,9 +544,8 @@ class JobManagerHandler(RequestHandler):
           badIDs.append(jobID)
         else:
           good_ids.append(jobID)
-        self.jobLoggingDB.addLoggingRecord(
-            result['JobID'], result['Status'], result['MinorStatus'],
-            application='Unknown', source='JobManager')
+        gJobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
+                                       applicationStatus='Unknown', source='JobManager')
 
     self.__sendJobsToOptimizationMind(good_ids)
     if invalidJobList or nonauthJobList or badIDs:

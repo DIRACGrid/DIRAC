@@ -69,7 +69,7 @@ in the order of preference of the option resolution:
      it will be interpreted as a configuration file, if the ``DIRAC_NO_CFG`` environment variable is not set.
 
 *Value of $DIRACSYSCONFIG environment variable*
-  if the DIRACSYSCONFIG variable is set, it should point to a cfg file (written in *CFG* format)
+  if the DIRACSYSCONFIG variable is set, it should point to a list of cfg file (written in *CFG* format), comma separated
 
 *$HOME/.dirac.cfg*
   This is the file in the user's home directory with the *CFG* format

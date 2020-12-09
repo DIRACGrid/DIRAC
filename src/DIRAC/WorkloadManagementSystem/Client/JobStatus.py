@@ -1,5 +1,5 @@
 """
-This module contains constants and lists for the the possible job states.
+This module contains constants and lists for the possible job states.
 """
 from __future__ import absolute_import
 from __future__ import division

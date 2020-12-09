@@ -245,39 +245,56 @@ class MonitoringDB(ElasticDB):
 
   def retrieveAggregatedData(self, typeName, startTime, endTime, interval, selectFields, condDict, grouping, metainfo):
     """
-    Get data from the DB using simple aggregations. Note: this method is equivalent to retrieveBucketedData.
-    The different is the dynamic bucketing. We do not perform dynamic bucketing on the raw data.
+    Get data from the DB using simple aggregations.
+    Note: this method is equivalent to retrieveBucketedData.
+    The difference is in the dynamic bucketing.
+    We do not perform dynamic bucketing on the raw data.
 
     :param str typeName: name of the monitoring type
-    :param int startTime:  epoch objects.
-    :param int endtime: epoch objects.
+    :param int startTime: epoch object
+    :param int endtime: epoch object
+    :param interval:
+    :param selectFields:
     :param dict condDict: conditions for the query
-
-                   * key -> name of the field
-                   * value -> list of possible values
+    :param str grouping: grouping requested
+    :param dict metainfo: dictionary of meta info (e.g. {'metric': 'avg'})
+    :returns: S_OK/S_ERROR with dictionary of key/value pairs
 
     """
-#    {'query': {'bool': {'filter': [{'bool': {'must': [{'range': {'timestamp': {'gte': 1474271462000, 'lte': 1474357862000}}}]}}]}}, 'aggs': {'end_data': {'date_histogram': {'field': 'timestamp', 'interval': '30m'}, 'aggs': {'tt': {'terms': {'field': 'component', 'size': 10000}, 'aggs': {'m1': {'avg': {'
-#    field': 'threads'}}}}}}}}
-#
-#     query = [Q( 'range',timestamp = {'lte':1474357862000,'gte': 1474271462000} )]
-#
-#     a = A('terms', field = 'component', size = 10000 )
-#     a.metric('m1', 'avg', field = 'threads' )
-#
-#     s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-*')
-#
-#     s = s.filter( 'bool', must = query )
-#     s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
+    # {'query':
+    #     {'bool':
+    #         {'filter': [
+    #             {'bool':
+    #                 {'must': [
+    #                     {'range':
+    #                         {'timestamp':
+    #                             {'gte': 1474271462000, 'lte': 1474357862000}}}]}}]}},
+    #     'aggs':
+    #         {'end_data':
+    #             {'date_histogram':
+    #                 {'field': 'timestamp', 'interval': '30m'},
+    #              'aggs': {'tt': {'terms': {'field': 'component', 'size': 10000},
+    #                       'aggs': {'m1': {'avg': {'field': 'threads'}}}}}}}}
+
+    # query = [Q('range', timestamp={'lte':1474357862000,'gte': 1474271462000} )]
+
+    # a = A('terms', field='component', size=10000)
+    # a.metric('m1', 'avg', field='threads')
+
+    # s = Search(using=cl, index='lhcb-certification_componentmonitoring-index-*')
+
+    # s = s.filter( 'bool', must = query )
+    # s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
 
     retVal = self.getIndexName(typeName)
     if not retVal['OK']:
       return retVal
+    indexName = "%s*" % (retVal['Value'])
 
     # default is average
     aggregator = metainfo.get('metric', 'avg')
 
-    indexName = "%s*" % (retVal['Value'])
+    # building the query incrementally
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
@@ -301,7 +318,7 @@ class MonitoringDB(ElasticDB):
                   field='timestamp',
                   interval=interval).metric('tt', a1)
 
-    #  s.fields( ['timestamp'] + selectFields )
+    # s.fields(['timestamp'] + selectFields)
     s = s.extra(size=self.RESULT_SIZE)  # do not get the hits!
 
     self.log.debug('Query:', s.to_dict())
