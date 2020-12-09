@@ -69,16 +69,17 @@ def writeLinesToFile(filename, lines):
     LOG.debug('Not updating file content for %s', os.path.join(os.getcwd(), filename))
 
 
-def setUpReadTheDocsEnvironment(moduleName='DIRAC'):
+def setUpReadTheDocsEnvironment(moduleName='DIRAC', location='../../'):
   """Create the necessary links and environment variables to create documentation inside readthedocs.
 
   Ensure that ``moduleName`` is in the PYTHONPATH by creating a link pointing to the basefolder of the source code.
 
   :param str moduleName: name of the base source code module, default 'DIRAC'
+  :param str location: Path to the location where the module can be found relative to the 'conf.py'. Default '../../'
   """
   LOG.info('Running for READTHEDOCS')
   sys.path.append(os.path.abspath('.'))
-  diracPath = os.path.abspath(os.path.join(os.getcwd(), '../src'))
+  diracPath = os.path.abspath(os.path.join(os.getcwd(), location))
   LOG.info('Path To Module(?): %r', diracPath)
 
   buildfolder = '_build'
@@ -86,13 +87,13 @@ def setUpReadTheDocsEnvironment(moduleName='DIRAC'):
 
   # We need to have the moduleName somewhere, or we cannot import it, as
   # readtheDocs clones the repo into something based on the branchname
-  if not os.path.exists(os.path.join('../src', moduleName)):
+  if not os.path.exists(os.path.join(location, moduleName)):
     diracLink = os.path.abspath(os.path.join(os.getcwd(), '../', buildfolder, moduleName))
     LOG.info('Link: %r', diracLink)
     if not os.path.exists(diracLink):
       LOG.info('Creating symbolic link %r -> %r', diracPath, diracLink)
       os.symlink(diracPath, diracLink)
-    diracPath = os.path.abspath(os.path.join(diracLink, 'src'))
+    diracPath = os.path.abspath(os.path.join(diracLink, '..'))
 
   sys.path.insert(0, diracPath)
 
