@@ -1,4 +1,4 @@
-[v7r2-pre22]
+[v7r2-pre23]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -27,6 +27,7 @@ FIX: (#4843) X509Chain: fix downloading X509 certificates
 
 *Framework
 CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
+FIX: (#4850) MQ logging sends also the message,asctime and levelname field
 
 *Interfaces
 CHANGE: (#4799) remove runLocalAgent method from DIRAC API
@@ -60,6 +61,14 @@ CHANGE: (#4823) added some clarifications on starting the pilots
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
+
+[v7r1p21]
+
+*ConfigurationSystem
+FIX: (#4854) Fix typo in CERNLDAPSyncPlugin
+
+*Resources
+FIX: (#4848) Fix SingularityComputingElement for non-server-style installations
 
 [v7r1p20]
 

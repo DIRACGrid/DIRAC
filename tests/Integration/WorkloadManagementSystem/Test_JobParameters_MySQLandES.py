@@ -21,7 +21,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
-from DIRAC.tests.Integration.WorkloadManagementSystem.Test_Client_WMS import helloWorldJob, createFile
+from DIRAC.tests.Utilities.WMS import helloWorldJob, createFile
 
 jobMonitoringClient = JobMonitoringClient()
 jobStateUpdateClient = JobStateUpdateClient()

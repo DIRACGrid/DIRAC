@@ -13,7 +13,7 @@ jobs:
       matrix:
         command:
           - pytest --no-cov
-          - pytest --no-cov Core/Security/test
+          - pytest --no-cov src/DIRAC/Core/Security/test
           - tests/checkDocs.sh
           # TODO This should cover more than just tests/CI
           # Excluded codes related to sourcing files
@@ -43,7 +43,7 @@ jobs:
         source "${CONDA}/bin/activate"
         conda activate dirac-testing
         set -euxo pipefail
-        export PYTHONPATH=${PWD%/*}
+        export PYTHONPATH=${PWD}/src
         ${{ matrix.command }}
       env:
         REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}

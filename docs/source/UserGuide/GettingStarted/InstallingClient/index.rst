@@ -20,7 +20,7 @@ Install script
 
 Download the *dirac-install* script from::
 
-  wget -np -O dirac-install https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py --no-check-certificate
+  wget -np -O dirac-install https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/dirac-install.py --no-check-certificate
   chmod +x dirac-install
 
 Choose the directory where you want to install the DIRAC software and run the dirac-install script from

@@ -85,7 +85,7 @@ Vagrant.configure("2") do |config|
   #   ln -s /home/vagrant/etc /home/vagrant/hostcode/etc
 
   #   # Installing DIRAC in /opt/dirac
-  #   curl -L -o dirac-install https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py && \
+  #   curl -L -o dirac-install https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/dirac-install.py && \
   #   chmod +x dirac-install && \
   #   ./dirac-install -r $DIRAC_VERSION -t client && \
   #   rm dirac-install && \
