@@ -28,15 +28,9 @@ The pilot.json file is always kept in sync with the content of the Configuration
 At every configuration update, the pilot.json file content will also be updated.
 
 
-If you use the DIRAC webserver please
+Starting with DIRAC version v7r2, the file uploads is completely on the balancer (nginx) side.
+Make sure your balancer is set to load files by following the :ref:`instructions <configure_nginx>`.
 
-- add the following option to the WebApp CS section::
-       
-    /WebApp/StaticDirs=pilot
-       
-- create the following directory in the DIRAC webserver machine::
-   
-    mkdir /opt/dirac/webRoot/www/pilot/
   
 
 Other options that can be set also in the Operations part of the CS include:
