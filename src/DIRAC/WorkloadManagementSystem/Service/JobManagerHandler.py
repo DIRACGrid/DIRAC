@@ -329,7 +329,7 @@ class JobManagerHandler(RequestHandler):
       self.log.debug(str(result))
       if not result['OK']:
         return result
-      cls.jobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
+      self.jobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
                                      applicationStatus='Unknown', source='JobManager')
 
     if invalidJobList or nonauthJobList:
@@ -544,7 +544,7 @@ class JobManagerHandler(RequestHandler):
           badIDs.append(jobID)
         else:
           good_ids.append(jobID)
-        gJobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
+        self.JobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
                                        applicationStatus='Unknown', source='JobManager')
 
     self.__sendJobsToOptimizationMind(good_ids)
