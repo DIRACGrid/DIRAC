@@ -16,7 +16,7 @@ Arguments:
 
 Example:
 
-  $ dirac-admin-set-site-protocols --Site
+  $ dirac-admin-set-site-protocols --Site=LCG.IN2P3.fr SRM2
 """
 from __future__ import print_function
 
