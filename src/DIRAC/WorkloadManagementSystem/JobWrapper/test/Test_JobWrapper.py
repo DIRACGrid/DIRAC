@@ -80,14 +80,14 @@ def test_execute(mocker):
   print('jw.execute() returns', str(res))
   assert res['OK']
 
-  shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
+  shutil.copy('src/DIRAC/WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
   jw = JobWrapper()
   jw.jobArgs = {'Executable': 'script-OK.sh'}
   res = jw.execute()
   assert res['OK']
   os.remove('script-OK.sh')
 
-  shutil.copy('WorkloadManagementSystem/JobWrapper/test/script.sh', 'script.sh')
+  shutil.copy('src/DIRAC/WorkloadManagementSystem/JobWrapper/test/script.sh', 'script.sh')
   jw = JobWrapper()
   jw.jobArgs = {'Executable': 'script.sh', 'Arguments': '111'}
   res = jw.execute()
@@ -95,7 +95,7 @@ def test_execute(mocker):
   # but the JobWrapper executed successfully
   os.remove('script.sh')
 
-  shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh')  # this will reschedule
+  shutil.copy('src/DIRAC/WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh')  # this will reschedule
   jw = JobWrapper()
   jw.jobArgs = {'Executable': 'script-RESC.sh'}
   res = jw.execute()
