@@ -46,6 +46,7 @@ NEW: (#4799) JobWrapperTemplate kills the JobWrapper in case of Exception during
 CHANGE: (#4799) Remove MultiProcessorSiteDirector (use standard SiteDirector)
 CHANGE: (#4799) stop setting JDL requirements MaxCPUTime, SubmitPools, GridRequiredCEs, Origin, JobMode
 CHANGE: (#4823) using JobReport and delayed send for JobStateUpdate
+FIX: (#4829) PilotCStoJSONSynchronizer - upload method uses webdav
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
@@ -57,6 +58,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *docs
 FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
 CHANGE: (#4823) added some clarifications on starting the pilots
+CHANGE: (#4829) updated configuration in terms of security, added description of webdav
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
