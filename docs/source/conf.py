@@ -50,7 +50,7 @@ os.environ['DIRAC_USE_M2CRYPTO'] = 'Yes'
 
 # AUTO SETUP START
 if os.environ.get('READTHEDOCS') == 'True':
-  setUpReadTheDocsEnvironment(moduleName='DIRAC')
+  setUpReadTheDocsEnvironment(moduleName='DIRAC', location='../../src')
 
   # re-create the RST files for the command references
   LOG.info('Building command reference')
