@@ -88,7 +88,7 @@ class X509Request(object):
 
   def dumpPKey(self):
     """
-    Get the pkey as a string
+    Get the private as a string
 
     :returns: S_OK(PEM encoded PKey)
     """
@@ -168,6 +168,7 @@ class X509Request(object):
 
     :param chain: :py:class:`X509Chain` object
     """
+
     if not self.__valid:
       return S_ERROR(DErrno.ENOCERT)
     retVal = chain.getCertInChain()
@@ -177,8 +178,11 @@ class X509Request(object):
     chainPubKey = lastCert.getPublicKey()
     if not chainPubKey['OK']:
       return chainPubKey
-    chainPubKey = chainPubKey['Value'].as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
-    reqPubKey = self.__reqObj.get_pubkey().as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
+
+    # as_der will dump public key info, while as_pem
+    # dumps private key.
+    chainPubKey = chainPubKey['Value'].as_der()
+    reqPubKey = self.__reqObj.get_pubkey().as_der()
     if not chainPubKey == reqPubKey:
       return S_ERROR(DErrno.EX509, "Public keys do not match")
 
