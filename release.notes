@@ -46,7 +46,7 @@ NEW: (#4799) JobWrapperTemplate kills the JobWrapper in case of Exception during
 CHANGE: (#4799) Remove MultiProcessorSiteDirector (use standard SiteDirector)
 CHANGE: (#4799) stop setting JDL requirements MaxCPUTime, SubmitPools, GridRequiredCEs, Origin, JobMode
 CHANGE: (#4823) using JobReport and delayed send for JobStateUpdate
-FIX: (#4829) PilotCStoJSONSynchronizer - upload method uses webdav
+FIX: (#4829) PilotCStoJSONSynchronizer - upload method uses WebDav
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
