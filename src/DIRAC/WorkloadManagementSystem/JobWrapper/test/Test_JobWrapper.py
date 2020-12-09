@@ -95,7 +95,8 @@ def test_execute(mocker):
   # but the JobWrapper executed successfully
   os.remove('script.sh')
 
-  shutil.copy('src/DIRAC/WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh')  # this will reschedule
+  # this will reschedule
+  shutil.copy('src/DIRAC/WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh')
   jw = JobWrapper()
   jw.jobArgs = {'Executable': 'script-RESC.sh'}
   res = jw.execute()
