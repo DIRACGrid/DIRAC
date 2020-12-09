@@ -42,8 +42,6 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
-gMonitoringReporter = None
-
 gProfilers = {}
 
 # pylint: disable=no-self-use
@@ -83,8 +81,7 @@ class SystemAdministratorHandler(RequestHandler):
     messageQueue = cls.srv_getCSOption('MessageQueue', 'dirac.componentmonitoring')
 
     if dynamicMonitoring:
-      global gMonitoringReporter
-      gMonitoringReporter = MonitoringReporter(
+      cls.gMonitoringReporter = MonitoringReporter(
           monitoringType="ComponentMonitoring", failoverQueueName=messageQueue)
       gThreadScheduler.addPeriodicTask(120, cls.__storeProfiling)
 
@@ -674,8 +671,8 @@ class SystemAdministratorHandler(RequestHandler):
 
     return S_OK('Profiling information logged correctly')
 
-  @staticmethod
-  def __storeProfiling():
+  @classmethod
+  def __storeProfiling(cls):
     """
     Retrieves and stores into ElasticSearch profiling information about the components on the host
     """
@@ -710,11 +707,11 @@ class SystemAdministratorHandler(RequestHandler):
             log['host'] = socket.getfqdn()
             log['component'] = instance
             log['timestamp'] = result['Value']['datetime']
-            gMonitoringReporter.addRecord(log)
+            cls.gMonitoringReporter.addRecord(log)
           else:
             gLogger.error(result['Message'])
             return result
-    gMonitoringReporter.commit()
+    cls.gMonitoringReporter.commit()
     return S_OK('Profiling information logged correctly')
 
   @staticmethod

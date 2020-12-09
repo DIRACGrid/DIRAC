@@ -1,25 +1,27 @@
 """ StorageManagerHandler is the implementation of the StorageManagementDB in the DISET framework """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from types import IntType, DictType, ListType, StringTypes, LongType
+import six
+
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB import StorageManagementDB
-# This is a global instance of the StorageDB
-storageDB = False
-
-
-def initializeStorageManagerHandler(serviceInfo):
-  global storageDB
-  storageDB = StorageManagementDB()
-  return S_OK()
 
 
 class StorageManagerHandler(RequestHandler):
+
+  @classmethod
+  def initializeHandler(cls, serviceInfoDict):
+    """ Initialization of DB object
+    """
+
+    cls.storageManagementDB = StorageManagementDB()
+    return S_OK()
 
   ######################################################################
   #
@@ -28,7 +30,8 @@ class StorageManagerHandler(RequestHandler):
 
   types_updateTaskStatus = []
 
-  def export_updateTaskStatus(self, sourceID, status, successful=[], failed=[]):
+  @classmethod
+  def export_updateTaskStatus(cls, sourceID, status, successful=[], failed=[]):
     """ An example to show the usage of the callbacks. """
     gLogger.info("updateTaskStatus: Received callback information for ID %s" % sourceID)
     gLogger.info("updateTaskStatus: Status = '%s'" % status)
@@ -47,38 +50,42 @@ class StorageManagerHandler(RequestHandler):
   #  Monitoring methods
   #
 
-  types_getTaskStatus = [IntType]
+  types_getTaskStatus = [six.integer_types]
 
-  def export_getTaskStatus(self, taskID):
+  @classmethod
+  def export_getTaskStatus(cls, taskID):
     """ Obtain the status of the stage task from the DB. """
-    res = storageDB.getTaskStatus(taskID)
+    res = cls.storageManagementDB.getTaskStatus(taskID)
     if not res['OK']:
       gLogger.error('getTaskStatus: Failed to get task status', res['Message'])
     return res
 
-  types_getTaskInfo = [IntType]
+  types_getTaskInfo = [six.integer_types]
 
-  def export_getTaskInfo(self, taskID):
+  @classmethod
+  def export_getTaskInfo(cls, taskID):
     """ Obtain the metadata of the stage task from the DB. """
-    res = storageDB.getTaskInfo(taskID)
+    res = cls.storageManagementDB.getTaskInfo(taskID)
     if not res['OK']:
       gLogger.error('getTaskInfo: Failed to get task metadata', res['Message'])
     return res
 
-  types_getTaskSummary = [IntType]
+  types_getTaskSummary = [six.integer_types]
 
-  def export_getTaskSummary(self, taskID):
+  @classmethod
+  def export_getTaskSummary(cls, taskID):
     """ Obtain the summary of the stage task from the DB. """
-    res = storageDB.getTaskSummary(taskID)
+    res = cls.storageManagementDB.getTaskSummary(taskID)
     if not res['OK']:
       gLogger.error('getTaskSummary: Failed to get task summary', res['Message'])
     return res
 
-  types_getTasks = [DictType]
+  types_getTasks = [dict]
 
-  def export_getTasks(self, condDict, older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None):
+  @classmethod
+  def export_getTasks(cls, condDict, older=None, newer=None, timeStamp='LastUpdate', orderAttribute=None, limit=None):
     """ Get the replicas known to the DB. """
-    res = storageDB.getTasks(
+    res = cls.storageManagementDB.getTasks(
         condDict=condDict,
         older=older,
         newer=newer,
@@ -89,18 +96,20 @@ class StorageManagerHandler(RequestHandler):
       gLogger.error('getTasks: Failed to get Cache replicas', res['Message'])
     return res
 
-  types_removeStageRequests = [ListType]
+  types_removeStageRequests = [list]
 
-  def export_removeStageRequests(self, replicaIDs):
-    res = storageDB.removeStageRequests(replicaIDs)
+  @classmethod
+  def export_removeStageRequests(cls, replicaIDs):
+    res = cls.storageManagementDB.removeStageRequests(replicaIDs)
     if not res['OK']:
       gLogger.error('removeStageRequests: Failed to remove StageRequests', res['Message'])
     return res
 
-  types_getCacheReplicas = [DictType]
+  types_getCacheReplicas = [dict]
 
+  @classmethod
   def export_getCacheReplicas(
-          self,
+          cls,
           condDict,
           older=None,
           newer=None,
@@ -108,7 +117,7 @@ class StorageManagerHandler(RequestHandler):
           orderAttribute=None,
           limit=None):
     """ Get the replcias known to the DB. """
-    res = storageDB.getCacheReplicas(
+    res = cls.storageManagementDB.getCacheReplicas(
         condDict=condDict,
         older=older,
         newer=newer,
@@ -119,10 +128,11 @@ class StorageManagerHandler(RequestHandler):
       gLogger.error('getCacheReplicas: Failed to get Cache replicas', res['Message'])
     return res
 
-  types_getStageRequests = [DictType]
+  types_getStageRequests = [dict]
 
+  @classmethod
   def export_getStageRequests(
-          self,
+          cls,
           condDict,
           older=None,
           newer=None,
@@ -130,7 +140,7 @@ class StorageManagerHandler(RequestHandler):
           orderAttribute=None,
           limit=None):
     """ Get the replcias known to the DB. """
-    res = storageDB.getStageRequests(
+    res = cls.storageManagementDB.getStageRequests(
         condDict=condDict,
         older=older,
         newer=newer,
@@ -150,11 +160,12 @@ class StorageManagerHandler(RequestHandler):
   # setRequest is used to initially insert tasks and their associated files. Leaves files in New status.
   #
 
-  types_setRequest = [DictType, StringTypes, StringTypes, IntType]
+  types_setRequest = [dict, six.string_types, six.string_types, six.integer_types]
 
-  def export_setRequest(self, lfnDict, source, callbackMethod, taskID):
+  @classmethod
+  def export_setRequest(cls, lfnDict, source, callbackMethod, taskID):
     """ This method allows stage requests to be set into the StagerDB """
-    res = storageDB.setRequest(lfnDict, source, callbackMethod, taskID)
+    res = cls.storageManagementDB.setRequest(lfnDict, source, callbackMethod, taskID)
     if not res['OK']:
       gLogger.error('setRequest: Failed to set stage request', res['Message'])
     return res
@@ -164,11 +175,12 @@ class StorageManagerHandler(RequestHandler):
   # The state transition of Replicas method
   #
 
-  types_updateReplicaStatus = [ListType, StringTypes]
+  types_updateReplicaStatus = [list, six.string_types]
 
-  def export_updateReplicaStatus(self, replicaIDs, newReplicaStatus):
+  @classmethod
+  def export_updateReplicaStatus(cls, replicaIDs, newReplicaStatus):
     """ This allows to update the status of replicas """
-    res = storageDB.updateReplicaStatus(replicaIDs, newReplicaStatus)
+    res = cls.storageManagementDB.updateReplicaStatus(replicaIDs, newReplicaStatus)
     if not res['OK']:
       gLogger.error('updateReplicaStatus: Failed to update replica status', res['Message'])
     return res
@@ -178,11 +190,12 @@ class StorageManagerHandler(RequestHandler):
   # The state transition of the Replicas from New->Waiting
   #
 
-  types_updateReplicaInformation = [ListType]
+  types_updateReplicaInformation = [list]
 
-  def export_updateReplicaInformation(self, replicaTuples):
+  @classmethod
+  def export_updateReplicaInformation(cls, replicaTuples):
     """ This method sets the pfn and size for the supplied replicas """
-    res = storageDB.updateReplicaInformation(replicaTuples)
+    res = cls.storageManagementDB.updateReplicaInformation(replicaTuples)
     if not res['OK']:
       gLogger.error('updateRelicaInformation: Failed to update replica information', res['Message'])
     return res
@@ -193,45 +206,50 @@ class StorageManagerHandler(RequestHandler):
   #
   types_getStagedReplicas = []
 
-  def export_getStagedReplicas(self):
+  @classmethod
+  def export_getStagedReplicas(cls):
     """ This method obtains the replicas for which all replicas in the task are Staged/StageSubmitted """
-    res = storageDB.getStagedReplicas()
+    res = cls.storageManagementDB.getStagedReplicas()
     if not res['OK']:
       gLogger.error('getStagedReplicas: Failed to obtain Staged/StageSubmitted replicas', res['Message'])
     return res
 
   types_getWaitingReplicas = []
 
-  def export_getWaitingReplicas(self):
+  @classmethod
+  def export_getWaitingReplicas(cls):
     """ This method obtains the replicas for which all replicas in the task are Waiting """
-    res = storageDB.getWaitingReplicas()
+    res = cls.storageManagementDB.getWaitingReplicas()
     if not res['OK']:
       gLogger.error('getWaitingReplicas: Failed to obtain Waiting replicas', res['Message'])
     return res
 
   types_getOfflineReplicas = []
 
-  def export_getOfflineReplicas(self):
+  @classmethod
+  def export_getOfflineReplicas(cls):
     """ This method obtains the replicas for which all replicas in the task are Offline """
-    res = storageDB.getOfflineReplicas()
+    res = cls.storageManagementDB.getOfflineReplicas()
     if not res['OK']:
       gLogger.error('getOfflineReplicas: Failed to obtain Offline replicas', res['Message'])
     return res
 
   types_getSubmittedStagePins = []
 
-  def export_getSubmittedStagePins(self):
+  @classmethod
+  def export_getSubmittedStagePins(cls):
     """ This method obtains the number of files and size of the requests submitted for each storage element """
-    res = storageDB.getSubmittedStagePins()
+    res = cls.storageManagementDB.getSubmittedStagePins()
     if not res['OK']:
       gLogger.error('getSubmittedStagePins: Failed to obtain submitted request summary', res['Message'])
     return res
 
-  types_insertStageRequest = [DictType, [IntType, LongType]]
+  types_insertStageRequest = [dict, [six.integer_types, six.integer_types]]
 
-  def export_insertStageRequest(self, requestReplicas, pinLifetime):
+  @classmethod
+  def export_insertStageRequest(cls, requestReplicas, pinLifetime):
     """ This method inserts the stage request ID assocaited to supplied replicaIDs """
-    res = storageDB.insertStageRequest(requestReplicas, pinLifetime)
+    res = cls.storageManagementDB.insertStageRequest(requestReplicas, pinLifetime)
     if not res['OK']:
       gLogger.error('insertStageRequest: Failed to insert stage request information', res['Message'])
     return res
@@ -241,11 +259,12 @@ class StorageManagerHandler(RequestHandler):
   # The state transition of the Replicas from StageSubmitted->Staged
   #
 
-  types_setStageComplete = [ListType]
+  types_setStageComplete = [list]
 
-  def export_setStageComplete(self, replicaIDs):
+  @classmethod
+  def export_setStageComplete(cls, replicaIDs):
     """ This method updates the status of the stage request for the supplied replica IDs """
-    res = storageDB.setStageComplete(replicaIDs)
+    res = cls.storageManagementDB.setStageComplete(replicaIDs)
     if not res['OK']:
       gLogger.error('setStageComplete: Failed to set StageRequest complete', res['Message'])
     return res
@@ -257,36 +276,40 @@ class StorageManagerHandler(RequestHandler):
   # Daniela: useless method
   '''types_updateStageCompletingTasks = []
   def export_updateStageCompletingTasks(self):
-    """ This method checks whether the file for Tasks in 'StageCompleting' status are all Staged and updates the Task status to Staged """
-    res = storageDB.updateStageCompletingTasks()
+    """ This method checks whether the file for Tasks in 'StageCompleting' status
+    are all Staged and updates the Task status to Staged """
+    res = cls.storageManagementDB.updateStageCompletingTasks()
     if not res['OK']:
       gLogger.error('updateStageCompletingTasks: Failed to update StageCompleting tasks.',res['Message'])
     return res
   '''
 
-  types_setTasksDone = [ListType]
+  types_setTasksDone = [list]
 
-  def export_setTasksDone(self, taskIDs):
+  @classmethod
+  def export_setTasksDone(cls, taskIDs):
     """ This method sets the status in the Tasks table to Done for the list of supplied task IDs """
-    res = storageDB.setTasksDone(taskIDs)
+    res = cls.storageManagementDB.setTasksDone(taskIDs)
     if not res['OK']:
       gLogger.error('setTasksDone: Failed to set status of tasks to Done', res['Message'])
     return res
 
-  types_removeTasks = [ListType]
+  types_removeTasks = [list]
 
-  def export_removeTasks(self, taskIDs):
+  @classmethod
+  def export_removeTasks(cls, taskIDs):
     """ This method removes the entries from TaskReplicas and Tasks with the supplied task IDs """
-    res = storageDB.removeTasks(taskIDs)
+    res = cls.storageManagementDB.removeTasks(taskIDs)
     if not res['OK']:
       gLogger.error('removeTasks: Failed to remove Tasks', res['Message'])
     return res
 
   types_removeUnlinkedReplicas = []
 
-  def export_removeUnlinkedReplicas(self):
+  @classmethod
+  def export_removeUnlinkedReplicas(cls):
     """ This method removes Replicas which have no associated Tasks """
-    res = storageDB.removeUnlinkedReplicas()
+    res = cls.storageManagementDB.removeUnlinkedReplicas()
     if not res['OK']:
       gLogger.error('removeUnlinkedReplicas: Failed to remove unlinked Replicas', res['Message'])
     return res
@@ -296,11 +319,12 @@ class StorageManagerHandler(RequestHandler):
   # The state transition of the Replicas from *->Failed
   #
 
-  types_updateReplicaFailure = [DictType]
+  types_updateReplicaFailure = [dict]
 
-  def export_updateReplicaFailure(self, replicaFailures):
+  @classmethod
+  def export_updateReplicaFailure(cls, replicaFailures):
     """ This method sets the status of the replica to failed with the supplied reason """
-    res = storageDB.updateReplicaFailure(replicaFailures)
+    res = cls.storageManagementDB.updateReplicaFailure(replicaFailures)
     if not res['OK']:
       gLogger.error('updateRelicaFailure: Failed to update replica failure information', res['Message'])
     return res
@@ -310,82 +334,90 @@ class StorageManagerHandler(RequestHandler):
   # Methods for obtaining Tasks, Replicas with supplied state
   #
 
-  types_getTasksWithStatus = [StringTypes]
+  types_getTasksWithStatus = [six.string_types]
 
-  def export_getTasksWithStatus(self, status):
+  @classmethod
+  def export_getTasksWithStatus(cls, status):
     """ This method allows to retrieve Tasks with the supplied status """
-    res = storageDB.getTasksWithStatus(status)
+    res = cls.storageManagementDB.getTasksWithStatus(status)
     if not res['OK']:
       gLogger.error('getTasksWithStatus: Failed to get tasks with %s status' % status, res['Message'])
     return res
 
-  types_getReplicasWithStatus = [StringTypes]
+  types_getReplicasWithStatus = [six.string_types]
 
-  def export_getReplicasWithStatus(self, status):
+  @classmethod
+  def export_getReplicasWithStatus(cls, status):
     """ This method allows to retrieve replicas with the supplied status """
-    res = storageDB.getCacheReplicas({'Status': status})
+    res = cls.storageManagementDB.getCacheReplicas({'Status': status})
     if not res['OK']:
       gLogger.error('getReplicasWithStatus: Failed to get replicas with %s status' % status, res['Message'])
     return res
 
   types_getStageSubmittedReplicas = []
 
-  def export_getStageSubmittedReplicas(self):
+  @classmethod
+  def export_getStageSubmittedReplicas(cls):
     """ This method obtains the replica metadata and the stage requestID for the replicas in StageSubmitted status """
-    res = storageDB.getCacheReplicas({'Status': 'StageSubmitted'})
+    res = cls.storageManagementDB.getCacheReplicas({'Status': 'StageSubmitted'})
     if not res['OK']:
       gLogger.error('getStageSubmittedReplicas: Failed to obtain StageSubmitted replicas', res['Message'])
     return res
 
-  types_wakeupOldRequests = [ListType, IntType]
+  types_wakeupOldRequests = [list, six.integer_types]
 
-  def export_wakeupOldRequests(self, oldRequests, retryInterval):
+  @classmethod
+  def export_wakeupOldRequests(cls, oldRequests, retryInterval):
     """  get only StageRequests with StageRequestSubmitTime older than 1 day AND are still not staged
     delete these requests
     reset Replicas with corresponding ReplicaIDs to Status='New'
     """
-    res = storageDB.wakeupOldRequests(oldRequests, retryInterval)
+    res = cls.storageManagementDB.wakeupOldRequests(oldRequests, retryInterval)
     if not res['OK']:
       gLogger.error('wakeupOldRequests: Failed to wake up old requests', res['Message'])
     return res
 
-  types_setOldTasksAsFailed = [IntType]
+  types_setOldTasksAsFailed = [six.integer_types]
 
-  def export_setOldTasksAsFailed(self, daysOld):
+  @classmethod
+  def export_setOldTasksAsFailed(cls, daysOld):
     """
     Set Tasks older than "daysOld" number of days to Failed
     These tasks have already been retried every day for staging
     """
-    res = storageDB.setOldTasksAsFailed(daysOld)
+    res = cls.storageManagementDB.setOldTasksAsFailed(daysOld)
     if not res['OK']:
       gLogger.error('setOldTasksAsFailed: Failed to set old Tasks to Failed state. ', res['Message'])
     return res
 
-  types_getAssociatedReplicas = [ListType]
+  types_getAssociatedReplicas = [list]
 
-  def export_getAssociatedReplicas(self, replicaIDs):
+  @classmethod
+  def export_getAssociatedReplicas(cls, replicaIDs):
     """
     Retrieve the list of Replicas that belong to the same Tasks as the provided list
     """
-    res = storageDB.getAssociatedReplicas(replicaIDs)
+    res = cls.storageManagementDB.getAssociatedReplicas(replicaIDs)
     if not res['OK']:
       gLogger.error('getAssociatedReplicas: Failed to get Associated Replicas. ', res['Message'])
     return res
 
-  types_killTasksBySourceTaskID = [ListType]
+  types_killTasksBySourceTaskID = [list]
 
-  def export_killTasksBySourceTaskID(self, sourceTaskIDs):
+  @classmethod
+  def export_killTasksBySourceTaskID(cls, sourceTaskIDs):
     """ Given SourceTaskIDs (jobIDs), this will cancel further staging of files for the corresponding tasks"""
-    res = storageDB.killTasksBySourceTaskID(sourceTaskIDs)
+    res = cls.storageManagementDB.killTasksBySourceTaskID(sourceTaskIDs)
     if not res['OK']:
       gLogger.error('removeTasks: Failed to kill staging', res['Message'])
     return res
 
   types_getCacheReplicasSummary = []
 
-  def export_getCacheReplicasSummary(self):
+  @classmethod
+  def export_getCacheReplicasSummary(cls):
     """ Reports breakdown of file number/size in different staging states across storage elements """
-    res = storageDB.getCacheReplicasSummary()
+    res = cls.storageManagementDB.getCacheReplicasSummary()
     if not res['OK']:
       gLogger.error(' getCacheReplicasSummary: Failed to retrieve summary from server', res['Message'])
     return res

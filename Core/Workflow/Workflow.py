@@ -7,8 +7,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import os
-import re
-import types
 import xml.sax
 import six
 

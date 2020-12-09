@@ -5,29 +5,27 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
-import types
+import six
+
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.FrameworkSystem.DB.UserProfileDB import UserProfileDB
 from DIRAC.Core.Security import Properties
-
-gUPDB = False
-
-
-def initializeUserProfileManagerHandler(serviceInfo):
-  global gUPDB
-  try:
-    gUPDB = UserProfileDB()
-  except Exception as e:
-    return S_ERROR("Can't initialize UserProfileDB: %s" % str(e))
-  return S_OK()
 
 
 class UserProfileManagerHandler(RequestHandler):
 
-  types_retrieveProfileVar = [types.StringTypes, types.StringTypes]
+  @classmethod
+  def initializeHandler(cls, serviceInfo):
+    """ Handler initialization
+    """
+    cls.upDB = UserProfileDB()
+    return S_OK()
+
+  types_retrieveProfileVar = [six.string_types, six.string_types]
 
   def export_retrieveProfileVar(self, profileName, varName):
     """ Get profile data for web
@@ -35,11 +33,11 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.retrieveVar(userName, userGroup,
-                             userName, userGroup,
-                             profileName, varName)
+    return self.upDB.retrieveVar(userName, userGroup,
+                                 userName, userGroup,
+                                 profileName, varName)
 
-  types_retrieveProfileVarFromUser = [types.StringTypes, types.StringTypes, types.StringTypes, types.StringTypes]
+  types_retrieveProfileVarFromUser = [six.string_types, six.string_types, six.string_types, six.string_types]
 
   def export_retrieveProfileVarFromUser(self, ownerName, ownerGroup, profileName, varName):
     """ Get profile data for web for any user according to perms
@@ -47,11 +45,11 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.retrieveVar(userName, userGroup,
-                             ownerName, ownerGroup,
-                             profileName, varName)
+    return self.upDB.retrieveVar(userName, userGroup,
+                                 ownerName, ownerGroup,
+                                 profileName, varName)
 
-  types_retrieveProfileAllVars = [types.StringTypes]
+  types_retrieveProfileAllVars = [six.string_types]
 
   def export_retrieveProfileAllVars(self, profileName):
     """ Get profile data for web
@@ -59,9 +57,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.retrieveAllUserVars(userName, userGroup, profileName)
+    return self.upDB.retrieveAllUserVars(userName, userGroup, profileName)
 
-  types_storeProfileVar = [types.StringTypes, types.StringTypes, types.StringTypes, types.DictType]
+  types_storeProfileVar = [six.string_types, six.string_types, six.string_types, dict]
 
   def export_storeProfileVar(self, profileName, varName, data, perms):
     """ Set profile data for web
@@ -69,9 +67,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.storeVar(userName, userGroup, profileName, varName, data, perms)
+    return self.upDB.storeVar(userName, userGroup, profileName, varName, data, perms)
 
-  types_deleteProfileVar = [types.StringTypes, types.StringTypes]
+  types_deleteProfileVar = [six.string_types, six.string_types]
 
   def export_deleteProfileVar(self, profileName, varName):
     """ Set profile data for web
@@ -79,9 +77,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.deleteVar(userName, userGroup, profileName, varName)
+    return self.upDB.deleteVar(userName, userGroup, profileName, varName)
 
-  types_listAvailableProfileVars = [types.StringTypes]
+  types_listAvailableProfileVars = [six.string_types]
 
   def export_listAvailableProfileVars(self, profileName, filterDict={}):
     """ Set profile data for web
@@ -89,7 +87,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.listVars(userName, userGroup, profileName, filterDict)
+    return self.upDB.listVars(userName, userGroup, profileName, filterDict)
 
   types_getUserProfiles = []
 
@@ -99,9 +97,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.retrieveUserProfiles(userName, userGroup)
+    return self.upDB.retrieveUserProfiles(userName, userGroup)
 
-  types_setProfileVarPermissions = [types.StringTypes, types.StringTypes, types.DictType]
+  types_setProfileVarPermissions = [six.string_types, six.string_types, dict]
 
   def export_setProfileVarPermissions(self, profileName, varName, perms):
     """ Set profile data for web
@@ -109,9 +107,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.setUserVarPerms(userName, userGroup, profileName, varName, perms)
+    return self.upDB.setUserVarPerms(userName, userGroup, profileName, varName, perms)
 
-  types_getProfileVarPermissions = [types.StringTypes, types.StringTypes]
+  types_getProfileVarPermissions = [six.string_types, six.string_types]
 
   def export_getProfileVarPermissions(self, profileName, varName):
     """ Set profile data for web
@@ -119,11 +117,11 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.retrieveVarPerms(userName, userGroup,
-                                  userName, userGroup,
-                                  profileName, varName)
+    return self.upDB.retrieveVarPerms(userName, userGroup,
+                                      userName, userGroup,
+                                      profileName, varName)
 
-  types_storeHashTag = [types.StringTypes]
+  types_storeHashTag = [six.string_types]
 
   def export_storeHashTag(self, tagName):
     """ Set hash tag
@@ -131,9 +129,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.storeHashTag(userName, userGroup, tagName)
+    return self.upDB.storeHashTag(userName, userGroup, tagName)
 
-  types_retrieveHashTag = [types.StringTypes]
+  types_retrieveHashTag = [six.string_types]
 
   def export_retrieveHashTag(self, hashTag):
     """ Get hash tag
@@ -141,7 +139,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.retrieveHashTag(userName, userGroup, hashTag)
+    return self.upDB.retrieveHashTag(userName, userGroup, hashTag)
 
   types_retrieveAllHashTags = []
 
@@ -151,9 +149,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return gUPDB.retrieveAllHashTags(userName, userGroup)
+    return self.upDB.retrieveAllHashTags(userName, userGroup)
 
-  types_deleteProfiles = [types.ListType]
+  types_deleteProfiles = [list]
 
   def export_deleteProfiles(self, userList):
     """
@@ -168,15 +166,15 @@ class UserProfileManagerHandler(RequestHandler):
     for entry in userList:
       userName = entry
       if admin or userName == requesterUserName:
-        result = gUPDB.deleteUserProfile(userName)
+        result = self.upDB.deleteUserProfile(userName)
         if not result['OK']:
           return result
     return S_OK()
 
-  types_getUserProfileNames = [types.DictType]
+  types_getUserProfileNames = [dict]
 
   def export_getUserProfileNames(self, permission):
     """
     it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
     """
-    return gUPDB.getUserProfileNames(permission)
+    return self.upDB.getUserProfileNames(permission)

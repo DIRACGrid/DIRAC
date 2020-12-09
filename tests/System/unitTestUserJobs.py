@@ -80,6 +80,14 @@ class submitSuccess(GridSubmissionTestCase):
     self.assertTrue(res['OK'])
     jobsSubmittedList.append(res['Value'])
 
+    res = jobWithOutput()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = jobWithOutputs()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
     print("submitted %d jobs: %s" % (len(jobsSubmittedList), ','.join(str(js) for js in jobsSubmittedList)))
 
 

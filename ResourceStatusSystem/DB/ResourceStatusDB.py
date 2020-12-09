@@ -1,4 +1,4 @@
-''' ResourceStatusDB:
+""" ResourceStatusDB:
     This module provides definition of the DB tables, and methods to access them.
 
     Written using sqlalchemy declarative_base
@@ -14,7 +14,7 @@
 
     2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
-'''
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -90,6 +90,7 @@ class ResourceStatusCache(rssBase):
     """
 
     return [self.id, self.sitename, self.name, self.status, self.previousstatus, self.statustype, self.time]
+
 
 class ElementStatusBase(object):
   """
@@ -259,9 +260,9 @@ class NodeHistory(ElementStatusBaseWithID, rssBase):
 # Interaction with the DB
 
 class ResourceStatusDB(SQLAlchemyDB):
-  '''
+  """
     Class that defines the interactions with the tables of the ResourceStatusDB.
-  '''
+  """
 
   def __init__(self):
     """c'tor
@@ -286,7 +287,7 @@ class ResourceStatusDB(SQLAlchemyDB):
     self._createTablesIfNotThere(self.tablesListWithID)
 
   def insert(self, table, params):
-    '''
+    """
     Inserts params in the DB.
 
     :param table: table where to insert
@@ -295,7 +296,7 @@ class ResourceStatusDB(SQLAlchemyDB):
     :type params: dict
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
 
     if not params.get('DateEffective'):
       params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond=0)
@@ -303,7 +304,7 @@ class ResourceStatusDB(SQLAlchemyDB):
     return super(ResourceStatusDB, self).insert(table, params)
 
   def addOrModify(self, table, params):
-    '''
+    """
     Using the PrimaryKeys of the table, it looks for the record in the database.
     If it is there, it is updated, if not, it is inserted as a new entry.
 
@@ -313,7 +314,7 @@ class ResourceStatusDB(SQLAlchemyDB):
     :type params: dict
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
 
     session = self.sessionMaker_o()
     found = False
@@ -383,7 +384,7 @@ class ResourceStatusDB(SQLAlchemyDB):
       session.close()
 
   def addIfNotThere(self, table, params):
-    '''
+    """
     Using the PrimaryKeys of the table, it looks for the record in the database.
     If it is not there, it is inserted as a new entry.
 
@@ -393,7 +394,7 @@ class ResourceStatusDB(SQLAlchemyDB):
     :type params: dict
 
     :return: S_OK() || S_ERROR()
-    '''
+    """
 
     session = self.sessionMaker_o()
     table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)

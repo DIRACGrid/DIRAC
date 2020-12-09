@@ -6,7 +6,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import types
 import tempfile
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -65,7 +64,7 @@ class PlottingClient(object):
     client = self.__getRPCClient()
     plotMetadata = {}
     for arg in args:
-      if isinstance(arg, types.DictType):
+      if isinstance(arg, dict):
         plotMetadata.update(arg)
       else:
         return S_ERROR('Non-dictionary non-keyed argument')

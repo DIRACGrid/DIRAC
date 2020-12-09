@@ -104,10 +104,8 @@ class SQLAlchemyDB(object):
     """
     Inserts params in the DB.
 
-    :param table: table where to insert
-    :type table: str
-    :param params: Dictionary to fill a single line
-    :type params: dict
+    :param str table: table where to insert
+    :param dict params: Dictionary to fill a single line
 
     :return: S_OK() || S_ERROR()
     """
@@ -118,14 +116,18 @@ class SQLAlchemyDB(object):
     found = False
     for ext in self.extensions:
       try:
-        tableRow_o = getattr(__import__(ext + self.__class__.__module__, globals(), locals(), [table]), table)()
+        tableRow_o = getattr(
+            __import__(ext + self.__class__.__module__, globals(), locals(), [table]),
+            table)()
         found = True
         break
       except (ImportError, AttributeError):
         continue
     # If not found in extensions, import it from DIRAC base (this same module).
     if not found:
-      tableRow_o = getattr(__import__(self.__class__.__module__, globals(), locals(), [table]), table)()
+      tableRow_o = getattr(
+          __import__(self.__class__.__module__, globals(), locals(), [table]),
+          table)()
 
     tableRow_o.fromDict(params)
 
@@ -160,14 +162,18 @@ class SQLAlchemyDB(object):
     found = False
     for ext in self.extensions:
       try:
-        table_c = getattr(__import__(ext + self.__class__.__module__, globals(), locals(), [table]), table)
+        table_c = getattr(
+            __import__(ext + self.__class__.__module__, globals(), locals(), [table]),
+            table)
         found = True
         break
       except (ImportError, AttributeError):
         continue
     # If not found in extensions, import it from DIRAC base (this same module).
     if not found:
-      table_c = getattr(__import__(self.__class__.__module__, globals(), locals(), [table]), table)
+      table_c = getattr(
+          __import__(self.__class__.__module__, globals(), locals(), [table]),
+          table)
 
     # handling query conditions found in 'Meta'
     columnNames = [column.lower() for column in params.get('Meta', {}).get('columns', [])]
@@ -181,8 +187,11 @@ class SQLAlchemyDB(object):
       # setting up the select query
       if not columnNames:  # query on the whole table
         wholeTable = True
-        columns = table_c.__table__.columns  # retrieve the column names
-        columnNames = [str(column).split('.')[1] for column in columns]
+        try:
+          columnNames = table_c.columnsOrder  # see ResourceStatusDB for example
+        except AttributeError:
+          columns = table_c.__table__.columns  # retrieve the column names
+          columnNames = [str(column).split('.')[1] for column in columns]
         select = Query(table_c, session=session)
       else:  # query only the selected columns
         wholeTable = False
@@ -251,14 +260,18 @@ class SQLAlchemyDB(object):
     found = False
     for ext in self.extensions:
       try:
-        table_c = getattr(__import__(ext + self.__class__.__module__, globals(), locals(), [table]), table)
+        table_c = getattr(
+            __import__(ext + self.__class__.__module__, globals(), locals(), [table]),
+            table)
         found = True
         break
       except (ImportError, AttributeError):
         continue
     # If not found in extensions, import it from DIRAC base (this same module).
     if not found:
-      table_c = getattr(__import__(self.__class__.__module__, globals(), locals(), [table]), table)
+      table_c = getattr(
+          __import__(self.__class__.__module__, globals(), locals(), [table]),
+          table)
 
     # handling query conditions found in 'Meta'
     older = params.get('Meta', {}).get('older', None)

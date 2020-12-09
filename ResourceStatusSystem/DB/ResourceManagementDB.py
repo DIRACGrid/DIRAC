@@ -23,13 +23,12 @@ __RCSID__ = "$Id$"
 
 import six
 import datetime
-from sqlalchemy import desc
-from sqlalchemy.orm import sessionmaker, class_mapper
+from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime, exc, Text, Integer, Float
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
@@ -389,7 +388,6 @@ class ResourceManagementDB(SQLAlchemyDB):
     # Create required tables
     self._createTablesIfNotThere(self.tablesList)
 
-
   def addOrModify(self, table, params):
     """
     Using the PrimaryKeys of the table, it looks for the record in the database.
@@ -461,6 +459,3 @@ class ResourceManagementDB(SQLAlchemyDB):
       return S_ERROR("addOrModify: unexpected exception %s" % e)
     finally:
       session.close()
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

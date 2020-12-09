@@ -39,15 +39,15 @@ class JobMonitoringHandler(RequestHandler):
   def initializeHandler(cls, svcInfoDict):
     """ initialize DBs
     """
-    cls.gJobDB = JobDB()
-    cls.gJobLoggingDB = JobLoggingDB()
-    cls.gTaskQueueDB = TaskQueueDB()
+    cls.jobDB = JobDB()
+    cls.jobLoggingDB = JobLoggingDB()
+    cls.taskQueueDB = TaskQueueDB()
 
-    cls.gElasticJobParametersDB = None
+    cls.elasticJobParametersDB = None
     useESForJobParametersFlag = Operations().getValue(
         '/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
-      cls.gElasticJobParametersDB = ElasticJobParametersDB()
+      cls.elasticJobParametersDB = ElasticJobParametersDB()
     return S_OK()
 
   def initialize(self):
@@ -61,7 +61,7 @@ class JobMonitoringHandler(RequestHandler):
     self.globalJobsInfo = operations.getValue(
         '/Services/JobMonitoring/GlobalJobsInfo', True)
     self.jobPolicy = JobPolicy(ownerDN, ownerGroup, self.globalJobsInfo)
-    self.jobPolicy.jobDB = self.gJobDB
+    self.jobPolicy.jobDB = self.jobDB
 
     return S_OK()
 
@@ -69,7 +69,7 @@ class JobMonitoringHandler(RequestHandler):
   def getAttributesForJobList(cls, *args, **kwargs):
     """ Utility function for unpacking
     """
-    res = cls.gJobDB.getAttributesForJobList(*args, **kwargs)
+    res = cls.jobDB.getAttributesForJobList(*args, **kwargs)
     if not res['OK']:
       return res
     return S_OK(strToIntDict(res['Value']))
@@ -82,7 +82,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getApplicationStates(cls, condDict=None, older=None, newer=None):
     """ Return Distinct Values of ApplicationStatus job Attribute in WMS
     """
-    return cls.gJobDB.getDistinctJobAttributes('ApplicationStatus', condDict, older, newer)
+    return cls.jobDB.getDistinctJobAttributes('ApplicationStatus', condDict, older, newer)
 
 ##############################################################################
   types_getJobTypes = []
@@ -91,7 +91,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobTypes(cls, condDict=None, older=None, newer=None):
     """ Return Distinct Values of JobType job Attribute in WMS
     """
-    return cls.gJobDB.getDistinctJobAttributes('JobType', condDict, older, newer)
+    return cls.jobDB.getDistinctJobAttributes('JobType', condDict, older, newer)
 
 ##############################################################################
   types_getOwners = []
@@ -101,7 +101,7 @@ class JobMonitoringHandler(RequestHandler):
     """
     Return Distinct Values of Owner job Attribute in WMS
     """
-    return cls.gJobDB.getDistinctJobAttributes('Owner', condDict, older, newer)
+    return cls.jobDB.getDistinctJobAttributes('Owner', condDict, older, newer)
 
 ##############################################################################
   types_getProductionIds = []
@@ -111,7 +111,7 @@ class JobMonitoringHandler(RequestHandler):
     """
     Return Distinct Values of ProductionId job Attribute in WMS
     """
-    return cls.gJobDB.getDistinctJobAttributes('JobGroup', condDict, older, newer)
+    return cls.jobDB.getDistinctJobAttributes('JobGroup', condDict, older, newer)
 
 ##############################################################################
   types_getJobGroups = []
@@ -121,7 +121,7 @@ class JobMonitoringHandler(RequestHandler):
     """
     Return Distinct Values of ProductionId job Attribute in WMS
     """
-    return cls.gJobDB.getDistinctJobAttributes('JobGroup', condDict, older, newer=cutDate)
+    return cls.jobDB.getDistinctJobAttributes('JobGroup', condDict, older, newer=cutDate)
 
 ##############################################################################
   types_getSites = []
@@ -131,7 +131,7 @@ class JobMonitoringHandler(RequestHandler):
     """
     Return Distinct Values of Site job Attribute in WMS
     """
-    return cls.gJobDB.getDistinctJobAttributes('Site', condDict, older, newer)
+    return cls.jobDB.getDistinctJobAttributes('Site', condDict, older, newer)
 
 ##############################################################################
   types_getStates = []
@@ -141,7 +141,7 @@ class JobMonitoringHandler(RequestHandler):
     """
     Return Distinct Values of Status job Attribute in WMS
     """
-    return cls.gJobDB.getDistinctJobAttributes('Status', condDict, older, newer)
+    return cls.jobDB.getDistinctJobAttributes('Status', condDict, older, newer)
 
 ##############################################################################
   types_getMinorStates = []
@@ -151,7 +151,7 @@ class JobMonitoringHandler(RequestHandler):
     """
     Return Distinct Values of Minor Status job Attribute in WMS
     """
-    return cls.gJobDB.getDistinctJobAttributes('MinorStatus', condDict, older, newer)
+    return cls.jobDB.getDistinctJobAttributes('MinorStatus', condDict, older, newer)
 
 ##############################################################################
   types_getJobs = []
@@ -171,7 +171,7 @@ class JobMonitoringHandler(RequestHandler):
     #    if attrDict.has_key(attribute):
     #      queryDict[attribute] = attrDict[attribute]
 
-    return cls.gJobDB.selectJobs(attrDict, newer=cutDate)
+    return cls.jobDB.selectJobs(attrDict, newer=cutDate)
 
 ##############################################################################
   types_getCounters = [list]
@@ -205,7 +205,7 @@ class JobMonitoringHandler(RequestHandler):
     if not attrDict:
       attrDict = {}
 
-    return cls.gJobDB.getCounters('Jobs', attrList, attrDict, newer=cutDate, timeStamp='LastUpdateTime')
+    return cls.jobDB.getCounters('Jobs', attrList, attrDict, newer=cutDate, timeStamp='LastUpdateTime')
 
 ##############################################################################
   types_getCurrentJobCounters = []
@@ -218,12 +218,12 @@ class JobMonitoringHandler(RequestHandler):
 
     if not attrDict:
       attrDict = {}
-    result = cls.gJobDB.getCounters('Jobs', ['Status'], attrDict, timeStamp='LastUpdateTime')
+    result = cls.jobDB.getCounters('Jobs', ['Status'], attrDict, timeStamp='LastUpdateTime')
     if not result['OK']:
       return result
     last_update = Time.dateTime() - Time.day
-    resultDay = cls.gJobDB.getCounters('Jobs', ['Status'], attrDict, newer=last_update,
-                                       timeStamp='LastUpdateTime')
+    resultDay = cls.jobDB.getCounters('Jobs', ['Status'], attrDict, newer=last_update,
+                                      timeStamp='LastUpdateTime')
     if not resultDay['OK']:
       return resultDay
 
@@ -246,7 +246,7 @@ class JobMonitoringHandler(RequestHandler):
   @classmethod
   def export_getJobStatus(cls, jobID):
 
-    return cls.gJobDB.getJobAttribute(jobID, 'Status')
+    return cls.jobDB.getJobAttribute(jobID, 'Status')
 
 ##############################################################################
   types_getJobOwner = [int]
@@ -254,7 +254,7 @@ class JobMonitoringHandler(RequestHandler):
   @classmethod
   def export_getJobOwner(cls, jobID):
 
-    return cls.gJobDB.getJobAttribute(jobID, 'Owner')
+    return cls.jobDB.getJobAttribute(jobID, 'Owner')
 
 ##############################################################################
   types_getJobSite = [int]
@@ -262,7 +262,7 @@ class JobMonitoringHandler(RequestHandler):
   @classmethod
   def export_getJobSite(cls, jobID):
 
-    return cls.gJobDB.getJobAttribute(jobID, 'Site')
+    return cls.jobDB.getJobAttribute(jobID, 'Site')
 
 ##############################################################################
   types_getJobJDL = [int, bool]
@@ -270,7 +270,7 @@ class JobMonitoringHandler(RequestHandler):
   @classmethod
   def export_getJobJDL(cls, jobID, original):
 
-    return cls.gJobDB.getJobJDL(jobID, original=original)
+    return cls.jobDB.getJobJDL(jobID, original=original)
 
 ##############################################################################
   types_getJobLoggingInfo = [int]
@@ -278,7 +278,7 @@ class JobMonitoringHandler(RequestHandler):
   @classmethod
   def export_getJobLoggingInfo(cls, jobID):
 
-    return cls.gJobLoggingDB.getJobLoggingInfo(jobID)
+    return cls.jobLoggingDB.getJobLoggingInfo(jobID)
 
 ##############################################################################
   types_getJobsParameters = [list, list]
@@ -332,14 +332,14 @@ class JobMonitoringHandler(RequestHandler):
 
   @classmethod
   def export_getJobSummary(cls, jobID):
-    return cls.gJobDB.getJobAttributes(jobID, SUMMARY)
+    return cls.jobDB.getJobAttributes(jobID, SUMMARY)
 
 ##############################################################################
   types_getJobPrimarySummary = [int]
 
   @classmethod
   def export_getJobPrimarySummary(cls, jobID):
-    return cls.gJobDB.getJobAttributes(jobID, PRIMARY_SUMMARY)
+    return cls.jobDB.getJobAttributes(jobID, PRIMARY_SUMMARY)
 
 ##############################################################################
   types_getJobsSummary = [list]
@@ -401,10 +401,10 @@ class JobMonitoringHandler(RequestHandler):
       orderAttribute = None
 
     statusDict = {}
-    result = self.gJobDB.getCounters('Jobs', ['Status'], selectDict,
-                                     newer=startDate,
-                                     older=endDate,
-                                     timeStamp='LastUpdateTime')
+    result = self.jobDB.getCounters('Jobs', ['Status'], selectDict,
+                                    newer=startDate,
+                                    older=endDate,
+                                    timeStamp='LastUpdateTime')
 
     nJobs = 0
     if result['OK']:
@@ -423,8 +423,8 @@ class JobMonitoringHandler(RequestHandler):
       if iniJob >= nJobs:
         return S_ERROR('Item number out of range')
 
-      result = self.gJobDB.selectJobs(selectDict, orderAttribute=orderAttribute,
-                                      newer=startDate, older=endDate, limit=(maxItems, iniJob))
+      result = self.jobDB.selectJobs(selectDict, orderAttribute=orderAttribute,
+                                     newer=startDate, older=endDate, limit=(maxItems, iniJob))
       if not result['OK']:
         return S_ERROR('Failed to select jobs: ' + result['Message'])
 
@@ -457,7 +457,7 @@ class JobMonitoringHandler(RequestHandler):
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
 
       tqDict = {}
-      result = self.gTaskQueueDB.getTaskQueueForJobs(summaryJobList)
+      result = self.taskQueueDB.getTaskQueueForJobs(summaryJobList)
       if result['OK']:
         tqDict = result['Value']
 
@@ -501,10 +501,10 @@ class JobMonitoringHandler(RequestHandler):
     if endDate:
       del selectDict['ToDate']
 
-    result = cls.gJobDB.getCounters('Jobs', [attribute], selectDict,
-                                    newer=startDate,
-                                    older=endDate,
-                                    timeStamp='LastUpdateTime')
+    result = cls.jobDB.getCounters('Jobs', [attribute], selectDict,
+                                   newer=startDate,
+                                   older=endDate,
+                                   timeStamp='LastUpdateTime')
     resultDict = {}
     if result['OK']:
       for cDict, count in result['Value']:
@@ -530,14 +530,14 @@ class JobMonitoringHandler(RequestHandler):
     :param str/int/long jobID: one single Job ID
     :param str parName: one single parameter name
     """
-    if cls.gElasticJobParametersDB:
-      res = cls.gElasticJobParametersDB.getJobParameters(jobID, [parName])
+    if cls.elasticJobParametersDB:
+      res = cls.elasticJobParametersDB.getJobParameters(jobID, [parName])
       if not res['OK']:
         return res
       if res['Value'].get(int(jobID)):
         return S_OK(res['Value'][int(jobID)])
 
-    res = cls.gJobDB.getJobParameters(jobID, [parName])
+    res = cls.jobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
       return res
     return S_OK(res['Value'].get(int(jobID), {}))
@@ -547,7 +547,7 @@ class JobMonitoringHandler(RequestHandler):
 
   @classmethod
   def export_getJobOptParameters(cls, jobID):
-    return cls.gJobDB.getJobOptParameters(jobID)
+    return cls.jobDB.getJobOptParameters(jobID)
 
 ##############################################################################
   types_getJobParameters = [six.string_types + six.integer_types + (list,)]
@@ -559,18 +559,18 @@ class JobMonitoringHandler(RequestHandler):
     :param str/int/long/list jobIDs: one single job ID or a list of them
     :param str parName: one single parameter name, a list or None (meaning all of them)
     """
-    if cls.gElasticJobParametersDB:
+    if cls.elasticJobParametersDB:
       if not isinstance(jobIDs, list):
         jobIDs = [jobIDs]
       parameters = {}
       for jobID in jobIDs:
-        res = cls.gElasticJobParametersDB.getJobParameters(jobID, parName)
+        res = cls.elasticJobParametersDB.getJobParameters(jobID, parName)
         if not res['OK']:
           return res
         parameters.update(res['Value'])
 
       # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
-      res = cls.gJobDB.getJobParameters(jobIDs, parName)
+      res = cls.jobDB.getJobParameters(jobIDs, parName)
       if not res['OK']:
         return res
       parametersM = res['Value']
@@ -586,7 +586,7 @@ class JobMonitoringHandler(RequestHandler):
           final[jobID] = parameters[jobID]
       return S_OK(final)
 
-    return cls.gJobDB.getJobParameters(jobIDs, parName)
+    return cls.jobDB.getJobParameters(jobIDs, parName)
 
 ##############################################################################
   types_traceJobParameter = [six.string_types, six.string_types + (int, long, list),
@@ -595,7 +595,7 @@ class JobMonitoringHandler(RequestHandler):
 
   @classmethod
   def export_traceJobParameter(cls, site, localID, parameter, date, until):
-    return cls.gJobDB.traceJobParameter(site, localID, parameter, date, until)
+    return cls.jobDB.traceJobParameter(site, localID, parameter, date, until)
 
 ##############################################################################
   types_traceJobParameters = [six.string_types, six.string_types + (int, long, list),
@@ -604,7 +604,7 @@ class JobMonitoringHandler(RequestHandler):
 
   @classmethod
   def export_traceJobParameters(cls, site, localID, parameterList, attributeList, date, until):
-    return cls.gJobDB.traceJobParameters(site, localID, parameterList, attributeList, date, until)
+    return cls.jobDB.traceJobParameters(site, localID, parameterList, attributeList, date, until)
 
 ##############################################################################
   types_getAtticJobParameters = [[int, long]]
@@ -613,7 +613,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getAtticJobParameters(cls, jobID, parameters=None, rescheduleCycle=-1):
     if not parameters:
       parameters = []
-    return cls.gJobDB.getAtticJobParameters(jobID, parameters, rescheduleCycle)
+    return cls.jobDB.getAtticJobParameters(jobID, parameters, rescheduleCycle)
 
 ##############################################################################
   types_getJobAttributes = [int]
@@ -625,7 +625,7 @@ class JobMonitoringHandler(RequestHandler):
     :param list attrList: optional list of attributes
     """
 
-    return cls.gJobDB.getJobAttributes(jobID, attrList=attrList)
+    return cls.jobDB.getJobAttributes(jobID, attrList=attrList)
 
 ##############################################################################
   types_getJobAttribute = [int, six.string_types]
@@ -637,21 +637,21 @@ class JobMonitoringHandler(RequestHandler):
     :param str attribute: one single attribute name
     """
 
-    return cls.gJobDB.getJobAttribute(jobID, attribute)
+    return cls.jobDB.getJobAttribute(jobID, attribute)
 
 ##############################################################################
   types_getSiteSummary = []
 
   @classmethod
   def export_getSiteSummary(cls):
-    return cls.gJobDB.getSiteSummary()
+    return cls.jobDB.getSiteSummary()
 
 ##############################################################################
   types_getJobHeartBeatData = [int]
 
   @classmethod
   def export_getJobHeartBeatData(cls, jobID):
-    return cls.gJobDB.getHeartBeatData(jobID)
+    return cls.jobDB.getHeartBeatData(jobID)
 
 ##############################################################################
   types_getInputData = [[int, long]]
@@ -660,7 +660,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getInputData(cls, jobID):
     """ Get input data for the specified jobs
     """
-    return cls.gJobDB.getInputData(jobID)
+    return cls.jobDB.getInputData(jobID)
 
 ##############################################################################
   types_getOwnerGroup = []
@@ -670,6 +670,6 @@ class JobMonitoringHandler(RequestHandler):
     """
     Return Distinct Values of OwnerGroup from the JobsDB
     """
-    return cls.gJobDB.getDistinctJobAttributes('OwnerGroup')
+    return cls.jobDB.getDistinctJobAttributes('OwnerGroup')
 
 ##############################################################################

@@ -43,14 +43,14 @@ class TransformationManagerHandler(RequestHandler):
   def initializeHandler(cls, serviceInfoDict):
     """ Initialization of DB object
     """
-    cls.gTransformationDB = TransformationDB()
+    cls.transformationDB = TransformationDB()
     return S_OK()
 
   types_getCounters = [six.string_types, list, dict]
 
   @classmethod
   def export_getCounters(cls, table, attrList, condDict, older=None, newer=None, timeStamp=None):
-    return cls.gTransformationDB.getCounters(table, attrList, condDict, older=older, newer=newer, timeStamp=timeStamp)
+    return cls.transformationDB.getCounters(table, attrList, condDict, older=older, newer=newer, timeStamp=timeStamp)
 
   ####################################################################
   #
@@ -79,7 +79,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     authorGroup = credDict.get('group')
-    res = self.gTransformationDB.addTransformation(
+    res = self.transformationDB.addTransformation(
         transName, description, longDescription,
         authorDN, authorGroup, transType, plugin,
         agentType, fileMask,
@@ -102,7 +102,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    return self.gTransformationDB.deleteTransformation(transName, author=authorDN)
+    return self.transformationDB.deleteTransformation(transName, author=authorDN)
 
   types_cleanTransformation = [transTypes]
 
@@ -110,7 +110,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    return self.gTransformationDB.cleanTransformation(transName, author=authorDN)
+    return self.transformationDB.cleanTransformation(transName, author=authorDN)
 
   types_setTransformationParameter = [transTypes, six.string_types]
 
@@ -118,7 +118,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    return self.gTransformationDB.setTransformationParameter(transName, paramName, paramValue, author=authorDN)
+    return self.transformationDB.setTransformationParameter(transName, paramName, paramValue, author=authorDN)
 
   types_deleteTransformationParameter = [transTypes, six.string_types]
 
@@ -127,7 +127,7 @@ class TransformationManagerHandler(RequestHandler):
     # credDict = self.getRemoteCredentials()
     # authorDN = credDict[ 'DN' ]
     # authorDN = self._clientTransport.peerCredentials['DN']
-    return cls.gTransformationDB.deleteTransformationParameter(transName, paramName)
+    return cls.transformationDB.deleteTransformationParameter(transName, paramName)
 
   types_getTransformations = []
 
@@ -136,7 +136,7 @@ class TransformationManagerHandler(RequestHandler):
                                 orderAttribute=None, limit=None, extraParams=False, offset=None):
     if not condDict:
       condDict = {}
-    return cls.gTransformationDB.getTransformations(
+    return cls.transformationDB.getTransformations(
         condDict=condDict,
         older=older,
         newer=newer,
@@ -150,19 +150,19 @@ class TransformationManagerHandler(RequestHandler):
 
   @classmethod
   def export_getTransformation(cls, transName, extraParams=False):
-    return cls.gTransformationDB.getTransformation(transName, extraParams=extraParams)
+    return cls.transformationDB.getTransformation(transName, extraParams=extraParams)
 
   types_getTransformationParameters = [transTypes, [six.string_types, list]]
 
   @classmethod
   def export_getTransformationParameters(cls, transName, parameters):
-    return cls.gTransformationDB.getTransformationParameters(transName, parameters)
+    return cls.transformationDB.getTransformationParameters(transName, parameters)
 
   types_getTransformationWithStatus = [[six.string_types, list, tuple]]
 
   @classmethod
   def export_getTransformationWithStatus(cls, status):
-    return cls.gTransformationDB.getTransformationWithStatus(status)
+    return cls.transformationDB.getTransformationWithStatus(status)
 
   ####################################################################
   #
@@ -173,13 +173,13 @@ class TransformationManagerHandler(RequestHandler):
 
   @classmethod
   def export_addFilesToTransformation(cls, transName, lfns):
-    return cls.gTransformationDB.addFilesToTransformation(transName, lfns)
+    return cls.transformationDB.addFilesToTransformation(transName, lfns)
 
   types_addTaskForTransformation = [transTypes]
 
   @classmethod
   def export_addTaskForTransformation(cls, transName, lfns=[], se='Unknown'):
-    return cls.gTransformationDB.addTaskForTransformation(
+    return cls.transformationDB.addTaskForTransformation(
         transName, lfns=lfns, se=se)
 
   types_setFileStatusForTransformation = [transTypes, dict]
@@ -203,25 +203,25 @@ class TransformationManagerHandler(RequestHandler):
     else:
       return S_ERROR("Status field should be two values")
 
-    res = cls.gTransformationDB._getConnectionTransID(False, transName)
+    res = cls.transformationDB._getConnectionTransID(False, transName)
     if not res['OK']:
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
 
-    return cls.gTransformationDB.setFileStatusForTransformation(transID, newStatusForFileIDs, connection=connection)
+    return cls.transformationDB.setFileStatusForTransformation(transID, newStatusForFileIDs, connection=connection)
 
   types_getTransformationStats = [transTypes]
 
   @classmethod
   def export_getTransformationStats(cls, transName):
-    return cls.gTransformationDB.getTransformationStats(transName)
+    return cls.transformationDB.getTransformationStats(transName)
 
   types_getTransformationFilesCount = [transTypes, six.string_types]
 
   @classmethod
   def export_getTransformationFilesCount(cls, transName, field, selection={}):
-    return cls.gTransformationDB.getTransformationFilesCount(transName, field, selection=selection)
+    return cls.transformationDB.getTransformationFilesCount(transName, field, selection=selection)
 
   types_getTransformationFiles = []
 
@@ -230,7 +230,7 @@ class TransformationManagerHandler(RequestHandler):
                                     orderAttribute=None, limit=None, offset=None):
     if not condDict:
       condDict = {}
-    return cls.gTransformationDB.getTransformationFiles(
+    return cls.transformationDB.getTransformationFiles(
         condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
         orderAttribute=orderAttribute, limit=limit, offset=offset,
         connection=False)
@@ -247,7 +247,7 @@ class TransformationManagerHandler(RequestHandler):
                                     orderAttribute=None, limit=None, inputVector=False, offset=None):
     if not condDict:
       condDict = {}
-    return cls.gTransformationDB.getTransformationTasks(
+    return cls.transformationDB.getTransformationTasks(
         condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
         orderAttribute=orderAttribute, limit=limit, inputVector=inputVector,
         offset=offset)
@@ -256,19 +256,19 @@ class TransformationManagerHandler(RequestHandler):
 
   @classmethod
   def export_setTaskStatus(cls, transName, taskID, status):
-    return cls.gTransformationDB.setTaskStatus(transName, taskID, status)
+    return cls.transformationDB.setTaskStatus(transName, taskID, status)
 
   types_setTaskStatusAndWmsID = [transTypes, [long, int], six.string_types, six.string_types]
 
   @classmethod
   def export_setTaskStatusAndWmsID(cls, transName, taskID, status, taskWmsID):
-    return cls.gTransformationDB.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
+    return cls.transformationDB.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
 
   types_getTransformationTaskStats = [transTypes]
 
   @classmethod
   def export_getTransformationTaskStats(cls, transName):
-    return cls.gTransformationDB.getTransformationTaskStats(transName)
+    return cls.transformationDB.getTransformationTaskStats(transName)
 
   types_deleteTasks = [transTypes, [long, int], [long, int]]
 
@@ -276,7 +276,7 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    return self.gTransformationDB.deleteTasks(transName, taskMin, taskMax, author=authorDN)
+    return self.transformationDB.deleteTasks(transName, taskMin, taskMax, author=authorDN)
 
   types_extendTransformation = [transTypes, [long, int]]
 
@@ -284,23 +284,23 @@ class TransformationManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     # authorDN = self._clientTransport.peerCredentials['DN']
-    return self.gTransformationDB.extendTransformation(transName, nTasks, author=authorDN)
+    return self.transformationDB.extendTransformation(transName, nTasks, author=authorDN)
 
   types_getTasksToSubmit = [transTypes, [long, int]]
 
   def export_getTasksToSubmit(self, transName, numTasks, site=''):
     """ Get information necessary for submission for a given number of tasks for a given transformation """
-    res = self.gTransformationDB.getTransformation(transName)
+    res = self.transformationDB.getTransformation(transName)
     if not res['OK']:
       return res
     transDict = res['Value']
     submitDict = {}
-    res = self.gTransformationDB.getTasksForSubmission(transName, numTasks=numTasks, site=site, statusList=['Created'])
+    res = self.transformationDB.getTasksForSubmission(transName, numTasks=numTasks, site=site, statusList=['Created'])
     if not res['OK']:
       return res
     tasksDict = res['Value']
     for taskID, taskDict in tasksDict.items():
-      res = self.gTransformationDB.reserveTask(transName, long(taskID))
+      res = self.transformationDB.reserveTask(transName, long(taskID))
       if not res['OK']:
         return res
       else:
@@ -319,19 +319,19 @@ class TransformationManagerHandler(RequestHandler):
   def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
-    return self.gTransformationDB.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
+    return self.transformationDB.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
 
   types_deleteTransformationMetaQuery = [transTypes, six.string_types]
 
   def export_deleteTransformationMetaQuery(self, transName, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
-    return self.gTransformationDB.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
+    return self.transformationDB.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
 
   types_getTransformationMetaQuery = [transTypes, six.string_types]
 
   def export_getTransformationMetaQuery(self, transName, queryType):
-    return self.gTransformationDB.getTransformationMetaQuery(transName, queryType)
+    return self.transformationDB.getTransformationMetaQuery(transName, queryType)
 
   ####################################################################
   #
@@ -341,7 +341,7 @@ class TransformationManagerHandler(RequestHandler):
   types_getTransformationLogging = [transTypes]
 
   def export_getTransformationLogging(self, transName):
-    return self.gTransformationDB.getTransformationLogging(transName)
+    return self.transformationDB.getTransformationLogging(transName)
 
   ####################################################################
   #
@@ -351,7 +351,7 @@ class TransformationManagerHandler(RequestHandler):
   types_getAdditionalParameters = [transTypes]
 
   def export_getAdditionalParameters(self, transName):
-    return self.gTransformationDB.getAdditionalParameters(transName)
+    return self.transformationDB.getAdditionalParameters(transName)
 
   ####################################################################
   #
@@ -362,19 +362,19 @@ class TransformationManagerHandler(RequestHandler):
 
   @classmethod
   def export_getFileSummary(cls, lfns):
-    return cls.gTransformationDB.getFileSummary(lfns)
+    return cls.transformationDB.getFileSummary(lfns)
 
   types_addDirectory = [six.string_types]
 
   @classmethod
   def export_addDirectory(cls, path, force=False):
-    return cls.gTransformationDB.addDirectory(path, force=force)
+    return cls.transformationDB.addDirectory(path, force=force)
 
   types_exists = [list]
 
   @classmethod
   def export_exists(cls, lfns):
-    return cls.gTransformationDB.exists(lfns)
+    return cls.transformationDB.exists(lfns)
 
   types_addFile = [[list, dict, six.string_types]]
 
@@ -382,7 +382,7 @@ class TransformationManagerHandler(RequestHandler):
   def export_addFile(cls, fileDicts, force=False):
     """ Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }
     """
-    return cls.gTransformationDB.addFile(fileDicts, force=force)
+    return cls.transformationDB.addFile(fileDicts, force=force)
 
   types_removeFile = [[list, dict]]
 
@@ -392,7 +392,7 @@ class TransformationManagerHandler(RequestHandler):
     """
     if isinstance(lfns, dict):
       lfns = list(lfns)
-    return cls.gTransformationDB.removeFile(lfns)
+    return cls.transformationDB.removeFile(lfns)
 
   types_setMetadata = [six.string_types, dict]
 
@@ -400,7 +400,7 @@ class TransformationManagerHandler(RequestHandler):
   def export_setMetadata(cls, path, querydict):
     """ Set metadata to a file or to a directory (path)
     """
-    return cls.gTransformationDB.setMetadata(path, querydict)
+    return cls.transformationDB.setMetadata(path, querydict)
 
   ####################################################################
   #
@@ -412,7 +412,7 @@ class TransformationManagerHandler(RequestHandler):
 
   @classmethod
   def export_getDistinctAttributeValues(cls, attribute, selectDict):
-    res = cls.gTransformationDB.getTableDistinctAttributeValues('Transformations', [attribute], selectDict)
+    res = cls.transformationDB.getTableDistinctAttributeValues('Transformations', [attribute], selectDict)
     if not res['OK']:
       return res
     return S_OK(res['Value'][attribute])
@@ -421,13 +421,13 @@ class TransformationManagerHandler(RequestHandler):
 
   @classmethod
   def export_getTableDistinctAttributeValues(cls, table, attributes, selectDict):
-    return cls.gTransformationDB.getTableDistinctAttributeValues(table, attributes, selectDict)
+    return cls.transformationDB.getTableDistinctAttributeValues(table, attributes, selectDict)
 
   types_getTransformationStatusCounters = []
 
   @classmethod
   def export_getTransformationStatusCounters(cls):
-    res = cls.gTransformationDB.getCounters('Transformations', ['Status'], {})
+    res = cls.transformationDB.getCounters('Transformations', ['Status'], {})
     if not res['OK']:
       return res
     statDict = {}
@@ -439,19 +439,19 @@ class TransformationManagerHandler(RequestHandler):
 
   def export_getTransformationSummary(self):
     """ Get the summary of the currently existing transformations """
-    res = self.gTransformationDB.getTransformations()
+    res = self.transformationDB.getTransformations()
     if not res['OK']:
       return res
     transList = res['Value']
     resultDict = {}
     for transDict in transList:
       transID = transDict['TransformationID']
-      res = self.gTransformationDB.getTransformationTaskStats(transID)
+      res = self.transformationDB.getTransformationTaskStats(transID)
       if not res['OK']:
         self.log.warn('Failed to get job statistics for transformation', transID)
         continue
       transDict['JobStats'] = res['Value']
-      res = self.gTransformationDB.getTransformationStats(transID)
+      res = self.transformationDB.getTransformationStats(transID)
       if not res['OK']:
         transDict['NumberOfFiles'] = -1
       else:
@@ -554,8 +554,8 @@ class TransformationManagerHandler(RequestHandler):
     # Get the columns that match the selection
     fcn = None
     fcnName = "get%s" % table
-    if hasattr(self.gTransformationDB, fcnName) and callable(getattr(self.gTransformationDB, fcnName)):
-      fcn = getattr(self.gTransformationDB, fcnName)
+    if hasattr(self.transformationDB, fcnName) and callable(getattr(self.transformationDB, fcnName)):
+      fcn = getattr(self.transformationDB, fcnName)
     if not fcn:
       return S_ERROR("Unable to invoke gTransformationDB.%s, it isn't a member function" % fcnName)
     res = fcn(condDict=selectDict, older=toDate, newer=fromDate, timeStamp=timeStamp,
@@ -596,7 +596,7 @@ class TransformationManagerHandler(RequestHandler):
     resultDict['Extras'] = statusDict
 
     # Obtain the distinct values of the selection parameters
-    res = self.gTransformationDB.getTableDistinctAttributeValues(
+    res = self.transformationDB.getTableDistinctAttributeValues(
         table, selectColumns, selectDict, older=toDate, newer=fromDate)
     distinctSelections = zip(selectColumns, [])
     if res['OK']:
@@ -631,7 +631,7 @@ class TransformationManagerHandler(RequestHandler):
       orderAttribute = None
 
     # Get the transformations that match the selection
-    res = self.gTransformationDB.getTransformations(
+    res = self.transformationDB.getTransformations(
         condDict=selectDict, older=toDate, newer=fromDate,
         orderAttribute=orderAttribute)
     if not res['OK']:
@@ -682,7 +682,7 @@ class TransformationManagerHandler(RequestHandler):
 
       # Get the statistics on the number of jobs for the transformation
       transID = transDict['TransformationID']
-      res = self.gTransformationDB.getTransformationTaskStats(transID)
+      res = self.transformationDB.getTransformationTaskStats(transID)
       taskDict = {}
       if res['OK'] and res['Value']:
         taskDict = res['Value']
@@ -695,7 +695,7 @@ class TransformationManagerHandler(RequestHandler):
       if transType.lower() in extendableTranfs:
         fileDict['PercentProcessed'] = '-'
       else:
-        res = self.gTransformationDB.getTransformationStats(transID)
+        res = self.transformationDB.getTransformationStats(transID)
         if res['OK']:
           fileDict = res['Value']
           total = fileDict['Total']

@@ -535,7 +535,7 @@ class JobAgent(AgentModule):
 
     wrapperFile = result['Value']
     jobReport.setJobStatus(status='Matched',
-                           minor='Could Not Extract JDL Parameters',
+                           minor='Submitting To CE',
                            sendFlag=False)
 
     self.log.info('Submitting JobWrapper',
