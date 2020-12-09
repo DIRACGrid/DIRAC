@@ -24,7 +24,7 @@ class ProductionManagerHandler(RequestHandler):
     """ Initialization of DB object
     """
 
-    cls.gProductionDB = ProductionDB()
+    cls.productionDB = ProductionDB()
     return S_OK()
 
   ####################################################################
@@ -38,7 +38,7 @@ class ProductionManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
     authorGroup = credDict.get('group')
-    res = self.gProductionDB.addProduction(prodName, prodDescription, authorDN, authorGroup)
+    res = self.productionDB.addProduction(prodName, prodDescription, authorDN, authorGroup)
     if res['OK']:
       gLogger.info("Added production %d" % res['Value'])
     return res
@@ -48,7 +48,7 @@ class ProductionManagerHandler(RequestHandler):
   def export_deleteProduction(self, prodName):
     credDict = self.getRemoteCredentials()
     authorDN = credDict.get('DN', credDict.get('CN'))
-    return self.gProductionDB.deleteProduction(prodName, author=authorDN)
+    return self.productionDB.deleteProduction(prodName, author=authorDN)
 
   types_getProductions = []
 
@@ -57,38 +57,38 @@ class ProductionManagerHandler(RequestHandler):
                             orderAttribute=None, limit=None, offset=None):
     if not condDict:
       condDict = {}
-    return cls.gProductionDB.getProductions(condDict=condDict,
-					    older=older,
-					    newer=newer,
-					    timeStamp=timeStamp,
-					    orderAttribute=orderAttribute,
-					    limit=limit,
-					    offset=offset)
+    return cls.productionDB.getProductions(condDict=condDict,
+                                           older=older,
+                                           newer=newer,
+                                           timeStamp=timeStamp,
+                                           orderAttribute=orderAttribute,
+                                           limit=limit,
+                                           offset=offset)
 
   types_getProduction = [prodTypes]
 
   @classmethod
   def export_getProduction(cls, prodName):
-    return cls.gProductionDB.getProduction(prodName)
+    return cls.productionDB.getProduction(prodName)
 
   types_getProductionParameters = [prodTypes, [six.string_types, list, tuple]]
 
   @classmethod
   def export_getProductionParameters(cls, prodName, parameters):
-    return cls.gProductionDB.getProductionParameters(prodName, parameters)
+    return cls.productionDB.getProductionParameters(prodName, parameters)
 
   types_setProductionStatus = [prodTypes, six.string_types]
 
   @classmethod
   def export_setProductionStatus(cls, prodName, status):
-    return cls.gProductionDB.setProductionStatus(prodName, status)
+    return cls.productionDB.setProductionStatus(prodName, status)
 
   types_startProduction = [prodTypes]
 
   @classmethod
   @ignoreEncodeWarning
   def export_startProduction(cls, prodName):
-    return cls.gProductionDB.startProduction(prodName)
+    return cls.productionDB.startProduction(prodName)
 
   ####################################################################
   #
@@ -99,13 +99,13 @@ class ProductionManagerHandler(RequestHandler):
 
   @classmethod
   def export_addTransformationsToProduction(cls, prodName, transIDs, parentTransIDs):
-    return cls.gProductionDB.addTransformationsToProduction(prodName, transIDs, parentTransIDs=parentTransIDs)
+    return cls.productionDB.addTransformationsToProduction(prodName, transIDs, parentTransIDs=parentTransIDs)
 
   types_getProductionTransformations = []
 
   @classmethod
   def export_getProductionTransformations(cls,
-					  prodName,
+                                          prodName,
                                           condDict=None,
                                           older=None,
                                           newer=None,
@@ -116,14 +116,14 @@ class ProductionManagerHandler(RequestHandler):
 
     if not condDict:
       condDict = {}
-    return cls.gProductionDB.getProductionTransformations(prodName,
-							  condDict=condDict,
-							  older=older,
-							  newer=newer,
-							  timeStamp=timeStamp,
-							  orderAttribute=orderAttribute,
-							  limit=limit,
-							  offset=offset)
+    return cls.productionDB.getProductionTransformations(prodName,
+                                                         condDict=condDict,
+                                                         older=older,
+                                                         newer=newer,
+                                                         timeStamp=timeStamp,
+                                                         orderAttribute=orderAttribute,
+                                                         limit=limit,
+                                                         offset=offset)
 
   ####################################################################
   #
@@ -144,9 +144,9 @@ class ProductionManagerHandler(RequestHandler):
     stepGroupSize = prodStep['groupsize']
     stepInputQuery = prodStep['inputquery']
     stepOutputQuery = prodStep['outputquery']
-    res = cls.gProductionDB.addProductionStep(
-	stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin,
-	stepAgentType, stepGroupSize, stepInputQuery, stepOutputQuery)
+    res = cls.productionDB.addProductionStep(
+        stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin,
+        stepAgentType, stepGroupSize, stepInputQuery, stepOutputQuery)
     if res['OK']:
       gLogger.info("Added production step %d" % res['Value'])
     return res
@@ -155,4 +155,4 @@ class ProductionManagerHandler(RequestHandler):
 
   @classmethod
   def export_getProductionStep(cls, stepID):
-    return cls.gProductionDB.getProductionStep(stepID)
+    return cls.productionDB.getProductionStep(stepID)

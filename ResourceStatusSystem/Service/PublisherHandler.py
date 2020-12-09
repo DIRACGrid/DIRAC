@@ -47,8 +47,8 @@ class PublisherHandler(RequestHandler):
   def initializeHandler(cls, serviceInfoDict):
     """Initialization of client objects
     """
-    cls.gRSClient = ResourceStatusClient()
-    cls.gRMClient = ResourceManagementClient()
+    cls.rsClient = ResourceStatusClient()
+    cls.rmClient = ResourceManagementClient()
 
     return S_OK()
 
@@ -123,7 +123,7 @@ class PublisherHandler(RequestHandler):
     Returns element statuses from the ResourceStatusDB
     """
 
-    return cls.gRSClient.selectStatusElement(
+    return cls.rsClient.selectStatusElement(
         element, 'Status', name=name, elementType=elementType,
         statusType=statusType, status=status, tokenOwner=tokenOwner)
 
@@ -139,7 +139,7 @@ class PublisherHandler(RequestHandler):
     """
 
     columns = ['Status', 'DateEffective', 'Reason']
-    return cls.gRSClient.selectStatusElement(
+    return cls.rsClient.selectStatusElement(
         element, 'History', name=name, elementType=elementType,
         statusType=statusType, meta={'columns': columns})
 
@@ -154,15 +154,15 @@ class PublisherHandler(RequestHandler):
     """
 
     columns = ['Status', 'PolicyName', 'DateEffective', 'LastCheckTime', 'Reason']
-    return cls.gRMClient.selectPolicyResult(element=element, name=name,
-                                            statusType=statusType,
-                                            meta={'columns': columns})
+    return cls.rmClient.selectPolicyResult(element=element, name=name,
+                                           statusType=statusType,
+                                           meta={'columns': columns})
 
   types_getNodeStatuses = []
 
   @classmethod
   def export_getNodeStatuses(cls):
-    return cls.gRSClient.selectStatusElement('Node', 'Status')
+    return cls.rsClient.selectStatusElement('Node', 'Status')
 
   types_getTree = [six.string_types, six.string_types]
 
@@ -176,7 +176,7 @@ class PublisherHandler(RequestHandler):
     if not site:
       return S_ERROR('No site')
 
-    siteStatus = self.gRSClient.selectStatusElement(
+    siteStatus = self.rsClient.selectStatusElement(
         'Site', 'Status', name=site, meta={'columns': ['StatusType', 'Status']})
     if not siteStatus['OK']:
       return siteStatus
@@ -187,7 +187,7 @@ class PublisherHandler(RequestHandler):
     if not result['OK']:
       return result
     ces = result['Value'][site]
-    cesStatus = self.gRSClient.selectStatusElement(
+    cesStatus = self.rsClient.selectStatusElement(
         'Resource', 'Status',
         name=ces, meta={'columns': ['Name', 'StatusType', 'Status']})
     if not cesStatus['OK']:
@@ -198,7 +198,7 @@ class PublisherHandler(RequestHandler):
       self.log.error('Could not get site to SE mapping', res['Message'])
       return S_OK()
     ses = res['Value'][1].get(site, [])
-    sesStatus = self.gRSClient.selectStatusElement(
+    sesStatus = self.rsClient.selectStatusElement(
         'Resource', 'Status', name=list(ses),
         meta={'columns': ['Name', 'StatusType', 'Status']})
     if not sesStatus['OK']:
@@ -230,7 +230,7 @@ class PublisherHandler(RequestHandler):
     credentials = self.getRemoteCredentials()
     self.log.info(credentials)
 
-    elementInDB = self.gRSClient.selectStatusElement(
+    elementInDB = self.rsClient.selectStatusElement(
         element, 'Status',
         name=name, statusType=statusType,
         elementType=elementType, lastCheckTime=lastCheckTime)
@@ -250,7 +250,7 @@ class PublisherHandler(RequestHandler):
 
     reason = 'Token %sd by %s ( web )' % (token, username)
 
-    newStatus = self.gRSClient.addOrModifyStatusElement(
+    newStatus = self.rsClient.addOrModifyStatusElement(
         element, 'Status',
         name=name, statusType=statusType, elementType=elementType,
         reason=reason, tokenOwner=tokenOwner, tokenExpiration=tokenExpiration)
@@ -302,7 +302,7 @@ class PublisherHandler(RequestHandler):
     else:
       names = name
 
-    return cls.gRMClient.selectDowntimeCache(
+    return cls.rmClient.selectDowntimeCache(
         element=element, name=names,
         meta={'columns': ['StartDate', 'EndDate', 'Link', 'Description', 'Severity']})
 
@@ -323,7 +323,7 @@ class PublisherHandler(RequestHandler):
 
     columns = ['Element', 'Name', 'StartDate', 'EndDate', 'Severity', 'Description', 'Link']
 
-    res = self.gRMClient.selectDowntimeCache(
+    res = self.rmClient.selectDowntimeCache(
         element=element, name=names, severity=severity, meta={'columns': columns})
     if not res['OK']:
       self.log.error("Error selecting downtime cache", res['Message'])
@@ -346,7 +346,7 @@ class PublisherHandler(RequestHandler):
     credentials = self.getRemoteCredentials()
     self.log.info(credentials)
 
-    elementInDB = self.gRSClient.selectStatusElement(
+    elementInDB = self.rsClient.selectStatusElement(
         element, 'Status',
         name=name, statusType=statusType,  # status = status,
         elementType=elementType, lastCheckTime=lastCheckTime)
@@ -359,7 +359,7 @@ class PublisherHandler(RequestHandler):
     reason = 'Status %s forced by %s ( web )' % (status, username)
     tokenExpiration = datetime.utcnow() + timedelta(days=1)
 
-    newStatus = self.gRSClient.addOrModifyStatusElement(
+    newStatus = self.rsClient.addOrModifyStatusElement(
         element, 'Status',
         name=name, statusType=statusType, status=status,
         elementType=elementType, reason=reason,

@@ -111,9 +111,9 @@ class ResourceStatusClient(Client):
     :return: S_OK() || S_ERROR()
     """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-		   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
+                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-		    lastCheckTime, tokenOwner, tokenExpiration, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, vo]
 
     return self._getRPC().insert(element + tableType, prepareDict(columnNames, columnValues))
 
@@ -157,9 +157,9 @@ class ResourceStatusClient(Client):
     :return: S_OK() || S_ERROR()
     """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-		   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta", "VO"]
+                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-		    lastCheckTime, tokenOwner, tokenExpiration, meta, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, meta, vo]
 
     return self._getRPC().select(element + tableType, prepareDict(columnNames, columnValues))
 
@@ -202,9 +202,9 @@ class ResourceStatusClient(Client):
     :return: S_OK() || S_ERROR()
     """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-		   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta", "VO"]
+                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-		    lastCheckTime, tokenOwner, tokenExpiration, meta, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, meta, vo]
 
     return self._getRPC().delete(element + tableType, prepareDict(columnNames, columnValues))
 
@@ -247,9 +247,9 @@ class ResourceStatusClient(Client):
     :return: S_OK() || S_ERROR()
     """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-		   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
+                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-		    lastCheckTime, tokenOwner, tokenExpiration, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, vo]
 
     return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
 
@@ -290,9 +290,9 @@ class ResourceStatusClient(Client):
     :return: S_OK() || S_ERROR()
     """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-		   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
+                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-		    lastCheckTime, tokenOwner, tokenExpiration, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, vo]
 
     return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
 
@@ -335,9 +335,9 @@ class ResourceStatusClient(Client):
     :return: S_OK() || S_ERROR()
     """
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
-		   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
+                   "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-		    lastCheckTime, tokenOwner, tokenExpiration, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, vo]
 
     return self._getRPC().addIfNotThere(element + tableType, prepareDict(columnNames, columnValues))
 

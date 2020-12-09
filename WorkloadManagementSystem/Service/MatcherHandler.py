@@ -32,13 +32,13 @@ class MatcherHandler(RequestHandler):
 
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
-    cls.gJobDB = JobDB()
-    cls.gJobLoggingDB = JobLoggingDB()
-    cls.gTaskQueueDB = TaskQueueDB()
-    cls.gPilotAgentsDB = PilotAgentsDB()
-    cls.limiter = Limiter(jobDB=cls.gJobDB)
+    cls.jobDB = JobDB()
+    cls.jobLoggingDB = JobLoggingDB()
+    cls.taskQueueDB = TaskQueueDB()
+    cls.pilotAgentsDB = PilotAgentsDB()
+    cls.limiter = Limiter(jobDB=cls.jobDB)
 
-    cls.gTaskQueueDB.recalculateTQSharesForAll()
+    cls.taskQueueDB.recalculateTQSharesForAll()
 
     gMonitor.registerActivity('matchTime', "Job matching time",
                               'Matching', "secs", gMonitor.OP_MEAN, 300)
@@ -49,7 +49,7 @@ class MatcherHandler(RequestHandler):
     gMonitor.registerActivity('numTQs', "Number of Task Queues",
                               'Matching', "tqsk queues", gMonitor.OP_MEAN, 300)
 
-    gThreadScheduler.addPeriodicTask(120, cls.gTaskQueueDB.recalculateTQSharesForAll)
+    gThreadScheduler.addPeriodicTask(120, cls.taskQueueDB.recalculateTQSharesForAll)
     gThreadScheduler.addPeriodicTask(60, cls.sendNumTaskQueues)
 
     cls.sendNumTaskQueues()
@@ -57,7 +57,7 @@ class MatcherHandler(RequestHandler):
 
   @classmethod
   def sendNumTaskQueues(cls):
-    result = cls.gTaskQueueDB.getNumTaskQueues()
+    result = cls.taskQueueDB.getNumTaskQueues()
     if result['OK']:
       gMonitor.addMark('numTQs', result['Value'])
     else:
@@ -77,10 +77,10 @@ class MatcherHandler(RequestHandler):
 
     try:
       opsHelper = Operations(group=credDict['group'])
-      matcher = Matcher(pilotAgentsDB=self.gPilotAgentsDB,
-                        jobDB=self.gJobDB,
-                        tqDB=self.gTaskQueueDB,
-                        jlDB=self.gJobLoggingDB,
+      matcher = Matcher(pilotAgentsDB=self.pilotAgentsDB,
+                        jobDB=self.jobDB,
+                        tqDB=self.taskQueueDB,
+                        jlDB=self.jobLoggingDB,
                         opsHelper=opsHelper)
       result = matcher.selectJob(resourceDescription, credDict)
     except RuntimeError as rte:
@@ -103,7 +103,7 @@ class MatcherHandler(RequestHandler):
   def export_getActiveTaskQueues(cls):
     """ Return all task queues
     """
-    return cls.gTaskQueueDB.retrieveTaskQueues()
+    return cls.taskQueueDB.retrieveTaskQueues()
 
 ##############################################################################
   types_getMatchingTaskQueues = [dict]
@@ -118,10 +118,10 @@ class MatcherHandler(RequestHandler):
       negativeCond = cls.limiter.getNegativeCondForSite(resourceDict['Site'])
     else:
       negativeCond = cls.limiter.getNegativeCond()
-    matcher = Matcher(pilotAgentsDB=cls.gPilotAgentsDB,
-                      jobDB=cls.gJobDB,
-                      tqDB=cls.gTaskQueueDB,
-                      jlDB=cls.gJobLoggingDB)
+    matcher = Matcher(pilotAgentsDB=cls.pilotAgentsDB,
+                      jobDB=cls.jobDB,
+                      tqDB=cls.taskQueueDB,
+                      jlDB=cls.jobLoggingDB)
     resourceDescriptionDict = matcher._processResourceDescription(resourceDict)
-    return cls.gTaskQueueDB.getMatchingTaskQueues(resourceDescriptionDict,
-                                                  negativeCond=negativeCond)
+    return cls.taskQueueDB.getMatchingTaskQueues(resourceDescriptionDict,
+                                                 negativeCond=negativeCond)

@@ -22,7 +22,7 @@ class UserProfileManagerHandler(RequestHandler):
   def initializeHandler(cls, serviceInfo):
     """ Handler initialization
     """
-    cls.gUPDB = UserProfileDB()
+    cls.upDB = UserProfileDB()
     return S_OK()
 
   types_retrieveProfileVar = [six.string_types, six.string_types]
@@ -33,9 +33,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.retrieveVar(userName, userGroup,
-				  userName, userGroup,
-				  profileName, varName)
+    return self.upDB.retrieveVar(userName, userGroup,
+                                 userName, userGroup,
+                                 profileName, varName)
 
   types_retrieveProfileVarFromUser = [six.string_types, six.string_types, six.string_types, six.string_types]
 
@@ -45,9 +45,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.retrieveVar(userName, userGroup,
-				  ownerName, ownerGroup,
-				  profileName, varName)
+    return self.upDB.retrieveVar(userName, userGroup,
+                                 ownerName, ownerGroup,
+                                 profileName, varName)
 
   types_retrieveProfileAllVars = [six.string_types]
 
@@ -57,7 +57,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.retrieveAllUserVars(userName, userGroup, profileName)
+    return self.upDB.retrieveAllUserVars(userName, userGroup, profileName)
 
   types_storeProfileVar = [six.string_types, six.string_types, six.string_types, dict]
 
@@ -67,7 +67,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.storeVar(userName, userGroup, profileName, varName, data, perms)
+    return self.upDB.storeVar(userName, userGroup, profileName, varName, data, perms)
 
   types_deleteProfileVar = [six.string_types, six.string_types]
 
@@ -77,7 +77,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.deleteVar(userName, userGroup, profileName, varName)
+    return self.upDB.deleteVar(userName, userGroup, profileName, varName)
 
   types_listAvailableProfileVars = [six.string_types]
 
@@ -87,7 +87,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.listVars(userName, userGroup, profileName, filterDict)
+    return self.upDB.listVars(userName, userGroup, profileName, filterDict)
 
   types_getUserProfiles = []
 
@@ -97,7 +97,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.retrieveUserProfiles(userName, userGroup)
+    return self.upDB.retrieveUserProfiles(userName, userGroup)
 
   types_setProfileVarPermissions = [six.string_types, six.string_types, dict]
 
@@ -107,7 +107,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.setUserVarPerms(userName, userGroup, profileName, varName, perms)
+    return self.upDB.setUserVarPerms(userName, userGroup, profileName, varName, perms)
 
   types_getProfileVarPermissions = [six.string_types, six.string_types]
 
@@ -117,9 +117,9 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.retrieveVarPerms(userName, userGroup,
-				       userName, userGroup,
-				       profileName, varName)
+    return self.upDB.retrieveVarPerms(userName, userGroup,
+                                      userName, userGroup,
+                                      profileName, varName)
 
   types_storeHashTag = [six.string_types]
 
@@ -129,7 +129,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.storeHashTag(userName, userGroup, tagName)
+    return self.upDB.storeHashTag(userName, userGroup, tagName)
 
   types_retrieveHashTag = [six.string_types]
 
@@ -139,7 +139,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.retrieveHashTag(userName, userGroup, hashTag)
+    return self.upDB.retrieveHashTag(userName, userGroup, hashTag)
 
   types_retrieveAllHashTags = []
 
@@ -149,7 +149,7 @@ class UserProfileManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     userName = credDict['username']
     userGroup = credDict['group']
-    return self.gUPDB.retrieveAllHashTags(userName, userGroup)
+    return self.upDB.retrieveAllHashTags(userName, userGroup)
 
   types_deleteProfiles = [list]
 
@@ -166,7 +166,7 @@ class UserProfileManagerHandler(RequestHandler):
     for entry in userList:
       userName = entry
       if admin or userName == requesterUserName:
-	result = self.gUPDB.deleteUserProfile(userName)
+        result = self.upDB.deleteUserProfile(userName)
         if not result['OK']:
           return result
     return S_OK()
@@ -177,4 +177,4 @@ class UserProfileManagerHandler(RequestHandler):
     """
     it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
     """
-    return self.gUPDB.getUserProfileNames(permission)
+    return self.upDB.getUserProfileNames(permission)

@@ -29,7 +29,7 @@ class PilotsLoggingHandler(RequestHandler):
     """Initialization of Pilots Logging service
     """
     cls.consumersSet = set()
-    cls.gPilotsLoggingDB = PilotsLoggingDB()
+    cls.pilotsLoggingDB = PilotsLoggingDB()
     queue = cls.srv_getCSOption("PilotsLoggingQueue")
     # This is pretty awful hack. Somehow, for uknown reason, I cannot access CS with srv_getCSOption.
     # The only way is using full CS path, so I'm using it as a backup solution.
@@ -52,7 +52,7 @@ class PilotsLoggingHandler(RequestHandler):
     """
     # verify received message format
     if set(message) == set(['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']):
-      cls.gPilotsLoggingDB.addPilotsLogging(
+      cls.pilotsLoggingDB.addPilotsLogging(
           message['pilotUUID'], message['timestamp'], message['source'],
           message['phase'], message['status'], message['messageContent'])
 
@@ -71,7 +71,7 @@ class PilotsLoggingHandler(RequestHandler):
     :param source: Source of statu information
     """
 
-    return cls.gPilotsLoggingDB.addPilotsLogging(
+    return cls.pilotsLoggingDB.addPilotsLogging(
         pilotUUID, timestamp, source, phase, status, messageContent)
 
   types_getPilotsLogging = [six.string_types]
@@ -84,7 +84,7 @@ class PilotsLoggingHandler(RequestHandler):
     :param pilotUUID: Pilot reference
     """
 
-    return cls.gPilotsLoggingDB.getPilotsLogging(pilotUUID)
+    return cls.pilotsLoggingDB.getPilotsLogging(pilotUUID)
 
   types_deletePilotsLogging = [six.string_types + (list,)]
 
@@ -96,4 +96,4 @@ class PilotsLoggingHandler(RequestHandler):
     :param pilotUUID: Pilot reference
     """
 
-    return cls.gPilotsLoggingDB.deletePilotsLogging(pilotUUID)
+    return cls.pilotsLoggingDB.deletePilotsLogging(pilotUUID)
