@@ -316,7 +316,7 @@ installDIRAC() {
     exit 1
   fi
 
-  cp "${TESTCODE}/DIRAC/Core/scripts/dirac-install.py" "${CLIENTINSTALLDIR}/dirac-install"
+  cp "${TESTCODE}/DIRAC/src/DIRAC/Core/scripts/dirac-install.py" "${CLIENTINSTALLDIR}/dirac-install"
   chmod +x "${CLIENTINSTALLDIR}/dirac-install"
 
   if [[ -n "${DEBUG+x}" ]]; then
@@ -443,7 +443,7 @@ prepareForServer() {
   echo '==> [prepareForServer]'
 
   #get the necessary scripts: dirac-install.py file
-  cp "${TESTCODE}/DIRAC/Core/scripts/dirac-install.py" "${SERVERINSTALLDIR}/"
+  cp "${TESTCODE}/DIRAC/src/DIRAC/Core/scripts/dirac-install.py" "${SERVERINSTALLDIR}/"
   chmod +x "${SERVERINSTALLDIR}/dirac-install.py"
 }
 

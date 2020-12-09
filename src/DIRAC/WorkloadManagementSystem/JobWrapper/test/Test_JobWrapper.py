@@ -10,6 +10,7 @@ from __future__ import division
 import unittest
 import importlib
 import os
+from os.path import dirname, join
 import shutil
 
 from mock import MagicMock, patch
@@ -89,14 +90,14 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
     print('jw.execute() returns', str(res))
     self.assertTrue(res['OK'])
 
-    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
+    shutil.copy(join(dirname(__file__), 'script-OK.sh'), 'script-OK.sh')
     jw = JobWrapper()
     jw.jobArgs = {'Executable': 'script-OK.sh'}
     res = jw.execute()
     self.assertTrue(res['OK'])
     os.remove('script-OK.sh')
 
-    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script.sh', 'script.sh')
+    shutil.copy(join(dirname(__file__), 'script.sh'), 'script.sh')
     jw = JobWrapper()
     jw.jobArgs = {'Executable': 'script.sh', 'Arguments': '111'}
     res = jw.execute()
@@ -104,7 +105,7 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
     # but the JobWrapper executed successfully
     os.remove('script.sh')
 
-    shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh')  # this will reschedule
+    shutil.copy(join(dirname(__file__), 'script-RESC.sh'), 'script-RESC.sh')  # this will reschedule
     jw = JobWrapper()
     jw.jobArgs = {'Executable': 'script-RESC.sh'}
     res = jw.execute()

@@ -116,7 +116,7 @@ prepareEnvironment() {
         echo "ALTERNATIVE_MODULES+=(\"${module_path}\")"
       done
     else
-      echo "ALTERNATIVE_MODULES+=(\"${DIRAC_BASE_DIR}\")"
+      echo "ALTERNATIVE_MODULES+=(\"${DIRAC_BASE_DIR}/src/DIRAC\")"
     fi
 
     echo "declare -a INSTALLOPTIONS"
@@ -138,8 +138,8 @@ prepareEnvironment() {
       echo "export DIRAC_RELEASE=integration"
     } >> "${SERVERCONFIG}"
   else
-    majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d '=' -f 2)
-    minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d '=' -f 2)
+    majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/src/DIRAC/__init__.py" | cut -d '=' -f 2)
+    minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/src/DIRAC/__init__.py" | cut -d '=' -f 2)
     {
       echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
     } >> "${SERVERCONFIG}"

@@ -225,7 +225,7 @@ chown -R diracuser:diracuser ~diracuser/.globus/
 cat > InstallDiracClient <<EOF
 # START installClient1
 mkdir -p ~/DiracInstallation && cd ~/DiracInstallation
-curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py
+curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/dirac-install.py
 chmod +x dirac-install.py
 ./dirac-install.py -r v7r0p36 --dirac-os
 # END installClient1

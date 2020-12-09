@@ -97,11 +97,9 @@ def test_everyBaseTypeIsTested():
       We rely on the fact that the test function will be called
       "test_BaseType"
   """
-  current_module = sys.modules[__name__]
-
   for encodeFunc in g_dEncodeFunctions.values():
     testFuncName = ('test_BaseType_%s' % encodeFunc.__name__).replace('encode', '')
-    getattr(current_module, testFuncName)
+    globals()[testFuncName]
 
 
 def agnosticTestFunction(enc_dec_tuple, data):

@@ -18,14 +18,12 @@ except ImportError:
 import unittest
 import tempfile
 
-from DIRAC import gLogger
+from DIRAC import gLogger, rootPath
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.DIRACCAProxyProvider import DIRACCAProxyProvider
 
 
-thisPath = os.path.dirname(os.path.abspath(__file__)).split('/')
-rootPath = thisPath[:len(thisPath) - 3]
-certsPath = os.path.join('/'.join(rootPath), 'Core/Security/test/certs')
+certsPath = os.path.join(rootPath, 'DIRAC/Core/Security/test/certs')
 
 testCAPath = os.path.join(tempfile.mkdtemp(dir='/tmp'), 'ca')
 testCAConfigFile = os.path.join(testCAPath, 'openssl_config_ca.cnf')

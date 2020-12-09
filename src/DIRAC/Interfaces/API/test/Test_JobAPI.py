@@ -6,6 +6,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from os.path import dirname, join
+
 import pytest
 from six import StringIO
 
@@ -26,21 +28,13 @@ def test_basicJob():
 
   xml = job._toXML()
 
-  try:
-    with open('./DIRAC/Interfaces/API/test/testWF.xml') as fd:
-      expected = fd.read()
-  except IOError:
-    with open('./Interfaces/API/test/testWF.xml') as fd:
-      expected = fd.read()
+  with open(join(dirname(__file__), "testWF.xml")) as fd:
+    expected = fd.read()
 
   assert xml == expected
 
-  try:
-    with open('./DIRAC/Interfaces/API/test/testWFSIO.jdl') as fd:
-      expected = fd.read()
-  except IOError:
-    with open('./Interfaces/API/test/testWFSIO.jdl') as fd:
-      expected = fd.read()
+  with open(join(dirname(__file__), "testWFSIO.jdl")) as fd:
+    expected = fd.read()
 
   jdlSIO = job._toJDL(jobDescriptionObject=StringIO(job._toXML()))
   assert jdlSIO == expected
@@ -71,12 +65,8 @@ def test_SimpleParametricJob():
 
   jdl = job._toJDL()
 
-  try:
-    with open('./DIRAC/Interfaces/API/test/testWF.jdl') as fd:
-      expected = fd.read()
-  except IOError:
-    with open('./Interfaces/API/test/testWF.jdl') as fd:
-      expected = fd.read()
+  with open(join(dirname(__file__), "testWF.jdl")) as fd:
+    expected = fd.read()
 
   assert jdl == expected
 
