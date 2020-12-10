@@ -10,63 +10,73 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
-import os
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-import DIRAC
-from DIRAC import gConfig
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Site' % Script.scriptName, ]))
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
+@DIRACScript()
+def main():
+  import os
 
-records = []
+  import DIRAC
+  from DIRAC import gConfig
+  from DIRAC.Core.Base import Script
+  from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+  from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+  from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-records.append(('Setup', gConfig.getValue('/DIRAC/Setup', 'Unknown')))
-records.append(('ConfigurationServer', gConfig.getValue('/DIRAC/Configuration/Servers', [])))
-records.append(('Installation path', DIRAC.rootPath))
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... Site' % Script.scriptName, ]))
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-if os.path.exists(os.path.join(DIRAC.rootPath, DIRAC.getPlatform(), 'bin', 'mysql')):
-  records.append(('Installation type', 'server'))
-else:
-  records.append(('Installation type', 'client'))
+  records = []
 
-records.append(('Platform', DIRAC.getPlatform()))
+  records.append(('Setup', gConfig.getValue('/DIRAC/Setup', 'Unknown')))
+  records.append(('ConfigurationServer', gConfig.getValue('/DIRAC/Configuration/Servers', [])))
+  records.append(('Installation path', DIRAC.rootPath))
 
-ret = getProxyInfo(disableVOMS=True)
-if ret['OK']:
-  if 'group' in ret['Value']:
-    vo = getVOForGroup(ret['Value']['group'])
+  if os.path.exists(os.path.join(DIRAC.rootPath, DIRAC.getPlatform(), 'bin', 'mysql')):
+    records.append(('Installation type', 'server'))
   else:
-    vo = getVOForGroup('')
-  if not vo:
-    vo = "None"
-  records.append(('VirtualOrganization', vo))
-  if 'identity' in ret['Value']:
-    records.append(('User DN', ret['Value']['identity']))
-  if 'secondsLeft' in ret['Value']:
-    records.append(('Proxy validity, secs', {'Value': str(ret['Value']['secondsLeft']), 'Just': 'L'}))
+    records.append(('Installation type', 'client'))
 
-if gConfig.getValue('/DIRAC/Security/UseServerCertificate', True):
-  records.append(('Use Server Certificate', 'Yes'))
-else:
-  records.append(('Use Server Certificate', 'No'))
-if gConfig.getValue('/DIRAC/Security/SkipCAChecks', False):
-  records.append(('Skip CA Checks', 'Yes'))
-else:
-  records.append(('Skip CA Checks', 'No'))
+  records.append(('Platform', DIRAC.getPlatform()))
 
-records.append(('DIRAC version', DIRAC.version))
+  ret = getProxyInfo(disableVOMS=True)
+  if ret['OK']:
+    if 'group' in ret['Value']:
+      vo = getVOForGroup(ret['Value']['group'])
+    else:
+      vo = getVOForGroup('')
+    if not vo:
+      vo = "None"
+    records.append(('VirtualOrganization', vo))
+    if 'identity' in ret['Value']:
+      records.append(('User DN', ret['Value']['identity']))
+    if 'secondsLeft' in ret['Value']:
+      records.append(('Proxy validity, secs', {'Value': str(ret['Value']['secondsLeft']), 'Just': 'L'}))
 
-fields = ['Option', 'Value']
+  if gConfig.getValue('/DIRAC/Security/UseServerCertificate', True):
+    records.append(('Use Server Certificate', 'Yes'))
+  else:
+    records.append(('Use Server Certificate', 'No'))
+  if gConfig.getValue('/DIRAC/Security/SkipCAChecks', False):
+    records.append(('Skip CA Checks', 'Yes'))
+  else:
+    records.append(('Skip CA Checks', 'No'))
 
-print()
-printTable(fields, records, numbering=False)
-print()
+  records.append(('DIRAC version', DIRAC.version))
+
+  fields = ['Option', 'Value']
+
+  print()
+  printTable(fields, records, numbering=False)
+  print()
+
+
+if __name__ == "__main__":
+  main()

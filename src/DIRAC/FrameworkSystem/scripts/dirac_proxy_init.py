@@ -17,6 +17,7 @@ import DIRAC
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -232,7 +233,9 @@ class ProxyInit(object):
     return S_OK()
 
 
-if __name__ == "__main__":
+@DIRACScript()
+def main():
+  global piParams, pI
   piParams = Params()
   piParams.registerCLISwitches()
 
@@ -249,3 +252,7 @@ if __name__ == "__main__":
   pI.printInfo()
 
   sys.exit(0)
+
+
+if __name__ == "__main__":
+  main()
