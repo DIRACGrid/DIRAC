@@ -14,12 +14,12 @@ else
   echo '==> Running in non-DEBUG mode'
 fi
 
-
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 ###############################################################################
 # Can't find anywhere a batch plugin, not even MJF
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
@@ -32,10 +32,10 @@ fi
 ###############################################################################
 # Found MJF, not reading it (not a directory)
 
-export MACHINEFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg
-export JOBFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg
+export MACHINEFEATURES="${SCRIPT_DIR}/sb.cfg"
+export JOBFEATURES="${SCRIPT_DIR}/sb.cfg"
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
@@ -48,10 +48,10 @@ fi
 ###############################################################################
 # Found MJF, gave proper values
 
-export MACHINEFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/MJF/
-export JOBFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/MJF/
+export MACHINEFEATURES=${SCRIPT_DIR}/MJF/
+export JOBFEATURES=${SCRIPT_DIR}/MJF/
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
