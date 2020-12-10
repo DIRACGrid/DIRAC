@@ -261,7 +261,7 @@ class SingularityComputingElement(ComputingElement):
     # Proxy
     if proxy:
       proxyLoc = os.path.join(tmpDir, "proxy")
-      rawfd = open(proxyLoc, os.O_WRONLY | os.O_CREAT, 0o600)
+      rawfd = os.open(proxyLoc, os.O_WRONLY | os.O_CREAT, 0o600)
       fd = os.fdopen(rawfd, "w")
       fd.write(proxy)
       fd.close()
@@ -315,7 +315,7 @@ class SingularityComputingElement(ComputingElement):
       CONTAINER_WRAPPER = CONTAINER_WRAPPER_NO_INSTALL
 
     wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
-    rawfd = open(wrapLoc, os.O_WRONLY | os.O_CREAT, 0o700)
+    rawfd = os.open(wrapLoc, os.O_WRONLY | os.O_CREAT, 0o700)
     fd = os.fdopen(rawfd, "w")
     fd.write(CONTAINER_WRAPPER % wrapSubs)
     fd.close()
