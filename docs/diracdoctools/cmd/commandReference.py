@@ -93,6 +93,7 @@ class CommandReference(object):
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
         scriptName = scriptName[:-3]
+      scriptName = scriptName.replace("_", "-")
       prefix = sectionDict[PREFIX].lower()
       prefix = prefix + '_' if prefix else ''
       if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=prefix):
@@ -120,6 +121,7 @@ class CommandReference(object):
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
         scriptName = scriptName[:-3]
+      scriptName = scriptName.replace("_", "-")
       prefix = sectionDict[PREFIX].lower()
       prefix = prefix + '_' if prefix else ''
       if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=prefix) and \
