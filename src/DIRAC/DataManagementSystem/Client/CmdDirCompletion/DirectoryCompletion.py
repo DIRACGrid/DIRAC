@@ -84,7 +84,7 @@ class DirectoryCompletion(object):
 
 
 if __name__ == "__main__":
-  from AbstractFileSystem import UnixLikeFileSystem  # pylint: disable=import-error
+  from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import UnixLikeFileSystem
   ulfs = UnixLikeFileSystem()
   dc = DirectoryCompletion(ulfs)
 
