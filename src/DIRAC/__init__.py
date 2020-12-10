@@ -70,6 +70,9 @@ import sys
 import os
 import platform as pyPlatform
 from pkgutil import extend_path
+
+import six
+
 __path__ = extend_path(__path__, __name__)
 
 # Set the environment variable such that openssl accepts proxy cert
@@ -88,22 +91,31 @@ __RCSID__ = "$Id$"
 # Importing _strptime before instantiating the threads seem to be a working workaround
 import _strptime
 
+# Define Version
+if six.PY3:
+  from pkg_resources import get_distribution, DistributionNotFound
 
-# Define Version, use an unusual structure to minimise conflicts with rel-v7r2
-pythonVersion = pyPlatform.python_version_tuple()
-if pythonVersion[0] == "3":
-  pass
+  try:
+    __version__ = get_distribution(__name__).version
+    version = __version__
+  except DistributionNotFound:
+    # package is not installed
+    pass
 else:
   majorVersion = 7
   minorVersion = 2
   patchLevel = 0
   preVersion = 28
 
-version = "v%sr%s" % (majorVersion, minorVersion)
-if patchLevel:
-  version = "%sp%s" % (version, patchLevel)
-if preVersion:
-  version = "%s-pre%s" % (version, preVersion)
+  version = "v%sr%s" % (majorVersion, minorVersion)
+  # Make it so that __version__ is always PEP-440 style
+  __version__ = "%s.%s" % (majorVersion, minorVersion)
+  if patchLevel:
+    version = "%sp%s" % (version, patchLevel)
+    __version__ += ".%s" % patchLevel
+  if preVersion:
+    version = "%s-pre%s" % (version, preVersion)
+    __version__ += "a%s" % preVersion
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
