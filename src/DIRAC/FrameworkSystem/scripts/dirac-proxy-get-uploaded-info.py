@@ -9,8 +9,6 @@ from __future__ import division
 
 import sys
 
-import DIRAC
-
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
@@ -26,7 +24,7 @@ userName = False
 def setUser(arg):
   """ Set user
 
-      :param basestring arg: user name
+      :param str arg: user name
 
       :return: S_OK()
   """
