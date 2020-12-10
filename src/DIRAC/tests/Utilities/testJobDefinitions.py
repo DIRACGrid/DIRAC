@@ -222,16 +222,15 @@ def jobWithOutput():
   """
 
   timenow = time.strftime("%s")
-  with open(os.path.join(os.getcwd(), timenow + "testFileUpload.txt"), "wt") as f:
+  inp1 = [os.path.join(os.getcwd(), timenow + "testFileUpload.txt")]
+  with open(inp1[0], "wt") as f:
     f.write(timenow)
 
   J = baseToAllJobs('helloWorld')
   try:
-    inp1 = [find_all(timenow + 'testFileUpload.txt', rootPath, 'DIRAC/tests/Workflow')[0]]
     inp2 = [find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]]
     J.setInputSandbox(inp1 + inp2)
   except IndexError:  # we are in Jenkins
-    inp1 = [find_all(timenow + 'testFileUpload.txt', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]]
     inp2 = [find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]]
     J.setInputSandbox(inp1 + inp2)
   J.setExecutable("exe-script.py", "", "helloWorld.log")
@@ -250,16 +249,15 @@ def jobWithOutputs():
   """
 
   timenow = time.strftime("%s")
-  with open(os.path.join(os.getcwd(), timenow + "testFileUpload.txt"), "wt") as f:
+  inp1 = [os.path.join(os.getcwd(), timenow + "testFileUpload.txt")]
+  with open(inp1[0], "wt") as f:
     f.write(timenow)
 
   J = baseToAllJobs('helloWorld')
   try:
-    inp1 = [find_all(timenow + 'testFileUpload.txt', rootPath, 'DIRAC/tests/Workflow')[0]]
     inp2 = [find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]]
     J.setInputSandbox(inp1 + inp2)
   except IndexError:  # we are in Jenkins
-    inp1 = [find_all(timenow + 'testFileUpload.txt', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]]
     inp2 = [find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]]
     J.setInputSandbox(inp1 + inp2)
   J.setExecutable("exe-script.py", "", "helloWorld.log")
