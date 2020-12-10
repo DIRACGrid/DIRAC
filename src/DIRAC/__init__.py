@@ -201,3 +201,14 @@ def abort(exitCode, *args, **kwargs):
   except OSError:
     gLogger.exception('Error while executing DIRAC.abort')
     os._exit(exitCode)
+
+
+def extension_metadata():
+  return {
+      "priority": 0,
+      "setups": {
+          "DIRAC-Certification": {
+              "ConfigurationServer": "dips://lbcertifdirac70.cern.ch:9135/Configuration/Server",
+          },
+      }
+  }
