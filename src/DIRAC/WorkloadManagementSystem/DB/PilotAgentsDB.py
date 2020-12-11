@@ -37,7 +37,7 @@ class PilotAgentsDB(DB):
 
   def __init__(self):
 
-    DB.__init__(self, 'PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB')
+    super(PilotAgentsDB, self).__init__('PilotAgentsDB', 'WorkloadManagement/PilotAgentsDB')
     self.lock = threading.Lock()
 
 ##########################################################################################
@@ -129,9 +129,7 @@ class PilotAgentsDB(DB):
 
 #     return self._update(req, conn)
 
-
 ##########################################################################################
-
   def selectPilots(self, condDict, older=None, newer=None, timeStamp='SubmissionTime',
                    orderAttribute=None, limit=None):
     """ Select pilot references according to the provided criteria. "newer" and "older"
@@ -165,9 +163,7 @@ class PilotAgentsDB(DB):
 
     return S_OK(pilotList)
 
-
 ##########################################################################################
-
   def countPilots(self, condDict, older=None, newer=None, timeStamp='SubmissionTime'):
     """ Select pilot references according to the provided criteria. "newer" and "older"
         specify the time interval in minutes
@@ -184,9 +180,7 @@ class PilotAgentsDB(DB):
 
     return S_OK(result['Value'][0][0])
 
-
-##########################################################################################
-
+#########################################################################################
   def getPilotGroups(self, groupList=['Status', 'OwnerDN', 'OwnerGroup', 'GridType'], condDict={}):
     """
      Get all exisiting combinations of groupList Values
