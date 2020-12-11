@@ -31,9 +31,21 @@ class MonitoringDB(ElasticDB):
   """
 
   def __init__(self, name='Monitoring/MonitoringDB', readOnly=False):
-    section = getDatabaseSection("Monitoring/MonitoringDB")
-    indexPrefix = gConfig.getValue("%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
-    super(MonitoringDB, self).__init__('MonitoringDB', name, indexPrefix)
+    """ Standard constructor
+    """
+
+    try:
+      section = getDatabaseSection("Monitoring/MonitoringDB")
+      indexPrefix = gConfig.getValue(
+          "%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
+
+      # Connecting to the ES cluster
+      super(MonitoringDB, self).__init__(
+          name.split('/')[1], name, indexPrefix)
+    except Exception as ex:
+      self.log.error("Can't connect to MonitoringDB", repr(ex))
+      raise RuntimeError("Can't connect to MonitoringDB")
+
     self.__readonly = readOnly
     self.documentTypes = {}
 
@@ -55,20 +67,22 @@ class MonitoringDB(ElasticDB):
       if self.__readonly:
         self.log.info("Read only mode is okay")
       else:
-        if self.exists("%s-*" % indexName):
+        # Verifying if the index is there, and if not create it
+        res = self.exists("%s-*" % indexName)
+        if res['OK']:
           indexes = self.getIndexes()
           if indexes:
-            actualIndexName = self.generateFullIndexName(indexName, period)
-            if self.exists(actualIndexName):
-              self.log.info("The index exists:", actualIndexName)
-            else:
+            actualIndexName = self.generateFullIndexName(
+                indexName, period)
+            res = self.exists(actualIndexName)
+            if not res['OK']:
               result = self.createIndex(indexName,
                                         self.documentTypes[monitoringType]['mapping'],
                                         period)
               if not result['OK']:
                 self.log.error(result['Message'])
                 raise RuntimeError(result['Message'])
-              self.log.info("The index is created", actualIndexName)
+              self.log.info("Index created", actualIndexName)
         else:
           # in case the index does not exist
           result = self.createIndex(indexName,
@@ -77,7 +91,7 @@ class MonitoringDB(ElasticDB):
           if not result['OK']:
             self.log.error(result['Message'])
             raise RuntimeError(result['Message'])
-          self.log.info("The index is created", indexName)
+          self.log.info("Index created", indexName)
 
   def getIndexName(self, typeName):
     """

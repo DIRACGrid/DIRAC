@@ -187,7 +187,7 @@ class ElasticTestChain(ElasticTestCase):
 
   def test_exists(self):
     result = self.elasticSearchDB.exists(self.index_name)
-    self.assertTrue(result)
+    self.assertTrue(result['OK'])
 
   def test_generateFullIndexName(self):
     indexName = 'test'
