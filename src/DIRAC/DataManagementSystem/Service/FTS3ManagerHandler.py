@@ -92,7 +92,7 @@ class FTS3ManagerHandler(RequestHandler):
 
     return False
 
-  types_persistOperation = [basestring]
+  types_persistOperation = [six.string_types]
 
   def export_persistOperation(self, opJSON):
     """ update or insert request into db
@@ -130,7 +130,7 @@ class FTS3ManagerHandler(RequestHandler):
     opJSON = encode(getOperation)
     return S_OK(opJSON)
 
-  types_getActiveJobs = [six.integer_types, [None] + [basestring], basestring]
+  types_getActiveJobs = [six.integer_types, [None] + [six.string_types], six.string_types]
 
   @classmethod
   def export_getActiveJobs(cls, limit, lastMonitor, jobAssignmentTag):
@@ -177,7 +177,7 @@ class FTS3ManagerHandler(RequestHandler):
     jobStatusDict = strToIntDict(jobStatusDict)
     return cls.fts3db.updateJobStatus(jobStatusDict)
 
-  types_getNonFinishedOperations = [six.integer_types, basestring]
+  types_getNonFinishedOperations = [six.integer_types, six.string_types]
 
   @classmethod
   def export_getNonFinishedOperations(cls, limit, operationAssignmentTag):

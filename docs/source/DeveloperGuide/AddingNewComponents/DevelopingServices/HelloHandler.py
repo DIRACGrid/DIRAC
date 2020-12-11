@@ -6,6 +6,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import six
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
@@ -24,7 +26,8 @@ class HelloHandler(RequestHandler):
     self.requestDefaultWhom = self.srv_getCSOption("DefaultWhom", HelloHandler.defaultWhom)
 
   auth_sayHello = ['all']
-  types_sayHello = [basestring]
+  types_sayHello = [six.string_types]
+
   def export_sayHello(self, whom):
     """ Say hello to somebody
     """

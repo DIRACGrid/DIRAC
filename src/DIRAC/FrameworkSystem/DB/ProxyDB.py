@@ -262,7 +262,7 @@ class ProxyDB(DB):
         :param int requestId: id of the request
         :param str userDN: user DN
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     try:
       sUserDN = self._escapeString(userDN)['Value']
@@ -897,7 +897,7 @@ class ProxyDB(DB):
         :param str vomsAttr: VOMS attribute
         :param X509Chain() chain: proxy as chain
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     retVal = self._getConnection()
     if not retVal['OK']:

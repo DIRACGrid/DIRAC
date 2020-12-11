@@ -94,7 +94,7 @@ class S3GatewayHandler(RequestHandler):
 
     return returnSingleResult(self._fc.hasAccess(lfn, opType))
 
-  types_createPresignedUrl = [basestring, basestring, (dict, list), six.integer_types]
+  types_createPresignedUrl = [six.string_types, six.string_types, (dict, list), six.integer_types]
 
   def export_createPresignedUrl(self, storageName, s3_method, urls, expiration):
     """ Generate a presigned URL for a given object, given method, and given storage

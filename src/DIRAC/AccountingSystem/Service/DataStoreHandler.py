@@ -217,7 +217,7 @@ class DataStoreHandler(RequestHandler):
       Remove a record for a type
     """
     setup = self.serviceInfoDict['clientSetup']
-    expectedTypes = [basestring, datetime.datetime, datetime.datetime, list]
+    expectedTypes = [six.string_types, datetime.datetime, datetime.datetime, list]
     for entry in entriesList:
       if len(entry) != 4:
         return S_ERROR("Invalid records")
