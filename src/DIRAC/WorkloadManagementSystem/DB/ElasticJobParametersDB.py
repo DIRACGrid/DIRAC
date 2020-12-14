@@ -80,8 +80,8 @@ class ElasticJobParametersDB(ElasticDB):
 
     self.indexName = "%s_%s" % (self.getIndexPrefix(), name.lower())
     # Verifying if the index is there, and if not create it
-    res = self.exists(self.indexName)
-    if not res['OK']:
+    res = self.existingIndex(self.indexName)
+    if not res['OK'] or not res['Value']:
       result = self.createIndex(self.indexName, mapping, period=None)
       if not result['OK']:
         self.log.error(result['Message'])

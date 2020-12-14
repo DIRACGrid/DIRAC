@@ -7,8 +7,10 @@ Elasticsearch database.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import six
+
 __RCSID__ = "$Id$"
+
+import six
 
 from datetime import datetime
 from datetime import timedelta
@@ -242,11 +244,12 @@ class ElasticSearchDB(object):
 
   ########################################################################
   @ifConnected
-  def exists(self, indexName):
+  def existingIndex(self, indexName):
     """
-    it checks the existance of an index
+    Checks the existance of an index, by its name
 
     :param str indexName: the name of the index
+    :returns: S_OK/S_ERROR if the request is successful
     """
     sLog.debug("Checking existance of index %s" % indexName)
     try:
@@ -272,7 +275,10 @@ class ElasticSearchDB(object):
       sLog.warn("The period is not provided, so using non-periodic indexes names")
       fullIndex = indexPrefix
 
-    if self.exists(fullIndex):
+    res = self.existingIndex(fullIndex)
+    if not res['OK']:
+      return res
+    elif res['Value']:
       return S_OK(fullIndex)
 
     try:
@@ -352,7 +358,10 @@ class ElasticSearchDB(object):
       indexName = indexPrefix
     sLog.debug("Bulk indexing into %s of %s" % (indexName, data))
 
-    if not self.exists(indexName):
+    res = self.existingIndex(indexName)
+    if not res['OK']:
+      return res
+    if not res['Value']:
       retVal = self.createIndex(indexPrefix, mapping, period)
       if not retVal['OK']:
         return retVal

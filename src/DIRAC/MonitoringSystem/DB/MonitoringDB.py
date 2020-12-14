@@ -40,8 +40,7 @@ class MonitoringDB(ElasticDB):
           "%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
 
       # Connecting to the ES cluster
-      super(MonitoringDB, self).__init__(
-          name.split('/')[1], name, indexPrefix)
+      super(MonitoringDB, self).__init__(name.split('/')[1], name, indexPrefix)
     except Exception as ex:
       self.log.error("Can't connect to MonitoringDB", repr(ex))
       raise RuntimeError("Can't connect to MonitoringDB")
@@ -68,30 +67,28 @@ class MonitoringDB(ElasticDB):
         self.log.info("Read only mode is okay")
       else:
         # Verifying if the index is there, and if not create it
-        res = self.exists("%s-*" % indexName)
-        if res['OK']:
-          indexes = self.getIndexes()
-          if indexes:
-            actualIndexName = self.generateFullIndexName(
-                indexName, period)
-            res = self.exists(actualIndexName)
-            if not res['OK']:
-              result = self.createIndex(indexName,
-                                        self.documentTypes[monitoringType]['mapping'],
-                                        period)
-              if not result['OK']:
-                self.log.error(result['Message'])
-                raise RuntimeError(result['Message'])
-              self.log.info("Index created", actualIndexName)
+        res = self.existingIndex("%s-*" % indexName)  # check with a wildcard
+        if res['OK'] and res['Value']:
+          actualIndexName = self.generateFullIndexName(indexName, period)
+          res = self.existingIndex(actualIndexName)  # check actual index
+          if not res['OK'] or not res['Value']:
+            result = self.createIndex(
+                indexName,
+                self.documentTypes[monitoringType]['mapping'],
+                period)
+            if not result['OK']:
+              self.log.error(result['Message'])
+              raise RuntimeError(result['Message'])
+            self.log.always("Index created", actualIndexName)
         else:
-          # in case the index does not exist
+          # in case the index pattern does not exist
           result = self.createIndex(indexName,
                                     self.documentTypes[monitoringType]['mapping'],
                                     period)
           if not result['OK']:
             self.log.error(result['Message'])
             raise RuntimeError(result['Message'])
-          self.log.info("Index created", indexName)
+          self.log.always("Index created", indexName)
 
   def getIndexName(self, typeName):
     """
