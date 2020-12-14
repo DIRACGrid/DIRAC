@@ -203,7 +203,7 @@ class ElasticSearchDB(object):
     """
     if not indexName:
       indexName = self.__indexPrefix
-    self.log.debug("Getting indices alias of %s" % indexName)
+    sLog.debug("Getting indices alias of %s" % indexName)
     # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
     return list(self.client.indices.get_alias("%s*" % indexName))
 
@@ -248,7 +248,7 @@ class ElasticSearchDB(object):
 
     :param str indexName: the name of the index
     """
-    self.log.debug("Checking existance of index %s" % indexName)
+    sLog.debug("Checking existance of index %s" % indexName)
     try:
       return S_OK(self.client.indices.exists(indexName))
     except TransportError as e:
