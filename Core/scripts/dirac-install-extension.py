@@ -33,7 +33,7 @@ def usage():
   print('Options::\n\n')
   for cmdOpt in cmdOpts:
     print("  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
-  
+
   sys.exit(0)
 
 

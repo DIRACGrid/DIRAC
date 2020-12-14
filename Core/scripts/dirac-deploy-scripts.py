@@ -12,7 +12,7 @@ Arguments::
 
 Example::
 
-  $ dirac-deploy-scripts 
+  $ dirac-deploy-scripts
   Scripts will be deployed at /afs/in2p3.fr/home/h/hamar/DIRAC-v5r12/scripts
   Inspecting DIRAC module
   Inspecting EELADIRAC module
@@ -32,8 +32,7 @@ import platform
 
 cmdOpts = (('', 'symlink', 'this will create symlinks instead of wrappers'),
            ('', 'module=', 'module in which to look for the scripts'),
-           ('h', 'help', 'help doc string')))
-
+           ('h', 'help', 'help doc string'))
 
 def usage(err=''):
   """ Usage printout
@@ -46,7 +45,7 @@ def usage(err=''):
   print('Options::\n\n')
   for cmdOpt in cmdOpts:
     print("  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
-  
+
   sys.exit(2 if err else 0)
 
 
@@ -82,7 +81,7 @@ try:
                              "".join([opt[0] for opt in cmdOpts]),
                              [opt[1] for opt in cmdOpts])
 except getopt.GetoptError as err:
-  # print help information and exit:
+  # print help information and exit
   usage(str(err))
 for o, a in opts:
   if o in ('-h', '--help'):
