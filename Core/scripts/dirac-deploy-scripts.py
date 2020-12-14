@@ -34,6 +34,7 @@ cmdOpts = (('', 'symlink', 'this will create symlinks instead of wrappers'),
            ('', 'module=', 'module in which to look for the scripts'),
            ('h', 'help', 'help doc string'))
 
+
 def usage(err=''):
   """ Usage printout
 
