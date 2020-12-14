@@ -8,7 +8,11 @@
 Reports breakdown of file(s) number/size in different staging states across Storage Elements.
 Currently used Cache per SE is also reported. (active pins)
 
-Example:
+Usage::
+
+  dirac-stager-show-stats (<options>|<cfgFile>)*
+
+Example::
 
   dirac-stager-show-stats
 
@@ -31,6 +35,7 @@ from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 Script.setUsageMessage(__doc__)
 Script.parseCommandLine(ignoreErrors=False)
+
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 client = StorageManagerClient()
 

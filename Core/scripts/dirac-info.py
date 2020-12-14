@@ -31,9 +31,16 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
+
+def version(arg):
+  Script.disableCS()
+  print(DIRAC.version)
+  DIRAC.exit(0)
+
+
 Script.setUsageMessage(__doc__)
+Script.registerSwitch("v", "version", "print version of current DIRAC installation", version)
 Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
 records = []
 

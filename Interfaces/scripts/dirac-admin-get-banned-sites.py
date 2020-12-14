@@ -7,7 +7,8 @@
 Usage:
 
   dirac-admin-get-banned-sites (<options>|<cfgFile>)*
-Example:
+
+Example::
 
   $ dirac-admin-get-banned-sites
   LCG.IN2P3.fr                      Site not present in logging table

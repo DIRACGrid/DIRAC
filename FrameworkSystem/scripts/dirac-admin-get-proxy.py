@@ -16,7 +16,7 @@ Arguments:
   user:     DIRAC user name (will fail if there is more than 1 DN registered)
   group:    DIRAC group name
 
-Example:
+Example::
 
   $ dirac-admin-get-proxy vhamar dirac_user
   Proxy downloaded to /afs/in2p3.fr/home/h/hamar/proxy.vhamar.dirac_user

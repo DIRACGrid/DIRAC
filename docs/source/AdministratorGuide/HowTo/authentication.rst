@@ -18,53 +18,23 @@ To identify users DIRAC use RBAC model (Role Based Access Control)
 - A username has a DN, and the groups in which it is included
 - A user group has a number of properties
 
-Before authorize or not some tasks you have to define these properties, hostnames, usernames and groups. For that you may register informations at ``/DIRAC/Registry``. After registering users create a proxy with a group and this guarantees certain properties.
+Before authorize or not some tasks you have to define these properties, hostnames, usernames and groups. For that you may :ref:`register informations<admin_usermanagement>` at ``/DIRAC/Registry``.
 
-Bellow a simple example with only one user, one group and one host::
+.. literalinclude:: ../../../../dirac.cfg
+  :start-after: ### Registry section:
+  :end-before: ###
+  :dedent: 0
 
-   Registry
-   {
-     Users
-     {
-       userName
-       {
-         DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
-         Email = youremail@yourprovider.com
-       }
-     }
+After registering users create a proxy with a group and this guarantees certain properties.
 
-     Groups
-     {
-       groupName
-       {
-         Users = userName
-         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
-       }
-     }
-
-     Hosts
-     {
-       hostName
-       {
-         DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=dirac.cern.ch/emailAddress=lhcb-dirac-ci@cern.ch
-         Properties = CSAdministrator, JobAdministrator, ServiceAdministrator, ProxyDelegation, FullDelegation
-       }
-     }
-   }
-
-
-Users and their roles registered in a VOMS server can be synchronized to the DIRAC configuration using the
-:mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent`.
+Users and their roles registered in a VOMS server can be synchronized to the DIRAC configuration using the :mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent`.
 
 
 **************
 Authorizations
 **************
 
-
-All procedure have a list of required Properties and user may have at least one property to execute the procedure. Be careful, properties are associated with groups, not directly with users!
-
-
+All procedure have a list of required :mod:`~DIRAC.Core.Security.Properties` and user may have at least one property to execute the procedure. Be careful, properties are associated with groups, not directly with users!
 
 There are two main ways to define required properties:
 
@@ -78,5 +48,3 @@ If you don't want to define specific properties you can use "authenticated", "an
 - "any" and "all" have the same effect, everyone can call the procedure. It can be dangerous if you allow non-secured connections.
 
 You also have to define properties for groups of users in the configuration system at ```/DIRAC/Registry/Groups/(groupName)/Properties```.
-
-For a comprehensive list of Properties, see :py:mod:`~DIRAC.Core.Security.Properties`

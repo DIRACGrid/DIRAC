@@ -3,10 +3,16 @@
 # File :   dirac-executor
 # Author : Adria Casajus
 ########################################################################
-__RCSID__ = "$Id$"
-
-"""  This is a script to launch DIRAC executors
 """
+This is a script to launch DIRAC executors
+
+Usage::
+
+  dirac-executor (<options>|<cfgFile>)*
+
+"""
+
+__RCSID__ = "$Id$"
 
 import sys
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
@@ -15,6 +21,7 @@ from DIRAC.Core.Base.ExecutorReactor import ExecutorReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
 localCfg = LocalConfiguration()
+localCfg.setUsageMessage(__doc__)
 
 positionalArgs = localCfg.getPositionalArguments()
 if len(positionalArgs) == 0:

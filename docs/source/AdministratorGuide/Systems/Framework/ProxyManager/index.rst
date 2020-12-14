@@ -9,7 +9,7 @@ It keeps uploaded long-living proxies in order to provide them for asynchronous 
 This system is vital, as the proxies stored here are used to run users jobs and pilots, as well as to retrieve information from VOMS.
 The system also contains the logic of notification (look :ref:`Notification system <framework_notification>` of the expiration of the proxy.
 It is also important to mention that the PM manages proxy extensions, both DIRAC and VOMS. The class :mod:`~DIRAC.Core.Security.VOMS` is used to add a VOMS extension.
-It is also possible to obtain a limited user proxy using tokens.
+It is also possible to obtain a limited user proxy using tokens. If such a proxy is also available through :ref:`a proxy provider <resourcesProxyProvider>` that is supported by DIRAC, it is used to update the proxy if necessary.
 
 Structure
 =========

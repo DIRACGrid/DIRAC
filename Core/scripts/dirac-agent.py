@@ -3,18 +3,26 @@
 # File :   dirac-agent
 # Author : Adria Casajus, Andrei Tsaregorodtsev, Stuart Paterson
 ########################################################################
-__RCSID__ = "$Id$"
+"""
+This is a script to launch DIRAC agents. Mostly internal.
 
-"""  This is a script to launch DIRAC agents
+Usage::
+
+  dirac-agent (<options>|<cfgFile>)*
+
 """
 
+__RCSID__ = "$Id$"
+
 import sys
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+
 from DIRAC import gLogger
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
+from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 
 localCfg = LocalConfiguration()
+localCfg.setUsageMessage(__doc__)
 
 positionalArgs = localCfg.getPositionalArguments()
 if len(positionalArgs) == 0:
