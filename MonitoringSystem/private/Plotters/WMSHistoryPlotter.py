@@ -111,11 +111,9 @@ class WMSHistoryPlotter(BasePlotter):
     :param dict reportRequest: contains attributes used to create the plot.
     :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
     """
-    selectFields = ['Jobs']
-
     retVal = self._getSummaryData(startTime=reportRequest['startTime'],
                                   endTime=reportRequest['endTime'],
-                                  selectFields=selectFields,
+                                  selectField='Jobs',
                                   preCondDict=reportRequest['condDict'],
                                   metadataDict={"metric": "avg"})
     if not retVal['OK']:

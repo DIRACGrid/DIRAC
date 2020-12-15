@@ -348,10 +348,9 @@ class MonitoringDB(ElasticDB):
                   field='timestamp',
                   interval=interval).metric('tt', a1)
 
-    # s.fields(['timestamp'] + selectFields)
     s = s.extra(size=self.RESULT_SIZE)  # max size
-    # s = s.source(False)  # don't return any fields, just the metadata
-
+    s = s.source(False)  # don't return any fields (hits), just the metadata
+    s = s[0:0]  # pagination 0, as we are only interested in the aggregations
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
