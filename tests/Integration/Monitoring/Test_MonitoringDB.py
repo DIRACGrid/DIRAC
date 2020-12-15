@@ -131,6 +131,7 @@ def putAndDelete():
   # delete the index
   monitoringDB.deleteIndex('test-*')
 
+
 #############################################
 #  actual tests
 #############################################

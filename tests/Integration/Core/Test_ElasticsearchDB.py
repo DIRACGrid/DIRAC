@@ -142,8 +142,7 @@ class ElasticDeleteChain(ElasticTestCase):
     """ delete non-existing index
     """
     result = self.elasticSearchDB.deleteIndex('dsdssuu')
-    self.assertFalse(result['OK'])
-    self.assertTrue(result['Message'])
+    self.assertTrue(result['OK'])
 
 
 class ElasticTestChain(ElasticTestCase):
