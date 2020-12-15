@@ -125,8 +125,8 @@ class MonitoringDB(ElasticDB):
     return S_OK(keyValuesDict)
 
   def retrieveBucketedData(self, typeName, startTime, endTime,
-			   interval, selectField, condDict, grouping,
-			   metainfo=None):
+                           interval, selectField, condDict, grouping,
+                           metainfo=None):
     """
     Get bucketed data from the DB. This is the standard method used.
 
@@ -181,12 +181,15 @@ class MonitoringDB(ElasticDB):
     for cond in condDict:
       query = None
       for condValue in condDict[cond]:
+        if not (cond and condValue):
+          continue
         kwargs = {cond: condValue}
         if query:
-	  query = query | self._Q('match', **kwargs)  # term?
+          query = query | self._Q('term', **kwargs)
         else:
-          query = self._Q('match', **kwargs)
-      q += [query]
+          query = self._Q('term', **kwargs)
+      if query:
+        q += [query]
 
     s = s.filter('bool', must=q)
 
@@ -195,29 +198,29 @@ class MonitoringDB(ElasticDB):
     # This the time-based metric aggregation of the selected field
     timeAggregation = self._A('terms', field='timestamp')
     timeAggregation.metric(
-	'total',  # name
-	'sum',  # type
-	field=selectField)
+        'total',  # name
+        'sum',  # type
+        field=selectField)
 
     # and now we group with bucket aggregation
     groupingAggregation = self._A('terms', field=grouping, size=self.RESULT_SIZE)
     groupingAggregation.bucket(
-	'end_data',  # name
-	'date_histogram',  # type
-	field='timestamp',
-	interval=interval).metric(
-	    'timeAggregation',
-	    timeAggregation).pipeline(
-		'timeAggregation_avg_bucket',
-		'avg_bucket',
-		buckets_path='timeAggregation>total',
-		gap_policy='insert_zeros')
+        'end_data',  # name
+        'date_histogram',  # type
+        field='timestamp',
+        interval=interval).metric(
+            'timeAggregation',
+            timeAggregation).pipeline(
+                'timeAggregation_avg_bucket',
+                'avg_bucket',
+                buckets_path='timeAggregation>total',
+                gap_policy='insert_zeros')
     if isAvgAgg:
       groupingAggregation.pipeline(
-	  'avg_total_jobs',
-	  'avg_bucket',
-	  buckets_path='end_data>timeAggregation_avg_bucket',
-	  gap_policy='insert_zeros')
+          'avg_total_jobs',
+          'avg_bucket',
+          buckets_path='end_data>timeAggregation_avg_bucket',
+          gap_policy='insert_zeros')
 
     s.aggs.bucket(aggName, groupingAggregation)
 
@@ -226,54 +229,29 @@ class MonitoringDB(ElasticDB):
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
-    self.log.debug("Query result", retVal)
-    self.log.debug("Query len result", len(retVal))
+    self.log.debug("Query len and result", (str(len(retVal)) + ' : ' + str(retVal)))
 
     result = {}
     for bucket in retVal.aggregations[aggName].buckets:
       if isAvgAgg:
-	if bucket.key not in result:
-	  result[bucket.key] = bucket.avg_total_jobs.value
-	else:
-	  result[bucket.key].append(bucket.avg_total_jobs.value)
+        if bucket.key not in result:
+          result[bucket.key] = bucket.avg_total_jobs.value
+        else:
+          result[bucket.key].append(bucket.avg_total_jobs.value)
       else:
-	if bucket.key not in result:
-	  result[bucket.key] = {}
-	for k in bucket.end_data.buckets:
-	  if (k.key / 1000) not in result[bucket.key]:
-	    result[bucket.key][k.key / 1000] = k.timeAggregation_avg_bucket.value
-	  else:
-	    result[bucket.key][k.key / 1000].append(k.timeAggregation_avg_bucket.value)
+        if bucket.key not in result:
+          result[bucket.key] = {}
+        for k in bucket.end_data.buckets:
+          if (k.key / 1000) not in result[bucket.key]:
+            result[bucket.key][k.key / 1000] = k.timeAggregation_avg_bucket.value
+          else:
+            result[bucket.key][k.key / 1000].append(k.timeAggregation_avg_bucket.value)
 
-    # the result format is { 'grouping':{timestamp:value, timestamp:value}:
-    # value is list if more than one value exist. for example :
-    # {u'Bookkeeping_BookkeepingManager': {1474300800: 4.0, 1474344000: 4.0, 1474331400: 4.0, 1
-    # 474302600: 4.0, 1474365600: 4.0, 1474304400: 4.0, 1474320600: 4.0, 1474360200: 4.0,
-    # 1474306200: 4.0, 1474356600: 4.0, 1474336800: 4.0, 1474326000: 4.0, 1474315200: 4.0,
-    # 1474281000: 4.0, 1474309800: 4.0, 1474338600: 4.0, 1474311600: 4.0, 1474317000: 4.0,
-    # 1474367400: 4.0, 1474333200: 4.0, 1474284600: 4.0, 1474362000: 4.0,
-    # 1474327800: 4.0, 1474345800: 4.0, 1474286400: 4.0, 1474308000: 4.0, 1474322400: 4.0,
-    # 1474288200: 4.0, 1474351200: 4.0, 1474282800: 4.0, 1474347600: 4.0,
-    # 1474313400: 4.0, 1474349400: 4.0, 1474297200: 4.0, 1474340400: 4.0, 1474291800: 4.0,
-    # 1474335000: 4.0, 1474293600: 4.0, 1474290000: 4.0, 1474363800: 4.0,
-    # 1474329600: 4.0, 1474353000: 4.0, 1474358400: 4.0, 1474324200: 4.0, 1474354800: 4.0,
-    # 1474295400: 4.0, 1474318800: 4.0, 1474299000: 4.0, 1474342200: 4.0},
-    # u'Framework_SystemAdministrator': {1474300800: 8.0, 1474344000: 8.0, 1474331400: 8.0,
-    # 1474302600: 8.0, 1474365600: 8.0, 1474304400: 8.0, 1474320600: 8.0,
-    # 1474360200: 8.0, 1474306200: 8.0, 1474356600: 8.0, 1474336800: 8.0, 1474326000: 8.0,
-    # 1474315200: 8.0, 1474281000: 8.0, 1474309800: 8.0, 1474338600: 8.0,
-    # 1474311600: 8.0, 1474317000: 8.0, 1474367400: 8.0, 1474333200: 8.0, 1474284600: 8.0,
-    # 1474362000: 8.0, 1474327800: 8.0, 1474345800: 8.0, 1474286400: 8.0,
-    # 1474308000: 8.0, 1474322400: 8.0, 1474288200: 8.0, 1474351200: 8.0, 1474282800: 8.0,
-    # 1474347600: 8.0, 1474313400: 8.0, 1474349400: 8.0, 1474297200: 8.0,
-    # 1474340400: 8.0, 1474291800: 8.0, 1474335000: 8.0, 1474293600: 8.0, 1474290000: 8.0,
-    # 1474363800: 8.0, 1474329600: 8.0, 1474353000: 8.0, 1474358400: 8.0,
-    # 1474324200: 8.0, 1474354800: 8.0, 1474295400: 8.0, 1474318800: 8.0, 1474299000: 8.0, 1474342200: 8.0}}
     return S_OK(result)
 
   def retrieveAggregatedData(self, typeName, startTime, endTime, interval,
-			     selectField, condDict, grouping,
-			     metainfo={}):
+                             selectField, condDict, grouping,
+                             metainfo={}):
     """
     Get data from the DB using simple aggregations.
     Note: this method is equivalent to retrieveBucketedData.
@@ -316,30 +294,51 @@ class MonitoringDB(ElasticDB):
     # s = s.filter( 'bool', must = query )
     # s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
 
+    if not selectField:
+      return S_ERROR("Missing the selection field")
+
+    if not grouping:
+      return S_ERROR("Missing the grouping field")
+
+    if metainfo is None:
+      metainfo = {}
+
+    # Getting the index
     retVal = self.getIndexName(typeName)
     if not retVal['OK']:
       return retVal
     indexName = "%s*" % (retVal['Value'])
     s = self._Search(indexName)
 
-    # First: create the query to filter the results
+    # ## building the ES query incrementally
+
+    # 2 parts:
+    #
+    # 1) query (on which documents are we working on?)
+    # 2) aggregations (given the documents, on which field are we aggregating?)
+
+    # 1) create the query to filter the results
     # Time range is always present
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
+    # Optional additional conditions
     for cond in condDict:
       query = None
       for condValue in condDict[cond]:
+        if not (cond and condValue):
+          continue
         kwargs = {cond: condValue}
         if query:
-	  query = query | self._Q('match', **kwargs)  # term?
+          query = query | self._Q('term', **kwargs)
         else:
-          query = self._Q('match', **kwargs)
-      q += [query]
-
+          query = self._Q('term', **kwargs)
+      if query:
+        q += [query]
     s = s.filter('bool', must=q)
 
-    # Second: aggregations
+    # 2) prepare the aggregations
+
     a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
     # default is average
     aggregator = metainfo.get('metric', 'avg')
@@ -368,30 +367,6 @@ class MonitoringDB(ElasticDB):
           # can use default value for simple aggregation. Later to be checked.
         else:
           result[value.key].update({bucketTime: value.m1.value if value.m1.value else 0})
-    # the result format is { 'grouping':{timestamp:value, timestamp:value}
-    # for example : {u'Bookkeeping_BookkeepingManager': {1474300800: 4.0, 1474344000: 4.0, 1474331400: 4.0, 1
-    # 474302600: 4.0, 1474365600: 4.0, 1474304400: 4.0, 1474320600: 4.0, 1474360200: 4.0, 1474306200: 4.0,
-    # 1474356600: 4.0, 1474336800: 4.0, 1474326000: 4.0, 1474315200: 4.0,
-    # 1474281000: 4.0, 1474309800: 4.0, 1474338600: 4.0, 1474311600: 4.0, 1474317000: 4.0,
-    # 1474367400: 4.0, 1474333200: 4.0, 1474284600: 4.0, 1474362000: 4.0,
-    # 1474327800: 4.0, 1474345800: 4.0, 1474286400: 4.0, 1474308000: 4.0, 1474322400: 4.0,
-    # 1474288200: 4.0, 1474351200: 4.0, 1474282800: 4.0, 1474347600: 4.0,
-    # 1474313400: 4.0, 1474349400: 4.0, 1474297200: 4.0, 1474340400: 4.0, 1474291800: 4.0,
-    # 1474335000: 4.0, 1474293600: 4.0, 1474290000: 4.0, 1474363800: 4.0,
-    # 1474329600: 4.0, 1474353000: 4.0, 1474358400: 4.0, 1474324200: 4.0, 1474354800: 4.0,
-    # 1474295400: 4.0, 1474318800: 4.0, 1474299000: 4.0, 1474342200: 4.0},
-    # u'Framework_SystemAdministrator': {1474300800: 8.0, 1474344000: 8.0, 1474331400: 8.0,
-    # 1474302600: 8.0, 1474365600: 8.0, 1474304400: 8.0, 1474320600: 8.0,
-    # 1474360200: 8.0, 1474306200: 8.0, 1474356600: 8.0, 1474336800: 8.0, 1474326000: 8.0,
-    # 1474315200: 8.0, 1474281000: 8.0, 1474309800: 8.0, 1474338600: 8.0,
-    # 1474311600: 8.0, 1474317000: 8.0, 1474367400: 8.0, 1474333200: 8.0, 1474284600: 8.0,
-    # 1474362000: 8.0, 1474327800: 8.0, 1474345800: 8.0, 1474286400: 8.0,
-    # 1474308000: 8.0, 1474322400: 8.0, 1474288200: 8.0, 1474351200: 8.0, 1474282800: 8.0,
-    # 1474347600: 8.0, 1474313400: 8.0, 1474349400: 8.0, 1474297200: 8.0,
-    # 1474340400: 8.0, 1474291800: 8.0, 1474335000: 8.0, 1474293600: 8.0, 1474290000: 8.0,
-    # 1474363800: 8.0, 1474329600: 8.0, 1474353000: 8.0, 1474358400: 8.0,
-    # 1474324200: 8.0, 1474354800: 8.0, 1474295400: 8.0, 1474318800: 8.0, 1474299000: 8.0,
-    # 1474342200: 8.0}}
 
     return S_OK(result)
 
@@ -464,14 +439,14 @@ class MonitoringDB(ElasticDB):
     mustClose = []
     for cond in condDict:
       if cond not in ('startTime', 'endTime'):
-	kwargs = {cond: condDict[cond]}
-	query = self._Q('match', **kwargs)
-	mustClose.append(query)
+        kwargs = {cond: condDict[cond]}
+        query = self._Q('match', **kwargs)
+        mustClose.append(query)
 
     if condDict.get('startTime') and condDict.get('endTime'):
       query = self._Q('range',
-		      timestamp={'lte': condDict.get('endTime') * 1000,
-				 'gte': condDict.get('startTime') * 1000})
+                      timestamp={'lte': condDict.get('endTime') * 1000,
+                                 'gte': condDict.get('startTime') * 1000})
 
       mustClose.append(query)
 
