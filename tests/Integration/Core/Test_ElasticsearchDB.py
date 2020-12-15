@@ -3,6 +3,8 @@ This is used to test the ElasticSearchDB module. It is used to discover all poss
 If you modify the test data, you have to update the test cases...
 """
 
+# TODO: move to pytest
+
 import unittest
 import sys
 import datetime

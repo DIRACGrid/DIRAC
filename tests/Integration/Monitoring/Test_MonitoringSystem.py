@@ -4,6 +4,9 @@ It is used to test client->db-> service.
   and this monitoring service should be connecting to an ElasticSeach instance
 """
 
+# TODO: move to pytest
+# TODO: use WMSHistory_testData.json as in Test_MonitoringDB.py
+
 # pylint: disable=invalid-name,wrong-import-position
 
 import unittest
