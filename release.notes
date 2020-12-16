@@ -1,4 +1,4 @@
-[v7r2-pre24]
+[v7r2-pre25]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -25,6 +25,7 @@ CHANGE: (#4791) dirac-install with diracos: remove TERMINFO, RRD_DEFAULT_FONT, G
 FIX: (#4791) Late import of MonitoringReport
 NEW: (#4823) flipped default value of DIRAC_USE_JSON_DECODE env variable
 FIX: (#4843) X509Chain: fix downloading X509 certificates
+FIX: (#4870) ElasticSearchDB: fix exception handling when checking existance of indices
 
 *Framework
 CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
