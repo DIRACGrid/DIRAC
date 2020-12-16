@@ -14,14 +14,16 @@ else
   echo '==> Running in non-DEBUG mode'
 fi
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 # Creating the XML job description files
-python $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/createJobXMLDescriptions.py $DEBUG
+python "${SCRIPT_DIR}/createJobXMLDescriptions.py" $DEBUG
 
 ###############################################################################
 # Running the real tests
 
 # OK
-$DIRACSCRIPTS/dirac-jobexec jobDescription-OK.xml --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-jobexec jobDescription-OK.xml --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
@@ -30,7 +32,7 @@ else
 fi
 
 # OK2
-$DIRACSCRIPTS/dirac-jobexec jobDescription-OK-multiSteps.xml --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-jobexec jobDescription-OK-multiSteps.xml --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
@@ -40,7 +42,7 @@ fi
 
 
 # FAIL
-$DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL.xml --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL.xml --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 if [[ "${?}" -eq 111 ]]; then
   echo -e "\nSuccess\n\n"
 else
@@ -49,7 +51,7 @@ else
 fi
 
 # FAIL2
-$DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL-multiSteps.xml --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL-multiSteps.xml --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 if [[ "${?}" -eq 111 ]]; then
   echo -e "\nSuccess\n\n"
 else
@@ -59,7 +61,7 @@ fi
 
 
 # FAIL with exit code > 255
-$DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL1502.xml --cfg $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL1502.xml --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 if [[ "${?}" -eq 222 ]]; then # This is 1502 & 255 (0xDE)
   echo -e "\nSuccess\n\n"
 else

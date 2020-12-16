@@ -19,6 +19,8 @@ if [[ "${1}" = "-test_filter" ]]; then
    fi
 fi
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 echo "dirac-proxy-init -g dirac_prod"
 dirac-proxy-init -g dirac_prod
 if [[ "${?}" -ne 0 ]]; then
@@ -58,7 +60,7 @@ done
 # Create unique files and adding entry to the bkk"
 echo ""
 echo "Creating unique test files"
-$DIRAC/DIRAC/tests/System/random_files_creator.sh --Files=5 --Name="Test_Transformation_System_" --Path=${PWD}/TransformationSystemTest/
+"${SCRIPT_DIR}/random_files_creator.sh" --Files=5 --Name="Test_Transformation_System_" --Path=${PWD}/TransformationSystemTest/
 
 # Add the random files to the transformation
 echo ""
@@ -98,12 +100,12 @@ fi
 
 echo ""
 echo "Submitting test production"
-python ${DIRAC}/DIRAC/tests/System/dirac-test-production.py -ddd ${directory}  --UseFilter=${TestFilter}
+python "${SCRIPT_DIR}/dirac-test-production.py" -ddd ${directory}  --UseFilter=${TestFilter}
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
 
-transID=`cat TransformationID`
+transID=$(cat TransformationID)
 
 if [[ ${TestFilter} == "False" ]]; then
   echo ""

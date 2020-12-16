@@ -22,6 +22,8 @@ if [[ "$1" = "-test_filter" ]]; then
    fi
 fi
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 echo "dirac-proxy-init -g dirac_prod"
 dirac-proxy-init -g dirac_prod --VOMS
 if [[ "${?}" -ne 0 ]]; then
@@ -73,7 +75,7 @@ echo "Target: ${TARGET_SE}"
 # Create unique files"
 echo ""
 echo "Creating unique test files"
-$DIRAC/DIRAC/tests/System/random_files_creator.sh --Files=5 --Name="Test_Transformation_System_" --Path=$PWD/TransformationSystemTest
+"${SCRIPT_DIR}/random_files_creator.sh" --Files=5 --Name="Test_Transformation_System_" --Path=$PWD/TransformationSystemTest
 
 # Add the random files to the transformation
 echo ""
