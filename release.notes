@@ -1,3 +1,22 @@
+[v7r1p23]
+
+FIX: Fixes from v7r0p43
+
+*Configuration
+FIX: (#4869) Bdii2CSAgent: remove constant update of NumberOfProcessors parameter.
+     Comparison between int and str lead to "new" value every run.
+
+*WMS
+FIX: (#4868) JobLoggingDB: fix for backward compatibility
+
+*Monitoring
+CHANGE: (#4872) better, faster aggregations. Always using term queries for keyword fields,
+         and other less important changes
+CHANGE: (#4872) do not return error if trying to delete non-existing index
+
+*tests
+NEW: (#4872) added integration test for MonitoringDB
+
 [v7r1p22]
 
 *WMS
