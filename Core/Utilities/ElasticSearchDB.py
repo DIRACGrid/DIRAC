@@ -283,15 +283,18 @@ class ElasticSearchDB(object):
     """
     :param str indexName: the name of the index to be deleted...
     """
+    sLog.info("Deleting index", indexName)
     try:
       retVal = self.client.indices.delete(indexName)
     except NotFoundError as e:
-      return S_ERROR(DErrno.EELNOFOUND, e)
+      sLog.warn("Index does not exist", indexName)
+      return S_OK("Noting to delete")
     except ValueError as e:
       return S_ERROR(DErrno.EVALUE, e)
 
     if retVal.get('acknowledged'):
       # if the value exists and the value is not None
+      sLog.info("Deleted index", indexName)
       return S_OK(indexName)
 
     return S_ERROR(retVal)

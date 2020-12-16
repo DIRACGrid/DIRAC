@@ -30,10 +30,9 @@ class WMSHistoryPlotter(BasePlotter):
     :param dict reportRequest: contains attributes used to create the plot.
     :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
     """
-    selectFields = ['Jobs']
     retVal = self._getTimedData(startTime=reportRequest['startTime'],
                                 endTime=reportRequest['endTime'],
-                                selectFields=selectFields,
+                                selectField='Jobs',
                                 preCondDict=reportRequest['condDict'],
                                 metadataDict=None)
     if not retVal['OK']:
@@ -71,10 +70,9 @@ class WMSHistoryPlotter(BasePlotter):
     :param dict reportRequest: contains attributes used to create the plot.
     :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
     """
-    selectFields = ['Reschedules']
     retVal = self._getTimedData(startTime=reportRequest['startTime'],
                                 endTime=reportRequest['endTime'],
-                                selectFields=selectFields,
+                                selectField='Reschedules',
                                 preCondDict=reportRequest['condDict'],
                                 metadataDict=None)
 
@@ -113,11 +111,9 @@ class WMSHistoryPlotter(BasePlotter):
     :param dict reportRequest: contains attributes used to create the plot.
     :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
     """
-    selectFields = ['Jobs']
-
     retVal = self._getSummaryData(startTime=reportRequest['startTime'],
                                   endTime=reportRequest['endTime'],
-                                  selectFields=selectFields,
+                                  selectField='Jobs',
                                   preCondDict=reportRequest['condDict'],
                                   metadataDict={"metric": "avg"})
     if not retVal['OK']:

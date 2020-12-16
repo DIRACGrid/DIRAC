@@ -12,7 +12,8 @@ The following options can be set in ``Systems/Monitoring/<Setup>/Databases/Monit
 
 __RCSID__ = "$Id$"
 
-import datetime
+import time
+import calendar
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.ElasticDB import ElasticDB
@@ -123,124 +124,134 @@ class MonitoringDB(ElasticDB):
         keyValuesDict[i] = retVal['Value']
     return S_OK(keyValuesDict)
 
-  def retrieveBucketedData(self, typeName, startTime, endTime, interval, selectFields, condDict, grouping, metainfo):
+  def retrieveBucketedData(self, typeName, startTime, endTime,
+                           interval, selectField, condDict, grouping,
+                           metainfo=None):
     """
-    Get data from the DB
+    Get bucketed data from the DB. This is the standard method used.
 
     :param str typeName: name of the monitoring type
-    :param int startTime:  epoch object
-    :param int endtime: epoch object
-    :param dict condDict: conditions for the query
-
-                   * key -> name of the field
-                   * value -> list of possible values
-
+    :param int startTime: start time, expressed as epoch
+    :param int endtime: end time, expressed as epoch
+    :param str interval: interval expressed in ES notation
+    :param str selectField: the field on which we are aggregating (the plot type)
+    :param dict condDict: optional additional conditions for the query
+    :param str grouping: what we are grouping on
+    :param dict metainfo: meta information
+    :returns: S_OK/S_ERROR with dictionary of key/value pairs
     """
 
+    if not selectField:
+      return S_ERROR("Missing the selection field")
+
+    if not grouping:
+      return S_ERROR("Missing the grouping field")
+
+    aggName = '_'.join([selectField, grouping])
+
+    if metainfo is None:
+      metainfo = {}
+
+    isAvgAgg = False
+    # the data is used to fill the pie charts.
+    # This aggregation is used to average the buckets.
+    if metainfo.get('metric', 'sum') == 'avg':
+      isAvgAgg = True
+
+    # Getting the index
     retVal = self.getIndexName(typeName)
     if not retVal['OK']:
       return retVal
-    isAvgAgg = False
-    # the data is used to fill the pie charts. This aggregation is used to average the buckets.
-    if metainfo and metainfo.get('metric', 'sum') == 'avg':
-      isAvgAgg = True
+    indexName = "%s*" % (retVal['Value'])
+    s = self._Search(indexName)
 
+    # ## building the ES query incrementally
+
+    # 2 parts:
+    #
+    # 1) query (on which documents are we working on?)
+    # 2) aggregations (given the documents, on which field are we aggregating?)
+
+    # 1) create the query to filter the results
+    # Time range is always present
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
-
+    # Optional additional conditions
     for cond in condDict:
       query = None
       for condValue in condDict[cond]:
+        if not (cond and condValue):
+          continue
         kwargs = {cond: condValue}
         if query:
-          query = query | self._Q('match', **kwargs)
+          query = query | self._Q('term', **kwargs)
         else:
-          query = self._Q('match', **kwargs)
-      q += [query]
+          query = self._Q('term', **kwargs)
+      if query:
+        q += [query]
 
-    indexName = "%s*" % (retVal['Value'])
-    s = self._Search(indexName)
     s = s.filter('bool', must=q)
 
-    for i, field in enumerate(selectFields):
-      a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
-      a2 = self._A('terms', field='timestamp')
+    # 2) prepare the aggregations
 
-      a2.metric('total_jobs', 'sum', field=field)
-      a1.bucket('end_data',
-                'date_histogram',
-                field='timestamp',
-                interval=interval).metric('tt', a2).pipeline('avg_monthly_sales',
-                                                             'avg_bucket',
-                                                             buckets_path='tt>total_jobs',
-                                                             gap_policy='insert_zeros')
-      if isAvgAgg:
-        a1.pipeline('avg_total_jobs',
-                    'avg_bucket',
-                    buckets_path='end_data>avg_monthly_sales',
-                    gap_policy='insert_zeros')
+    # This the time-based metric aggregation of the selected field
+    timeAggregation = self._A('terms', field='timestamp')
+    timeAggregation.metric(
+        'total',  # name
+        'sum',  # type
+        field=selectField)
 
-      s.aggs.bucket(str(i), a1)
+    # and now we group with bucket aggregation
+    groupingAggregation = self._A('terms', field=grouping, size=self.RESULT_SIZE)
+    groupingAggregation.bucket(
+        'end_data',  # name
+        'date_histogram',  # type
+        field='timestamp',
+        interval=interval).metric(
+            'timeAggregation',
+            timeAggregation).pipeline(
+                'timeAggregation_avg_bucket',
+                'avg_bucket',
+                buckets_path='timeAggregation>total',
+                gap_policy='insert_zeros')
+    if isAvgAgg:
+      groupingAggregation.pipeline(
+          'avg_total_jobs',
+          'avg_bucket',
+          buckets_path='end_data>timeAggregation_avg_bucket',
+          gap_policy='insert_zeros')
 
-    #  s.fields( ['timestamp'] + selectFields )
+    s.aggs.bucket(aggName, groupingAggregation)
+
+    s = s.source(False)  # don't return any fields (hits), just the metadata
+    s = s[0:0]  # pagination 0, as we are only interested in the aggregations
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
-    self.log.debug("Query result", len(retVal))
+    self.log.debug("Query len and result", (str(len(retVal)) + ' : ' + str(retVal)))
 
     result = {}
-#    for i in retVal.aggregations['2'].buckets:
-    for i, field in enumerate(selectFields):
-      for j in retVal.aggregations[str(i)].buckets:
-        if isAvgAgg:
-          if j.key not in result:
-            if len(selectFields) == 1:  # for backward compatibility
-              result[j.key] = j.avg_total_jobs.value
-            else:
-              result[j.key] = [j.avg_total_jobs.value]
-          else:
-            result[j.key].append(j.avg_total_jobs.value)
+    for bucket in retVal.aggregations[aggName].buckets:
+      if isAvgAgg:
+        if bucket.key not in result:
+          result[bucket.key] = bucket.avg_total_jobs.value
         else:
-          site = j.key
-          if site not in result:
-            result[site] = {}
-          for k in j.end_data.buckets:
-            if (k.key / 1000) not in result[site]:
-              if len(selectFields) == 1:  # for backward compatibility
-                result[site][k.key / 1000] = k.avg_monthly_sales.value
-              else:
-                result[site][k.key / 1000] = [k.avg_monthly_sales.value]
-            else:
-              result[site][k.key / 1000].append(k.avg_monthly_sales.value)
+          result[bucket.key].append(bucket.avg_total_jobs.value)
+      else:
+        if bucket.key not in result:
+          result[bucket.key] = {}
+        for k in bucket.end_data.buckets:
+          if (k.key / 1000) not in result[bucket.key]:
+            result[bucket.key][k.key / 1000] = k.timeAggregation_avg_bucket.value
+          else:
+            result[bucket.key][k.key / 1000].append(k.timeAggregation_avg_bucket.value)
 
-    # the result format is { 'grouping':{timestamp:value, timestamp:value}:
-    # value is list if more than one value exist. for example :
-    # {u'Bookkeeping_BookkeepingManager': {1474300800: 4.0, 1474344000: 4.0, 1474331400: 4.0, 1
-    # 474302600: 4.0, 1474365600: 4.0, 1474304400: 4.0, 1474320600: 4.0, 1474360200: 4.0,
-    # 1474306200: 4.0, 1474356600: 4.0, 1474336800: 4.0, 1474326000: 4.0, 1474315200: 4.0,
-    # 1474281000: 4.0, 1474309800: 4.0, 1474338600: 4.0, 1474311600: 4.0, 1474317000: 4.0,
-    # 1474367400: 4.0, 1474333200: 4.0, 1474284600: 4.0, 1474362000: 4.0,
-    # 1474327800: 4.0, 1474345800: 4.0, 1474286400: 4.0, 1474308000: 4.0, 1474322400: 4.0,
-    # 1474288200: 4.0, 1474351200: 4.0, 1474282800: 4.0, 1474347600: 4.0,
-    # 1474313400: 4.0, 1474349400: 4.0, 1474297200: 4.0, 1474340400: 4.0, 1474291800: 4.0,
-    # 1474335000: 4.0, 1474293600: 4.0, 1474290000: 4.0, 1474363800: 4.0,
-    # 1474329600: 4.0, 1474353000: 4.0, 1474358400: 4.0, 1474324200: 4.0, 1474354800: 4.0,
-    # 1474295400: 4.0, 1474318800: 4.0, 1474299000: 4.0, 1474342200: 4.0},
-    # u'Framework_SystemAdministrator': {1474300800: 8.0, 1474344000: 8.0, 1474331400: 8.0,
-    # 1474302600: 8.0, 1474365600: 8.0, 1474304400: 8.0, 1474320600: 8.0,
-    # 1474360200: 8.0, 1474306200: 8.0, 1474356600: 8.0, 1474336800: 8.0, 1474326000: 8.0,
-    # 1474315200: 8.0, 1474281000: 8.0, 1474309800: 8.0, 1474338600: 8.0,
-    # 1474311600: 8.0, 1474317000: 8.0, 1474367400: 8.0, 1474333200: 8.0, 1474284600: 8.0,
-    # 1474362000: 8.0, 1474327800: 8.0, 1474345800: 8.0, 1474286400: 8.0,
-    # 1474308000: 8.0, 1474322400: 8.0, 1474288200: 8.0, 1474351200: 8.0, 1474282800: 8.0,
-    # 1474347600: 8.0, 1474313400: 8.0, 1474349400: 8.0, 1474297200: 8.0,
-    # 1474340400: 8.0, 1474291800: 8.0, 1474335000: 8.0, 1474293600: 8.0, 1474290000: 8.0,
-    # 1474363800: 8.0, 1474329600: 8.0, 1474353000: 8.0, 1474358400: 8.0,
-    # 1474324200: 8.0, 1474354800: 8.0, 1474295400: 8.0, 1474318800: 8.0, 1474299000: 8.0, 1474342200: 8.0}}
     return S_OK(result)
 
-  def retrieveAggregatedData(self, typeName, startTime, endTime, interval, selectFields, condDict, grouping, metainfo):
+  def retrieveAggregatedData(self, typeName, startTime, endTime, interval,
+                             selectField, condDict, grouping,
+                             metainfo={}):
     """
     Get data from the DB using simple aggregations.
     Note: this method is equivalent to retrieveBucketedData.
@@ -248,13 +259,13 @@ class MonitoringDB(ElasticDB):
     We do not perform dynamic bucketing on the raw data.
 
     :param str typeName: name of the monitoring type
-    :param int startTime: epoch object
-    :param int endtime: epoch object
-    :param interval:
-    :param selectFields:
-    :param dict condDict: conditions for the query
-    :param str grouping: grouping requested
-    :param dict metainfo: dictionary of meta info (e.g. {'metric': 'avg'})
+    :param int startTime: start time, expressed as epoch
+    :param int endtime: end time, expressed as epoch
+    :param str interval: interval expressed in ES notation
+    :param str selectField: the field on which we are aggregating (the plot type)
+    :param dict condDict: optional additional conditions for the query
+    :param str grouping: what we are grouping on
+    :param dict metainfo: meta information
     :returns: S_OK/S_ERROR with dictionary of key/value pairs
 
     """
@@ -283,41 +294,63 @@ class MonitoringDB(ElasticDB):
     # s = s.filter( 'bool', must = query )
     # s = s.aggs.bucket('end_data', 'date_histogram', field='timestamp', interval='30m').metric( 'tt', a )
 
+    if not selectField:
+      return S_ERROR("Missing the selection field")
+
+    if not grouping:
+      return S_ERROR("Missing the grouping field")
+
+    if metainfo is None:
+      metainfo = {}
+
+    # Getting the index
     retVal = self.getIndexName(typeName)
     if not retVal['OK']:
       return retVal
     indexName = "%s*" % (retVal['Value'])
+    s = self._Search(indexName)
 
-    # default is average
-    aggregator = metainfo.get('metric', 'avg')
+    # ## building the ES query incrementally
 
-    # building the query incrementally
+    # 2 parts:
+    #
+    # 1) query (on which documents are we working on?)
+    # 2) aggregations (given the documents, on which field are we aggregating?)
+
+    # 1) create the query to filter the results
+    # Time range is always present
     q = [self._Q('range',
                  timestamp={'lte': endTime * 1000,
                             'gte': startTime * 1000})]
+    # Optional additional conditions
     for cond in condDict:
       query = None
       for condValue in condDict[cond]:
+        if not (cond and condValue):
+          continue
         kwargs = {cond: condValue}
         if query:
-          query = query | self._Q('match', **kwargs)
+          query = query | self._Q('term', **kwargs)
         else:
-          query = self._Q('match', **kwargs)
-      q += [query]
+          query = self._Q('term', **kwargs)
+      if query:
+        q += [query]
+    s = s.filter('bool', must=q)
+
+    # 2) prepare the aggregations
 
     a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
-    a1.metric('m1', aggregator, field=selectFields[0])
-
-    s = self._Search(indexName)
-    s = s.filter('bool', must=q)
+    # default is average
+    aggregator = metainfo.get('metric', 'avg')
+    a1.metric('m1', aggregator, field=selectField)
     s.aggs.bucket('end_data',
                   'date_histogram',
                   field='timestamp',
                   interval=interval).metric('tt', a1)
 
-    # s.fields(['timestamp'] + selectFields)
-    s = s.extra(size=self.RESULT_SIZE)  # do not get the hits!
-
+    s = s.extra(size=self.RESULT_SIZE)  # max size
+    s = s.source(False)  # don't return any fields (hits), just the metadata
+    s = s[0:0]  # pagination 0, as we are only interested in the aggregations
     self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
 
@@ -333,30 +366,6 @@ class MonitoringDB(ElasticDB):
           # can use default value for simple aggregation. Later to be checked.
         else:
           result[value.key].update({bucketTime: value.m1.value if value.m1.value else 0})
-    # the result format is { 'grouping':{timestamp:value, timestamp:value}
-    # for example : {u'Bookkeeping_BookkeepingManager': {1474300800: 4.0, 1474344000: 4.0, 1474331400: 4.0, 1
-    # 474302600: 4.0, 1474365600: 4.0, 1474304400: 4.0, 1474320600: 4.0, 1474360200: 4.0, 1474306200: 4.0,
-    # 1474356600: 4.0, 1474336800: 4.0, 1474326000: 4.0, 1474315200: 4.0,
-    # 1474281000: 4.0, 1474309800: 4.0, 1474338600: 4.0, 1474311600: 4.0, 1474317000: 4.0,
-    # 1474367400: 4.0, 1474333200: 4.0, 1474284600: 4.0, 1474362000: 4.0,
-    # 1474327800: 4.0, 1474345800: 4.0, 1474286400: 4.0, 1474308000: 4.0, 1474322400: 4.0,
-    # 1474288200: 4.0, 1474351200: 4.0, 1474282800: 4.0, 1474347600: 4.0,
-    # 1474313400: 4.0, 1474349400: 4.0, 1474297200: 4.0, 1474340400: 4.0, 1474291800: 4.0,
-    # 1474335000: 4.0, 1474293600: 4.0, 1474290000: 4.0, 1474363800: 4.0,
-    # 1474329600: 4.0, 1474353000: 4.0, 1474358400: 4.0, 1474324200: 4.0, 1474354800: 4.0,
-    # 1474295400: 4.0, 1474318800: 4.0, 1474299000: 4.0, 1474342200: 4.0},
-    # u'Framework_SystemAdministrator': {1474300800: 8.0, 1474344000: 8.0, 1474331400: 8.0,
-    # 1474302600: 8.0, 1474365600: 8.0, 1474304400: 8.0, 1474320600: 8.0,
-    # 1474360200: 8.0, 1474306200: 8.0, 1474356600: 8.0, 1474336800: 8.0, 1474326000: 8.0,
-    # 1474315200: 8.0, 1474281000: 8.0, 1474309800: 8.0, 1474338600: 8.0,
-    # 1474311600: 8.0, 1474317000: 8.0, 1474367400: 8.0, 1474333200: 8.0, 1474284600: 8.0,
-    # 1474362000: 8.0, 1474327800: 8.0, 1474345800: 8.0, 1474286400: 8.0,
-    # 1474308000: 8.0, 1474322400: 8.0, 1474288200: 8.0, 1474351200: 8.0, 1474282800: 8.0,
-    # 1474347600: 8.0, 1474313400: 8.0, 1474349400: 8.0, 1474297200: 8.0,
-    # 1474340400: 8.0, 1474291800: 8.0, 1474335000: 8.0, 1474293600: 8.0, 1474290000: 8.0,
-    # 1474363800: 8.0, 1474329600: 8.0, 1474353000: 8.0, 1474358400: 8.0,
-    # 1474324200: 8.0, 1474354800: 8.0, 1474295400: 8.0, 1474318800: 8.0, 1474299000: 8.0,
-    # 1474342200: 8.0}}
 
     return S_OK(result)
 
@@ -417,8 +426,7 @@ class MonitoringDB(ElasticDB):
     retVal = self.getIndexName(typeName)
     if not retVal['OK']:
       return retVal
-    date = datetime.datetime.utcnow()
-    indexName = "%s-%s" % (retVal['Value'], date.strftime('%Y-%m-%d'))
+    indexName = "%s-%s" % (retVal['Value'], time.strftime('%Y-%m-%d', time.gmtime()))
 
     # going to create:
     # s = Search(using=cl, index = 'lhcb-certification_componentmonitoring-index-2016-09-16')
@@ -429,14 +437,15 @@ class MonitoringDB(ElasticDB):
 
     mustClose = []
     for cond in condDict:
-      kwargs = {cond: condDict[cond]}
-      query = self._Q('match', **kwargs)
-      mustClose.append(query)
+      if cond not in ('startTime', 'endTime'):
+        kwargs = {cond: condDict[cond]}
+        query = self._Q('match', **kwargs)
+        mustClose.append(query)
 
     if condDict.get('startTime') and condDict.get('endTime'):
       query = self._Q('range',
-                      timestamp={'lte': condDict.get('endTime'),
-                                 'gte': condDict.get('startTime')})
+                      timestamp={'lte': condDict.get('endTime') * 1000,
+                                 'gte': condDict.get('startTime') * 1000})
 
       mustClose.append(query)
 
@@ -447,8 +456,10 @@ class MonitoringDB(ElasticDB):
     if size > 0:
       s = s.extra(size=size)
 
+    self.log.debug('Query:', s.to_dict())
     retVal = s.execute()
     if not retVal:
+      self.log.error("Error getting raw data", str(retVal))
       return S_ERROR(str(retVal))
     hits = retVal['hits']
     if hits and 'hits' in hits and hits['hits']:
@@ -516,12 +527,12 @@ class MonitoringDB(ElasticDB):
       return self.__getRawData(typeName, condDict, 10)
 
     if initialDate:
-      condDict['startTime'] = datetime.datetime.strptime(initialDate, '%d/%m/%Y %H:%M')
+      condDict['startTime'] = calendar.timegm(time.strptime(initialDate, '%d/%m/%Y %H:%M'))
     else:
-      condDict['startTime'] = datetime.datetime.min
+      condDict['startTime'] = 0000000000
     if endDate:
-      condDict['endTime'] = datetime.datetime.strptime(endDate, '%d/%m/%Y %H:%M')
+      condDict['endTime'] = calendar.timegm(time.strptime(endDate, '%d/%m/%Y %H:%M'))
     else:
-      condDict['endTime'] = datetime.datetime.utcnow()
+      condDict['endTime'] = calendar.timegm(time.gmtime())
 
     return self.__getRawData(typeName, condDict)

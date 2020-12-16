@@ -210,13 +210,13 @@ class BasePlotter(DBUtils):
                                     reportData=reportData,
                                     plotFunc=funcObj)
 
-  def _getTimedData(self, startTime, endTime, selectFields, preCondDict, metadataDict=None):
+  def _getTimedData(self, startTime, endTime, selectField, preCondDict, metadataDict=None):
     """
-    It retrieves the time series data from the database.
+    It retrieves the time series data from the ES database.
 
     :param int startTime: epoch time
     :param int endTime: epoch time
-    :param list selectFields: the value what we want to plot
+    :param str selectField: the value that we want to plot
     :param dict preCondDict: plot attributes
     :param dict metadataDict: extra arguments used to create the plot.
 
@@ -245,7 +245,7 @@ class BasePlotter(DBUtils):
                                           startTime,
                                           endTime,
                                           interval,
-                                          selectFields,
+                                          selectField,
                                           condDict,
                                           grouping,
                                           metadataDict)
@@ -254,7 +254,7 @@ class BasePlotter(DBUtils):
                                             startTime,
                                             endTime,
                                             interval,
-                                            selectFields,
+                                            selectField,
                                             condDict,
                                             grouping,
                                             metadataDict)
@@ -265,13 +265,13 @@ class BasePlotter(DBUtils):
 
     return S_OK((dataDict, granularity))
 
-  def _getSummaryData(self, startTime, endTime, selectFields, preCondDict, metadataDict=None):
+  def _getSummaryData(self, startTime, endTime, selectField, preCondDict, metadataDict=None):
     """
     It returns the data used to create the pie chart plot.
 
     :param int startTime: epoch time
     :param int endTime: epoch time
-    :param list selectFields: the value what we want to plot
+    :param str selectField: the value what we want to plot
     :param dict preCondDict: plot attributes
     :param dict metadataDict: extra arguments used to create the plot.
     """
@@ -291,7 +291,7 @@ class BasePlotter(DBUtils):
                                         startTime=startTime,
                                         endTime=endTime,
                                         interval=interval,
-                                        selectFields=selectFields,
+                                        selectField=selectField,
                                         condDict=condDict,
                                         grouping=grouping,
                                         metadataDict=metadataDict)
