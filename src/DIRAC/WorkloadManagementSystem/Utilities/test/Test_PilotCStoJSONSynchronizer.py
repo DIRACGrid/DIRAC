@@ -6,9 +6,7 @@ from __future__ import print_function
 
 import unittest
 import os
-from mock import patch, MagicMock as Mock
 from diraccfg import CFG
-import six
 
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
@@ -130,7 +128,7 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
     self.wm = gConfig.getValue('DIRAC/Setups/' + self.setup + '/WorkloadManagement', '')
 
   def tearDown(self):
-    for aFile in [self.testCfgFileName, 'checksums.sha512', 'pilot.json']:
+    for aFile in [self.testCfgFileName, 'pilot.json']:
       try:
         os.remove(aFile)
       except OSError:
@@ -149,46 +147,10 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
 
 class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
 
-  @patch('DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer.requests', new=Mock())
   def test_success(self):
     synchroniser = PilotCStoJSONSynchronizer()
-    synchroniser.pilotFileServer = 'value'
-    res = synchroniser._syncJSONFile()
+    res = synchroniser.getCSDict()
     assert res['OK'], res['Message']
-    # ensure pilot.json was "uploaded"
-    assert 'pilot.json' in synchroniser._checksumDict
-
-  @patch('DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer.requests', new=Mock())
-  def test_syncchecksum(self):
-    # If the hashes need to be changed because the pilot or test.cfg file change, they should be created with the
-    # sha512sum command line tool, and the files should be checked for correctness
-    expectedHash = '00e67a2d45e2c2508a935500a4765e1a5f1ce661f23c1fb329987c8211bde754ed' + \
-                   '79f6b02cdeabd429979a82014c474c5ce2f46a879f17e2a6ce4bcac683e2e4'
-    expectedPJHash = '6f0a45fc703ca03ad3f277173c3464dafcaad2b85fa6643f66a02721e69233cd' + \
-                     'ec6c50c75eb779740788b5211f740631944f8d703d4149f6526d149c761c02f4'
-    synchroniser = PilotCStoJSONSynchronizer()
-    synchroniser.pilotFileServer = 'value'
-    synchroniser._checksumFile(self.testCfgFileName)
-    res = synchroniser._syncJSONFile()
-    assert res['OK'], res['Message']
-    synchroniser._syncChecksum()
-    assert self.testCfgFileName in synchroniser._checksumDict
-    assert synchroniser._checksumDict[self.testCfgFileName] == expectedHash
-    with open('checksums.sha512', 'rt') as fp:
-      checksums = fp.read()
-    with open('pilot.json', 'rt') as fp:
-      pilot_json_content = fp.read()
-
-    if not six.PY2:
-      # JSON is a non-deterministic format so hard-coding the SHA512 is unreliable
-      import subprocess
-      expectedPJHash = subprocess.check_output(["sha512sum", "pilot.json"], text=True).split(" ")[0]
-      expectedHash = subprocess.check_output(["sha512sum", self.testCfgFileName], text=True).split(" ")[0]
-
-    assert checksums.split('\n')[0] == '%s  %s' % (expectedPJHash, 'pilot.json'), pilot_json_content
-    assert checksums.split('\n')[1] == '%s  %s' % (expectedHash, self.testCfgFileName)
-    # this tests if the checksums file was also "uploaded"
-    assert 'checksums.sha512' in list(synchroniser._checksumDict)
 
 
 if __name__ == '__main__':
