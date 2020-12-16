@@ -92,19 +92,19 @@ class PilotsSyncAgent(AgentModule):
     for pFile in allFiles:
       filename = os.path.basename(pFile)
       with open(pFile, 'rb') as fp:
-	checksumDict[filename] = hashlib.sha512(fp.read()).hexdigest()
+        checksumDict[filename] = hashlib.sha512(fp.read()).hexdigest()
       cksPath = os.path.join(self.workingDirectory, 'checksums.sha512')
     with open(cksPath, 'wt') as chksums:
       for filename, chksum in sorted(checksumDict.items()):
-	# same as the output from sha512sum commands
-	chksums.write('%s  %s\n' % (chksum, filename))
+        # same as the output from sha512sum commands
+        chksums.write('%s  %s\n' % (chksum, filename))
 
     allFiles = allFiles + [cksPath]
 
     if self.saveDir:
       # Moving files to the correct location
       for tf in allFiles:
-	shutil.move(tf, self.saveDir)
+        shutil.move(tf, self.saveDir)
 
     # upload
     if not self.upload:
@@ -114,11 +114,11 @@ class PilotsSyncAgent(AgentModule):
     # Here, attempting upload somewhere, and somehow
     for server in self.uploadLocations:
       if server.startswith('https://'):
-	for tf in allFiles:
-	  requests.put(
-	      server, data=tf, verify=self.casLocation, cert=self.certAndKeyLocation)
+        for tf in allFiles:
+          requests.put(
+              server, data=tf, verify=self.casLocation, cert=self.certAndKeyLocation)
       else:  # Assumes this is a DIRAC SE
-	for tf in allFiles:
-	  DataManager().put(lfn=tf, fileName=tf, diracSE=server)
+        for tf in allFiles:
+          DataManager().put(lfn=tf, fileName=tf, diracSE=server)
 
     return S_OK()

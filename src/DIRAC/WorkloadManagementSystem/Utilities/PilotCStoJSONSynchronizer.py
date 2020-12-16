@@ -265,7 +265,7 @@ class PilotCStoJSONSynchronizer(object):
         lines = [line.rstrip('\n') for line in releasesFile]
         lines = [s.strip() for s in lines]
         if self.pilotVOVersion in lines:
-	  pilotVersion = lines[(lines.index(self.pilotVOVersion)) + 3].split(':')[1]
+          pilotVersion = lines[(lines.index(self.pilotVOVersion)) + 3].split(':')[1]
       repo.git.checkout(repo.tags[pilotVersion], b='pilotScripts')
     else:
       repo.git.checkout('upstream/%s' % self.pilotRepoBranch, b='pilotScripts')
@@ -274,17 +274,17 @@ class PilotCStoJSONSynchronizer(object):
     for filename in glob.glob(scriptDir):
       tarFiles.append(filename)
     if not os.path.isfile(os.path.join(pilotLocalRepo,
-				       self.pilotScriptPath,
-				       "dirac-install.py")):
+                                       self.pilotScriptPath,
+                                       "dirac-install.py")):
       tarFiles.append(os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
 
     tarPath = os.path.join(self.workDir, 'pilot.tar')
     with tarfile.TarFile(name=tarPath, mode='w') as tf:
       for ptf in tarFiles:
-	# This copy makes sure that all the files in the tarball are accessible
-	# in the work directory. It should be kept
-	shutil.copyfile(ptf, os.path.join(self.workDir, os.path.basename(ptf)))
-	tf.add(ptf, arcname=os.path.basename(ptf), recursive=False)
+        # This copy makes sure that all the files in the tarball are accessible
+        # in the work directory. It should be kept
+        shutil.copyfile(ptf, os.path.join(self.workDir, os.path.basename(ptf)))
+        tf.add(ptf, arcname=os.path.basename(ptf), recursive=False)
 
     tarFilesPaths = [os.path.join(self.workDir, os.path.basename(tarredF)) for tarredF in tarFiles]
 
