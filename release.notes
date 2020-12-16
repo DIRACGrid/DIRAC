@@ -65,6 +65,25 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p23]
+
+FIX: Fixes from v7r0p43
+
+*Configuration
+FIX: (#4869) Bdii2CSAgent: remove constant update of NumberOfProcessors parameter.
+     Comparison between int and str lead to "new" value every run.
+
+*WMS
+FIX: (#4868) JobLoggingDB: fix for backward compatibility
+
+*Monitoring
+CHANGE: (#4872) better, faster aggregations. Always using term queries for keyword fields,
+         and other less important changes
+CHANGE: (#4872) do not return error if trying to delete non-existing index
+
+*tests
+NEW: (#4872) added integration test for MonitoringDB
+
 [v7r1p22]
 
 *WMS
@@ -478,6 +497,12 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p43]
+
+*RSS
+FIX: (#4871) SiteInspectorAgent: prevent the agent from getting locked if an exception occurs during enforcement
+FIX: (#4871) ElementInspectorAgent: prevent the agent from getting locked if an exception occurs during enforcement
 
 [v7r0p42]
 

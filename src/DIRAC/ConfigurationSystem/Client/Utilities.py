@@ -302,16 +302,22 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
 
           # tags, processors
           tag = queueDict.get('Tag', '')
-          numberOfProcessors = queueDict.get('NumberOfProcessors', '')
-          newNOP = queueInfo.get('NumberOfProcessors', 1)
+          numberOfProcessors = int(queueDict.get('NumberOfProcessors', 0))
+          newNOP = int(queueInfo.get('NumberOfProcessors', 1))
 
           # Adding queue info to the CS
           addToChangeSet((queueSection, 'maxCPUTime', maxCPUTime, newMaxCPUTime), changeSet)
           addToChangeSet((queueSection, 'SI00', si00, newSI00), changeSet)
-          if newNOP > 1:
+          if newNOP != numberOfProcessors:
             addToChangeSet((queueSection, 'NumberOfProcessors', numberOfProcessors, newNOP), changeSet)
-            newTag = ','.join(sorted(set(tag.split(',')).union({'MultiProcessor'}))).strip(',')
-            addToChangeSet((queueSection, 'Tag', tag, newTag), changeSet)
+            if newNOP > 1:
+              # if larger than one, add MultiProcessor to site tags
+              newTag = ','.join(sorted(set(tag.split(',')).union({'MultiProcessor'}))).strip(',')
+              addToChangeSet((queueSection, 'Tag', tag, newTag), changeSet)
+            else:
+              # if not larger than one, drop MultiProcessor
+              newTag = ','.join(sorted(set(tag.split(',')).difference({'MultiProcessor'}))).strip(',')
+              addToChangeSet((queueSection, 'Tag', tag, newTag), changeSet)
           if maxTotalJobs == "Unknown":
             newTotalJobs = min(1000, int(int(queueInfo.get('GlueCEInfoTotalCPUs', 0)) / 2))
             newWaitingJobs = max(2, int(newTotalJobs * 0.1))

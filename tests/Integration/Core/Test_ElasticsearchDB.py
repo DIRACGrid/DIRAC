@@ -6,6 +6,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+# TODO: move to pytest
+
 import unittest
 import sys
 import datetime
@@ -143,8 +145,7 @@ class ElasticDeleteChain(ElasticTestCase):
     """ delete non-existing index
     """
     result = self.elasticSearchDB.deleteIndex('dsdssuu')
-    self.assertFalse(result['OK'])
-    self.assertTrue(result['Message'])
+    self.assertTrue(result['OK'])
 
 
 class ElasticTestChain(ElasticTestCase):

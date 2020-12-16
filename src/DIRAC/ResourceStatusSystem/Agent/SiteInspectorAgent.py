@@ -180,11 +180,11 @@ class SiteInspectorAgent(AgentModule):
       except Queue.Empty:
         return S_OK()
 
-      resEnforce = pep.enforce(site)
-      if not resEnforce['OK']:
-        self.log.error('Failed policy enforcement', resEnforce['Message'])
-        self.sitesToBeChecked.task_done()
-        continue
-
+      try:
+        resEnforce = pep.enforce(site)
+        if not resEnforce['OK']:
+          self.log.error('Failed policy enforcement', resEnforce['Message'])
+      except Exception as e:
+        self.log.exception('Exception during enforcement')
       # Used together with join !
       self.sitesToBeChecked.task_done()
