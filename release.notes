@@ -431,6 +431,12 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p43]
+
+*RSS
+FIX: (#4871) SiteInspectorAgent: prevent the agent from getting locked if an exception occurs during enforcement
+FIX: (#4871) ElementInspectorAgent: prevent the agent from getting locked if an exception occurs during enforcement
+
 [v7r0p42]
 
 *Configuration

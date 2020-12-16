@@ -213,7 +213,11 @@ class ElementInspectorAgent(AgentModule):
                                                            element['status'],
                                                            element['statusType']))
 
-      resEnforce = pep.enforce(element)
+      try:
+        resEnforce = pep.enforce(element)
+      except Exception as e:
+        self.log.exception('Exception during enforcement')
+        resEnforce = S_ERROR('Exception during enforcement')
       if not resEnforce['OK']:
         self.log.error('Failed policy enforcement', resEnforce['Message'])
         self.elementsToBeChecked.task_done()
