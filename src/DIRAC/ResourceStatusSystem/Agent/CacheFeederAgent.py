@@ -1,4 +1,4 @@
-''' CacheFeederAgent
+""" CacheFeederAgent
 
   This agent feeds the Cache tables with the outputs of the cache commands.
 
@@ -7,7 +7,7 @@
   :end-before: ##END
   :dedent: 2
   :caption: CacheFeederAgent options
-'''
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -27,11 +27,11 @@ AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
 
 class CacheFeederAgent(AgentModule):
-  '''
+  """
   The CacheFeederAgent feeds the cache tables for the client and the accounting.
   It runs periodically a set of commands, and stores it's results on the
   tables.
-  '''
+  """
 
   def __init__(self, *args, **kwargs):
 

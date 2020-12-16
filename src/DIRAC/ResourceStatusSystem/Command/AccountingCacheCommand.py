@@ -21,7 +21,6 @@ from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
 class SuccessfullJobsBySiteSplittedCommand(Command):
@@ -55,11 +54,6 @@ class SuccessfullJobsBySiteSplittedCommand(Command):
     if 'sites' in self.args:
       sites = self.args['sites']
     if sites is None:
-      # FIXME: pointing to the CSHelper instead
-      #      sources = self.rsClient.getSite( meta = {'columns': 'SiteName'} )
-      #      if not sources[ 'OK' ]:
-      #        return sources
-      #      sources = [ si[0] for si in sources[ 'Value' ] ]
       sites = getSites()
       if not sites['OK']:
         return sites
