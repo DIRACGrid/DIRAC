@@ -246,15 +246,15 @@ class MonitoringHandler(RequestHandler):
     reportRequest['generatePlot'] = False
     return reporter.generate(reportRequest, self.getRemoteCredentials())
 
-  types_addMonitoringRecords = [six.string_types, six.string_types, list]
+  types_addMonitoringRecords = [six.string_types, list]
 
   def export_addMonitoringRecords(self, monitoringtype, data):
     """
-    It is used to insert data directly to the given monitoring type
+    Bulk insert data directly to the given monitoring type.
 
-    :param str monitoringtype:
-    :param data:
-    :type data: python:list
+    :param str monitoringtype: monitoring type name
+    :param list data: list of documents
+    :returns: S_OK or S_ERROR
     """
 
     retVal = self.__db.getIndexName(monitoringtype)
@@ -273,6 +273,7 @@ class MonitoringHandler(RequestHandler):
     :param str indexname: name of the index
     :param str monitoringType: type of the monitoring
     :param list data: data to insert
+    :returns: S_OK or S_ERROR
     """
     setup = self.serviceInfoDict.get('clientSetup', '')
     indexname = "%s_%s" % (setup.lower(), indexname)

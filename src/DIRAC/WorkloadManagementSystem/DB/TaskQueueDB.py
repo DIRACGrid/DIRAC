@@ -229,7 +229,7 @@ class TaskQueueDB(DB):
       if field in ["CPUTime"]:
         result = travelAndCheckType(fieldValue, six.integer_types, escapeValues=False)
       else:
-        result = travelAndCheckType(fieldValue, basestring)
+        result = travelAndCheckType(fieldValue, six.string_types)
       if not result['OK']:
         return S_ERROR("Match definition field %s failed : %s" % (field, result['Message']))
       tqMatchDict[field] = result['Value']
@@ -238,7 +238,7 @@ class TaskQueueDB(DB):
       for field in (multiField, "Banned%s" % multiField, "Required%s" % multiField):
         if field in tqMatchDict:
           fieldValue = tqMatchDict[field]
-          result = travelAndCheckType(fieldValue, basestring)
+          result = travelAndCheckType(fieldValue, six.string_types)
           if not result['OK']:
             return S_ERROR("Match definition field %s failed : %s" % (field, result['Message']))
           tqMatchDict[field] = result['Value']

@@ -6,6 +6,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import six
+
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import InstalledComponentsDB,\
@@ -309,7 +311,7 @@ class ComponentMonitoringHandler(RequestHandler):
     return \
         ComponentMonitoringHandler.db.removeInstalledComponents(matchFields)
 
-  types_updateLog = [basestring, dict]
+  types_updateLog = [six.string_types, dict]
 
   def export_updateLog(self, host, fields):
     """
@@ -332,7 +334,7 @@ class ComponentMonitoringHandler(RequestHandler):
 
     return S_OK('Logs updated correctly')
 
-  types_getLog = [basestring]
+  types_getLog = [six.string_types]
 
   def export_getLog(self, host):
     """

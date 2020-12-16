@@ -1,6 +1,6 @@
 """
 It is used to test client->db-> service.
-  It requires the  Monitoring service to be running and installed (so discoverable in the .cfg),
+  It requires the Monitoring service to be running and installed (so discoverable in the .cfg),
   and this monitoring service should be connecting to an ElasticSeach instance
 """
 from __future__ import absolute_import

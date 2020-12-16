@@ -186,9 +186,9 @@ class ElasticTestChain(ElasticTestCase):
     else:
       self.assertEqual(list(result['Value']['properties']), [u'Color', u'timestamp', u'Product', u'quantity'])
 
-  def test_exists(self):
-    result = self.elasticSearchDB.exists(self.index_name)
-    self.assertTrue(result)
+  def test_existingIndex(self):
+    result = self.elasticSearchDB.existingIndex(self.index_name)
+    self.assertTrue(result['OK'] and result['Value'])
 
   def test_generateFullIndexName(self):
     indexName = 'test'

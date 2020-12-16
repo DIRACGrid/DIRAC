@@ -1,14 +1,14 @@
-''' EmailAgent
-  This agent reads a cache file ( cache.db ) which contains the aggregated information
-  of what happened to the elements of each site. After reading the cache file
-  ( by default every 30 minutes ) it sends an email for every site and then clears it.
+""" EmailAgent
+  This agent reads the ResourceStatusCache table of ResourceStatusDB
+  for sending emails with aggregated information about state changes,
+  and then clears it.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN EmailAgent
   :end-before: ##END
   :dedent: 2
   :caption: EmailAgent options
-'''
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -35,8 +35,8 @@ class EmailAgent(AgentModule):
     self.rsClient = ResourceStatusClient()
 
   def initialize(self, *args, **kwargs):
-    ''' EmailAgent initialization
-    '''
+    """ EmailAgent initialization
+    """
 
     self.diracAdmin = DiracAdmin()
 
@@ -129,7 +129,7 @@ class EmailAgent(AgentModule):
 
       email = html_header + html_body
 
-      subject = "RSS actions taken for " + site[0] + "\n"
+      subject = "RSS actions taken for " + str(site) + "\n"
       self._sendMail(subject, email, html=True)
 
     self.rsClient.delete('ResourceStatusCache')

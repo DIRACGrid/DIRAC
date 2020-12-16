@@ -66,17 +66,17 @@ def ClientSelector(disetClient, *args, **kwargs):  # We use same interface as RP
 
   try:
     serviceName = args[0]
-    sLog.verbose("Trying to autodetect client for %s" % serviceName)
+    sLog.debug("Trying to autodetect client for %s" % serviceName)
 
     # If we are not already given a URL, resolve it
     if serviceName.startswith(('http', 'dip')):
       completeUrl = serviceName
     else:
       completeUrl = getServiceURL(serviceName)
-      sLog.verbose("URL resolved: %s" % completeUrl)
+      sLog.debug("URL resolved: %s" % completeUrl)
 
     if completeUrl.startswith("http"):
-      sLog.info("Using HTTPS for service %s" % serviceName)
+      sLog.verbose("Using HTTPS for service %s" % serviceName)
       rpc = tornadoClient(*args, **kwargs)
     else:
       rpc = disetClient(*args, **kwargs)

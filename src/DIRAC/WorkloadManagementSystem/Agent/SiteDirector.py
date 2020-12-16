@@ -717,14 +717,10 @@ class SiteDirector(AgentModule):
   def _allowedToSubmit(self, queue, anySite, jobSites, testSites):
     """ Check if we are allowed to submit to a certain queue
 
-        :param queue: the queue name
-        :type queue: basestring
-        :param anySite: submitting anywhere?
-        :type anySite: bool
-        :param jobSites: set of job site names (only considered if anySite is False)
-        :type jobSites: set
-        :param testSites: set of test site names
-        :type testSites: set
+        :param str queue: the queue name
+        :param bool anySite: submitting anywhere?
+        :param set jobSites: set of job site names (only considered if anySite is False)
+        :param set testSites: set of test site names
 
         :return: True/False
     """
@@ -766,8 +762,7 @@ class SiteDirector(AgentModule):
   def _getCE(self, queue):
     """ Prepare the queue description to look for eligible jobs
 
-        :param queue: queue name
-        :type queue: basestring
+        :param str queue: queue name
 
         :return: ce (ComputingElement object), ceDict (dict)
     """
@@ -829,8 +824,7 @@ class SiteDirector(AgentModule):
        :type pilotsToSubmit: int
        :param ce: computing element object to where we submit
        :type ce: ComputingElement
-       :param queue: queue where to submit
-       :type queue: basestring
+       :param str queue: queue where to submit
 
        :return: S_OK/S_ERROR.
                 If S_OK, returns tuple with (pilotsToSubmit, pilotList, stampDict)
@@ -902,8 +896,7 @@ class SiteDirector(AgentModule):
   def _addPilotTQReference(self, queue, taskQueueDict, pilotList, stampDict):
     """ Add to pilotAgentsDB the reference of for which TqID the pilots have been sent
 
-        :param queue: the queue name
-        :type queue: basestring
+        :param str queue: the queue name
         :param taskQueueDict: dict of task queues
         :type taskQueueDict: dict
         :param pilotList: list of pilots
@@ -1042,17 +1035,15 @@ class SiteDirector(AgentModule):
                     **kwargs):
     """ Prepare the full executable for queue
 
-    :param queue: queue name
-    :type queue: basestring
+    :param str queue: queue name
     :param pilotsToSubmit: number of pilots to submit
     :type pilotsToSubmit: int
     :param bundleProxy: flag that say if to bundle or not the proxy
     :type bundleProxy: bool
-    :param queue: pilot execution dir (normally an empty string)
-    :type queue: basestring
+    :param str queue: pilot execution dir (normally an empty string)
 
     :returns: a string the options for the pilot
-    :rtype: basestring
+    :rtype: str
     """
 
     pilotOptions, pilotsSubmitted = self._getPilotOptions(queue, pilotsToSubmit, **kwargs)
@@ -1075,8 +1066,7 @@ class SiteDirector(AgentModule):
   def _getPilotOptions(self, queue, pilotsToSubmit, **kwargs):
     """ Prepare pilot options
 
-    :param queue: queue name
-    :type queue: basestring
+    :param str queue: queue name
     :param pilotsToSubmit: number of pilots to submit
     :type pilotsToSubmit: int
 
@@ -1178,17 +1168,13 @@ class SiteDirector(AgentModule):
                         envVariables=None):
     """ Bundle together and write out the pilot executable script, admix the proxy if given
 
-     :param workingDirectory: pilot wrapper working directory
-     :type workingDirectory: basestring
-     :param pilotOptions: options with which to start the pilot
-     :type pilotOptions: basestring
-     :param proxy: proxy file we are going to bundle
-     :type proxy: basestring
-     :param pilotExecDir: pilot executing directory
-     :type pilotExecDir: basestring
+     :param str workingDirectory: pilot wrapper working directory
+     :param str pilotOptions: options with which to start the pilot
+     :param str proxy: proxy file we are going to bundle
+     :param str pilotExecDir: pilot executing directory
 
      :returns: file name of the pilot wrapper created
-     :rtype: basestring
+     :rtype: str
     """
 
     try:
