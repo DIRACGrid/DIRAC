@@ -10,7 +10,8 @@ __RCSID__ = "$Id$"
 
 
 def getDBOrClient(DB, serverName):
-  """ Tries to instantiate the DB object and returns it if we manage to connect to the DB, otherwise returns a Client of the server
+  """ Tries to instantiate the DB object and returns it if we manage to connect to the DB,
+      otherwise returns a Client of the server
   """
   from DIRAC import gLogger
   from DIRAC.Core.DISET.RPCClient import RPCClient
