@@ -20,6 +20,8 @@ The pilot wrapper (the script that starts the pilot, which is effectively equiva
 expects to find and download such a ``pilot.json`` file from a known location, or a set of them.
 Such a location should be exposed via *https://* by, for example, the DIRAC WebApp webserver.
 
+TODO: MOD HERE
+
 The (list of) location(s) has to be added in the Operations option *Pilot/pilotFileServer*.
 If more than one location is used, add them as a list.
 We suggest to add at least the URL of the DIRAC WebApp webserver, but multiple locations are also possible, and advised.

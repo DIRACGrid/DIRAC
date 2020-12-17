@@ -16,7 +16,6 @@ from base64 import b64encode, b64decode
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.private.ServiceInterfaceTornado import ServiceInterfaceTornado as ServiceInterface
-from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 
 sLog = gLogger.getSubLogger(__name__)
@@ -80,24 +79,7 @@ class TornadoConfigurationHandler(TornadoService):
     if 'DN' not in credDict or 'username' not in credDict:
       return S_ERROR("You must be authenticated!")
     sData = b64decode(sData)
-    res = self.ServiceInterface.updateConfiguration(sData, credDict['username'])
-    if not res['OK']:
-      return res
-
-    # Check the flag for updating the pilot 3 JSON file
-    if self.srv_getCSOption('UpdatePilotCStoJSONFile', False) and self.ServiceInterface.isMaster():
-      if self.PilotSynchronizer is None:
-        try:
-          # This import is only needed for the Master CS service, making it conditional avoids
-          # dependency on the git client preinstalled on all the servers running CS slaves
-          from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
-        except ImportError as exc:
-          sLog.exception("Failed to import PilotCStoJSONSynchronizer", repr(exc))
-          return S_ERROR(DErrno.EIMPERR, 'Failed to import PilotCStoJSONSynchronizer')
-        self.PilotSynchronizer = PilotCStoJSONSynchronizer()
-      return self.PilotSynchronizer.sync()
-
-    return res
+    return self.ServiceInterface.updateConfiguration(sData, credDict['username'])
 
   def export_writeEnabled(self):
     """
