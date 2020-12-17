@@ -52,7 +52,7 @@ def getCAsLocation():
   casPath = "%s/etc/grid-security/certificates" % DIRAC.rootPath
   if os.path.isdir(casPath):
     return casPath
-  #/etc/grid-security/certificates
+  # /etc/grid-security/certificates
   casPath = "/etc/grid-security/certificates"
   if os.path.isdir(casPath):
     return casPath
@@ -74,11 +74,36 @@ def getCAsDefaultLocation():
 
 
 def getHostCertificateAndKeyLocation(specificLocation=None):
-  """ Retrieve the host certificate files location
+  """ Retrieve the host certificate files location.
+
+      Lookup order:
+
+      * ``specificLocation`` (probably broken, don't use it)
+      * Environment variables (``DIRAC_X509_HOST_CERT`` and ``DIRAC_X509_HOST_KEY``)
+      * CS (``/DIRAC/Security/CertFile`` and ``/DIRAC/Security/CertKey``)
+      * Alternative exotic options, with ``prefix`` in  ``server``, ``host``, ``dirac``, ``service``:
+        * in `<DIRAC rootpath>/etc/grid-security/` for ``<prefix>cert.pem`` and ``<prefix>key.pem``
+        * in the path defined in the CS in ``/DIRAC/Security/Grid-Security``
+
+      :param specificLocation: CS path to look for a the path to cert and key, which then should be the same.
+                               Probably does not work, don't use it
+
+      :returns: tuple ``(<cert location>, <key location>)`` or ``False``
+
   """
 
   fileDict = {}
+
+  # First, check the environment variables
+  for fileType, envVar in (('cert', 'DIRAC_X509_HOST_CERT'), ('key', 'DIRAC_X509_HOST_KEY')):
+    if envVar in os.environ and os.path.exists(os.environ[envVar]):
+      fileDict[fileType] = os.environ[envVar]
+
   for fileType in ("cert", "key"):
+    # Check if we already have the info
+    if fileType in fileDict:
+      continue
+
     # Direct file in config
     retVal = gConfig.getOption('%s/%sFile' % (g_SecurityConfPath, fileType.capitalize()))
     if retVal['OK']:
@@ -92,7 +117,6 @@ def getHostCertificateAndKeyLocation(specificLocation=None):
       if retVal['OK']:
         paths.append(retVal['Value'])
       paths.append("%s/etc/grid-security/" % DIRAC.rootPath)
-      #paths.append( os.path.expanduser( "~/.globus" ) )
       for path in paths:
         filePath = os.path.realpath("%s/%s%s.pem" % (path, filePrefix, fileType))
         if os.path.isfile(filePath):
@@ -149,6 +173,6 @@ def getDefaultProxyLocation():
       proxyPath = os.path.realpath(os.environ[envVar])
       return proxyPath
 
-  #/tmp/x509up_u<uid>
+  # /tmp/x509up_u<uid>
   proxyName = "x509up_u%d" % os.getuid()
   return "/tmp/%s" % proxyName
