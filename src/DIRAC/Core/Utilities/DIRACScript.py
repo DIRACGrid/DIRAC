@@ -9,8 +9,6 @@ import functools
 
 import six
 
-from DIRAC import gLogger
-
 
 class DIRACScript(object):
   """Decorator for providing command line executables
@@ -23,18 +21,6 @@ class DIRACScript(object):
     """
     pass
 
-  @property
-  def func(self):
-    if not hasattr(self, "_func"):
-      raise NotImplementedError("Something is very wrong")
-    return self._func
-
-  @func.setter
-  def func(self, value):
-    if hasattr(self, "_func"):
-      raise NotImplementedError("Something is very wrong")
-    self._func = value
-
   def __call__(self, func=None):
     """Set the wrapped function or call the script
 
@@ -45,12 +31,12 @@ class DIRACScript(object):
     """
     # If func is provided then the decorator is being applied to a function
     if func is not None:
-      self.func = func
+      self._func = func
       return functools.wraps(func)(self)
 
     # Setuptools based installations aren't supported with Python 2
     if six.PY2:
-      return self.func()  # pylint: disable=not-callable
+      return self._func()  # pylint: disable=not-callable
 
     # This is only available in Python 3.8+ so it has to be here for now
     from importlib import metadata  # pylint: disable=no-name-in-module
@@ -75,7 +61,7 @@ class DIRACScript(object):
 
     if function_name is None:
       # TODO: This should an error once the integration tests modified to use pip install
-      return self.func()  # pylint: disable=not-callable
+      return self._func()  # pylint: disable=not-callable
       # raise NotImplementedError("Something is very wrong")
 
     # Call the entry_point from the extension with the highest priority
@@ -85,7 +71,7 @@ class DIRACScript(object):
         key=lambda e: rankedExtensions.index(_entrypointToExtension(e)),
     )
 
-    return entrypoint.load().func()
+    return entrypoint.load()._func()
 
 
 def _entrypointToExtension(entrypoint):
@@ -109,16 +95,12 @@ def _extensionsByPriority():
     extensionName = _entrypointToExtension(entrypoint)
     extension_metadata = entrypoint.load()()
     priorties[extension_metadata["priority"]].append(extensionName)
-    gLogger.verbose(
-        "Found extension",
-        "{} with metadata {}".format(extensionName, extension_metadata),
-    )
 
   extensions = []
   for priority, extensionNames in sorted(priorties.items()):
     if len(extensionNames) != 1:
-      gLogger.warn(
-          "Found multiple extensions with priority",
+      print(
+          "WARNING: Found multiple extensions with priority",
           "{} ({})".format(priority, extensionNames),
       )
     # If multiple are passed, sort the extensions so things are deterministic at least

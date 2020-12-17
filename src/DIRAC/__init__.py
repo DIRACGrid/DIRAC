@@ -100,7 +100,7 @@ if six.PY3:
     version = __version__
   except DistributionNotFound:
     # package is not installed
-    pass
+    version = "Unknown"
 else:
   majorVersion = 7
   minorVersion = 2
