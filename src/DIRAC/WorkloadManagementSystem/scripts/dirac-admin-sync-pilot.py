@@ -53,7 +53,8 @@ allFiles = [tarPath] + tarFiles + ['pilot.json']
 checksumDict = {}
 for pFile in allFiles:
   filename = os.path.basename(pFile)
-  checksumDict[filename] = hashlib.sha512(open(pFile, 'rb').read()).hexdigest()
+  with open(pFile, 'rb') as fp:
+    checksumDict[filename] = hashlib.sha512(fp.read()).hexdigest()
   cksPath = 'checksums.sha512'
 with open(cksPath, 'wt') as chksums:
   for filename, chksum in sorted(checksumDict.items()):
