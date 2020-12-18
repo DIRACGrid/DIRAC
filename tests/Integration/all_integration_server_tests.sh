@@ -31,6 +31,7 @@ python "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Framework/Test_ProxyDB.py" |
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_MonitoringReporter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_Plotter.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_MonitoringDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RSS TESTS ****\n"
