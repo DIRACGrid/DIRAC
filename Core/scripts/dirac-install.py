@@ -145,9 +145,7 @@ import shutil
 import subprocess
 import ssl
 import hashlib
-import tarfile
 
-from contextlib import closing
 from distutils.version import LooseVersion   # pylint: disable=no-name-in-module,import-error
 
 try:
@@ -2660,7 +2658,7 @@ if __name__ == "__main__":
 
       os.system(cmd)
     else:
-      logDEBUG("No dirac-deploy-scripts found. This doesn't look good")
+      logERROR("No dirac-deploy-scripts found. This doesn't look good")
   else:
     logNOTICE("Skipping installing DIRAC")
 
