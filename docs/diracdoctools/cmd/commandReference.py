@@ -129,6 +129,7 @@ class CommandReference(object):
     if missingCommands:
       LOG.error("The following commands are not in the command index: \n\t\t\t\t%s",
                 "\n\t\t\t\t".join(missingCommands))
+      LOG.error("Add them to docs/source/AdministratorGuide/CommandReference/index.rst")
       self.exitcode = 1
 
   def cleanExistingIndex(self, sectionDict):

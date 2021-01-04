@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-
+This is a simple script that can be used for synchronizing pilot files
+to the current directory.
 """
 
 from __future__ import absolute_import

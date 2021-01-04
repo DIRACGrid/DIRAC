@@ -1,33 +1,22 @@
 .. _pilot3:
 
-==============
-DIRAC pilots 3
-==============
-
-All concepts defined for Pilot2 are valid also for Pilot3. There are anyway some differences for what regards their usage.
-
-.. meta::
-   :keywords: Pilots3, Pilot3, Pilot
+====================
+Pilots bootstrapping
+====================
 
 
-Bootstrap
-=========
-
-Pilot3 needs a JSON file for bootstrapping. We simply call this file the ``pilot.json`` file.
+Pilot3 needs some Python files, and a JSON file for bootstrapping. We simply call this file the ``pilot.json`` file.
 The ``pilot.json`` file is created starting from information found in the Configuration Service.
 
 The pilot wrapper (the script that starts the pilot, which is effectively equivalent to what SiteDirectors send)
 expects to find and download such a ``pilot.json`` file from a known location, or a set of them.
-Such a location should be exposed via *https://* by, for example, the DIRAC WebApp webserver.
+Such a location should be exposed via *https://* by, for example, the DIRAC WebApp webserver (but not necessarily).
 
-TODO: MOD HERE
+To make sure that the ``pilot.json`` is created and uploaded, there's an agent that can be used for your convenience: the agent **PilotsSyncAgent** syncs CS and pilot files to a web server of your choice.
+The (list of) location(s) where the agent would upload the pilot files can be added in the CS agent option *UploadLocations*. If this location is not set, then the agent will try to use the *Operations* option *Pilot/pilotFileServer*.
 
-The (list of) location(s) has to be added in the Operations option *Pilot/pilotFileServer*.
 If more than one location is used, add them as a list.
 We suggest to add at least the URL of the DIRAC WebApp webserver, but multiple locations are also possible, and advised.
-
-The pilot.json file is always kept in sync with the content of the Configuration Service.
-At every configuration update, the pilot.json file content will also be updated.
 
 
 Starting with DIRAC version v7r2, the file uploads is completely on the balancer (nginx) side.
@@ -64,8 +53,6 @@ Other options that can be set also in the Operations part of the CS include:
 | *workDir*                          | Local directory of the master CS where the | workDir = /tmp/pilotSyncDir                                             |
 |                                    | files will be downloaded before the upload | There is no default (so /opt/dirac/runit/Configuration/Server)          |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
-
-Since DIRAC v7r0, SiteDirectors send "pilots3".
 
 
 Pilots environment

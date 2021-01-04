@@ -22,6 +22,7 @@ import requests
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation, getCAsLocation
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 
@@ -48,6 +49,8 @@ class PilotsSyncAgent(AgentModule):
     self.saveDir = self.am_getOption('SaveDir', self.saveDir)
     self.upload = self.am_getOption('Upload', self.upload)
     self.uploadLocations = self.am_getOption('UploadLocations', self.uploadLocations)
+    if not self.uploadLocations:
+      self.uploadLocations = Operations().getValue("Pilot/pilotFileServer")
 
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
     self.casLocation = getCAsLocation()
