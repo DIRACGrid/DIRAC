@@ -130,7 +130,7 @@ class CSShellCLI(CLI):
     if self.connected:
       opts = self.modificator.getOptionsDict(self.root)
 
-      if line in opts.keys():
+      if line in opts:
         print(opts[line])
       else:
         print("cat: No such option")

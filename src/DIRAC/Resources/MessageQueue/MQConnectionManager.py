@@ -226,7 +226,7 @@ class MQConnectionManager(object):
     Returns:
       list:
     """
-    return self.__connectionStorage.keys()
+    return list(self.__connectionStorage)
 
   def __getConnector(self, mqConnection):
     """ Function returns MQConnector from the storage.

@@ -211,14 +211,14 @@ class RequestPreparationAgent(AgentModule):
       return res
     failed = res['Value']['Failed']
     for lfn, lfnReplicas in res['Value']['Successful'].items():
-      if len(lfnReplicas.keys()) == 0:
+      if len(lfnReplicas) == 0:
         noReplicas[lfn] = "LFN registered with zero replicas in the FileCatalog"
       else:
         replicas[lfn] = lfnReplicas
     if noReplicas:
       for lfn, reason in noReplicas.items():
         gLogger.warn("RequestPreparation.__getFileReplicas: %s" % reason, lfn)
-      self.__reportProblematicFiles(noReplicas.keys(), 'LFN-LFC-NoReplicas')
+      self.__reportProblematicFiles(list(noReplicas), 'LFN-LFC-NoReplicas')
     return S_OK({'Replicas': replicas, 'ZeroReplicas': noReplicas, 'Failed': failed})
 
   def __reportProblematicFiles(self, lfns, reason):

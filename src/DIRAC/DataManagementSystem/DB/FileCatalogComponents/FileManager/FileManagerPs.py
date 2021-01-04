@@ -294,7 +294,7 @@ class FileManagerPs(FileManagerBase):
       fileDesc[(dirID, fileName)] = lfn
 
     chunkSize = 200
-    allChunks = list(self.__chunks(lfns.keys(), chunkSize))
+    allChunks = list(self.__chunks(list(lfns), chunkSize))
 
     for lfnChunk in allChunks:
       result = self.__insertMultipleFiles(fileValues, lfnChunk)
@@ -546,7 +546,7 @@ class FileManagerPs(FileManagerBase):
         repValues[lfn] = (fileID, seID, statusID, replicaType, pfn)
         repDesc[(fileID, seID)] = lfn
 
-    allChunks = list(self.__chunks(lfns.keys(), chunkSize))
+    allChunks = list(self.__chunks(list(lfns), chunkSize))
 
     for lfnChunk in allChunks:
       result = self.__insertMultipleReplicas(repValues, lfnChunk)

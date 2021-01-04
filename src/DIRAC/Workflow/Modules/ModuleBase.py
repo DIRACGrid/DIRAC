@@ -444,7 +444,7 @@ class ModuleBase(object):
         self.log.verbose('Found LFN %s for file %s' % (lfn, os.path.basename(lfn)))
 
     # check local existance
-    self._checkLocalExistance(fileInfo.keys())
+    self._checkLocalExistance(list(fileInfo))
 
     # Select which files have to be uploaded: in principle all
     candidateFiles = self._applyMask(fileInfo, fileMask, stepMask)

@@ -235,7 +235,7 @@ DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.\
 
 def mock_getAllGroups():
   """ Mocks the getAllGroups method from the CS"""
-  return diracGrps.keys()
+  return list(diracGrps)
 
 
 def mock_getGroupOption(grpName, grpOption):

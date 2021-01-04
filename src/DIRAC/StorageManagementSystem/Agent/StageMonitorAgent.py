@@ -212,7 +212,7 @@ class StageMonitorAgent(AgentModule):
     if not res['OK']:
       return res
     if not res['Value']:
-      return S_ERROR('Could not obtain request IDs for replicas %s from StageRequests table' % (replicaIDs.keys()))
+      return S_ERROR('Could not obtain request IDs for replicas %s from StageRequests table' % list(replicaIDs))
 
     for replicaID, info in res['Value'].items():
       replicaIDs[replicaID]['RequestID'] = info['RequestID']

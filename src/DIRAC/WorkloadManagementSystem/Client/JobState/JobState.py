@@ -151,7 +151,7 @@ class JobState(object):
 
     gLogger.info("Job %s: Ended trace execution" % self.__jid)
     # We return a new initial state
-    return self.getAttributes(initialState.keys())
+    return self.getAttributes(list(initialState))
 #
 # Status
 #

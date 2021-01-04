@@ -85,7 +85,7 @@ class InputDataByProtocol(object):
     # If all replicas are requested, get results for other SEs
     seList = set()
     localSESet = set(localSEList)
-    for lfn in replicas.keys():
+    for lfn in list(replicas):
       extraSEs = set(replicas[lfn]) - localSESet
       # If any extra SE, add it to the set, othewise don't consider that file
       if extraSEs:

@@ -166,7 +166,7 @@ class FileCatalogClient(FileCatalogClientBase):
       # { lfn : { 'SE' : se1, 'PFN' : pfn1, 'Status' : status }, ... }
       batch = {}
 
-      for lfn in lfnsSEs.keys():
+      for lfn in list(lfnsSEs):
         # If there are still some Replicas (SE) for the given LFN, we put it in the next batch
         # else we remove the entry from the lfnsSEs dict
         if lfnsSEs[lfn]:
@@ -251,7 +251,7 @@ class FileCatalogClient(FileCatalogClientBase):
     # Replace just the filename with the full LFN
     for path in result['Value']['Successful']:
       pathDict = result['Value']['Successful'][path]
-      for fname in pathDict.keys():
+      for fname in list(pathDict):
         # Remove the file name from the directory dict
         detailsDict = pathDict.pop(fname)
         # Build the lfn

@@ -283,9 +283,9 @@ class FileCatalog(object):
           failed.setdefault(lfn, {})[catalogName] = errorMessage
       # Restore original lfns if they were changed by normalization
       if lfnMapDict:
-        for lfn in failed.keys():
+        for lfn in list(failed):
           failed[lfnMapDict.get(lfn, lfn)] = failed.pop(lfn)
-        for lfn in successful.keys():
+        for lfn in list(successful):
           successful[lfnMapDict.get(lfn, lfn)] = successful.pop(lfn)
       resDict = {'Failed': failed, 'Successful': successful}
       return S_OK(resDict)

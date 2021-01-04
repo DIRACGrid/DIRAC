@@ -181,7 +181,7 @@ for host in finalSet:
 
     for db in allDB:
       # Check for DIRAC only databases
-      if db in availableDB.keys() and db != 'InstalledComponentsDB':
+      if db in availableDB and db != 'InstalledComponentsDB':
         # Check for 'installed' databases
         isSection = cfg.isSection('Systems/' + availableDB[db]['System'] + '/' +
                                   cfg.getOption('DIRAC/Setups/' + setup + '/' +

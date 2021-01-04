@@ -172,7 +172,7 @@ class StateMachine(object):
     :return: list( stateNames )
     """
 
-    return self.states.keys()
+    return list(self.states)
 
   def getNextState(self, candidateState):
     """
