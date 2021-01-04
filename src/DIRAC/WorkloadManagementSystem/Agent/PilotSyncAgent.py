@@ -1,7 +1,7 @@
 """ This agent syncs CS and pilot files to a web server of your choice
 
 .. literalinclude:: ../ConfigTemplate.cfg
-  :start-after: ##BEGIN PilotsSyncAgent
+  :start-after: ##BEGIN PilotSyncAgent
   :end-before: ##END
   :dedent: 2
   :caption: PilotsSyncAgent options
@@ -27,14 +27,14 @@ from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 
 
-class PilotsSyncAgent(AgentModule):
+class PilotSyncAgent(AgentModule):
   """ Syncs CS and pilot files to a web server of your choice
   """
 
   def __init__(self, *args, **kwargs):
     """ c'tor
     """
-    super(PilotsSyncAgent, self).__init__(*args, **kwargs)
+    super(PilotSyncAgent, self).__init__(*args, **kwargs)
 
     # This location would be enough if we are running this agent on the DIRAC web server
     # '/opt/dirac/webRoot/www/pilot'

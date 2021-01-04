@@ -67,6 +67,7 @@ class PilotCStoJSONSynchronizer(object):
 
   def getCSDict(self):
     """ Gets minimal info for running a pilot, from the CS
+
     :returns: pilotDict (containing pilots run info)
     :rtype: S_OK, S_ERROR, value is pilotDict
     """
