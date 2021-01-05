@@ -21,7 +21,8 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   :param str flavour: Flavour of replication to create: Replication or Moving
   :param targetSE: Destination for files
   :type targetSE: python:list or str
-  :param str sourceSE: Origin of files.
+  :param sourceSE: Origin of files
+  :type targetSE: python:list or str
   :param int metaKey: Meta key to identify input files
   :param int metaValue: Meta value to identify input files
   :param dict metaData: Additional meta data to use to identify input files
@@ -42,7 +43,8 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   if isinstance(targetSE, six.string_types):
     targetSE = [targetSE]
 
-  sourceSE = '%s' % (",".join(sourceSE))
+  if isinstance(sourceSE, (list, tuple)):
+    sourceSE = '%s' % (",".join(sourceSE))
 
   gLogger.debug('Using plugin: %r' % plugin)
 
