@@ -42,6 +42,8 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   if isinstance(targetSE, six.string_types):
     targetSE = [targetSE]
 
+  sourceSE = '%s' % (",".join(sourceSE))
+
   gLogger.debug('Using plugin: %r' % plugin)
 
   if flavour not in ('Replication', 'Moving'):
