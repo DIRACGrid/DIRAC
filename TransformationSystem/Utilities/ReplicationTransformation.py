@@ -22,7 +22,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   :param targetSE: Destination for files
   :type targetSE: python:list or str
   :param sourceSE: Origin of files
-  :type targetSE: python:list or str
+  :type sourceSE: python:list or str
   :param int metaKey: Meta key to identify input files
   :param int metaValue: Meta value to identify input files
   :param dict metaData: Additional meta data to use to identify input files
