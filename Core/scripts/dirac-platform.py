@@ -12,6 +12,10 @@ Invoked at any installation, so by the *dirac-install* script, and by the pilots
 
 On a RHEL 6 node, for example, the determined dirac platform is "Linux_x86_64_glibc-2.5"
 
+Usage::
+
+  dirac-platform [option|cfgfile]
+
 Example::
 
   $ dirac-platform
@@ -21,6 +25,19 @@ Example::
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
+
+import sys
+import getopt
+
+cmdOpt = ('h', 'help', 'help doc string')
+
+optList, args = getopt.getopt(sys.argv[1:], cmdOpt[0], cmdOpt[1])
+for opt, value in optList:
+  if opt in ('-h', '--help'):
+    print(__doc__)
+    print('Options::\n\n')
+    print("  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
+    sys.exit(0)
 
 try:
   from DIRAC.Core.Utilities.Platform import getPlatformString

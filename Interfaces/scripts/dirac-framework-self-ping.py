@@ -23,7 +23,4 @@ with open(os.devnull, 'w') as redirectStdout, open(os.devnull, 'w') as redirectS
   rpc = RPCClient('dips://localhost:%s' % sys.argv[1])
   res = rpc.ping()
   time.sleep(0.1)
-  if not res['OK']:
-    sys.exit(1)
-  else:
-    sys.exit(0)
+  sys.exit(0 if res['OK'] else 1)
