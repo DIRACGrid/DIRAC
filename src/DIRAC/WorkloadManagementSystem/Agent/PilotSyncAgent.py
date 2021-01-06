@@ -39,15 +39,13 @@ class PilotSyncAgent(AgentModule):
     # This location would be enough if we are running this agent on the DIRAC web server
     # '/opt/dirac/webRoot/www/pilot'
     self.saveDir = ''
-    self.upload = False
     self.uploadLocations = []
 
   def initialize(self):
     """ Initial settings
     """
     self.workingDirectory = self.am_getOption('WorkDirectory')
-    self.saveDir = self.am_getOption('SaveDir', self.saveDir)
-    self.upload = self.am_getOption('Upload', self.upload)
+    self.saveDir = self.am_getOption('SaveDirectory', self.saveDir)
     self.uploadLocations = self.am_getOption('UploadLocations', self.uploadLocations)
     if not self.uploadLocations:
       self.uploadLocations = Operations().getValue("Pilot/pilotFileServer")
@@ -110,7 +108,7 @@ class PilotSyncAgent(AgentModule):
         shutil.move(tf, self.saveDir)
 
     # upload
-    if not self.upload:
+    if not self.uploadLocations:
       # nothing else to do
       return S_OK()
 
