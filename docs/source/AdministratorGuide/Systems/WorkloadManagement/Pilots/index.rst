@@ -42,6 +42,7 @@ A pilot has to run on each and every computing resource type, provided that:
 
 - Python 2.6+ on the WN
 - It is an OS onto which we can install a DIRAC client (basically: SLC6 or CentOS7)
+  - if that's not possible, we plan to add support for singularity
 
 The same pilot script can be used everywhere.
 
@@ -63,7 +64,7 @@ Definitions that help understanding what's a pilot
 
 The *pilot* is a "standardized" piece of code. The *pilot wrapper* might not be standardized.
 
-The "SiteDirector" agent encapsulates the *pilot* in a *pilot wrapper*, then sends it to a Computing Element as a *pilot job*.
+The "SiteDirector" agent encapsulates creates the *pilot wrapper*, then sends it to a Computing Element as a *pilot job*.
 
 But, if you don't have the possibility to send a pilot job (e.g. the case of a Virtual Machine in a cloud),
 you can still find a way to start the pilot script by encapsulating it in a pilot wrapper that will be started at boot time,
@@ -104,7 +105,7 @@ Pilot Commands
 The system works with "commands", as explained in the `RFC 18 <https://github.com/DIRACGrid/DIRAC/wiki/Pilots-2.0:-generic,-configurable-pilots>`_.
 Any command can be added. If your command is executed before the "InstallDIRAC" command, pay attention that DIRAC functionalities won't be available.
 
-Basically, pilot commands are an implementation of the command pattern.
+Basically, pilot commands are an implementation of the `command pattern <https://en.wikipedia.org/wiki/Command_pattern>`_.
 Commands define a toolbox of pilot capabilities available to the pilot script. Each command implements one function, like:
 
 - Check the environment
@@ -139,7 +140,7 @@ for the full list.
 Pilot extensions
 ================
 
-In case your VO only uses Grid resources, and the pilots are only sent by SiteDirector or TaksQueueDirector agents,
+In case your VO only uses Grid resources, and the pilots are only sent by SiteDirector agents,
 and you don't plan to have any specific pilot behaviour, you can stop reading here.
 
 Instead, in case you want, for example, to install DIRAC in a different way, or you want your pilot to have some VO specific action,

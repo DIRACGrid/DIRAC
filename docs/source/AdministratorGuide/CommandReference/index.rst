@@ -152,7 +152,8 @@ Other commands:
 
     dirac-admin-sysadmin-cli
     dirac-admin-update-instance
-    dirac-admin-update-pilot    
+    dirac-admin-update-pilot
+    dirac-admin-sync-pilot
 
     dirac-admin-sort-cs-sites
 
