@@ -1,4 +1,4 @@
-[v7r2-pre26]
+[v7r2-pre27]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -27,6 +27,9 @@ NEW: (#4823) flipped default value of DIRAC_USE_JSON_DECODE env variable
 FIX: (#4843) X509Chain: fix downloading X509 certificates
 FIX: (#4870) ElasticSearchDB: fix exception handling when checking existance of indices
 
+*Configuration
+CHANGE: (#4866) split standard and tornado refresher in two files to avoid tornado dependency on the client
+
 *Framework
 CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
 FIX: (#4850) MQ logging sends also the message,asctime and levelname field
@@ -48,6 +51,10 @@ CHANGE: (#4799) Remove MultiProcessorSiteDirector (use standard SiteDirector)
 CHANGE: (#4799) stop setting JDL requirements MaxCPUTime, SubmitPools, GridRequiredCEs, Origin, JobMode
 CHANGE: (#4823) using JobReport and delayed send for JobStateUpdate
 FIX: (#4829) PilotCStoJSONSynchronizer - upload method uses WebDav
+NEW: (#4874) new agent PilotsSyncAgent for syncing pilot files.
+NEW: (#4874) new script dirac-admin-sync-pilots for syncing pilot files.
+CHANGE: (#4874) largely simplified PilotCStoJSONSynchronizer
+CHANGE: (#4874) don't call PilotCStoJSONSynchronizer from the CS
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
