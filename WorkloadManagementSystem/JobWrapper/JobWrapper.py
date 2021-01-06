@@ -223,7 +223,7 @@ class JobWrapper(object):
       os.mkdir(str(self.jobID))
       os.chdir(str(self.jobID))
       extraOpts = self.jobArgs.get('ExtraOptions', '')
-      if extraOpts:
+      if extraOpts and '$DIRACROOT' in self.jobArgs.get('Executable', '').strip():
         if os.path.exists('%s/%s' % (self.root, extraOpts)):
           shutil.copyfile('%s/%s' % (self.root, extraOpts), extraOpts)
         self.__loadLocalCFGFiles(self.localSiteRoot)
