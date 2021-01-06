@@ -1,3 +1,12 @@
+[v7r0p44]
+
+*Core
+CHANGE: (#4873) default generated bashrc does not overwrite X509* variables if already set
+NEW: (#4873) Add DIRAC_X509_HOST_CERT and DIRAC_X509_HOST_KEY environment variables
+
+*WMS
+CHANGE: (#4836) JobWrapper: Add extraOptions only when the executable is a DIRAC script
+
 [v7r0p43]
 
 *RSS
