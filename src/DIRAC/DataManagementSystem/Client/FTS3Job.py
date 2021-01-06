@@ -12,6 +12,8 @@ import errno
 # Requires at least version 3.3.3
 import fts3.rest.client.easy as fts3
 from fts3.rest.client.exceptions import FTS3ClientException, NotFound
+# We specifically use Request in the FTS client because of a leak in the
+# default pycurl. See https://its.cern.ch/jira/browse/FTS-261
 from fts3.rest.client.request import Request as ftsSSLRequest
 
 from DIRAC.Resources.Storage.StorageElement import StorageElement

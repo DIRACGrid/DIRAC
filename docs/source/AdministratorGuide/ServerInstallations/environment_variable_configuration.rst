@@ -50,3 +50,9 @@ DIRACSYSCONFIG
 
 DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK
   This variable only makes sense for DIRAC pilots. When set, the wallclock check done within the watchdog is disabled.
+
+DIRAC_X509_HOST_CERT
+  Defines the location of the host certificate, and takes precedence over CS options. This option is not meant to be used in the ``bashrc`` of DIRAC, but rather by external tools starting DIRAC (read orchestrators).
+
+DIRAC_X509_HOST_KEY
+  Defines the location of the host key, and takes precedence over CS options. This option is not meant to be used in the ``bashrc`` of DIRAC, but rather by external tools starting DIRAC (read orchestrators).

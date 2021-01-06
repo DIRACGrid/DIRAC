@@ -73,6 +73,13 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p24]
+
+FIX: fixes from v7r0p44
+
+*TransformationSystem
+FIX: (#4883) fix to allow to pass a list of sourceSE to dirac-transformation-replication
+
 [v7r1p23]
 
 FIX: Fixes from v7r0p43
@@ -505,6 +512,15 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p44]
+
+*Core
+CHANGE: (#4873) default generated bashrc does not overwrite X509* variables if already set
+NEW: (#4873) Add DIRAC_X509_HOST_CERT and DIRAC_X509_HOST_KEY environment variables
+
+*WMS
+CHANGE: (#4836) JobWrapper: Add extraOptions only when the executable is a DIRAC script
 
 [v7r0p43]
 
