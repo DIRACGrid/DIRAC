@@ -114,6 +114,7 @@ Managing DIRAC installation:
     dirac-configure
     dirac-admin-get-CAs
     dirac-info
+    dirac-version
     dirac-admin-check-config-options
     dirac-populate-component-db
 
