@@ -42,6 +42,24 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManife
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 #############################################################################
+# utility functions
+
+
+def compressJDL(jdl):
+  """Return compressed JDL string."""
+  return zlib.compress(jdl, -1).encode('base64')
+
+
+def extractJDL(compressedJDL):
+  """Return decompressed JDL string."""
+  # the starting bracket is guaranteeed by JobManager.submitJob
+  # we need the check to be backward compatible
+  if compressedJDL.startswith('['):
+    return compressedJDL
+  return zlib.decompress(compressedJDL.decode('base64'))
+
+
+#############################################################################
 
 
 class JobDB(DB):
@@ -57,7 +75,6 @@ class JobDB(DB):
     # data member to check if __init__ went through without error
     self.__initialized = False
     self.maxRescheduling = self.getCSOption('MaxRescheduling', 3)
-    self.compressJDLs = self.getCSOption('CompressJDLs', False)
 
     # loading the function that will be used to determine the platform (it can be VO specific)
     res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatform')
@@ -78,7 +95,6 @@ class JobDB(DB):
     self.jdl2DBParameters = ['JobName', 'JobType', 'JobGroup']
 
     self.log.info("MaxReschedule", self.maxRescheduling)
-    self.log.info("CompressJDLs", self.compressJDLs)
     self.log.info("==================================================")
     self.__initialized = True
 
@@ -883,12 +899,12 @@ class JobDB(DB):
       return ret
     jobID = ret['Value']
 
-    ret = self._escapeString(self.__compressJDL(jdl))
+    ret = self._escapeString(compressJDL(jdl))
     if not ret['OK']:
       return ret
     e_JDL = ret['Value']
 
-    ret = self._escapeString(self.__compressJDL(originalJDL))
+    ret = self._escapeString(compressJDL(originalJDL))
     if not ret['OK']:
       return ret
     e_originalJDL = ret['Value']
@@ -920,21 +936,6 @@ class JobDB(DB):
     return result
 
 #############################################################################
-  def __compressJDL(self, jdl):
-    """Return compressed JDL string."""
-    if not self.compressJDLs:
-      return jdl
-    compressed = zlib.compress(jdl.encode(), -1)
-    return base64.b64encode(compressed).decode()
-
-  def __extractJDL(self, compressedJDL):
-    """Return decompressed JDL string."""
-    # the starting bracket is guaranteed by JobManager.submitJob
-    # we need the check to be backward compatible
-    if compressedJDL.startswith('['):
-      return compressedJDL
-    return zlib.decompress(base64.b64decode(compressedJDL))
-
   def __insertNewJDL(self, jdl):
     """Insert a new JDL in the system, this produces a new JobID
     """
@@ -943,7 +944,7 @@ class JobDB(DB):
 
     result = self.insertFields('JobJDLs',
                                ['JDL', 'JobRequirements', 'OriginalJDL'],
-                               ['', '', self.__compressJDL(jdl)])
+                               ['', '', compressJDL(jdl)])
     if not result['OK']:
       self.log.error('Can not insert New JDL', result['Message'])
       return result
@@ -977,7 +978,7 @@ class JobDB(DB):
       jdl = result['Value']
       if not jdl:
         return S_OK(jdl)
-      return S_OK(self.__extractJDL(jdl[0][0]))
+      return S_OK(extractJDL(jdl[0][0]))
     return result
 
 #############################################################################
