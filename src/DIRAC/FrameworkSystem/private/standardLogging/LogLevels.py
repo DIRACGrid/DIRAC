@@ -74,7 +74,7 @@ class LogLevels(object):
     """
     :return: all level names available in the wrapper
     """
-    return cls.__levelDict.keys()
+    return list(cls.__levelDict)
 
   @classmethod
   def getLevels(cls):

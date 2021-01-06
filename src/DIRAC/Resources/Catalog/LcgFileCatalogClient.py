@@ -1115,7 +1115,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
       # { lfn : { 'SE' : se1, 'PFN' : pfn1, 'Status' : status }, ... }
       batch = {}
 
-      for lfn in lfnsSEs.keys():
+      for lfn in list(lfnsSEs):
         # If there are still some Replicas (SE) for the given LFN, we put it in the next batch
         # else we remove the entry from the lfnsSEs dict
         if lfnsSEs[lfn]:

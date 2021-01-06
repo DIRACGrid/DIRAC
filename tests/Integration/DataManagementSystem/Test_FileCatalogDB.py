@@ -780,14 +780,14 @@ class DirectoryCase(FileCatalogDBTestCase):
         "listDirectory : %s should be in Successful %s" %
         (parentDir,
          result))
-    self.assertEqual(result["Value"]["Successful"][parentDir]["SubDirs"].keys(), [testDir],
+    self.assertEqual(list(result["Value"]["Successful"][parentDir]["SubDirs"]), [testDir],
                      "listDir : incorrect content for %s (%s)" % (parentDir, result))
     self.assertTrue(
         testDir in result["Value"]["Successful"],
         "listDirectory : %s should be in Successful %s" %
         (testDir,
          result))
-    self.assertEqual(result["Value"]["Successful"][testDir]["Files"].keys(), [testFile.split("/")[-1]],
+    self.assertEqual(list(result["Value"]["Successful"][testDir]["Files"]), [testFile.split("/")[-1]],
                      "listDir : incorrect content for %s (%s)" % (testDir, result))
     self.assertTrue(
         nonExistingDir in result["Value"]["Failed"],

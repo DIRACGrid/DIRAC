@@ -104,7 +104,7 @@ class PDP(object):
     the actions to be triggered and returns.
 
     examples:
-      >>> pdp.takeDecision()['Value'].keys()
+      >>> list(pdp.takeDecision()['Value'])
           ['singlePolicyResults', 'policyCombinedResult', 'decisionParams']
       >>> pdp.takeDecision()['Value']['singlePolicyResults']
           [ { 'Status' : 'Active',

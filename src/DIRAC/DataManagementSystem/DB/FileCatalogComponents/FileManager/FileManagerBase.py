@@ -312,7 +312,7 @@ class FileManagerBase(object):
     if masterLfns:
       res = self._insertFiles(masterLfns, uid, gid, connection=connection)
       if not res['OK']:
-        for lfn in masterLfns.keys():  # pylint: disable=consider-iterating-dictionary
+        for lfn in list(masterLfns):  # pylint: disable=consider-iterating-dictionary
           failed[lfn] = res['Message']
           masterLfns.pop(lfn)
       else:
@@ -355,14 +355,14 @@ class FileManagerBase(object):
         self._deleteFiles(toPurge, connection=connection)
 
     # Add extra replicas for successfully registered LFNs
-    for lfn in extraLfns.keys():  # pylint: disable=consider-iterating-dictionary
+    for lfn in list(extraLfns):
       if lfn not in successful:
         extraLfns.pop(lfn)
 
     if extraLfns:
       res = self._findFiles(list(extraLfns), ['FileID', 'DirID'], connection=connection)
       if not res['OK']:
-        for lfn in lfns.keys():
+        for lfn in list(lfns):
           failed[lfn] = 'Failed while registering extra replicas'
           successful.pop(lfn)
           extraLfns.pop(lfn)

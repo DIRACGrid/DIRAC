@@ -319,4 +319,4 @@ class ClassAd(object):
 
     :return: list of names as strings
     """
-    return self.contents.keys()
+    return list(self.contents)

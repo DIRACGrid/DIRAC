@@ -523,7 +523,7 @@ class DirectoryTestCases(StorageElementTestCase):
     self.assertTrue(listDirRes['Value'])
     self.assertTrue('SubDirs' in listDirRes['Value']['Successful'][destDirectory])
     self.assertTrue('Files' in listDirRes['Value']['Successful'][destDirectory])
-    self.assertEqual(len(listDirRes['Value']['Successful'][destDirectory]['Files'].keys()), self.numberOfFiles)
+    self.assertEqual(len(listDirRes['Value']['Successful'][destDirectory]['Files']), self.numberOfFiles)
     # Perform the checks for the remove directory operation
     self.assertTrue(removeDirRes['OK'])
     self.assertTrue(removeDirRes['Value'])

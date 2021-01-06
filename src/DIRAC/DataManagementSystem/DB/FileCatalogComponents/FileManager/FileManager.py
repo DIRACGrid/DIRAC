@@ -282,7 +282,7 @@ class FileManager(FileManagerBase):
     # Get the fileIDs for the inserted files
     res = self._findFiles(list(lfns), ['FileID'], connection=connection)
     if not res['OK']:
-      for lfn in lfns.keys():
+      for lfn in list(lfns):
         failed[lfn] = 'Failed post insert check'
         lfns.pop(lfn)
     else:
@@ -429,7 +429,7 @@ class FileManager(FileManagerBase):
     statusID = 0
     if res['OK']:
       statusID = res['Value']
-    for lfn in lfns.keys():
+    for lfn in list(lfns):
       fileID = lfns[lfn]['FileID']
       fileIDLFNs[fileID] = lfn
       seName = lfns[lfn]['SE']

@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, gConfig, S_OK
+from DIRAC import gLogger, S_OK
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
@@ -410,7 +411,7 @@ class StageRequestAgent(AgentModule):
       seReplicas.setdefault(storageElement, []).extend(seReplicaIDs)
       replicasToStage.extend(seReplicaIDs)
 
-    for replicaID in allReplicaInfo.keys():
+    for replicaID in list(allReplicaInfo):
       if replicaID not in replicasToStage:
         del allReplicaInfo[replicaID]
 

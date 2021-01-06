@@ -101,7 +101,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
       return res
     if not res['Value']:
       return S_OK(0)
-    return S_OK(res['Value'].keys()[0])
+    return S_OK(list(res['Value'])[0])
 
   def removeDir(self, path):
     """ Remove directory """

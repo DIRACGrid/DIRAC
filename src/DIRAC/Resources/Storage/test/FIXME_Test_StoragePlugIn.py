@@ -259,7 +259,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
     resDict = listDirRes['Value']['Successful'][remoteDir]
     self.assertTrue('SubDirs' in resDict)
     self.assertTrue('Files' in resDict)
-    self.assertEqual(len(resDict['Files'].keys()), self.numberOfFiles)
+    self.assertEqual(len(resDict['Files']), self.numberOfFiles)
     # Perform the checks for the remove directory operation
     self.assertTrue(removeDirRes['OK'])
     self.assertTrue(remoteDir in removeDirRes['Value']['Successful'])

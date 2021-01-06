@@ -214,7 +214,7 @@ class GOCDB2CSAgent (AgentModule):
 
     # reverse the dictionary (assume 1 to 1 relation)
     DIRACGOCDict = result['Value']
-    GOCDIRACDict = dict(zip(DIRACGOCDict.values(), DIRACGOCDict.keys()))
+    GOCDIRACDict = dict(zip(DIRACGOCDict.values(), DIRACGOCDict))
 
     # add DIRAC site names
     outputList = []

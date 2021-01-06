@@ -402,7 +402,7 @@ def getDIRACPlatforms():
   result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
   if not (result['OK'] and result['Value']):
     return S_ERROR("OS compatibility info not found")
-  return S_OK(result['Value'].keys())
+  return S_OK(list(result['Value']))
 
 
 def getCatalogPath(catalogName):
