@@ -6,10 +6,13 @@
 
 # pylint: disable=wrong-import-position
 
-from __future__ import print_function, absolute_import
+from __future__ import print_function
+from __future__ import absolute_import
 from __future__ import division
 
 from datetime import datetime, timedelta
+
+import pytest
 
 __RCSID__ = "$Id$"
 
@@ -51,6 +54,22 @@ jdl = """[
 gLogger.setLevel('DEBUG')
 
 
+# fixture for teardown
+@pytest.fixture
+def putAndDelete():
+
+  yield putAndDelete
+  # from here on is teardown
+
+  # remove the job entries
+  res = jobDB.selectJobs({})
+  assert res['OK'] is True, res['Message']
+  jobs = res['Value']
+  for job in jobs:
+    res = jobDB.removeJobFromDB(job)
+    assert res['OK'] is True, res['Message']
+
+
 def fakegetDIRACPlatform(OSList):
   return {'OK': True, 'Value': 'pippo'}
 
@@ -59,7 +78,9 @@ jobDB = JobDB()
 jobDB.getDIRACPlatform = fakegetDIRACPlatform
 
 
-def test_insertAndRemoveJobIntoDB():
+# #### real tests #
+
+def test_insertAndRemoveJobIntoDB(putAndDelete):
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
@@ -74,19 +95,16 @@ def test_insertAndRemoveJobIntoDB():
   assert res['OK'] is True, res['Message']
   assert res['Value'] == {}
 
-  res = jobDB.selectJobs({})
-  assert res['OK'] is True, res['Message']
-  jobs = res['Value']
-  for job in jobs:
-    res = jobDB.removeJobFromDB(job)
-    assert res['OK'] is True, res['Message']
 
-
-def test_rescheduleJob():
+def test_rescheduleJob(putAndDelete):
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
   jobID = res['JobID']
+
+  res = jobDB.getJobAttribute(jobID, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == 'Received'
 
   res = jobDB.rescheduleJob(jobID)
   assert res['OK'] is True, res['Message']
@@ -98,13 +116,6 @@ def test_rescheduleJob():
   assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Job Rescheduled'
 
-  res = jobDB.selectJobs({})
-  assert res['OK'] is True, res['Message']
-  jobs = res['Value']
-  for job in jobs:
-    res = jobDB.removeJobFromDB(job)
-    assert res['OK'] is True, res['Message']
-
 
 def test_getCounters():
 
@@ -112,7 +123,7 @@ def test_getCounters():
   assert res['OK'] is True, res['Message']
 
 
-def test_heartBeatLogging():
+def test_heartBeatLogging(putAndDelete):
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
@@ -148,15 +159,8 @@ def test_heartBeatLogging():
   assert res['OK'] is True, res['Message']
   assert not res['Value'], str(res)
 
-  res = jobDB.selectJobs({})
-  assert res['OK'] is True, res['Message']
-  jobs = res['Value']
-  for job in jobs:
-    res = jobDB.removeJobFromDB(job)
-    assert res['OK'] is True, res['Message']
 
-
-def test_jobParameters():
+def test_jobParameters(putAndDelete):
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
   jobID = res['JobID']
@@ -173,9 +177,57 @@ def test_jobParameters():
   assert res['OK'] is True, res['Message']
   assert res['Value'] == {}, res['Value']
 
-  res = jobDB.selectJobs({})
+
+def test_attributes(putAndDelete):
+
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner_1', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
-  jobs = res['Value']
-  for job in jobs:
-    res = jobDB.removeJobFromDB(job)
-    assert res['OK'] is True, res['Message']
+  jobID_1 = res['JobID']
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner_2', '/DN/OF/owner', 'ownerGroup', 'someSetup')
+  assert res['OK'] is True, res['Message']
+  jobID_2 = res['JobID']
+
+  res = jobDB.getJobAttribute(jobID_1, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == 'Received'
+  res = jobDB.getJobAttribute(jobID_2, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == 'Received'
+
+  res = jobDB.setJobAttributes(jobID_1, ['Status'], ['Waiting'], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttribute(jobID_1, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == 'Waiting'
+
+  res = jobDB.setJobAttributes(jobID_1, ['Status', 'MinorStatus'], ['Matched', 'minor'], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == 'Matched'
+  assert res['Value']['MinorStatus'] == 'minor'
+  res = jobDB.getJobAttributes(jobID_2, ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == 'Received'
+
+  res = jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], ['Running', 'minor_2'], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == 'Running'
+  assert res['Value']['MinorStatus'] == 'minor_2'
+  res = jobDB.getJobAttributes(jobID_2, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == 'Running'
+  assert res['Value']['MinorStatus'] == 'minor_2'
+
+  jobDB.setJobAttributes(jobID_1, ['Status'], ['Done'], True)
+  jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], ['Completed', 'minor_3'], True)
+  res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == 'Done'
+  assert res['Value']['MinorStatus'] == 'minor_2'
+  res = jobDB.getJobAttributes(jobID_2, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == 'Completed'
+  assert res['Value']['MinorStatus'] == 'minor_3'

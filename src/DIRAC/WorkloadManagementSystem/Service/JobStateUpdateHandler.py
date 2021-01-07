@@ -257,11 +257,11 @@ class JobStateUpdateHandler(RequestHandler):
       application = sDict.get('ApplicationStatus', 'idem')
       source = sDict.get('Source', 'Unknown')
       result = cls.jobLoggingDB.addLoggingRecord(jobID,
-                                                  status=status,
-                                                  minorStatus=minor,
-                                                  applicationStatus=application,
-                                                  date=date,
-                                                  source=source)
+                                                 status=status,
+                                                 minorStatus=minor,
+                                                 applicationStatus=application,
+                                                 date=date,
+                                                 source=source)
       if not result['OK']:
         return result
 

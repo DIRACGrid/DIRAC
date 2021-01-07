@@ -33,7 +33,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.DErrno import EWMSSUBM
+from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJERR
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -405,11 +405,9 @@ class JobDB(DB):
     """
 
     result = self.getJobAttributes(jobID, [attribute])
-    if result['OK']:
-      value = result['Value'][attribute]
-      return S_OK(value)
-
-    return result
+    if not result['OK']:
+      return result
+    return S_OK(result['Value'].get(attribute))
 
 #############################################################################
   def getJobParameter(self, jobID, parameter):
@@ -601,7 +599,7 @@ class JobDB(DB):
     """
 
     if attrName not in self.jobAttributeNames:
-      return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
+      return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
 
     ret = self._escapeString(jobID)
     if not ret['OK']:
@@ -631,6 +629,10 @@ class JobDB(DB):
     """ Set one or more attribute values for one or more jobs specified by jobID.
         The LastUpdate time stamp is refreshed if explicitly requested with the update flag
 
+        This method is also used for updating the Status, MinorStatus, ApplicationStatus
+        of a job, as self.setJobsStatus also calls this method.
+        If the status is already final, we don't update it.
+
         :param jobID: one or more job IDs
         :type jobID: int or str or python:list
         :param list attrNames: names of attributes to update
@@ -645,22 +647,27 @@ class JobDB(DB):
     if not isinstance(jobID, (list, tuple)):
       jobIDList = [jobID]
 
-    jIDList = []
-    for jID in jobIDList:
-      ret = self._escapeString(jID)
-      if not ret['OK']:
-        return ret
-      jIDList.append(ret['Value'])
-
     if len(attrNames) != len(attrValues):
       return S_ERROR('JobDB.setAttributes: incompatible Argument length')
 
     for attrName in attrNames:
       if attrName not in self.jobAttributeNames:
-        return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
+        return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
 
     attr = []
+    jobIDListToUpdate = []
+
     for name, value in zip(attrNames, attrValues):
+
+      if name in ('Status', 'MinorStatus', 'ApplicationStatus'):
+        # Need to check what's the current status, and if "final" we don't update
+        for jID in jobIDList:
+          res = self.getJobAttribute(jID, 'Status')
+          if not res['OK']:
+            return S_ERROR(EWMSJERR, "Could not find Status Job Attribute")
+          if res['Value'] not in JobStatus.JOB_FINAL_STATES:
+            jobIDListToUpdate.append(jID)
+
       ret = self._escapeString(value)
       if not ret['OK']:
         return ret
@@ -670,6 +677,12 @@ class JobDB(DB):
     if not attr:
       return S_ERROR('JobDB.setAttributes: Nothing to do')
 
+    jIDList = []
+    for jID in jobIDListToUpdate:
+      ret = self._escapeString(jID)
+      if not ret['OK']:
+        return ret
+      jIDList.append(ret['Value'])
     cmd = 'UPDATE Jobs SET %s WHERE JobID in ( %s )' % (', '.join(attr), ', '.join(jIDList))
 
     if myDate:
