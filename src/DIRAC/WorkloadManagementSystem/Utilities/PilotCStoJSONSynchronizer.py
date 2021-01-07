@@ -246,7 +246,7 @@ class PilotCStoJSONSynchronizer(object):
       for fileVO in glob.glob(scriptDir):
         tarFiles.append(fileVO)
     else:
-      self.log.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
+      self.log.info("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined, using Vanilla DIRAC pilot")
 
     # DIRAC repo
     pilotLocalRepo = os.path.join(self.workDir, 'pilotLocalRepo')
