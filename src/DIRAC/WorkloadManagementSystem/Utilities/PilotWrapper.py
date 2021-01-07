@@ -212,9 +212,11 @@ for loc in locations:
           raise
     # if we get here we break out of the loop of locations
     break
-  except (url_library_URLError, Exception) as e:
-    print('%%s unreacheable' %% loc, file=sys.stderr)
-    logger.error('%%s unreacheable' %% loc)
+  except url_library_URLError as e:
+    print('%%s unreachable' %% loc, file=sys.stderr)
+    logger.error('%%s unreachable' %% loc)
+    logger.exception(e)
+  except Exception as e:
     logger.exception(e)
 
 else:
