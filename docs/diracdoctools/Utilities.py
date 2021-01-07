@@ -107,8 +107,11 @@ def runCommand(command):
     result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT,
                                      universal_newlines=True)
     if 'NOTICE:' in result:
-      LOG.warn('NOTICE in output for: %s', command)
-      return ''
+      lines = []
+      LOG.warn('NOTICE in output for: %s; cleaning output from datestamp..', command)
+      for l in result.split('\n'):
+        lines.append(re.sub(r"^.*NOTICE: ", "", l))
+      result = "\n".join(lines) if len(lines) > 2 else ''
     return result
   except (OSError, subprocess.CalledProcessError) as e:
     LOG.error('Error when runnning command %s: %r', command, e.output)
