@@ -401,14 +401,15 @@ class JobStateUpdateHandler(RequestHandler):
     """ Send a heart beat sign of life for a job jobID
     """
 
-    result = cls.jobDB.setHeartBeatData(int(jobID), staticData, dynamicData)
+    result = cls.jobDB.setHeartBeatData(int(jobID), dynamicData)
     if not result['OK']:
       gLogger.warn('Failed to set the heart beat data', 'for job %d ' % int(jobID))
 
     if cls.elasticJobParametersDB:
-      result = cls.elasticJobParametersDB.setJobParameters(jobID, list(staticData.items()))
-      if not result['OK']:
-        gLogger.error('Failed to add Job Parameters to ElasticSearch', result['Message'])
+      for key, value in staticData.items():
+        result = cls.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
+        if not result['OK']:
+          gLogger.error('Failed to add Job Parameters to ElasticSearch', result['Message'])
     else:
       result = cls.jobDB.setJobParameters(int(jobID), list(staticData.items()))
       if not result['OK']:

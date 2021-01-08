@@ -30,11 +30,11 @@ class WMSAdministratorHandler(RequestHandler):
     cls.jobDB = JobDB()
     cls.taskQueueDB = TaskQueueDB()
 
-    cls.gElasticJobParametersDB = None
+    cls.elasticJobParametersDB = None
     useESForJobParametersFlag = Operations().getValue(
         '/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
-      cls.gElasticJobParametersDB = ElasticJobParametersDB()
+      cls.elasticJobParametersDB = ElasticJobParametersDB()
 
     return S_OK()
 
@@ -183,8 +183,8 @@ class WMSAdministratorHandler(RequestHandler):
     pilotReference = ''
     # Get the pilot grid reference first from the job parameters
 
-    if self.gElasticJobParametersDB:
-      res = self.gElasticJobParametersDB.getJobParameters(int(jobID), 'Pilot_Reference')
+    if self.elasticJobParametersDB:
+      res = self.elasticJobParametersDB.getJobParameters(int(jobID), 'Pilot_Reference')
       if not res['OK']:
         return res
       if res['Value'].get(int(jobID)):
