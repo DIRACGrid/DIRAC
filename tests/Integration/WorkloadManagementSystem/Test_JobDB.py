@@ -121,9 +121,9 @@ def test_heartBeatLogging():
 
   res = jobDB.setJobStatus(jobID, status='Running')
   assert res['OK'] is True, res['Message']
-  res = jobDB.setHeartBeatData(jobID, staticDataDict={}, dynamicDataDict={'CPU': 2345})
+  res = jobDB.setHeartBeatData(jobID, dynamicDataDict={'CPU': 2345})
   assert res['OK'] is True, res['Message']
-  res = jobDB.setHeartBeatData(jobID, staticDataDict={}, dynamicDataDict={'Memory': 5555})
+  res = jobDB.setHeartBeatData(jobID, dynamicDataDict={'Memory': 5555})
   assert res['OK'] is True, res['Message']
   res = jobDB.getHeartBeatData(jobID)
   assert res['OK'] is True, res['Message']

@@ -1944,7 +1944,7 @@ class JobDB(DB):
     return S_OK(finalDict)
 
 #####################################################################################
-  def setHeartBeatData(self, jobID, staticDataDict, dynamicDataDict):
+  def setHeartBeatData(self, jobID, dynamicDataDict):
     """ Add the job's heart beat data to the database
     """
 
@@ -1961,13 +1961,6 @@ class JobDB(DB):
       return S_ERROR('Failed to set the heart beat time: ' + result['Message'])
 
     ok = True
-    # FIXME: It is rather not optimal to use parameters to store the heartbeat info, must find a proper solution
-    # Add static data items as job parameters
-    result = self.setJobParameters(jobID, list(staticDataDict.items()))
-    if not result['OK']:
-      ok = False
-      self.log.warn(result['Message'])
-
     # Add dynamic data to the job heart beat log
     # start = time.time()
     valueList = []
