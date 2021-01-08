@@ -110,8 +110,8 @@ def runCommand(command):
     if 'NOTICE:' in result:
       lines = []
       LOG.warn('NOTICE in output for: %s; cleaning output from datestamp..', command)
-      for l in result.split('\n'):
-        lines.append(re.sub(r"^.*NOTICE: ", "", l))
+      for line in result.split('\n'):
+        lines.append(re.sub(r"^.*NOTICE: ", "", line))
       # if the output is less than 3 lines something went wrong
       result = "\n".join(lines) if len(lines) > 2 else ''
     return result
