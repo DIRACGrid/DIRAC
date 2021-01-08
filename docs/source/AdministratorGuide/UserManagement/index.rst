@@ -53,7 +53,7 @@ You need to log in under this user/group and use the Configuration Manager appli
 
 First of all, define, if necessary, some attributes at the root of the Registry section, that will be applicable for all the configuration are defined.
 
-.. literalinclude:: ../../../../dirac.cfg
+.. literalinclude:: /build/dirac.cfg
   :start-after: ## Registry options:
   :end-before: ##
   :dedent: 2
@@ -65,7 +65,7 @@ If the described VO is a VOMS VO, then it is important to note that the VO admin
 it is necessary to obtain relevant information from the VOMS servers regarding VO users.
 In this case, the addition of VOMS VO is considered, respectively, there are attributes specific to VOMS.
 
-.. literalinclude:: ../../../../dirac.cfg
+.. literalinclude:: /build/dirac.cfg
   :start-after: ## VOs
   :end-before: ##
   :dedent: 2
@@ -80,7 +80,7 @@ It is usually necessary to have at least three groups:
 
 Permissions of the group users are determined by "Properties" option. Full description of all supported :mod:`~DIRAC.Core.Security.Properties`.
 
-.. literalinclude:: ../../../../dirac.cfg
+.. literalinclude:: /build/dirac.cfg
   :start-after: ## Groups:
   :end-before: ##
   :dedent: 2
@@ -91,7 +91,7 @@ To add a new group you can use special DIRAC command that simplifies this action
 
 Finally, create a user in the **Registry/Users** section:
 
-.. literalinclude:: ../../../../dirac.cfg
+.. literalinclude:: /build/dirac.cfg
   :start-after: ## Users:
   :end-before: ##
   :dedent: 2

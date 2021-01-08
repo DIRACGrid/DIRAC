@@ -11,9 +11,12 @@
 
 # You can set these variables from the command line.
 #SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
+CFGPATH				= ../dirac.cfg
+# Move dirac.cfg to source dir
+USEDIRACCFG		= cp $(CFGPATH) $(BUILDDIR)/
+SPHINXBUILD   = $(USEDIRACCFG) && sphinx-build
 
 
 

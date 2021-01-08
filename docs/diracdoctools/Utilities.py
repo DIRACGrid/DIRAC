@@ -4,11 +4,12 @@ from __future__ import absolute_import
 
 from builtins import open
 
-import logging
 import os
+import re
 import sys
-import subprocess32 as subprocess
 import shlex
+import logging
+import subprocess32 as subprocess
 
 
 LOG = logging.getLogger(__name__)
@@ -111,6 +112,7 @@ def runCommand(command):
       LOG.warn('NOTICE in output for: %s; cleaning output from datestamp..', command)
       for l in result.split('\n'):
         lines.append(re.sub(r"^.*NOTICE: ", "", l))
+      # if the output is less than 3 lines something went wrong
       result = "\n".join(lines) if len(lines) > 2 else ''
     return result
   except (OSError, subprocess.CalledProcessError) as e:

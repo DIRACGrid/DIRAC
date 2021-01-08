@@ -12,7 +12,7 @@ DIRACCA proxy provider
 
 ProxyProvider implementation for the proxy generation using local Certification Authority (CA) credentials. DIRACCA type of the proxy provider is a simple CA, its main purpose is to generate a proxy on the fly for DIRAC users who do not have a certificate registered in DIRAC registry. To use it needs to have CA certificate and key locally. Here are two ways to set up this type of proxy provider in the DIRAC configuration:
 
-.. literalinclude:: ../../../../dirac.cfg
+.. literalinclude:: /build/dirac.cfg
   :start-after: ## DIRACCA type:
   :end-before: ##
   :dedent: 2
@@ -38,7 +38,7 @@ PUSP proxy provider
 
 ProxyProvider implementation for a Per-User Sub-Proxy(PUSP) proxy generation using PUSP proxy server. `More details about PUSP here <https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI>`_. Required parameters in the DIRAC configuration for its implementation:
 
-.. literalinclude:: ../../../../dirac.cfg
+.. literalinclude:: /build/dirac.cfg
   :start-after: ## PUSP type:
   :end-before: ##
   :dedent: 2
