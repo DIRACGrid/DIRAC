@@ -5,7 +5,7 @@
 
     Required parameters in the DIRAC configuration for its implementation:
 
-    .. literalinclude:: /build/dirac.cfg
+    .. literalinclude:: /dirac.cfg
       :start-after: ## DIRACCA type:
       :end-before: ##
       :dedent: 2

@@ -15,7 +15,7 @@ PAPER         =
 BUILDDIR      = build
 CFGPATH				= ../dirac.cfg
 # Move dirac.cfg to source dir
-USEDIRACCFG		= mkdir $(BUILDDIR) && cp $(CFGPATH) $(BUILDDIR)/
+USEDIRACCFG		= cp $(CFGPATH) source/
 SPHINXBUILD   = $(USEDIRACCFG) && sphinx-build
 
 
@@ -47,6 +47,7 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*
+	-rm -rf source/dirac.cfg
 
 cleanall: clean
 	diracdoctools/scripts/dirac-docs-build-code.py --clean

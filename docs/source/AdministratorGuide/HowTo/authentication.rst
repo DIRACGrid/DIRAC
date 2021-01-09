@@ -20,7 +20,7 @@ To identify users DIRAC use RBAC model (Role Based Access Control)
 
 Before authorize or not some tasks you have to define these properties, hostnames, usernames and groups. For that you may :ref:`register informations<admin_usermanagement>` at ``/DIRAC/Registry``.
 
-.. literalinclude:: /build/dirac.cfg
+.. literalinclude:: /dirac.cfg
   :start-after: ### Registry section:
   :end-before: ###
   :dedent: 0
