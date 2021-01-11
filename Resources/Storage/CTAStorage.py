@@ -21,6 +21,9 @@ class CTAStorage(GFAL2_XROOTStorage):
               BackendType = Cta
               AccessProtocols = root
               WriteProtocols = root
+              # This is very important if you want to transfer
+              # using a different protocol
+              StageProtocols = root
               SEType = T1D0
               SpaceReservation = LHCb-Tape
               OccupancyLFN = /eos/ctalhcbpps/proc/accounting
