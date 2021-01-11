@@ -295,7 +295,7 @@ class MySQL(object):
       try:
         conn.ping(True)
         return True
-      except BaseException:
+      except Exception:
         return False
 
     def __innerGet(self):
@@ -326,7 +326,7 @@ class MySQL(object):
             data[0].close()
           except MySQLdb.ProgrammingError as exc:
             gLogger.warn("ProgrammingError exception while closing MySQL connection: %s" % exc)
-          except BaseException as exc:
+          except Exception as exc:
             gLogger.warn("Exception while closing MySQL connection: %s" % exc)
       except KeyError:
         pass
@@ -420,7 +420,7 @@ class MySQL(object):
     except Exception:
       pass
 
-  def _except(self, methodName, x, err):
+  def _except(self, methodName, x, err, cmd=''):
     """
     print MySQL error or exception
     return S_ERROR with Exception
@@ -429,11 +429,11 @@ class MySQL(object):
     try:
       raise x
     except MySQLdb.Error as e:
-      # self.log.debug('%s: %s' % (methodName, err),
-      #               '%d: %s' % (e.args[0], e.args[1]))
+      self.log.error('%s (%s): %s' % (methodName, cmd, err),
+                     '%d: %s' % (e.args[0], e.args[1]))
       return S_ERROR(DErrno.EMYSQL, '%s: ( %d: %s )' % (err, e.args[0], e.args[1]))
-    except BaseException as e:
-      # self.log.debug('%s: %s' % (methodName, err), repr(e))
+    except Exception as e:
+      self.log.error('%s (%s): %s' % (methodName, cmd, err), repr(e))
       return S_ERROR(DErrno.EMYSQL, '%s: (%s)' % (err, repr(e)))
 
   def __isDateTime(self, dateString):
@@ -446,7 +446,7 @@ class MySQL(object):
       if dtime is None:
         return False
       return True
-    except BaseException:
+    except Exception:
       return False
 
   def __escapeString(self, myString):
@@ -487,9 +487,8 @@ class MySQL(object):
       escape_string = connection.escape_string(str(myString))
       # self.log.debug('__escape_string: returns', '"%s"' % escape_string)
       return S_OK('"%s"' % escape_string)
-    except BaseException as x:
-      # self.log.debug('__escape_string: Could not escape string', '"%s"' % myString)
-      return self._except('__escape_string', x, 'Could not escape string')
+    except Exception as x:
+      return self._except('__escape_string', x, 'Could not escape string', myString)
 
   def __checkTable(self, tableName, force=False):
 
@@ -615,13 +614,13 @@ class MySQL(object):
       #  self.logger.debug('_query: %s ...' % str(res[:10]))
 
       retDict = S_OK(res)
-    except BaseException as x:
+    except Exception as x:
       # self.log.debug('_query: %s' % self._safeCmd(cmd))
-      retDict = self._except('_query', x, 'Execution failed.')
+      retDict = self._except('_query', x, 'Execution failed.', cmd)
 
     try:
       cursor.close()
-    except BaseException:
+    except Exception:
       pass
 
     return retDict
@@ -650,7 +649,7 @@ class MySQL(object):
         retDict['lastRowId'] = cursor.lastrowid
     except Exception as x:
       # self.log.debug('_update: %s: %s' % (self._safeCmd(cmd), str(x)))
-      retDict = self._except('_update', x, 'Execution failed.')
+      retDict = self._except('_update', x, 'Execution failed.', cmd)
 
     try:
       cursor.close()
@@ -1446,7 +1445,7 @@ class MySQL(object):
         row.append(cursor.fetchone()[0])
       retDict = S_OK(row)
     except Exception as x:
-      retDict = self._except('_query', x, 'Execution failed.')
+      retDict = self._except('_query', x, 'Execution failed.', packageName)
       connection.rollback()
 
     try:
@@ -1471,7 +1470,7 @@ class MySQL(object):
       rows = cursor.fetchall()
       retDict = S_OK(rows)
     except Exception as x:
-      retDict = self._except('_query', x, 'Execution failed.')
+      retDict = self._except('_query', x, 'Execution failed.', packageName)
       connection.rollback()
     try:
       cursor.close()
