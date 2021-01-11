@@ -708,7 +708,10 @@ class StorageElementItem(object):
         :param sourceSE: storageElement instance of the sourceSE
         :param protocols: ordered protocol restriction list
 
-        :return: dictionnary Successful/Failed with pair (src, dest) urls
+        :return: dictionnary with keys::
+          * Successful: lfn indexed pair (src, dest) urls
+          * Failed: lfn indexed with error
+          * Protocols: tuple (srcProto, destProto)
     """
     log = self.log.getSubLogger('generateTransferURLsBetweenSEs')
 
@@ -814,7 +817,9 @@ class StorageElementItem(object):
 
         successful[lfn] = (srcURL, destURL)
 
-      return S_OK({'Successful': successful, 'Failed': failed})
+      nativeSrcProtocol = srcPlugin.getParameters()['Protocol']
+      nativeDestProtocol = destPlugin.getParameters()['Protocol']
+      return S_OK({'Successful': successful, 'Failed': failed, 'Protocols': (nativeSrcProtocol, nativeDestProtocol)})
 
     return S_ERROR(errno.ENOPROTOOPT, "Could not find a protocol ")
 
