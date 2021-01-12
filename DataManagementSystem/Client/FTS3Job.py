@@ -2,6 +2,7 @@
 
 __RCSID__ = "$Id $"
 
+import six
 
 import datetime
 import errno
@@ -150,7 +151,15 @@ class FTS3Job(JSerializable):
 
     for fileDict in filesInfoList:
       file_state = fileDict['file_state'].capitalize()
-      file_id = fileDict['file_metadata']
+      file_metadata = fileDict['file_metadata']
+
+      # previous version of the code did not have dictionary as
+      # file_metadata
+      if isinstance(file_metadata, dict):
+        file_id = file_metadata['fileID']
+      else:
+        file_id = file_metadata
+
       file_error = fileDict['reason']
       filesStatus[file_id] = {'status': file_state, 'error': file_error}
 
@@ -284,15 +293,17 @@ class FTS3Job(JSerializable):
         ftsFile.status = 'Defunct'
         continue
 
+      ftsFileID = getattr(ftsFile, 'fileID')
+      trans_metadata = {'desc': 'Transfer %s' % ftsFileID, 'fileID': ftsFileID}
       trans = fts3.new_transfer(sourceSURL,
                                 targetSURL,
                                 checksum='ADLER32:%s' % ftsFile.checksum,
                                 filesize=ftsFile.size,
-                                metadata=getattr(ftsFile, 'fileID'),
+                                metadata=trans_metadata,
                                 activity=self.activity)
 
       transfers.append(trans)
-      fileIDsInTheJob.append(getattr(ftsFile, 'fileID'))
+      fileIDsInTheJob.append(ftsFileID)
 
     # If the source is not an tape SE, we should set the
     # copy_pin_lifetime and bring_online params to None,
@@ -422,15 +433,17 @@ class FTS3Job(JSerializable):
         continue
 
       sourceSURL = targetSURL = allTargetSURLs[ftsFile.lfn]
+      ftsFileID = getattr(ftsFile, 'fileID')
+      trans_metadata = {'desc': 'Stage %s' % ftsFileID, 'fileID': ftsFileID}
       trans = fts3.new_transfer(sourceSURL,
                                 targetSURL,
                                 checksum='ADLER32:%s' % ftsFile.checksum,
                                 filesize=ftsFile.size,
-                                metadata=getattr(ftsFile, 'fileID'),
+                                metadata=trans_metadata,
                                 activity=self.activity)
 
       transfers.append(trans)
-      fileIDsInTheJob.append(getattr(ftsFile, 'fileID'))
+      fileIDsInTheJob.append(ftsFileID)
 
     # If the source is not an tape SE, we should set the
     # copy_pin_lifetime and bring_online params to None,
