@@ -2,8 +2,6 @@
 
 __RCSID__ = "$Id $"
 
-import six
-
 import datetime
 import errno
 
@@ -33,7 +31,7 @@ class FTS3Job(JSerializable):
       to an FTS3Operation
   """
 
-  # States from FTS doc
+  # States from FTS doc https://fts3-docs.web.cern.ch/fts3-docs/docs/state_machine.html
   ALL_STATES = ['Submitted',  # Initial state of a job as soon it's dropped into the database
                 'Ready',  # One of the files within a job went to Ready state
                 'Active',  # One of the files within a job went to Active state
@@ -91,6 +89,9 @@ class FTS3Job(JSerializable):
         monitoring result.
 
         In case the job is not found on the server, the status is set to 'Failed'
+
+        Within a job, only the transfers having a `fileID` metadata are considered.
+        This is to allow for multihop jobs doing a staging
 
         This method assumes that the attribute self.ftsGUID is set
 
@@ -156,9 +157,15 @@ class FTS3Job(JSerializable):
       # previous version of the code did not have dictionary as
       # file_metadata
       if isinstance(file_metadata, dict):
-        file_id = file_metadata['fileID']
+        file_id = file_metadata.get('fileID')
       else:
         file_id = file_metadata
+
+      # The transfer does not have a fileID attached to it
+      # so it does not correspond to a file in our DB: skip it
+      # (typical of jobs with different staging protocol == CTA)
+      if not file_id:
+        continue
 
       file_error = fileDict['reason']
       filesStatus[file_id] = {'status': file_state, 'error': file_error}
@@ -263,6 +270,13 @@ class FTS3Job(JSerializable):
     dstSE = StorageElement(self.targetSE, vo=self.vo)
     srcSE = StorageElement(self.sourceSE, vo=self.vo)
 
+    # If the source is not a tape SE, we should set the
+    # copy_pin_lifetime and bring_online params to None,
+    # otherwise they will do an extra useless queue in FTS
+    sourceIsTape = self.__isTapeSE(self.sourceSE, self.vo)
+    copy_pin_lifetime = pinTime if sourceIsTape else None
+    bring_online = BRING_ONLINE_TIMEOUT if sourceIsTape else None
+
     # getting all the (source, dest) surls
     res = dstSE.generateTransferURLsBetweenSEs(allLFNs, srcSE, protocols=protocols)
 
@@ -275,6 +289,28 @@ class FTS3Job(JSerializable):
 
     allSrcDstSURLs = res['Value']['Successful']
 
+    # This contains the staging URLs if they are different from the transfer URLs
+    # (CTA...)
+    allStageURLs = dict()
+
+    # In case we are transfering from a tape system, and the stage protocol
+    # is not the same as the transfer protocol, we generate the staging URLs
+    # to do a multihop transfer. See bellow.
+    if sourceIsTape:
+      srcProto, _destProto = res['Value']['Protocols']
+      if srcProto not in srcSE.localStageProtocolList:
+        res = srcSE.getURL(allSrcDstSURLs, protocol=srcSE.localStageProtocolList)
+
+        if not res['OK']:
+          return res
+
+        for lfn, reason in res['Value']['Failed'].iteritems():
+          failedLFNs.add(lfn)
+          log.error("Could not get stage SURL", "%s %s" % (lfn, reason))
+          allSrcDstSURLs.pop(lfn)
+
+        allStageURLs = res['Value']['Successful']
+
     transfers = []
 
     fileIDsInTheJob = []
@@ -286,6 +322,7 @@ class FTS3Job(JSerializable):
         continue
 
       sourceSURL, targetSURL = allSrcDstSURLs[ftsFile.lfn]
+      stageURL = allStageURLs.get(ftsFile.lfn)
 
       if sourceSURL == targetSURL:
         log.error("sourceSURL equals to targetSURL", "%s" % ftsFile.lfn)
@@ -294,6 +331,31 @@ class FTS3Job(JSerializable):
         continue
 
       ftsFileID = getattr(ftsFile, 'fileID')
+
+      # Under normal circumstances, we simply submit an fts transfer as such:
+      # * srcProto://myFile -> destProto://myFile
+      #
+      # Even in case of the source storage being a tape system, it works fine.
+      # However, if the staging and transfer protocols are different (CTA),
+      #  we use the multihop machineryto submit two sequential fts transfers:
+      # one to stage, one to transfer.
+      # It looks like such
+      # * stageProto://myFile -> stageProto://myFile
+      # * srcProto://myFile -> destProto://myFile
+
+      if stageURL:
+
+        # We do not set a fileID in the metadata
+        # such that we do not update the DB when monitoring
+        stageTrans_metadata = {'desc': 'PreStage %s' % ftsFileID}
+        stageTrans = fts3.new_transfer(stageURL,
+                                       stageURL,
+                                       checksum='ADLER32:%s' % ftsFile.checksum,
+                                       filesize=ftsFile.size,
+                                       metadata=stageTrans_metadata,
+                                       activity=self.activity)
+        transfers.append(stageTrans)
+
       trans_metadata = {'desc': 'Transfer %s' % ftsFileID, 'fileID': ftsFileID}
       trans = fts3.new_transfer(sourceSURL,
                                 targetSURL,
@@ -304,13 +366,6 @@ class FTS3Job(JSerializable):
 
       transfers.append(trans)
       fileIDsInTheJob.append(ftsFileID)
-
-    # If the source is not an tape SE, we should set the
-    # copy_pin_lifetime and bring_online params to None,
-    # otherwise they will do an extra useless queue in FTS
-    sourceIsTape = self.__isTapeSE(self.sourceSE, self.vo)
-    copy_pin_lifetime = pinTime if sourceIsTape else None
-    bring_online = BRING_ONLINE_TIMEOUT if sourceIsTape else None
 
     if not transfers:
       log.error("No transfer possible!")
@@ -331,6 +386,7 @@ class FTS3Job(JSerializable):
                        bring_online=bring_online,
                        copy_pin_lifetime=copy_pin_lifetime,
                        retry=3,
+                       multihop=bool(allStageURLs),  # if we have stage urls, then we need multihop
                        metadata=job_metadata,
                        priority=self.priority)
 
@@ -654,12 +710,15 @@ class FTS3Job(JSerializable):
 
     accountingDict["TransferOK"] = len(successfulFiles)
     accountingDict["TransferTotal"] = len(filesInfoList)
-    accountingDict["TransferSize"] = sum([fileDict['filesize'] for fileDict in successfulFiles])
+    # We need this if in the list comprehension because staging only jobs have `None`
+    # as filesize
+    accountingDict["TransferSize"] = sum([fileDict['filesize'] for fileDict in successfulFiles if fileDict['filesize']])
     accountingDict["FinalStatus"] = self.status
     accountingDict["Source"] = sourceSE
     accountingDict["Destination"] = targetSE
+    # Same as above for the condition
     accountingDict['TransferTime'] = sum(int(fileDict['tx_duration'])
-                                         for fileDict in successfulFiles)
+                                         for fileDict in successfulFiles if fileDict['tx_duration'])
 
     # Registration values must be set anyway
     accountingDict['RegistrationTime'] = 0.0
