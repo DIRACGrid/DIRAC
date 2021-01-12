@@ -4,7 +4,10 @@
 # pylint: disable=invalid-name
 
 from __future__ import print_function
+
 import os
+import time
+import errno
 
 from DIRAC import rootPath
 from DIRAC.Interfaces.API.Job import Job
@@ -208,3 +211,58 @@ def parametricJob():
   J.setParameterSequence("iargs", [1, 2, 3])
   J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile='helloWorld_%n.log')
   return endOfAllJobs(J)
+
+
+def jobWithOutput():
+  """ Creates a job that uploads an output.
+      The output SE is not set here, so it would use the default /Resources/StorageElementGroups/SE-USER
+      And possibly use for failover /Resources/StorageElementGroups/Tier1-Failover
+  """
+
+  timenow = time.strftime("%s")
+  inp1 = [os.path.join(os.getcwd(), timenow + "testFileUpload.txt")]
+  with open(inp1[0], "wt") as f:
+    f.write(timenow)
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    inp2 = [find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]]
+    J.setInputSandbox(inp1 + inp2)
+  except IndexError:  # we are in Jenkins
+    inp2 = [find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]]
+    J.setInputSandbox(inp1 + inp2)
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setOutputData([timenow + 'testFileUpload.txt'])
+  res = endOfAllJobs(J)
+  try:
+    os.remove(os.path.join(os.getcwd(), timenow + "testFileUpload.txt"))
+  except OSError as e:
+    return e.errno == errno.ENOENT
+  return res
+
+
+def jobWithOutputs():
+  """ Creates a job that uploads an output to 2 SEs.
+      The output SE is set here to ['RAL-SE', 'IN2P3-SE']
+  """
+
+  timenow = time.strftime("%s")
+  inp1 = [os.path.join(os.getcwd(), timenow + "testFileUpload.txt")]
+  with open(inp1[0], "wt") as f:
+    f.write(timenow)
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    inp2 = [find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]]
+    J.setInputSandbox(inp1 + inp2)
+  except IndexError:  # we are in Jenkins
+    inp2 = [find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]]
+    J.setInputSandbox(inp1 + inp2)
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setOutputData([timenow + 'testFileUpload.txt'], outputSE=['RAL-SE', 'IN2P3-SE'])
+  res = endOfAllJobs(J)
+  try:
+    os.remove(os.path.join(os.getcwd(), timenow + "testFileUpload.txt"))
+  except OSError as e:
+    return e.errno == errno.ENOENT
+  return res
