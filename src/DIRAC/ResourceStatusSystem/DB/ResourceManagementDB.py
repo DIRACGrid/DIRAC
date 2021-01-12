@@ -95,7 +95,7 @@ class DowntimeCache(rmsBase):
   __table_args__ = {'mysql_engine': 'InnoDB',
                     'mysql_charset': 'utf8'}
 
-  downtimeid = Column('DowntimeID', String(64), nullable=False, primary_key=True)
+  downtimeid = Column('DowntimeID', String(127), nullable=False, primary_key=True)
   name = Column('Name', String(64), nullable=False)
   element = Column('Element', String(32), nullable=False)
   gocdbservicetype = Column('GOCDBServiceType', String(32), nullable=True)
