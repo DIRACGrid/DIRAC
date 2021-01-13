@@ -53,8 +53,10 @@ NO_LATER_THAN_2050_IN_SEC = int((datetime.strptime("2049-12-31", "%Y-%M-%d") - d
 def get_proxy(x509ChainClassName, certFile, lifetime=3600, deimport=True, **kwargs):
   """ Generate the proxyString and return it as an X509Chain object
 
+      :param x509ChainClassName: The implementation of X509Chain to import
       :param certFile: path to the certificate
       :param lifetime: lifetime of the proxy in seconds
+      :param deimport: Should DIRAC be deimported before loading x509ChainClassName
 
       :returns:  X509Chain object
   """
@@ -508,7 +510,6 @@ def test_delegation(x509ClassName, x509ChainClassName, diracGroup, lifetime):
   """
       Test the delegation mechanism.
       Generate a proxy request and generate the proxy from there
-      NOTE: DO NOT CHANGE THE NAME OF THIS TEST FUNCTION ! See get_proxy code for details
 
       :param diracGroup: group of the initial proxy
       :param lifetime: requested lifetime of the delegated proxy
@@ -527,6 +528,9 @@ def test_delegation(x509ClassName, x509ChainClassName, diracGroup, lifetime):
 
     # The client side signs the request
 
+    # Pass `deimport=False` when you do the delegation as the get_X509Request
+    # fixture has already been called and if you do the cleaning twice, you
+    # end up in a terrible mess
     with get_proxy(x509ChainClassName, USERCERT, diracGroup=diracGroup, deimport=False) as proxyChain:
       # The proxy will contain a "bullshit private key"
       res = proxyChain.generateChainFromRequestString(reqStr, lifetime=lifetime)
