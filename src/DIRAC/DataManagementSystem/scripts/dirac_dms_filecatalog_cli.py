@@ -6,51 +6,60 @@ from __future__ import division
 import sys
 
 from DIRAC.Core.Base import Script
-Script.setUsageMessage("""
-Launch the File Catalog shell
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Usage:
-   %s [option]
-""" % Script.scriptName)
 
-fcType = 'FileCatalog'
-Script.registerSwitch("f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType)
-Script.parseCommandLine(ignoreErrors=False)
+@DIRACScript()
+def main():
+  Script.setUsageMessage("""
+  Launch the File Catalog shell
 
-from DIRAC import gConfig, exit as dexit
-from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
+  Usage:
+    %s [option]
+  """ % Script.scriptName)
 
-__RCSID__ = "$Id$"
+  fcType = 'FileCatalog'
+  Script.registerSwitch("f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType)
+  Script.parseCommandLine(ignoreErrors=False)
 
-fcType = gConfig.getValue("/LocalSite/FileCatalog", "")
+  from DIRAC import gConfig, exit as dexit
+  from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 
-res = gConfig.getSections("/Resources/FileCatalogs", listOrdered=True)
-if not res['OK']:
-  dexit(1)
-fcList = res['Value']
-if not fcType:
-  if res['OK']:
-    fcType = res['Value'][0]
+  __RCSID__ = "$Id$"
 
-for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower() == "f" or switch[0].lower() == "file-catalog":
-    fcType = switch[1]
+  fcType = gConfig.getValue("/LocalSite/FileCatalog", "")
 
-if not fcType:
-  print("No file catalog given and defaults could not be obtained")
-  sys.exit(1)
+  res = gConfig.getSections("/Resources/FileCatalogs", listOrdered=True)
+  if not res['OK']:
+    dexit(1)
+  fcList = res['Value']
+  if not fcType:
+    if res['OK']:
+      fcType = res['Value'][0]
 
-from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
+  for switch in Script.getUnprocessedSwitches():
+    if switch[0].lower() == "f" or switch[0].lower() == "file-catalog":
+      fcType = switch[1]
 
-result = FileCatalogFactory().createCatalog(fcType)
-if not result['OK']:
-  print(result['Message'])
-  if fcList:
-    print("Possible choices are:")
-    for fc in fcList:
-      print(' ' * 5, fc)
-  sys.exit(1)
-print("Starting %s client" % fcType)
-catalog = result['Value']
-cli = FileCatalogClientCLI(catalog)
-cli.cmdloop()
+  if not fcType:
+    print("No file catalog given and defaults could not be obtained")
+    sys.exit(1)
+
+  from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
+
+  result = FileCatalogFactory().createCatalog(fcType)
+  if not result['OK']:
+    print(result['Message'])
+    if fcList:
+      print("Possible choices are:")
+      for fc in fcList:
+        print(' ' * 5, fc)
+    sys.exit(1)
+  print("Starting %s client" % fcType)
+  catalog = result['Value']
+  cli = FileCatalogClientCLI(catalog)
+  cli.cmdloop()
+
+
+if __name__ == "__main__":
+  main()

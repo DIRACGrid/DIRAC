@@ -9,20 +9,20 @@ from __future__ import print_function
 import sys
 
 from DIRAC.Core.Base import Script
-
-Script.parseCommandLine()
-
-from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 # Invariants:
 # * root does not end with "/" or root is "/"
 # * root starts with "/"
 
 
+@DIRACScript
 def main():
+  Script.parseCommandLine()
+  from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
   shell = CSShellCLI()
   shell.cmdloop()
 
 
 if __name__ == "__main__":
-  sys.exit(main())
+  main()

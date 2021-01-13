@@ -11,36 +11,43 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s prodID' % Script.scriptName,
-                                  'Arguments:',
-                                  '  prodID: Production ID (mandatory)'
-                                  ]))
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-Script.parseCommandLine()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s prodID' % Script.scriptName,
+                                    'Arguments:',
+                                    '  prodID: Production ID (mandatory)'
+                                    ]))
 
-from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
+  Script.parseCommandLine()
 
-prodClient = ProductionClient()
+  from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
-# get arguments
-args = Script.getPositionalArgs()
-if len(args) < 1:
-  Script.showHelp(exitCode=1)
-else:
-  prodID = args[0]
-  res = prodClient.getProduction(prodID)
+  prodClient = ProductionClient()
 
-if res['OK']:
-  prod = res['Value']
-else:
-  DIRAC.gLogger.error(res['Message'])
-  DIRAC.exit(-1)
+  # get arguments
+  args = Script.getPositionalArgs()
+  if len(args) < 1:
+    Script.showHelp(exitCode=1)
+  else:
+    prodID = args[0]
+    res = prodClient.getProduction(prodID)
 
-print('Description for production %s:\n' % prodID)
-print(prod['Description'])
+  if res['OK']:
+    prod = res['Value']
+  else:
+    DIRAC.gLogger.error(res['Message'])
+    DIRAC.exit(-1)
 
-DIRAC.exit(0)
+  print('Description for production %s:\n' % prodID)
+  print(prod['Description'])
+
+  DIRAC.exit(0)
+
+
+if __name__ == "__main__":
+  main()

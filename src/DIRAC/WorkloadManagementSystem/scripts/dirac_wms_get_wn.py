@@ -15,9 +15,11 @@ import datetime
 
 import DIRAC
 import DIRAC.Core.Base.Script as Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-if __name__ == "__main__":
+@DIRACScript()
+def main():
   site = 'BOINC.World.org'
   status = ["Running"]
   minorStatus = None
@@ -195,3 +197,7 @@ if __name__ == "__main__":
         node = result[job]['Node']
         jobID = result[job].get('LocalJobID')
         gLogger.always('%s (%s): %s - %s' % (node, jobID, job, status))
+
+
+if __name__ == "__main__":
+  main()

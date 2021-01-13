@@ -10,47 +10,55 @@ import os
 
 from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage("""
-Get the given file replica metadata from the File Catalog
 
-Usage:
-   %s <LFN | fileContainingLFNs> SE
-""" % Script.scriptName)
+@DIRACScript()
+def main():
+  Script.setUsageMessage("""
+  Get the given file replica metadata from the File Catalog
 
-Script.parseCommandLine()
+  Usage:
+    %s <LFN | fileContainingLFNs> SE
+  """ % Script.scriptName)
 
-from DIRAC import gLogger
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+  Script.parseCommandLine()
 
-args = Script.getPositionalArgs()
-if not len(args) == 2:
-  Script.showHelp(exitCode=1)
-else:
-  inputFileName = args[0]
-  storageElement = args[1]
+  from DIRAC import gLogger
+  from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
-if os.path.exists(inputFileName):
-  inputFile = open(inputFileName, 'r')
-  string = inputFile.read()
-  lfns = [lfn.strip() for lfn in string.splitlines()]
-  inputFile.close()
-else:
-  lfns = [inputFileName]
+  args = Script.getPositionalArgs()
+  if not len(args) == 2:
+    Script.showHelp(exitCode=1)
+  else:
+    inputFileName = args[0]
+    storageElement = args[1]
 
-res = DataManager().getReplicaMetadata(lfns, storageElement)
-if not res['OK']:
-  print('Error:', res['Message'])
-  DIRACExit(1)
+  if os.path.exists(inputFileName):
+    inputFile = open(inputFileName, 'r')
+    string = inputFile.read()
+    lfns = [lfn.strip() for lfn in string.splitlines()]
+    inputFile.close()
+  else:
+    lfns = [inputFileName]
 
-print('%s %s %s %s' % ('File'.ljust(100), 'Migrated'.ljust(8), 'Cached'.ljust(8), 'Size (bytes)'.ljust(10)))
-for lfn, metadata in res['Value']['Successful'].items():
-  print(
-      '%s %s %s %s' %
-      (lfn.ljust(100), str(
-          metadata['Migrated']).ljust(8), str(
-          metadata.get(
-              'Cached', metadata['Accessible'])).ljust(8), str(
-          metadata['Size']).ljust(10)))
-for lfn, reason in res['Value']['Failed'].items():
-  print('%s %s' % (lfn.ljust(100), reason.ljust(8)))
+  res = DataManager().getReplicaMetadata(lfns, storageElement)
+  if not res['OK']:
+    print('Error:', res['Message'])
+    DIRACExit(1)
+
+  print('%s %s %s %s' % ('File'.ljust(100), 'Migrated'.ljust(8), 'Cached'.ljust(8), 'Size (bytes)'.ljust(10)))
+  for lfn, metadata in res['Value']['Successful'].items():
+    print(
+        '%s %s %s %s' %
+        (lfn.ljust(100), str(
+            metadata['Migrated']).ljust(8), str(
+            metadata.get(
+                'Cached', metadata['Accessible'])).ljust(8), str(
+            metadata['Size']).ljust(10)))
+  for lfn, reason in res['Value']['Failed'].items():
+    print('%s %s' % (lfn.ljust(100), reason.ljust(8)))
+
+
+if __name__ == "__main__":
+  main()

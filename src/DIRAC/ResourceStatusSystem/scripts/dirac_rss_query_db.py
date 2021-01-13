@@ -23,6 +23,7 @@ __RCSID__ = '$Id$'
 import datetime
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -387,7 +388,6 @@ def run(args, switchDictSet):
   """
     Main function of the script
   """
-
   query = args[0]
 
   matches = 0
@@ -410,8 +410,8 @@ def run(args, switchDictSet):
   confirm(query, matches)
 
 
-if __name__ == "__main__":
-
+@DIRACScript()
+def main():
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization
@@ -427,3 +427,7 @@ if __name__ == "__main__":
 
   # Bye
   DIRACExit(0)
+
+
+if __name__ == "__main__":
+  main()

@@ -14,32 +14,40 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  JobID:    DIRAC Job ID']))
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-if len(args) < 1:
-  Script.showHelp(exitCode=1)
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  JobID:    DIRAC Job ID']))
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-dirac = Dirac()
-exitCode = 0
-errorList = []
+  if len(args) < 1:
+    Script.showHelp(exitCode=1)
 
-result = dirac.rescheduleJob(parseArguments(args))
-if result['OK']:
-  print('Rescheduled job %s' % ','.join([str(j) for j in result['Value']]))
-else:
-  errorList.append((j, result['Message']))
-  print(result['Message'])
-  exitCode = 2
+  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
+  dirac = Dirac()
+  exitCode = 0
+  errorList = []
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+  result = dirac.rescheduleJob(parseArguments(args))
+  if result['OK']:
+    print('Rescheduled job %s' % ','.join([str(j) for j in result['Value']]))
+  else:
+    errorList.append((j, result['Message']))
+    print(result['Message'])
+    exitCode = 2
 
-DIRAC.exit(exitCode)
+  for error in errorList:
+    print("ERROR %s: %s" % error)
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

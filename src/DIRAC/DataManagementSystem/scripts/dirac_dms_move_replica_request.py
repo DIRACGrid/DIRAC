@@ -11,14 +11,7 @@ import os
 from hashlib import md5
 import time
 from DIRAC.Core.Base import Script
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[0],
-                                  __doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... sourceSE LFN targetSE1 [targetSE2...]' % Script.scriptName,
-                                  'Arguments:',
-                                  '  sourceSE:   source SE',
-                                  '  targetSE: target SE',
-                                  '  LFN:      LFN or file containing a List of LFNs']))
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 def getLFNList(arg):
@@ -31,8 +24,18 @@ def getLFNList(arg):
   return list(set(lfnList))
 
 
-# # execution
-if __name__ == "__main__":
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([
+      __doc__.split('\n')[0],
+      __doc__.split('\n')[1],
+      'Usage:',
+      '  %s [option|cfgfile] ... sourceSE LFN targetSE1 [targetSE2...]' % Script.scriptName,
+      'Arguments:',
+      '  sourceSE:   source SE',
+      '  targetSE: target SE',
+      '  LFN:      LFN or file containing a List of LFNs'
+  ]))
 
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
@@ -126,3 +129,7 @@ if __name__ == "__main__":
   if multiRequests:
     gLogger.always("%d requests have been submitted" % (count))
   DIRAC.exit(error)
+
+
+if __name__ == "__main__":
+  main()

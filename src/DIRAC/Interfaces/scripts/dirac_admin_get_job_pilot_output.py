@@ -12,39 +12,47 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  JobID:    DIRAC ID of the Job']))
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-if len(args) < 1:
-  Script.showHelp()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  JobID:    DIRAC ID of the Job']))
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-from DIRAC import exit as DIRACExit
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-diracAdmin = DiracAdmin()
-exitCode = 0
-errorList = []
+  if len(args) < 1:
+    Script.showHelp()
 
-for job in args:
+  from DIRAC import exit as DIRACExit
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  diracAdmin = DiracAdmin()
+  exitCode = 0
+  errorList = []
 
-  try:
-    job = int(job)
-  except Exception as x:
-    errorList.append(('Expected integer for JobID', job))
-    exitCode = 2
-    continue
+  for job in args:
 
-  result = diracAdmin.getJobPilotOutput(job)
-  if not result['OK']:
-    errorList.append((job, result['Message']))
-    exitCode = 2
+    try:
+      job = int(job)
+    except Exception as x:
+      errorList.append(('Expected integer for JobID', job))
+      exitCode = 2
+      continue
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+    result = diracAdmin.getJobPilotOutput(job)
+    if not result['OK']:
+      errorList.append((job, result['Message']))
+      exitCode = 2
 
-DIRACExit(exitCode)
+  for error in errorList:
+    print("ERROR %s: %s" % error)
+
+  DIRACExit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

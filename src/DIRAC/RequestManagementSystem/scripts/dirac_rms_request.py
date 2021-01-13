@@ -7,6 +7,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 import os
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 def convertDate(date):
@@ -18,39 +19,40 @@ def convertDate(date):
   try:
     value = datetime.datetime.utcnow() - datetime.timedelta(hours=int(24 * float(date)))
   except Exception:
+    from DIRAC import gLogger
     gLogger.fatal("Invalid date", date)
     value = None
   return value
 
 
-from DIRAC.Core.Base import Script
-Script.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
-Script.registerSwitch('', 'Transformation=', '   transformation ID')
-Script.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
-Script.registerSwitch('', 'Verbose', '   Print more information')
-Script.registerSwitch('', 'Terse', '   Only print request status')
-Script.registerSwitch('', 'Full', '   Print full request content')
-Script.registerSwitch('', 'Status=', '   Select all requests in a given status')
-Script.registerSwitch('', 'Since=',
-                      '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day')
-Script.registerSwitch('', 'Until=', '      Associated to --Status, end date (default= now')
-Script.registerSwitch('', 'Maximum=', '      Associated to --Status, max number of requests ')
-Script.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
-Script.registerSwitch('', 'Force', '   Force reset even if not Failed')
-Script.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
-Script.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
-Script.registerSwitch('', 'Cancel', '   Cancel the request')
-Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
-Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
-Script.setUsageMessage('\n'.join([__doc__,
-                                  'Usage:',
-                                  ' %s [option|cfgfile] [request[,request1,...]|<file>' % Script.scriptName,
-                                  'Arguments:',
-                                  ' request: a request ID or a unique request name',
-                                  ' <file>: a file containing a list of requests (Comma-separated on each line)']))
+@DIRACScript()
+def main():
+  from DIRAC.Core.Base import Script
+  Script.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
+  Script.registerSwitch('', 'Transformation=', '   transformation ID')
+  Script.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
+  Script.registerSwitch('', 'Verbose', '   Print more information')
+  Script.registerSwitch('', 'Terse', '   Only print request status')
+  Script.registerSwitch('', 'Full', '   Print full request content')
+  Script.registerSwitch('', 'Status=', '   Select all requests in a given status')
+  Script.registerSwitch('', 'Since=',
+                        '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day')
+  Script.registerSwitch('', 'Until=', '      Associated to --Status, end date (default= now')
+  Script.registerSwitch('', 'Maximum=', '      Associated to --Status, max number of requests ')
+  Script.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
+  Script.registerSwitch('', 'Force', '   Force reset even if not Failed')
+  Script.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
+  Script.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
+  Script.registerSwitch('', 'Cancel', '   Cancel the request')
+  Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
+  Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
+  Script.setUsageMessage('\n'.join([__doc__,
+                                    'Usage:',
+                                    ' %s [option|cfgfile] [request[,request1,...]|<file>' % Script.scriptName,
+                                    'Arguments:',
+                                    ' request: a request ID or a unique request name',
+                                    ' <file>: a file containing a list of requests (Comma-separated on each line)']))
 
-# # execution
-if __name__ == "__main__":
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 
@@ -274,3 +276,7 @@ if __name__ == "__main__":
     gLogger.notice('\nList of %d selected requests:' % len(okRequests))
     for reqs in breakListIntoChunks(okRequests, 100):
       gLogger.notice(','.join(reqs))
+
+
+if __name__ == "__main__":
+  main()

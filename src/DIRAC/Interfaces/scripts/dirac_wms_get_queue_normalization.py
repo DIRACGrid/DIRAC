@@ -15,28 +15,38 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import getQueueNormalization
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Queue ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  Queue:     GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)']))
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-if len(args) < 1:
-  Script.showHelp()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([
+      __doc__.split('\n')[1],
+      'Usage:',
+      '  %s [option|cfgfile] ... Queue ...' % Script.scriptName,
+      'Arguments:',
+      '  Queue:     GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)',
+  ]))
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-exitCode = 0
+  if len(args) < 1:
+    Script.showHelp()
 
-for ceUniqueID in args:
+  exitCode = 0
 
-  cpuNorm = getQueueNormalization(ceUniqueID)
+  for ceUniqueID in args:
 
-  if not cpuNorm['OK']:
-    print('ERROR %s:' % ceUniqueID, cpuNorm['Message'])
-    exitCode = 2
-    continue
-  print(ceUniqueID, cpuNorm['Value'])
+    cpuNorm = getQueueNormalization(ceUniqueID)
 
-DIRAC.exit(exitCode)
+    if not cpuNorm['OK']:
+      print('ERROR %s:' % ceUniqueID, cpuNorm['Message'])
+      exitCode = 2
+      continue
+    print(ceUniqueID, cpuNorm['Value'])
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

@@ -15,6 +15,7 @@ from __future__ import print_function
 
 from DIRAC import gLogger, exit as DIRACExit, version
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
@@ -153,8 +154,8 @@ def run():
   tabularPrint(elements)
 
 
-if __name__ == "__main__":
-
+@DIRACScript()
+def main():
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization
@@ -167,3 +168,7 @@ if __name__ == "__main__":
 
   # Bye
   DIRACExit(0)
+
+
+if __name__ == "__main__":
+  main()

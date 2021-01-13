@@ -11,26 +11,34 @@ __RCSID__ = "$Id$"
 
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage("""
-Get the list of sites enabled in the mask for job submission
 
-Usage:
-   %s [options]
-""" % Script.scriptName)
+@DIRACScript()
+def main():
+  Script.setUsageMessage("""
+  Get the list of sites enabled in the mask for job submission
 
-Script.parseCommandLine(ignoreErrors=True)
+  Usage:
+    %s [options]
+  """ % Script.scriptName)
 
-from DIRAC import exit as DIRACExit, gLogger
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  Script.parseCommandLine(ignoreErrors=True)
 
-diracAdmin = DiracAdmin()
+  from DIRAC import exit as DIRACExit, gLogger
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-gLogger.setLevel('ALWAYS')
+  diracAdmin = DiracAdmin()
 
-result = diracAdmin.getSiteMask(printOutput=True, status="Active")
-if result['OK']:
-  DIRACExit(0)
-else:
-  print(result['Message'])
-  DIRACExit(2)
+  gLogger.setLevel('ALWAYS')
+
+  result = diracAdmin.getSiteMask(printOutput=True, status="Active")
+  if result['OK']:
+    DIRACExit(0)
+  else:
+    print(result['Message'])
+    DIRACExit(2)
+
+
+if __name__ == "__main__":
+  main()

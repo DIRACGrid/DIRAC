@@ -7,15 +7,16 @@ __RCSID__ = "$Id$"
 import DIRAC
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Base.Script import parseCommandLine
 
-Script.registerSwitch('', 'Full', '   Print full list of requests')
-Script.setUsageMessage('\n'.join([__doc__, 'Usage:', ' %s [option|cfgfile]' % Script.scriptName]))
-parseCommandLine()
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
-
-if __name__ == "__main__":
+@DIRACScript()
+def main():
+  Script.registerSwitch('', 'Full', '   Print full list of requests')
+  Script.setUsageMessage('\n'.join([__doc__, 'Usage:', ' %s [option|cfgfile]' % Script.scriptName]))
+  parseCommandLine()
+  from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
   fullPrint = False
 
@@ -39,3 +40,7 @@ if __name__ == "__main__":
       DIRAC.gLogger.always("Number of requests in the cache", len(reqCache))
 
   DIRAC.exit(0)
+
+
+if __name__ == "__main__":
+  main()

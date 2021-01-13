@@ -13,6 +13,7 @@ import DIRAC
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -126,7 +127,7 @@ def deleteLocalProxy(proxyLoc):
   gLogger.notice('Local proxy deleted.')
 
 
-def main():
+def run():
   """
   main program entry point
   """
@@ -180,10 +181,15 @@ def main():
   return 0
 
 
-if __name__ == "__main__":
+@DIRACScript()
+def main():
   try:
-    retval = main()
+    retval = run()
     DIRAC.exit(retval)
   except RuntimeError as rtError:
     gLogger.error('Operation failed: %s' % str(rtError))
   DIRAC.exit(1)
+
+
+if __name__ == "__main__":
+  main()

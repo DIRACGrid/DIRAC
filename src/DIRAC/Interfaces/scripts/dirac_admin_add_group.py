@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 groupName = None
 groupProperties = []
@@ -38,64 +39,73 @@ def addProperty(arg):
     groupProperties.append(arg)
 
 
-Script.setUsageMessage('\n'.join(['Add or Modify a Group info in DIRAC',
-                                  '\nUsage:\n',
-                                  '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
-                                  '\nArguments:\n',
-                                  '  Property=<Value>: Other properties to be added to the User like (VOMSRole=XXXX)',
-                                  ]))
+@DIRACScript()
+def main():
+  global groupName
+  global groupProperties
+  global userNames
+  Script.setUsageMessage('\n'.join(['Add or Modify a Group info in DIRAC',
+                                    '\nUsage:\n',
+                                    '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
+                                    '\nArguments:\n',
+                                    '  Property=<Value>: Other properties to be added to the User like (VOMSRole=XXXX)',
+                                    ]))
 
-Script.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
-Script.registerSwitch(
-    'U:',
-    'UserName:',
-    'Short Name of user to be added to the Group (Allow Multiple instances or None)',
-    addUserName)
-Script.registerSwitch(
-    'P:',
-    'Property:',
-    'Property to be added to the Group (Allow Multiple instances or None)',
-    addProperty)
+  Script.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
+  Script.registerSwitch(
+      'U:',
+      'UserName:',
+      'Short Name of user to be added to the Group (Allow Multiple instances or None)',
+      addUserName)
+  Script.registerSwitch(
+      'P:',
+      'Property:',
+      'Property to be added to the Group (Allow Multiple instances or None)',
+      addProperty)
 
-Script.parseCommandLine(ignoreErrors=True)
+  Script.parseCommandLine(ignoreErrors=True)
 
-if groupName is None:
-  Script.showHelp(exitCode=1)
+  if groupName is None:
+    Script.showHelp(exitCode=1)
 
-args = Script.getPositionalArgs()
+  args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-diracAdmin = DiracAdmin()
-exitCode = 0
-errorList = []
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  diracAdmin = DiracAdmin()
+  exitCode = 0
+  errorList = []
 
-groupProps = {}
-if userNames:
-  groupProps['Users'] = ', '.join(userNames)
-if groupProperties:
-  groupProps['Properties'] = ', '.join(groupProperties)
+  groupProps = {}
+  if userNames:
+    groupProps['Users'] = ', '.join(userNames)
+  if groupProperties:
+    groupProps['Properties'] = ', '.join(groupProperties)
 
-for prop in args:
-  pl = prop.split("=")
-  if len(pl) < 2:
-    errorList.append(("in arguments", "Property %s has to include a '=' to separate name from value" % prop))
+  for prop in args:
+    pl = prop.split("=")
+    if len(pl) < 2:
+      errorList.append(("in arguments", "Property %s has to include a '=' to separate name from value" % prop))
+      exitCode = 255
+    else:
+      pName = pl[0]
+      pValue = "=".join(pl[1:])
+      Script.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      groupProps[pName] = pValue
+
+  if not diracAdmin.csModifyGroup(groupName, groupProps, createIfNonExistant=True)['OK']:
+    errorList.append(("add group", "Cannot register group %s" % groupName))
     exitCode = 255
   else:
-    pName = pl[0]
-    pValue = "=".join(pl[1:])
-    Script.gLogger.info("Setting property %s to %s" % (pName, pValue))
-    groupProps[pName] = pValue
+    result = diracAdmin.csCommitChanges()
+    if not result['OK']:
+      errorList.append(("commit", result['Message']))
+      exitCode = 255
 
-if not diracAdmin.csModifyGroup(groupName, groupProps, createIfNonExistant=True)['OK']:
-  errorList.append(("add group", "Cannot register group %s" % groupName))
-  exitCode = 255
-else:
-  result = diracAdmin.csCommitChanges()
-  if not result['OK']:
-    errorList.append(("commit", result['Message']))
-    exitCode = 255
+  for error in errorList:
+    Script.gLogger.error("%s: %s" % error)
 
-for error in errorList:
-  Script.gLogger.error("%s: %s" % error)
+  DIRAC.exit(exitCode)
 
-DIRAC.exit(exitCode)
+
+if __name__ == "__main__":
+  main()

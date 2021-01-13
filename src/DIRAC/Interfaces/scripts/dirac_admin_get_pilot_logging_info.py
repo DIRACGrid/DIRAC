@@ -15,36 +15,44 @@ __RCSID__ = "$Id$"
 # pylint: disable=wrong-import-position
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  PilotID:  Grid ID of the pilot']))
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-if len(args) < 1:
-  Script.showHelp()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  PilotID:  Grid ID of the pilot']))
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-from DIRAC import exit as DIRACExit
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-diracAdmin = DiracAdmin()
-exitCode = 0
-errorList = []
+  if len(args) < 1:
+    Script.showHelp()
 
-for gridID in args:
+  from DIRAC import exit as DIRACExit
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  diracAdmin = DiracAdmin()
+  exitCode = 0
+  errorList = []
 
-  result = diracAdmin.getPilotLoggingInfo(gridID)
-  if not result['OK']:
-    errorList.append((gridID, result['Message']))
-    exitCode = 2
-  else:
-    print('Pilot Reference: %s', gridID)
-    print(result['Value'])
-    print()
+  for gridID in args:
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+    result = diracAdmin.getPilotLoggingInfo(gridID)
+    if not result['OK']:
+      errorList.append((gridID, result['Message']))
+      exitCode = 2
+    else:
+      print('Pilot Reference: %s', gridID)
+      print(result['Value'])
+      print()
 
-DIRACExit(exitCode)
+  for error in errorList:
+    print("ERROR %s: %s" % error)
+
+  DIRACExit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

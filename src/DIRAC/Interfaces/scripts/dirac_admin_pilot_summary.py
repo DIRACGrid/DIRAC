@@ -13,16 +13,24 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-diracAdmin = DiracAdmin()
+@DIRACScript()
+def main():
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-result = diracAdmin.getPilotSummary()
-if result['OK']:
-  DIRAC.exit(0)
-else:
-  print(result['Message'])
-  DIRAC.exit(2)
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  diracAdmin = DiracAdmin()
+
+  result = diracAdmin.getPilotSummary()
+  if result['OK']:
+    DIRAC.exit(0)
+  else:
+    print(result['Message'])
+    DIRAC.exit(2)
+
+
+if __name__ == "__main__":
+  main()

@@ -14,13 +14,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 
-if __name__ == "__main__":
-
+@DIRACScript()
+def main():
   Script.setUsageMessage(
       '\n'.join(
           [
@@ -99,3 +100,7 @@ if __name__ == "__main__":
     if not res['OK']:
       gLogger.error("Failure committing to CS", res['Message'])
       DIRACExit(3)
+
+
+if __name__ == "__main__":
+  main()

@@ -14,31 +14,39 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Site ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  Site:     Name of the Site']))
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-if len(args) < 1:
-  Script.showHelp()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... Site ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  Site:     Name of the Site']))
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-diracAdmin = DiracAdmin()
-exitCode = 0
-errorList = []
+  if len(args) < 1:
+    Script.showHelp()
 
-for site in args:
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  diracAdmin = DiracAdmin()
+  exitCode = 0
+  errorList = []
 
-  result = diracAdmin.getSiteSection(site, printOutput=True)
-  if not result['OK']:
-    errorList.append((site, result['Message']))
-    exitCode = 2
+  for site in args:
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+    result = diracAdmin.getSiteSection(site, printOutput=True)
+    if not result['OK']:
+      errorList.append((site, result['Message']))
+      exitCode = 2
 
-DIRAC.exit(exitCode)
+  for error in errorList:
+    print("ERROR %s: %s" % error)
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

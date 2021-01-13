@@ -46,16 +46,19 @@ import csv
 from collections import defaultdict
 
 from DIRAC.Core.Base import Script
-Script.registerSwitch('', 'FromSE=', 'SE1[,SE2,...]')
-Script.registerSwitch('', 'TargetSE=', 'SE1[,SE2,...]')
-Script.registerSwitch('', 'OutputFile=', 'CSV output file (default /tmp/protocol-matrix.csv)')
-Script.registerSwitch('', 'Bidirection', 'If FromSE or TargetSE are specified, make a square matrix ')
-Script.setUsageMessage('\n'.join([__doc__,
-                                  'Usage:',
-                                  ' %s [option|cfgfile]  % Script.scriptName']))
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-if __name__ == '__main__':
+@DIRACScript()
+def main():
+  Script.registerSwitch('', 'FromSE=', 'SE1[,SE2,...]')
+  Script.registerSwitch('', 'TargetSE=', 'SE1[,SE2,...]')
+  Script.registerSwitch('', 'OutputFile=', 'CSV output file (default /tmp/protocol-matrix.csv)')
+  Script.registerSwitch('', 'Bidirection', 'If FromSE or TargetSE are specified, make a square matrix ')
+  Script.setUsageMessage('\n'.join([__doc__,
+                                    'Usage:',
+                                    ' %s [option|cfgfile]  % Script.scriptName']))
+
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   from DIRAC import gConfig, gLogger
@@ -177,3 +180,7 @@ if __name__ == '__main__':
         srcRow.append(tpMatrix[src].get(dst, 'NA'))
       csvWriter.writerow(srcRow)
   gLogger.notice('Wrote Matrix to', outputFile)
+
+
+if __name__ == "__main__":
+  main()

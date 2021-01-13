@@ -13,27 +13,35 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s <pilot reference>' % Script.scriptName]))
 
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s <pilot reference>' % Script.scriptName]))
 
-if len(args) < 1:
-  Script.showHelp(exitCode=1)
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-pilotRef = args[0]
+  if len(args) < 1:
+    Script.showHelp(exitCode=1)
 
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-diracAdmin = DiracAdmin()
-exitCode = 0
+  pilotRef = args[0]
 
-result = diracAdmin.killPilot(pilotRef)
-if not result['OK']:
-  DIRAC.gLogger.error('Failed to kill pilot', pilotRef)
-  DIRAC.gLogger.error(result['Message'])
-  exitCode = 1
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  diracAdmin = DiracAdmin()
+  exitCode = 0
 
-DIRAC.exit(exitCode)
+  result = diracAdmin.killPilot(pilotRef)
+  if not result['OK']:
+    DIRAC.gLogger.error('Failed to kill pilot', pilotRef)
+    DIRAC.gLogger.error(result['Message'])
+    exitCode = 1
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

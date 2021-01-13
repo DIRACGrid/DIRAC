@@ -17,21 +17,22 @@ import os.path
 
 import DIRAC
 from DIRAC.Core.Base import Script
-
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  ' %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  ' JobID: DIRAC Job ID']))
-
-Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
-Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
-
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-if __name__ == "__main__":
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    ' %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                    'Arguments:',
+                                    ' JobID: DIRAC Job ID']))
+
+  Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
+  Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
+
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   from DIRAC.Core.Utilities.Time import toString, date, day
@@ -72,3 +73,7 @@ if __name__ == "__main__":
     exitCode = 2
 
   DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

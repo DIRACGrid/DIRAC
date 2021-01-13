@@ -11,24 +11,33 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
-Script.parseCommandLine(ignoreErrors=True)
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-diracAdmin = DiracAdmin()
+@DIRACScript()
+def main():
+  Script.parseCommandLine(ignoreErrors=True)
 
-result = diracAdmin.getBannedSites()
-if result['OK']:
-  bannedSites = result['Value']
-else:
-  gLogger.error(result['Message'])
-  DIRACExit(2)
+  from DIRAC import gLogger, exit as DIRACExit
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-for site in bannedSites:
-  result = diracAdmin.getSiteMaskLogging(site, printOutput=True)
-  if not result['OK']:
+  diracAdmin = DiracAdmin()
+
+  result = diracAdmin.getBannedSites()
+  if result['OK']:
+    bannedSites = result['Value']
+  else:
     gLogger.error(result['Message'])
     DIRACExit(2)
 
-DIRACExit(0)
+  for site in bannedSites:
+    result = diracAdmin.getSiteMaskLogging(site, printOutput=True)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+      DIRACExit(2)
+
+  DIRACExit(0)
+
+
+if __name__ == "__main__":
+  main()

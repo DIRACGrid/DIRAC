@@ -8,9 +8,11 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 import DIRAC
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-if __name__ == "__main__":
 
+@DIRACScript()
+def main():
   from DIRAC.Core.Base import Script
 
   Script.registerSwitch('', 'Path=', '    Path to search for')
@@ -78,3 +80,7 @@ if __name__ == "__main__":
   lfnList = sorted(result['Value'])
 
   gLogger.notice('\n'.join(lfn for lfn in lfnList))
+
+
+if __name__ == "__main__":
+  main()

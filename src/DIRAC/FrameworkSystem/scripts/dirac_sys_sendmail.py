@@ -33,58 +33,66 @@ import os
 
 from DIRAC import gLogger, exit as DIRACexit
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
-Script.setUsageMessage(''.join(__doc__))
 
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
+@DIRACScript()
+def main():
+  Script.setUsageMessage(''.join(__doc__))
 
-arg = "".join(args)
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-if not len(arg) > 0:
-  gLogger.error("Missing argument")
-  DIRACexit(2)
+  arg = "".join(args)
 
-try:
-  head, body = arg.split("\\n\\n")
-except Exception as x:
-  head = "To: %s" % arg
-  body = sys.stdin.read()
+  if not len(arg) > 0:
+    gLogger.error("Missing argument")
+    DIRACexit(2)
 
-try:
-  tmp, body = body.split("\\n\\n")
-  head = tmp + "\\n" + head
-except Exception as x:
-  pass
+  try:
+    head, body = arg.split("\\n\\n")
+  except Exception as x:
+    head = "To: %s" % arg
+    body = sys.stdin.read()
 
-body = "".join(body.strip())
+  try:
+    tmp, body = body.split("\\n\\n")
+    head = tmp + "\\n" + head
+  except Exception as x:
+    pass
 
-try:
-  headers = dict((i.strip(), j.strip()) for i, j in
-                 (item.split(':') for item in head.split('\\n')))
-except BaseException:
-  gLogger.error("Failed to convert string: %s to email headers" % head)
-  DIRACexit(4)
+  body = "".join(body.strip())
 
-if "To" not in headers:
-  gLogger.error("Failed to get 'To:' field from headers %s" % head)
-  DIRACexit(5)
-to = headers["To"]
+  try:
+    headers = dict((i.strip(), j.strip()) for i, j in
+                   (item.split(':') for item in head.split('\\n')))
+  except BaseException:
+    gLogger.error("Failed to convert string: %s to email headers" % head)
+    DIRACexit(4)
 
-origin = "%s@%s" % (os.getenv("LOGNAME", "dirac"), socket.getfqdn())
-if "From" in headers:
-  origin = headers["From"]
+  if "To" not in headers:
+    gLogger.error("Failed to get 'To:' field from headers %s" % head)
+    DIRACexit(5)
+  to = headers["To"]
 
-subject = "Sent from %s" % socket.getfqdn()
-if "Subject" in headers:
-  subject = headers["Subject"]
+  origin = "%s@%s" % (os.getenv("LOGNAME", "dirac"), socket.getfqdn())
+  if "From" in headers:
+    origin = headers["From"]
 
-ntc = NotificationClient()
-print("sendMail(%s,%s,%s,%s,%s)" % (to, subject, body, origin, False))
-result = ntc.sendMail(to, subject, body, origin, localAttempt=False)
-if not result["OK"]:
-  gLogger.error(result["Message"])
-  DIRACexit(6)
+  subject = "Sent from %s" % socket.getfqdn()
+  if "Subject" in headers:
+    subject = headers["Subject"]
 
-DIRACexit(0)
+  ntc = NotificationClient()
+  print("sendMail(%s,%s,%s,%s,%s)" % (to, subject, body, origin, False))
+  result = ntc.sendMail(to, subject, body, origin, localAttempt=False)
+  if not result["OK"]:
+    gLogger.error(result["Message"])
+    DIRACexit(6)
+
+  DIRACexit(0)
+
+
+if __name__ == "__main__":
+  main()

@@ -14,6 +14,7 @@ import DIRAC
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
@@ -92,71 +93,77 @@ class Params(object):
     Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
 
 
-params = Params()
-params.registerCLISwitches()
+@DIRACScript()
+def main():
+  params = Params()
+  params.registerCLISwitches()
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... <DN|user> group' % Script.scriptName,
-                                  'Arguments:',
-                                  '  DN:       DN of the user',
-                                  '  user:     DIRAC user name (will fail if there is more than 1 DN registered)',
-                                  '  group:    DIRAC group name']))
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... <DN|user> group' % Script.scriptName,
+                                    'Arguments:',
+                                    '  DN:       DN of the user',
+                                    '  user:     DIRAC user name (will fail if there is more than 1 DN registered)',
+                                    '  group:    DIRAC group name']))
 
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-if len(args) != 2:
-  Script.showHelp()
+  if len(args) != 2:
+    Script.showHelp()
 
-userGroup = str(args[1])
-userDN = str(args[0])
-userName = False
-if userDN.find("/") != 0:
-  userName = userDN
-  retVal = Registry.getDNForUsername(userName)
-  if not retVal['OK']:
-    gLogger.notice("Cannot discover DN for username %s\n\t%s" % (userName, retVal['Message']))
-    DIRAC.exit(2)
-  DNList = retVal['Value']
-  if len(DNList) > 1:
-    gLogger.notice("Username %s has more than one DN registered" % userName)
-    ind = 0
-    for dn in DNList:
-      gLogger.notice("%d %s" % (ind, dn))
-      ind += 1
-    inp = raw_input("Which DN do you want to download? [default 0] ")
-    if not inp:
-      inp = 0
-    else:
-      inp = int(inp)
-    userDN = DNList[inp]
-  else:
-    userDN = DNList[0]
-
-if not params.proxyPath:
-  if not userName:
-    result = Registry.getUsernameForDN(userDN)
-    if not result['OK']:
-      gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
+  userGroup = str(args[1])
+  userDN = str(args[0])
+  userName = False
+  if userDN.find("/") != 0:
+    userName = userDN
+    retVal = Registry.getDNForUsername(userName)
+    if not retVal['OK']:
+      gLogger.notice("Cannot discover DN for username %s\n\t%s" % (userName, retVal['Message']))
       DIRAC.exit(2)
-    userName = result['Value']
-  params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
+    DNList = retVal['Value']
+    if len(DNList) > 1:
+      gLogger.notice("Username %s has more than one DN registered" % userName)
+      ind = 0
+      for dn in DNList:
+        gLogger.notice("%d %s" % (ind, dn))
+        ind += 1
+      inp = raw_input("Which DN do you want to download? [default 0] ")
+      if not inp:
+        inp = 0
+      else:
+        inp = int(inp)
+      userDN = DNList[inp]
+    else:
+      userDN = DNList[0]
 
-if params.enableVOMS:
-  result = gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=params.limited,
-                                           requiredTimeLeft=params.proxyLifeTime,
-                                           requiredVOMSAttribute=params.vomsAttr)
-else:
-  result = gProxyManager.downloadProxy(userDN, userGroup, limited=params.limited,
-                                       requiredTimeLeft=params.proxyLifeTime)
-if not result['OK']:
-  gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
-  DIRAC.exit(2)
-chain = result['Value']
-result = chain.dumpAllToFile(params.proxyPath)
-if not result['OK']:
-  gLogger.notice('Proxy file cannot be written to %s: %s' % (params.proxyPath, result['Message']))
-  DIRAC.exit(2)
-gLogger.notice("Proxy downloaded to %s" % params.proxyPath)
-DIRAC.exit(0)
+  if not params.proxyPath:
+    if not userName:
+      result = Registry.getUsernameForDN(userDN)
+      if not result['OK']:
+        gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
+        DIRAC.exit(2)
+      userName = result['Value']
+    params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
+
+  if params.enableVOMS:
+    result = gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=params.limited,
+                                             requiredTimeLeft=params.proxyLifeTime,
+                                             requiredVOMSAttribute=params.vomsAttr)
+  else:
+    result = gProxyManager.downloadProxy(userDN, userGroup, limited=params.limited,
+                                         requiredTimeLeft=params.proxyLifeTime)
+  if not result['OK']:
+    gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
+    DIRAC.exit(2)
+  chain = result['Value']
+  result = chain.dumpAllToFile(params.proxyPath)
+  if not result['OK']:
+    gLogger.notice('Proxy file cannot be written to %s: %s' % (params.proxyPath, result['Message']))
+    DIRAC.exit(2)
+  gLogger.notice("Proxy downloaded to %s" % params.proxyPath)
+  DIRAC.exit(0)
+
+
+if __name__ == "__main__":
+  main()

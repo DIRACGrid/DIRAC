@@ -7,9 +7,11 @@ __RCSID__ = "$Id$"
 
 from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-if __name__ == "__main__":
+@DIRACScript()
+def main():
 
   Script.setUsageMessage("""
 Remove the given file replica or a list of file replicas from the File Catalog
@@ -53,3 +55,7 @@ Usage:
       for lfn in sorted(res['Value']['Failed']):
         message = res['Value']['Failed'][lfn]
         print('Error: failed to remove %s replica of %s: %s' % (storageElementName, lfn, message))
+
+
+if __name__ == "__main__":
+  main()

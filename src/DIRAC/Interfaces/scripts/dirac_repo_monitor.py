@@ -10,26 +10,34 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... RepoDir' % Script.scriptName,
-                                  'Arguments:',
-                                  '  RepoDir:  Location of Job Repository']))
-Script.parseCommandLine(ignoreErrors=False)
-args = Script.getPositionalArgs()
 
-if len(args) != 1:
-  Script.showHelp()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... RepoDir' % Script.scriptName,
+                                    'Arguments:',
+                                    '  RepoDir:  Location of Job Repository']))
+  Script.parseCommandLine(ignoreErrors=False)
+  args = Script.getPositionalArgs()
 
-repoLocation = args[0]
-from DIRAC.Interfaces.API.Dirac import Dirac
-dirac = Dirac(withRepo=True, repoLocation=repoLocation)
+  if len(args) != 1:
+    Script.showHelp()
 
-exitCode = 0
-result = dirac.monitorRepository(printOutput=True)
-if not result['OK']:
-  print('ERROR: ', result['Message'])
-  exitCode = 2
+  repoLocation = args[0]
+  from DIRAC.Interfaces.API.Dirac import Dirac
+  dirac = Dirac(withRepo=True, repoLocation=repoLocation)
 
-DIRAC.exit(exitCode)
+  exitCode = 0
+  result = dirac.monitorRepository(printOutput=True)
+  if not result['OK']:
+    print('ERROR: ', result['Message'])
+    exitCode = 2
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
@@ -232,8 +233,8 @@ def run(switchDict):
     DIRACExit(1)
 
 
-if __name__ == "__main__":
-
+@DIRACScript()
+def main():
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization
@@ -249,5 +250,6 @@ if __name__ == "__main__":
   # Bye
   DIRACExit(0)
 
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+
+if __name__ == "__main__":
+  main()

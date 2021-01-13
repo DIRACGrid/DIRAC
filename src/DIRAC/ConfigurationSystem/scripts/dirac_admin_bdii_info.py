@@ -14,6 +14,7 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
@@ -131,10 +132,8 @@ def showInfo(result, info):
     print("}")
 
 
-# ...............................................................................
-
-if __name__ == "__main__":
-
+@DIRACScript()
+def main():
   # Script initialization
   registerSwitches()
   # registerUsageMessage()
@@ -144,5 +143,6 @@ if __name__ == "__main__":
 
   DIRAC.exit(0)
 
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+
+if __name__ == "__main__":
+  main()

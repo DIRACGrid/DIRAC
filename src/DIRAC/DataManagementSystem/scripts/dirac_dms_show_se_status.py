@@ -6,15 +6,9 @@ from __future__ import division
 
 from DIRAC import S_OK, exit as DIRACexit
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
-
-Script.setUsageMessage("""
-Get status of the available Storage Elements
-
-Usage:
-  %s [<options>]
-""" % Script.scriptName)
 
 vo = None
 
@@ -44,62 +38,79 @@ def setNoVO(arg):
   return S_OK()
 
 
-Script.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
-Script.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)
-Script.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", setNoVO)
+@DIRACScript()
+def main():
+  global vo
+  global noVOFlag
+  global allVOsFlag
 
-Script.parseCommandLine()
+  Script.setUsageMessage("""
+Get status of the available Storage Elements
 
-from DIRAC import gConfig, gLogger
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+Usage:
+  %s [<options>]
+""" % Script.scriptName)
 
-storageCFGBase = "/Resources/StorageElements"
+  Script.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
+  Script.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)
+  Script.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", setNoVO)
 
-res = gConfig.getSections(storageCFGBase, True)
-if not res['OK']:
-  gLogger.error('Failed to get storage element info')
-  gLogger.error(res['Message'])
-  DIRACexit(1)
+  Script.parseCommandLine()
 
-gLogger.info("%s %s %s" % ('Storage Element'.ljust(25), 'Read Status'.rjust(15), 'Write Status'.rjust(15)))
+  from DIRAC import gConfig, gLogger
+  from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+  from DIRAC.Core.Utilities.PrettyPrint import printTable
+  from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
-seList = sorted(res['Value'])
+  storageCFGBase = "/Resources/StorageElements"
 
-resourceStatus = ResourceStatus()
-
-res = resourceStatus.getElementStatus(seList, "StorageElement")
-if not res['OK']:
-  gLogger.error("Failed to get StorageElement status for %s" % str(seList))
-  DIRACexit(1)
-
-fields = ['SE', 'ReadAccess', 'WriteAccess', 'RemoveAccess', 'CheckAccess']
-records = []
-
-if vo is None and not allVOsFlag:
-  result = getVOfromProxyGroup()
-  if not result['OK']:
-    gLogger.error('Failed to determine the user VO')
+  res = gConfig.getSections(storageCFGBase, True)
+  if not res['OK']:
+    gLogger.error('Failed to get storage element info')
+    gLogger.error(res['Message'])
     DIRACexit(1)
-  vo = result['Value']
 
-for se, statusDict in res['Value'].items():
+  gLogger.info("%s %s %s" % ('Storage Element'.ljust(25), 'Read Status'.rjust(15), 'Write Status'.rjust(15)))
 
-  # Check if the SE is allowed for the user VO
-  if not allVOsFlag:
-    voList = gConfig.getValue('/Resources/StorageElements/%s/VO' % se, [])
-    if noVOFlag and voList:
-      continue
-    if voList and vo not in voList:
-      continue
+  seList = sorted(res['Value'])
 
-  record = [se]
-  for status in fields[1:]:
-    value = statusDict.get(status, 'Unknown')
-    record.append(value)
-  records.append(record)
+  resourceStatus = ResourceStatus()
 
-printTable(fields, records, numbering=False, sortField='SE')
+  res = resourceStatus.getElementStatus(seList, "StorageElement")
+  if not res['OK']:
+    gLogger.error("Failed to get StorageElement status for %s" % str(seList))
+    DIRACexit(1)
 
-DIRACexit(0)
+  fields = ['SE', 'ReadAccess', 'WriteAccess', 'RemoveAccess', 'CheckAccess']
+  records = []
+
+  if vo is None and not allVOsFlag:
+    result = getVOfromProxyGroup()
+    if not result['OK']:
+      gLogger.error('Failed to determine the user VO')
+      DIRACexit(1)
+    vo = result['Value']
+
+  for se, statusDict in res['Value'].items():
+
+    # Check if the SE is allowed for the user VO
+    if not allVOsFlag:
+      voList = gConfig.getValue('/Resources/StorageElements/%s/VO' % se, [])
+      if noVOFlag and voList:
+        continue
+      if voList and vo not in voList:
+        continue
+
+    record = [se]
+    for status in fields[1:]:
+      value = statusDict.get(status, 'Unknown')
+      record.append(value)
+    records.append(record)
+
+  printTable(fields, records, numbering=False, sortField='SE')
+
+  DIRACexit(0)
+
+
+if __name__ == "__main__":
+  main()

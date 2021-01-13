@@ -12,17 +12,21 @@ __RCSID__ = "$Id: $"
 import os
 
 from DIRAC.Core.Base import Script
-Script.setUsageMessage('\n'.join([__doc__,
-                                  'Usage:',
-                                  ' %s [option|cfgfile] requestName LFN localFile targetSE' % Script.scriptName,
-                                  'Arguments:',
-                                  ' requestName: a request name',
-                                  '         LFN: logical file name'
-                                  '   localFile: local file you want to put',
-                                  '    targetSE: target SE']))
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-# # execution
-if __name__ == "__main__":
+
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([
+      __doc__,
+      'Usage:',
+      ' %s [option|cfgfile] requestName LFN localFile targetSE' % Script.scriptName,
+      'Arguments:',
+      ' requestName: a request name',
+      '         LFN: logical file name'
+      '   localFile: local file you want to put',
+      '    targetSE: target SE'
+  ]))
 
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
@@ -91,3 +95,7 @@ if __name__ == "__main__":
   gLogger.always("Request '%s' has been put to ReqDB for execution." % requestName)
   gLogger.always("You can monitor its status using command: 'dirac-rms-request %s'" % requestName)
   DIRAC.exit(0)
+
+
+if __name__ == "__main__":
+  main()

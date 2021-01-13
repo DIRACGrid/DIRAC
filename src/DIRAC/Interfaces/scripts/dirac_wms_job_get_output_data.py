@@ -14,39 +14,47 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  JobID:    DIRAC Job ID']))
-Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-if len(args) < 1:
-  Script.showHelp(exitCode=1)
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  JobID:    DIRAC Job ID']))
+  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-dirac = Dirac()
-exitCode = 0
-errorList = []
+  if len(args) < 1:
+    Script.showHelp(exitCode=1)
 
-outputDir = ''
-for sw, v in Script.getUnprocessedSwitches():
-  if sw in ('D', 'Dir'):
-    outputDir = v
+  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
+  dirac = Dirac()
+  exitCode = 0
+  errorList = []
 
-for job in parseArguments(args):
+  outputDir = ''
+  for sw, v in Script.getUnprocessedSwitches():
+    if sw in ('D', 'Dir'):
+      outputDir = v
 
-  result = dirac.getJobOutputData(job, destinationDir=outputDir)
-  if result['OK']:
-    print('Job %s output data retrieved' % (job))
-  else:
-    errorList.append((job, result['Message']))
-    exitCode = 2
+  for job in parseArguments(args):
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+    result = dirac.getJobOutputData(job, destinationDir=outputDir)
+    if result['OK']:
+      print('Job %s output data retrieved' % (job))
+    else:
+      errorList.append((job, result['Message']))
+      exitCode = 2
 
-DIRAC.exit(exitCode)
+  for error in errorList:
+    print("ERROR %s: %s" % error)
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

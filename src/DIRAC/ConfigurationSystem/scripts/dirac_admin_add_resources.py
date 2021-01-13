@@ -16,6 +16,7 @@ import signal
 import shlex
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -264,15 +265,12 @@ def handler(signum, frame):
   DIRACExit(-1)
 
 
-if __name__ == "__main__":
-
+@DIRACScript()
+def main():
   signal.signal(signal.SIGTERM, handler)
   signal.signal(signal.SIGINT, handler)
 
-  vo = ''
-  dry = False
-  doCEs = False
-  ceBdiiDict = None
+  global vo, dry, doCEs, ceBdiiDict
 
   processScriptSwitches()
 
@@ -280,7 +278,6 @@ if __name__ == "__main__":
     gLogger.error('No VO specified')
     DIRACExit(-1)
 
-  diracVO = vo
   vo = getVOOption(vo, 'VOMSName', vo)
 
   if doCEs:
@@ -293,3 +290,12 @@ if __name__ == "__main__":
     yn = yn.strip()
     if yn == '' or yn.lower().startswith('y'):
       updateSites()
+
+
+if __name__ == "__main__":
+  vo = ''
+  dry = False
+  doCEs = False
+  ceBdiiDict = None
+
+  main()

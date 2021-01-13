@@ -17,6 +17,7 @@ import os
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
@@ -292,7 +293,8 @@ class CreateMovingRequest(object):
     return 1
 
 
-if __name__ == '__main__':
+@DIRACScript()
+def main():
   try:
     CMR = CreateMovingRequest()
     CMR.run()
@@ -303,3 +305,7 @@ if __name__ == '__main__':
       sLog.error('ERROR: Failed to create Moving Request:', str(e))
     exit(1)
   exit(0)
+
+
+if __name__ == "__main__":
+  main()

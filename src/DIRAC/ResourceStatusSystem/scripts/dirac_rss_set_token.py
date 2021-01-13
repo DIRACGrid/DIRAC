@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 # DIRAC
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
@@ -175,11 +176,19 @@ def setToken(user):
   return S_OK()
 
 
+@DIRACScript()
 def main():
   """
   Main function of the script. Gets the username from the proxy loaded and sets
   the token taking into account that user and the switchDict parameters.
   """
+  # Logger initialization
+  subLogger = gLogger.getSubLogger(__file__)
+
+  # Script initialization
+  registerSwitches()
+  registerUsageMessage()
+  switchDict = parseSwitches()
 
   user = proxyUser()
   if not user['OK']:
@@ -192,17 +201,8 @@ def main():
     subLogger.error(res['Message'])
     DIRACExit(1)
 
-
-if __name__ == '__main__':
-
-  # Logger initialization
-  subLogger = gLogger.getSubLogger(__file__)
-
-  # Script initialization
-  registerSwitches()
-  registerUsageMessage()
-  switchDict = parseSwitches()
-
-  main()
-
   DIRACExit(0)
+
+
+if __name__ == "__main__":
+  main()

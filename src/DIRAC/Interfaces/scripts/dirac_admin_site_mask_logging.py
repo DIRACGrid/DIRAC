@@ -15,31 +15,39 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Site ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  Site:     Name of the Site']))
 
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... Site ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  Site:     Name of the Site']))
 
-if len(args) < 1:
-  Script.showHelp()
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-diracAdmin = DiracAdmin()
-exitCode = 0
-errorList = []
+  if len(args) < 1:
+    Script.showHelp()
 
-for site in args:
-  result = diracAdmin.getSiteMaskLogging(site, printOutput=True)
-  if not result['OK']:
-    errorList.append((site, result['Message']))
-    exitCode = 2
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  diracAdmin = DiracAdmin()
+  exitCode = 0
+  errorList = []
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+  for site in args:
+    result = diracAdmin.getSiteMaskLogging(site, printOutput=True)
+    if not result['OK']:
+      errorList.append((site, result['Message']))
+      exitCode = 2
 
-DIRAC.exit(exitCode)
+  for error in errorList:
+    print("ERROR %s: %s" % error)
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

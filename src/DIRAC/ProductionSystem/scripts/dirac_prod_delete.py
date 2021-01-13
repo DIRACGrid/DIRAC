@@ -11,33 +11,40 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s prodID' % Script.scriptName,
-                                  'Arguments:',
-                                  '  prodID: Production ID (mandatory)'
-                                  ]))
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-Script.parseCommandLine()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s prodID' % Script.scriptName,
+                                    'Arguments:',
+                                    '  prodID: Production ID (mandatory)'
+                                    ]))
 
-from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
+  Script.parseCommandLine()
 
-args = Script.getPositionalArgs()
-if len(args) < 1:
-  Script.showHelp(exitCode=1)
+  from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
-# get arguments
-prodID = args[0]
+  args = Script.getPositionalArgs()
+  if len(args) < 1:
+    Script.showHelp(exitCode=1)
 
-prodClient = ProductionClient()
+  # get arguments
+  prodID = args[0]
 
-res = prodClient.deleteProduction(prodID)
-if res['OK']:
-  DIRAC.gLogger.notice('Production %s successully deleted' % prodID)
-else:
-  DIRAC.gLogger.error(res['Message'])
-  DIRAC.exit(-1)
+  prodClient = ProductionClient()
 
-DIRAC.exit(0)
+  res = prodClient.deleteProduction(prodID)
+  if res['OK']:
+    DIRAC.gLogger.notice('Production %s successully deleted' % prodID)
+  else:
+    DIRAC.gLogger.error(res['Message'])
+    DIRAC.exit(-1)
+
+  DIRAC.exit(0)
+
+
+if __name__ == "__main__":
+  main()

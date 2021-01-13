@@ -11,11 +11,13 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC import exit as DIRACExit, gLogger
 
-if __name__ == "__main__":
 
+@DIRACScript()
+def main():
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... ShifterRole UserName DIRACGroup ...' % Script.scriptName,
@@ -44,3 +46,7 @@ if __name__ == "__main__":
     gLogger.error("Could not add shifter", ": " + res['Message'])
     DIRACExit(1)
   gLogger.notice("Added shifter %s as user %s with group %s" % (shifterRole, userName, diracGroup))
+
+
+if __name__ == "__main__":
+  main()

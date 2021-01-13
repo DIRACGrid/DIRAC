@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base import Script
-
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = '$Id$'
 
@@ -33,7 +33,8 @@ class Params(object):
                                       '  %s [option|cfgfile] ...\n' % Script.scriptName]))
 
 
-if __name__ == '__main__':
+@DIRACScript()
+def main():
   PARAMS = Params()
   PARAMS.registerSwitches()
   Script.parseCommandLine(ignoreErrors=False)
@@ -56,3 +57,7 @@ if __name__ == '__main__':
   gLogger.notice('Found transformation: %s' % TRANS_INFO_DICT)
   DRA.treatTransformation(PARAMS.transID, TRANS_INFO_DICT)
   exit(0)
+
+
+if __name__ == "__main__":
+  main()

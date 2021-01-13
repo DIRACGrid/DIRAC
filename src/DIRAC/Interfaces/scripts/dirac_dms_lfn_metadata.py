@@ -14,33 +14,41 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  LFN:      Logical File Name or file containing LFNs']))
-Script.parseCommandLine(ignoreErrors=True)
-lfns = Script.getPositionalArgs()
 
-if len(lfns) < 1:
-  Script.showHelp()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  LFN:      Logical File Name or file containing LFNs']))
+  Script.parseCommandLine(ignoreErrors=True)
+  lfns = Script.getPositionalArgs()
 
-from DIRAC.Interfaces.API.Dirac import Dirac
-dirac = Dirac()
-exitCode = 0
-errorList = []
+  if len(lfns) < 1:
+    Script.showHelp()
 
-if len(lfns) == 1:
-  try:
-    with open(lfns[0], 'r') as f:
-      lfns = f.read().splitlines()
-  except BaseException:
-    pass
+  from DIRAC.Interfaces.API.Dirac import Dirac
+  dirac = Dirac()
+  exitCode = 0
+  errorList = []
 
-result = dirac.getLfnMetadata(lfns, printOutput=True)
-if not result['OK']:
-  print('ERROR: ', result['Message'])
-  exitCode = 2
+  if len(lfns) == 1:
+    try:
+      with open(lfns[0], 'r') as f:
+        lfns = f.read().splitlines()
+    except BaseException:
+      pass
 
-DIRAC.exit(exitCode)
+  result = dirac.getLfnMetadata(lfns, printOutput=True)
+  if not result['OK']:
+    print('ERROR: ', result['Message'])
+    exitCode = 2
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

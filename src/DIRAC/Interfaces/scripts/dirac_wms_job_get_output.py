@@ -18,101 +18,109 @@ import shutil
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  JobID:    DIRAC Job ID or a name of the file with JobID per line']))
 
-Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
-Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
-Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  JobID:    DIRAC Job ID or a name of the file with JobID per line']))
 
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
+  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
+  Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
+  Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
 
-from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-from DIRAC.Core.Utilities.Time import toString, date, day
-from DIRAC.Core.Utilities.File import mkDir
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-dirac = Dirac()
-exitCode = 0
-errorList = []
+  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
+  from DIRAC.Core.Utilities.Time import toString, date, day
+  from DIRAC.Core.Utilities.File import mkDir
 
-outputDir = None
-group = None
-jobs = []
-for sw, value in Script.getUnprocessedSwitches():
-  if sw in ('D', 'Dir'):
-    outputDir = value
-  elif sw.lower() in ('f', 'file'):
-    if os.path.exists(value):
-      jFile = open(value)
-      jobs += jFile.read().split()
-      jFile.close()
-  elif sw.lower() in ('g', 'jobgroup'):
-    group = value
-    jobDate = toString(date() - 30 * day)
+  dirac = Dirac()
+  exitCode = 0
+  errorList = []
 
-    # Choose jobs in final state, no more than 30 days old
-    result = dirac.selectJobs(jobGroup=value, date=jobDate, status='Done')
-    if not result['OK']:
-      if "No jobs selected" not in result['Message']:
-        print("Error:", result['Message'])
-        DIRAC.exit(-1)
+  outputDir = None
+  group = None
+  jobs = []
+  for sw, value in Script.getUnprocessedSwitches():
+    if sw in ('D', 'Dir'):
+      outputDir = value
+    elif sw.lower() in ('f', 'file'):
+      if os.path.exists(value):
+        jFile = open(value)
+        jobs += jFile.read().split()
+        jFile.close()
+    elif sw.lower() in ('g', 'jobgroup'):
+      group = value
+      jobDate = toString(date() - 30 * day)
+
+      # Choose jobs in final state, no more than 30 days old
+      result = dirac.selectJobs(jobGroup=value, date=jobDate, status='Done')
+      if not result['OK']:
+        if "No jobs selected" not in result['Message']:
+          print("Error:", result['Message'])
+          DIRAC.exit(-1)
+      else:
+        jobs += result['Value']
+      result = dirac.selectJobs(jobGroup=value, date=jobDate, status='Failed')
+      if not result['OK']:
+        if "No jobs selected" not in result['Message']:
+          print("Error:", result['Message'])
+          DIRAC.exit(-1)
+      else:
+        jobs += result['Value']
+
+  for arg in parseArguments(args):
+    if os.path.isdir(arg):
+      print("Output for job %s already retrieved, remove the output directory to redownload" % arg)
     else:
-      jobs += result['Value']
-    result = dirac.selectJobs(jobGroup=value, date=jobDate, status='Failed')
-    if not result['OK']:
-      if "No jobs selected" not in result['Message']:
-        print("Error:", result['Message'])
-        DIRAC.exit(-1)
+      jobs.append(arg)
+
+  if not jobs:
+    print("No jobs selected")
+    DIRAC.exit(0)
+
+  if group:
+    if outputDir:
+      outputDir = os.path.join(outputDir, group)
     else:
-      jobs += result['Value']
+      outputDir = group
 
-for arg in parseArguments(args):
-  if os.path.isdir(arg):
-    print("Output for job %s already retrieved, remove the output directory to redownload" % arg)
-  else:
-    jobs.append(arg)
-
-if not jobs:
-  print("No jobs selected")
-  DIRAC.exit(0)
-
-if group:
   if outputDir:
-    outputDir = os.path.join(outputDir, group)
+    mkDir(outputDir)
   else:
-    outputDir = group
+    outputDir = os.getcwd()
 
-if outputDir:
-  mkDir(outputDir)
-else:
-  outputDir = os.getcwd()
+  jobs = [str(job) for job in jobs]
+  doneJobs = os.listdir(outputDir)
+  todoJobs = [job for job in jobs if job not in doneJobs]
 
-jobs = [str(job) for job in jobs]
-doneJobs = os.listdir(outputDir)
-todoJobs = [job for job in jobs if job not in doneJobs]
+  for job in todoJobs:
 
-for job in todoJobs:
+    result = dirac.getOutputSandbox(job, outputDir=outputDir)
 
-  result = dirac.getOutputSandbox(job, outputDir=outputDir)
+    jobDir = str(job)
+    if outputDir:
+      jobDir = os.path.join(outputDir, job)
+    if result['OK']:
+      if os.path.exists(jobDir):
+        print('Job output sandbox retrieved in %s/' % (jobDir))
+    else:
+      if os.path.exists('%s' % jobDir):
+        shutil.rmtree(jobDir)
+      errorList.append((job, result['Message']))
+      exitCode = 2
 
-  jobDir = str(job)
-  if outputDir:
-    jobDir = os.path.join(outputDir, job)
-  if result['OK']:
-    if os.path.exists(jobDir):
-      print('Job output sandbox retrieved in %s/' % (jobDir))
-  else:
-    if os.path.exists('%s' % jobDir):
-      shutil.rmtree(jobDir)
-    errorList.append((job, result['Message']))
-    exitCode = 2
+  for error in errorList:
+    print("ERROR %s: %s" % error)
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+  DIRAC.exit(exitCode)
 
-DIRAC.exit(exitCode)
+
+if __name__ == "__main__":
+  main()

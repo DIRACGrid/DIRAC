@@ -14,25 +14,33 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... File ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  File:     File Name']))
-Script.parseCommandLine(ignoreErrors=False)
-files = Script.getPositionalArgs()
-if len(files) == 0:
-  Script.showHelp()
 
-exitCode = 0
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... File ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  File:     File Name']))
+  Script.parseCommandLine(ignoreErrors=False)
+  files = Script.getPositionalArgs()
+  if len(files) == 0:
+    Script.showHelp()
 
-for fa in files:
-  adler = fileAdler(fa)
-  if adler:
-    print(fa.rjust(100), adler.ljust(10))  # pylint: disable=no-member
-  else:
-    print('ERROR %s: Failed to get adler' % fa)
-    exitCode = 2
+  exitCode = 0
 
-DIRAC.exit(exitCode)
+  for fa in files:
+    adler = fileAdler(fa)
+    if adler:
+      print(fa.rjust(100), adler.ljust(10))  # pylint: disable=no-member
+    else:
+      print('ERROR %s: Failed to get adler' % fa)
+      exitCode = 2
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

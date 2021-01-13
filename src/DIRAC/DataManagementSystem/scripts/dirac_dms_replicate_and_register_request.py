@@ -6,22 +6,9 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 import os
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger
 import DIRAC
-Script.setUsageMessage('\n'.join([__doc__,
-                                  'Usage:',
-                                  ' %s [option|cfgfile] requestName LFNs targetSE1 [targetSE2 ...]' % Script.scriptName,
-                                  'Arguments:',
-                                  ' requestName: a request name',
-                                  '        LFNs: single LFN or file with LFNs',
-                                  '    targetSE: target SE']))
-
-catalog = None
-Script.registerSwitch("C:", "Catalog=", "Catalog to use")
-Script.parseCommandLine()
-for switch in Script.getUnprocessedSwitches():
-  if switch[0] == "C" or switch[0].lower() == "catalog":
-    catalog = switch[1]
 
 
 def getLFNList(arg):
@@ -34,8 +21,24 @@ def getLFNList(arg):
   return list(set(lfnList))
 
 
-# # execution
-if __name__ == "__main__":
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([
+      __doc__,
+      'Usage:',
+      ' %s [option|cfgfile] requestName LFNs targetSE1 [targetSE2 ...]' % Script.scriptName,
+      'Arguments:',
+      ' requestName: a request name',
+      '        LFNs: single LFN or file with LFNs',
+      '    targetSE: target SE',
+  ]))
+
+  catalog = None
+  Script.registerSwitch("C:", "Catalog=", "Catalog to use")
+  Script.parseCommandLine()
+  for switch in Script.getUnprocessedSwitches():
+    if switch[0] == "C" or switch[0].lower() == "catalog":
+      catalog = switch[1]
 
   args = Script.getPositionalArgs()
 
@@ -126,3 +129,7 @@ if __name__ == "__main__":
     gLogger.always("RequestID(s): %s" % " ".join(requestIDs))
   gLogger.always("You can monitor requests' status using command: 'dirac-rms-request <requestName/ID>'")
   DIRAC.exit(error)
+
+
+if __name__ == "__main__":
+  main()

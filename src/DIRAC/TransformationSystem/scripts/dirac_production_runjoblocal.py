@@ -29,32 +29,7 @@ else:
   from urllib.error import URLError as url_library_URLError  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC.Core.Base import Script
-Script.parseCommandLine(ignoreErrors=False)
-
-Script.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
-Script.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
-
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  '\nUsage:',
-                                  'dirac-production-runjoblocal [Data imput mode] [job ID]'
-                                  '\nArguments:',
-                                  '  Download (Job ID): Defines data aquisition as DownloadInputData',
-                                  '  Protocol (Job ID): Defines data acquisition as InputDataByProtocol\n']))
-
-from DIRAC import S_OK
-from DIRAC.Core.Utilities.File import mkDir
-
-
-_downloadinputdata = False
-_jobID = None
-
-for switch in Script.getUnprocessedSwitches():
-  if switch[0] in ('D', 'Download'):
-    _downloadinputdata = True
-    _jobID = switch[1]
-  if switch[0] in ('I', 'Protocol'):
-    _downloadinputdata = False
-    _jobID = switch[1]
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 def __runSystemDefaults(jobID, vo):
@@ -63,9 +38,8 @@ def __runSystemDefaults(jobID, vo):
   the path for the other functions.
 
   """
-
+  from DIRAC.Core.Utilities.File import mkDir
   tempdir = str(vo) + "job" + str(jobID) + "temp"
-
   mkDir(tempdir)
   basepath = os.getcwd()
   return basepath + os.path.sep + tempdir + os.path.sep
@@ -88,6 +62,7 @@ def __modifyJobDescription(jobID, basepath, downloadinputdata):
   uses InputDataByProtocol
 
   """
+  from DIRAC import S_OK
   if not downloadinputdata:
     from xml.etree import ElementTree as et
     archive = et.parse(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
@@ -160,7 +135,30 @@ def __runJobLocally(jobID, basepath, vo):
   localJob.runLocal()
 
 
-if __name__ == "__main__":
+@DIRACScript()
+def main():
+  Script.parseCommandLine(ignoreErrors=False)
+
+  Script.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
+  Script.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
+
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    '\nUsage:',
+                                    'dirac-production-runjoblocal [Data imput mode] [job ID]'
+                                    '\nArguments:',
+                                    '  Download (Job ID): Defines data aquisition as DownloadInputData',
+                                    '  Protocol (Job ID): Defines data acquisition as InputDataByProtocol\n']))
+  _downloadinputdata = False
+  _jobID = None
+
+  for switch in Script.getUnprocessedSwitches():
+    if switch[0] in ('D', 'Download'):
+      _downloadinputdata = True
+      _jobID = switch[1]
+    if switch[0] in ('I', 'Protocol'):
+      _downloadinputdata = False
+      _jobID = switch[1]
+
   from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import Extensions
   ext = Extensions()
   _vo = ext.getCSExtensions()[0]
@@ -182,3 +180,7 @@ if __name__ == "__main__":
   finally:
     os.chdir(_dir)
     os.rename(_dir + '.dirac.cfg.old', _dir + '.dirac.cfg')
+
+
+if __name__ == "__main__":
+  main()

@@ -11,4 +11,13 @@ from __future__ import absolute_import
 from __future__ import division
 
 import DIRAC
-print(DIRAC.version)
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
+
+@DIRACScript()
+def main():
+  print(DIRAC.version)
+
+
+if __name__ == "__main__":
+  main()

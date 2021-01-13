@@ -11,26 +11,35 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s TransID' % Script.scriptName
-                                  ]))
 
-Script.parseCommandLine()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([
+      __doc__.split('\n')[1],
+      'Usage:',
+      '  %s TransID' % Script.scriptName
+  ]))
 
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+  Script.parseCommandLine()
 
-args = Script.getPositionalArgs()
-if len(args) != 1:
-  Script.showHelp(exitCode=1)
+  from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-tc = TransformationClient()
-res = tc.getTransformationFiles({'TransformationID': args[0]})
+  args = Script.getPositionalArgs()
+  if len(args) != 1:
+    Script.showHelp(exitCode=1)
 
-if not res['OK']:
-  DIRAC.gLogger.error(res['Message'])
-  DIRAC.exit(2)
+  tc = TransformationClient()
+  res = tc.getTransformationFiles({'TransformationID': args[0]})
 
-for transfile in res['Value']:
-  DIRAC.gLogger.notice(transfile['LFN'])
+  if not res['OK']:
+    DIRAC.gLogger.error(res['Message'])
+    DIRAC.exit(2)
+
+  for transfile in res['Value']:
+    DIRAC.gLogger.notice(transfile['LFN'])
+
+
+if __name__ == "__main__":
+  main()

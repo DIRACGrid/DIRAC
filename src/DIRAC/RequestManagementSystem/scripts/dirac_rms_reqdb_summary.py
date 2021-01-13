@@ -6,11 +6,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
-Script.setUsageMessage('\n'.join([__doc__,
-                                  'Usage:',
-                                  ' %s [option|cfgfile]' % Script.scriptName]))
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-if __name__ == "__main__":
+
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__,
+                                    'Usage:',
+                                    ' %s [option|cfgfile]' % Script.scriptName]))
 
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
@@ -47,3 +50,7 @@ if __name__ == "__main__":
     DIRAC.gLogger.always("- '%s' %s" % (fState, fCount))
 
   DIRAC.exit(0)
+
+
+if __name__ == "__main__":
+  main()

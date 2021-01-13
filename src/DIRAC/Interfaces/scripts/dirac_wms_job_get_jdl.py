@@ -14,41 +14,49 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-original = False
-Script.registerSwitch('O', 'Original', 'Gets the original JDL')
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  JobID:    DIRAC Job ID']))
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-for switch in Script.getUnprocessedSwitches():
-  if switch[0] == 'Original' or switch[0] == 'O':
-    original = True
+@DIRACScript()
+def main():
+  original = False
+  Script.registerSwitch('O', 'Original', 'Gets the original JDL')
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  JobID:    DIRAC Job ID']))
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-for switch in Script.getUnprocessedSwitches():
-  if switch[0] == 'Original':
-    original = True
+  for switch in Script.getUnprocessedSwitches():
+    if switch[0] == 'Original' or switch[0] == 'O':
+      original = True
 
-if len(args) < 1:
-  Script.showHelp(exitCode=1)
+  for switch in Script.getUnprocessedSwitches():
+    if switch[0] == 'Original':
+      original = True
 
-from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-dirac = Dirac()
-exitCode = 0
-errorList = []
+  if len(args) < 1:
+    Script.showHelp(exitCode=1)
 
-for job in parseArguments(args):
+  from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
+  dirac = Dirac()
+  exitCode = 0
+  errorList = []
 
-  result = dirac.getJobJDL(job, original=original, printOutput=True)
-  if not result['OK']:
-    errorList.append((job, result['Message']))
-    exitCode = 2
+  for job in parseArguments(args):
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+    result = dirac.getJobJDL(job, original=original, printOutput=True)
+    if not result['OK']:
+      errorList.append((job, result['Message']))
+      exitCode = 2
 
-DIRAC.exit(exitCode)
+  for error in errorList:
+    print("ERROR %s: %s" % error)
+
+  DIRAC.exit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

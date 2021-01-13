@@ -13,30 +13,37 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gConfig, gLogger, exit as Dexit
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... CE ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  CE:       Name of the CE (mandatory)']))
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... CE ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  CE:       Name of the CE (mandatory)']))
 
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-if len(args) < 1:
-  Script.showHelp(exitCode=1)
+  if len(args) < 1:
+    Script.showHelp(exitCode=1)
 
-res = getCESiteMapping(args[0])
-if not res['OK']:
-  gLogger.error(res['Message'])
-  Dexit(1)
-site = res['Value'][args[0]]
+  res = getCESiteMapping(args[0])
+  if not res['OK']:
+    gLogger.error(res['Message'])
+    Dexit(1)
+  site = res['Value'][args[0]]
 
-res = gConfig.getOptionsDict(cfgPath('Resources', 'Sites', site.split('.')[0], site, 'CEs', args[0]))
-if not res['OK']:
-  gLogger.error(res['Message'])
-  Dexit(1)
-gLogger.notice(res['Value'])
+  res = gConfig.getOptionsDict(cfgPath('Resources', 'Sites', site.split('.')[0], site, 'CEs', args[0]))
+  if not res['OK']:
+    gLogger.error(res['Message'])
+    Dexit(1)
+  gLogger.notice(res['Value'])
+
+
+if __name__ == "__main__":
+  main()

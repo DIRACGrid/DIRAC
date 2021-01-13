@@ -42,6 +42,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -520,7 +521,8 @@ class CreateArchiveRequest(object):
     request.addOperation(registerSource)
 
 
-if __name__ == '__main__':
+@DIRACScript()
+def main():
   try:
     CAR = CreateArchiveRequest()
     CAR.run()
@@ -531,3 +533,7 @@ if __name__ == '__main__':
       sLog.error('ERROR: Failed to create Archive Request:', str(e))
     exit(1)
   exit(0)
+
+
+if __name__ == "__main__":
+  main()

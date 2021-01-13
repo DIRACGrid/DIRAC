@@ -12,70 +12,76 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Base import Script
-
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s prodID transID [parentTransID]' % Script.scriptName,
-                                  'Arguments:',
-                                  '  prodID: Production ID',
-                                  '  transID: Transformation ID',
-                                  '  parentTransID: Parent Transformation ID'
-                                  ]))
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-Script.parseCommandLine()
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s prodID transID [parentTransID]' % Script.scriptName,
+                                    'Arguments:',
+                                    '  prodID: Production ID',
+                                    '  transID: Transformation ID',
+                                    '  parentTransID: Parent Transformation ID'
+                                    ]))
 
-from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+  Script.parseCommandLine()
 
-prodClient = ProductionClient()
-transClient = TransformationClient()
+  from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
+  from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-# get arguments
-args = Script.getPositionalArgs()
-if len(args) == 3:
-  parentTransID = args[2]
-elif len(args) == 2:
-  parentTransID = ''
-else:
-  Script.showHelp(exitCode=1)
+  prodClient = ProductionClient()
+  transClient = TransformationClient()
 
-prodID = args[0]
-transID = args[1]
+  # get arguments
+  args = Script.getPositionalArgs()
+  if len(args) == 3:
+    parentTransID = args[2]
+  elif len(args) == 2:
+    parentTransID = ''
+  else:
+    Script.showHelp(exitCode=1)
 
-res = transClient.getTransformation(transID)
-if not res['OK']:
-  DIRAC.gLogger.error('Failed to get transformation %s: %s' % (transID, res['Message']))
-  DIRAC.exit(-1)
+  prodID = args[0]
+  transID = args[1]
 
-transID = res['Value']['TransformationID']
-
-if parentTransID:
-  res = transClient.getTransformation(parentTransID)
+  res = transClient.getTransformation(transID)
   if not res['OK']:
-    DIRAC.gLogger.error('Failed to get transformation %s: %s' % (parentTransID, res['Message']))
+    DIRAC.gLogger.error('Failed to get transformation %s: %s' % (transID, res['Message']))
     DIRAC.exit(-1)
-  parentTransID = res['Value']['TransformationID']
 
-res = prodClient.getProduction(prodID)
-if not res['OK']:
-  DIRAC.gLogger.error('Failed to get production %s: %s' % (prodID, res['Message']))
-  DIRAC.exit(-1)
+  transID = res['Value']['TransformationID']
 
-prodID = res['Value']['ProductionID']
-res = prodClient.addTransformationsToProduction(prodID, transID, parentTransID)
-if not res['OK']:
-  DIRAC.gLogger.error(res['Message'])
-  DIRAC.exit(-1)
+  if parentTransID:
+    res = transClient.getTransformation(parentTransID)
+    if not res['OK']:
+      DIRAC.gLogger.error('Failed to get transformation %s: %s' % (parentTransID, res['Message']))
+      DIRAC.exit(-1)
+    parentTransID = res['Value']['TransformationID']
 
-if parentTransID:
-  msg = 'Transformation %s successfully added to production %s with parent transformation %s' % \
-        (transID, prodID, parentTransID)
-else:
-  msg = 'Transformation %s successfully added to production %s with no parent transformation' %  \
-        (transID, prodID)
+  res = prodClient.getProduction(prodID)
+  if not res['OK']:
+    DIRAC.gLogger.error('Failed to get production %s: %s' % (prodID, res['Message']))
+    DIRAC.exit(-1)
 
-DIRAC.gLogger.notice(msg)
+  prodID = res['Value']['ProductionID']
+  res = prodClient.addTransformationsToProduction(prodID, transID, parentTransID)
+  if not res['OK']:
+    DIRAC.gLogger.error(res['Message'])
+    DIRAC.exit(-1)
+
+  if parentTransID:
+    msg = 'Transformation %s successfully added to production %s with parent transformation %s' % \
+          (transID, prodID, parentTransID)
+  else:
+    msg = 'Transformation %s successfully added to production %s with no parent transformation' %  \
+          (transID, prodID)
+
+  DIRAC.gLogger.notice(msg)
+
+  DIRAC.exit(0)
 
 
-DIRAC.exit(0)
+if __name__ == "__main__":
+  main()

@@ -6,44 +6,52 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage("""
-Returns the LFN matching given GUIDs
-Usage:
-   %s <GUIDs>
-""" % Script.scriptName)
 
-Script.parseCommandLine()
+@DIRACScript()
+def main():
+  Script.setUsageMessage("""
+  Returns the LFN matching given GUIDs
+  Usage:
+    %s <GUIDs>
+  """ % Script.scriptName)
 
-import DIRAC
-from DIRAC import gLogger
+  Script.parseCommandLine()
 
-args = Script.getPositionalArgs()
-if len(args) != 1:
-  Script.showHelp()
-guids = args[0]
+  import DIRAC
+  from DIRAC import gLogger
 
-try:
-  guids = guids.split(',')
-except BaseException:
-  pass
+  args = Script.getPositionalArgs()
+  if len(args) != 1:
+    Script.showHelp()
+  guids = args[0]
 
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+  try:
+    guids = guids.split(',')
+  except BaseException:
+    pass
 
-fc = FileCatalog()
-res = fc.getLFNForGUID(guids)
-if not res['OK']:
-  gLogger.error("Failed to get the LFNs", res['Message'])
-  DIRAC.exit(-2)
+  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-errorGuid = {}
-for guid, reason in res['Value']['Failed'].items():
-  errorGuid.setdefault(reason, []).append(guid)
+  fc = FileCatalog()
+  res = fc.getLFNForGUID(guids)
+  if not res['OK']:
+    gLogger.error("Failed to get the LFNs", res['Message'])
+    DIRAC.exit(-2)
 
-for error, guidList in errorGuid.items():
-  gLogger.notice("Error '%s' for guids %s" % (error, guidList))
+  errorGuid = {}
+  for guid, reason in res['Value']['Failed'].items():
+    errorGuid.setdefault(reason, []).append(guid)
 
-for guid, lfn in res['Value']['Successful'].items():
-  gLogger.notice("%s -> %s" % (guid, lfn))
+  for error, guidList in errorGuid.items():
+    gLogger.notice("Error '%s' for guids %s" % (error, guidList))
 
-DIRAC.exit(0)
+  for guid, lfn in res['Value']['Successful'].items():
+    gLogger.notice("%s -> %s" % (guid, lfn))
+
+  DIRAC.exit(0)
+
+
+if __name__ == "__main__":
+  main()

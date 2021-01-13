@@ -13,42 +13,50 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... User ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  User:     User name']))
-Script.parseCommandLine(ignoreErrors=True)
-args = Script.getPositionalArgs()
 
-from DIRAC import exit as DIRACExit
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-diracAdmin = DiracAdmin()
-exitCode = 0
-errorList = []
+@DIRACScript()
+def main():
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... User ...' % Script.scriptName,
+                                    'Arguments:',
+                                    '  User:     User name']))
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
-if len(args) < 1:
-  Script.showHelp()
+  from DIRAC import exit as DIRACExit
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  diracAdmin = DiracAdmin()
+  exitCode = 0
+  errorList = []
 
-choice = raw_input("Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join(args))
-choice = choice.lower()
-if choice not in ("yes", "y"):
-  print("Delete aborted")
-  DIRACExit(0)
+  if len(args) < 1:
+    Script.showHelp()
 
-for user in args:
-  if not diracAdmin.csDeleteUser(user):
-    errorList.append(("delete user", "Cannot delete user %s" % user))
-    exitCode = 255
+  choice = raw_input("Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join(args))
+  choice = choice.lower()
+  if choice not in ("yes", "y"):
+    print("Delete aborted")
+    DIRACExit(0)
 
-if not exitCode:
-  result = diracAdmin.csCommitChanges()
-  if not result['OK']:
-    errorList.append(("commit", result['Message']))
-    exitCode = 255
+  for user in args:
+    if not diracAdmin.csDeleteUser(user):
+      errorList.append(("delete user", "Cannot delete user %s" % user))
+      exitCode = 255
 
-for error in errorList:
-  print("ERROR %s: %s" % error)
+  if not exitCode:
+    result = diracAdmin.csCommitChanges()
+    if not result['OK']:
+      errorList.append(("commit", result['Message']))
+      exitCode = 255
 
-DIRACExit(exitCode)
+  for error in errorList:
+    print("ERROR %s: %s" % error)
+
+  DIRACExit(exitCode)
+
+
+if __name__ == "__main__":
+  main()

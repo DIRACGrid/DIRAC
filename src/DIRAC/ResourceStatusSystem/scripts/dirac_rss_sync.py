@@ -20,6 +20,7 @@ __RCSID__ = '$Id$'
 
 from DIRAC import version, gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 subLogger = None
 switchDict = {}
@@ -256,10 +257,14 @@ def run():
         DIRACExit(1)
 
 
-if __name__ == "__main__":
-
+@DIRACScript()
+def main():
   # Run script
   run()
 
   # Bye
   DIRACExit(0)
+
+
+if __name__ == "__main__":
+  main()
