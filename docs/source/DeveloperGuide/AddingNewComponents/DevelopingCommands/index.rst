@@ -56,6 +56,7 @@ which will set the interpreter directive to the python on the environment.
 **4.** Next the function must be registered as a ``console_scripts`` ``entrypoint`` in the ``setuptools`` metadata (`more details<https://setuptools.readthedocs.io/en/latest/userguide/entry_point.html>`_). This is done by adding a line to the ``console_scripts`` list like below, where the first string is the name for the script you want to create, the left hand side of ``:`` is the module that contains your function and the right hand side is the object you want to invoke (e.g. a function).
 
 .. code-block:: cfg
+
     console_scripts =
         dirac-info = DIRAC.Core.scripts.dirac_info:main
         dirac-proxy-info = DIRAC.FrameworkSystem.scripts.dirac_proxy_info:main

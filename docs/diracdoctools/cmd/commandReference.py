@@ -140,7 +140,10 @@ class CommandReference(object):
     If an rst file exists for a command, we move it.
     An existing entry for a non existing rst file will create a warning when running sphinx.
     """
-    existingCommands = {os.path.basename(com).replace('.py', '') for com in sectionDict[SCRIPTS] + sectionDict[MANUAL]}
+    existingCommands = {
+        os.path.basename(com).replace('.py', '').replace("_", "-")
+        for com in sectionDict[SCRIPTS] + sectionDict[MANUAL]
+    }
     sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
     LOG.info('Checking %r for non-existent commands', sectionPath)
     # read the script index
