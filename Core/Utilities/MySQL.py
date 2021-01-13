@@ -429,11 +429,11 @@ class MySQL(object):
     try:
       raise x
     except MySQLdb.Error as e:
-      self.log.error('%s (%s): %s' % (methodName, cmd, err),
+      self.log.error('%s (%s): %s' % (methodName, self._safeCmd(cmd), err),
                      '%d: %s' % (e.args[0], e.args[1]))
       return S_ERROR(DErrno.EMYSQL, '%s: ( %d: %s )' % (err, e.args[0], e.args[1]))
     except Exception as e:
-      self.log.error('%s (%s): %s' % (methodName, cmd, err), repr(e))
+      self.log.error('%s (%s): %s' % (methodName, self._safeCmd(cmd), err), repr(e))
       return S_ERROR(DErrno.EMYSQL, '%s: (%s)' % (err, repr(e)))
 
   def __isDateTime(self, dateString):
