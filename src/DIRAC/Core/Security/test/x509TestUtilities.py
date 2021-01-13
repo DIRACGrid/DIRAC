@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import contextlib
 import os
 import sys
 
@@ -311,31 +312,27 @@ X509REQUESTTYPES = ('M2_X509Request',)
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
 
 
-@fixture(scope="function", params=X509REQUESTTYPES)
-def get_X509Request(request):
+@contextlib.contextmanager
+def get_X509Request(x509ClassName):
   """ Fixture to return either the X509Request instance.
       It also 'de-import' DIRAC before and after
+
+      This can't be implemented as a pytest fixture with function scope due to
+      the use of hypothesis
   """
   # Clean before
   deimportDIRAC()
 
-  x509Class = request.param
-
-  if x509Class == 'M2_X509Request':
+  if x509ClassName == 'M2_X509Request':
     from DIRAC.Core.Security.m2crypto.X509Request import X509Request
   else:
-    raise NotImplementedError()
+    raise NotImplementedError(x509ClassName)
 
-  def _generateX509Request():
-    """ Instanciate the object
-        :returns: an X509Request instance
-    """
-    return X509Request()
-
-  yield _generateX509Request
-
-  # Clean after
-  deimportDIRAC()
+  try:
+    yield X509Request()
+  finally:
+    # Clean after
+    deimportDIRAC()
 
 
 def get_X509Chain_from_X509Request(x509ReqObj):

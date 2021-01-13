@@ -26,7 +26,7 @@ from __future__ import print_function
 
 # redefined-outer-name is needed because we keep bassing get_X509Chain_class as param
 # pylint: disable=redefined-outer-name
-
+import contextlib
 from datetime import datetime, timedelta
 from string import ascii_letters, digits
 
@@ -39,7 +39,7 @@ parametrize = mark.parametrize
 
 from .x509TestUtilities import CERTS, CERTKEYS, CERTCONTENTS, deimportDIRAC, ENCRYPTEDKEYPASS,\
     ENCRYPTEDKEY, getCertOption, HOSTCERT, KEYCONTENTS_PKCS8, USERCERT, get_X509Chain_class, \
-    X509CHAINTYPES, get_X509Request, get_X509Chain_from_X509Request
+    X509CHAINTYPES, get_X509Request, X509REQUESTTYPES, get_X509Chain_from_X509Request
 
 
 ONE_YEAR_IN_SECS = 3600 * 24 * 365
@@ -49,53 +49,43 @@ TWENTY_YEARS_IN_SEC = 20 * ONE_YEAR_IN_SECS
 NO_LATER_THAN_2050_IN_SEC = int((datetime.strptime("2049-12-31", "%Y-%M-%d") - datetime.now()).total_seconds())
 
 
-@fixture(scope="function", params=X509CHAINTYPES)
-def get_proxy(request):
-  """ Fixture to return either the proxy string.
-      It also 'de-import' DIRAC before and after
-  """
-  # Clean before
+@contextlib.contextmanager
+def get_proxy(x509ChainClassName, certFile, lifetime=3600, deimport=True, **kwargs):
+  """ Generate the proxyString and return it as an X509Chain object
 
-  # Oh what a dirty hack....
+      :param certFile: path to the certificate
+      :param lifetime: lifetime of the proxy in seconds
+
+      :returns:  X509Chain object
+  """
   # When you do the delegation, you call both Request and Proxy generation fixtures.
   # So if you do the cleaning twice, you end up in a terrible mess.
-  # So, do not do the cleaning if you are in the test_delegation method
-  if request.function.__name__ != 'test_delegation':
+  if deimport:
     deimportDIRAC()
-  x509Class = request.param
 
-  if x509Class == 'M2_X509Chain':
+  if x509ChainClassName == 'M2_X509Chain':
     from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
   else:
     raise NotImplementedError()
 
-  def _generateProxy(certFile, lifetime=3600, **kwargs):
-    """ Generate the proxyString and return it as an X509Chain object
+  # Load the certificate and the key
+  x509Chain = X509Chain()
+  x509Chain.loadChainFromFile(certFile)
+  x509Chain.loadKeyFromFile(getCertOption(certFile, 'keyFile'))
 
-        :param certFile: path to the certificate
-        :param lifetime: lifetime of the proxy in seconds
+  # Generate the proxy string
+  res = x509Chain.generateProxyToString(lifetime, rfc=True, **kwargs)
 
-        :returns:  X509Chain object
-    """
-    # Load the certificate and the key
-    x509Chain = X509Chain()
-    x509Chain.loadChainFromFile(certFile)
-    x509Chain.loadKeyFromFile(getCertOption(certFile, 'keyFile'))
+  proxyString = res['Value']
+  # Load the proxy string as an X509Chain object
+  proxyChain = X509Chain()
+  proxyChain.loadProxyFromString(proxyString)
 
-    # Generate the proxy string
-    res = x509Chain.generateProxyToString(lifetime, rfc=True, **kwargs)
-
-    proxyString = res['Value']
-    # Load the proxy string as an X509Chain object
-    proxyChain = X509Chain()
-    proxyChain.loadProxyFromString(proxyString)
-
-    return proxyChain
-
-  yield _generateProxy
-
-  # Clean after
-  deimportDIRAC()
+  try:
+    yield proxyChain
+  finally:
+    # Clean after
+    deimportDIRAC()
 
 
 @parametrize('cert_file', CERTS)
@@ -388,81 +378,78 @@ def test_hash_on_cert(cert_file, get_X509Chain_class):
 ########################################################################
 
 
-def test_generateProxyToString(get_proxy):
+@parametrize('x509ChainClassName', X509CHAINTYPES)
+def test_generateProxyToString(x509ChainClassName):
   """" Generate a proxy and check that the chain has two level
   """
+  with get_proxy(x509ChainClassName, USERCERT) as proxyChain:
+    # We are supposed now to have two elements in the chain
+    assert proxyChain.getNumCertsInChain()['Value'] == 2
 
-  proxyChain = get_proxy(USERCERT)
-  # We are supposed now to have two elements in the chain
-  assert proxyChain.getNumCertsInChain()['Value'] == 2
 
-
-def test_getCertInChain(get_proxy):
+@parametrize('x509ChainClassName', X509CHAINTYPES)
+def test_getCertInChain(x509ChainClassName):
   """" retrieve the first certificate in the chain, and make sure it is the original one
   """
+  with get_proxy(x509ChainClassName, USERCERT) as proxyChain:
+    chainLength = proxyChain.getNumCertsInChain()['Value']
 
-  proxyChain = get_proxy(USERCERT)
+    res = proxyChain.getCertInChain(certPos=chainLength - 1)
 
-  chainLength = proxyChain.getNumCertsInChain()['Value']
+    assert res['OK']
 
-  res = proxyChain.getCertInChain(certPos=chainLength - 1)
+    certSubject = res['Value'].getSubjectDN().get('Value')
+    assert certSubject == getCertOption(USERCERT, 'subjectDN')
 
-  assert res['OK']
+    # bonus: check the negative counter also works
+    assert certSubject == proxyChain.getCertInChain(certPos=- 1)['Value'].getSubjectDN().get('Value')
 
-  certSubject = res['Value'].getSubjectDN().get('Value')
-  assert certSubject == getCertOption(USERCERT, 'subjectDN')
-
-  # bonus: check the negative counter also works
-  assert certSubject == proxyChain.getCertInChain(certPos=- 1)['Value'].getSubjectDN().get('Value')
-
-  # Test default value
-  assert proxyChain.isProxy()['Value'] is True
-  assert proxyChain.isLimitedProxy()['Value'] is False
-  assert proxyChain.isVOMS()['Value'] is False
-  assert proxyChain.isRFC()['Value'] is True
-  assert proxyChain.isValidProxy()['Value'] is True
+    # Test default value
+    assert proxyChain.isProxy()['Value'] is True
+    assert proxyChain.isLimitedProxy()['Value'] is False
+    assert proxyChain.isVOMS()['Value'] is False
+    assert proxyChain.isRFC()['Value'] is True
+    assert proxyChain.isValidProxy()['Value'] is True
 
 
+@parametrize('x509ChainClassName', X509CHAINTYPES)
 @settings(max_examples=200)
 @given(lifetime=integers(max_value=ONE_YEAR_IN_SECS, min_value=1))
-def test_proxyLifetime(get_proxy, lifetime):
+def test_proxyLifetime(x509ChainClassName, lifetime):
   """" Generate a proxy with various lifetime, smaller than the certificate length
         :param lifetime: lifetime of the proxy in seconds
   """
+  with get_proxy(x509ChainClassName, USERCERT, lifetime=lifetime) as proxyChain:
+    res = proxyChain.getNotAfterDate()
+    assert res['OK']
 
-  proxyChain = get_proxy(USERCERT, lifetime=lifetime)
+    notAfterDate = res['Value']
+    expectedValidity = datetime.utcnow() + timedelta(seconds=lifetime)
 
-  res = proxyChain.getNotAfterDate()
-  assert res['OK']
-
-  notAfterDate = res['Value']
-  expectedValidity = datetime.utcnow() + timedelta(seconds=lifetime)
-
-  # The two value should coincide with a margin of 2 seconds
-  margin = 2
-  assert (notAfterDate - expectedValidity).total_seconds() == approx(0, abs=margin)
+    # The two value should coincide with a margin of 2 seconds
+    margin = 2
+    assert (notAfterDate - expectedValidity).total_seconds() == approx(0, abs=margin)
 
 
+@parametrize('x509ChainClassName', X509CHAINTYPES)
 @settings(max_examples=200)
 @given(lifetime=integers(min_value=TWENTY_YEARS_IN_SEC, max_value=NO_LATER_THAN_2050_IN_SEC))
-def test_tooLong_proxyLifetime(get_proxy, lifetime):
+def test_tooLong_proxyLifetime(x509ChainClassName, lifetime):
   """" Generate a proxy with various lifetime, longer than the certificate length
         :param lifetime: lifetime of the proxy in seconds
   """
+  with get_proxy(x509ChainClassName, USERCERT, lifetime=lifetime) as proxyChain:
+    res = proxyChain.getNotAfterDate()
+    assert res['OK']
 
-  proxyChain = get_proxy(USERCERT, lifetime=lifetime)
+    notAfterDate = res['Value']
 
-  res = proxyChain.getNotAfterDate()
-  assert res['OK']
+    # The expected validity is the validity of the certificate
 
-  notAfterDate = res['Value']
-
-  # The expected validity is the validity of the certificate
-
-  certObj = proxyChain.getCertInChain(-1)['Value']
-  expectedEndDate = certObj.getNotAfterDate()['Value']
-  # The two value should coincide with a margin of 2 seconds
-  assert notAfterDate == expectedEndDate
+    certObj = proxyChain.getCertInChain(-1)['Value']
+    expectedEndDate = certObj.getNotAfterDate()['Value']
+    # The two value should coincide with a margin of 2 seconds
+    assert notAfterDate == expectedEndDate
 
 # def generateProxyToString(self, lifeTime, diracGroup=False, strength=1024, limited=False, proxyKey=False, rfc = True):
 
@@ -471,39 +458,37 @@ def test_tooLong_proxyLifetime(get_proxy, lifetime):
 # Let's just focus on letters and '-'
 
 
+@parametrize('x509ChainClassName', X509CHAINTYPES)
 @settings(max_examples=200)
 @given(diracGroup=text(ascii_letters + '-_' + digits, min_size=1))
-def test_diracGroup(get_proxy, diracGroup):
+def test_diracGroup(x509ChainClassName, diracGroup):
   """ Generate a proxy with a given group and check that we can retrieve it"""
-  proxyChain = get_proxy(USERCERT, diracGroup=diracGroup)
+  with get_proxy(x509ChainClassName, USERCERT, diracGroup=diracGroup) as proxyChain:
+    res = proxyChain.getDIRACGroup(ignoreDefault=True)
+    assert res['OK']
 
-  res = proxyChain.getDIRACGroup(ignoreDefault=True)
-  assert res['OK']
-
-  assert len(res['Value']) == len(diracGroup)
-  assert res['Value'] == diracGroup
+    assert len(res['Value']) == len(diracGroup)
+    assert res['Value'] == diracGroup
 
 
+@parametrize('x509ChainClassName', X509CHAINTYPES)
 @parametrize('isLimited', (True, False))
-def test_limitedProxy(get_proxy, isLimited):
+def test_limitedProxy(x509ChainClassName, isLimited):
   """ Generate limited and non limited proxy"""
   # A group is needed to be limited
-  proxyChain = get_proxy(USERCERT, diracGroup='anyGroup', limited=isLimited)
-
-  res = proxyChain.isLimitedProxy()
-  assert res['OK']
-
-  assert res['Value'] is isLimited
+  with get_proxy(x509ChainClassName, USERCERT, diracGroup='anyGroup', limited=isLimited) as proxyChain:
+    res = proxyChain.isLimitedProxy()
+    assert res['OK']
+    assert res['Value'] is isLimited
 
 
-def test_getIssuerCert(get_proxy):
+@parametrize('x509ChainClassName', X509CHAINTYPES)
+def test_getIssuerCert(x509ChainClassName):
   """ Generate a proxy and check the issuer of the certificate"""
-  proxyChain = get_proxy(USERCERT)
-
-  res = proxyChain.getIssuerCert()
-  assert res['OK']
-
-  assert res['Value'].getSubjectDN()['Value'] == getCertOption(USERCERT, 'subjectDN')
+  with get_proxy(x509ChainClassName, USERCERT) as proxyChain:
+    res = proxyChain.getIssuerCert()
+    assert res['OK']
+    assert res['Value'].getSubjectDN()['Value'] == getCertOption(USERCERT, 'subjectDN')
 
 
 ################################################################
@@ -515,9 +500,11 @@ def test_getIssuerCert(get_proxy):
   #                                               lifetime=chainLifeTime,
   #                                               diracGroup=diracGroup,
   #                                               rfc = rfcIfPossible)
+@parametrize("x509ClassName", X509REQUESTTYPES)
+@parametrize('x509ChainClassName', X509CHAINTYPES)
 @settings(max_examples=200)
 @given(diracGroup=text(ascii_letters + '-', min_size=1), lifetime=integers(min_value=1, max_value=TWENTY_YEARS_IN_SEC))
-def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
+def test_delegation(x509ClassName, x509ChainClassName, diracGroup, lifetime):
   """
       Test the delegation mechanism.
       Generate a proxy request and generate the proxy from there
@@ -529,51 +516,53 @@ def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
 
   # The server side generates a request
   # Equivalent to ProxyManager.requestDelegationUpload
-  x509Req = get_X509Request()
-  x509Req.generateProxyRequest()
-  reqStr = x509Req.dumpRequest()['Value']
+  with get_X509Request(x509ClassName) as x509Req:
+    x509Req.generateProxyRequest()
+    reqStr = x509Req.dumpRequest()['Value']
 
-  # This object contains both the public and private key
-  pkeyReq = x509Req.getPKey()
+    # This object contains both the public and private key
+    pkeyReq = x509Req.getPKey()
 
-  #######################################################
+    #######################################################
 
-  # The client side signs the request
+    # The client side signs the request
 
-  proxyChain = get_proxy(USERCERT, diracGroup=diracGroup)
+    with get_proxy(x509ChainClassName, USERCERT, diracGroup=diracGroup, deimport=False) as proxyChain:
+      # The proxy will contain a "bullshit private key"
+      res = proxyChain.generateChainFromRequestString(reqStr, lifetime=lifetime)
 
-  # The proxy will contain a "bullshit private key"
-  res = proxyChain.generateChainFromRequestString(reqStr, lifetime=lifetime)
+      # This is sent back to the server
+      delegatedProxyString = res['Value']
 
-  # This is sent back to the server
-  delegatedProxyString = res['Value']
+      ######################################################
+      # Equivalent to ProxyManager.completeDelegationUpload
 
-  ######################################################
-  # Equivalent to ProxyManager.completeDelegationUpload
+      # Dirty hack:
+      X509Chain = get_X509Chain_from_X509Request(x509Req)
 
-  # Dirty hack:
-  X509Chain = get_X509Chain_from_X509Request(x509Req)
+      # Create the new chain
+      # the pkey was generated together with the Request
+      delegatedProxy = X509Chain(keyObj=pkeyReq)
+      delegatedProxy.loadChainFromString(delegatedProxyString)
 
-  # Create the new chain
-  # the pkey was generated together with the Request
-  delegatedProxy = X509Chain(keyObj=pkeyReq)
-  delegatedProxy.loadChainFromString(delegatedProxyString)
+      # make sure the public key match between Request and the new Chain
+      # (Stupid, of course it will ! But it is done in the ProxyManager...)
+      res = x509Req.checkChain(delegatedProxy)
 
-  # make sure the public key match between Request and the new Chain
-  # (Stupid, of course it will ! But it is done in the ProxyManager...)
-  res = x509Req.checkChain(delegatedProxy)
+      assert res['OK']
 
-  assert res['OK']
+      # perform a few checks on the generated proxy
 
-  # perform a few checks on the generated proxy
+      # There should be one level extra in the delegated proxy
+      assert proxyChain.getNumCertsInChain()['Value'] + 1 == delegatedProxy.getNumCertsInChain()['Value']
 
-  # There should be one level extra in the delegated proxy
-  assert proxyChain.getNumCertsInChain()['Value'] + 1 == delegatedProxy.getNumCertsInChain()['Value']
+      # The issuer of the delegatedProxy should be the original proxy
+      assert (
+          proxyChain.getCertInChain()['Value'].getSubjectDN() ==
+          delegatedProxy.getCertInChain()['Value'].getIssuerDN()
+      )
 
-  # The issuer of the delegatedProxy should be the original proxy
-  assert proxyChain.getCertInChain()['Value'].getSubjectDN() == delegatedProxy.getCertInChain()['Value'].getIssuerDN()
+      # The groups should be the same
+      assert proxyChain.getDIRACGroup(ignoreDefault=True) == delegatedProxy.getDIRACGroup(ignoreDefault=True)
 
-  # The groups should be the same
-  assert proxyChain.getDIRACGroup(ignoreDefault=True) == delegatedProxy.getDIRACGroup(ignoreDefault=True)
-
-  assert proxyChain.getNotAfterDate()['Value'] >= delegatedProxy.getNotAfterDate()['Value']
+      assert proxyChain.getNotAfterDate()['Value'] >= delegatedProxy.getNotAfterDate()['Value']
