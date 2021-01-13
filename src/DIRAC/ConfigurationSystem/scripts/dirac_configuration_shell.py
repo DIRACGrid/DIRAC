@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 # * root starts with "/"
 
 
-@DIRACScript
+@DIRACScript()
 def main():
   Script.parseCommandLine()
   from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
