@@ -149,12 +149,14 @@ def enc_dec_without_json(request, monkeypatch):
   return base_enc_dec(request, monkeypatch)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=booleans())
 def test_BaseType_Bool(enc_dec, data):
   """ Test for boolean"""
   agnosticTestFunction(enc_dec, data)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=myDatetimes())
 def test_BaseType_DateTime(enc_dec, data):
   """ Test for data time"""
@@ -163,20 +165,22 @@ def test_BaseType_DateTime(enc_dec, data):
 
 
 # Json does not serialize keys as integers but as string
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=dictionaries(integers(), integers()))
 def test_BaseType_Dict(enc_dec_without_json, data):
   """ Test for basic dict"""
   agnosticTestFunction(enc_dec_without_json, data)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=integers(max_value=sys.maxsize))
 def test_BaseType_Int(enc_dec, data):
   """ Test for integer"""
   agnosticTestFunction(enc_dec, data)
 
+
 # CAUTION: DEncode is not precise for floats !!
-
-
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=floats(allow_nan=False))
 def test_BaseType_Float(enc_dec, data):
   """ Test that float is approximatly stable"""
@@ -187,12 +191,14 @@ def test_BaseType_Float(enc_dec, data):
   assert lenData == len(encodedData)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=lists(integers()))
 def test_BaseType_List(enc_dec, data):
   """ Test for List """
   agnosticTestFunction(enc_dec, data)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=integers(min_value=sys.maxsize + 1))
 def test_BaseType_Long(enc_dec, data):
   """ Test long type"""
@@ -204,6 +210,7 @@ def test_BaseType_None(enc_dec, ):
   agnosticTestFunction(enc_dec, None)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=text(printable))
 def test_BaseType_String(enc_dec, data):
   """ Test basic strings"""
@@ -213,12 +220,14 @@ def test_BaseType_String(enc_dec, data):
 
 
 # Tuple are not serialized in JSON
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=tuples(integers()))
 def test_BaseType_Tuple(enc_dec_without_json, data):
   """ Test basic tuple """
   agnosticTestFunction(enc_dec_without_json, data)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=text())
 def test_BaseType_Unicode(enc_dec, data):
   """ Test unicode data """
@@ -226,6 +235,7 @@ def test_BaseType_Unicode(enc_dec, data):
 
 
 # Json will not pass this because of tuples and integers as dict keys
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=nestedStrategy)
 def test_nestedStructure(enc_dec_without_json, data):
   """ Test nested structure """
@@ -261,7 +271,7 @@ class Serializable(JSerializable):
     return all([getattr(self, attr) == getattr(other, attr) for attr in self._attrToSerialize])
 
 
-@settings(suppress_health_check=(HealthCheck.too_slow,))
+@settings(suppress_health_check=(HealthCheck.too_slow,HealthCheck.function_scoped_fixture))
 @given(data=nestedStrategyJson)
 def test_Serializable(data):
   """ Test if a simple serializable class with one random argument
@@ -303,6 +313,7 @@ def test_missingAttrToSerialize():
     agnosticTestFunction(jsonTuple, objData)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(data=nestedStrategyJson)
 def test_nestedSerializable(data):
   """ Test that a serializable containing a serializable class
