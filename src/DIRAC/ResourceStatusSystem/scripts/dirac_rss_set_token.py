@@ -182,6 +182,9 @@ def main():
   Main function of the script. Gets the username from the proxy loaded and sets
   the token taking into account that user and the switchDict parameters.
   """
+  global subLogger
+  global switchDict
+
   # Logger initialization
   subLogger = gLogger.getSubLogger(__file__)
 

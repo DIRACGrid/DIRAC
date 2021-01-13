@@ -28,7 +28,6 @@ from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
 subLogger = None
-switchDict = {}
 
 
 def registerSwitches():
@@ -341,6 +340,7 @@ def run(args, switchDict):
 
 @DIRACScript()
 def main():
+  global subLogger
   global ResourceManagementClient
 
   subLogger = gLogger.getSubLogger(__file__)

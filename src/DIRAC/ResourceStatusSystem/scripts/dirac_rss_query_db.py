@@ -31,7 +31,6 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 subLogger = None
-switchDict = {}
 
 
 def registerSwitches():
@@ -412,6 +411,8 @@ def run(args, switchDictSet):
 
 @DIRACScript()
 def main():
+  global subLogger
+
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization

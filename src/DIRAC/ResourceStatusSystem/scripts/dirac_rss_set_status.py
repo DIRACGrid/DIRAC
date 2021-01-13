@@ -22,7 +22,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 subLogger = None
-switchDict = {}
 
 
 def registerSwitches():
@@ -235,6 +234,9 @@ def run(switchDict):
 
 @DIRACScript()
 def main():
+  global subLogger
+  global registerUsageMessage
+
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization
