@@ -56,8 +56,8 @@ class CommandReference(object):
         continue
 
       for mT in self.sectionDicts:
-        if any(pattern in scriptPath for pattern in mT[PATTERN]) and \
-           not any(pattern in scriptPath for pattern in mT[EXCLUDE]):
+        if any(pattern in scriptPath.replace("_", "-") for pattern in mT[PATTERN]) and \
+           not any(pattern in scriptPath.replace("_", "-") for pattern in mT[EXCLUDE]):
           mT[SCRIPTS].append(scriptPath)
 
     return
