@@ -82,7 +82,6 @@ except Exception:
     return lib, '.'.join(map(str, version))
 
   # Command line interface
-
   def getPlatformString():
     # Modified to return our desired platform string, R. Graciani
     platformTuple = (platform.system(), platform.machine())
@@ -127,12 +126,10 @@ except Exception:
 
     return platformString
 
-
   def main():
     print(getPlatformString())
 else:
   from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
 
   @DIRACScript()
   def main():

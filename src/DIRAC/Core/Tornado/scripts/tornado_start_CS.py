@@ -45,9 +45,7 @@ def main():
 
   includeExtensionErrors()
 
-
   gLogger.initialize('Tornado-CS', "/")
-
 
   serverToLaunch = TornadoServer(services='Configuration/Server')
   serverToLaunch.startTornado()
