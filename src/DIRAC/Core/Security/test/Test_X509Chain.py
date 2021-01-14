@@ -29,13 +29,19 @@ from __future__ import print_function
 
 from datetime import datetime, timedelta
 from string import ascii_letters, digits
+import sys
 
-from hypothesis import given, settings
+from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import integers, text
-
 
 from pytest import mark, fixture, skip, raises, approx
 parametrize = mark.parametrize
+
+# function_scoped_fixture is only used in Python 3 compatible release of hypothesis
+if sys.version_info.major >= 3:
+  function_scoped = (HealthCheck.function_scoped_fixture,)
+else:
+  function_scoped = tuple()
 
 from .x509TestUtilities import CERTS, CERTKEYS, CERTCONTENTS, deimportDIRAC, ENCRYPTEDKEYPASS,\
     ENCRYPTEDKEY, getCertOption, HOSTCERT, KEYCONTENTS_PKCS8, USERCERT, get_X509Chain_class, \
@@ -423,7 +429,7 @@ def test_getCertInChain(get_proxy):
   assert proxyChain.isValidProxy()['Value'] is True
 
 
-@settings(max_examples=200)
+@settings(max_examples=200, suppress_health_check=function_scoped)
 @given(lifetime=integers(max_value=ONE_YEAR_IN_SECS, min_value=1))
 def test_proxyLifetime(get_proxy, lifetime):
   """" Generate a proxy with various lifetime, smaller than the certificate length
@@ -443,7 +449,7 @@ def test_proxyLifetime(get_proxy, lifetime):
   assert (notAfterDate - expectedValidity).total_seconds() == approx(0, abs=margin)
 
 
-@settings(max_examples=200)
+@settings(max_examples=200, suppress_health_check=function_scoped)
 @given(lifetime=integers(min_value=TWENTY_YEARS_IN_SEC, max_value=NO_LATER_THAN_2050_IN_SEC))
 def test_tooLong_proxyLifetime(get_proxy, lifetime):
   """" Generate a proxy with various lifetime, longer than the certificate length
@@ -471,7 +477,7 @@ def test_tooLong_proxyLifetime(get_proxy, lifetime):
 # Let's just focus on letters and '-'
 
 
-@settings(max_examples=200)
+@settings(max_examples=200, suppress_health_check=function_scoped)
 @given(diracGroup=text(ascii_letters + '-_' + digits, min_size=1))
 def test_diracGroup(get_proxy, diracGroup):
   """ Generate a proxy with a given group and check that we can retrieve it"""
@@ -515,7 +521,7 @@ def test_getIssuerCert(get_proxy):
   #                                               lifetime=chainLifeTime,
   #                                               diracGroup=diracGroup,
   #                                               rfc = rfcIfPossible)
-@settings(max_examples=200)
+@settings(max_examples=200, suppress_health_check=function_scoped)
 @given(diracGroup=text(ascii_letters + '-', min_size=1), lifetime=integers(min_value=1, max_value=TWENTY_YEARS_IN_SEC))
 def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
   """
