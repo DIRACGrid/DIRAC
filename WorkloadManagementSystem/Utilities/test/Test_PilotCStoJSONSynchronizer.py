@@ -160,8 +160,6 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     # sha512sum command line tool, and the files should be checked for correctness
     expectedHash = '00e67a2d45e2c2508a935500a4765e1a5f1ce661f23c1fb329987c8211bde754ed' + \
                    '79f6b02cdeabd429979a82014c474c5ce2f46a879f17e2a6ce4bcac683e2e4'
-    expectedPJHash = '6f0a45fc703ca03ad3f277173c3464dafcaad2b85fa6643f66a02721e69233cd' + \
-                     'ec6c50c75eb779740788b5211f740631944f8d703d4149f6526d149c761c02f4'
     synchroniser = PilotCStoJSONSynchronizer()
     synchroniser.pilotFileServer = 'value'
     synchroniser._checksumFile(self.testCfgFileName)
@@ -170,8 +168,6 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     synchroniser._syncChecksum()
     assert self.testCfgFileName in synchroniser._checksumDict
     assert synchroniser._checksumDict[self.testCfgFileName] == expectedHash
-    assert open('checksums.sha512', 'rb').read().split('\n')[0] == '%s  %s' % (expectedPJHash, 'pilot.json'), \
-        'pilot.json content: ' + repr(open('pilot.json', 'rb').read())
     assert open('checksums.sha512', 'rb').read().split('\n')[1] == '%s  %s' % (expectedHash, self.testCfgFileName)
     # this tests if the checksums file was also "uploaded"
     assert 'checksums.sha512' in list(synchroniser._checksumDict)
