@@ -53,7 +53,7 @@ which will set the interpreter directive to the python on the environment.
    if __name__ == "__main__":
      main()
 
-**4.** Next the function must be registered as a ``console_scripts`` ``entrypoint`` in the ``setuptools`` metadata (`more details <https://setuptools.readthedocs.io/en/latest/userguide/entry_point.html>`_). This is done by adding a line to the ``console_scripts`` list like below, where the first string is the name for the script you want to create, the left hand side of ``:`` is the module that contains your function and the right hand side is the object you want to invoke (e.g. a function).
+**4.** Next the function must be registered as a ``console_scripts`` ``entrypoint`` in the ``setuptools`` metadata (`more details <https://setuptools.readthedocs.io/en/latest/userguide/entry_point.html>`_). This is done by adding a line to the ``console_scripts`` list in ``setup.cfg`` like below, where the first string is the name for the script you want to create, the left hand side of ``:`` is the module that contains your function and the right hand side is the object you want to invoke (e.g. a function).
 
 .. code-block:: cfg
 

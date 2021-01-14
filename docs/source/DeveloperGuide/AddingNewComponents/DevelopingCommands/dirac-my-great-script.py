@@ -91,6 +91,7 @@ def parseSwitches():
   return switches
 
 
+# IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
 @DIRACScript()
 def main():
   '''
