@@ -127,5 +127,17 @@ except Exception:
 
     return platformString
 
+
+  def main():
+    print(getPlatformString())
+else:
+  from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
+
+  @DIRACScript()
+  def main():
+    print(getPlatformString())
+
+
 if __name__ == "__main__":
-  print(getPlatformString())
+  main()
