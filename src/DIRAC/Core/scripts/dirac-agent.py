@@ -17,6 +17,9 @@ from DIRAC import gLogger
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
+print("NOTE:", __file__, "is deprecated and will be removed in v7r3, for details see",
+      "https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v7r2#rename-of-scripts")
+
 localCfg = LocalConfiguration()
 
 positionalArgs = localCfg.getPositionalArguments()
