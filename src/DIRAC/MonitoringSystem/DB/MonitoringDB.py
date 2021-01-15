@@ -41,10 +41,12 @@ class MonitoringDB(ElasticDB):
           "%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
 
       # Connecting to the ES cluster
-      super(MonitoringDB, self).__init__(name.split('/')[1], name, indexPrefix)
-    except Exception as ex:
+      super(MonitoringDB, self).__init__(dbname=name.split('/')[1],
+                                         fullName=name,
+                                         indexPrefix=indexPrefix)
+    except RuntimeError as ex:
       self.log.error("Can't connect to MonitoringDB", repr(ex))
-      raise RuntimeError("Can't connect to MonitoringDB")
+      raise ex
 
     self.__readonly = readOnly
     self.documentTypes = {}
@@ -65,7 +67,7 @@ class MonitoringDB(ElasticDB):
                                             'monitoringFields': monfields,
                                             'period': period}
       if self.__readonly:
-        self.log.info("Read only mode is okay")
+        self.log.info("Read only mode: no new index will be created")
       else:
         # Verifying if the index is there, and if not create it
         res = self.existingIndex("%s-*" % indexName)  # check with a wildcard

@@ -12,7 +12,7 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 __RCSID__ = "$Id$"
 
 
-class DB(MySQL, DIRACDB):
+class DB(DIRACDB, MySQL):
   """ All DIRAC DB classes should inherit from this one (unless using sqlalchemy)
   """
 
@@ -45,6 +45,6 @@ class DB(MySQL, DIRACDB):
     self.log.info("User:           " + self.dbUser)
     self.log.info("Host:           " + self.dbHost)
     self.log.info("Port:           " + str(self.dbPort))
-    #self.log.info("Password:       "+self.dbPass)
+    # self.log.info("Password:       "+ self.dbPass)
     self.log.info("DBName:         " + self.dbName)
     self.log.info("==================================================")

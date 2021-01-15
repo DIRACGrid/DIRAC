@@ -494,7 +494,7 @@ class ElasticSearchDB(object):
     :returns: string with full index name
     """
 
-    # if the period is not correct, we use daily indexes.
+    # if the period is not correct, we use no-period indexes (same as "null").
     if period.lower() not in ['day', 'week', 'month', 'year', 'null']:
       sLog.error("Period is not correct: ", period)
       return indexName
