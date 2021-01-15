@@ -129,7 +129,7 @@ class PilotCStoJSONSynchronizer(object):
     :rtype: S_OK, S_ERROR, value is pilotDict
     """
 
-    pilotDict = {'timestamp': str(datetime.datetime.utcnow()),
+    pilotDict = {'timestamp': datetime.datetime.utcnow().isoformat(),
                  'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
 
     self.log.info('-- Getting the content of the CS --')
