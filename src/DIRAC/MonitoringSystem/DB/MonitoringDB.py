@@ -385,13 +385,13 @@ class MonitoringDB(ElasticDB):
 
   def put(self, records, monitoringType):
     """
-    It is used to insert the data to El.
+    It is used to insert the data to ES. Calls bulk_index()
 
     :param list records: it is a list of documents (dictionary)
     :param str monitoringType: is the type of the monitoring
     """
     mapping = self.getMapping(monitoringType)
-    self.log.always("Mapping used to create an index:", mapping)
+    self.log.verbose("Mapping used to create an index:", mapping)
     period = self.documentTypes[monitoringType].get('period')
     res = self.getIndexName(monitoringType)
     if not res['OK']:
