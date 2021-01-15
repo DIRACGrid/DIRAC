@@ -6,12 +6,12 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger
+from DIRAC.Core.Base.DIRACDB import DIRACDB
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
 from DIRAC.ConfigurationSystem.Client.Utilities import getElasticDBParameters
 
 
-class ElasticDB(ElasticSearchDB):
+class ElasticDB(ElasticSearchDB, DIRACDB):
   """ Class for interfacing DIRAC ES DB definitions to ES clusters
   """
 
@@ -24,9 +24,6 @@ class ElasticDB(ElasticSearchDB):
     :param str fullName: The DIRAC full name of the database for example: 'Monitoring/MonitoringDB'
     :param str indexPrefix: it is the indexPrefix used to load all indexes
     """
-
-    database_name = dbname
-    self.log = gLogger.getSubLogger(database_name)
 
     result = getElasticDBParameters(fullName)
     if not result['OK']:

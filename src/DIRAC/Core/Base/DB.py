@@ -5,23 +5,20 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from DIRAC import gLogger, gConfig
+from DIRAC.Core.Base.DIRACDB import DIRACDB
 from DIRAC.Core.Utilities.MySQL import MySQL
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 __RCSID__ = "$Id$"
 
 
-class DB(MySQL):
+class DB(MySQL, DIRACDB):
   """ All DIRAC DB classes should inherit from this one (unless using sqlalchemy)
   """
 
   def __init__(self, dbname, fullname, debug=False):
 
     self.fullname = fullname
-    database_name = dbname
-    self.log = gLogger.getSubLogger(database_name)
 
     result = getDBParameters(fullname)
     if not result['OK']:
@@ -51,8 +48,3 @@ class DB(MySQL):
     #self.log.info("Password:       "+self.dbPass)
     self.log.info("DBName:         " + self.dbName)
     self.log.info("==================================================")
-
-#############################################################################
-  def getCSOption(self, optionName, defaultValue=None):
-    cs_path = getDatabaseSection(self.fullname)
-    return gConfig.getValue("/%s/%s" % (cs_path, optionName), defaultValue)
