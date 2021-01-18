@@ -1,6 +1,13 @@
 """
+The Monitoring/Monitoring service interacts with the ElasticSearch backend
+exposed by MonitoringDB.
 
-It is used to create plots using Elasticsearch
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN Monitoring
+  :end-before: ##END
+  :dedent: 2
+  :caption: Monitoring options
+
 
 """
 

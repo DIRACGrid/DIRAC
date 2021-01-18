@@ -41,10 +41,12 @@ class MonitoringDB(ElasticDB):
           "%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
 
       # Connecting to the ES cluster
-      super(MonitoringDB, self).__init__(name.split('/')[1], name, indexPrefix)
-    except Exception as ex:
+      super(MonitoringDB, self).__init__(dbname=name.split('/')[1],
+                                         fullName=name,
+                                         indexPrefix=indexPrefix)
+    except RuntimeError as ex:
       self.log.error("Can't connect to MonitoringDB", repr(ex))
-      raise RuntimeError("Can't connect to MonitoringDB")
+      raise ex
 
     self.__readonly = readOnly
     self.documentTypes = {}
@@ -59,13 +61,13 @@ class MonitoringDB(ElasticDB):
       monitoringType = typeClass().__class__.__name__
       mapping = typeClass().mapping
       monfields = typeClass().monitoringFields
-      period = typeClass().period
+      period = self.getCSOption('MonitoringTypes/%s/period' % monitoringType, typeClass().period)
       self.documentTypes[monitoringType] = {'indexName': indexName,
                                             'mapping': mapping,
                                             'monitoringFields': monfields,
                                             'period': period}
       if self.__readonly:
-        self.log.info("Read only mode is okay")
+        self.log.info("Read only mode: no new index will be created")
       else:
         # Verifying if the index is there, and if not create it
         res = self.existingIndex("%s-*" % indexName)  # check with a wildcard
@@ -385,13 +387,13 @@ class MonitoringDB(ElasticDB):
 
   def put(self, records, monitoringType):
     """
-    It is used to insert the data to El.
+    It is used to insert the data to ES. Calls bulk_index()
 
     :param list records: it is a list of documents (dictionary)
     :param str monitoringType: is the type of the monitoring
     """
     mapping = self.getMapping(monitoringType)
-    self.log.always("Mapping used to create an index:", mapping)
+    self.log.verbose("Mapping used to create an index:", mapping)
     period = self.documentTypes[monitoringType].get('period')
     res = self.getIndexName(monitoringType)
     if not res['OK']:

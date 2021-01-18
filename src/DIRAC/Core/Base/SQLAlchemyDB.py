@@ -17,21 +17,23 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.DIRACDB import DIRACDB
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 
-class SQLAlchemyDB(object):
+class SQLAlchemyDB(DIRACDB):
   """
     Base class that defines some of the basic DB interactions.
   """
 
-  def __init__(self):
+  def __init__(self, *args, **kwargs):
     """c'tor
 
     :param self: self reference
     """
+    self.fullname = self.__class__.__name__
+    super(SQLAlchemyDB, self).__init__(*args, **kwargs)
 
-    self.log = gLogger.getSubLogger(self.__class__.__name__)
     self.extensions = gConfig.getValue('DIRAC/Extensions', [])
     self.tablesList = []
 

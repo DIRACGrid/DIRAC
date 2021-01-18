@@ -270,7 +270,7 @@ class ElasticSearchDB(object):
 
     """
     if period is not None:
-      fullIndex = self.generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
+      fullIndex = self.generateFullIndexName(indexPrefix, period)  # we have to create an index each period...
     else:
       sLog.warn("The period is not provided, so using non-periodic indexes names")
       fullIndex = indexPrefix
@@ -487,22 +487,28 @@ class ElasticSearchDB(object):
   @staticmethod
   def generateFullIndexName(indexName, period):
     """
-    Given an index prefix we create the actual index name. Each day an index is created.
+    Given an index prefix we create the actual index name.
 
     :param str indexName: it is the name of the index
-    :param str period: We can specify, which kind of indexes will be created.
-        Currently only daily and monthly indexes are supported.
+    :param str period: We can specify which kind of indexes will be created (day, week, month, year, null).
+    :returns: string with full index name
     """
 
-    today = datetime.today().strftime("%Y-%m-%d")
-    index = ''
-    if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
-      sLog.warn("Period is not correct daily indexes are used instead:", period)
-      index = "%s-%s" % (indexName, today)
+    # if the period is not correct, we use no-period indexes (same as "null").
+    if period.lower() not in ['day', 'week', 'month', 'year', 'null']:
+      sLog.error("Period is not correct: ", period)
+      return indexName
     elif period.lower() == 'day':
-      index = "%s-%s" % (indexName, today)
+      today = datetime.today().strftime("%Y-%m-%d")
+      return "%s-%s" % (indexName, today)
+    elif period.lower() == 'week':
+      week = datetime.today().isocalendar()[1]
+      return "%s-%s" % (indexName, week)
     elif period.lower() == 'month':
       month = datetime.today().strftime("%Y-%m")
-      index = "%s-%s" % (indexName, month)
-
-    return index
+      return "%s-%s" % (indexName, month)
+    elif period.lower() == 'year':
+      year = datetime.today().strftime("%Y")
+      return "%s-%s" % (indexName, year)
+    elif period.lower() == 'null':
+      return indexName
