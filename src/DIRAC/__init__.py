@@ -112,8 +112,8 @@ else:
 
 # Check of python version
 
-__pythonMajorVersion = ("2", )
-__pythonMinorVersion = ("7")
+__pythonMajorVersion = ("2", "3")
+__pythonMinorVersion = ("7", "8")
 if str(pythonVersion[0]) not in __pythonMajorVersion or str(pythonVersion[1]) not in __pythonMinorVersion:
   print("Python Version %s not supported by DIRAC" % pyPlatform.python_version())
   print("Supported versions are: ")
