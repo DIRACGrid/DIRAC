@@ -401,9 +401,19 @@ class JobStateUpdateHandler(RequestHandler):
     """ Send a heart beat sign of life for a job jobID
     """
 
-    result = cls.jobDB.setHeartBeatData(int(jobID), staticData, dynamicData)
+    result = cls.jobDB.setHeartBeatData(int(jobID), dynamicData)
     if not result['OK']:
       gLogger.warn('Failed to set the heart beat data', 'for job %d ' % int(jobID))
+
+    if cls.elasticJobParametersDB:
+      for key, value in staticData.items():
+        result = cls.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
+        if not result['OK']:
+          gLogger.error('Failed to add Job Parameters to ElasticSearch', result['Message'])
+    else:
+      result = cls.jobDB.setJobParameters(int(jobID), list(staticData.items()))
+      if not result['OK']:
+        gLogger.error('Failed to add Job Parameters to MySQL', result['Message'])
 
     # Restore the Running status if necessary
     result = cls.jobDB.getJobAttributes(jobID, ['Status'])

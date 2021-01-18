@@ -167,9 +167,11 @@ class ARCComputingElement(ComputingElement):
     if nProcessors and nProcessors > 1:
       xrslMPAdditions = """
 (count = %(processors)u)
+(countpernode = %(processorsPerNode)u)
 %(xrslMPExtraString)s
       """ % {
           'processors': nProcessors,
+          'processorsPerNode': nProcessors,  # This basically says that we want all processors on the same node
           'xrslMPExtraString': self.xrslMPExtraString
       }
 

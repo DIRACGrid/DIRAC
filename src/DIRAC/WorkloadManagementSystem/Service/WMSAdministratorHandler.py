@@ -11,9 +11,11 @@ import six
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
 
 FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
@@ -27,6 +29,12 @@ class WMSAdministratorHandler(RequestHandler):
     """
     cls.jobDB = JobDB()
     cls.taskQueueDB = TaskQueueDB()
+
+    cls.elasticJobParametersDB = None
+    useESForJobParametersFlag = Operations().getValue(
+        '/Services/JobMonitoring/useESForJobParametersFlag', False)
+    if useESForJobParametersFlag:
+      cls.elasticJobParametersDB = ElasticJobParametersDB()
 
     return S_OK()
 
@@ -174,20 +182,31 @@ class WMSAdministratorHandler(RequestHandler):
     """
     pilotReference = ''
     # Get the pilot grid reference first from the job parameters
-    result = self.jobDB.getJobParameter(int(jobID), 'Pilot_Reference')
-    if result['OK']:
-      pilotReference = result['Value']
+
+    if self.elasticJobParametersDB:
+      res = self.elasticJobParametersDB.getJobParameters(int(jobID), 'Pilot_Reference')
+      if not res['OK']:
+        return res
+      if res['Value'].get(int(jobID)):
+        pilotReference = res['Value'][int(jobID)]['Pilot_Reference']
+
+    if not pilotReference:
+      res = self.jobDB.getJobParameter(int(jobID), 'Pilot_Reference')
+      if not res['OK']:
+        return res
+      pilotReference = res['Value']
 
     if not pilotReference:
       # Failed to get the pilot reference, try to look in the attic parameters
-      result = self.jobDB.getAtticJobParameters(int(jobID), ['Pilot_Reference'])
-      if result['OK']:
-        c = -1
-        # Get the pilot reference for the last rescheduling cycle
-        for cycle in result['Value']:
-          if cycle > c:
-            pilotReference = result['Value'][cycle]['Pilot_Reference']
-            c = cycle
+      res = self.jobDB.getAtticJobParameters(int(jobID), ['Pilot_Reference'])
+      if not res['OK']:
+        return res
+      c = -1
+      # Get the pilot reference for the last rescheduling cycle
+      for cycle in res['Value']:
+        if cycle > c:
+          pilotReference = res['Value'][cycle]['Pilot_Reference']
+          c = cycle
 
     if pilotReference:
       return getGridJobOutput(pilotReference)

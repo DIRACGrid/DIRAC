@@ -1063,7 +1063,7 @@ class JobDB(DB):
       if not result['OK']:
         return result
 
-      retVal['Status'] = 'Failed'
+      retVal['Status'] = JobStatus.FAILED
       retVal['MinorStatus'] = 'Error in JDL syntax'
       return retVal
 
@@ -1235,11 +1235,11 @@ class JobDB(DB):
     if error:
       retVal = S_ERROR(EWMSSUBM, error)
       retVal['JobId'] = jobID
-      retVal['Status'] = 'Failed'
+      retVal['Status'] = JobStatus.FAILED
       retVal['MinorStatus'] = error
 
       jobAttrNames.append('Status')
-      jobAttrValues.append('Failed')
+      jobAttrValues.append(JobStatus.FAILED)
 
       jobAttrNames.append('MinorStatus')
       jobAttrValues.append(error)
@@ -1725,7 +1725,12 @@ class JobDB(DB):
 
     siteList = result['Value']
     siteDict = {}
-    totalDict = {'Waiting': 0, 'Running': 0, 'Stalled': 0, 'Done': 0, 'Failed': 0}
+    totalDict = {
+        JobStatus.WAITING: 0,
+        JobStatus.RUNNING: 0,
+        JobStatus.STALLED: 0,
+        JobStatus.DONE: 0,
+        JobStatus.FAILED: 0}
 
     for site in siteList:
       if site == "ANY":
@@ -1743,8 +1748,8 @@ class JobDB(DB):
         count = result['Value'][0][0]
       else:
         return S_ERROR('Failed to get Site data from the JobDB')
-      siteDict[site]['Waiting'] = count
-      totalDict['Waiting'] += count
+      siteDict[site][JobStatus.WAITING] = count
+      totalDict[JobStatus.WAITING] += count
       # Running,Stalled,Done,Failed
       for status in ['"%s"' % JobStatus.RUNNING,
                      '"%s"' % JobStatus.STALLED,
@@ -1863,7 +1868,7 @@ class JobDB(DB):
       for state in JobStatus.JOB_FINAL_STATES:
         total_finished += resultDict[siteFullName][state]
       if total_finished > 0:
-        efficiency = siteDict['Done'] + siteDict['Completed'] / total_finished
+        efficiency = float(siteDict[JobStatus.DONE] + siteDict[JobStatus.COMPLETED]) / float(total_finished)
       rList.append('%.1f' % (efficiency * 100.))
       # Estimate the site verbose status
       if efficiency > 0.95:
@@ -1916,7 +1921,7 @@ class JobDB(DB):
     return S_OK(finalDict)
 
 #####################################################################################
-  def setHeartBeatData(self, jobID, staticDataDict, dynamicDataDict):
+  def setHeartBeatData(self, jobID, dynamicDataDict):
     """ Add the job's heart beat data to the database
     """
 
@@ -1926,19 +1931,13 @@ class JobDB(DB):
       return ret
     e_jobID = ret['Value']
 
-    req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='Running' WHERE JobID=%s" % e_jobID
+    req = "UPDATE Jobs SET HeartBeatTime=UTC_TIMESTAMP(), Status='%s' WHERE JobID=%s" % (
+        JobStatus.RUNNING, e_jobID)
     result = self._update(req)
     if not result['OK']:
       return S_ERROR('Failed to set the heart beat time: ' + result['Message'])
 
     ok = True
-    # FIXME: It is rather not optimal to use parameters to store the heartbeat info, must find a proper solution
-    # Add static data items as job parameters
-    result = self.setJobParameters(jobID, list(staticDataDict.items()))
-    if not result['OK']:
-      ok = False
-      self.log.warn(result['Message'])
-
     # Add dynamic data to the job heart beat log
     # start = time.time()
     valueList = []

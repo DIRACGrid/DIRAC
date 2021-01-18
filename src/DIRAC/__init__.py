@@ -89,18 +89,37 @@ __RCSID__ = "$Id$"
 import _strptime
 
 
-# Define Version
-
-majorVersion = 7
-minorVersion = 2
-patchLevel = 0
-preVersion = 28
+# Define Version, use an unsual structure to minimise conflicts with rel-v7r2
+pythonVersion = pyPlatform.python_version_tuple()
+if pythonVersion[0] == "3":
+  pass
+else:
+  majorVersion = 7
+  minorVersion = 2
+  patchLevel = 0
+  preVersion = 28
 
 version = "v%sr%s" % (majorVersion, minorVersion)
+buildVersion = "v%dr%d" % (majorVersion, minorVersion)
 if patchLevel:
   version = "%sp%s" % (version, patchLevel)
+  buildVersion = "%s build %s" % (buildVersion, patchLevel)
 if preVersion:
   version = "%s-pre%s" % (version, preVersion)
+  buildVersion = "%s pre %s" % (buildVersion, preVersion)
+
+# Check of python version
+
+__pythonMajorVersion = ("2", )
+__pythonMinorVersion = ("7")
+if str(pythonVersion[0]) not in __pythonMajorVersion or str(pythonVersion[1]) not in __pythonMinorVersion:
+  print("Python Version %s not supported by DIRAC" % pyPlatform.python_version())
+  print("Supported versions are: ")
+  for major in __pythonMajorVersion:
+    for minor in __pythonMinorVersion:
+      print("%s.%s.x" % (major, minor))
+
+  sys.exit(1)
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"

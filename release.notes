@@ -81,6 +81,18 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p25]
+
+FIX: Fixes from v7r0p45
+
+*Core
+CHANGE: (#4890) logging failing MySQL commands
+
+*WMS
+FIX: (#4889) fix for retrieving the pilot reference when it's an ES JobParameter
+FIX: (#4889) fix for using the ES JobParameters for static data of heartbeats (app std out)
+FIX: (#4897) added timestamp to pilot.json
+
 [v7r1p24]
 
 FIX: fixes from v7r0p44
@@ -520,6 +532,14 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p45]
+
+*WMS
+FIX: (#4899) JobAgent: adding ExtraOptions as argument iff the executable is a DIRAC script
+
+*Resources
+CHANGE: (#4896) ARC CE: request all processors on the same node.
 
 [v7r0p44]
 
