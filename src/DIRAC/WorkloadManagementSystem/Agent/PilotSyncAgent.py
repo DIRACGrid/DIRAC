@@ -47,8 +47,6 @@ class PilotSyncAgent(AgentModule):
     self.workingDirectory = self.am_getOption('WorkDirectory')
     self.saveDir = self.am_getOption('SaveDirectory', self.saveDir)
     self.uploadLocations = self.am_getOption('UploadLocations', self.uploadLocations)
-    if not self.uploadLocations:
-      self.uploadLocations = Operations().getValue("Pilot/pilotFileServer")
 
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
     self.casLocation = getCAsLocation()
@@ -104,22 +102,25 @@ class PilotSyncAgent(AgentModule):
 
     if self.saveDir:
       # Moving files to the correct location
+      self.log.info("Moving pilot files", "to %s" % self.saveDir)
       for tf in allFiles:
-        shutil.move(tf, self.saveDir)
-
-    # upload
-    if not self.uploadLocations:
-      # nothing else to do
-      return S_OK()
+        # this overrides the destinations
+        shutil.move(tf, os.path.join(self.saveDir, os.path.basename(tf)))
 
     # Here, attempting upload somewhere, and somehow
     for server in self.uploadLocations:
+      self.log.info("Attempting to upload", "to %s" % server)
       if server.startswith('https://'):
         for tf in allFiles:
-          requests.put(
+          res = requests.put(
               server, data=tf, verify=self.casLocation, cert=self.certAndKeyLocation)
+          if res.status_code not in (200, 202):
+            self.log.error("Could not upload",
+                           "to %s: status %s" % (server, res.status_code))
       else:  # Assumes this is a DIRAC SE
         for tf in allFiles:
-          DataManager().put(lfn=tf, fileName=tf, diracSE=server)
+          res = DataManager().put(lfn=tf, fileName=tf, diracSE=server)
+          if not res['OK']:
+            self.log.error("Could not upload", "to %s: %s" % (server, res['Message']))
 
     return S_OK()
