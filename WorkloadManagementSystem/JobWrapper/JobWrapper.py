@@ -317,8 +317,9 @@ class JobWrapper(object):
       self.log.warn(msg)
       return S_ERROR(msg)
 
-    jobArguments = self.jobArgs.get('Arguments', '')  # In case the excutable is dirac-jobexec,
-    # the argument is the jobDescription.xml file
+    # In case the executable is dirac-jobexec,
+    # the argument should include the jobDescription.xml file
+    jobArguments = self.jobArgs.get('Arguments', '')
 
     executable = os.path.expandvars(executable)
     exeThread = None
