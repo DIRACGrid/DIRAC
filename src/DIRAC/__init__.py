@@ -89,7 +89,7 @@ __RCSID__ = "$Id$"
 import _strptime
 
 
-# Define Version, use an unsual structure to minimise conflicts with rel-v7r2
+# Define Version, use an unusual structure to minimise conflicts with rel-v7r2
 pythonVersion = pyPlatform.python_version_tuple()
 if pythonVersion[0] == "3":
   pass
@@ -99,14 +99,16 @@ else:
   patchLevel = 0
   preVersion = 28
 
-version = "v%sr%s" % (majorVersion, minorVersion)
-buildVersion = "v%dr%d" % (majorVersion, minorVersion)
-if patchLevel:
-  version = "%sp%s" % (version, patchLevel)
-  buildVersion = "%s build %s" % (buildVersion, patchLevel)
-if preVersion:
-  version = "%s-pre%s" % (version, preVersion)
-  buildVersion = "%s pre %s" % (buildVersion, preVersion)
+  # Define version only for python 2, When using python 3 the version definition will change
+  # as needed by setup tools
+  version = "v%sr%s" % (majorVersion, minorVersion)
+  buildVersion = "v%dr%d" % (majorVersion, minorVersion)
+  if patchLevel:
+    version = "%sp%s" % (version, patchLevel)
+    buildVersion = "%s build %s" % (buildVersion, patchLevel)
+  if preVersion:
+    version = "%s-pre%s" % (version, preVersion)
+    buildVersion = "%s pre %s" % (buildVersion, preVersion)
 
 # Check of python version
 
