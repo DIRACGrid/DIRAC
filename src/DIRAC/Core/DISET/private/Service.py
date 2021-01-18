@@ -176,7 +176,8 @@ class Service(object):
       return result
     self._actions = result['Value']
 
-    gThreadScheduler.addPeriodicTask(30, self.__reportThreadPoolContents)
+    if not self.activityMonitoring:
+      gThreadScheduler.addPeriodicTask(30, self.__reportThreadPoolContents)
 
     return S_OK()
 
@@ -354,8 +355,9 @@ class Service(object):
 
       :param clientTransport: Object which describes opened connection (PlainTransport or SSLTransport)
     """
-    self._stats['connections'] += 1
-    self._monitor.setComponentExtraParam('queries', self._stats['connections'])
+    if not self.activityMonitoring:
+      self._stats['connections'] += 1
+      self._monitor.setComponentExtraParam('queries', self._stats['connections'])
     # TODO: remove later
     if useThreadPoolExecutor:
       self._threadPool.submit(self._processInThread, clientTransport)

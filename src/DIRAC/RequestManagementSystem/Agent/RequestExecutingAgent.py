@@ -47,7 +47,6 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import Time, Network
 
@@ -104,6 +103,8 @@ class RequestExecutingAgent(AgentModule):
   __requestClient = None
   # # Size of the bulk if use of getRequests. If 0, use getRequest
   __bulkRequest = 0
+  # # Send the monitoring data to ES rather than the Framework/Monitoring
+  __rmsMonitoring = False
 
   def __init__(self, *args, **kwargs):
     """ c'tor """
@@ -124,6 +125,8 @@ class RequestExecutingAgent(AgentModule):
     self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep)
     self.__bulkRequest = self.am_getOption("BulkRequest", self.__bulkRequest)
     self.log.info("Bulk request size = %d" % self.__bulkRequest)
+    self.__rmsMonitoring = self.am_getOption("EnableRMSMonitoring", self.__rmsMonitoring)
+    self.log.info("Enable ES RMS Monitoring = %s" % self.__rmsMonitoring)
 
     # # keep config path and agent name
     self.agentName = self.am_getModuleParam("fullName")
@@ -165,14 +168,7 @@ class RequestExecutingAgent(AgentModule):
                                                                      self.timeOuts[opHandler]['PerOperation'],
                                                                      self.timeOuts[opHandler]['PerFile']))
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
-    # This flag can be enabled inside /Operations/Defaults or RequestExecutingAgent of the 'cfg' file.
-    self.rmsMonitoring = (
-        Operations().getValue("EnableActivityMonitoring", False) or
-        self.am_getOption("EnableActivityMonitoring", False)
-    )
-
-    if self.rmsMonitoring:
+    if self.__rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
       gThreadScheduler.addPeriodicTask(100, self.__rmsMonitoringReporting)
     else:
@@ -280,7 +276,7 @@ class RequestExecutingAgent(AgentModule):
 
   def execute(self):
     """ read requests from RequestClient and enqueue them into ProcessPool """
-    if not self.rmsMonitoring:
+    if not self.__rmsMonitoring:
       gMonitor.addMark("Iteration", 1)
     # # requests (and so tasks) counter
     taskCounter = 0
@@ -364,7 +360,7 @@ class RequestExecutingAgent(AgentModule):
                                                                     "handlersDict": self.handlersDict,
                                                                     "csPath": self.__configPath,
                                                                     "agentName": self.agentName,
-                                                                    "rmsMonitoring": self.rmsMonitoring},
+                                                                    "rmsMonitoring": self.__rmsMonitoring},
                                                             taskID=taskID,
                                                             blocking=True,
                                                             usePoolCallbacks=True,
@@ -374,7 +370,7 @@ class RequestExecutingAgent(AgentModule):
             else:
               self.log.debug("successfully enqueued task", "'%s'" % taskID)
               # # update monitor
-              if self.rmsMonitoring:
+              if self.__rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord({
                     "timestamp": int(Time.toEpoch()),
                     "host": Network.getFQDN(),
