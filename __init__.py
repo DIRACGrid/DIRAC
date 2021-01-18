@@ -88,12 +88,15 @@ __RCSID__ = "$Id$"
 import _strptime
 
 
-# Define Version
-
-majorVersion = 7
-minorVersion = 1
-patchLevel = 25
-preVersion = 0
+# Define Version, use an unsual structure to minimise conflicts with rel-v7r2
+pythonVersion = pyPlatform.python_version_tuple()
+if pythonVersion[0] == "3":
+  pass
+else:
+  majorVersion = 7
+  minorVersion = 1
+  patchLevel = 25
+  preVersion = 0
 
 version = "v%sr%s" % (majorVersion, minorVersion)
 buildVersion = "v%dr%d" % (majorVersion, minorVersion)
@@ -108,8 +111,6 @@ if preVersion:
 
 __pythonMajorVersion = ("2", )
 __pythonMinorVersion = ("7")
-
-pythonVersion = pyPlatform.python_version_tuple()
 if str(pythonVersion[0]) not in __pythonMajorVersion or str(pythonVersion[1]) not in __pythonMinorVersion:
   print("Python Version %s not supported by DIRAC" % pyPlatform.python_version())
   print("Supported versions are: ")

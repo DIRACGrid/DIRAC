@@ -450,6 +450,14 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p45]
+
+*WMS
+FIX: (#4899) JobAgent: adding ExtraOptions as argument iff the executable is a DIRAC script
+
+*Resources
+CHANGE: (#4896) ARC CE: request all processors on the same node.
+
 [v7r0p44]
 
 *Core
