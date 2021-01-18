@@ -1,4 +1,4 @@
-[v7r2-pre27]
+[v7r2-pre28]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -26,6 +26,9 @@ FIX: (#4791) Late import of MonitoringReport
 NEW: (#4823) flipped default value of DIRAC_USE_JSON_DECODE env variable
 FIX: (#4843) X509Chain: fix downloading X509 certificates
 FIX: (#4870) ElasticSearchDB: fix exception handling when checking existance of indices
+FIX: (#4887) fix exception in Services when trying to use uninitialized gMonitor client while
+             targeting ES monitoring
+NEW: (#4898) added a base DB class for all DB types
 
 *Configuration
 CHANGE: (#4866) split standard and tornado refresher in two files to avoid tornado dependency on the client
@@ -59,9 +62,14 @@ CHANGE: (#4874) don't call PilotCStoJSONSynchronizer from the CS
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
 FIX: (#4844) Correct the rounding of integers when computing buckets in MonitoringDB
+NEW: (#4898) added possibility to configure the period and so the indexing strategy
 
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
+NEW: (#4900) Remove old entries from history
+
+*RMS
+CHANGE: (#4887) use dedicated ES monitoring flag RMSMonitoring
 
 *docs
 FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
