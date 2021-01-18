@@ -1,3 +1,15 @@
+[v7r1p25]
+
+FIX: Fixes from v7r0p45
+
+*Core
+CHANGE: (#4890) logging failing MySQL commands
+
+*WMS
+FIX: (#4889) fix for retrieving the pilot reference when it's an ES JobParameter
+FIX: (#4889) fix for using the ES JobParameters for static data of heartbeats (app std out)
+FIX: (#4897) added timestamp to pilot.json
+
 [v7r1p24]
 
 FIX: fixes from v7r0p44
