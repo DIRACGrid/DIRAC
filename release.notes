@@ -1,3 +1,11 @@
+[v7r0p45]
+
+*WMS
+FIX: (#4899) JobAgent: adding ExtraOptions as argument iff the executable is a DIRAC script
+
+*Resources
+CHANGE: (#4896) ARC CE: request all processors on the same node.
+
 [v7r0p44]
 
 *Core
