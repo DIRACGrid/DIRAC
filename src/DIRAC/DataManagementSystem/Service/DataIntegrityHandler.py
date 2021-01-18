@@ -16,29 +16,11 @@ from __future__ import print_function
 import six
 
 # from DIRAC
+from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC import gLogger, S_OK
 from DIRAC.DataManagementSystem.DB.DataIntegrityDB import DataIntegrityDB
 
 __RCSID__ = "$Id$"
-
-# This is a global instance of the DataIntegrityDB class
-gDataIntegrityDB = False
-
-
-def initializeDataIntegrityHandler(serviceInfo):
-  """ Check that we can connect to the DB and that the tables are properly created or updated
-  """
-  global gDataIntegrityDB
-  gDataIntegrityDB = DataIntegrityDB()
-  res = gDataIntegrityDB._connect()
-  if not res['OK']:
-    return res
-  res = gDataIntegrityDB._checkTable()
-  if not res['OK'] and not res['Message'] == 'The requested table already exist':
-    return res
-
-  return S_OK()
 
 
 class DataIntegrityHandler(RequestHandler):
@@ -48,132 +30,130 @@ class DataIntegrityHandler(RequestHandler):
   Implementation of the Data Integrity service in the DISET framework.
   """
 
+  @classmethod
+  def initializeHandler(cls, serviceInfoDict):
+    """ Initialization of DB object
+    """
+
+    cls.dataIntegrityDB = DataIntegrityDB()
+    return S_OK()
+
   types_removeProblematic = [list(six.integer_types) + [list]]
 
-  @staticmethod
-  def export_removeProblematic(fileID):
+  def export_removeProblematic(self, fileID):
     """ Remove the file with the supplied FileID from the database
     """
     if isinstance(fileID, list):
       fileIDs = fileID
     else:
       fileIDs = [int(fileID)]
-    gLogger.info("DataIntegrityHandler.removeProblematic: Attempting to remove problematic.")
-    res = gDataIntegrityDB.removeProblematic(fileIDs)
+    self.log.info("DataIntegrityHandler.removeProblematic: Attempting to remove problematic.")
+    res = self.dataIntegrityDB.removeProblematic(fileIDs)
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.removeProblematic: Failed to remove problematic.", res['Message'])
+      self.log.error("DataIntegrityHandler.removeProblematic: Failed to remove problematic.", res['Message'])
     return res
 
   types_getProblematic = []
 
-  @staticmethod
-  def export_getProblematic():
+  def export_getProblematic(self):
     """ Get the next problematic to resolve from the IntegrityDB
     """
-    gLogger.info("DataIntegrityHandler.getProblematic: Getting file to resolve.")
-    res = gDataIntegrityDB.getProblematic()
+    self.log.info("DataIntegrityHandler.getProblematic: Getting file to resolve.")
+    res = self.dataIntegrityDB.getProblematic()
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.getProblematic: Failed to get problematic file to resolve.", res['Message'])
+      self.log.error("DataIntegrityHandler.getProblematic: Failed to get problematic file to resolve.", res['Message'])
     return res
 
   types_getPrognosisProblematics = [list(six.string_types)]
 
-  @staticmethod
-  def export_getPrognosisProblematics(prognosis):
+  def export_getPrognosisProblematics(self, prognosis):
     """ Get problematic files from the problematics table of the IntegrityDB
     """
-    gLogger.info("DataIntegrityHandler.getPrognosisProblematics: Getting files with %s prognosis." % prognosis)
-    res = gDataIntegrityDB.getPrognosisProblematics(prognosis)
+    self.log.info("DataIntegrityHandler.getPrognosisProblematics: Getting files with %s prognosis." % prognosis)
+    res = self.dataIntegrityDB.getPrognosisProblematics(prognosis)
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.getPrognosisProblematics: Failed to get prognosis files.", res['Message'])
+      self.log.error("DataIntegrityHandler.getPrognosisProblematics: Failed to get prognosis files.", res['Message'])
     return res
 
   types_setProblematicStatus = [list(six.integer_types), list(six.string_types)]
 
-  @staticmethod
-  def export_setProblematicStatus(fileID, status):
+  def export_setProblematicStatus(self, fileID, status):
     """ Update the status of the problematics with the provided fileID
     """
-    gLogger.info("DataIntegrityHandler.setProblematicStatus: Setting file %s status to %s." % (fileID, status))
-    res = gDataIntegrityDB.setProblematicStatus(fileID, status)
+    self.log.info("DataIntegrityHandler.setProblematicStatus: Setting file %s status to %s." % (fileID, status))
+    res = self.dataIntegrityDB.setProblematicStatus(fileID, status)
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.setProblematicStatus: Failed to set status.", res['Message'])
+      self.log.error("DataIntegrityHandler.setProblematicStatus: Failed to set status.", res['Message'])
     return res
 
   types_incrementProblematicRetry = [list(six.integer_types)]
 
-  @staticmethod
-  def export_incrementProblematicRetry(fileID):
+  def export_incrementProblematicRetry(self, fileID):
     """ Update the retry count for supplied file ID.
     """
-    gLogger.info("DataIntegrityHandler.incrementProblematicRetry: Incrementing retries for file %s." % (fileID))
-    res = gDataIntegrityDB.incrementProblematicRetry(fileID)
+    self.log.info("DataIntegrityHandler.incrementProblematicRetry: Incrementing retries for file %s." % (fileID))
+    res = self.dataIntegrityDB.incrementProblematicRetry(fileID)
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.incrementProblematicRetry: Failed to increment retries.", res['Message'])
+      self.log.error("DataIntegrityHandler.incrementProblematicRetry: Failed to increment retries.", res['Message'])
     return res
 
   types_insertProblematic = [list(six.string_types), dict]
 
-  @staticmethod
-  def export_insertProblematic(source, fileMetadata):
+  def export_insertProblematic(self, source, fileMetadata):
     """ Insert problematic files into the problematics table of the IntegrityDB
     """
-    gLogger.info("DataIntegrityHandler.insertProblematic: Inserting problematic file to integrity DB.")
-    res = gDataIntegrityDB.insertProblematic(source, fileMetadata)
+    self.log.info("DataIntegrityHandler.insertProblematic: Inserting problematic file to integrity DB.")
+    res = self.dataIntegrityDB.insertProblematic(source, fileMetadata)
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.insertProblematic: Failed to insert.", res['Message'])
+      self.log.error("DataIntegrityHandler.insertProblematic: Failed to insert.", res['Message'])
     return res
 
   types_changeProblematicPrognosis = []
 
-  @staticmethod
-  def export_changeProblematicPrognosis(fileID, newPrognosis):
+  def export_changeProblematicPrognosis(self, fileID, newPrognosis):
     """ Change the prognosis for the supplied file """
-    gLogger.info("DataIntegrityHandler.changeProblematicPrognosis: Changing problematic prognosis.")
-    res = gDataIntegrityDB.changeProblematicPrognosis(fileID, newPrognosis)
+    self.log.info("DataIntegrityHandler.changeProblematicPrognosis: Changing problematic prognosis.")
+    res = self.dataIntegrityDB.changeProblematicPrognosis(fileID, newPrognosis)
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.changeProblematicPrognosis: Failed to update.", res['Message'])
+      self.log.error("DataIntegrityHandler.changeProblematicPrognosis: Failed to update.", res['Message'])
     return res
 
   types_getTransformationProblematics = [list(six.integer_types)]
 
-  @staticmethod
-  def export_getTransformationProblematics(transID):
+  def export_getTransformationProblematics(self, transID):
     """ Get the problematics for a given transformation """
-    gLogger.info("DataIntegrityHandler.getTransformationProblematics: Getting problematics for transformation.")
-    res = gDataIntegrityDB.getTransformationProblematics(transID)
+    self.log.info("DataIntegrityHandler.getTransformationProblematics: Getting problematics for transformation.")
+    res = self.dataIntegrityDB.getTransformationProblematics(transID)
     if not res['OK']:
-      gLogger.error("DataIntegrityHandler.getTransformationProblematics: Failed.", res['Message'])
+      self.log.error("DataIntegrityHandler.getTransformationProblematics: Failed.", res['Message'])
     return res
 
   types_getProblematicsSummary = []
 
-  @staticmethod
-  def export_getProblematicsSummary():
+  def export_getProblematicsSummary(self):
     """ Get a summary from the Problematics table from the IntegrityDB
     """
-    gLogger.info("DataIntegrityHandler.getProblematicsSummary: Getting problematics summary.")
-    res = gDataIntegrityDB.getProblematicsSummary()
+    self.log.info("DataIntegrityHandler.getProblematicsSummary: Getting problematics summary.")
+    res = self.dataIntegrityDB.getProblematicsSummary()
     if res['OK']:
       for prognosis, statusDict in res['Value'].items():
-        gLogger.info("DataIntegrityHandler.getProblematicsSummary: %s." % prognosis)
+        self.log.info("DataIntegrityHandler.getProblematicsSummary: %s." % prognosis)
         for status, count in statusDict.items():
-          gLogger.info("DataIntegrityHandler.getProblematicsSummary: \t%-10s %-10s." % (status, str(count)))
+          self.log.info("DataIntegrityHandler.getProblematicsSummary: \t%-10s %-10s." % (status, str(count)))
     else:
-      gLogger.error("DataIntegrityHandler.getProblematicsSummary: Failed to get summary.", res['Message'])
+      self.log.error("DataIntegrityHandler.getProblematicsSummary: Failed to get summary.", res['Message'])
     return res
 
   types_getDistinctPrognosis = []
 
-  @staticmethod
-  def export_getDistinctPrognosis():
+  def export_getDistinctPrognosis(self):
     """ Get a list of the distinct prognosis from the IntegrityDB
     """
-    gLogger.info("DataIntegrityHandler.getDistinctPrognosis: Getting distinct prognosis.")
-    res = gDataIntegrityDB.getDistinctPrognosis()
+    self.log.info("DataIntegrityHandler.getDistinctPrognosis: Getting distinct prognosis.")
+    res = self.dataIntegrityDB.getDistinctPrognosis()
     if res['OK']:
       for prognosis in res['Value']:
-        gLogger.info("DataIntegrityHandler.getDistinctPrognosis: \t%s." % prognosis)
+        self.log.info("DataIntegrityHandler.getDistinctPrognosis: \t%s." % prognosis)
     else:
-      gLogger.error("DataIntegrityHandler.getDistinctPrognosis: Failed to get unique prognosis.", res['Message'])
+      self.log.error("DataIntegrityHandler.getDistinctPrognosis: Failed to get unique prognosis.", res['Message'])
     return res
