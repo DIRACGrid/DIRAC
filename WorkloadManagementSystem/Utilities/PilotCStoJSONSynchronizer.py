@@ -16,6 +16,7 @@ import os
 import glob
 import tarfile
 import requests
+import datetime
 
 from git import Repo
 
@@ -128,7 +129,8 @@ class PilotCStoJSONSynchronizer(object):
     :rtype: S_OK, S_ERROR, value is pilotDict
     """
 
-    pilotDict = {'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
+    pilotDict = {'timestamp': datetime.datetime.utcnow().isoformat(),
+                 'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
 
     self.log.info('-- Getting the content of the CS --')
 
