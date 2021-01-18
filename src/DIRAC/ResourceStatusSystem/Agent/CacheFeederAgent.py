@@ -106,10 +106,8 @@ class CacheFeederAgent(AgentModule):
   def loadCommand(self, commandModule, commandDict):
     """ Loads and executes commands.
 
-       :param commandModule: Name of the command (e.g. 'Downtime')
-       :type commandModule: str
-       :param commandDict: dictionary of {'CommandClass':{arguments}}
-       :type commandDict: dict
+       :param str commandModule: Name of the command (e.g. 'Downtime')
+       :param dict commandDict: dictionary of {'CommandClass':{arguments}}
     """
 
     commandName = list(commandDict)[0]

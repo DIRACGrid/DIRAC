@@ -6,7 +6,7 @@
   cleared.
 
   In order to summarize the logs, all entries with no changes on the Status or
-  TokenOwner column for a given ( Name, StatusType ) tuple are discarded.
+  TokenOwner column for a given (Name, StatusType) tuple are discarded.
 
   The agent also adds a little prevention to avoid messing the summaries if the
   agent is restarted / killed abruptly. Please, please, please, DO NOT DO IT !
@@ -23,6 +23,8 @@ from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = '$Id$'
+
+from datetime import datetime, timedelta
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -43,6 +45,7 @@ class SummarizeLogsAgent(AgentModule):
     AgentModule.__init__(self, *args, **kwargs)
 
     self.rsClient = None
+    self.months = 36
 
   def initialize(self):
     """ Standard initialize.
@@ -52,18 +55,20 @@ class SummarizeLogsAgent(AgentModule):
     """
 
     self.rsClient = ResourceStatusClient()
+    self.months = self.am_getOption('Months', self.months)
     return S_OK()
 
   def execute(self):
-    """ execute ( main method )
+    """ execute (main method)
 
-    The execute method runs over the three families of tables ( Site, Resource and
-    Node ) performing identical operations. First, selects all logs for a given
-    family ( and keeps track of which one is the last row ID ). It summarizes the
+    The execute method runs over the three families of tables (Site, Resource and
+    Node) performing identical operations. First, selects all logs for a given
+    family (and keeps track of which one is the last row ID). It summarizes the
     logs and finally, deletes the logs from the database.
 
-    :return: S_OK
+    At last, this agent removes older entries from history tables
 
+    :return: S_OK
     """
 
     # loop over the tables
@@ -80,7 +85,7 @@ class SummarizeLogsAgent(AgentModule):
       lastID, logElements = selectLogElements['Value']
 
       # logElements is a dictionary of key-value pairs as follows:
-      # ( name, statusType ) : list( logs )
+      # (name, statusType) : list(logs)
       for key, logs in logElements.items():
 
         sumResult = self._registerLogs(element, key, logs)
@@ -96,17 +101,16 @@ class SummarizeLogsAgent(AgentModule):
           self.log.error(deleteResult['Message'])
           continue
 
+      if self.months:
+        self._removeOldHistoryEntries(element, self.months)
+
     return S_OK()
 
   def _summarizeLogs(self, element):
     """ given an element, selects all logs in table <element>Log.
 
-    :Parameters:
-      **element** - `string`
-        name of the table family ( either Site, Resource or Node )
-
-    :return: S_OK( lastID, listOfLogs ) / S_ERROR
-
+    :param str element: name of the table family (either Site, Resource or Node)
+    :return: S_OK(lastID, listOfLogs) / S_ERROR
     """
 
     selectResults = self.rsClient.selectStatusElement(element, 'Log')
@@ -146,21 +150,18 @@ class SummarizeLogsAgent(AgentModule):
     return S_OK((latestID, selectedItems))
 
   def _registerLogs(self, element, key, logs):
-    """ Given an element, a key - which is a tuple ( <name>, <statusType> )
+    """ Given an element, a key - which is a tuple (<name>, <statusType>)
     and a list of dictionaries, this method inserts them on the <element>History
     table. Before inserting them, checks whether the first one is or is not on
     the <element>History table. If it is, it is not inserted.
 
-    :Parameters:
-      **element** - `string`
-        name of the table family ( either Site, Resource and Node )
-      **key** - `tuple`
-        tuple with the name of the element and the statusType
-      **logs** - `list`
-        list of dictionaries containing the logs
+
+    :param str element: name of the table family (either Site, Resource or Node)
+    :param tuple key: tuple with the name of the element and the statusType
+    :param list logs: list of dictionaries containing the logs
+    :return: S_OK(lastID, listOfLogs) / S_ERROR
 
      :return: S_OK / S_ERROR
-
     """
 
     if not logs:
@@ -200,7 +201,7 @@ class SummarizeLogsAgent(AgentModule):
       logs.pop(0)
 
     if logs:
-      self.log.info('%s ( %s ):' % (name, statusType))
+      self.log.info('%s (%s):' % (name, statusType))
       self.log.debug(logs)
 
     for selectedItemDict in logs:
@@ -215,14 +216,10 @@ class SummarizeLogsAgent(AgentModule):
     """ Given an element and a dictionary with all the arguments, this method
     inserts a new entry on the <element>History table
 
-    :Parameters:
-      **element** - `string`
-        name of the table family ( either Site, Resource and Node )
-      **elementDict** - `dict`
-        dictionary returned from the DB to be inserted on the History table
+    :param str element: name of the table family (either Site, Resource or Node)
+    :param dict elementDict: dictionary returned from the DB to be inserted on the History table
 
     :return: S_OK / S_ERROR
-
     """
 
     name = elementDict.get('Name')
@@ -245,3 +242,18 @@ class SummarizeLogsAgent(AgentModule):
         status=status, elementType=elementType, reason=reason,
         dateEffective=dateEffective, lastCheckTime=lastCheckTime,
         tokenOwner=tokenOwner, tokenExpiration=tokenExpiration)
+
+  def _removeOldHistoryEntries(self, element, months):
+    """ Delete entries older than period
+
+    :param str element: name of the table family (either Site, Resource or Node)
+    :param int months: number of months
+
+    :return: S_OK / S_ERROR
+    """
+    toRemove = datetime.utcnow().replace(microsecond=0) - timedelta(days=30 * months)
+
+    deleteResult = self.rsClient.deleteStatusElement(element, 'History',
+                                                     meta={'older': ['DateEffective', toRemove]})
+    if not deleteResult['OK']:
+      self.log.error(deleteResult['Message'])
