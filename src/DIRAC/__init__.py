@@ -92,7 +92,7 @@ import _strptime
 # Define Version, use an unusual structure to minimise conflicts with rel-v7r2
 pythonVersion = pyPlatform.python_version_tuple()
 if pythonVersion[0] == "3":
-  version = "%s.%s" % (majorVersion, minorVersion)
+  version = "7.2"
 else:
   majorVersion = 7
   minorVersion = 2
