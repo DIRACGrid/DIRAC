@@ -8,12 +8,14 @@
 """
 
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import time
 import six
 from six.moves import range
 
 __RCSID__ = "$Id$"
-
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -34,14 +36,14 @@ class JobStateUpdateHandler(RequestHandler):
     """
     Determines the switching of ElasticSearch and MySQL backends
     """
-    cls.gJobDB = JobDB()
-    cls.gJobLoggingDB = JobLoggingDB()
+    cls.jobDB = JobDB()
+    cls.jobLoggingDB = JobLoggingDB()
 
-    cls.gElasticJobParametersDB = None
+    cls.elasticJobParametersDB = None
     useESForJobParametersFlag = Operations().getValue(
         '/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
-      cls.gElasticJobParametersDB = ElasticJobParametersDB()
+      cls.elasticJobParametersDB = ElasticJobParametersDB()
     return S_OK()
 
   ###########################################################################
@@ -62,7 +64,7 @@ class JobStateUpdateHandler(RequestHandler):
     infoStr = None
     trials = 10
     for i in range(trials):
-      result = cls.gJobDB.getJobAttributes(jobID, ['Status'])
+      result = cls.jobDB.getJobAttributes(jobID, ['Status'])
       if not result['OK']:
         return result
       if not result['Value']:
@@ -155,7 +157,7 @@ class JobStateUpdateHandler(RequestHandler):
     application = ''
     jobID = int(jobID)
 
-    result = cls.gJobDB.getJobAttributes(
+    result = cls.jobDB.getJobAttributes(
         jobID, ['Status', 'StartExecTime', 'EndExecTime'])
     if not result['OK']:
       return result
@@ -176,7 +178,7 @@ class JobStateUpdateHandler(RequestHandler):
       endTime = None
 
     # Get the latest WN time stamps of status updates
-    result = cls.gJobLoggingDB.getWMSTimeStamps(int(jobID))
+    result = cls.jobLoggingDB.getWMSTimeStamps(int(jobID))
     if not result['OK']:
       return result
     lastTime = max([float(t) for s, t in result['Value'].items() if s != 'LastTime'])
@@ -233,17 +235,17 @@ class JobStateUpdateHandler(RequestHandler):
       if application:
         attrNames.append('ApplicationStatus')
         attrValues.append(application)
-      result = cls.gJobDB.setJobAttributes(jobID, attrNames, attrValues, update=True)
+      result = cls.jobDB.setJobAttributes(jobID, attrNames, attrValues, update=True)
       if not result['OK']:
         return result
 
     # Update start and end time if needed
     if endTime:
-      result = cls.gJobDB.setEndExecTime(jobID, endTime)
+      result = cls.jobDB.setEndExecTime(jobID, endTime)
       if not result['OK']:
         return result
     if startTime:
-      result = cls.gJobDB.setStartExecTime(jobID, startTime)
+      result = cls.jobDB.setStartExecTime(jobID, startTime)
       if not result['OK']:
         return result
 
@@ -254,7 +256,7 @@ class JobStateUpdateHandler(RequestHandler):
       minor = sDict.get('MinorStatus', 'idem')
       application = sDict.get('ApplicationStatus', 'idem')
       source = sDict.get('Source', 'Unknown')
-      result = cls.gJobLoggingDB.addLoggingRecord(jobID,
+      result = cls.jobLoggingDB.addLoggingRecord(jobID,
                                                   status=status,
                                                   minorStatus=minor,
                                                   applicationStatus=application,
@@ -272,7 +274,7 @@ class JobStateUpdateHandler(RequestHandler):
   def export_setJobAttribute(cls, jobID, attribute, value):
     """Set a job attribute
     """
-    return cls.gJobDB.setJobAttribute(int(jobID), attribute, value)
+    return cls.jobDB.setJobAttribute(int(jobID), attribute, value)
 
   ###########################################################################
   types_setJobSite = [[six.string_types, int], six.string_types]
@@ -281,7 +283,7 @@ class JobStateUpdateHandler(RequestHandler):
   def export_setJobSite(cls, jobID, site):
     """Allows the site attribute to be set for a job specified by its jobID.
     """
-    return cls.gJobDB.setJobAttribute(int(jobID), 'Site', site)
+    return cls.jobDB.setJobAttribute(int(jobID), 'Site', site)
 
   ###########################################################################
   types_setJobFlag = [[six.string_types, int], six.string_types]
@@ -290,7 +292,7 @@ class JobStateUpdateHandler(RequestHandler):
   def export_setJobFlag(cls, jobID, flag):
     """ Set job flag for job with jobID
     """
-    return cls.gJobDB.setJobAttribute(int(jobID), flag, 'True')
+    return cls.jobDB.setJobAttribute(int(jobID), flag, 'True')
 
   ###########################################################################
   types_unsetJobFlag = [[six.string_types, int], six.string_types]
@@ -299,7 +301,7 @@ class JobStateUpdateHandler(RequestHandler):
   def export_unsetJobFlag(cls, jobID, flag):
     """ Unset job flag for job with jobID
     """
-    return cls.gJobDB.setJobAttribute(int(jobID), flag, 'False')
+    return cls.jobDB.setJobAttribute(int(jobID), flag, 'False')
 
   ###########################################################################
   types_setJobApplicationStatus = [[six.string_types, int], six.string_types, six.string_types]
@@ -320,10 +322,10 @@ class JobStateUpdateHandler(RequestHandler):
         for job specified by its JobId
     """
 
-    if cls.gElasticJobParametersDB:
-      return cls.gElasticJobParametersDB.setJobParameter(int(jobID), name, value)  # pylint: disable=no-member
+    if cls.elasticJobParametersDB:
+      return cls.elasticJobParametersDB.setJobParameter(int(jobID), name, value)  # pylint: disable=no-member
 
-    return cls.gJobDB.setJobParameter(int(jobID), name, value)
+    return cls.jobDB.setJobParameter(int(jobID), name, value)
 
   ###########################################################################
   types_setJobsParameter = [dict]
@@ -338,20 +340,20 @@ class JobStateUpdateHandler(RequestHandler):
 
     for jobID in jobsParameterDict:
 
-      if cls.gElasticJobParametersDB:
-        res = cls.gElasticJobParametersDB.setJobParameter(
+      if cls.elasticJobParametersDB:
+        res = cls.elasticJobParametersDB.setJobParameter(
             jobID,
             str(jobsParameterDict[jobID][0]),
             str(jobsParameterDict[jobID][1]))
         if not res['OK']:
-          gLogger.error('Failed to add Job Parameter to cls.gElasticJobParametersDB', res['Message'])
+          gLogger.error('Failed to add Job Parameter to cls.elasticJobParametersDB', res['Message'])
           failed = True
           message = res['Message']
 
       else:
-        res = cls.gJobDB.setJobParameter(jobID,
-                                         str(jobsParameterDict[jobID][0]),
-                                         str(jobsParameterDict[jobID][1]))
+        res = cls.jobDB.setJobParameter(jobID,
+                                        str(jobsParameterDict[jobID][0]),
+                                        str(jobsParameterDict[jobID][1]))
         if not res['OK']:
           gLogger.error('Failed to add Job Parameter to MySQL', res['Message'])
           failed = True
@@ -372,20 +374,20 @@ class JobStateUpdateHandler(RequestHandler):
     """
     failed = False
 
-    if cls.gElasticJobParametersDB:
+    if cls.elasticJobParametersDB:
       for key, value in parameters:  # FIXME: should use a bulk method
-        res = cls.gElasticJobParametersDB.setJobParameter(jobID, key, value)
+        res = cls.elasticJobParametersDB.setJobParameter(jobID, key, value)
         if not res['OK']:
-          gLogger.error('Failed to add Job Parameters to cls.gElasticJobParametersDB', res['Message'])
+          gLogger.error('Failed to add Job Parameters to cls.elasticJobParametersDB', res['Message'])
           failed = True
           message = res['Message']
 
     else:
-      result = cls.gJobDB.setJobParameters(int(jobID), parameters)
+      result = cls.jobDB.setJobParameters(int(jobID), parameters)
       if not result['OK']:
-        gLogger.error('Failed to add Job Parameters to MySQL', res['Message'])
+        gLogger.error('Failed to add Job Parameters to MySQL', result['Message'])
         failed = True
-        message = res['Message']
+        message = result['Message']
 
     if failed:
       return S_ERROR(message)
@@ -399,12 +401,22 @@ class JobStateUpdateHandler(RequestHandler):
     """ Send a heart beat sign of life for a job jobID
     """
 
-    result = cls.gJobDB.setHeartBeatData(int(jobID), staticData, dynamicData)
+    result = cls.jobDB.setHeartBeatData(int(jobID), dynamicData)
     if not result['OK']:
       gLogger.warn('Failed to set the heart beat data', 'for job %d ' % int(jobID))
 
+    if cls.elasticJobParametersDB:
+      for key, value in staticData.items():
+        result = cls.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
+        if not result['OK']:
+          gLogger.error('Failed to add Job Parameters to ElasticSearch', result['Message'])
+    else:
+      result = cls.jobDB.setJobParameters(int(jobID), list(staticData.items()))
+      if not result['OK']:
+        gLogger.error('Failed to add Job Parameters to MySQL', result['Message'])
+
     # Restore the Running status if necessary
-    result = cls.gJobDB.getJobAttributes(jobID, ['Status'])
+    result = cls.jobDB.getJobAttributes(jobID, ['Status'])
     if not result['OK']:
       return result
 
@@ -413,17 +425,17 @@ class JobStateUpdateHandler(RequestHandler):
 
     status = result['Value']['Status']
     if status in (JobStatus.STALLED, JobStatus.MATCHED):
-      result = cls.gJobDB.setJobAttribute(jobID, 'Status', JobStatus.RUNNING, True)
+      result = cls.jobDB.setJobAttribute(jobID, 'Status', JobStatus.RUNNING, True)
       if not result['OK']:
         gLogger.warn('Failed to restore the job status to Running')
 
     jobMessageDict = {}
-    result = cls.gJobDB.getJobCommand(int(jobID))
+    result = cls.jobDB.getJobCommand(int(jobID))
     if result['OK']:
       jobMessageDict = result['Value']
 
     if jobMessageDict:
       for key, _value in jobMessageDict.items():
-        result = cls.gJobDB.setJobCommandStatus(int(jobID), key, 'Sent')
+        result = cls.jobDB.setJobCommandStatus(int(jobID), key, 'Sent')
 
     return S_OK(jobMessageDict)

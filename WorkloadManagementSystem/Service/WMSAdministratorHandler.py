@@ -1,6 +1,9 @@
 """
 This is a DIRAC WMS administrator interface.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
@@ -8,36 +11,32 @@ import six
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
-
-# This is a global instance of the database classes
-jobDB = None
-taskQueueDB = None
-enablePilotsLogging = False
 
 FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
 
 
-def initializeWMSAdministratorHandler(serviceInfo):
-  """ WMS AdministratorService initialization
-
-      :param dict serviceInfo: service information dictionary
-
-      :return: S_OK()/S_ERROR()
-  """
-  global jobDB
-  global taskQueueDB
-
-  jobDB = JobDB()
-  taskQueueDB = TaskQueueDB()
-
-  return S_OK()
-
-
 class WMSAdministratorHandler(RequestHandler):
+
+  @classmethod
+  def initializeHandler(cls, svcInfoDict):
+    """ WMS AdministratorService initialization
+    """
+    cls.jobDB = JobDB()
+    cls.taskQueueDB = TaskQueueDB()
+
+    cls.elasticJobParametersDB = None
+    useESForJobParametersFlag = Operations().getValue(
+        '/Services/JobMonitoring/useESForJobParametersFlag', False)
+    if useESForJobParametersFlag:
+      cls.elasticJobParametersDB = ElasticJobParametersDB()
+
+    return S_OK()
 
   types_setSiteMask = [list]
 
@@ -50,7 +49,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     credDict = self.getRemoteCredentials()
     maskList = [(site, 'Active') for site in siteList]
-    return jobDB.setSiteMask(maskList, credDict['DN'], 'No comment')
+    return self.jobDB.setSiteMask(maskList, credDict['DN'], 'No comment')
 
 ##############################################################################
   types_getSiteMask = []
@@ -63,7 +62,7 @@ class WMSAdministratorHandler(RequestHandler):
 
         :return: S_OK(list)/S_ERROR()
     """
-    return jobDB.getSiteMask(siteState)
+    return cls.jobDB.getSiteMask(siteState)
 
   types_getSiteMaskStatus = []
 
@@ -76,7 +75,7 @@ class WMSAdministratorHandler(RequestHandler):
 
         :return: S_OK()/S_ERROR() -- S_OK contain dict or str
     """
-    return jobDB.getSiteMaskStatus(sites)
+    return cls.jobDB.getSiteMaskStatus(sites)
 
   ##############################################################################
   types_getAllSiteMaskStatus = []
@@ -87,7 +86,7 @@ class WMSAdministratorHandler(RequestHandler):
 
         :return: dict
     """
-    return jobDB.getAllSiteMaskStatus()
+    return cls.jobDB.getAllSiteMaskStatus()
 
 ##############################################################################
   types_banSite = [six.string_types]
@@ -102,7 +101,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     credDict = self.getRemoteCredentials()
     author = credDict['username'] if credDict['username'] != 'anonymous' else credDict['DN']
-    return jobDB.banSiteInMask(site, author, comment)
+    return self.jobDB.banSiteInMask(site, author, comment)
 
 ##############################################################################
   types_allowSite = [six.string_types]
@@ -117,7 +116,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     credDict = self.getRemoteCredentials()
     author = credDict['username'] if credDict['username'] != 'anonymous' else credDict['DN']
-    return jobDB.allowSiteInMask(site, author, comment)
+    return self.jobDB.allowSiteInMask(site, author, comment)
 
 ##############################################################################
   types_clearMask = []
@@ -128,10 +127,10 @@ class WMSAdministratorHandler(RequestHandler):
 
         :return: S_OK()/S_ERROR()
     """
-    return jobDB.removeSiteFromMask(None)
+    return cls.jobDB.removeSiteFromMask(None)
 
   ##############################################################################
-  types_getSiteMaskLogging = [(six.string_types, list)]
+  types_getSiteMaskLogging = [six.string_types + (list,)]
 
   @classmethod
   def export_getSiteMaskLogging(cls, sites):
@@ -144,7 +143,7 @@ class WMSAdministratorHandler(RequestHandler):
     if isinstance(sites, six.string_types):
       sites = [sites]
 
-    return jobDB.getSiteMaskLogging(sites)
+    return cls.jobDB.getSiteMaskLogging(sites)
 
 ##############################################################################
   types_getSiteMaskSummary = []
@@ -162,7 +161,7 @@ class WMSAdministratorHandler(RequestHandler):
     sites = res['Value']
 
     # Get the current mask status
-    result = jobDB.getSiteMaskStatus()
+    result = cls.jobDB.getSiteMaskStatus()
     siteDict = result['Value']
     for site in sites:
       if site not in siteDict:
@@ -171,7 +170,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(siteDict)
 
   ##############################################################################
-  types_getJobPilotOutput = [(six.string_types, six.integer_types)]
+  types_getJobPilotOutput = [six.string_types + six.integer_types]
 
   def export_getJobPilotOutput(self, jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC
@@ -183,20 +182,31 @@ class WMSAdministratorHandler(RequestHandler):
     """
     pilotReference = ''
     # Get the pilot grid reference first from the job parameters
-    result = jobDB.getJobParameter(int(jobID), 'Pilot_Reference')
-    if result['OK']:
-      pilotReference = result['Value']
+
+    if self.elasticJobParametersDB:
+      res = self.elasticJobParametersDB.getJobParameters(int(jobID), 'Pilot_Reference')
+      if not res['OK']:
+        return res
+      if res['Value'].get(int(jobID)):
+        pilotReference = res['Value'][int(jobID)]['Pilot_Reference']
+
+    if not pilotReference:
+      res = self.jobDB.getJobParameter(int(jobID), 'Pilot_Reference')
+      if not res['OK']:
+        return res
+      pilotReference = res['Value']
 
     if not pilotReference:
       # Failed to get the pilot reference, try to look in the attic parameters
-      result = jobDB.getAtticJobParameters(int(jobID), ['Pilot_Reference'])
-      if result['OK']:
-        c = -1
-        # Get the pilot reference for the last rescheduling cycle
-        for cycle in result['Value']:
-          if cycle > c:
-            pilotReference = result['Value'][cycle]['Pilot_Reference']
-            c = cycle
+      res = self.jobDB.getAtticJobParameters(int(jobID), ['Pilot_Reference'])
+      if not res['OK']:
+        return res
+      c = -1
+      # Get the pilot reference for the last rescheduling cycle
+      for cycle in res['Value']:
+        if cycle > c:
+          pilotReference = res['Value'][cycle]['Pilot_Reference']
+          c = cycle
 
     if pilotReference:
       return getGridJobOutput(pilotReference)
@@ -216,7 +226,7 @@ class WMSAdministratorHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    return jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
+    return cls.jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
 
 ##############################################################################
   types_getSiteSummarySelectors = []

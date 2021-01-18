@@ -357,7 +357,7 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertEqual(sorted(res['Value']), sorted(types), msg="Got %s" % str(sorted(res['Value'])))
     res = jobMonitor.getApplicationStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(sorted(res['Value']), sorted(['Unknown']), msg="Got %s" % sorted(str(res['Value'])))
+    self.assertEqual(sorted(res['Value']), sorted(['Unknown']), msg="Got %s" % str(res['Value']))
 
     res = jobMonitor.getOwners()
     self.assertTrue(res['OK'], res.get('Message'))
