@@ -13,9 +13,8 @@
 #SPHINXOPTS    =
 PAPER         =
 BUILDDIR      = build
-CFGPATH				= ../dirac.cfg
 # Move dirac.cfg to source dir
-USEDIRACCFG		= cp $(CFGPATH) source/
+USEDIRACCFG		= cp ../dirac.cfg source/
 SPHINXBUILD   = $(USEDIRACCFG) && sphinx-build
 
 
