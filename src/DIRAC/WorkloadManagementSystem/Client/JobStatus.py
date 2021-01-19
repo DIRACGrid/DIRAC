@@ -8,7 +8,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import State, StateMachine
+from DIRAC.Core.Utilities.StateMachine import State, StateMachine
 
 
 #:
