@@ -3,10 +3,33 @@ Wrapper on top of ElasticDB. It is used to manage the DIRAC monitoring types.
 
 **Configuration Parameters**:
 
-The following options can be set in ``Systems/Monitoring/<Setup>/Databases/MonitoringDB``
+The following option can be set in `Systems/Monitoring/<Setup>/Databases/MonitoringDB`
 
 * *IndexPrefix*:  Prefix used to prepend to indexes created in the ES instance. If this
                   is not present in the CS, the indexes are prefixed with the setup name.
+
+For each monitoring types managed, the Period (how often a new index is created)
+can be defined with::
+
+   MonitoringTypes
+   {
+     ComponentMonitoring
+     {
+       # Indexing strategy. Possible values: day, week, month, year, null
+       Period = month
+     }
+     RMSMonitoring
+     {
+       # Indexing strategy. Possible values: day, week, month, year, null
+       Period = month
+     }
+     WMSHistory
+     {
+       # Indexing strategy. Possible values: day, week, month, year, null
+       Period = day
+     }
+   }
+
 
 """
 from __future__ import absolute_import
