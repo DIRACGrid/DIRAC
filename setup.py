@@ -1,45 +1,8 @@
-""" Basic setuptools script for DIRAC.
-    Does not contain any dependency
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import glob
-# Actual setuptools
-from setuptools import setup, find_packages
+from setuptools import setup
 
-# Find the base dir where the setup.py lies
-base_dir = os.path.abspath(os.path.dirname(__file__))
-
-# Take all the packages but the scripts and tests
-allPackages = find_packages(where=base_dir, exclude=["*test*", "*scripts*", "*docs*"])
-
-# Because we want to have a 'DIRAC' base module and that the setup.py
-# is lying inside it, we need to define a mapping
-# < module name : directory >
-# e.g. DIRAC.DataManagementSystem is base_dir/DataManagementSystem
-
-package_dir = dict(("DIRAC.%s" % p, os.path.join(base_dir, p.replace('.', '/'))) for p in allPackages)
-
-# We also rename the packages so that they contain DIRAC
-allPackages = ['DIRAC.%s' % p for p in allPackages]
-
-# Artificially create the 'DIRAC' package
-# at the root
-allPackages.insert(0, 'DIRAC')
-package_dir['DIRAC'] = base_dir
-
-# The scripts to be distributed
-scripts = glob.glob('%s/*/scripts/*.py' % base_dir)
-
-setup(
-    name="DIRAC",
-    version="7.2.pre28",
-    url="https://github.com/DIRACGRID/DIRAC",
-    license="GPLv3",
-    package_dir=package_dir,
-    packages=allPackages,
-    scripts=scripts,
-)
+# This is required to allow editable pip installs while using the declarative configuration (setup.cfg)
+setup()

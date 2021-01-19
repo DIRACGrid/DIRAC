@@ -1914,11 +1914,11 @@ exec 2>&1
 [[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
 #%(bashVariables)s
 #
-exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py \
+exec python $DIRAC/DIRAC/Core/scripts/dirac_%(componentType)s.py \
   %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
     """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                 'bashVariables': bashVars,
-                'componentType': componentType,
+                'componentType': componentType.replace("-", "_"),
                 'system': system,
                 'component': component,
                 'componentCfg': componentCfg})
@@ -2541,7 +2541,7 @@ exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
   exec 2>&1
   #
   #
-  exec python $DIRAC/DIRAC/Core/Tornado/scripts/tornado-start-all.py -ddd
+  exec python $DIRAC/DIRAC/Core/Tornado/scripts/tornado_start_all.py -ddd
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
 
       os.chmod(runFile, self.gDefaultPerms)

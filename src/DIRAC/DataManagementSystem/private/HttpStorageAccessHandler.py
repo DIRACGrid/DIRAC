@@ -14,9 +14,10 @@ from __future__ import print_function
 __RCS__ = "$Id$"
 
 import os
-import BaseHTTPServer
 import shutil
 import random
+
+from six.moves import BaseHTTPServer
 
 from DIRAC.Core.Utilities.DictCache import DictCache
 

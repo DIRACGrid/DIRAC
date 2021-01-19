@@ -70,6 +70,9 @@ import sys
 import os
 import platform as pyPlatform
 from pkgutil import extend_path
+
+import six
+
 __path__ = extend_path(__path__, __name__)
 
 # Set the environment variable such that openssl accepts proxy cert
@@ -88,40 +91,31 @@ __RCSID__ = "$Id$"
 # Importing _strptime before instantiating the threads seem to be a working workaround
 import _strptime
 
+# Define Version
+if six.PY3:
+  from pkg_resources import get_distribution, DistributionNotFound
 
-# Define Version, use an unusual structure to minimise conflicts with rel-v7r2
-pythonVersion = pyPlatform.python_version_tuple()
-if pythonVersion[0] == "3":
-  version = "7.2"
+  try:
+    __version__ = get_distribution(__name__).version
+    version = __version__
+  except DistributionNotFound:
+    # package is not installed
+    version = "Unknown"
 else:
   majorVersion = 7
   minorVersion = 2
   patchLevel = 0
   preVersion = 28
 
-  # Define version only for python 2, When using python 3 the version definition will change
-  # as needed by setup tools
   version = "v%sr%s" % (majorVersion, minorVersion)
-  buildVersion = "v%dr%d" % (majorVersion, minorVersion)
+  # Make it so that __version__ is always PEP-440 style
+  __version__ = "%s.%s" % (majorVersion, minorVersion)
   if patchLevel:
     version = "%sp%s" % (version, patchLevel)
-    buildVersion = "%s build %s" % (buildVersion, patchLevel)
+    __version__ += ".%s" % patchLevel
   if preVersion:
     version = "%s-pre%s" % (version, preVersion)
-    buildVersion = "%s pre %s" % (buildVersion, preVersion)
-
-# Check of python version
-
-__pythonMajorVersion = ("2", "3")
-__pythonMinorVersion = ("7", "8")
-if str(pythonVersion[0]) not in __pythonMajorVersion or str(pythonVersion[1]) not in __pythonMinorVersion:
-  print("Python Version %s not supported by DIRAC" % pyPlatform.python_version())
-  print("Supported versions are: ")
-  for major in __pythonMajorVersion:
-    for minor in __pythonMinorVersion:
-      print("%s.%s.x" % (major, minor))
-
-  sys.exit(1)
+    __version__ += "a%s" % preVersion
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
@@ -219,3 +213,9 @@ def abort(exitCode, *args, **kwargs):
   except OSError:
     gLogger.exception('Error while executing DIRAC.abort')
     os._exit(exitCode)
+
+
+def extension_metadata():
+  return {
+      "priority": 0,
+  }

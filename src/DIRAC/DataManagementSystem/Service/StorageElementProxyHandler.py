@@ -13,7 +13,7 @@ from __future__ import print_function
 
 import os
 import shutil
-import SocketServer
+from six.moves import socketserver
 import threading
 import socket
 import random
@@ -75,7 +75,7 @@ def initializeStorageElementProxyHandler(serviceInfo):
   return S_OK()
 
 
-class ThreadedSocketServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+class ThreadedSocketServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
   """ bag dummy class to hold ThreadingMixIn and TCPServer """
   pass
 

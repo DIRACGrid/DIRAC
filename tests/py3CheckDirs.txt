@@ -15,6 +15,6 @@ src/DIRAC/DataManagementSystem/Service/TornadoFileCatalogHandler.py
 src/DIRAC/FrameworkSystem/Client/ComponentInstaller.py
 src/DIRAC/FrameworkSystem/Client/MonitoringClientIOLoop.py
 src/DIRAC/FrameworkSystem/Client/MonitoringClient.py
-src/DIRAC/FrameworkSystem/scripts/dirac-install-tornado-service.py
+src/DIRAC/FrameworkSystem/scripts/dirac_install_tornado_service.py
 src/DIRAC/Resources/Catalog/FileCatalogClient.py
 src/DIRAC/Resources/Storage/GFAL2_StorageBase.py

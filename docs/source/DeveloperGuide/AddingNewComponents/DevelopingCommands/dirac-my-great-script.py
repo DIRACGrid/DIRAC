@@ -17,10 +17,8 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Base import Script
-
-cliParams = None
-switchDict = None
 
 
 class Params(object):
@@ -93,20 +91,12 @@ def parseSwitches():
   return switches
 
 
+# IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
+@DIRACScript()
 def main():
   '''
     This is the script main method, which will hold all the logic.
   '''
-
-  # let's do something
-  if not len(switchDict['servicesList']):
-    gLogger.error('No services defined')
-    DIRACExit(1)
-  gLogger.notice('We are done')
-
-
-if __name__ == "__main__":
-
   # Script initialization
   registerSwitches()
   switchDict = parseSwitches()
@@ -114,8 +104,14 @@ if __name__ == "__main__":
   # Import the required DIRAC modules
   from DIRAC.Interfaces.API.Dirac import Dirac
 
-  # Run the script
-  main()
+  # let's do something
+  if not len(switchDict['servicesList']):
+    gLogger.error('No services defined')
+    DIRACExit(1)
+  gLogger.notice('We are done')
 
-  # Bye
   DIRACExit(0)
+
+
+if __name__ == "__main__":
+  main()
