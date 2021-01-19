@@ -1,4 +1,4 @@
-[v7r2-pre28]
+[v7r2-pre29]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -29,6 +29,7 @@ FIX: (#4870) ElasticSearchDB: fix exception handling when checking existance of 
 FIX: (#4887) fix exception in Services when trying to use uninitialized gMonitor client while
              targeting ES monitoring
 NEW: (#4898) added a base DB class for all DB types
+NEW: (#4865) Fully support installation with setuptools
 
 *Configuration
 CHANGE: (#4866) split standard and tornado refresher in two files to avoid tornado dependency on the client
