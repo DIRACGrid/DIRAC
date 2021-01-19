@@ -604,6 +604,13 @@ class JobDB(DB):
     if not isinstance(jobID, (list, tuple)):
       jobIDList = [jobID]
 
+    jIDList = []
+    for jID in jobIDList:
+      ret = self._escapeString(jID)
+      if not ret['OK']:
+	return ret
+      jIDList.append(ret['Value'])
+
     if len(attrNames) != len(attrValues):
       return S_ERROR('JobDB.setAttributes: incompatible Argument length')
 
@@ -612,18 +619,13 @@ class JobDB(DB):
 	return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
 
     attr = []
-    jobIDListToUpdate = []
 
     for name, value in zip(attrNames, attrValues):
 
       if name in ('Status', 'MinorStatus', 'ApplicationStatus'):
-	# Need to check what's the current status, and if "final" we don't update
-	for jID in jobIDList:
-	  res = self.getJobAttribute(jID, 'Status')
-	  if not res['OK']:
-	    return S_ERROR(EWMSJERR, "Could not find Status Job Attribute")
-	  if res['Value'] not in JobStatus.JOB_FINAL_STATES:
-	    jobIDListToUpdate.append(jID)
+	# Need to check what's the current status, and if the state change is allowed
+	# TODO: check the state machine
+	pass
 
       ret = self._escapeString(value)
       if not ret['OK']:
@@ -634,12 +636,6 @@ class JobDB(DB):
     if not attr:
       return S_ERROR('JobDB.setAttributes: Nothing to do')
 
-    jIDList = []
-    for jID in jobIDListToUpdate:
-      ret = self._escapeString(jID)
-      if not ret['OK']:
-	return ret
-      jIDList.append(ret['Value'])
     cmd = 'UPDATE Jobs SET %s WHERE JobID in ( %s )' % (', '.join(attr), ', '.join(jIDList))
 
     if myDate:
@@ -648,19 +644,12 @@ class JobDB(DB):
     return self._update(cmd)
 
 #############################################################################
-  def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus='', minor=None, application=None):
+  def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus=''):
     """ Set status of the job specified by its jobID
     """
-    # Backward compatibility
-    # FIXME: to remove in next version
-    if minor:
-      minorStatus = minor
-    if application:
-      applicationStatus = application
-
     # Do not update the LastUpdate time stamp if setting the Stalled status
     update_flag = True
-    if status == "Stalled":
+    if status == JobStatus.STALLED:
       update_flag = False
 
     attrNames = []

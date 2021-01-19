@@ -59,10 +59,13 @@ JOB_STATES = [SUBMITTING,
               DELETED,
               KILLED]
 
-#: Job States when the payload work has finished
+# Job States when the payload work has finished
 JOB_FINAL_STATES = [DONE,
                     COMPLETED,
                     FAILED]
+
+# WMS internal job States indicating the job object won't be updated
+JOB_REALLY_FINAL_STATES = [DELETED]
 
 
 class JobsStateMachine(StateMachine):
@@ -76,19 +79,46 @@ class JobsStateMachine(StateMachine):
     super(JobsStateMachine, self).__init__(state)
 
     # States transitions
-    self.states = {KILLED: State(3),  # final state
-		   DELETED: State(3),  # final state
-		   FAILED: State(3, [RESCHEDULED, KILLED, DELETED], defState=DELETED),
-		   COMPLETED: State(3, [DONE, FAILED, KILLED, DELETED], defState=DONE),
-		   DONE: State(3, [KILLED, DELETED], defState=DELETED),
-		   COMPLETING: State(3, [DONE, FAILED, COMPLETED], defState=COMPLETED),
-		   STALLED: State(3, [RUNNING], defState=RUNNING),  # CHECK!
-		   RUNNING: State(3, [STALLED, DONE, FAILED, COMPLETING], defState=DONE),
-		   RESCHEDULED: State(3, [WAITING], defState=WAITING),
-		   MATCHED: State(5, [RUNNING], defState=RUNNING),
-		   WAITING: State(4, [MATCHED, RESCHEDULED], defState=MATCHED),
-		   STAGING: State(3, [WAITING], defState=WAITING),
-		   CHECKING: State(2, [STAGING, WAITING, RESCHEDULED], defState=WAITING),
-		   RECEIVED: State(1, [CHECKING], defState=CHECKING),
-		   # initial state
-		   SUBMITTING: State(0, [RECEIVED, CHECKING], defState=RECEIVED)}
+    self.states = {DELETED: State(14),  # final state
+		   KILLED: State(13,
+				 [DELETED],
+				 defState=KILLED),
+		   FAILED: State(12,
+				 [RESCHEDULED, DELETED],
+				 defState=FAILED),
+		   DONE: State(11,
+			       [KILLED, DELETED],
+			       defState=DONE),
+		   COMPLETED: State(10,
+				    [DONE, FAILED, DELETED],
+				    defState=COMPLETED),
+		   COMPLETING: State(9,
+				     [DONE, FAILED, COMPLETED],
+				     defState=COMPLETING),
+		   STALLED: State(8,
+				  [RUNNING, FAILED, KILLED],
+				  defState=STALLED),
+		   RUNNING: State(7,
+				  [STALLED, DONE, FAILED, COMPLETING, KILLED],
+				  defState=RUNNING),
+		   RESCHEDULED: State(6,
+				      [WAITING, RECEIVED, DELETED],
+				      defState=RESCHEDULED),
+		   MATCHED: State(5,
+				  [RUNNING, KILLED],
+				  defState=MATCHED),
+		   WAITING: State(4,
+				  [MATCHED, RESCHEDULED, KILLED, DELETED],
+				  defState=WAITING),
+		   STAGING: State(3,
+				  [WAITING, KILLED],
+				  defState=STAGING),
+		   CHECKING: State(2,
+				   [STAGING, WAITING, RESCHEDULED, DELETED],
+				   defState=CHECKING),
+		   RECEIVED: State(1,
+				   [CHECKING, DELETED],
+				   defState=RECEIVED),
+		   SUBMITTING: State(0,  # initial state
+				     [RECEIVED, CHECKING, DELETED],
+				     defState=SUBMITTING)}

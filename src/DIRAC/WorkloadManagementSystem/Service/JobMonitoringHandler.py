@@ -19,8 +19,9 @@ import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
@@ -29,7 +30,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GE
 
 SUMMARY = []
 PRIMARY_SUMMARY = []
-FINAL_STATES = ['Done', 'Completed', 'Stalled', 'Failed', 'Killed']
+FINAL_STATES = JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES
 
 
 class JobMonitoringHandler(RequestHandler):
@@ -448,7 +449,7 @@ class JobMonitoringHandler(RequestHandler):
           hbTime = Time.fromString(jobDict['HeartBeatTime'])
           # Not only Stalled jobs but also Failed jobs because Stalled
           if ((hbTime - lastTime) > timedelta(0) or
-                  jobDict['Status'] == "Stalled" or
+		  jobDict['Status'] == JobStatus.STALLED or
                   jobDict['MinorStatus'].startswith('Job stalled') or
                   jobDict['MinorStatus'].startswith('Stalling')):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
