@@ -201,18 +201,18 @@ class FTS3Job(JSerializable):
     return S_OK(seToken)
 
   @staticmethod
-  def __isTapeSE(seName):
+  def __isTapeSE(seName, vo):
     """ Check whether a given SE is a tape storage
 
-        :param seName name of the storageElement
-
-        :returns True/False
-                 In case of error, returns True.
-                 It is better to loose a bit of time on the FTS
-                 side, rather than failing jobs because the FTS default
-                 pin time is too short
+        :param seName: name of the storageElement
+        :param vo: VO of the job
+        :returns: True/False
+                  In case of error, returns True.
+                  It is better to lose a bit of time on the FTS
+                  side, rather than failing jobs because the FTS default
+                  pin time is too short
     """
-    isTape = StorageElement(seName).getStatus()\
+    isTape = StorageElement(seName, vo=vo).getStatus()\
         .get('Value', {})\
         .get('TapeSE', True)
 
@@ -295,7 +295,7 @@ class FTS3Job(JSerializable):
     # If the source is not an tape SE, we should set the
     # copy_pin_lifetime and bring_online params to None,
     # otherwise they will do an extra useless queue in FTS
-    sourceIsTape = self.__isTapeSE(self.sourceSE)
+    sourceIsTape = self.__isTapeSE(self.sourceSE, self.vo)
     copy_pin_lifetime = pinTime if sourceIsTape else None
     bring_online = BRING_ONLINE_TIMEOUT if sourceIsTape else None
 
@@ -433,7 +433,7 @@ class FTS3Job(JSerializable):
     # If the source is not an tape SE, we should set the
     # copy_pin_lifetime and bring_online params to None,
     # otherwise they will do an extra useless queue in FTS
-    sourceIsTape = self.__isTapeSE(self.sourceSE)
+    sourceIsTape = self.__isTapeSE(self.sourceSE, self.vo)
     copy_pin_lifetime = pinTime if sourceIsTape else None
     bring_online = 86400 if sourceIsTape else None
 
