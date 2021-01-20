@@ -83,12 +83,12 @@ class ARCComputingElement(ComputingElement):
         By the time we come here, the environment variable X509_USER_PROXY should already be set
     """
     j = arc.Job()
-    j.JobID = jobID
+    j.JobID = str(jobID)
     statURL = "ldap://%s:2135/Mds-Vo-Name=local,o=grid??sub?(nordugrid-job-globalid=%s)" % (self.ceHost, jobID)
-    j.JobStatusURL = arc.URL(statURL)
+    j.JobStatusURL = arc.URL(str(statURL))
     j.JobStatusInterfaceName = "org.nordugrid.ldapng"
     mangURL = "gsiftp://%s:2811/jobs/" % (self.ceHost)
-    j.JobManagementURL = arc.URL(mangURL)
+    j.JobManagementURL = arc.URL(str(mangURL))
     j.JobManagementInterfaceName = "org.nordugrid.gridftpjob"
     j.ServiceInformationURL = j.JobManagementURL
     j.ServiceInformationInterfaceName = "org.nordugrid.ldapng"
@@ -489,7 +489,7 @@ class ARCComputingElement(ComputingElement):
     errFileName = os.path.join(workingDirectory, '%s.err' % stamp)
     self.log.debug("Working directory for pilot output %s" % workingDirectory)
 
-    isItOkay = job.Retrieve(self.usercfg, arc.URL(workingDirectory), False)
+    isItOkay = job.Retrieve(self.usercfg, arc.URL(str(workingDirectory)), False)
     if isItOkay:
       output = None
       error = None

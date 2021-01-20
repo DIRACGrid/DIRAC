@@ -82,6 +82,17 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 
+[v7r1p26]
+
+FIX: Fixes from v7r0p46
+
+*Resources
+FIX: (#4909) use grid CA to download the srr file
+FIX: (#4904) ARCComputingElement: fixed a few places where unicode literals have leaked: wrapped in str
+
+*WMS
+FIX: (#4904) JobAgent: using internal function for rescheduling jobs
+
 [v7r1p25]
 
 FIX: Fixes from v7r0p45
@@ -533,6 +544,12 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p46]
+
+*DMS
+FIX: (#4908) FTS3Job: fix the check of isTapeSE for multiVO instances, fixes #4878
+FIX: (#4908) FTS3Job: pass VO for fetchSpaceToken function to StorageElement
 
 [v7r0p45]
 

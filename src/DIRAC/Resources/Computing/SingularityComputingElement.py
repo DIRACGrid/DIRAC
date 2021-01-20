@@ -47,7 +47,7 @@ CONTAINER_INNERDIR = "/tmp"
 
 CONTAINER_WRAPPER_INSTALL = """#!/bin/bash
 
-echo "Starting inner container wrapper scripts at `date`."
+echo "Starting inner container wrapper scripts (uses dirac-install) at `date`."
 set -x
 cd /tmp
 # Avoid using the host's DIRAC(OS) installation
@@ -73,7 +73,7 @@ FALLBACK_SINGULARITY = "/cvmfs/oasis.opensciencegrid.org/mis/singularity/current
 
 CONTAINER_WRAPPER_NO_INSTALL = """#!/bin/bash
 
-echo "Starting inner container wrapper scripts at `date`."
+echo "Starting inner container wrapper scripts (no install) at `date`."
 set -x
 cd /tmp
 # In any case we need to find a bashrc, and a pilot.cfg, both created by the pilot

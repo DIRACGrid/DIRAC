@@ -35,7 +35,6 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
-from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import rescheduleFailedJob
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
 
@@ -570,7 +569,7 @@ class JobAgent(AgentModule):
                                 par_value='%s CE Submission Error' % (self.ceName),
                                 sendFlag=False)
       if 'ReschedulePayload' in submission:
-        rescheduleFailedJob(jobID, submission['Message'])
+        self._rescheduleFailedJob(jobID, submission['Message'], self.stopOnApplicationFailure)
         return S_OK()  # Without this, the job is marked as failed
       else:
         if 'Value' in submission:
