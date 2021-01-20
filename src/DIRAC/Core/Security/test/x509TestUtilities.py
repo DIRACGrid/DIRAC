@@ -272,10 +272,16 @@ def deimportDIRAC():
       This method is extremely fragile, but hopefully, we can get ride of all these
       messy tests soon, when PyGSI has gone.
   """
-  for mod in list(sys.modules):
-    # You should be careful with what you remove....
-    if (mod == 'DIRAC' or mod.startswith('DIRAC.')) and not mod.startswith('DIRAC.Core.Security.test'):
-      sys.modules.pop(mod)
+  if len(X509CHAINTYPES) != 1 or len(X509REQUESTTYPES) != 1:
+    raise NotImplementedError(
+        "This no longer de-imports DIRAC, if we want to test another SSL wrapper "
+        "we will have to find another way of doing this or run a separate pytest "
+        "process again"
+    )
+  # for mod in list(sys.modules):
+  #   # You should be careful with what you remove....
+  #   if (mod == 'DIRAC' or mod.startswith('DIRAC.')) and not mod.startswith('DIRAC.Core.Security.test'):
+  #     sys.modules.pop(mod)
 
 
 X509CHAINTYPES = ('M2_X509Chain',)
