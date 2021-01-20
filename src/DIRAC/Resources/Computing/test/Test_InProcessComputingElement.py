@@ -6,6 +6,8 @@ tests for InProcessComputingElement module
 import os
 import shutil
 
+import pytest
+
 from DIRAC.Resources.Computing.test.Test_PoolComputingElement import jobScript, _stopJob
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
@@ -13,6 +15,7 @@ from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 
 
+@pytest.mark.slow
 def test_submitJob():
   with open('testJob.py', 'w') as execFile:
     execFile.write(jobScript % '1')

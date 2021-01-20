@@ -12,8 +12,8 @@ jobs:
       fail-fast: False
       matrix:
         command:
-          - pytest --no-cov
-          - pytest --no-cov src/DIRAC/Core/Security/test
+          - pytest --runslow --no-cov
+          - pytest --runslow --no-cov src/DIRAC/Core/Security/test
           - tests/checkDocs.sh
           # TODO This should cover more than just tests/CI
           # Excluded codes related to sourcing files

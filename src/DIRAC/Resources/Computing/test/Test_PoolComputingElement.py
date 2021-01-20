@@ -45,6 +45,7 @@ def _stopJob(nJob):
     os.remove('stop_job_%s' % nJob)
 
 
+@pytest.mark.slow
 def test_executeJob():
 
   ceParameters = {'WholeNode': True,
