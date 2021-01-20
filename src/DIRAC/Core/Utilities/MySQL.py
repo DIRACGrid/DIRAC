@@ -487,6 +487,12 @@ class MySQL(object):
       return self._except('__escape_string', x, 'Could not escape string', myString)
 
   def __checkTable(self, tableName, force=False):
+    """ Check if a table exists by issuing 'SHOW TABLES'
+
+    :param str tableName: table name in check
+    :param bool force: force or not the re-creation (would drop the previous one)
+    :returns: S_OK/S_ERROR
+    """
 
     table = _quotedList([tableName])
     if not table:

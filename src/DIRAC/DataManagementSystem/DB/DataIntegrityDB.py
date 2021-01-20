@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from DIRAC import gConfig, gLogger, S_OK
+from DIRAC import S_OK
 from DIRAC.Core.Base.DB import DB
 
 __RCSID__ = "$Id$"
@@ -42,37 +42,42 @@ class DataIntegrityDB(DB):
     DB.__init__(self, 'DataIntegrityDB', 'DataManagement/DataIntegrityDB')
 
     self.tableName = 'Problematics'
-    self.tableDict = {self.tableName: {'Fields': {'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
-                                                  'Prognosis': 'VARCHAR(32) NOT NULL',
-                                                  'LFN': 'VARCHAR(255) NOT NULL',
-                                                  'PFN': 'VARCHAR(255)',
-                                                  'Size': 'BIGINT(20)',
-                                                  'SE': 'VARCHAR(32)',
-                                                  'GUID': 'VARCHAR(255)',
-                                                  'Status': 'VARCHAR(32) DEFAULT "New"',
-                                                  'Retries': 'INTEGER DEFAULT 0',
-                                                  'InsertDate': 'DATETIME NOT NULL',
-                                                  'LastUpdate': 'DATETIME NOT NULL',
-                                                  'Source': 'VARCHAR(127) NOT NULL DEFAULT "Unknown"',
-                                                  },
-                                       'PrimaryKey': 'FileID',
-                                       'Indexes': {'PS': ['Prognosis', 'Status']},
-                                       'Engine': 'InnoDB',
-                                       }
-                      }
-
     self.fieldList = ['FileID', 'LFN', 'PFN', 'Size', 'SE', 'GUID', 'Prognosis']
 
-  def _checkTable(self):
+    retVal = self.__initializeDB()
+    if not retVal['OK']:
+      raise Exception("Can't create tables: %s" % retVal['Message'])
+
+  def __initializeDB(self):
     """ Make sure the table is created
     """
-    showTables = self._query("SHOW TABLES;")
-    if not showTables['OK']:
-      return showTables
-    tables = [table[0] for table in showTables['Value'] if table]
-    if self.tableName not in tables:
-      return self._createTables(self.tableDict, force=False)
-    return S_OK()
+    result = self._query("show tables")
+    if not result['OK']:
+      return result
+
+    tablesInDB = [t[0] for t in result['Value']]
+    if self.tableName in tablesInDB:
+      return S_OK()
+    tablesDesc = {}
+    tablesDesc[self.tableName] = {'Fields': {'FileID': 'INTEGER NOT NULL AUTO_INCREMENT',
+                                             'Prognosis': 'VARCHAR(32) NOT NULL',
+                                             'LFN': 'VARCHAR(255) NOT NULL',
+                                             'PFN': 'VARCHAR(255)',
+                                             'Size': 'BIGINT(20)',
+                                             'SE': 'VARCHAR(32)',
+                                             'GUID': 'VARCHAR(255)',
+                                             'Status': 'VARCHAR(32) DEFAULT "New"',
+                                             'Retries': 'INTEGER DEFAULT 0',
+                                             'InsertDate': 'DATETIME NOT NULL',
+                                             'LastUpdate': 'DATETIME NOT NULL',
+                                             'Source': 'VARCHAR(127) NOT NULL DEFAULT "Unknown"',
+                                             },
+                                  'PrimaryKey': 'FileID',
+                                  'Indexes': {'PS': ['Prognosis', 'Status']},
+                                  'Engine': 'InnoDB',
+                                  }
+
+    return self._createTables(tablesDesc)
 
 #############################################################################
   def insertProblematic(self, source, fileMetadata):
