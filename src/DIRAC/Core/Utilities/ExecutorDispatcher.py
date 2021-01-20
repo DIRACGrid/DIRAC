@@ -10,6 +10,8 @@ import time
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 
 class ExecutorState(object):
@@ -294,6 +296,11 @@ class ExecutorDispatcher(object):
       return rS
 
   def __init__(self, monitor=None):
+    """
+      :param monitor: good question.... what's meant to be used for monitoring.
+          Either a :py:class`DIRAC.FrameworkSystem.Client.MonitoringClient.MonitoringClient` or a
+          :py:class`DIRAC.MonitoringSystem.Client.MonitoringReporter.MonitoringReporter`
+    """
     self.__idMap = {}
     self.__execTypes = {}
     self.__executorsLock = threading.Lock()
@@ -305,7 +312,11 @@ class ExecutorDispatcher(object):
     self.__queues = ExecutorQueues(self.__log)
     self.__states = ExecutorState(self.__log)
     self.__cbHolder = ExecutorDispatcherCallbacks()
-    self.__monitor = monitor
+    self.__monitor = None
+    if isinstance(monitor, MonitoringClient):
+      self.__monitor = monitor
+    elif isinstance(monitor, MonitoringReporter):
+      self.__monitoringReporter = monitor
     gThreadScheduler.addPeriodicTask(60, self.__doPeriodicStuff)
     # If a task is frozen too many times, send error or forget task?
     self.__failedOnTooFrozen = True
