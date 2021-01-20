@@ -1,3 +1,14 @@
+[v7r1p26]
+
+FIX: Fixes from v7r0p46
+
+*Resources
+FIX: (#4909) use grid CA to download the srr file
+FIX: (#4904) ARCComputingElement: fixed a few places where unicode literals have leaked: wrapped in str
+
+*WMS
+FIX: (#4904) JobAgent: using internal function for rescheduling jobs
+
 [v7r1p25]
 
 FIX: Fixes from v7r0p45
