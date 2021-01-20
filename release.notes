@@ -1,3 +1,9 @@
+[v7r0p46]
+
+*DMS
+FIX: (#4908) FTS3Job: fix the check of isTapeSE for multiVO instances, fixes #4878
+FIX: (#4908) FTS3Job: pass VO for fetchSpaceToken function to StorageElement
+
 [v7r0p45]
 
 *WMS
