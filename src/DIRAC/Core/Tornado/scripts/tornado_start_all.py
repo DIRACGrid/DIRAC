@@ -12,7 +12,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-# Must be define BEFORE any dirac import
 import os
 import sys
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
@@ -20,6 +19,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  # Must be defined BEFORE any dirac import
   os.environ['DIRAC_USE_TORNADO_IOLOOP'] = "True"
 
   from DIRAC import gConfig
