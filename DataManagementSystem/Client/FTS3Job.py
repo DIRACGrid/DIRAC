@@ -176,16 +176,16 @@ class FTS3Job(JSerializable):
     return S_OK(filesStatus)
 
   @staticmethod
-  def __fetchSpaceToken(seName):
+  def __fetchSpaceToken(seName, vo):
     """ Fetch the space token of storage element
 
-        :param seName name of the storageElement
-
-        :returns space token. If there is no SpaceToken defined, returns None
+        :param seName: name of the storageElement
+        :param vo: vo of the job
+        :returns: space token. If there is no SpaceToken defined, returns None
     """
     seToken = None
     if seName:
-      seObj = StorageElement(seName)
+      seObj = StorageElement(seName, vo=vo)
 
       res = seObj.getStorageParameters(protocol='srm')
       if not res['OK']:
@@ -243,7 +243,7 @@ class FTS3Job(JSerializable):
         "constructTransferJob/%s/%s_%s" %
         (self.operationID, self.sourceSE, self.targetSE), True)
 
-    res = self.__fetchSpaceToken(self.sourceSE)
+    res = self.__fetchSpaceToken(self.sourceSE, self.vo)
     if not res['OK']:
       return res
     source_spacetoken = res['Value']
@@ -498,7 +498,7 @@ class FTS3Job(JSerializable):
           verify=False)
 
     # Construct the target SURL
-    res = self.__fetchSpaceToken(self.targetSE)
+    res = self.__fetchSpaceToken(self.targetSE, self.vo)
     if not res['OK']:
       return res
     target_spacetoken = res['Value']
