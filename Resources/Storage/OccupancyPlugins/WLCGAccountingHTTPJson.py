@@ -10,6 +10,7 @@ When this is used, the OccupancyLFN has to be the full HTTP(s) URL
 
 import requests
 
+from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.Resources.Storage.OccupancyPlugins.WLCGAccountingJson import WLCGAccountingJson
 
 
@@ -41,7 +42,8 @@ class WLCGAccountingHTTPJson(WLCGAccountingJson):
 
     try:
       with open(filePath, 'wt') as fd:
-        res = requests.get(occupancyLFN)
+        caPath = getCAsLocation()
+        res = requests.get(occupancyLFN, verify=caPath)
         res.raise_for_status()
         fd.write(res.content)
     except Exception as e:
