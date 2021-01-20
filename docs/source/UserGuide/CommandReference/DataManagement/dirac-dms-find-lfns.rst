@@ -12,7 +12,7 @@ Usage::
 
 Arguments::
 
- metaspec:    metadata index specification (of the form: "meta=value" or "meta<value", "meta!=value", etc.)
+ metaspec:    metadata index specification               (of the form: "meta=value" or "meta<value", "meta!=value", etc.)
 
 Examples::
 

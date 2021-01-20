@@ -12,7 +12,7 @@ Usage::
 
 Arguments::
 
-  LFN:      Logical File Name  or file containing LFNs
+  LFN:      Logical File Name or file containing LFNs
 
 Options::
 

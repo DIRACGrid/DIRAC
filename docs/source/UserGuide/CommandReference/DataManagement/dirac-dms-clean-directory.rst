@@ -10,7 +10,7 @@ file catalogs.
 
 Usage::
 
-   dirac-dms-clean-directory <lfn | fileContainingLfns> <SE> <status>
+   dirac-dms-clean-directory <LFN_Directory | fileContainingLFN_Directories>
 
 Example::
 

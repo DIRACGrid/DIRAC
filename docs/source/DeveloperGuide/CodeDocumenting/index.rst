@@ -140,7 +140,7 @@ Code Reference
 ``````````````
 
 The code reference is either created by calling ``run`` from
-``diracdoctools.cmd.codeReference`` or by invoking the script
+``diracdoctools.Cmd.codeReference`` or by invoking the script
 ``dirac-docs-build-code.py``. This creates an ``rst`` file for each python
 file, using ``autodoc`` to document all classes inside those modules. The
 actual documentation is build when sphinx is invoked, which must be able to
@@ -151,7 +151,7 @@ Command Reference
 `````````````````
 
 The command references can be created by calling ``run`` from
-``diracdoctools.cmd.commandReference``, or by calling the
+``diracdoctools.Cmd.commandReference``, or by calling the
 ``dirac-docs-build-command.py`` script. ``[commands.section]`` will result in a
 list of commands with links to their documentation, which is based on the output
 of their ``--help``. The resulting ``index.rst`` has to be included explicitly

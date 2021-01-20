@@ -17,3 +17,8 @@ Example::
                  Setup : Dirac-Production
    ConfigurationServer : ['dips://dirac.in2p3.fr:9135/Configuration/Server']
    VirtualOrganization : vo.formation.idgrilles.fr
+
+Options::
+
+  -v  --version                : print version of current DIRAC installation
+  -p  --platform               : print platform of current DIRAC installation

@@ -8,6 +8,12 @@ Usage::
 
   dirac-proxy-init.py (<options>|<cfgFile>)*
 
+Example::
+
+  $ dirac-proxy-init -g dirac_user -t --rfc
+
+  Enter Certificate password::
+
 Options::
 
   -v  --valid <value>          : Valid HH:MM for the proxy. By default is 24 hours
@@ -26,11 +32,4 @@ Options::
   -r  --rfc                    : Create an RFC proxy, true by default, deprecated flag
   -L  --legacy                 : Create a legacy non-RFC proxy
   -U  --upload                 : Upload a long lived proxy to the ProxyManager
-  -P  --uploadPilot            : Upload a long lived pilot proxy to the ProxyManager
   -M  --VOMS                   : Add voms extension
-
-Example::
-
-  $ dirac-proxy-init -g dirac_user --rfc
-  Enter Certificate password:
-  $
