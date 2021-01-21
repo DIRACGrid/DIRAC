@@ -22,7 +22,7 @@ jobs:
       - name: Validate README for PyPI
         run: |
           python -m readme_renderer README.rst -o /tmp/README.html
-      - name: Check Tag
+      - name: Check tag is for v7r2 or later
         id: check-tag
         run: |
           if [[ "${{ github.event.ref }}" =~ ^refs/tags/v7r2(p[0-9]+)?(-pre[0-9]+)?$ ]]; then
@@ -48,4 +48,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
-          password: ${{ secrets.pypi_password }}
+          password: ${{ secrets.PYPI_API_TOKEN }}
