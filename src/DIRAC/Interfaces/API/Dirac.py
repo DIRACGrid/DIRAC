@@ -30,11 +30,12 @@ import sys
 import tarfile
 import tempfile
 import time
-import urllib
-
-from past.builtins import long
 import six
 from six import StringIO
+
+from six.moves.urllib.parse import urlunquote
+from past.builtins import long
+
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -705,7 +706,7 @@ class Dirac(API):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split('=')[0]
-        valEnv = urllib.unquote(var.split('=')[1])  # this is needed to make the value contain strange things
+        valEnv = urlunquote(var.split('=')[1])  # this is needed to make the value contain strange things
         executionEnv[nameEnv] = valEnv
         self.log.verbose('%s = %s' % (nameEnv, valEnv))
 
