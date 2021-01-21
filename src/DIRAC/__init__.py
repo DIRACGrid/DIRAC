@@ -107,27 +107,15 @@ else:
   patchLevel = 0
   preVersion = 30
 
-version = "v%sr%s" % (majorVersion, minorVersion)
-buildVersion = "v%dr%d" % (majorVersion, minorVersion)
-if patchLevel:
-  version = "%sp%s" % (version, patchLevel)
-  buildVersion = "%s build %s" % (buildVersion, patchLevel)
-if preVersion:
-  version = "%s-pre%s" % (version, preVersion)
-  buildVersion = "%s pre %s" % (buildVersion, preVersion)
-
-# Check of python version
-
-__pythonMajorVersion = ("2", )
-__pythonMinorVersion = ("7")
-if str(pythonVersion[0]) not in __pythonMajorVersion or str(pythonVersion[1]) not in __pythonMinorVersion:
-  print("Python Version %s not supported by DIRAC" % pyPlatform.python_version())
-  print("Supported versions are: ")
-  for major in __pythonMajorVersion:
-    for minor in __pythonMinorVersion:
-      print("%s.%s.x" % (major, minor))
-
-  sys.exit(1)
+  version = "v%sr%s" % (majorVersion, minorVersion)
+  # Make it so that __version__ is always PEP-440 style
+  __version__ = "%s.%s" % (majorVersion, minorVersion)
+  if patchLevel:
+    version = "%sp%s" % (version, patchLevel)
+    __version__ += ".%s" % patchLevel
+  if preVersion:
+    version = "%s-pre%s" % (version, preVersion)
+    __version__ += "a%s" % preVersion
 
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
