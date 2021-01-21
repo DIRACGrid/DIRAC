@@ -72,6 +72,14 @@ class submitSuccess(GridSubmissionTestCase):
     self.assertTrue(res['OK'])
     jobsSubmittedList.append(res['Value'])
 
+    res = mp3Job()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = min2max4Job()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
     res = wholeNodeJob()
     self.assertTrue(res['OK'])
     jobsSubmittedList.append(res['Value'])
