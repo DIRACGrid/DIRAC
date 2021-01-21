@@ -24,6 +24,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 subLogger = None
 switchDict = {}
+DEFAULT_STATUS = ""
 
 
 def registerSwitches():
@@ -75,30 +76,15 @@ def parseSwitches():
   return switches
 
 
-# Script initialization
-subLogger = gLogger.getSubLogger(__file__)
-registerSwitches()
-registerUsageMessage()
-switchDict = parseSwitches()
-DEFAULT_STATUS = switchDict.get('defaultStatus', 'Banned')
-
-#############################################################################
-# We can define the script body now
-
-from DIRAC import gConfig
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-from DIRAC.ResourceStatusSystem.Utilities import Synchronizer, CSHelpers, RssConfiguration
-from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
-
-
 def synchronize():
   '''
     Given the element switch, adds rows to the <element>Status tables with Status
     `Unknown` and Reason `Synchronized`.
   '''
   global DEFAULT_STATUS
+
+  from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
+
   synchronizer = Synchronizer.Synchronizer(defaultStatus=DEFAULT_STATUS)
 
   if switchDict['element'] in ('Site', 'all'):
@@ -126,6 +112,8 @@ def initSites():
   '''
     Initializes Sites statuses taking their values from the "SiteMask" table of "JobDB" database.
   '''
+  from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+  from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
@@ -154,6 +142,11 @@ def initSEs():
   '''
     Initializes SEs statuses taking their values from the CS.
   '''
+  from DIRAC import gConfig
+  from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+  from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, RssConfiguration
+  from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
+  from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 
   # WarmUp local copy
   CSHelpers.warmUp()
@@ -259,6 +252,16 @@ def run():
 
 @DIRACScript()
 def main():
+  global subLogger
+  global switchDict
+  global DEFAULT_STATUS
+
+  subLogger = gLogger.getSubLogger(__file__)
+  registerSwitches()
+  registerUsageMessage()
+  switchDict = parseSwitches()
+  DEFAULT_STATUS = switchDict.get('defaultStatus', 'Banned')
+
   # Run script
   run()
 

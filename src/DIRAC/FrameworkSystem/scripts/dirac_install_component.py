@@ -13,23 +13,18 @@ from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import exit as DIRACexit
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
 __RCSID__ = "$Id$"
 
-gComponentInstaller.exitOnError = True
-
 overwrite = False
+module = ''
+specialOptions = {}
 
 
 def setOverwrite(opVal):
   global overwrite
   overwrite = True
   return S_OK()
-
-
-module = ''
-specialOptions = {}
 
 
 def setModule(optVal):
@@ -52,6 +47,9 @@ def main():
   global specialOptions
   global module
   global specialOptions
+
+  from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+  gComponentInstaller.exitOnError = True
 
   Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
   Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)

@@ -15,11 +15,8 @@ from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC import exit as DIRACexit
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
 __RCSID__ = "$Id$"
-
-gComponentInstaller.exitOnError = True
 
 force = False
 
@@ -33,6 +30,10 @@ def setForce(opVal):
 @DIRACScript()
 def main():
   global force
+
+  from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+  gComponentInstaller.exitOnError = True
+
   Script.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                     'Usage:',
