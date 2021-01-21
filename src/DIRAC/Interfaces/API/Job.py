@@ -31,9 +31,9 @@ __RCSID__ = "$Id$"
 import six
 import re
 import os
-import urllib
 import shlex
 from six import StringIO
+from six.moves.urllib.parse import quote as urlquote
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.API import API
@@ -866,7 +866,7 @@ class Job(API):
       environment = []
       for var, val in environmentDict.items():
         try:
-          environment.append('='.join([str(var), urllib.quote(str(val))]))
+          environment.append('='.join([str(var), urlquote(str(val))]))
         except Exception:
           return self._reportError('Expected string for environment variable key value pairs', **kwargs)
 

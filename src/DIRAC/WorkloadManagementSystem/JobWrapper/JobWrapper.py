@@ -14,6 +14,7 @@ and a Watchdog Agent that can monitor its progress.
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import os
@@ -25,9 +26,10 @@ import shutil
 import threading
 import tarfile
 import glob
-import urllib
 import json
 import six
+
+from six.moves.urllib.parse import unquote as urlunquote
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -355,7 +357,7 @@ class JobWrapper(object):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split('=')[0]
-        valEnv = urllib.unquote(var.split('=')[1])
+        valEnv = urlunquote(var.split('=')[1])
         exeEnv[nameEnv] = valEnv
         self.log.verbose('%s = %s' % (nameEnv, valEnv))
 
