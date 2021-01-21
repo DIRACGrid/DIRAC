@@ -7,6 +7,6 @@
 """
 import sys
 
-from diracdoctools.Cmd.commandReference import run
+from diracdoctools.diraccmd.commandReference import run
 from diracdoctools.Config import CLParser
 sys.exit(run(**(CLParser().optionDict())))

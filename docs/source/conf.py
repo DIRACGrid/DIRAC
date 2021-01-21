@@ -24,7 +24,7 @@ import recommonmark
 from recommonmark.transform import AutoStructify
 
 import diracdoctools
-import diracdoctools.Cmd
+import diracdoctools.diraccmd
 from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
 from diracdoctools.Utilities import setUpReadTheDocsEnvironment
 
@@ -34,7 +34,7 @@ LOG = logging.getLogger('conf.py')
 LOG.info('Current location %r', os.getcwd())
 LOG.info('DiracDocTools location %r', diracdoctools.__file__)
 LOG.info('DiracDocTools location %r', diracdoctools.Utilities.__file__)
-LOG.info('DiracDocTools location %r', diracdoctools.Cmd.__file__)
+LOG.info('DiracDocTools location %r', diracdoctools.diraccmd.__file__)
 #...............................................................................
 # configuration
 
@@ -51,18 +51,18 @@ if os.environ.get('READTHEDOCS') == 'True':
 
   # re-create the RST files for the command references
   LOG.info('Building command reference')
-  from diracdoctools.Cmd.commandReference import run as buildCommandReference
+  from diracdoctools.diraccmd.commandReference import run as buildCommandReference
   buildCommandReference(configFile='../docs.conf')
 
   # singlehtml build needs too much memory, so we need to create less code documentation
   buildType = 'limited' if any('singlehtml' in arg for arg in sys.argv) else 'full'
   LOG.info('Chosing build type: %r', buildType)
-  from diracdoctools.Cmd.codeReference import run as buildCodeDoc
+  from diracdoctools.diraccmd.codeReference import run as buildCodeDoc
   buildCodeDoc(configFile='../docs.conf', buildType=buildType)
 
   # Update dirac.cfg
   LOG.info('Concatenating dirac.cfg')
-  from diracdoctools.Cmd.concatcfg import run as updateCompleteDiracCFG
+  from diracdoctools.diraccmd.concatcfg import run as updateCompleteDiracCFG
   updateCompleteDiracCFG(configFile='../docs.conf')
 
 # AUTO SETUP END
