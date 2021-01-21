@@ -11,7 +11,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from past.builtins import long
 import six
 import os
 
@@ -440,7 +439,7 @@ class DirectoryClosure(DirectoryTreeBase):
     if isinstance(pathOrDirId, six.string_types):
       psName = 'ps_get_all_directory_info'
     # it is the dirId
-    elif isinstance(pathOrDirId, (list, long)):
+    elif isinstance(pathOrDirId, ((list, ) + six.integer_types)):
       psName = 'ps_get_all_directory_info_from_id'
     else:
       return S_ERROR("Unknown type of pathOrDirId %s" % type(pathOrDirId))

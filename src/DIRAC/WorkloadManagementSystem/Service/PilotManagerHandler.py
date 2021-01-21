@@ -7,7 +7,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
 import six
 from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
@@ -159,7 +158,7 @@ class PilotManagerHandler(RequestHandler):
     return cls.pilotAgentsDB.getPilotSummary(startdate, enddate)
 
   ##############################################################################
-  types_getPilotMonitorWeb = [dict, list, six.integer_types, [int, long]]
+  types_getPilotMonitorWeb = [dict, list, six.integer_types, list(six.integer_types)]
 
   @classmethod
   def export_getPilotMonitorWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -180,7 +179,7 @@ class PilotManagerHandler(RequestHandler):
     return cls.pilotAgentsDB.getPilotMonitorSelectors()
 
   ##############################################################################
-  types_getPilotSummaryWeb = [dict, list, six.integer_types, [int, long]]
+  types_getPilotSummaryWeb = [dict, list, six.integer_types, list(six.integer_types)]
 
   @classmethod
   def export_getPilotSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -366,7 +365,7 @@ class PilotManagerHandler(RequestHandler):
     return S_OK(statistics)
 
   ##############################################################################
-  types_deletePilots = [(list, int, long) + six.string_types]
+  types_deletePilots = [(list, ) + six.integer_types + six.string_types]
 
   @classmethod
   def export_deletePilots(cls, pilotIDs):
