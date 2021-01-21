@@ -1,6 +1,8 @@
 """ Used by the executors for dispatching events (IIUC)
 """
 
+from __future__ import absolute_import
+
 import threading
 import time
 

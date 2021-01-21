@@ -2,6 +2,8 @@
     Extremely simple utility class to send mails
 """
 
+from __future__ import absolute_import
+
 import six
 import os
 import socket

@@ -2,7 +2,8 @@
    Collection of DIRAC useful network related modules
    by default on Error they return None
 """
-__RCSID__ = "$Id$"
+
+from __future__ import absolute_import
 
 import socket
 import urlparse
@@ -13,6 +14,8 @@ import fcntl
 import platform
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+
+__RCSID__ = "$Id$"
 
 
 def discoverInterfaces():

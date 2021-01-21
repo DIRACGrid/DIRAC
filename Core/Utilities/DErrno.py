@@ -37,6 +37,9 @@
                              DErrno.ERRX : ['An error message for ERRX that is specific to LHCb']}
 
 """
+
+from __future__ import absolute_import
+
 import six
 import os
 import imp

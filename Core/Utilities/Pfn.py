@@ -9,6 +9,8 @@
 
 """
 
+from __future__ import absolute_import
+
 __RCSID__ = "$Id$"
 
 # # imports
