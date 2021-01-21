@@ -32,9 +32,7 @@ import tempfile
 import time
 import six
 from six import StringIO
-
-from six.moves.urllib.parse import urlunquote
-from past.builtins import long
+from six.moves.urllib.parse import unquote as urlunquote
 
 
 import DIRAC
@@ -125,7 +123,7 @@ class Dirac(API):
 
   def _checkJobArgument(self, jobID, multiple=False):
     try:
-      if isinstance(jobID, (str, int, long)):
+      if isinstance(jobID, (str, six.integer_types)):
         jobID = int(jobID)
         if multiple:
           jobID = [jobID]

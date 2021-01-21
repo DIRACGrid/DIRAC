@@ -15,9 +15,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 # # imports
-from past.builtins import long
 import six
 import json
 import datetime
@@ -358,7 +359,7 @@ class ReqManagerHandler(RequestHandler):
       gLogger.error("getRequestStatus: %s" % status["Message"])
     return status
 
-  types_getRequestFileStatus = [[int, long], [basestring, list]]
+  types_getRequestFileStatus = [list(six.integer_types), [list(six.string_types), list]]
 
   @classmethod
   def export_getRequestFileStatus(cls, requestID, lfnList):
@@ -370,7 +371,7 @@ class ReqManagerHandler(RequestHandler):
       gLogger.error("getRequestFileStatus: %s" % res["Message"])
     return res
 
-  types_getRequestInfo = [[int, long]]
+  types_getRequestInfo = [list(six.integer_types)]
 
   @classmethod
   def export_getRequestInfo(cls, requestID):

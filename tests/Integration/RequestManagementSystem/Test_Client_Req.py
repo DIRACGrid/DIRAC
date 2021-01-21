@@ -10,9 +10,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-from past.builtins import long
 import unittest
 import sys
+import six
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -83,7 +83,7 @@ class ReqClientMix(ReqClientTestCase):
     put = self.requestClient.putRequest(self.request)
     self.assertTrue(put['OK'], put)
 
-    self.assertEqual(type(put['Value']), long)
+    self.assertEqual(type(put['Value']), six.integer_types)
     reqID = put['Value']
 
     # # summary
