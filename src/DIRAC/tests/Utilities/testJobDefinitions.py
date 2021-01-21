@@ -74,7 +74,7 @@ def helloWorldCERN():
   """ simple hello world job to CERN
   """
 
-  J = baseToAllJobs('helloWorld')
+  J = baseToAllJobs('helloWorldCERN')
   try:
     J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
   except IndexError:  # we are in Jenkins
@@ -88,7 +88,7 @@ def helloWorldNCBJ():
   """ simple hello world job to NCBJ
   """
 
-  J = baseToAllJobs('helloWorld')
+  J = baseToAllJobs('helloWorldNCBJ')
   try:
     J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
   except IndexError:  # we are in Jenkins
@@ -102,7 +102,7 @@ def helloWorldGRIDKA():
   """ simple hello world job to GRIDKA
   """
 
-  J = baseToAllJobs('helloWorld')
+  J = baseToAllJobs('helloWorldGRIDKA')
   try:
     J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
   except IndexError:  # we are in Jenkins
@@ -116,7 +116,7 @@ def helloWorldGRIF():
   """ simple hello world job to GRIF
   """
 
-  J = baseToAllJobs('helloWorld')
+  J = baseToAllJobs('helloWorldGRIF')
   try:
     J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
   except IndexError:  # we are in Jenkins
@@ -130,7 +130,7 @@ def helloWorldSSHBatch():
   """ simple hello world job to DIRAC.Jenkins_SSHBatch.ch
   """
 
-  J = baseToAllJobs('helloWorld')
+  J = baseToAllJobs('helloWorldSSHBatch')
   try:
     J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
   except IndexError:  # we are in Jenkins
@@ -189,7 +189,7 @@ def wholeNodeJob():
   """ simple hello world job, with WholeNode and MultiProcessor tags
   """
 
-  J = baseToAllJobs('mpJob')
+  J = baseToAllJobs('wholeNodeJob')
   try:
     J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]])
   except IndexError:  # we are in Jenkins
@@ -204,7 +204,7 @@ def parametricJob():
   """ Creates a parametric job with 3 subjobs which are simple hello world jobs
   """
 
-  J = baseToAllJobs('helloWorld')
+  J = baseToAllJobs('parametricJob')
   try:
     J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
   except IndexError:  # we are in Jenkins
@@ -226,7 +226,7 @@ def jobWithOutput():
   with open(inp1[0], "wt") as f:
     f.write(timenow)
 
-  J = baseToAllJobs('helloWorld')
+  J = baseToAllJobs('jobWithOutput')
   try:
     inp2 = [find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]]
     J.setInputSandbox(inp1 + inp2)
@@ -253,7 +253,7 @@ def jobWithOutputs():
   with open(inp1[0], "wt") as f:
     f.write(timenow)
 
-  J = baseToAllJobs('helloWorld')
+  J = baseToAllJobs('jobWithOutputs')
   try:
     inp2 = [find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]]
     J.setInputSandbox(inp1 + inp2)
