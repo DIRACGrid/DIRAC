@@ -121,3 +121,9 @@ Acknowledgements
 ~~~~~~~~~~~~~~~~
 
 This work is co-funded by the EOSC-hub project (Horizon 2020) under Grant number 777536
+
+|eu-logo| |eosc-hub-web|
+
+.. |eu-logo| image:: https://github.com/DIRACGrid/DIRAC/raw/integration/docs/source/_static/eu-logo.jpeg
+
+.. |eosc-hub-web| image:: https://github.com/DIRACGrid/DIRAC/raw/integration/docs/source/_static/eosc-hub-web.png
