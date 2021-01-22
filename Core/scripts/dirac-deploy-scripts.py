@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-Deploy all scripts and extensions
+Deploy all scripts and extensions.
+This script is not meant to be called by users (it's automatically called by dirac-install).
 
 Usage::
 
@@ -13,10 +14,6 @@ Arguments::
 Example::
 
   $ dirac-deploy-scripts
-  Scripts will be deployed at /afs/in2p3.fr/home/h/hamar/DIRAC-v5r12/scripts
-  Inspecting DIRAC module
-  Inspecting EELADIRAC module
-
 """
 from __future__ import print_function
 
