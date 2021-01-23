@@ -17,7 +17,7 @@ funcsigs
 future
 futures
 GitPython>=2.1.0
-locustio
+locustio<0.14
 # newer versions of matplotlib require python 3
 matplotlib>=2.1.0,<3.0
 mock>=1.0.1
