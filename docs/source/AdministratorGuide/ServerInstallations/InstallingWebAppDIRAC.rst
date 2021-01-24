@@ -66,7 +66,7 @@ Installation configuration::
 
 
 Before you start the installation please make sure that you have the host certificate in the /opt/dirac/etc directory. 
-More info in the Server Certificates section in :ref:`server_requirements` .
+More info in the Server Certificates section in :ref:`server_requirements`.
 
 Create the configuration file and copy the lines above the this file::
 
@@ -109,8 +109,6 @@ Without NGinx::
 Using Nginx::
 
   tail -200f /opt/dirac/runit/Web/WebApp/log/current
-
-  The output of the command::
 
   2016-06-02 12:35:46 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
   2016-06-02 12:35:46 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
@@ -250,16 +248,11 @@ Install NGINX
 Note: you can run NGINX in a separate machine.
 
 The official site of NGINX is the following: `<http://nginx.org/>`_
-The required NGINX version has to be grater than 1.4 and WebDAV nginx module to serve static files.
-
-Prepare, needed the development repository to compile the WebDAV dynamic module for Nginx::
-
-  yum update -y
-  yum groupinstall "Development Tools" -y
-  yum install yum-utils pcre-devel zlib-devel libxslt-devel libxml2-devel -y
+The required NGINX version has to be grater than 1.4.
 
 Install Nginx using package manager. At this point, you should be able to install the pre-built Nginx package with dynamic module support::
 
+  yum update -y
   yum install nginx -y
   systemctl enable nginx
   systemctl start nginx
@@ -269,29 +262,6 @@ If it is successful installed::
   Verifying: nginx-1.16.1-1.el6.ngx.x86_64                                                                                                                                                                                                                    1/1
   Installed:
     nginx.x86_64 0:1.16.1-1.el6.ngx
-
-Compile WebDev module
-~~~~~~~~~~~~~~~~~~~~~
-
-Download the Nginx and the module source code, and you need to determine which Nginx version is running on your server. Determine running Nginx version::
-
-  nginx -v
-  nginx version: nginx/1.16.1
-
-Download the source code corresponding to the installed version::
-
-  wget http://nginx.org/download/nginx-1.16.1.tar.gz
-
-Clone the module repository::
-
-  git clone https://github.com/arut/nginx-dav-ext-module
-
-Change to the Nginx source code directory, compile the module, and copy it to the standard directory for the Nginx modules::
-
-  cd nginx-1.16.1
-  ./configure --with-compat --with-http_dav_module --add-dynamic-module=../nginx-dav-ext-module/
-  make modules
-  cp objs/ngx_http_dav_ext_module.so /etc/nginx/modules/
 
 .. _configure_nginx:
 
@@ -362,52 +332,6 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
 
     root /opt/dirac/pro;
 
-  # The same directory must exist with 'rw' permissions for all
-  location /files {
-    # Access for GET requests without certificate
-    if ($request_method = GET) {
-      # Webdav sever
-      error_page 418 = @webdav;
-      return 418;
-    }
-
-    # For not GET requests access only with client certificate verification
-    if ($ssl_client_verify = NONE) {
-      return 403 'certificate not found';
-    }
-    if ($ssl_client_verify != SUCCESS) {
-      return 403 'certificate verify failed';
-    }
-
-    # Webdav sever
-    error_page 418 = @webdav;
-    return 418;
-  }
-
-  location @webdav {
-      satisfy any;
-      # Read access for all
-      limit_except GET {
-        # Here need to add hosts IPs that allowed to make requests, except GET
-        # First, need to add the IP host used by the master CS. 
-        #allow XXX.XXX.XXX.XXX;
-        deny  all;
-      }
-      client_max_body_size 1g;
-      root /opt/dirac/webRoot/www/;
-      # Access settings
-      dav_access group:rw all:rw;
-      # Allow all posible methods
-      dav_methods PUT DELETE MKCOL COPY MOVE;
-      # For webdav clients (Cyberduck and Monosnap)
-      dav_ext_methods PROPFIND OPTIONS;
-      # Clients can create paths
-      create_full_put_path on;
-      charset utf-8;
-      autoindex on;
-      break;
-  }
-
     location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+\.(jpg|jpeg|gif|png|bmp|ico|pdf))$ {
       alias /opt/dirac/pro/;
       # Add one more for every static path. For instance for LHCbWebDIRAC:
@@ -464,12 +388,6 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
     }
   }
 
-Make sure the directory exists with the necessary permissions::
-
-  mkdir /opt/dirac/webRoot/www/files
-  chmod 666 /opt/dirac/webRoot/www/files
-  chown dirac:dirac /opt/dirac/webRoot/www/files
-
 You can start NGINX now
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -498,3 +416,94 @@ Generate the the rule::
   semodule -i nginx.pp
 
 Refresh the page
+
+
+WebDav
+------
+
+Also you can organize a file server to upload and download files, it is optional.
+
+Provide WebDav module
+~~~~~~~~~~~~~~~~~~~~~
+
+Prepare, needed the development repository to compile the WebDAV dynamic module for Nginx::
+
+  yum groupinstall "Development Tools" -y
+  yum install yum-utils pcre-devel zlib-devel libxslt-devel libxml2-devel -y
+
+Download the Nginx and the module source code, and you need to determine which Nginx version is running on your server. Determine running Nginx version::
+
+  nginx -v
+  nginx version: nginx/1.16.1
+
+Download the source code corresponding to the installed version::
+
+  wget http://nginx.org/download/nginx-1.16.1.tar.gz
+
+Clone the module repository::
+
+  git clone https://github.com/arut/nginx-dav-ext-module
+
+Change to the Nginx source code directory, compile the module, and copy it to the standard directory for the Nginx modules::
+
+  cd nginx-1.16.1
+  ./configure --with-compat --with-http_dav_module --add-dynamic-module=../nginx-dav-ext-module/
+  make modules
+  cp objs/ngx_http_dav_ext_module.so /etc/nginx/modules/
+
+Configure WebDav
+~~~~~~~~~~~~~~~~
+
+To describe WebDav server, please, add next locations to NGINX configuration::
+
+  # The same directory must exist with 'rw' permissions for all
+  location /files {
+    # Access for GET requests without certificate
+    if ($request_method = GET) {
+      # Webdav sever
+      error_page 418 = @webdav;
+      return 418;
+    }
+
+    # For not GET requests access only with client certificate verification
+    if ($ssl_client_verify = NONE) {
+      return 403 'certificate not found';
+    }
+    if ($ssl_client_verify != SUCCESS) {
+      return 403 'certificate verify failed';
+    }
+
+    # Webdav sever
+    error_page 418 = @webdav;
+    return 418;
+  }
+
+  location @webdav {
+    satisfy any;
+    # Read access for all
+    limit_except GET {
+      # Here need to add hosts IPs that allowed to make requests, except GET
+      # First, need to add the IP host used by the master CS. 
+      #allow XXX.XXX.XXX.XXX;
+      deny  all;
+    }
+    client_max_body_size 1g;
+    root /opt/dirac/webRoot/www/;
+    # Access settings
+    dav_access group:rw all:rw;
+    # Allow all posible methods
+    dav_methods PUT DELETE MKCOL COPY MOVE;
+    # For webdav clients (Cyberduck and Monosnap)
+    dav_ext_methods PROPFIND OPTIONS;
+    # Clients can create paths
+    create_full_put_path on;
+    charset utf-8;
+    autoindex on;
+    break;
+  }
+
+Make sure the directory exists with the necessary permissions::
+
+  mkdir /opt/dirac/webRoot/www/files
+  chmod 666 /opt/dirac/webRoot/www/files
+  chown dirac:dirac /opt/dirac/webRoot/www/files
