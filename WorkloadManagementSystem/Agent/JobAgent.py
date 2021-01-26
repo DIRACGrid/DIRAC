@@ -46,8 +46,10 @@ class JobAgent(AgentModule):
     super(JobAgent, self).__init__(agentName, loadName, baseAgentName, properties)
 
     # Inner CE
-    self.ceName = 'InProcess'  # "Inner" CE type
-    self.innerCESubmissionType = 'InProcess'  # "Inner" CE submission type (e.g. for Pool CE)
+    # CE type the JobAgent submits to. It can be "InProcess" or "Pool" or "Singularity".
+    self.ceName = 'InProcess'
+    # "Inner" CE submission type (e.g. for Pool CE). It can be "InProcess" or "Singularity".
+    self.innerCESubmissionType = 'InProcess'
     self.computingElement = None  # The ComputingElement object, e.g. SingularityComputingElement()
 
     # Localsite options
@@ -82,16 +84,14 @@ class JobAgent(AgentModule):
     self.am_setOption('MonitoringEnabled', False)
     self.am_setOption('MaxCycles', loops)
 
-    ceType = self.am_getOption('CEType', self.ceName)
-    localCE = gConfig.getValue('/LocalSite/LocalCE', '')
-    if localCE:
+    localCE = gConfig.getValue('/LocalSite/LocalCE', self.ceName)
+    if localCE != self.ceName:
       self.log.info('Defining CE from local configuration', '= %s' % localCE)
-      ceType = localCE
 
     # Create backend Computing Element
     ceFactory = ComputingElementFactory()
-    self.ceName = ceType.split('/')[0]  # It might be "Pool/Singularity", or simply "Pool"
-    self.innerCESubmissionType = ceType.split('/')[1] if len(ceType.split('/')) == 2 else self.innerCESubmissionType
+    self.ceName = localCE.split('/')[0]  # It might be "Pool/Singularity", or simply "Pool"
+    self.innerCESubmissionType = localCE.split('/')[1] if len(localCE.split('/')) == 2 else self.innerCESubmissionType
     ceInstance = ceFactory.getCE(self.ceName)
     if not ceInstance['OK']:
       self.log.warn("Can't instantiate a CE", ceInstance['Message'])
