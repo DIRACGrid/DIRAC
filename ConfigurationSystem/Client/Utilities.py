@@ -530,6 +530,62 @@ def getElasticDBParameters(fullname):
     ssl = False if result['Value'].lower() in ('false', 'no', 'n') else True
   parameters['SSL'] = ssl
 
+  # Elasticsearch use certs
+  result = gConfig.getOption(cs_path + '/CRT')
+  if not result['OK']:
+    # No host name found, try at the common place
+    result = gConfig.getOption('/Systems/NoSQLDatabases/CRT')
+    if not result['OK']:
+      gLogger.warn("Failed to get the configuration parameter: certs. Using False")
+      certs = False
+    else:
+      certs = result['Value']
+  else:
+    certs = result['Value']
+  parameters['CRT'] = certs
+
+  # Elasticsearch ca_certs
+  result = gConfig.getOption(cs_path + '/ca_certs')
+  if not result['OK']:
+    # No host name found, try at the common place
+    result = gConfig.getOption('/Systems/NoSQLDatabases/ca_certs')
+    if not result['OK']:
+      gLogger.warn("Failed to get the configuration parameter: ca_certs. Using None")
+      ca_certs = None
+    else:
+      ca_certs = result['Value']
+  else:
+    ca_certs = result['Value']
+  parameters['ca_certs'] = ca_certs
+
+  # Elasticsearch client_key
+  result = gConfig.getOption(cs_path + '/client_key')
+  if not result['OK']:
+    # No host name found, try at the common place
+    result = gConfig.getOption('/Systems/NoSQLDatabases/client_key')
+    if not result['OK']:
+      gLogger.warn("Failed to get the configuration parameter: client_key. Using None")
+      client_key = None
+    else:
+      client_key = result['Value']
+  else:
+    client_key = result['Value']
+  parameters['client_key'] = client_key
+
+  # Elasticsearch client_cert
+  result = gConfig.getOption(cs_path + '/client_cert')
+  if not result['OK']:
+    # No host name found, try at the common place
+    result = gConfig.getOption('/Systems/NoSQLDatabases/client_cert')
+    if not result['OK']:
+      gLogger.warn("Failed to get the configuration parameter: client_cert. Using None")
+      client_cert = None
+    else:
+      client_cert = result['Value']
+  else:
+    client_cert = result['Value']
+  parameters['client_cert'] = client_cert
+
   return S_OK(parameters)
 
 

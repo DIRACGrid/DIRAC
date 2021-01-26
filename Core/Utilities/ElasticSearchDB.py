@@ -58,7 +58,8 @@ class ElasticSearchDB(object):
   RESULT_SIZE = 10000
 
   ########################################################################
-  def __init__(self, host, port, user=None, password=None, indexPrefix='', useSSL=True):
+  def __init__(self, host, port, user=None, password=None, indexPrefix='', useSSL=True,
+                useCRT=False, ca_certs=None, client_key=None, client_cert=None):
     """ c'tor
 
     :param self: self reference
@@ -68,6 +69,10 @@ class ElasticSearchDB(object):
     :param str password: if the db is password protected we need to provide a password
     :param str indexPrefix: it is the indexPrefix used to get all indexes
     :param bool useSSL: We can disable using secure connection. By default we use secure connection.
+    :param bool useCRT: Use certificates.
+    :param str ca_certs: Server certificate.
+    :param str client_key: Client key.
+    :param str client_cert: Client certificate.
     """
 
     self.__indexPrefix = indexPrefix
@@ -105,6 +110,14 @@ class ElasticSearchDB(object):
                                   use_ssl=True,
                                   verify_certs=True,
                                   ca_certs=casFile)
+    elif useCRT:
+        self.client = Elasticsearch(self.__url,
+                                  timeout=self.__timeout,
+                                  use_ssl=True,
+                                  verify_certs=True,
+                                  ca_certs=ca_certs,
+                                  client_cert=client_cert,
+                                  client_key=client_key)
     else:
       self.client = Elasticsearch(self.__url, timeout=self.__timeout)
 
