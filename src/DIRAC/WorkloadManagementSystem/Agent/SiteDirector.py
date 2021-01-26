@@ -64,16 +64,6 @@ MAX_PILOTS_TO_SUBMIT = 100
 MAX_JOBS_IN_FILLMODE = 5
 
 
-def getSubmitPools(group=None, vo=None):
-  """ This method gets submit pools
-  """
-  if group:
-    return Registry.getGroupOption(group, 'SubmitPools', '')
-  if vo:
-    return Registry.getVOOption(vo, 'SubmitPools', '')
-  return ''
-
-
 class SiteDirector(AgentModule):
   """ SiteDirector class provides an implementation of a DIRAC agent.
 
@@ -112,7 +102,6 @@ class SiteDirector(AgentModule):
     self.pilotGroup = ''
     self.platforms = []
     self.sites = []
-    self.defaultSubmitPools = ''
     self.totalSubmittedPilots = 0
 
     self.addPilotsToEmptySites = False
@@ -205,7 +194,6 @@ class SiteDirector(AgentModule):
     self.pilotDN, self.pilotGroup = result['Value']
 
     # Parameters
-    self.defaultSubmitPools = getSubmitPools(self.group, self.vo)
     self.workingDirectory = self.am_getOption('WorkDirectory')
     self.maxQueueLength = self.am_getOption('MaxQueueLength', self.maxQueueLength)
     self.pilotLogLevel = self.am_getOption('PilotLogLevel', self.pilotLogLevel)
@@ -677,8 +665,7 @@ class SiteDirector(AgentModule):
         :returns dict: tqDict of task queue descriptions
     """
     tqDict = {'Setup': CSGlobals.getSetup(),
-              'CPUTime': 9999999,
-              'SubmitPool': self.defaultSubmitPools}
+              'CPUTime': 9999999}
     if self.vo:
       tqDict['Community'] = self.vo
     if self.voGroups:
