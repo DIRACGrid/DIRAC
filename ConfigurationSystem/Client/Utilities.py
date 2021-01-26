@@ -536,7 +536,7 @@ def getElasticDBParameters(fullname):
     # No host name found, try at the common place
     result = gConfig.getOption('/Systems/NoSQLDatabases/CRT')
     if not result['OK']:
-      gLogger.warn("Failed to get the configuration parameter: certs. Using False")
+      gLogger.warn("Failed to get the configuration parameter: CRT. Using False")
       certs = False
     else:
       certs = result['Value']

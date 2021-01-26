@@ -59,7 +59,7 @@ class ElasticSearchDB(object):
 
   ########################################################################
   def __init__(self, host, port, user=None, password=None, indexPrefix='', useSSL=True,
-                useCRT=False, ca_certs=None, client_key=None, client_cert=None):
+               useCRT=False, ca_certs=None, client_key=None, client_cert=None):
     """ c'tor
 
     :param self: self reference
@@ -112,12 +112,12 @@ class ElasticSearchDB(object):
                                   ca_certs=casFile)
     elif useCRT:
         self.client = Elasticsearch(self.__url,
-                                  timeout=self.__timeout,
-                                  use_ssl=True,
-                                  verify_certs=True,
-                                  ca_certs=ca_certs,
-                                  client_cert=client_cert,
-                                  client_key=client_key)
+                                    timeout=self.__timeout,
+                                    use_ssl=True,
+                                    verify_certs=True,
+                                    ca_certs=ca_certs,
+                                    client_cert=client_cert,
+                                    client_key=client_key)
     else:
       self.client = Elasticsearch(self.__url, timeout=self.__timeout)
 
