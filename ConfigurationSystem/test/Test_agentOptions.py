@@ -59,7 +59,7 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['Mess
                                                                                           'TransfIDMeta']}),
           # ('DIRAC.TransformationSystem.Agent.RequestTaskAgent', {}),  # not inheriting from AgentModule
           # ('DIRAC.TransformationSystem.Agent.WorkflowTaskAgent', {}),  # not inheriting from AgentModule
-          ('DIRAC.WorkloadManagementSystem.Agent.JobAgent', {'IgnoreOptions': ['FillingModeFlag', 'JobWrapperTemplate',
+          ('DIRAC.WorkloadManagementSystem.Agent.JobAgent', {'IgnoreOptions': ['JobWrapperTemplate',
                                                                                'MinimumTimeLeft']}),
           ('DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent', {}),
           ('DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent', {'IgnoreOptions': ['PilotAccountingEnabled',
