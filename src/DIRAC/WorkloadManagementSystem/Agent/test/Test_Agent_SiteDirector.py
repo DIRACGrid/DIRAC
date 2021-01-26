@@ -62,9 +62,9 @@ def test__getPilotOptions(mocker):
                                                 'OwnerGroup': ['lhcb_user'],
                                                 'Setup': 'LHCb-Production',
                                                 'Site': 'LCG.CERN.cern'}}}
-  res = sd._getPilotOptions('aQueue', 10)
+  res = sd._getPilotOptions('aQueue')
   assert res == ['-S TestSetup', '-V 123', '-l 123',
-                 '-z ', '-o /Security/ProxyToken=token', '-M 1',
+                 '-z ', '-M 1',
                  '-C T,e,s,t,S,e,t,u,p', '-e 1,2,3',
                  '-N aCE', '-Q aQueue', '-n LCG.CERN.cern']
 
