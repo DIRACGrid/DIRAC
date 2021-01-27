@@ -62,9 +62,9 @@ def test__getPilotOptions(mocker):
                                                 'SubmitPool': ''}}}
   res = sd._getPilotOptions('aQueue', 10)
   assert res[0] == ['-S TestSetup', '-V 123', '-l 123',
-                    '-o /Security/ProxyToken=token', '-M 1', '-C T,e,s,t,S,e,t,u,p',
+                    '-o /Security/ProxyToken=token', '-C T,e,s,t,S,e,t,u,p',
                     '-e 1,2,3', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern']
-  assert res[1] == 1
+  assert res[1] == 10
 
 
 @pytest.mark.parametrize("mockMatcherReturnValue, expected, anyExpected, sitesExpected", [
