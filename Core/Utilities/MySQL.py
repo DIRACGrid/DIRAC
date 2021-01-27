@@ -151,6 +151,7 @@ import collections
 import time
 import threading
 import MySQLdb
+import re
 
 from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
@@ -1116,21 +1117,13 @@ class MySQL(object):
             raise Exception(retDict['Message'])
           else:
             escapeInValue = retDict['Value'][0]
-            if escapeInValue[1:3] == '%%' or escapeInValue[-3:-1] == '%%':
-
-              if escapeInValue[1:3] == '%%' and escapeInValue[-3:-1] == '%%':
-                escapeInValue = escapeInValue[:1] + escapeInValue[2:-2] + escapeInValue[-1]
-              elif escapeInValue[1:3] == '%%':
-                escapeInValue = escapeInValue[:1] + escapeInValue[2:]
-              else:
-                escapeInValue = escapeInValue[:-2] + escapeInValue[-1:]
-
+            regex = re.compile('%')
+            if regex.search(escapeInValue):
               condition = ' %s %s %s LIKE %s' % (condition,
                                                  conjunction,
                                                  attrName,
                                                  escapeInValue)
             else:
-
               condition = ' %s %s %s = %s' % (condition,
                                               conjunction,
                                               attrName,
