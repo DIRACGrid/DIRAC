@@ -50,10 +50,11 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 | *<CE_NAME>/CEType*                             | Type of CE, can take values as LCG or CREAM                  | CEType = ARC                   |
 +------------------------------------------------+------------------------------------------------------------- +--------------------------------+
 | *<CE_NAME>/LocalCEType*                        | Type of 'Inner' CE, normally empty. Default = "InProcess".   | LocalCEType = Pool             |
-|                                                | Possibilities: potentially all CEs type, but in practice     |                                |
+|                                                | Possibilities: potentially all CE types, but in practice     |                                |
 |                                                | the most valid would be: InProcess, Sudo, Singularity, Pool. |                                |
 |                                                | Pool CE in turn uses InProcess (Default)                     |                                |
 |                                                | or Sudo or Singularity. To specify, use Pool/ce_type.        | LocalCEType = Pool/Singularity |
+|                                                | This option can also go at the Queue level.                  |                                |
 +------------------------------------------------+------------------------------------------------------------- +--------------------------------+
 | *<CE_NAME>/OS*                                 | CE operating system in a DIRAC format                        | OS = ScientificLinux_Boron_5.3 |
 +------------------------------------------------+------------------------------------------------------------- +--------------------------------+
@@ -97,7 +98,9 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 | *<CE_NAME>/Queues/<QUEUE_NAME>/Tag*            | List of tags specific for the Queue                          | Tag = GPU,96RAM                |
 +------------------------------------------------+------------------------------------------------------------- +--------------------------------+
 | *<CE_NAME>/Queues/<QUEUE_NAME>/RequiredTag*    | List of required tags that a job to be eligible must have    | RequiredTag = GPU,96RAM        |
-+------------------------------------------------+-------------------------------------------------------------+--------------------------------+
++------------------------------------------------+--------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/Queues/<QUEUE_NAME>/LocalCEType*    | Same as *<CE_NAME>/LocalCEType* (see above) but per queue.   | LocalCEType = Pool/Singularity |
++------------------------------------------------+--------------------------------------------------------------+--------------------------------+
 
 
 An example for this session follows::
@@ -139,6 +142,8 @@ An example for this session follows::
                 MaxTotalJobs = 5000
                 MaxWaitingJobs = 200
                 maxCPUTime = 7776
+                LocalCEType = Pool/Singularity
+                Tag = MultiProcessor
               }
             }
             VO = lhcb
