@@ -1145,7 +1145,7 @@ class SiteDirector(AgentModule):
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
     # Request token for maximum pilot efficiency
-    numberOfProcessors = queueDict.get('NumberOfProcessors', 1)
+    numberOfProcessors = int(queueDict.get('NumberOfProcessors', 1))
     result = gProxyManager.requestToken(ownerDN, ownerGroup, pilotsToSubmit * numberOfProcessors)
     if not result['OK']:
       self.log.error('Invalid proxy token request', result['Message'])

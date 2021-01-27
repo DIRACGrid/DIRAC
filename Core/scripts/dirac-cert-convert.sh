@@ -28,7 +28,7 @@ USERCERT_P12_ORIG=$1
 USERCERT_P12="${GLOBUS}"/$(basename "${USERCERT_P12_ORIG}")
 USERCERT_PEM="${GLOBUS}"/usercert.pem
 USERKEY_PEM="${GLOBUS}"/userkey.pem
-OPENSSL=$(which openssl)
+OPENSSL=$(command -v openssl)
 DATE=$(/bin/date +%F-%H:%M)
 
 if [[ ! -f "${USERCERT_P12_ORIG}" ]]; then
