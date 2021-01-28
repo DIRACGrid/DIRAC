@@ -38,7 +38,7 @@ The three strings are concatenated with "." to produce the name of the sites.
 CEs  sub-subsection
 -------------------
 
-This sub-subsection specify the attributes of each particular CE of the site. Must be noticed than in eachDRAC site can be more than one CE.
+This sub-subsection specifies the attributes of each particular CE of the site. For each DIRAC site there can be more than one CE.
 
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | **Name**                                       | **Description**                                             | **Example**                    |
