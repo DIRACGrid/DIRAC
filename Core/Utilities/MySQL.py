@@ -387,6 +387,8 @@ class MySQL(object):
     global gInstancesCount
     gInstancesCount += 1
 
+    self.__regexLike = re.compile('%')
+
     self._connected = False
 
     if 'log' not in dir(self):
@@ -1117,8 +1119,7 @@ class MySQL(object):
             raise Exception(retDict['Message'])
           else:
             escapeInValue = retDict['Value'][0]
-            regex = re.compile('%')
-            if regex.search(escapeInValue):
+            if self.__regexLike.search(escapeInValue):
               condition = ' %s %s %s LIKE %s' % (condition,
                                                  conjunction,
                                                  attrName,
