@@ -9,6 +9,7 @@ import os
 
 from DIRAC import S_ERROR
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 
@@ -504,12 +505,14 @@ class Logging(object):
     finally:
       self._lockInit.release()
 
+  @deprecated("No longer does anything", onlyOnce=True)
   def initialized(self):  # pylint: disable=no-self-use
     """
     initialized: Deleted method. Do not use it.
     """
     return True
 
+  @deprecated("No longer does anything", onlyOnce=True)
   def processMessage(self, messageObject):  # pylint: disable=no-self-use
     """
     processMessage: Deleted method. Do not use it.
@@ -517,6 +520,7 @@ class Logging(object):
     _ = messageObject  # make pylint happy
     return False
 
+  @deprecated("No longer does anything", onlyOnce=True)
   def flushAllMessages(self, exitCode=0):
     """
     flushAllMessages: Deleted method. Do not use it.
