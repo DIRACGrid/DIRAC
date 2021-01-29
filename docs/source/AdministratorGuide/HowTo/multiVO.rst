@@ -119,7 +119,7 @@ Here define the users part of the "superb_user" group, its DIRAC properties, and
 $HOME/.glite/vomses
 -------------------
 
-DIRAC search for VOMS data in the directory pointed by ``$X509_VOMSES`` variable (there is no default location).
+DIRAC search for VOMS data in the directory pointed by ``$X509_VOMSES`` variable (if not set `/etc/vomses` will be queried).
 
 For each VO, there should be a file with the same name of VO and filled it the following way for every VOMS server:
 (Take data from http://operations-portal.egi.eu/vo)
