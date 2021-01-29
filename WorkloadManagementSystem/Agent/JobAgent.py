@@ -62,7 +62,7 @@ class JobAgent(AgentModule):
     self.cpuFactor = 0.0
     self.jobSubmissionDelay = 10
     self.fillingMode = True
-    self.minimumTimeLeft = 1000
+    self.minimumTimeLeft = 5000
     self.stopOnApplicationFailure = True
     self.stopAfterFailedMatches = 10
     self.jobCount = 0
@@ -77,16 +77,15 @@ class JobAgent(AgentModule):
     self.pilotInfoReportedFlag = False
 
   #############################################################################
-  def initialize(self, loops=0):
+  def initialize(self):
     """Sets default parameters and creates CE instance
     """
-    # Disable monitoring, logLevel INFO, limited cycles
+    # Disable monitoring
     self.am_setOption('MonitoringEnabled', False)
-    self.am_setOption('MaxCycles', loops)
 
     localCE = gConfig.getValue('/LocalSite/LocalCE', self.ceName)
     if localCE != self.ceName:
-      self.log.info('Defining CE from local configuration', '= %s' % localCE)
+      self.log.info('Defining Inner CE from local configuration', '= %s' % localCE)
 
     # Create backend Computing Element
     ceFactory = ComputingElementFactory()
