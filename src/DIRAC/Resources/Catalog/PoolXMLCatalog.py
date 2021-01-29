@@ -162,7 +162,6 @@ class PoolXMLCatalog(object):
       if isinstance(xmlfile, list):
         for xmlf in xmlfile:
           try:
-            _sfile = file(xmlf, 'r')
             self.dom = xml.dom.minidom.parse(xmlf)
           except BaseException:
             self.dom = xml.dom.minidom.parseString(xmlf)
@@ -170,7 +169,6 @@ class PoolXMLCatalog(object):
           self.analyseCatalog(self.dom)
       else:
         try:
-          _sfile = file(xmlfile, 'r')
           self.dom = xml.dom.minidom.parse(xmlfile)
           # This is a file, set it as a backend by default
           self.backend_file = xmlfile

@@ -339,12 +339,12 @@ class ServiceInterface(object):
     :return: S_OK with all the data that is read.
     """
     try:
-      fd = file("%s/%s" % (self.plotsPath, filename))
+      with open("%s/%s" % (self.plotsPath, filename)) as fd:
+        data = fd.read()
     except Exception as e:
       return S_ERROR(e)
-    data = fd.read()
-    fd.close()
-    return S_OK(data)
+    else:
+      return S_OK(data)
 
   def saveView(self, viewName, viewDescription):
     """
