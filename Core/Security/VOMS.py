@@ -193,10 +193,13 @@ class VOMS(BaseSecurity):
     requiredFilePerms = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
     # 777
     allPerms = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
-    vomsesPaths = []
-    if 'DIRAC_VOMSES' in os.environ:
-      vomsesPaths.append(os.environ['DIRAC_VOMSES'])
-    vomsesPaths.append(os.path.join(rootPath, "etc", "grid-security", "vomses"))
+    vomsesPaths = None
+    if 'X509_VOMSES' in os.environ:
+      vomsesPaths = os.environ['X509_VOMSES'].split(':')
+    else:
+      return S_ERROR("The env variable X509_VOMSES is not set. "
+                     "DIRAC does not know where to look for etc/grid-security/vomses. "
+                     "Please set X509_VOMSES in your bashrc.")
     for vomsesPath in vomsesPaths:
       if not os.path.exists(vomsesPath):
         continue
