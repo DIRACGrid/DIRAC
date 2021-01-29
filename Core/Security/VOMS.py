@@ -209,7 +209,7 @@ class VOMS(BaseSecurity):
         os.close(fd)
         shutil.copy(vomsesPath, tmpPath)
         os.chmod(tmpPath, requiredFilePerms)
-        os.environ['DIRAC_VOMSES'] = tmpPath
+        os.environ['X509_VOMSES'] = tmpPath
         return tmpPath
       elif os.path.isdir(vomsesPath):
         ok = True
@@ -230,7 +230,7 @@ class VOMS(BaseSecurity):
         os.chmod(tmpDir, requiredDirPerms)
         for fP in os.listdir(tmpDir):
           os.chmod(os.path.join(tmpDir, fP), requiredFilePerms)
-        os.environ['DIRAC_VOMSES'] = tmpDir
+        os.environ['X509_VOMSES'] = tmpDir
         return tmpDir
 
   def setVOMSAttributes(self, proxy, attribute=None, vo=None):
