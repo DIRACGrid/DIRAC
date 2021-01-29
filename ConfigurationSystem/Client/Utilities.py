@@ -533,7 +533,7 @@ def getElasticDBParameters(fullname):
   # Elasticsearch use certs
   result = gConfig.getOption(cs_path + '/CRT')
   if not result['OK']:
-    # No host name found, try at the common place
+    # No CRT option found, try at the common place
     result = gConfig.getOption('/Systems/NoSQLDatabases/CRT')
     if not result['OK']:
       gLogger.warn("Failed to get the configuration parameter: CRT. Using False")
@@ -547,7 +547,7 @@ def getElasticDBParameters(fullname):
   # Elasticsearch ca_certs
   result = gConfig.getOption(cs_path + '/ca_certs')
   if not result['OK']:
-    # No host name found, try at the common place
+    # No CA certificate found, try at the common place
     result = gConfig.getOption('/Systems/NoSQLDatabases/ca_certs')
     if not result['OK']:
       gLogger.warn("Failed to get the configuration parameter: ca_certs. Using None")
@@ -561,7 +561,7 @@ def getElasticDBParameters(fullname):
   # Elasticsearch client_key
   result = gConfig.getOption(cs_path + '/client_key')
   if not result['OK']:
-    # No host name found, try at the common place
+    # No client private key found, try at the common place
     result = gConfig.getOption('/Systems/NoSQLDatabases/client_key')
     if not result['OK']:
       gLogger.warn("Failed to get the configuration parameter: client_key. Using None")
@@ -575,7 +575,7 @@ def getElasticDBParameters(fullname):
   # Elasticsearch client_cert
   result = gConfig.getOption(cs_path + '/client_cert')
   if not result['OK']:
-    # No host name found, try at the common place
+    # No cient certificate found, try at the common place
     result = gConfig.getOption('/Systems/NoSQLDatabases/client_cert')
     if not result['OK']:
       gLogger.warn("Failed to get the configuration parameter: client_cert. Using None")
