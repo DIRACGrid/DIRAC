@@ -1142,17 +1142,6 @@ class SiteDirector(AgentModule):
             "(version in CS: %s)" % lcgBundleVersion)
         pilotOptions.append('-g %s' % lcgBundleVersion)
 
-    ownerDN = self.pilotDN
-    ownerGroup = self.pilotGroup
-    # Request token for maximum pilot efficiency
-    numberOfProcessors = int(queueDict.get('NumberOfProcessors', 1))
-    result = gProxyManager.requestToken(ownerDN, ownerGroup, pilotsToSubmit * numberOfProcessors)
-    if not result['OK']:
-      self.log.error('Invalid proxy token request', result['Message'])
-      return [None, None]
-    (token, _) = result['Value']
-    pilotOptions.append('-o /Security/ProxyToken=%s' % token)
-
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
       pilotOptions.append('-ddd')

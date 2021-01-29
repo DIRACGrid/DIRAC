@@ -443,7 +443,7 @@ class JobAgent(AgentModule):
     self.log.info("Requesting proxy', 'for %s@%s" % (ownerDN, ownerGroup))
     token = gConfig.getValue("/Security/ProxyToken", "")
     if not token:
-      self.log.info("No token defined. Trying to download proxy without token")
+      self.log.verbose("No token defined. Trying to download proxy without token")
       token = False
     retVal = gProxyManager.getPayloadProxyFromDIRACGroup(ownerDN, ownerGroup,
                                                          self.defaultProxyLength, token)
