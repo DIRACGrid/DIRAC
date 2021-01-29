@@ -69,7 +69,7 @@ if os.environ.get('READTHEDOCS') == 'True':
 
 else:
   # If not READTHEDOCS just prepare dirac.cfg for docs
-  from diracdoctools.cmd.concatcfg import ConcatCFG 
+  from diracdoctools.cmd.concatcfg import ConcatCFG
   ConcatCFG(configFile='../docs.conf').prepareDiracCFG()
 
 # get the dirac version
