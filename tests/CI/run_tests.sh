@@ -35,6 +35,8 @@ if [[ "$INSTALLTYPE" == "server" ]]; then
         if [[ "$(basename "${repo_path}")" == "DIRAC" ]]; then
             sed -i "s/\(elHost = \).*/\1'elasticsearch'/" "$WORKSPACE/ServerInstallDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py"
         fi
+    done
+    for repo_path in "${TESTREPO[@]}"; do
         source "$WORKSPACE/ServerInstallDIR/$(basename "${repo_path}")/tests/Integration/all_integration_server_tests.sh"
     done
 elif [[ "$INSTALLTYPE" == "client" ]]; then
@@ -44,6 +46,8 @@ elif [[ "$INSTALLTYPE" == "client" ]]; then
     ERR=0
     for repo_path in "${TESTREPO[@]}"; do
         cp -r "${repo_path}/tests" "$WORKSPACE/ClientInstallDIR/$(basename "${repo_path}")"
+    done
+    for repo_path in "${TESTREPO[@]}"; do
         source "$WORKSPACE/ClientInstallDIR/$(basename "${repo_path}")/tests/Integration/all_integration_client_tests.sh"
     done
 fi
