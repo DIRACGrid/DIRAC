@@ -45,6 +45,7 @@ dependencies:
   - coverage
   - hypothesis
   - ipython
+  - make
   - mock
   - parameterized
   - pylint >=1.6.5
