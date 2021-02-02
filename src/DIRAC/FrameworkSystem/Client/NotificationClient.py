@@ -25,7 +25,7 @@ class NotificationClient(Client):
     self.setServer('Framework/Notification')
 
   def sendMail(self, addresses, subject, body,
-               fromAddress=None, localAttempt=True, html=False, avoidSpam=False):
+	       fromAddress=None, localAttempt=True, html=False):
     """ Send an e-mail with subject and body to the specified address. Try to send
         from local area before central service by default.
     """
@@ -59,7 +59,7 @@ class NotificationClient(Client):
             'Could not send mail with the following message:\n%s\n will attempt to send via NotificationService' %
             result['Message'])
 
-      result = self._getRPC().sendMail(address, subject, body, str(fromAddress), avoidSpam)
+      result = self._getRPC().sendMail(address, subject, body, str(fromAddress))
       if not result['OK']:
         self.log.error('Could not send mail via central Notification service', result['Message'])
         return result

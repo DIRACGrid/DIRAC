@@ -20,7 +20,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 
@@ -40,37 +39,6 @@ def getGridVOs():
       if vomsVO:
         voNames.append(vomsVO)
   return S_OK(voNames)
-
-
-@deprecated("Will disappear (see https://github.com/DIRACGrid/DIRAC/issues/3908)")
-def getSEsFromCS(protocol='srm'):
-  """ Get all the SEs defined in the CS
-
-      :param str protocol: storage protocol
-
-      :return: S_OK(dict)/S_ERROR()
-  """
-  knownSEs = {}
-  result = gConfig.getSections('/Resources/StorageElements')
-  if not result['OK']:
-    return result
-  ses = result['Value']
-  for se in ses:
-    seSection = '/Resources/StorageElements/%s' % se
-    result = gConfig.getSections(seSection)
-    if not result['OK']:
-      continue
-    accesses = result['Value']
-    for access in accesses:
-      seProtocol = gConfig.getValue(cfgPath(seSection, access, 'Protocol'), '')
-      if seProtocol.lower() == protocol.lower() or protocol == 'any':
-        host = gConfig.getValue(cfgPath(seSection, access, 'Host'), '')
-        knownSEs.setdefault(host, [])
-        knownSEs[host].append(se)
-      else:
-        continue
-
-  return S_OK(knownSEs)
 
 
 def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
@@ -352,26 +320,6 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
 
   return S_OK(changeSet)
 
-
-@deprecated("Used nowhere")
-def getDIRACSesForHostName(hostName):
-  """ returns the DIRAC SEs that share the same hostName
-
-      :param str hostName: host name, e.g. 'storm-fe-lhcb.cr.cnaf.infn.it'
-      :return: S_OK with list of DIRAC SE names, or S_ERROR
-  """
-
-  seNames = DMSHelpers().getStorageElements()
-
-  resultDIRACSEs = []
-  for seName in seNames:
-    res = getSEHosts(seName)
-    if not res['OK']:
-      return res
-    if hostName in res['Value']:
-      resultDIRACSEs.extend(seName)
-
-  return S_OK(resultDIRACSEs)
 
 def getDBParameters(fullname):
   """ Retrieve Database parameters from CS
