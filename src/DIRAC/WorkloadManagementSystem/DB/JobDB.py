@@ -35,7 +35,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
@@ -147,112 +146,6 @@ class JobDB(DB):
     """
     return self.getDistinctAttributeValues('Jobs', attribute, condDict=condDict,
                                            older=older, newer=newer, timeStamp=timeStamp)
-
-#############################################################################
-  @deprecated("Unused")
-  def traceJobParameter(self, site, localID, parameter, date=None, until=None):
-    ret = self.traceJobParameters(site, localID, [parameter], None, date, until)
-    if not ret['OK']:
-      return ret
-    returnDict = {}
-    for jobID in ret['Value']:
-      returnDict[jobID] = ret['Value'][jobID].get(parameter)
-    return S_OK(returnDict)
-
-#############################################################################
-  @deprecated("Unused, and broken in case the job parameters are on ElasticSearch")
-  def traceJobParameters(self, site, localIDs, paramList=None, attributeList=None, date=None, until=None):
-    import datetime
-    exactTime = False
-    if not attributeList:
-      attributeList = []
-    attributeList = list(set(attributeList) | set(['StartExecTime', 'SubmissionTime', 'HeartBeatTime',
-                                                   'EndExecTime', 'JobName', 'OwnerDN', 'OwnerGroup']))
-    try:
-      if isinstance(localIDs, (list, dict)):
-        localIDs = [int(localID) for localID in localIDs]
-      else:
-        localIDs = [int(localIDs)]
-    except Exception:
-      return S_ERROR("localIDs must be integers")
-    now = datetime.datetime.utcnow()
-    if until:
-      if until.lower() == 'now':
-        until = now
-      else:
-        try:
-          until = datetime.datetime.strptime(until, '%Y-%m-%d')
-        except Exception:
-          return S_ERROR("Error in format for 'until', expected '%Y-%m-%d'")
-    if not date:
-      until = now
-      since = until - datetime.timedelta(hours=24)
-    else:
-      since = None
-      for dFormat in ('%Y-%m-%d', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S'):
-        try:
-          since = datetime.datetime.strptime(date, dFormat)
-          break
-        except Exception:
-          exactTime = True
-      if not since:
-        return S_ERROR('Error in date format')
-      if exactTime:
-        exactTime = since
-        if not until:
-          until = now
-      else:
-        if not until:
-          until = since + datetime.timedelta(hours=24)
-      if since > now:
-        return S_ERROR('Cannot find jobs in the future')
-      if until > now:
-        until = now
-    result = self.selectJobs({'Site': site}, older=str(until), newer=str(since))
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      return S_ERROR('No jobs found at %s for date %s' % (site, date))
-    resultDict = {'Successful': {}, 'Failed': {}}
-    for jobID in result['Value']:
-      if jobID:
-        ret = self.getJobParameter(jobID, 'LocalJobID')
-        if not ret['OK']:
-          return ret
-        localID = ret['Value']
-        if localID and int(localID) in localIDs:
-          attributes = self.getJobAttributes(jobID, attributeList)
-          if not attributes['OK']:
-            return attributes
-          attributes = attributes['Value']
-          if exactTime:
-            for att in ('StartExecTime', 'SubmissionTime'):
-              startTime = attributes.get(att)
-              if startTime == 'None':
-                startTime = None
-              if startTime:
-                break
-            startTime = datetime.datetime.strptime(startTime, '%Y-%m-%d %H:%M:%S') if startTime else now
-            for att in ('EndExecTime', 'HeartBeatTime'):
-              lastTime = attributes.get(att)
-              if lastTime == 'None':
-                lastTime = None
-              if lastTime:
-                break
-            lastTime = datetime.datetime.strptime(lastTime, '%Y-%m-%d %H:%M:%S') if lastTime else now
-            okTime = (exactTime >= startTime and exactTime <= lastTime)
-          else:
-            okTime = True
-          if okTime:
-            ret = self.getJobParameters(jobID, paramList=paramList)
-            if not ret['OK']:
-              return ret
-            attributes.update(ret['Value'].get(jobID, {}))
-            resultDict['Successful'].setdefault(int(localID), {})[int(jobID)] = attributes
-    for localID in localIDs:
-      if localID not in resultDict['Successful']:
-        resultDict['Failed'][localID] = 'localID not found'
-    return S_OK(resultDict)
 
 #############################################################################
   def getJobParameters(self, jobID, paramList=None):

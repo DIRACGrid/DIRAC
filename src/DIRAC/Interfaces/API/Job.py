@@ -42,7 +42,6 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Workflow.Parameter import Parameter
 from DIRAC.Core.Workflow.Workflow import Workflow
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -880,32 +879,6 @@ class Job(API):
     for par in params:
       wfParams[par.getName()] = par.getValue()
     return wfParams
-
-  #############################################################################
-  @deprecated("Unused")
-  def _dumpParameters(self, showType=None):
-    """Developer function.
-       Method to print the workflow parameters.
-    """
-    paramsDict = {}
-    paramList = self.workflow.parameters
-    for param in paramList:
-      paramsDict[param.getName()] = {'type': param.getType(), 'value': param.getValue()}
-    self.log.info('--------------------------------------')
-    self.log.info('Workflow parameter summary:           ')
-    self.log.info('--------------------------------------')
-    # print self.workflow.parameters
-    # print params.getParametersNames()
-    for name, _props in paramsDict.items():
-      ptype = paramsDict[name]['type']
-      value = paramsDict[name]['value']
-      if showType:
-        if ptype == showType:
-          self.log.info('NAME: %s\nTYPE: %s\nVALUE: %s ' % (name, ptype, value))
-          self.log.info('--------------------------------------')
-      else:
-        self.log.info('NAME: %s\nTYPE: %s\nVALUE: %s ' % (name, ptype, value))
-        self.log.info('--------------------------------------')
 
   #############################################################################
 

@@ -52,14 +52,13 @@ class NotificationHandler(RequestHandler):
   ###########################################################################
   types_sendMail = [six.string_types, six.string_types, six.string_types, six.string_types, bool]
 
-  def export_sendMail(self, address, subject, body, fromAddress, avoidSpam=False):
+  def export_sendMail(self, address, subject, body, fromAddress):
     """ Send an email with supplied body to the specified address using the Mail utility.
 
         :param six.string_types address: recipient addresses
         :param six.string_types subject: subject of letter
         :param six.string_types body: body of letter
         :param six.string_types fromAddress: sender address, if None, will be used default from CS
-        :param bool avoidSpam: Deprecated
 
         :return: S_OK(six.string_types)/S_ERROR() -- six.string_types is status message
     """

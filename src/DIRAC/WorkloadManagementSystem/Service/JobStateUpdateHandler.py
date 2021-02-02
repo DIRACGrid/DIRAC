@@ -26,7 +26,6 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 class JobStateUpdateHandler(RequestHandler):
@@ -99,21 +98,6 @@ class JobStateUpdateHandler(RequestHandler):
     """
     return cls.__setJobStatus(
         int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime)
-
-  ###########################################################################
-  types_setJobsStatus = [list]
-
-  @classmethod
-  @deprecated("unused")
-  def export_setJobsStatus(cls, jobIDs, status='', minorStatus='', source='Unknown', datetime=None):
-    """ Set the major and minor status for job specified by its JobId.
-        Set optionally the status date and source component which sends the
-        status information.
-    """
-    for jobID in jobIDs:
-      cls.__setJobStatus(
-          int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime)
-    return S_OK()
 
   @classmethod
   def __setJobStatus(cls, jobID, status=None, minorStatus=None, appStatus=None, source=None, datetime=None):
