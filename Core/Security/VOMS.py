@@ -8,7 +8,7 @@ import stat
 import tempfile
 import shutil
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
@@ -193,6 +193,20 @@ class VOMS(BaseSecurity):
     requiredFilePerms = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
     # 777
     allPerms = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
+    # Transition code to new behaviour
+    if 'DIRAC_VOMSES' not in os.environ and 'X509_VOMSES' not in os.environ:
+      os.environ["X509_VOMSES"] = os.path.join(rootPath, "etc", "grid-security", "vomses")
+      gLogger.notice("You did not set X509_VOMSES in your bashrc. DIRAC searches $DIRAC/etc/grid-security/vomses . "
+                      "Please use X509_VOMSES, this auto discovery will be dropped.")
+    if 'DIRAC_VOMSES' in os.environ and 'X509_VOMSES' in os.environ:
+      os.environ["X509_VOMSES"] = "%s:%s" % (os.environ['DIRAC_VOMSES'], os.environ["X509_VOMSES"])
+      gLogger.notice("You set both variables DIRAC_VOMSES and X509_VOMSES in your bashrc. "
+                      "DIRAC_VOMSES will be dropped in a future version, please use only X509_VOMSES")
+    if 'DIRAC_VOMSES' in os.environ and 'X509_VOMSES' not in os.environ:
+      os.environ["X509_VOMSES"] = os.environ['DIRAC_VOMSES']
+      gLogger.notice("You set the variables DIRAC_VOMSES in your bashrc. "
+                      "DIRAC_VOMSES will be dropped in a future version, please use X509_VOMSES")
+    # End of transition code
     if 'X509_VOMSES' not in os.environ:
       raise Exception("The env variable X509_VOMSES is not set. "
                       "DIRAC does not know where to look for etc/grid-security/vomses. "
