@@ -35,12 +35,12 @@ class StatesAccountingAgent(AgentModule):
                                'UserGroup',
                                'JobGroup',
                                'JobType',
-			       'ApplicationStatus',
-			       'MinorStatus']
+                               'ApplicationStatus',
+                               'MinorStatus']
   __summaryDefinedFields = [('ApplicationStatus', 'unset'),
-			    ('MinorStatus', 'unset')]
+                            ('MinorStatus', 'unset')]
   __summaryValueFieldsMapping = ['Jobs',
-				 'Reschedules']
+                                 'Reschedules']
   __renameFieldsMapping = {'JobType': 'JobSplitType'}
 
   def initialize(self):
@@ -58,8 +58,8 @@ class StatesAccountingAgent(AgentModule):
       self.datastores['Accounting'] = DataStoreClient(retryGraceTime=900)
     if 'Monitoring' in self.backends:
       self.datastores['Monitoring'] = MonitoringReporter(
-	  monitoringType="WMSHistory",
-	  failoverQueueName=messageQueue)
+          monitoringType="WMSHistory",
+          failoverQueueName=messageQueue)
 
     self.__jobDBFields = []
     for field in self.__summaryKeyFieldsMapping:
@@ -88,36 +88,36 @@ class StatesAccountingAgent(AgentModule):
       record = record[1:]
       rD = {}
       for fV in self.__summaryDefinedFields:
-	rD[fV[0]] = fV[1]
+        rD[fV[0]] = fV[1]
       for iP in range(len(self.__summaryKeyFieldsMapping)):
-	fieldName = self.__summaryKeyFieldsMapping[iP]
-	rD[self.__renameFieldsMapping.get(fieldName, fieldName)] = record[iP]
+        fieldName = self.__summaryKeyFieldsMapping[iP]
+        rD[self.__renameFieldsMapping.get(fieldName, fieldName)] = record[iP]
       record = record[len(self.__summaryKeyFieldsMapping):]
       for iP in range(len(self.__summaryValueFieldsMapping)):
-	rD[self.__summaryValueFieldsMapping[iP]] = int(record[iP])
+        rD[self.__summaryValueFieldsMapping[iP]] = int(record[iP])
 
       for backend in self.datastores:
-	if backend.lower() == 'monitoring':
-	  rD['timestamp'] = int(Time.toEpoch(now))
-	  self.datastores['Monitoring'].addRecord(rD)
+        if backend.lower() == 'monitoring':
+          rD['timestamp'] = int(Time.toEpoch(now))
+          self.datastores['Monitoring'].addRecord(rD)
 
-	elif backend.lower() == 'accounting':
-	  acWMS = WMSHistory()
-	  acWMS.setStartTime(now)
-	  acWMS.setEndTime(now)
-	  acWMS.setValuesFromDict(rD)
-	  retVal = acWMS.checkValues()
+        elif backend.lower() == 'accounting':
+          acWMS = WMSHistory()
+          acWMS.setStartTime(now)
+          acWMS.setEndTime(now)
+          acWMS.setValuesFromDict(rD)
+          retVal = acWMS.checkValues()
           if not retVal['OK']:
-	    self.log.error("Invalid accounting record ", "%s -> %s" % (retVal['Message'], rD))
+            self.log.error("Invalid accounting record ", "%s -> %s" % (retVal['Message'], rD))
           else:
-	    self.datastores['Accounting'].addRegister(acWMS)
+            self.datastores['Accounting'].addRegister(acWMS)
 
     for backend, datastore in self.datastores.items():
       self.log.info("Committing to %s backend" % backend)
       result = datastore.commit()
       if not result['OK']:
-	self.log.error("Couldn't commit WMS history to %s" % backend, result['Message'])
-	return S_ERROR()
+        self.log.error("Couldn't commit WMS history to %s" % backend, result['Message'])
+        return S_ERROR()
       self.log.verbose("Done committing to %s backend" % backend)
 
     return S_OK()

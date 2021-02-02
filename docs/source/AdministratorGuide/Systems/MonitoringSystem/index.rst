@@ -23,7 +23,8 @@ Install Elasticsearch
 ======================
 
 This is not covered here, as installation and administration of ES are not part of DIRAC guide.
-Just a note on the ES versions supported: ES7 and ES6 are supported, the support for ES5 is not assured.
+Just a note on the ES versions supported: ES7 and ES6 are supported, the support for ES5 is not assured,
+and the one for ES6 will be dropped in a future release.
 
 Configure the MonitoringSystem
 ===============================
@@ -35,7 +36,7 @@ You can run your Elastic cluster even without authentication, or using User name
   - Host
   - Port
 
-The User name and Password must be added to the local cfg file while the other can be added to the CS using the Configuration web application.
+The *User* name and *Password* must be added to the local cfg file while the other can be added to the CS using the Configuration web application.
 You have to handle the ES secret information in a similar way to what is done for the other supported SQL databases, e.g. MySQL
 
 
@@ -54,7 +55,7 @@ For example::
 The following option can be set in `Systems/Monitoring/<Setup>/Databases/MonitoringDB`:
 
    *IndexPrefix*:  Prefix used to prepend to indexes created in the ES instance. If this
-		   is not present in the CS, the indexes are prefixed with the setup name.
+                   is not present in the CS, the indices are prefixed with the setup name.
 
 For each monitoring types managed, the Period (how often a new index is created)
 can be defined with::
@@ -84,18 +85,18 @@ The given periods above are also the default periods in the code.
 Enable WMSHistory monitoring
 ============================
 
-You have to install the WorkloadManagemet/StatesMonitoringAgent.
-This agent is used to collect information using the JobDB and send it to the Elasticsearch database.
-If you install this agent, you can stop the StatesAccounting agent, that was reporting to the MySQL backend of the Accounting system.
+You have to add ``Monitoring`` to the ``Backends`` option of WorkloadManagemet/StatesAccountingAgent.
+If you do so, this agent will collect information using the JobDB and send it to the Elasticsearch database.
+This same agent can also report to the MySQL backend of the Accounting system (which is in fact the default).
 
-You can use RabbitMQ for failover. This is optional as the agent already has a failover mechanism.
-You can configure RabbitMQ in the local dirac.cfg file where the agent is running::
+Optionally, you can use an MQ system (like RabbitMQ) for failover, even though the agent already has a simple failover mechanism.
+You can configure the MQ in the local dirac.cfg file where the agent is running::
 
    Resources
    {
      MQServices
      {
-       hostname (for example lbvobox10.cern.ch)
+       hostname.some.where
        {
          MQType = Stomp
          Port = 61613
@@ -117,23 +118,58 @@ You can configure RabbitMQ in the local dirac.cfg file where the agent is runnin
 Enable Component monitoring
 ===========================
 
-You have to set DynamicMonitoring=True in the CS::
+You have to set ``DynamicMonitoring=True`` in the CS::
 
    Systems
    {
-      Framework
-      {
-          SystemAdministrator
+     Framework
+     {
+       <instance>
+       {
+         Services
+         {
+           SystemAdministrator
            {
-              ...
-              DynamicMonitoring = True
-            }
+             ...
+             DynamicMonitoring = True
+           }
          }
        }
+     }
+   }
 
 
 .. image:: cs.png
    :align: center
+
+
+Enable RMS Monitoring
+=====================
+
+In order to enable RMSMonitoring we need to set value of ``EnableActivityMonitoring`` flag to yes/true in the CS::
+
+
+   Systems
+   {
+     RequestManagement
+     {
+       <instance>
+       {
+         Agents
+         {
+           RequestExecutingAgent
+           {
+             ...
+             EnableActivityMonitoring = True
+           }
+         }
+       }
+     }
+   }
+
+
+or inside the ``/Operations`` section as a general flag.
+
 
 Accessing the Monitoring information
 =====================================

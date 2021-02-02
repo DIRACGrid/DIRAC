@@ -40,7 +40,7 @@ class StatesMonitoringAgent(AgentModule):
                                'ApplicationStatus',
                                'MinorStatus']
   __summaryDefinedFields = [('ApplicationStatus', 'unset'),
-			    ('MinorStatus', 'unset')]
+                            ('MinorStatus', 'unset')]
   __summaryValueFieldsMapping = ['Jobs',
                                  'Reschedules']
   __renameFieldsMapping = {'JobType': 'JobSplitType'}
@@ -60,8 +60,8 @@ class StatesMonitoringAgent(AgentModule):
     self.messageQueue = self.am_getOption('MessageQueue', 'dirac.wmshistory')
 
     self.monitoringReporter = MonitoringReporter(
-	monitoringType="WMSHistory",
-	failoverQueueName=self.messageQueue)
+        monitoringType="WMSHistory",
+        failoverQueueName=self.messageQueue)
 
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
@@ -100,8 +100,8 @@ class StatesMonitoringAgent(AgentModule):
 
       retVal = self.monitoringReporter.commit()
       if retVal['OK']:
-	 self.log.info("Records sent", "(%s)" % result['Value'])
+         self.log.info("Records sent", "(%s)" % result['Value'])
       else:
-	self.log.error("Failed to insert the records, it will be retried in the next iteration", retVal['Message'])
+        self.log.error("Failed to insert the records, it will be retried in the next iteration", retVal['Message'])
 
     return S_OK()

@@ -53,14 +53,14 @@ if [[ "${#}" -gt 0 ]]; then
 
         -p=*|--Path=*)
         temporaryPath="${i#*=}"
-	if [[ ! -d "${temporaryPath}" ]]; then
-	  mkdir -p "${temporaryPath}"
+        if [[ ! -d "${temporaryPath}" ]]; then
+          mkdir -p "${temporaryPath}"
         fi
         shift # past argument=value
         ;;
 
         *)
-	echo -e "${helpmessage}"
+        echo -e "${helpmessage}"
         exit 0
             # unknown option
         ;;
