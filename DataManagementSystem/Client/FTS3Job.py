@@ -150,7 +150,9 @@ class FTS3Job(JSerializable):
     filesStatus = {}
     statusSummary = {}
 
-    for fileDict in filesInfoList:
+    # Make a copy, since we are potentially
+    # deleting objects
+    for fileDict in list(filesInfoList):
       file_state = fileDict['file_state'].capitalize()
       file_metadata = fileDict['file_metadata']
 
@@ -164,7 +166,10 @@ class FTS3Job(JSerializable):
       # The transfer does not have a fileID attached to it
       # so it does not correspond to a file in our DB: skip it
       # (typical of jobs with different staging protocol == CTA)
+      # We also remove it from the fileInfoList, such that it is
+      # not considered for accounting
       if not file_id:
+        filesInfoList.remove(fileDict)
         continue
 
       file_error = fileDict['reason']
@@ -186,6 +191,12 @@ class FTS3Job(JSerializable):
                        (self.ftsGUID, self.status, file_id, file_state))
 
       statusSummary[file_state] = statusSummary.get(file_state, 0) + 1
+
+    # We've removed all the intermediate transfers that we are not interested in
+    # so we put this back into the monitoring data such that the accounting is done properly
+    jobStatusDict['files'] = filesInfoList
+    if newStatus in self.FINAL_STATES:
+      self._fillAccountingDict(jobStatusDict)
 
     total = len(filesInfoList)
     completed = sum([statusSummary.get(state, 0) for state in FTS3File.FTS_FINAL_STATES])
@@ -283,7 +294,7 @@ class FTS3Job(JSerializable):
     if not res['OK']:
       return res
 
-    for lfn, reason in res['Value']['Failed'].iteritems():
+    for lfn, reason in res['Value']['Failed'].items():
       failedLFNs.add(lfn)
       log.error("Could not get source SURL", "%s %s" % (lfn, reason))
 
@@ -295,16 +306,27 @@ class FTS3Job(JSerializable):
 
     # In case we are transfering from a tape system, and the stage protocol
     # is not the same as the transfer protocol, we generate the staging URLs
-    # to do a multihop transfer. See bellow.
+    # to do a multihop transfer. See below.
     if sourceIsTape:
       srcProto, _destProto = res['Value']['Protocols']
       if srcProto not in srcSE.localStageProtocolList:
+
+        # As of version 3.10, FTS can only handle one file per multi hop
+        # job. If we are here, that means that we need one, so make sure that
+        # we only have a single file to transfer (this should have been checked
+        # at the job construction step in FTS3Operation).
+        # This test is important, because multiple files would result in the source
+        # being deleted !
+        if len(allLFNs) != 1:
+          log.debug("Multihop job has %s files while only 1 allowed" % len(allLFNs))
+          return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
+
         res = srcSE.getURL(allSrcDstSURLs, protocol=srcSE.localStageProtocolList)
 
         if not res['OK']:
           return res
 
-        for lfn, reason in res['Value']['Failed'].iteritems():
+        for lfn, reason in res['Value']['Failed'].items():
           failedLFNs.add(lfn)
           log.error("Could not get stage SURL", "%s %s" % (lfn, reason))
           allSrcDstSURLs.pop(lfn)
@@ -337,7 +359,7 @@ class FTS3Job(JSerializable):
       #
       # Even in case of the source storage being a tape system, it works fine.
       # However, if the staging and transfer protocols are different (CTA),
-      #  we use the multihop machineryto submit two sequential fts transfers:
+      #  we use the multihop machinery to submit two sequential fts transfers:
       # one to stage, one to transfer.
       # It looks like such
       # * stageProto://myFile -> stageProto://myFile
@@ -476,7 +498,7 @@ class FTS3Job(JSerializable):
     if not res['OK']:
       return res
 
-    for lfn, reason in res['Value']['Failed'].iteritems():
+    for lfn, reason in res['Value']['Failed'].items():
       failedLFNs.add(lfn)
       log.error("Could not get target SURL", "%s %s" % (lfn, reason))
 
@@ -710,13 +732,12 @@ class FTS3Job(JSerializable):
 
     accountingDict["TransferOK"] = len(successfulFiles)
     accountingDict["TransferTotal"] = len(filesInfoList)
-    # We need this if in the list comprehension because staging only jobs have `None`
-    # as filesize
+    # We need this if in the list comprehension because staging only jobs have `None` as filesize
     accountingDict["TransferSize"] = sum([fileDict['filesize'] for fileDict in successfulFiles if fileDict['filesize']])
     accountingDict["FinalStatus"] = self.status
     accountingDict["Source"] = sourceSE
     accountingDict["Destination"] = targetSE
-    # Same as above for the condition
+    # We need this if in the list comprehension because staging only jobs have `None` as tx_duration
     accountingDict['TransferTime'] = sum(int(fileDict['tx_duration'])
                                          for fileDict in successfulFiles if fileDict['tx_duration'])
 

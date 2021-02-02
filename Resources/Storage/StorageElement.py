@@ -708,7 +708,8 @@ class StorageElementItem(object):
         :param sourceSE: storageElement instance of the sourceSE
         :param protocols: ordered protocol restriction list
 
-        :return: dictionnary with keys::
+        :return: dictionary with keys:
+        
           * Successful: lfn indexed pair (src, dest) urls
           * Failed: lfn indexed with error
           * Protocols: tuple (srcProto, destProto)
