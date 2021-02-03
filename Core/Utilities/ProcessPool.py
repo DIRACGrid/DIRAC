@@ -97,6 +97,8 @@ executing same type of callables in subprocesses and  hence you are expecting th
 everywhere.
 """
 
+from __future__ import absolute_import
+
 __RCSID__ = "$Id$"
 
 import multiprocessing

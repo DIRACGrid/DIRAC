@@ -35,6 +35,8 @@ Utilities to execute one or more functions with a given proxy.
 
 """
 
+from __future__ import absolute_import
+
 import os
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK

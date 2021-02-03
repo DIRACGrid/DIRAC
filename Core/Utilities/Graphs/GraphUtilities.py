@@ -5,8 +5,9 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-__RCSID__ = "$Id$"
+from __future__ import absolute_import
 
+__RCSID__ = "$Id$"
 
 import six
 import os

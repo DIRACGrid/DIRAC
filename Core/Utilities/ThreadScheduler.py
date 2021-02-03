@@ -1,7 +1,6 @@
 """ a scheduler of threads, of course!
 """
-
-__RCSID__ = "$Id$"
+from __future__ import absolute_import
 
 from past.builtins import long
 import hashlib
@@ -10,6 +9,8 @@ import time
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
+
+__RCSID__ = "$Id$"
 
 gSchedulerLock = Synchronizer()
 
