@@ -1,0 +1,54 @@
+name: Deployment
+
+on: [push, pull_request]
+
+jobs:
+  deploy-pypi:
+    name: PyPI deployment
+    runs-on: "ubuntu-latest"
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          git fetch --prune --unshallow
+      # Use the action from conda-incubator to set up conda based on the
+      # conda-forge installer. Mamba is used to make the creation of the
+      # conda environment considerably faster.
+      - uses: conda-incubator/setup-miniconda@master
+        with:
+          environment-file: environment-py3.yml
+          miniforge-variant: Mambaforge
+          use-mamba: true
+      - name: Validate README for PyPI
+        run: |
+          python -m readme_renderer README.rst -o /tmp/README.html
+      - name: Check tag is for v7r2 or later
+        id: check-tag
+        run: |
+          if [[ "${{ github.event.ref }}" =~ ^refs/tags/v7r2(p[0-9]+)?(-pre[0-9]+)?$ ]]; then
+              echo ::set-output name=create-release::true
+          fi
+      - name: Make PEP-440 style release on GitHub
+        if: steps.check-tag.outputs.create-release == 'true'
+        run: |
+          OLD_STYLE=${GITHUB_REF##*/}
+          NEW_STYLE=$(python -c "import diraccfg; major, minor, patch, pre = diraccfg.parseVersion('${OLD_STYLE}'); print(f'{major}.{minor}.{patch}', f'a{pre}' if pre else '', sep='')")
+          echo "Converted ${OLD_STYLE} version to ${NEW_STYLE}"
+          .github/workflows/make_release.py \
+            --token="${{ secrets.GITHUB_TOKEN }}" \
+            --version="v${NEW_STYLE}" \
+            --rev="$(git rev-parse HEAD)"
+          git fetch --all --tags
+      # Need to do this after creating the PEP-440 style tag
+      - name: Build distributions
+        run: |
+          python setup.py sdist bdist_wheel
+      - name: Publish package on PyPI
+        if: steps.check-tag.outputs.create-release == 'true'
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
