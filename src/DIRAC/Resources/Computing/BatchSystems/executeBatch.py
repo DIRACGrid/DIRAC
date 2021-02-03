@@ -18,10 +18,12 @@ if __name__ == "__main__":
 
   import sys
   import json
-  import urllib
+  from six.moves.urllib.parse import quote as urlquote
+  from six.moves.urllib.parse import unquote as urlunquote
+
 
   arguments = sys.argv[1]
-  inputDict = json.loads(urllib.unquote(arguments))
+  inputDict = json.loads(urlunquote(arguments))
 
   method = inputDict.pop('Method')
   batchSystem = inputDict.pop('BatchSystem')
@@ -32,7 +34,7 @@ if __name__ == "__main__":
   except Exception as x:
     result = 'Exception: %s' % str(x)
 
-  resultJson = urllib.quote(json.dumps(result))
+  resultJson = urlquote(json.dumps(result))
   print("============= Start output ===============")
   print(resultJson)
 """
