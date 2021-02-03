@@ -50,11 +50,10 @@ class submitSuccess(GridSubmissionTestCase):
 
     print("submitted %d jobs: %s" % (len(jobsSubmittedList), ','.join(str(js) for js in jobsSubmittedList)))
 
-
-
 #############################################################################
 # Test Suite run
 #############################################################################
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(GridSubmissionTestCase)

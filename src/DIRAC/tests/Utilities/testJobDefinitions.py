@@ -139,6 +139,7 @@ def helloWorldSSHBatch():
   J.setDestination('DIRAC.Jenkins_SSHBatch.ch')
   return endOfAllJobs(J)
 
+
 def helloWorldCloud():
   """ simple hello world job to Cloud at Imperial College
   """
