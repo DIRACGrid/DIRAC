@@ -105,7 +105,7 @@ class MJF(object):
 
     try:
       return int(value)
-    except BaseException:
+    except ValueError:
       return None
 
   def __fetchMachineJobFeature(self, mORj, key):
@@ -127,7 +127,7 @@ class MJF(object):
       try:
         with open(url, 'r') as fd:
           return fd.read().strip()
-      except BaseException:
+      except Exception:
         return None
 
     # Otherwise make sure it's an HTTP(S) URL
@@ -143,10 +143,13 @@ class MJF(object):
       if mjfUrl.getcode() / 100 != 2:
         return None
       return mjfUrl.read().strip()
-    except BaseException:
+    except Exception:
       return None
     finally:
-      mjfUrl.close()
+      try:
+        mjfUrl.close()
+      except UnboundLocalError:
+        pass
 
   def getWallClockSecondsLeft(self):
     """Returns the number of seconds until either the wall clock limit
