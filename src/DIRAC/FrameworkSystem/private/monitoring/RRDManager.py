@@ -63,12 +63,11 @@ class RRDManager(object):
     if self.__logRRDCommands and rrdFile:
       try:
         logFile = "%s.log" % rrdFile
-        fd = file(logFile, "a")
-        if not retVal['OK'] or retVal['Value'][0]:
-          fd.write("ERROR %s\n" % cmd)
-        else:
-          fd.write("OK    %s\n" % cmd)
-        fd.close()
+        with open(logFile, "a") as fd:
+          if not retVal['OK'] or retVal['Value'][0]:
+            fd.write("ERROR %s\n" % cmd)
+          else:
+            fd.write("OK    %s\n" % cmd)
       except Exception as e:
         self.log.warn("Cannot write log %s: %s" % (logFile, str(e)))
     if not retVal['OK']:

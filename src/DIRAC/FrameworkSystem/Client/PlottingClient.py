@@ -47,13 +47,12 @@ class PlottingClient(object):
     """
     transferClient = self.__getTransferClient()
     try:
-      destFile = file(fileName, "wb")
+      with open(fileName, "wb") as destFile:
+        retVal = transferClient.receiveFile(destFile, plotName)
     except Exception as e:
       return S_ERROR("Can't open file %s for writing: %s" % (fileName, str(e)))
-    retVal = transferClient.receiveFile(destFile, plotName)
     if not retVal['OK']:
       return retVal
-    destFile.close()
     return S_OK(fileName)
 
   def graph(self, data, fname=False, *args, **kw):

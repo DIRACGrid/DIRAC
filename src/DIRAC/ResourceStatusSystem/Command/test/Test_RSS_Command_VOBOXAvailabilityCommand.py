@@ -9,6 +9,7 @@ import unittest
 import mock
 
 import DIRAC.ResourceStatusSystem.Command.VOBOXAvailabilityCommand as moduleTested
+from six.moves import reload_module
 
 __RCSID__ = '$Id$'
 
@@ -108,7 +109,7 @@ class VOBOXAvailabilityCommand_Success(VOBOXAvailabilityCommand_TestCase):
 
     # Restore the module
     self.moduleTested.RPCClient.return_value = self.mock_RPCClient
-    reload(self.moduleTested)
+    reload_module(self.moduleTested)
 
 ################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
