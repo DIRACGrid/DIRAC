@@ -709,7 +709,7 @@ class StorageElementItem(object):
         :param protocols: ordered protocol restriction list
 
         :return: dictionary with keys:
-        
+
           * Successful: lfn indexed pair (src, dest) urls
           * Failed: lfn indexed with error
           * Protocols: tuple (srcProto, destProto)

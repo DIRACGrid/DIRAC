@@ -223,6 +223,7 @@ class FTS3Operation(JSerializable):
     newJob.vo = self.vo
     newJob.filesToSubmit = ftsFiles
     newJob.operationID = getattr(self, 'operationID')
+    newJob.rmsReqID = self.rmsReqID
 
     return newJob
 

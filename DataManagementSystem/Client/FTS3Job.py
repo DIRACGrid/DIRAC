@@ -77,6 +77,7 @@ class FTS3Job(JSerializable):
     self.activity = None
     self.priority = None
     self.vo = None
+    self.rmsReqID = None
 
     # temporary used only for accounting
     # it is set by the monitor method
@@ -398,6 +399,7 @@ class FTS3Job(JSerializable):
     # source and target SE are just used for accounting purpose
     job_metadata = {
         'operationID': self.operationID,
+        'rmsReqID': self.rmsReqID,
         'sourceSE': self.sourceSE,
         'targetSE': self.targetSE}
 
