@@ -194,7 +194,7 @@ class MonitoringReporter(object):
     if result['OK']:
       result = createProducer("Monitoring::Queues::%s" % self.__failoverQueueName)
       if not result['OK']:
-        gLogger.error("Fail to create Producer:", result['Message'])
+        gLogger.debug("Fail to create Producer:", result['Message'])
       else:
         mqProducer = result['Value']
     else:

@@ -5,25 +5,32 @@ Create a production to replicate files from some storage elements to others
 :since:  May 31, 2018
 :author: A. Sailer
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from DIRAC.Core.Base import Script
-from DIRAC import gLogger, exit as dexit
-from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
-from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
 
 __RCSID__ = "$Id$"
 
+from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-def _createTrafo():
+
+@DIRACScript()
+def main():
   """reads command line parameters, makes check and creates replication transformation"""
+  from DIRAC import gLogger, exit as dexit
+  from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
+
   clip = Params()
   clip.registerSwitches(Script)
   Script.parseCommandLine()
+
+  from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
+
   if not clip.checkSettings(Script)['OK']:
     gLogger.error("ERROR: Missing settings")
-    return 1
+    dexit(1)
   for metaValue in clip.metaValues:
     resCreate = createDataTransformation(flavour=clip.flavour,
                                          targetSE=clip.targetSE,
@@ -39,10 +46,10 @@ def _createTrafo():
                                          )
     if not resCreate['OK']:
       gLogger.error("Failed to create Transformation", resCreate['Message'])
-      return 1
+      dexit(1)
 
-  return 0
+  dexit(0)
 
 
-if __name__ == '__main__':
-  dexit(_createTrafo())
+if __name__ == "__main__":
+  main()
