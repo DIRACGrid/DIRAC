@@ -59,13 +59,6 @@ if [[ "${?}" -ne 0 ]]; then
 fi
 
 echo " "
-echo "======  dirac-version"
-dirac-version
-if [[ "${?}" -ne 0 ]]; then
-   exit 1
-fi
-
-echo " "
 echo "======  dirac-platform"
 dirac-platform
 if [[ "${?}" -ne 0 ]]; then

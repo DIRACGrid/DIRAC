@@ -61,7 +61,6 @@ WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
 FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 
 MAX_PILOTS_TO_SUBMIT = 100
-MAX_JOBS_IN_FILLMODE = 5
 
 
 def getSubmitPools(group=None, vo=None):
@@ -100,7 +99,6 @@ class SiteDirector(AgentModule):
     # failedPilotOutput stores the number of times the Site Director failed to get a given pilot output
     self.failedPilotOutput = defaultdict(int)
     self.firstPass = True
-    self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
 
     self.gridEnv = ''
@@ -209,7 +207,6 @@ class SiteDirector(AgentModule):
     self.workingDirectory = self.am_getOption('WorkDirectory')
     self.maxQueueLength = self.am_getOption('MaxQueueLength', self.maxQueueLength)
     self.pilotLogLevel = self.am_getOption('PilotLogLevel', self.pilotLogLevel)
-    self.maxJobsInFillMode = self.am_getOption('MaxJobsInFillMode', self.maxJobsInFillMode)
     self.maxPilotsToSubmit = self.am_getOption('MaxPilotsToSubmit', self.maxPilotsToSubmit)
     self.pilotWaitingFlag = self.am_getOption('PilotWaitingFlag', self.pilotWaitingFlag)
     self.failedQueueCycleFactor = self.am_getOption('FailedQueueCycleFactor', self.failedQueueCycleFactor)
@@ -273,7 +270,6 @@ class SiteDirector(AgentModule):
       self.log.always('Pilot submission accounting sending requested')
 
     self.log.always('MaxPilotsToSubmit:', self.maxPilotsToSubmit)
-    self.log.always('MaxJobsInFillMode:', self.maxJobsInFillMode)
 
     if self.firstPass:
       if self.queueDict:
@@ -1103,27 +1099,24 @@ class SiteDirector(AgentModule):
     if pilotLogging:
       pilotOptions.append('-z ')
 
-    ownerDN = self.pilotDN
-    ownerGroup = self.pilotGroup
-    # Request token for maximum pilot efficiency
-    result = gProxyManager.requestToken(ownerDN, ownerGroup, pilotsToSubmit * self.maxJobsInFillMode)
-    if not result['OK']:
-      self.log.error('Invalid proxy token request', result['Message'])
-      return [None, None]
-    (token, numberOfUses) = result['Value']
-    pilotOptions.append('-o /Security/ProxyToken=%s' % token)
-    # Use Filling mode
-    pilotOptions.append('-M %s' % min(numberOfUses, self.maxJobsInFillMode))
+    # Request a release
+    # FIXME: this can disapper at some point (when there will only be pilot 3)
+    if not self.pilot3:  # in pilot 3 the version is taken from the JSON file exported from the CS
+      diracVersion = opsHelper.getValue("Pilot/Version", [])
+      if not diracVersion:
+        self.log.error('Pilot/Version is not defined in the configuration')
+        return [None, None]
+      # diracVersion is a list of accepted releases
+      pilotOptions.append('-r %s' % ','.join(str(it) for it in diracVersion))
 
-    # Since each pilot will execute min( numberOfUses, self.maxJobsInFillMode )
-    # with numberOfUses tokens we can submit at most:
-    #    numberOfUses / min( numberOfUses, self.maxJobsInFillMode )
-    # pilots
-    newPilotsToSubmit = int(numberOfUses / min(numberOfUses, self.maxJobsInFillMode))
-    if newPilotsToSubmit != pilotsToSubmit:
-      self.log.info("Number of pilots to submit is changed",
-                    "to %d after getting the proxy token" % newPilotsToSubmit)
-      pilotsToSubmit = newPilotsToSubmit
+      # lcgBundle defined? (pilot 2 only)
+      lcgBundleVersion = opsHelper.getValue("Pilot/LCGBundleVersion", "")
+      if lcgBundleVersion:
+        self.log.warn(
+            "lcgBundle defined in CS: will overwrite possible per-release lcg bundle versions",
+            "(version in CS: %s)" % lcgBundleVersion)
+        pilotOptions.append('-g %s' % lcgBundleVersion)
+
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
       pilotOptions.append('-ddd')

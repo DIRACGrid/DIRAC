@@ -127,9 +127,8 @@ class PilotCStoJSONSynchronizer(object):
           continue
 
         for ce in ceList['Value']:
+          # This CEType is like 'HTCondor' or 'ARC' etc.
           ceType = gConfig.getValue('/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/CEType')
-          localCEType = gConfig.getValue('/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/LocalCEType')
-
           if ceType is None:
             # Skip but log it
             self.log.error('CE has no option CEType!', ce + ' at ' + site)
@@ -137,8 +136,19 @@ class PilotCStoJSONSynchronizer(object):
           else:
             pilotDict['CEs'][ce] = {'Site': site, 'GridCEType': ceType}
 
+          # This LocalCEType is like 'InProcess' or 'Pool' or 'Pool/Singularity' etc.
+          # It can be in the queue and/or the CE level
+          localCEType = gConfig.getValue(
+              '/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/LocalCEType')
           if localCEType is not None:
             pilotDict['CEs'][ce].setdefault('LocalCEType', localCEType)
+
+          queueList = gConfig.getSections('/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/Queues/')
+          for queue in queueList:
+            localCEType = gConfig.getValue(
+                '/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/' + queue + '/LocalCEType')
+            if localCEType is not None:
+              pilotDict['CEs'][ce][queue].setdefault('LocalCEType', localCEType)
 
     defaultSetup = gConfig.getValue('/DIRAC/DefaultSetup')
     if defaultSetup:

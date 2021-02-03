@@ -1,3 +1,5 @@
+.. _configurationSystem:
+
 ====================
 Configuration System
 ====================

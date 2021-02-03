@@ -108,7 +108,7 @@ class Watchdog(object):
     self.processors = processors
 
   #############################################################################
-  def initialize(self, loops=0):
+  def initialize(self):
     """ Watchdog initialization.
     """
     if self.initialized:
@@ -125,7 +125,6 @@ class Watchdog(object):
       return S_ERROR('Can not get the WorkloadManagement system instance')
     self.section = '/Systems/WorkloadManagement/%s/JobWrapper' % wms_instance
 
-    self.maxcount = loops
     self.log.verbose('Watchdog initialization')
     # Test control flags
     self.testWallClock = gConfig.getValue(self.section + '/CheckWallClockFlag', 1)

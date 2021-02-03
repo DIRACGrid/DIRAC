@@ -85,6 +85,41 @@ FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 
+[v7r1p27]
+
+FIX: Fixes from v7r0p47
+FIX: (#4919) Added from future import absolute_import when having conflicts when importing standard modules.
+     Fixes issue #2207
+
+*Core
+FIX: (#4918) Glue2: fix problem for CEs with multiple Queues, only one queue was discovered
+FIX: (#4926) ElasticSearchDB: fix exception handling when checking existence of indices
+
+*Configuration
+CHANGE: (#4926) Adding Pool as LocalCEType for MultiProcessor queues (invoked by BDII2CSAgent)
+
+*Framework
+CHANGE: (#4928) initialized, processMessage and flushAllMessages functions of Logging are deprecated
+
+*WMS
+FIX: (#4923) The StalledJobAgent's behaviour changed (for bad) as only jobs stalled for more than 24.5 hours were
+     checked before being set Failed... Restore v7r0 behaviour with immediate check
+CHANGE: (#4926) JobAgent: getting CEType only from LocalSite/LocalCE config
+CHANGE: (#4926) JobAgent: flipped the default for fillingMode
+CHANGE: (#4926) SiteDirector: The max number of jobs in filling mode is not set anymore by the SD. The option
+        MaxJobsInFillMode was removed
+
+*Resources
+FIX: (#4931) InProcess/SingularityComputingElement - Fix calling _monitorProxy as a periodic task
+
+*Monitoring
+NEW: (#4924) added possibility to login to ES via certificates.
+
+*docs
+NEW: (#4853) user management, ProxyManager
+CHANGE: (#4853) move Registry from ConfReference to dirac.cfg
+CHANGE: (#4853) move CommandReference content to scripts docs
+
 [v7r1p26]
 
 FIX: Fixes from v7r0p46
@@ -547,6 +582,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p47]
+
+*Core
+CHANGE: (#4930) Resolve location of etc/grid-security/vomses via env variable X509_VOMSES
 
 [v7r0p46]
 

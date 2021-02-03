@@ -142,6 +142,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
   siteDict = {}
   for siteName, shareInfoDicts in shareInfoLists.items():
     siteDict[siteName] = {'CEs': {}}
+    cesDict = siteDict[siteName]['CEs']
     for shareInfoDict in shareInfoDicts:
       ceInfo = {}
       ceInfo['MaxWaitingJobs'] = shareInfoDict.get('GLUE2ComputingShareMaxWaitingJobs', '-1')  # This is not used
@@ -199,7 +200,6 @@ def __getGlue2ShareInfo(host, shareInfoLists):
       shareEndpoints = shareInfoDict.get('GLUE2ShareEndpointForeignKey', [])
       if isinstance(shareEndpoints, six.string_types):
         shareEndpoints = [shareEndpoints]
-      cesDict = {}
       for endpoint in shareEndpoints:
         ceType = endpoint.rsplit('.', 1)[1]
         # get queue Name, in CREAM this is behind GLUE2entityOtherInfo...
@@ -244,7 +244,6 @@ def __getGlue2ShareInfo(host, shareInfoLists):
           cesDict[ceName].update(ceInfo)
       except Exception:
         sLog.error('Exception in ARC part for site:', siteName)
-      siteDict[siteName]['CEs'].update(cesDict)
 
   return S_OK(siteDict)
 

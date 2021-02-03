@@ -156,8 +156,7 @@ for the agent restart
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
     """
     # Only get jobs that have been Stalled for long enough
-    checkTime = dateTime() - failedTime * second
-    result = self.jobDB.selectJobs({'Status': JobStatus.STALLED}, older=checkTime)
+    result = self.jobDB.selectJobs({'Status': JobStatus.STALLED})
     if not result['OK']:
       return result
     jobs = result['Value']
@@ -166,7 +165,7 @@ for the agent restart
     minorStalledStatuses = (JobMinorStatus.STALLED_PILOT_NOT_RUNNING, 'Stalling for more than %d sec' % failedTime)
 
     if jobs:
-      self.log.info('%d jobs Stalled before %s will be checked for failure' % (len(jobs), str(checkTime)))
+      self.log.info('%d jobs Stalled will be checked for failure' % len(jobs))
 
       for job in jobs:
         setFailed = False
