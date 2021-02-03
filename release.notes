@@ -61,6 +61,7 @@ NEW: (#4874) new agent PilotsSyncAgent for syncing pilot files.
 NEW: (#4874) new script dirac-admin-sync-pilots for syncing pilot files.
 CHANGE: (#4874) largely simplified PilotCStoJSONSynchronizer
 CHANGE: (#4874) don't call PilotCStoJSONSynchronizer from the CS
+NEW: (#4905) moving towards a single agent for WMS history
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
@@ -78,6 +79,7 @@ CHANGE: (#4887) use dedicated ES monitoring flag RMSMonitoring
 FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
 CHANGE: (#4823) added some clarifications on starting the pilots
 CHANGE: (#4829) updated configuration in terms of security, added description of webdav
+FIX: (#4905) added config and instructions for Monitoring DBs (ES) configuration
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
