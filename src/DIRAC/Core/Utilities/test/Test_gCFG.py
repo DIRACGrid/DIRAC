@@ -13,9 +13,8 @@
 # cfg1 = CFG()
 # cfg1.loadFromFile( testconfig )
 #
-# fd = file( testconfig )
-# cfg1String = fd.read()
-# fd.close()
+# with open( testconfig ) as fd:
+#   cfg1String = fd.read()
 #
 # cfg2 = CFG()
 # cfg2.loadFromBuffer( cfg1.serialize() )

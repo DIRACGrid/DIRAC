@@ -7,7 +7,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-from past.builtins import long
 import six
 from DIRAC.Core.Workflow.Utility import *
 
@@ -485,7 +484,7 @@ class ParameterCollection(list):
           return v
       return None
 
-    elif isinstance(name_or_ind, (int, long)):  # we given index
+    elif isinstance(name_or_ind, six.integer_types):  # we given index
       return self[name_or_ind]
     return self[int(name_or_ind)]
 

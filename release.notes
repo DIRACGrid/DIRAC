@@ -1,4 +1,4 @@
-[v7r2-pre31]
+[v7r2-pre32]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -6,6 +6,8 @@ CHANGE: (#4586) Use __future__ imports to get Python 3 like behaviour for import
 CHANGE: (#4796, #4797) removed obsoleted codes
 CHANGE: (#4823) Service handlers use class variables instead of global
 NEW: Moved to a src/ repository layout
+NEW: (#4906) Deploy releases to PyPI
+FIX: (#4921) use six.moves for urllib
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -59,6 +61,7 @@ NEW: (#4874) new agent PilotsSyncAgent for syncing pilot files.
 NEW: (#4874) new script dirac-admin-sync-pilots for syncing pilot files.
 CHANGE: (#4874) largely simplified PilotCStoJSONSynchronizer
 CHANGE: (#4874) don't call PilotCStoJSONSynchronizer from the CS
+NEW: (#4905) moving towards a single agent for WMS history
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
@@ -76,11 +79,48 @@ CHANGE: (#4887) use dedicated ES monitoring flag RMSMonitoring
 FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
 CHANGE: (#4823) added some clarifications on starting the pilots
 CHANGE: (#4829) updated configuration in terms of security, added description of webdav
+FIX: (#4905) added config and instructions for Monitoring DBs (ES) configuration
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
+NEW: (#4910) --runslow option on unit tests to allow faster local tests
+
+[v7r1p27]
+
+FIX: Fixes from v7r0p47
+FIX: (#4919) Added from future import absolute_import when having conflicts when importing standard modules.
+     Fixes issue #2207
+
+*Core
+FIX: (#4918) Glue2: fix problem for CEs with multiple Queues, only one queue was discovered
+FIX: (#4926) ElasticSearchDB: fix exception handling when checking existence of indices
+
+*Configuration
+CHANGE: (#4926) Adding Pool as LocalCEType for MultiProcessor queues (invoked by BDII2CSAgent)
+
+*Framework
+CHANGE: (#4928) initialized, processMessage and flushAllMessages functions of Logging are deprecated
+
+*WMS
+FIX: (#4923) The StalledJobAgent's behaviour changed (for bad) as only jobs stalled for more than 24.5 hours were
+     checked before being set Failed... Restore v7r0 behaviour with immediate check
+CHANGE: (#4926) JobAgent: getting CEType only from LocalSite/LocalCE config
+CHANGE: (#4926) JobAgent: flipped the default for fillingMode
+CHANGE: (#4926) SiteDirector: The max number of jobs in filling mode is not set anymore by the SD. The option
+        MaxJobsInFillMode was removed
+
+*Resources
+FIX: (#4931) InProcess/SingularityComputingElement - Fix calling _monitorProxy as a periodic task
+
+*Monitoring
+NEW: (#4924) added possibility to login to ES via certificates.
+
+*docs
+NEW: (#4853) user management, ProxyManager
+CHANGE: (#4853) move Registry from ConfReference to dirac.cfg
+CHANGE: (#4853) move CommandReference content to scripts docs
 
 [v7r1p26]
 
@@ -544,6 +584,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p47]
+
+*Core
+CHANGE: (#4930) Resolve location of etc/grid-security/vomses via env variable X509_VOMSES
 
 [v7r0p46]
 

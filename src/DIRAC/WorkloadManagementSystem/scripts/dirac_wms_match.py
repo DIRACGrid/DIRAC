@@ -107,7 +107,7 @@ def main():
     if not result['OK']:
       gLogger.error('Failed in getting match data', result['Message'])
       DIRACExit(-1)
-    status = "Active" if siteStatus is "Active" and ceStatus is "Active" else "Inactive"
+    status = "Active" if siteStatus == "Active" and ceStatus == "Active" else "Inactive"
     if result['Value']['Match']:
       records.append((site, ce, queueInfo['Queue'], status, 'Yes', ''))
     else:

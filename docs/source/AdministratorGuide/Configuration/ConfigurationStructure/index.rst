@@ -28,7 +28,7 @@ At the top level of the Configuration tree there are the following sections:
   This section provides configuration data for all the DIRAC Systems, their instances and
   components - services, agents and databases.     
 
-:ref:`Registry <dirac-registry-cs>`
+Registry
   The *Registry* contains information about DIRAC users, groups and communities (VOs).
   
 :ref:`Resources <dirac-resources-cs>`

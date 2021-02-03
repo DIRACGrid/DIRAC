@@ -11,7 +11,6 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import six
-from past.builtins import long
 from datetime import timedelta
 
 from DIRAC import S_OK, S_ERROR
@@ -589,7 +588,7 @@ class JobMonitoringHandler(RequestHandler):
     return cls.jobDB.getJobParameters(jobIDs, parName)
 
 ##############################################################################
-  types_traceJobParameter = [six.string_types, six.string_types + (int, long, list),
+  types_traceJobParameter = [six.string_types, six.string_types + (list, ) + six.integer_types,
                              six.string_types, six.string_types + (None,),
                              six.string_types + (None,)]
 
@@ -598,7 +597,7 @@ class JobMonitoringHandler(RequestHandler):
     return cls.jobDB.traceJobParameter(site, localID, parameter, date, until)
 
 ##############################################################################
-  types_traceJobParameters = [six.string_types, six.string_types + (int, long, list),
+  types_traceJobParameters = [six.string_types, six.string_types + (list, ) + six.integer_types,
                               [list, None], [list, None],
                               six.string_types + (None,), six.string_types + (None,)]
 
@@ -607,7 +606,7 @@ class JobMonitoringHandler(RequestHandler):
     return cls.jobDB.traceJobParameters(site, localID, parameterList, attributeList, date, until)
 
 ##############################################################################
-  types_getAtticJobParameters = [[int, long]]
+  types_getAtticJobParameters = [list(six.integer_types)]
 
   @classmethod
   def export_getAtticJobParameters(cls, jobID, parameters=None, rescheduleCycle=-1):
@@ -654,7 +653,7 @@ class JobMonitoringHandler(RequestHandler):
     return cls.jobDB.getHeartBeatData(jobID)
 
 ##############################################################################
-  types_getInputData = [[int, long]]
+  types_getInputData = [list(six.integer_types)]
 
   @classmethod
   def export_getInputData(cls, jobID):

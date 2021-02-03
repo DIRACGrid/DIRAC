@@ -45,6 +45,7 @@ dependencies:
   - coverage
   - hypothesis
   - ipython
+  - make
   - mock
   - parameterized
   - pylint >=1.6.5
@@ -52,6 +53,7 @@ dependencies:
   - pytest >=3.6
   - pytest-cov >=2.2.0
   - pytest-mock
+  - setuptools-scm
   - shellcheck
   - flaky
   # docs
@@ -60,6 +62,10 @@ dependencies:
   # unused
   - funcsigs
   - jinja2
+  # PyPI deployment
+  - readme_renderer
+  - twine
+  - uritemplate
   # - readline >=6.2.4 in the standard library
   - simplejson >=3.8.1
   #- tornado >=5.0.0,<6.0.0

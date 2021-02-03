@@ -37,12 +37,11 @@ class MonitoringReporter(object):
   """
   .. class:: MonitoringReporter
 
-  This class is used to interact with the db using failover mechanism.
+  This class is used to interact with the ES DB, using a MQ as a failover mechanism.
 
   :param int __maxRecordsInABundle: limit the number of records to be inserted to the db.
   :param threading.RLock __documentLock: is used to lock the local store when it is being modified.
-  :param __documents: contains the recods which will be inserted to the db.
-  :type __documents: python:list
+  :param list __documents: contains the records which will be inserted to the db.
   :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
   :param str __failoverQueueName: the name of the messaging queue. For example: /queue/dirac.certification
   """
@@ -62,8 +61,8 @@ class MonitoringReporter(object):
 
   def processRecords(self):
     """
-    It consumes all messages from the MQ (these are failover messages). In case of failure, the messages
-    will be inserted to the MQ again.
+    It consumes all messages from the MQ (these are failover messages).
+    In case of failure, the messages will be inserted to the MQ again.
     """
     retVal = monitoringDB.pingDB()  # if the db is not accessible, the records will be not processed from MQ
     if retVal['OK']:
@@ -74,10 +73,9 @@ class MonitoringReporter(object):
 
     result = createConsumer("Monitoring::Queues::%s" % self.__failoverQueueName)
     if not result['OK']:
-      gLogger.error("Fail to create Consumer: %s" % result['Message'])
-      return S_ERROR("Fail to create Consumer: %s" % result['Message'])
-    else:
-      mqConsumer = result['Value']
+      gLogger.error("Fail to create Consumer", result['Message'])
+      return S_ERROR("Fail to create Consumer")
+    mqConsumer = result['Value']
 
     result = S_OK()
     failedToProcess = []
@@ -128,8 +126,8 @@ class MonitoringReporter(object):
 
   def commit(self):
     """
-    It inserts the accumulated data to the db. In case of failure
-    it keeps in memory/MQ
+    It inserts the accumulated data to the db.
+    In case of failure it keeps in memory/MQ
     """
     # before we try to insert the data to the db, we process all the data
     # which are already in the queue
@@ -194,7 +192,7 @@ class MonitoringReporter(object):
     if result['OK']:
       result = createProducer("Monitoring::Queues::%s" % self.__failoverQueueName)
       if not result['OK']:
-        gLogger.error("Fail to create Producer:", result['Message'])
+        gLogger.debug("Fail to create Producer:", result['Message'])
       else:
         mqProducer = result['Value']
     else:

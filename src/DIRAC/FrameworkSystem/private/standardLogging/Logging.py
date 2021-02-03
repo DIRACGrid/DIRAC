@@ -5,15 +5,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
+from __future__ import absolute_import
 
 import logging
 import os
 
 from DIRAC import S_ERROR
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
+
+__RCSID__ = "$Id$"
 
 
 class Logging(object):
@@ -452,3 +455,4 @@ class Logging(object):
       return childLogging
     finally:
       self._lockInit.release()
+      

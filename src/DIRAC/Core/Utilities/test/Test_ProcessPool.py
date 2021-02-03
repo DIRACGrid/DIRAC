@@ -39,6 +39,9 @@ from DIRAC import gLogger
 ## SUT
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 
+# Mark this entire module as slow
+pytestmark = pytest.mark.slow
+
 
 @pytest.fixture(autouse=True)
 def capture_wrap():

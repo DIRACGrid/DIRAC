@@ -29,7 +29,8 @@ from subprocess import Popen
 # SUT
 from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall, getChildrenPIDs
 
-########################################################################
+# Mark this entire module as slow
+pytestmark = pytest.mark.slow
 
 cmd = ["sleep", "2"]
 

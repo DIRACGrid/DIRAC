@@ -78,9 +78,9 @@ Install
 
 There are basically 2 types of installations: client, and server.
 
-For DIRAC client installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/InstallingClient/index.html>`_.
+For DIRAC client installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/InstallingClient/index.html>`__.
 
-For DIRAC server installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/AdministratorGuide/InstallingDIRACService/index.html>`_.
+For DIRAC server installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/AdministratorGuide/InstallingDIRACService/index.html>`__.
 
 The supported distributions are EL6 (e.g. SLC6) and EL7 (e.g. CC7).
 
@@ -118,12 +118,12 @@ Unit tests are provided within the source code. Integration, regression and syst
 Run pytest to run all unit tests (it will include the coverage).
 
 Acknowledgements
-~~~~~~~
+~~~~~~~~~~~~~~~~
 
 This work is co-funded by the EOSC-hub project (Horizon 2020) under Grant number 777536
 
-.. raw:: html 
-  <img src="https://wiki.eosc-hub.eu/download/attachments/1867786/eu%20logo.jpeg?version=1&modificationDate=1459256840098&api=v2" height="24"/>
+|eu-logo| |eosc-hub-web|
 
-.. raw:: html 
-  <img src="https://wiki.eosc-hub.eu/download/attachments/18973612/eosc-hub-web.png?version=1&modificationDate=1516099993132&api=v2" height="24"/>
+.. |eu-logo| image:: https://github.com/DIRACGrid/DIRAC/raw/integration/docs/source/_static/eu-logo.jpeg
+
+.. |eosc-hub-web| image:: https://github.com/DIRACGrid/DIRAC/raw/integration/docs/source/_static/eosc-hub-web.png

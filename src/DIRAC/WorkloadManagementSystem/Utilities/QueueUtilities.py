@@ -67,7 +67,7 @@ def getQueuesResolved(siteDict):
             queueDict[parameter] = queueParameter
 
         # If we have a multi-core queue add MultiProcessor tag
-        if queueDict.get('NumberOfProcessors', 1) > 1:
+        if int(queueDict.get('NumberOfProcessors', 1)) > 1:
           queueDict.setdefault('Tag', []).append('MultiProcessor')
 
         queueDict['CEName'] = ce

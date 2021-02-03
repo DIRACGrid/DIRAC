@@ -101,8 +101,8 @@ class SummarizeLogsAgent(AgentModule):
           self.log.error(deleteResult['Message'])
           continue
 
-      if self.months:
-        self._removeOldHistoryEntries(element, self.months)
+    if self.months:
+      self._removeOldHistoryEntries(element, self.months)
 
     return S_OK()
 
@@ -252,6 +252,7 @@ class SummarizeLogsAgent(AgentModule):
     :return: S_OK / S_ERROR
     """
     toRemove = datetime.utcnow().replace(microsecond=0) - timedelta(days=30 * months)
+    self.log.info("Removing history entries", "older than %s" % toRemove)
 
     deleteResult = self.rsClient.deleteStatusElement(element, 'History',
                                                      meta={'older': ['DateEffective', toRemove]})

@@ -13,12 +13,13 @@ __RCSID__ = "$Id$"
 
 import six
 import os
-import urllib
 import json
 import stat
 import shutil
 import errno
 from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import quote as urlquote
+from six.moves.urllib.parse import unquote as urlunquote
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import rootPath
@@ -456,7 +457,7 @@ class SSHComputingElement(ComputingElement):
     options['Queue'] = self.queue
 
     options = json.dumps(options)
-    options = urllib.quote(options)
+    options = urlquote(options)
 
     cmd = "bash --login -c 'python %s/execute_batch %s'" % (self.sharedArea, options)
 
@@ -480,7 +481,7 @@ class SSHComputingElement(ComputingElement):
       except BaseException:
         return S_ERROR("Invalid output from remote command: %s" % output)
       try:
-        output = urllib.unquote(output)
+        output = urlunquote(output)
         result = json.loads(output)
         if isinstance(result, six.string_types) and result.startswith('Exception:'):
           return S_ERROR(result)

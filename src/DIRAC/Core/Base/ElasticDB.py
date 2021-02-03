@@ -37,13 +37,22 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
     self.__user = dbParameters.get('User', '')
     self.__dbPassword = dbParameters.get('Password', '')
     self.__useSSL = dbParameters.get('SSL', True)
+    self.__useCRT = dbParameters.get('CRT', True)
+    self.__ca_certs = dbParameters.get('ca_certs', None)
+    self.__client_key = dbParameters.get('client_key', None)
+    self.__client_cert = dbParameters.get('client_cert', None)
 
     super(ElasticDB, self).__init__(host=self._dbHost,
                                     port=self._dbPort,
                                     user=self.__user,
                                     password=self.__dbPassword,
                                     indexPrefix=indexPrefix,
-                                    useSSL=self.__useSSL)
+                                    useSSL=self.__useSSL,
+                                    useCRT=self.__useCRT,
+                                    ca_certs=self.__ca_certs,
+                                    client_key=self.__client_key,
+                                    client_cert=self.__client_cert)
+
     if not self._connected:
       raise RuntimeError('Can not connect to ES cluster %s, exiting...' % self.clusterName)
 

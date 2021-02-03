@@ -11,9 +11,9 @@
 
 # You can set these variables from the command line.
 #SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
+SPHINXBUILD   = sphinx-build
 
 
 
@@ -44,6 +44,7 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/*
+	-rm -rf source/dirac.cfg
 
 cleanall: clean
 	diracdoctools/scripts/dirac-docs-build-code.py --clean

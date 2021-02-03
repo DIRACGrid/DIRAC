@@ -30,11 +30,10 @@ import sys
 import tarfile
 import tempfile
 import time
-import urllib
-
-from past.builtins import long
 import six
 from six import StringIO
+from six.moves.urllib.parse import unquote as urlunquote
+
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -124,7 +123,7 @@ class Dirac(API):
 
   def _checkJobArgument(self, jobID, multiple=False):
     try:
-      if isinstance(jobID, (str, int, long)):
+      if isinstance(jobID, (str, six.integer_types)):
         jobID = int(jobID)
         if multiple:
           jobID = [jobID]
@@ -705,7 +704,7 @@ class Dirac(API):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split('=')[0]
-        valEnv = urllib.unquote(var.split('=')[1])  # this is needed to make the value contain strange things
+        valEnv = urlunquote(var.split('=')[1])  # this is needed to make the value contain strange things
         executionEnv[nameEnv] = valEnv
         self.log.verbose('%s = %s' % (nameEnv, valEnv))
 

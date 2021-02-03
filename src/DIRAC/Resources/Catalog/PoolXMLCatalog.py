@@ -159,24 +159,16 @@ class PoolXMLCatalog(object):
 
     # Get the dom representation of the catalog
     if xmlfile:
-      if isinstance(xmlfile, list):
-        for xmlf in xmlfile:
-          try:
-            _sfile = file(xmlf, 'r')
-            self.dom = xml.dom.minidom.parse(xmlf)
-          except BaseException:
-            self.dom = xml.dom.minidom.parseString(xmlf)
-
-          self.analyseCatalog(self.dom)
-      else:
-        try:
-          _sfile = file(xmlfile, 'r')
-          self.dom = xml.dom.minidom.parse(xmlfile)
-          # This is a file, set it as a backend by default
+      if not isinstance(xmlfile, list):
+        if os.path.isfile(xmlfile):
           self.backend_file = xmlfile
-        except BaseException:
-          self.dom = xml.dom.minidom.parseString(xmlfile)
+        xmlfile = [xmlfile]
 
+      for xmlf in xmlfile:
+        if os.path.isfile(xmlf):
+          self.dom = xml.dom.minidom.parse(xmlf)
+        else:
+          self.dom = xml.dom.minidom.parseString(xmlf)
         self.analyseCatalog(self.dom)
 
   def setBackend(self, fname):
@@ -198,10 +190,8 @@ class PoolXMLCatalog(object):
 
     if os.path.exists(self.backend_file):
       os.rename(self.backend_file, self.backend_file + '.bak')
-
-    bfile = open(self.backend_file, 'w')
-    print(self.toXML(), file=bfile)
-    bfile.close()
+    with open(self.backend_file, 'w') as fp:
+      fp.write(self.toXML())
 
   def getName(self):
     """ Get the catalog type name

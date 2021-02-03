@@ -11,13 +11,12 @@ import os
 
 import DIRAC
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Security import Locations
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+from DIRAC.Core.Security import Locations, ProxyInfo
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security import ProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 __RCSID__ = "$Id$"
@@ -60,7 +59,7 @@ class Params(object):
     """
     add options to dirac option parser
     """
-    Script.setUsageMessage("Script to delete a dirac proxy. Default: delete local proxy only.")
+    Script.setUsageMessage(__doc__)
     Script.registerSwitch(
         "a",
         "all",

@@ -77,14 +77,13 @@ class SecurityFileLog(threading.Thread):
     try:
       gLogger.info("Compressing file %s" % filePath)
       fd = gzip.open("%s.gz" % filePath, "w")
-      fO = file(filePath)
-      bS = 1048576  # 1MiB
-      buf = fO.read(bS)
-      while buf:
-        fd.write(buf)
+      with open(filePath) as fO:
+        bS = 1048576  # 1MiB
         buf = fO.read(bS)
+        while buf:
+          fd.write(buf)
+          buf = fO.read(bS)
       fd.close()
-      fO.close()
     except Exception as e:
       gLogger.exception("Can't compress old log file", filePath)
       return 1

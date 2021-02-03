@@ -53,7 +53,7 @@ def test_dumpRequest(get_X509Request):
   res = x509Req.dumpRequest()
 
   assert res['OK']
-  assert 'CERTIFICATE REQUEST' in res['Value']
+  assert b'CERTIFICATE REQUEST' in res['Value']
 
 
 def test_loadAllFromString_fromDumpRequest(get_X509Request):

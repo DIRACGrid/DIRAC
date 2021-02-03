@@ -10,6 +10,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from __future__ import absolute_import
+
 import os
 import ssl
 import time
@@ -144,10 +146,13 @@ class MJF(object):
       if int(mjfUrl.getcode() / 100) != 2:
         return None
       return mjfUrl.read().strip()
-    except BaseException:
+    except Exception:
       return None
     finally:
-      mjfUrl.close()
+      try:
+        mjfUrl.close()
+      except UnboundLocalError:
+        pass
 
   def getWallClockSecondsLeft(self):
     """Returns the number of seconds until either the wall clock limit

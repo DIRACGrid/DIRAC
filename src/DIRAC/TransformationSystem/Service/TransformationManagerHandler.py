@@ -4,7 +4,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from past.builtins import long
 import six
 
 from DIRAC import S_OK, S_ERROR
@@ -13,7 +12,7 @@ from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-transTypes = [six.string_types, int, long]
+transTypes = list(six.string_types) + list(six.integer_types)
 
 __RCSID__ = "$Id$"
 
@@ -252,13 +251,13 @@ class TransformationManagerHandler(RequestHandler):
         orderAttribute=orderAttribute, limit=limit, inputVector=inputVector,
         offset=offset)
 
-  types_setTaskStatus = [transTypes, [list, int, long], six.string_types]
+  types_setTaskStatus = [transTypes, [list] + list(six.integer_types), six.string_types]
 
   @classmethod
   def export_setTaskStatus(cls, transName, taskID, status):
     return cls.transformationDB.setTaskStatus(transName, taskID, status)
 
-  types_setTaskStatusAndWmsID = [transTypes, [long, int], six.string_types, six.string_types]
+  types_setTaskStatusAndWmsID = [transTypes, list(six.integer_types), six.string_types, six.string_types]
 
   @classmethod
   def export_setTaskStatusAndWmsID(cls, transName, taskID, status, taskWmsID):
@@ -270,7 +269,7 @@ class TransformationManagerHandler(RequestHandler):
   def export_getTransformationTaskStats(cls, transName):
     return cls.transformationDB.getTransformationTaskStats(transName)
 
-  types_deleteTasks = [transTypes, [long, int], [long, int]]
+  types_deleteTasks = [transTypes, list(six.integer_types), list(six.integer_types)]
 
   def export_deleteTasks(self, transName, taskMin, taskMax):
     credDict = self.getRemoteCredentials()
@@ -278,7 +277,7 @@ class TransformationManagerHandler(RequestHandler):
     # authorDN = self._clientTransport.peerCredentials['DN']
     return self.transformationDB.deleteTasks(transName, taskMin, taskMax, author=authorDN)
 
-  types_extendTransformation = [transTypes, [long, int]]
+  types_extendTransformation = [transTypes, list(six.integer_types)]
 
   def export_extendTransformation(self, transName, nTasks):
     credDict = self.getRemoteCredentials()
@@ -286,7 +285,7 @@ class TransformationManagerHandler(RequestHandler):
     # authorDN = self._clientTransport.peerCredentials['DN']
     return self.transformationDB.extendTransformation(transName, nTasks, author=authorDN)
 
-  types_getTasksToSubmit = [transTypes, [long, int]]
+  types_getTasksToSubmit = [transTypes, list(six.integer_types)]
 
   def export_getTasksToSubmit(self, transName, numTasks, site=''):
     """ Get information necessary for submission for a given number of tasks for a given transformation """
@@ -300,7 +299,7 @@ class TransformationManagerHandler(RequestHandler):
       return res
     tasksDict = res['Value']
     for taskID, taskDict in tasksDict.items():
-      res = self.transformationDB.reserveTask(transName, long(taskID))
+      res = self.transformationDB.reserveTask(transName, int(taskID))
       if not res['OK']:
         return res
       else:

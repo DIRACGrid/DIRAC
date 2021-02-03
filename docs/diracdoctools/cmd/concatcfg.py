@@ -10,6 +10,7 @@ import os
 import re
 import textwrap
 import sys
+import shutil
 
 from diracdoctools.Config import Configuration
 from diracdoctools.Utilities import makeLogger
@@ -32,6 +33,11 @@ class ConcatCFG(object):
     self.config = Configuration(configFile, sections=['CFG'])
     self.retVal = 0
 
+  def prepareDiracCFG(self):
+    """Copy dirac.cfg file to source dir."""
+    LOG.info('Copy %r to source directory', self.config.cfg_baseFile)
+    shutil.copy(self.config.cfg_baseFile, '/'.join([self.config.docsPath, 'source/']))
+
   def updateCompleteDiracCFG(self):
     """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
     compCfg = CFG()
@@ -40,6 +46,8 @@ class ConcatCFG(object):
     if not os.path.exists(mainDiracCfgPath):
       LOG.error('Failed to find Main Dirac cfg at %r', mainDiracCfgPath)
       return 1
+
+    self.prepareDiracCFG()
 
     LOG.info('Extracting default configuration from %r', mainDiracCfgPath)
     loadCFG = CFG()
