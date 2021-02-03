@@ -1,4 +1,4 @@
-[v7r2-pre31]
+[v7r2-pre32]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -6,6 +6,8 @@ CHANGE: (#4586) Use __future__ imports to get Python 3 like behaviour for import
 CHANGE: (#4796, #4797) removed obsoleted codes
 CHANGE: (#4823) Service handlers use class variables instead of global
 NEW: Moved to a src/ repository layout
+NEW: (#4906) Deploy releases to PyPI
+FIX: (#4921) use six.moves for urllib
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -81,6 +83,7 @@ CHANGE: (#4829) updated configuration in terms of security, added description of
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
+NEW: (#4910) --runslow option on unit tests to allow faster local tests
 
 [v7r1p26]
 
