@@ -1,6 +1,11 @@
 ''' StatesMonitoringAgent
   sends periodically numbers of jobs in various states for various
-     sites to the Monitoring system to create historical plots.
+     sites to the Monitoring system to create monitoring plots.
+
+  As of DIRAC v7r2, this agent is an almost exact copy of StatesAccountingAgent,
+  the only difference being that it will only use the Monitoring System
+  as its backend (and so ElasticSearch).
+  This agent will be removed from DIRAC v7r3.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN StatesMonitoringAgent
@@ -15,7 +20,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig, S_OK
+from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import Time
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -24,13 +29,6 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 class StatesMonitoringAgent(AgentModule):
   """
-      The specific agents must provide the following methods:
-        - initialize() for initial settings
-        - beginExecution()
-        - execute() - the main method called in the agent cycle
-        - endExecution()
-        - finalize() - the graceful exit of the method, this one is usually used
-                   for the agent restart
   """
 
   __summaryKeyFieldsMapping = ['Status',
@@ -41,7 +39,8 @@ class StatesMonitoringAgent(AgentModule):
                                'JobType',
                                'ApplicationStatus',
                                'MinorStatus']
-  __summaryDefinedFields = [('ApplicationStatus', 'unset'), ('MinorStatus', 'unset')]
+  __summaryDefinedFields = [('ApplicationStatus', 'unset'),
+                            ('MinorStatus', 'unset')]
   __summaryValueFieldsMapping = ['Jobs',
                                  'Reschedules']
   __renameFieldsMapping = {'JobType': 'JobSplitType'}
@@ -52,7 +51,7 @@ class StatesMonitoringAgent(AgentModule):
   monitoringReporter = None
 
   def initialize(self):
-    """ Standard constructor
+    """ Standard initialization
     """
 
     self.jobDB = JobDB()
@@ -60,7 +59,9 @@ class StatesMonitoringAgent(AgentModule):
     self.am_setOption("PollingTime", 900)
     self.messageQueue = self.am_getOption('MessageQueue', 'dirac.wmshistory')
 
-    self.monitoringReporter = MonitoringReporter(monitoringType="WMSHistory", failoverQueueName=self.messageQueue)
+    self.monitoringReporter = MonitoringReporter(
+        monitoringType="WMSHistory",
+        failoverQueueName=self.messageQueue)
 
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
@@ -74,24 +75,16 @@ class StatesMonitoringAgent(AgentModule):
   def execute(self):
     """ Main execution method
     """
-    result = gConfig.getSections("/DIRAC/Setups")
-    if not result['OK']:
-      return result
-    validSetups = result['Value']
-    self.log.info("Valid setups for this cycle are %s" % ", ".join(validSetups))
     # Get the WMS Snapshot!
     result = self.jobDB.getSummarySnapshot(self.__jobDBFields)
     now = Time.dateTime()
     if not result['OK']:
-      self.log.error("Can't get the jobdb summary", result['Message'])
+      self.log.error("Can't get the JobDB summary", "%s: won't commit at this cycle" % result['Message'])
     else:
       values = result['Value'][1]
-      self.log.info("Start sending records!")
+
+      self.log.info("Start sending records")
       for record in values:
-        recordSetup = record[0]
-        if recordSetup not in validSetups:
-          self.log.error("Setup %s is not valid" % recordSetup)
-          continue
         record = record[1:]
         rD = {}
         for fV in self.__summaryDefinedFields:
@@ -104,10 +97,11 @@ class StatesMonitoringAgent(AgentModule):
           rD[self.__summaryValueFieldsMapping[iP]] = int(record[iP])
         rD['timestamp'] = int(Time.toEpoch(now))
         self.monitoringReporter.addRecord(rD)
+
       retVal = self.monitoringReporter.commit()
       if retVal['OK']:
-        self.log.info("The records are successfully sent to the Store!")
+         self.log.info("Records sent", "(%s)" % result['Value'])
       else:
-        self.log.warn("Faild to insert the records! It will be retried in the next iteration", retVal['Message'])
+        self.log.error("Failed to insert the records, it will be retried in the next iteration", retVal['Message'])
 
     return S_OK()

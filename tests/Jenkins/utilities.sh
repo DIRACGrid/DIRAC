@@ -486,12 +486,12 @@ generateCA() {
 
   # Generate the CA certificate
   openssl req -config openssl_config_ca.cnf \
-	      -key ca.key.pem \
-	      -new -x509 \
-	      -days 7300 \
-	      -sha256 \
-	      -extensions v3_ca \
-	      -out ca.cert.pem
+              -key ca.key.pem \
+              -new -x509 \
+              -days 7300 \
+              -sha256 \
+              -extensions v3_ca \
+              -out ca.cert.pem
 
   # Copy the CA to the list of trusted CA
   cp ca.cert.pem "${SERVERINSTALLDIR}/etc/grid-security/certificates/"
@@ -864,7 +864,7 @@ diracAgents(){
       python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-add-option.py" "agent" "$agent"
       echo "==> calling dirac-agent $agent -o MaxCycles=1 ${DEBUG}"
       if ! dirac-agent "$agent"  -o MaxCycles=1 "${DEBUG}"; then
-	echo 'ERROR: dirac-agent failed' >&2
+        echo 'ERROR: dirac-agent failed' >&2
         exit 1
       fi
     fi
