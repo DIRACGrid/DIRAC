@@ -496,6 +496,11 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p47]
+
+*Core
+CHANGE: (#4930) Resolve location of etc/grid-security/vomses via env variable X509_VOMSES
+
 [v7r0p46]
 
 *DMS

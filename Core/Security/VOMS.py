@@ -8,7 +8,7 @@ import stat
 import tempfile
 import shutil
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
@@ -193,10 +193,25 @@ class VOMS(BaseSecurity):
     requiredFilePerms = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
     # 777
     allPerms = stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO
-    vomsesPaths = []
-    if 'DIRAC_VOMSES' in os.environ:
-      vomsesPaths.append(os.environ['DIRAC_VOMSES'])
-    vomsesPaths.append(os.path.join(rootPath, "etc", "grid-security", "vomses"))
+    # Transition code to new behaviour
+    if 'DIRAC_VOMSES' not in os.environ and 'X509_VOMSES' not in os.environ:
+      os.environ["X509_VOMSES"] = os.path.join(rootPath, "etc", "grid-security", "vomses")
+      gLogger.notice("You did not set X509_VOMSES in your bashrc. DIRAC searches $DIRAC/etc/grid-security/vomses . "
+                     "Please use X509_VOMSES, this auto discovery will be dropped.")
+    elif 'DIRAC_VOMSES' in os.environ and 'X509_VOMSES' in os.environ:
+      os.environ["X509_VOMSES"] = "%s:%s" % (os.environ['DIRAC_VOMSES'], os.environ["X509_VOMSES"])
+      gLogger.notice("You set both variables DIRAC_VOMSES and X509_VOMSES in your bashrc. "
+                     "DIRAC_VOMSES will be dropped in a future version, please use only X509_VOMSES")
+    elif 'DIRAC_VOMSES' in os.environ and 'X509_VOMSES' not in os.environ:
+      os.environ["X509_VOMSES"] = os.environ['DIRAC_VOMSES']
+      gLogger.notice("You set the variables DIRAC_VOMSES in your bashrc. "
+                     "DIRAC_VOMSES will be dropped in a future version, please use X509_VOMSES")
+    # End of transition code
+    if 'X509_VOMSES' not in os.environ:
+      raise Exception("The env variable X509_VOMSES is not set. "
+                      "DIRAC does not know where to look for etc/grid-security/vomses. "
+                      "Please set X509_VOMSES in your bashrc.")
+    vomsesPaths = os.environ['X509_VOMSES'].split(':')
     for vomsesPath in vomsesPaths:
       if not os.path.exists(vomsesPath):
         continue
@@ -208,7 +223,7 @@ class VOMS(BaseSecurity):
         os.close(fd)
         shutil.copy(vomsesPath, tmpPath)
         os.chmod(tmpPath, requiredFilePerms)
-        os.environ['DIRAC_VOMSES'] = tmpPath
+        os.environ['X509_VOMSES'] = tmpPath
         return tmpPath
       elif os.path.isdir(vomsesPath):
         ok = True
@@ -229,7 +244,7 @@ class VOMS(BaseSecurity):
         os.chmod(tmpDir, requiredDirPerms)
         for fP in os.listdir(tmpDir):
           os.chmod(os.path.join(tmpDir, fP), requiredFilePerms)
-        os.environ['DIRAC_VOMSES'] = tmpDir
+        os.environ['X509_VOMSES'] = tmpDir
         return tmpDir
 
   def setVOMSAttributes(self, proxy, attribute=None, vo=None):
