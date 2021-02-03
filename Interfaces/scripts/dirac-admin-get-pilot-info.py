@@ -1,10 +1,39 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-admin-get-pilot-output
+# File :    dirac-admin-get-pilot-info
 # Author :  Ricardo Graciani
 ########################################################################
 """
-  Retrieve available info about the given pilot
+Retrieve available info about the given pilot
+
+Usage:
+
+  dirac-admin-get-pilot-info [option|cfgfile] ... PilotID ...
+
+Arguments:
+
+  PilotID:  Grid ID of the pilot
+
+Example:
+
+  $ dirac-admin-get-pilot-info https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw
+  {'https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw': {'AccountingSent': 'False',
+                                                          'BenchMark': 0.0,
+                                                          'Broker': 'marwms.in2p3.fr',
+                                                          'DestinationSite': 'cclcgceli01.in2p3.fr',
+                                                          'GridSite': 'LCG.IN2P3.fr',
+                                                          'GridType': 'gLite',
+                                                          'LastUpdateTime': datetime.datetime(2011, 2, 21, 12, 49, 14),
+                                                          'OutputReady': 'False',
+                                                          'OwnerDN': '/O=GRID/C=FR/O=CNRS/OU=LPC/CN=Sebastien Guizard',
+                                                          'OwnerGroup': '/biomed',
+                                                          'ParentID': 0L,
+                                                          'PilotID': 2241L,
+                                                          'PilotJobReference': 'https://marlb.in2p3.fr:9000/2KHFrQjkw',
+                                                          'PilotStamp': '',
+                                                          'Status': 'Done',
+                                                          'SubmissionTime': datetime.datetime(2011, 2, 21, 12, 27, 52),
+                                                          'TaskQueueID': 399L}}
 """
 from __future__ import print_function
 __RCSID__ = "$Id$"
@@ -22,11 +51,7 @@ def setExtendedPrint(_arg):
   extendedPrint = True
 
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  PilotID:  Grid ID of the pilot']))
+Script.setUsageMessage(__doc__)
 Script.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
 Script.parseCommandLine(ignoreErrors=True)
 

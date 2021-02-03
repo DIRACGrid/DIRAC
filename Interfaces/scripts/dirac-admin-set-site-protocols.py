@@ -4,7 +4,19 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Defined protocols for each SE for a given site.
+Defined protocols for each SE for a given site.
+
+Usage:
+
+  dirac-admin-set-site-protocols [option|cfgfile] ... Protocol ...
+
+Arguments:
+
+  Protocol: SE access protocol (mandatory)
+
+Example:
+
+  $ dirac-admin-set-site-protocols --Site=LCG.IN2P3.fr SRM2
 """
 from __future__ import print_function
 
@@ -13,12 +25,8 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
+Script.setUsageMessage(__doc__)
 Script.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Protocol ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  Protocol: SE access protocol (mandatory)']))
 Script.parseCommandLine(ignoreErrors=True)
 
 site = None

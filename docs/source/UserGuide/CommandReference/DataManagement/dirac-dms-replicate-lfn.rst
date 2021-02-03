@@ -12,8 +12,8 @@ Usage::
 
 Arguments::
 
-  LFN:      Logical File Name or file containing LFNs
-  Dest:     Valid DIRAC SE
+  LFN:      Logical File Name or file containing LFNs (mandatory)
+  Dest:     Valid DIRAC SE (mandatory)
   Source:   Valid DIRAC SE
   Cache:    Local directory to be used as cache
 

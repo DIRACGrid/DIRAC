@@ -4,7 +4,21 @@
 # Author :  Adrian Casajus
 ########################################################################
 """
-  Modify a user in the CS.
+Modify a user in the CS.
+
+Usage:
+
+  dirac-admin-modify-user [option|cfgfile] ... user DN group [group] ...
+
+Arguments:
+
+  user:     User name (mandatory)
+  DN:       DN of the User (mandatory)
+  group:    Add the user to the group (mandatory)
+
+Example:
+
+  $ dirac-admin-modify-user vhamar /C=FR/O=Org/CN=User dirac_user
 """
 from __future__ import print_function
 
@@ -13,18 +27,10 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
+Script.setUsageMessage(__doc__)
 Script.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
 Script.registerSwitch("f", "force", "create the user if it doesn't exist")
-
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... user DN group [group] ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  user:     User name (mandatory)',
-                                  '  DN:       DN of the User (mandatory)',
-                                  '  group:    Add the user to the group (mandatory)']))
 Script.parseCommandLine(ignoreErrors=True)
-
 args = Script.getPositionalArgs()
 
 if len(args) < 3:

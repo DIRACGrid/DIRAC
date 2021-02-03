@@ -2,17 +2,29 @@
 ########################################################################
 # $HeadURL$
 ########################################################################
+"""
+Show storage quotas for specified users or for all registered users if nobody is specified
+
+Usage:
+
+  dirac-admin-user-quota [user1 ...]
+
+Example::
+
+  $ dirac-admin-user-quota
+  ------------------------------
+  Username       |     Quota (GB)
+  ------------------------------
+  atsareg        |           None
+  msapunov       |           None
+  vhamar         |           None
+  ------------------------------
+"""
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage("""
-Show storage quotas for specified users or for all registered users if nobody is specified
-
-Usage:
-   %s [user1 ...]
-""" % Script.scriptName)
-
+Script.setUsageMessage(__doc__)
 Script.parseCommandLine()
 users = Script.getPositionalArgs()
 

@@ -3,7 +3,8 @@
 # File :    dirac-admin-get-CAs
 # Author :  Ricardo Graciani
 ########################################################################
-"""Refresh the local copy of the CA certificates and revocation lists.
+"""
+Refresh the local copy of the CA certificates and revocation lists.
 
 Connects to the BundleDelivery service to obtain the tar balls. Needed when proxies appear to be
 invalid.
@@ -11,6 +12,10 @@ invalid.
 Usage:
 
   dirac-admin-get-CAs (<options>|<cfgFile>)*
+
+Example:
+
+  $ dirac-admin-get-CAs
 """
 
 import DIRAC

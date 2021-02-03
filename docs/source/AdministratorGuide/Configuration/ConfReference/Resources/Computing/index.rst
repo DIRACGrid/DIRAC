@@ -14,7 +14,7 @@ highest prority
 
   /Resources/Computing/OSCompatibility
 
-This section is used to define a compatibility matrix between dirac platforms (:ref:`dirac-platform`) and OS versions.
+This section is used to define a compatibility matrix between dirac platforms (:ref:`admin_dirac-platform`) and OS versions.
 
 An example of this session is the following::
 
@@ -59,7 +59,7 @@ An example of this session is the following::
       Linux_x86_64_glibc-2.5 += x86_64_SL_Nitrogen_7.2
     }
 
-What's on the left is an example of a dirac platform as determined the dirac-platform script (:ref:`dirac-platform`). 
+What's on the left is an example of a dirac platform as determined the dirac-platform script (:ref:`admin_dirac-platform`). 
 This platform is declared to be compatible with a list of "OS" strings.
 These strings are identifying the architectures of computing elements.
 This list of strings can be constructed from the "Architecture" + "OS" fields

@@ -1,5 +1,11 @@
 """ ProxyProvider implementation for a per-user sub-proxy(PUSP) proxy generation using PUSP proxy server.
     More details about PUSP here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI
+
+    .. literalinclude:: /dirac.cfg
+      :start-after: ## PUSP type:
+      :end-before: ##
+      :dedent: 2
+      :caption: /Resources/ProxyProviders section
 """
 
 from six.moves.urllib.request import urlopen

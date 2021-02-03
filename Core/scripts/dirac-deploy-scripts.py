@@ -1,21 +1,51 @@
 #!/usr/bin/env python
 """
-Deploy all scripts and extensions
-Options:
- * --symlink: this will create symlinks instead of wrappers
- * <python path>: you can specify the folder where your python installation should be fetched from
+Deploy all scripts and extensions.
+This script is not meant to be called by users (it's automatically called by dirac-install).
+
+Usage::
+
+  dirac-deploy-scripts (<options>|<cfgFile>)* ... <python path>
+
+Arguments::
+  python path:    you can specify the folder where your python installation should be fetched from
                   to replace the shebang
+
+Example::
+
+  $ dirac-deploy-scripts
 """
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
-import getopt
 import os
-import shutil
-import stat
 import re
 import sys
+import stat
+import getopt
+import shutil
 import platform
+
+cmdOpts = (('', 'symlink', 'this will create symlinks instead of wrappers'),
+           ('', 'module=', 'module in which to look for the scripts'),
+           ('h', 'help', 'help doc string'))
+
+
+def usage(err=''):
+  """ Usage printout
+
+      :param str err: will print something like "option -a not recognized"
+  """
+  if err:
+    print(err)
+  print(__doc__)
+  print('Options::\n\n')
+  for cmdOpt in cmdOpts:
+    print("  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
+
+  sys.exit(2 if err else 0)
+
 
 DEBUG = False
 
@@ -45,12 +75,15 @@ useSymlinks = False
 module = None
 
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "", ["symlink", "module="])
+  opts, args = getopt.getopt(sys.argv[1:],
+                             "".join([opt[0] for opt in cmdOpts]),
+                             [opt[1] for opt in cmdOpts])
 except getopt.GetoptError as err:
-  # print help information and exit:
-  print(str(err))  # will print something like "option -a not recognized"
-  sys.exit(2)
+  # print help information and exit
+  usage(str(err))
 for o, a in opts:
+  if o in ('-h', '--help'):
+    usage()
   if o == "--symlink":
     useSymlinks = True
   elif o == "--module":

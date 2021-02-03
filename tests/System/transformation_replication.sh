@@ -33,7 +33,7 @@ echo " "
 #Values to be used
 stime=$(date +"%H%M%S")
 tdate=$(date +"20%y-%m-%d")
-version=$(dirac-version)
+version=$(dirac-info -v)
 
 if [[ -d "TransformationSystemTest" ]]; then
   echo "Removing TransformationSystemTest"

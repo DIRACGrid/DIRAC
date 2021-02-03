@@ -3,6 +3,16 @@
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
+"""
+Usage:
+
+  dirac-proxy-init.py (<options>|<cfgFile>)*
+
+Example:
+
+  $ dirac-proxy-init -g dirac_user -t --rfc
+  Enter Certificate password:
+"""
 from __future__ import division
 
 import os
@@ -21,7 +31,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 __RCSID__ = "$Id$"
-
+Script.setUsageMessage(__doc__)
 
 class Params(ProxyGeneration.CLIParams):
 

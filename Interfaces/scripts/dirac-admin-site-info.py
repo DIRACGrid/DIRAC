@@ -4,7 +4,25 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Print Configuration information for a given Site
+Print Configuration information for a given Site
+
+Usage:
+
+  dirac-admin-site-info [option|cfgfile] ... Site ...
+
+Arguments:
+
+  Site:     Name of the Site
+
+Example:
+
+  $ dirac-admin-site-info LCG.IN2P3.fr
+  {'CE': 'cclcgceli01.in2p3.fr, cclcgceli03.in2p3.fr, sbgce1.in2p3.fr',
+   'Coordinates': '4.8655:45.7825',
+   'Mail': 'grid.admin@cc.in2p3.fr',
+   'MoUTierLevel': '1',
+   'Name': 'IN2P3-CC',
+   'SE': 'IN2P3-disk, DIRAC-USER'}
 """
 from __future__ import print_function
 
@@ -13,11 +31,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Site ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  Site:     Name of the Site']))
+Script.setUsageMessage(__doc__)
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 

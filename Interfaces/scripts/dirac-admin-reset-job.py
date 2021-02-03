@@ -4,7 +4,20 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Reset a job or list of jobs in the WMS
+Reset a job or list of jobs in the WMS
+
+Usage:
+
+  dirac-admin-reset-job [option|cfgfile] ... JobID ...
+
+Arguments:
+
+  JobID:    DIRAC ID of the Job
+
+Example:
+
+  $ dirac-admin-reset-job 1848
+  Reset Job 1848
 """
 from __future__ import print_function
 
@@ -13,13 +26,8 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  JobID:    DIRAC ID of the Job']))
+Script.setUsageMessage(__doc__)
 Script.parseCommandLine(ignoreErrors=True)
-
 args = Script.getPositionalArgs()
 
 if len(args) < 1:

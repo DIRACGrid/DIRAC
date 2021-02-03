@@ -1,5 +1,19 @@
 #!/usr/bin/env python
+"""
+Add or Modify a User info in DIRAC
 
+Usage:
+
+  dirac-admin-add-user [option|cfgfile] ... Property=<Value> ...
+
+Arguments:
+
+  Property=<Value>: Properties to be added to the User like (Phone=XXXX)
+
+Example:
+
+  $ dirac-admin-add-user -N vhamar -D /O=GRID/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar -M hamar@cppm.in2p3.fr -G dirac_user
+"""
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -43,12 +57,7 @@ def addUserGroup(arg):
     userGroups.append(arg)
 
 
-Script.setUsageMessage('\n'.join(['Add or Modify a User info in DIRAC',
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
-                                  'Arguments:',
-                                  ' Property=<Value>: Properties to be added to the User like (Phone=XXXX)', ]))
-
+Script.setUsageMessage(__doc__)
 Script.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName)
 Script.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', setUserDN)
 Script.registerSwitch('M:', 'UserMail:', 'eMail of the user (Mandatory)', setUserMail)
@@ -57,7 +66,6 @@ Script.registerSwitch(
     'UserGroup:',
     'Name of the Group for the User (Allow Multiple instances or None)',
     addUserGroup)
-
 Script.parseCommandLine(ignoreErrors=True)
 
 if userName is None or userDN is None or userMail is None:

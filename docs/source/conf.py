@@ -67,6 +67,11 @@ if os.environ.get('READTHEDOCS') == 'True':
 
 # AUTO SETUP END
 
+else:
+  # If not READTHEDOCS just prepare dirac.cfg for docs
+  from diracdoctools.cmd.concatcfg import ConcatCFG
+  ConcatCFG(configFile='../docs.conf').prepareDiracCFG()
+
 # get the dirac version
 try:
   from DIRAC import version

@@ -1,19 +1,30 @@
 #!/usr/bin/env python
 """
 Status of DIRAC components using runsvstat utility
+
+Usage:
+
+  dirac-status-component [option|cfgfile] ... [system [service|agent]]
+
+Arguments:
+
+  system:        Name of the system for the component (default *: all)
+  service|agent: Name of the particular component (default *: all)
+
+Example:
+
+  $ dirac-status-component
+  DIRAC Root Path = /vo/dirac/versions/Lyon-HEAD-1296215324
+                                           Name : Runit    Uptime    PID
+            WorkloadManagement_PilotStatusAgent : Run        4029     1697
+             WorkloadManagement_JobHistoryAgent : Run        4029     167
 """
-#
 from __future__ import print_function
 
 from DIRAC.Core.Base import Script
 Script.disableCS()
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [option|cfgfile] ... [system [service|agent]]' % Script.scriptName,
-                                  'Arguments:',
-                                  '  system:        Name of the system for the component (default *: all)',
-                                  '  service|agent: Name of the particular component (default *: all)']))
+Script.setUsageMessage(__doc__)
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 

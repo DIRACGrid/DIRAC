@@ -11,7 +11,7 @@ It performs the following operations:
 - Sends report for performed operation to the VO administrator
 
 The agent is performing its operations with credentials of the VO administrator as defined
-in the ``/Registry/VO/<VO_name>`` configuration section. See also :ref:`registry_vo`.
+in the ``/Registry/VO/<VO_name>`` configuration section.
 
 The following options can be set for the VOMS2CSAgent.
 

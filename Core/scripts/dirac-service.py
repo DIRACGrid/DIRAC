@@ -3,6 +3,14 @@
 # File :   dirac-service
 # Author : Adria Casajus
 ########################################################################
+"""
+This is a script to launch DIRAC services. Mostly internal.
+
+Usage::
+
+  dirac-service (<options>|<cfgFile>)*
+
+"""
 
 import sys
 
@@ -14,7 +22,7 @@ from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 __RCSID__ = "$Id$"
 
 localCfg = LocalConfiguration()
-
+localCfg.setUsageMessage(__doc__)
 
 positionalArgs = localCfg.getPositionalArguments()
 if len(positionalArgs) == 0:

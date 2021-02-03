@@ -12,8 +12,8 @@ Usage::
 
 Arguments::
 
-  LFN:      Logical File Name or file containing LFNs
-  SE:       Valid DIRAC SE
+  LFN:      Logical File Name or file containing LFNs (mandatory)
+  SE:       Valid DIRAC SE (mandatory)
   PROTO:    Optional protocol for accessURL
 
 Example::

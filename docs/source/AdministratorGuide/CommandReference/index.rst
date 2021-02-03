@@ -21,6 +21,8 @@ General information:
     dirac-admin-service-ports
     dirac-platform
 
+.. _registry_cmd:
+
 Managing Registry:
 
 .. toctree::
@@ -135,6 +137,20 @@ User convenience:
     dirac-utils-file-adler
     dirac-utils-file-md5
 
+.. _proxymanager_cmd:
+
+ProxyManager management commands:
+
+.. toctree::
+    :maxdepth: 2
+
+    dirac-proxy-info
+    dirac-proxy-init
+    dirac-proxy-destroy
+    dirac-admin-get-proxy
+    dirac-admin-proxy-upload
+    dirac-proxy-get-uploaded-info
+
 Other commands:
 
 .. toctree::
@@ -142,13 +158,6 @@ Other commands:
 
     dirac-admin-accounting-cli
     
-    dirac-admin-get-proxy
-    dirac-admin-proxy-upload
-    dirac-proxy-get-uploaded-info
-    dirac-proxy-info
-    dirac-proxy-init
-    dirac-proxy-destroy
-
     dirac-admin-sysadmin-cli
     dirac-admin-update-instance
     dirac-admin-update-pilot    
