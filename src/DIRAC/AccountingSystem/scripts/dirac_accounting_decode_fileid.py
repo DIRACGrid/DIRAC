@@ -18,11 +18,12 @@ import cgi
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
+
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                     'Usage:',
                                     '  %s [option|cfgfile] ... URL ...' % Script.scriptName,

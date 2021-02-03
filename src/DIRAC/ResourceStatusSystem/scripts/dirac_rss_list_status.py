@@ -156,6 +156,8 @@ def run():
 
 @DIRACScript()
 def main():
+  global subLogger
+  global switchDict
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization
