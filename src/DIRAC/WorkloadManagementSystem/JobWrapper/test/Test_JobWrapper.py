@@ -67,6 +67,7 @@ def test_performChecks():
   assert res['OK']
 
 
+@pytest.mark.slow
 def test_execute(mocker):
 
   mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection",

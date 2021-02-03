@@ -429,6 +429,7 @@ def test_getCertInChain(get_proxy):
   assert proxyChain.isValidProxy()['Value'] is True
 
 
+@mark.slow
 @settings(max_examples=200, suppress_health_check=function_scoped)
 @given(lifetime=integers(max_value=ONE_YEAR_IN_SECS, min_value=1))
 def test_proxyLifetime(get_proxy, lifetime):
@@ -449,6 +450,7 @@ def test_proxyLifetime(get_proxy, lifetime):
   assert (notAfterDate - expectedValidity).total_seconds() == approx(0, abs=margin)
 
 
+@mark.slow
 @settings(max_examples=200, suppress_health_check=function_scoped)
 @given(lifetime=integers(min_value=TWENTY_YEARS_IN_SEC, max_value=NO_LATER_THAN_2050_IN_SEC))
 def test_tooLong_proxyLifetime(get_proxy, lifetime):
@@ -472,11 +474,12 @@ def test_tooLong_proxyLifetime(get_proxy, lifetime):
 
 # def generateProxyToString(self, lifeTime, diracGroup=False, strength=1024, limited=False, proxyKey=False, rfc = True):
 
-# hypthesis successfuly prove that m2crypto implementation does not work
+# hypthesis successfully prove that m2crypto implementation does not work
 # for an empty group name, or 0, or whatever can be evaluated to False . Fine...
 # Let's just focus on letters and '-'
 
 
+@mark.slow
 @settings(max_examples=200, suppress_health_check=function_scoped)
 @given(diracGroup=text(ascii_letters + '-_' + digits, min_size=1))
 def test_diracGroup(get_proxy, diracGroup):
@@ -516,11 +519,12 @@ def test_getIssuerCert(get_proxy):
 # From now on, test proxy coming from Requests
 ################################################################
 
-  #
-  # retVal = chain.generateChainFromRequestString(reqDict['request'],
-  #                                               lifetime=chainLifeTime,
-  #                                               diracGroup=diracGroup,
-  #                                               rfc = rfcIfPossible)
+#
+# retVal = chain.generateChainFromRequestString(reqDict['request'],
+#                                               lifetime=chainLifeTime,
+#                                               diracGroup=diracGroup,
+#                                               rfc = rfcIfPossible)
+@mark.slow
 @settings(max_examples=200, suppress_health_check=function_scoped)
 @given(diracGroup=text(ascii_letters + '-', min_size=1), lifetime=integers(min_value=1, max_value=TWENTY_YEARS_IN_SEC))
 def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):

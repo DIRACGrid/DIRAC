@@ -22,8 +22,7 @@ jobs:
           #     supported alternative: "If you want your threads to stop
           #     gracefully, make them non-daemonic and use a suitable
           #     signalling mechanism such as an Event."
-          - pytest --no-cov -k 'not test_BaseType_Unicode and not test_nestedStructure and not testLockedClass'
-          - pytest --no-cov src/DIRAC/Core/Security/test
+          - pytest --runslow -k 'not test_BaseType_Unicode and not test_nestedStructure and not testLockedClass'
 
     steps:
     - uses: actions/checkout@v2

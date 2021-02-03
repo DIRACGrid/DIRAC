@@ -18,6 +18,8 @@ except ImportError:
 import unittest
 import tempfile
 
+import pytest
+
 from DIRAC import gLogger, rootPath
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.DIRACCAProxyProvider import DIRACCAProxyProvider
@@ -88,6 +90,7 @@ class DIRACCAProviderTestCase(unittest.TestCase):
 
 class testDIRACCAProvider(DIRACCAProviderTestCase):
 
+  @pytest.mark.slow
   def test_getProxy(self):
     """ Test 'getProxy' - try to get proxies for different users and check it
     """

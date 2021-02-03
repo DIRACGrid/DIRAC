@@ -9,10 +9,14 @@ import time
 from os.path import dirname, join
 from subprocess import Popen
 
+import pytest
 from flaky import flaky
 
 import DIRAC
 from DIRAC.Core.Utilities.Profiler import Profiler
+
+# Mark this entire module as slow
+pytestmark = pytest.mark.slow
 
 
 def test_base():
