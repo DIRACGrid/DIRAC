@@ -120,7 +120,7 @@ $HOME/.glite/vomses
 -------------------
 
 DIRAC search for VOMS data in the directory pointed by ``$X509_VOMSES`` variable.
-Up to including v7r1 DIRAC also searches for this information in `$DIRAC/etc/grid-security/vomses`, however this behaviour is dropped in `v7r2`.
+Up to and including ``v7r1``, DIRAC also searches for this information in ``$DIRAC/etc/grid-security/vomses`` independent of the environment variable. Starting with ``v7r2`` only the ``X509_VOMSES`` variable will be used and must be set in the ``bashrc`` file. Still, the folder ``$DIRAC/etc/grid-security/vomses`` is going to be filled by the ``dirac-configure`` command with the information found in the CS, and is the default location pointed to by ``X509_VOMSES`` in ``bashrc`` files created by ``dirac-install``.
 
 For each VO, there should be a file with the same name of VO and filled it the following way for every VOMS server:
 (Take data from http://operations-portal.egi.eu/vo)
@@ -345,4 +345,3 @@ Operations - adding pamela section
        }
      }
    }
-
