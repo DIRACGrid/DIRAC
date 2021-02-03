@@ -180,5 +180,7 @@ class HandlerManager(object):
     """
     if not self.__handlers and self.__autoDiscovery:
       self.__autoDiscovery = False
-      self.discoverHandlers()
+      res = self.discoverHandlers()
+      if not res['OK']:
+        gLogger.error("Could not load handlers", res)
     return self.__handlers

@@ -39,6 +39,7 @@ def main():
     sys.exit(0)
 
   localCfg = LocalConfiguration()
+  localCfg.setConfigurationForServer('Tornado/Tornado')
   localCfg.addMandatoryEntry("/DIRAC/Setup")
   localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
   localCfg.addDefaultEntry("LogLevel", "INFO")
