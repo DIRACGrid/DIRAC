@@ -257,7 +257,13 @@ class ElasticSearchDB(object):
 
     :param str indexName: the name of the index
     """
-    return self.client.indices.exists(indexName)
+    # if the index does not exist at all, we might get an obscure authorization exception.
+    sLog.debug("Checking existance of index %s" % indexName)
+    try:
+      return self.client.indices.exists(indexName)
+    except TransportError:
+      sLog.exception()
+      return False
 
   ########################################################################
 

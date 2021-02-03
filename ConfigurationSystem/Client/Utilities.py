@@ -312,8 +312,16 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
             if 'CPUScalingReferenceSI00' in cap:
               newSI00 = cap.split('=')[-1]
 
-          # tags, processors
+          # tags, processors, localCEType
           tag = queueDict.get('Tag', '')
+          # LocalCEType can be empty (equivalent to "InProcess")
+          # or "Pool", "Singularity", but also "Pool/Singularity"
+          localCEType = queueDict.get('LocalCEType', 'InProcess')
+          try:
+            localCEType_inner = localCEType.split('/')[1]
+          except ValueError:
+            localCEType_inner = ''
+
           numberOfProcessors = int(queueDict.get('NumberOfProcessors', 0))
           newNOP = int(queueInfo.get('NumberOfProcessors', 1))
 
@@ -323,13 +331,19 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
           if newNOP != numberOfProcessors:
             addToChangeSet((queueSection, 'NumberOfProcessors', numberOfProcessors, newNOP), changeSet)
             if newNOP > 1:
-              # if larger than one, add MultiProcessor to site tags
+              # if larger than one, add MultiProcessor to site tags, and LocalCEType=Pool
               newTag = ','.join(sorted(set(tag.split(',')).union({'MultiProcessor'}))).strip(',')
               addToChangeSet((queueSection, 'Tag', tag, newTag), changeSet)
+              if localCEType_inner:
+                newLocalCEType = 'Pool/' + localCEType_inner
+              else:
+                newLocalCEType = 'Pool'
+              addToChangeSet((queueSection, 'LocalCEType', localCEType, newLocalCEType), changeSet)
             else:
-              # if not larger than one, drop MultiProcessor
+              # if not larger than one, drop MultiProcessor Tag.
+              # Here we do not change the LocalCEType as Pool CE would still be perfectly valid.
               newTag = ','.join(sorted(set(tag.split(',')).difference({'MultiProcessor'}))).strip(',')
-              addToChangeSet((queueSection, 'Tag', tag, newTag), changeSet)
+              changeSet.add(queueSection, 'Tag', tag, newTag)
           if maxTotalJobs == "Unknown":
             newTotalJobs = min(1000, int(int(queueInfo.get('GlueCEInfoTotalCPUs', 0)) / 2))
             newWaitingJobs = max(2, int(newTotalJobs * 0.1))

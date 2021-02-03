@@ -46,8 +46,10 @@ class JobAgent(AgentModule):
     super(JobAgent, self).__init__(agentName, loadName, baseAgentName, properties)
 
     # Inner CE
-    self.ceName = 'InProcess'  # "Inner" CE type
-    self.innerCESubmissionType = 'InProcess'  # "Inner" CE submission type (e.g. for Pool CE)
+    # CE type the JobAgent submits to. It can be "InProcess" or "Pool" or "Singularity".
+    self.ceName = 'InProcess'
+    # "Inner" CE submission type (e.g. for Pool CE). It can be "InProcess" or "Singularity".
+    self.innerCESubmissionType = 'InProcess'
     self.computingElement = None  # The ComputingElement object, e.g. SingularityComputingElement()
 
     # Localsite options
@@ -59,8 +61,8 @@ class JobAgent(AgentModule):
     # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
     self.cpuFactor = 0.0
     self.jobSubmissionDelay = 10
-    self.fillingMode = False
-    self.minimumTimeLeft = 1000
+    self.fillingMode = True
+    self.minimumTimeLeft = 5000
     self.stopOnApplicationFailure = True
     self.stopAfterFailedMatches = 10
     self.jobCount = 0
@@ -75,23 +77,20 @@ class JobAgent(AgentModule):
     self.pilotInfoReportedFlag = False
 
   #############################################################################
-  def initialize(self, loops=0):
+  def initialize(self):
     """Sets default parameters and creates CE instance
     """
-    # Disable monitoring, logLevel INFO, limited cycles
+    # Disable monitoring
     self.am_setOption('MonitoringEnabled', False)
-    self.am_setOption('MaxCycles', loops)
 
-    ceType = self.am_getOption('CEType', self.ceName)
-    localCE = gConfig.getValue('/LocalSite/LocalCE', '')
-    if localCE:
-      self.log.info('Defining CE from local configuration', '= %s' % localCE)
-      ceType = localCE
+    localCE = gConfig.getValue('/LocalSite/LocalCE', self.ceName)
+    if localCE != self.ceName:
+      self.log.info('Defining Inner CE from local configuration', '= %s' % localCE)
 
     # Create backend Computing Element
     ceFactory = ComputingElementFactory()
-    self.ceName = ceType.split('/')[0]  # It might be "Pool/Singularity", or simply "Pool"
-    self.innerCESubmissionType = ceType.split('/')[1] if len(ceType.split('/')) == 2 else self.innerCESubmissionType
+    self.ceName = localCE.split('/')[0]  # It might be "Pool/Singularity", or simply "Pool"
+    self.innerCESubmissionType = localCE.split('/')[1] if len(localCE.split('/')) == 2 else self.innerCESubmissionType
     ceInstance = ceFactory.getCE(self.ceName)
     if not ceInstance['OK']:
       self.log.warn("Can't instantiate a CE", ceInstance['Message'])
@@ -132,10 +131,12 @@ class JobAgent(AgentModule):
   def execute(self):
     """The JobAgent execution method.
     """
+
+    # Temporary mechanism to pass a shutdown message to the agent
+    if os.path.exists('/var/lib/dirac_drain'):
+      return self.__finish('Node is being drained by an operator')
+
     if self.jobCount:
-      # Temporary mechanism to pass a shutdown message to the agent
-      if os.path.exists('/var/lib/dirac_drain'):
-        return self.__finish('Node is being drained by an operator')
       # Only call timeLeft utility after a job has been picked up
       self.log.info('Attempting to check CPU time left for filling mode')
       if self.fillingMode:
@@ -442,7 +443,7 @@ class JobAgent(AgentModule):
     self.log.info("Requesting proxy', 'for %s@%s" % (ownerDN, ownerGroup))
     token = gConfig.getValue("/Security/ProxyToken", "")
     if not token:
-      self.log.info("No token defined. Trying to download proxy without token")
+      self.log.verbose("No token defined. Trying to download proxy without token")
       token = False
     retVal = gProxyManager.getPayloadProxyFromDIRACGroup(ownerDN, ownerGroup,
                                                          self.defaultProxyLength, token)
