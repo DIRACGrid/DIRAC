@@ -1,3 +1,8 @@
+[v7r0p47]
+
+*Core
+CHANGE: (#4930) Resolve location of etc/grid-security/vomses via env variable X509_VOMSES
+
 [v7r0p46]
 
 *DMS
