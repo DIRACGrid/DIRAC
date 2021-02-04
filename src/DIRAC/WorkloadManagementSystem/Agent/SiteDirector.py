@@ -1099,24 +1099,6 @@ class SiteDirector(AgentModule):
     if pilotLogging:
       pilotOptions.append('-z ')
 
-    # Request a release
-    # FIXME: this can disapper at some point (when there will only be pilot 3)
-    if not self.pilot3:  # in pilot 3 the version is taken from the JSON file exported from the CS
-      diracVersion = opsHelper.getValue("Pilot/Version", [])
-      if not diracVersion:
-        self.log.error('Pilot/Version is not defined in the configuration')
-        return [None, None]
-      # diracVersion is a list of accepted releases
-      pilotOptions.append('-r %s' % ','.join(str(it) for it in diracVersion))
-
-      # lcgBundle defined? (pilot 2 only)
-      lcgBundleVersion = opsHelper.getValue("Pilot/LCGBundleVersion", "")
-      if lcgBundleVersion:
-        self.log.warn(
-            "lcgBundle defined in CS: will overwrite possible per-release lcg bundle versions",
-            "(version in CS: %s)" % lcgBundleVersion)
-        pilotOptions.append('-g %s' % lcgBundleVersion)
-
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
       pilotOptions.append('-ddd')
