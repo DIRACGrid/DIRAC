@@ -63,8 +63,7 @@ def test__getPilotOptions(mocker):
                                                 'Setup': 'LHCb-Production',
                                                 'Site': 'LCG.CERN.cern'}}}
   res = sd._getPilotOptions('aQueue', 10)
-  assert res[0] == ['-S TestSetup', '-V 123', '-l 123', '-C T,e,s,t,S,e,t,u,p',
-                    '-e 1,2,3', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern']
+  assert set(['-S TestSetup', '-V 123', '-l 123', '-n LCG.CERN.cern']) <= set(res[0])
   assert res[1] == 10
 
 
