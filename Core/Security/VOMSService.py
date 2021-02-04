@@ -131,9 +131,10 @@ class VOMSService(object):
         dn = cert['subjectString']
         resultDict[dn] = user
         resultDict[dn]['CA'] = cert['issuerString']
-        resultDict[dn]['certSuspended'] = cert['suspended']
-        resultDict[dn]['mail'] = user['emailAddress']
-        resultDict[dn]['Roles'] = user['fqans']
+        resultDict[dn]['certSuspended'] = cert.get('suspended')
+        resultDict[dn]['suspended'] = user.get('suspended')
+        resultDict[dn]['mail'] = user.get('emailAddress')
+        resultDict[dn]['Roles'] = user.get('fqans')
         attributes = user.get('attributes')
         if attributes:
           for attribute in user.get('attributes', []):
