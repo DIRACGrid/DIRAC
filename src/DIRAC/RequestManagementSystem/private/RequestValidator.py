@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File: RequestValidator.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/09/18 07:55:16

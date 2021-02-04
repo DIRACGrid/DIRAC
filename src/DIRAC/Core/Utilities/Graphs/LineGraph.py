@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ LineGraph represents line graphs both simple and stacked. It includes
     also cumulative graph functionality.
 

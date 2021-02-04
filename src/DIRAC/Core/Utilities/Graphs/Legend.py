@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ Legend encapsulates a graphical plot legend drawing tool
 
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
