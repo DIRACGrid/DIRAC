@@ -173,8 +173,6 @@ def test__submitPilotsToQueue(mocker):
   sd.queueSlots = {'aQueue': {'AvailableSlots': 10}}
   res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')
   assert res['OK'] is True
-  assert res['Value'][0] == 0
-
 
 @pytest.mark.parametrize("pilotRefs, pilotDict, pilotCEDict, expected", [
     ([], {}, {}, (0, [])),
