@@ -65,8 +65,6 @@ def test__getPilotOptions(mocker):
 
   res = sd._getPilotOptions('aQueue')
   assert set(['-S TestSetup', '-V 123', '-l 123', '-n LCG.CERN.cern']) <= set(res)
-  assert res[1] == 10
-
 
 @pytest.mark.parametrize("mockMatcherReturnValue, expected, anyExpected, sitesExpected", [
     ({'OK': False, 'Message': 'boh'},
