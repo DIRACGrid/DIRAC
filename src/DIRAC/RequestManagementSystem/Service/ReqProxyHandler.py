@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File: ReqProxyHandler.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/06/04 13:18:41

@@ -12,12 +12,16 @@ import json
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+ceName = ''
+Queue = ''
+Site = ''
+
 
 @DIRACScript()
 def main():
-  ceName = ''
-  Queue = ''
-  Site = ''
+  global ceName
+  global Queue
+  global Site
 
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
