@@ -21,7 +21,7 @@ class CTAStorage(GFAL2_XROOTStorage):
               BackendType = Cta
               AccessProtocols = root
               WriteProtocols = root
-              # This is very important if you have to stage with this protocol,  but might transfer 
+              # This is very important if you have to stage with this protocol,  but might transfer
               # using a different protocol, like https
               StageProtocols = root
               SEType = T1D0
