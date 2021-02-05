@@ -316,7 +316,7 @@ In order to make it easier to debug, the script :ref:`dirac-dms-protocol-matrix`
 Staging
 ^^^^^^^
 
-Up to recently, any protocol that was defined as ``AccessProtocol`` was also used for staging (plot twister: only ``srm`` could do it).
+Up to recently, any protocol that was defined as ``AccessProtocols`` was also used for staging (plot twister: only ``srm`` could do it).
 This is not true for `CTA <https://cta.web.cern.ch/cta/>`_ . Because ``CTA`` can stage with xroot only, but we may need to use another protocol to transfer to a another site, we need to distinguish between staging and accessing. To the best of my knowledge, only ``CTA`` is like this, and thus, it is the only place where you may need to define ``StageProtocols``.
 In case of FTS transfer from CTA where the stage and transfer protocols are different, we rely on the multihop mechanism of FTS to do the protocol translations. More technical details are available in :py:mod:`DIRAC.DataManagementSystem.Client.FTS3Job`
 

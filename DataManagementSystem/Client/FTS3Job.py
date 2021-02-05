@@ -359,7 +359,7 @@ class FTS3Job(JSerializable):
       # * srcProto://myFile -> destProto://myFile
       #
       # Even in case of the source storage being a tape system, it works fine.
-      # However, if the staging and transfer protocols are different (CTA),
+      # However, if the staging and transfer protocols are different (which might be the case for CTA),
       #  we use the multihop machinery to submit two sequential fts transfers:
       # one to stage, one to transfer.
       # It looks like such
