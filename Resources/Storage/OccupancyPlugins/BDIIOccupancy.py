@@ -21,7 +21,7 @@ class BDIIOccupancy(object):
     # flag to show initalization status of the plugin
     self.log = se.log.getSubLogger('BDIIOccupancy')
     # BDII host to query
-    self.bdii = 'lcg-bdii.cern.ch:2170'
+    self.bdii = 'cclcgtopbdii01.in2p3.fr:2170'
     if 'LCG_GFAL_INFOSYS' in os.environ:
       self.bdii = os.environ['LCG_GFAL_INFOSYS']
     self.vo = se.vo
