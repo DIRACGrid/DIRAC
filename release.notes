@@ -510,6 +510,14 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p48]
+
+CHANGE: (#4949) change default top-level bdii to cclcgtopbdii01.in2p3.fr (was lcg-bdii.cern.ch)
+
+*CS
+FIX: (#4943) Fix exception in VOMS2CSAgent for missing 'suspended' and other entries occurring if the credentials
+     used to query the VOMS server have insufficient privileges to obtain this information
+
 [v7r0p47]
 
 *Core

@@ -41,7 +41,7 @@ class Bdii2CSAgent(AgentModule):
     self.alternativeBDIIs = []
     self.voBdiiCEDict = {}
     self.voBdiiSEDict = {}
-    self.host = 'lcg-bdii.cern.ch:2170'
+    self.host = 'cclcgtopbdii01.in2p3.fr:2170'
     self.glue2URLs = []
     self.glue2Only = True
 
