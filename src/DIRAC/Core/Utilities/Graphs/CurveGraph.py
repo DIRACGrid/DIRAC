@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ CurveGraph represents simple line graphs with markers.
 
     The DIRAC Graphs package is derived from the GraphTool plotting package of the

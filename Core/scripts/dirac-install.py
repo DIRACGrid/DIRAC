@@ -2640,9 +2640,6 @@ if __name__ == "__main__":
     if not os.path.isfile(ddeLocation):
       ddeLocation = os.path.join(cliParams.targetPath, "DIRAC", "Core",
                                  "scripts", "dirac_deploy_scripts.py")
-    if not os.path.isfile(ddeLocation):
-      ddeLocation = os.path.join(cliParams.targetPath, "DIRAC", "src", "DIRAC", "Core",
-                                 "scripts", "dirac_deploy_scripts.py")
     if os.path.isfile(ddeLocation):
       cmd = ddeLocation
 

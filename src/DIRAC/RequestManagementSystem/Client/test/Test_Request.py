@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File: RequestTests.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2012/07/24 10:23:40

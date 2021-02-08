@@ -1,4 +1,3 @@
-# $HeadURL$
 """
    DIRAC.Core package
 """

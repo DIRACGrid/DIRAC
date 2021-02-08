@@ -1,4 +1,3 @@
-# $HeadURL$
 """
    DIRAC.ConfigurationSystem.Client.Helpers package
 """

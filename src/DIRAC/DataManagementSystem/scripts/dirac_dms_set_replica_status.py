@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-########################################################################
 """
 Set the status of the replicas of given files at the provided SE
 """
@@ -28,7 +25,7 @@ def main():
   Script.parseCommandLine(ignoreErrors=False)
 
   import DIRAC
-  from DIRAC import gConfig, gLogger
+  from DIRAC import gLogger
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
   import os
 
@@ -50,7 +47,6 @@ def main():
 
   fc = FileCatalog()
 
-  replicaDict = {}
   res = fc.getReplicas(lfns, allStatus=True)
   if not res['OK']:
     gLogger.error("Failed to get catalog replicas.", res['Message'])
