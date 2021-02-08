@@ -62,10 +62,9 @@ def test__getPilotOptions(mocker):
                                                 'OwnerGroup': ['lhcb_user'],
                                                 'Setup': 'LHCb-Production',
                                                 'Site': 'LCG.CERN.cern'}}}
-  res = sd._getPilotOptions('aQueue', 10)
-  assert set(['-S TestSetup', '-V 123', '-l 123', '-n LCG.CERN.cern']) <= set(res[0])
-  assert res[1] == 10
 
+  res = sd._getPilotOptions('aQueue')
+  assert set(['-S TestSetup', '-V 123', '-l 123', '-n LCG.CERN.cern']) <= set(res)
 
 @pytest.mark.parametrize("mockMatcherReturnValue, expected, anyExpected, sitesExpected", [
     ({'OK': False, 'Message': 'boh'},
@@ -174,8 +173,6 @@ def test__submitPilotsToQueue(mocker):
   sd.queueSlots = {'aQueue': {'AvailableSlots': 10}}
   res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')
   assert res['OK'] is True
-  assert res['Value'][0] == 0
-
 
 @pytest.mark.parametrize("pilotRefs, pilotDict, pilotCEDict, expected", [
     ([], {}, {}, (0, [])),

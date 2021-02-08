@@ -63,16 +63,6 @@ FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 MAX_PILOTS_TO_SUBMIT = 100
 
 
-def getSubmitPools(group=None, vo=None):
-  """ This method gets submit pools
-  """
-  if group:
-    return Registry.getGroupOption(group, 'SubmitPools', '')
-  if vo:
-    return Registry.getVOOption(vo, 'SubmitPools', '')
-  return ''
-
-
 class SiteDirector(AgentModule):
   """ SiteDirector class provides an implementation of a DIRAC agent.
 
@@ -110,7 +100,6 @@ class SiteDirector(AgentModule):
     self.pilotGroup = ''
     self.platforms = []
     self.sites = []
-    self.defaultSubmitPools = ''
     self.totalSubmittedPilots = 0
 
     self.addPilotsToEmptySites = False
@@ -203,7 +192,6 @@ class SiteDirector(AgentModule):
     self.pilotDN, self.pilotGroup = result['Value']
 
     # Parameters
-    self.defaultSubmitPools = getSubmitPools(self.group, self.vo)
     self.workingDirectory = self.am_getOption('WorkDirectory')
     self.maxQueueLength = self.am_getOption('MaxQueueLength', self.maxQueueLength)
     self.pilotLogLevel = self.am_getOption('PilotLogLevel', self.pilotLogLevel)
@@ -577,19 +565,16 @@ class SiteDirector(AgentModule):
       ce.setProxy(proxy, lifetime_secs)
 
       # now really submitting
-      while pilotsToSubmit:  # a cycle because pilots are submitted in chunks
-        res = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
-        if not res['OK']:
-          self.log.info("Won't try further because of failures", "Queue: %s" % queueName)
-          pilotsToSubmit = 0
-          pilotList = []
-          stampDict = {}
-        else:
-          pilotsToSubmit, pilotList, stampDict = res['Value']
+      res = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
+      if not res['OK']:
+        self.log.info("Failed pilot submission", "Queue: %s" % queueName)
+      else:
+        pilotList, stampDict = res['Value']
 
         # updating the pilotAgentsDB... done by default but maybe not strictly necessary
         res = self._addPilotTQReference(queueName, additionalInfo, pilotList, stampDict)
 
+    # Summary after the cycle over queues
     self.log.info("Total number of pilots submitted in this cycle", '%d' % self.totalSubmittedPilots)
 
     return S_OK()
@@ -673,8 +658,7 @@ class SiteDirector(AgentModule):
         :returns dict: tqDict of task queue descriptions
     """
     tqDict = {'Setup': CSGlobals.getSetup(),
-              'CPUTime': 9999999,
-              'SubmitPool': self.defaultSubmitPools}
+              'CPUTime': 9999999}
     if self.vo:
       tqDict['Community'] = self.vo
     if self.voGroups:
@@ -816,7 +800,7 @@ class SiteDirector(AgentModule):
   def _submitPilotsToQueue(self, pilotsToSubmit, ce, queue):
     """ Method that really submits the pilots to the ComputingElements' queue
 
-       :param pilotsToSubmit: number of pilots to submit. Maybe only part of this amount will be submitted here.
+       :param pilotsToSubmit: number of pilots to submit.
        :type pilotsToSubmit: int
        :param ce: computing element object to where we submit
        :type ce: ComputingElement
@@ -841,12 +825,12 @@ class SiteDirector(AgentModule):
     jobExecDir = self.queueDict[queue]['ParametersDict'].get('JobExecDir', '')
     envVariables = self.queueDict[queue]['ParametersDict'].get('EnvironmentVariables', None)
 
-    executable, pilotSubmissionChunk = self.getExecutable(queue, pilotsToSubmit,
-                                                          proxy=proxy,
-                                                          jobExecDir=jobExecDir,
-                                                          envVariables=envVariables)
+    executable = self.getExecutable(queue,
+                                    proxy=proxy,
+                                    jobExecDir=jobExecDir,
+                                    envVariables=envVariables)
 
-    submitResult = ce.submitJob(executable, '', pilotSubmissionChunk)
+    submitResult = ce.submitJob(executable, '', pilotsToSubmit)
     # FIXME: The condor thing only transfers the file with some
     # delay, so when we unlink here the script is gone
     # FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
@@ -865,11 +849,9 @@ class SiteDirector(AgentModule):
                                            0,
                                            'Failed')
 
-      pilotsToSubmit = 0
       self.failedQueues[queue] += 1
       return submitResult
 
-    pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
     # Add pilots to the PilotAgentsDB: assign pilots to TaskQueue proportionally to the task queue priorities
     pilotList = submitResult['Value']
     self.queueSlots[queue]['AvailableSlots'] -= len(pilotList)
@@ -887,7 +869,7 @@ class SiteDirector(AgentModule):
                                          len(pilotList),
                                          'Succeeded')
 
-    return S_OK((pilotsToSubmit, pilotList, stampDict))
+    return S_OK((pilotList, stampDict))
 
   def _addPilotTQReference(self, queue, taskQueueDict, pilotList, stampDict):
     """ Add to pilotAgentsDB the reference of for which TqID the pilots have been sent
@@ -1026,14 +1008,11 @@ class SiteDirector(AgentModule):
     return totalSlots
 
 #####################################################################################
-  def getExecutable(self, queue, pilotsToSubmit,
-                    proxy=None, jobExecDir='', envVariables=None,
+  def getExecutable(self, queue, proxy=None, jobExecDir='', envVariables=None,
                     **kwargs):
     """ Prepare the full executable for queue
 
     :param str queue: queue name
-    :param pilotsToSubmit: number of pilots to submit
-    :type pilotsToSubmit: int
     :param bundleProxy: flag that say if to bundle or not the proxy
     :type bundleProxy: bool
     :param str queue: pilot execution dir (normally an empty string)
@@ -1042,12 +1021,10 @@ class SiteDirector(AgentModule):
     :rtype: str
     """
 
-    pilotOptions, pilotsSubmitted = self._getPilotOptions(queue, pilotsToSubmit, **kwargs)
+    pilotOptions = self._getPilotOptions(queue, **kwargs)
     if not pilotOptions:
       self.log.warn("Pilots will be submitted without additional options")
       pilotOptions = []
-    if not pilotsSubmitted:
-      pilotsSubmitted = pilotsToSubmit
     pilotOptions = ' '.join(pilotOptions)
     self.log.verbose('pilotOptions: %s' % pilotOptions)
     executable = self._writePilotScript(workingDirectory=self.workingDirectory,
@@ -1055,21 +1032,17 @@ class SiteDirector(AgentModule):
                                         proxy=proxy,
                                         pilotExecDir=jobExecDir,
                                         envVariables=envVariables)
-    return executable, pilotsSubmitted
+    return executable
 
 #####################################################################################
 
-  def _getPilotOptions(self, queue, pilotsToSubmit, **kwargs):
+  def _getPilotOptions(self, queue, **kwargs):
     """ Prepare pilot options
 
     :param str queue: queue name
-    :param pilotsToSubmit: number of pilots to submit
-    :type pilotsToSubmit: int
 
-    :returns: pilotOptions, pilotsToSubmit tuple where
-              pilotOptions is a list of strings, each one is an option to the dirac-pilot script invocation
-              pilotsToSubmit is the number of pilots to submit
-    :rtype: tuple
+    :returns: pilotOptions is a list of strings, each one is an option to the dirac-pilot script invocation
+    :rtype: list
     """
     queueDict = self.queueDict[queue]['ParametersDict']
     pilotOptions = []
@@ -1133,7 +1106,7 @@ class SiteDirector(AgentModule):
     if self.group:
       pilotOptions.append('-G %s' % self.group)
 
-    return pilotOptions, pilotsToSubmit
+    return pilotOptions
 
 ####################################################################################
 
