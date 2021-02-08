@@ -610,6 +610,8 @@ class TestBase(unittest.TestCase):
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('root:%s' % lfn, 'srm:%s' % lfn))
+    protoPair = res['Value']['Protocols']
+    self.assertTupleEqual(protoPair, ('root', 'srm'))
 
     # RAL -> CERN
     # We should read using root and write directly with it
@@ -617,6 +619,8 @@ class TestBase(unittest.TestCase):
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('root:%s' % lfn, 'root:%s' % lfn))
+    protoPair = res['Value']['Protocols']
+    self.assertTupleEqual(protoPair, ('root', 'root'))
 
     # GRIDKA -> RAL
     # We should read using gsiftp and write directly with it
@@ -624,6 +628,8 @@ class TestBase(unittest.TestCase):
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('gsiftp:%s' % lfn, 'gsiftp:%s' % lfn))
+    protoPair = res['Value']['Protocols']
+    self.assertTupleEqual(protoPair, ('gsiftp', 'gsiftp'))
 
     # GRIDKA -> CERN
     # We should read using srm and write with root
@@ -631,6 +637,8 @@ class TestBase(unittest.TestCase):
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('srm:%s' % lfn, 'root:%s' % lfn))
+    protoPair = res['Value']['Protocols']
+    self.assertTupleEqual(protoPair, ('srm', 'root'))
 
     # CERN -> RAL
     # We should read using srm and write with gsiftp
@@ -638,14 +646,17 @@ class TestBase(unittest.TestCase):
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
     self.assertTupleEqual(urlPair, ('srm:%s' % lfn, 'gsiftp:%s' % lfn))
+    protoPair = res['Value']['Protocols']
+    self.assertTupleEqual(protoPair, ('srm', 'gsiftp'))
 
     # CERN -> GRIDKA
     # We should read using root and write directly with srm
     res = self.seY.generateTransferURLsBetweenSEs(lfn, self.seZ)
     self.assertTrue(res['OK'], res)
     urlPair = res['Value']['Successful'].get(lfn)
-
     self.assertTupleEqual(urlPair, ('root:%s' % lfn, 'srm:%s' % lfn))
+    protoPair = res['Value']['Protocols']
+    self.assertTupleEqual(protoPair, ('root', 'srm'))
 
 
 class TestSameSE(unittest.TestCase):
