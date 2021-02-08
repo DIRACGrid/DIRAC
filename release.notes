@@ -1,4 +1,4 @@
-[v7r2-pre32]
+[v7r2-pre33]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -32,6 +32,7 @@ FIX: (#4887) fix exception in Services when trying to use uninitialized gMonitor
              targeting ES monitoring
 NEW: (#4898) added a base DB class for all DB types
 NEW: (#4865) Fully support installation with setuptools
+CHANGE: (#4932) Rename DIRAC_VOMSES to X509_VOMSES in dirac-install.py
 
 *Configuration
 CHANGE: (#4866) split standard and tornado refresher in two files to avoid tornado dependency on the client
@@ -62,6 +63,9 @@ NEW: (#4874) new script dirac-admin-sync-pilots for syncing pilot files.
 CHANGE: (#4874) largely simplified PilotCStoJSONSynchronizer
 CHANGE: (#4874) don't call PilotCStoJSONSynchronizer from the CS
 NEW: (#4905) moving towards a single agent for WMS history
+CHANGE: (#4925) SiteDirector - removed using of SubmitPools requirement by default
+CHANGE: (#4925) SiteDirector, JobAgent - no more using ProxyManager tokens while user proxy retrieval
+NEW: (#4950) JobAgent adds GridCE and queue to Job Parameters
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
@@ -86,6 +90,7 @@ NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
+NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 
 [v7r1p27]
 
