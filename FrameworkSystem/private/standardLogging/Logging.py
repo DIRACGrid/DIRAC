@@ -2,7 +2,7 @@
 Logging
 """
 
-from __future__ import absolute_import
+__RCSID__ = "$Id$"
 
 import logging
 import os
@@ -12,8 +12,6 @@ from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
-
-__RCSID__ = "$Id$"
 
 
 class Logging(object):

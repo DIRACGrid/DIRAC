@@ -1,6 +1,5 @@
-from __future__ import print_function
-from __future__ import absolute_import
 
+from __future__ import print_function
 import random
 import time
 import threading
@@ -9,8 +8,6 @@ from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-
-__RCSID__ = "$Id$"
 
 
 class LockRing(object):

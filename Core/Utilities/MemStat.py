@@ -1,6 +1,5 @@
-from __future__ import absolute_import
-
 import os
+
 
 def VmB(vmKey):
   __memScale = {'kB': 1024.0, 'mB': 1024.0 * 1024.0, 'KB': 1024.0, 'MB': 1024.0 * 1024.0}
