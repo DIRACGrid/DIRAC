@@ -44,7 +44,6 @@ class ClientsTestCase(unittest.TestCase):
 #############################################################################
 
 
-
 class MatcherTestCase(ClientsTestCase):
 
   def test__processResourceDescription(self):
