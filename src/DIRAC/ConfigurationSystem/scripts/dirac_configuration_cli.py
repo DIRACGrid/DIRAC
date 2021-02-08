@@ -4,7 +4,11 @@
 # Author : Adria Casajus
 ########################################################################
 """
-  Command line interface to DIRAC Configuration Server
+Command line interface to DIRAC Configuration Server
+
+Usage::
+
+  dirac-configuration-cli [option|cfgfile] ...
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -19,11 +23,7 @@ from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
 @DIRACScript()
 def main():
   Script.localCfg.addDefaultEntry("LogLevel", "fatal")
-  Script.setUsageMessage('\n'.join([
-      __doc__.split('\n')[1],
-      'Usage:',
-      '  %s [option|cfgfile] ...' % Script.scriptName,
-  ]))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
 
   CSCLI().start()

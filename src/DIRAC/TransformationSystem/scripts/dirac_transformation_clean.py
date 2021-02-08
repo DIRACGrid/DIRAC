@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-""" Clean a tranformation
+"""
+Clean a tranformation
+
+Usage::
+
+  dirac-transformation-clean transID [transID] [transID]
 """
 
 from __future__ import print_function
@@ -19,7 +24,7 @@ def main():
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
   if not getPositionalArgs():
-    print('Usage: dirac-transformation-clean transID [transID] [transID]')
+    print(__doc__)
     sys.exit()
   else:
     transIDs = [int(arg) for arg in getPositionalArgs()]

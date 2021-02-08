@@ -1,5 +1,11 @@
 #!/bin/env python
-"""Script to call the DataRecoveryAgent functionality by hand."""
+"""
+Script to call the DataRecoveryAgent functionality by hand.
+
+Usage::
+
+  dirac-transformation-recover-data [option|cfgfile] ...
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -28,9 +34,7 @@ class Params(object):
   def registerSwitches(self):
     Script.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
     Script.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
-    Script.setUsageMessage('\n'.join([__doc__,
-                                      '\nUsage:',
-                                      '  %s [option|cfgfile] ...\n' % Script.scriptName]))
+    Script.setUsageMessage(__doc__)
 
 
 @DIRACScript()

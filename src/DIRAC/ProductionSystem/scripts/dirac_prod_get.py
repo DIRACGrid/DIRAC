@@ -1,7 +1,18 @@
 #!/usr/bin/env python
-
 """
-  Get informations for a given production
+Get informations for a given production
+
+Usage::
+
+  dirac-prod-get prodID
+
+Arguments::
+
+  prodID: Production ID (mandatory)
+
+Example::
+
+  $ dirac-prod-get 381
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -12,20 +23,14 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s prodID' % Script.scriptName,
-                                    'Arguments:',
-                                    '  prodID: Production ID (mandatory)'
-                                    ]))
-
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
 
+  from DIRAC.Core.Utilities.PrettyPrint import printTable
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
   prodClient = ProductionClient()

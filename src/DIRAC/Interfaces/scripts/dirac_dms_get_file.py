@@ -4,7 +4,21 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Retrieve a single file or list of files from Grid storage to the current directory.
+Retrieve a single file or list of files from Grid storage to the current directory.
+
+Usage::
+
+  dirac-dms-get-file [option|cfgfile] ... LFN ...
+
+Arguments::
+
+  LFN:      Logical File Name or file containing LFNs
+
+Example::
+
+  $ dirac-dms-get-file /formation/user/v/vhamar/Example.txt
+  {'Failed': {},
+   'Successful': {'/formation/user/v/vhamar/Example.txt': '/afs/in2p3.fr/home/h/hamar/Tests/DMS/Example.txt'}}
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -19,11 +33,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  LFN:      Logical File Name or file containing LFNs']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   lfns = Script.getPositionalArgs()
 

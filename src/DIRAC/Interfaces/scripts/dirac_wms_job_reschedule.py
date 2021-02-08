@@ -1,10 +1,23 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-wms-job-delete
+# File :    dirac-wms-job-reschedule
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Reschedule the given DIRAC job
+Reschedule the given DIRAC job
+
+Usage::
+
+  dirac-wms-job-reschedule [option|cfgfile] ... JobID ...
+
+Arguments::
+
+  JobID:    DIRAC Job ID
+
+Example::
+
+  $ dirac-wms-job-reschedule 1
+  Rescheduled job 1
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -19,11 +32,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JobID:    DIRAC Job ID']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

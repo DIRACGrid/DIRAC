@@ -1,5 +1,22 @@
 #!/usr/bin/env python
+"""
+Show storage quotas for specified users or for all registered users if nobody is specified
 
+Usage::
+
+  dirac-admin-user-quota [user1 ...]
+
+Example::
+
+  $ dirac-admin-user-quota
+  ------------------------------
+  Username       |     Quota (GB)
+  ------------------------------
+  atsareg        |           None
+  msapunov       |           None
+  vhamar         |           None
+  ------------------------------
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -13,13 +30,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage("""
-  Show storage quotas for specified users or for all registered users if nobody is specified
-
-  Usage:
-    %s [user1 ...]
-  """ % Script.scriptName)
-
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
   users = Script.getPositionalArgs()
 

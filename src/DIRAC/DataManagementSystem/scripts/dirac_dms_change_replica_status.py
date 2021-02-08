@@ -1,5 +1,11 @@
 #! /usr/bin/env python
+"""
+Change status of replica of a given file or a list of files at a given Storage Element
 
+Usage::
+
+  dirac-dms-change-replica-status <lfn | fileContainingLfns> <SE> <status>
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -13,13 +19,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage("""
-  Change status of replica of a given file or a list of files at a given Storage Element
-
-  Usage:
-    %s <lfn | fileContainingLfns> <SE> <status>
-  """ % Script.scriptName)
-
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog

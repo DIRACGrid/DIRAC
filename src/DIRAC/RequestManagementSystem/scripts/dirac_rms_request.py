@@ -1,8 +1,20 @@
 #!/bin/env python
-""" Show request given its ID, a jobID or a transformation and a task """
+"""
+Show request given its ID, a jobID or a transformation and a task
+
+Usage::
+
+  dirac-rms-request [option|cfgfile] [request[,request1,...]|<file>
+
+Arguments::
+
+  request:  a request ID or a unique request name
+  <file>:   a file containing a list of requests (Comma-separated on each line)
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import datetime
@@ -46,12 +58,7 @@ def main():
   Script.registerSwitch('', 'Cancel', '   Cancel the request')
   Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
   Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
-  Script.setUsageMessage('\n'.join([__doc__,
-                                    'Usage:',
-                                    ' %s [option|cfgfile] [request[,request1,...]|<file>' % Script.scriptName,
-                                    'Arguments:',
-                                    ' request: a request ID or a unique request name',
-                                    ' <file>: a file containing a list of requests (Comma-separated on each line)']))
+  Script.setUsageMessage(__doc__)
 
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()

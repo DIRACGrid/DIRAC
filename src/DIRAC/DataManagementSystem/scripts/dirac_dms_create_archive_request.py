@@ -1,4 +1,5 @@
-"""Create and put Requests to archive files.
+"""
+Create and put Requests to archive files.
 
 **List of operations**
 
@@ -30,6 +31,9 @@ Default values for any of the command line options can also be set in the CS
 * Operations/DataManagement/ArchiveFiles/MaxFiles
 * ...
 
+Usage::
+
+  dirac-dms-create-archive-request [option|cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -100,10 +104,7 @@ class CreateArchiveRequest(object):
   @staticmethod
   def setUsage():
     """Set flags and options."""
-    Script.setUsageMessage('\n'.join([__doc__,
-                                      'Usage:',
-                                      ' %s [option|cfgfile]' % Script.scriptName,
-                                      ]))
+    Script.setUsageMessage(__doc__)
 
   @property
   def fcClient(self):

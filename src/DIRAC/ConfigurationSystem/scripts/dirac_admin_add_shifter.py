@@ -3,7 +3,18 @@
 # File :   dirac-admin-add-shifter
 # Author : Federico Stagni
 ########################################################################
-""" Adds or modify a shifter, in the operations section of the CS
+"""
+Adds or modify a shifter, in the operations section of the CS
+
+Usage::
+
+  dirac-admin-add-shifter [option|cfgfile] ... ShifterRole UserName DIRACGroup ...
+
+Arguments::
+
+  ShifterRole:  Name of the shifter role, e.g. DataManager
+  UserName:     A user name, as registered in Registry section
+  DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -18,13 +29,7 @@ from DIRAC import exit as DIRACExit, gLogger
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... ShifterRole UserName DIRACGroup ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  ShifterRole: Name of the shifter role, e.g. DataManager',
-                                    '  UserName: A user name, as registered in Registry section',
-                                    '  DIRACGroup: DIRAC Group, e.g. diracAdmin (the user has to have this role)']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

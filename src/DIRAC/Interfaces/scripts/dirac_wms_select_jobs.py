@@ -4,11 +4,20 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Select DIRAC jobs matching the given conditions
+Select DIRAC jobs matching the given conditions
+
+Usage::
+
+  dirac-wms-job-status [option|cfgfile] ... JobID ...
+
+Arguments::
+
+  JobID:    DIRAC Job ID
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -28,9 +37,7 @@ def main():
   Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
   Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
   Script.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName]))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
 
   args = Script.getPositionalArgs()

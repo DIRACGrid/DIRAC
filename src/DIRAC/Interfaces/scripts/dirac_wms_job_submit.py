@@ -4,7 +4,20 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Submit jobs to DIRAC WMS
+Submit jobs to DIRAC WMS
+
+Usage::
+
+  dirac-wms-job-submit [option|cfgfile] ... JDL ...
+
+Arguments::
+
+  JDL:    Path to JDL file
+
+Example::
+
+  $ dirac-wms-job-submit Simple.jdl
+  JobID = 11
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -21,12 +34,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JDL ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JDL:      Path to JDL file']))
-
+  Script.setUsageMessage(__doc__)
   Script.registerSwitch("f:", "File=", "Writes job ids to file <value>")
   Script.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
   Script.parseCommandLine(ignoreErrors=True)

@@ -8,6 +8,7 @@ Usage::
   dirac-deploy-scripts (<options>|<cfgFile>)* ... <python path>
 
 Arguments::
+
   python path:    you can specify the folder where your python installation should be fetched from
                   to replace the shebang
 

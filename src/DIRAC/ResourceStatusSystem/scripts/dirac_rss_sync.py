@@ -6,11 +6,13 @@ reason to `Synchronized`. However, it can copy over the status on the CS to
 the RSS. Important: If the StatusType is not defined on the CS, it will set
 it to Banned !
 
-Usage:
+Usage::
+
   dirac-rss-sync [options]
 
-Verbosity:
-    -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
+Verbosity::
+
+  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import
 from __future__ import division

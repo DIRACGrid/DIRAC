@@ -4,7 +4,22 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Retrieve a delegated proxy for the given user and group
+Retrieve a delegated proxy for the given user and group
+
+Usage::
+
+  dirac-admin-get-proxy [option|cfgfile] ... <DN|user> group
+
+Arguments::
+
+  DN:       DN of the user
+  user:     DIRAC user name (will fail if there is more than 1 DN registered)
+  group:    DIRAC group name
+
+Example::
+
+  $ dirac-admin-get-proxy vhamar dirac_user
+  Proxy downloaded to /afs/in2p3.fr/home/h/hamar/proxy.vhamar.dirac_user
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -98,13 +113,7 @@ def main():
   params = Params()
   params.registerCLISwitches()
 
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... <DN|user> group' % Script.scriptName,
-                                    'Arguments:',
-                                    '  DN:       DN of the user',
-                                    '  user:     DIRAC user name (will fail if there is more than 1 DN registered)',
-                                    '  group:    DIRAC group name']))
+  Script.setUsageMessage(__doc__)
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()

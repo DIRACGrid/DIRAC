@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 """
-Do the initial installation and configuration of the DIRAC MySQL server
+Stop DIRAC component using runsvctrl utility
+
+Usage::
+
+  dirac-stop-component [option|cfgfile] ... [system [service|agent]]
+
+Arguments::
+
+  system:        Name of the system for the component (default *: all)
+  service|agent: Name of the particular component (default *: all)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -12,12 +21,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.disableCS()
-  Script.setUsageMessage('\n'.join(['Stop DIRAC component using runsvctrl utility',
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... [system [service|agent]]' % Script.scriptName,
-                                    'Arguments:',
-                                    '  system:        Name of the system for the component (default *: all)',
-                                    '  service|agent: Name of the particular component (default *: all)']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
 
@@ -35,10 +39,9 @@ def main():
   if system != '*':
     if len(args) > 1:
       component = args[1]
-  #
-  #
+
   gComponentInstaller.exitOnError = True
-  #
+
   result = gComponentInstaller.runsvctrlComponent(system, component, 'd')
   if not result['OK']:
     print('ERROR:', result['Message'])

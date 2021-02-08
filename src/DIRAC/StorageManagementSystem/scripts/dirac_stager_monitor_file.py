@@ -13,24 +13,28 @@ Give monitoring information regarding a staging file uniquely identified with (L
 - pin expiry time
 - pin length
 
+Usage::
+
+  dirac-stager-monitor-file LFN SE ...
+
+Arguments::
+
+  LFN: LFN of the staging file
+  SE: Storage Element for the staging file
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__,
-                                    'Usage:',
-                                    '  %s  LFN SE ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  LFN: LFN of the staging file',
-                                    '  SE: Storage Element for the staging file'
-                                    ]))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
   if len(args) < 2:

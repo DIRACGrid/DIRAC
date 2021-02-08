@@ -1,9 +1,20 @@
 #!/usr/bin/env python
-""" Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
+"""
+Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
+
+Usage::
+
+  dirac-dms-create-removal-request [option|cfgfile] ... SE LFN ...
+
+Arguments::
+
+  SE:       StorageElement|All
+  LFN:      LFN or file containing a List of LFNs
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "ea64b42 (2012-07-29 16:45:05 +0200) ricardo <Ricardo.Graciani@gmail.com>"
 
 import os
@@ -16,14 +27,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[0],
-                                    __doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... SE LFN ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  SE:       StorageElement|All',
-                                    '  LFN:      LFN or file containing a List of LFNs']))
-
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()

@@ -4,7 +4,16 @@
 # Author  : Stuart Paterson
 ########################################################################
 """
-  Retrieve an access URL for a PFN given a valid DIRAC SE
+Retrieve an access URL for a PFN given a valid DIRAC SE
+
+Usage::
+
+  dirac-dms-pfn-accessURL [option|cfgfile] ... PFN SE
+
+Arguments::
+
+  PFN:      Physical File Name or file containing PFNs (mandatory)
+  SE:       Valid DIRAC SE (mandatory)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -19,12 +28,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... PFN SE' % Script.scriptName,
-                                    'Arguments:',
-                                    '  PFN:      Physical File Name or file containing PFNs (mandatory)',
-                                    '  SE:       Valid DIRAC SE (mandatory)']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

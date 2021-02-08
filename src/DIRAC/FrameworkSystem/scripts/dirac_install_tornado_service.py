@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 """
 Do the initial installation and configuration of a DIRAC service based on tornado
+
+Usage::
+
+  dirac-install-tornado-service [option|cfgfile] ... System Component|System/Component
+
+Arguments::
+
+  System:  Name of the DIRAC system (ie: WorkloadManagement)
+  Service: Name of the DIRAC component (ie: Matcher)
 """
 
 from __future__ import absolute_import
@@ -9,12 +18,12 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from DIRAC import exit as DIRACexit
 from DIRAC import gConfig, gLogger, S_OK
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
-from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC import exit as DIRACexit
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
+from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 
 __RCSID__ = "$Id$"
 
@@ -59,12 +68,7 @@ def main():
   Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
   Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
   Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... System Component|System/Component' % Script.scriptName,
-                                    'Arguments:',
-                                    '  System:  Name of the DIRAC system (ie: WorkloadManagement)',
-                                    '  Service: Name of the DIRAC component (ie: Matcher)']))
+  Script.setUsageMessage(__doc__)
 
   Script.parseCommandLine()
   args = Script.getPositionalArgs()

@@ -4,6 +4,10 @@
 Populates the database with the current installations of components
 This script assumes that the InstalledComponentsDB, the
 ComponentMonitoring service and the Notification service are installed and running
+
+Usage::
+
+  dirac-populate-component-db [option|cfgfile] ... [debug]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -47,9 +51,7 @@ def main():
       "Comma separated list of hosts to be excluded from the scanning process",
       setExcludedHosts)
 
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... [debug]' % Script.scriptName]))
+  Script.setUsageMessage(__doc__)
 
   Script.parseCommandLine(ignoreErrors=False)
   args = Script.getPositionalArgs()

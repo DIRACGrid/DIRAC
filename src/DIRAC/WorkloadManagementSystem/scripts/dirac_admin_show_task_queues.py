@@ -4,7 +4,23 @@
 # Author :  Ricardo Graciani
 ########################################################################
 """
-   Show details of currently active Task Queues
+Show details of currently active Task Queues
+
+Usage:
+
+  dirac-admin-show-task-queues [option|cfgfile]
+
+Example:
+
+  $ dirac-admin-show-task-queues
+  Getting TQs..
+  * TQ 401
+          CPUTime: 360
+             Jobs: 3
+          OwnerDN: /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+       OwnerGroup: dirac_user
+         Priority: 1.0
+            Setup: Dirac-Production
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -46,10 +62,7 @@ def main():
   global taskQueueID
   Script.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)
   Script.registerSwitch("t:", "taskQueue=", "show this task queue only", setTaskQueueID)
-
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ' % Script.scriptName]))
+  Script.setUsageMessage(__doc__)
 
   Script.parseCommandLine(initializeMonitor=False)
 

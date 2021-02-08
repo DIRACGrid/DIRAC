@@ -4,11 +4,24 @@
 # Author :  Adrian Casajus
 ########################################################################
 """
-  Remove User from Configuration
+Remove User from Configuration
+
+Usage::
+
+  dirac-admin-delete-user [option|cfgfile] ... User ...
+
+Arguments::
+
+  User:     User name
+
+Example::
+
+  $ dirac-admin-delete-user vhamar
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -17,11 +30,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... User ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  User:     User name']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

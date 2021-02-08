@@ -4,7 +4,20 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Retrieve status of the given DIRAC job
+Retrieve status of the given DIRAC job
+
+Usage::
+
+  dirac-wms-job-status [option|cfgfile] ... JobID ...
+
+Arguments::
+
+  JobID:    DIRAC Job ID
+
+Example::
+
+  $ dirac-wms-job-status 2
+  JobID=2 Status=Done; MinorStatus=Execution Complete; Site=EELA.UTFSM.cl;
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -13,28 +26,23 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import os
-import DIRAC
-from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Utilities.Time import toString, date, day
 
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    '\nUsage:\n',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    '\nArguments:\n',
-                                    '  JobID:    DIRAC Job ID']))
-
+  Script.setUsageMessage(__doc__)
   Script.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
   Script.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
+  from DIRAC import exit as DIRACExit
+  from DIRAC.Core.Utilities.Time import toString, date, day
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
+  
   dirac = Dirac()
   exitCode = 0
 
@@ -71,7 +79,7 @@ def main():
     exitCode = 2
     print("ERROR: %s" % result['Message'])
 
-  DIRAC.exit(exitCode)
+  DIRACExit(exitCode)
 
 
 if __name__ == "__main__":

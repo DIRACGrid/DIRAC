@@ -4,7 +4,11 @@
 # Author : Andrei Tsaregorodtsev
 ########################################################################
 """
-  Add resources from the BDII database for a given VO
+Add resources from the BDII database for a given VO
+
+Usage::
+
+  dirac-admin-add-resources [option|cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -37,9 +41,7 @@ def processScriptSwitches():
   Script.registerSwitch("G", "glue2", "DEPRECATED: query GLUE2 information schema")
   Script.registerSwitch("g", "glue1", "query GLUE1 information schema")
 
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile]' % Script.scriptName]))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
 
   vo = ''

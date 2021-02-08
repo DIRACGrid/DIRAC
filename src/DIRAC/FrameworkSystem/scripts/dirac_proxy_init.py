@@ -34,7 +34,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 __RCSID__ = "$Id$"
-Script.setUsageMessage(__doc__)
+
 
 class Params(ProxyGeneration.CLIParams):
 
@@ -250,6 +250,7 @@ def main():
   piParams.registerCLISwitches()
 
   Script.disableCS()
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
 

@@ -4,7 +4,19 @@
 # Author :  Andrei Tsaregorodtsev
 ########################################################################
 """
-  Report info about local DIRAC installation
+Report info about local DIRAC installation
+
+Usage::
+
+  dirac-info [option|cfgfile] ... Site
+
+Example::
+
+  $ dirac-info
+         DIRAC version : v5r12
+                 Setup : Dirac-Production
+   ConfigurationServer : ['dips://dirac.in2p3.fr:9135/Configuration/Server']
+   VirtualOrganization : vo.formation.idgrilles.fr
 """
 
 from __future__ import print_function
@@ -27,11 +39,20 @@ def main():
   from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
   from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... Site' % Script.scriptName, ]))
+  def version(arg):
+    Script.disableCS()
+    print(DIRAC.version)
+    DIRAC.exit(0)
+  
+  def platform(arg):
+    Script.disableCS()
+    print(DIRAC.getPlatform())
+    DIRAC.exit(0)
+  
+  Script.setUsageMessage(__doc__)
+  Script.registerSwitch("v", "version", "print version of current DIRAC installation", version)
+  Script.registerSwitch("p", "platform", "print platform of current DIRAC installation", platform)
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
 
   records = []
 

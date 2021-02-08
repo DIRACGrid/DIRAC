@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 """
-command line tool to remove local and remote proxies
+Command line tool to remove local and remote proxies
+
+Usage::
+
+  dirac-proxy-destroy.py (<options>|<cfgFile>)*
+
+Example::
+
+  $ dirac-proxy-destroy -a
 """
 from __future__ import absolute_import
 from __future__ import division

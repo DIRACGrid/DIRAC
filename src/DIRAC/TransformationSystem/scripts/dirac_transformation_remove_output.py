@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-""" Remove the outputs produced by a transformation
+"""
+Remove the outputs produced by a transformation
+
+Usage::
+
+  dirac-transformation-remove-output transID [transID] [transID]
 """
 
 from __future__ import print_function
@@ -16,7 +21,7 @@ def main():
   parseCommandLine()
 
   if not getPositionalArgs():
-    print('Usage: dirac-transformation-remove-output transID [transID] [transID]')
+    print(__doc__)
     sys.exit()
   else:
     transIDs = [int(arg) for arg in getPositionalArgs()]

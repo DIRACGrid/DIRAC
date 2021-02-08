@@ -3,25 +3,31 @@
 # File :   dirac-executor
 # Author : Adria Casajus
 ########################################################################
+"""
+This is a script to launch DIRAC executors
+
+Usage::
+
+  dirac-executor (<options>|<cfgFile>)*
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-"""  This is a script to launch DIRAC executors
-"""
-
 import sys
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+
 from DIRAC import gLogger
 from DIRAC.Core.Base.ExecutorReactor import ExecutorReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
+from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 
 @DIRACScript()
 def main():
   localCfg = LocalConfiguration()
+  localCfg.setUsageMessage(__doc__)
 
   positionalArgs = localCfg.getPositionalArguments()
   if len(positionalArgs) == 0:

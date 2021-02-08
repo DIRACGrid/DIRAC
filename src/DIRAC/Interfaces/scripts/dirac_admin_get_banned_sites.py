@@ -3,7 +3,16 @@
 # File :    dirac-admin-get-banned-sites
 # Author :  Stuart Paterson
 ########################################################################
+"""
+Usage::
 
+  dirac-admin-get-banned-sites (<options>|<cfgFile>)*
+
+Example::
+
+  $ dirac-admin-get-banned-sites
+  LCG.IN2P3.fr                      Site not present in logging table
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -16,6 +25,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import gLogger, exit as DIRACExit

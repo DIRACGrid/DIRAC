@@ -1,7 +1,18 @@
 #!/usr/bin/env python
-
 """
-  Start a given production
+Start a given production
+
+Usage::
+
+  dirac-prod-start prodID
+
+Arguments::
+
+  prodID: Production ID (mandatory)
+
+Example::
+
+  $ dirac-prod-start 381
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -16,13 +27,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s prodID' % Script.scriptName,
-                                    'Arguments:',
-                                    '  prodID: Production ID (mandatory)'
-                                    ]))
-
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient

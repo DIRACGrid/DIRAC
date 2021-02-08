@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+"""
+Usage::
+
+  dirac-admin-sysadmin-cli.py (<options>|<cfgFile>)*
+
+Example::
+
+  $ dirac-admin-sysadmin-cli --host dirac.in2p3.fr
+  DIRAC Root Path = /afs/in2p3.fr/home/h/hamar/DIRAC-v5r12
+  dirac.in2p3.fr >
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -11,6 +22,7 @@ __RCSID__ = "$Id$"
 @DIRACScript()
 def main():
   host = None
+  Script.setUsageMessage(__doc__)
   Script.registerSwitch("H:", "host=", "   Target host")
   Script.parseCommandLine(ignoreErrors=False)
   for switch in Script.getUnprocessedSwitches():

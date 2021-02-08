@@ -4,16 +4,48 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Upload a file to the grid storage and register it in the File Catalog
+Upload a file to the grid storage and register it in the File Catalog
+
+Usage::
+
+  dirac-dms-add-file [option|cfgfile] ... LFN Path SE [GUID]
+
+Arguments::
+
+  LFN:      Logical File Name
+  Path:     Local path to the file
+  SE:       DIRAC Storage Element
+  GUID:     GUID to use in the registration (optional)
+
+**OR**
+
+Usage::
+
+  dirac-dms-add-file [option|cfgfile] ... LocalFile
+
+Arguments::
+
+  LocalFile: Path to local file containing all the above, i.e.::
+
+  lfn1 localfile1 SE [GUID1]
+  lfn2 localfile2 SE [GUID2]
+
+Example::
+
+  $ dirac-dms-add-file LFN:/formation/user/v/vhamar/Example.txt Example.txt DIRAC-USER
+  {'Failed': {},
+   'Successful': {'/formationes/user/v/vhamar/Example.txt': {'put': 0.70791220664978027,
+                                                             'register': 0.61061787605285645}}}
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC import S_OK
 import os
+from DIRAC import S_OK
+from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 overwrite = False
@@ -43,25 +75,7 @@ def getDict(item_list):
 @DIRACScript()
 def main():
   global overwrite
-  Script.setUsageMessage('\n'.join([
-      __doc__.split('\n')[1],
-      '\nUsage:',
-      '  %s [option|cfgfile] ... LFN Path SE [GUID]' % Script.scriptName,
-      '\nArguments:',
-      '  LFN:      Logical File Name',
-      '  Path:     Local path to the file',
-      '  SE:       DIRAC Storage Element',
-      '  GUID:     GUID to use in the registration (optional)',
-      '',
-      '**OR**',
-      '',
-      'Usage:',
-      '  %s [option|cfgfile] ... LocalFile' % Script.scriptName,
-      '\nArguments:',
-      '  LocalFile: Path to local file containing all the above, i.e.:',
-      '  lfn1 localfile1 SE [GUID1]',
-      '  lfn2 localfile2 SE [GUID2]'
-  ]))
+  Script.setUsageMessage(__doc__)
 
   Script.registerSwitch("f", "force", "Force overwrite of existing file", setOverwrite)
   Script.parseCommandLine(ignoreErrors=True)

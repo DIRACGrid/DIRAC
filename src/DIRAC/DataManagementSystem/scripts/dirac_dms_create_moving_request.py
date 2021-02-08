@@ -1,4 +1,5 @@
-"""Create and put Requests to move files.
+"""
+Create and put Requests to move files.
 
 List of operations:
 
@@ -6,7 +7,9 @@ List of operations:
 #. Check for Migration
 #. Remove all other replicas for these files
 
+Usage::
 
+  dirac-dms-create-moving-request [option|cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -57,10 +60,7 @@ class CreateMovingRequest(object):
   @staticmethod
   def setUsage():
     """Set flags and options."""
-    Script.setUsageMessage('\n'.join([__doc__,
-                                      'Usage:',
-                                      ' %s [option|cfgfile]' % Script.scriptName,
-                                      ]))
+    Script.setUsageMessage(__doc__)
 
   @property
   def fcClient(self):

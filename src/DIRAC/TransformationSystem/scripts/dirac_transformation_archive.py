@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-""" Archive a transformation
+"""
+Archive a transformation
+
+Usage::
+
+  dirac-transformation-archive transID [transID] [transID]
 """
 
 from __future__ import print_function
@@ -16,7 +21,7 @@ def main():
   parseCommandLine()
 
   if not getPositionalArgs():
-    print('Usage: dirac-transformation-archive transID [transID] [transID]')
+    print(__doc__)
     sys.exit()
   else:
     transIDs = [int(arg) for arg in getPositionalArgs()]

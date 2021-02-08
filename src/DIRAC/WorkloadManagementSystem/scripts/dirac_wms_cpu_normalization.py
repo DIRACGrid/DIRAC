@@ -4,26 +4,29 @@
 # Author :  Andrew McNab
 ########################################################################
 """
-  Determine Normalization for current CPU.
+Determine Normalization for current CPU.
 
-  The main users of this script are the pilot jobs.
+The main users of this script are the pilot jobs.
 
-  Pilots invoke dirac-wms-cpu-normalization which
-  - tries to find MACHINEFEATURES/ + JOBFEATURES,
-       and if found populates the local cfg file with e.g. '/LocalSite/JOBFEATURES/'
-  - runs 1 iteration of singleDiracBenchmark(1) (for single processors only)
-  - stores in local cfg the following: (the example below is from the case of when MJF is not available)::
+Pilots invoke dirac-wms-cpu-normalization which
+- tries to find MACHINEFEATURES/ + JOBFEATURES,
+      and if found populates the local cfg file with e.g. '/LocalSite/JOBFEATURES/'
+- runs 1 iteration of singleDiracBenchmark(1) (for single processors only)
+- stores in local cfg the following: (the example below is from the case of when MJF is not available)::
 
-      LocalSite
-      {
-        CPUScalingFactor = 23.7 # corrected value (by JobScheduling/CPUNormalizationCorrection)
-        CPUNormalizationFactor = 23.7 # corrected value (by JobScheduling/CPUNormalizationCorrection)
-        DB12measured = 15.4
-        DB12 = 15.4
-      }
+    LocalSite
+    {
+      CPUScalingFactor = 23.7 # corrected value (by JobScheduling/CPUNormalizationCorrection)
+      CPUNormalizationFactor = 23.7 # corrected value (by JobScheduling/CPUNormalizationCorrection)
+      DB12measured = 15.4
+      DB12 = 15.4
+    }
 
-  The last 2 (DB12 and DB12measured) are up to now wrote down but never used.
+The last 2 (DB12 and DB12measured) are up to now wrote down but never used.
 
+Usage::
+
+  dirac-wms-cpu-normalization [option|cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -38,10 +41,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main():
   Script.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
   Script.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
-
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ' % Script.scriptName]))
+  Script.setUsageMessage(__doc__)
 
   Script.parseCommandLine(ignoreErrors=True)
 

@@ -1,5 +1,20 @@
 #!/usr/bin/env python
+"""
+Get the size of the given file or a list of files
 
+Usage::
+
+   dirac-dms-data-size <lfn | fileContainingLfns> <SE> <status>
+
+Example::
+
+  $ dirac-dms-data-size  /formation/user/v/vhamar/Example.txt
+  ------------------------------
+  Files          |      Size (GB)
+  ------------------------------
+  1              |            0.0
+  ------------------------------
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -18,12 +33,7 @@ def main():
   unit = 'GB'
   Script.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
 
-  Script.setUsageMessage("""
-  Get the size of the given file or a list of files
-
-  Usage:
-    %s <lfn | fileContainingLfns> <SE> <status>
-  """ % Script.scriptName)
+  Script.setUsageMessage(__doc__)
 
   Script.parseCommandLine(ignoreErrors=False)
   for switch in Script.getUnprocessedSwitches():

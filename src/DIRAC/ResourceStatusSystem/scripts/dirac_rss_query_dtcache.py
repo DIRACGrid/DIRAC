@@ -2,14 +2,17 @@
 """
 Select/Add/Delete a new DownTime entry for a given Site or Service.
 
-Usage:
-    dirac-rss-query-dtcache [option] <query>
+Usage::
 
-Queries:
-    [select|add|delete]
+  dirac-rss-query-dtcache [option] <query>
 
-Verbosity:
-    -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
+Queries::
+
+  [select|add|delete]
+
+Verbosity::
+
+  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import
 from __future__ import division

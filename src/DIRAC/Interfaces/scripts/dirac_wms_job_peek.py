@@ -4,7 +4,19 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Peek StdOut of the given DIRAC job
+Peek StdOut of the given DIRAC job
+
+Usage::
+
+  dirac-wms-job-delete [option|cfgfile] ... JobID ...
+
+Arguments::
+
+  JobID:    DIRAC Job ID
+
+Example::
+
+  $ dirac-wms-job-peek 1
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -19,11 +31,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JobID:    DIRAC Job ID']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

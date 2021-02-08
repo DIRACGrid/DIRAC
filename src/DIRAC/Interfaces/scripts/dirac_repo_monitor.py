@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 """
-  Monitor the jobs present in the repository
+Monitor the jobs present in the repository
+
+Usage::
+
+  dirac-repo-monitor [option|cfgfile] ... RepoDir
+
+Arguments::
+
+  RepoDir:  Location of Job Repository
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -15,11 +23,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... RepoDir' % Script.scriptName,
-                                    'Arguments:',
-                                    '  RepoDir:  Location of Job Repository']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=False)
   args = Script.getPositionalArgs()
 

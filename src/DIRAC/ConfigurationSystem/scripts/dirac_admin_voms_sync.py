@@ -4,7 +4,11 @@
 # Author : Andrei Tsaregorodtsev
 ########################################################################
 """
-  Synchronize VOMS user data with the DIRAC Registry
+Synchronize VOMS user data with the DIRAC Registry
+
+Usage::
+
+  dirac-admin-voms-sync [option|cfgfile] ...
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -40,11 +44,7 @@ def setVO(value):
 def main():
   Script.registerSwitch("V:", "vo=", "VO name", setVO)
   Script.registerSwitch("D", "dryRun", "Dry run", setDryRun)
-  Script.setUsageMessage('\n'.join([
-      __doc__.split('\n')[1],
-      'Usage:',
-      '  %s [option|cfgfile] ...' % Script.scriptName
-  ]))
+  Script.setUsageMessage(__doc__)
 
   Script.parseCommandLine(ignoreErrors=True)
 

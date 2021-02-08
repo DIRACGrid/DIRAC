@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 """
-  Determine number of processors and memory for the worker node
+Determine number of processors and memory for the worker node
+
+Usage::
+
+  dirac-wms-get-wn-parameters [option]... [cfgfile]
+
+Arguments::
+
+  cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -38,12 +46,7 @@ def main():
   global ceName
   global Site
   global Queue
-  Script.setUsageMessage('\n'.join(['Get the parameters (Memory and Number of processors) of a worker node',
-                                    'Usage:',
-                                    ' %s [option]... [cfgfile]' % Script.scriptName,
-                                    'Arguments:',
-                                    ' cfgfile: DIRAC Cfg with description of the configuration (optional)']))
-
+  Script.setUsageMessage(__doc__)
   Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
   Script.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
   Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)

@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 """
 Start DIRAC component using runsvctrl utility
+
+Usage::
+
+  dirac-start-component [option|cfgfile] ... [system [service|agent]]
+
+Arguments::
+
+  system:        Name of the system for the component (default *: all)
+  service|agent: Name of the particular component (default *: all)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -15,12 +24,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.disableCS()
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... [system [service|agent]]' % Script.scriptName,
-                                    'Arguments:',
-                                    '  system:        Name of the system for the component (default *: all)',
-                                    '  service|agent: Name of the particular component (default *: all)']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
   if len(args) > 2:

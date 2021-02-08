@@ -1,5 +1,11 @@
 #!/usr/bin/env python
+"""
+Get the given file replica metadata from the File Catalog
 
+Usage::
+
+  dirac-dms-replica-metadata <LFN | fileContainingLFNs> SE
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -15,13 +21,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage("""
-  Get the given file replica metadata from the File Catalog
-
-  Usage:
-    %s <LFN | fileContainingLFNs> SE
-  """ % Script.scriptName)
-
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
 
   from DIRAC import gLogger

@@ -4,12 +4,26 @@
 # Author :  Daniela Remenska
 ########################################################################
 """
-  Report the details of file staging requests, based on selection filters
+Report the details of file staging requests, based on selection filters
+
+Usage::
+
+  dirac-stager-monitor-requests [--status=<Status>] [--se=<SE>] [--limit=<integer>] [--showJobs=YES] ...
+
+Arguments::
+
+  status:   file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).
+  se:       storage element
+  showJobs: whether to ALSO list the jobs asking for these files to be staged
+
+  WARNING: Query may be heavy, please use --limit switch!
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 _RCSID__ = "$Id$"
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
@@ -19,18 +33,7 @@ subLogger = None
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage(
-      '\n'.join(
-          [
-              __doc__.split('\n')[1],
-              'Usage:',
-              '  %s  [--status=<Status>] [--se=<SE>] [--limit=<integer>] [--showJobs=YES] ...' %
-              Script.scriptName,
-              'Arguments:',
-              '  status: file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).',
-              '  se: storage element',
-              '  showJobs: whether to ALSO list the jobs asking for these files to be staged',
-              '     WARNING: Query may be heavy, please use --limit switch!']))
+  Script.setUsageMessage(__doc__)
 
   def registerSwitches():
     '''

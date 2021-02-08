@@ -1,5 +1,22 @@
 #!/usr/bin/env python
+"""
+Get status of the available Storage Elements
 
+Usage::
+
+  dirac-dms-show-se-status [<options>]
+
+Example::
+
+  $ dirac-dms-show-se-status
+  Storage Element               Read Status    Write Status
+  DIRAC-USER                         Active          Active
+  IN2P3-disk                         Active          Active
+  IPSL-IPGP-disk                     Active          Active
+  IRES-disk                        InActive        InActive
+  M3PEC-disk                         Active          Active
+  ProductionSandboxSE                Active          Active
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -44,12 +61,7 @@ def main():
   global noVOFlag
   global allVOsFlag
 
-  Script.setUsageMessage("""
-Get status of the available Storage Elements
-
-Usage:
-  %s [<options>]
-""" % Script.scriptName)
+  Script.setUsageMessage(__doc__)
 
   Script.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
   Script.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)

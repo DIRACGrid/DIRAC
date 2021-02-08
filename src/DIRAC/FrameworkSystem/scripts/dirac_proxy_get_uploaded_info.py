@@ -3,6 +3,21 @@
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
+"""
+Usage::
+
+  dirac-proxy-get-uploaded-info.py (<options>|<cfgFile>)*
+
+Example::
+
+  $ dirac-proxy-get-uploaded-info
+  Checking for DNs /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  --------------------------------------------------------------------------------------------------------
+  | UserDN                                          | UserGroup   | ExpirationTime      | PersistentFlag |
+  --------------------------------------------------------------------------------------------------------
+  | /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar | dirac_user  | 2011-06-29 12:04:25 | True           |
+  --------------------------------------------------------------------------------------------------------
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -38,7 +53,7 @@ def setUser(arg):
 def main():
   global userName
   Script.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)
-
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
 
   result = getProxyInfo()

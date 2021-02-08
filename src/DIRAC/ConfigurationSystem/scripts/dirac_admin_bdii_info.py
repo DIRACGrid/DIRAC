@@ -4,7 +4,17 @@
 # Author :  Aresh Vedaee
 ########################################################################
 """
-  Check info on BDII for a given CE or site
+Check info on BDII for a given CE or site
+
+Usage::
+
+  dirac-admin-bdii-info [option|cfgfile] ... <info> <Site|CE>
+
+Arguments::
+
+  Site:     Name of the Site (i.e. CERN-PROD)
+  CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)
+  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -27,13 +37,7 @@ def registerSwitches():
 
   Script.registerSwitch("H:", "host=", "BDII host")
   Script.registerSwitch("V:", "vo=", "vo")
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... <info> <Site|CE>' % Script.scriptName,
-                                    'Arguments:',
-                                    '  Site:     Name of the Site (i.e. CERN-PROD)',
-                                    '  CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)',
-                                    '  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site)']))
+  Script.setUsageMessage(__doc__)
 
 
 def parseSwitches():

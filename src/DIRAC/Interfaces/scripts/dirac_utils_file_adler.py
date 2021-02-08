@@ -3,7 +3,20 @@
 # File :    dirac-utils-file-adler
 ########################################################################
 """
-  Calculate alder32 of the supplied file
+Calculate alder32 of the supplied file
+
+Usage::
+
+  dirac-utils-file-adler [option|cfgfile] ... File ...
+
+Arguments::
+
+  File:     File Name
+
+Example::
+
+  $ dirac-utils-file-adler Example.tgz
+  Example.tgz 88b4ca8b
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -11,19 +24,13 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-import DIRAC
-from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... File ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  File:     File Name']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=False)
   files = Script.getPositionalArgs()
   if len(files) == 0:
@@ -31,6 +38,9 @@ def main():
 
   exitCode = 0
 
+  import DIRAC
+  from DIRAC.Core.Utilities.Adler import fileAdler
+  
   for fa in files:
     adler = fileAdler(fa)
     if adler:

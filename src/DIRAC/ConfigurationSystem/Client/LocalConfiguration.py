@@ -6,8 +6,9 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import sys
+import re
 import os
+import sys
 import getopt
 
 import DIRAC
@@ -46,7 +47,9 @@ class LocalConfiguration(object):
     self.componentType = False
     self.loggingSection = "/DIRAC"
     self.initialized = False
+    self.__scriptDescription = ''
     self.__usageMessage = ''
+    self.__usageExample = ''
     self.__debugMode = 0
     self.firstOptionIndex = 1
 
@@ -86,7 +89,20 @@ class LocalConfiguration(object):
     """
     Define message to be display by the showHelp method
     """
-    self.__usageMessage = usageMsg
+    r = r"(.*?)(?:(?:Usage|Example|Arguments|Options):+\n|$)"
+    if usageMsg:
+      desc = re.search(r, usageMsg, re.DOTALL)
+      if desc:
+        self.__scriptDescription = '\n' + desc.group(1).strip('\n') + '\n'
+      usage = re.search(r"%s%s" % (r"Usage:+", r), usageMsg, re.DOTALL)
+      if usage:
+        self.__usageMessage = '\nUsage:\n' + usage.group(1).strip('\n') + '\n'
+      args = re.search(r"%s%s" % (r"Arguments:+", r), usageMsg, re.DOTALL)
+      if args:
+        self.__arguments = '\nArguments:\n' + args.group(1).strip('\n') + '\n'
+      expl = re.search(r"%s%s" % (r"Example:+", r), usageMsg, re.DOTALL)
+      if expl:
+        self.__usageExample = '\nExample:\n' + expl.group(1).strip('\n') + '\n'
 
   def __setOptionValue(self, optionPath, value):
     gConfigurationData.setOptionInCFG(self.__getAbsolutePath(optionPath),
@@ -262,8 +278,7 @@ class LocalConfiguration(object):
 
     for opt, val in opts:
       if opt in ('-h', '--help'):
-        self.showHelp()
-        sys.exit(2)
+        self.showHelp(exitCode=2)
       if opt == '--cfg':
         self.cliAdditionalCFGFiles.append(os.path.expanduser(val))
 
@@ -510,8 +525,11 @@ class LocalConfiguration(object):
     """
     Printout help message including a Usage message if defined via setUsageMessage method
     """
+    if self.__scriptDescription:
+      gLogger.notice(self.__scriptDescription)
+    
     if self.__usageMessage:
-      gLogger.notice('\n' + self.__usageMessage.lstrip())
+      gLogger.notice(self.__usageMessage)
     else:
       gLogger.notice("\nUsage:")
       gLogger.notice("\n  %s (<options>|<cfgFile>)*" % os.path.basename(sys.argv[0]))
@@ -534,7 +552,7 @@ class LocalConfiguration(object):
         # Last general opt is always help
         break
     if iLastOpt + 1 < len(self.commandOptionList):
-      gLogger.notice(" \nOptions:")
+      gLogger.notice("\nOptions:")
       for iPos in range(iLastOpt + 1, len(self.commandOptionList)):
         optionTuple = self.commandOptionList[iPos]
         if optionTuple[0].endswith(':'):
@@ -545,6 +563,12 @@ class LocalConfiguration(object):
         else:
           gLogger.notice("  -%s --%s : %s" % (optionTuple[0].ljust(2), optionTuple[1].ljust(22), optionTuple[2]))
 
+    if self.__arguments:
+      gLogger.notice(self.__arguments)
+
+    if self.__usageExample:
+      gLogger.notice(self.__usageExample)
+    
     gLogger.notice("")
     DIRAC.exit(exitCode)
 

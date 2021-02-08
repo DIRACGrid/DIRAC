@@ -4,18 +4,21 @@
 # Author :  Matvey Sapunov
 ########################################################################
 """
-  Sort site names at CS in "/Resources" section. Sort can be alphabetic or by country postfix in a site name.
-  Alphabetic sort is default (i.e. LCG.IHEP.cn, LCG.IHEP.su, LCG.IN2P3.fr)
+Sort site names at CS in "/Resources" section. Sort can be alphabetic or by country postfix in a site name.
+Alphabetic sort is default (i.e. LCG.IHEP.cn, LCG.IHEP.su, LCG.IN2P3.fr)
 
-  Options:
-    -C --country              Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)
-    -R --reverse              Reverse the sort order
+Usage::
 
-  Argument:
-    Name of the subsection in the CS '/Resources/Sites/' section to be sorted (i.e. LCG, DIRAC)
+  dirac-admin-sort-cs-sites [option|cfgfile] <Section>
 
-  Example: dirac-admin-sort-cs-sites -C DIRAC
-  Sort sites in subsection /Resources/Sites/DIRAC by country postfix
+Arguments::
+
+  Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)
+
+Example::
+
+  $ dirac-admin-sort-cs-sites -C CLOUDS DIRAC
+  sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -63,18 +66,7 @@ def main():
       sortBy)
   Script.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
 
-  Script.setUsageMessage("\n".join([
-      __doc__.split("\n")[1],
-      "Usage:",
-      "  %s [option|cfgfile] <Section>" %
-      Script.scriptName,
-      "Optional arguments:",
-      "  Section:       Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)",
-      "Example:",
-      "  dirac-admin-sort-cs-sites -C CLOUDS DIRAC",
-      "  sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection",
-      ""
-  ]))
+  Script.setUsageMessage(__doc__)
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()

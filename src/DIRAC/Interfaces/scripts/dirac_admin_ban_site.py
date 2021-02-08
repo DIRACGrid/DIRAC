@@ -4,7 +4,20 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Remove Site from Active mask for current Setup
+Remove Site from Active mask for current Setup
+
+Usage::
+
+  dirac-admin-ban-site [option|cfgfile] ... Site Comment
+
+Arguments::
+
+  Site:     Name of the Site
+  Comment:  Reason of the action
+
+Example::
+
+  $ dirac-admin-ban-site LCG.IN2P3.fr "Pilot installation problems"
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -14,7 +27,6 @@ __RCSID__ = "$Id$"
 
 import time
 
-from DIRAC import exit as DIRACExit, gConfig, gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
@@ -22,17 +34,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... Site Comment' % Script.scriptName,
-                                    'Arguments:',
-                                    '  Site:     Name of the Site',
-                                    '  Comment:  Reason of the action']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+  from DIRAC import exit as DIRACExit, gConfig, gLogger
   from DIRAC.Core.Utilities.PromptUser import promptUser
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+  from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
   def getBoolean(value):
     if value.lower() == 'true':

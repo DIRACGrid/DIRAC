@@ -4,7 +4,22 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Obtain replica information from file catalogue client.
+Obtain replica information from file catalogue client.
+
+Usage::
+
+  dirac-admin-lfn-replicas [option|cfgfile] ... LFN ...
+
+Arguments::
+
+  LFN:      Logical File Name or file containing LFNs
+
+Example::
+
+  $ dirac-dms-lfn-replicas /formation/user/v/vhamar/Test.txt
+  {'Failed': {},
+   'Successful': {'/formation/user/v/vhamar/Test.txt':\
+   {'M3PEC-disk': 'srm://se0.m3pec.u-bordeaux1.fr/dpm/m3pec.u-bordeaux1.fr/home/formation/user/v/vhamar/Test.txt'}}}
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -20,11 +35,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.registerSwitch('a', "All", "  Also show inactive replicas")
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... LFN ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  LFN:      Logical File Name or file containing LFNs']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   lfns = Script.getPositionalArgs()
   switches = Script.getUnprocessedSwitches()

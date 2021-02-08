@@ -1,15 +1,18 @@
 #!/usr/bin/env python
-'''
-  dirac-production-runjoblocal
+"""
+Module created to run failed jobs locally on a CVMFS-configured machine.
+It creates the necessary environment, downloads the necessary files, modifies the necessary
+files and runs the job
 
-  Module created to run failed jobs locally on a CVMFS-configured machine.
-  It creates the necessary environment, downloads the necessary files, modifies the necessary
-  files and runs the job
+Usage::
 
-  Usage:
-    dirac-production-diracrunjoblocal (job ID)  -  No parenthesis
+  dirac-production-runjoblocal [Data imput mode] [job ID]
 
-'''
+Arguments::
+
+  Download (Job ID): Defines data aquisition as DownloadInputData
+  Protocol (Job ID): Defines data acquisition as InputDataByProtocol
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -139,15 +142,10 @@ def __runJobLocally(jobID, basepath, vo):
 def main():
   Script.parseCommandLine(ignoreErrors=False)
 
+  Script.setUsageMessage(__doc__)
   Script.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
   Script.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
 
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    '\nUsage:',
-                                    'dirac-production-runjoblocal [Data imput mode] [job ID]'
-                                    '\nArguments:',
-                                    '  Download (Job ID): Defines data aquisition as DownloadInputData',
-                                    '  Protocol (Job ID): Defines data acquisition as InputDataByProtocol\n']))
   _downloadinputdata = False
   _jobID = None
 
