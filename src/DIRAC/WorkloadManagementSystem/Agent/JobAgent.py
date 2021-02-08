@@ -538,6 +538,15 @@ class JobAgent(AgentModule):
                            minor='Submitting To CE',
                            sendFlag=False)
 
+    gridCE = gConfig.getValue('/LocalSite/GridCE', '')
+    queue = gConfig.getValue('/LocalSite/CEQueue', '')
+    jobReport.setJobParameter(par_name='GridCE',
+                              par_value=gridCE,
+                              sendFlag=False)
+    jobReport.setJobParameter(par_name='CEQueue',
+                              par_value=queue,
+                              sendFlag=False)
+
     self.log.info('Submitting JobWrapper',
                   '%s to %sCE' % (os.path.basename(wrapperFile), self.ceName))
 
