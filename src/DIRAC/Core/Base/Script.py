@@ -51,7 +51,11 @@ i = 0 if i == len(sys.argv) else i
 scriptName = os.path.basename(sys.argv[i].split('::')[0]).replace('.py', '')
 # The first argument DIRAC should parse is the next one
 localCfg.firstOptionIndex = i + 1
+<<<<<<< HEAD
 localCfg.setUsageMessage(doc)
+=======
+setUsageMessage(doc)
+>>>>>>> 09f0d006f (rebase with integration)
 gIsAlreadyInitialized = False
 
 

@@ -1,4 +1,4 @@
-""" This is the guy that parses and interprets the local configuration options
+""" This is the guy that parses and interprets the local configuration options.
 """
 from __future__ import absolute_import
 from __future__ import division
