@@ -5,12 +5,9 @@
 """
 
 from __future__ import print_function
-<<<<<<< HEAD:src/DIRAC/Core/Utilities/Graphs/GraphData.py
 from __future__ import absolute_import
 from __future__ import division
 
-=======
->>>>>>> rel-v7r1:Core/Utilities/Graphs/GraphData.py
 __RCSID__ = "$Id$"
 
 import six
