@@ -1,3 +1,11 @@
+[v7r0p48]
+
+CHANGE: (#4949) change default top-level bdii to cclcgtopbdii01.in2p3.fr (was lcg-bdii.cern.ch)
+
+*CS
+FIX: (#4943) Fix exception in VOMS2CSAgent for missing 'suspended' and other entries occurring if the credentials
+     used to query the VOMS server have insufficient privileges to obtain this information
+
 [v7r0p47]
 
 *Core
