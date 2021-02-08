@@ -2,11 +2,9 @@
 LogLevels wrapper
 """
 
-from __future__ import absolute_import
+__RCSID__ = "$Id$"
 
 import logging
-
-__RCSID__ = "$Id$"
 
 
 class LogLevels(object):

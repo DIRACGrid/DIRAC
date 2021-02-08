@@ -23,8 +23,6 @@
    Note that several executables can be provided and wil be executed sequentially.
 """
 
-from __future__ import absolute_import
-
 __RCSID__ = "$Id$"
 
 import six

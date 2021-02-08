@@ -1,9 +1,6 @@
 """ Transition methods to allow to move from DEncode to JEncode
 
 """
-
-from __future__ import absolute_import
-
 import os
 from DIRAC.Core.Utilities import DEncode, JEncode
 

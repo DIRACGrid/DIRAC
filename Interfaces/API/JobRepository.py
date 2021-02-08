@@ -1,7 +1,5 @@
 """ This is the Job Repository which stores and manipulates DIRAC job metadata in CFG format """
 
-from __future__ import absolute_import
-
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR

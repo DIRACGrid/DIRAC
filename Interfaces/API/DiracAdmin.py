@@ -6,8 +6,6 @@ site banning and unbanning, WMS proxy uploading etc.
 """
 
 from __future__ import print_function
-from __future__ import absolute_import
-
 __RCSID__ = "$Id$"
 
 import six
