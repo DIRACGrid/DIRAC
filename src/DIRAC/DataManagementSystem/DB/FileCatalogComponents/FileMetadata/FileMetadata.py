@@ -429,7 +429,7 @@ class FileMetadata(object):
       queryList.append(('=', '%f' % value))
     elif isinstance(value, six.integer_types):
       queryList.append(('=', '%d' % value))
-    elif isinstance(value, str):
+    elif isinstance(value, six.string_types):
       if value.lower() == 'any':
         queryList.append(('IS', 'NOT NULL'))
       elif value.lower() == 'missing':
