@@ -322,13 +322,13 @@ class SiteDirector(AgentModule):
             ceTags = ceDict.get(tagFieldName, [])
             if isinstance(ceTags, six.string_types):
               ceTags = fromChar(ceTags)
-            queueTags = self.queueDict[queueName]['ParametersDict'].get(tagFieldName)
-            if queueTags and isinstance(queueTags, six.string_types):
+            queueTags = self.queueDict[queueName]['ParametersDict'].get(tagFieldName, [])
+            if isinstance(queueTags, six.string_types):
               queueTags = fromChar(queueTags)
               self.queueDict[queueName]['ParametersDict'][tagFieldName] = queueTags
             if ceTags:
               if queueTags:
-                allTags = list(set(ceTags + queueTags))
+                allTags = list(set(ceTags) + set(queueTags))
                 self.queueDict[queueName]['ParametersDict'][tagFieldName] = allTags
               else:
                 self.queueDict[queueName]['ParametersDict'][tagFieldName] = ceTags

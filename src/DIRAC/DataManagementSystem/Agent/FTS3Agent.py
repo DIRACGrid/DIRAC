@@ -261,6 +261,7 @@ class FTS3Agent(AgentModule):
       return ftsJob, res
 
     except Exception as e:
+      log.exception("Exception while monitoring job", repr(e))
       return ftsJob, S_ERROR(0, "Exception %s" % repr(e))
 
   @staticmethod

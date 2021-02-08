@@ -46,25 +46,25 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
 Configuration options are:
 
 * ``BackendType``: just used for information. No internal use at the moment
-* ``SEType``: Can be `T0D1` or `T1D0` or `T1D1`. it is used to asses whether the SE is a tape SE or not. If the digit after `T` is `1`, then it is a tape.
-* ``UseCatalogURL``: default `False`. If `True`, use the url stored in the catalog instead of regenerating it
-* ``ChecksumType``: default `ADLER32`. NOT ACTIVE !
+* ``SEType``: Can be ``T0D1`` or ``T1D0`` or ``T1D1``. it is used to asses whether the SE is a tape SE or not. If the digit after ``T`` is ``1``, then it is a tape.
+* ``UseCatalogURL``: default ``False``. If ``True``, use the url stored in the catalog instead of regenerating it
+* ``ChecksumType``: default ``ADLER32``. NOT ACTIVE !
 * ``Alias``: when set to the name of another storage element, it instanciates the other SE instead.
-* ``ReadAccess``: default `True`. Allowed for Read if no RSS enabled (:ref:`activateRSS`)
-* ``WriteAccess``: default `True`. Allowed for Write if no RSS enabled
-* ``CheckAccess``: default `True`. Allowed for Check if no RSS enabled
-* ``RemoveAccess``: default `True`. Allowed for Remove if no RSS enabled
-* ``OccupancyLFN``: default (`/<vo>/occupancy.json`). LFN where the json file containing the space reporting is to be found
-* ``OccupancyPlugin``: default (`empty`). Plugin to find the occupancy of a given storage.
+* ``ReadAccess``: default ``True``. Allowed for Read if no RSS enabled (:ref:`activateRSS`)
+* ``WriteAccess``: default ``True``. Allowed for Write if no RSS enabled
+* ``CheckAccess``: default ``True``. Allowed for Check if no RSS enabled
+* ``RemoveAccess``: default ``True``. Allowed for Remove if no RSS enabled
+* ``OccupancyLFN``: default (``/<vo>/occupancy.json``). LFN where the json file containing the space reporting is to be found
+* ``OccupancyPlugin``: default (``empty``). Plugin to find the occupancy of a given storage.
 * ``SpaceReservation``: just a name of a zone of the physical storage which can have some space reserved. Extends the SRM ``SpaceToken`` concept.
 
 VO specific paths
 -----------------
 
 Storage Elements supporting multiple VO's can have definitions slightly differing with respect
-to the `Path` used to navigate to the VO specific namespace in the physical storage. If a generic
-`Path` can not be suitable for all the allowed VO's a `VOPath` section can be added to the Plugin
-definition section as shown in the example above. In this section a specific `Path` can be defined for
+to the ``Path`` used to navigate to the VO specific namespace in the physical storage. If a generic
+`Path` can not be suitable for all the allowed VO's a ``VOPath`` section can be added to the Plugin
+definition section as shown in the example above. In this section a specific ``Path`` can be defined for
 each VO which needs it.
 
 
@@ -72,7 +72,7 @@ StorageElementBases
 -------------------
 
 Installations tend to have several StorageElements, with very similar configurations (e.g., the same Host and Port). It could be useful to factorize the SEs configuration to avoid repeating it.
-In order to factorize the configuration, it is possible to use `BaseSE`, which acts just like inheritance in object programming. You define a SE just like any other but in the `StorageElementBases` section. This SE can then be refered to by another SE. This new SE will inherit all the configuration from its parents, and can override it.  For example::
+In order to factorize the configuration, it is possible to use ``BaseSE``, which acts just like inheritance in object programming. You define a SE just like any other but in the ``StorageElementBases`` section. This SE can then be refered to by another SE. This new SE will inherit all the configuration from its parents, and can override it.  For example::
 
     StorageElementBases
     {
@@ -199,7 +199,7 @@ Available protocol plugins
 --------------------------
 
 DIRAC comes with a bunch of plugins that you can use to interact with StorageElements.
-These are the plugins that you should define in the `PluginName` option of your StorageElement definition.
+These are the plugins that you should define in the ``PluginName`` option of your StorageElement definition.
 
   - DIP: used for dips, the DIRAC custom protocol (useful for example for DIRAC SEs).
   - File: offers an abstraction of the local access as an SE.
@@ -218,7 +218,7 @@ There are also a set of plugins based on the gfal2 libraries (https://dmc.web.ce
 
 Default plugin options:
 
-* `Access`: `Remote` or `Local`. If `Local`, then this protocol can be used only if we are running at the site to which the SE is associated. Typically, if a site mounts the storage as NFS, the `file` protocol can be used.
+* ``Access``: ``Remote`` or ``Local``. If ``Local``, then this protocol can be used only if we are running at the site to which the SE is associated. Typically, if a site mounts the storage as NFS, the ``file`` protocol can be used.
 
 
 GRIDFTP Optimisation
@@ -243,7 +243,7 @@ Several methods allow to know how much space is left on a storage, depending on 
 * any other: a generic implementation has been made in order to retrieve a JSON file containing the necessary information.
 
 A WLCG working group is trying to standardize the space reporting. So a standard will probably emerge soon (before 2053).
-For the time being, we shall consider that the JSON file will contain a dictionary with keys `Total` and `Free` in Bytes.
+For the time being, we shall consider that the JSON file will contain a dictionary with keys ``Total`` and ``Free`` in Bytes.
 For example::
 
    {
@@ -251,7 +251,7 @@ For example::
      "Free": 10
    }
 
-The LFN of this file is by default `/<vo>/occupancy.json`, but can be overwritten with the `OccupancyLFN` option of the SE.
+The LFN of this file is by default `/<vo>/occupancy.json`, but can be overwritten with the ``OccupancyLFN`` option of the SE.
 
 The ``SpaceReservation`` option allows to specify a physical zone of the storage which would have space reservation (for example ``LHCb_USER``, ``LHCb_PROD``, etc). It extends the concept of ``SpaceToken`` that SRM has. This option is only used if the StoragePlugin does not return itself a ``SpaceReservation`` value.
 
@@ -275,12 +275,13 @@ There are several aspects of multi protocol:
   * We want to use different protocols for different operations
 
 DIRAC supports all of them. The bottom line is that before executing an action on an SE, we check among all the plugins defined for it, which plugins are the most suitable.
-There are 4 Operation options under the `DataManagement` section used for that:
+There are 5 Operation options under the ``DataManagement`` section used for that:
 
- * `RegistrationProtocols`: used to generate a URL that will be stored in the FileCatalog
- * `AccessProtocols`: used to perform the read operations
- * `WriteProtocols`: used to perform the write and remove operations
- * `ThirdPartyProtocols`: used in case of replications
+ * ``RegistrationProtocols``: used to generate a URL that will be stored in the FileCatalog
+ * ``AccessProtocols``: used to perform the read operations
+ * ``WriteProtocols``: used to perform the write and remove operations
+ * ``ThirdPartyProtocols``: used in case of replications
+ * ``StageProtocols``: used when issuing a stage request (see below)
 
 When performing an action on an SE, the StorageElement class will evaluate, based on these lists, and following this preference order, which StoragePlugins to use.
 
@@ -297,7 +298,7 @@ and it will be generated by GFAL2_XROOT because root is its native protocol (so 
 GFAL2_SRM2 plugins because only srm is allowed as a write plugin, but since this plugins can take root URL as input, the copy will work.
 
 
-The WriteProtocols and AccessProtocols list can be locally overwritten in the SE definition.
+The WriteProtocols, AccessProtocols and StageProtocols lists can be locally overwritten in the SE definition.
 
 Multi Protocol with FTS
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -311,8 +312,16 @@ Protocol matrix
 
 In order to make it easier to debug, the script :ref:`dirac-dms-protocol-matrix` will generate a CSV files that allows you to see what would happen if you were to try transfers between SEs
 
+
+Staging
+^^^^^^^
+
+Up to recently, any protocol that was defined as ``AccessProtocols`` was also used for staging (plot twister: only ``srm`` could do it).
+This is not true for `CTA <https://cta.web.cern.ch/cta/>`_ . Because ``CTA`` can stage with xroot only, but we may need to use another protocol to transfer to a another site, we need to distinguish between staging and accessing. To the best of my knowledge, only ``CTA`` is like this, and thus, it is the only place where you may need to define ``StageProtocols``.
+In case of FTS transfer from CTA where the stage and transfer protocols are different, we rely on the multihop mechanism of FTS to do the protocol translations. More technical details are available in :py:mod:`DIRAC.DataManagementSystem.Client.FTS3Job`
+
 --------------------
 StorageElementGroups
 --------------------
 
-StorageElements can be grouped together in a `StorageElementGroup`. This allows the systems or the users to refer to `any storage within this group`.
+StorageElements can be grouped together in a ``StorageElementGroup``. This allows the systems or the users to refer to ``any storage within this group``.

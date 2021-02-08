@@ -158,9 +158,7 @@ def main():
       gLogger.notice("Could not generate transfer URLS", "src:%s, dst:%s, error:%s" % (src, dst, res['Message']))
     else:
       # We only keep the protocol part of the url
-      res = res['Value']
-      surls = res.get('Successful', res.get('Failed'))[lfn]
-      surls = '/'.join([url.split(':')[0] for url in surls])
+      surls = '/'.join(res['Value']['Protocols'])
 
     # Add also the third party protocols
     proto = ','.join(ses[dst].negociateProtocolWithOtherSE(ses[src], thirdPartyProtocols)['Value'])

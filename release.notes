@@ -92,6 +92,20 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 
+[v7r1p28]
+
+CHANGE: Revert #4919 - absolute imports in several modules
+
+*Configuration
+FIX: (#4945) CS.Client.Utilities: change exception caught to IndexError
+
+*WMS
+FIX: (#4947) SiteDirector: fix for case of empty tag
+
+*DMS
+CHANGE: (#4891) split staging and access protocols
+NEW: (#4891) FTS3 can submit transfers with staging protocols different from transfer protocols
+
 [v7r1p27]
 
 FIX: Fixes from v7r0p47
@@ -589,6 +603,14 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p48]
+
+CHANGE: (#4949) change default top-level bdii to cclcgtopbdii01.in2p3.fr (was lcg-bdii.cern.ch)
+
+*CS
+FIX: (#4943) Fix exception in VOMS2CSAgent for missing 'suspended' and other entries occurring if the credentials
+     used to query the VOMS server have insufficient privileges to obtain this information
 
 [v7r0p47]
 

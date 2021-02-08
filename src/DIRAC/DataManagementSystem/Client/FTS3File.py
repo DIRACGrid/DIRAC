@@ -20,6 +20,7 @@ class FTS3File(JSerializable):
                 'Failed',  # From FTS: File failure
                 'Defunct',  # Totally fail, no more attempt will be made
                 'Started',  # From FTS: File transfer has started
+                'Not_used',  # From FTS: Transfer not being considered yet, waiting for another one (multihop)
                 ]
 
   # These are the states that we consider final.

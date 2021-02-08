@@ -21,14 +21,27 @@ class CTAStorage(GFAL2_XROOTStorage):
               BackendType = Cta
               AccessProtocols = root
               WriteProtocols = root
+              # This is very important if you have to stage with this protocol,  but might transfer
+              # using a different protocol, like https
+              StageProtocols = root
               SEType = T1D0
               SpaceReservation = LHCb-Tape
               OccupancyLFN = /eos/ctalhcbpps/proc/accounting
               OccupancyPlugin = WLCGAccountingJson
+              # Config for this plugin is below
+              ###################################
               CTA
               {
                 Host = eosctalhcbpps.cern.ch
                 Protocol = root
+                Path = /eos/ctalhcbpps/archivetest/
+                Access = remote
+              }
+              ###################################
+              GFAL2_HTTPS
+              {
+                Host = eosctalhcbpps.cern.ch
+                Protocol = https
                 Path = /eos/ctalhcbpps/archivetest/
                 Access = remote
               }

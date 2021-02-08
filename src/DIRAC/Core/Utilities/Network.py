@@ -6,6 +6,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
+
 import socket
 from six.moves.urllib import parse as urlparse
 import os
@@ -15,8 +17,6 @@ import fcntl
 import platform
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-
-__RCSID__ = "$Id$"
 
 
 def discoverInterfaces():
