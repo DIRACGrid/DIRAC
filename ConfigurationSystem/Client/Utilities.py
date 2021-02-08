@@ -319,7 +319,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
           localCEType = queueDict.get('LocalCEType', 'InProcess')
           try:
             localCEType_inner = localCEType.split('/')[1]
-          except ValueError:
+          except IndexError:
             localCEType_inner = ''
 
           numberOfProcessors = int(queueDict.get('NumberOfProcessors', 0))
