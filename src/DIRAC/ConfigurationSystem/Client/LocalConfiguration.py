@@ -279,7 +279,8 @@ class LocalConfiguration(object):
 
     for opt, val in opts:
       if opt in ('-h', '--help'):
-        self.showHelp(exitCode=2)
+        self.showHelp()
+        sys.exit(2)
       if opt == '--cfg':
         self.cliAdditionalCFGFiles.append(os.path.expanduser(val))
 
