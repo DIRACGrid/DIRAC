@@ -3,6 +3,16 @@
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
+"""
+Usage:
+
+  dirac-proxy-init.py (<options>|<cfgFile>)*
+
+Example:
+
+  $ dirac-proxy-init -g dirac_user -t --rfc
+  Enter Certificate password:
+"""
 from __future__ import division
 from __future__ import absolute_import
 from __future__ import print_function

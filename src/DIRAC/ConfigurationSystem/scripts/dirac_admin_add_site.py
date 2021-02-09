@@ -36,17 +36,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage(
-      '\n'.join(
-          [
-              __doc__.split('\n')[1],
-              'Usage:',
-              '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' %
-              Script.scriptName,
-              'Arguments:',
-              '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
-              '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
-              '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)']))
+  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
