@@ -21,7 +21,9 @@ __RCSID__ = "$Id$"
 
 import argparse
 
-parser = argparse.ArgumentParser(usage=__doc__)
+parser = argparse.ArgumentParser(
+    description=__doc__,
+    formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.parse_known_args()
 
 import DIRAC
