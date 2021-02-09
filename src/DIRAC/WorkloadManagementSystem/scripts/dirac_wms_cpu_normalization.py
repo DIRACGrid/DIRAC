@@ -4,13 +4,11 @@
 # Author :  Andrew McNab
 ########################################################################
 """
-Determine Normalization for current CPU.
-
-The main users of this script are the pilot jobs.
+Determine Normalization for current CPU. The main users of this script are the pilot jobs.
 
 Pilots invoke dirac-wms-cpu-normalization which
-- tries to find MACHINEFEATURES/ + JOBFEATURES,
-      and if found populates the local cfg file with e.g. '/LocalSite/JOBFEATURES/'
+- tries to find MACHINEFEATURES/ + JOBFEATURES, and if found populates the local cfg file with\
+  e.g. '/LocalSite/JOBFEATURES/'
 - runs 1 iteration of singleDiracBenchmark(1) (for single processors only)
 - stores in local cfg the following: (the example below is from the case of when MJF is not available)::
 
