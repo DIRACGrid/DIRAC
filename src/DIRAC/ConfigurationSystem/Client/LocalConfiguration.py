@@ -49,6 +49,7 @@ class LocalConfiguration(object):
     self.initialized = False
     self.__scriptDescription = ''
     self.__usageMessage = ''
+    self.__arguments = ''
     self.__usageExample = ''
     self.__debugMode = 0
     self.firstOptionIndex = 1
