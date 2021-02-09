@@ -204,7 +204,7 @@ for loc in locations:
       except Exception as x:
         print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
         logger.error("tarfile failed with message %%s" %% repr(x))
-	logger.warning("Trying tar command (tar -xvf pilot.tar)")
+        logger.warning("Trying tar command (tar -xvf pilot.tar)")
         res = os.system("tar -xvf pilot.tar")
         if res:
           logger.error("tar failed with exit code %%d, giving up" %% int(res))

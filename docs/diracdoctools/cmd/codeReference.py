@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 """ create rst files for documentation of DIRAC """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import os
 import shutil
 import socket
@@ -194,7 +196,7 @@ class CodeReference(object):
         LOG.debug('Skipping file: %s/%s', abspath, filename)
         continue
       if 'test' in filename.lower():
-	LOG.warning("File contains 'test', but is kept: %s/%s", abspath, filename)
+        LOG.warning("File contains 'test', but is kept: %s/%s", abspath, filename)
 
       if filename != '__init__.py':
         packages.append(filename.split('.py')[0])
@@ -385,6 +387,7 @@ def run(configFile='docs.conf', logLevel=logging.INFO, debug=False, buildType='f
     return retVal
   except ImportError:
     return 1
+
 
 if __name__ == '__main__':
   sys.exit(run(**(CLParser().optionDict())))
