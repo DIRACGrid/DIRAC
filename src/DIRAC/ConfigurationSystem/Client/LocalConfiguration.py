@@ -528,7 +528,7 @@ class LocalConfiguration(object):
     """
     if self.__scriptDescription:
       gLogger.notice(self.__scriptDescription)
-    
+
     if self.__usageMessage:
       gLogger.notice(self.__usageMessage)
     else:
@@ -569,7 +569,7 @@ class LocalConfiguration(object):
 
     if self.__usageExample:
       gLogger.notice(self.__usageExample)
-    
+
     gLogger.notice("")
     DIRAC.exit(exitCode)
 

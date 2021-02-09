@@ -13,7 +13,7 @@ Example::
 
   $ dirac-dms-remove-catalog-files   /formation/user/v/vhamar/1/1134/StdOut
   Successfully removed 1 catalog files.
-""" 
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division

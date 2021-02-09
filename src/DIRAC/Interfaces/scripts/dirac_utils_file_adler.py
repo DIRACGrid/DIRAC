@@ -40,7 +40,7 @@ def main():
 
   import DIRAC
   from DIRAC.Core.Utilities.Adler import fileAdler
-  
+
   for fa in files:
     adler = fileAdler(fa)
     if adler:
