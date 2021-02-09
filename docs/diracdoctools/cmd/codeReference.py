@@ -194,7 +194,7 @@ class CodeReference(object):
         LOG.debug('Skipping file: %s/%s', abspath, filename)
         continue
       if 'test' in filename.lower():
-        LOG.warn("File contains 'test', but is kept: %s/%s", abspath, filename)
+	LOG.warning("File contains 'test', but is kept: %s/%s", abspath, filename)
 
       if filename != '__init__.py':
         packages.append(filename.split('.py')[0])
