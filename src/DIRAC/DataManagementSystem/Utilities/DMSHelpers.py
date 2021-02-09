@@ -438,3 +438,7 @@ class DMSHelpers(object):
   def getWriteProtocols(self):
     """ Returns the Favorite Write protocol defined in the CS, or 'srm' as default """
     return self.__opsHelper.getValue('DataManagement/WriteProtocols', ['srm', 'dips'])
+
+  def getStageProtocols(self):
+    """ Returns the Favorite staging protocol defined in the CS. There are no default"""
+    return self.__opsHelper.getValue('DataManagement/StageProtocols', list())

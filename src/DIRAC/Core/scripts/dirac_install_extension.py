@@ -1,36 +1,37 @@
 #!/usr/bin/env python
-"""
-Allows to add a specified extension to an already existing DIRAC installation.
-The extension can come from another project than the one installed.
-No new version directory is created. The command is based on the main DIRAC installer dirac-install.py.
+""" dirac-install-extension command allows to add a specified extension
+to an already existing DIRAC installation. No new version directory is created.
+The command is based on the main DIRAC installer dirac-install.py.
 
-Usage::
+The valid options are:
 
-  dirac-install-extension (<options>|<cfgFile>)*
-
+  -l <project> - the project in which the extension is developed
+  -r <release> - the project release version
+  -e <extension> - the extension name. Several -e options can be given
 """
 
 from __future__ import unicode_literals, absolute_import, division, print_function
 
 import os
 import sys
-import six
-import time
-import getopt
 import importlib
+import getopt
+import time
+import six
 
 cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('l:', 'project=', 'Project to install'),
-           ('e:', 'extensions=', 'Extensions to install (comma separated). Several -e options can be given'),
-           ('M:', 'defaultsURL=', 'Where to retrieve the global defaults from'),
+           ('e:', 'extensions=', 'Extensions to install (comma separated)'),
            ('h', 'help', 'help doc string'))
 
 
 def usage():
   """ Usage printout
   """
-  print(__doc__)
-  print('Options::\n\n')
+  print("\nThe command allows to add a specified extension to an already existing DIRAC installation.\n"
+        "The extension can come from another project than the one installed.")
+  print("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
+  print("\nOptions:")
   for cmdOpt in cmdOpts:
     print("  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
 

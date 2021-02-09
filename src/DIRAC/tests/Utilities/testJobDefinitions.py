@@ -140,6 +140,21 @@ def helloWorldSSHBatch():
   return endOfAllJobs(J)
 
 
+def helloWorldCloud():
+  """ simple hello world job to Cloud at Imperial College
+  """
+
+  J = baseToAllJobs('helloCloudWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins --- are we ?
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorldCloud.log")
+  J.setDestination('CLOUD.UKI-LT2-IC-HEP.uk')
+  return endOfAllJobs(J)
+
+
+
 def mpJob():
   """ simple hello world job, with 4Processors and MultiProcessor tags
   """

@@ -226,6 +226,7 @@ class FTS3Operation(JSerializable):
     newJob.vo = self.vo
     newJob.filesToSubmit = ftsFiles
     newJob.operationID = getattr(self, 'operationID')
+    newJob.rmsReqID = self.rmsReqID
 
     return newJob
 
@@ -423,6 +424,10 @@ class FTS3TransferOperation(FTS3Operation):
       # We don't need to check the source, since it is already filtered by the DataManager
       for sourceSE, ftsFiles in uniqueTransfersBySource.items():
 
+        if self.__needsMultiHopStaging(sourceSE, targetSE):
+          log.verbose("Needs multihop staging, max files per job is 1")
+          maxFilesPerJob = 1
+
         for ftsFilesChunk in breakListIntoChunks(ftsFiles, maxFilesPerJob):
 
           newJob = self._createNewJob('Transfer', ftsFilesChunk, targetSE, sourceSE=sourceSE)
@@ -430,6 +435,43 @@ class FTS3TransferOperation(FTS3Operation):
           newJobs.append(newJob)
 
     return S_OK(newJobs)
+
+  def __needsMultiHopStaging(self, sourceSEName, destSEName):
+    """ Checks whether transfers between the two SE given as parameters
+        need a multi hop transfer to stage with a different protocol
+        than the transfer one.
+
+        :param str sourceSEName: source storage element name
+        :param str destSEName: destination storage element name
+
+        :returns: boolean
+    """
+    srcSE = StorageElement(sourceSEName, vo=self.vo)
+    dstSE = StorageElement(destSEName, vo=self.vo)
+    srcIsTape = srcSE.getStatus()['Value'].get('TapeSE', True)
+
+    if not srcIsTape:
+      return False
+
+    # To know if we will need a multihop staging transfer,
+    # we check whether we can generate transfer URLs
+    # for a fake LFN, and see if the protocol we get
+    # is compatible with staging
+
+    tpcProtocols = DMSHelpers(vo=self.vo).getThirdPartyProtocols()
+
+    res = dstSE.generateTransferURLsBetweenSEs('/%s/fakeLFN' % self.vo, srcSE, protocols=tpcProtocols)
+
+    # There is an error, but let's ignore it,
+    # it will be dealt with in the FTS3Job logic
+    if not res['OK']:
+      return False
+
+    srcProto, _destProto = res['Value']['Protocols']
+    if srcProto not in srcSE.localStageProtocolList:
+      return True
+
+    return False
 
   def _callback(self):
     """" After a Transfer operation, we have to update the matching Request in the
@@ -479,7 +521,7 @@ class FTS3TransferOperation(FTS3Operation):
     request = res['Value']['request']
     operation = res['Value']['operation']
 
-    registrationProtocols = DMSHelpers(vo=self._vo).getRegistrationProtocols()
+    registrationProtocols = DMSHelpers(vo=self.vo).getRegistrationProtocols()
 
     log.info("will create %s 'RegisterReplica' operations" % len(ftsFilesByTarget))
 

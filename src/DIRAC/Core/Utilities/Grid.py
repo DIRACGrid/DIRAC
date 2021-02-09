@@ -5,8 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from __future__ import absolute_import
-
 import six
 import os
 import re
@@ -71,17 +69,17 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None):
 def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="Glue"):
   """ Python wrapper for ldapserch at bdii.
 
-      :param  filt:    Filter used to search ldap, default = '', means select all
-      :param  attr:    Attributes returned by ldapsearch, default = '*', means return all
-      :param  host:    Host used for ldapsearch, default = 'lcg-bdii.cern.ch:2170', can be changed by $LCG_GFAL_INFOSYS
+  :param  filt: Filter used to search ldap, default = '', means select all
+  :param  attr: Attributes returned by ldapsearch, default = '*', means return all
+  :param  host: Host used for ldapsearch, default = 'cclcgtopbdii01.in2p3.fr:2170', can be changed by $LCG_GFAL_INFOSYS
 
-      :return: standard DIRAC answer with Value equals to list of ldapsearch responses
+  :return: standard DIRAC answer with Value equals to list of ldapsearch responses
 
-      Each element of list is dictionary with keys:
+  Each element of list is dictionary with keys:
 
-        'dn':                 Distinguished name of ldapsearch response
-        'objectClass':        List of classes in response
-        'attr':               Dictionary of attributes
+    'dn':                 Distinguished name of ldapsearch response
+    'objectClass':        List of classes in response
+    'attr':               Dictionary of attributes
   """
 
   if filt is None:
@@ -89,7 +87,7 @@ def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="
   if attr is None:
     attr = ''
   if host is None:
-    host = 'lcg-bdii.cern.ch:2170'
+    host = 'cclcgtopbdii01.in2p3.fr:2170'
   if base is None:
     base = 'Mds-Vo-name=local,o=grid'
 

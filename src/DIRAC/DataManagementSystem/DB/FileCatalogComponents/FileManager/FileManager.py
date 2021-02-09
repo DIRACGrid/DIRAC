@@ -7,6 +7,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
+import six
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
@@ -433,7 +434,7 @@ class FileManager(FileManagerBase):
       fileID = lfns[lfn]['FileID']
       fileIDLFNs[fileID] = lfn
       seName = lfns[lfn]['SE']
-      if isinstance(seName, str):
+      if isinstance(seName, six.string_types):
         seList = [seName]
       elif isinstance(seName, list):
         seList = seName
@@ -546,7 +547,7 @@ class FileManager(FileManagerBase):
     for lfn, fileDict in lfnFileIDDict.items():
       fileID = fileDict['FileID']
       se = lfns[lfn]['SE']
-      if isinstance(se, str):
+      if isinstance(se, six.string_types):
         res = self.db.seManager.findSE(se)
         if not res['OK']:
           return res
@@ -687,7 +688,7 @@ class FileManager(FileManagerBase):
 
   def __getRepIDForReplica(self, fileID, seID, connection=False):
     connection = self._getConnection(connection)
-    if isinstance(seID, str):
+    if isinstance(seID, six.string_types):
       res = self.db.seManager.findSE(seID)
       if not res['OK']:
         return res

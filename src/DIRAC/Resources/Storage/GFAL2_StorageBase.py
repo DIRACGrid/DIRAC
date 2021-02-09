@@ -5,10 +5,13 @@
 :synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
 
 
+:TODO: When we are totally migrated to python 3, we can explicitely remove the str cast
+  of all the ctx calls. They were added because we would receive unicode from DIRAC https servers
+  and boost python does not play well with that.
 
 Environment Variables:
 
-DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported
+* DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported
   and set to true in server bashrc files for efficiency reasons.
 
 """
@@ -178,7 +181,7 @@ class GFAL2_StorageBase(StorageBase):
     log.debug("Determining whether %s exists or not" % path)
 
     try:
-      self.ctx.stat(path)  # If path doesn't exist this will raise an error - otherwise path exists
+      self.ctx.stat(str(path))  # If path doesn't exist this will raise an error - otherwise path exists
       log.debug("path exists")
       return S_OK(True)
     except gfal2.GError as e:
@@ -233,7 +236,7 @@ class GFAL2_StorageBase(StorageBase):
     log.debug("Determining whether %s is a file or not." % path)
 
     try:
-      statInfo = self.ctx.stat(path)
+      statInfo = self.ctx.stat(str(path))
       # instead of return S_OK( S_ISDIR( statInfo.st_mode ) ) we use if/else. So we can use the log.
       if S_ISREG(statInfo.st_mode):
         log.debug("Path is a file")
@@ -350,7 +353,7 @@ class GFAL2_StorageBase(StorageBase):
 
     # Params set, copying file now
     try:
-      self.ctx.filecopy(params, src_url, dest_url)
+      self.ctx.filecopy(params, str(src_url), str(dest_url))
       if self.checksumType:
         # checksum check is done by gfal2
         return S_OK(sourceSize)
@@ -479,7 +482,7 @@ class GFAL2_StorageBase(StorageBase):
       # gfal2 needs a protocol to copy local which is 'file:'
       if not dest_file.startswith('file://'):
         dest = 'file://%s' % os.path.abspath(dest_file)
-      self.ctx.filecopy(params, src_url, dest)
+      self.ctx.filecopy(params, str(src_url), str(dest))
       if useChecksum:
         # gfal2 did a checksum check, so we should be good
         return S_OK(remoteSize)
@@ -539,9 +542,9 @@ class GFAL2_StorageBase(StorageBase):
 
     log = self.log.getSubLogger("GFAL2_StorageBase.__removeSingleFile")
     log.debug("Attempting to remove single file %s" % path)
-
+    path = str(path)
     try:
-      status = self.ctx.unlink(path)
+      status = self.ctx.unlink(str(path))
       if status == 0:
         log.debug("File successfully removed")
         return S_OK(True)
@@ -601,9 +604,9 @@ class GFAL2_StorageBase(StorageBase):
     """
     log = self.log.getSubLogger("GFAL2_StorageBase.__getSingleFileSize")
     log.debug("Determining file size of %s" % path)
-
+    path = str(path)
     try:
-      statInfo = self.ctx.stat(path)  # keeps info like size, mode.
+      statInfo = self.ctx.stat(str(path))  # keeps info like size, mode.
 
       # If it is not a file
       if not S_ISREG(statInfo.st_mode):
@@ -696,7 +699,7 @@ class GFAL2_StorageBase(StorageBase):
     log.debug('Reading metadata for %s' % path)
 
     try:
-      statInfo = self.ctx.stat(path)
+      statInfo = self.ctx.stat(str(path))
     except gfal2.GError as e:
       errStr = "Failed to retrieve metadata"
       self.log.debug(errStr, repr(e))
@@ -767,7 +770,7 @@ class GFAL2_StorageBase(StorageBase):
     log.debug("Attempting to issue stage request for single file: %s" % path)
 
     try:
-      (status, token) = self.ctx.bring_online(path, lifetime, self.stageTimeout, True)
+      (status, token) = self.ctx.bring_online(str(path), lifetime, self.stageTimeout, True)
       log.debug("Staging issued - Status: %s" % status)
       if status >= 0:
         return S_OK(token)
@@ -826,7 +829,7 @@ class GFAL2_StorageBase(StorageBase):
 
     try:
       self.ctx.set_opt_boolean("BDII", "ENABLE", True)
-      status = self.ctx.bring_online_poll(path, token)
+      status = self.ctx.bring_online_poll(str(path), str(token))
 
       if status == 0:
         log.debug("File not staged")
@@ -895,7 +898,7 @@ class GFAL2_StorageBase(StorageBase):
 
     try:
       self.ctx.set_opt_boolean("BDII", "ENABLE", True)
-      status, token = self.ctx.bring_online(path, lifetime, self.stageTimeout, True)
+      status, token = self.ctx.bring_online(str(path), lifetime, self.stageTimeout, True)
       log.debug("Pinning issued - Status: %s" % status)
       if status >= 0:
         return S_OK(token)
@@ -953,7 +956,7 @@ class GFAL2_StorageBase(StorageBase):
       token = str(token)
     try:
       self.ctx.set_opt_boolean("BDII", "ENABLE", True)
-      status = self.ctx.release(path, token)
+      status = self.ctx.release(str(path), token)
       if status >= 0:
         return S_OK(token)
       else:
@@ -989,7 +992,7 @@ class GFAL2_StorageBase(StorageBase):
 
     try:
       log.debug("using %s checksum" % checksumType)
-      fileChecksum = self.ctx.checksum(path, checksumType)
+      fileChecksum = self.ctx.checksum(str(path), checksumType)
       return S_OK(fileChecksum)
 
     except gfal2.GError as e:
@@ -1088,7 +1091,7 @@ class GFAL2_StorageBase(StorageBase):
     log = self.log.getSubLogger("GFAL2_StorageBase._createSingleDirectory")
     try:
       log.debug("Creating %s" % path)
-      status = self.ctx.mkdir_rec(path, 755)
+      status = self.ctx.mkdir_rec(str(path), 755)
       if status >= 0:
         log.debug('Successfully created directory')
         return S_OK()
@@ -1155,7 +1158,7 @@ class GFAL2_StorageBase(StorageBase):
     log = self.log.getSubLogger("GFAL2_StorageBase.__isSingleDirectory")
     log.debug("Determining whether %s is a directory or not." % path)
     try:
-      statInfo = self.ctx.stat(path)
+      statInfo = self.ctx.stat(str(path))
       # instead of return S_OK( S_ISDIR( statInfo.st_mode ) ) we use if/else. So we can use the log.
       if S_ISDIR(statInfo.st_mode):
         log.debug("Path is a directory")
@@ -1228,7 +1231,7 @@ class GFAL2_StorageBase(StorageBase):
     log.debug("Attempting to list content of %s" % path)
 
     try:
-      listing = self.ctx.listdir(path)
+      listing = self.ctx.listdir(str(path))
 
     except gfal2.GError as e:
       errStr = 'Could not list directory content.'
@@ -1639,7 +1642,7 @@ class GFAL2_StorageBase(StorageBase):
 
     if (recursive and allRemoved) or (not recursive and removedAllFiles and not subDirsDict):
       try:
-        status = self.ctx.rmdir(path)
+        status = self.ctx.rmdir(str(path))
         if status < 0:
           errStr = "Error occured while removing directory. Status: %s" % status
           log.debug(errStr)
@@ -1793,12 +1796,12 @@ class GFAL2_StorageBase(StorageBase):
     # get all the extended attributes from path
     try:
       if not attributes:
-        attributes = self.ctx.listxattr(path)
+        attributes = self.ctx.listxattr(str(path))
 
       # get all the respective values of the extended attributes of path
       for attribute in attributes:
         log.debug("Fetching %s" % attribute)
-        attributeDict[attribute] = self.ctx.getxattr(path, attribute)
+        attributeDict[attribute] = self.ctx.getxattr(str(path), attribute)
       return S_OK(attributeDict)
     # simple error messages, the method that is calling them adds the source of error.
     except gfal2.GError as e:

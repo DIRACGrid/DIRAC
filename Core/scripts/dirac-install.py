@@ -2112,6 +2112,13 @@ def createBashrc():
               'etc',
               'grid-security',
               'vomsdir'))
+      lines.append(
+          'export X509_VOMSES=${X509_VOMSES:-%s}' %
+          os.path.join(
+              proPath,
+              'etc',
+              'grid-security',
+              'vomses'))
       lines.extend(
           [
               '# Some DIRAC locations',
@@ -2205,7 +2212,6 @@ def createBashrc():
       lines.append('# export DIRAC_USE_JSON_ENCODE=no')
       lines.append('# export DIRAC_USE_M2CRYPTO=true')
       lines.append('# export DIRAC_USE_NEWTHREADPOOL=yes')
-      lines.append('# export DIRAC_VOMSES=$DIRAC/etc/grid-security/vomses')
       lines.append('# export DIRAC_NO_CFG=true')
       lines.append('')
       f = open(bashrcFile, 'w')
@@ -2256,6 +2262,13 @@ def createCshrc():
               'etc',
               'grid-security',
               'vomsdir'))
+      lines.append(
+          'setenv X509_VOMSES %s' %
+          os.path.join(
+              proPath,
+              'etc',
+              'grid-security',
+              'vomses'))
       lines.extend(['# Some DIRAC locations',
                     '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' % proPath,
                     'setenv DIRACBIN %s' % os.path.join("$DIRAC", cliParams.platform, 'bin'),
@@ -2445,6 +2458,13 @@ def createBashrcForDiracOS():
               'etc',
               'grid-security',
               'vomsdir'))
+      lines.append(
+          'export X509_VOMSES=${X509_VOMSES:-%s}' %
+          os.path.join(
+              proPath,
+              'etc',
+              'grid-security',
+              'vomses'))
       lines.extend(
           [
               '# Some DIRAC locations',
@@ -2488,7 +2508,6 @@ def createBashrcForDiracOS():
       lines.append('# export DIRAC_USE_JSON_ENCODE=no')
       lines.append('# export DIRAC_USE_M2CRYPTO=true')
       lines.append('# export DIRAC_USE_NEWTHREADPOOL=yes')
-      lines.append('# export DIRAC_VOMSES=$DIRAC/etc/grid-security/vomses')
 
       # Add the lines required for further env variables requested
       if cliParams.userEnvVariables:

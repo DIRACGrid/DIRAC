@@ -184,7 +184,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       serviceName = relativeUrl[1:]
 
       cls._startTime = datetime.utcnow()
-      sLog.info("First use of %s, initializing service..." % relativeUrl)
+      sLog.info("First use, initializing service...", "%s" % relativeUrl)
       cls._authManager = AuthManager("%s/Authorization" % PathFinder.getServiceSection(serviceName))
 
       cls._initMonitoring(serviceName, absoluteUrl)
@@ -353,7 +353,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     """
 
     sLog.notice(
-        "Incoming request %s /%s: %s" %
+        "Incoming request", "%s /%s: %s" %
         (self.srv_getFormattedRemoteCredentials(),
          self._serviceName,
          self.method))

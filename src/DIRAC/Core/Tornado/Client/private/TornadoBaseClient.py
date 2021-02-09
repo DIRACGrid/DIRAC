@@ -120,7 +120,6 @@ class TornadoBaseClient(object):
     self.setup = None
     self.vo = None
     self.serviceURL = None
-    self.__proxy_location = None
 
     for initFunc in (
             self.__discoverTimeout,
@@ -232,22 +231,7 @@ class TornadoBaseClient(object):
 
     # ==== REWRITED FROM HERE ====
 
-    # Getting proxy
-
-    proxy = Locations.getProxyLocation()
-    if not proxy:
-      gLogger.error("No proxy found")
-      return S_ERROR("No proxy found")
-    self.__proxy_location = proxy
-
     # For certs always check CA's. For clients skipServerIdentityCheck
-    if self.KW_SKIP_CA_CHECK not in self.kwargs or not self.kwargs[self.KW_SKIP_CA_CHECK]:
-      cafile = Locations.getCAsLocation()
-      if not cafile:
-        gLogger.error("No CAs found!")
-        return S_ERROR("No CAs found!")
-      else:
-        self.__ca_location = cafile
 
     return S_OK()
 
@@ -509,15 +493,25 @@ class TornadoBaseClient(object):
     url = url['Value']
 
     # Getting CA file (or skip verification)
-    verify = (not self.kwargs[self.KW_SKIP_CA_CHECK])
-    if verify and self.__ca_location:
+    verify = (not self.kwargs.get(self.KW_SKIP_CA_CHECK))
+    if verify:
+      cafile = Locations.getCAsLocation()
+      if not cafile:
+        gLogger.error("No CAs found!")
+        return S_ERROR("No CAs found!")
       verify = self.__ca_location
 
     # getting certificate
+    # Do we use the server certificate ?
     if self.kwargs[self.KW_USE_CERTIFICATES]:
       cert = Locations.getHostCertificateAndKeyLocation()
+    # CHRIS 04.02.21
+    # TODO: add proxyLocation check ?
     else:
-      cert = self.__proxy_location
+      cert = Locations.getProxyLocation()
+      if not cert:
+        gLogger.error("No proxy found")
+        return S_ERROR("No proxy found")
 
     # We have a try/except for all the exceptions
     # whose default behavior is to try again,

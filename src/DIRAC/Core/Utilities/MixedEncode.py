@@ -8,6 +8,8 @@ from __future__ import print_function
 import os
 from DIRAC.Core.Utilities import DEncode, JEncode
 
+__RCSID__ = "$Id$"
+
 
 def encode(inData):
   """ Encode the input data

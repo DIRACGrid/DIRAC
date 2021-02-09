@@ -238,10 +238,26 @@ class StorageElementItem(object):
       self.localWriteProtocolList = writeProto if writeProto else self.__dmsHelper.getWriteProtocols()
       self.log.debug("localWriteProtocolList %s" % self.localWriteProtocolList)
 
-    #                         'getTransportURL',
+      # For the staging protocols, we take in order:
+      # * the locally defined staging protocols list
+      # * the locally defined access protocols list
+      # * the globally defined staging protocols list
+      # * the globally defined access protocols list
+      # This ensures local over global preference as well
+      # as backward compatibility (when staging was part of read methods)
+
+      stageProto = self.options.get('StageProtocols')
+      globalStageProto = self.__dmsHelper.getStageProtocols()
+      self.localStageProtocolList = stageProto if stageProto \
+          else accessProto if accessProto \
+          else globalStageProto if globalStageProto \
+          else self.localAccessProtocolList
+      self.log.debug("localStageProtocolList %s" % self.localStageProtocolList)
+
+    self.stageMethods = ['prestageFile',
+                         'prestageFileStatus']
+
     self.readMethods = ['getFile',
-                        'prestageFile',
-                        'prestageFileStatus',
                         'getDirectory']
 
     self.writeMethods = ['retransferOnlineFile',
@@ -572,7 +588,9 @@ class StorageElementItem(object):
       return S_ERROR(errno.EACCES, "SE.isValid: Read, write and check access not permitted.")
 
     # The supplied operation can be 'Read','Write' or any of the possible StorageElement methods.
-    if (operation in self.readMethods) or (operation.lower() in ('read', 'readaccess')):
+    if (operation in self.readMethods) or \
+        (operation in self.stageMethods) or \
+            (operation.lower() in ('read', 'readaccess')):
       operation = 'ReadAccess'
     elif operation in self.writeMethods or (operation.lower() in ('write', 'writeaccess')):
       operation = 'WriteAccess'
@@ -693,7 +711,11 @@ class StorageElementItem(object):
         :param sourceSE: storageElement instance of the sourceSE
         :param protocols: ordered protocol restriction list
 
-        :return: dictionnary Successful/Failed with pair (src, dest) urls
+        :return: dictionary with keys:
+
+          * Successful: lfn indexed pair (src, dest) urls
+          * Failed: lfn indexed with error
+          * Protocols: tuple (srcProto, destProto)
     """
     log = self.log.getSubLogger('generateTransferURLsBetweenSEs')
 
@@ -799,7 +821,9 @@ class StorageElementItem(object):
 
         successful[lfn] = (srcURL, destURL)
 
-      return S_OK({'Successful': successful, 'Failed': failed})
+      nativeSrcProtocol = srcPlugin.getParameters()['Protocol']
+      nativeDestProtocol = destPlugin.getParameters()['Protocol']
+      return S_OK({'Successful': successful, 'Failed': failed, 'Protocols': (nativeSrcProtocol, nativeDestProtocol)})
 
     return S_ERROR(errno.ENOPROTOOPT, "Could not find a protocol ")
 
@@ -1045,6 +1069,8 @@ class StorageElementItem(object):
 
     if methodName in self.readMethods + self.checkMethods:
       allowedProtocols = self.localAccessProtocolList
+    elif methodName in self.stageMethods:
+      allowedProtocols = self.localStageProtocolList
     elif methodName in self.removeMethods + self.writeMethods:
       allowedProtocols = self.localWriteProtocolList
     else:
@@ -1311,7 +1337,7 @@ class StorageElementItem(object):
 
     """
 
-    if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods):
+    if self.methodName not in (self.readMethods + self.writeMethods + self.removeMethods + self.stageMethods):
       return
 
     baseAccountingDict = {}
