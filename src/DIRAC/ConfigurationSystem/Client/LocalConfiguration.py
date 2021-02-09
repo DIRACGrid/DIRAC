@@ -533,7 +533,7 @@ class LocalConfiguration(object):
       gLogger.notice(self.__usageMessage)
     else:
       gLogger.notice("\nUsage:")
-      gLogger.notice("\n  %s (<options>|<cfgFile>)*" % os.path.basename(sys.argv[0]))
+      gLogger.notice("\n  %s [<options>|<cfgFile>] ..." % os.path.basename(sys.argv[0]))
       if dummy:
         gLogger.notice(dummy)
 
