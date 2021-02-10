@@ -2,18 +2,19 @@
 """
 Create a new DB in the MySQL server
 
-Usage::
+Usage:
+  dirac-install-db [options] ... DB ...
 
-  dirac-install-db [option|cfgFile] ... DB ...
-
-Arguments::
-
+Arguments:
   DB: Name of the Database (mandatory)
 """
 # Script initialization and parseCommandLine
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
+__RCSID__ = "$Id$"
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
@@ -30,8 +31,6 @@ def main():
   from DIRAC import gConfig
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-
-  __RCSID__ = "$Id$"
 
   gComponentInstaller.exitOnError = True
   gComponentInstaller.getMySQLPasswords()

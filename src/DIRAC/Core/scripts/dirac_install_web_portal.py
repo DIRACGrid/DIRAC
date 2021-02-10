@@ -5,10 +5,6 @@
 ########################################################################
 """
 Do the initial installation of a DIRAC Web portal
-
-Usage::
-
-  dirac-install-web-portal [option|cfgfile] ...
 """
 from __future__ import absolute_import
 from __future__ import division

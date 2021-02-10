@@ -1,15 +1,12 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-proxy-init.py
+# File :    dirac_proxy_get_uploaded_info.py
 # Author :  Adrian Casajus
 ########################################################################
 """
-Usage::
+Print information about uploaded proxies.
 
-  dirac-proxy-get-uploaded-info.py (<options>|<cfgFile>)*
-
-Example::
-
+Example:
   $ dirac-proxy-get-uploaded-info
   Checking for DNs /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
   --------------------------------------------------------------------------------------------------------
@@ -22,6 +19,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
+__RCSID__ = "$Id$"
+
 import sys
 
 from DIRAC import gLogger, S_OK
@@ -31,8 +30,6 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-__RCSID__ = "$Id:"
 
 userName = False
 

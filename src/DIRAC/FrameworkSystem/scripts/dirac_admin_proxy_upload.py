@@ -4,29 +4,27 @@
 # Author :  Adrian Casajus
 ########################################################################
 """
-Usage:
+Upload proxy.
 
-  dirac-admin-proxy-upload.py (<options>|<cfgFile>)*
-
-Example::
-
+Example:
   $ dirac-admin-proxy-upload
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
+__RCSID__ = "$Id$"
+
 import sys
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
-__RCSID__ = "$Id$"
-Script.setUsageMessage(__doc__)
-
 
 @DIRACScript()
 def main():
+  Script.setUsageMessage(__doc__)
   cliParams = CLIParams()
   cliParams.registerCLISwitches()
 

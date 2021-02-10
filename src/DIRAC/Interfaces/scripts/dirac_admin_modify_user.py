@@ -8,7 +8,7 @@ Modify a user in the CS.
 
 Usage::
 
-  dirac-admin-modify-user [option|cfgfile] ... user DN group [group] ...
+  dirac-admin-modify-user [options] ... user DN group [group] ...
 
 Arguments::
 

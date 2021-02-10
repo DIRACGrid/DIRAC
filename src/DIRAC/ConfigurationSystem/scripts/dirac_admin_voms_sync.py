@@ -5,10 +5,6 @@
 ########################################################################
 """
 Synchronize VOMS user data with the DIRAC Registry
-
-Usage::
-
-  dirac-admin-voms-sync [option|cfgfile] ...
 """
 from __future__ import absolute_import
 from __future__ import division

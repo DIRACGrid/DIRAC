@@ -90,7 +90,7 @@ class LocalConfiguration(object):
     """
     Define message to be display by the showHelp method
     """
-    r = r"(.*?)(?:(?:Usage|Example|Arguments|Options):+\n|$)"
+    r = r"(.*?)(?:\n(?:Usage|Example|Arguments|Options):+\n|$)"
     if usageMsg:
       desc = re.search(r, usageMsg, re.DOTALL)
       if desc:
@@ -534,7 +534,7 @@ class LocalConfiguration(object):
       gLogger.notice(self.__usageMessage)
     else:
       gLogger.notice("\nUsage:")
-      gLogger.notice("\n  %s [<options>|<cfgFile>] ..." % os.path.basename(sys.argv[0]))
+      gLogger.notice("\n  %s [options] ..." % os.path.basename(sys.argv[0]))
       if dummy:
         gLogger.notice(dummy)
 

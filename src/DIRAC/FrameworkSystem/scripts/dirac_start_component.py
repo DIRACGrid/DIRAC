@@ -2,12 +2,10 @@
 """
 Start DIRAC component using runsvctrl utility
 
-Usage::
+Usage:
+  dirac-start-component [options] ... [system [service|agent]]
 
-  dirac-start-component [option|cfgfile] ... [system [service|agent]]
-
-Arguments::
-
+Arguments:
   system:        Name of the system for the component (default *: all)
   service|agent: Name of the particular component (default *: all)
 """

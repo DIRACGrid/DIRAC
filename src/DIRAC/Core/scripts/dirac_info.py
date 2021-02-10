@@ -6,12 +6,7 @@
 """
 Report info about local DIRAC installation
 
-Usage::
-
-  dirac-info [option|cfgfile] ... Site
-
-Example::
-
+Example:
   $ dirac-info
          DIRAC version : v5r12
                  Setup : Dirac-Production

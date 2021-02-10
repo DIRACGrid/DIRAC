@@ -8,7 +8,7 @@ Reset a job or list of jobs in the WMS
 
 Usage::
 
-  dirac-admin-reset-job [option|cfgfile] ... JobID ...
+  dirac-admin-reset-job [options] ... JobID ...
 
 Arguments::
 

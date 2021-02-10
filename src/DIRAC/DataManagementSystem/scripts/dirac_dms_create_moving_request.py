@@ -6,10 +6,6 @@ List of operations:
 #. ReplicateAndRegister LFNs
 #. Check for Migration
 #. Remove all other replicas for these files
-
-Usage::
-
-  dirac-dms-create-moving-request [option|cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division

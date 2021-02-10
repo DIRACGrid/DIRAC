@@ -8,7 +8,7 @@ Print the service ports for the specified setup
 
 Usage::
 
-  dirac-admin-service-ports [option|cfgfile] ... [Setup]
+  dirac-admin-service-ports [options] ... [Setup]
 
 Arguments::
 

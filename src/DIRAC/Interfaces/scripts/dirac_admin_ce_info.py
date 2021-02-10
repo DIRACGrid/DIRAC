@@ -8,7 +8,7 @@ Retrieve Site Associated to a given CE
 
 Usage::
 
-  dirac-admin-ce-info [option|cfgfile] ... CE ...
+  dirac-admin-ce-info [options] ... CE ...
 
 Arguments::
 

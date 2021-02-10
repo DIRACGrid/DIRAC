@@ -6,24 +6,22 @@
 """
 Retrieve a delegated proxy for the given user and group
 
-Usage::
+Usage:
+  dirac-admin-get-proxy [options] ... <DN|user> group
 
-  dirac-admin-get-proxy [option|cfgfile] ... <DN|user> group
-
-Arguments::
-
+Arguments:
   DN:       DN of the user
   user:     DIRAC user name (will fail if there is more than 1 DN registered)
   group:    DIRAC group name
 
-Example::
-
+Example:
   $ dirac-admin-get-proxy vhamar dirac_user
   Proxy downloaded to /afs/in2p3.fr/home/h/hamar/proxy.vhamar.dirac_user
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import os
 import DIRAC
 

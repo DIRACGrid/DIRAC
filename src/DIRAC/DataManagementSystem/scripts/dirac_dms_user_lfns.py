@@ -2,12 +2,7 @@
 """
 Get the list of all the user files.
 
-Usage::
-
-  dirac-dms-user-lfns [option|cfgfile] ...
-
-Example::
-
+Example:
   $ dirac-dms-user-lfns
   /formation/user/v/vhamar: 14 files, 6 sub-directories
   /formation/user/v/vhamar/newDir2: 0 files, 0 sub-directories

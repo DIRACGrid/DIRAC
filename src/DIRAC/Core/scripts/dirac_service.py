@@ -8,7 +8,7 @@ This is a script to launch DIRAC services. Mostly internal.
 
 Usage::
 
-  dirac-service (<options>|<cfgFile>)*
+  dirac-service [options] ...
 """
 from __future__ import absolute_import
 from __future__ import division

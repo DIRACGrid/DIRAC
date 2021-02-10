@@ -8,7 +8,7 @@ Retrieve output of a Grid pilot
 
 Usage::
 
-  dirac-admin-get-pilot-output [option|cfgfile] ... PilotID ...
+  dirac-admin-get-pilot-output [options] ... PilotID ...
 
 Arguments::
 

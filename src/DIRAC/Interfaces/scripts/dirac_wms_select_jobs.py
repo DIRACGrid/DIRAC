@@ -8,7 +8,7 @@ Select DIRAC jobs matching the given conditions
 
 Usage::
 
-  dirac-wms-job-status [option|cfgfile] ... JobID ...
+  dirac-wms-job-status [options] ... JobID ...
 
 Arguments::
 

@@ -11,7 +11,7 @@ the matching but now this is no more the case.
 
 Usage::
 
-  dirac-wms-get-normalized-queue-length [option|cfgfile] ... Queue ...
+  dirac-wms-get-normalized-queue-length [options] ... Queue ...
 
 Arguments::
 

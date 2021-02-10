@@ -5,15 +5,11 @@
 ########################################################################
 """
 This is a script to launch DIRAC executors
-
-Usage::
-
-  dirac-executor (<options>|<cfgFile>)*
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import sys

@@ -2,17 +2,14 @@
 """
 Status of DIRAC components using runsvstat utility
 
-Usage::
+Usage:
+  dirac-status-component [options] ... [system [service|agent]]
 
-  dirac-status-component [option|cfgfile] ... [system [service|agent]]
-
-Arguments::
-
+Arguments:
   system:        Name of the system for the component (default *: all)
   service|agent: Name of the particular component (default *: all)
 
-Example::
-
+Example:
   $ dirac-status-component
   DIRAC Root Path = /vo/dirac/versions/Lyon-HEAD-1296215324
                                            Name : Runit    Uptime    PID

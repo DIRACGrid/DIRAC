@@ -2,18 +2,17 @@
 """
 Stop DIRAC component using runsvctrl utility
 
-Usage::
+Usage:
+  dirac-stop-component [options] ... [system [service|agent]]
 
-  dirac-stop-component [option|cfgfile] ... [system [service|agent]]
-
-Arguments::
-
+Arguments:
   system:        Name of the system for the component (default *: all)
   service|agent: Name of the particular component (default *: all)
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 

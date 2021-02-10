@@ -8,7 +8,7 @@ Retrieve output sandbox for a DIRAC job
 
 Usage::
 
-  dirac-wms-job-get-output [option|cfgfile] ... JobID ...
+  dirac-wms-job-get-output [options] ... JobID ...
 
 Arguments::
 

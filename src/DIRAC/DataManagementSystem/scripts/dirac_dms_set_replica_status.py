@@ -2,12 +2,10 @@
 """
 Set the status of the replicas of given files at the provided SE
 
-Usage::
+Usage:
+  dirac-dms-set-replica-status [options] ... <LFN|File> SE Status
 
-  dirac-dms-set-replica-status [option|cfgfile] ... <LFN|File> SE Status
-
-Arguments::
-
+Arguments:
   LFN:      LFN
   File:     File name containing a list of affected LFNs
   SE:       Name of Storage Element
@@ -16,6 +14,7 @@ Arguments::
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script

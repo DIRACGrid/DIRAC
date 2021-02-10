@@ -8,7 +8,7 @@ Retrieve input sandbox for DIRAC Job
 
 Usage::
 
-  dirac-wms-job-get-input [option|cfgfile] ... JobID ...
+  dirac-wms-job-get-input [options] ... JobID ...
 
 Arguments::
 

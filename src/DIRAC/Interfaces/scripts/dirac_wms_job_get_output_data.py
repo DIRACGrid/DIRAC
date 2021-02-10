@@ -8,7 +8,7 @@ Retrieve the output data files of a DIRAC job
 
 Usage::
 
-  dirac-wms-job-get-output-data [option|cfgfile] ... JobID ...
+  dirac-wms-job-get-output-data [options] ... JobID ...
 
 Arguments::
 

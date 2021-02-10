@@ -8,7 +8,7 @@ Submit jobs to DIRAC WMS
 
 Usage::
 
-  dirac-wms-job-submit [option|cfgfile] ... JDL ...
+  dirac-wms-job-submit [options] ... JDL ...
 
 Arguments::
 

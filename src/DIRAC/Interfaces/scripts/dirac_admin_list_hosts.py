@@ -6,7 +6,7 @@
 """
 Usage::
 
-  dirac-admin-list-hosts (<options>|<cfgFile>)*
+  dirac-admin-list-hosts [options] ...
 
 Example::
 

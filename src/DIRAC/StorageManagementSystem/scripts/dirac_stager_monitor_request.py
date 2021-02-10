@@ -8,7 +8,7 @@ Report the summary of the stage task from the DB.
 
 Usage::
 
-  dirac-stager-monitor-request [option|cfgfile] ... Request ...
+  dirac-stager-monitor-request [options] ... Request ...
 
 Arguments::
 

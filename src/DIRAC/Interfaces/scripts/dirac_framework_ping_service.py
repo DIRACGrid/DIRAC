@@ -8,7 +8,7 @@ Ping the given DIRAC Service
 
 Usage::
 
-  dirac-framework-ping-service [option|cfgfile] ... System Service|System/Agent
+  dirac-framework-ping-service [options] ... System Service|System/Agent
 
 Arguments::
 

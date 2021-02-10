@@ -2,12 +2,10 @@
 """
 Uninstallation of a DIRAC component
 
-Usage::
+Usage:
+  dirac-uninstall-component [options] ... System Component|System/Component
 
-  dirac-uninstall-component [option|cfgfile] ... System Component|System/Component
-
-Arguments::
-
+Arguments:
   System:  Name of the DIRAC system (ie: WorkloadManagement)
   Component: Name of the DIRAC component (ie: Matcher)
 """

@@ -8,7 +8,7 @@ Retrieve parameters associated to the given DIRAC job
 
 Usage::
 
-  dirac-wms-job-parameters [option|cfgfile] ... JobID ...
+  dirac-wms-job-parameters [options] ... JobID ...
 
 Arguments::
 

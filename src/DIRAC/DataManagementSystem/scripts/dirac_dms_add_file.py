@@ -6,12 +6,10 @@
 """
 Upload a file to the grid storage and register it in the File Catalog
 
-Usage::
+Usage:
+  dirac-dms-add-file [options] ... LFN Path SE [GUID]
 
-  dirac-dms-add-file [option|cfgfile] ... LFN Path SE [GUID]
-
-Arguments::
-
+Arguments:
   LFN:      Logical File Name
   Path:     Local path to the file
   SE:       DIRAC Storage Element
@@ -19,19 +17,16 @@ Arguments::
 
 **OR**
 
-Usage::
+Usage:
+  dirac-dms-add-file [options] ... LocalFile ...
 
-  dirac-dms-add-file [option|cfgfile] ... LocalFile
-
-Arguments::
-
+Arguments:
   LocalFile: Path to local file containing all the above, i.e.::
 
   lfn1 localfile1 SE [GUID1]
   lfn2 localfile2 SE [GUID2]
 
-Example::
-
+Example:
   $ dirac-dms-add-file LFN:/formation/user/v/vhamar/Example.txt Example.txt DIRAC-USER
   {'Failed': {},
    'Successful': {'/formationes/user/v/vhamar/Example.txt': {'put': 0.70791220664978027,

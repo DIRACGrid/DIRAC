@@ -30,10 +30,6 @@ Default values for any of the command line options can also be set in the CS
 * Operations/DataManagement/ArchiveFiles/SourceSE
 * Operations/DataManagement/ArchiveFiles/MaxFiles
 * ...
-
-Usage::
-
-  dirac-dms-create-archive-request [option|cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division

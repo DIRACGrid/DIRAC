@@ -4,7 +4,7 @@ Show ReqDB summary
 
 Usage::
 
-  dirac-rms-reqdb-summary [option|cfgfile]
+  dirac-rms-reqdb-summary [options]
 """
 from __future__ import absolute_import
 from __future__ import division

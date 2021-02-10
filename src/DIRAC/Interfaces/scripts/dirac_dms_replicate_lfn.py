@@ -8,7 +8,7 @@ Replicate an existing LFN to another Storage Element
 
 Usage::
 
-  dirac-dms-replicate-lfn [option|cfgfile] ... LFN Dest [Source [Cache]]
+  dirac-dms-replicate-lfn [options] ... LFN Dest [Source [Cache]]
 
 Arguments::
 

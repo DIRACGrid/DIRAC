@@ -4,12 +4,9 @@
 # Author :  Adrian Casajus
 ########################################################################
 """
-Usage::
+Print information about the current proxy.
 
-  dirac-proxy-info (<options>|<cfgFile>)*
-
-Example::
-
+Example:
   $ dirac-proxy-info
   subject      : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar/CN=proxy/CN=proxy
   issuer       : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar/CN=proxy
@@ -25,12 +22,12 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
+__RCSID__ = "$Id$"
+
 import sys
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.ReturnValues import S_OK
-
-__RCSID__ = "$Id$"
 
 
 class Params(object):

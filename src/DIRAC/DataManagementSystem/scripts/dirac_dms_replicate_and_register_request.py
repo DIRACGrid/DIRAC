@@ -4,7 +4,7 @@ Create and put 'ReplicateAndRegister' request.
 
 Usage::
 
-  dirac-dms-replicate-and-register-request [option|cfgfile] requestName LFNs targetSE1 [targetSE2 ...]
+  dirac-dms-replicate-and-register-request [options] requestName LFNs targetSE1 [targetSE2 ...]
 
 Arguments::
 

@@ -8,7 +8,7 @@ Retrieve an access URL for an LFN replica given a valid DIRAC SE.
 
 Usage::
 
-  dirac-dms-lfn-accessURL [option|cfgfile] ... LFN SE [PROTO]
+  dirac-dms-lfn-accessURL [options] ... LFN SE [PROTO]
 
 Arguments::
 

@@ -4,7 +4,7 @@ Monitor the jobs present in the repository
 
 Usage::
 
-  dirac-repo-monitor [option|cfgfile] ... RepoDir
+  dirac-repo-monitor [options] ... RepoDir
 
 Arguments::
 

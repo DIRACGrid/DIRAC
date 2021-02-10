@@ -8,7 +8,7 @@ Peek StdOut of the given DIRAC job
 
 Usage::
 
-  dirac-wms-job-delete [option|cfgfile] ... JobID ...
+  dirac-wms-job-delete [options] ... JobID ...
 
 Arguments::
 

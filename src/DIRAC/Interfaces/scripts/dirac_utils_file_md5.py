@@ -8,7 +8,7 @@ Calculate md5 of the supplied file
 
 Usage::
 
-  dirac-utils-file-md5 [option|cfgfile] ... File ...
+  dirac-utils-file-md5 [options] ... File ...
 
 Arguments::
 

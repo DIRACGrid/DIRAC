@@ -37,14 +37,11 @@ You can have the following combinations::
   DIRAC-PROD>dirac-dms-protocol-matrix --FromSE=IN2P3-User --Bidirection
   Using sources: IN2P3-User
   Using target: IN2P3-User
-
-Usage::
-
-  dirac-dms-protocol-matrix [option|cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import csv
 from collections import defaultdict
 

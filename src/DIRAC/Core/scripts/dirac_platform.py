@@ -14,7 +14,7 @@ On a RHEL 6 node, for example, the determined dirac platform is "Linux_x86_64_gl
 
 Usage::
 
-  dirac-platform [option|cfgfile]
+  dirac-platform [options]
 
 Example::
 

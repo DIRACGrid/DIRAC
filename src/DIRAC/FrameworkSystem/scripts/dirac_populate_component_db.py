@@ -4,10 +4,6 @@
 Populates the database with the current installations of components
 This script assumes that the InstalledComponentsDB, the
 ComponentMonitoring service and the Notification service are installed and running
-
-Usage::
-
-  dirac-populate-component-db [option|cfgfile] ... [debug]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -52,9 +48,7 @@ def main():
       setExcludedHosts)
 
   Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=False)
-  args = Script.getPositionalArgs()
 
   componentType = ''
 

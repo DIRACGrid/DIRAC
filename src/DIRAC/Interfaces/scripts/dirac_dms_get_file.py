@@ -8,7 +8,7 @@ Retrieve a single file or list of files from Grid storage to the current directo
 
 Usage::
 
-  dirac-dms-get-file [option|cfgfile] ... LFN ...
+  dirac-dms-get-file [options] ... LFN ...
 
 Arguments::
 

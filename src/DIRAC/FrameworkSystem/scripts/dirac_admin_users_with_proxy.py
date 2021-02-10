@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 """
-Usage::
+Print list of users with proxies.
 
-  dirac-admin-users-with-proxy.py (<options>|<cfgFile>)*
-
-Example::
-
+Example:
   $ dirac-admin-users-with-proxy
   * vhamar
   DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar

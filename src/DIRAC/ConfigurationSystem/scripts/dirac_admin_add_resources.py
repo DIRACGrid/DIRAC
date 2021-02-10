@@ -5,10 +5,6 @@
 ########################################################################
 """
 Add resources from the BDII database for a given VO
-
-Usage::
-
-  dirac-admin-add-resources [option|cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division

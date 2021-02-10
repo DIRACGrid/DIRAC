@@ -4,7 +4,7 @@ Script to call the DataRecoveryAgent functionality by hand.
 
 Usage::
 
-  dirac-transformation-recover-data [option|cfgfile] ...
+  dirac-transformation-recover-data [options] ...
 """
 from __future__ import absolute_import
 from __future__ import division

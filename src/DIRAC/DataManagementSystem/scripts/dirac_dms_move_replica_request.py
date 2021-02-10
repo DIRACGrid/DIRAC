@@ -2,12 +2,10 @@
 """
 Create a DIRAC MoveReplica request to be executed by the RMS
 
-Usage::
+Usage:
+  dirac-dms-move-replica-request [options] ... sourceSE LFN targetSE1 [targetSE2...]
 
-  dirac-dms-move-replica-request [option|cfgfile] ... sourceSE LFN targetSE1 [targetSE2...]
-
-Arguments::
-
+Arguments:
   sourceSE:   source SE
   targetSE:   target SE
   LFN:        LFN or file containing a List of LFNs
@@ -19,8 +17,9 @@ from __future__ import print_function
 __RCSID__ = "$Id $"
 
 import os
-from hashlib import md5
 import time
+from hashlib import md5
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 

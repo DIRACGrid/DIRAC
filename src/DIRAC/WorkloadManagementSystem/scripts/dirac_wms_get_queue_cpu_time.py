@@ -9,7 +9,7 @@ This script is used by the dirac-pilot script to set the CPUTime left, which is 
 
 Usage::
 
-  dirac-wms-get-queue-cpu-time [option|cfgfile]
+  dirac-wms-get-queue-cpu-time [options]
 """
 from __future__ import print_function
 from __future__ import absolute_import

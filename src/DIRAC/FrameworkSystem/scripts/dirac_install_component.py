@@ -2,12 +2,10 @@
 """
 Do the initial installation and configuration of a DIRAC component
 
-Usage::
+Usage:
+  dirac-install-component [options] ... System Component|System/Component
 
-  dirac-install-component [option|cfgfile] ... System Component|System/Component
-
-Arguments::
-
+Arguments:
   System:  Name of the DIRAC system (ie: WorkloadManagement)
   Service: Name of the DIRAC component (ie: Matcher)
 """

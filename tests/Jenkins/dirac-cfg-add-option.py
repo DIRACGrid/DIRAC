@@ -13,7 +13,7 @@ Script.setUsageMessage(
         [
             __doc__.split('\n')[1],
             'Usage:',
-            '  %s [option|cfgfile] ... ComponentType System Component|System/Component' %
+            '  %s [options] ... ComponentType System Component|System/Component' %
             Script.scriptName,
             'Arguments:',
             '  ComponentType:  Name of the ComponentType (ie: agent)',

@@ -8,7 +8,7 @@ Reschedule the given DIRAC job
 
 Usage::
 
-  dirac-wms-job-reschedule [option|cfgfile] ... JobID ...
+  dirac-wms-job-reschedule [options] ... JobID ...
 
 Arguments::
 

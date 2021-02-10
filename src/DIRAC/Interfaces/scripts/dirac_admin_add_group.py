@@ -4,7 +4,7 @@ Add or Modify a Group info in DIRAC
 
 Usage::
 
-  dirac-admin-add-group [option|cfgfile] ... Property=<Value> ...
+  dirac-admin-add-group [options] ... Property=<Value> ...
 
 Arguments::
 
@@ -17,6 +17,7 @@ Example::
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position

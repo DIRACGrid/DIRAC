@@ -8,7 +8,7 @@ Sync users in Configuration with the cfg contents.
 
 Usage::
 
-  dirac-admin-sync-users-from-file [option|cfgfile] ... UserCfg
+  dirac-admin-sync-users-from-file [options] ... UserCfg
 
 Arguments::
 

@@ -9,7 +9,7 @@ from DIRAC.Core.Base import Script
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s [option|cfgFile] ... DB ...' % Script.scriptName,
+                                  '  %s [options] ... DB ...' % Script.scriptName,
                                   'Arguments:',
                                   '  setup: Name of the build setup (mandatory)']))
 

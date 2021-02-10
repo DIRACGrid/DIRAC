@@ -8,7 +8,7 @@ Retrieve available info about the given pilot
 
 Usage::
 
-  dirac-admin-get-pilot-info [option|cfgfile] ... PilotID ...
+  dirac-admin-get-pilot-info [options] ... PilotID ...
 
 Arguments::
 

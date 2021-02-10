@@ -8,7 +8,7 @@ Retrieves site mask logging information.
 
 Usage::
 
-  dirac-admin-site-mask-logging [option|cfgfile] ... Site ...
+  dirac-admin-site-mask-logging [options] ... Site ...
 
 Arguments::
 

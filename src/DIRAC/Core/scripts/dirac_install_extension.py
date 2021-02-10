@@ -6,7 +6,7 @@ No new version directory is created. The command is based on the main DIRAC inst
 
 Usage::
 
-  dirac-install-extension [<options>|<cfgFile>] ...
+  dirac-install-extension [options] ...
 
 """
 

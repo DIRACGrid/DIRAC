@@ -8,7 +8,7 @@ Delete DIRAC job from WMS, if running it will be killed
 
 Usage::
 
-  dirac-wms-job-delete [option|cfgfile] ... JobID ...
+  dirac-wms-job-delete [options] ... JobID ...
 
 Arguments::
 

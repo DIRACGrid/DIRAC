@@ -12,7 +12,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s [option|cfgFile] ' % Script.scriptName]))
+                                  '  %s [options] ' % Script.scriptName]))
 
 Script.parseCommandLine()
 args = Script.getPositionalArgs()

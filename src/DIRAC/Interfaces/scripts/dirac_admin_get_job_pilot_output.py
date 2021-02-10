@@ -8,7 +8,7 @@ Retrieve the output of the pilot that executed a given job
 
 Usage::
 
-  dirac-admin-get-job-pilot-output [option|cfgfile] ... JobID ...
+  dirac-admin-get-job-pilot-output [options] ... JobID ...
 
 Arguments::
 

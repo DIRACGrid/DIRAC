@@ -2,12 +2,10 @@
 """
 Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
 
-Usage::
+Usage:
+  dirac-dms-create-removal-request [options] ... SE LFN ...
 
-  dirac-dms-create-removal-request [option|cfgfile] ... SE LFN ...
-
-Arguments::
-
+Arguments:
   SE:       StorageElement|All
   LFN:      LFN or file containing a List of LFNs
 """

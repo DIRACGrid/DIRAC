@@ -8,7 +8,7 @@ Retrieve an access URL for a PFN given a valid DIRAC SE
 
 Usage::
 
-  dirac-dms-pfn-accessURL [option|cfgfile] ... PFN SE
+  dirac-dms-pfn-accessURL [options] ... PFN SE
 
 Arguments::
 

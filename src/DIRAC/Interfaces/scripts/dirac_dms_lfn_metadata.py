@@ -8,7 +8,7 @@ Obtain replica metadata from file catalogue client.
 
 Usage::
 
-  dirac-dms-lfn-metadata [option|cfgfile] ... LFN ...
+  dirac-dms-lfn-metadata [options] ... LFN ...
 
 Arguments::
 

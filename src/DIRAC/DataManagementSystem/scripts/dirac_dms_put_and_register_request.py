@@ -5,12 +5,10 @@ Create and put 'PutAndRegister' request with a single local file
   warning: make sure the file you want to put is accessible from DIRAC production hosts,
            i.e. put file on network fs (AFS or NFS), otherwise operation will fail!!!
 
-Usage::
+Usage:
+  dirac-dms-put-and-register-request [options] requestName LFN localFile targetSE
 
-  dirac-dms-put-and-register-request [option|cfgfile] requestName LFN localFile targetSE
-
-Arguments::
-
+Arguments:
   requestName:  a request name
   LFN:          logical file name
   localFile:    local file you want to put
@@ -19,7 +17,8 @@ Arguments::
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-__RCSID__ = "$Id: $"
+
+__RCSID__ = "$Id$"
 
 import os
 

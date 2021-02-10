@@ -7,7 +7,7 @@ Calculate alder32 of the supplied file
 
 Usage::
 
-  dirac-utils-file-adler [option|cfgfile] ... File ...
+  dirac-utils-file-adler [options] ... File ...
 
 Arguments::
 

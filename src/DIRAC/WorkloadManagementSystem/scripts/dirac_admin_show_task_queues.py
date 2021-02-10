@@ -8,7 +8,7 @@ Show details of currently active Task Queues
 
 Usage:
 
-  dirac-admin-show-task-queues [option|cfgfile]
+  dirac-admin-show-task-queues [options]
 
 Example:
 

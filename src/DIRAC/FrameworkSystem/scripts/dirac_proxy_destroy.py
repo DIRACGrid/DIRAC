@@ -2,18 +2,14 @@
 """
 Command line tool to remove local and remote proxies
 
-Usage::
-
-  dirac-proxy-destroy.py (<options>|<cfgFile>)*
-
-Example::
-
+Example:
   $ dirac-proxy-destroy -a
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
 
 import os
 
@@ -26,8 +22,6 @@ from DIRAC.Core.Security import Locations, ProxyInfo
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-__RCSID__ = "$Id$"
 
 
 class Params(object):

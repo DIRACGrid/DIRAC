@@ -8,7 +8,7 @@ Retrieve the current JDL of a DIRAC job
 
 Usage::
 
-  dirac-wms-job-get-jdl [option|cfgfile] ... JobID ...
+  dirac-wms-job-get-jdl [options] ... JobID ...
 
 Arguments::
 

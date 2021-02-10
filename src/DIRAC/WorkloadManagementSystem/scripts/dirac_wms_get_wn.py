@@ -8,7 +8,7 @@ Get WNs for a selection of jobs
 
 Usage::
 
-  dirac-wms-get-wn [option|cfgfile] ... LFN|File
+  dirac-wms-get-wn [options] ... LFN|File
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -44,7 +44,7 @@ def main():
   Script.registerSwitch('', 'Full', '   Printout full list of job (default: False except if --WorkerNode)')
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                     'Usage:',
-                                    '  %s [option|cfgfile] ... LFN|File' % Script.scriptName]))
+                                    '  %s [options] ... LFN|File' % Script.scriptName]))
   Script.parseCommandLine()
   from DIRAC import gLogger
   from DIRAC.Interfaces.API.Dirac import Dirac

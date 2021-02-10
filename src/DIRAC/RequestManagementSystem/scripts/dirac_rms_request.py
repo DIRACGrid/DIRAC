@@ -4,7 +4,7 @@ Show request given its ID, a jobID or a transformation and a task
 
 Usage::
 
-  dirac-rms-request [option|cfgfile] [request[,request1,...]|<file>
+  dirac-rms-request [options] [request[,request1,...]|<file>
 
 Arguments::
 

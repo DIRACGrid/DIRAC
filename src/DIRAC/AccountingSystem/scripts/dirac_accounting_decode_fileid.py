@@ -6,12 +6,10 @@
 """
 Decode Accounting plot URLs
 
-Usage::
+Usage:
+  dirac-accounting-decode-fileid [options] ... URL ...
 
-  dirac-accounting-decode-fileid [option|cfgfile] ... URL ...
-
-Arguments::
-
+Arguments:
   URL: encoded URL of a DIRAC Accounting plot
 """
 from __future__ import absolute_import

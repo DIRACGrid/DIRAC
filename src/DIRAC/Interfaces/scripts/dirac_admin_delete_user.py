@@ -8,7 +8,7 @@ Remove User from Configuration
 
 Usage::
 
-  dirac-admin-delete-user [option|cfgfile] ... User ...
+  dirac-admin-delete-user [options] ... User ...
 
 Arguments::
 

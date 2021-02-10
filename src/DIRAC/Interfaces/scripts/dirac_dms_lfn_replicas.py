@@ -8,7 +8,7 @@ Obtain replica information from file catalogue client.
 
 Usage::
 
-  dirac-admin-lfn-replicas [option|cfgfile] ... LFN ...
+  dirac-admin-lfn-replicas [options] ... LFN ...
 
 Arguments::
 

@@ -8,7 +8,7 @@ Retrieve history of transitions for a DIRAC job
 
 Usage::
 
-  dirac-wms-job-logging-info [option|cfgfile] ... JobID ...
+  dirac-wms-job-logging-info [options] ... JobID ...
 
 Arguments::
 

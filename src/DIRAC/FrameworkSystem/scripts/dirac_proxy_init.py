@@ -4,12 +4,9 @@
 # Author :  Adrian Casajus
 ########################################################################
 """
-Usage:
-
-  dirac-proxy-init.py (<options>|<cfgFile>)*
+Creating a proxy.
 
 Example:
-
   $ dirac-proxy-init -g dirac_user -t --rfc
   Enter Certificate password:
 """

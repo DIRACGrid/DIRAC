@@ -8,7 +8,7 @@ Retrieve info about jobs run by the given pilot
 
 Usage::
 
-  dirac-wms-pilot-job-info [option|cfgfile] ... PilotID ...
+  dirac-wms-pilot-job-info [options] ... PilotID ...
 
 Arguments::
 

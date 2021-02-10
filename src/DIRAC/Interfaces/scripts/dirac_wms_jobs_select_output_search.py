@@ -8,7 +8,7 @@ Retrieve output sandbox for DIRAC Jobs for the given selection and search for a 
 
 Usage::
 
-  dirac-wms-jobs-select-output-search [option|cfgfile] ... String ...
+  dirac-wms-jobs-select-output-search [options] ... String ...
 
 Arguments::
 

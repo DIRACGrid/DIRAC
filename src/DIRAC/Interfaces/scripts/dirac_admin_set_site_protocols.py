@@ -8,7 +8,7 @@ Defined protocols for each SE for a given site.
 
 Usage::
 
-  dirac-admin-set-site-protocols [option|cfgfile] ... Protocol ...
+  dirac-admin-set-site-protocols [options] ... Protocol ...
 
 Arguments::
 

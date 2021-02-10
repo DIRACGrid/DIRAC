@@ -4,7 +4,7 @@ Add or Modify a User info in DIRAC
 
 Usage::
 
-  dirac-admin-add-user [option|cfgfile] ... Property=<Value> ...
+  dirac-admin-add-user [options] ... Property=<Value> ...
 
 Arguments::
 

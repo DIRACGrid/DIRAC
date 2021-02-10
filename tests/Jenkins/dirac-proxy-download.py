@@ -9,7 +9,7 @@ import os
 from DIRAC.Core.Base import Script
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s [option|cfgFile] UserName Role' % Script.scriptName,
+                                  '  %s [options] UserName Role' % Script.scriptName,
                                   'Arguments:',
                                   '  UserName: User DN']))
 Script.registerSwitch('R:', 'role=', "set the User DN.")

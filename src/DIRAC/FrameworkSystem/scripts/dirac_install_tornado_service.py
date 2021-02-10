@@ -2,12 +2,10 @@
 """
 Do the initial installation and configuration of a DIRAC service based on tornado
 
-Usage::
+Usage:
+  dirac-install-tornado-service [options] ... System Component|System/Component
 
-  dirac-install-tornado-service [option|cfgfile] ... System Component|System/Component
-
-Arguments::
-
+Arguments:
   System:  Name of the DIRAC system (ie: WorkloadManagement)
   Service: Name of the DIRAC component (ie: Matcher)
 """

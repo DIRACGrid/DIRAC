@@ -8,7 +8,7 @@ Remove Site from Active mask for current Setup
 
 Usage::
 
-  dirac-admin-ban-site [option|cfgfile] ... Site Comment
+  dirac-admin-ban-site [options] ... Site Comment
 
 Arguments::
 

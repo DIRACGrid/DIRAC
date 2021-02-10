@@ -1,6 +1,12 @@
 #!/usr/bin/env python
+"""
+Ping a list of services and show the result
 
-"""  Ping a list of services and show the result
+Usage:
+  dirac-ping-info [options] ... System ...
+
+Arguments:
+  System:   system name(mandatory)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -44,10 +50,7 @@ def main():
   Script.registerSwitch("p:", "numPings=", "Number of pings to do (by default 1)", cliParams.setNumOfPingsToDo)
 
   # Define a help message
-  Script.setUsageMessage('\n'.join([__doc__,
-                                    'Usage:',
-                                    '  %s [option|cfgfile] <system name to ping>+' % Script.scriptName,
-                                    '  Specifying a system is mandatory']))
+  Script.setUsageMessage(__doc__)
 
   # Parse the command line and initialize DIRAC
   Script.parseCommandLine(ignoreErrors=False)

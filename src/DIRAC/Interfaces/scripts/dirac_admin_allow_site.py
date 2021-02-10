@@ -8,7 +8,7 @@ Add Site to Active mask for current Setup
 
 Usage::
 
-  dirac-admin-allow-site [option|cfgfile] ... Site Comment
+  dirac-admin-allow-site [options] ... Site Comment
 
 Arguments::
 

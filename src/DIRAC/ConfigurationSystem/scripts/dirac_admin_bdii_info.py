@@ -6,12 +6,10 @@
 """
 Check info on BDII for a given CE or site
 
-Usage::
+Usage:
+  dirac-admin-bdii-info [options] ... <info> <Site|CE>
 
-  dirac-admin-bdii-info [option|cfgfile] ... <info> <Site|CE>
-
-Arguments::
-
+Arguments:
   Site:     Name of the Site (i.e. CERN-PROD)
   CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)
   info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site)

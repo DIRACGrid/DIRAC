@@ -282,7 +282,7 @@ def main():
 
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                     '\nUsage:',
-                                    '  %s [option|cfgfile] ...\n' % Script.scriptName]))
+                                    '  %s [options] ...\n' % Script.scriptName]))
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getExtraCLICFGFiles()

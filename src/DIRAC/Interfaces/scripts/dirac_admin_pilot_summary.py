@@ -6,7 +6,7 @@
 """
 Usage::
 
-  dirac-admin-pilot-summary (<options>|<cfgFile>)*
+  dirac-admin-pilot-summary [options] ...
 
 Example::
 

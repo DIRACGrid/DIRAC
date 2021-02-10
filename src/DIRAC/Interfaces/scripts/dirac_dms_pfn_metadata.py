@@ -8,7 +8,7 @@ Retrieve metadata for a PFN given a valid DIRAC SE
 
 Usage::
 
-  dirac-dms-pfn-metadata [option|cfgfile] ... PFN SE
+  dirac-dms-pfn-metadata [options] ... PFN SE
 
 Arguments::
 

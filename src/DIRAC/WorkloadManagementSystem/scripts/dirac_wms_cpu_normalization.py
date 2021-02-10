@@ -24,7 +24,7 @@ The last 2 (DB12 and DB12measured) are up to now wrote down but never used.
 
 Usage::
 
-  dirac-wms-cpu-normalization [option|cfgfile]
+  dirac-wms-cpu-normalization [options]
 """
 from __future__ import absolute_import
 from __future__ import division

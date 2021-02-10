@@ -4,7 +4,7 @@ List the number of requests in the caches of all the ReqProxyies
 
 Usage::
 
-  dirac-rms-list-req-cache [option|cfgfile]
+  dirac-rms-list-req-cache [options]
 """
 from __future__ import absolute_import
 from __future__ import division

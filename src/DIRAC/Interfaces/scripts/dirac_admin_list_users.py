@@ -8,7 +8,7 @@ Lists the users in the Configuration. If no group is specified return all users.
 
 Usage::
 
-  dirac-admin-list-users [option|cfgfile] ... [Group] ...
+  dirac-admin-list-users [options] ... [Group] ...
 
 Arguments::
 

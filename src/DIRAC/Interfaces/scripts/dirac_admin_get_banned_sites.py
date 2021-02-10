@@ -6,7 +6,7 @@
 """
 Usage::
 
-  dirac-admin-get-banned-sites (<options>|<cfgFile>)*
+  dirac-admin-get-banned-sites [options] ...
 
 Example::
 

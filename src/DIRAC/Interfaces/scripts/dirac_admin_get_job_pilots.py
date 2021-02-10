@@ -8,7 +8,7 @@ Retrieve info about pilots that have matched a given Job
 
 Usage::
 
-  dirac-admin-get-job-pilots [option|cfgfile] ... JobID
+  dirac-admin-get-job-pilots [options] ... JobID
 
 Arguments::
 

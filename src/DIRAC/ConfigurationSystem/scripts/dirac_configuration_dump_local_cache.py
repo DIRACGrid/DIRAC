@@ -5,10 +5,6 @@
 ########################################################################
 """
 Dump DIRAC Configuration data
-
-Usage::
-
-  dirac-configuration-dump-local-cache [option|cfgfile] ...
 """
 from __future__ import print_function
 from __future__ import absolute_import

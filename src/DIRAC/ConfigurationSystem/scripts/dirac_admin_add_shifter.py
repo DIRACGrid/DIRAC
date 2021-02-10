@@ -6,12 +6,10 @@
 """
 Adds or modify a shifter, in the operations section of the CS
 
-Usage::
+Usage:
+  dirac-admin-add-shifter [options] ... ShifterRole UserName DIRACGroup ...
 
-  dirac-admin-add-shifter [option|cfgfile] ... ShifterRole UserName DIRACGroup ...
-
-Arguments::
-
+Arguments:
   ShifterRole:  Name of the shifter role, e.g. DataManager
   UserName:     A user name, as registered in Registry section
   DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)
