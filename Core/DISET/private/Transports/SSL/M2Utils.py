@@ -6,6 +6,7 @@ Utilities for using M2Crypto SSL with DIRAC.
 import os
 from M2Crypto import SSL, m2, X509
 
+from DIRAC.Core.DISET import DEFAULT_SSL_METHODS
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
 
@@ -63,7 +64,7 @@ def getM2SSLContext(ctx=None, **kwargs):
         - proxyLocation: String, Path to file to use as proxy, defaults to
                                  usual location(s) if not set.
         - skipCACheck: Boolean, if True, don't verify peer certificates.
-        - sslMethod: String, List of SSL algorithms to enable in OpenSSL style
+        - sslMethods: String, List of SSL algorithms to enable in OpenSSL style
                               cipher format, e.g. "SSLv3:TLSv1".
         - sslCiphers: String, OpenSSL style cipher string of ciphers to allow
                               on this connection.
@@ -126,15 +127,15 @@ def getM2SSLContext(ctx=None, **kwargs):
     ctx.get_cert_store().set_flags(X509.verify_allow_proxy_certs)  # pylint: disable=no-member
 
   # Other parameters
-  sslMethod = kwargs.get('sslMethod', None)
-  if sslMethod:
+  sslMethods = kwargs.get('sslMethods', DEFAULT_SSL_METHODS)
+  if sslMethods:
     # Pylint can't see the m2 constants due to the way the library is loaded
     # We just have to disable that warning for the next bit...
     # pylint: disable=no-member
     methods = [('SSLv2', m2.SSL_OP_NO_SSLv2),
                ('SSLv3', m2.SSL_OP_NO_SSLv3),
                ('TLSv1', m2.SSL_OP_NO_TLSv1)]
-    allowed_methods = sslMethod.split(':')
+    allowed_methods = sslMethods.split(':')
     # If a method isn't explicitly allowed, set the flag to disable it...
     for method, method_flag in methods:
       if method not in allowed_methods:
