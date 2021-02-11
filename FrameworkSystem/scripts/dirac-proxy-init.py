@@ -33,23 +33,32 @@ from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClie
 __RCSID__ = "$Id$"
 Script.setUsageMessage(__doc__)
 
+
 class Params(ProxyGeneration.CLIParams):
 
   addVOMSExt = False
-  uploadProxy = False
+  uploadProxy = True
   uploadPilot = False
 
   def setVOMSExt(self, _arg):
     self.addVOMSExt = True
     return S_OK()
 
-  def setUploadProxy(self, _arg):
-    self.uploadProxy = True
+  def disableProxyUpload(self, _arg):
+    self.uploadProxy = False
     return S_OK()
 
   def registerCLISwitches(self):
     ProxyGeneration.CLIParams.registerCLISwitches(self)
-    Script.registerSwitch("U", "upload", "Upload a long lived proxy to the ProxyManager", self.setUploadProxy)
+    Script.registerSwitch(
+        "U",
+        "upload",
+        "Upload a long lived proxy to the ProxyManager (deprecated, see --no-upload)")
+    Script.registerSwitch(
+        "N",
+        "no-upload",
+        "Do not upload a long lived proxy to the ProxyManager",
+        self.disableProxyUpload)
     Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
 
 
@@ -149,7 +158,7 @@ class ProxyInit(object):
     resultProxyUpload = ProxyUpload.uploadProxy(upParams)
     if not resultProxyUpload['OK']:
       gLogger.error(resultProxyUpload['Message'])
-      sys.exit(1)
+      return resultProxyUpload
     self.__uploadedInfo = resultProxyUpload['Value']
     gLogger.info("Proxy uploaded")
     return S_OK()
