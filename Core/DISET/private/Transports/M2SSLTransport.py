@@ -77,6 +77,12 @@ class SSLTransport(BaseTransport):
 
     self.__locked = False  # We don't support locking, so this is always false.
 
+    # If not specified in the arguments (never is in DIRAC code...)
+    # and we are setting up a server listing connection, set the accepted
+    # ssl methods
+    if kwargs.get('bServerMode') and 'sslMethods' not in kwargs:
+      kwargs['sslMethods'] = os.environ.get('DIRAC_M2CRYPTO_SSL_METHODS')
+
     self.__ctx = kwargs.pop('ctx', None)
     if not self.__ctx:
       self.__ctx = getM2SSLContext(**kwargs)
