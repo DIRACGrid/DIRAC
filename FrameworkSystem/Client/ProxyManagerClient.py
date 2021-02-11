@@ -98,15 +98,27 @@ class ProxyManagerClient(object):
 
         :return: S_OK()/S_ERROR()
     """
-    cacheKey = (userDN, userGroup)
-    if self.__usersCache.exists(cacheKey, validSeconds):
-      return S_OK(True)
+
+    # For backward compatibility reasons with versions prior to v7r1
+    # we need to check for proxy with a group
+    # AND for groupless proxy even if not specified
+
+    cacheKeys = ((userDN, userGroup), (userDN, ''))
+    for cacheKey in cacheKeys:
+      if self.__usersCache.exists(cacheKey, validSeconds):
+        return S_OK(True)
+
     # Get list of users from the DB with proxys at least 300 seconds
     gLogger.verbose("Updating list of users in proxy management")
     retVal = self.__refreshUserCache(validSeconds)
     if not retVal['OK']:
       return retVal
-    return S_OK(self.__usersCache.exists(cacheKey, validSeconds))
+
+    for cacheKey in cacheKeys:
+      if self.__usersCache.exists(cacheKey, validSeconds):
+        return S_OK(True)
+
+    return S_OK(False)
 
   @gUsersSync
   def getUserPersistence(self, userDN, userGroup, validSeconds=0):
