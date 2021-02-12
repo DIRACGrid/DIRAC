@@ -25,6 +25,9 @@ DIRAC_GFAL_GRIDFTP_SESSION_REUSE
 DIRAC_M2CRYPTO_SPLIT_HANDSHAKE
   If ``true`` or ``yes`` the SSL handshake is done in a new thread (default Yes)
 
+DIRAC_M2CRYPTO_SSL_CIPHERS
+  If set, overwrites the default SSL ciphers accepted. It should be a column separated list. See :py:mod:`DIRAC.Core.DISET`
+
 DIRAC_M2CRYPTO_SSL_METHODS
   If set, overwrites the default SSL methods accepted. It should be a column separated list. See :py:mod:`DIRAC.Core.DISET`
 
