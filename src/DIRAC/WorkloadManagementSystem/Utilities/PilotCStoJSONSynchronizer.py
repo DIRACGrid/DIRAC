@@ -21,6 +21,7 @@ import datetime
 from git import Repo
 
 from DIRAC import gLogger, S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
@@ -66,7 +67,7 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotRepoBranch = ops.getValue("Pilot/pilotRepoBranch", self.pilotRepoBranch)
     self.pilotVORepoBranch = ops.getValue("Pilot/pilotVORepoBranch", self.pilotVORepoBranch)
 
-  def getCSDict(self):
+  def getCSDict(self, includeMasterCS=True):
     """ Gets minimal info for running a pilot, from the CS
 
     :returns: pilotDict (containing pilots run info)
@@ -155,7 +156,11 @@ class PilotCStoJSONSynchronizer(object):
       pilotDict['DefaultSetup'] = defaultSetup
 
     self.log.debug('From DIRAC/Configuration')
-    pilotDict['ConfigurationServers'] = gConfig.getServersList()
+    configurationServers = gConfig.getServersList()
+    if not includeMasterCS:
+      masterCS = gConfigurationData.getMasterServer()
+      configurationServers = list(set(configurationServers) - set([masterCS]))
+    pilotDict['ConfigurationServers'] = configurationServers
 
     self.log.debug("Got pilotDict", str(pilotDict))
 

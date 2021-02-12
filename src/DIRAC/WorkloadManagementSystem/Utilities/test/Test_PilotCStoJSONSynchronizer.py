@@ -151,6 +151,8 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     synchroniser = PilotCStoJSONSynchronizer()
     res = synchroniser.getCSDict()
     assert res['OK'], res['Message']
+    res = synchroniser.getCSDict(includeMasterCS=False)
+    assert res['OK'], res['Message']
 
 
 if __name__ == '__main__':

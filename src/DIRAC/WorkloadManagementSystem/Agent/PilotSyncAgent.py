@@ -18,11 +18,11 @@ import json
 import shutil
 import hashlib
 import requests
+import six
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation, getCAsLocation
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 
@@ -40,6 +40,7 @@ class PilotSyncAgent(AgentModule):
     # '/opt/dirac/webRoot/www/pilot'
     self.saveDir = ''
     self.uploadLocations = []
+    self.includeMasterCS = True
 
   def initialize(self):
     """ Initial settings
@@ -47,6 +48,9 @@ class PilotSyncAgent(AgentModule):
     self.workingDirectory = self.am_getOption('WorkDirectory')
     self.saveDir = self.am_getOption('SaveDirectory', self.saveDir)
     self.uploadLocations = self.am_getOption('UploadLocations', self.uploadLocations)
+    includeMasterCS = self.am_getOption('IncludeMasterCS', self.includeMasterCS)
+    if isinstance(includeMasterCS, six.string_types) and includeMasterCS.lower() in ['n', 'no', 'false']:
+      self.includeMasterCS = False
 
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
     self.casLocation = getCAsLocation()
@@ -70,7 +74,7 @@ class PilotSyncAgent(AgentModule):
     self.log.verbose("pilotVORepoBranch=" + ps.pilotVORepoBranch)
 
     # pilot.json
-    res = ps.getCSDict()
+    res = ps.getCSDict(includeMasterCS=self.includeMasterCS)
     if not res['OK']:
       return res
     pilotDict = res['Value']
