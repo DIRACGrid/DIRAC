@@ -6,14 +6,10 @@ Utilities for using M2Crypto SSL with DIRAC.
 import os
 from M2Crypto import SSL, m2, X509
 
-from DIRAC.Core.DISET import DEFAULT_SSL_METHODS
+from DIRAC.Core.DISET import DEFAULT_SSL_CIPHERS, DEFAULT_SSL_METHODS
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
 
-# Default ciphers to use if unspecified
-# Cipher line should be as readable as possible, sorry pylint
-# pylint: disable=line-too-long
-DEFAULT_SSL_CIPHERS = "AES256-GCM-SHA384:AES256-SHA256:AES256-SHA:CAMELLIA256-SHA:AES128-GCM-SHA256:AES128-SHA256:AES128-SHA:HIGH:MEDIUM:RSA:!3DES:!RC4:!aNULL:!eNULL:!MD5:!SEED:!IDEA"  # noqa
 # Verify depth of peer certs
 VERIFY_DEPTH = 50
 
