@@ -49,7 +49,7 @@ class LocalConfiguration(object):
     self.initialized = False
     self.__scriptDescription = ''
     self.__usageMessage = ''
-    self.__arguments = ''
+    self.__argumentsDescription = ''
     self.__usageExample = ''
     self.__debugMode = 0
     self.firstOptionIndex = 1
@@ -87,20 +87,30 @@ class LocalConfiguration(object):
     self.additionalCFGFiles.append(filePath)
 
   def setUsageMessage(self, usageMsg):
+    """ Define and parse message to be display by the showHelp method.
+
+        :param str usageMsg: script description that can contain Usage, Example, Arguments, Options blocks
     """
-    Define message to be display by the showHelp method
-    """
-    r = r"(.*?)(?:\n(?:Usage|Example|Arguments|Options):+\n|$)"
+    # Searched text
+    context = r"(.*?)"
+    # Start of any block description or end of __doc__
+    startAnyBlockOrEnd = r"(?:\n(?:Usage|Example|Arguments|Options):+\n|$)"
+
+    r = r"%s%s" % (context, startAnyBlockOrEnd)
     if usageMsg:
+      # The description block is the first in the __doc__
       desc = re.search(r, usageMsg, re.DOTALL)
       if desc:
         self.__scriptDescription = '\n' + desc.group(1).strip('\n') + '\n'
+      # The usage block starts with '\nUsage:\n' or '\nUsage::\n'
       usage = re.search(r"%s%s" % (r"Usage:+", r), usageMsg, re.DOTALL)
       if usage:
         self.__usageMessage = '\nUsage:\n' + usage.group(1).strip('\n') + '\n'
+      # The argument block starts with '\Arguments:\n' or '\Arguments::\n'
       args = re.search(r"%s%s" % (r"Arguments:+", r), usageMsg, re.DOTALL)
       if args:
-        self.__arguments = '\nArguments:\n' + args.group(1).strip('\n') + '\n'
+        self.__argumentsDescription = '\nArguments:\n' + args.group(1).strip('\n') + '\n'
+      # The example block starts with '\Example:\n' or '\Example::\n'
       expl = re.search(r"%s%s" % (r"Example:+", r), usageMsg, re.DOTALL)
       if expl:
         self.__usageExample = '\nExample:\n' + expl.group(1).strip('\n') + '\n'
@@ -565,8 +575,8 @@ class LocalConfiguration(object):
         else:
           gLogger.notice("  -%s --%s : %s" % (optionTuple[0].ljust(2), optionTuple[1].ljust(22), optionTuple[2]))
 
-    if self.__arguments:
-      gLogger.notice(self.__arguments)
+    if self.__argumentsDescription:
+      gLogger.notice(self.__argumentsDescription)
 
     if self.__usageExample:
       gLogger.notice(self.__usageExample)
