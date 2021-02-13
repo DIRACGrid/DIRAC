@@ -51,6 +51,7 @@ i = 0 if i == len(sys.argv) else i
 scriptName = os.path.basename(sys.argv[i].split('::')[0]).replace('.py', '')
 # The first argument DIRAC should parse is the next one
 localCfg.firstOptionIndex = i + 1
+# Read and parse the script __doc__ to create a draft help message
 localCfg.setUsageMessage(doc)
 gIsAlreadyInitialized = False
 
