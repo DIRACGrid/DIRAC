@@ -6,18 +6,15 @@
 """
 Retrieve an access URL for an LFN replica given a valid DIRAC SE.
 
-Usage::
-
+Usage:
   dirac-dms-lfn-accessURL [options] ... LFN SE [PROTO]
 
-Arguments::
-
+Arguments:
   LFN:      Logical File Name or file containing LFNs (mandatory)
   SE:       Valid DIRAC SE (mandatory)
   PROTO:    Optional protocol for accessURL
 
-Example::
-
+Example:
   $ dirac-dms-lfn-accessURL /formation/user/v/vhamar/Example.txt DIRAC-USER
   {'Failed': {},
    'Successful': {'/formation/user/v/vhamar/Example.txt': 'dips://dirac.in2p3.fr:9148/DataManagement/StorageElement\

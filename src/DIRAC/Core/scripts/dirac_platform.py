@@ -12,12 +12,10 @@ Invoked at any installation, so by the *dirac-install* script, and by the pilots
 
 On a RHEL 6 node, for example, the determined dirac platform is "Linux_x86_64_glibc-2.5"
 
-Usage::
-
+Usage:
   dirac-platform [options]
 
-Example::
-
+Example:
   $ dirac-platform
   Linux_x86_64_glibc-2.5
 

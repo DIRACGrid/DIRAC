@@ -6,16 +6,13 @@
 """
 Issue a kill signal to a running DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-kill [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-kill 1918
   Killed job 1918
 

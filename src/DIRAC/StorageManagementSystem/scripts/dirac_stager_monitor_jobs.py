@@ -6,12 +6,10 @@
 """
 Report the summary of the staging progress of jobs
 
-Usage::
-
+Usage:
   dirac-stager-monitor-jobs jobID [jobID] [jobID] ...
 
-Arguments::
-
+Arguments:
   JobID: DIRAC job ID
 """
 from __future__ import absolute_import

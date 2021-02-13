@@ -2,16 +2,13 @@
 """
 Stop a given production
 
-Usage::
-
+Usage:
   dirac-prod-stop prodID
 
-Arguments::
-
+Arguments:
   prodID: Production ID (mandatory)
 
-Example::
-
+Example:
   $ dirac-prod-stop 381
 """
 from __future__ import absolute_import

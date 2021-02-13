@@ -2,12 +2,10 @@
 """
 Determine number of processors and memory for the worker node
 
-Usage::
-
+Usage:
   dirac-wms-get-wn-parameters [option]... [cfgfile]
 
-Arguments::
-
+Arguments:
   cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import absolute_import

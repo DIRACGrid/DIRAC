@@ -2,12 +2,10 @@
 """
 Get the size of the given file or a list of files
 
-Usage::
-
+Usage:
    dirac-dms-data-size <lfn | fileContainingLfns> <SE> <status>
 
-Example::
-
+Example:
   $ dirac-dms-data-size  /formation/user/v/vhamar/Example.txt
   ------------------------------
   Files          |      Size (GB)

@@ -13,12 +13,10 @@ Give monitoring information regarding a staging file uniquely identified with (L
 - pin expiry time
 - pin length
 
-Usage::
-
+Usage:
   dirac-stager-monitor-file LFN SE ...
 
-Arguments::
-
+Arguments:
   LFN: LFN of the staging file
   SE: Storage Element for the staging file
 """

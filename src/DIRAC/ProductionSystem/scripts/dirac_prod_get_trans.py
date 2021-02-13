@@ -2,16 +2,13 @@
 """
 Get the transformations belonging to a given production
 
-Usage::
-
+Usage:
   dirac-prod-get-trans prodID
 
-Arguments::
-
+Arguments:
   prodID: Production ID (mandatory)
 
-Example::
-
+Example:
   $ dirac-prod-get-trans 381
 """
 from __future__ import absolute_import

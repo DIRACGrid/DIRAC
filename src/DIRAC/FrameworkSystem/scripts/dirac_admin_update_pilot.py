@@ -2,12 +2,10 @@
 """
 Script to update pilot version in CS
 
-Usage::
-
+Usage:
   dirac-admin-update-pilot version
 
-Arguments::
-
+Arguments:
   version: pilot version you want to update to
 """
 from __future__ import absolute_import

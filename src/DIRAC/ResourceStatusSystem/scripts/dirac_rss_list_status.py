@@ -3,8 +3,7 @@
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 
-Usage::
-
+Usage:
   dirac-rss-list-status [options]
 
 Verbosity::

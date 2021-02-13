@@ -6,8 +6,7 @@
 """
 This is a script to launch DIRAC services. Mostly internal.
 
-Usage::
-
+Usage:
   dirac-service [options] ...
 """
 from __future__ import absolute_import

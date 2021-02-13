@@ -4,12 +4,10 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-Usage::
-
+Usage:
   dirac-admin-get-banned-sites [options] ...
 
-Example::
-
+Example:
   $ dirac-admin-get-banned-sites
   LCG.IN2P3.fr                      Site not present in logging table
 """

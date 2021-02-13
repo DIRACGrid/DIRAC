@@ -6,12 +6,10 @@
 """
 Initial installation and configuration of a new DIRAC server (DBs, Services, Agents, Web Portal,...)
 
-Usage::
-
+Usage:
   dirac-setup-site [option] ... [cfgfile]
 
-Arguments::
-
+Arguments:
   cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import print_function

@@ -6,8 +6,7 @@
 """
 Kill the specified pilot
 
-Usage::
-
+Usage:
   dirac-admin-kill-pilot <pilot reference>
 """
 from __future__ import absolute_import

@@ -6,12 +6,10 @@
 """
 Retrieve metadata for a PFN given a valid DIRAC SE
 
-Usage::
-
+Usage:
   dirac-dms-pfn-metadata [options] ... PFN SE
 
-Arguments::
-
+Arguments:
   PFN:      Physical File Name or file containing PFNs (mandatory)
   SE:       Valid DIRAC SE (mandatory)
 """

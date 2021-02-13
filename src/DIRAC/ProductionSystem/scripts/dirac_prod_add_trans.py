@@ -3,12 +3,10 @@
 Add an existing transformation to an existing production.
 Transformations already belonging to another production cannot be added.
 
-Usage::
-
+Usage:
   dirac-prod-add-trans prodID transID [parentTransID]
 
-Arguments::
-
+Arguments:
   prodID:         Production ID
   transID:        Transformation ID
   parentTransID:  Parent Transformation ID

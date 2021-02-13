@@ -6,16 +6,13 @@
 """
 Retrieve history of transitions for a DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-logging-info [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-logging-info 1
   Status                        MinorStatus                         ApplicationStatus             DateTime
   Received                      Job accepted                        Unknown                       2011-02-14 10:12:40

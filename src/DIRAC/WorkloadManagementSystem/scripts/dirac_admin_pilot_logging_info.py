@@ -2,8 +2,7 @@
 """
 Get Pilots Logging for specific Pilot UUID or Job ID.
 
-Usage::
-
+Usage:
   dirac-admin-pilot-loggin-info <option value>
 
   WARNING: Only one option (either uuid or jobid) should be used.

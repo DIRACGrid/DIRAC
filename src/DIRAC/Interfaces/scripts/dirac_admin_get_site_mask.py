@@ -6,12 +6,10 @@
 """
 Get the list of sites enabled in the mask for job submission
 
-Usage::
-
+Usage:
   dirac-admin-get-site-mask [options]
 
-Example::
-
+Example:
   $ dirac-admin-get-site-mask
   LCG.CGG.fr
   LCG.CPPM.fr

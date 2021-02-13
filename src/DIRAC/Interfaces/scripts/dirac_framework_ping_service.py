@@ -6,18 +6,15 @@
 """
 Ping the given DIRAC Service
 
-Usage::
-
+Usage:
   dirac-framework-ping-service [options] ... System Service|System/Agent
 
-Arguments::
-
+Arguments:
   System:   Name of the DIRAC system (ie: WorkloadManagement)
   Service:  Name of the DIRAC service (ie: Matcher)
   url:      URL of the service to ping (instead of System and Service)
 
-Example::
-
+Example:
   $ dirac-framework-ping-service WorkloadManagement PilotManager
   {'OK': True,
    'Value': {'cpu times': {'children system time': 0.0,

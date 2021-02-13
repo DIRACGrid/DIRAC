@@ -4,12 +4,10 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-Usage::
-
+Usage:
   dirac-admin-pilot-summary [options] ...
 
-Example::
-
+Example:
   $ dirac-admin-pilot-summary
   CE                Status  Count Status Count Status Count Status  Count Status    Count Status    Count Status  Count
   sbgce1.in2p3.fr   Done    31

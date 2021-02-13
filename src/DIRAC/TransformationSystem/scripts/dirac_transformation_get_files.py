@@ -3,8 +3,7 @@
 """
 Get the files attached to a transformation
 
-Usage::
-
+Usage:
   dirac-transformation-get-files TransID
 """
 from __future__ import absolute_import

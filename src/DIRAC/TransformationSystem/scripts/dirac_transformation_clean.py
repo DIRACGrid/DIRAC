@@ -2,8 +2,7 @@
 """
 Clean a tranformation
 
-Usage::
-
+Usage:
   dirac-transformation-clean transID [transID] [transID]
 """
 

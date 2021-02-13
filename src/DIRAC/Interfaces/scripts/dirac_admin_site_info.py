@@ -6,16 +6,13 @@
 """
 Print Configuration information for a given Site
 
-Usage::
-
+Usage:
   dirac-admin-site-info [options] ... Site ...
 
-Arguments::
-
+Arguments:
   Site:     Name of the Site
 
-Example::
-
+Example:
   $ dirac-admin-site-info LCG.IN2P3.fr
   {'CE': 'cclcgceli01.in2p3.fr, cclcgceli03.in2p3.fr, sbgce1.in2p3.fr',
    'Coordinates': '4.8655:45.7825',

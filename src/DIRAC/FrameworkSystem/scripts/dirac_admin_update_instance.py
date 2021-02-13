@@ -2,12 +2,10 @@
 """
 Script to apply update to all or some dirac servers and restart them
 
-Usage::
-
+Usage:
   dirac-admin-update-instance version
 
-Arguments::
-
+Arguments:
   version: version of DIRAC you want to update to
 """
 from __future__ import absolute_import

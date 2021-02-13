@@ -6,16 +6,13 @@
 """
 Retrieve status of the given DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-status [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-status 2
   JobID=2 Status=Done; MinorStatus=Execution Complete; Site=EELA.UTFSM.cl;
 """

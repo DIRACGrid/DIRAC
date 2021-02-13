@@ -2,12 +2,10 @@
 """
 Get the currently defined user data volume quotas
 
-Usage::
-
+Usage:
   dirac-dms-user-quota [options]
 
-Example::
-
+Example:
   $ dirac-dms-user-quota
   Current quota found to be 0.0 GB
 """

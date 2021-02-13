@@ -6,16 +6,13 @@
 """
 Retrieve Site Associated to a given CE
 
-Usage::
-
+Usage:
   dirac-admin-ce-info [options] ... CE ...
 
-Arguments::
-
+Arguments:
   CE:       Name of the CE (mandatory)
 
-Example::
-
+Example:
   $ dirac-admin-ce-info LCG.IN2P3.fr
 """
 from __future__ import print_function

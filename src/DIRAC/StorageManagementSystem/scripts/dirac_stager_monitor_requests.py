@@ -6,12 +6,10 @@
 """
 Report the details of file staging requests, based on selection filters
 
-Usage::
-
+Usage:
   dirac-stager-monitor-requests [--status=<Status>] [--se=<SE>] [--limit=<integer>] [--showJobs=YES] ...
 
-Arguments::
-
+Arguments:
   status:   file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).
   se:       storage element
   showJobs: whether to ALSO list the jobs asking for these files to be staged

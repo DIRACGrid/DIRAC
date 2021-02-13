@@ -6,12 +6,10 @@
 """
 Report the summary of the stage task from the DB.
 
-Usage::
-
+Usage:
   dirac-stager-monitor-request [options] ... Request ...
 
-Arguments::
-
+Arguments:
   Request:  ID of the Stage request in the StorageManager
 """
 from __future__ import absolute_import

@@ -6,16 +6,13 @@
 """
 Retrieve info about pilots that have matched a given Job
 
-Usage::
-
+Usage:
   dirac-admin-get-job-pilots [options] ... JobID
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC ID of the Job
 
-Example::
-
+Example:
   $ dirac-admin-get-job-pilots 1848
   {'https://marlb.in2p3.fr:9000/bqYViq6KrVgGfr6wwgT45Q': {'AccountingSent': 'False',
                                                           'BenchMark': 8.1799999999999997,

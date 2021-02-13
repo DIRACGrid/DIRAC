@@ -2,16 +2,13 @@
 """
 Start a given production
 
-Usage::
-
+Usage:
   dirac-prod-start prodID
 
-Arguments::
-
+Arguments:
   prodID: Production ID (mandatory)
 
-Example::
-
+Example:
   $ dirac-prod-start 381
 """
 from __future__ import absolute_import

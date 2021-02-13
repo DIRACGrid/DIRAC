@@ -6,16 +6,13 @@
 """
 Reschedule the given DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-reschedule [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-reschedule 1
   Rescheduled job 1
 """

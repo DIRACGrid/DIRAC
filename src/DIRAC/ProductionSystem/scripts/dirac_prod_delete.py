@@ -3,12 +3,10 @@
 """
 Delete a given production
 
-Usage::
-
+Usage:
   dirac-prod-delete prodID
 
-Arguments::
-
+Arguments:
   prodID: Production ID (mandatory)
 """
 from __future__ import absolute_import

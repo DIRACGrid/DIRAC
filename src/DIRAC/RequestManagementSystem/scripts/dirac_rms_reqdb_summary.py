@@ -2,8 +2,7 @@
 """
 Show ReqDB summary
 
-Usage::
-
+Usage:
   dirac-rms-reqdb-summary [options]
 """
 from __future__ import absolute_import

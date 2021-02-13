@@ -6,16 +6,13 @@
 """
 Delete DIRAC job from WMS, if running it will be killed
 
-Usage::
-
+Usage:
   dirac-wms-job-delete [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID: DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-delete 12
   Deleted job 12
 """

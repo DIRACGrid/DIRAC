@@ -2,8 +2,7 @@
 """
 Returns the LFN matching given GUIDs
 
-Usage::
-
+Usage:
   dirac-dms-resolve-guid <GUIDs>
 """
 from __future__ import absolute_import

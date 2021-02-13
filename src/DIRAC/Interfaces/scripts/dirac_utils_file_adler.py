@@ -5,16 +5,13 @@
 """
 Calculate alder32 of the supplied file
 
-Usage::
-
+Usage:
   dirac-utils-file-adler [options] ... File ...
 
-Arguments::
-
+Arguments:
   File:     File Name
 
-Example::
-
+Example:
   $ dirac-utils-file-adler Example.tgz
   Example.tgz 88b4ca8b
 """

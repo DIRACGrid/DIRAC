@@ -6,16 +6,13 @@
 """
 Obtain replica metadata from file catalogue client.
 
-Usage::
-
+Usage:
   dirac-dms-lfn-metadata [options] ... LFN ...
 
-Arguments::
-
+Arguments:
   LFN:      Logical File Name or file containing LFNs
 
-Example::
-
+Example:
   $ dirac-dms-lfn-metadata /formation/user/v/vhamar/test.txt
   {'Failed': {},
    'Successful': {'/formation/user/v/vhamar/test.txt': {'Checksum': 'eed20d47',

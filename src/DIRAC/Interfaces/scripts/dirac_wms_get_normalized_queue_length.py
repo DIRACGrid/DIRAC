@@ -9,16 +9,13 @@ Report Normalized CPU length of queue
 This script was used by the dirac-pilot script to set the CPUTime limit for
 the matching but now this is no more the case.
 
-Usage::
-
+Usage:
   dirac-wms-get-normalized-queue-length [options] ... Queue ...
 
-Arguments::
-
+Arguments:
   Queue:     GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)
 
-Example::
-
+Example:
   $ dirac-wms-get-normalized-queue-length  cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long
   cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long 857400.0
 """

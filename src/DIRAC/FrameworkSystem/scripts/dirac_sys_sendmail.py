@@ -7,8 +7,7 @@
 """
 Utility to send an e-mail using DIRAC notification service.
 
-Arguments::
-
+Arguments:
   Formated text message. The message consists of e-mail headers and e-mail body
   separated by two newline characters. Headers are key : value pairs separated
   by newline character. Meaningful headers are "To:", "From:", "Subject:".

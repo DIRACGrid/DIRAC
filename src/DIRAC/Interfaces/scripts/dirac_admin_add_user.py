@@ -2,16 +2,13 @@
 """
 Add or Modify a User info in DIRAC
 
-Usage::
-
+Usage:
   dirac-admin-add-user [options] ... Property=<Value> ...
 
-Arguments::
-
+Arguments:
   Property=<Value>: Properties to be added to the User like (Phone=XXXX)
 
-Example::
-
+Example:
   $ dirac-admin-add-user -N vhamar -D /O=GRID/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar -M hamar@cppm.in2p3.fr -G dirac_user
 """
 from __future__ import absolute_import

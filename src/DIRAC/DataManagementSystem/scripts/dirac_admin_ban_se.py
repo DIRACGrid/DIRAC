@@ -3,12 +3,10 @@
 """
 Ban one or more Storage Elements for usage
 
-Usage::
-
+Usage:
   dirac-admin-ban-se SE1 [SE2 ...]
 
-Example::
-
+Example:
   $ dirac-admin-ban-se M3PEC-disk
 """
 from __future__ import print_function

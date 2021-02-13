@@ -2,8 +2,7 @@
 """
 Select/Add/Delete a new DownTime entry for a given Site or Service.
 
-Usage::
-
+Usage:
   dirac-rss-query-dtcache [option] <query>
 
 Queries::

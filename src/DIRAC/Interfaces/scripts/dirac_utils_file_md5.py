@@ -6,16 +6,13 @@
 """
 Calculate md5 of the supplied file
 
-Usage::
-
+Usage:
   dirac-utils-file-md5 [options] ... File ...
 
-Arguments::
-
+Arguments:
   File:     File Name
 
-Example::
-
+Example:
   $ dirac-utils-file-md5 Example.tgz
   Example.tgz 5C1A1102-EAFD-2CBA-25BD-0EFCCFC3623E
 """

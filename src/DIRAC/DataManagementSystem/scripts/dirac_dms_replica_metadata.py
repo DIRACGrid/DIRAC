@@ -2,8 +2,7 @@
 """
 Get the given file replica metadata from the File Catalog
 
-Usage::
-
+Usage:
   dirac-dms-replica-metadata <LFN | fileContainingLFNs> SE
 """
 from __future__ import print_function

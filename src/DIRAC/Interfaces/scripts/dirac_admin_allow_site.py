@@ -6,17 +6,14 @@
 """
 Add Site to Active mask for current Setup
 
-Usage::
-
+Usage:
   dirac-admin-allow-site [options] ... Site Comment
 
-Arguments::
-
+Arguments:
   Site:     Name of the Site
   Comment:  Reason of the action
 
-Example::
-
+Example:
   $ dirac-admin-allow-site LCG.IN2P3.fr "FRANCE"
 """
 from __future__ import print_function

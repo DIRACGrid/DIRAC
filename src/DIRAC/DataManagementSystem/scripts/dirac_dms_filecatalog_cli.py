@@ -2,12 +2,10 @@
 """
 Launch the File Catalog shell
 
-Usage::
-
+Usage:
    dirac-dms-filecatalog-cli [option]
 
-Example::
-
+Example:
   $ dirac-dms-filecatalog-cli
   Starting DIRAC FileCatalog client
   File Catalog Client $Revision: 1.17 $Date:

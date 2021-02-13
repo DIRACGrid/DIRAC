@@ -6,16 +6,13 @@
 """
 Obtain replica information from file catalogue client.
 
-Usage::
-
+Usage:
   dirac-admin-lfn-replicas [options] ... LFN ...
 
-Arguments::
-
+Arguments:
   LFN:      Logical File Name or file containing LFNs
 
-Example::
-
+Example:
   $ dirac-dms-lfn-replicas /formation/user/v/vhamar/Test.txt
   {'Failed': {},
    'Successful': {'/formation/user/v/vhamar/Test.txt':\

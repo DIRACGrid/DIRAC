@@ -6,16 +6,13 @@
 """
 Retrieve logging info of a Grid pilot
 
-Usage::
-
+Usage:
   dirac-admin-get-pilot-logging-info [options] ... PilotID ...
 
-Arguments::
-
+Arguments:
   PilotID:  Grid ID of the pilot
 
-Example::
-
+Example:
   $ dirac-admin-get-pilot-logging-info https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw
   Pilot Reference: dirac-admin-get-pilot-logging-info https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw
   ===================== glite-job-logging-info Success =====================

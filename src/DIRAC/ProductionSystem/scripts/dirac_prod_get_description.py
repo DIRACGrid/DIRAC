@@ -2,16 +2,13 @@
 """
 Get the description of a given production
 
-Usage::
-
+Usage:
   dirac-prod-get-description prodID
 
-Arguments::
-
+Arguments:
   prodID: Production ID (mandatory)
 
-Example::
-
+Example:
   $ dirac-prod-get-description 381
 """
 

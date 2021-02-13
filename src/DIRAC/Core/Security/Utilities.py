@@ -2,8 +2,7 @@
 
 This module module is used to generate the CAs and CRLs (revoked certificates)
 
-Example::
-
+Example:
   from DIRAC.Core.Security import Utilities
 
   retVal = Utilities.generateRevokedCertsFile()

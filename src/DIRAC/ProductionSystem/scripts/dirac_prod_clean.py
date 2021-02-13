@@ -2,12 +2,10 @@
 """
 Clean a given production
 
-Usage::
-
+Usage:
   dirac-prod-clean prodID
 
-Arguments::
-
+Arguments:
   prodID: Production ID (mandatory)
 """
 from __future__ import absolute_import

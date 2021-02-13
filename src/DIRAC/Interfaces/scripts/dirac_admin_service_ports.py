@@ -6,16 +6,13 @@
 """
 Print the service ports for the specified setup
 
-Usage::
-
+Usage:
   dirac-admin-service-ports [options] ... [Setup]
 
-Arguments::
-
+Arguments:
   Setup:    Name of the setup
 
-Example::
-
+Example:
   $ dirac-admin-service-ports
   {'Framework/ProxyManager': 9152,
    'Framework/SystemAdministrator': 9162,

@@ -7,8 +7,7 @@
 Report CPU length of queue, in seconds
 This script is used by the dirac-pilot script to set the CPUTime left, which is a limit for the matching
 
-Usage::
-
+Usage:
   dirac-wms-get-queue-cpu-time [options]
 """
 from __future__ import print_function

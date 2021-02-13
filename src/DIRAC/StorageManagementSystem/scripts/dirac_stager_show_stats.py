@@ -7,8 +7,7 @@
 Reports breakdown of file(s) number/size in different staging states across Storage Elements.
 Currently used Cache per SE is also reported. (active pins)
 
-Example::
-
+Example:
   dirac-stager-show-stats
 
    Status               SE                   NumberOfFiles        Size(GB)

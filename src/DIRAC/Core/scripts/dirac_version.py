@@ -6,12 +6,10 @@
 """
 Print version of current DIRAC installation
 
-Usage::
-
+Usage:
   dirac-version [option]
 
-Example::
-
+Example:
   $ dirac-version
 
 """

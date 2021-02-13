@@ -2,12 +2,10 @@
 """
 Find files in the FileCatalog using file metadata
 
-Usage::
-
+Usage:
   dirac-dms-find-lfns [options] metaspec [metaspec ...]
 
-Arguments::
-
+Arguments:
   metaspec: metadata index specification (of the form: "meta=value" or "meta<value", "meta!=value", etc.)
 
 Examples::

@@ -11,8 +11,7 @@ Syncs the source destination folder recursivly into the target destination
 If option --sync is used contend that is not in the source directory but is
 only in the target directory will be deleted.
 
-Usage::
-
+Usage:
   dirac-dms-directory-sync Source Destination
 
   e.g.: Download
@@ -20,8 +19,7 @@ Usage::
   or Upload
     dirac-dms-directory-sync Path LFN SE
 
-Arguments::
-
+Arguments:
   LFN:           Logical File Name (Path to directory)
   Path:          Local path to the file (Path to directory)
   SE:            DIRAC Storage Element

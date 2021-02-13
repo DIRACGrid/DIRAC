@@ -2,12 +2,10 @@
 """
 Get status of the available Storage Elements
 
-Usage::
-
+Usage:
   dirac-dms-show-se-status [<options>]
 
-Example::
-
+Example:
   $ dirac-dms-show-se-status
   Storage Element               Read Status    Write Status
   DIRAC-USER                         Active          Active

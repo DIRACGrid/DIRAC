@@ -2,12 +2,10 @@
 """
 Create and put 'ReplicateAndRegister' request.
 
-Usage::
-
+Usage:
   dirac-dms-replicate-and-register-request [options] requestName LFNs targetSE1 [targetSE2 ...]
 
-Arguments::
-
+Arguments:
   requestName:  a request name
   LFNs:         single LFN or file with LFNs
   targetSE:     target SE

@@ -6,16 +6,13 @@
 """
 Remove User from Configuration
 
-Usage::
-
+Usage:
   dirac-admin-delete-user [options] ... User ...
 
-Arguments::
-
+Arguments:
   User:     User name
 
-Example::
-
+Example:
   $ dirac-admin-delete-user vhamar
 """
 from __future__ import print_function

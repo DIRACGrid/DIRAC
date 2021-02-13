@@ -2,8 +2,7 @@
 """
 Remove the outputs produced by a transformation
 
-Usage::
-
+Usage:
   dirac-transformation-remove-output transID [transID] [transID]
 """
 

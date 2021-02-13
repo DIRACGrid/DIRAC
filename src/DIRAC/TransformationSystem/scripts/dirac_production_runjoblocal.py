@@ -4,12 +4,10 @@ Module created to run failed jobs locally on a CVMFS-configured machine.
 It creates the necessary environment, downloads the necessary files, modifies the necessary
 files and runs the job
 
-Usage::
-
+Usage:
   dirac-production-runjoblocal [Data imput mode] [job ID]
 
-Arguments::
-
+Arguments:
   Download (Job ID): Defines data aquisition as DownloadInputData
   Protocol (Job ID): Defines data acquisition as InputDataByProtocol
 """

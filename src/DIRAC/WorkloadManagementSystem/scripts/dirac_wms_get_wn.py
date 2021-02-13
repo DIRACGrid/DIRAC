@@ -6,8 +6,7 @@
 """
 Get WNs for a selection of jobs
 
-Usage::
-
+Usage:
   dirac-wms-get-wn [options] ... LFN|File
 """
 from __future__ import absolute_import

@@ -6,16 +6,13 @@
 """
 Submit jobs to DIRAC WMS
 
-Usage::
-
+Usage:
   dirac-wms-job-submit [options] ... JDL ...
 
-Arguments::
-
+Arguments:
   JDL:    Path to JDL file
 
-Example::
-
+Example:
   $ dirac-wms-job-submit Simple.jdl
   JobID = 11
 """

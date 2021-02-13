@@ -6,16 +6,13 @@
 """
 Retrieve input sandbox for DIRAC Job
 
-Usage::
-
+Usage:
   dirac-wms-job-get-input [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-get-input 13
   Job input sandbox retrieved in InputSandbox13/
 """

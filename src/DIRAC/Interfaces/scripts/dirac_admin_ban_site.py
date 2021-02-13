@@ -6,17 +6,14 @@
 """
 Remove Site from Active mask for current Setup
 
-Usage::
-
+Usage:
   dirac-admin-ban-site [options] ... Site Comment
 
-Arguments::
-
+Arguments:
   Site:     Name of the Site
   Comment:  Reason of the action
 
-Example::
-
+Example:
   $ dirac-admin-ban-site LCG.IN2P3.fr "Pilot installation problems"
 """
 from __future__ import print_function

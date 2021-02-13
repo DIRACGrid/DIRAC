@@ -6,16 +6,13 @@
 """
 Defined protocols for each SE for a given site.
 
-Usage::
-
+Usage:
   dirac-admin-set-site-protocols [options] ... Protocol ...
 
-Arguments::
-
+Arguments:
   Protocol: SE access protocol (mandatory)
 
-Example::
-
+Example:
   $ dirac-admin-set-site-protocols --Site=LCG.IN2P3.fr SRM2
 """
 from __future__ import print_function

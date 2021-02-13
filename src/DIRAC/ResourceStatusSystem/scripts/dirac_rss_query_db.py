@@ -3,12 +3,10 @@
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 
-Usage::
-
+Usage:
   dirac-rss-query-db [option] <query> <element> <tableType>
 
-Arguments::
-
+Arguments:
   Queries:    [select|add|modify|delete]
   Elements:   [site|resource|component|node]
   TableTypes: [status|log|history]

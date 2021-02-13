@@ -2,8 +2,7 @@
 """
 Add files to an existing transformation
 
-Usage::
-
+Usage:
   dirac-transformation-add-files TransID <LFN | fileContainingLFNs>
 """
 from __future__ import absolute_import

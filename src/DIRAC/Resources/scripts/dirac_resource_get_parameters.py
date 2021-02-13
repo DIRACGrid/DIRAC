@@ -2,12 +2,10 @@
 """
 Get parameters assigned to the CE
 
-Usage::
-
+Usage:
   dirac-resource-get-parameters [option]... [cfgfile]
 
-Arguments::
-
+Arguments:
   cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import absolute_import

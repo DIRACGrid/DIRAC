@@ -6,16 +6,13 @@
 """
 Reset a job or list of jobs in the WMS
 
-Usage::
-
+Usage:
   dirac-admin-reset-job [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC ID of the Job
 
-Example::
-
+Example:
   $ dirac-admin-reset-job 1848
   Reset Job 1848
 """

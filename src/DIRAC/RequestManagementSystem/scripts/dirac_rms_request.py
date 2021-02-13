@@ -2,12 +2,10 @@
 """
 Show request given its ID, a jobID or a transformation and a task
 
-Usage::
-
+Usage:
   dirac-rms-request [options] [request[,request1,...]|<file>
 
-Arguments::
-
+Arguments:
   request:  a request ID or a unique request name
   <file>:   a file containing a list of requests (Comma-separated on each line)
 """

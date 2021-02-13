@@ -2,16 +2,13 @@
 """
 Add or Modify a Host info in DIRAC
 
-Usage::
-
+Usage:
   dirac-admin-add-host [options] ... Property=<Value> ...
 
-Arguments::
-
+Arguments:
   Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)
 
-Example::
-
+Example:
   $ dirac-admin-add-host -H dirac.i2np3.fr -D /O=GRID-FR/C=FR/O=CNRS/OU=CC-IN2P3/CN=dirac.in2p3.fr
 """
 from __future__ import absolute_import

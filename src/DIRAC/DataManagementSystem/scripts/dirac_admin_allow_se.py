@@ -2,12 +2,10 @@
 """
 Enable using one or more Storage Elements
 
-Usage::
-
+Usage:
   dirac-admin-allow-se SE1 [SE2 ...]
 
-Example::
-
+Example:
   $ dirac-admin-allow-se M3PEC-disk
 """
 from __future__ import print_function

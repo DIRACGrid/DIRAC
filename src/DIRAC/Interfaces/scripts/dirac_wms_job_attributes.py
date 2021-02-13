@@ -6,16 +6,13 @@
 """
 Retrieve attributes associated with the given DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-attributes [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-attributes  1
   {'AccountedFlag': 'False',
    'ApplicationNumStatus': '0',

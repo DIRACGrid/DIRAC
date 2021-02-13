@@ -4,8 +4,7 @@ Allows to add a specified extension to an already existing DIRAC installation.
 The extension can come from another project than the one installed.
 No new version directory is created. The command is based on the main DIRAC installer dirac-install.py.
 
-Usage::
-
+Usage:
   dirac-install-extension [options] ...
 
 """

@@ -2,16 +2,13 @@
 """
 Get informations for a given production
 
-Usage::
-
+Usage:
   dirac-prod-get prodID
 
-Arguments::
-
+Arguments:
   prodID: Production ID (mandatory)
 
-Example::
-
+Example:
   $ dirac-prod-get 381
 """
 from __future__ import absolute_import

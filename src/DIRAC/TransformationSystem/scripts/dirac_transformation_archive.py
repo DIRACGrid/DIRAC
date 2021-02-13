@@ -2,8 +2,7 @@
 """
 Archive a transformation
 
-Usage::
-
+Usage:
   dirac-transformation-archive transID [transID] [transID]
 """
 

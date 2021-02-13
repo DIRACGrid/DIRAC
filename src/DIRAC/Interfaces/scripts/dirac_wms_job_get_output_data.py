@@ -6,12 +6,10 @@
 """
 Retrieve the output data files of a DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-get-output-data [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 """
 from __future__ import print_function

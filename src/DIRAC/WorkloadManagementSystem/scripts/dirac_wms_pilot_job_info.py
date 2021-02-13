@@ -6,12 +6,10 @@
 """
 Retrieve info about jobs run by the given pilot
 
-Usage::
-
+Usage:
   dirac-wms-pilot-job-info [options] ... PilotID ...
 
-Arguments::
-
+Arguments:
   PilotID:  Grid ID of the pilot
 """
 from __future__ import print_function

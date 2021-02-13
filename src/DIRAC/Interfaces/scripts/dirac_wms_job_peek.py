@@ -6,16 +6,13 @@
 """
 Peek StdOut of the given DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-delete [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-peek 1
 """
 from __future__ import print_function

@@ -2,8 +2,7 @@
 """
 Change status of replica of a given file or a list of files at a given Storage Element
 
-Usage::
-
+Usage:
   dirac-dms-change-replica-status <lfn | fileContainingLfns> <SE> <status>
 """
 from __future__ import print_function

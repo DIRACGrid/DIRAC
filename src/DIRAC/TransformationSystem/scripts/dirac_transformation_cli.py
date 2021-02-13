@@ -2,8 +2,7 @@
 """
 Command to launch the Transformation Shell
 
-Usage::
-
+Usage:
   dirac-transformation-cli [option]
 """
 from __future__ import absolute_import

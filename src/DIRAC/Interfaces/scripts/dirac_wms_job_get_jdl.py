@@ -6,16 +6,13 @@
 """
 Retrieve the current JDL of a DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-get-jdl [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-get-jdl 1
   {'Arguments': '-ltrA',
    'CPUTime': '86400',

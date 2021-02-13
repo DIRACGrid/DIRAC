@@ -6,16 +6,13 @@
 """
 Lists the users in the Configuration. If no group is specified return all users.
 
-Usage::
-
+Usage:
   dirac-admin-list-users [options] ... [Group] ...
 
-Arguments::
-
+Arguments:
   Group:    Only users from this group (default: all)
 
-Example::
-
+Example:
   $ dirac-admin-list-users
   All users registered:
   vhamar

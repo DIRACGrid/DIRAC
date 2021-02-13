@@ -2,8 +2,7 @@
 """
 Runs checkTransformationIntegrity from ValidateOutputDataAgent on selected Tranformation
 
-Usage::
-
+Usage:
   dirac-transformation-verify-outputdata transID [transID] [transID]
 """
 

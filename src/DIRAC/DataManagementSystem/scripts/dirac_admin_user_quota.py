@@ -2,12 +2,10 @@
 """
 Show storage quotas for specified users or for all registered users if nobody is specified
 
-Usage::
-
+Usage:
   dirac-admin-user-quota [user1 ...]
 
-Example::
-
+Example:
   $ dirac-admin-user-quota
   ------------------------------
   Username       |     Quota (GB)

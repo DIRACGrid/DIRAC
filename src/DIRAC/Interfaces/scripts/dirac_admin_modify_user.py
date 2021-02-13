@@ -6,18 +6,15 @@
 """
 Modify a user in the CS.
 
-Usage::
-
+Usage:
   dirac-admin-modify-user [options] ... user DN group [group] ...
 
-Arguments::
-
+Arguments:
   user:     User name (mandatory)
   DN:       DN of the User (mandatory)
   group:    Add the user to the group (mandatory)
 
-Example::
-
+Example:
   $ dirac-admin-modify-user vhamar /C=FR/O=Org/CN=User dirac_user
 """
 from __future__ import print_function

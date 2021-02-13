@@ -6,16 +6,13 @@
 """
 Retrieve parameters associated to the given DIRAC job
 
-Usage::
-
+Usage:
   dirac-wms-job-parameters [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC Job ID
 
-Example::
-
+Example:
   $ dirac-wms-job-parameters 1
   {'CPU(MHz)': '1596.479',
    'CPUNormalizationFactor': '6.8',

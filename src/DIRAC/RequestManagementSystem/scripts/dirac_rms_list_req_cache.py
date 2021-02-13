@@ -2,8 +2,7 @@
 """
 List the number of requests in the caches of all the ReqProxyies
 
-Usage::
-
+Usage:
   dirac-rms-list-req-cache [options]
 """
 from __future__ import absolute_import

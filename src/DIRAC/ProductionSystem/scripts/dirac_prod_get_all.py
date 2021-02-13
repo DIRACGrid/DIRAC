@@ -2,8 +2,7 @@
 """
 Get summary informations of all productions
 
-Usage::
-
+Usage:
   dirac-prod-get-all
 """
 from __future__ import absolute_import

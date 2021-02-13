@@ -6,16 +6,13 @@
 """
 Retrieve the output of the pilot that executed a given job
 
-Usage::
-
+Usage:
   dirac-admin-get-job-pilot-output [options] ... JobID ...
 
-Arguments::
-
+Arguments:
   JobID:    DIRAC ID of the Job
 
-Example::
-
+Example:
   $ dirac-admin-get-job-pilot-output 34
 """
 from __future__ import print_function

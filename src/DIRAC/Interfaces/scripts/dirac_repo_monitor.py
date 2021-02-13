@@ -2,12 +2,10 @@
 """
 Monitor the jobs present in the repository
 
-Usage::
-
+Usage:
   dirac-repo-monitor [options] ... RepoDir
 
-Arguments::
-
+Arguments:
   RepoDir:  Location of Job Repository
 """
 from __future__ import print_function
