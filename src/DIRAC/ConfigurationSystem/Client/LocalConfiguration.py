@@ -48,9 +48,9 @@ class LocalConfiguration(object):
     self.loggingSection = "/DIRAC"
     self.initialized = False
     self.__scriptDescription = ''
-    self.__usageMessage = ''
-    self.__argumentsDescription = ''
-    self.__usageExample = ''
+    self.__helpUsageDoc = ''
+    self.__helpArgumentsDoc = ''
+    self.__helpExampleDoc = ''
     self.__debugMode = 0
     self.firstOptionIndex = 1
 
@@ -105,15 +105,15 @@ class LocalConfiguration(object):
       # The usage block starts with '\nUsage:\n' or '\nUsage::\n'
       usage = re.search(r"%s%s" % (r"Usage:+", r), usageMsg, re.DOTALL)
       if usage:
-        self.__usageMessage = '\nUsage:\n' + usage.group(1).strip('\n') + '\n'
+        self.__helpUsageDoc = '\nUsage:\n' + usage.group(1).strip('\n') + '\n'
       # The argument block starts with '\Arguments:\n' or '\Arguments::\n'
       args = re.search(r"%s%s" % (r"Arguments:+", r), usageMsg, re.DOTALL)
       if args:
-        self.__argumentsDescription = '\nArguments:\n' + args.group(1).strip('\n') + '\n'
+        self.__helpArgumentsDoc = '\nArguments:\n' + args.group(1).strip('\n') + '\n'
       # The example block starts with '\Example:\n' or '\Example::\n'
       expl = re.search(r"%s%s" % (r"Example:+", r), usageMsg, re.DOTALL)
       if expl:
-        self.__usageExample = '\nExample:\n' + expl.group(1).strip('\n') + '\n'
+        self.__helpExampleDoc = '\nExample:\n' + expl.group(1).strip('\n') + '\n'
 
   def __setOptionValue(self, optionPath, value):
     gConfigurationData.setOptionInCFG(self.__getAbsolutePath(optionPath),
@@ -540,8 +540,8 @@ class LocalConfiguration(object):
     if self.__scriptDescription:
       gLogger.notice(self.__scriptDescription)
 
-    if self.__usageMessage:
-      gLogger.notice(self.__usageMessage)
+    if self.__helpUsageDoc:
+      gLogger.notice(self.__helpUsageDoc)
     else:
       gLogger.notice("\nUsage:")
       gLogger.notice("\n  %s [options] ..." % os.path.basename(sys.argv[0]))
@@ -575,11 +575,11 @@ class LocalConfiguration(object):
         else:
           gLogger.notice("  -%s --%s : %s" % (optionTuple[0].ljust(2), optionTuple[1].ljust(22), optionTuple[2]))
 
-    if self.__argumentsDescription:
-      gLogger.notice(self.__argumentsDescription)
+    if self.__helpArgumentsDoc:
+      gLogger.notice(self.__helpArgumentsDoc)
 
-    if self.__usageExample:
-      gLogger.notice(self.__usageExample)
+    if self.__helpExampleDoc:
+      gLogger.notice(self.__helpExampleDoc)
 
     gLogger.notice("")
     DIRAC.exit(exitCode)
