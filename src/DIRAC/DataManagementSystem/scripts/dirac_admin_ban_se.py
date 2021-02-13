@@ -28,8 +28,6 @@ def main():
   site = ''
   mute = False
 
-  Script.setUsageMessage(__doc__)
-
   Script.registerSwitch("r", "BanRead", "     Ban only reading from the storage element")
   Script.registerSwitch("w", "BanWrite", "     Ban writing to the storage element")
   Script.registerSwitch("k", "BanCheck", "     Ban check access to the storage element")

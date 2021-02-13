@@ -31,8 +31,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
-
-  Script.setUsageMessage(__doc__)
   Script.parseCommandLine()
 
   fileIds = Script.getPositionalArgs()

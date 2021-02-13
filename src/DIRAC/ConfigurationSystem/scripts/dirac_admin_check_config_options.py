@@ -70,7 +70,6 @@ class CheckConfig(object):
     Script.registerSwitch("O", "missingOption", "Show options which do not exist in the current configuration",
                           self._setShowMissingOptions)
 
-    Script.setUsageMessage(__doc__)
     Script.parseCommandLine(ignoreErrors=True)
     if not any([self.showModified, self.showAdded, self.showMissingSections, self.showMissingOptions]):
       LOG.error("\nERROR: Set at least one of the flags M A U O")

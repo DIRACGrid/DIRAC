@@ -42,8 +42,6 @@ def main():
   gComponentInstaller.exitOnError = True
 
   Script.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
 

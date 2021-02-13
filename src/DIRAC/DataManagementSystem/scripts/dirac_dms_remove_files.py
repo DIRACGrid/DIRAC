@@ -19,9 +19,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine()
+def main():  Script.parseCommandLine()
 
   import os
   import DIRAC

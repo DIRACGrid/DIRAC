@@ -36,9 +36,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
 @DIRACScript()
-def main():
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine(ignoreErrors=True)
+def main():  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
   arg = "".join(args)

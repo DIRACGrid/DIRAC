@@ -20,9 +20,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine(ignoreErrors=False)
+def main():  Script.parseCommandLine(ignoreErrors=False)
   args = Script.getPositionalArgs()
 
   if len(args) != 1:

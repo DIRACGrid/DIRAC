@@ -37,8 +37,6 @@ def main():
   cliParams = Params()
 
   Script.disableCS()
-  Script.setUsageMessage(__doc__)
-
   Script.registerSwitch(
       "e",
       "exitOnError",

@@ -36,8 +36,6 @@ def processScriptSwitches():
   Script.registerSwitch("H:", "host=", "use this url for information querying")
   Script.registerSwitch("G", "glue2", "DEPRECATED: query GLUE2 information schema")
   Script.registerSwitch("g", "glue1", "query GLUE1 information schema")
-
-  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=True)
 
   vo = ''

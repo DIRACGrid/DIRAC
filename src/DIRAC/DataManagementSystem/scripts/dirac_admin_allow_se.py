@@ -27,8 +27,6 @@ def main():
   site = ''
   mute = False
 
-  Script.setUsageMessage(__doc__)
-
   Script.registerSwitch("r", "AllowRead", "     Allow only reading from the storage element")
   Script.registerSwitch("w", "AllowWrite", "     Allow only writing to the storage element")
   Script.registerSwitch("k", "AllowCheck", "     Allow only check access to the storage element")

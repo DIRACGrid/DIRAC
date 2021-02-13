@@ -111,8 +111,6 @@ def main():
   params = Params()
   params.registerCLISwitches()
 
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

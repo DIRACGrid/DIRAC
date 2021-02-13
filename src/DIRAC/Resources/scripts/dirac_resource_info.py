@@ -21,8 +21,6 @@ def main():
 
   from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
 
-  Script.setUsageMessage(__doc__)
-
   ceFlag = False
   seFlag = False
   voName = None

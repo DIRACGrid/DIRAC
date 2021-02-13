@@ -49,9 +49,6 @@ def main():
   Script.registerSwitch("r", "showRaw", "show raw result from the query", cliParams.setRawResult)
   Script.registerSwitch("p:", "numPings=", "Number of pings to do (by default 1)", cliParams.setNumOfPingsToDo)
 
-  # Define a help message
-  Script.setUsageMessage(__doc__)
-
   # Parse the command line and initialize DIRAC
   Script.parseCommandLine(ignoreErrors=False)
 

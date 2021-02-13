@@ -21,9 +21,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.localCfg.addDefaultEntry("LogLevel", "info")
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine()
+  Script.localCfg.addDefaultEntry("LogLevel", "info")  Script.parseCommandLine()
 
   from DIRAC.AccountingSystem.Client.AccountingCLI import AccountingCLI
 

@@ -40,8 +40,6 @@ def main():
   Script.registerSwitch("b:", "BaseDir=", "Base directory to begin search (default /[vo]/user/[initial]/[username])")
   Script.registerSwitch("e", "EmptyDirs", "Create a list of empty directories")
 
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=False)
 
   for switch in Script.getUnprocessedSwitches():

@@ -62,9 +62,6 @@ def registerSwitches():
   for switch in switches:
     Script.registerSwitch(*switch)
 
-  # Define a help message
-  Script.setUsageMessage(__doc__)
-
 
 def parseSwitches():
   '''

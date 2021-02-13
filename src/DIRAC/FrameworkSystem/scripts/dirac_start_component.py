@@ -21,9 +21,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.disableCS()
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine()
+  Script.disableCS()  Script.parseCommandLine()
   args = Script.getPositionalArgs()
   if len(args) > 2:
     Script.showHelp(exitCode=1)

@@ -30,9 +30,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch("f:", "File=", "Writes job ids to file <value>")
+def main():  Script.registerSwitch("f:", "File=", "Writes job ids to file <value>")
   Script.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()

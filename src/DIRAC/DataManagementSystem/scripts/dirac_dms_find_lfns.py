@@ -24,9 +24,7 @@ def main():
   from DIRAC.Core.Base import Script
 
   Script.registerSwitch('', 'Path=', '    Path to search for')
-  Script.registerSwitch('', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched')
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch('', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched')  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
   import DIRAC

@@ -33,8 +33,6 @@ def getLFNList(arg):
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage(__doc__)
-
   catalog = None
   Script.registerSwitch("C:", "Catalog=", "Catalog to use")
   Script.parseCommandLine()

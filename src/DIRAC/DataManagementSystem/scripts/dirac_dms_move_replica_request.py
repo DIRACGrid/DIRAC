@@ -36,8 +36,6 @@ def getLFNList(arg):
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage(__doc__)
-
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 

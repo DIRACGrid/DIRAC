@@ -31,9 +31,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
-  Script.registerSwitch("f", "force", "create the user if it doesn't exist")
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch("f", "force", "create the user if it doesn't exist")  Script.parseCommandLine(ignoreErrors=True)
 
   args = Script.getPositionalArgs()
 

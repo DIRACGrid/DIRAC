@@ -40,8 +40,6 @@ def setVO(value):
 def main():
   Script.registerSwitch("V:", "vo=", "VO name", setVO)
   Script.registerSwitch("D", "dryRun", "Dry run", setDryRun)
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=True)
 
   @executeWithUserProxy

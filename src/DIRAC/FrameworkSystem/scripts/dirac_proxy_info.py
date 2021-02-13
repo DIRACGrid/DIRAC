@@ -79,9 +79,7 @@ class Params(object):
 def main():
   params = Params()
 
-  from DIRAC.Core.Base import Script
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
+  from DIRAC.Core.Base import Script  Script.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
   Script.registerSwitch("i", "version", "Print version", params.showVersion)
   Script.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)
   Script.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck)

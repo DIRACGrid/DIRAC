@@ -36,8 +36,6 @@ def main():
   Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
   Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
   Script.registerSwitch("", "File=", "File name,if not specified default is std.out ")
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

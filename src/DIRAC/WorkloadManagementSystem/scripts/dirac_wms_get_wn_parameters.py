@@ -43,9 +43,7 @@ def setQueue(args):
 def main():
   global ceName
   global Site
-  global Queue
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
+  global Queue  Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
   Script.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
   Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
   Script.parseCommandLine(ignoreErrors=True)

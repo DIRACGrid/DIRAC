@@ -33,9 +33,7 @@ from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 
 @DIRACScript()
-def main():
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine(ignoreErrors=False)
+def main():  Script.parseCommandLine(ignoreErrors=False)
   from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
   client = StorageManagerClient()
 

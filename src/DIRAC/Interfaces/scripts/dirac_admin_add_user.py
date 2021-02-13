@@ -64,9 +64,7 @@ def main():
   global userName
   global userDN
   global userMail
-  global userGroups
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName)
+  global userGroups  Script.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName)
   Script.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', setUserDN)
   Script.registerSwitch('M:', 'UserMail:', 'eMail of the user (Mandatory)', setUserMail)
   Script.registerSwitch(

@@ -61,7 +61,6 @@ class Params(object):
     """
     add options to dirac option parser
     """
-    Script.setUsageMessage(__doc__)
     Script.registerSwitch(
         "a",
         "all",

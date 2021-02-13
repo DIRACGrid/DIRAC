@@ -55,9 +55,7 @@ def addProperty(arg):
 def main():
   global groupName
   global groupProperties
-  global userNames
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
+  global userNames  Script.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
   Script.registerSwitch(
       'U:',
       'UserName:',

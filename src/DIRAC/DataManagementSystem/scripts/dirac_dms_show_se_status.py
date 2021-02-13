@@ -59,8 +59,6 @@ def main():
   global noVOFlag
   global allVOsFlag
 
-  Script.setUsageMessage(__doc__)
-
   Script.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
   Script.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)
   Script.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", setNoVO)

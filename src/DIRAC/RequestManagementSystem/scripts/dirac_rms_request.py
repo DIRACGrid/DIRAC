@@ -56,8 +56,6 @@ def main():
   Script.registerSwitch('', 'Cancel', '   Cancel the request')
   Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
   Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
-  Script.setUsageMessage(__doc__)
-
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 

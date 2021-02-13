@@ -33,7 +33,6 @@ class Params(object):
   def registerSwitches(self):
     Script.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
     Script.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
-    Script.setUsageMessage(__doc__)
 
 
 @DIRACScript()

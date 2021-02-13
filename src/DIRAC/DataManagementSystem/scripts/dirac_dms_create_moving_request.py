@@ -48,15 +48,9 @@ class CreateMovingRequest(object):
                    'Ensure the LFNs are migrated to tape before removing any replicas'),
                   ('X', 'Execute', 'Put Requests, else dryrun'),
                   ]
-    self.setUsage()
     self.registerSwitchesAndParseCommandLine()
     self.getLFNList()
     self.getLFNMetadata()
-
-  @staticmethod
-  def setUsage():
-    """Set flags and options."""
-    Script.setUsageMessage(__doc__)
 
   @property
   def fcClient(self):

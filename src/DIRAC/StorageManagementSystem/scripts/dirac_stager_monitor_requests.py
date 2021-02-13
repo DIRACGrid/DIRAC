@@ -31,8 +31,6 @@ subLogger = None
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage(__doc__)
-
   def registerSwitches():
     '''
       Registers all switches that can be used while calling the script from the

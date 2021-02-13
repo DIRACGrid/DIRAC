@@ -37,9 +37,7 @@ def main():
     return DIRAC.S_OK()
 
   Script.registerSwitch("f:", "file=", "Dump Configuration data into <file>", setFilename)
-  Script.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine()
+  Script.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)  Script.parseCommandLine()
 
   from DIRAC import gConfig, gLogger
   result = gConfig.dumpCFGAsLocalCache(fileName, raw)

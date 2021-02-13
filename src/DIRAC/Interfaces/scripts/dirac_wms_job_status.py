@@ -28,9 +28,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
+def main():  Script.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
   Script.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
 
   Script.parseCommandLine(ignoreErrors=True)

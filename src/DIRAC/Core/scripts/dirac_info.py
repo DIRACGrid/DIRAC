@@ -53,8 +53,6 @@ def main():
     Script.disableCS()
     print(DIRAC.getPlatform())
     DIRAC.exit(0)
-
-  Script.setUsageMessage(__doc__)
   Script.registerSwitch("v", "version", "print version of current DIRAC installation", version)
   Script.registerSwitch("p", "platform", "print platform of current DIRAC installation", platform)
   Script.parseCommandLine(ignoreErrors=True)

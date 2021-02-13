@@ -86,7 +86,6 @@ class CreateArchiveRequest(object):
                   ('', 'SourceOnly', 'Only treat files that are already at the Source-SE'),
                   ('X', 'Execute', 'Put Requests, else dryrun'),
                   ]
-    self.setUsage()
     self.registerSwitchesAndParseCommandLine()
 
     self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', MAX_SIZE))
@@ -96,11 +95,6 @@ class CreateArchiveRequest(object):
     self.getLFNMetadata()
     self.lfnChunks = []
     self.replicaSEs = []
-
-  @staticmethod
-  def setUsage():
-    """Set flags and options."""
-    Script.setUsageMessage(__doc__)
 
   @property
   def fcClient(self):

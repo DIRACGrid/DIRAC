@@ -31,8 +31,6 @@ def main():
   unit = 'GB'
   Script.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
 
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=False)
   for switch in Script.getUnprocessedSwitches():
     if switch[0].lower() == "u" or switch[0].lower() == "unit":

@@ -62,8 +62,6 @@ def main():
       sortBy)
   Script.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
 
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

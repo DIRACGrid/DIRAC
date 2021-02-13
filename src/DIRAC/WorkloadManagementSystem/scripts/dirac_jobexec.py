@@ -26,9 +26,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   # Register workflow parameter switch
-  Script.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine()
+  Script.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')  Script.parseCommandLine()
 
   # from DIRAC.Core.Workflow.Parameter import *
   from DIRAC import gLogger

@@ -20,9 +20,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch(
+def main():  Script.registerSwitch(
       "v:",
       "vo=",
       "Location of pilot version in CS /Operations/<vo>/Pilot/Version"

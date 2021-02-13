@@ -35,8 +35,6 @@ def registerSwitches():
 
   Script.registerSwitch("H:", "host=", "BDII host")
   Script.registerSwitch("V:", "vo=", "vo")
-  Script.setUsageMessage(__doc__)
-
 
 def parseSwitches():
   '''

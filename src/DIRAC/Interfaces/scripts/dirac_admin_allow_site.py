@@ -30,9 +30,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
-  Script.setUsageMessage(__doc__)
-  Script.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")  Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

@@ -32,8 +32,6 @@ def main():
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 
-  Script.setUsageMessage(__doc__)
-
   def setCEName(args):
     global ceName
     ceName = args

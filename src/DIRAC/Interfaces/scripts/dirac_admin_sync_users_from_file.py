@@ -28,9 +28,7 @@ __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main():
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch("t", "test", "Only test. Don't commit changes")
+def main():  Script.registerSwitch("t", "test", "Only test. Don't commit changes")
   Script.parseCommandLine(ignoreErrors=True)
 
   args = Script.getExtraCLICFGFiles()

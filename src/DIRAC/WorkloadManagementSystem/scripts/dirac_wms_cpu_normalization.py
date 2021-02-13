@@ -38,8 +38,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main():
   Script.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
   Script.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=True)
 
   update = False

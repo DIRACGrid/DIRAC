@@ -52,9 +52,7 @@ def addProperty(arg):
 def main():
   global hostName
   global hostDN
-  global hostProperties
-  Script.setUsageMessage(__doc__)
-  Script.registerSwitch('H:', 'HostName:', 'Name of the Host (Mandatory)', setHostName)
+  global hostProperties  Script.registerSwitch('H:', 'HostName:', 'Name of the Host (Mandatory)', setHostName)
   Script.registerSwitch('D:', 'HostDN:', 'DN of the Host Certificate (Mandatory)', setHostDN)
   Script.registerSwitch(
       'P:',

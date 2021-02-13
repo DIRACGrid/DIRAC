@@ -46,8 +46,6 @@ def main():
       "exclude=",
       "Comma separated list of hosts to be excluded from the scanning process",
       setExcludedHosts)
-
-  Script.setUsageMessage(__doc__)
   Script.parseCommandLine(ignoreErrors=False)
 
   componentType = ''

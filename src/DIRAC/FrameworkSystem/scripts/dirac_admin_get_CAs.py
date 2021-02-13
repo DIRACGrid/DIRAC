@@ -27,8 +27,6 @@ __RCSID__ = "$Id$"
 @DIRACScript()
 def main():
   Script.addDefaultOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=True)
 
   bdc = BundleDeliveryClient()

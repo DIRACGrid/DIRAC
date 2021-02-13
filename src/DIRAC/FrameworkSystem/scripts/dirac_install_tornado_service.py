@@ -66,8 +66,6 @@ def main():
   Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
   Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
   Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
 

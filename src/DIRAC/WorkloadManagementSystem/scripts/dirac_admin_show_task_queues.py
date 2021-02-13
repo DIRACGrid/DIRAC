@@ -62,8 +62,6 @@ def main():
   global taskQueueID
   Script.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)
   Script.registerSwitch("t:", "taskQueue=", "show this task queue only", setTaskQueueID)
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(initializeMonitor=False)
 
   result = MatcherClient().getActiveTaskQueues()

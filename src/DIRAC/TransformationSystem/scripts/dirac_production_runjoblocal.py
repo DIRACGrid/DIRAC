@@ -139,8 +139,6 @@ def __runJobLocally(jobID, basepath, vo):
 @DIRACScript()
 def main():
   Script.parseCommandLine(ignoreErrors=False)
-
-  Script.setUsageMessage(__doc__)
   Script.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
   Script.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
 

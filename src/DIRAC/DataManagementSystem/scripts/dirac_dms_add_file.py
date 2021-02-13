@@ -70,8 +70,6 @@ def getDict(item_list):
 @DIRACScript()
 def main():
   global overwrite
-  Script.setUsageMessage(__doc__)
-
   Script.registerSwitch("f", "force", "Force overwrite of existing file", setOverwrite)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
