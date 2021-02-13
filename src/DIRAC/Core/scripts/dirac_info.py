@@ -8,10 +8,20 @@ Report info about local DIRAC installation
 
 Example:
   $ dirac-info
-         DIRAC version : v5r12
-                 Setup : Dirac-Production
-   ConfigurationServer : ['dips://dirac.in2p3.fr:9135/Configuration/Server']
-   VirtualOrganization : vo.formation.idgrilles.fr
+
+  Option                 Value
+  ============================
+  Setup                  Dirac-Production
+  ConfigurationServer    dips://ccdiracli08.in2p3.fr:9135/Configuration/Server
+  Installation path      /opt/dirac/versions/v7r2-pre33_1613239204
+  Installation type      client
+  Platform               Linux_x86_64_glibc-2.17
+  VirtualOrganization    dteam
+  User DN                /DC=org/DC=ugrid/O=people/O=BITP/CN=Andrii Lytovchenko
+  Proxy validity, secs   0
+  Use Server Certificate Yes
+  Skip CA Checks         No
+  DIRAC version          v7r2-pre33
 """
 
 from __future__ import print_function
