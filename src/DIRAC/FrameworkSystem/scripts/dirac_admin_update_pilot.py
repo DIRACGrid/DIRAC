@@ -20,7 +20,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.registerSwitch(
+def main():
+  Script.registerSwitch(
       "v:",
       "vo=",
       "Location of pilot version in CS /Operations/<vo>/Pilot/Version"

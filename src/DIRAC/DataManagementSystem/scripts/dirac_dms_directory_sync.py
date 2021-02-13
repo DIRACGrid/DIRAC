@@ -36,7 +36,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.registerSwitch("D", "sync", "Make target directory identical to source")
+def main():
+  Script.registerSwitch("D", "sync", "Make target directory identical to source")
   Script.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
   Script.parseCommandLine(ignoreErrors=False)
 

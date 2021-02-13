@@ -31,7 +31,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch('a', "All", "  Also show inactive replicas")  Script.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch('a', "All", "  Also show inactive replicas")
+  Script.parseCommandLine(ignoreErrors=True)
   lfns = Script.getPositionalArgs()
   switches = Script.getUnprocessedSwitches()
 

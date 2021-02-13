@@ -52,7 +52,8 @@ def setExtendedPrint(_arg):
 
 @DIRACScript()
 def main():
-  global extendedPrint  Script.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
+  global extendedPrint
+  Script.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
   Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit

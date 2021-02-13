@@ -22,7 +22,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine()
+def main():
+  Script.parseCommandLine()
 
   from DIRAC.Core.Utilities.List import breakListIntoChunks
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager

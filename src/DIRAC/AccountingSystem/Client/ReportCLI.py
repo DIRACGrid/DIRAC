@@ -7,10 +7,7 @@ Once ready it could be used with a script as simple as:
 
 from DIRAC.Core.Base import Script
 
-Script.localCfg.addDefaultEntry( "LogLevel", "info" )
-Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [options] ...' % Script.scriptName, ] )   )
+Script.localCfg.addDefaultEntry("LogLevel", "info")
 Script.parseCommandLine()
 
 from DIRAC.AccountingSystem.Client.ReportCLI import ReportCLI

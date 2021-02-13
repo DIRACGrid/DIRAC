@@ -26,7 +26,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine(ignoreErrors=False)
+def main():
+  Script.parseCommandLine(ignoreErrors=False)
   files = Script.getPositionalArgs()
   if len(files) == 0:
     Script.showHelp()

@@ -41,9 +41,7 @@ def main():
   Script.registerSwitch('', 'Since=', '   Date since when to select jobs, or number of days (default: today)')
   Script.registerSwitch('', 'Date=', '   Specify the date (check for a full day)')
   Script.registerSwitch('', 'Full', '   Printout full list of job (default: False except if --WorkerNode)')
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [options] ... LFN|File' % Script.scriptName]))
+
   Script.parseCommandLine()
   from DIRAC import gLogger
   from DIRAC.Interfaces.API.Dirac import Dirac

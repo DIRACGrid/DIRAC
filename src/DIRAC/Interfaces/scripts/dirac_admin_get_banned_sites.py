@@ -22,7 +22,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine(ignoreErrors=True)
+def main():
+  Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

@@ -6,9 +6,6 @@
 """
 Report CPU length of queue, in seconds
 This script is used by the dirac-pilot script to set the CPUTime left, which is a limit for the matching
-
-Usage:
-  dirac-wms-get-queue-cpu-time [options]
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -22,7 +19,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch("C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known")  Script.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch("C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known")
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
   CPUNormalizationFactor = 0.0

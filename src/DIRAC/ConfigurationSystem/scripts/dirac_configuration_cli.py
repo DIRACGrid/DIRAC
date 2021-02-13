@@ -19,7 +19,8 @@ from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
 
 @DIRACScript()
 def main():
-  Script.localCfg.addDefaultEntry("LogLevel", "fatal")  Script.parseCommandLine()
+  Script.localCfg.addDefaultEntry("LogLevel", "fatal")
+  Script.parseCommandLine()
 
   CSCLI().start()
 

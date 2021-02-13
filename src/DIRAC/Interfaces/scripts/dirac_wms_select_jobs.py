@@ -34,7 +34,8 @@ def main():
   Script.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
   Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
   Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
-  Script.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)  Script.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
+  Script.parseCommandLine(ignoreErrors=True)
 
   args = Script.getPositionalArgs()
 

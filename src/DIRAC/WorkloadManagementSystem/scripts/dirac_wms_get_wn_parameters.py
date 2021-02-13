@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 """
 Determine number of processors and memory for the worker node
-
-Usage:
-  dirac-wms-get-wn-parameters [option]... [cfgfile]
-
-Arguments:
-  cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -43,7 +37,8 @@ def setQueue(args):
 def main():
   global ceName
   global Site
-  global Queue  Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
+  global Queue
+  Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
   Script.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
   Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
   Script.parseCommandLine(ignoreErrors=True)

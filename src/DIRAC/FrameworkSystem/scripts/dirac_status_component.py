@@ -26,7 +26,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.disableCS()  Script.parseCommandLine()
+  Script.disableCS()
+  Script.parseCommandLine()
   args = Script.getPositionalArgs()
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller

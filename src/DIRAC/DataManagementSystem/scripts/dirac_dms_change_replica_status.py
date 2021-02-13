@@ -17,7 +17,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine()
+def main():
+  Script.parseCommandLine()
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
   catalog = FileCatalog()

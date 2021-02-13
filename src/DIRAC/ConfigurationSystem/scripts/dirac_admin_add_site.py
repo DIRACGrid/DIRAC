@@ -32,7 +32,8 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine(ignoreErrors=True)
+def main():
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
   if len(args) < 3:

@@ -24,7 +24,8 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine(ignoreErrors=False)
+def main():
+  Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()
   if len(args) < 2:

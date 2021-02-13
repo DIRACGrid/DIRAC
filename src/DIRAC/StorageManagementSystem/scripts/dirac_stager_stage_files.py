@@ -25,7 +25,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine(ignoreErrors=True)
+def main():
+  Script.parseCommandLine(ignoreErrors=True)
 
   args = Script.getPositionalArgs()
 

@@ -19,7 +19,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  host = None  Script.registerSwitch("H:", "host=", "   Target host")
+  host = None
+  Script.registerSwitch("H:", "host=", "   Target host")
   Script.parseCommandLine(ignoreErrors=False)
   for switch in Script.getUnprocessedSwitches():
     if switch[0].lower() == "h" or switch[0].lower() == "host":

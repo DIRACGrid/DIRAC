@@ -23,7 +23,8 @@ from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
 
 @DIRACScript()
-def main():  cliParams = CLIParams()
+def main():
+  cliParams = CLIParams()
   cliParams.registerCLISwitches()
 
   Script.parseCommandLine()

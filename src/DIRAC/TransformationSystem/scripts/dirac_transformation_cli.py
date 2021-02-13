@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Command to launch the Transformation Shell
-
-Usage:
-  dirac-transformation-cli [option]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -14,7 +11,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine(ignoreErrors=False)
+def main():
+  Script.parseCommandLine(ignoreErrors=False)
 
   from DIRAC.TransformationSystem.Client.TransformationCLI import TransformationCLI
 

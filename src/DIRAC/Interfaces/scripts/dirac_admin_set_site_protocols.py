@@ -28,7 +28,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")  Script.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")
+  Script.parseCommandLine(ignoreErrors=True)
 
   site = None
   for switch in Script.getUnprocessedSwitches():

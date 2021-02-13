@@ -27,7 +27,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine()
+def main():
+  Script.parseCommandLine()
   users = Script.getPositionalArgs()
 
   from DIRAC import gLogger, gConfig

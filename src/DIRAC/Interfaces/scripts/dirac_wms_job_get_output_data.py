@@ -24,7 +24,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
+def main():
+  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

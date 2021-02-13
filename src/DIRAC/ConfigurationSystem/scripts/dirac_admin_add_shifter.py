@@ -26,7 +26,8 @@ from DIRAC import exit as DIRACExit, gLogger
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine(ignoreErrors=True)
+def main():
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
   csAPI = CSAPI()

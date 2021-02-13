@@ -18,7 +18,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.registerSwitch('', 'Full', '   Print full list of requests')  from DIRAC.Core.Base.Script import parseCommandLine
+  Script.registerSwitch('', 'Full', '   Print full list of requests')
+  from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 

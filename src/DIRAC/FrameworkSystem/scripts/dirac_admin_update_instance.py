@@ -22,7 +22,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():  Script.registerSwitch("", "hosts=", "Comma separated list of hosts or file containing row wise list of hosts"
+def main():
+  Script.registerSwitch("", "hosts=", "Comma separated list of hosts or file containing row wise list of hosts"
                                       " targeted for update (leave empty for all)")
   Script.registerSwitch("", "retry=", "Number of retry attempts on hosts that have failed to update")
 

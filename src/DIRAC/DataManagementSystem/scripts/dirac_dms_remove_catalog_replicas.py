@@ -22,7 +22,8 @@ from DIRAC import gLogger
 
 
 @DIRACScript()
-def main():  Script.parseCommandLine()
+def main():
+  Script.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
   allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)

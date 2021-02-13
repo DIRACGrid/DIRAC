@@ -32,7 +32,8 @@ def _stringInList(subStr, sList):
 
 @DIRACScript()
 def main():
-  parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']  Script.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
+  parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
+  Script.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
   Script.parseCommandLine(ignoreErrors=True)
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Parameters':

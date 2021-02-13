@@ -39,7 +39,8 @@ def setSites(optVal_):
 @DIRACScript()
 def main():
   global fullMatch
-  global sites  Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
+  global sites
+  Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
   Script.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
 
   Script.parseCommandLine(ignoreErrors=True)

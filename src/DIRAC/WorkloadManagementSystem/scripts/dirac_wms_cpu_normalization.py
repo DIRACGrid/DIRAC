@@ -21,14 +21,13 @@ Pilots invoke dirac-wms-cpu-normalization which
     }
 
 The last 2 (DB12 and DB12measured) are up to now wrote down but never used.
-
-Usage:
-  dirac-wms-cpu-normalization [options]
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript

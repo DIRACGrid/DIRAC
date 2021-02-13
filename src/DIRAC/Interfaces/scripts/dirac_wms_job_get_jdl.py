@@ -46,7 +46,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   original = False
-  Script.registerSwitch('O', 'Original', 'Gets the original JDL')  Script.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch('O', 'Original', 'Gets the original JDL')
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
   for switch in Script.getUnprocessedSwitches():

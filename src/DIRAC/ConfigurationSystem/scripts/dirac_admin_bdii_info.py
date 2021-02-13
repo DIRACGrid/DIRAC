@@ -36,6 +36,7 @@ def registerSwitches():
   Script.registerSwitch("H:", "host=", "BDII host")
   Script.registerSwitch("V:", "vo=", "vo")
 
+
 def parseSwitches():
   '''
     Parses the arguments passed by the user

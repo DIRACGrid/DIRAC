@@ -246,7 +246,8 @@ def main():
   piParams = Params()
   piParams.registerCLISwitches()
 
-  Script.disableCS()  Script.parseCommandLine(ignoreErrors=True)
+  Script.disableCS()
+  Script.parseCommandLine(ignoreErrors=True)
   DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
 
   pI = ProxyInit(piParams)
