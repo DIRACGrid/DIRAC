@@ -18,7 +18,7 @@ from six.moves import http_client
 import DIRAC
 
 from DIRAC import gLogger
-from DIRAC.Core.Web import Conf
+from DIRAC.Core.Tornado.Web import Conf
 from DIRAC.Core.Tornado.Server.BaseRequestHandler import BaseRequestHandler
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 

@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Base.DIRACDB import DIRACDB
 from DIRAC.Core.Utilities.MySQL import MySQL
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
