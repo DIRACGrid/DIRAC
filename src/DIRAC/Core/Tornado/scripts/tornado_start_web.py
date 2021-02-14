@@ -10,6 +10,8 @@ import os
 import sys
 import tornado
 
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
 @DIRACScript()
 def main():
   # Must be define BEFORE any dirac import
