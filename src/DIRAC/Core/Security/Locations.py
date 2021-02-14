@@ -29,7 +29,19 @@ def getProxyLocation():
   # No gridproxy found
   return False
 
-# Retrieve CA's location
+
+def getPrivateKeyLocation():
+  """ Get the path of the currently active private key(for auth)
+  """
+  # Grid-Security
+  retVal = gConfig.getOption('%s/Grid-Security' % g_SecurityConfPath)
+  if retVal['OK']:
+    keyPath = "%s/private.pem" % retVal['Value']
+    if os.path.isfile(keyPath):
+      return keyPath
+
+  # No private key found
+  return False
 
 
 def getCAsLocation():

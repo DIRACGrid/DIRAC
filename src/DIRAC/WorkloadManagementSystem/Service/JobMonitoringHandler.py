@@ -54,12 +54,13 @@ class JobMonitoringHandler(RequestHandler):
     """
 
     credDict = self.getRemoteCredentials()
+    owner = credDict['username']
     ownerDN = credDict['DN']
     ownerGroup = credDict['group']
     operations = Operations(group=ownerGroup)
     self.globalJobsInfo = operations.getValue(
         '/Services/JobMonitoring/GlobalJobsInfo', True)
-    self.jobPolicy = JobPolicy(ownerDN, ownerGroup, self.globalJobsInfo)
+    self.jobPolicy = JobPolicy(owner, ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = self.jobDB
 
     return S_OK()

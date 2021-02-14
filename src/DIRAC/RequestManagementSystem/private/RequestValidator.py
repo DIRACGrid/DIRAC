@@ -290,17 +290,19 @@ class RequestValidator(object):
         the RequestExecutingAgent
 
         :param request: the request to test
-        :param remoteCredentials: credentials from the clients
+        :param dict remoteCredentials: credentials from the clients
 
         :returns: True if everything is fine, False otherwise
     """
 
     credDN = remoteCredentials['DN']
     credGroup = remoteCredentials['group']
+    credUsername = remoteCredentials['username']
     credProperties = remoteCredentials['properties']
 
     # If the owner or the group was not set, we use the one of the credentials
-    if not request.OwnerDN or not request.OwnerGroup:
+    if not request.Owner or not request.OwnerGroup:
+      request.Owner = credUsername
       request.OwnerDN = credDN
       request.OwnerGroup = credGroup
       return True
@@ -308,7 +310,7 @@ class RequestValidator(object):
     # From here onward, we expect the ownerDN/group to already have a value
 
     # If the credentials in the Request match those from the credentials, it's OK
-    if request.OwnerDN == credDN and request.OwnerGroup == credGroup:
+    if request.Owner == credUsername and request.OwnerGroup == credGroup:
       return True
 
     # From here, something/someone is putting a request on behalf of someone else

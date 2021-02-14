@@ -284,6 +284,7 @@ class JobAgent(AgentModule):
     jobJDL = matcherInfo['JDL']
     jobGroup = matcherInfo['Group']
     ownerDN = matcherInfo['DN']
+    owner = matcherInfo['User']
 
     optimizerParams = {}
     for key in matcherInfo:
@@ -462,12 +463,12 @@ class JobAgent(AgentModule):
     return cpuWorkleft
 
   #############################################################################
-  def _setupProxy(self, ownerDN, ownerGroup):
+  def _setupProxy(self, owner, ownerGroup):
     """
     Retrieve a proxy for the execution of the job
     """
     if gConfig.getValue('/DIRAC/Security/UseServerCertificate', False):
-      proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
+      proxyResult = self._requestProxyFromProxyManager(owner, ownerGroup)
       if not proxyResult['OK']:
         self.log.error('Failed to setup proxy', proxyResult['Message'])
         return S_ERROR('Failed to setup proxy: %s' % proxyResult['Message'])
@@ -487,7 +488,7 @@ class JobAgent(AgentModule):
 
       groupProps = ret['Value']['groupProperties']
       if Properties.GENERIC_PILOT in groupProps or Properties.PILOT in groupProps:
-        proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
+        proxyResult = self._requestProxyFromProxyManager(owner, ownerGroup)
         if not proxyResult['OK']:
           self.log.error('Invalid Proxy', proxyResult['Message'])
           return S_ERROR('Failed to setup proxy: %s' % proxyResult['Message'])
@@ -496,18 +497,18 @@ class JobAgent(AgentModule):
     return S_OK(proxyChain)
 
   #############################################################################
-  def _requestProxyFromProxyManager(self, ownerDN, ownerGroup):
+  def _requestProxyFromProxyManager(self, owner, ownerGroup):
     """Retrieves user proxy with correct role for job and sets up environment to
        run job locally.
     """
 
-    self.log.info("Requesting proxy', 'for %s@%s" % (ownerDN, ownerGroup))
+    self.log.info("Requesting proxy', 'for %s@%s" % (owner, ownerGroup))
     token = gConfig.getValue("/Security/ProxyToken", "")
     if not token:
       self.log.verbose("No token defined. Trying to download proxy without token")
       token = False
-    retVal = gProxyManager.getPayloadProxyFromDIRACGroup(ownerDN, ownerGroup,
-                                                         self.defaultProxyLength, token)
+    retVal = gProxyManager.downloadCorrectProxy(owner, ownerGroup, self.defaultProxyLength,
+                                                token=token)
     if not retVal['OK']:
       self.log.error('Could not retrieve payload proxy', retVal['Message'])
       os.system('dirac-proxy-info')

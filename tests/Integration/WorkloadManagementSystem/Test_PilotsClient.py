@@ -25,10 +25,10 @@ gLogger.setLevel('VERBOSE')
 
 
 def test_PilotsDB():
-
+  realDN = '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch'
+  realGroup = 'dirac_user'
   pilots = PilotManagerClient()
-
-  res = pilots.addPilotTQReference(['aPilot'], 1, '/a/ownerDN', 'a/owner/Group')
+  res = pilots.addPilotTQReference(['aPilot'], 1, realDN, realGroup)
   assert res['OK'] is True, res['Message']
   res = pilots.getCurrentPilotCounters({})
   assert res['OK'] is True, res['Message']
@@ -39,17 +39,19 @@ def test_PilotsDB():
   assert res['OK'] is True, res['Message']
   assert res['Value'] == {}, res['Value']
 
-  res = pilots.addPilotTQReference(['anotherPilot'], 1, '/a/ownerDN', 'a/owner/Group')
+  res = pilots.addPilotTQReference(['anotherPilot'], 1, realDN, realGroup)
   assert res['OK'] is True, res['Message']
   res = pilots.storePilotOutput('anotherPilot', 'This is an output', 'this is an error')
   assert res['OK'] is True, res['Message']
   res = pilots.getPilotOutput('anotherPilot')
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == {'OwnerDN': '/a/ownerDN',
-                                     'OwnerGroup': 'a/owner/Group',
-                                     'StdErr': 'this is an error',
-                                     'FileList': [],
-                                     'StdOut': 'This is an output'}
+  # There are new "Owner" key ... Therefore, if the main keys match then all is well
+  expectedDict = {'FileList': [],
+                  'OwnerDN': realDN,
+                  'OwnerGroup': realGroup,
+                  'StdErr': 'this is an error',
+                  'StdOut': 'This is an output'}
+  assert all([res['Value'][k] == v for k, v in expectedDict.items()])
   res = pilots.getPilotInfo('anotherPilot')
   assert res['OK'] is True, res['Message']
   assert res['Value']['anotherPilot']['AccountingSent'] == 'False', res['Value']
@@ -66,12 +68,12 @@ def test_PilotsDB():
   res = pilots.getPilotMonitorSelectors()
   assert res['OK'] is True, res['Message']
   assert res['Value'] == {'GridType': ['DIRAC'],
-                          'OwnerGroup': ['a/owner/Group'],
+                          'OwnerGroup': [realGroup],
                           'DestinationSite': ['NotAssigned'],
                           'Broker': ['Unknown'], 'Status': ['Submitted'],
-                          'OwnerDN': ['/a/ownerDN'],
+                          'OwnerDN': [realDN],
                           'GridSite': ['Unknown'],
-                          'Owner': []}, res['Value']
+                          'Owner': ['adminusername']}, res['Value']
   res = pilots.getPilotSummaryWeb({}, [], 0, 100)
   assert res['OK'] is True, res['Message']
   assert res['Value']['TotalRecords'] == 1, res['Value']

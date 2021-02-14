@@ -23,7 +23,7 @@ import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.Grid import executeGridCommand
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -215,9 +215,13 @@ class GlobusComputingElement(ComputingElement):
     if not result['OK'] or not result['Value']:
       return S_ERROR('Failed to determine owner for pilot ' + pilotRef)
     pilotDict = result['Value'][pilotRef]
-    owner = pilotDict['OwnerDN']
-    group = getGroupOption(pilotDict['OwnerGroup'], 'VOMSRole', pilotDict['OwnerGroup'])
-    ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
+    owner = pilotDict['Owner']
+    ownerDN = pilotDict['OwnerDN']
+    group = pilotDict['OwnerGroup']
+    if not getVOMSAttributeForGroup(group):
+      self.log.error("No voms attribute assigned to group %s when requested pilot proxy." % group)
+      return S_ERROR("Failed to get the pilot's owner proxy")
+    ret = gProxyManager.downloadVOMSProxy(ownerDN or owner, group)
     if not ret['OK']:
       self.log.error(ret['Message'])
       self.log.error('Could not get proxy:', 'User "%s", Group "%s"' % (owner, group))

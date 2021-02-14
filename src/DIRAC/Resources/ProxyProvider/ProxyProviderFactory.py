@@ -9,9 +9,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
+from DIRAC.Core.Utilities import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProviderInfo
 
 __RCSID__ = "$Id$"
 
@@ -25,17 +26,18 @@ class ProxyProviderFactory(object):
     self.log = gLogger.getSubLogger(__name__)
 
   #############################################################################
-  def getProxyProvider(self, proxyProvider):
+  def getProxyProvider(self, proxyProvider, proxyManager=None):
     """ This method returns a ProxyProvider instance corresponding to the supplied
         name.
 
         :param str proxyProvider: the name of the Proxy Provider
+        :param object proxyManager: proxy manager
 
         :return: S_OK(ProxyProvider)/S_ERROR()
     """
     if not proxyProvider:
       return S_ERROR('Provider name not set.')
-    result = getInfoAboutProviders(of='Proxy', providerName=proxyProvider, option='all', section='all')
+    result = getProviderInfo(proxyProvider)
     if not result['OK']:
       return result
     ppDict = result['Value']

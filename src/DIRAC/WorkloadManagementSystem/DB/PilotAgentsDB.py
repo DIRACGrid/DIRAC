@@ -314,6 +314,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         pilotDict[parameters[i]] = row[i]
         if parameters[i] == 'PilotID':
           pilotIDs.append(row[i])
+      result = getUsernameForDN(pilotDict['OwnerDN'])
+      if not result['OK']:
+        return result
+      pilotDict['Owner'] = result['Value']
       resDict[row[0]] = pilotDict
 
     result = self.getJobsForPilot(pilotIDs)
@@ -1062,8 +1066,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         userList = [userList]
       dnList = []
       for uName in userList:
-        uList = getDNForUsername(uName)['Value']
-        dnList += uList
+        result = getDNsForUsername(uName)
+        if not result['OK']:
+          return result
+        dnList += result['Value']
       selectDict['OwnerDN'] = dnList
       del selectDict['Owner']
     startDate = selectDict.get('FromDate', None)

@@ -12,8 +12,7 @@ import unittest
 
 from diraccfg import CFG
 
-import DIRAC
-from DIRAC import gConfig
+from DIRAC import gConfig, S_OK
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
@@ -66,6 +65,15 @@ Registry
 """
 
 
+class proxyManager(object):
+  """ Fake proxyManager
+  """
+  def _storeProxy(self, userDN, chain):
+    """ Fake store method
+    """
+    return S_OK()
+
+
 class DIRACCAPPTest(unittest.TestCase):
   """ Base class for the Modules test cases
   """
@@ -86,7 +94,7 @@ class DIRACCAPPTest(unittest.TestCase):
     cfg.loadFromBuffer(userCFG)
     gConfig.loadCFG(cfg)
 
-    result = ProxyProviderFactory().getProxyProvider('DIRAC_TEST_CA')
+    result = ProxyProviderFactory().getProxyProvider('DIRAC_TEST_CA', proxyManager=proxyManager())
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.pp = result['Value']
 
@@ -103,8 +111,7 @@ class DIRACCAPPTest(unittest.TestCase):
                                      ': %s' % result.get('Message', 'Error message is absent.'))
       self.assertEqual(result['OK'], res, text)
       if res:
-        chain = X509Chain()
-        chain.loadChainFromString(result['Value'])
+        chain = result['Value']
         result = chain.getCredentials()
         self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
         credDict = result['Value']
@@ -122,8 +129,7 @@ class DIRACCAPPTest(unittest.TestCase):
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     result = self.pp.getProxy(result['Value'])
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    chain = X509Chain()
-    chain.loadChainFromString(result['Value'])
+    chain = result['Value']
     result = chain.getCredentials()
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     issuer = result['Value']['issuer']

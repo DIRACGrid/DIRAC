@@ -66,6 +66,8 @@ def getComponentSection(componentName, componentTuple=False, setup=False, compon
   systemSection = getSystemSection(componentName, componentTuple, setup=setup)
   return "%s/%s/%s" % (systemSection, componentCategory, componentTuple[1])
 
+def getAPISection(APIName, APITuple=False, setup=False):
+  return getComponentSection(APIName, APITuple, setup, "APIs")
 
 def getServiceSection(serviceName, serviceTuple=False, setup=False):
   return getComponentSection(serviceName, serviceTuple, setup, "Services")

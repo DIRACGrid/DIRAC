@@ -270,7 +270,7 @@ class StorageElementProxyHandler(RequestHandler):
       clientUsername = credDict['username']
       clientGroup = credDict['group']
       gLogger.debug("Getting proxy for %s@%s (%s)" % (clientUsername, clientGroup, clientDN))
-      res = gProxyManager.downloadVOMSProxy(clientDN, clientGroup)
+      res = gProxyManager.downloadVOMSProxy(clientDN or clientUsername, clientGroup)
       if not res['OK']:
         return res
       chain = res['Value']

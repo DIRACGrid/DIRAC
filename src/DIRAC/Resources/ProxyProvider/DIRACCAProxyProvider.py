@@ -97,11 +97,11 @@ class DIRACCAProxyProvider(ProxyProvider):
     if 'Algoritm' in parameters:
       self.algoritm = parameters['Algoritm']
     if 'Match' in parameters:
-      self.match = [self.fields2nid[f] for f in parameters['Match']]
+      self.match = [self.fields2nid[f] for f in parameters['Match']] if parameters['Match'][0] else []
     if 'Supplied' in parameters:
-      self.supplied = [self.fields2nid[f] for f in parameters['Supplied']]
+      self.supplied = [self.fields2nid[f] for f in parameters['Supplied']] if parameters['Supplied'][0] else []
     if 'Optional' in parameters:
-      self.optional = [self.fields2nid[f] for f in parameters['Optional']]
+      self.optional = [self.fields2nid[f] for f in parameters['Optional']] if parameters['Optional'][0] else []
     allFields = self.optional + self.supplied + self.match
     if 'DNOrder' in parameters:
       self.dnList = []
@@ -200,7 +200,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :param str userDN: user DN
 
-        :return: S_OK(str)/S_ERROR() -- contain a proxy string
+        :return: S_OK(object)/S_ERROR() -- contain a X509Chain() object
     """
     self.__X509Name = X509.X509_Name()
     result = self.checkStatus(userDN)
@@ -215,8 +215,15 @@ class DIRACCAProxyProvider(ProxyProvider):
           result = chain.loadKeyFromString(keyStr)
           if result['OK']:
             result = chain.generateProxyToString(365 * 24 * 3600, rfc=True)
+            if result['OK']:
+              chain = X509Chain()
+              result = chain.loadProxyFromString(result['Value'])
+              if result['OK']:
 
-    return result
+                # Store proxy in proxy manager
+                result = self.proxyManager._storeProxy(userDN, chain)
+
+    return S_OK(chain) if result['OK'] else result
 
   def generateDN(self, **kwargs):
     """ Get DN of the user certificate that will be created

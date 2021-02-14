@@ -14,14 +14,11 @@ try:
   import commands
 except ImportError:
   # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
-import unittest
+  import subprocess as commandsimport unittest
 import tempfile
-
 import pytest
 
-import DIRAC
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK, rootPath
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.DIRACCAProxyProvider import DIRACCAProxyProvider
 
@@ -45,6 +42,14 @@ diracCAConf = {'ProviderType': 'DIRACCA',
                'CAConfigFile': testCAConfigFile,
                'ProviderName': 'DIRAC_CA_CFG'}
 
+
+class proxyManager(object):
+  """ Fake proxyManager
+  """
+  def _storeProxy(self, userDN, chain):
+    """ Fake store method
+    """
+    return S_OK()
 
 class DIRACCAProviderTestCase(unittest.TestCase):
 
@@ -90,23 +95,23 @@ class DIRACCAProviderTestCase(unittest.TestCase):
 
 
 class testDIRACCAProvider(DIRACCAProviderTestCase):
+  """ Base class for the testDIRACCAProvider test cases
+  """
 
   @pytest.mark.slow
   def test_getProxy(self):
     """ Test 'getProxy' - try to get proxies for different users and check it
     """
-    def check(proxyStr, proxyProvider, name):
+    def check(chain, proxyProvider, name):
       """ Check proxy
 
-          :param str proxyStr: proxy as string
+          :param object chain: proxy as string
           :param str proxyProvider: proxy provider name
           :param str name: proxy name
       """
       proxyFile = os.path.join(testCAPath, proxyProvider + name.replace(' ', '') + '.pem')
       gLogger.info('Check proxy..')
-      chain = X509Chain()
-      result = chain.loadProxyFromString(proxyStr)
-      self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
+
       for result in [chain.getRemainingSecs(),
                      chain.getIssuerCert(),
                      chain.getPKeyObj(),
@@ -125,8 +130,8 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                                (diracCAConf, 'read configuration file')]:
       gLogger.info('\n* Try proxy provider that %s..' % log)
       ca = DIRACCAProxyProvider()
-      result = ca.setParameters(proxyProvider)
-      self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
+      ca.setParameters(proxyProvider)
+      ca.setManager(proxyManager())
 
       gLogger.info('* Get proxy using FullName and Email of user..')
       for name, email, res in [('MrUser', 'good@mail.com', True),

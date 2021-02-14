@@ -68,7 +68,7 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['Mess
                                                                                       'Enable']}),
           ('DIRAC.WorkloadManagementSystem.Agent.StatesAccountingAgent', {}),
           ('DIRAC.WorkloadManagementSystem.Agent.SiteDirector',
-           {'SpecialMocks': {'findGenericPilotCredentials': S_OK(('a', 'b'))}}),
+           {'SpecialMocks': {'findGenericPilotCredentials': S_OK(('a', 'b', 'c'))}}),
           ]
 
 

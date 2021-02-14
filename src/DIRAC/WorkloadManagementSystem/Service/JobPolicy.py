@@ -9,20 +9,19 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security import Properties
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsForUser, \
-    getPropertiesForGroup, getUsersInGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser, getPropertiesForGroup, getUsersInGroup
 
+RIGHT_KILL = 'Kill'
+RIGHT_RESET = 'Reset'
+RIGHT_DELETE = 'Delete'
+RIGHT_SUBMIT = 'Submit'
 RIGHT_GET_JOB = 'GetJob'
 RIGHT_GET_INFO = 'GetInfo'
+RIGHT_GET_STATS = 'GetStats'
+RIGHT_RESCHEDULE = 'Reschedule'
 RIGHT_GET_SANDBOX = 'GetSandbox'
 RIGHT_PUT_SANDBOX = 'PutSandbox'
 RIGHT_CHANGE_STATUS = 'ChangeStatus'
-RIGHT_DELETE = 'Delete'
-RIGHT_KILL = 'Kill'
-RIGHT_SUBMIT = 'Submit'
-RIGHT_RESCHEDULE = 'Reschedule'
-RIGHT_GET_STATS = 'GetStats'
-RIGHT_RESET = 'Reset'
 
 ALL_RIGHTS = [RIGHT_GET_JOB, RIGHT_GET_INFO, RIGHT_GET_SANDBOX, RIGHT_PUT_SANDBOX,
               RIGHT_CHANGE_STATUS, RIGHT_DELETE, RIGHT_KILL, RIGHT_SUBMIT,
@@ -51,33 +50,38 @@ sLog = gLogger.getSubLogger(__name__)
 
 class JobPolicy(object):
 
-  def __init__(self, userDN, userGroup, allInfo=True):
+  def __init__(self, username, userGroup, allInfo=True):
+    """ C'tor
 
-    self.userDN = userDN
-    self.userName = ''
-    result = getUsernameForDN(userDN)
-    if result['OK']:
-      self.userName = result['Value']
-    self.userGroup = userGroup
-    self.userProperties = getPropertiesForGroup(userGroup, [])
+        :param str username: user name
+        :param str userGroup: group name
+        :param bool allInfo: all information
+    """
     self.jobDB = None
     self.allInfo = allInfo
+    self.userName = username
+    self.userGroup = userGroup
+    self.userProperties = getPropertiesForGroup(userGroup, [])
     self.__permissions = {}
     self.__getUserJobPolicy()
 
   def getUserRightsForJob(self, jobID, owner=None, group=None):
-    """ Get access rights to job with jobID for the user specified by
-        userDN/userGroup
+    """ Get access rights to job with jobID for the user specified by username/userGroup
+
+        :param str jobID: job ID
+        :param str owner: user name
+        :param str group: group name
+
+        :return: S_OK()/S_ERROR()
     """
     if owner is None or group is None:
       result = self.jobDB.getJobAttributes(jobID, ['Owner', 'OwnerGroup'])
       if not result['OK']:
         return result
-      elif result['Value']:
-        owner = result['Value']['OwnerDN']
-        group = result['Value']['OwnerGroup']
-      else:
+      if not result['Value']:
         return S_ERROR('Job not found')
+      owner = result['Value']['OwnerDN']
+      group = result['Value']['OwnerGroup']
 
     return self.getJobPolicy(owner, group)
 
@@ -113,10 +117,15 @@ class JobPolicy(object):
       for right in PROPERTY_RIGHTS[Properties.GENERIC_PILOT]:
         self.__permissions[right] = True
 
-  def getJobPolicy(self, jobOwner='', jobOwnerGroup=''):
-    """ Get the job operations rights for a job owned by jobOwnerDN/jobOwnerGroup
-        for a user with userDN/userGroup.
+  def getJobPolicy(self, jobOwner=None, jobOwnerGroup=None):
+    """ Get the job operations rights for a job owned by jobOwner/jobOwnerGroup
+        for a user with username/userGroup.
         Returns a dictionary of various operations rights
+
+        :param str jobOwner: user name
+        :param str jobOwnerGroup: group name
+
+        :return: S_OK(dict)/S_ERROR()
     """
     permDict = dict(self.__permissions)
     # Job Owner can do everything with his jobs
@@ -133,7 +142,12 @@ class JobPolicy(object):
     return S_OK(permDict)
 
   def evaluateJobRights(self, jobList, right):
-    """ Get access rights to jobID for the user ownerDN/ownerGroup
+    """ Get access rights to jobID for the user owner/ownerGroup
+
+        :param list jobList: job list
+        :param str right: right
+
+        :return: tuple -- contain valid, invalid, nonauth, owner jobs
     """
     validJobList = []
     invalidJobList = []
@@ -180,6 +194,10 @@ class JobPolicy(object):
 
   def getControlledUsers(self, right):
     """ Get users and groups which jobs are subject to the given access right
+
+        :param str right: right
+
+        :return: S_OK()/S_ERROR()
     """
 
     userGroupList = 'ALL'

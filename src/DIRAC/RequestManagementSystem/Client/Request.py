@@ -25,6 +25,7 @@ import six
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.DISET.AuthManager import authorizeByCertificate
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -77,6 +78,7 @@ class Request(object):
     self.JobID = 0
     self.Error = None
     self.DIRACSetup = None
+    self.Owner = None
     self.OwnerDN = None
     self.RequestName = None
     self.OwnerGroup = None
@@ -84,12 +86,17 @@ class Request(object):
 
     self.dmsHelper = DMSHelpers()
 
+    credDict = {}
     proxyInfo = getProxyInfo()
     if proxyInfo["OK"]:
-      proxyInfo = proxyInfo["Value"]
-      if proxyInfo["validGroup"] and proxyInfo["validDN"]:
-        self.OwnerDN = proxyInfo["identity"]
-        self.OwnerGroup = proxyInfo["group"]
+      credDict['DN'] = proxyInfo["Value"]['issuer']
+      credDict['group'] = proxyInfo["Value"].get('group')
+      credDict['username'] = proxyInfo["Value"].get('username')
+
+      if authorizeByCertificate(credDict):
+        self.Owner = credDict["username"]
+        self.OwnerDN = credDict["DN"]
+        self.OwnerGroup = credDict["group"]
 
     self.__operations__ = []
 
@@ -397,7 +404,7 @@ class Request(object):
   def _getJSONData(self):
     """ Returns the data that have to be serialized by JSON """
 
-    attrNames = ['RequestID', "RequestName", "OwnerDN", "OwnerGroup",
+    attrNames = ['RequestID', "RequestName", "Owner", "OwnerDN", "OwnerGroup",
                  "Status", "Error", "DIRACSetup", "SourceComponent",
                  "JobID", "CreationTime", "SubmitTime", "LastUpdate", "NotBefore"]
     jsonData = {}

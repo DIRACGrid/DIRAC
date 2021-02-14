@@ -92,6 +92,7 @@ ENOGROUP = 1108
 # DISET: 1X
 EDISET = 1110
 ENOAUTH = 1111
+ECONNECT = 1112
 # 3rd party security: 2X
 E3RDPARTY = 1120
 EVOMS = 1121
@@ -169,6 +170,7 @@ dErrorCode = {
     # 111X: DISET
     1110: 'EDISET',
     1111: 'ENOAUTH',
+    1112: 'ECONNECT',
     # 112X: 3rd party security
     1120: 'E3RDPARTY',
     1121: 'EVOMS',
@@ -242,6 +244,7 @@ dStrError = {  # Generic (10XX)
     # 111X: DISET
     EDISET: "DISET Error",
     ENOAUTH: "Unauthorized query",
+    ECONNECT: "Connection error",
     # 112X: 3rd party security
     E3RDPARTY: "3rd party security service error",
     EVOMS: "VOMS Error",

@@ -188,7 +188,7 @@ class ReqClientMix(ReqClientTestCase):
 
     request = Request({"RequestName": "unauthorized"})
     request.OwnerDN = 'NotMe'
-    request.OwnerDN = 'AnotherGroup'
+    request.OwnerGroup = 'AnotherGroup'
     op = Operation({"Type": "RemoveReplica", "TargetSE": "CERN-USER"})
     op += File({"LFN": "/lhcb/user/c/cibak/foo"})
     request += op

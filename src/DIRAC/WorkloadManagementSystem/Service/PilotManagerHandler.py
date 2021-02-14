@@ -137,15 +137,16 @@ class PilotManagerHandler(RequestHandler):
       return S_ERROR('Failed to determine owner for pilot ' + pilotReference)
 
     pilotDict = result['Value'][pilotReference]
-    owner = pilotDict['OwnerDN']
-    group = pilotDict['OwnerGroup']
+    owner = pilotDict['Owner']
+    ownerDN = pilotDict['OwnerDN']
+    ownerGroup = pilotDict['OwnerGroup']
     gridType = pilotDict['GridType']
     pilotStamp = pilotDict['PilotStamp']
 
     # Add the pilotStamp to the pilot Reference, some CEs may need it to retrieve the logging info
     pilotReference = pilotReference + ':::' + pilotStamp
     return getPilotLoggingInfo(gridType, pilotReference,  # pylint: disable=unexpected-keyword-arg
-                               proxyUserDN=owner, proxyUserGroup=group)
+                               proxyUserName=owner, proxyUserGroup=ownerGroup)
 
   ##############################################################################
   types_getPilotSummary = []
@@ -258,9 +259,9 @@ class PilotManagerHandler(RequestHandler):
         return S_ERROR('Failed to get info for pilot ' + pilotReference)
 
       pilotDict = result['Value'][pilotReference]
-      owner = pilotDict['OwnerDN']
-      group = pilotDict['OwnerGroup']
-      queue = '@@@'.join([owner, group, pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue']])
+      owner = pilotDict['Owner']
+      ownerGroup = pilotDict['OwnerGroup']
+      queue = '@@@'.join([owner, ownerGroup, pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue']])
       gridType = pilotDict['GridType']
       pilotRefDict.setdefault(queue, {})
       pilotRefDict[queue].setdefault('PilotList', [])
