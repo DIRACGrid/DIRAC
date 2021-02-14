@@ -23,7 +23,7 @@ def main():
 
   if not args:
     Script.showHelp()
-  
+
   transIDs = [int(arg) for arg in args]
 
   from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent import TransformationCleaningAgent
