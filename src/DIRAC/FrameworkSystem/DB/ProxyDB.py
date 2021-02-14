@@ -27,6 +27,7 @@ from six.moves.urllib.request import urlopen
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.MyProxy import MyProxy
