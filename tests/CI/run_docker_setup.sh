@@ -11,8 +11,8 @@ DIRAC_BASE_DIR=$(realpath "${SCRIPT_DIR}/../..")
 
 export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE:-diracgrid}
 export HOST_OS=${HOST_OS:-cc7}
-export MYSQL_VER=${MYSQL_VER:-5.7}
-export ES_VER=${ES_VER:-6.6.0}
+export MYSQL_VER=${MYSQL_VER:-8.0}
+export ES_VER=${ES_VER:-7.9.1}
 
 export DOCKER_USER=dirac
 export USER_HOME=/home/${DOCKER_USER}

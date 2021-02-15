@@ -11,7 +11,7 @@ jobs:
     env:
       MATRIX_DEFAULT_MYSQL_VER: 8.0
       MATRIX_DEFAULT_HOST_OS: cc7
-      MATRIX_DEFAULT_ES_VER: 6.6.0
+      MATRIX_DEFAULT_ES_VER: 7.9.1
       MATRIX_DEFAULT_USE_NEWTHREADPOOL: default
       MATRIX_DEFAULT_DIRACOSVER: default
       MATRIX_DEFAULT_TEST_HTTPS: No
@@ -28,9 +28,9 @@ jobs:
             MYSQL_VER: 5.7
           # IMPLICIT: - MYSQL_VER: 8.0
           ###### ES versions
-          - TEST_NAME: "Elasticsearch 7.9.1"
-            ES_VER: 7.9.1
-          # IMPLICIT: - ES_VER: 6.6.0
+          - TEST_NAME: "Elasticsearch 6.6.0"
+            ES_VER: 6.6.0
+          # IMPLICIT: - ES_VER: 7.9.1
           ###### Host OS
           # - TEST_NAME: "SLC 6"
           #   HOST_OS: slc6
