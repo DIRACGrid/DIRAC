@@ -711,12 +711,12 @@ diracUserAndGroup() {
 diracProxies() {
   echo '==> [diracProxies]'
   # User proxy, should be uploaded anyway
-  if ! dirac-proxy-init -U -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
+  if ! dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
     echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
   # group proxy, will be uploaded explicitly
-  if ! dirac-proxy-init -U -g prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
+  if ! dirac-proxy-init -g prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
     echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi

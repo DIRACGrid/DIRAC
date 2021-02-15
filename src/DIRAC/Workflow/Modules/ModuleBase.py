@@ -226,6 +226,7 @@ class ModuleBase(object):
   def finalize(self):
     """ Just finalizing the module execution by flushing the logs. This will be done always.
     """
+
     self.log.info('===== Terminating ' + str(self.__class__) + ' ===== ')
 
   #############################################################################

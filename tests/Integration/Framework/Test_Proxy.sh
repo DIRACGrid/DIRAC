@@ -19,9 +19,9 @@ echo
 echo
 
 echo "================================"
-echo "===  dirac-proxy-init $PARAMS -U"
+echo "===  dirac-proxy-init $PARAMS"
 echo
-dirac-proxy-init $PARAMS -U
+dirac-proxy-init $PARAMS
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
@@ -64,9 +64,9 @@ fi
 echo
 
 echo "==============================================="
-echo "===  dirac-proxy-init -g dirac_admin $PARAMS -U"
+echo "===  dirac-proxy-init -g dirac_admin $PARAMS"
 echo
-dirac-proxy-init -g dirac_admin $PARAMS -U
+dirac-proxy-init -g dirac_admin $PARAMS
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi

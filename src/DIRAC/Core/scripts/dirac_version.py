@@ -19,7 +19,6 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-import sys
 import argparse
 
 parser = argparse.ArgumentParser(

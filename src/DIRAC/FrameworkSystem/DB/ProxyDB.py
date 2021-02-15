@@ -1362,11 +1362,6 @@ Dear %s,
 
   DN:    %s
 
-  If you plan on keep using this credentials please upload a newer proxy to
-  DIRAC by executing:
-
-  $ dirac-proxy-init --upload
-
   If you have been issued different certificate, please make sure you have a
   proxy uploaded with that certificate.
 

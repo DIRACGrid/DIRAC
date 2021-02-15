@@ -7,8 +7,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import os
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import runCommand
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.ResourceUsage import ResourceUsage
@@ -56,7 +54,7 @@ class SLURMResourceUsage(ResourceUsage):
       cpu = float(cpu)
 
     consumed = {'CPU': wallClock,
-                'CPULimit': wallClockLimit,
+                'CPULimit': cpuLimit,
                 'WallClock': wallClock,
                 'WallClockLimit': wallClockLimit}
 

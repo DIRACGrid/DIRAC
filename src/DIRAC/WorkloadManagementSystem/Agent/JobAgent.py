@@ -77,7 +77,6 @@ class JobAgent(AgentModule):
     self.initTimes = os.times()
     self.timeLeft = 0.0
     self.timeLeftUtil = None
-    self.timeLeftError = ''
     self.pilotInfoReportedFlag = False
 
   #############################################################################
@@ -144,9 +143,6 @@ class JobAgent(AgentModule):
       # Only call timeLeft utility after a job has been picked up
       self.log.info('Attempting to check CPU time left for filling mode')
       if self.fillingMode:
-        if self.timeLeftError:
-          self.log.warn("Disabling filling mode as errors calculating time left", self.timeLeftError)
-          return self.__finish(self.timeLeftError)
         self.log.info('normalized CPU units remaining in slot', self.timeLeft)
         if self.timeLeft <= self.minimumTimeLeft:
           return self.__finish('No more time left')
@@ -184,9 +180,8 @@ class JobAgent(AgentModule):
       if runningJobs:
         self.log.info('No available slots', '%d running jobs' % runningJobs)
         return S_OK('Job Agent cycle complete with %d running jobs' % runningJobs)
-      else:
-        self.log.info('CE is not available')
-        return self.__finish('CE Not Available')
+      self.log.info('CE is not available (and there are no running jobs)')
+      return self.__finish('CE Not Available')
 
     result = self.computingElement.getDescription()
     if not result['OK']:
@@ -395,11 +390,11 @@ class JobAgent(AgentModule):
     if result['OK']:
       self.timeLeft = result['Value']
     else:
-      if result['Message'] != 'Current batch system is not supported':
-        self.timeLeftError = result['Message']
-      else:
-        # if the batch system is not defined, use the process time and the CPU normalization defined locally
-        self.timeLeft = self._getCPUTimeLeft()
+      self.log.warn(
+          "There were errors calculating time left using the Timeleft utility",
+          result['Message'])
+      self.log.warn("The time left will be calculated using os.times() and the info in our possession")
+      self.timeLeft = self._getCPUTimeLeft()
 
     return S_OK('Job Agent cycle complete')
 
@@ -417,7 +412,9 @@ class JobAgent(AgentModule):
 
   #############################################################################
   def _getCPUTimeLeft(self):
-    """Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
+    """
+    Return the TimeLeft as estimated by DIRAC using the process time
+    and the CPU normalization defined locally in the Local Config.
     """
     cpuTime = sum(os.times()[:-1])
     self.log.info('Current raw CPU time consumed is %s' % cpuTime)
@@ -647,6 +644,7 @@ class JobAgent(AgentModule):
                     'with message "%s", execution complete.' % message)
       self.am_stopExecution()
       return S_ERROR(message)
+
     return S_OK(message)
 
   #############################################################################
