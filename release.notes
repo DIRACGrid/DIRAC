@@ -1,4 +1,4 @@
-[v7r2-pre33]
+[v7r2-pre34]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -8,6 +8,7 @@ CHANGE: (#4823) Service handlers use class variables instead of global
 NEW: Moved to a src/ repository layout
 NEW: (#4906) Deploy releases to PyPI
 FIX: (#4921) use six.moves for urllib
+CHANGE: (#4958) use __doc__ for script help message, remove filecfg as argument from usage description
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -33,9 +34,11 @@ FIX: (#4887) fix exception in Services when trying to use uninitialized gMonitor
 NEW: (#4898) added a base DB class for all DB types
 NEW: (#4865) Fully support installation with setuptools
 CHANGE: (#4932) Rename DIRAC_VOMSES to X509_VOMSES in dirac-install.py
+CHANGE: (#4958) when import Script, a help message is formed from __doc__, not need to use Script.setUsageMessage(__doc__)
 
 *Configuration
 CHANGE: (#4866) split standard and tornado refresher in two files to avoid tornado dependency on the client
+HANGE: (#4958) setUsageMessage in LocalConfiguration will parse received str value for building help message
 
 *Framework
 CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
@@ -91,6 +94,7 @@ FIX: (#4677) Ignore tornado services and test DBs
 NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
+CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
 [v7r1p28]
 
