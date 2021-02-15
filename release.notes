@@ -1,5 +1,7 @@
 [v7r1p29]
 
+FIX: Fixes from v7r0p49 patch release
+
 *Core
 CHANGE: (#4954) using argparse for a few scripts instead of getopt
 NEW: (#4957) ObjectLoader: do not fail if one module fails importing in recursive loading
