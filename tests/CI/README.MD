@@ -52,7 +52,7 @@ See the CONFIG file for specific details for every variable.
 The environment variables are easily overridable by exporting the variable with the DEFAULT_ name prefix stripped, with whichever value you wish. Do this _before_ running `run_docker_setup.sh` if running local testing, or inject custom variables in the GitLab CI Pipeline. 
 
 Example:
-I want to change the version of MySQL to 8.0 (from default 5.7). The corresponding variable in CONFIG is `DEFAULT_MYSQL_VER=5.7`. Export `MYSQL_VER=8.0` to override defaults. 
+I want to change the version of MySQL to 8.0 (from default 5.7). The corresponding variable in CONFIG is `MYSQL_VER=5.7`. Export `MYSQL_VER=8.0` to override defaults. 
 
 #### Using client or server specific settings
 
