@@ -1,3 +1,9 @@
+[v7r0p49]
+
+*Core
+NEW: (#4967) introduce DIRAC_M2CRYPTO_SSL_METHODS to configure accepted protocols
+NEW: (#4967) introduce DIRAC_M2CRYPTO_SSL_CIPHERS to configure accepted ciphers
+
 [v7r0p48]
 
 CHANGE: (#4949) change default top-level bdii to cclcgtopbdii01.in2p3.fr (was lcg-bdii.cern.ch)

@@ -34,7 +34,7 @@ scripts = glob.glob('%s/*/scripts/*.py' % base_dir)
 
 setup(
     name="DIRAC",
-    version="7.0.48",
+    version="7.0.49",
     url="https://github.com/DIRACGRID/DIRAC",
     license="GPLv3",
     package_dir=package_dir,
