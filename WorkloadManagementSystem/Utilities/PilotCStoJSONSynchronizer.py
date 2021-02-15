@@ -199,12 +199,17 @@ class PilotCStoJSONSynchronizer(object):
           if localCEType is not None:
             pilotDict['CEs'][ce].setdefault('LocalCEType', localCEType)
 
-          queueList = gConfig.getSections('/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/Queues/')
+          res = gConfig.getSections('/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/Queues/')
+          if not res['OK']:
+            # Skip but log it
+            self.log.error("No queues found for CE", ce + ': ' + res['Message'])
+            continue
+          queueList = res['Value']
           for queue in queueList:
             localCEType = gConfig.getValue(
-                '/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/' + queue + '/LocalCEType')
+                '/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/Queues/' + queue + '/LocalCEType')
             if localCEType is not None:
-              pilotDict['CEs'][ce][queue].setdefault('LocalCEType', localCEType)
+              pilotDict['CEs'][ce].setdefault(queue, {'LocalCEType': localCEType})
 
     defaultSetup = gConfig.getValue('/DIRAC/DefaultSetup')
     if defaultSetup:

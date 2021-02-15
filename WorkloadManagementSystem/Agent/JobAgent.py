@@ -180,9 +180,8 @@ class JobAgent(AgentModule):
       if runningJobs:
         self.log.info('No available slots', '%d running jobs' % runningJobs)
         return S_OK('Job Agent cycle complete with %d running jobs' % runningJobs)
-      else:
-        self.log.info('CE is not available')
-        return self.__finish('CE Not Available')
+      self.log.info('CE is not available (and there are no running jobs)')
+      return self.__finish('CE Not Available')
 
     result = self.computingElement.getDescription()
     if not result['OK']:
@@ -613,8 +612,8 @@ class JobAgent(AgentModule):
                     'with message "%s", execution complete.' % message)
       self.am_stopExecution()
       return S_ERROR(message)
-    else:
-      return S_OK(message)
+
+    return S_OK(message)
 
   #############################################################################
   def _rescheduleFailedJob(self, jobID, message, stop=True):
