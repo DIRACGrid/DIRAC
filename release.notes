@@ -1,3 +1,20 @@
+[v7r1p29]
+
+*Core
+CHANGE: (#4954) using argparse for a few scripts instead of getopt
+NEW: (#4957) ObjectLoader: do not fail if one module fails importing in recursive loading
+
+*Framework
+CHANGE: (#4964) dirac-proxy-init always uploads the proxy unless --no-upload is specified
+FIX: (#4964) ProxyManagerClient checks for group and groupless proxies in its cache
+
+*WMS
+FIX: (#4954) PilotCStoJSONSynchronizer - bug fixed in getting CE information
+CHANGE: (#4956) JobAgent - resorting to calculate time left with info in possession
+
+*Workflow
+FIX: (#4953) ModuleBase - remove deprecated function that does not do anything
+
 [v7r1p28]
 
 CHANGE: Revert #4919 - absolute imports in several modules
