@@ -63,7 +63,7 @@ Testing the ``ProxyManager``
 
 The simplest way to test it is to upload your user proxy::
 
-  [diracuser@dirac-tuto ~]$ dirac-proxy-init -U
+  [diracuser@dirac-tuto ~]$ dirac-proxy-init
   Generating proxy...
   Uploading proxy for dirac_user...
   Proxy generated:
