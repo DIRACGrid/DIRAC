@@ -4,10 +4,20 @@
 # Author :  Ricardo Graciani
 ########################################################################
 """
-  Report Normalized CPU length of queue
+Report Normalized CPU length of queue
 
-  This script was used by the dirac-pilot script to set the CPUTime limit for
-  the matching but now this is no more the case.
+This script was used by the dirac-pilot script to set the CPUTime limit for
+the matching but now this is no more the case.
+
+Usage:
+  dirac-wms-get-normalized-queue-length [options] ... Queue ...
+
+Arguments:
+  Queue:     GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)
+
+Example:
+  $ dirac-wms-get-normalized-queue-length  cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long
+  cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long 857400.0
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -23,13 +33,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([
-      __doc__.split('\n')[1],
-      'Usage:',
-      '  %s [option|cfgfile] ... Queue ...' % Script.scriptName,
-      'Arguments:',
-      '  Queue:     GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)'
-  ]))
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

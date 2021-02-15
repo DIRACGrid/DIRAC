@@ -1,20 +1,25 @@
 #!/bin/env python
-""" List the number of requests in the caches of all the ReqProxyies """
+"""
+List the number of requests in the caches of all the ReqProxyies
+
+Usage:
+  dirac-rms-list-req-cache [options]
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-__RCSID__ = "$Id$"
-import DIRAC
 
+__RCSID__ = "$Id$"
+
+import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Base.Script import parseCommandLine
 
 
 @DIRACScript()
 def main():
   Script.registerSwitch('', 'Full', '   Print full list of requests')
-  Script.setUsageMessage('\n'.join([__doc__, 'Usage:', ' %s [option|cfgfile]' % Script.scriptName]))
+  from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 

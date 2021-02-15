@@ -7,11 +7,12 @@ Usage:
   dirac-rss-query-db [option] <query> <element> <tableType>
 
 Arguments:
-  Queries: [select|add|modify|delete]
-  Elements: [site|resource|component|node]
+  Queries:    [select|add|modify|delete]
+  Elements:   [site|resource|component|node]
   TableTypes: [status|log|history]
 
-Verbosity:
+Verbosity::
+
   -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import

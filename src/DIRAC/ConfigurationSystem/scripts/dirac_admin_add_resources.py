@@ -4,7 +4,7 @@
 # Author : Andrei Tsaregorodtsev
 ########################################################################
 """
-  Add resources from the BDII database for a given VO
+Add resources from the BDII database for a given VO
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -36,10 +36,6 @@ def processScriptSwitches():
   Script.registerSwitch("H:", "host=", "use this url for information querying")
   Script.registerSwitch("G", "glue2", "DEPRECATED: query GLUE2 information schema")
   Script.registerSwitch("g", "glue1", "query GLUE1 information schema")
-
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile]' % Script.scriptName]))
   Script.parseCommandLine(ignoreErrors=True)
 
   vo = ''

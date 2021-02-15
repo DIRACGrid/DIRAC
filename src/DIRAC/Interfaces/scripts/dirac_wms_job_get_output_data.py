@@ -4,7 +4,13 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Retrieve the output data files of a DIRAC job
+Retrieve the output data files of a DIRAC job
+
+Usage:
+  dirac-wms-job-get-output-data [options] ... JobID ...
+
+Arguments:
+  JobID:    DIRAC Job ID
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -19,11 +25,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JobID:    DIRAC Job ID']))
   Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()

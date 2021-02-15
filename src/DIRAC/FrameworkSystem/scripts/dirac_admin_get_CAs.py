@@ -3,14 +3,14 @@
 # File :    dirac-admin-get-CAs
 # Author :  Ricardo Graciani
 ########################################################################
-"""Refresh the local copy of the CA certificates and revocation lists.
+"""
+Refresh the local copy of the CA certificates and revocation lists.
 
 Connects to the BundleDelivery service to obtain the tar balls. Needed when proxies appear to be
 invalid.
 
-Usage:
-
-  dirac-admin-get-CAs (<options>|<cfgFile>)*
+Example:
+  $ dirac-admin-get-CAs
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -27,8 +27,6 @@ __RCSID__ = "$Id$"
 @DIRACScript()
 def main():
   Script.addDefaultOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
-  Script.setUsageMessage(__doc__)
-
   Script.parseCommandLine(ignoreErrors=True)
 
   bdc = BundleDeliveryClient()

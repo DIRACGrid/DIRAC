@@ -4,17 +4,25 @@
 # Author :  Adria Casajus
 ########################################################################
 """
-  Decode Accounting plot URLs
+Decode Accounting plot URLs
+
+Usage:
+  dirac-accounting-decode-fileid [options] ... URL ...
+
+Arguments:
+  URL: encoded URL of a DIRAC Accounting plot
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
-import pprint
 import sys
-from six.moves.urllib import parse as urlparse
 import cgi
+import pprint
+from six.moves.urllib import parse as urlparse
+
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
@@ -23,12 +31,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
-
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... URL ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  URL: encoded URL of a DIRAC Accounting plot']))
   Script.parseCommandLine()
 
   fileIds = Script.getPositionalArgs()

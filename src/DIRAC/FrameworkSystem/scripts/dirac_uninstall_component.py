@@ -1,20 +1,27 @@
 #!/usr/bin/env python
-
 """
 Uninstallation of a DIRAC component
+
+Usage:
+  dirac-uninstall-component [options] ... System Component|System/Component
+
+Arguments:
+  System:  Name of the DIRAC system (ie: WorkloadManagement)
+  Component: Name of the DIRAC component (ie: Matcher)
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import socket
-from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
-from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
+
+from DIRAC import exit as DIRACexit
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.PromptUser import promptUser
-from DIRAC import exit as DIRACexit
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
 __RCSID__ = "$Id$"
 
@@ -35,13 +42,6 @@ def main():
   gComponentInstaller.exitOnError = True
 
   Script.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... System Component|System/Component' % Script.scriptName,
-                                    'Arguments:',
-                                    '  System:  Name of the DIRAC system (ie: WorkloadManagement)',
-                                    '  Component: Name of the DIRAC component (ie: Matcher)']))
-
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
 

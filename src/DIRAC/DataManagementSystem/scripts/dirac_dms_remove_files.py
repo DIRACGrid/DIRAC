@@ -1,5 +1,13 @@
 #!/usr/bin/env python
+"""
+Remove the given file or a list of files from the File Catalog and from the storage
 
+Usage:
+  dirac-dms-remove-files <LFN | fileContainingLFNs>
+
+Example:
+  $ dirac-dms-remove-files /formation/user/v/vhamar/Test.txt
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -12,13 +20,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage("""
-  Remove the given file or a list of files from the File Catalog and from the storage
-
-  Usage:
-    %s <LFN | fileContainingLFNs>
-  """ % Script.scriptName)
-
   Script.parseCommandLine()
 
   import os

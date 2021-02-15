@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-""" Enable using one or more Storage Elements
+"""
+Enable using one or more Storage Elements
+
+Usage:
+  dirac-admin-allow-se SE1 [SE2 ...]
+
+Example:
+  $ dirac-admin-allow-se M3PEC-disk
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -19,13 +26,6 @@ def main():
   remove = False
   site = ''
   mute = False
-
-  Script.setUsageMessage("""
-  Enable using one or more Storage Elements
-
-  Usage:
-    %s SE1 [SE2 ...]
-  """ % Script.scriptName)
 
   Script.registerSwitch("r", "AllowRead", "     Allow only reading from the storage element")
   Script.registerSwitch("w", "AllowWrite", "     Allow only writing to the storage element")

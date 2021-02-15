@@ -1,8 +1,19 @@
 #!/usr/bin/env python
+"""
+Remove the given file replica or a list of file replicas from the File Catalog
+and from the storage.
 
+Usage:
+   dirac-dms-remove-replicas <LFN | fileContainingLFNs> SE [SE]
+
+Example:
+  $ dirac-dms-remove-replicas /formation/user/v/vhamar/Test.txt IBCP-disk
+  Successfully removed DIRAC-USER replica of /formation/user/v/vhamar/Test.txt
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 from DIRAC import exit as DIRACExit
@@ -12,15 +23,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-
-  Script.setUsageMessage("""
-Remove the given file replica or a list of file replicas from the File Catalog
-and from the storage.
-
-Usage:
-   %s <LFN | fileContainingLFNs> SE [SE]
-""" % Script.scriptName)
-
   Script.parseCommandLine()
 
   from DIRAC.Core.Utilities.List import breakListIntoChunks

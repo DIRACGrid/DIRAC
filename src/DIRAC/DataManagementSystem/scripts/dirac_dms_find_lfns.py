@@ -1,15 +1,23 @@
 #!/usr/bin/env python
-
 """
 Find files in the FileCatalog using file metadata
+
+Usage:
+  dirac-dms-find-lfns [options] metaspec [metaspec ...]
+
+Arguments:
+  metaspec: metadata index specification (of the form: "meta=value" or "meta<value", "meta!=value", etc.)
+
+Examples::
+
+  $ dirac-dms-find-lfns Path=/lhcb/user "Size>1000" "CreationDate<2015-05-15"
 """
 
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
@@ -17,27 +25,13 @@ def main():
 
   Script.registerSwitch('', 'Path=', '    Path to search for')
   Script.registerSwitch('', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched')
-  Script.setUsageMessage(
-      '\n'.join(
-          [
-              __doc__.split('\n')[1],
-              'Usage:',
-              '  %s [options] metaspec [metaspec ...]' %
-              Script.scriptName,
-              'Arguments:',
-              ' metaspec:    metadata index specification \
-              (of the form: "meta=value" or "meta<value", "meta!=value", etc.)',
-              '',
-              'Examples:',
-              '  $ dirac-dms-find-lfns Path=/lhcb/user "Size>1000" "CreationDate<2015-05-15"',
-          ]))
-
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
+  import DIRAC
+  from DIRAC import gLogger
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
   from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD_METAKEYS
-  from DIRAC import gLogger
   from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
 
   path = '/'

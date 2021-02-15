@@ -5,8 +5,17 @@
 ########################################################################
 """
 Delete DIRAC job from WMS, if running it will be killed
-"""
 
+Usage:
+  dirac-wms-job-delete [options] ... JobID ...
+
+Arguments:
+  JobID: DIRAC Job ID
+
+Example:
+  $ dirac-wms-job-delete 12
+  Deleted job 12
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -15,25 +24,19 @@ __RCSID__ = "$Id$"
 
 import os.path
 
-import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    ' %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    ' JobID: DIRAC Job ID']))
-
   Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
   Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
+  import DIRAC
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   from DIRAC.Core.Utilities.Time import toString, date, day
   dirac = Dirac()

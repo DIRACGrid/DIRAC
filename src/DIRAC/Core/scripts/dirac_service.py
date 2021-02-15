@@ -3,7 +3,12 @@
 # File :   dirac-service
 # Author : Adria Casajus
 ########################################################################
+"""
+This is a script to launch DIRAC services. Mostly internal.
 
+Usage:
+  dirac-service [options] ...
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -21,6 +26,7 @@ __RCSID__ = "$Id$"
 @DIRACScript()
 def main():
   localCfg = LocalConfiguration()
+  localCfg.setUsageMessage(__doc__)
 
   positionalArgs = localCfg.getPositionalArguments()
   if len(positionalArgs) == 0:

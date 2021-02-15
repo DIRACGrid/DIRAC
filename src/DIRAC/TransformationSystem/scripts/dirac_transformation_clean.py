@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-""" Clean a tranformation
+"""
+Clean a tranformation
+
+Usage:
+  dirac-transformation-clean transID [transID] [transID]
 """
 
 from __future__ import print_function
@@ -7,22 +11,22 @@ from __future__ import absolute_import
 from __future__ import division
 import sys
 
-from DIRAC.Core.Base.Script import parseCommandLine, getPositionalArgs
+from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
-  parseCommandLine()
+  Script.parseCommandLine()
+
+  args = Script.getPositionalArgs()
+  if not args:
+    Script.showHelp()
 
   from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent import TransformationCleaningAgent
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  if not getPositionalArgs():
-    print('Usage: dirac-transformation-clean transID [transID] [transID]')
-    sys.exit()
-  else:
-    transIDs = [int(arg) for arg in getPositionalArgs()]
+  transIDs = [int(arg) for arg in args]
 
   agent = TransformationCleaningAgent('Transformation/TransformationCleaningAgent',
                                       'Transformation/TransformationCleaningAgent',

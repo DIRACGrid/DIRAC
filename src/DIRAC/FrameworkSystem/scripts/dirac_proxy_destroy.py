@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 """
-command line tool to remove local and remote proxies
+Command line tool to remove local and remote proxies
+
+Example:
+  $ dirac-proxy-destroy -a
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
 
 import os
 
 import DIRAC
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Security import Locations
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+from DIRAC.Core.Security import Locations, ProxyInfo
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security import ProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-__RCSID__ = "$Id$"
 
 
 class Params(object):
@@ -60,7 +61,6 @@ class Params(object):
     """
     add options to dirac option parser
     """
-    Script.setUsageMessage("Script to delete a dirac proxy. Default: delete local proxy only.")
     Script.registerSwitch(
         "a",
         "all",

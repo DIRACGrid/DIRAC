@@ -1,8 +1,22 @@
 #!/usr/bin/env python
+"""
+Add or Modify a Host info in DIRAC
+
+Usage:
+  dirac-admin-add-host [options] ... Property=<Value> ...
+
+Arguments:
+  Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)
+
+Example:
+  $ dirac-admin-add-host -H dirac.i2np3.fr -D /O=GRID-FR/C=FR/O=CNRS/OU=CC-IN2P3/CN=dirac.in2p3.fr
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
@@ -39,14 +53,6 @@ def main():
   global hostName
   global hostDN
   global hostProperties
-  Script.setUsageMessage('\n'.join([
-      'Add or Modify a Host info in DIRAC',
-      '\nUsage:\n',
-      '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
-      '\nArguments:\n',
-      '  Property=<Value>: Other properties to be added to the User like (Responsible=XXX)',
-  ]))
-
   Script.registerSwitch('H:', 'HostName:', 'Name of the Host (Mandatory)', setHostName)
   Script.registerSwitch('D:', 'HostDN:', 'DN of the Host Certificate (Mandatory)', setHostDN)
   Script.registerSwitch(

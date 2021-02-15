@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-
 """
-  Add files to an existing transformation
+Add files to an existing transformation
+
+Usage:
+  dirac-transformation-add-files TransID <LFN | fileContainingLFNs>
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -17,11 +19,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s TransID <LFN | fileContainingLFNs>' % Script.scriptName
-                                    ]))
-
   Script.parseCommandLine()
 
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient

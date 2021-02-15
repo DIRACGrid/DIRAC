@@ -1,11 +1,25 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-proxy-init.py
+# File :    dirac_proxy_get_uploaded_info.py
 # Author :  Adrian Casajus
 ########################################################################
+"""
+Print information about uploaded proxies.
+
+Example:
+  $ dirac-proxy-get-uploaded-info
+  Checking for DNs /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  --------------------------------------------------------------------------------------------------------
+  | UserDN                                          | UserGroup   | ExpirationTime      | PersistentFlag |
+  --------------------------------------------------------------------------------------------------------
+  | /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar | dirac_user  | 2011-06-29 12:04:25 | True           |
+  --------------------------------------------------------------------------------------------------------
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
+__RCSID__ = "$Id$"
 
 import sys
 
@@ -16,8 +30,6 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-__RCSID__ = "$Id:"
 
 userName = False
 
@@ -38,7 +50,6 @@ def setUser(arg):
 def main():
   global userName
   Script.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)
-
   Script.parseCommandLine()
 
   result = getProxyInfo()

@@ -4,7 +4,33 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Retrieve the current JDL of a DIRAC job
+Retrieve the current JDL of a DIRAC job
+
+Usage:
+  dirac-wms-job-get-jdl [options] ... JobID ...
+
+Arguments:
+  JobID:    DIRAC Job ID
+
+Example:
+  $ dirac-wms-job-get-jdl 1
+  {'Arguments': '-ltrA',
+   'CPUTime': '86400',
+   'DIRACSetup': 'EELA-Production',
+   'Executable': '/bin/ls',
+   'JobID': '1',
+   'JobName': 'DIRAC_vhamar_602138',
+   'JobRequirements': '[OwnerDN = /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar;
+                        OwnerGroup = eela_user;
+                        Setup = EELA-Production;
+                        UserPriority = 1;
+                        CPUTime = 0 ]',
+   'OutputSandbox': ['std.out', 'std.err'],
+   'Owner': 'vhamar',
+   'OwnerDN': '/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar',
+   'OwnerGroup': 'eela_user',
+   'OwnerName': 'vhamar',
+   'Priority': '1'}
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -21,11 +47,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main():
   original = False
   Script.registerSwitch('O', 'Original', 'Gets the original JDL')
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JobID:    DIRAC Job ID']))
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

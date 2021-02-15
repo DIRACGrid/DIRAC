@@ -4,11 +4,15 @@
 # Author :  Philippe Charpentier
 ########################################################################
 """
-  Get WNs for a selection of jobs
+Get WNs for a selection of jobs
+
+Usage:
+  dirac-wms-get-wn [options] ... LFN|File
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import datetime
@@ -37,9 +41,7 @@ def main():
   Script.registerSwitch('', 'Since=', '   Date since when to select jobs, or number of days (default: today)')
   Script.registerSwitch('', 'Date=', '   Specify the date (check for a full day)')
   Script.registerSwitch('', 'Full', '   Printout full list of job (default: False except if --WorkerNode)')
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... LFN|File' % Script.scriptName]))
+
   Script.parseCommandLine()
   from DIRAC import gLogger
   from DIRAC.Interfaces.API.Dirac import Dirac

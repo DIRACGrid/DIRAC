@@ -5,21 +5,19 @@
 ########################################################################
 
 """
-  Utility to send an e-mail using DIRAC notification service.
+Utility to send an e-mail using DIRAC notification service.
 
-  Arguments:
-    Formated text message. The message consists of e-mail headers and e-mail body
-    separated by two newline characters. Headers are key : value pairs separated
-    by newline character. Meaningful headers are "To:", "From:", "Subject:".
-    Other keys will be ommited.
-    Message body is an arbitrary string.
+Arguments:
+  Formated text message. The message consists of e-mail headers and e-mail body
+  separated by two newline characters. Headers are key : value pairs separated
+  by newline character. Meaningful headers are "To:", "From:", "Subject:".
+  Other keys will be ommited.
+  Message body is an arbitrary string.
 
-  Options:
-    There are no options.
+Examples::
 
-  Examples:
-    dirac-sys-sendmail "From: source@email.com\\nTo: destination@email.com\\nSubject: Test\\n\\nMessage body"
-    echo "From: source@email.com\\nSubject: Test\\n\\nMessage body" | dirac-sys-sendmail destination@email.com
+  dirac-sys-sendmail "From: source@email.com\\nTo: destination@email.com\\nSubject: Test\\n\\nMessage body"
+  echo "From: source@email.com\\nSubject: Test\\n\\nMessage body" | dirac-sys-sendmail destination@email.com
 """
 
 from __future__ import print_function
@@ -39,8 +37,6 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage(''.join(__doc__))
-
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

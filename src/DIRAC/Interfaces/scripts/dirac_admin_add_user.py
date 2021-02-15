@@ -1,5 +1,16 @@
 #!/usr/bin/env python
+"""
+Add or Modify a User info in DIRAC
 
+Usage:
+  dirac-admin-add-user [options] ... Property=<Value> ...
+
+Arguments:
+  Property=<Value>: Properties to be added to the User like (Phone=XXXX)
+
+Example:
+  $ dirac-admin-add-user -N vhamar -D /O=GRID/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar -M hamar@cppm.in2p3.fr -G dirac_user
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -54,12 +65,6 @@ def main():
   global userDN
   global userMail
   global userGroups
-  Script.setUsageMessage('\n'.join(['Add or Modify a User info in DIRAC',
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
-                                    'Arguments:',
-                                    ' Property=<Value>: Properties to be added to the User like (Phone=XXXX)', ]))
-
   Script.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName)
   Script.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', setUserDN)
   Script.registerSwitch('M:', 'UserMail:', 'eMail of the user (Mandatory)', setUserMail)

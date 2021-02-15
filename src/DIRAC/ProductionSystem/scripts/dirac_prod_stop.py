@@ -1,7 +1,15 @@
 #!/usr/bin/env python
-
 """
-  Stop a given production
+Stop a given production
+
+Usage:
+  dirac-prod-stop prodID
+
+Arguments:
+  prodID: Production ID (mandatory)
+
+Example:
+  $ dirac-prod-stop 381
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -16,13 +24,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s prodID' % Script.scriptName,
-                                    'Arguments:',
-                                    '  prodID: Production ID (mandatory)'
-                                    ]))
-
   Script.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient

@@ -9,8 +9,9 @@ it to Banned !
 Usage:
   dirac-rss-sync [options]
 
-Verbosity:
-    -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
+Verbosity::
+
+  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import
 from __future__ import division

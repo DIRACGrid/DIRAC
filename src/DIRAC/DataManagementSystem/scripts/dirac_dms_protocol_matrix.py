@@ -1,47 +1,47 @@
 #!/usr/bin/env python
 """
-  Generate a matrix of protocols used between SEs for FTS transfers.
-  The output is a CSV file containing a matrix source/destination.
-  The value of each cell is of the form "proto1/proto2 ([protoA,protoB,...])"
-  proto1/proto2 are the protocols that would really be given to FTS for source and dest urls
-  protoA,protoB,etc are the sorted list of protocols that would be attempted for thrid party copy by DIRAC
+Generate a matrix of protocols used between SEs for FTS transfers.
+The output is a CSV file containing a matrix source/destination.
+The value of each cell is of the form "proto1/proto2 ([protoA,protoB,...])"
+proto1/proto2 are the protocols that would really be given to FTS for source and dest urls
+protoA,protoB,etc are the sorted list of protocols that would be attempted for thrid party copy by DIRAC
 
-  By default, all the SEs are taken into account, but the matrix is factorized by using baseSEs.
+By default, all the SEs are taken into account, but the matrix is factorized by using baseSEs.
 
-  Suppose you have the following in your CS::
+Suppose you have the following in your CS::
 
-    StorageElementBases{
-      IN2P3-Disk
+  StorageElementBases{
+    IN2P3-Disk
+  }
+  StorageElements{
+    IN2P3-DST{
+      BaseSE = IN2P3-Disk
     }
-    StorageElements{
-      IN2P3-DST{
-        BaseSE = IN2P3-Disk
-      }
-      IN2P3-User{
-        BaseSE = IN2P3-Disk
-      }
-      AnotherDisk{
-      }
+    IN2P3-User{
+      BaseSE = IN2P3-Disk
     }
+    AnotherDisk{
+    }
+  }
 
-  You can have the following combinations::
+You can have the following combinations::
 
-    DIRAC-PROD>dirac-dms-protocol-matrix
-    Using sources: IN2P3-Disk, AnotherDisk
-    Using target: IN2P3-Disk, AnotherDisk
+  DIRAC-PROD>dirac-dms-protocol-matrix
+  Using sources: IN2P3-Disk, AnotherDisk
+  Using target: IN2P3-Disk, AnotherDisk
 
-    DIRAC-PROD>dirac-dms-protocol-matrix --FromSE=IN2P3-User
-    Using sources: IN2P3-User
-    Using target: IN2P3-Disk, AnotherDisk
+  DIRAC-PROD>dirac-dms-protocol-matrix --FromSE=IN2P3-User
+  Using sources: IN2P3-User
+  Using target: IN2P3-Disk, AnotherDisk
 
-    DIRAC-PROD>dirac-dms-protocol-matrix --FromSE=IN2P3-User --Bidirection
-    Using sources: IN2P3-User
-    Using target: IN2P3-User
-
+  DIRAC-PROD>dirac-dms-protocol-matrix --FromSE=IN2P3-User --Bidirection
+  Using sources: IN2P3-User
+  Using target: IN2P3-User
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import csv
 from collections import defaultdict
 
@@ -55,10 +55,6 @@ def main():
   Script.registerSwitch('', 'TargetSE=', 'SE1[,SE2,...]')
   Script.registerSwitch('', 'OutputFile=', 'CSV output file (default /tmp/protocol-matrix.csv)')
   Script.registerSwitch('', 'Bidirection', 'If FromSE or TargetSE are specified, make a square matrix ')
-  Script.setUsageMessage('\n'.join([__doc__,
-                                    'Usage:',
-                                    ' %s [option|cfgfile]  % Script.scriptName']))
-
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   from DIRAC import gConfig, gLogger

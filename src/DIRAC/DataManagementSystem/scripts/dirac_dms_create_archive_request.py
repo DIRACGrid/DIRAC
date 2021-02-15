@@ -1,4 +1,5 @@
-"""Create and put Requests to archive files.
+"""
+Create and put Requests to archive files.
 
 **List of operations**
 
@@ -29,7 +30,6 @@ Default values for any of the command line options can also be set in the CS
 * Operations/DataManagement/ArchiveFiles/SourceSE
 * Operations/DataManagement/ArchiveFiles/MaxFiles
 * ...
-
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -86,7 +86,6 @@ class CreateArchiveRequest(object):
                   ('', 'SourceOnly', 'Only treat files that are already at the Source-SE'),
                   ('X', 'Execute', 'Put Requests, else dryrun'),
                   ]
-    self.setUsage()
     self.registerSwitchesAndParseCommandLine()
 
     self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', MAX_SIZE))
@@ -96,14 +95,6 @@ class CreateArchiveRequest(object):
     self.getLFNMetadata()
     self.lfnChunks = []
     self.replicaSEs = []
-
-  @staticmethod
-  def setUsage():
-    """Set flags and options."""
-    Script.setUsageMessage('\n'.join([__doc__,
-                                      'Usage:',
-                                      ' %s [option|cfgfile]' % Script.scriptName,
-                                      ]))
 
   @property
   def fcClient(self):

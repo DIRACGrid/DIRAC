@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """
-  Get information on resources: Computing and Storage
+Get information on resources available for the given VO: Computing and Storage.
+By default, resources for the VO corresponding to the current user identity are displayed
+
+Usage:
+  dirac-resource-info [option]...
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -16,17 +20,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main():
 
   from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
-
-  description = """Get information on resources available for the given VO.
-
-  By default, resources for the VO corresponding to the current user
-  identity are displayed
-
-  """
-
-  Script.setUsageMessage('\n'.join([description,
-                                    'Usage:',
-                                    '  %s [option]...' % Script.scriptName]))
 
   ceFlag = False
   seFlag = False

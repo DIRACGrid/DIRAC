@@ -1,10 +1,24 @@
 #!/usr/bin/env python
 """
 Get the list of all the user files.
+
+Example:
+  $ dirac-dms-user-lfns
+  /formation/user/v/vhamar: 14 files, 6 sub-directories
+  /formation/user/v/vhamar/newDir2: 0 files, 0 sub-directories
+  /formation/user/v/vhamar/testDir: 0 files, 0 sub-directories
+  /formation/user/v/vhamar/0: 0 files, 6 sub-directories
+  /formation/user/v/vhamar/test: 0 files, 0 sub-directories
+  /formation/user/v/vhamar/meta-test: 0 files, 0 sub-directories
+  /formation/user/v/vhamar/1: 0 files, 4 sub-directories
+  /formation/user/v/vhamar/0/994: 1 files, 0 sub-directories
+  /formation/user/v/vhamar/0/20: 1 files, 0 sub-directories
+  16 matched files have been put in formation-user-v-vhamar.lfns
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -25,10 +39,6 @@ def main():
   Script.registerSwitch("w:", "Wildcard=", "Wildcard for matching filenames [All]")
   Script.registerSwitch("b:", "BaseDir=", "Base directory to begin search (default /[vo]/user/[initial]/[username])")
   Script.registerSwitch("e", "EmptyDirs", "Create a list of empty directories")
-
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ...' % Script.scriptName, ]))
 
   Script.parseCommandLine(ignoreErrors=False)
 

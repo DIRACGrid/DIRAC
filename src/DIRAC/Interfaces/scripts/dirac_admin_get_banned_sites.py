@@ -3,7 +3,14 @@
 # File :    dirac-admin-get-banned-sites
 # Author :  Stuart Paterson
 ########################################################################
+"""
+Usage:
+  dirac-admin-get-banned-sites [options] ...
 
+Example:
+  $ dirac-admin-get-banned-sites
+  LCG.IN2P3.fr                      Site not present in logging table
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division

@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 """
 Script to update pilot version in CS
+
+Usage:
+  dirac-admin-update-pilot version
+
+Arguments:
+  version: pilot version you want to update to
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -15,14 +21,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([
-      __doc__.split('\n')[1],
-      'Usage:',
-      '  %s version' % Script.scriptName,
-      ' ',
-      'Arguments:',
-      '  version:           pilot version you want to update to'
-  ]))
   Script.registerSwitch(
       "v:",
       "vo=",

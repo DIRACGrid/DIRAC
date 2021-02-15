@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 """
-  dirac-my-great-script
+This script prints out how great is it, shows raw queries and sets the
+number of pings.
 
-    This script prints out how great is it, shows raw queries and sets the
-    number of pings.
+Usage:
+  dirac-my-great-script [options] <Arguments>
 
-    Usage:
-      dirac-my-great-script [option|cfgfile] <Arguments>
-    Arguments:
-      <service1> [<service2> ...]
+Arguments:
+  <service1> [<service2> ...]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -62,9 +61,6 @@ def registerSwitches():
   # Register switches
   for switch in switches:
     Script.registerSwitch(*switch)
-
-  # Define a help message
-  Script.setUsageMessage(__doc__)
 
 
 def parseSwitches():

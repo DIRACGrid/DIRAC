@@ -1,12 +1,11 @@
-"""Create and put Requests to move files.
+"""
+Create and put Requests to move files.
 
 List of operations:
 
 #. ReplicateAndRegister LFNs
 #. Check for Migration
 #. Remove all other replicas for these files
-
-
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -49,18 +48,9 @@ class CreateMovingRequest(object):
                    'Ensure the LFNs are migrated to tape before removing any replicas'),
                   ('X', 'Execute', 'Put Requests, else dryrun'),
                   ]
-    self.setUsage()
     self.registerSwitchesAndParseCommandLine()
     self.getLFNList()
     self.getLFNMetadata()
-
-  @staticmethod
-  def setUsage():
-    """Set flags and options."""
-    Script.setUsageMessage('\n'.join([__doc__,
-                                      'Usage:',
-                                      ' %s [option|cfgfile]' % Script.scriptName,
-                                      ]))
 
   @property
   def fcClient(self):

@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 """
-  Restart DIRAC component using runsvctrl utility
+Restart DIRAC component using runsvctrl utility
+
+Usage:
+  dirac-restart-component [options] ... [System [Service|Agent]]
+
+Arguments:
+  System:        Name of the system for the component (default *: all)
+  Service|Agent: Name of the particular component (default *: all)
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
-#
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
@@ -14,12 +22,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.disableCS()
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... [System [Service|Agent]]' % Script.scriptName,
-                                    'Arguments:',
-                                    '  System:        Name of the system for the component (default *: all)',
-                                    '  Service|Agent: Name of the particular component (default *: all)']))
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
   if len(args) > 2:

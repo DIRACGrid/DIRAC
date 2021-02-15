@@ -1,4 +1,4 @@
-""" This is the guy that parses and interprets the local configuration options
+""" This is the guy that parses and interprets the local configuration options.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -6,8 +6,9 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import sys
+import re
 import os
+import sys
 import getopt
 
 import DIRAC
@@ -46,7 +47,10 @@ class LocalConfiguration(object):
     self.componentType = False
     self.loggingSection = "/DIRAC"
     self.initialized = False
-    self.__usageMessage = ''
+    self.__scriptDescription = ''
+    self.__helpUsageDoc = ''
+    self.__helpArgumentsDoc = ''
+    self.__helpExampleDoc = ''
     self.__debugMode = 0
     self.firstOptionIndex = 1
 
@@ -83,10 +87,33 @@ class LocalConfiguration(object):
     self.additionalCFGFiles.append(filePath)
 
   def setUsageMessage(self, usageMsg):
+    """ Define and parse message to be display by the showHelp method.
+
+        :param str usageMsg: script description that can contain Usage, Example, Arguments, Options blocks
     """
-    Define message to be display by the showHelp method
-    """
-    self.__usageMessage = usageMsg
+    # Searched text
+    context = r"(.*?)"
+    # Start of any block description or end of __doc__
+    startAnyBlockOrEnd = r"(?:\n(?:Usage|Example|Arguments|Options):+\n|$)"
+
+    r = r"%s%s" % (context, startAnyBlockOrEnd)
+    if usageMsg:
+      # The description block is the first in the __doc__
+      desc = re.search(r, usageMsg, re.DOTALL)
+      if desc:
+        self.__scriptDescription = '\n' + desc.group(1).strip('\n') + '\n'
+      # The usage block starts with '\nUsage:\n' or '\nUsage::\n'
+      usage = re.search(r"%s%s" % (r"Usage:+", r), usageMsg, re.DOTALL)
+      if usage:
+        self.__helpUsageDoc = '\nUsage:\n' + usage.group(1).strip('\n') + '\n'
+      # The argument block starts with '\Arguments:\n' or '\Arguments::\n'
+      args = re.search(r"%s%s" % (r"Arguments:+", r), usageMsg, re.DOTALL)
+      if args:
+        self.__helpArgumentsDoc = '\nArguments:\n' + args.group(1).strip('\n') + '\n'
+      # The example block starts with '\Example:\n' or '\Example::\n'
+      expl = re.search(r"%s%s" % (r"Example:+", r), usageMsg, re.DOTALL)
+      if expl:
+        self.__helpExampleDoc = '\nExample:\n' + expl.group(1).strip('\n') + '\n'
 
   def __setOptionValue(self, optionPath, value):
     gConfigurationData.setOptionInCFG(self.__getAbsolutePath(optionPath),
@@ -510,11 +537,14 @@ class LocalConfiguration(object):
     """
     Printout help message including a Usage message if defined via setUsageMessage method
     """
-    if self.__usageMessage:
-      gLogger.notice('\n' + self.__usageMessage.lstrip())
+    if self.__scriptDescription:
+      gLogger.notice(self.__scriptDescription)
+
+    if self.__helpUsageDoc:
+      gLogger.notice(self.__helpUsageDoc)
     else:
       gLogger.notice("\nUsage:")
-      gLogger.notice("\n  %s (<options>|<cfgFile>)*" % os.path.basename(sys.argv[0]))
+      gLogger.notice("\n  %s [options] ..." % os.path.basename(sys.argv[0]))
       if dummy:
         gLogger.notice(dummy)
 
@@ -534,7 +564,7 @@ class LocalConfiguration(object):
         # Last general opt is always help
         break
     if iLastOpt + 1 < len(self.commandOptionList):
-      gLogger.notice(" \nOptions:")
+      gLogger.notice("\nOptions:")
       for iPos in range(iLastOpt + 1, len(self.commandOptionList)):
         optionTuple = self.commandOptionList[iPos]
         if optionTuple[0].endswith(':'):
@@ -544,6 +574,12 @@ class LocalConfiguration(object):
           gLogger.notice(line)
         else:
           gLogger.notice("  -%s --%s : %s" % (optionTuple[0].ljust(2), optionTuple[1].ljust(22), optionTuple[2]))
+
+    if self.__helpArgumentsDoc:
+      gLogger.notice(self.__helpArgumentsDoc)
+
+    if self.__helpExampleDoc:
+      gLogger.notice(self.__helpExampleDoc)
 
     gLogger.notice("")
     DIRAC.exit(exitCode)

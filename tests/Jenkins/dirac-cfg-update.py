@@ -12,7 +12,7 @@ from diraccfg import CFG
 from DIRAC.Core.Base import Script
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s [option|cfgFile]' % Script.scriptName]))
+                                  '  %s [options]' % Script.scriptName]))
 
 Script.registerSwitch('F:', 'file=', "set the cfg file to update.")
 Script.registerSwitch('V:', 'vo=', "set the VO.")

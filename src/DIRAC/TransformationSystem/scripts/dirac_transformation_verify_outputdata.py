@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-""" runs checkTransformationIntegrity from ValidateOutputDataAgent on selected Tranformation
+"""
+Runs checkTransformationIntegrity from ValidateOutputDataAgent on selected Tranformation
+
+Usage:
+  dirac-transformation-verify-outputdata transID [transID] [transID]
 """
 
 from __future__ import print_function
@@ -7,19 +11,19 @@ from __future__ import absolute_import
 from __future__ import division
 import sys
 
-from DIRAC.Core.Base.Script import parseCommandLine, getPositionalArgs
+from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
-  parseCommandLine()
+  Script.parseCommandLine()
 
-  if not getPositionalArgs():
-    print('Usage: dirac-transformation-verify-outputdata transID [transID] [transID]')
-    sys.exit()
-  else:
-    transIDs = [int(arg) for arg in getPositionalArgs()]
+  args = Script.getPositionalArgs()
+  if not args:
+    Script.showHelp()
+
+  transIDs = [int(arg) for arg in args]
 
   from DIRAC.TransformationSystem.Agent.ValidateOutputDataAgent import ValidateOutputDataAgent
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient

@@ -4,7 +4,24 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Print the service ports for the specified setup
+Print the service ports for the specified setup
+
+Usage:
+  dirac-admin-service-ports [options] ... [Setup]
+
+Arguments:
+  Setup:    Name of the setup
+
+Example:
+  $ dirac-admin-service-ports
+  {'Framework/ProxyManager': 9152,
+   'Framework/SystemAdministrator': 9162,
+   'Framework/UserProfileManager': 9155,
+   'WorkloadManagement/JobManager': 9132,
+   'WorkloadManagement/PilotManager': 9171,
+   'WorkloadManagement/Matcher': 9170,
+   'WorkloadManagement/SandboxStore': 9196,
+   'WorkloadManagement/WMSAdministrator': 9145}
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -19,11 +36,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... [Setup]' % Script.scriptName,
-                                    'Arguments:',
-                                    '  Setup:    Name of the setup']))
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

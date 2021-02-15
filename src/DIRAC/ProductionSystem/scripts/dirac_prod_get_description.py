@@ -1,7 +1,15 @@
 #!/usr/bin/env python
-
 """
-  Get the description of a given production
+Get the description of a given production
+
+Usage:
+  dirac-prod-get-description prodID
+
+Arguments:
+  prodID: Production ID (mandatory)
+
+Example:
+  $ dirac-prod-get-description 381
 """
 
 from __future__ import print_function
@@ -16,13 +24,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s prodID' % Script.scriptName,
-                                    'Arguments:',
-                                    '  prodID: Production ID (mandatory)'
-                                    ]))
-
   Script.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient

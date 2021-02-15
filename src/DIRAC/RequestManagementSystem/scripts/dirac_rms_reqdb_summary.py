@@ -1,8 +1,14 @@
 #!/bin/env python
-""" show ReqDB summary """
+"""
+Show ReqDB summary
+
+Usage:
+  dirac-rms-reqdb-summary [options]
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -11,10 +17,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__,
-                                    'Usage:',
-                                    ' %s [option|cfgfile]' % Script.scriptName]))
-
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 

@@ -1,8 +1,20 @@
 #!/usr/bin/env python
+"""
+Add or Modify a Group info in DIRAC
 
+Usage:
+  dirac-admin-add-group [options] ... Property=<Value> ...
+
+Arguments:
+  Property=<Value>: Other properties to be added to the Group like (VOMSRole=XXXX)
+
+Example:
+  $ dirac-admin-add-group -G dirac_test
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
@@ -44,13 +56,6 @@ def main():
   global groupName
   global groupProperties
   global userNames
-  Script.setUsageMessage('\n'.join(['Add or Modify a Group info in DIRAC',
-                                    '\nUsage:\n',
-                                    '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
-                                    '\nArguments:\n',
-                                    '  Property=<Value>: Other properties to be added to the User like (VOMSRole=XXXX)',
-                                    ]))
-
   Script.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
   Script.registerSwitch(
       'U:',

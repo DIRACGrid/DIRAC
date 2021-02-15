@@ -4,24 +4,26 @@
 # Author :  Daniela Remenska
 ########################################################################
 """
-  Report the summary of the staging progress of jobs
+Report the summary of the staging progress of jobs
+
+Usage:
+  dirac-stager-monitor-jobs jobID [jobID] [jobID] ...
+
+Arguments:
+  JobID: DIRAC job ID
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s  jobID [jobID] [jobID] ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JobID: DIRAC job ID \n'
-                                    ]))
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()

@@ -4,9 +4,18 @@
 # Author : Stuart Paterson
 ########################################################################
 """
-  Retrieve output sandbox for a DIRAC job
-"""
+Retrieve output sandbox for a DIRAC job
 
+Usage:
+  dirac-wms-job-get-output [options] ... JobID ...
+
+Arguments:
+  JobID:    DIRAC Job ID or a name of the file with JobID per line
+
+Example:
+  $ dirac-wms-job-get-output 1
+  Job output sandbox retrieved in 1/
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -23,12 +32,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JobID:    DIRAC Job ID or a name of the file with JobID per line']))
-
   Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
   Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
   Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")

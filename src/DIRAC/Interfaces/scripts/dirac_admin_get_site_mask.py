@@ -3,12 +3,26 @@
 # File :    dirac-admin-get-site-mask
 # Author :  Stuart Paterson
 ########################################################################
+"""
+Get the list of sites enabled in the mask for job submission
 
+Usage:
+  dirac-admin-get-site-mask [options]
+
+Example:
+  $ dirac-admin-get-site-mask
+  LCG.CGG.fr
+  LCG.CPPM.fr
+  LCG.LAPP.fr
+  LCG.LPSC.fr
+  LCG.M3PEC.fr
+  LCG.MSFG.fr
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-__RCSID__ = "$Id$"
 
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
@@ -16,13 +30,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage("""
-  Get the list of sites enabled in the mask for job submission
-
-  Usage:
-    %s [options]
-  """ % Script.scriptName)
-
   Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit, gLogger

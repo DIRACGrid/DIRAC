@@ -4,11 +4,21 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Retrieve the output of the pilot that executed a given job
+Retrieve the output of the pilot that executed a given job
+
+Usage:
+  dirac-admin-get-job-pilot-output [options] ... JobID ...
+
+Arguments:
+  JobID:    DIRAC ID of the Job
+
+Example:
+  $ dirac-admin-get-job-pilot-output 34
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -17,11 +27,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JobID:    DIRAC ID of the Job']))
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

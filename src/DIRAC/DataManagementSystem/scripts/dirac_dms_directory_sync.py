@@ -10,6 +10,19 @@ Syncs the source destination folder recursivly into the target destination
 
 If option --sync is used contend that is not in the source directory but is
 only in the target directory will be deleted.
+
+Usage:
+  dirac-dms-directory-sync Source Destination
+
+  e.g.: Download
+    dirac-dms-directory-sync LFN Path
+  or Upload
+    dirac-dms-directory-sync Path LFN SE
+
+Arguments:
+  LFN:           Logical File Name (Path to directory)
+  Path:          Local path to the file (Path to directory)
+  SE:            DIRAC Storage Element
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -24,21 +37,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([
-      __doc__.split('\n')[1],
-      'Usage:',
-      '  %s Source Destination' % Script.scriptName,
-      ' ',
-      ' e.g.: Download',
-      '   %s LFN Path' % Script.scriptName,
-      '  or Upload',
-      '   %s Path LFN SE' % Script.scriptName,
-      'Arguments:',
-      '  LFN:           Logical File Name (Path to directory)',
-      '  Path:          Local path to the file (Path to directory)',
-      '  SE:            DIRAC Storage Element'
-  ]))
-
   Script.registerSwitch("D", "sync", "Make target directory identical to source")
   Script.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
   Script.parseCommandLine(ignoreErrors=False)

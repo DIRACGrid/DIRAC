@@ -3,17 +3,31 @@
 # File :    dirac-proxy-info.py
 # Author :  Adrian Casajus
 ########################################################################
+"""
+Print information about the current proxy.
 
+Example:
+  $ dirac-proxy-info
+  subject      : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar/CN=proxy/CN=proxy
+  issuer       : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar/CN=proxy
+  identity     : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  timeleft     : 23:53:55
+  DIRAC group  : dirac_user
+  path         : /tmp/x509up_u40885
+  username     : vhamar
+  VOMS         : True
+  VOMS fqan    : ['/formation']
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
+__RCSID__ = "$Id$"
 
 import sys
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.ReturnValues import S_OK
-
-__RCSID__ = "$Id$"
 
 
 class Params(object):

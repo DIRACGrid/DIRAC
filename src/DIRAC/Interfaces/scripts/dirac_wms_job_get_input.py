@@ -1,10 +1,20 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-production-job-get-input
+# File :    dirac-wms-job-get-input
 # Author :  Stuart Paterson
 ########################################################################
 """
-  Retrieve input sandbox for DIRAC Job
+Retrieve input sandbox for DIRAC Job
+
+Usage:
+  dirac-wms-job-get-input [options] ... JobID ...
+
+Arguments:
+  JobID:    DIRAC Job ID
+
+Example:
+  $ dirac-wms-job-get-input 13
+  Job input sandbox retrieved in InputSandbox13/
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -21,11 +31,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  JobID:    DIRAC Job ID']))
   Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()

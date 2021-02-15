@@ -4,7 +4,10 @@
 # Author :  A.T.
 ########################################################################
 """
-  Kill the specified pilot
+Kill the specified pilot
+
+Usage:
+  dirac-admin-kill-pilot <pilot reference>
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -18,10 +21,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s <pilot reference>' % Script.scriptName]))
-
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

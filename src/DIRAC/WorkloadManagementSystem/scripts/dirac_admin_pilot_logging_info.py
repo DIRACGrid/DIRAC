@@ -1,6 +1,11 @@
 #! /usr/bin/env python
 """
-  Get Pilots Logging for specific Pilot UUID or Job ID.
+Get Pilots Logging for specific Pilot UUID or Job ID.
+
+Usage:
+  dirac-admin-pilot-loggin-info <option value>
+
+  WARNING: Only one option (either uuid or jobid) should be used.
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -40,12 +45,6 @@ def main():
   global jobid
   Script.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', setUUID)
   Script.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', setJobID)
-
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s option value ' % Script.scriptName,
-                                    'Only one option (either uuid or jobid) should be used.']))
-
   Script.parseCommandLine()
 
   from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient

@@ -2,6 +2,16 @@
 ########################################################################
 # $Header:  $
 ########################################################################
+"""
+Remove the given file or a list of files from the File Catalog
+
+Usage:
+  dirac-file-remove-catalog-files <LFN | fileContainingLFNs>
+
+Example:
+  $ dirac-dms-remove-catalog-files   /formation/user/v/vhamar/1/1134/StdOut
+  Successfully removed 1 catalog files.
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -16,13 +26,6 @@ from DIRAC import gLogger
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage("""
-  Remove the given file or a list of files from the File Catalog
-
-  Usage:
-    %s <LFN | fileContainingLFNs>
-  """ % Script.scriptName)
-
   Script.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

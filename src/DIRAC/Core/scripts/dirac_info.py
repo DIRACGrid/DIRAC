@@ -4,7 +4,24 @@
 # Author :  Andrei Tsaregorodtsev
 ########################################################################
 """
-  Report info about local DIRAC installation
+Report info about local DIRAC installation
+
+Example:
+  $ dirac-info
+
+  Option                 Value
+  ============================
+  Setup                  Dirac-Production
+  ConfigurationServer    dips://ccdiracli08.in2p3.fr:9135/Configuration/Server
+  Installation path      /opt/dirac/versions/v7r2-pre33_1613239204
+  Installation type      client
+  Platform               Linux_x86_64_glibc-2.17
+  VirtualOrganization    dteam
+  User DN                /DC=org/DC=ugrid/O=people/O=BITP/CN=Andrii Lytovchenko
+  Proxy validity, secs   0
+  Use Server Certificate Yes
+  Skip CA Checks         No
+  DIRAC version          v7r2-pre33
 """
 
 from __future__ import print_function
@@ -27,11 +44,19 @@ def main():
   from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
   from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... Site' % Script.scriptName, ]))
+  def version(arg):
+    Script.disableCS()
+    print(DIRAC.version)
+    DIRAC.exit(0)
+
+  def platform(arg):
+    Script.disableCS()
+    print(DIRAC.getPlatform())
+    DIRAC.exit(0)
+
+  Script.registerSwitch("v", "version", "print version of current DIRAC installation", version)
+  Script.registerSwitch("p", "platform", "print platform of current DIRAC installation", platform)
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
 
   records = []
 

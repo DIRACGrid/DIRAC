@@ -1,5 +1,15 @@
 #!/bin/env python
-"""Create and put 'ReplicateAndRegister' request."""
+"""
+Create and put 'ReplicateAndRegister' request.
+
+Usage:
+  dirac-dms-replicate-and-register-request [options] requestName LFNs targetSE1 [targetSE2 ...]
+
+Arguments:
+  requestName:  a request name
+  LFNs:         single LFN or file with LFNs
+  targetSE:     target SE
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -23,16 +33,6 @@ def getLFNList(arg):
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([
-      __doc__,
-      'Usage:',
-      ' %s [option|cfgfile] requestName LFNs targetSE1 [targetSE2 ...]' % Script.scriptName,
-      'Arguments:',
-      ' requestName: a request name',
-      '        LFNs: single LFN or file with LFNs',
-      '    targetSE: target SE',
-  ]))
-
   catalog = None
   Script.registerSwitch("C:", "Catalog=", "Catalog to use")
   Script.parseCommandLine()

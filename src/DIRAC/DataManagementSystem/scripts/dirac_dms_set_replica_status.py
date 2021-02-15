@@ -1,10 +1,20 @@
 #!/usr/bin/env python
 """
 Set the status of the replicas of given files at the provided SE
+
+Usage:
+  dirac-dms-set-replica-status [options] ... <LFN|File> SE Status
+
+Arguments:
+  LFN:      LFN
+  File:     File name containing a list of affected LFNs
+  SE:       Name of Storage Element
+  Status:   New Status for the replica
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -13,15 +23,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    '\nUsage:',
-                                    '  %s [option|cfgfile] ... <LFN|File> SE Status' % Script.scriptName,
-                                    'Arguments:',
-                                    '  LFN:      LFN',
-                                    '  File:     File name containing a list of affected LFNs',
-                                    '  SE:       Name of Storage Element',
-                                    '  Status:   New Status for the replica']))
-
   Script.parseCommandLine(ignoreErrors=False)
 
   import DIRAC

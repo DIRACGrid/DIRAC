@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 """
-  Get the files attached to a transformation
+Get the files attached to a transformation
+
+Usage:
+  dirac-transformation-get-files TransID
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -16,12 +19,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([
-      __doc__.split('\n')[1],
-      'Usage:',
-      '  %s TransID' % Script.scriptName
-  ]))
-
   Script.parseCommandLine()
 
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient

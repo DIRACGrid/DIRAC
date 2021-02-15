@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 
-""" Ban one or more Storage Elements for usage
+"""
+Ban one or more Storage Elements for usage
+
+Usage:
+  dirac-admin-ban-se SE1 [SE2 ...]
+
+Example:
+  $ dirac-admin-ban-se M3PEC-disk
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -20,13 +27,6 @@ def main():
   remove = True
   site = ''
   mute = False
-
-  Script.setUsageMessage("""
-  Ban one or more Storage Elements for usage
-
-  Usage:
-    %s SE1 [SE2 ...]
-  """ % Script.scriptName)
 
   Script.registerSwitch("r", "BanRead", "     Ban only reading from the storage element")
   Script.registerSwitch("w", "BanWrite", "     Ban writing to the storage element")

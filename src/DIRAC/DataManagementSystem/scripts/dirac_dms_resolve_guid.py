@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+Returns the LFN matching given GUIDs
+
+Usage:
+  dirac-dms-resolve-guid <GUIDs>
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -11,12 +17,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage("""
-  Returns the LFN matching given GUIDs
-  Usage:
-    %s <GUIDs>
-  """ % Script.scriptName)
-
   Script.parseCommandLine()
 
   import DIRAC

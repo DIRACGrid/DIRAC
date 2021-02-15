@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-"""Check configuration options against the defaults in the ConfigTemplate.cfg files.
+"""
+Check configuration options against the defaults in the ConfigTemplate.cfg files.
 
 This script can help to discover discrepancies in the configuration:
 
@@ -9,6 +10,8 @@ This script can help to discover discrepancies in the configuration:
 
 This script should be run by dirac administrators after major updates.
 
+Usage:
+  dirac-admin-check-config-options [options] -[MAUO] [-S <system>]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -67,9 +70,6 @@ class CheckConfig(object):
     Script.registerSwitch("O", "missingOption", "Show options which do not exist in the current configuration",
                           self._setShowMissingOptions)
 
-    Script.setUsageMessage('\n'.join([self.__doc__,
-                                      'Usage:',
-                                      '  %s [option|cfgfile] -[MAUO] [-S <system]' % Script.scriptName]))
     Script.parseCommandLine(ignoreErrors=True)
     if not any([self.showModified, self.showAdded, self.showMissingSections, self.showMissingOptions]):
       LOG.error("\nERROR: Set at least one of the flags M A U O")

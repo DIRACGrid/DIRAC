@@ -3,16 +3,14 @@
 Deploy all scripts and extensions.
 This script is not meant to be called by users (it's automatically called by dirac-install).
 
-Usage::
+Usage:
+  dirac-deploy-scripts [options] ... ... <python path>
 
-  dirac-deploy-scripts (<options>|<cfgFile>)* ... <python path>
-
-Arguments::
+Arguments:
   python path:    you can specify the folder where your python installation should be fetched from
                   to replace the shebang
 
-Example::
-
+Example:
   $ dirac-deploy-scripts
 """
 from __future__ import print_function

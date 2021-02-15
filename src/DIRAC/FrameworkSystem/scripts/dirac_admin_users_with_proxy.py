@@ -1,13 +1,34 @@
 #!/usr/bin/env python
+"""
+Print list of users with proxies.
 
+Example:
+  $ dirac-admin-users-with-proxy
+  * vhamar
+  DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  group      : dirac_admin
+  not after  : 2011-06-29 12:04:25
+  persistent : False
+  -
+  DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  group      : dirac_pilot
+  not after  : 2011-06-29 12:04:27
+  persistent : False
+  -
+  DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
+  group      : dirac_user
+  not after  : 2011-06-29 12:04:30
+  persistent : True
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import DIRAC
 from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Utilities import Time
 
 __RCSID__ = "$Id$"
 
@@ -35,7 +56,6 @@ class Params(object):
 def main():
   params = Params()
   params.registerCLISwitches()
-
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
   result = gProxyManager.getDBContents()

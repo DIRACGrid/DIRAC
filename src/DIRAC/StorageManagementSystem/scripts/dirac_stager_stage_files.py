@@ -7,24 +7,25 @@
 - submit staging requests for a particular Storage Element! Default DIRAC JobID will be =0.
   (not visible in the Job monitoring list though)
 
+Usage:
+  dirac-stager-stage-files <LFN> <SE>
+
+Arguments:
+  <LFN>: LFN to Stage (or local file with list of LFNs)
+  <SE>:  Name of Storage Element
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s <LFN> <SE>' % Script.scriptName,
-                                    'Arguments:',
-                                    '  <LFN>: LFN to Stage (or local file with list of LFNs)',
-                                    '  <SE>:  Name of Storage Element']))
-
   Script.parseCommandLine(ignoreErrors=True)
 
   args = Script.getPositionalArgs()

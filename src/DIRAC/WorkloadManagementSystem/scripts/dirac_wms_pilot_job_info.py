@@ -4,9 +4,14 @@
 # Author :  Philippe Charpentier
 ########################################################################
 """
-  Retrieve info about jobs run by the given pilot
-"""
+Retrieve info about jobs run by the given pilot
 
+Usage:
+  dirac-wms-pilot-job-info [options] ... PilotID ...
+
+Arguments:
+  PilotID:  Grid ID of the pilot
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -28,11 +33,6 @@ def _stringInList(subStr, sList):
 @DIRACScript()
 def main():
   parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... PilotID ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  PilotID:  Grid ID of the pilot']))
   Script.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
   Script.parseCommandLine(ignoreErrors=True)
   for switch in Script.getUnprocessedSwitches():

@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 """
-  Get computing resources capable to execute the given job
+Get computing resources capable to execute a job with the given description.
+
+Note that only statically defined computing resource parameters are considered although sites
+can fail matching due to their dynamic state, e.g. occupancy by other jobs. Also input data
+proximity is not taken into account.
+
+Usage:
+  dirac-wms-match [option]... <job_JDL>
 """
 
 from __future__ import absolute_import
@@ -33,16 +40,6 @@ def setSites(optVal_):
 def main():
   global fullMatch
   global sites
-  description = """Get computing resources capable to execute a job with the given description.
-
-  Note that only statically defined computing resource parameters are considered although sites
-  can fail matching due to their dynamic state, e.g. occupancy by other jobs. Also input data
-  proximity is not taken into account.
-  """
-  Script.setUsageMessage('\n'.join([description,
-                                    'Usage:',
-                                    '  %s [option]... <job_JDL>' % Script.scriptName]))
-
   Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
   Script.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
 

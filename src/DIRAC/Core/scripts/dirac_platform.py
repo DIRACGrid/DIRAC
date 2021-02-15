@@ -3,11 +3,36 @@
 # File :   dirac-platform
 # Author : Adria Casajus
 ########################################################################
+"""
+The *dirac-platform* script determines the "platform" of a certain node.
+The platform is a string used to identify the minimal characteristics of the node,
+enough to determine which version of DIRAC can be installed.
 
+Invoked at any installation, so by the *dirac-install* script, and by the pilots.
+
+On a RHEL 6 node, for example, the determined dirac platform is "Linux_x86_64_glibc-2.5"
+
+Usage:
+  dirac-platform [options]
+
+Example:
+  $ dirac-platform
+  Linux_x86_64_glibc-2.5
+
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
+
+import sys
+import argparse
+
+parser = argparse.ArgumentParser(
+    description=__doc__,
+    formatter_class=argparse.RawDescriptionHelpFormatter)
+parser.parse_known_args()
 
 try:
   from DIRAC.Core.Utilities.Platform import getPlatformString

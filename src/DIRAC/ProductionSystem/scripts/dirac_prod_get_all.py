@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-
 """
-  Get summary informations of all productions
+Get summary informations of all productions
+
+Usage:
+  dirac-prod-get-all
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -17,8 +19,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1]]))
-
   Script.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient

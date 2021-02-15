@@ -4,9 +4,20 @@
 # Author : Federico Stagni
 ########################################################################
 """
-  Add a new DIRAC SiteName to DIRAC Configuration, including one or more CEs.
-  If site is already in the CS with another name, error message will be produced.
-  If site is already in the CS with the right name, only new CEs will be added.
+Add a new DIRAC SiteName to DIRAC Configuration, including one or more CEs.
+If site is already in the CS with another name, error message will be produced.
+If site is already in the CS with the right name, only new CEs will be added.
+
+Usage:
+  dirac-admin-add-site [options] ... DIRACSiteName GridSiteName CE [CE] ...
+
+Arguments:
+  DIRACSiteName:  Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)
+  GridSiteName:   Name of the site in the Grid (ie: CERN-PROD)
+  CE:             Name of the CE to be included in the site (ie: ce111.cern.ch)
+
+Example:
+  $ dirac-admin-add-site LCG.IN2P3.fr IN2P3-Site
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -22,17 +33,6 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage(
-      '\n'.join(
-          [
-              __doc__.split('\n')[1],
-              'Usage:',
-              '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' %
-              Script.scriptName,
-              'Arguments:',
-              '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
-              '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
-              '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)']))
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

@@ -1,7 +1,15 @@
 #!/usr/bin/env python
-
 """
-  Get the transformations belonging to a given production
+Get the transformations belonging to a given production
+
+Usage:
+  dirac-prod-get-trans prodID
+
+Arguments:
+  prodID: Production ID (mandatory)
+
+Example:
+  $ dirac-prod-get-trans 381
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -17,14 +25,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                    'Usage:',
-                                    '  %s prodID' % Script.scriptName,
-                                    'Arguments:',
-                                    '  prodID: Production ID (mandatory)',
-                                    '\ne.g: %s 381' % Script.scriptName,
-                                    ]))
-
   Script.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
