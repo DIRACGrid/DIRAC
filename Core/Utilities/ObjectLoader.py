@@ -150,7 +150,7 @@ class ObjectLoader(object):
     except AttributeError:
       return S_ERROR(DErrno.EIMPERR, "%s does not contain a %s object" % (importString, objName))
 
-  def getObjects(self, modulePath, reFilter=None, parentClass=None, recurse=False):
+  def getObjects(self, modulePath, reFilter=None, parentClass=None, recurse=False, continueOnError=False):
     """ Search for modules under a certain path
 
         modulePath is the import string needed to access the parent module.
@@ -158,6 +158,8 @@ class ObjectLoader(object):
 
         reFilter is a regular expression to filter what to load. For instance ".*Handler"
         parentClass is a class object from which the loaded modules have to import from. For instance RequestHandler
+
+        :param continueOnError: if True, continue loading further module even if one fails
     """
 
     if 'OrderedDict' in dir(collections):
@@ -202,6 +204,9 @@ class ObjectLoader(object):
         fullName = "%s.%s" % (impPath, modName)
         result = self.__recurseImport(modName, parentModule=parentModule, fullName=fullName)
         if not result['OK']:
+          if continueOnError:
+            gLogger.error("Error loading module but continueOnError is true", "module %s error %s" % (fullName, result))
+            continue
           return result
         if not result['Value']:
           continue
