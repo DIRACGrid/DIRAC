@@ -2102,18 +2102,18 @@ def createBashrc():
           # But this will have to be created at some point (dirac-configure)
           certDir = '%s/etc/grid-security/certificates' % proPath
       lines.extend(['# CAs path for SSL verification',
-                    'export X509_CERT_DIR=%s' % certDir,
-                    'export SSL_CERT_DIR=%s' % certDir])
+                    'export X509_CERT_DIR=${X509_CERT_DIR:-%s}' % certDir,
+                    'export SSL_CERT_DIR=${SSL_CERT_DIR:-%s}' % certDir])
 
       lines.append(
-          'export X509_VOMS_DIR=%s' %
+          'export X509_VOMS_DIR=${X509_VOMS_DIR:-%s}' %
           os.path.join(
               proPath,
               'etc',
               'grid-security',
               'vomsdir'))
       lines.append(
-          'export X509_VOMSES=%s' %
+          'export X509_VOMSES=${X509_VOMSES:-%s}' %
           os.path.join(
               proPath,
               'etc',
@@ -2448,18 +2448,18 @@ def createBashrcForDiracOS():
           # But this will have to be created at some point (dirac-configure)
           certDir = '%s/etc/grid-security/certificates' % proPath
       lines.extend(['# CAs path for SSL verification',
-                    'export X509_CERT_DIR=%s' % certDir,
-                    'export SSL_CERT_DIR=%s' % certDir])
+                    'export X509_CERT_DIR=${X509_CERT_DIR:-%s}' % certDir,
+                    'export SSL_CERT_DIR=${SSL_CERT_DIR:-%s}' % certDir])
 
       lines.append(
-          'export X509_VOMS_DIR=%s' %
+          'export X509_VOMS_DIR=${X509_VOMS_DIR:-%s}' %
           os.path.join(
               proPath,
               'etc',
               'grid-security',
               'vomsdir'))
       lines.append(
-          'export X509_VOMSES=%s' %
+          'export X509_VOMSES=${X509_VOMSES:-%s}' %
           os.path.join(
               proPath,
               'etc',
