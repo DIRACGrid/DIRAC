@@ -444,7 +444,7 @@ class SingularityComputingElement(ComputingElement):
       cmd.extend([rootImage, innerCmd])
     else:
       # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
-      self.log.error('Singularity image to exec not found: %s' % rootImage)
+      self.log.error('Singularity image to exec not found: ', rootImage)
       result = S_ERROR("Failed to find singularity image to exec")
       result['ReschedulePayload'] = True
       return result
