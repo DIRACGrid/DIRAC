@@ -98,24 +98,33 @@ class TimeLeft(object):
     if not resources['CPULimit']:
       resources['CPULimit'] = resources['WallClockLimit'] * processors
     elif not resources['WallClockLimit']:
-      resources['WallClockLimit'] = resources['CPULimit']
+      resources['WallClockLimit'] = resources['CPULimit'] / processors
 
     # if one of CPU or WallClock is missing, compute a reasonable value
     if not resources['CPU']:
       resources['CPU'] = resources['WallClock'] * processors
     elif not resources['WallClock']:
-      resources['WallClock'] = resources['CPU']
+      resources['WallClock'] = resources['CPU'] / processors
 
     timeLeft = 0.
     cpu = float(resources['CPU'])
     cpuLimit = float(resources['CPULimit'])
     wallClock = float(resources['WallClock'])
     wallClockLimit = float(resources['WallClockLimit'])
+    batchSystemTimeUnit = resources.get('Unit', 'Both')
+
+    # Some batch systems rely on wall clock time and/or cpu time to make allocations
+    if batchSystemTimeUnit == 'WallClock':
+      time = wallClock
+      timeLimit = wallClockLimit
+    else:
+      time = cpu
+      timeLimit = cpuLimit
 
     validTimeLeft = enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, self.cpuMargin, self.wallClockMargin)
 
     if validTimeLeft:
-      if cpu and cpuConsumed > 3600. and self.normFactor:
+      if time and cpuConsumed > 3600. and self.normFactor:
         # If there has been more than 1 hour of consumed CPU and
         # there is a Normalization set for the current CPU
         # use that value to renormalize the values returned by the batch system
@@ -123,19 +132,19 @@ class TimeLeft(object):
         # cpuLimit and cpu may be in the units of the batch system, not real seconds...
         # (in this case the other case won't work)
         # therefore renormalise it using cpuConsumed (which is in real seconds)
-        timeLeft = (cpuLimit - cpu) * self.normFactor * cpuConsumed / cpu
+        cpuWorkLeft = (timeLimit - time) * self.normFactor * cpuConsumed / time
       elif self.normFactor:
         # FIXME: this is always used by the watchdog... Also used by the JobAgent
         #        if consumed less than 1 hour of CPU
         # It was using self.scaleFactor but this is inconsistent: use the same as above
         # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
-        timeLeft = (cpuLimit - cpu) * self.normFactor
+        cpuWorkLeft = (timeLimit - time) * self.normFactor
       else:
         # Last resort recovery...
-        timeLeft = (cpuLimit - cpu) * self.scaleFactor
+        cpuWorkLeft = (timeLimit - time) * self.scaleFactor
 
       self.log.verbose('Remaining CPU in normalized units is: %.02f' % timeLeft)
-      return S_OK(timeLeft)
+      return S_OK(cpuWorkLeft)
     else:
       return S_ERROR('No time left for slot')
 

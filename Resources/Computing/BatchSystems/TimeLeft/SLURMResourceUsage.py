@@ -50,10 +50,13 @@ class SLURMResourceUsage(ResourceUsage):
         cpuLimit = wallClockLimit * int(allocCPUs)
       cpu = float(cpu)
 
-    consumed = {'CPU': wallClock,
+    # Slurm allocations are based on wallclock time, not cpu time.
+    # We precise it in the 'Unit' field
+    consumed = {'CPU': cpu,
                 'CPULimit': cpuLimit,
                 'WallClock': wallClock,
-                'WallClockLimit': wallClockLimit}
+                'WallClockLimit': wallClockLimit,
+                'Unit': 'WallClock'}
 
     if None not in consumed.values():
       # This cannot happen as we can't get wallClock from anywhere
