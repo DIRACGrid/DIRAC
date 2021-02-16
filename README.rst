@@ -80,7 +80,7 @@ There are basically 2 types of installations: client, and server.
 
 For DIRAC client installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/UserGuide/GettingStarted/InstallingClient/index.html>`__.
 
-For DIRAC server installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/AdministratorGuide/InstallingDIRACService/index.html>`__.
+For DIRAC server installation instructions, see the `web page <https://dirac.readthedocs.io/en/latest/AdministratorGuide/ServerInstallations/InstallingDiracServer.html>`__.
 
 The supported distributions are EL6 (e.g. SLC6) and EL7 (e.g. CC7).
 
