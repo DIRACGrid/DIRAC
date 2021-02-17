@@ -588,7 +588,7 @@ class JobMonitoringHandler(RequestHandler):
     return cls.jobDB.getJobParameters(jobIDs, parName)
 
 ##############################################################################
-  types_getAtticJobParameters = [[int, long]]
+  types_getAtticJobParameters = [list(six.integer_types)]
 
   @classmethod
   def export_getAtticJobParameters(cls, jobID, parameters=None, rescheduleCycle=-1):
