@@ -526,7 +526,7 @@ class JobMonitoringHandler(RequestHandler):
   @ignoreEncodeWarning
   def export_getJobParameter(cls, jobID, parName):
     """
-    :param str/int/long jobID: one single Job ID
+    :param str/int jobID: one single Job ID
     :param str parName: one single parameter name
     """
     if cls.elasticJobParametersDB:
@@ -555,7 +555,7 @@ class JobMonitoringHandler(RequestHandler):
   @ignoreEncodeWarning
   def export_getJobParameters(cls, jobIDs, parName=None):
     """
-    :param str/int/long/list jobIDs: one single job ID or a list of them
+    :param str/int/list jobIDs: one single job ID or a list of them
     :param str parName: one single parameter name, a list or None (meaning all of them)
     """
     if cls.elasticJobParametersDB:

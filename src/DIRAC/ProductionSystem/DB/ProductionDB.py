@@ -8,7 +8,6 @@ from __future__ import division
 from __future__ import print_function
 
 # # imports
-from past.builtins import long
 import six
 import json
 import threading
@@ -570,7 +569,7 @@ class ProductionDB(DB):
     :param str prodName: the Production name
     """
     try:
-      prodName = long(prodName)
+      prodName = int(prodName)
       cmd = "SELECT ProductionID from Productions WHERE ProductionID=%d;" % prodName
     except BaseException:
       if not isinstance(prodName, six.string_types):

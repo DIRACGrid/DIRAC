@@ -30,8 +30,8 @@ from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 ########################################################################
 class Operation(object):
   """
-  :param long OperationID: OperationID as read from DB backend
-  :param long RequestID: parent RequestID
+  :param int OperationID: OperationID as read from DB backend
+  :param int RequestID: parent RequestID
   :param str Status: execution status
   :param str Type: operation to perform
   :param str Arguments: additional arguments

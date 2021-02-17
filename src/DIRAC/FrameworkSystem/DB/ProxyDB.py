@@ -1070,8 +1070,8 @@ class ProxyDB(DB):
 
         :param dict selDict: selection dict that contain fields and their posible values
         :param dict sortList: dict with sorting fields
-        :param int,long start: search limit start
-        :param int,long start: search limit amount
+        :param int start: search limit start
+        :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """

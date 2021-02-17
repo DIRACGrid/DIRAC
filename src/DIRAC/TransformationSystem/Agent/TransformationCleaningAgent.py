@@ -14,7 +14,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 # # imports
-from past.builtins import long
 import re
 import ast
 import os
@@ -614,7 +613,7 @@ class TransformationCleaningAgent(AgentModule):
   def __removeRequests(self, requestIDs):
     """ This will remove requests from the RMS system -
     """
-    rIDs = [int(long(j)) for j in requestIDs if long(j)]
+    rIDs = [int(int(j)) for j in requestIDs if int(j)]
     for reqID in rIDs:
       self.reqClient.cancelRequest(reqID)
 

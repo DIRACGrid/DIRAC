@@ -12,12 +12,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from past.builtins import long
 import time
-from six.moves import queue as Queue
 import os
 import datetime
 import pickle
+from six.moves import queue as Queue
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -152,7 +151,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     # Process the transformations
     count = 0
     for transDict in res['Value']:
-      transID = long(transDict['TransformationID'])
+      transID = int(transDict['TransformationID'])
       if transDict.get('InheritedFrom'):
         # Try and move datasets from the ancestor production
         res = self.transfClient.moveFilesToDerivedTransformation(transDict)
@@ -218,7 +217,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     while True:
       transDict = self.transQueue.get()
       try:
-        transID = long(transDict['TransformationID'])
+        transID = int(transDict['TransformationID'])
         if transID not in self.transInQueue:
           break
         self.transInThread[transID] = ' [Thread%d] [%s] ' % (threadID, str(transID))
