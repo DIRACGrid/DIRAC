@@ -25,7 +25,7 @@ class NotificationClient(Client):
     self.setServer('Framework/Notification')
 
   def sendMail(self, addresses, subject, body,
-	       fromAddress=None, localAttempt=True, html=False):
+               fromAddress=None, localAttempt=True, html=False):
     """ Send an e-mail with subject and body to the specified address. Try to send
         from local area before central service by default.
     """
