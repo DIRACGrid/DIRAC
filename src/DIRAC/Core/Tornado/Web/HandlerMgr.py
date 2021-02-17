@@ -30,7 +30,7 @@ class HandlerMgr(object):
     """ Constructor
 
         :param list sysService: DIRAC system services
-        :param basestring baseURL: base URL
+        :param str baseURL: base URL
     """
     self.__baseURL = baseURL.strip("/")
     if sysService and not isinstance(sysService, list):
@@ -47,13 +47,14 @@ class HandlerMgr(object):
   def getPaths(self, dirName):
     """ Get lists of paths for all installed and enabled extensions
 
-        :param basestring dirName: path to handlers
+        :param str dirName: path to handlers
 
         :return: list
     """
     pathList = []
     extNames = CSGlobals.getCSExtensions()
     if 'WebAppDIRAC' in extNames:
+      # Move WebAppDirac to the end
       extNames.append(extNames.pop(extNames.index('WebAppDIRAC')))
     for extName in extNames:
       if not extName.endswith('DIRAC'):

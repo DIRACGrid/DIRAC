@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+
 from DIRAC import gConfig, gLogger
 from DIRAC.Core.Tornado.Web import Conf
 from DIRAC.Core.Utilities import List, ThreadSafe
@@ -153,10 +154,6 @@ class SessionData(object):
 
         :return: dict
     """
-    from pprint import pprint
-    print('-- getData --')
-    pprint(self.__credDict)
-    pprint(self.__getGroupMenu())
     data = {'configuration': self.getWebConfiguration(),
             'menu': self.__getGroupMenu(),
             'user': self.__credDict,

@@ -7,10 +7,9 @@ import uuid
 import tempfile
 import tornado.process
 
-from diraccfg import CFG
-
 from DIRAC import gConfig
 from DIRAC.Core.Security import Locations, X509Chain, X509CRL
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 __RCSID__ = "$Id$"
 
@@ -193,10 +192,10 @@ def generateCAFile():
       continue
     for caFile in os.listdir(caDir):
       caFile = os.path.join(caDir, caFile)
-      result = X509Chain.X509Chain.instanceFromFile(caFile)
+      chain = X509Chain.X509Chain()
+      result = chain.loadChainFromFile(caFile)
       if not result['OK']:
         continue
-      chain = result['Value']
       expired = chain.hasExpired()
       if not expired['OK'] or expired['Value']:
         continue
@@ -223,10 +222,10 @@ def generateRevokedCertsFile():
       continue
     for caFile in os.listdir(caDir):
       caFile = os.path.join(caDir, caFile)
-      result = X509CRL.X509CRL.instanceFromFile(caFile)
+      chain = X509CRL.X509CRL()
+      result = chain.loadCRLFromFile(caFile)
       if not result['OK']:
         continue
-      chain = result['Value']
       fd.write(chain.dumpAllToString()['Value'])
     fd.close()
     return fn
@@ -257,13 +256,17 @@ def getIcon():
   return getCSValue("Icon", "/static/core/img/icons/system/favicon.ico")
 
 
+@deprecated("Please, use SSLProtocol instead.")
 def SSLProrocol():
+  return SSLProtocol()
+
+
+def SSLProtocol():
   """ Get ssl protocol
 
       :return: str
   """
-  return getCSValue("SSLProtcol", "")
-
+  return getCSValue("SSLProtocol", getCSValue("SSLProtcol", ""))
 
 def getDefaultStaticDirs():
   """ Get default static directories
