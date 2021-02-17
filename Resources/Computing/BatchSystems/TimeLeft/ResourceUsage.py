@@ -19,11 +19,15 @@ class ResourceUsage(object):
     self.jobID = os.environ.get(jobIdEnvVar)
 
   def getResourceUsage(self):
-    """ Returns a dictionary that can contain CPUConsumed, CPULimit, WallClockConsumed
-        and WallClockLimit for current slot.  All values returned in seconds.
-        The dictionary can also contain Unit indicating whether the Batch System allocates
-        resources with limited CPU time and or Wallclock time.
+    """ Returns S_OK with a dictionary that can contain entries:
 
-        :return: dict such as {cpuConsumed, cpuLimit, wallClockConsumed, wallClockLimit, unit}
+        - CPU: the CPU time consumed since the beginning of the execution for current slot (seconds)
+        - CPULimit: the CPU time limit for current slot (seconds)
+        - WallClock: the wall clock time consumed since the beginning of the execution for current slot (seconds)
+        - WallClockLimit: the wall clock time limit for current slot (seconds)
+        - Unit: indicates whether the Batch System allocates resources with limited CPU time and/or wallclock time
+          Unit can take the following values: 'CPU', 'WallClock' or 'Both'.
+
+        :return: dict such as {CPU, CPULimit, WallClock, WallClockLimit, Unit}
     """
     raise NotImplementedError("getResourceUsage not implemented")

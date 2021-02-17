@@ -26,8 +26,7 @@ class HTCondorResourceUsage(ResourceUsage):
     super(HTCondorResourceUsage, self).__init__('HTCondor', '_CONDOR_JOB_AD')
 
   def getResourceUsage(self):
-    """ Returns a dictionary containing WallClockConsumed and WallClockLimit for current slot.
-        All values returned in seconds.
+    """ Returns S_OK with a dictionary containing the entries WallClock, WallClockLimit, and Unit for current slot.
     """
     # $_CONDOR_JOB_AD corresponds to the path to the .job.ad file
     # It contains info about the job:
@@ -58,12 +57,5 @@ class HTCondorResourceUsage(ResourceUsage):
                 'WallClockLimit': wallClockLimit,
                 'Unit': 'WallClock'}
 
-    if None not in consumed.values():
-      self.log.debug("TimeLeft counters complete:", str(consumed))
-      return S_OK(consumed)
-    else:
-      missed = [key for key, val in consumed.items() if val is None]
-      msg = 'Could not determine parameter'
-      self.log.warn('Could not determine parameter', ','.join(missed))
-      self.log.debug('This is the stdout from the batch system call\n%s' % (result['Value']))
-      return S_ERROR(msg)
+    self.log.debug("TimeLeft counters complete:", str(consumed))
+    return S_OK(consumed)

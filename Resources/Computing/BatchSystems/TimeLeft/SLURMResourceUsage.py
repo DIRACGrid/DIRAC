@@ -22,8 +22,8 @@ class SLURMResourceUsage(ResourceUsage):
     self.log.verbose('JOB_ID=%s' % self.jobID)
 
   def getResourceUsage(self):
-    """Returns a dictionary containing CPUConsumed, CPULimit, WallClockConsumed
-       and WallClockLimit for current slot.  All values returned in seconds.
+    """ Returns S_OK with a dictionary containing the entries CPU, CPULimit,
+        WallClock, WallClockLimit, and Unit for current slot.
     """
     # sacct displays accounting data for all jobs and job steps
     # -j is the given job, -o the information of interest, -X to get rid of intermediate steps
@@ -58,16 +58,15 @@ class SLURMResourceUsage(ResourceUsage):
                 'WallClockLimit': wallClockLimit,
                 'Unit': 'WallClock'}
 
-    if None not in consumed.values():
-      # This cannot happen as we can't get wallClock from anywhere
-      self.log.debug("TimeLeft counters complete:", str(consumed))
-      return S_OK(consumed)
-    else:
+    if None in consumed.values():
       missed = [key for key, val in consumed.items() if val is None]
       msg = 'Could not determine parameter'
       self.log.warn('Could not determine parameter', ','.join(missed))
       self.log.debug('This is the stdout from the batch system call\n%s' % (result['Value']))
       return S_ERROR(msg)
+
+    self.log.debug("TimeLeft counters complete:", str(consumed))
+    return S_OK(consumed)
 
   def _getFormattedTimeInSeconds(self, slurmTime):
     """ Convert SLURM time format into seconds
