@@ -149,7 +149,7 @@ class MonitoringReporter(object):
         if retVal['OK']:
           recordSent += len(recordsToSend)
           del documents[:self.__maxRecordsInABundle]
-          gLogger.info("%d records inserted to the db" % (recordSent))
+          gLogger.verbose("%d records inserted to MonitoringDB" % (recordSent))
         else:
           if mqProducer is not None:
             res = self.publishRecords(recordsToSend, mqProducer)
