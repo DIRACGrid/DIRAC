@@ -17,11 +17,11 @@ import threading
 from datetime import datetime
 from six.moves import http_client
 
-import tornado
-import tornado.ioloop
-from tornado import gen
-from tornado.web import RequestHandler, HTTPError
-from tornado.ioloop import IOLoop
+# import tornado
+# import tornado.ioloop
+# from tornado import gen
+# from tornado.web import RequestHandler, HTTPError
+# from tornado.ioloop import IOLoop
 
 import DIRAC
 
@@ -29,13 +29,15 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+from DIRAC.Core.Tornado.Server.BaseRequestHandler import BaseRequestHandler
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 
 sLog = gLogger.getSubLogger(__name__)
 
 
-class TornadoService(RequestHandler):  # pylint: disable=abstract-method
+# class TornadoService(RequestHandler):  # pylint: disable=abstract-method
+class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
   """
     Base class for all the Handlers.
     It directly inherits from :py:class:`tornado.web.RequestHandler`
