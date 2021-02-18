@@ -1253,6 +1253,7 @@ class SystemAdministratorClientCLI(CLI):
     client = SystemAdministratorIntegrator()
     silentHosts = client.getSilentHosts()
     respondingHosts = client.getRespondingHosts()
+    allHosts = len(silentHosts) + len(respondingHosts)
     resultAll = client.getOverallStatus()
     resultInfo = client.getInfo()
 
@@ -1295,7 +1296,7 @@ class SystemAdministratorClientCLI(CLI):
                 records.append(record)
       printTable(fields, records, sortOption)
       if silentHosts:
-        print("\n %d out of %d hosts did not respond" % (len(silentHosts), len(respondingHosts)))
+        print("\n %d out of %d hosts did not respond" % (len(silentHosts), allHosts))
 
   def default(self, args):
 
