@@ -245,6 +245,8 @@ class AuthHandler(TornadoREST):
 
     # Main session metadata
     sessionDict = self.server.getSession(session)
+    if not sessionDict:
+      return "%s session is expired." % session
     username = sessionDict['username']
     request = sessionDict['request']    
     userID = sessionDict['userID']
