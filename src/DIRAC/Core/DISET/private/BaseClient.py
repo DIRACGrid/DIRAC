@@ -70,8 +70,8 @@ class BaseClient(object):
     if not isinstance(serviceName, six.string_types):
       raise TypeError("Service name expected to be a string. Received %s type %s" %
                       (str(serviceName), type(serviceName)))
-    self._destinationSrv = serviceName
-    self._serviceName = serviceName
+    self._destinationSrv = str(serviceName)
+    self._serviceName = str(serviceName)
     self.kwargs = kwargs
     self.__useCertificates = None
     # The CS useServerCertificate option can be overridden by explicit argument
