@@ -146,7 +146,7 @@ You have to set ``DynamicMonitoring=True`` in the CS::
 Enable RMS Monitoring
 =====================
 
-In order to enable RMSMonitoring we need to set value of ``EnableActivityMonitoring`` flag to yes/true in the CS::
+In order to enable RMSMonitoring we need to set value of ``EnableRMSMonitoring`` flag to yes/true in the CS::
 
 
    Systems
@@ -160,15 +160,13 @@ In order to enable RMSMonitoring we need to set value of ``EnableActivityMonitor
            RequestExecutingAgent
            {
              ...
-             EnableActivityMonitoring = True
+             EnableRMSMonitoring = True
            }
          }
        }
      }
    }
 
-
-or inside the ``/Operations`` section as a general flag.
 
 
 Accessing the Monitoring information
