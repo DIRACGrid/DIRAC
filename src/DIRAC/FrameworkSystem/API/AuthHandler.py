@@ -283,7 +283,7 @@ class AuthHandler(TornadoREST):
             {% for group, data in groups.items() %}
               <li> <a href="{{url}}?state={{session}}&chooseScope=g:{{group}}">{{group}}</a>
                 : {{data['Status']}} </br>
-                {{data['Comment']}} </br>
+                {{data.get('Comment', '')}} </br>
                 {% if data.get('Action', '') %}
                   {{data['Action'][0]}} : {{data['Action'][1][0]}}
                 {% end %}
