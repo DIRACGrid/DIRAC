@@ -84,7 +84,7 @@ class MonitoringDB(ElasticDB):
       monitoringType = typeClass().__class__.__name__
       mapping = typeClass().mapping
       monfields = typeClass().monitoringFields
-      period = self.getCSOption('MonitoringTypes/%s/period' % monitoringType, typeClass().period)
+      period = self.getCSOption('MonitoringTypes/%s/Period' % monitoringType, typeClass().period)
       self.documentTypes[monitoringType] = {'indexName': indexName,
                                             'mapping': mapping,
                                             'monitoringFields': monfields,
