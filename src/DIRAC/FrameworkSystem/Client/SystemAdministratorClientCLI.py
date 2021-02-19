@@ -1296,7 +1296,7 @@ class SystemAdministratorClientCLI(CLI):
                 records.append(record)
       printTable(fields, records, sortOption)
       if silentHosts:
-        print("\n %d out of %d hosts did not respond" % (len(silentHosts), allHosts))
+        print("\n %d out of %d hosts did not respond" % (len(silentHosts), totalHosts))
 
   def default(self, args):
 
