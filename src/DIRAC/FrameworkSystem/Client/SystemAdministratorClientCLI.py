@@ -1253,7 +1253,7 @@ class SystemAdministratorClientCLI(CLI):
     client = SystemAdministratorIntegrator()
     silentHosts = client.getSilentHosts()
     respondingHosts = client.getRespondingHosts()
-    allHosts = len(silentHosts) + len(respondingHosts)
+    totalHosts = len(silentHosts) + len(respondingHosts)
     resultAll = client.getOverallStatus()
     resultInfo = client.getInfo()
 
