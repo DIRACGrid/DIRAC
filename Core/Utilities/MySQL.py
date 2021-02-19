@@ -151,7 +151,6 @@ import collections
 import time
 import threading
 import MySQLdb
-import re
 
 from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
