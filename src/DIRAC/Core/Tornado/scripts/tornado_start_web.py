@@ -50,6 +50,7 @@ def main():
 
   gLogger.initialize('Tornado', "/")
 
+  services = ['DataManagement/TornadoFileCatalog']
   endpoints = ['Configuration/Configuration', 'Framework/Auth', 'Framework/Proxy']
 
   try:
@@ -65,7 +66,7 @@ def main():
     sys.exit(1)
   app = result['Value']
 
-  serverToLaunch = TornadoServer(False, endpoints, port=8000, balancer='nginx')
+  serverToLaunch = TornadoServer(services, endpoints, port=8000, balancer='nginx')
   serverToLaunch.addHandlers(app['routes'], app['settings'])
   serverToLaunch.startTornado()
 
