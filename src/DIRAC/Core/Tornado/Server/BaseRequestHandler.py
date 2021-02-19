@@ -536,7 +536,7 @@ class BaseRequestHandler(RequestHandler):
       token = ResourceProtector().acquire_token(self.request)
     except Exception as e:
       return S_ERROR(str(e))
-    return {'ID': token.sub, 'issuer': token.issuer, 'group': token.groups[0]}
+    return S_OK({'ID': token.sub, 'issuer': token.issuer, 'group': token.groups[0]})
 
   @property
   def log(self):
