@@ -70,6 +70,7 @@ class BaseClient(object):
     if not isinstance(serviceName, six.string_types):
       raise TypeError("Service name expected to be a string. Received %s type %s" %
                       (str(serviceName), type(serviceName)))
+    # Explicitly convert to a str to avoid Python 2 M2Crypto issues with unicode objects
     self._destinationSrv = str(serviceName)
     self._serviceName = str(serviceName)
     self.kwargs = kwargs
