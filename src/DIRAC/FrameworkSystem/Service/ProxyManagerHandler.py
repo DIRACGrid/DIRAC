@@ -340,10 +340,30 @@ class ProxyManagerHandler(RequestHandler):
     # Not authorized!
     return S_ERROR("You can't get proxies!")
 
+  auth_getPersonalProxy = ['authenticated']
+  types_getPersonalProxy = [six.string_types, six.string_types, six.string_types, six.integer_types]
+
+  def export_getPersonalProxy(self, instance, group, requestPem, requiredLifetime, vomsAttribute=None):
+    """ Get a proxy for a user/group
+
+        :param str instance: user name or DN
+        :param str group: DIRAC group
+        :param str requestPem: PEM encoded request object for delegation
+        :param int requiredLifetime: Argument for length of proxy
+        :param bool vomsAttribute: make proxy with VOMS extension
+
+          * Properties for personal proxy:
+              * NormalUser
+
+        :return: S_OK(str)/S_ERROR()
+    """
+    return self.export_getProxy(instance, group, requestPem, requiredLifetime,
+                                token=None, vomsAttribute=vomsAttribute, personal=True)
+
   types_getProxy = [six.string_types, six.string_types, six.string_types, six.integer_types]
 
   def export_getProxy(self, instance, group, requestPem, requiredLifetime,
-                      token=None, vomsAttribute=None, personal=False):
+                      token=None, vomsAttribute=None):
     """ Get a proxy for a user/group
 
         :param str instance: user name or DN
@@ -358,9 +378,6 @@ class ProxyManagerHandler(RequestHandler):
               * FullDelegation <- permits full delegation of proxies
               * LimitedDelegation <- permits downloading only limited proxies
               * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
-
-          * Properties for personal proxy:
-              * NormalUser <- permits full delegation of proxies
 
         :return: S_OK(str)/S_ERROR()
     """

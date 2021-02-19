@@ -161,8 +161,17 @@ class ProxyManagerClient(Client):
     req = X509Request()
     req.generateProxyRequest(limited=limited)
     rpcClient = self._getRPC(proxyChain=proxyToConnect) if proxyToConnect else self._getRPC()
-    retVal = rpcClient.getProxy(dn or user, userGroup, req.dumpRequest()['Value'],
-                                int(cacheTime + requiredTimeLeft), token, voms, personal)
+    
+    result = req.dumpRequest()
+    if not result['OK']:
+      return result
+    requestPem = result['Value']
+    requestTime = int(cacheTime + requiredTimeLeft)
+
+    if personal:
+      retVal = rpcClient.getPersonalProxy(dn or user, userGroup, requestPem, requestTime, voms)
+    else:
+      retVal = rpcClient.getProxy(dn or user, userGroup, requestPem, requestTime, token, voms)
     if not retVal['OK']:
       return retVal
 
@@ -183,8 +192,7 @@ class ProxyManagerClient(Client):
 
         :return: S_OK(X509Chain)/S_ERROR()
     """
-    return self.__getProxy(user, group, requiredTimeLeft=requiredTimeLeft,
-                           voms=voms, personal=True)
+    return self.__getProxy(user, group, requiredTimeLeft=requiredTimeLeft, voms=voms, personal=True)
 
   def downloadProxy(self, user, group, limited=False, requiredTimeLeft=1200, cacheTime=14400,
                     proxyToConnect=None, token=None, personal=False):
