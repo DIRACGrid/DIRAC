@@ -70,7 +70,7 @@ def listify(values):
   return [entry.strip() for entry in values.split(',') if entry]
 
 
-def githubSetup(GITHUBTOKEN):
+def githubSetup(GITHUBTOKEN=''):
   """Import the GITHUB Token and add proper header."""
   LOGGER.info('Setting up GITHUB')
   if not GITHUBTOKEN:
@@ -83,7 +83,7 @@ def githubSetup(GITHUBTOKEN):
                             'Authorization': 'token %s ' % GITHUBTOKEN})
 
 
-def gitlabSetup(GITLABTOKEN):
+def gitlabSetup(GITLABTOKEN=''):
   """Import the GITLAB Token and add proper header."""
   LOGGER.info('Setting up GitLab')
   if not GITLABTOKEN:
