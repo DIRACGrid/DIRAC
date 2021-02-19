@@ -522,7 +522,7 @@ class BaseRequestHandler(RequestHandler):
         :return: S_OK(dict)/S_ERROR()
     """
     try:
-      token = ResourceProtector().acquire_token(self.request, scope)
+      token = ResourceProtector().acquire_token(self.request)
     except Exception as e:
       return S_ERROR(str(e))
     return {'ID': token.sub, 'issuer': token.issuer, 'group': token.groups[0]}
