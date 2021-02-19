@@ -1082,6 +1082,7 @@ class MySQL(object):
         that are requested to be >= or < than the corresponding value.
         For compatibility with current usage it uses Exceptions to exit in case of
         invalid arguments
+        For performing LIKE queries use the parameter likeQuery=True
     """
     condition = ''
     conjunction = "WHERE"
@@ -1252,6 +1253,7 @@ class MySQL(object):
       if outFields is None all fields in "tableName" are returned
       if limit is not False, the given limit is set
       inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
+      if likeQuery=True, then conDict can return matched rows if "%" inside conDict.
     """
     table = _quotedList([tableName])
     if not table:
