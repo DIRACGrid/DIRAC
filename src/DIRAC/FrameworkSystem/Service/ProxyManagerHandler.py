@@ -363,7 +363,7 @@ class ProxyManagerHandler(RequestHandler):
   types_getProxy = [six.string_types, six.string_types, six.string_types, six.integer_types]
 
   def export_getProxy(self, instance, group, requestPem, requiredLifetime,
-                      token=None, vomsAttribute=None):
+                      token=None, vomsAttribute=None, personal=True):
     """ Get a proxy for a user/group
 
         :param str instance: user name or DN
@@ -372,6 +372,7 @@ class ProxyManagerHandler(RequestHandler):
         :param int requiredLifetime: Argument for length of proxy
         :param str token: token that need to use
         :param bool vomsAttribute: make proxy with VOMS extension
+        :param bool personal: get personal proxy
         :param bool personal: get personal proxy
 
           * Properties:
