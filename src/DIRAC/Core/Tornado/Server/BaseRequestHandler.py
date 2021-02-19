@@ -473,7 +473,7 @@ class BaseRequestHandler(RequestHandler):
         raise Exception('%s authentication type is not supported.' % a)
       if result['OK']:
         break
-      err += '%s authentication: %s; '
+      err += '%s authentication: %s; ' % (a.upper(), result['Message'])
     if err:
       raise Exception(err)
     return result['Value']
