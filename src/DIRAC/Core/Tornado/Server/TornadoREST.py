@@ -20,7 +20,7 @@ import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Tornado.Web import Conf
 from DIRAC.Core.Tornado.Server.BaseRequestHandler import BaseRequestHandler
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
+# from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 
 sLog = gLogger.getSubLogger(__name__)
 

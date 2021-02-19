@@ -30,6 +30,7 @@ from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 
 sLog = gLogger.getSubLogger(__name__)
 
