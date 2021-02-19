@@ -478,7 +478,7 @@ class BaseRequestHandler(RequestHandler):
         raise Exception('%s authentication type is not supported.' % a)
       if result['OK']:
         break
-      err.append('%s authentication: %s; ' % (a.upper(), result['Message']))
+      err.append('%s authentication: %s' % (a.upper(), result['Message']))
     
     # Report on failed authentication attempts
     if err:
@@ -486,7 +486,7 @@ class BaseRequestHandler(RequestHandler):
         for e in err:
           print(e)
       else:
-        raise Exception(err)
+        raise Exception('; '.join(err))
     
     return result['Value']
 
