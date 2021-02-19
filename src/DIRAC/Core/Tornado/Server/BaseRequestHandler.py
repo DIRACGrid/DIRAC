@@ -465,9 +465,9 @@ class BaseRequestHandler(RequestHandler):
         :returns: a dict containing the return of :py:meth:`DIRAC.Core.Security.X509Chain.X509Chain.getCredentials`
                   (not a DIRAC structure !)
     """
-    err = ''
-    result = S_OK({})
-    for a in self.AUTHZ_GRANTS:
+    err = []
+    result = None
+    for a in self.AUTHZ_GRANTS or ['VISITOR']:  # AUTHZ_GRANTS must contain something
       if a.upper() == 'SSL':
         result = self.__authzCertificate()
       elif a.upper() == 'JWT':
@@ -478,9 +478,16 @@ class BaseRequestHandler(RequestHandler):
         raise Exception('%s authentication type is not supported.' % a)
       if result['OK']:
         break
-      err += '%s authentication: %s; ' % (a.upper(), result['Message'])
+      err.append('%s authentication: %s; ' % (a.upper(), result['Message']))
+    
+    # Report on failed authentication attempts
     if err:
-      raise Exception(err)
+      if result['OK']:
+        for e in err:
+          print(e)
+      else:
+        raise Exception(err)
+    
     return result['Value']
 
   def __authzCertificate(self):
