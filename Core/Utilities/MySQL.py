@@ -387,8 +387,6 @@ class MySQL(object):
     global gInstancesCount
     gInstancesCount += 1
 
-    self.__regexLike = re.compile('%')
-
     self._connected = False
 
     if 'log' not in dir(self):
@@ -1076,7 +1074,7 @@ class MySQL(object):
 #############################################################################
   def buildCondition(self, condDict=None, older=None, newer=None,
                      timeStamp=None, orderAttribute=None, limit=False,
-                     greater=None, smaller=None, offset=None):
+                     greater=None, smaller=None, offset=None, likeQuery=False):
     """ Build SQL condition statement from provided condDict and other extra check on
         a specified time stamp.
         The conditions dictionary specifies for each attribute one or a List of possible
@@ -1119,7 +1117,7 @@ class MySQL(object):
             raise Exception(retDict['Message'])
           else:
             escapeInValue = retDict['Value'][0]
-            if self.__regexLike.search(escapeInValue):
+            if likeQuery:
               condition = ' %s %s %s LIKE %s' % (condition,
                                                  conjunction,
                                                  attrName,
@@ -1247,7 +1245,7 @@ class MySQL(object):
                 limit=False, conn=None,
                 older=None, newer=None,
                 timeStamp=None, orderAttribute=None,
-                greater=None, smaller=None):
+                greater=None, smaller=None, likeQuery=False):
     """
       Select "outFields" from "tableName" with condDict
       N records can match the condition
@@ -1284,7 +1282,7 @@ class MySQL(object):
         myoffset = None
       condition = self.buildCondition(condDict=condDict, older=older, newer=newer,
                                       timeStamp=timeStamp, orderAttribute=orderAttribute, limit=mylimit,
-                                      greater=greater, smaller=smaller, offset=myoffset)
+                                      greater=greater, smaller=smaller, offset=myoffset, likeQuery=likeQuery)
     except Exception as x:
       return S_ERROR(DErrno.EMYSQL, x)
 
