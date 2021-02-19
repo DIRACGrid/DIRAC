@@ -69,6 +69,7 @@ class TornadoBaseClient(object):
   KW_TIMEOUT = "timeout"
   KW_SETUP = "setup"
   KW_VO = "VO"
+  KW_DELEGATED_ID = "delegatedID"
   KW_DELEGATED_DN = "delegatedDN"
   KW_DELEGATED_GROUP = "delegatedGroup"
   KW_IGNORE_GATEWAYS = "ignoreGateways"
@@ -249,28 +250,24 @@ class TornadoBaseClient(object):
     WARNING: COPY/PASTE FROM Core/Diset/private/BaseClient
     """
     # which extra credentials to use?
-    if self.__useCertificates:
-      self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
-    else:
-      self.__extraCredentials = ""
+    self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST if self.__useCertificates else ""
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]
+
     # Are we delegating something?
-    delegatedDN, delegatedGroup = self.__threadConfig.getID()
-    if self.KW_DELEGATED_DN in self.kwargs and self.kwargs[self.KW_DELEGATED_DN]:
-      delegatedDN = self.kwargs[self.KW_DELEGATED_DN]
-    elif delegatedDN:
-      self.kwargs[self.KW_DELEGATED_DN] = delegatedDN
-    if self.KW_DELEGATED_GROUP in self.kwargs and self.kwargs[self.KW_DELEGATED_GROUP]:
-      delegatedGroup = self.kwargs[self.KW_DELEGATED_GROUP]
-    elif delegatedGroup:
-      self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
+    delegatedID = self.kwargs.get(self.KW_DELEGATED_ID) or self.__threadConfig.getID()
+    delegatedDN = self.kwargs.get(self.KW_DELEGATED_DN) or self.__threadConfig.getDN()
+    delegatedGroup = self.kwargs.get(self.KW_DELEGATED_GROUP) or self.__threadConfig.getGroup()
+
+    if delegatedID:
+      self.kwargs[self.KW_DELEGATED_ID] = delegatedID
     if delegatedDN:
-      if not delegatedGroup:
-        result = findDefaultGroupForDN(self.kwargs[self.KW_DELEGATED_DN])
-        if not result['OK']:
-          return result
-      self.__extraCredentials = (delegatedDN, delegatedGroup)
+      self.kwargs[self.KW_DELEGATED_DN] = delegatedDN
+    if delegatedGroup:
+      self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
+
+    if delegatedID or delegatedDN:
+      self.__extraCredentials = (delegatedID or delegatedDN, delegatedGroup)
     return S_OK()
 
   def __discoverTimeout(self):
