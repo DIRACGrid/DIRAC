@@ -49,10 +49,12 @@ class BaseRequestHandler(RequestHandler):
   AUTH_PROPS = None
   # Type of component
   MONITORING_COMPONENT = MonitoringClient.COMPONENT_WEB
-  # Authentication types
-  AUTHZ_GRANTS = ['SSL', 'JWT']
+
   # Prefix of methods names
   METHOD_PREFIX = "export_"
+
+  # Authentication types: SSL, JWT, VISITOR
+  AUTHZ_GRANTS = ['SSL', 'JWT']
   
   @classmethod
   def _initMonitoring(cls, serviceName, fullUrl):
@@ -470,6 +472,8 @@ class BaseRequestHandler(RequestHandler):
         result = self.__authzCertificate()
       elif a.upper() == 'JWT':
         result = self.__authzToken()
+      elif a.upper() == 'VISITOR':
+        result = S_OK({})
       else:
         raise Exception('%s authentication type is not supported.' % a)
       if result['OK']:
