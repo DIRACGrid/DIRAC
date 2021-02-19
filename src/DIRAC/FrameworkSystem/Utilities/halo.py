@@ -303,7 +303,7 @@ class Halo(object):
         return f(*args, **kwargs)
     return wrapped
 
-  def coloredFrame(text, color=None):
+  def coloredFrame(self, text, color=None):
     """ Colorize text, while stripping nested ANSI color sequences.
 
         :param str text: text
@@ -311,7 +311,7 @@ class Halo(object):
 
         :return: str
     """
-    return colored(frame, color, attrs=['bold'])
+    return colored(text, color, attrs=['bold'])
 
   @property
   def spinner(self):
@@ -574,7 +574,7 @@ class Halo(object):
     frames = self._spinner['frames']
     frame = frames[self._frameIndex]
     if self._color:
-      frame = coloredFrame(frame, self._color)
+      frame = self.coloredFrame(frame, self._color)
     self._frameIndex += 1
     self._frameIndex = self._frameIndex % len(frames)
     textFrame = self.textFrame()
@@ -585,14 +585,14 @@ class Halo(object):
     """
     if len(self._text['frames']) == 1:
       if self._textColor:
-        return coloredFrame(self._text['frames'][0], self._textColor)
+        return self.coloredFrame(self._text['frames'][0], self._textColor)
       # Return first frame (can't return original text because at this point it might be ellipsed)
       return self._text['frames'][0]
     frames = self._text['frames']
     frame = frames[self._textIndex]
     self._textIndex += 1
     self._textIndex = self._textIndex % len(frames)
-    return coloredFrame(frame, self._textColor) if self._textColor else frame
+    return self.coloredFrame(frame, self._textColor) if self._textColor else frame
 
   def start(self, text=None):
     """ Starts the spinner on a separate thread.
@@ -672,8 +672,8 @@ class Halo(object):
     self.__stop()
     symbol = decodeUTF8Text(symbol) if symbol is not None else ''
     text = decodeUTF8Text(text) if text is not None else self._text['original']
-    symbol = coloredFrame(symbol, self._color) if self._color and symbol else symbol
-    text = coloredFrame(text, self._textColor) if self._textColor and text else text.strip()
+    symbol = self.coloredFrame(symbol, self._color) if self._color and symbol else symbol
+    text = self.coloredFrame(text, self._textColor) if self._textColor and text else text.strip()
     output = u'{0} {1}'.format(*[(text, symbol) if self._placement == 'right' else (symbol, text)][0])
     output += '' if self._newline is False else '\n'
     try:
