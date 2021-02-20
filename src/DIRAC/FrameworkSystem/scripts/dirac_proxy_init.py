@@ -34,7 +34,6 @@ from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClie
 __RCSID__ = "$Id$"
 
 
-
 class Params(ProxyGeneration.CLIParams):
 
   session = None
@@ -42,6 +41,7 @@ class Params(ProxyGeneration.CLIParams):
   addEmail = False
   addQRcode = False
   addVOMSExt = False
+  addProvider = False
   uploadProxy = True
   uploadPilot = False
 
@@ -88,6 +88,12 @@ class Params(ProxyGeneration.CLIParams):
     return S_OK()
 
   def disableProxyUpload(self, _arg):
+    """ Do not upload proxy
+
+        :param _arg: unuse
+
+        :return: S_OK()
+    """
     self.uploadProxy = False
     return S_OK()
 
@@ -103,6 +109,9 @@ class Params(ProxyGeneration.CLIParams):
         "no-upload",
         "Do not upload a long lived proxy to the ProxyManager",
         self.disableProxyUpload)
+    Script.registerSwitch("e:", "email=", "Send oauth authentification url on email", self.setEmail)
+    Script.registerSwitch("P:", "provider=", "Set provider name for authentification", self.setProvider)
+    Script.registerSwitch("Q", "qrcode", "Print link as QR code", self.setQRcode)
     Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
 
 
