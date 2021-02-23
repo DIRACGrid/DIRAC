@@ -30,6 +30,15 @@ distributed among a number of servers installed using the procedure for addition
 
 For all DIRAC installations any number of client installations is possible.
 
+
+Using Puppet
+------------
+
+The procedure outlined below is a manual procedure for installing DIRAC.
+Some installations have been done using `puppet <https://puppet.com/>`_.
+Find puppet modules used at CERN in https://gitlab.cern.ch/ai/it-puppet-module-dirac.
+
+
 .. _server_requirements:
 
 
