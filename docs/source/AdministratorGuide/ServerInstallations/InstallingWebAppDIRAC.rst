@@ -148,10 +148,15 @@ Section has the following structure::
 
   WebApp
   {
-    Balancer = None #[nginx] in case you have installed nginx
+    # Set if need to use balancer, [nginx] in case you have installed nginx
+    Balancer = None
     #NumProcesses = 1
-    #SSLProtocol = "" [PROTOCOL_SSLv2, PROTOCOL_SSLv23, PROTOCOL_SSLv3, PROTOCOL_TLSv1] in case you do not want to use the default protocol
-    Theme = tabs #[desktop]
+
+    # [PROTOCOL_SSLv2, PROTOCOL_SSLv23, PROTOCOL_SSLv3, PROTOCOL_TLSv1] in case you do not want to use the default protocol
+    #SSLProtocol = ""
+
+    # Theme of the web portal: [tabs] or [desktop]
+    Theme = tabs
 
     Schema
     {
@@ -320,6 +325,9 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
     # OCSP Stapling --- fetch OCSP records from URL in ssl_certificate and cache them
     ssl_stapling on;
     ssl_stapling_verify on;
+
+    # verify chain of trust of OCSP response using Root CA and Intermediate certs
+    #ssl_trusted_certificate /path/to/root_CA_cert_plus_intermediates;
 
     # DNS resolver for stapling so that the resolver defaults to Google’s DNS
     resolver 8.8.4.4 8.8.8.8;
