@@ -70,27 +70,29 @@ def listify(values):
   return [entry.strip() for entry in values.split(',') if entry]
 
 
-def githubSetup():
+def githubSetup(GITHUBTOKEN=''):
   """Import the GITHUB Token and add proper header."""
   LOGGER.info('Setting up GITHUB')
-  try:
-    from GitTokens import GITHUBTOKEN
-    if GITHUBTOKEN:
-      SESSION.headers.update({'Accept': 'application/vnd.github.v3+json',
-                              'Authorization': 'token %s ' % GITHUBTOKEN})
-  except ImportError:
-    raise ImportError(G_ERROR)
+  if not GITHUBTOKEN:
+    try:
+      from GitTokens import GITHUBTOKEN
+    except ImportError:
+      raise ImportError(G_ERROR)
+  if GITHUBTOKEN:
+    SESSION.headers.update({'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': 'token %s ' % GITHUBTOKEN})
 
 
-def gitlabSetup():
+def gitlabSetup(GITLABTOKEN=''):
   """Import the GITLAB Token and add proper header."""
   LOGGER.info('Setting up GitLab')
-  try:
-    from GitTokens import GITLABTOKEN
-    if GITLABTOKEN:
-      SESSION.headers.update({'PRIVATE-TOKEN': GITLABTOKEN})
-  except ImportError:
-    raise ImportError(G_ERROR)
+  if not GITLABTOKEN:
+    try:
+      from GitTokens import GITLABTOKEN
+    except ImportError:
+      raise ImportError(G_ERROR)
+  if GITLABTOKEN:
+    SESSION.headers.update({'PRIVATE-TOKEN': GITLABTOKEN})
 
 
 def req2Json(url, parameterDict=None, requestType='GET'):
@@ -150,6 +152,7 @@ class GithubInterface(object):
     self.headerMessage = None
     self.footerMessage = None
     self.startDate = datetime.datetime.now() - datetime.timedelta(days=14)
+    self.token = None
     self.printLevel = logging.WARNING
     logging.getLogger().setLevel(self.printLevel)
     self.useGitlab = False
@@ -212,8 +215,10 @@ class GithubInterface(object):
                                           add_help=False,
                                           )
     conf_parser.add_argument('-c', '--configFile', help='Specify config file', metavar='FILE', dest='configFile')
+    conf_parser.add_argument('-t', '--token', help='API token to use', default='')
     conf_parser.add_argument('-d', '--debug', action='count', dest='debug', help='d, dd, ddd', default=0)
     args, _remaining_argv = conf_parser.parse_known_args()
+    self.token = args.token
     self.printLevel = _parsePrintLevel(args.debug)
     LOGGER.setLevel(self.printLevel)
     log.debug('Parsing options')
@@ -572,9 +577,9 @@ class GithubInterface(object):
     """
     # Setting up the API
     if self.useGithub:
-      githubSetup()
+      githubSetup(self.token)
     elif self.useGitlab:
-      gitlabSetup()
+      gitlabSetup(self.token)
 
   def createGithubRelease(self):
     """ make a release on github """
