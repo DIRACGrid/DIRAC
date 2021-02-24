@@ -137,6 +137,7 @@ ignore-docstrings=yes
 ignore-mixin-members=yes
 
 # List of classes names for which member attributes should not be checked
+# Skip some sqlalchemy objects which cause trouble 
 ignored-classes=SQLObject,Session
 
 # List of members which are set dynamically and missed by pylint inference
