@@ -8,6 +8,7 @@ jobs:
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     timeout-minutes: 30
     defaults:
+      # Activate the conda environment automatically in each step
       run:
         shell: bash -l {0}
 
