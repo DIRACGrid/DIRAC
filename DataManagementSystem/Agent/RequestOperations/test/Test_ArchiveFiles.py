@@ -11,7 +11,7 @@ import pytest
 from mock import MagicMock as Mock
 
 from DIRAC import S_ERROR, S_OK
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -86,10 +86,10 @@ def archiveRequestAndOp(listOfLFNs):
   op = Operation()
   switches = {}
   archiveLFN = '/vo/tars/myTar.tar'
-  op.Arguments = DEncode.encode({'SourceSE': switches.get('SourceSE', 'SOURCE-SE'),
-                                 'TarballSE': switches.get('TarballSE', 'TARBALL-SE'),
-                                 'RegisterDescendent': False,
-                                 'ArchiveLFN': archiveLFN})
+  op.Arguments = MixedEncode.encode({'SourceSE': switches.get('SourceSE', 'SOURCE-SE'),
+                                     'TarballSE': switches.get('TarballSE', 'TARBALL-SE'),
+                                     'RegisterDescendent': False,
+                                     'ArchiveLFN': archiveLFN})
   op.Type = 'ArchiveFiles'
   for index, lfn in enumerate(listOfLFNs):
     oFile = File()

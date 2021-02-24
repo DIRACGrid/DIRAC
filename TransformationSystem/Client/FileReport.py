@@ -4,7 +4,7 @@
 import copy
 
 from DIRAC import S_OK
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
@@ -71,7 +71,7 @@ class FileReport(object):
       # Generate Request
       commitOp = Operation()
       commitOp.Type = 'SetFileStatus'
-      commitOp.Arguments = DEncode.encode({'transformation': self.transformation,
-                                           'statusDict': self.statusDict, 'force': self.force})
+      commitOp.Arguments = MixedEncode.encode({'transformation': self.transformation,
+                                               'statusDict': self.statusDict, 'force': self.force})
 
     return S_OK(commitOp)

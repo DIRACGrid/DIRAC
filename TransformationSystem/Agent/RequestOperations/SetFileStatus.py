@@ -4,7 +4,7 @@ TODO: Is there any good reason why this is just not using a forwardDISET instead
 """
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
@@ -31,7 +31,7 @@ class SetFileStatus(OperationHandlerBase):
     """ It expects to find the arguments for tc.setFileStatusForTransformation in operation.Arguments
     """
     try:
-      setFileStatusDict = DEncode.decode(self.operation.Arguments)[0]
+      setFileStatusDict = MixedEncode.decode(self.operation.Arguments)[0]
       self.log.debug("decoded filStatusDict=%s" % str(setFileStatusDict))
     except ValueError as error:
       self.log.exception(error)

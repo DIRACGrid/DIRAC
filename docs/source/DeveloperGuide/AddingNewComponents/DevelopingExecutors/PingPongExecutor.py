@@ -1,6 +1,5 @@
-import threading
 from DIRAC import S_OK
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 
 
@@ -26,10 +25,10 @@ class PingPongExecutor(ExecutorModule):
     """
     Tasks are received as a stream of bytes. They have to be converted from that into a usable object.
     """
-    return S_OK(DEncode.decode(taskStub)[0])
+    return S_OK(MixedEncode.decode(taskStub)[0])
 
   def serializeTask(self, taskData):
     """
     Before sending the task back to the mind it has to be serialized again.
     """
-    return S_OK(DEncode.encode(taskData))
+    return S_OK(MixedEncode.encode(taskData))

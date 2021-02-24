@@ -31,7 +31,7 @@ import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
@@ -591,7 +591,7 @@ class JobWrapper(object):
     optReplicas = {}
     if self.optArgs:
       try:
-        optDict, _length = DEncode.decode(self.optArgs['InputData'])
+        optDict, _length = MixedEncode.decode(self.optArgs['InputData'])
         optReplicas = optDict['Value']
         self.log.info('Found optimizer catalog result')
         self.log.verbose(optReplicas)

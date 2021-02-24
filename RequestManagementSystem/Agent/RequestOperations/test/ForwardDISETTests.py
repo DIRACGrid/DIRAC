@@ -26,7 +26,7 @@ __RCSID__ = "$Id $"
 # # imports
 import unittest
 # # from DIRAC
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 # # SUT
@@ -46,8 +46,8 @@ class ForwardDISETTests( unittest.TestCase ):
                       "foo",
                       ( 12345, { "Hi": "There!" } ) )
     self.req = Request( { "RequestName": "testRequest" } )
-    self.op = Operation( { "Type": "ForwardDISET",
-                           "Arguments": DEncode.encode( self.hiArgs ) } )
+    self.op = Operation({"Type": "ForwardDISET",
+                         "Arguments": MixedEncode.encode(self.hiArgs)})
     self.req += self.op
 
   def tearDown( self ):
@@ -77,5 +77,3 @@ if __name__ == "__main__":
   forwardDISETTests = testLoader.loadTestsFromTestCase( ForwardDISETTests )
   suite = unittest.TestSuite( [ forwardDISETTests ] )
   unittest.TextTestRunner( verbosity = 3 ).run( suite )
-
-

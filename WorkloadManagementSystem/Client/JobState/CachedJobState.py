@@ -8,7 +8,7 @@ import six
 import copy
 import time
 
-from DIRAC.Core.Utilities import Time, DEncode
+from DIRAC.Core.Utilities import Time, MixedEncode
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
@@ -113,12 +113,12 @@ class CachedJobState(object):
       manifest = (self.__manifest.dumpAsCFG(), self.__manifest.isDirty())
     else:
       manifest = None
-    return DEncode.encode((self.__jid, self.__cache, self.__jobLog, manifest,
-                           self.__initState, self.__insertIntoTQ, tuple(self.__dirtyKeys)))
+    return MixedEncode.encode((self.__jid, self.__cache, self.__jobLog, manifest,
+                               self.__initState, self.__insertIntoTQ, tuple(self.__dirtyKeys)))
 
   @staticmethod
   def deserialize(stub):
-    dataTuple, _slen = DEncode.decode(stub)
+    dataTuple, _slen = MixedEncode.decode(stub)
     if len(dataTuple) != 7:
       return S_ERROR("Invalid stub")
     # jid

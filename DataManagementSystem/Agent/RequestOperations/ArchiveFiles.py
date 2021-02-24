@@ -16,7 +16,7 @@ import os
 import shutil
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
@@ -66,7 +66,7 @@ class ArchiveFiles(OperationHandlerBase):
 
   def _run(self):
     """Execute the download and tarring."""
-    self.parameterDict = DEncode.decode(self.operation.Arguments)[0]  # tuple: dict, number of characters
+    self.parameterDict = MixedEncode.decode(self.operation.Arguments)[0]  # tuple: dict, number of characters
     self.cacheFolder = os.path.join(self.cacheFolder, self.request.RequestName)
     self._checkArchiveLFN()
     for parameter, value in self.parameterDict.iteritems():

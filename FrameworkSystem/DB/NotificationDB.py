@@ -8,7 +8,7 @@ import time
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
@@ -142,7 +142,7 @@ class NotificationDB(DB):
             notifications[nType] = 1
           else:
             notifications[nType] = 0
-        val = DEncode.encode(notifications)
+        val = MixedEncode.encode(notifications)
       else:
         val = alarmDef[field]
       # Add to the list of fields to add
@@ -240,7 +240,7 @@ class NotificationDB(DB):
       if not result['OK']:
         return result
       updateFields.append("%s=%s" % (field, result['Value']))
-    return S_OK((", ".join(updateFields), DEncode.encode(modifications), followers))
+    return S_OK((", ".join(updateFields), MixedEncode.encode(modifications), followers))
 
   def __getAlarmIdFromKey(self, alarmKey):
     result = self._escapeString(alarmKey)
@@ -339,7 +339,7 @@ class NotificationDB(DB):
     if not result['OK'] or not result['Value']:
       self.log.error("Could not retrieve default notifications for alarm", "%s" % alarmId)
       return S_OK(alarmId)
-    notificationsDict = DEncode.decode(result['Value'][0][0])[0]
+    notificationsDict = MixedEncode.decode(result['Value'][0][0])[0]
     for v in self.__validAlarmNotifications:
       if v not in notificationsDict:
         notificationsDict[v] = 0
@@ -403,7 +403,7 @@ class NotificationDB(DB):
       for i in range(len(alarmLog['ParameterNames'])):
         if rec[i]:
           data[alarmLog['ParameterNames'][i]] = rec[i]
-      #[ 'timestamp', 'author', 'comment', 'modifications' ]
+      # [ 'timestamp', 'author', 'comment', 'modifications' ]
       msg = [" Entry by : %s" % data['author']]
       msg.append(" On       : %s" % data['timestamp'].strftime("%Y/%m/%d %H:%M:%S"))
       if 'modifications' in data:
@@ -418,7 +418,7 @@ class NotificationDB(DB):
     return "\n\n===============\n".join(finalMessage)
 
   def __generateAlarmInfoMessage(self, alarmInfo):
-    #[ 'alarmid', 'author', 'creationtime', 'modtime', 'subject', 'status', 'type', 'body', 'assignee' ]
+    # [ 'alarmid', 'author', 'creationtime', 'modtime', 'subject', 'status', 'type', 'body', 'assignee' ]
     msg = " Alarm %6d\n" % alarmInfo['alarmid']
     msg += "   Author            : %s\n" % alarmInfo['author']
     msg += "   Subject           : %s\n" % alarmInfo['subject']
@@ -506,8 +506,9 @@ class NotificationDB(DB):
       alarmId = int(alarmId)
     except BaseException:
       return S_ERROR("Alarm id must be a non decimal number")
-    sqlSel = "SELECT %s FROM `ntf_AlarmLog` WHERE AlarmId=%d ORDER BY Timestamp ASC" % (",".join(self.__alarmLogFields),
-                                                                                        alarmId)
+    sqlSel = "SELECT %s FROM `ntf_AlarmLog` WHERE AlarmId=%d ORDER BY Timestamp ASC" % (
+        ",".join(self.__alarmLogFields),
+        alarmId)
     result = self._query(sqlSel)
     if not result['OK']:
       return result
@@ -517,7 +518,7 @@ class NotificationDB(DB):
       if not row[3]:
         decodedRows.append(list(row))
         continue
-      dec = DEncode.decode(row[3])
+      dec = MixedEncode.decode(row[3])
       decodedRows[-1][3] = dec[0]
 
     resultDict = {}

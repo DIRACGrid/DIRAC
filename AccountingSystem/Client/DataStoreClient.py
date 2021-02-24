@@ -10,7 +10,7 @@ import threading
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Base.Client import Client, createClient
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -150,7 +150,7 @@ def _sendToFailover(rpcStub):
     request.RequestName = "Accounting.DataStore.%s.%s" % (time.time(), random.random())
     forwardDISETOp = Operation()
     forwardDISETOp.Type = "ForwardDISET"
-    forwardDISETOp.Arguments = DEncode.encode(rpcStub)
+    forwardDISETOp.Arguments = MixedEncode.encode(rpcStub)
     request.addOperation(forwardDISETOp)
 
     return ReqClient().putRequest(request)

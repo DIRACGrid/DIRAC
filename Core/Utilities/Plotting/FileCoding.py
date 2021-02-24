@@ -3,7 +3,7 @@ __RCSID__ = "$Id$"
 
 import base64
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 
 gForceRawEncoding = False
 
@@ -18,22 +18,22 @@ def codeRequestInFileId(plotRequest, compressIfPossible=True):
   compress = compressIfPossible and gZCompressionEnabled
   thbStub = False
   if compress:
-    plotStub = "Z:%s" % base64.urlsafe_b64encode(zlib.compress(DEncode.encode(plotRequest), 9))
+    plotStub = "Z:%s" % base64.urlsafe_b64encode(zlib.compress(MixedEncode.encode(plotRequest), 9))
   elif not gForceRawEncoding:
-    plotStub = "S:%s" % base64.urlsafe_b64encode(DEncode.encode(plotRequest))
+    plotStub = "S:%s" % base64.urlsafe_b64encode(MixedEncode.encode(plotRequest))
   else:
-    plotStub = "R:%s" % DEncode.encode(plotRequest)
+    plotStub = "R:%s" % MixedEncode.encode(plotRequest)
   # If thumbnail requested, use plot as thumbnail, and generate stub for plot without one
   extraArgs = plotRequest['extraArgs']
   if 'thumbnail' in extraArgs and extraArgs['thumbnail']:
     thbStub = plotStub
     extraArgs['thumbnail'] = False
     if compress:
-      plotStub = "Z:%s" % base64.urlsafe_b64encode(zlib.compress(DEncode.encode(plotRequest), 9))
+      plotStub = "Z:%s" % base64.urlsafe_b64encode(zlib.compress(MixedEncode.encode(plotRequest), 9))
     elif not gForceRawEncoding:
-      plotStub = "S:%s" % base64.urlsafe_b64encode(DEncode.encode(plotRequest))
+      plotStub = "S:%s" % base64.urlsafe_b64encode(MixedEncode.encode(plotRequest))
     else:
-      plotStub = "R:%s" % DEncode.encode(plotRequest)
+      plotStub = "R:%s" % MixedEncode.encode(plotRequest)
   return S_OK({'plot': plotStub, 'thumbnail': thbStub})
 
 
@@ -65,7 +65,7 @@ def extractRequestFromFileId(fileId):
   else:
     gLogger.error("Oops! Stub type is unknown", compressType)
     return S_ERROR("Oops! Stub type '%s' is unknown :P" % compressType)
-  plotRequest, stubLength = DEncode.decode(stub)
+  plotRequest, stubLength = MixedEncode.decode(stub)
   if len(stub) != stubLength:
     gLogger.error("Oops! The stub is longer than the data :P")
     return S_ERROR("Oops! The stub is longer than the data :P")

@@ -11,7 +11,7 @@ from past.builtins import long
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC import gLogger, rootPath, gConfig
-from DIRAC.Core.Utilities import DEncode, List
+from DIRAC.Core.Utilities import MixedEncode, List
 
 from DIRAC.FrameworkSystem.private.monitoring.RRDManager import RRDManager
 from DIRAC.FrameworkSystem.private.monitoring.PlotCache import PlotCache
@@ -66,13 +66,14 @@ class ServiceInterface(object):
     viewNames = [str(v[1]) for v in acCatalog.getViews(False)]
     if 'Dynamic component view' in viewNames:
       return True
-    return acCatalog.registerView("Dynamic component view",
-                                  DEncode.encode({'variable': ['sources.componentName'],
-                                                  'definition': {},
-                                                  'stacked': True,
-                                                  'groupBy': ['activities.description'],
-                                                  'label': '$SITE'}),
-                                  ['sources.componentName'])
+    return acCatalog.registerView(
+        "Dynamic component view",
+        MixedEncode.encode({'variable': ['sources.componentName'],
+                            'definition': {},
+                            'stacked': True,
+                            'groupBy': ['activities.description'],
+                            'label': '$SITE'}),
+        ['sources.componentName'])
 
   def __checkSourceDict(self, sourceDict):
     """
@@ -271,7 +272,7 @@ class ServiceInterface(object):
     else:
       viewDescription['variable'] = []
     acCatalog = self.__createCatalog()
-    return acCatalog.registerView(viewName, DEncode.encode(viewDescription), viewDescription['variable'])
+    return acCatalog.registerView(viewName, MixedEncode.encode(viewDescription), viewDescription['variable'])
 
   def getViews(self, onlyStatic=True):
     """
@@ -288,7 +289,7 @@ class ServiceInterface(object):
     if len(views) == 0:
       return S_ERROR("View does not exist")
     viewData = views[0]
-    viewDefinition = DEncode.decode(str(viewData[0]))[0]
+    viewDefinition = MixedEncode.decode(str(viewData[0]))[0]
     neededVarFields = List.fromChar(viewData[1], ",")
     if len(neededVarFields) > 0:
       if 'varData' not in viewRequest:

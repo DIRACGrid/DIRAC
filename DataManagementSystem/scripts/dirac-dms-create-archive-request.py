@@ -36,7 +36,7 @@ import os
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
@@ -393,10 +393,11 @@ class CreateArchiveRequest(object):
 
     archiveFiles = Operation()
     archiveFiles.Type = 'ArchiveFiles'
-    archiveFiles.Arguments = DEncode.encode({'SourceSE': self.sourceSEs[0],
-                                             'TarballSE': self.switches['TarballSE'],
-                                             'RegisterDescendent': self.switches['RegisterDescendent'],
-                                             'ArchiveLFN': archiveLFN})
+    archiveFiles.Arguments = MixedEncode.encode({
+        'SourceSE': self.sourceSEs[0],
+        'TarballSE': self.switches['TarballSE'],
+        'RegisterDescendent': self.switches['RegisterDescendent'],
+        'ArchiveLFN': archiveLFN})
     self.addLFNs(archiveFiles, lfnChunk)
     request.addOperation(archiveFiles)
 

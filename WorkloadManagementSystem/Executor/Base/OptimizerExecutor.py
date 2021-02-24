@@ -5,8 +5,9 @@ __RCSID__ = "$Id$"
 
 import threading
 import datetime  # Because eval(valenc) might require it
+
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import DEncode, List
+from DIRAC.Core.Utilities import MixedEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -136,7 +137,7 @@ class OptimizerExecutor(ExecutorModule):
   def storeOptimizerParam(self, name, value):
     if not self.__jobData.jobState:
       return S_ERROR("This function can only be called inside the optimizeJob function")
-    valenc = DEncode.encode(value)
+    valenc = MixedEncode.encode(value)
     return self.__jobData.jobState.setOptParameter(name, valenc)
 
   def retrieveOptimizerParam(self, name):
@@ -147,7 +148,7 @@ class OptimizerExecutor(ExecutorModule):
       return result
     valenc = result['Value']
     try:
-      value, encLength = DEncode.decode(valenc)
+      value, encLength = MixedEncode.decode(valenc)
       if encLength == len(valenc):
         return S_OK(value)
     except Exception:

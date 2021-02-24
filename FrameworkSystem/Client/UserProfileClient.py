@@ -3,7 +3,7 @@ import six
 import re
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities import DEncode, Time
+from DIRAC.Core.Utilities import MixedEncode, Time
 
 
 class UserProfileClient(object):
@@ -49,14 +49,14 @@ class UserProfileClient(object):
 
   def storeVar(self, varName, data, perms={}):
     try:
-      stub = DEncode.encode(data)
+      stub = MixedEncode.encode(data)
     except Exception as e:
       return S_ERROR("Cannot encode data:%s" % str(e))
     return self.__getRPCClient().storeProfileVar(self.profile, varName, stub, perms)
 
   def __decodeVar(self, data, dataTypeRE):
     try:
-      dataObj, lenData = DEncode.decode(data)
+      dataObj, lenData = MixedEncode.decode(data)
     except Exception as e:
       return S_ERROR("Cannot decode data: %s" % str(e))
     if dataTypeRE:
@@ -88,7 +88,7 @@ class UserProfileClient(object):
       encodedData = result['Value']
       dataObj = {}
       for k in encodedData:
-        v, lenData = DEncode.decode(encodedData[k])
+        v, lenData = MixedEncode.decode(encodedData[k])
         dataObj[k] = v
     except Exception as e:
       return S_ERROR("Cannot decode data: %s" % str(e))

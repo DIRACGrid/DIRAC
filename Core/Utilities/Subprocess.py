@@ -207,17 +207,17 @@ class Subprocess(object):
 
     """
 
-    from DIRAC.Core.Utilities import DEncode
+    from DIRAC.Core.Utilities import MixedEncode
 
     try:
-      os.write(writePipe, DEncode.encode(S_OK(function(*stArgs, **stKeyArgs))))
+      os.write(writePipe, MixedEncode.encode(S_OK(function(*stArgs, **stKeyArgs))))
     except OSError as x:
       if str(x) == '[Errno 32] Broken pipe':
         # the parent has died
         pass
     except Exception as x:
       self.log.exception('Exception while executing', function.__name__)
-      os.write(writePipe, DEncode.encode(S_ERROR(str(x))))
+      os.write(writePipe, MixedEncode.encode(S_ERROR(str(x))))
       # HACK: Allow some time to flush logs
       time.sleep(1)
     try:
@@ -305,7 +305,7 @@ class Subprocess(object):
   def pythonCall(self, function, *stArgs, **stKeyArgs):
     """ call python function :function: with :stArgs: and :stKeyArgs: """
 
-    from DIRAC.Core.Utilities import DEncode
+    from DIRAC.Core.Utilities import MixedEncode
 
     self.log.verbose('pythonCall:', function.__name__)
 
@@ -342,7 +342,7 @@ class Subprocess(object):
             dataStub = retDict['Value']
             if not dataStub:
               return S_ERROR("Error decoding data coming from call")
-            retObj, stubLen = DEncode.decode(dataStub)
+            retObj, stubLen = MixedEncode.decode(dataStub)
             if stubLen == len(dataStub):
               return retObj
             return S_ERROR("Error decoding data coming from call")

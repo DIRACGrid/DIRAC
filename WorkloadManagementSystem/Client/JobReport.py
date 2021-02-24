@@ -8,7 +8,7 @@ from collections import defaultdict
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import Time, DEncode
+from DIRAC.Core.Utilities import Time, MixedEncode
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
@@ -185,7 +185,7 @@ class JobReport(object):
 
         forwardDISETOp = Operation()
         forwardDISETOp.Type = "ForwardDISET"
-        forwardDISETOp.Arguments = DEncode.encode(rpcStub)
+        forwardDISETOp.Arguments = MixedEncode.encode(rpcStub)
 
       else:
         return S_ERROR('Could not create ForwardDISET operation')

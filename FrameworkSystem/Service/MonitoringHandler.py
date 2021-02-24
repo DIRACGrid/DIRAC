@@ -8,7 +8,7 @@ import os
 
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities import DEncode, Time
+from DIRAC.Core.Utilities import DEncode, Time, MixedEncode
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -115,7 +115,7 @@ class MonitoringHandler(RequestHandler):
     """
       Generates plots based on a DEncoded view description
     """
-    viewDescription, _stubLength = DEncode.decode(viewDescriptionStub)
+    viewDescription, _stubLength = MixedEncode.decode(viewDescriptionStub)
     if 'definition' not in viewDescription:
       return S_ERROR("No plot definition given")
     defDict = viewDescription['definition']
@@ -130,7 +130,7 @@ class MonitoringHandler(RequestHandler):
     """
     if not viewName:
       return S_OK("View name not valid")
-    viewDescription, _stubLength = DEncode.decode(viewDescriptionStub)
+    viewDescription, _stubLength = MixedEncode.decode(viewDescriptionStub)
     if 'definition' not in viewDescription:
       return S_ERROR("No plot definition given")
     defDict = viewDescription['definition']

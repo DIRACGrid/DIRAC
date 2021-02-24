@@ -29,7 +29,7 @@ __RCSID__ = "$Id $"
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.Core.DISET.RPCClient import executeRPCStub
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import DEncode, MixedEncode
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 ########################################################################
@@ -58,7 +58,7 @@ class ForwardDISET(OperationHandlerBase):
     """ execute RPC stub """
     # # decode arguments
     try:
-      decode, length = DEncode.decode(self.operation.Arguments)
+      decode, length = MixedEncode.decode(self.operation.Arguments)
       self.log.debug("decoded len=%s val=%s" % (length, decode))
     except ValueError as error:
       self.log.exception(error)
