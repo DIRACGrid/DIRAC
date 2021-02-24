@@ -572,7 +572,7 @@ class SiteDirector(AgentModule):
         pilotList, stampDict = res['Value']
 
         # updating the pilotAgentsDB... done by default but maybe not strictly necessary
-        res = self._addPilotTQReference(queueName, additionalInfo, pilotList, stampDict)
+        self._addPilotTQReference(queueName, additionalInfo, pilotList, stampDict)
 
     # Summary after the cycle over queues
     self.log.info("Total number of pilots submitted in this cycle", '%d' % self.totalSubmittedPilots)

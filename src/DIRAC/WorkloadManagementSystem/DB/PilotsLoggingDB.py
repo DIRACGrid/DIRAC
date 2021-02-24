@@ -134,14 +134,14 @@ class PilotsLoggingDB(object):
     except SQLAlchemyError as e:
       session.rollback()
       session.close()
-      return S_ERROR(DErrno.ESQLA, "Failed to add PilotsLogging: " + e.message)
+      return S_ERROR(DErrno.ESQLA, "Failed to add PilotsLogging: " + str(e))
 
     try:
       session.commit()
     except SQLAlchemyError as e:
       session.rollback()
       session.close()
-      return S_ERROR(DErrno.ESQLA, "Failed to commit PilotsLogging: " + e.message)
+      return S_ERROR(DErrno.ESQLA, "Failed to commit PilotsLogging: " + str(e))
 
     return S_OK()
 
@@ -182,7 +182,7 @@ class PilotsLoggingDB(object):
     except SQLAlchemyError as e:
       session.rollback()
       session.close()
-      return S_ERROR(DErrno.ESQLA, "Failed to commit: " + e.message)
+      return S_ERROR(DErrno.ESQLA, "Failed to commit: " + str(e))
 
     return S_OK()
 

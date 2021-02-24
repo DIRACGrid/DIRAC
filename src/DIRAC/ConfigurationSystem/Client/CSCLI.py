@@ -243,7 +243,7 @@ class CSCLI(CLI):
         return
       if not self.modifiedData:
         while True:
-          choice = raw_input("Data has not been modified, do you still want to upload changes? yes/no [no]: ")
+          choice = six.moves.input("Data has not been modified, do you still want to upload changes? yes/no [no]: ")
           choice = choice.lower()
           if choice in ("yes", "y"):
             break
@@ -251,7 +251,7 @@ class CSCLI(CLI):
             print("Commit aborted")
             return
 
-      choice = raw_input("Do you really want to send changes to server? yes/no [no]: ")
+      choice = six.moves.input("Do you really want to send changes to server? yes/no [no]: ")
       choice = choice.lower()
       if choice in ("yes", "y"):
         print("Uploading changes to %s (It may take some seconds)..." % self.masterURL)
@@ -305,7 +305,7 @@ class CSCLI(CLI):
         print("Must specify option to delete")
         return
       optionPath = argsList[0].strip()
-      choice = raw_input("Are you sure you want to delete %s? yes/no [no]: " % optionPath)
+      choice = six.moves.input("Are you sure you want to delete %s? yes/no [no]: " % optionPath)
       choice = choice.lower()
       if choice in ("yes", "y", "true"):
         if self.modificator.removeOption(optionPath):
@@ -329,7 +329,7 @@ class CSCLI(CLI):
         print("Must specify section to delete")
         return
       section = argsList[0].strip()
-      choice = raw_input("Are you sure you want to delete %s? yes/no [no]: " % section)
+      choice = six.moves.input("Are you sure you want to delete %s? yes/no [no]: " % section)
       choice = choice.lower()
       if choice in ("yes", "y", "true"):
         if self.modificator.removeSection(section):
@@ -502,7 +502,7 @@ class CSCLI(CLI):
         print("What version to rollback?")
         return
       version = " ".join(argsList[0:2])
-      choice = raw_input("Do you really want to rollback to version %s? yes/no [no]: " % version)
+      choice = six.moves.input("Do you really want to rollback to version %s? yes/no [no]: " % version)
       choice = choice.lower()
       if choice in ("yes", "y"):
         response = self.modificator.rollbackToVersion(version)
@@ -521,7 +521,7 @@ class CSCLI(CLI):
     Usage: diffWithServer
     """
     try:
-      choice = raw_input("Do you want to merge with server configuration? yes/no [no]: ")
+      choice = six.moves.input("Do you want to merge with server configuration? yes/no [no]: ")
       choice = choice.lower()
       if choice in ("yes", "y"):
         retVal = self.modificator.mergeWithServer()

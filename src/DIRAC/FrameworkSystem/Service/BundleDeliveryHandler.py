@@ -75,7 +75,7 @@ class BundleManager(object):
       buffer_ = BytesIO()
       filesToBundle = sorted(File.getGlobbedFiles(bundlePaths))
       if filesToBundle:
-        commonPath = File.getCommonPath(filesToBundle)
+        commonPath = os.path.commonprefix(filesToBundle)
         commonEnd = len(commonPath)
         gLogger.info("Bundle will have %s files with common path %s" % (len(filesToBundle), commonPath))
         with tarfile.open('dummy', "w:gz", buffer_) as tarBuffer:

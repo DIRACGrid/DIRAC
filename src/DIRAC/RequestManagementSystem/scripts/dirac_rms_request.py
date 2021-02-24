@@ -84,12 +84,16 @@ def main():
   targetSE = set()
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
+      jobs = []
+      job = "Unknown"
       try:
-        jobs = []
         for arg in switch[1].split(','):
           if os.path.exists(arg):
-            lines = open(arg, 'r').readlines()
-            jobs += [int(job.strip()) for line in lines for job in line.split(',')]
+            with open(arg, 'r') as fp:
+              lines = fp.readlines()
+            for line in lines:
+              for job in line.split(','):
+                jobs += [int(job.strip())]
             gLogger.notice("Found %d jobs in file %s" % (len(jobs), arg))
           else:
             jobs.append(int(arg))

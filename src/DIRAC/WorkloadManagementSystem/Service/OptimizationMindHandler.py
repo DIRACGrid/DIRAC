@@ -44,7 +44,6 @@ def cleanTaskQueues():
 
 class OptimizationMindHandler(ExecutorMindHandler):
 
-  __jobDB = False
   __optimizationStates = ['Received', 'Checking']
   __loadTaskId = False
 

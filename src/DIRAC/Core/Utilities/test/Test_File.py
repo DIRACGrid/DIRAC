@@ -11,6 +11,7 @@ from __future__ import print_function
 
 # imports
 import os
+from os.path import abspath, commonprefix, normpath
 import re
 import sys
 
@@ -20,7 +21,7 @@ from hypothesis.strategies import floats
 from pytest import mark
 # sut
 from DIRAC.Core.Utilities.File import checkGuid, makeGuid, getSize,\
-    getMD5ForFiles, getCommonPath, convertSizeUnits, SIZE_UNIT_CONVERSION
+    getMD5ForFiles, convertSizeUnits, SIZE_UNIT_CONVERSION
 
 parametrize = mark.parametrize
 
@@ -82,7 +83,7 @@ def testMakeGuid():
   # no filename - fake guid produced
   assert checkGuid(makeGuid()) is True, "fake guid for inexisting file"
   # using this python file
-  assert checkGuid(makeGuid(os.path.abspath(__file__))) is True, "guid for FileTestCase.py file"
+  assert checkGuid(makeGuid(abspath(__file__))) is True, "guid for FileTestCase.py file"
 
 
 def testGetSize():
@@ -96,7 +97,7 @@ def testGetSize():
 def testGetMD5ForFiles():
   """ getMD5ForFiles tests """
 
-  filesList = [os.path.abspath(".") + os.sep + x for x in os.listdir(".")]
+  filesList = [abspath(".") + os.sep + x for x in os.listdir(".")]
   md5sum = getMD5ForFiles(filesList)
   reMD5 = re.compile("^[0-9a-fA-F]+$")
   assert reMD5.match(md5sum) is not None
@@ -107,10 +108,10 @@ def testGetMD5ForFiles():
 def testGetCommonPath():
   """ getCommonPath tests """
   # empty list
-  assert getCommonPath([]) == ""
+  assert commonprefix([]) == ""
   # this folder
-  filesList = [os.path.abspath(".") + os.sep + x for x in os.listdir(".")]
-  assert getCommonPath(filesList) == os.path.abspath(".")
+  filesList = [abspath(".") + os.sep + x for x in os.listdir(".")]
+  assert normpath(commonprefix(filesList)) == normpath(abspath("."))
 
 
 @given(nb=floats(allow_nan=False, allow_infinity=False, min_value=1))

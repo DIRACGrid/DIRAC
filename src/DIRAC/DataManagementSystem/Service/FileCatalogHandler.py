@@ -19,7 +19,6 @@ import six
 from six import StringIO
 import csv
 import os
-from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
 # from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 
@@ -118,21 +117,21 @@ class FileCatalogHandler(RequestHandler):
   ########################################################################
   # Path operations (not updated)
   #
-  types_changePathOwner = [[ListType, DictType] + list(StringTypes)]
+  types_changePathOwner = [[list, dict] + list(six.string_types)]
 
   def export_changePathOwner(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
     """
     return gFileCatalogDB.changePathOwner(lfns, self.getRemoteCredentials(), recursive)
 
-  types_changePathGroup = [[ListType, DictType] + list(StringTypes)]
+  types_changePathGroup = [[list, dict] + list(six.string_types)]
 
   def export_changePathGroup(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
     """
     return gFileCatalogDB.changePathGroup(lfns, self.getRemoteCredentials(), recursive)
 
-  types_changePathMode = [[ListType, DictType] + list(StringTypes)]
+  types_changePathMode = [[list, dict] + list(six.string_types)]
 
   def export_changePathMode(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
@@ -142,7 +141,7 @@ class FileCatalogHandler(RequestHandler):
   ########################################################################
   # ACL Operations
   #
-  types_getPathPermissions = [[ListType, DictType] + list(StringTypes)]
+  types_getPathPermissions = [[list, dict] + list(six.string_types)]
 
   def export_getPathPermissions(self, lfns):
     """ Determine the ACL information for a supplied path
@@ -187,25 +186,25 @@ class FileCatalogHandler(RequestHandler):
   #  User/Group write operations
   #
 
-  types_addUser = [StringTypes]
+  types_addUser = [six.string_types]
 
   def export_addUser(self, userName):
     """ Add a new user to the File Catalog """
     return gFileCatalogDB.addUser(userName, self.getRemoteCredentials())
 
-  types_deleteUser = [StringTypes]
+  types_deleteUser = [six.string_types]
 
   def export_deleteUser(self, userName):
     """ Delete user from the File Catalog """
     return gFileCatalogDB.deleteUser(userName, self.getRemoteCredentials())
 
-  types_addGroup = [StringTypes]
+  types_addGroup = [six.string_types]
 
   def export_addGroup(self, groupName):
     """ Add a new group to the File Catalog """
     return gFileCatalogDB.addGroup(groupName, self.getRemoteCredentials())
 
-  types_deleteGroup = [StringTypes]
+  types_deleteGroup = [six.string_types]
 
   def export_deleteGroup(self, groupName):
     """ Delete group from the File Catalog """
@@ -233,7 +232,7 @@ class FileCatalogHandler(RequestHandler):
   # Path read operations
   #
 
-  types_exists = [[ListType, DictType] + list(StringTypes)]
+  types_exists = [[list, dict] + list(six.string_types)]
 
   def export_exists(self, lfns):
     """ Check whether the supplied paths exists """
@@ -244,7 +243,7 @@ class FileCatalogHandler(RequestHandler):
   # File write operations
   #
 
-  types_addFile = [[ListType, DictType] + list(StringTypes)]
+  types_addFile = [[list, dict] + list(six.string_types)]
 
   def export_addFile(self, lfns):
     """ Register supplied files """
@@ -256,7 +255,7 @@ class FileCatalogHandler(RequestHandler):
 
     return res
 
-  types_removeFile = [[ListType, DictType] + list(StringTypes)]
+  types_removeFile = [[list, dict] + list(six.string_types)]
 
   def export_removeFile(self, lfns):
     """ Remove the supplied lfns """
@@ -268,13 +267,13 @@ class FileCatalogHandler(RequestHandler):
 
     return res
 
-  types_setFileStatus = [DictType]
+  types_setFileStatus = [dict]
 
   def export_setFileStatus(self, lfns):
     """ Remove the supplied lfns """
     return gFileCatalogDB.setFileStatus(lfns, self.getRemoteCredentials())
 
-  types_addReplica = [[ListType, DictType] + list(StringTypes)]
+  types_addReplica = [[list, dict] + list(six.string_types)]
 
   def export_addReplica(self, lfns):
     """ Register supplied replicas """
@@ -286,7 +285,7 @@ class FileCatalogHandler(RequestHandler):
 
     return res
 
-  types_removeReplica = [[ListType, DictType] + list(StringTypes)]
+  types_removeReplica = [[list, dict] + list(six.string_types)]
 
   def export_removeReplica(self, lfns):
     """ Remove the supplied replicas """
@@ -298,19 +297,19 @@ class FileCatalogHandler(RequestHandler):
 
     return res
 
-  types_setReplicaStatus = [[ListType, DictType] + list(StringTypes)]
+  types_setReplicaStatus = [[list, dict] + list(six.string_types)]
 
   def export_setReplicaStatus(self, lfns):
     """ Set the status for the supplied replicas """
     return gFileCatalogDB.setReplicaStatus(lfns, self.getRemoteCredentials())
 
-  types_setReplicaHost = [[ListType, DictType] + list(StringTypes)]
+  types_setReplicaHost = [[list, dict] + list(six.string_types)]
 
   def export_setReplicaHost(self, lfns):
     """ Change the registered SE for the supplied replicas """
     return gFileCatalogDB.setReplicaHost(lfns, self.getRemoteCredentials())
 
-  types_addFileAncestors = [DictType]
+  types_addFileAncestors = [dict]
 
   def export_addFileAncestors(self, lfns):
     """ Add file ancestor information for the given list of LFNs """
@@ -321,57 +320,57 @@ class FileCatalogHandler(RequestHandler):
   # File read operations
   #
 
-  types_isFile = [[ListType, DictType] + list(StringTypes)]
+  types_isFile = [[list, dict] + list(six.string_types)]
 
   def export_isFile(self, lfns):
     """ Check whether the supplied lfns are files """
     return gFileCatalogDB.isFile(lfns, self.getRemoteCredentials())
 
-  types_getFileSize = [[ListType, DictType] + list(StringTypes)]
+  types_getFileSize = [[list, dict] + list(six.string_types)]
 
   def export_getFileSize(self, lfns):
     """ Get the size associated to supplied lfns """
     return gFileCatalogDB.getFileSize(lfns, self.getRemoteCredentials())
 
-  types_getFileMetadata = [[ListType, DictType] + list(StringTypes)]
+  types_getFileMetadata = [[list, dict] + list(six.string_types)]
 
   def export_getFileMetadata(self, lfns):
     """ Get the metadata associated to supplied lfns """
     return gFileCatalogDB.getFileMetadata(lfns, self.getRemoteCredentials())
 
-  types_getReplicas = [[ListType, DictType] + list(StringTypes), BooleanType]
+  types_getReplicas = [[list, dict] + list(six.string_types), bool]
 
   def export_getReplicas(self, lfns, allStatus=False):
     """ Get replicas for supplied lfns """
     return gFileCatalogDB.getReplicas(lfns, allStatus, self.getRemoteCredentials())
 
-  types_getReplicaStatus = [[ListType, DictType] + list(StringTypes)]
+  types_getReplicaStatus = [[list, dict] + list(six.string_types)]
 
   def export_getReplicaStatus(self, lfns):
     """ Get the status for the supplied replicas """
     return gFileCatalogDB.getReplicaStatus(lfns, self.getRemoteCredentials())
 
-  types_getFileAncestors = [[ListType, DictType], [ListType, IntType, LongType]]
+  types_getFileAncestors = [[list, dict], (list,) + six.integer_types]
 
   def export_getFileAncestors(self, lfns, depths):
     """ Get the status for the supplied replicas """
     dList = depths
-    if not isinstance(dList, ListType):
+    if not isinstance(dList, list):
       dList = [depths]
     lfnDict = dict.fromkeys(lfns, True)
     return gFileCatalogDB.getFileAncestors(lfnDict, dList, self.getRemoteCredentials())
 
-  types_getFileDescendents = [[ListType, DictType], [ListType, IntType, LongType]]
+  types_getFileDescendents = [[list, dict], (list,) + six.integer_types]
 
   def export_getFileDescendents(self, lfns, depths):
     """ Get the status for the supplied replicas """
     dList = depths
-    if not isinstance(dList, ListType):
+    if not isinstance(dList, list):
       dList = [depths]
     lfnDict = dict.fromkeys(lfns, True)
     return gFileCatalogDB.getFileDescendents(lfnDict, dList, self.getRemoteCredentials())
 
-  types_getLFNForGUID = [[ListType, DictType] + list(StringTypes)]
+  types_getLFNForGUID = [[list, dict] + list(six.string_types)]
 
   def export_getLFNForGUID(self, guids):
     """Get the matching lfns for given guids"""
@@ -382,13 +381,13 @@ class FileCatalogHandler(RequestHandler):
   # Directory write operations
   #
 
-  types_createDirectory = [[ListType, DictType] + list(StringTypes)]
+  types_createDirectory = [[list, dict] + list(six.string_types)]
 
   def export_createDirectory(self, lfns):
     """ Create the supplied directories """
     return gFileCatalogDB.createDirectory(lfns, self.getRemoteCredentials())
 
-  types_removeDirectory = [[ListType, DictType] + list(StringTypes)]
+  types_removeDirectory = [[list, dict] + list(six.string_types)]
 
   def export_removeDirectory(self, lfns):
     """ Remove the supplied directories """
@@ -399,32 +398,32 @@ class FileCatalogHandler(RequestHandler):
   # Directory read operations
   #
 
-  types_listDirectory = [[ListType, DictType] + list(StringTypes), BooleanType]
+  types_listDirectory = [[list, dict] + list(six.string_types), bool]
 
   def export_listDirectory(self, lfns, verbose):
     """ List the contents of supplied directories """
     gMonitor.addMark('ListDirectory', 1)
     return gFileCatalogDB.listDirectory(lfns, self.getRemoteCredentials(), verbose=verbose)
 
-  types_isDirectory = [[ListType, DictType] + list(StringTypes)]
+  types_isDirectory = [[list, dict] + list(six.string_types)]
 
   def export_isDirectory(self, lfns):
     """ Determine whether supplied path is a directory """
     return gFileCatalogDB.isDirectory(lfns, self.getRemoteCredentials())
 
-  types_getDirectoryMetadata = [[ListType, DictType] + list(StringTypes)]
+  types_getDirectoryMetadata = [[list, dict] + list(six.string_types)]
 
   def export_getDirectoryMetadata(self, lfns):
     """ Get the size of the supplied directory """
     return gFileCatalogDB.getDirectoryMetadata(lfns, self.getRemoteCredentials())
 
-  types_getDirectorySize = [[ListType, DictType] + list(StringTypes)]
+  types_getDirectorySize = [[list, dict] + list(six.string_types)]
 
   def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False):
     """ Get the size of the supplied directory """
     return gFileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, self.getRemoteCredentials())
 
-  types_getDirectoryReplicas = [[ListType, DictType] + list(StringTypes), BooleanType]
+  types_getDirectoryReplicas = [[list, dict] + list(six.string_types), bool]
 
   def export_getDirectoryReplicas(self, lfns, allStatus=False):
     """ Get replicas for files in the supplied directory """
@@ -458,7 +457,7 @@ class FileCatalogHandler(RequestHandler):
   # Metadata Catalog Operations
   #
 
-  types_addMetadataField = [StringTypes, StringTypes, StringTypes]
+  types_addMetadataField = [six.string_types, six.string_types, six.string_types]
 
   def export_addMetadataField(self, fieldName, fieldType, metaType='-d'):
     """ Add a new metadata field of the given type
@@ -472,7 +471,7 @@ class FileCatalogHandler(RequestHandler):
     else:
       return S_ERROR('Unknown metadata type %s' % metaType)
 
-  types_deleteMetadataField = [StringTypes]
+  types_deleteMetadataField = [six.string_types]
 
   def export_deleteMetadataField(self, fieldName):
     """ Delete the metadata field
@@ -503,42 +502,42 @@ class FileCatalogHandler(RequestHandler):
     return S_OK({'DirectoryMetaFields': resultDir['Value'],
                  'FileMetaFields': resultFile['Value']})
 
-  types_setMetadata = [StringTypes, DictType]
+  types_setMetadata = [six.string_types, dict]
 
   def export_setMetadata(self, path, metadatadict):
     """ Set metadata parameter for the given path
     """
     return gFileCatalogDB.setMetadata(path, metadatadict, self.getRemoteCredentials())
 
-  types_setMetadataBulk = [DictType]
+  types_setMetadataBulk = [dict]
 
   def export_setMetadataBulk(self, pathMetadataDict):
     """ Set metadata parameter for the given path
     """
     return gFileCatalogDB.setMetadataBulk(pathMetadataDict, self.getRemoteCredentials())
 
-  types_removeMetadata = [DictType]
+  types_removeMetadata = [dict]
 
   def export_removeMetadata(self, pathMetadataDict):
     """ Remove the specified metadata for the given path
     """
     return gFileCatalogDB.removeMetadata(pathMetadataDict, self.getRemoteCredentials())
 
-  types_getDirectoryUserMetadata = [StringTypes]
+  types_getDirectoryUserMetadata = [six.string_types]
 
   def export_getDirectoryUserMetadata(self, path):
     """ Get all the metadata valid for the given directory path
     """
     return gFileCatalogDB.dmeta.getDirectoryMetadata(path, self.getRemoteCredentials())
 
-  types_getFileUserMetadata = [StringTypes]
+  types_getFileUserMetadata = [six.string_types]
 
   def export_getFileUserMetadata(self, path):
     """ Get all the metadata valid for the given file
     """
     return gFileCatalogDB.fmeta.getFileUserMetadata(path, self.getRemoteCredentials())
 
-  types_findDirectoriesByMetadata = [DictType]
+  types_findDirectoriesByMetadata = [dict]
 
   def export_findDirectoriesByMetadata(self, metaDict, path='/'):
     """ Find all the directories satisfying the given metadata set
@@ -546,7 +545,7 @@ class FileCatalogHandler(RequestHandler):
     return gFileCatalogDB.dmeta.findDirectoriesByMetadata(
         metaDict, path, self.getRemoteCredentials())
 
-  types_findFilesByMetadata = [DictType, StringTypes]
+  types_findFilesByMetadata = [dict, six.string_types]
 
   def export_findFilesByMetadata(self, metaDict, path='/'):
     """ Find all the files satisfying the given metadata set
@@ -557,7 +556,7 @@ class FileCatalogHandler(RequestHandler):
     lfns = result['Value'].values()
     return S_OK(lfns)
 
-  types_getReplicasByMetadata = [DictType, StringTypes, BooleanType]
+  types_getReplicasByMetadata = [dict, six.string_types, bool]
 
   def export_getReplicasByMetadata(self, metaDict, path='/', allStatus=False):
     """ Find all the files satisfying the given metadata set
@@ -567,7 +566,7 @@ class FileCatalogHandler(RequestHandler):
                                                             allStatus,
                                                             self.getRemoteCredentials())
 
-  types_findFilesByMetadataDetailed = [DictType, StringTypes]
+  types_findFilesByMetadataDetailed = [dict, six.string_types]
 
   def export_findFilesByMetadataDetailed(self, metaDict, path='/'):
     """ Find all the files satisfying the given metadata set
@@ -579,7 +578,7 @@ class FileCatalogHandler(RequestHandler):
     lfns = result['Value'].values()
     return gFileCatalogDB.getFileDetails(lfns, self.getRemoteCredentials())
 
-  types_findFilesByMetadataWeb = [DictType, StringTypes, [IntType, LongType], [IntType, LongType]]
+  types_findFilesByMetadataWeb = [dict, six.string_types, six.integer_types, six.integer_types]
 
   def export_findFilesByMetadataWeb(self, metaDict, path, startItem, maxItems):
     """ Find files satisfying the given metadata set
@@ -632,21 +631,21 @@ class FileCatalogHandler(RequestHandler):
     result = S_OK({"TotalRecords": totalRecords, "Records": resultDetails['Value']})
     return result
 
-  types_getCompatibleMetadata = [DictType, StringTypes]
+  types_getCompatibleMetadata = [dict, six.string_types]
 
   def export_getCompatibleMetadata(self, metaDict, path='/'):
     """ Get metadata values compatible with the given metadata subset
     """
     return gFileCatalogDB.dmeta.getCompatibleMetadata(metaDict, path, self.getRemoteCredentials())
 
-  types_addMetadataSet = [StringTypes, DictType]
+  types_addMetadataSet = [six.string_types, dict]
 
   def export_addMetadataSet(self, setName, setDict):
     """ Add a new metadata set
     """
     return gFileCatalogDB.dmeta.addMetadataSet(setName, setDict, self.getRemoteCredentials())
 
-  types_getMetadataSet = [StringTypes, BooleanType]
+  types_getMetadataSet = [six.string_types, bool]
 
   def export_getMetadataSet(self, setName, expandFlag):
     """ Add a new metadata set
@@ -657,14 +656,14 @@ class FileCatalogHandler(RequestHandler):
 #
 #  Dataset manipulation methods
 #
-  types_addDataset = [DictType]
+  types_addDataset = [dict]
 
   def export_addDataset(self, datasets):
     """ Add a new dynamic dataset defined by its meta query
     """
     return gFileCatalogDB.datasetManager.addDataset(datasets, self.getRemoteCredentials())
 
-  types_addDatasetAnnotation = [DictType]
+  types_addDatasetAnnotation = [dict]
 
   def export_addDatasetAnnotation(self, datasetDict):
     """ Add annotation to an already created dataset
@@ -672,63 +671,63 @@ class FileCatalogHandler(RequestHandler):
     return gFileCatalogDB.datasetManager.addDatasetAnnotation(
         datasetDict, self.getRemoteCredentials())
 
-  types_removeDataset = [DictType]
+  types_removeDataset = [dict]
 
   def export_removeDataset(self, datasets):
     """ Check the given dynamic dataset for changes since its definition
     """
     return gFileCatalogDB.datasetManager.removeDataset(datasets, self.getRemoteCredentials())
 
-  types_checkDataset = [DictType]
+  types_checkDataset = [dict]
 
   def export_checkDataset(self, datasets):
     """ Check the given dynamic dataset for changes since its definition
     """
     return gFileCatalogDB.datasetManager.checkDataset(datasets, self.getRemoteCredentials())
 
-  types_updateDataset = [DictType]
+  types_updateDataset = [dict]
 
   def export_updateDataset(self, datasets):
     """ Update the given dynamic dataset for changes since its definition
     """
     return gFileCatalogDB.datasetManager.updateDataset(datasets, self.getRemoteCredentials())
 
-  types_getDatasets = [DictType]
+  types_getDatasets = [dict]
 
   def export_getDatasets(self, datasets):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
     return gFileCatalogDB.datasetManager.getDatasets(datasets, self.getRemoteCredentials())
 
-  types_getDatasetParameters = [DictType]
+  types_getDatasetParameters = [dict]
 
   def export_getDatasetParameters(self, datasets):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
     return gFileCatalogDB.datasetManager.getDatasetParameters(datasets, self.getRemoteCredentials())
 
-  types_getDatasetAnnotation = [DictType]
+  types_getDatasetAnnotation = [dict]
 
   def export_getDatasetAnnotation(self, datasets):
     """ Get annotation of the given datasets
     """
     return gFileCatalogDB.datasetManager.getDatasetAnnotation(datasets, self.getRemoteCredentials())
 
-  types_freezeDataset = [DictType]
+  types_freezeDataset = [dict]
 
   def export_freezeDataset(self, datasets):
     """ Freeze the contents of the dataset making it effectively static
     """
     return gFileCatalogDB.datasetManager.freezeDataset(datasets, self.getRemoteCredentials())
 
-  types_releaseDataset = [DictType]
+  types_releaseDataset = [dict]
 
   def export_releaseDataset(self, datasets):
     """ Release the contents of the frozen dataset allowing changes in its contents
     """
     return gFileCatalogDB.datasetManager.releaseDataset(datasets, self.getRemoteCredentials())
 
-  types_getDatasetFiles = [DictType]
+  types_getDatasetFiles = [dict]
 
   def export_getDatasetFiles(self, datasets):
     """ Get lfns in the given dataset

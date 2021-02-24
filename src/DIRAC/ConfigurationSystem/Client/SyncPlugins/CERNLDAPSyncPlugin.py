@@ -76,6 +76,7 @@ class CERNLDAPSyncPlugin(object):
     )
     if not status:
       raise ValueError("Bad status from LDAP search: %s" % result)
+    response = list(response)
     if len(response) != 1:
       raise ValueError(
           "Expected exactly one match for CN=%s but found %s"

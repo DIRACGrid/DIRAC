@@ -195,8 +195,8 @@ class Legend(object):
                        verticalalignment='top', size=legend_text_size_point)
         box = Rectangle((float(column * self.column_width) + legend_offset, -float(row * 1.6 * box_width) - box_width),
                         box_width, box_width)
-        box.set_ec('black')
+        box.set_edgecolor('black')
         box.set_linewidth(pixelToPoint(0.5, dpi))
-        box.set_fc(color)
+        box.set_facecolor(color)
         self.ax.add_patch(box)
         nc += 1

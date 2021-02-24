@@ -63,7 +63,7 @@ class PublisherHandler(RequestHandler):
 
     return getSites()
 
-  types_getSitesResources = [(six.string_types, list, types.NoneType)]
+  types_getSitesResources = [(six.string_types, list, type(None))]
 
   def export_getSitesResources(self, siteNames):
     """
@@ -111,11 +111,11 @@ class PublisherHandler(RequestHandler):
     return S_OK(sitesRes)
 
   types_getElementStatuses = [six.string_types,
-                              (six.string_types, list, types.NoneType),
-                              (six.string_types, list, types.NoneType),
-                              (six.string_types, list, types.NoneType),
-                              (six.string_types, list, types.NoneType),
-                              (six.string_types, list, types.NoneType)]
+                              (six.string_types, list, type(None)),
+                              (six.string_types, list, type(None)),
+                              (six.string_types, list, type(None)),
+                              (six.string_types, list, type(None)),
+                              (six.string_types, list, type(None))]
 
   @classmethod
   def export_getElementStatuses(cls, element, name, elementType, statusType, status, tokenOwner):
@@ -128,9 +128,9 @@ class PublisherHandler(RequestHandler):
         statusType=statusType, status=status, tokenOwner=tokenOwner)
 
   types_getElementHistory = [six.string_types,
-                             (six.string_types, list, types.NoneType),
-                             (six.string_types, list, types.NoneType),
-                             (six.string_types, list, types.NoneType)]
+                             (six.string_types, list, type(None)),
+                             (six.string_types, list, type(None)),
+                             (six.string_types, list, type(None))]
 
   @classmethod
   def export_getElementHistory(cls, element, name, elementType, statusType):
@@ -144,8 +144,8 @@ class PublisherHandler(RequestHandler):
         statusType=statusType, meta={'columns': columns})
 
   types_getElementPolicies = [six.string_types,
-                              (six.string_types, list, types.NoneType),
-                              (six.string_types, list, types.NoneType)]
+                              (six.string_types, list, type(None)),
+                              (six.string_types, list, type(None))]
 
   @classmethod
   def export_getElementPolicies(cls, element, name, statusType):
@@ -306,10 +306,10 @@ class PublisherHandler(RequestHandler):
         element=element, name=names,
         meta={'columns': ['StartDate', 'EndDate', 'Link', 'Description', 'Severity']})
 
-  types_getCachedDowntimes = [(six.string_types, types.NoneType, list),
-                              (six.string_types, types.NoneType, list),
-                              (six.string_types, types.NoneType, list),
-                              (six.string_types, types.NoneType, list)]
+  types_getCachedDowntimes = [(six.string_types, type(None), list),
+                              (six.string_types, type(None), list),
+                              (six.string_types, type(None), list),
+                              (six.string_types, type(None), list)]
 
   def export_getCachedDowntimes(self, element, elementType, name, severity):
 

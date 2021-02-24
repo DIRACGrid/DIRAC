@@ -120,7 +120,7 @@ def runCommand(command):
       result = "\n".join(lines) if len(lines) > 2 else ''
     return result
   except (OSError, subprocess.CalledProcessError) as e:
-    LOG.error('Error when runnning command %s: %r', command, e.output)
+    LOG.error('Error when runnning command %s: %r', command, getattr(e, "output", None))
     return ''
 
 

@@ -1581,7 +1581,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
     subDirs = {}
     links = {}
     files = {}
-    loop = range(nbfiles + 1)
+    loop = list(range(nbfiles + 1))
     while loop.pop():
       result = lfc.lfc_readdirxr(oDirectory, "")
       if not result:
@@ -1655,7 +1655,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
       return res
     oDirectory = res['Value']
     pathDict = {'SubDirs': {}, 'ClosedDirs': [], 'Files': 0, 'TotalSize': 0, 'SiteUsage': {}}
-    loop = range(nbfiles + 1)
+    loop = list(range(nbfiles + 1))
     while loop.pop():
       entry, fileInfo = lfc.lfc_readdirxr(oDirectory, "")
       if S_ISDIR(entry.filemode):
