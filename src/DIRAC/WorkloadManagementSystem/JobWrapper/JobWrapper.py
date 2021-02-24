@@ -28,6 +28,7 @@ import tarfile
 import glob
 import json
 import six
+import distutils.spawn
 
 from six.moves.urllib.parse import unquote as urlunquote
 
@@ -231,6 +232,7 @@ class JobWrapper(object):
         if os.path.exists('%s/%s' % (self.root, extraOpts)):
           shutil.copyfile('%s/%s' % (self.root, extraOpts), extraOpts)
         self.__loadLocalCFGFiles(self.localSiteRoot)
+
     else:
       self.log.info('JobID is not defined, running in current directory')
 
@@ -333,6 +335,14 @@ class JobWrapper(object):
     # the argument should include the jobDescription.xml file
     jobArguments = self.jobArgs.get('Arguments', '')
 
+    # This is a workaround for Python 2 style installations
+    if six.PY3 and executable == "$DIRACROOT/scripts/dirac-jobexec":
+      self.log.warning(
+          'Replaced job executable "$DIRACROOT/scripts/dirac-jobexec" with '
+          '"dirac-jobexec". Please fix your submission script!'
+        )
+      executable = "dirac-jobexec"
+
     executable = os.path.expandvars(executable)
     exeThread = None
     spObject = None
@@ -340,6 +350,11 @@ class JobWrapper(object):
     if re.search('DIRACROOT', executable):
       executable = executable.replace('$DIRACROOT', self.localSiteRoot)
       self.log.verbose('Replaced $DIRACROOT for executable as %s' % (self.localSiteRoot))
+
+    # Try to find the executable on PATH
+    if "/" not in executable:
+      # Returns None if the executable is not found so use "or" to leave it unchanged
+      executable = distutils.spawn.find_executable(executable) or executable
 
     # Make the full path since . is not always in the PATH
     executable = os.path.abspath(executable)

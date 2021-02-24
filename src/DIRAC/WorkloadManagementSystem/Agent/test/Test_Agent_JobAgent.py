@@ -35,7 +35,7 @@ def test__getJDLParameters(mocker):
 
   jdl = """
         [
-            Executable = "$DIRACROOT/scripts/dirac-jobexec";
+            Executable = "dirac-jobexec";
             StdError = "std.err";
             LogLevel = "info";
             Site = "ANY";
