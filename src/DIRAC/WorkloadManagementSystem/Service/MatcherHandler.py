@@ -1,7 +1,7 @@
-""" The Matcher service provides an XMLRPC interface for matching jobs to pilots
+""" The Matcher service provides an interface for matching jobs to pilots
 
-    It uses a Matcher and a Limiter object that encapsulated the matching logic.
-    It connects to JobDB, TaskQueueDB, and PilotAgentsDB.
+    It uses a Matcher and a Limiter object that encapsulates the matching logic.
+    It connects to JobDB, TaskQueueDB, JobLoggingDB, and PilotAgentsDB.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -74,6 +74,7 @@ class MatcherHandler(RequestHandler):
 
     resourceDescription['Setup'] = self.serviceInfoDict['clientSetup']
     credDict = self.getRemoteCredentials()
+    pilotRef = resourceDescription.get('PilotReference', 'Unknown')
 
     try:
       opsHelper = Operations(group=credDict['group'])
@@ -81,10 +82,11 @@ class MatcherHandler(RequestHandler):
                         jobDB=self.jobDB,
                         tqDB=self.taskQueueDB,
                         jlDB=self.jobLoggingDB,
-                        opsHelper=opsHelper)
+                        opsHelper=opsHelper,
+                        pilotRef=pilotRef)
       result = matcher.selectJob(resourceDescription, credDict)
     except RuntimeError as rte:
-      self.log.error("Error requesting job: ", rte)
+      self.log.error("[%s] Error requesting job: " % pilotRef, rte)
       return S_ERROR("Error requesting job")
 
     # result can be empty, meaning that no job matched

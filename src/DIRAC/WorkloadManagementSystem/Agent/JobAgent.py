@@ -75,7 +75,8 @@ class JobAgent(AgentModule):
 
     # Timeleft
     self.initTimes = os.times()
-    self.timeLeft = 0.0
+    self.initTimeLeft = 0.0
+    self.timeLeft = self.initTimeLeft
     self.timeLeftUtil = None
     self.pilotInfoReportedFlag = False
 
@@ -109,8 +110,9 @@ class JobAgent(AgentModule):
       ceDict = result['Value'][0]
     else:
       ceDict = result['Value']
-    self.timeLeft = ceDict.get('CPUTime', self.timeLeft)
-    self.timeLeft = gConfig.getValue('/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft)
+    self.initTimeLeft = ceDict.get('CPUTime', self.initTimeLeft)
+    self.initTimeLeft = gConfig.getValue('/Resources/Computing/CEDefaults/MaxCPUTime', self.initTimeLeft)
+    self.timeLeft = self.initTimeLeft
 
     self.initTimes = os.times()
     # Localsite options
@@ -383,18 +385,7 @@ class JobAgent(AgentModule):
       self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
       return self._rescheduleFailedJob(jobID, 'Job processing failed with exception', self.stopOnApplicationFailure)
 
-    # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
-    cpuTime = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
-
-    result = self.timeLeftUtil.getTimeLeft(cpuTime, processors)
-    if result['OK']:
-      self.timeLeft = result['Value']
-    else:
-      self.log.warn(
-          "There were errors calculating time left using the Timeleft utility",
-          result['Message'])
-      self.log.warn("The time left will be calculated using os.times() and the info in our possession")
-      self.timeLeft = self._getCPUTimeLeft()
+    self.timeLeft = self.computeCPUWorkLeft(processors)
 
     return S_OK('Job Agent cycle complete')
 
@@ -411,17 +402,39 @@ class JobAgent(AgentModule):
     jdlFile.close()
 
   #############################################################################
-  def _getCPUTimeLeft(self):
+  def computeCPUWorkLeft(self, processors):
     """
-    Return the TimeLeft as estimated by DIRAC using the process time
-    and the CPU normalization defined locally in the Local Config.
+    Compute CPU Work Left in hepspec06 seconds
+
+    :param int processors: number of processors available
+    :return: cpu work left (cpu time left * cpu power of the cpus)
     """
-    cpuTime = sum(os.times()[:-1])
-    self.log.info('Current raw CPU time consumed is %s' % cpuTime)
-    timeleft = self.timeLeft
+    # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
+    cpuTime = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
+    result = self.timeLeftUtil.getTimeLeft(cpuTime, processors)
+    if result['OK']:
+      cpuWorkLeft = result['Value']
+    else:
+      self.log.warn(
+          "There were errors calculating time left using the Timeleft utility",
+          result['Message'])
+      self.log.warn("The time left will be calculated using os.times() and the info in our possession")
+      cpuWorkLeft = self._getCPUWorkLeft(cpuTime)
+    return cpuWorkLeft
+
+  def _getCPUWorkLeft(self, cpuConsumed):
+    """
+    Compute the CPU Work Left as estimated by DIRAC using the process time
+    and the CPU Power defined locally in the Local Config.
+
+    :param int cpuConsumed: cpu time already consumed since the beginning of the execution
+    :return: cpu work left (cpu time left * cpu power of the cpus)
+    """
+    self.log.info('Current raw CPU time consumed is %s' % cpuConsumed)
+    cpuWorkleft = self.timeLeft
     if self.cpuFactor:
-      timeleft -= cpuTime * self.cpuFactor
-    return timeleft
+      cpuWorkleft = self.initTimeLeft - cpuConsumed * self.cpuFactor
+    return cpuWorkleft
 
   #############################################################################
   def _setupProxy(self, ownerDN, ownerGroup):

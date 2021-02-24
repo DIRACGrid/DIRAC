@@ -142,8 +142,8 @@ def test__setupProxy(mocker, mockGCReplyInput, mockPMReplyInput, expected):
     assert result['Message'] == expected['Message']
 
 
-def test__getCPUTimeLeft(mocker):
-  """ Testing JobAgent()._getCPUTimeLeft()
+def test__getCPUWorkLeft(mocker):
+  """ Testing JobAgent()._getCPUWorkLeft()
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
@@ -153,7 +153,7 @@ def test__getCPUTimeLeft(mocker):
   jobAgent.log = gLogger
   jobAgent.log.setLevel('DEBUG')
 
-  result = jobAgent._getCPUTimeLeft()
+  result = jobAgent._getCPUWorkLeft(0)
 
   assert 0 == result
 

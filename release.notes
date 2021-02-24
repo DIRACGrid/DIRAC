@@ -100,6 +100,24 @@ NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
+[v7r1p30]
+
+*Configuration
+FIX: (#4879) The loop in the siteCE mapping was exiting as soon as a mis-configured site was found.
+     Fixed to continue the loop, while adding an error message.
+FIX: (#4970) Utilities - fixed bug in addToChangeSet(): use tuple instead 4 arguments
+FIX: (#4974) Utilities - fix setting of LocalCEType
+
+*WorkloadManagementSystem
+FIX: (#4972) fix the cpu work left computation in JobAgent when batch system information cannot be processed
+CHANGE: (#4978) Improved logging of the Matcher: adding pilotReference
+
+*Resources
+FIX: (#4955) SingularityComputingElement - better error message when the Singularity CE not found
+CHANGE: (#4972) add a condition in TimeLeft module to know whether the batch system relies on wallclock and/or cpu time
+NEW: (#4972) HTCondorResourceUsage module to get the time left in CERN-specific HTCondor resources.
+CHANGE: (#4935) HTCondorCE: add a periodic remove in case we are not using the local schedd
+
 [v7r1p29]
 
 FIX: Fixes from v7r0p49 patch release

@@ -17,13 +17,21 @@ WorkingDirectory:
    readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
    from the global Resources/Computing/HTCondorCE location.
 
+DaysToKeepRemoteLogs:
+   How long to keep the log files on the remote schedd until they are removed
+
 DaysToKeepLogs:
-   How long to keep the log files until they are removed
+   How long to keep the log files locally until they are removed
 
 ExtraSubmitString:
    Additional options for the condor submit file, separate options with '\\n', for example::
 
      request_cpus = 8 \\n periodic_remove = ...
+
+   CERN proposes additional features to the standard HTCondor implementation. Among these features, one can find
+   an option to limit the allocation runtime (`+MaxRuntime`), that does not exist in the standard HTCondor version:
+   no explicit way to define a runtime limit (`maxCPUTime` would act as the limit). On CERN-HTCondor CEs, one can use
+   CERN-specific features via the `ExtraSubmitString` configuration parameter.
 
 UseLocalSchedd:
    If False, directly submit to a remote condor schedule daemon,
@@ -76,6 +84,7 @@ __RCSID__ = "$Id$"
 CE_NAME = 'HTCondorCE'
 MANDATORY_PARAMETERS = ['Queue']
 DEFAULT_WORKINGDIRECTORY = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT'
+DEFAULT_DAYSTOKEEPREMOTELOGS = 1
 DEFAULT_DAYSTOKEEPLOGS = 15
 
 
@@ -170,6 +179,7 @@ class HTCondorCEComputingElement(ComputingElement):
     self.gridEnv = ''
     self.proxyRenewal = 0
     self.daysToKeepLogs = DEFAULT_DAYSTOKEEPLOGS
+    self.daysToKeepRemoteLogs = DEFAULT_DAYSTOKEEPREMOTELOGS
     self.extraSubmitString = ''
     # see note on getCondorLogFile, why we can only use the global setting
     self.workingDirectory = gConfig.getValue("Resources/Computing/HTCondorCE/WorkingDirectory",
@@ -199,10 +209,16 @@ class HTCondorCEComputingElement(ComputingElement):
 
     executable = os.path.join(self.workingDirectory, executable)
 
+    # This is used to remove outputs from the remote schedd
+    # Used in case a local schedd is not used
+    periodicRemove = "periodic_remove = "
+    periodicRemove += "(JobStatus == 4) && "
+    periodicRemove += "(time() - EnteredCurrentStatus) > (%s * 24 * 3600)" % self.daysToKeepRemoteLogs
+
     localScheddOptions = """
 ShouldTransferFiles = YES
 WhenToTransferOutput = ON_EXIT_OR_EVICT
-""" if self.useLocalSchedd else ""
+""" if self.useLocalSchedd else periodicRemove
 
     targetUniverse = "grid" if self.useLocalSchedd else "vanilla"
 
@@ -245,6 +261,7 @@ Queue %(nJobs)s
     self.gridEnv = self.ceParameters.get('GridEnv')
     self.daysToKeepLogs = self.ceParameters.get('DaysToKeepLogs', DEFAULT_DAYSTOKEEPLOGS)
     self.extraSubmitString = str(self.ceParameters.get('ExtraSubmitString', '').encode().decode('unicode_escape'))
+    self.daysToKeepRemoteLogs = self.ceParameters.get('DaysToKeepRemoteLogs', DEFAULT_DAYSTOKEEPREMOTELOGS)
     self.useLocalSchedd = self.ceParameters.get('UseLocalSchedd', self.useLocalSchedd)
     if isinstance(self.useLocalSchedd, six.string_types):
       if self.useLocalSchedd == "False":

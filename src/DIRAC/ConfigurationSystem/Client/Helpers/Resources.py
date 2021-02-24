@@ -11,7 +11,7 @@ from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,
 
 import six
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.List import uniqueElements, fromChar
 
@@ -49,7 +49,8 @@ def getSiteCEMapping():
                                                               site.split('.')[0], site, 'CEs'),
                                                       [])
     if not res['OK']:
-      return res
+      gLogger.error('Wrong configuration of CE for site:', site)
+      continue
     sitesCEsMapping[site] = res['Value']
   return S_OK(sitesCEsMapping)
 

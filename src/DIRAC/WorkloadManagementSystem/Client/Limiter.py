@@ -23,7 +23,7 @@ class Limiter(object):
   condCache = DictCache()
   delayMem = {}
 
-  def __init__(self, jobDB=None, opsHelper=None):
+  def __init__(self, jobDB=None, opsHelper=None, pilotRef=None):
     """ Constructor
     """
     self.__runningLimitSection = "JobScheduling/RunningLimit"
@@ -34,7 +34,11 @@ class Limiter(object):
     else:
       self.jobDB = JobDB()
 
-    self.log = gLogger.getSubLogger("Limiter")
+    if pilotRef:
+      self.log = gLogger.getSubLogger("[%s]Limiter" % pilotRef)
+      self.jobDB.log = gLogger.getSubLogger("[%s]Limiter" % pilotRef)
+    else:
+      self.log = gLogger.getSubLogger("Limiter")
 
     if opsHelper:
       self.__opsHelper = opsHelper

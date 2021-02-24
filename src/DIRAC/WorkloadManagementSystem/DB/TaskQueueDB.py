@@ -554,7 +554,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         self.log.info("No TQ matches requirements")
         return S_OK({'matchFound': False, 'tqMatch': tqMatchDict})
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
-        self.log.info("Trying to extract jobs from TQ", tqId)
+        self.log.verbose("Trying to extract jobs from TQ", tqId)
         retVal = self._query(prioSQL % tqId, conn=connObj)
         if not retVal['OK']:
           return S_ERROR("Can't retrieve winning priority for matching job: %s" % retVal['Message'])
@@ -571,8 +571,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           self.__deleteTQWithDelay.add(tqId, 300, (tqId, tqOwnerDN, tqOwnerGroup))
         while jobTQList:
           jobId, tqId = jobTQList.pop(random.randint(0, len(jobTQList) - 1))
-          self.log.info("Trying to extract job from TQ",
-                        "%s : %s" % (jobId, tqId))
+          self.log.verbose("Trying to extract job from TQ",
+                           "%s : %s" % (jobId, tqId))
           retVal = self.deleteJob(jobId, connObj=connObj)
           if not retVal['OK']:
             msgFix = "Could not take job"
@@ -893,7 +893,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     if not data:
       return S_OK(False)
     tqId, tqOwnerDN, tqOwnerGroup = data[0]
-    self.log.info("Deleting job", jobId)
+    self.log.verbose("Deleting job", jobId)
     retVal = self._update("DELETE FROM `tq_Jobs` WHERE JobId = %s" % jobId, conn=connObj)
     if not retVal['OK']:
       return S_ERROR("Could not delete job from task queue %s: %s" % (jobId, retVal['Message']))
