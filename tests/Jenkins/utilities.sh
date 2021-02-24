@@ -308,51 +308,69 @@ getCFGFile() {
 #   --UseServerCertificate -o /DIRAC/Security/CertFile=some/location.pem -o /DIRAC/Security/KeyFile=some/location.pem
 
 installDIRAC() {
-  echo -n > "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
-
   echo '==> Installing DIRAC client'
   if ! cd "${CLIENTINSTALLDIR}"; then
     echo "ERROR: cannot change to ${CLIENTINSTALLDIR}" >&2
     exit 1
   fi
 
-  cp "${TESTCODE}/DIRAC/src/DIRAC/Core/scripts/dirac-install.py" "${CLIENTINSTALLDIR}/dirac-install"
-  chmod +x "${CLIENTINSTALLDIR}/dirac-install"
-
-  if [[ -n "${DEBUG+x}" ]]; then
-    INSTALLOPTIONS+=("${DEBUG}")
-  fi
-
-  if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
-    echo "Installing from non-release code"
-    local option="--module="
+  if [[ "${CLIENT_USE_PYTHON3:-}" == "Yes" ]]; then
+    if [[ -n "${DIRACOSVER+x}" ]]; then
+      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+    else
+      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
+    fi
+    curl -L "${DIRACOS2_URL}" > "installer.sh"
+    bash "installer.sh"
+    rm "installer.sh"
+    # TODO: Remove
+    echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
+    source diracos/diracosrc
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-      if [[ -d "${module_path}" ]]; then
-        option+="${module_path}:::$(basename "${module_path}"):::local,"
-      else
-        option+="${module_path},"
-      fi
+      pip install "${module_path}"
     done
-    INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
-  fi
+  else
+    echo -n > "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
 
-  if [[ "${DIRACOSVER}" ]]; then
-    INSTALLOPTIONS+=("--dirac-os")
-    INSTALLOPTIONS+=("--dirac-os-version=${DIRACOSVER}")
-  fi
+    curl -L "https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/dirac-install.py" \
+        > "${CLIENTINSTALLDIR}/dirac-install"
+    chmod +x "${CLIENTINSTALLDIR}/dirac-install"
 
-  if [[ "$DIRACOS_TARBALL_PATH" ]]; then
-    {
-      echo "DIRACOS = $DIRACOS_TARBALL_PATH"
-    } >> "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
-  fi
+    if [[ -n "${DEBUG+x}" ]]; then
+      INSTALLOPTIONS+=("${DEBUG}")
+    fi
 
-  if ! ./dirac-install -r "${DIRAC_RELEASE}" -t client "${INSTALLOPTIONS[@]}" "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"; then
-    echo 'ERROR: DIRAC client installation failed' >&2
-    exit 1
-  fi
+    if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
+      echo "Installing from non-release code"
+      local option="--module="
+      for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+        if [[ -d "${module_path}" ]]; then
+          option+="${module_path}:::$(basename "${module_path}"):::local,"
+        else
+          option+="${module_path},"
+        fi
+      done
+      INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
+    fi
 
-  source bashrc
+    if [[ "${DIRACOSVER}" ]]; then
+      INSTALLOPTIONS+=("--dirac-os")
+      INSTALLOPTIONS+=("--dirac-os-version=${DIRACOSVER}")
+    fi
+
+    if [[ "$DIRACOS_TARBALL_PATH" ]]; then
+      {
+        echo "DIRACOS = $DIRACOS_TARBALL_PATH"
+      } >> "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
+    fi
+
+    if ! ./dirac-install -r "${DIRAC_RELEASE}" -t client "${INSTALLOPTIONS[@]}" "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"; then
+      echo 'ERROR: DIRAC client installation failed' >&2
+      exit 1
+    fi
+
+    source bashrc
+  fi
   echo "$DIRAC"
   echo "$PATH"
 
@@ -362,9 +380,6 @@ installDIRAC() {
     echo 'ERROR: dirac-configure failed' >&2
     exit 1
   fi
-
-  echo 'Content of etc/dirac.cfg:'
-  cat "${CLIENTINSTALLDIR}/etc/dirac.cfg"
 
   echo '==> Done installDIRAC'
 }

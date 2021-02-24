@@ -111,13 +111,6 @@ prepareEnvironment() {
     fi
 
     echo "declare -a ALTERNATIVE_MODULES"
-    if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
-      for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-        echo "ALTERNATIVE_MODULES+=(\"${module_path}\")"
-      done
-    else
-      echo "ALTERNATIVE_MODULES+=(\"${DIRAC_BASE_DIR}/src/DIRAC\")"
-    fi
 
     echo "declare -a INSTALLOPTIONS"
     if [[ -n "${INSTALLOPTIONS+x}" ]]; then
@@ -154,12 +147,37 @@ prepareEnvironment() {
   cp "${SERVERCONFIG}" "${CLIENTCONFIG}"
 
   if [[ "${SERVER_USE_PYTHON3:-}" == "Yes" ]]; then
-    echo "INSTALLOPTIONS+=(\"--pythonVersion=3\")" >> "${SERVERCONFIG}"
+    echo "export SERVER_USE_PYTHON3=${SERVER_USE_PYTHON3}" >> "${SERVERCONFIG}"
+    echo "ALTERNATIVE_MODULES+=(\"${DIRAC_BASE_DIR}/\")" >> "${SERVERCONFIG}"
+  else
+    if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
+      for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+        echo "ALTERNATIVE_MODULES+=(\"${module_path}\")" >> "${SERVERCONFIG}"
+      done
+    else
+      echo "ALTERNATIVE_MODULES+=(\"${DIRAC_BASE_DIR}/src/DIRAC\")" >> "${SERVERCONFIG}"
+    fi
   fi
 
-  echo "${CLIENT_USE_PYTHON3}"
+  if [[ -n "${SERVER_DIRACOSVER+x}" ]]; then
+    echo "export DIRACOSVER=${SERVER_DIRACOSVER}" >> "${SERVERCONFIG}"
+  fi
+
   if [[ "${CLIENT_USE_PYTHON3:-}" == "Yes" ]]; then
-    echo "INSTALLOPTIONS+=(\"--pythonVersion=3\")" >> "${CLIENTCONFIG}"
+    echo "export CLIENT_USE_PYTHON3=${CLIENT_USE_PYTHON3}" >> "${CLIENTCONFIG}"
+    echo "ALTERNATIVE_MODULES+=(\"${DIRAC_BASE_DIR}/\")" >> "${CLIENTCONFIG}"
+  else
+    if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
+      for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+        echo "ALTERNATIVE_MODULES+=(\"${module_path}\")" >> "${CLIENTCONFIG}"
+      done
+    else
+      echo "ALTERNATIVE_MODULES+=(\"${DIRAC_BASE_DIR}/src/DIRAC\")" >> "${CLIENTCONFIG}"
+    fi
+  fi
+
+  if [[ -n "${CLIENT_DIRACOSVER+x}" ]]; then
+    echo "export DIRACOSVER=${CLIENT_DIRACOSVER}" >> "${CLIENTCONFIG}"
   fi
 
   echo "Generated server config file is:"

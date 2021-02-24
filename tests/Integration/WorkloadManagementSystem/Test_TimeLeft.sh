@@ -19,7 +19,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ###############################################################################
 # Can't find anywhere a batch plugin, not even MJF
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
+dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
@@ -35,7 +35,7 @@ fi
 export MACHINEFEATURES="${SCRIPT_DIR}/sb.cfg"
 export JOBFEATURES="${SCRIPT_DIR}/sb.cfg"
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
+dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
@@ -51,7 +51,7 @@ fi
 export MACHINEFEATURES=${SCRIPT_DIR}/MJF/
 export JOBFEATURES=${SCRIPT_DIR}/MJF/
 
-$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
+dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 
 if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
