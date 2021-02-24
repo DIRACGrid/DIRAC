@@ -32,7 +32,7 @@ load-plugins=
 #R0903 = Too few public methods (%s/%s)
 #C0326 = bad-whitespace
 #I0011 = locally-disabling
-disable=R0903,C0326,I0011,redefined-variable-type,c-extension-no-member
+disable=R0903,C0326,I0011,redefined-variable-type,c-extension-no-member,W,C,R
 
 
 [REPORTS]
