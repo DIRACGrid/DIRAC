@@ -70,6 +70,7 @@ class Client(Model, OAuth2ClientMixin):
                     'mysql_charset': 'utf8'}
   id = Column(Integer, primary_key=True, nullable=False)
   client_metadata = Column('client_metadata', MutableDict.as_mutable(JSONEncodedDict))
+  _client_metadata = None
 
 
 class Token(Model, OAuth2TokenMixin):
