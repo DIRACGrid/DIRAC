@@ -25,6 +25,11 @@ ExtraSubmitString:
 
      request_cpus = 8 \\n periodic_remove = ...
 
+   CERN proposes additional features to the standard HTCondor implementation. Among these features, one can find
+   an option to limit the allocation runtime (`+MaxRuntime`), that does not exist in the standard HTCondor version:
+   no explicit way to define a runtime limit (`maxCPUTime` would act as the limit). On CERN-HTCondor CEs, one can use
+   CERN-specific features via the `ExtraSubmitString` configuration parameter.
+
 UseLocalSchedd:
    If False, directly submit to a remote condor schedule daemon,
    then one does not need to run condor daemons on the submit machine.

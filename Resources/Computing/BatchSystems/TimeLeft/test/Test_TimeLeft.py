@@ -58,6 +58,10 @@ SLURM_OUT_2 = "12345,21600,24,900,30:00"
 SLURM_OUT_3 = "12345,43200,24,1800,30:00"
 SLURM_OUT_4 = ""
 
+HTCONDOR_OUT_0 = "86400 3600"
+HTCONDOR_OUT_1 = "undefined 3600"
+HTCONDOR_OUT_2 = ""
+
 
 @pytest.mark.parametrize("cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallClockMargin, expected", [
     (100., 1000., 50., 80., 3, 10, True),
@@ -78,11 +82,14 @@ def test_enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wal
     ('LSF', {'bin': '/usr/bin', 'hostNorm': 10.0}, LSF_OUT, 0.0),
     ('MJF', {}, MJF_OUT, 0.0),
     ('SGE', {}, SGE_OUT, 300.0),
-    # ('SLURM', {}, SLURM_OUT_0, 432000.0),
-    # ('SLURM', {}, SLURM_OUT_1, 432000.0),
-    # ('SLURM', {}, SLURM_OUT_2, 108000.0),
-    # ('SLURM', {}, SLURM_OUT_3, 216000.0),
-    # ('SLURM', {}, SLURM_OUT_4, 0.0),
+    ('SLURM', {}, SLURM_OUT_0, 432000.0),
+    ('SLURM', {}, SLURM_OUT_1, 432000.0),
+    ('SLURM', {}, SLURM_OUT_2, 108000.0),
+    ('SLURM', {}, SLURM_OUT_3, 216000.0),
+    ('SLURM', {}, SLURM_OUT_4, 0.0),
+    ('HTCondor', {}, HTCONDOR_OUT_0, 18000.0),
+    ('HTCondor', {}, HTCONDOR_OUT_1, 0.0),
+    ('HTCondor', {}, HTCONDOR_OUT_2, 0.0)
 ])
 def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
   """ Test getScaledCPU()
@@ -114,11 +121,14 @@ def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
 @pytest.mark.parametrize("batch, requiredVariables, returnValue, expected_1, expected_2", [
     ('LSF', {'bin': '/usr/bin', 'hostNorm': 10.0, 'cpuLimit': 1000, 'wallClockLimit': 1000}, LSF_OUT, True, 9400.0),
     ('SGE', {}, SGE_OUT, True, 9400.0),
-    # ('SLURM', {}, SLURM_OUT_0, True, 1728000.0),
-    # ('SLURM', {}, SLURM_OUT_1, True, 84672000.0),
-    # ('SLURM', {}, SLURM_OUT_2, True, 216000.0),
-    # ('SLURM', {}, SLURM_OUT_3, False, 0.0),
-    # ('SLURM', {}, SLURM_OUT_4, False, 0.0),
+    ('SLURM', {}, SLURM_OUT_0, True, 72000.0),
+    ('SLURM', {}, SLURM_OUT_1, True, 3528000.0),
+    ('SLURM', {}, SLURM_OUT_2, True, 9000.0),
+    ('SLURM', {}, SLURM_OUT_3, False, 18000.0),
+    ('SLURM', {}, SLURM_OUT_4, False, 0.0),
+    ('HTCondor', {}, HTCONDOR_OUT_0, True, 828000),
+    ('HTCondor', {}, HTCONDOR_OUT_1, False, 0.0),
+    ('HTCondor', {}, HTCONDOR_OUT_2, False, 0.0)
 ])
 def test_getTimeLeft(mocker, batch, requiredVariables, returnValue, expected_1, expected_2):
   """ Test getTimeLeft()

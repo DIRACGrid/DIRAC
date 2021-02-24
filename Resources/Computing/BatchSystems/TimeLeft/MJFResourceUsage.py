@@ -30,8 +30,8 @@ class MJFResourceUsage(ResourceUsage):
 
   #############################################################################
   def getResourceUsage(self):
-    """Returns a dictionary containing CPUConsumed, CPULimit, WallClockConsumed
-       and WallClockLimit for current slot.  All values returned in seconds.
+    """ Returns S_OK with a dictionary containing the entries CPU, CPULimit,
+        WallClock, WallClockLimit, and Unit for current slot.
     """
 
     cpuLimit = None

@@ -128,7 +128,7 @@ A commented example follows::
        long
        {
          # Max CPU time in HEP'06 unit secs
-         CPUTime = 10000
+         maxCPUTime = 10000
          # Max total number of jobs in the queue
          MaxTotalJobs = 5
          # Max number of waiting jobs in the queue
@@ -176,7 +176,7 @@ configuration follows ::
        long
        {
          # Max CPU time in HEP'06 unit secs
-         CPUTime = 10000
+         maxCPUTime = 10000
          # Max total number of jobs in the queue
          MaxTotalJobs = 5
          # Max number of waitin jobs in the queue
