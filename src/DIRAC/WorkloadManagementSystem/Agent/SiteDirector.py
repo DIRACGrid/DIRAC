@@ -1075,9 +1075,6 @@ class SiteDirector(AgentModule):
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
       pilotOptions.append('-ddd')
-    # CS Servers
-    csServers = gConfig.getValue("/DIRAC/Configuration/Servers", [])
-    pilotOptions.append('-C %s' % ",".join(csServers))
 
     # DIRAC Extensions to be used in pilots
     pilotExtensionsList = opsHelper.getValue("Pilot/Extensions", [])
