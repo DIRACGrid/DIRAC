@@ -320,7 +320,7 @@ class ProxyInit(object):
     return S_OK()
 
   def doOAuthMagic(self):
-    """ Magic method
+    """ Magic method with tokens
 
         :return: S_OK()/S_ERROR()
     """
@@ -440,6 +440,7 @@ class ProxyInit(object):
       clientID = result['Value']['client_id']
 
       __start = time.time()
+      #TODO: Fix hardcore url
       url = 'https://marosvn32.in2p3.fr/DIRAC/auth/token?client_id=%s' % clientID
       url += '&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=%s' % deviceCode
       while True:

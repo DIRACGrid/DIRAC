@@ -67,7 +67,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
   """ Implementation of :class:`authlib.oauth2.rfc6749.AuthorizationServer`.
       Initialize it ::
 
-          server = AuthServer()
+        server = AuthServer()
   """
   metadata_class = AuthorizationServerMetadata
 
@@ -238,6 +238,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     except Exception:
       print('REQUEST --- ')
     return createOAuth2Request(request, method_cls, use_json)
+
   def create_json_request(self, request):
     return self.create_oauth2_request(request, HttpRequest, True)
 

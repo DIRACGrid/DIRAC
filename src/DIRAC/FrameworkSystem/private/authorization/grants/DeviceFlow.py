@@ -24,6 +24,7 @@ class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
     return c, data, h
 
   def get_verification_uri(self):
+    #TODO: Fix hardcore url
     return 'https://marosvn32.in2p3.fr/DIRAC/auth/device'
 
   def save_device_credential(self, client_id, scope, data):
@@ -70,6 +71,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
       return None
     data['expires_at'] = data['expires_in'] + int(time())
     data['interval'] = 5
+    #TODO: Fix hardcore url
     data['verification_uri'] = 'https://marosvn32.in2p3.fr/DIRAC/auth/device'
     return DeviceCredentialDict(data)
 

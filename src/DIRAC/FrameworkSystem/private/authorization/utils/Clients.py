@@ -68,7 +68,12 @@ class ClientManager(object):
 
 
 class ClientRegistrationEndpoint(_ClientRegistrationEndpoint):
+  #TODO: align with version authlib
   def authenticate_user(self, request):
+    return True
+
+  def authenticate_token(self, request):
+    #TODO: check
     return True
 
   def save_client(self, client_info, client_metadata, request):

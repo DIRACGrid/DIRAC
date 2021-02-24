@@ -42,6 +42,8 @@ class AuthManagerClient(Client):
         :return: S_OK(dict)/S_ERROR()
     """
     clientMetadata = None
+    #TODO: description client.cfg
+    #      use client.json instead or write to dirac.cfg in LocalConfiguration
     clientCFG = '/opt/dirac/etc/client.cfg'
     if os.path.isfile(clientCFG) and os.stat(clientCFG).st_size > 0:
       try:
@@ -53,6 +55,7 @@ class AuthManagerClient(Client):
     if not clientMetadata:
       self.log.info('Register new client')
       try:
+        #TODO: Fix hardcore url
         r = requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', {'redirect_uri': ''}, verify=False)
         r.raise_for_status()
         clientMetadata = r.json()
@@ -81,6 +84,7 @@ class AuthManagerClient(Client):
         return result
       client = result['Value']
 
+    #TODO: Fix hardcore url
     url = 'https://marosvn32.in2p3.fr/DIRAC/auth/device?client_id=%s' % client['client_id']
     if group:
       url += '&scope=g:%s' % group
