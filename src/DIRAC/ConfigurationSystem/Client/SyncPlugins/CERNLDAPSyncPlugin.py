@@ -76,10 +76,10 @@ class CERNLDAPSyncPlugin(object):
     )
     if not status:
       raise ValueError("Bad status from LDAP search: %s" % result)
-    response = list(response)
     if len(response) != 1:
       raise ValueError(
           "Expected exactly one match for CN=%s but found %s"
           % (commonName, len(response))
       )
-    return response[0]["attributes"]
+    # https://github.com/PyCQA/pylint/issues/4148
+    return response[0]["attributes"]  # pylint: disable=unsubscriptable-object
