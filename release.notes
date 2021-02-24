@@ -1,4 +1,4 @@
-[v7r2-pre34]
+[v7r2-pre35]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -43,6 +43,8 @@ HANGE: (#4958) setUsageMessage in LocalConfiguration will parse received str val
 *Framework
 CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
 FIX: (#4850) MQ logging sends also the message,asctime and levelname field
+FIX: fix link to DIRAC install instruction and comments for WebApp
+FIX: (#4977) SystemAdministratorClientCLI - fix log message about responding hosts in sysadmin cli
 
 *Interfaces
 CHANGE: (#4799) remove runLocalAgent method from DIRAC API
@@ -69,6 +71,7 @@ NEW: (#4905) moving towards a single agent for WMS history
 CHANGE: (#4925) SiteDirector - removed using of SubmitPools requirement by default
 CHANGE: (#4925) SiteDirector, JobAgent - no more using ProxyManager tokens while user proxy retrieval
 NEW: (#4950) JobAgent adds GridCE and queue to Job Parameters
+CHANGE: (#4966) added flag to exclude the master CS from the list of servers synchronized by PilotCS2JSON
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
@@ -87,6 +90,7 @@ FIX: (#4740) make dirac-docs-get-release-notes.py python3 compatible
 CHANGE: (#4823) added some clarifications on starting the pilots
 CHANGE: (#4829) updated configuration in terms of security, added description of webdav
 FIX: (#4905) added config and instructions for Monitoring DBs (ES) configuration
+FIX: (#4973) fix link to DIRAC install instruction and comments for WebApp
 
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
