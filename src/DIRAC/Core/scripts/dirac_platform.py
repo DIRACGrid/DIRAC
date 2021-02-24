@@ -26,22 +26,21 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-import sys
-import argparse
-
-parser = argparse.ArgumentParser(
-    description=__doc__,
-    formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.parse_known_args()
 
 try:
   from DIRAC.Core.Utilities.Platform import getPlatformString
 except Exception:
+  import argparse
   import platform
   import os
   import sys
   import re
   import subprocess
+
+  parser = argparse.ArgumentParser(
+      description=__doc__,
+      formatter_class=argparse.RawDescriptionHelpFormatter)
+  parser.parse_known_args()
 
   # We need to patch python platform module. It does a string comparison for the libc versions.
   # it fails when going from 2.9 to 2.10,

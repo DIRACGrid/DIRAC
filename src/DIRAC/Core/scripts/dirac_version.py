@@ -21,17 +21,18 @@ __RCSID__ = "$Id$"
 
 import argparse
 
-parser = argparse.ArgumentParser(
-    description=__doc__,
-    formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.parse_known_args()
-
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  parser = argparse.ArgumentParser(
+      description=__doc__,
+      formatter_class=argparse.RawDescriptionHelpFormatter,
+  )
+  parser.parse_known_args()
+
   print(DIRAC.version)
 
 
