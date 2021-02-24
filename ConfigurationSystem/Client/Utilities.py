@@ -316,7 +316,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
           tag = queueDict.get('Tag', '')
           # LocalCEType can be empty (equivalent to "InProcess")
           # or "Pool", "Singularity", but also "Pool/Singularity"
-          localCEType = queueDict.get('LocalCEType', 'InProcess')
+          localCEType = queueDict.get('LocalCEType', '')
           try:
             localCEType_inner = localCEType.split('/')[1]
           except IndexError:
