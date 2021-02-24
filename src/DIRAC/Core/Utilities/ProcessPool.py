@@ -301,7 +301,7 @@ class WorkingProcess(multiprocessing.Process):
 
       # processThread is still alive? stop it!
       if self.__processThread.is_alive():
-        self.__processThread._Thread__stop()
+        self.__processThread._Thread__stop()  # pylint: disable=no-member
         self.task.setResult(S_ERROR(errno.ETIME, "Timed out"))
         timeout = True
       # if the task finished with no results, something bad happened, e.g.
