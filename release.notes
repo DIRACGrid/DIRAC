@@ -14,6 +14,7 @@ CHANGE: (#4978) Improved logging of the Matcher: adding pilotReference
 FIX: (#4955) SingularityComputingElement - better error message when the Singularity CE not found
 CHANGE: (#4972) add a condition in TimeLeft module to know whether the batch system relies on wallclock and/or cpu time
 NEW: (#4972) HTCondorResourceUsage module to get the time left in CERN-specific HTCondor resources.
+CHANGE: (#4935) HTCondorCE: add a periodic remove in case we are not using the local schedd
 
 [v7r1p29]
 
