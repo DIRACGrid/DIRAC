@@ -27,7 +27,7 @@ class Matcher(object):
   """ Logic for matching
   """
 
-  def __init__(self, pilotAgentsDB=None, jobDB=None, tqDB=None, jlDB=None, opsHelper=None):
+  def __init__(self, pilotAgentsDB=None, jobDB=None, tqDB=None, jlDB=None, opsHelper=None, pilotRef=None):
     """ c'tor
     """
     if pilotAgentsDB:
@@ -52,9 +52,16 @@ class Matcher(object):
     else:
       self.opsHelper = Operations()
 
-    self.log = gLogger.getSubLogger("Matcher")
+    if pilotRef:
+      self.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
+      self.pilotAgentsDB.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
+      self.jobDB.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
+      self.tqDB.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
+      self.jlDB.log = gLogger.getSubLogger("[%s]Matcher" % pilotRef)
+    else:
+      self.log = gLogger.getSubLogger("Matcher")
 
-    self.limiter = Limiter(jobDB=self.jobDB, opsHelper=self.opsHelper)
+    self.limiter = Limiter(jobDB=self.jobDB, opsHelper=self.opsHelper, pilotRef=pilotRef)
 
     self.siteClient = SiteStatus()
 
@@ -115,7 +122,7 @@ class Matcher(object):
     resultDict['JobID'] = jobID
 
     matchTime = time.time() - startTime
-    self.log.info("Match time", "[%s]" % str(matchTime))
+    self.log.verbose("Match time", "[%s]" % str(matchTime))
     gMonitor.addMark("matchTime", matchTime)
 
     # Get some extra stuff into the response returned
