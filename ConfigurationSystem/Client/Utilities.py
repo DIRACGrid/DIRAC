@@ -343,7 +343,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, glue2=True):
               # if not larger than one, drop MultiProcessor Tag.
               # Here we do not change the LocalCEType as Pool CE would still be perfectly valid.
               newTag = ','.join(sorted(set(tag.split(',')).difference({'MultiProcessor'}))).strip(',')
-              changeSet.add(queueSection, 'Tag', tag, newTag)
+              changeSet.add((queueSection, 'Tag', tag, newTag))
           if maxTotalJobs == "Unknown":
             newTotalJobs = min(1000, int(int(queueInfo.get('GlueCEInfoTotalCPUs', 0)) / 2))
             newWaitingJobs = max(2, int(newTotalJobs * 0.1))
