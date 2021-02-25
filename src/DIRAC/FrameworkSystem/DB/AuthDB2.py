@@ -21,6 +21,8 @@ from sqlalchemy.types import TypeDecorator, VARCHAR
 import json
 from sqlalchemy.ext.mutable import Mutable
 
+# Next two classes to help sqlalchemy work with dicts
+# https://docs.sqlalchemy.org/en/14/orm/extensions/mutable.html#establishing-mutability-on-scalar-column-values
 class MutableDict(Mutable, dict):
     @classmethod
     def coerce(cls, key, value):
@@ -69,6 +71,7 @@ class Client(Model, OAuth2ClientMixin):
   __table_args__ = {'mysql_engine': 'InnoDB',
                     'mysql_charset': 'utf8'}
   id = Column(Integer, primary_key=True, nullable=False)
+  # Parameter names must match field names to avoid AttributeError exception
   client_metadata = Column('client_metadata', MutableDict.as_mutable(JSONEncodedDict))
   _client_metadata = None
 

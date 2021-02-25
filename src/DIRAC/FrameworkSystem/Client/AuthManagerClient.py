@@ -11,7 +11,9 @@ import json
 import requests
 from authlib.common.security import generate_token
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from diraccfg import CFG
+
+from DIRAC import rootPath, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities import DIRACSingleton
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
@@ -33,44 +35,47 @@ class AuthManagerClient(Client):
     """ Constructor
     """
     super(AuthManagerClient, self).__init__(*args, **kwargs)
+    self.localCfg = CFG()
+    self.cfgFile = os.path.join(rootPath, 'etc', 'dirac.cfg')
+    self.localCfg.loadFromFile(self.cfgFile)
     self.setServer('Framework/AuthManager')
     self.idps = IdProviderFactory()
 
   def prepareClientCredentials(self):
-    """ Prepare authentication client credentials
+    """ To interact with the server part through OAuth, you must at least be a registered client,
+        prepare authentication client credentials
 
         :return: S_OK(dict)/S_ERROR()
     """
-    clientMetadata = None
-    #TODO: description client.cfg
-    #      use client.json instead or write to dirac.cfg in LocalConfiguration
-    clientCFG = '/opt/dirac/etc/client.cfg'
-    if os.path.isfile(clientCFG) and os.stat(clientCFG).st_size > 0:
-      try:
-        with open('/opt/dirac/etc/client.cfg', 'rb') as f:
-          clientMetadata = json.load(f)
-      except IOError as e:
-        self.log.error('Cannot read "%s" file with client configuration: %s' % (clientCFG, e))
+    clientMetadata = self.localCfg.getAsDict('/LocalInstallation/AuthorizationClient')
+    
+    if clientMetadata:
+      return S_OK(clientMetadata)
 
+    self.log.info('Register new authorization client..')
+
+    try:
+      #TODO: Fix hardcore url
+      r = requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', {'redirect_uri': ''}, verify=False)
+      r.raise_for_status()
+      clientMetadata = r.json()
+    except requests.exceptions.Timeout:
+      return S_ERROR('Authentication server is not answer.')
+    except requests.exceptions.RequestException as ex:
+      return S_ERROR(r.content or ex)
+    except Exception as ex:
+      return S_ERROR('Cannot read response: %s' % ex)
+    
     if not clientMetadata:
-      self.log.info('Register new client')
-      try:
-        #TODO: Fix hardcore url
-        r = requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', {'redirect_uri': ''}, verify=False)
-        r.raise_for_status()
-        clientMetadata = r.json()
-      except requests.exceptions.Timeout:
-        return S_ERROR('Authentication server is not answer.')
-      except requests.exceptions.RequestException as ex:
-        return S_ERROR(r.content or ex)
-      except Exception as ex:
-        return S_ERROR('Cannot read response: %s' % ex)
-      self.log.debug('Store %s client to %s' % (clientMetadata['client_id'], clientCFG))
-      try:
-        with open('/opt/dirac/etc/client.cfg', 'w') as f:
-          json.dump(clientMetadata, f)
-      except IOError as e:
-        self.log.error('Cannot save "%s" file with client configuration: %s' % (clientCFG, e))
+      return S_ERROR('Cannot get authorization client credentials')
+
+    self.log.debug('Store %s client to local configuration..' % clientMetadata['client_id'])
+
+    data = CFG()
+    data.loadFromDict(clientMetadata):
+    comment = "Write fresh client credentials to /LocalInstallation section"
+    self.localCfg.createNewSection('LocalConfiguration/AuthorizationClient', comment=comment, contents=data)
+    self.localCfg.writeToFile(self.cfgFile)
 
     return S_OK(clientMetadata)
 
