@@ -17,13 +17,13 @@ from authlib.oauth2.base import OAuth2Error
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import ClientRegistrationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 
 __RCSID__ = "$Id$"
 
@@ -86,8 +86,16 @@ class AuthHandler(TornadoREST):
   def web_register(self):
     """ Client registry
 
-        POST: /register?client_id=.. &scope=.. &redirect_uri=..
+        POST: /register
+
+        JSON data:
         
+          grant_types     - list of grant types, e.g.: ["authorization_code","refresh_token"]
+                            more supported grant types in DIRAC.FrameworkSystem.private.authorization.grants
+          scope           - list of scoupes separated by a space, e.g.: changeGroup something
+          response_types  - list of returned responses, e.g: ["token","id_token token","code"]
+          redirect_uris   - e.g.: ['https://dirac.egi.eu']
+
         requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', json={'grant_types': ['implicit'], 'response_types': ['token'], 'redirect_uris': ['https://dirac.egi.eu'], 'token_endpoint_auth_method': 'none'}, verify=False).text
         requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', json={"scope":"changeGroup","token_endpoint_auth_method":"client_secret_basic","grant_types":["authorization_code","refresh_token"],"redirect_uris":["https://marosvn32.in2p3.fr/DIRAC","https://marosvn32.in2p3.fr/DIRAC/loginComplete"],"response_types":["token","id_token token","code"]}, verify=False).text
     """

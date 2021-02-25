@@ -5,9 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsernameInGroup
-from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 
 __RCSID__ = "$Id$"
 
