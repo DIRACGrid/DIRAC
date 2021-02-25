@@ -10,6 +10,23 @@ except ImportError:
   # Fall back to Python 2's urllib2
   from urllib2 import urlopen, HTTPError, URLError
 
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("\n")
+sys.stderr.write("Getting dirac-install from this location is no longer supported!\n")
+sys.stderr.write("\n")
+sys.stderr.write("Please update your scripts to use:\n")
+sys.stderr.write("    https://raw.githubusercontent.com/DIRACGrid/management/add-dirac-install/dirac-install.py\n")
+sys.stderr.write("\n")
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("#" * 100 + "\n")
+sys.stderr.write("#" * 100 + "\n")
+
 # Download dirac-install.py
 response = urlopen(
     "https://raw.githubusercontent.com/chrisburr/management/add-dirac-install/dirac-install.py"
