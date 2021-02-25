@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
 from pprint import pprint
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -13,13 +14,12 @@ __RCSID__ = "$Id$"
 
 from authlib.oauth2.rfc6749.wrappers import OAuth2Token
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin, OAuth2TokenMixin
-from sqlalchemy.orm import scoped_session
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, Text, BigInteger, String
+from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.types import TypeDecorator, VARCHAR
-import json
 from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.ext.declarative import declarative_base
 
 # Next two classes to help sqlalchemy work with dicts
 # https://docs.sqlalchemy.org/en/14/orm/extensions/mutable.html#establishing-mutability-on-scalar-column-values
@@ -131,6 +131,7 @@ class AuthDB2(SQLAlchemyDB):
 
         :return: S_OK(dict)/S_ERROR()
     """
+    #TODO: remove debug
     print('============ addClient ============')
     pprint(data)
     session = self.session()
@@ -228,7 +229,7 @@ class AuthDB2(SQLAlchemyDB):
       session.add(Token(**attrts))
     except Exception as e:
       return self.__result(session, S_ERROR('Could not add Token: %s' % e))
-    return self.__result(session, S_OK('Component successfully added'))
+    return self.__result(session, S_OK('Token successfully added'))
   
   def updateToken(self, token, refreshToken):
     """ Update token
