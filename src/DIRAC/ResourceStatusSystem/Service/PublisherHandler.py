@@ -13,7 +13,6 @@ __RCSID__ = '$Id$'
 #  pylint: disable=no-self-use
 
 import six
-import types
 from datetime import datetime, timedelta
 
 # DIRAC

@@ -11,7 +11,7 @@ from __future__ import print_function
 
 # imports
 import os
-from os.path import abspath, commonprefix, normpath
+from os.path import abspath
 import re
 import sys
 
@@ -103,15 +103,6 @@ def testGetMD5ForFiles():
   assert reMD5.match(md5sum) is not None
   # OK for python 2.7
   # self.assertRegexpMatches( md5sum, reMD5, "regexp doesn't match" )
-
-
-def testGetCommonPath():
-  """ getCommonPath tests """
-  # empty list
-  assert commonprefix([]) == ""
-  # this folder
-  filesList = [abspath(".") + os.sep + x for x in os.listdir(".")]
-  assert normpath(commonprefix(filesList)) == normpath(abspath("."))
 
 
 @given(nb=floats(allow_nan=False, allow_infinity=False, min_value=1))
