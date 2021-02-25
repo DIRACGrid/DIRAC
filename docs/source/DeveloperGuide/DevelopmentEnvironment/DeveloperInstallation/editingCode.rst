@@ -38,7 +38,7 @@ Stuff you need to have installed
 
 *git*: DIRAC's version control system of choice is git and most computers will already have this installed. If not, you can easily install it by searching online for your operating system name and "install git".
 
-*editor*: Almost any text editor is fine so if you already have a preference for vim/emas/sublime/eclipse/pycharm/atom use that.
+*editor*: Almost any text editor is fine so if you already have a preference for vim/emacs/sublime/eclipse/pycharm/atom use that.
 If you're new to development, Visual Studio Code is free modern editor with an extensive plugin ecosystem and many nice IDE like features.
 Regardless of which editor you choose it's worth investigating what plugins are available plugins.
 
