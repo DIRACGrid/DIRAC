@@ -13,12 +13,10 @@ from authlib.common.security import generate_token
 
 from diraccfg import CFG
 
-from DIRAC import rootPath, gLogger, S_OK, S_ERROR
+from DIRAC import rootPath, S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities import DIRACSingleton
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-# from DIRAC.ConfigurationSystem.Client.Utilities import getAuthAPI
-# from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.AuthManagerData import gAuthManagerData
 from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import Session
 
