@@ -54,7 +54,7 @@ from authlib.common.security import generate_token
 from authlib.common.encoding import to_unicode, json_dumps, json_b64encode, urlsafe_b64decode, json_loads
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.FrameworkSystem.DB.AuthDB2 import AuthDB2
+from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
@@ -72,7 +72,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
   metadata_class = AuthorizationServerMetadata
 
   def __init__(self):
-    self.__db = AuthDB2()
+    self.__db = AuthDB()
     self.idps = IdProviderFactory()
     ClientManager.__init__(self, self.__db)
     SessionManager.__init__(self)

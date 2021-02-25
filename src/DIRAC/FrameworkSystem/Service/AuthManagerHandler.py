@@ -22,7 +22,7 @@ from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthAPI
 from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import Session
 
-from DIRAC.FrameworkSystem.DB.AuthDB2 import AuthDB2
+from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 
 # from DIRAC.FrameworkSystem.DB.AuthServerHandler import AuthServerHandler
 
@@ -115,7 +115,7 @@ class AuthManagerHandler(RequestHandler):
   def initializeHandler(cls, serviceInfo):
     """ Handler initialization
     """
-    cls.__db = AuthDB2()
+    cls.__db = AuthDB()
     cls.__idps = IdProviderFactory()
     #gThreadScheduler.addPeriodicTask(3600, cls.__cleanAuthDB)
     #result = cls.__cleanAuthDB()

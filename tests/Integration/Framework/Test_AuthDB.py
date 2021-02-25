@@ -12,10 +12,10 @@ import unittest
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from DIRAC.FrameworkSystem.DB.AuthDB2 import AuthDB2
+from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 
 
-db = AuthDB2()
+db = AuthDB()
 
 
 class AuthDBTestCase(unittest.TestCase):
