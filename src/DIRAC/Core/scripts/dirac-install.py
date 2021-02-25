@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+The main DIRAC installer script. It can be used to install the main DIRAC software, its
+modules, web, rest etc. and DIRAC extensions.
+
+See https://github.com/DIRACGrid/management/blob/master/dirac-install.py
+"""
 import os
 import stat
 import sys

@@ -27,6 +27,9 @@ sys.stderr.write("#" * 100 + "\n")
 sys.stderr.write("#" * 100 + "\n")
 sys.stderr.write("#" * 100 + "\n")
 
+if os.environ.get("DIRAC_DEPRECATED_FAIL", "No").lower() in ("y", "yes", "t", "true", "on", "1"):
+  raise RuntimeError("Failing as DIRAC_DEPRECATED_FAIL is set")
+
 # Download dirac-install.py
 response = urlopen(
     "https://raw.githubusercontent.com/chrisburr/management/add-dirac-install/dirac-install.py"
