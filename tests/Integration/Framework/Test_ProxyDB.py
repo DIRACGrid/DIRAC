@@ -510,7 +510,7 @@ class testDB(ProxyDBTestCase):
       if not res:
         gLogger.info('Msg: %s' % (result['Message']))
       cmd = 'SELECT COUNT( * ) FROM ProxyDB_Proxies WHERE UserName="%s"' % user
-      self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0), 'ProxyDB_Proxies must be empty'))
+      self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0), 'ProxyDB_Proxies must be empty')
       cmd = 'SELECT COUNT( * ) FROM ProxyDB_CleanProxies WHERE UserDN="%s"' % usersDNs[user]
       self.assertTrue(bool(db._query(cmd)['Value'][0][0] == (1 if res else 0)),
                       'ProxyDB_CleanProxies must ' + ('contain proxy' if res else 'be empty'))
