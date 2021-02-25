@@ -72,7 +72,7 @@ class AuthManagerClient(Client):
     self.log.debug('Store %s client to local configuration..' % clientMetadata['client_id'])
 
     data = CFG()
-    data.loadFromDict(clientMetadata):
+    data.loadFromDict(clientMetadata)
     comment = "Write fresh client credentials to /LocalInstallation section"
     self.localCfg.createNewSection('LocalConfiguration/AuthorizationClient', comment=comment, contents=data)
     self.localCfg.writeToFile(self.cfgFile)
