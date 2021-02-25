@@ -19,7 +19,7 @@ sys.stderr.write("\n")
 sys.stderr.write("Getting dirac-install from this location is no longer supported!\n")
 sys.stderr.write("\n")
 sys.stderr.write("Please update your scripts to use:\n")
-sys.stderr.write("    https://raw.githubusercontent.com/DIRACGrid/management/add-dirac-install/dirac-install.py\n")
+sys.stderr.write("    https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py\n")
 sys.stderr.write("\n")
 sys.stderr.write("#" * 100 + "\n")
 sys.stderr.write("#" * 100 + "\n")
@@ -32,7 +32,7 @@ if os.environ.get("DIRAC_DEPRECATED_FAIL", "No").lower() in ("y", "yes", "t", "t
 
 # Download dirac-install.py
 response = urlopen(
-    "https://raw.githubusercontent.com/chrisburr/management/add-dirac-install/dirac-install.py"
+    "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py"
 )
 code = response.getcode()
 if code > 200 or code >= 300:

@@ -18,7 +18,7 @@ except ImportError:
 
 # Download dirac-install.py
 response = urlopen(
-    "https://raw.githubusercontent.com/chrisburr/management/add-dirac-install/dirac-install.py"
+    "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py"
 )
 code = response.getcode()
 if code > 200 or code >= 300:
