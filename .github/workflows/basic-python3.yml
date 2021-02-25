@@ -27,7 +27,7 @@ jobs:
           #     gracefully, make them non-daemonic and use a suitable
           #     signalling mechanism such as an Event."
           - pytest --runslow -k 'not test_BaseType_Unicode and not test_nestedStructure and not testLockedClass'
-          - pylint src/
+          - pylint -E src/
 
     steps:
     - uses: actions/checkout@v2
