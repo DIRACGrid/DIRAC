@@ -444,6 +444,7 @@ def getProvidersForInstance(instance, providerType=None):
       return S_OK(data)
     result = gConfig.getSections('%s/%s' % (gBaseResourcesSection, instance))
   
+  # Return an empty list if the section does not exist
   if not result['OK'] or not result['Value'] or not providerType:
     return result
   

@@ -1,4 +1,9 @@
 """ Helper for /Registry section
+
+    Thare are present two important imports, that provide caching data(included VOMSes and IdPs)::
+
+      * :mod:`ProxyManagerData <FrameworkSystem.Client.ProxyManagerData>`
+      * :mod:`AuthManagerData <FrameworkSystem.Client.AuthManagerData>`
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -60,13 +65,13 @@ def getUsernameForDN(dn, usersList=None):
 
   return S_ERROR("No username found for dn %s" % dn)
 
-@deprecated("Use getDNsForUsername or getDNsForUsernameFromCS if need information only from CS")
+@deprecated("Use getDNsForUsername or getDNsForUsernameFromCS instead")
 def getDNForUsername(username):
   dnList = getDNsForUsernameFromSC(username)
   return S_OK(dnList) if dnList else S_ERROR("No DN found for user %s" % username)
 
 def getDNsForUsernameFromCS(username):
-  """ Find DNs for DIRAC user from CS
+  """ Find DNs for DIRAC user only from CS
 
       :param str username: DIRAC user
 

@@ -16,7 +16,7 @@ gCacheSession = ThreadSafe.Synchronizer()
 
 
 class Session(dict):
-  """ A dict instance to represent a Session object.
+  """ A dict instance to represent a authentication session object.
   
       :param session:
       :type session: str or dict
@@ -79,7 +79,7 @@ class Session(dict):
 
 
 class SessionManager(object):
-  """ Sessions cache """
+  """ Authentication sessions cache manager """
   def __init__(self, addTime=300, maxAge=3600 * 12):
     """ Con'r
 

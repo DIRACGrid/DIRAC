@@ -65,6 +65,7 @@ log = gLogger.getSubLogger(__name__)
 
 class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
   """ Implementation of :class:`authlib.oauth2.rfc6749.AuthorizationServer`.
+
       Initialize it ::
 
         server = AuthServer()
@@ -105,7 +106,13 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.register_endpoint(DeviceAuthorizationEndpoint)
   
   def saveToken(self, token, request):
+    """ Store tokens
+    
+        :param dict token: tokens
+        :param object request: http Request object, implemented for compatibility with authlib library (unuse)
+    """
     if 'refresh_token' in token:
+      # Cache it for one month
       self.addSession(token['refresh_token'], exp=int(time()) + (30 * 24 * 3600), **token)
     return None
 
@@ -165,6 +172,15 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     return S_OK(session['mainSession'])
 
   def access_token_generator(self, client, grant_type, user, scope):
+    """ A function to generate ``access_token``
+
+        :param object client: Client object
+        :param str grant_type: grant type
+        :param str user: user unique id
+        :param str scope: scope
+
+        :return: jwt object
+    """
     print('GENERATE ACCESS TOKEN')
     print('scope: %s' % scope)
     header = {'alg': 'RS256'}
@@ -181,6 +197,15 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     return jwt.encode(header, payload, key)
   
   def refresh_token_generator(self, client, grant_type, user, scope):
+    """ A function to generate ``refresh_token``
+
+        :param object client: Client object
+        :param str grant_type: grant type
+        :param str user: user unique id
+        :param str scope: scope
+
+        :return: jwt object
+    """
     print('GENERATE REFRESH TOKEN')
     print('scope: %s' % scope)
     header = {'alg': 'RS256'}

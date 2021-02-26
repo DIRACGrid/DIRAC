@@ -128,9 +128,9 @@ class AuthManagerHandler(RequestHandler):
         :return: S_OK()/S_ERROR()
     """
     def refreshIdP(idP):
-      """ Process to get information from VOMS API
+      """ Process to get information from IdPs using access tokens
 
-          :param str vo: VO name
+          :param str idP: identity provider name
       """
       result = cls.__idps.getIdProvider(idP, sessionManager=cls.__db)
       if result['OK']:

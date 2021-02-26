@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 
 
 class OAuth2Request(_OAuth2Request):
+  """ OAuth request object """
   # def __init__(self, method, uri, body=None, headers=None):
   #   super(OAuth2Request, self).__init__(method, uri.replace('http://', 'https://'), body, headers)
 

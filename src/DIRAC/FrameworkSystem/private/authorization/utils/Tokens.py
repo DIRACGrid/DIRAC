@@ -15,6 +15,7 @@ from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
 class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):
+  """ Implementation a Token object """
   def __init__(self, params=None, **kwargs):
     kwargs.update(params or {})
     self.sub = kwargs.get('sub')
@@ -49,10 +50,18 @@ class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):
   
   @property
   def scopes(self):
+    """ Get tokens scopes
+
+        :return: list
+    """
     return scope_to_list(self.scope) or []
   
   @property
   def groups(self):
+    """ Get tokens groups
+
+        :return: list
+    """
     return [s.split(':')[1] for s in self.scopes if s.startswith('g:')]
 
 
