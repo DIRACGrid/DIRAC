@@ -72,6 +72,8 @@ from __future__ import print_function
 import sys
 import os
 
+import six
+
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base import Script
@@ -81,8 +83,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Re
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
-
 __RCSID__ = "$Id$"
+
 
 class Params(object):
   def __init__(self):
@@ -196,12 +198,122 @@ class Params(object):
     return DIRAC.S_OK()
 
 
+def _runConfigurationWizard(setups, defaultSetup):
+  """The implementation of the configuration wizard"""
+  from prompt_toolkit import prompt, print_formatted_text, HTML
+  from prompt_toolkit.completion import FuzzyWordCompleter
+
+  # It makes no sense to have suggestions if there is no default so adjust the message accordingly
+  msg = ""
+  if setups:
+    msg = "press tab for suggestions"
+    if defaultSetup:
+      msg = "default</b> <green>%s</green><b>, %s" % (defaultSetup, msg)
+    msg = " (%s)" % msg
+  # Get the Setup
+  setup = prompt(
+      HTML("<b>Choose a DIRAC Setup%s:</b>\n" % msg),
+      completer=FuzzyWordCompleter(list(setups)),
+  )
+  if defaultSetup and not setup:
+    setup = defaultSetup
+  if setup not in setups:
+    print_formatted_text(HTML("Unknown setup <yellow>%s</yellow> chosen" % setup))
+    confirm = prompt(HTML("<b>Are you sure you want to continue?</b> "), default="n")
+    if confirm.lower() not in ["y", "yes"]:
+      return None
+
+  # Get the URL to the master CS
+  csURL = prompt(HTML("<b>Choose a configuration sever URL (leave blank for default):</b>\n"))
+  if not csURL:
+    csURL = setups[setup]
+
+  # Confirm
+  print_formatted_text(HTML(
+      "<b>Configuration is:</b>\n" +
+      "  * <b>Setup:</b> <green>%s</green>\n" % setup +
+      "  * <b>Configuration server:</b> <green>%s</green>\n" % csURL
+  ))
+  confirm = prompt(HTML("<b>Are you sure you want to continue?</b> "), default="y")
+  if confirm.lower() in ["y", "yes"]:
+    return setup, csURL
+  else:
+    return None
+
+
+def runConfigurationWizard(params):
+  """Interactively configure DIRAC using metadata from installed extensions"""
+  import subprocess
+  from prompt_toolkit import prompt, print_formatted_text, HTML
+  from DIRAC.Core.Utilities.DIRACScript import _extensionsByPriority, _getExtensionMetadata
+
+  extensions = _extensionsByPriority()
+
+  extensionMetadata = _getExtensionMetadata(extensions[-1])
+  defaultSetup = extensionMetadata.get("default_setup", "")
+  setups = extensionMetadata.get("setups", {})
+
+  # Run the wizard
+  try:
+    # Get the user's password and create a proxy so we can download from the CS
+    while True:
+      userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
+      result = subprocess.run(  # pylint: disable=no-member
+          ["dirac-proxy-init", "--nocs", "--pwstdin"],
+          input=userPasswd,
+          encoding="utf-8",
+          check=False,
+      )
+      if result.returncode == 0:
+        break
+      print_formatted_text(HTML(
+          "<red>Wizard failed, retrying...</red> (press Control + C to exit)\n"
+      ))
+
+    print_formatted_text()
+
+    # Ask the user for the appropriate configuration settings
+    while True:
+      result = _runConfigurationWizard(setups, defaultSetup)
+      if result:
+        break
+      print_formatted_text(HTML(
+          "<red>Wizard failed, retrying...</red> (press Control + C to exit)\n"
+      ))
+  except KeyboardInterrupt:
+    print_formatted_text(HTML("<red>Cancelled</red>"))
+    sys.exit(1)
+
+  # Apply the arguments to the params object
+  setup, csURL = result
+  params.setSetup(setup)
+  params.setServer(csURL)
+  params.setSkipCAChecks(True)
+
+  # Do the actual configuration
+  runDiracConfigure(params)
+
+  # Generate a new proxy without passing --nocs
+  result = subprocess.run(  # pylint: disable=no-member
+      ["dirac-proxy-init", "--pwstdin"],
+      input=userPasswd,
+      encoding="utf-8",
+      check=False,
+  )
+  sys.exit(result.returncode)
+
+
 @DIRACScript()
 def main():
-  params = Params()
-
   Script.disableCS()
+  params = Params()
+  if six.PY3 and len(sys.argv) < 2:
+    runConfigurationWizard(params)
+  else:
+    runDiracConfigure(params)
 
+
+def runDiracConfigure(params):
   Script.registerSwitch("S:", "Setup=", "Set <setup> as DIRAC setup", params.setSetup)
   Script.registerSwitch("e:", "Extensions=", "Set <extensions> as DIRAC extensions", params.setExtensions)
   Script.registerSwitch("C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", params.setServer)
@@ -237,7 +349,6 @@ def main():
   ]))
 
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getExtraCLICFGFiles()
 
   if not params.logLevel:
     params.logLevel = DIRAC.gConfig.getValue(cfgInstallPath('LogLevel'), '')
@@ -478,8 +589,7 @@ def main():
   # This has to be done for all VOs in the installation
 
   if params.skipVOMSDownload:
-    # We stop here
-    sys.exit(0)
+    return
 
   result = Registry.getVOMSServerInfo()
   if not result['OK']:
@@ -530,8 +640,6 @@ def main():
 
   if error:
     sys.exit(1)
-
-  sys.exit(0)
 
 
 if __name__ == "__main__":
