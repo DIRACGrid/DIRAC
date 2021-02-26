@@ -7,7 +7,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import sys
-import getpass
+from prompt_toolkit import prompt
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
@@ -297,11 +297,14 @@ def generateProxy(params):
   # First try reading the key from the file
   retVal = testChain.loadKeyFromFile(params.keyLoc, password=params.userPasswd)  # XXX why so commented?
   if not retVal['OK']:
-    passwdPrompt = "Enter Certificate password:"
     if params.stdinPasswd:
       userPasswd = sys.stdin.readline().strip("\n")
     else:
-      userPasswd = getpass.getpass(passwdPrompt)
+      try:
+        userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
+      except KeyboardInterrupt:
+        gLogger.error("Caught KeyboardInterrupt, exiting...")
+        sys.exit(1)
     params.userPasswd = userPasswd
 
   # Find location

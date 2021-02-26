@@ -21,6 +21,7 @@ dependencies:
   - numpy
   - pexpect >=4.0.1
   - pillow
+  - prompt-toolkit >=3,<4
   - psutil >=4.2.0
   - pyasn1 >0.4.1
   - pyasn1-modules
