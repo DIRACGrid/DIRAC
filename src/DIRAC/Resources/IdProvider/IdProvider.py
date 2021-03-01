@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
 
 __RCSID__ = "$Id$"
 
@@ -61,7 +62,7 @@ class IdProvider(object):
     """
     if not self.sessionManager:
       try:
-        from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
+        #from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
         self.sessionManager = gSessionManager
       except Exception as e:
         return S_ERROR('Session manager not able: %s' % e)
