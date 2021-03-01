@@ -15,8 +15,9 @@ from authlib.common.encoding import to_unicode, json_dumps, json_b64encode, urls
 
 from DIRAC import gLogger, S_OK, S_ERROR
 
-log = gLogger.getSubLogger(__name__)
-
+log = logging.getLogger('authlib')
+log.addHandler(logging.StreamHandler(gLogger.getSubLogger(__name__)))
+log.setLevel(logging.DEBUG)
 
 class OAuth2Code(dict):
   def __init__(self, params):
