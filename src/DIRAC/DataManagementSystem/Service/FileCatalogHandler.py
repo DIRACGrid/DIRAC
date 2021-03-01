@@ -1,111 +1,23 @@
-########################################################################
-# File: FileCatalogHandler.py
-########################################################################
 """
-:mod: FileCatalogHandler
-
-.. module: FileCatalogHandler
-  :synopsis: FileCatalogHandler is a simple Replica and Metadata Catalog service
-
+FileCatalogHandler is a simple Replica and Metadata Catalog service
+in the DIRAC framework
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-# imports
 import six
 from six import StringIO
 import csv
 import os
-from types import IntType, LongType, DictType, StringTypes, BooleanType, ListType
-# from DIRAC
-from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
-
-# This is a global instance of the FileCatalogDB class
-gFileCatalogDB = None
-
-
-def initializeFileCatalogHandler(serviceInfo):
-  """ handler initialisation """
-
-  global gFileCatalogDB
-
-  dbLocation = getServiceOption(serviceInfo, 'Database', 'DataManagement/FileCatalogDB')
-  gFileCatalogDB = FileCatalogDB(dbLocation)
-
-  databaseConfig = {}
-  # Obtain the plugins to be used for DB interaction
-  gLogger.info("Initializing with FileCatalog with following managers:")
-  defaultManagers = {'UserGroupManager': 'UserAndGroupManagerDB',
-                     'SEManager': 'SEManagerDB',
-                     'SecurityManager': 'NoSecurityManager',
-                     'DirectoryManager': 'DirectoryLevelTree',
-                     'FileManager': 'FileManager',
-                     'DirectoryMetadata': 'DirectoryMetadata',
-                     'FileMetadata': 'FileMetadata',
-                     'DatasetManager': 'DatasetManager'}
-  for configKey in sorted(defaultManagers.keys()):
-    defaultValue = defaultManagers[configKey]
-    configValue = getServiceOption(serviceInfo, configKey, defaultValue)
-    gLogger.info("%-20s : %-20s" % (str(configKey), str(configValue)))
-    databaseConfig[configKey] = configValue
-
-  # Obtain some general configuration of the database
-  gLogger.info("Initializing the FileCatalog with the following configuration:")
-  defaultConfig = {'UniqueGUID': False,
-                   'GlobalReadAccess': True,
-                   'LFNPFNConvention': 'Strong',
-                   'ResolvePFN': True,
-                   'DefaultUmask': 0o775,
-                   'ValidFileStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
-                   'ValidReplicaStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
-                   'VisibleFileStatus': ['AprioriGood'],
-                   'VisibleReplicaStatus': ['AprioriGood']}
-  for configKey in sorted(defaultConfig.keys()):
-    defaultValue = defaultConfig[configKey]
-    configValue = getServiceOption(serviceInfo, configKey, defaultValue)
-    gLogger.info("%-20s : %-20s" % (str(configKey), str(configValue)))
-    databaseConfig[configKey] = configValue
-  res = gFileCatalogDB.setConfig(databaseConfig)
-
-  gMonitor.registerActivity("AddFile", "Amount of addFile calls",
-                            "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
-  gMonitor.registerActivity("AddFileSuccessful", "Files successfully added",
-                            "FileCatalogHandler", "files/min", gMonitor.OP_SUM)
-  gMonitor.registerActivity("AddFileFailed", "Files failed to add",
-                            "FileCatalogHandler", "files/min", gMonitor.OP_SUM)
-
-  gMonitor.registerActivity("RemoveFile", "Amount of removeFile calls",
-                            "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
-  gMonitor.registerActivity("RemoveFileSuccessful", "Files successfully removed",
-                            "FileCatalogHandler", "files/min", gMonitor.OP_SUM)
-  gMonitor.registerActivity("RemoveFileFailed", "Files failed to remove",
-                            "FileCatalogHandler", "files/min", gMonitor.OP_SUM)
-
-  gMonitor.registerActivity("AddReplica", "Amount of addReplica calls",
-                            "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
-  gMonitor.registerActivity("AddReplicaSuccessful", "Replicas successfully added",
-                            "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM)
-  gMonitor.registerActivity("AddReplicaFailed", "Replicas failed to add",
-                            "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM)
-
-  gMonitor.registerActivity("RemoveReplica", "Amount of removeReplica calls",
-                            "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
-  gMonitor.registerActivity("RemoveReplicaSuccessful", "Replicas successfully removed",
-                            "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM)
-  gMonitor.registerActivity("RemoveReplicaFailed", "Replicas failed to remove",
-                            "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM)
-
-  gMonitor.registerActivity("ListDirectory", "Amount of listDirectory calls",
-                            "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
-
-  return res
 
 
 class FileCatalogHandler(RequestHandler):
@@ -115,39 +27,116 @@ class FileCatalogHandler(RequestHandler):
   A simple Replica and Metadata Catalog service.
   """
 
+  @classmethod
+  def initializeHandler(cls, serviceInfo):
+    """
+    Handler class initialization
+    """
+
+    dbLocation = getServiceOption( serviceInfo, 'Database', 'DataManagement/FileCatalogDB' )
+    cls.fileCatalogDB = FileCatalogDB( dbLocation )
+
+    databaseConfig = { }
+    # Obtain the plugins to be used for DB interaction
+    cls.log.info( "Initializing with FileCatalog with following managers:" )
+    defaultManagers = { 'UserGroupManager': 'UserAndGroupManagerDB',
+                        'SEManager': 'SEManagerDB',
+                        'SecurityManager': 'NoSecurityManager',
+                        'DirectoryManager': 'DirectoryLevelTree',
+                        'FileManager': 'FileManager',
+                        'DirectoryMetadata': 'DirectoryMetadata',
+                        'FileMetadata': 'FileMetadata',
+                        'DatasetManager': 'DatasetManager' }
+    for configKey in sorted( defaultManagers.keys() ):
+      defaultValue = defaultManagers[configKey]
+      configValue = getServiceOption( serviceInfo, configKey, defaultValue )
+      cls.log.info( "%-20s : %-20s" % (str( configKey ), str( configValue )) )
+      databaseConfig[configKey] = configValue
+
+    # Obtain some general configuration of the database
+    cls.log.info( "Initializing the FileCatalog with the following configuration:" )
+    defaultConfig = { 'UniqueGUID': False,
+                      'GlobalReadAccess': True,
+                      'LFNPFNConvention': 'Strong',
+                      'ResolvePFN': True,
+                      'DefaultUmask': 0o775,
+                      'ValidFileStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
+                      'ValidReplicaStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
+                      'VisibleFileStatus': ['AprioriGood'],
+                      'VisibleReplicaStatus': ['AprioriGood'] }
+    for configKey in sorted( defaultConfig.keys() ):
+      defaultValue = defaultConfig[configKey]
+      configValue = getServiceOption( serviceInfo, configKey, defaultValue )
+      cls.log.info( "%-20s : %-20s" % (str( configKey ), str( configValue )) )
+      databaseConfig[configKey] = configValue
+    res = cls.fileCatalogDB.setConfig( databaseConfig )
+
+    gMonitor.registerActivity( "AddFile", "Amount of addFile calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "AddFileSuccessful", "Files successfully added",
+                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "AddFileFailed", "Files failed to add",
+                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity( "RemoveFile", "Amount of removeFile calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RemoveFileSuccessful", "Files successfully removed",
+                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RemoveFileFailed", "Files failed to remove",
+                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity( "AddReplica", "Amount of addReplica calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "AddReplicaSuccessful", "Replicas successfully added",
+                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "AddReplicaFailed", "Replicas failed to add",
+                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity( "RemoveReplica", "Amount of removeReplica calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RemoveReplicaSuccessful", "Replicas successfully removed",
+                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity( "RemoveReplicaFailed", "Replicas failed to remove",
+                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+
+    gMonitor.registerActivity( "ListDirectory", "Amount of listDirectory calls",
+                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+
+    return res
+
   ########################################################################
   # Path operations (not updated)
   #
-  types_changePathOwner = [[ListType, DictType] + list(StringTypes)]
+  types_changePathOwner = [[list, dict] + list(six.string_types)]
 
   def export_changePathOwner(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
     """
-    return gFileCatalogDB.changePathOwner(lfns, self.getRemoteCredentials(), recursive)
+    return self.fileCatalogDB.changePathOwner(lfns, self.getRemoteCredentials(), recursive)
 
-  types_changePathGroup = [[ListType, DictType] + list(StringTypes)]
+  types_changePathGroup = [[list, dict] + list(six.string_types)]
 
   def export_changePathGroup(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
     """
-    return gFileCatalogDB.changePathGroup(lfns, self.getRemoteCredentials(), recursive)
+    return self.fileCatalogDB.changePathGroup(lfns, self.getRemoteCredentials(), recursive)
 
-  types_changePathMode = [[ListType, DictType] + list(StringTypes)]
+  types_changePathMode = [[list, dict] + list(six.string_types)]
 
   def export_changePathMode(self, lfns, recursive=False):
     """ Get replica info for the given list of LFNs
     """
-    return gFileCatalogDB.changePathMode(lfns, self.getRemoteCredentials(), recursive)
+    return self.fileCatalogDB.changePathMode(lfns, self.getRemoteCredentials(), recursive)
 
   ########################################################################
   # ACL Operations
   #
-  types_getPathPermissions = [[ListType, DictType] + list(StringTypes)]
+  types_getPathPermissions = [[list, dict] + list(six.string_types)]
 
   def export_getPathPermissions(self, lfns):
     """ Determine the ACL information for a supplied path
     """
-    return gFileCatalogDB.getPathPermissions(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.getPathPermissions(lfns, self.getRemoteCredentials())
 
   types_hasAccess = [[six.string_types, dict], [six.string_types, list, dict]]
 
@@ -165,7 +154,7 @@ class FileCatalogHandler(RequestHandler):
     if isinstance(paths, six.string_types):
       paths, opType = opType, paths
 
-    return gFileCatalogDB.hasAccess(opType, paths, self.getRemoteCredentials())
+    return self.fileCatalogDB.hasAccess(opType, paths, self.getRemoteCredentials())
 
   ###################################################################
   #
@@ -174,11 +163,11 @@ class FileCatalogHandler(RequestHandler):
 
   types_isOK = []
 
-  @staticmethod
-  def export_isOK():
+  @classmethod
+  def export_isOK(cls):
     """ returns S_OK if DB is connected
     """
-    if gFileCatalogDB and gFileCatalogDB._connected:
+    if cls.fileCatalogDB and cls.fileCatalogDB._connected:
       return S_OK()
     return S_ERROR('Server not connected to DB')
 
@@ -187,29 +176,29 @@ class FileCatalogHandler(RequestHandler):
   #  User/Group write operations
   #
 
-  types_addUser = [StringTypes]
+  types_addUser = [six.string_types]
 
   def export_addUser(self, userName):
     """ Add a new user to the File Catalog """
-    return gFileCatalogDB.addUser(userName, self.getRemoteCredentials())
+    return self.fileCatalogDB.addUser(userName, self.getRemoteCredentials())
 
-  types_deleteUser = [StringTypes]
+  types_deleteUser = [six.string_types]
 
   def export_deleteUser(self, userName):
     """ Delete user from the File Catalog """
-    return gFileCatalogDB.deleteUser(userName, self.getRemoteCredentials())
+    return self.fileCatalogDB.deleteUser(userName, self.getRemoteCredentials())
 
-  types_addGroup = [StringTypes]
+  types_addGroup = [six.string_types]
 
   def export_addGroup(self, groupName):
     """ Add a new group to the File Catalog """
-    return gFileCatalogDB.addGroup(groupName, self.getRemoteCredentials())
+    return self.fileCatalogDB.addGroup(groupName, self.getRemoteCredentials())
 
-  types_deleteGroup = [StringTypes]
+  types_deleteGroup = [six.string_types]
 
   def export_deleteGroup(self, groupName):
     """ Delete group from the File Catalog """
-    return gFileCatalogDB.deleteGroup(groupName, self.getRemoteCredentials())
+    return self.fileCatalogDB.deleteGroup(groupName, self.getRemoteCredentials())
 
   ###################################################################
   #
@@ -220,215 +209,215 @@ class FileCatalogHandler(RequestHandler):
 
   def export_getUsers(self):
     """ Get all the users defined in the File Catalog """
-    return gFileCatalogDB.getUsers(self.getRemoteCredentials())
+    return self.fileCatalogDB.getUsers(self.getRemoteCredentials())
 
   types_getGroups = []
 
   def export_getGroups(self):
     """ Get all the groups defined in the File Catalog """
-    return gFileCatalogDB.getGroups(self.getRemoteCredentials())
+    return self.fileCatalogDB.getGroups(self.getRemoteCredentials())
 
   ########################################################################
   #
   # Path read operations
   #
 
-  types_exists = [[ListType, DictType] + list(StringTypes)]
+  types_exists = [[list, dict] + list(six.string_types)]
 
   def export_exists(self, lfns):
     """ Check whether the supplied paths exists """
-    return gFileCatalogDB.exists(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.exists(lfns, self.getRemoteCredentials())
 
   ########################################################################
   #
   # File write operations
   #
 
-  types_addFile = [[ListType, DictType] + list(StringTypes)]
+  types_addFile = [[list, dict] + list(six.string_types)]
 
   def export_addFile(self, lfns):
     """ Register supplied files """
     gMonitor.addMark("AddFile", 1)
-    res = gFileCatalogDB.addFile(lfns, self.getRemoteCredentials())
+    res = self.fileCatalogDB.addFile(lfns, self.getRemoteCredentials())
     if res['OK']:
       gMonitor.addMark("AddFileSuccessful", len(res.get('Value', {}).get('Successful', [])))
       gMonitor.addMark("AddFileFailed", len(res.get('Value', {}).get('Failed', [])))
 
     return res
 
-  types_removeFile = [[ListType, DictType] + list(StringTypes)]
+  types_removeFile = [[list, dict] + list(six.string_types)]
 
   def export_removeFile(self, lfns):
     """ Remove the supplied lfns """
     gMonitor.addMark("RemoveFile", 1)
-    res = gFileCatalogDB.removeFile(lfns, self.getRemoteCredentials())
+    res = self.fileCatalogDB.removeFile(lfns, self.getRemoteCredentials())
     if res['OK']:
       gMonitor.addMark("RemoveFileSuccessful", len(res.get('Value', {}).get('Successful', [])))
       gMonitor.addMark("RemoveFileFailed", len(res.get('Value', {}).get('Failed', [])))
 
     return res
 
-  types_setFileStatus = [DictType]
+  types_setFileStatus = [dict]
 
   def export_setFileStatus(self, lfns):
     """ Remove the supplied lfns """
-    return gFileCatalogDB.setFileStatus(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.setFileStatus(lfns, self.getRemoteCredentials())
 
-  types_addReplica = [[ListType, DictType] + list(StringTypes)]
+  types_addReplica = [[list, dict] + list(six.string_types)]
 
   def export_addReplica(self, lfns):
     """ Register supplied replicas """
     gMonitor.addMark("AddReplica", 1)
-    res = gFileCatalogDB.addReplica(lfns, self.getRemoteCredentials())
+    res = self.fileCatalogDB.addReplica(lfns, self.getRemoteCredentials())
     if res['OK']:
       gMonitor.addMark("AddReplicaSuccessful", len(res.get('Value', {}).get('Successful', [])))
       gMonitor.addMark("AddReplicaFailed", len(res.get('Value', {}).get('Failed', [])))
 
     return res
 
-  types_removeReplica = [[ListType, DictType] + list(StringTypes)]
+  types_removeReplica = [[list, dict] + list(six.string_types)]
 
   def export_removeReplica(self, lfns):
     """ Remove the supplied replicas """
     gMonitor.addMark("RemoveReplica", 1)
-    res = gFileCatalogDB.removeReplica(lfns, self.getRemoteCredentials())
+    res = self.fileCatalogDB.removeReplica(lfns, self.getRemoteCredentials())
     if res['OK']:
       gMonitor.addMark("RemoveReplicaSuccessful", len(res.get('Value', {}).get('Successful', [])))
       gMonitor.addMark("RemoveReplicaFailed", len(res.get('Value', {}).get('Failed', [])))
 
     return res
 
-  types_setReplicaStatus = [[ListType, DictType] + list(StringTypes)]
+  types_setReplicaStatus = [[list, dict] + list(six.string_types)]
 
   def export_setReplicaStatus(self, lfns):
     """ Set the status for the supplied replicas """
-    return gFileCatalogDB.setReplicaStatus(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.setReplicaStatus(lfns, self.getRemoteCredentials())
 
-  types_setReplicaHost = [[ListType, DictType] + list(StringTypes)]
+  types_setReplicaHost = [[list, dict] + list(six.string_types)]
 
   def export_setReplicaHost(self, lfns):
     """ Change the registered SE for the supplied replicas """
-    return gFileCatalogDB.setReplicaHost(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.setReplicaHost(lfns, self.getRemoteCredentials())
 
-  types_addFileAncestors = [DictType]
+  types_addFileAncestors = [dict]
 
   def export_addFileAncestors(self, lfns):
     """ Add file ancestor information for the given list of LFNs """
-    return gFileCatalogDB.addFileAncestors(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.addFileAncestors(lfns, self.getRemoteCredentials())
 
   ########################################################################
   #
   # File read operations
   #
 
-  types_isFile = [[ListType, DictType] + list(StringTypes)]
+  types_isFile = [[list, dict] + list(six.string_types)]
 
   def export_isFile(self, lfns):
     """ Check whether the supplied lfns are files """
-    return gFileCatalogDB.isFile(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.isFile(lfns, self.getRemoteCredentials())
 
-  types_getFileSize = [[ListType, DictType] + list(StringTypes)]
+  types_getFileSize = [[list, dict] + list(six.string_types)]
 
   def export_getFileSize(self, lfns):
     """ Get the size associated to supplied lfns """
-    return gFileCatalogDB.getFileSize(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.getFileSize(lfns, self.getRemoteCredentials())
 
-  types_getFileMetadata = [[ListType, DictType] + list(StringTypes)]
+  types_getFileMetadata = [[list, dict] + list(six.string_types)]
 
   def export_getFileMetadata(self, lfns):
     """ Get the metadata associated to supplied lfns """
-    return gFileCatalogDB.getFileMetadata(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.getFileMetadata(lfns, self.getRemoteCredentials())
 
-  types_getReplicas = [[ListType, DictType] + list(StringTypes), BooleanType]
+  types_getReplicas = [[list, dict] + list(six.string_types), bool]
 
   def export_getReplicas(self, lfns, allStatus=False):
     """ Get replicas for supplied lfns """
-    return gFileCatalogDB.getReplicas(lfns, allStatus, self.getRemoteCredentials())
+    return self.fileCatalogDB.getReplicas(lfns, allStatus, self.getRemoteCredentials())
 
-  types_getReplicaStatus = [[ListType, DictType] + list(StringTypes)]
+  types_getReplicaStatus = [[list, dict] + list(six.string_types)]
 
   def export_getReplicaStatus(self, lfns):
     """ Get the status for the supplied replicas """
-    return gFileCatalogDB.getReplicaStatus(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.getReplicaStatus(lfns, self.getRemoteCredentials())
 
-  types_getFileAncestors = [[ListType, DictType], [ListType, IntType, LongType]]
+  types_getFileAncestors = [[list, dict], [list, int]]
 
   def export_getFileAncestors(self, lfns, depths):
     """ Get the status for the supplied replicas """
     dList = depths
-    if not isinstance(dList, ListType):
+    if not isinstance(dList, list):
       dList = [depths]
     lfnDict = dict.fromkeys(lfns, True)
-    return gFileCatalogDB.getFileAncestors(lfnDict, dList, self.getRemoteCredentials())
+    return self.fileCatalogDB.getFileAncestors(lfnDict, dList, self.getRemoteCredentials())
 
-  types_getFileDescendents = [[ListType, DictType], [ListType, IntType, LongType]]
+  types_getFileDescendents = [[list, dict], [list, int]]
 
   def export_getFileDescendents(self, lfns, depths):
     """ Get the status for the supplied replicas """
     dList = depths
-    if not isinstance(dList, ListType):
+    if not isinstance(dList, list):
       dList = [depths]
     lfnDict = dict.fromkeys(lfns, True)
-    return gFileCatalogDB.getFileDescendents(lfnDict, dList, self.getRemoteCredentials())
+    return self.fileCatalogDB.getFileDescendents(lfnDict, dList, self.getRemoteCredentials())
 
-  types_getLFNForGUID = [[ListType, DictType] + list(StringTypes)]
+  types_getLFNForGUID = [[list, dict] + list(six.string_types)]
 
   def export_getLFNForGUID(self, guids):
     """Get the matching lfns for given guids"""
-    return gFileCatalogDB.getLFNForGUID(guids, self.getRemoteCredentials())
+    return self.fileCatalogDB.getLFNForGUID(guids, self.getRemoteCredentials())
 
   ########################################################################
   #
   # Directory write operations
   #
 
-  types_createDirectory = [[ListType, DictType] + list(StringTypes)]
+  types_createDirectory = [[list, dict] + list(six.string_types)]
 
   def export_createDirectory(self, lfns):
     """ Create the supplied directories """
-    return gFileCatalogDB.createDirectory(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.createDirectory(lfns, self.getRemoteCredentials())
 
-  types_removeDirectory = [[ListType, DictType] + list(StringTypes)]
+  types_removeDirectory = [[list, dict] + list(six.string_types)]
 
   def export_removeDirectory(self, lfns):
     """ Remove the supplied directories """
-    return gFileCatalogDB.removeDirectory(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.removeDirectory(lfns, self.getRemoteCredentials())
 
   ########################################################################
   #
   # Directory read operations
   #
 
-  types_listDirectory = [[ListType, DictType] + list(StringTypes), BooleanType]
+  types_listDirectory = [[list, dict] + list(six.string_types), bool]
 
   def export_listDirectory(self, lfns, verbose):
     """ List the contents of supplied directories """
     gMonitor.addMark('ListDirectory', 1)
-    return gFileCatalogDB.listDirectory(lfns, self.getRemoteCredentials(), verbose=verbose)
+    return self.fileCatalogDB.listDirectory(lfns, self.getRemoteCredentials(), verbose=verbose)
 
-  types_isDirectory = [[ListType, DictType] + list(StringTypes)]
+  types_isDirectory = [[list, dict] + list(six.string_types)]
 
   def export_isDirectory(self, lfns):
     """ Determine whether supplied path is a directory """
-    return gFileCatalogDB.isDirectory(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.isDirectory(lfns, self.getRemoteCredentials())
 
-  types_getDirectoryMetadata = [[ListType, DictType] + list(StringTypes)]
+  types_getDirectoryMetadata = [[list, dict] + list(six.string_types)]
 
   def export_getDirectoryMetadata(self, lfns):
     """ Get the size of the supplied directory """
-    return gFileCatalogDB.getDirectoryMetadata(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.getDirectoryMetadata(lfns, self.getRemoteCredentials())
 
-  types_getDirectorySize = [[ListType, DictType] + list(StringTypes)]
+  types_getDirectorySize = [[list, dict] + list(six.string_types)]
 
   def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False):
     """ Get the size of the supplied directory """
-    return gFileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, self.getRemoteCredentials())
+    return self.fileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, self.getRemoteCredentials())
 
-  types_getDirectoryReplicas = [[ListType, DictType] + list(StringTypes), BooleanType]
+  types_getDirectoryReplicas = [[list, dict] + list(six.string_types), bool]
 
   def export_getDirectoryReplicas(self, lfns, allStatus=False):
     """ Get replicas for files in the supplied directory """
-    return gFileCatalogDB.getDirectoryReplicas(lfns, allStatus, self.getRemoteCredentials())
+    return self.fileCatalogDB.getDirectoryReplicas(lfns, allStatus, self.getRemoteCredentials())
 
   ########################################################################
   #
@@ -439,49 +428,49 @@ class FileCatalogHandler(RequestHandler):
 
   def export_getCatalogCounters(self):
     """ Get the number of registered directories, files and replicas in various tables """
-    return gFileCatalogDB.getCatalogCounters(self.getRemoteCredentials())
+    return self.fileCatalogDB.getCatalogCounters(self.getRemoteCredentials())
 
   types_rebuildDirectoryUsage = []
 
-  @staticmethod
-  def export_rebuildDirectoryUsage():
+  @classmethod
+  def export_rebuildDirectoryUsage(cls):
     """ Rebuild DirectoryUsage table from scratch """
-    return gFileCatalogDB.rebuildDirectoryUsage()
+    return cls.fileCatalogDB.rebuildDirectoryUsage()
 
   types_repairCatalog = []
 
   def export_repairCatalog(self):
     """ Repair the catalog inconsistencies """
-    return gFileCatalogDB.repairCatalog(self.getRemoteCredentials())
+    return self.fileCatalogDB.repairCatalog(self.getRemoteCredentials())
 
   ########################################################################
   # Metadata Catalog Operations
   #
 
-  types_addMetadataField = [StringTypes, StringTypes, StringTypes]
+  types_addMetadataField = [six.string_types, six.string_types, six.string_types]
 
   def export_addMetadataField(self, fieldName, fieldType, metaType='-d'):
     """ Add a new metadata field of the given type
     """
     if metaType.lower() == "-d":
-      return gFileCatalogDB.dmeta.addMetadataField(
+      return self.fileCatalogDB.dmeta.addMetadataField(
           fieldName, fieldType, self.getRemoteCredentials())
     elif metaType.lower() == "-f":
-      return gFileCatalogDB.fmeta.addMetadataField(
+      return self.fileCatalogDB.fmeta.addMetadataField(
           fieldName, fieldType, self.getRemoteCredentials())
     else:
       return S_ERROR('Unknown metadata type %s' % metaType)
 
-  types_deleteMetadataField = [StringTypes]
+  types_deleteMetadataField = [six.string_types]
 
   def export_deleteMetadataField(self, fieldName):
     """ Delete the metadata field
     """
-    result = gFileCatalogDB.dmeta.deleteMetadataField(fieldName, self.getRemoteCredentials())
+    result = self.fileCatalogDB.dmeta.deleteMetadataField(fieldName, self.getRemoteCredentials())
     error = ''
     if not result['OK']:
       error = result['Message']
-    result = gFileCatalogDB.fmeta.deleteMetadataField(fieldName, self.getRemoteCredentials())
+    result = self.fileCatalogDB.fmeta.deleteMetadataField(fieldName, self.getRemoteCredentials())
     if not result['OK']:
       if error:
         result["Message"] = error + "; " + result["Message"]
@@ -493,98 +482,98 @@ class FileCatalogHandler(RequestHandler):
   def export_getMetadataFields(self):
     """ Get all the metadata fields
     """
-    resultDir = gFileCatalogDB.dmeta.getMetadataFields(self.getRemoteCredentials())
+    resultDir = self.fileCatalogDB.dmeta.getMetadataFields(self.getRemoteCredentials())
     if not resultDir['OK']:
       return resultDir
-    resultFile = gFileCatalogDB.fmeta.getFileMetadataFields(self.getRemoteCredentials())
+    resultFile = self.fileCatalogDB.fmeta.getFileMetadataFields(self.getRemoteCredentials())
     if not resultFile['OK']:
       return resultFile
 
     return S_OK({'DirectoryMetaFields': resultDir['Value'],
                  'FileMetaFields': resultFile['Value']})
 
-  types_setMetadata = [StringTypes, DictType]
+  types_setMetadata = [six.string_types, dict]
 
   def export_setMetadata(self, path, metadatadict):
     """ Set metadata parameter for the given path
     """
-    return gFileCatalogDB.setMetadata(path, metadatadict, self.getRemoteCredentials())
+    return self.fileCatalogDB.setMetadata(path, metadatadict, self.getRemoteCredentials())
 
-  types_setMetadataBulk = [DictType]
+  types_setMetadataBulk = [dict]
 
   def export_setMetadataBulk(self, pathMetadataDict):
     """ Set metadata parameter for the given path
     """
-    return gFileCatalogDB.setMetadataBulk(pathMetadataDict, self.getRemoteCredentials())
+    return self.fileCatalogDB.setMetadataBulk(pathMetadataDict, self.getRemoteCredentials())
 
-  types_removeMetadata = [DictType]
+  types_removeMetadata = [dict]
 
   def export_removeMetadata(self, pathMetadataDict):
     """ Remove the specified metadata for the given path
     """
-    return gFileCatalogDB.removeMetadata(pathMetadataDict, self.getRemoteCredentials())
+    return self.fileCatalogDB.removeMetadata(pathMetadataDict, self.getRemoteCredentials())
 
-  types_getDirectoryUserMetadata = [StringTypes]
+  types_getDirectoryUserMetadata = [six.string_types]
 
   def export_getDirectoryUserMetadata(self, path):
     """ Get all the metadata valid for the given directory path
     """
-    return gFileCatalogDB.dmeta.getDirectoryMetadata(path, self.getRemoteCredentials())
+    return self.fileCatalogDB.dmeta.getDirectoryMetadata(path, self.getRemoteCredentials())
 
-  types_getFileUserMetadata = [StringTypes]
+  types_getFileUserMetadata = [six.string_types]
 
   def export_getFileUserMetadata(self, path):
     """ Get all the metadata valid for the given file
     """
-    return gFileCatalogDB.fmeta.getFileUserMetadata(path, self.getRemoteCredentials())
+    return self.fileCatalogDB.fmeta.getFileUserMetadata(path, self.getRemoteCredentials())
 
-  types_findDirectoriesByMetadata = [DictType]
+  types_findDirectoriesByMetadata = [dict]
 
   def export_findDirectoriesByMetadata(self, metaDict, path='/'):
     """ Find all the directories satisfying the given metadata set
     """
-    return gFileCatalogDB.dmeta.findDirectoriesByMetadata(
+    return self.fileCatalogDB.dmeta.findDirectoriesByMetadata(
         metaDict, path, self.getRemoteCredentials())
 
-  types_findFilesByMetadata = [DictType, StringTypes]
+  types_findFilesByMetadata = [dict, six.string_types]
 
   def export_findFilesByMetadata(self, metaDict, path='/'):
     """ Find all the files satisfying the given metadata set
     """
-    result = gFileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
+    result = self.fileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
     if not result['OK']:
       return result
     lfns = result['Value'].values()
     return S_OK(lfns)
 
-  types_getReplicasByMetadata = [DictType, StringTypes, BooleanType]
+  types_getReplicasByMetadata = [dict, six.string_types, bool]
 
   def export_getReplicasByMetadata(self, metaDict, path='/', allStatus=False):
     """ Find all the files satisfying the given metadata set
     """
-    return gFileCatalogDB.fileManager.getReplicasByMetadata(metaDict,
+    return self.fileCatalogDB.fileManager.getReplicasByMetadata(metaDict,
                                                             path,
                                                             allStatus,
                                                             self.getRemoteCredentials())
 
-  types_findFilesByMetadataDetailed = [DictType, StringTypes]
+  types_findFilesByMetadataDetailed = [dict, six.string_types]
 
   def export_findFilesByMetadataDetailed(self, metaDict, path='/'):
     """ Find all the files satisfying the given metadata set
     """
-    result = gFileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
+    result = self.fileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
     if not result['OK'] or not result['Value']:
       return result
 
     lfns = result['Value'].values()
-    return gFileCatalogDB.getFileDetails(lfns, self.getRemoteCredentials())
+    return self.fileCatalogDB.getFileDetails(lfns, self.getRemoteCredentials())
 
-  types_findFilesByMetadataWeb = [DictType, StringTypes, [IntType, LongType], [IntType, LongType]]
+  types_findFilesByMetadataWeb = [dict, six.string_types, int, int]
 
   def export_findFilesByMetadataWeb(self, metaDict, path, startItem, maxItems):
     """ Find files satisfying the given metadata set
     """
-    result = gFileCatalogDB.dmeta.findFileIDsByMetadata(
+    result = self.fileCatalogDB.dmeta.findFileIDsByMetadata(
         metaDict, path, self.getRemoteCredentials(), startItem, maxItems)
     if not result['OK'] or not result['Value']:
       return result
@@ -592,12 +581,12 @@ class FileCatalogHandler(RequestHandler):
     fileIDs = result['Value']
     totalRecords = result['TotalRecords']
 
-    result = gFileCatalogDB.fileManager._getFileLFNs(fileIDs)
+    result = self.fileCatalogDB.fileManager._getFileLFNs(fileIDs)
     if not result['OK']:
       return result
 
     lfnsResultList = result['Value']['Successful'].values()
-    resultDetails = gFileCatalogDB.getFileDetails(lfnsResultList, self.getRemoteCredentials())
+    resultDetails = self.fileCatalogDB.getFileDetails(lfnsResultList, self.getRemoteCredentials())
     if not resultDetails['OK']:
       return resultDetails
 
@@ -607,7 +596,7 @@ class FileCatalogHandler(RequestHandler):
   def findFilesByMetadataWeb(self, metaDict, path, startItem, maxItems):
     """ Find all the files satisfying the given metadata set
     """
-    result = gFileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
+    result = self.fileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
     if not result['OK'] or not result['Value']:
       return result
 
@@ -625,115 +614,115 @@ class FileCatalogHandler(RequestHandler):
       end = totalRecords
     lfnsResultList = lfns[start:end]
 
-    resultDetails = gFileCatalogDB.getFileDetails(lfnsResultList, self.getRemoteCredentials())
+    resultDetails = self.fileCatalogDB.getFileDetails(lfnsResultList, self.getRemoteCredentials())
     if not resultDetails['OK']:
       return resultDetails
 
     result = S_OK({"TotalRecords": totalRecords, "Records": resultDetails['Value']})
     return result
 
-  types_getCompatibleMetadata = [DictType, StringTypes]
+  types_getCompatibleMetadata = [dict, six.string_types]
 
   def export_getCompatibleMetadata(self, metaDict, path='/'):
     """ Get metadata values compatible with the given metadata subset
     """
-    return gFileCatalogDB.dmeta.getCompatibleMetadata(metaDict, path, self.getRemoteCredentials())
+    return self.fileCatalogDB.dmeta.getCompatibleMetadata(metaDict, path, self.getRemoteCredentials())
 
-  types_addMetadataSet = [StringTypes, DictType]
+  types_addMetadataSet = [six.string_types, dict]
 
   def export_addMetadataSet(self, setName, setDict):
     """ Add a new metadata set
     """
-    return gFileCatalogDB.dmeta.addMetadataSet(setName, setDict, self.getRemoteCredentials())
+    return self.fileCatalogDB.dmeta.addMetadataSet(setName, setDict, self.getRemoteCredentials())
 
-  types_getMetadataSet = [StringTypes, BooleanType]
+  types_getMetadataSet = [six.string_types, bool]
 
   def export_getMetadataSet(self, setName, expandFlag):
     """ Add a new metadata set
     """
-    return gFileCatalogDB.dmeta.getMetadataSet(setName, expandFlag, self.getRemoteCredentials())
+    return self.fileCatalogDB.dmeta.getMetadataSet(setName, expandFlag, self.getRemoteCredentials())
 
 #########################################################################################
 #
 #  Dataset manipulation methods
 #
-  types_addDataset = [DictType]
+  types_addDataset = [dict]
 
   def export_addDataset(self, datasets):
     """ Add a new dynamic dataset defined by its meta query
     """
-    return gFileCatalogDB.datasetManager.addDataset(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.addDataset(datasets, self.getRemoteCredentials())
 
-  types_addDatasetAnnotation = [DictType]
+  types_addDatasetAnnotation = [dict]
 
   def export_addDatasetAnnotation(self, datasetDict):
     """ Add annotation to an already created dataset
     """
-    return gFileCatalogDB.datasetManager.addDatasetAnnotation(
+    return self.fileCatalogDB.datasetManager.addDatasetAnnotation(
         datasetDict, self.getRemoteCredentials())
 
-  types_removeDataset = [DictType]
+  types_removeDataset = [dict]
 
   def export_removeDataset(self, datasets):
     """ Check the given dynamic dataset for changes since its definition
     """
-    return gFileCatalogDB.datasetManager.removeDataset(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.removeDataset(datasets, self.getRemoteCredentials())
 
-  types_checkDataset = [DictType]
+  types_checkDataset = [dict]
 
   def export_checkDataset(self, datasets):
     """ Check the given dynamic dataset for changes since its definition
     """
-    return gFileCatalogDB.datasetManager.checkDataset(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.checkDataset(datasets, self.getRemoteCredentials())
 
-  types_updateDataset = [DictType]
+  types_updateDataset = [dict]
 
   def export_updateDataset(self, datasets):
     """ Update the given dynamic dataset for changes since its definition
     """
-    return gFileCatalogDB.datasetManager.updateDataset(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.updateDataset(datasets, self.getRemoteCredentials())
 
-  types_getDatasets = [DictType]
+  types_getDatasets = [dict]
 
   def export_getDatasets(self, datasets):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
-    return gFileCatalogDB.datasetManager.getDatasets(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.getDatasets(datasets, self.getRemoteCredentials())
 
-  types_getDatasetParameters = [DictType]
+  types_getDatasetParameters = [dict]
 
   def export_getDatasetParameters(self, datasets):
     """ Get parameters of the given dynamic dataset as they are stored in the database
     """
-    return gFileCatalogDB.datasetManager.getDatasetParameters(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.getDatasetParameters(datasets, self.getRemoteCredentials())
 
-  types_getDatasetAnnotation = [DictType]
+  types_getDatasetAnnotation = [dict]
 
   def export_getDatasetAnnotation(self, datasets):
     """ Get annotation of the given datasets
     """
-    return gFileCatalogDB.datasetManager.getDatasetAnnotation(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.getDatasetAnnotation(datasets, self.getRemoteCredentials())
 
-  types_freezeDataset = [DictType]
+  types_freezeDataset = [dict]
 
   def export_freezeDataset(self, datasets):
     """ Freeze the contents of the dataset making it effectively static
     """
-    return gFileCatalogDB.datasetManager.freezeDataset(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.freezeDataset(datasets, self.getRemoteCredentials())
 
-  types_releaseDataset = [DictType]
+  types_releaseDataset = [dict]
 
   def export_releaseDataset(self, datasets):
     """ Release the contents of the frozen dataset allowing changes in its contents
     """
-    return gFileCatalogDB.datasetManager.releaseDataset(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.releaseDataset(datasets, self.getRemoteCredentials())
 
-  types_getDatasetFiles = [DictType]
+  types_getDatasetFiles = [dict]
 
   def export_getDatasetFiles(self, datasets):
     """ Get lfns in the given dataset
     """
-    return gFileCatalogDB.datasetManager.getDatasetFiles(datasets, self.getRemoteCredentials())
+    return self.fileCatalogDB.datasetManager.getDatasetFiles(datasets, self.getRemoteCredentials())
 
   def getSEDump(self, seName):
     """
@@ -743,7 +732,7 @@ class FileCatalogHandler(RequestHandler):
 
         :returns: S_OK with list of tuples (lfn, checksum, size)
     """
-    return gFileCatalogDB.getSEDump(seName)['Value']
+    return self.fileCatalogDB.getSEDump(seName)['Value']
 
   def transfer_toClient(self, seName, token, fileHelper):
     """ This method used to transfer the SEDump to the client,
@@ -770,7 +759,7 @@ class FileCatalogHandler(RequestHandler):
       return ret
 
     except Exception as e:
-      gLogger.exception("Exception while sending seDump", repr(e))
-      return S_ERROR("Exception while sendind seDump: %s" % repr(e))
+      self.log.exception("Exception while sending seDump", repr(e))
+      return S_ERROR("Exception while sending seDump: %s" % repr(e))
     finally:
       csvOutput.close()
