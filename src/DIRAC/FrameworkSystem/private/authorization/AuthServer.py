@@ -87,6 +87,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
     self.metadata = {}
+    #TODO: move to conf utility
     result = gConfig.getOptionsDictRecursively('/Systems/Framework/Production/Services/AuthManager/AuthorizationServer')
     if result['OK']:
       data = {}

@@ -21,6 +21,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Utilities.Glue2 import getGlue2CEInfo
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 
 
 def getGridVOs():
@@ -578,3 +579,18 @@ def getDIRACGOCDictionary():
 
   log.debug('End function.')
   return S_OK(dictionary)
+
+
+def getAuthClientsFromCS():
+  """ Get all registred in the configuration authentication clients
+
+      :return: S_OK(dict)/S_ERROR() -- dictionary contain all registred clients in the configuration
+  """
+  clients = {}
+  path = '/Systems/Framework/%s/Services/AuthManager' % getSystemInstance("Framework")
+  result = gConfig.getSections(path)
+  if not result['OK']:
+    return result
+  
+  return gConfig.getOptionsDictRecursively(path) if 'Clients' in result['Value'] else {}
+

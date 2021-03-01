@@ -6,12 +6,6 @@ from __future__ import print_function
 
 import json
 from pprint import pprint
-
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
-
-__RCSID__ = "$Id$"
-
 from authlib.oauth2.rfc6749.wrappers import OAuth2Token
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin, OAuth2TokenMixin
 from sqlalchemy import Column, Integer, Text, BigInteger, String
@@ -20,6 +14,13 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.types import TypeDecorator, VARCHAR
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.ext.declarative import declarative_base
+
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthClientsFromCS
+
+__RCSID__ = "$Id$"
+
 
 # Next two classes to help sqlalchemy work with dicts
 # https://docs.sqlalchemy.org/en/14/orm/extensions/mutable.html#establishing-mutability-on-scalar-column-values
@@ -174,6 +175,16 @@ class AuthDB(SQLAlchemyDB):
 
         :return: S_OK(dict)/S_ERROR()
     """
+    # To begin with, let's see if this client is described in the configuration
+    result = getAuthClientsFromCS()
+    if not result['OK']:
+      return result
+    clientsDict = result['Value']
+    for cliDict in list(clientsDict.values()):
+      if clientID == cliDict['client_id']:
+        return S_OK(cliDict)
+    
+    # If not let's search it in the database
     session = self.session()
     try:
       client = session.query(Client).filter(Client.client_id==clientID).first()
