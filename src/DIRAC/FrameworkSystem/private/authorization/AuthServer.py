@@ -60,6 +60,11 @@ from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
 # from DIRAC.Core.Web.SessionData import SessionStorage
 
+import logging
+import sys
+log = logging.getLogger('authlib')
+log.addHandler(logging.StreamHandler(sys.stdout))
+log.setLevel(logging.DEBUG)
 log = gLogger.getSubLogger(__name__)
 
 
@@ -77,6 +82,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.idps = IdProviderFactory()
     ClientManager.__init__(self, self.__db)
     SessionManager.__init__(self)
+    # Privide two authlib methods query_client and save_token
     _AuthorizationServer.__init__(self, query_client=self.getClient, save_token=self.saveToken)
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
