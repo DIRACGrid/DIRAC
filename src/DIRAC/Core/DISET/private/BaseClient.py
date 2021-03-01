@@ -271,7 +271,7 @@ class BaseClient(object):
       self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
 
     if delegatedID or delegatedDN:
-      self.__extraCredentials = (delegatedID or delegatedDN, delegatedGroup)
+      self.__extraCredentials = (delegatedDN or delegatedID, delegatedGroup)
     return S_OK()
 
   def __findServiceURL(self):
