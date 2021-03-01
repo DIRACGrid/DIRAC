@@ -21,7 +21,7 @@ def codeRequestInFileId(plotRequest, compressIfPossible=True):
   compress = compressIfPossible and gZCompressionEnabled
   thbStub = False
   if compress:
-    plotStub = "Z:%s" % base64.urlsafe_b64encode(zlib.compress(DEncode.encode(plotRequest), 9))
+    plotStub = "Z:%s" % base64.urlsafe_b64encode(zlib.compress(DEncode.encode(plotRequest), 9)).decode()
   elif not gForceRawEncoding:
     plotStub = "S:%s" % base64.urlsafe_b64encode(DEncode.encode(plotRequest))
   else:
@@ -32,11 +32,11 @@ def codeRequestInFileId(plotRequest, compressIfPossible=True):
     thbStub = plotStub
     extraArgs['thumbnail'] = False
     if compress:
-      plotStub = "Z:%s" % base64.urlsafe_b64encode(zlib.compress(DEncode.encode(plotRequest), 9))
+      plotStub = "Z:%s" % base64.urlsafe_b64encode(zlib.compress(DEncode.encode(plotRequest), 9)).decode()
     elif not gForceRawEncoding:
-      plotStub = "S:%s" % base64.urlsafe_b64encode(DEncode.encode(plotRequest))
+      plotStub = "S:%s" % base64.urlsafe_b64encode(DEncode.encode(plotRequest)).decode()
     else:
-      plotStub = "R:%s" % DEncode.encode(plotRequest)
+      plotStub = "R:%s" % DEncode.encode(plotRequest).decode()
   return S_OK({'plot': plotStub, 'thumbnail': thbStub})
 
 

@@ -285,7 +285,7 @@ class ConfigurationData(object):
 
   def getCompressedData(self):
     if self.__compressedConfigurationData is None:
-      self.__compressedConfigurationData = zlib.compress(str(self.remoteCFG), 9)
+      self.__compressedConfigurationData = zlib.compress(str(self.remoteCFG).encode(), 9)
     return self.__compressedConfigurationData
 
   def isMaster(self):

@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import six
+import base64
 import zlib
 
 from six.moves import range
@@ -923,15 +924,16 @@ class JobDB(DB):
     """Return compressed JDL string."""
     if not self.compressJDLs:
       return jdl
-    return zlib.compress(jdl, -1).encode('base64')
+    compressed = zlib.compress(jdl.encode(), -1)
+    return base64.b64encode(compressed).decode()
 
   def __extractJDL(self, compressedJDL):
     """Return decompressed JDL string."""
-    # the starting bracket is guaranteeed by JobManager.submitJob
+    # the starting bracket is guaranteed by JobManager.submitJob
     # we need the check to be backward compatible
     if compressedJDL.startswith('['):
       return compressedJDL
-    return zlib.decompress(compressedJDL.decode('base64'))
+    return zlib.decompress(base64.b64decode(compressedJDL))
 
   def __insertNewJDL(self, jdl):
     """Insert a new JDL in the system, this produces a new JobID
