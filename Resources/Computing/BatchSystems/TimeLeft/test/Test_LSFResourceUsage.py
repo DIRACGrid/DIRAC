@@ -1,5 +1,4 @@
 """ Test class for lsfResourceUsage utility
-
 """
 
 import os
