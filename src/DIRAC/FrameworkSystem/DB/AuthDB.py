@@ -183,8 +183,8 @@ class AuthDB(SQLAlchemyDB):
     clientsDict = result['Value']
     for cliDict in list(clientsDict.values()):
       if clientID == cliDict['client_id']:
-        cliDict.get('client_id_issued_at', int(time()))
-        cliDict.get('client_secret_expires_at', 0)
+        cliDict['client_id_issued_at'] = cliDict.get('client_id_issued_at', int(time()))
+        cliDict['client_secret_expires_at'] = cliDict.get('client_secret_expires_at', 0)
         return S_OK(cliDict)
     
     # If not let's search it in the database
