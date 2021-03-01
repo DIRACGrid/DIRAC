@@ -225,6 +225,11 @@ class JobAgent(AgentModule):
     self.stopAfterFailedMatches = self.am_getOption('StopAfterFailedMatches', self.stopAfterFailedMatches)
 
     if not jobRequest['OK']:
+
+      # if we don't match a job, independently from the reason,
+      # we wait a bit longer before trying again
+      self.am_setOption("PollingTime", int(self.am_getOption("PollingTime") * 1.5))
+
       if re.search('No match found', jobRequest['Message']):
         self.log.notice('Job request OK, but no match found', ': %s' % (jobRequest['Message']))
         self.matchFailedCount += 1
