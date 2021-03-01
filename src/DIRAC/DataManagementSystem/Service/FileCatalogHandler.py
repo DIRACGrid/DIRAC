@@ -22,8 +22,6 @@ from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 
 class FileCatalogHandler(RequestHandler):
   """
-  ..class:: FileCatalogHandler
-
   A simple Replica and Metadata Catalog service.
   """
 
@@ -33,74 +31,74 @@ class FileCatalogHandler(RequestHandler):
     Handler class initialization
     """
 
-    dbLocation = getServiceOption( serviceInfo, 'Database', 'DataManagement/FileCatalogDB' )
-    cls.fileCatalogDB = FileCatalogDB( dbLocation )
+    dbLocation = getServiceOption(serviceInfo, 'Database', 'DataManagement/FileCatalogDB')
+    cls.fileCatalogDB = FileCatalogDB(dbLocation)
 
-    databaseConfig = { }
+    databaseConfig = {}
     # Obtain the plugins to be used for DB interaction
-    cls.log.info( "Initializing with FileCatalog with following managers:" )
-    defaultManagers = { 'UserGroupManager': 'UserAndGroupManagerDB',
-                        'SEManager': 'SEManagerDB',
-                        'SecurityManager': 'NoSecurityManager',
-                        'DirectoryManager': 'DirectoryLevelTree',
-                        'FileManager': 'FileManager',
-                        'DirectoryMetadata': 'DirectoryMetadata',
-                        'FileMetadata': 'FileMetadata',
-                        'DatasetManager': 'DatasetManager' }
-    for configKey in sorted( defaultManagers.keys() ):
+    cls.log.info("Initializing with FileCatalog with following managers:")
+    defaultManagers = {'UserGroupManager': 'UserAndGroupManagerDB',
+                       'SEManager': 'SEManagerDB',
+                       'SecurityManager': 'NoSecurityManager',
+                       'DirectoryManager': 'DirectoryLevelTree',
+                       'FileManager': 'FileManager',
+                       'DirectoryMetadata': 'DirectoryMetadata',
+                       'FileMetadata': 'FileMetadata',
+                       'DatasetManager': 'DatasetManager'}
+    for configKey in sorted(defaultManagers.keys()):
       defaultValue = defaultManagers[configKey]
-      configValue = getServiceOption( serviceInfo, configKey, defaultValue )
-      cls.log.info( "%-20s : %-20s" % (str( configKey ), str( configValue )) )
+      configValue = getServiceOption(serviceInfo, configKey, defaultValue)
+      cls.log.info("%-20s : %-20s" % (str(configKey), str(configValue)))
       databaseConfig[configKey] = configValue
 
     # Obtain some general configuration of the database
-    cls.log.info( "Initializing the FileCatalog with the following configuration:" )
-    defaultConfig = { 'UniqueGUID': False,
-                      'GlobalReadAccess': True,
-                      'LFNPFNConvention': 'Strong',
-                      'ResolvePFN': True,
-                      'DefaultUmask': 0o775,
-                      'ValidFileStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
-                      'ValidReplicaStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
-                      'VisibleFileStatus': ['AprioriGood'],
-                      'VisibleReplicaStatus': ['AprioriGood'] }
-    for configKey in sorted( defaultConfig.keys() ):
+    cls.log.info("Initializing the FileCatalog with the following configuration:")
+    defaultConfig = {'UniqueGUID': False,
+                     'GlobalReadAccess': True,
+                     'LFNPFNConvention': 'Strong',
+                     'ResolvePFN': True,
+                     'DefaultUmask': 0o775,
+                     'ValidFileStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
+                     'ValidReplicaStatus': ['AprioriGood', 'Trash', 'Removing', 'Probing'],
+                     'VisibleFileStatus': ['AprioriGood'],
+                     'VisibleReplicaStatus': ['AprioriGood']}
+    for configKey in sorted(defaultConfig.keys()):
       defaultValue = defaultConfig[configKey]
-      configValue = getServiceOption( serviceInfo, configKey, defaultValue )
-      cls.log.info( "%-20s : %-20s" % (str( configKey ), str( configValue )) )
+      configValue = getServiceOption(serviceInfo, configKey, defaultValue)
+      cls.log.info("%-20s : %-20s" % (str(configKey), str(configValue)))
       databaseConfig[configKey] = configValue
-    res = cls.fileCatalogDB.setConfig( databaseConfig )
+    res = cls.fileCatalogDB.setConfig(databaseConfig)
 
-    gMonitor.registerActivity( "AddFile", "Amount of addFile calls",
-                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "AddFileSuccessful", "Files successfully added",
-                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "AddFileFailed", "Files failed to add",
-                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("AddFile", "Amount of addFile calls",
+                              "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("AddFileSuccessful", "Files successfully added",
+                              "FileCatalogHandler", "files/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("AddFileFailed", "Files failed to add",
+                              "FileCatalogHandler", "files/min", gMonitor.OP_SUM)
 
-    gMonitor.registerActivity( "RemoveFile", "Amount of removeFile calls",
-                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveFileSuccessful", "Files successfully removed",
-                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveFileFailed", "Files failed to remove",
-                               "FileCatalogHandler", "files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("RemoveFile", "Amount of removeFile calls",
+                              "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("RemoveFileSuccessful", "Files successfully removed",
+                              "FileCatalogHandler", "files/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("RemoveFileFailed", "Files failed to remove",
+                              "FileCatalogHandler", "files/min", gMonitor.OP_SUM)
 
-    gMonitor.registerActivity( "AddReplica", "Amount of addReplica calls",
-                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "AddReplicaSuccessful", "Replicas successfully added",
-                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "AddReplicaFailed", "Replicas failed to add",
-                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("AddReplica", "Amount of addReplica calls",
+                              "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("AddReplicaSuccessful", "Replicas successfully added",
+                              "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("AddReplicaFailed", "Replicas failed to add",
+                              "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM)
 
-    gMonitor.registerActivity( "RemoveReplica", "Amount of removeReplica calls",
-                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveReplicaSuccessful", "Replicas successfully removed",
-                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveReplicaFailed", "Replicas failed to remove",
-                               "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("RemoveReplica", "Amount of removeReplica calls",
+                              "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("RemoveReplicaSuccessful", "Replicas successfully removed",
+                              "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("RemoveReplicaFailed", "Replicas failed to remove",
+                              "FileCatalogHandler", "replicas/min", gMonitor.OP_SUM)
 
-    gMonitor.registerActivity( "ListDirectory", "Amount of listDirectory calls",
-                               "FileCatalogHandler", "calls/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("ListDirectory", "Amount of listDirectory calls",
+                              "FileCatalogHandler", "calls/min", gMonitor.OP_SUM)
 
     return res
 
@@ -552,9 +550,9 @@ class FileCatalogHandler(RequestHandler):
     """ Find all the files satisfying the given metadata set
     """
     return self.fileCatalogDB.fileManager.getReplicasByMetadata(metaDict,
-                                                            path,
-                                                            allStatus,
-                                                            self.getRemoteCredentials())
+                                                                path,
+                                                                allStatus,
+                                                                self.getRemoteCredentials())
 
   types_findFilesByMetadataDetailed = [dict, six.string_types]
 
