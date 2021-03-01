@@ -137,6 +137,24 @@ class JobAgent(AgentModule):
     if os.path.exists('/var/lib/dirac_drain'):
       return self.__finish('Node is being drained by an operator')
 
+    # Check if we can match jobs at all
+    self.log.verbose('Job Agent execution loop')
+    result = self.computingElement.available()
+    if not result['OK']:
+      self.log.info('Resource is not available', result['Message'])
+      return self.__finish('CE Not Available')
+
+    ceInfoDict = result['CEInfoDict']
+    runningJobs = ceInfoDict.get("RunningJobs")
+    availableSlots = result['Value']
+
+    if not availableSlots:
+      if runningJobs:
+        self.log.info('No available slots', ': %d running jobs' % runningJobs)
+        return S_OK('Job Agent cycle complete with %d running jobs' % runningJobs)
+      self.log.info('CE is not available (and there are no running jobs)')
+      return self.__finish('CE Not Available')
+
     if self.jobCount:
       # Only call timeLeft utility after a job has been picked up
       self.log.info('Attempting to check CPU time left for filling mode')
@@ -164,23 +182,7 @@ class JobAgent(AgentModule):
       else:
         return self.__finish('Filling Mode is Disabled')
 
-    self.log.verbose('Job Agent execution loop')
-    result = self.computingElement.available()
-    if not result['OK']:
-      self.log.info('Resource is not available', result['Message'])
-      return self.__finish('CE Not Available')
-
-    ceInfoDict = result['CEInfoDict']
-    runningJobs = ceInfoDict.get("RunningJobs")
-    availableSlots = result['Value']
-
-    if not availableSlots:
-      if runningJobs:
-        self.log.info('No available slots', '%d running jobs' % runningJobs)
-        return S_OK('Job Agent cycle complete with %d running jobs' % runningJobs)
-      self.log.info('CE is not available (and there are no running jobs)')
-      return self.__finish('CE Not Available')
-
+    # if we are here we assume that a job can be matched
     result = self.computingElement.getDescription()
     if not result['OK']:
       return result
