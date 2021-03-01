@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+from time import time
 from pprint import pprint
 from authlib.oauth2.rfc6749.wrappers import OAuth2Token
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin, OAuth2TokenMixin
@@ -182,6 +183,8 @@ class AuthDB(SQLAlchemyDB):
     clientsDict = result['Value']
     for cliDict in list(clientsDict.values()):
       if clientID == cliDict['client_id']:
+        cliDict.get('client_id_issued_at', int(time()))
+        cliDict.get('client_secret_expires_at', 0)
         return S_OK(cliDict)
     
     # If not let's search it in the database
