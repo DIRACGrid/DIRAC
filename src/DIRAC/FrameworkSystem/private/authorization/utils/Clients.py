@@ -68,6 +68,10 @@ class ClientManager(object):
 
 
 class ClientRegistrationEndpoint(_ClientRegistrationEndpoint):
+  """ The client registration endpoint is an OAuth 2.0 endpoint designed to
+      allow a client to be registered with the authorization server. See authlib
+      :mod:`ClientRegistrationEndpoint <authlib.oauth2.rfc7591.ClientRegistrationEndpoint>` class.
+  """
   #TODO: align with version authlib
   def authenticate_user(self, request):
     return True

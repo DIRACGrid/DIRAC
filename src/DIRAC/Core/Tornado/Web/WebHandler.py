@@ -371,8 +371,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler, WebHandler):
     tornado.websocket.WebSocketHandler.__init__(self, *args, **kwargs)
 
   def open(self, setup, group, route):
-    if not self._pathResult.ok:
-      raise self._pathResult
     return self.on_open()
 
   def on_open(self):

@@ -1,4 +1,4 @@
-""" Handler to provide REST APIs to manage user authentication.
+""" This handler basically provides a REST interface to interact with the OAuth 2 authentication server
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -34,26 +34,25 @@ class AuthHandler(TornadoREST):
 
   @classmethod
   def initializeHandler(cls, serviceInfo):
-    """
-      This may be overwritten when you write a DIRAC service handler
-      And it must be a class method. This method is called only one time,
-      at the first request
+    """ This method is called only one time, at the first request
 
-      :param dict ServiceInfoDict: infos about services, it contains
-                                    'serviceName', 'serviceSectionPath',
-                                    'csPaths' and 'URL'
+        :param dict ServiceInfoDict: infos about services
     """
     cls.server = AuthServer()
   
   def initializeRequest(self):
+    """ Called at every request """
     self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
 
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
   def web_index(self, instance):
-    """ Well known endpoint
+    """ Well known endpoint, specified by
+        `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_
 
-        GET: /.well-known/openid-configuration
-        GET: /.well-known/oauth-authorization-server
+        Request examples::
+          
+          GET: /.well-known/openid-configuration
+          GET: /.well-known/oauth-authorization-server
     """
     print('------ web_.well-known --------')
     if self.request.method == "GET":
@@ -61,7 +60,7 @@ class AuthHandler(TornadoREST):
     print('-----> web_.well-known <-------')
 
   def web_jwk(self):
-    """ JWKs
+    """ JWKs endpoint
     """
     print('------ web_jwk --------')
     if self.request.method == "GET":
@@ -75,6 +74,30 @@ class AuthHandler(TornadoREST):
   
   #auth_userinfo = ["authenticated"]
   def web_userinfo(self):
+    """ The UserInfo endpoint can be used to retrieve identity information about a user,
+        see `spec <https://openid.net/specs/openid-connect-core-1_0.html#UserInfo>`_
+
+        Request example::
+
+          GET /connect/userinfo
+          Authorization: Bearer <access_token>
+
+        Response::
+
+          HTTP/1.1 200 OK
+          Content-Type: application/json
+
+          {
+              "sub": "248289761001",
+              "name": "Bob Smith",
+              "given_name": "Bob",
+              "family_name": "Smith",
+              "role": [
+                  "user",
+                  "admin"
+              ]
+          }
+    """
     print('------ web_userinfo --------')
     token = ResourceProtector().acquire_token(self.request, '')
     return {'sub': token.sub, 'issuer': token.issuer, 'group': token.groups[0]}
@@ -84,9 +107,10 @@ class AuthHandler(TornadoREST):
     print('-----> web_userinfo <-------')
 
   def web_register(self):
-    """ Client registry
+    """ The Client Registration Endpoint, specified by 
+        `RFC7591 <https://tools.ietf.org/html/rfc7591#section-3.1>`_
 
-        POST: /register
+        POST /register?data..
 
         JSON data:
         
@@ -96,11 +120,12 @@ class AuthHandler(TornadoREST):
           response_types  - list of returned responses, e.g: ["token","id_token token","code"]
           redirect_uris   - e.g.: ['https://dirac.egi.eu']
 
+        https://wlcg.cloud.cnaf.infn.it/register
+        
         requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', json={'grant_types': ['implicit'], 'response_types': ['token'], 'redirect_uris': ['https://dirac.egi.eu'], 'token_endpoint_auth_method': 'none'}, verify=False).text
         requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', json={"scope":"changeGroup","token_endpoint_auth_method":"client_secret_basic","grant_types":["authorization_code","refresh_token"],"redirect_uris":["https://marosvn32.in2p3.fr/DIRAC","https://marosvn32.in2p3.fr/DIRAC/loginComplete"],"response_types":["token","id_token token","code"]}, verify=False).text
     """
     #TODO: docs
-    # 
     print('------ web_register --------')
     name = ClientRegistrationEndpoint.ENDPOINT_NAME
     return self.__response(**self.server.create_endpoint_response(name, self.request))
@@ -108,13 +133,14 @@ class AuthHandler(TornadoREST):
 
   path_device = ['([A-z0-9-_]*)']
   def web_device(self, userCode=None):
-    """ Device authorization flow
+    """ The device authorization endpoint can be used to request device and user codes.
+        This endpoint is used to start the device flow authorization process.
 
-        POST: /device?client_id=.. &scope=..
+        POST /device?client_id=.. &scope=..
           # group - optional
           provider - optional
         
-        GET: /device/<user code>
+        GET /device/<user code>
     """
     print('------ web_device --------')
     if self.request.method == 'POST':
@@ -132,6 +158,7 @@ class AuthHandler(TornadoREST):
                                                       data['client_id'], userCode)
         return self.__response(code=302, headers=HTTPHeaders({"Location": authURL}))
       
+      # Device code entry interface
       t = Template('''<!DOCTYPE html>
       <html>
         <head>
@@ -186,7 +213,8 @@ class AuthHandler(TornadoREST):
 
     idP = self.get_argument('provider', provider)
     if not idP:
-      # Choose IdP
+
+      # Choose IdP interface
       t = Template('''<!DOCTYPE html>
       <html>
         <head>
@@ -223,6 +251,8 @@ class AuthHandler(TornadoREST):
     print('-----> web_authorization <-------')
 
   def web_redirect(self):
+    """ Redirect endpoint
+    """
     print('------ web_redirect --------')
     # Redirect endpoint for response
     self.log.info('REDIRECT RESPONSE:\n', self.request)
@@ -281,6 +311,7 @@ class AuthHandler(TornadoREST):
     pprint(groupStatuses)
 
     if not groups:
+      # Choose group interface
       t = Template('''<!DOCTYPE html>
       <html>
         <head>
@@ -328,11 +359,15 @@ class AuthHandler(TornadoREST):
     print('-----> web_redirect <-------')
 
   def web_token(self):
+    """ The token endpoint
+    """
     print('------ web_token --------')
     return self.__response(**self.server.create_token_response(self.request))
     print('-----> web_token <-------')
 
   def __implicitFlow(self):
+    """ For implicit flow
+    """
     accessToken = self.get_argument('access_token')
     providerName = self.get_argument('provider')
     result = self.server.idps.getIdProvider(providerName)
@@ -377,6 +412,7 @@ class AuthHandler(TornadoREST):
     return S_OK(claims.sub)
   
   def __response(self, *args, **kwargs):
+    """ Return response as HTTPResponse object """
     return HTTPResponse(HTTPRequest(self.request.full_url(), self.request.method), *args, **kwargs)
 
   def __validateToken(self):
