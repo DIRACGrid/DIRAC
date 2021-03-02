@@ -40,7 +40,7 @@ Stuff you need to have installed
 
 *editor*: Almost any text editor is fine so if you already have a preference for vim/emacs/sublime/eclipse/pycharm/atom use that.
 If you're new to development, Visual Studio Code is free modern editor with an extensive plugin ecosystem and many nice IDE like features.
-Regardless of which editor you choose it's worth investigating what plugins are available plugins.
+Regardless of which editor you choose it's worth investigating what plugins are available.
 
 *python*: DIRAC is written in Python so you will need to have Python environment available. While there are many possible ways of doing this the simplest option for most people is to use either conda or DIRACOS2 (Linux only).
 
@@ -50,7 +50,7 @@ Creating a development environment with Conda
 .. note::
     The Python packaging ecosystem is very old and as a result there has been a lot of fragmentation. Here are a few points that might be worthwhile to clarify:
 
-    * **anaconda** vs **miniconda** vs **miniforge** vs **mambaforge**: `Anaconda Inc. <https://anaconda.com/>`_ is the original company behind the conda package manger however the project has slowly evolved to be community project. Anaconda Inc. provides two free installers (**anaconda**/**miniconda**) as well various paid support plans. Community efforts are centered around `conda-forge <https://conda-forge.org/>`_, a NumFOCUS sponsored project to provide recipes, build infrastructure and distributions for the conda package manager. While anaconda and conda-forge provided packages are mostly compatible there can be issues when mixing them. As a result it is often easier to use the official `conda-forge installer bundles <https://github.com/conda-forge/miniforge/#download>`_ **miniforge** (``conda`` only) or **mambaforge** (with both ``conda`` and ``mamba``).
+    * **anaconda** vs **miniconda** vs **miniforge** vs **mambaforge**: `Anaconda Inc. <https://anaconda.com/>`_ is the original company behind the conda package manager, however the project has slowly evolved to be community project. Anaconda Inc. provides two free installers (**anaconda**/**miniconda**) as well as various paid support plans. Community efforts are centered around `conda-forge <https://conda-forge.org/>`_, a NumFOCUS sponsored project to provide recipes, build infrastructure and distributions for the conda package manager. While anaconda and conda-forge provided packages are mostly compatible there can be issues when mixing them. As a result, it is often easier to use the official `conda-forge installer bundles <https://github.com/conda-forge/miniforge/#download>`_ **miniforge** (``conda`` only) or **mambaforge** (with both ``conda`` and ``mamba``).
     * **conda** vs **mamba**: As conda has grown, some applications have had issues with ``conda`` being slow to solve and install some environments. Mamba is built upon ``conda`` and uses ``libsolv`` to provide a fast alternative install command. The two are interoperable and a common workflow is to replace calls to ``conda install``/``conda create``/``conda env create`` with ``mamba install``/``mamba create``/``mamba env create``. The only command which cannot be substituted is ``conda activate`` as it is implemented as a shell function to allow it to change environment variables.
 
 The conda package manager's main selling point is that you can install binary packages in any location without needing system level privileges.
