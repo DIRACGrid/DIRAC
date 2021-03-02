@@ -650,12 +650,12 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     sqlQuery = table.buildSQL()
 
     self.logger.info("SQL query : ")
-    self.logger.info("\n"+sqlQuery)
+    self.logger.info("\n" + sqlQuery)
 
     res = self._query(sqlQuery)
     if not res['OK']:
       return res
-    
+
     self.logger.info(res)
     # TODO add site or CE status, while looping
     rows = []
@@ -672,14 +672,14 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       multiple = True
 
     for row in res['Value']:
-      lrow =list(row)
+      lrow = list(row)
       if groupIndex:
         lrow[groupIndex] = getVOForGroup(row[groupIndex])
       if multiple:
         lrow.append('Multiple')
       for index, value in enumerate(row):
-        if type(value) == decimal.Decimal:
-          lrow[index]  = float(value)
+        if isinstance(value, decimal.Decimal):
+          lrow[index] = float(value)
       # get the value of the Total column
       if 'Total' in columnList:
         total = lrow[columnList.index('Total')]
@@ -693,7 +693,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       rows.append(tuple(lrow))
 # If not grouped by CE and more then 1 CE in the result:
     if multiple:
-      columns.append('CE') # 'DestinationSite' re-mapped to 'CE' already
+      columns.append('CE')  # 'DestinationSite' re-mapped to 'CE' already
     columns.append('Status')
     result['Records'] = rows
 

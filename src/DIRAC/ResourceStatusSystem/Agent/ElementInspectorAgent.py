@@ -213,9 +213,9 @@ class ElementInspectorAgent(AgentModule):
         return S_OK()
 
       self.log.verbose('%s ( vO=%s / status=%s / statusType=%s ) being processed' % (element['name'],
-                                                           element['vO'],
-                                                           element['status'],
-                                                           element['statusType']))
+                                                                                     element['vO'],
+                                                                                     element['status'],
+                                                                                     element['statusType']))
 
       try:
         resEnforce = pep.enforce(element)

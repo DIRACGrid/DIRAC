@@ -133,19 +133,14 @@ class Cache(object):
     result = {}
 
     for cacheKey in cacheKeys:
-      cacheKey = list(cacheKey)
-      cacheKey.append('all')
-      cacheKey1 = tuple(cacheKey)
-      cacheRow = self.__cache.get(cacheKey1, validSeconds=self.__validSeconds)
-
+      longCacheKey = cacheKey + ('all',)
+      cacheRow = self.__cache.get(longCacheKey, validSeconds=self.__validSeconds)
       if not cacheRow:
-        cacheKey = list(cacheKey)
-        cacheKey.append(vO)
-        cacheKey1 = tuple(cacheKey)
-        cacheRow = self.__cache.get(cacheKey1, validSeconds=self.__validSeconds)
+        longCacheKey = cacheKey + (vO,)
+        cacheRow = self.__cache.get(longCacheKey, validSeconds=self.__validSeconds)
         if not cacheRow:
           return S_ERROR('Cannot get extended %s (neither for VO = %s nor for "all" Vos)' % (str(cacheKey), vO))
-      result.update({cacheKey1: cacheRow})
+      result.update({longCacheKey: cacheRow})
 
     return S_OK(result)
 
@@ -296,7 +291,7 @@ class RSSCache(Cache):
     # has expired in between. It has 30 valid seconds, which means something was
     # extremely slow above.
     if matchKeys['CheckVO']:
-      cacheMatches = self.check(matchKeys['Value'], vO) # add an appropriate VO to the keys
+      cacheMatches = self.check(matchKeys['Value'], vO)  # add an appropriate VO to the keys
     else:
       cacheMatches = self.get(matchKeys['Value'])
     if not cacheMatches['OK']:
@@ -371,7 +366,7 @@ class RSSCache(Cache):
       flattenedCache.update({(key[0], key[1], key[2]): value
                             for key, value in validCache.items() if key[3] == vO})
       validCache = flattenedCache
-    else: # site, not VO specific in SiteStatus, eventually to be upgraded there to include the VO
+    else:  # site, not VO specific in SiteStatus, eventually to be upgraded there to include the VO
       pass
 
     if isinstance(elementNames, six.string_types):
