@@ -303,8 +303,7 @@ def generateProxy(params):
       try:
         userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
       except KeyboardInterrupt:
-        gLogger.error("Caught KeyboardInterrupt, exiting...")
-        sys.exit(1)
+        return S_ERROR("Caught KeyboardInterrupt, exiting...")
     params.userPasswd = userPasswd
 
   # Find location

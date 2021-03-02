@@ -135,8 +135,7 @@ def uploadProxy(params):
         try:
           userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
         except KeyboardInterrupt:
-          DIRAC.gLogger.error("Caught KeyboardInterrupt, exiting...")
-          sys.exit(1)
+          return S_ERROR("Caught KeyboardInterrupt, exiting...")
       params.userPasswd = userPasswd
 
     DIRAC.gLogger.info("Loading cert and key")
