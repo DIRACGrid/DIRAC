@@ -1,4 +1,4 @@
-""" Test class for lsfResourceUsage utility
+""" Test class for SGEResourceUsage utility
 """
 
 import pytest

@@ -55,9 +55,14 @@ class SGEResourceUsage(ResourceUsage):
         try:
           newcpu = 0.
           if len(cpuList) == 3:
-            newcpu = (float(cpuList[0]) * 3600 + float(cpuList[1])) * 60 + float(cpuList[2])
+            newcpu = float(cpuList[0]) * 3600 + \
+                float(cpuList[1]) * 60 + \
+                float(cpuList[2])
           elif len(cpuList) == 4:
-            newcpu = ((float(cpuList[0]) * 24 + float(cpuList[1])) * 60 + float(cpuList[2])) * 60 + float(cpuList[3])
+            newcpu = float(cpuList[0]) * 24 * 3600 + \
+                float(cpuList[1]) * 3600 + \
+                float(cpuList[2]) * 60 + \
+                float(cpuList[3])
           if not cpu or newcpu > cpu:
             cpu = newcpu
         except ValueError:
