@@ -42,7 +42,7 @@ class JobWrapperSubmissionCase(JobWrapperTestCase):
     jobParams = {'JobID': '1',
                  'JobType': 'Merge',
                  'CPUTime': '1000000',
-                 'Executable': '$DIRACROOT/scripts/dirac-jobexec',
+                 'Executable': 'dirac-jobexec',
                  'Arguments': "helloWorld.xml -o LogLevel=DEBUG --cfg pilot.cfg",
                  'InputSandbox': ['helloWorld.xml', 'exe-script.py']}
     resourceParams = {}

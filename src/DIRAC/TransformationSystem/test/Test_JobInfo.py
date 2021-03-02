@@ -39,7 +39,7 @@ class TestJI(unittest.TestCase):
 
     self.jdl2 = {
         'LogTargetPath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/00006326_015.tar",
-        'Executable': "$DIRACROOT/scripts/dirac-jobexec",
+        'Executable': "dirac-jobexec",
         'TaskID': 15,
         'SoftwareDistModule': "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation",
         'JobName': "00006326_00000015",
@@ -109,7 +109,7 @@ class TestJI(unittest.TestCase):
 
     self.jdlBrokenContent = {
         'LogTargetPath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/00006326_015.tar",
-        'Executable': "$DIRACROOT/scripts/dirac-jobexec",
+        'Executable': "dirac-jobexec",
         'TaskID': 'muahahaha',
         'SoftwareDistModule': "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation",
         'JobName': "00006326_00000015",
@@ -180,7 +180,7 @@ class TestJI(unittest.TestCase):
     # jdl with single outputdata,
     self.jdl1 = {
         'LogTargetPath': "/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/LOG/00006301_10256.tar",
-        'Executable': "$DIRACROOT/scripts/dirac-jobexec",
+        'Executable': "dirac-jobexec",
         'TaskID': 10256,
         'SoftwareDistModule': "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation",
         'JobName': "00006301_00010256",
@@ -250,7 +250,7 @@ class TestJI(unittest.TestCase):
 
     self.jdlNoInput = {
         'LogTargetPath': "/ilc/prod/clic/1.4tev/ea_qqqqnu/gen/00006498/LOG/00006498_1307.tar",
-        'Executable': "$DIRACROOT/scripts/dirac-jobexec",
+        'Executable': "dirac-jobexec",
         'TaskID': 1307,
         'SoftwareDistModule': "ILCDIRAC.Core.Utilities.CombinedSoftwareInstallation",
         'JobName': "00006498_00001307",

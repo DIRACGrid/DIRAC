@@ -50,6 +50,7 @@ jobs:
           #             CLIENT_USE_PYTHON3: No
           - TEST_NAME: "Python 3 client"
             CLIENT_USE_PYTHON3: Yes
+            CLIENT_DIRACOSVER: 2.0a8
 
     steps:
     - uses: actions/checkout@v2
@@ -74,7 +75,9 @@ jobs:
         if [[ "${{ matrix.DIRACOSVER || env.MATRIX_DEFAULT_DIRACOSVER }}" != "default" ]]; then echo -n "-e DIRACOSVER=${{ matrix.DIRACOSVER || env.MATRIX_DEFAULT_DIRACOSVER }} " >> run_in_container; fi
         echo -n "-e TEST_HTTPS=${{ matrix.TEST_HTTPS || env.MATRIX_DEFAULT_TEST_HTTPS }} " >> run_in_container
         echo -n "-e SERVER_USE_PYTHON3=${{ matrix.SERVER_USE_PYTHON3 || env.MATRIX_DEFAULT_SERVER_USE_PYTHON3 }} " >> run_in_container
+        if [[ "${{ matrix.SERVER_DIRACOSVER || env.MATRIX_DEFAULT_SERVER_DIRACOSVER }}" != "default" ]]; then echo -n "-e SERVER_DIRACOSVER=${{ matrix.SERVER_DIRACOSVER || env.MATRIX_DEFAULT_SERVER_DIRACOSVER }} " >> run_in_container; fi
         echo -n "-e CLIENT_USE_PYTHON3=${{ matrix.CLIENT_USE_PYTHON3 || env.MATRIX_DEFAULT_CLIENT_USE_PYTHON3 }} " >> run_in_container
+        if [[ "${{ matrix.CLIENT_DIRACOSVER || env.MATRIX_DEFAULT_CLIENT_DIRACOSVER }}" != "default" ]]; then echo -n "-e CLIENT_DIRACOSVER=${{ matrix.CLIENT_DIRACOSVER || env.MATRIX_DEFAULT_CLIENT_DIRACOSVER }} " >> run_in_container; fi
         # Finish wrapper script
         echo -n "dirac-testing-host \"\$@\"" >> run_in_container
         chmod +x run_in_container

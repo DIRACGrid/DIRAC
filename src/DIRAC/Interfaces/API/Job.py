@@ -83,7 +83,7 @@ class Job(API):
     self.stdout = stdout
     self.stderr = stderr
     self.logLevel = 'info'
-    self.executable = '$DIRACROOT/scripts/dirac-jobexec'  # to be clarified
+    self.executable = 'dirac-jobexec'  # to be clarified
     # $DIRACROOT is set by the JobWrapper at execution time
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
