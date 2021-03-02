@@ -158,12 +158,6 @@ installSite() {
     exit 1
   fi
 
-  echo "=> The pilot flag should be False"
-  if ! dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH "${DEBUG}"; then
-    echo "ERROR: dirac-configure failed" >&2
-    exit 1
-  fi
-
   if ! dirac-setup-site "${DEBUG}"; then
     echo "ERROR: dirac-setup-site failed" >&2
     exit 1
