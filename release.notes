@@ -1,3 +1,8 @@
+[v7r0p50]
+
+*Core
+CHANGE: (#4927) Added MySQL LIKE query feature.
+
 [v7r0p49]
 
 *Core
