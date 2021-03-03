@@ -27,6 +27,7 @@ import urllib
 import json
 import six
 import distutils.spawn
+import datetime
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -1245,6 +1246,8 @@ class JobWrapper(object):
     """ Create and send a combined job failover request if any
     """
     request = Request()
+    # Forbid the request to be executed within the next 2 minutes
+    request.NotBefore = datetime.datetime.utcnow() + datetime.timedelta(seconds=120)
 
     requestName = 'job_%s' % self.jobID
     if 'JobName' in self.jobArgs:
