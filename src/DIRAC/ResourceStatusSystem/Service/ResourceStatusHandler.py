@@ -17,8 +17,6 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
-db = None
-
 
 def convert(table, params):
   """ Conversion utility for backward compatibility
@@ -69,35 +67,6 @@ def loadResourceStatusComponent(moduleName, className):
   return S_OK(component)
 
 
-def initializeResourceStatusHandler(serviceInfo):
-  """
-    Handler initialization, where we:
-      dynamically load ResourceStatus database plugin module, as advised by the config,
-      (assumes that the module name and a class name are the same)
-      set the ResourceManagementDB as global db.
-
-      :param serviceInfo: service info dictionary
-      :return: standard Dirac return object
-
-  """
-
-  gLogger.debug("Initializing ResourceStatus Service with the following DB component:")
-  defaultOption, defaultClass = 'ResourceStatusDB', 'ResourceStatusDB'
-  configValue = getServiceOption(serviceInfo, defaultOption, defaultClass)
-  gLogger.debug("Option:%-20s Class: %-20s" % (str(defaultOption), str(configValue)))
-  result = loadResourceStatusComponent(configValue, configValue)
-
-  if not result['OK']:
-    return result
-
-  global db
-  db = result['Value']
-
-  return S_OK()
-
-################################################################################
-
-
 class ResourceStatusHandler(RequestHandler):
   '''
   The ResourceStatusHandler exposes the DB front-end functions through a XML-RPC
@@ -126,29 +95,37 @@ class ResourceStatusHandler(RequestHandler):
 
     super(ResourceStatusHandler, self).__init__(*args, **kwargs)
 
-  @staticmethod
-  def __logResult(methodName, result):
+  @classmethod
+  def initializeHandler(cls, serviceInfoDict):
+    """
+      Handler initialization, where we:
+        dynamically load ResourceStatus database plugin module, as advised by the config,
+        (assumes that the module name and a class name are the same)
+        set the ResourceManagementDB as global db.
+
+        :param serviceInfoDict: service info dictionary
+        :return: standard Dirac return object
+
+    """
+
+    defaultOption, defaultClass = 'ResourceStatusDB', 'ResourceStatusDB'
+    configValue = getServiceOption(serviceInfoDict, defaultOption, defaultClass)
+    result = loadResourceStatusComponent(configValue, configValue)
+
+    if not result['OK']:
+      return result
+
+    cls.db = result['Value']
+
+    return S_OK()
+
+  def __logResult(self, methodName, result):
     '''
       Method that writes to log error messages
     '''
 
     if not result['OK']:
-      gLogger.error('%s%s' % (methodName, result['Message']))
-
-  @staticmethod
-  def setDatabase(database):
-    '''
-    This method let us inherit from this class and overwrite the database object
-    without having problems with the global variables.
-
-    :Parameters:
-      **database** - `MySQL`
-        database used by this handler
-
-    :return: None
-    '''
-    global db
-    db = database
+      self.log.error('%s%s' % (methodName, result['Message']))
 
   types_insert = [[six.string_types, dict], dict]
 
@@ -170,8 +147,8 @@ class ResourceStatusHandler(RequestHandler):
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info('insert: %s %s' % (table, params))
-    res = db.insert(table, params)
+    self.log.info('insert: %s %s' % (table, params))
+    res = self.db.insert(table, params)
     self.__logResult('insert', res)
 
     return res
@@ -196,8 +173,8 @@ class ResourceStatusHandler(RequestHandler):
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info('select: %s %s' % (table, params))
-    res = db.select(table, params)
+    self.log.info('select: %s %s' % (table, params))
+    res = self.db.select(table, params)
     self.__logResult('select', res)
 
     return res
@@ -223,8 +200,8 @@ class ResourceStatusHandler(RequestHandler):
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info('delete: %s %s' % (table, params))
-    res = db.delete(table, params)
+    self.log.info('delete: %s %s' % (table, params))
+    res = self.db.delete(table, params)
     self.__logResult('delete', res)
 
     return res
@@ -250,8 +227,8 @@ class ResourceStatusHandler(RequestHandler):
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info('addOrModify: %s %s' % (table, params))
-    res = db.addOrModify(table, params)
+    self.log.info('addOrModify: %s %s' % (table, params))
+    res = self.db.addOrModify(table, params)
     self.__logResult('addOrModify', res)
 
     return res
@@ -277,8 +254,8 @@ class ResourceStatusHandler(RequestHandler):
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info('addIfNotThere: %s %s' % (table, params))
-    res = db.addIfNotThere(table, params)
+    self.log.info('addIfNotThere: %s %s' % (table, params))
+    res = self.db.addIfNotThere(table, params)
     self.__logResult('addIfNotThere', res)
 
     return res
