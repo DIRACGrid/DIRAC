@@ -346,11 +346,7 @@ class ComponentMonitoringHandler(RequestHandler):
     if not result['Value']:
       return S_ERROR('Host %s does not exist' % host)
 
-    result = ComponentMonitoringHandler.db.getLogs({'hostName': host})
-    if not result['OK']:
-      return result
-
-    return S_OK(result['Value'])
+    return ComponentMonitoringHandler.db.getLogs({'hostName': host})
 
   types_getLogs = []
 
