@@ -22,6 +22,7 @@ def main():
   # Must be defined BEFORE any dirac import
   os.environ['DIRAC_USE_TORNADO_IOLOOP'] = "True"
 
+  from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
   from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
   from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
@@ -47,7 +48,13 @@ def main():
 
   gLogger.initialize('Tornado-CS', "/")
 
-  serverToLaunch = TornadoServer(services='Configuration/Server')
+  # get the specific master CS port
+  try:
+    csPort = int(gConfigurationData.extractOptionFromCFG('%s/Port' % getServiceSection('Configuration/Server')))
+  except TypeError:
+    csPort = None
+
+  serverToLaunch = TornadoServer(services='Configuration/Server', port=csPort)
   serverToLaunch.startTornado()
 
 
