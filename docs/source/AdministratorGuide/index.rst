@@ -14,9 +14,9 @@ This administration documentation refers to the "Core" DIRAC project.
    :maxdepth: 2
 
    Introduction/index
-   UserManagement/index
    ExternalsSupport/index
    ServerInstallations/index
+   UserManagement/index
    HowTo/index
    Configuration/index
    Resources/index

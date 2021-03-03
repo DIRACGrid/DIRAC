@@ -36,6 +36,22 @@ MySQL is a hard dependency for all DIRAC servers installations. Supported versio
 - 5.7
 - 8.0
 
+MySQL server is not shipped with DIRAC. You are responsible of its administration.
+
+While specific configurations may be applied for each MySQL Database connection,
+generic connection details can be applied in CS location below (the shown values are the defaults)::
+
+   Systems
+   {
+     Databases
+     {
+       User = Dirac
+       Password = Dirac
+       Host = localhost
+       Port = 3306
+     }
+   }
+
 
 ElasticSearch versions:
 -----------------------
@@ -44,3 +60,31 @@ ElasticSearch is an optional dependency for DIRAC servers installations. Support
 
 - 6.x
 - 7.x
+
+ElasticSearch server is not shipped with DIRAC. You are responsible of its administration.
+
+You can run your ES cluster without authentication, or using User name and password, or using certificates. You may add the following parameters:
+
+  - ``User`` (default:'')
+  - ``Password`` (default:'')
+  - ``Host`` (default:localhost)
+  - ``Port`` (default:9201)
+  - ``SSL`` (default:True)
+  - ``CRT`` (default:True)
+  - ``ca_certs`` (default:None)
+  - ``client_key`` (default:None)
+  - ``client_cert`` (default:None)
+
+
+to the location::
+
+   Systems
+   {
+     NoSQLDatabases
+     {
+       User = ...
+       Password = ...
+       ...
+     }
+   }
+
