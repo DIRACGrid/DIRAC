@@ -312,7 +312,7 @@ class SystemAdministratorHandler(RequestHandler):
       if "WebApp" in extensionList:
         extensionList.remove("WebApp")
 
-    webPortal = gConfig.getValue('/LocalInstallation/WebApp', False)  # this is the new portal
+    webPortal = gConfig.getValue('/LocalInstallation/WebApp', False)
     if webPortal:
       if "WebAppDIRAC" not in extensionList:
         extensionList.append("WebAppDIRAC")

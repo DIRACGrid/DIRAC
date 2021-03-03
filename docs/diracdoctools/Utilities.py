@@ -113,7 +113,7 @@ def runCommand(command):
                                      universal_newlines=True)
     if 'NOTICE:' in result:
       lines = []
-      LOG.warn('NOTICE in output for: %s; cleaning output from datestamp..', command)
+      LOG.warning('NOTICE in output for: %s; cleaning output from datestamp..', command)
       for line in result.split('\n'):
         lines.append(re.sub(r"^.*NOTICE: ", "", line))
       # if the output is less than 3 lines something went wrong

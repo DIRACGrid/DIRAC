@@ -561,9 +561,10 @@ class ComponentInstaller(object):
     if mySetup is None:
       mySetup = self.setup
 
-    result = self.monitoringClient.getInstallations({'UnInstallationTime': None, 'Instance': component},
-                                                    {'System': system},
-                                                    {}, True)
+    result = self.monitoringClient.getInstallations(
+        {'UnInstallationTime': None, 'Instance': component},
+        {'DIRACSystem': system},
+        {}, True)
     if not result['OK']:
       return result
     installations = result['Value']
@@ -586,10 +587,11 @@ class ComponentInstaller(object):
       else:
         isRenamed = True
 
-      result = self.monitoringClient.getInstallations({'UnInstallationTime': None},
-                                                      {'System': system,
-                                                       'Module': installation['Component']['Module']},
-                                                      {}, True)
+      result = self.monitoringClient.getInstallations(
+          {'UnInstallationTime': None},
+          {'System': system, 'DIRACModule': installation['Component']['Module']},
+          {},
+          True)
       if not result['OK']:
         return result
       installations = result['Value']
@@ -871,9 +873,10 @@ class ComponentInstaller(object):
     if mySetup is None:
       mySetup = self.setup
 
-    result = self.monitoringClient.installationExists({'UnInstallationTime': None},
-                                                      {'System': system, 'Type': 'DB', 'Module': dbName},
-                                                      {})
+    result = self.monitoringClient.installationExists(
+        {'UnInstallationTime': None},
+        {'DIRACSystem': system, 'Type': 'DB', 'DIRACModule': dbName},
+        {})
     if not result['OK']:
       return result
     exists = result['Value']
