@@ -15,6 +15,7 @@ pyasn1>0.4.1
 pyasn1_modules
 pyparsing
 pytz
+prompt_toolkit
 recommonmark
 sqlalchemy
 subprocess32
