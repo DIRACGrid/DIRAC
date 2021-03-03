@@ -26,6 +26,7 @@ import glob
 import urllib
 import json
 import six
+import distutils.spawn
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -336,6 +337,11 @@ class JobWrapper(object):
     if re.search('DIRACROOT', executable):
       executable = executable.replace('$DIRACROOT', self.localSiteRoot)
       self.log.verbose('Replaced $DIRACROOT for executable as %s' % (self.localSiteRoot))
+
+    # Try to find the executable on PATH
+    if "/" not in executable:
+      # Returns None if the executable is not found so use "or" to leave it unchanged
+      executable = distutils.spawn.find_executable(executable) or executable
 
     # Make the full path since . is not always in the PATH
     executable = os.path.abspath(executable)
