@@ -1,6 +1,6 @@
  
     Arguments = "jobDescription.xml -o LogLevel=DEBUG  -p JOB_ID=%(JOB_ID)s  -p InputData=%(InputData)s";
-    Executable = "$DIRACROOT/scripts/dirac-jobexec";
+    Executable = "dirac-jobexec";
     InputData = %(InputData)s;
     InputSandbox = jobDescription.xml;
     JOB_ID = %(JOB_ID)s;

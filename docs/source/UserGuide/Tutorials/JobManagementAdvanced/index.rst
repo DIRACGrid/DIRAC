@@ -395,7 +395,7 @@ Let's perform this exercise in the python shell.
           $ python Test-API-JDL.py 
  
               Priority = "1";
-              Executable = "$DIRACROOT/scripts/dirac-jobexec";
+              Executable = "dirac-jobexec";
               ExecutionEnvironment = "MYVARIABLE=TEST";
               StdError = "std.err";
               LogLevel = "DEBUG";
