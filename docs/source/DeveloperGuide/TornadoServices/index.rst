@@ -167,7 +167,7 @@ Finally, there is no automatic installations script. So just install a CS as you
     #
     #
   -  exec python $DIRAC/DIRAC/Core/scripts/dirac-service.py Configuration/Server --cfg /opt/dirac/pro/etc/Configuration_Server.cfg < /dev/null
-  +  exec python $DIRAC/DIRAC/Core/Tornado/scripts/tornado_start_CS.py -ddd
+  +  exec tornado-start-CS -ddd
 
 
 
