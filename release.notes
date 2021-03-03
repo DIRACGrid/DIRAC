@@ -1,4 +1,4 @@
-[v7r2-pre35]
+[v7r2-pre36]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -35,16 +35,22 @@ NEW: (#4898) added a base DB class for all DB types
 NEW: (#4865) Fully support installation with setuptools
 CHANGE: (#4932) Rename DIRAC_VOMSES to X509_VOMSES in dirac-install.py
 CHANGE: (#4958) when import Script, a help message is formed from __doc__, not need to use Script.setUsageMessage(__doc__)
+FIX: (#4956) use logging.warning in favor of deprecated logging.warn
+CHANGE: (#4997) Use prompt-toolkit for password input when generating proxies
+CHANGE: (#4994) dirac-install.py should now be taken from management
+CHANGE: (#5010) Use ConfigurationClient in CSCLI and CSShellCLI
 
 *Configuration
 CHANGE: (#4866) split standard and tornado refresher in two files to avoid tornado dependency on the client
-HANGE: (#4958) setUsageMessage in LocalConfiguration will parse received str value for building help message
+CHANGE: (#4958) setUsageMessage in LocalConfiguration will parse received str value for building help message
+FIX: (#5008) HTTPS: allow to run master CS in parallel of other tornado services
 
 *Framework
 CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
 FIX: (#4850) MQ logging sends also the message,asctime and levelname field
 FIX: fix link to DIRAC install instruction and comments for WebApp
 FIX: (#4977) SystemAdministratorClientCLI - fix log message about responding hosts in sysadmin cli
+CHANGE: (#4956) renames of column names to avoid reserved keywords
 
 *Interfaces
 CHANGE: (#4799) remove runLocalAgent method from DIRAC API
@@ -81,6 +87,7 @@ NEW: (#4898) added possibility to configure the period and so the indexing strat
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
 NEW: (#4900) Remove old entries from history
+CHANGE: (#5002) RSS handlers: removed global objects
 
 *RMS
 CHANGE: (#4887) use dedicated ES monitoring flag RMSMonitoring
