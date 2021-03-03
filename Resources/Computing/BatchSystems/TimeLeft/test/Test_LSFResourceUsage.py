@@ -1,5 +1,4 @@
-""" Test class for lsfResourceUsage utility
-
+""" Test class for LSFResourceUsage utility
 """
 
 import os
