@@ -6,36 +6,8 @@ from DIRAC.Core.Utilities.MySQL import _quotedList
 
 class PivotedPilotSummaryTable:
   """
-    SELECT Pivoted_eff.GridSite, Pivoted_eff.DestinationSite, Pivoted_eff.Done_Empties,
-           Pivoted_eff.Submitted, Pivoted_eff.Done, Pivoted_eff.Failed, Pivoted_eff.Aborted,
-           Pivoted_eff.Running, Pivoted_eff.Waiting, Pivoted_eff.Scheduled, Pivoted_eff.Total,
-    (CASE
-         WHEN Pivoted_eff.Done - Pivoted_eff.Done_Empties > 0
-              THEN Pivoted_eff.Done/(Pivoted_eff.Done-Pivoted_eff.Done_Empties)
-         WHEN Pivoted_eff.Done=0
-              THEN 0
-         WHEN Pivoted_eff.Done=Pivoted_eff.Done_Empties
-              THEN 99.0 ELSE 0.0 END)
-          AS PilotsPerJob,
-          (Pivoted_eff.Total - Pivoted_eff.Aborted)/Pivoted_eff.Total*100.0 AS Eff
-    FROM (SELECT Frank.GridSite, Frank.DestinationSite,
-                 SUM(if (Frank.Status='Done', Frank.Empties,0)) AS Done_Empties,
-                 SUM(if (Frank.Status='Submitted', Frank.qty, 0)) AS Submitted,
-                 SUM(if (Frank.Status='Done', Frank.qty, 0)) AS Done,
-                 SUM(if (Frank.Status='Failed', Frank.qty, 0)) AS Failed,
-                 SUM(if (Frank.Status='Aborted', Frank.qty, 0)) AS Aborted,
-                 SUM(if (Frank.Status='Running', Frank.qty, 0)) AS Running,
-                 SUM(if (Frank.Status='Waiting', Frank.qty, 0)) AS Waiting,
-                 SUM(if (Frank.Status='Scheduled', Frank.qty, 0)) AS Scheduled,
-                 SUM(Frank.qty) AS Total
-          FROM (SELECT GridSite, DestinationSite, Status, count(CASE WHEN CurrentJobID=0  THEN 1 END) AS Empties,
-                count(*) AS qty
-                from PilotAgents where
-                     Status not in ('Done', 'Aborted') OR (Status in ('Done', 'Aborted')
-                     AND LastUpdateTime > '2019-12-04 10:35:00')  group by GridSite, DestinationSite, Status)
-          AS Frank
-          group by GridSite, DestinationSite)
-    AS Pivoted_eff;
+  The class creates a 'pivoted' table by combining records with with the same group
+  of self.columnList into a single row. It allows an easy calculateion of pilot efficiencies.
   """
 
   def __init__(self, columnList):
@@ -80,7 +52,6 @@ class PivotedPilotSummaryTable:
 
     # pivoted table: combine records with the same group of self.columnList into a single row.
 
-    # FIXME backqouting does not work with a prefix. Investigate.
     pivotedQuery = "SELECT %s,\n" % ', '.join([pvtable + '.' + item for item in self.columnList])
     line_template = " SUM(if (pivoted.Status={state!r}, pivoted.qty, 0)) AS {state}"
     pivotedQuery += ',\n'.join(line_template.format(state=state) for state in self.pstates)
@@ -98,8 +69,7 @@ class PivotedPilotSummaryTable:
                "  THEN 99.0 ELSE 0.0 END) AS PilotsPerJob,\n" \
                " (pivoted_eff.Total - pivoted_eff.Aborted)/pivoted_eff.Total*100.0 AS PilotJobEff \nFROM \n("
     eff_select_template = " CAST(pivoted_eff.{state} AS UNSIGNED) AS {state} "
-#    eff_select_template = " CAST(pivoted_eff.{state} AS UNSIGNED) AS {state} "
-    # now select the columns + the states:
+    # now select the columns + states:
     pivoted_eff = "SELECT %s,\n" % ', '.join(['pivoted_eff' + '.' + item for item in self.columnList]) + \
                   ', '.join(eff_select_template.format(state=state) for state in self.pstates + ['Total']) + ", \n"
 
