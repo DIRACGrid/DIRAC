@@ -657,8 +657,7 @@ class ScriptSuccess(ModulesTestCase):
         self.script.workflow_commons = wf_commons
         self.script.step_commons = step_commons
         self.script._setCommand()
-        res = self.script._executeCommand()
-        self.assertIsNone(res)
+        self.script._executeCommand()
 
 
 class ScriptFailure(ModulesTestCase):

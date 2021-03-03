@@ -69,7 +69,7 @@ class ReqManagerHandler(RequestHandler):
       cls.__validator = RequestValidator()
     return cls.__validator.validate(request)
 
-  types_getRequestIDForName = [basestring]
+  types_getRequestIDForName = [six.string_types]
 
   @classmethod
   def export_getRequestIDForName(cls, requestName):
@@ -88,7 +88,7 @@ class ReqManagerHandler(RequestHandler):
     """ Cancel a request """
     return cls.__requestDB.cancelRequest(requestID)
 
-  types_putRequest = [basestring]
+  types_putRequest = [six.string_types]
 
   def export_putRequest(self, requestJSON):
     """ put a new request into RequestDB
@@ -257,7 +257,7 @@ class ReqManagerHandler(RequestHandler):
     """
     return cls.__requestDB.getRequestSummaryWeb(selectDict, sortList, startItem, maxItems)
 
-  types_getDistinctValuesWeb = [basestring]
+  types_getDistinctValuesWeb = [six.string_types]
 
   @classmethod
   def export_getDistinctValuesWeb(cls, attribute):
@@ -269,7 +269,7 @@ class ReqManagerHandler(RequestHandler):
       tableName = 'Operation'
     return cls.__requestDB.getDistinctValues(tableName, attribute)
 
-  types_getRequestCountersWeb = [basestring, dict]
+  types_getRequestCountersWeb = [six.string_types, dict]
 
   @classmethod
   def export_getRequestCountersWeb(cls, groupingAttribute, selectDict):
@@ -291,7 +291,7 @@ class ReqManagerHandler(RequestHandler):
     """ Delete the request with the supplied ID"""
     return cls.__requestDB.deleteRequest(requestID)
 
-  types_getRequestIDsList = [list, int, basestring]
+  types_getRequestIDsList = [list, int, six.string_types]
 
   @classmethod
   def export_getRequestIDsList(

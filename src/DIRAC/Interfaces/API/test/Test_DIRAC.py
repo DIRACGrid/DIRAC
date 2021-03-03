@@ -127,8 +127,14 @@ def test_runLocal(dirac, job, mocker, osmock, confMock):
   ret = dirac.runLocal(job)
   LOG.info("dirac log calls: %s", dirac.log.call_args_list)
   LOG.info("CallStack: %s", pformat(ret.get('CallStack', {})))
-  assert sysMock.call_args_list[0][1]['cmdSeq'] == ['/root/dirac/scripts/dirac-jobexec',
-                                                    'jobDescription.xml', '-o', 'LogLevel=DEBUG']
+  try:
+    assert sysMock.call_args_list[0][1]['cmdSeq'] == [
+        'dirac-jobexec', 'jobDescription.xml', '-o', 'LogLevel=DEBUG'
+    ]
+  except AssertionError:
+    assert sysMock.call_args_list[0][1]['cmdSeq'] == [
+        '/root/dirac/scripts/dirac-jobexec', 'jobDescription.xml', '-o', 'LogLevel=DEBUG'
+    ]
   assert ret.get('Message', None) is None
   assert ret['OK']
   assert call('/abspath/absfile.xml', '/pwd/tempFolder/') in shMock.copy.call_args_list

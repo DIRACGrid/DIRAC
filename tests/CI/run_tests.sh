@@ -45,12 +45,8 @@ elif [[ "$INSTALLTYPE" == "client" ]]; then
     source "$WORKSPACE/ClientInstallDIR/bashrc"
     set -o pipefail
     ERR=0
-    # TODO: The tests should be refactored to remove the need for this
     for repo_path in "${TESTREPO[@]}"; do
-        cp -r "${repo_path}/tests" "$WORKSPACE/ClientInstallDIR/$(basename "${repo_path}")"
-    done
-    for repo_path in "${TESTREPO[@]}"; do
-        source "$WORKSPACE/ClientInstallDIR/$(basename "${repo_path}")/tests/Integration/all_integration_client_tests.sh"
+        source "${repo_path}/tests/Integration/all_integration_client_tests.sh"
     done
 fi
 

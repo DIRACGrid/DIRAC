@@ -107,7 +107,7 @@ class MonitoringHandler(RequestHandler):
       del activitiesDict[acName]
     return gServiceInterface.commitMarks(sourceId, activitiesDict, componentExtraInfo)
 
-  types_queryField = [basestring, dict]
+  types_queryField = [six.string_types, dict]
 
   def export_queryField(self, field, definedFields):
     """
@@ -116,7 +116,7 @@ class MonitoringHandler(RequestHandler):
     definedFields['sources.setup'] = self.serviceInfoDict['clientSetup']
     return gServiceInterface.fieldValue(field, definedFields)
 
-  types_tryView = [int, int, basestring]
+  types_tryView = [int, int, six.string_types]
 
   def export_tryView(self, fromSecs, toSecs, viewDescriptionStub):
     """
@@ -129,7 +129,7 @@ class MonitoringHandler(RequestHandler):
     defDict['sources.setup'] = self.serviceInfoDict['clientSetup']
     return gServiceInterface.generatePlots(fromSecs, toSecs, viewDescription)
 
-  types_saveView = [basestring, basestring]
+  types_saveView = [six.string_types, six.string_types]
 
   def export_saveView(self, viewName, viewDescriptionStub):
     """

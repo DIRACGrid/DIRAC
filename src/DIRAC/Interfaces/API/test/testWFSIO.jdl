@@ -1,6 +1,6 @@
  
     Arguments = "jobDescription.xml -o LogLevel=info";
-    Executable = "$DIRACROOT/scripts/dirac-jobexec";
+    Executable = "dirac-jobexec";
     JobGroup = jobGroup;
     JobName = jobName;
     JobType = jobType;

@@ -338,7 +338,7 @@ class FileCatalogHandler(RequestHandler):
     """ Get the status for the supplied replicas """
     return self.fileCatalogDB.getReplicaStatus(lfns, self.getRemoteCredentials())
 
-  types_getFileAncestors = [[list, dict], [list, int]]
+  types_getFileAncestors = [[list, dict], (list,) + six.integer_types]
 
   def export_getFileAncestors(self, lfns, depths):
     """ Get the status for the supplied replicas """
@@ -348,7 +348,7 @@ class FileCatalogHandler(RequestHandler):
     lfnDict = dict.fromkeys(lfns, True)
     return self.fileCatalogDB.getFileAncestors(lfnDict, dList, self.getRemoteCredentials())
 
-  types_getFileDescendents = [[list, dict], [list, int]]
+  types_getFileDescendents = [[list, dict], (list,) + six.integer_types]
 
   def export_getFileDescendents(self, lfns, depths):
     """ Get the status for the supplied replicas """
@@ -566,7 +566,7 @@ class FileCatalogHandler(RequestHandler):
     lfns = result['Value'].values()
     return self.fileCatalogDB.getFileDetails(lfns, self.getRemoteCredentials())
 
-  types_findFilesByMetadataWeb = [dict, six.string_types, int, int]
+  types_findFilesByMetadataWeb = [dict, six.string_types, six.integer_types, six.integer_types]
 
   def export_findFilesByMetadataWeb(self, metaDict, path, startItem, maxItems):
     """ Find files satisfying the given metadata set

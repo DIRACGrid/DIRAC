@@ -20,6 +20,7 @@ from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 
+
 @DIRACScript()
 def main():
   localCfg = LocalConfiguration()

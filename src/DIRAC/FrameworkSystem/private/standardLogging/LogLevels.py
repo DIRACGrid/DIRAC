@@ -29,7 +29,7 @@ class LogLevels(object):
   DEBUG = logging.DEBUG
   VERBOSE = 15
   INFO = logging.INFO
-  WARN = logging.WARN
+  WARN = logging.WARNING
   NOTICE = 35
   ERROR = logging.ERROR
   ALWAYS = 45

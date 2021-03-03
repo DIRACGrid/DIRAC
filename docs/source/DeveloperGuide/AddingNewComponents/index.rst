@@ -22,4 +22,3 @@ What starts here is a guide to develop DIRAC components. This guide is done in t
    Utilities/index
    Resources/index
    DevelopingWebPages/index
-   CodeQuality/index

@@ -560,7 +560,7 @@ class Transformation(API):
     for parameter in requiredParameters:
       if not self.paramValues[parameter]:
         gLogger.info("%s is not defined for this transformation. This is required..." % parameter)
-        self.paramValues[parameter] = raw_input("Please enter the value of " + parameter + " ")
+        self.paramValues[parameter] = six.moves.input("Please enter the value of " + parameter + " ")
 
     plugin = self.paramValues['Plugin']
     if plugin:
@@ -596,7 +596,7 @@ class Transformation(API):
     requiredParams = ['SourceSE', 'TargetSE']
     for requiredParam in requiredParams:
       if not self.paramValues.get(requiredParam):
-        paramValue = raw_input("Please enter " + requiredParam + " ")
+        paramValue = six.moves.input("Please enter " + requiredParam + " ")
         setter = None
         setterName = "set%s" % requiredParam
         if hasattr(self, setterName) and callable(getattr(self, setterName)):

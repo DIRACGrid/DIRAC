@@ -16,6 +16,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import six
+
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR
@@ -48,7 +50,7 @@ class ConfigurationHandler(RequestHandler):
     sData = gServiceInterface.getCompressedConfigurationData()
     return S_OK(sData)
 
-  types_getCompressedDataIfNewer = [basestring]
+  types_getCompressedDataIfNewer = [six.string_types]
 
   @classmethod
   def export_getCompressedDataIfNewer(cls, sClientVersion):
@@ -58,14 +60,14 @@ class ConfigurationHandler(RequestHandler):
       retDict['data'] = gServiceInterface.getCompressedConfigurationData()
     return S_OK(retDict)
 
-  types_publishSlaveServer = [basestring]
+  types_publishSlaveServer = [six.string_types]
 
   @classmethod
   def export_publishSlaveServer(cls, sURL):
     gServiceInterface.publishSlaveServer(sURL)
     return S_OK()
 
-  types_commitNewData = [basestring]
+  types_commitNewData = [six.string_types]
 
   def export_commitNewData(self, sData):
     global gPilotSynchronizer
@@ -115,7 +117,7 @@ class ConfigurationHandler(RequestHandler):
         return S_ERROR("Can't get contents for version %s: %s" % (version, retVal['Message']))
     return S_OK(contentsList)
 
-  types_rollbackToVersion = [basestring]
+  types_rollbackToVersion = [six.string_types]
 
   def export_rollbackToVersion(self, version):
     retVal = gServiceInterface.getVersionContents(version)

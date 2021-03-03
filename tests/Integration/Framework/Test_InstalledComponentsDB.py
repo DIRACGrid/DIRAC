@@ -48,15 +48,15 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
     """
 
     # Create a sample component
-    result = self.client.addComponent({'System': 'Test',
-                                       'Module': 'TestModule',
+    result = self.client.addComponent({'DIRACSystem': 'Test',
+                                       'DIRACModule': 'TestModule',
                                        'Type': 'TestingFeature'})
 
     self.assertTrue(result['OK'])
 
     # Check if the component exists
-    result = self.client.getComponents({'System': 'Test',
-                                        'Module': 'TestModule',
+    result = self.client.getComponents({'DIRACSystem': 'Test',
+                                        'DIRACModule': 'TestModule',
                                         'Type': 'TestingFeature'},
                                        False,
                                        False)
@@ -64,16 +64,16 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
     self.assertTrue(result['OK'] and len(result['Value']) > 0)
 
     # Update the fields of the created component
-    result = self.client.updateComponents({'System': 'Test',
-                                           'Module': 'TestModule',
+    result = self.client.updateComponents({'DIRACSystem': 'Test',
+                                           'DIRACModule': 'TestModule',
                                            'Type': 'TestingFeature'},
-                                          {'Module': 'NewTestModule'})
+                                          {'DIRACModule': 'NewTestModule'})
 
     self.assertTrue(result['OK'])
 
     # Check if the component with the modified fields exists
-    result = self.client.getComponents({'System': 'Test',
-                                        'Module': 'NewTestModule',
+    result = self.client.getComponents({'DIRACSystem': 'Test',
+                                        'DIRACModule': 'NewTestModule',
                                         'Type': 'TestingFeature'},
                                        False,
                                        False)
@@ -81,15 +81,15 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
     self.assertTrue(result['OK'] and len(result['Value']) > 0)
 
     # Remove the Component
-    result = self.client.removeComponents({'System': 'Test',
-                                           'Module': 'NewTestModule',
+    result = self.client.removeComponents({'DIRACSystem': 'Test',
+                                           'DIRACModule': 'NewTestModule',
                                            'Type': 'TestingFeature'})
 
     self.assertTrue(result['OK'])
 
     # Check if the component was actually removed
-    result = self.client.getComponents({'System': 'Test',
-                                        'Module': 'NewTestModule',
+    result = self.client.getComponents({'DIRACSystem': 'Test',
+                                        'DIRACModule': 'NewTestModule',
                                         'Type': 'TestingFeature'},
                                        False,
                                        False)
@@ -97,40 +97,40 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
     self.assertTrue(result['OK'] and len(result['Value']) <= 0)
 
     # Try to create an incomplete component
-    result = self.client.addComponent({'System': 'Test'})
+    result = self.client.addComponent({'DIRACSystem': 'Test'})
 
     self.assertFalse(result['OK'])
 
     # Multiple removal
-    self.client.addComponent({'System': 'Test',
-                              'Module': 'TestModule1',
+    self.client.addComponent({'DIRACSystem': 'Test',
+                              'DIRACModule': 'TestModule1',
                               'Type': 'TestingFeature1'})
-    self.client.addComponent({'System': 'Test',
-                              'Module': 'TestModule2',
+    self.client.addComponent({'DIRACSystem': 'Test',
+                              'DIRACModule': 'TestModule2',
                               'Type': 'TestingFeature1'})
-    self.client.addComponent({'System': 'Test',
-                              'Module': 'TestModule1',
+    self.client.addComponent({'DIRACSystem': 'Test',
+                              'DIRACModule': 'TestModule1',
                               'Type': 'TestingFeature2'})
 
-    self.client.removeComponents({'System': 'Test', 'Module': 'TestModule1'})
+    self.client.removeComponents({'DIRACSystem': 'Test', 'DIRACModule': 'TestModule1'})
 
-    result = self.client.getComponents({'System': 'Test',
-                                        'Module': 'TestModule2',
+    result = self.client.getComponents({'DIRACSystem': 'Test',
+                                        'DIRACModule': 'TestModule2',
                                         'Type': 'TestingFeature1'},
                                        False,
                                        False)
 
     self.assertTrue(result['OK'] and len(result['Value']) >= 1)
 
-    result = self.client.getComponents({'System': 'Test',
-                                        'Module': 'TestModule1'},
+    result = self.client.getComponents({'DIRACSystem': 'Test',
+                                        'DIRACModule': 'TestModule1'},
                                        False,
                                        False)
 
     self.assertTrue(result['OK'] and len(result['Value']) <= 0)
 
-    self.client.removeComponents({'System': 'Test',
-                                  'Module': 'TestModule2',
+    self.client.removeComponents({'DIRACSystem': 'Test',
+                                  'DIRACModule': 'TestModule2',
                                   'Type': 'TestingFeature1'})
 
     self.assertTrue(result['OK'])
@@ -221,8 +221,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
     result = self.client.addInstallation({'InstallationTime': datetime.datetime.now(),
                                           'UnInstallationTime': datetime.datetime.now(),
                                           'Instance': 'TestInstallA111'},
-                                         {'System': 'UnexistentSystem',
-                                          'Module': 'UnexistentModule',
+                                         {'DIRACSystem': 'UnexistentSystem',
+                                          'DIRACModule': 'UnexistentModule',
                                           'Type': 'UnexistentType'},
                                          {'HostName': 'fictional',
                                           'CPU': 'TestCPU'},
@@ -232,8 +232,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
 
     # Check if the installation exists
     result = self.client.getInstallations({'Instance': 'TestInstallA111'},
-                                          {'System': 'UnexistentSystem',
-                                           'Module': 'UnexistentModule',
+                                          {'DIRACSystem': 'UnexistentSystem',
+                                           'DIRACModule': 'UnexistentModule',
                                            'Type': 'UnexistentType'},
                                           {'HostName': 'fictional',
                                            'CPU': 'TestCPU'},
@@ -243,8 +243,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
 
     # Update the fields of the created installation
     result = self.client.updateInstallations({'Instance': 'TestInstallA111'},
-                                             {'System': 'UnexistentSystem',
-                                              'Module': 'UnexistentModule',
+                                             {'DIRACSystem': 'UnexistentSystem',
+                                              'DIRACModule': 'UnexistentModule',
                                               'Type': 'UnexistentType'},
                                              {'HostName': 'fictional',
                                               'CPU': 'TestCPU'},
@@ -255,8 +255,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
 
     # Check if the installation with the modified fields exists
     result = self.client.getInstallations({'Instance': 'TestInstallA222'},
-                                          {'System': 'UnexistentSystem',
-                                           'Module': 'UnexistentModule',
+                                          {'DIRACSystem': 'UnexistentSystem',
+                                           'DIRACModule': 'UnexistentModule',
                                            'Type': 'UnexistentType'},
                                           {'HostName': 'fictional',
                                            'CPU': 'TestCPU'},
@@ -266,8 +266,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
 
     # Remove the Installation
     result = self.client.removeInstallations({'Instance': 'TestInstallA222'},
-                                             {'System': 'UnexistentSystem',
-                                              'Module': 'UnexistentModule',
+                                             {'DIRACSystem': 'UnexistentSystem',
+                                              'DIRACModule': 'UnexistentModule',
                                               'Type': 'UnexistentType'},
                                              {'HostName': 'fictional',
                                               'CPU': 'TestCPU'})
@@ -276,8 +276,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
 
     # Check if the installation was actually removed
     result = self.client.getInstallations({'Instance': 'TestInstallA222'},
-                                          {'System': 'UnexistentSystem',
-                                           'Module': 'UnexistentModule',
+                                          {'DIRACSystem': 'UnexistentSystem',
+                                           'DIRACModule': 'UnexistentModule',
                                               'Type': 'UnexistentType'},
                                           {'HostName': 'fictional',
                                            'CPU': 'TestCPU'},
@@ -290,8 +290,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
         {'InstallationTime': datetime.datetime.now(),
          'UnInstallationTime': datetime.datetime.now(),
          'Instance': 'TestInstallA333'},
-        {'System': 'UnexistentSystem',
-         'Module': 'UnexistentModule22A',
+        {'DIRACSystem': 'UnexistentSystem',
+         'DIRACModule': 'UnexistentModule22A',
          'Type': 'UnexistentType'},
         {'HostName': 'fictional',
          'CPU': 'TestCPU'},
@@ -304,8 +304,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
         {'InstallationTime': datetime.datetime.now(),
          'UnInstallationTime': datetime.datetime.now(),
          'Instance': 'MultipleRemovalInstall1'},
-        {'System': 'UnexistentSystem',
-         'Module': 'UnexistentModule',
+        {'DIRACSystem': 'UnexistentSystem',
+         'DIRACModule': 'UnexistentModule',
          'Type': 'UnexistentType'},
         {'HostName': 'fictional',
          'CPU': 'TestCPU'},
@@ -314,8 +314,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
         {'InstallationTime': datetime.datetime.now(),
          'UnInstallationTime': datetime.datetime.now(),
          'Instance': 'MultipleRemovalInstall2'},
-        {'System': 'UnexistentSystem',
-         'Module': 'UnexistentModule',
+        {'DIRACSystem': 'UnexistentSystem',
+         'DIRACModule': 'UnexistentModule',
          'Type': 'UnexistentType'},
         {'HostName': 'fictional',
          'CPU': 'TestCPU'},
@@ -324,8 +324,8 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
         {'InstallationTime': datetime.datetime.now(),
          'UnInstallationTime': datetime.datetime.now(),
          'Instance': 'MultipleRemovalInstall3'},
-        {'System': 'UnexistentSystem',
-         'Module': 'UnexistentModule2',
+        {'DIRACSystem': 'UnexistentSystem',
+         'DIRACModule': 'UnexistentModule2',
          'Type': 'UnexistentType'},
         {'HostName': 'fictional',
          'CPU': 'TestCPU'},
@@ -341,35 +341,35 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
     self.assertTrue(result['OK'] and len(result['Value']) == 2)
 
     self.client.removeInstallations({},
-                                    {'Module': 'UnexistentModule'},
+                                    {'DIRACModule': 'UnexistentModule'},
                                     {})
 
     result = self.client.getInstallations({},
-                                          {'Module': 'UnexistentModule2'},
+                                          {'DIRACModule': 'UnexistentModule2'},
                                           {}, False)
 
     self.assertTrue(result['OK'] and len(result['Value']) >= 1)
 
     result = self.client.getInstallations({},
-                                          {'Module': 'UnexistentModule'},
+                                          {'DIRACModule': 'UnexistentModule'},
                                           {},
                                           False)
 
     self.assertTrue(result['OK'] and len(result['Value']) <= 0)
 
     self.client.removeInstallations({},
-                                    {'Module': 'UnexistentModule2'},
+                                    {'DIRACModule': 'UnexistentModule2'},
                                     {})
 
     self.assertTrue(result['OK'])
 
     # Clean up what we created
     self.client.removeHosts({'HostName': 'fictional', 'CPU': 'TestCPU'})
-    self.client.removeComponents({'System': 'UnexistentSystem',
-                                  'Module': 'UnexistentModule',
+    self.client.removeComponents({'DIRACSystem': 'UnexistentSystem',
+                                  'DIRACModule': 'UnexistentModule',
                                   'Type': 'UnexistentType'})
-    self.client.removeComponents({'System': 'UnexistentSystem',
-                                  'Module': 'UnexistentModule2',
+    self.client.removeComponents({'DIRACSystem': 'UnexistentSystem',
+                                  'DIRACModule': 'UnexistentModule2',
                                   'Type': 'UnexistentType'})
 
   def testHostLogging(self):

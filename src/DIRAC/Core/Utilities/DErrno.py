@@ -46,8 +46,6 @@ import os
 import imp
 import sys
 
-# pylint: disable=bad-continuation
-
 # To avoid conflict, the error numbers should be greater than 1000
 # We decided to group the by range of 100 per system
 

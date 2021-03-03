@@ -4,6 +4,8 @@
 
 __RCSID__ = "$Id$"
 
+import six
+
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 # You need to copy ../DB/UserDB in DIRAC/FrameworkSystem/DB
@@ -25,7 +27,7 @@ class UserDiracHandler(RequestHandler):
     return S_OK()
 
   auth_addUser = ['all']
-  types_addUser = [basestring]
+  types_addUser = [six.string_types]
 
   def export_addUser(self, whom):
     """ Add a user and return user id
@@ -36,7 +38,7 @@ class UserDiracHandler(RequestHandler):
     return newUser
 
   auth_editUser = ['all']
-  types_editUser = [int, basestring]
+  types_editUser = [int, six.string_types]
 
   def export_editUser(self, uid, value):
     """ Edit a user """

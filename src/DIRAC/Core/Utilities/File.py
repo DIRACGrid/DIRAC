@@ -209,39 +209,6 @@ def getGlobbedFiles(files):
   return globbedFiles
 
 
-def getCommonPath(files):
-  """Get the common path for all files in the file list.
-
-  :param files: list of strings with paths
-  :type files: python:list
-  """
-  def properSplit(dirPath):
-    """Splitting of path to drive and path parts for non-Unix file systems.
-
-    :param string dirPath: path
-    """
-    nDrive, nPath = os.path.splitdrive(dirPath)
-    return [nDrive] + [d for d in nPath.split(os.sep) if d.strip()]
-  if not files:
-    return ""
-  commonPath = properSplit(files[0])
-  for fileName in files:
-    if os.path.isdir(fileName):
-      dirPath = fileName
-    else:
-      dirPath = os.path.dirname(fileName)
-    nPath = properSplit(dirPath)
-    tPath = []
-    for i in range(min(len(commonPath), len(nPath))):
-      if commonPath[i] != nPath[i]:
-        break
-      tPath .append(commonPath[i])
-    if not tPath:
-      return ""
-    commonPath = tPath
-  return tPath[0] + os.sep + os.path.join(*tPath[1:])
-
-
 def getMD5ForFiles(fileList):
   """Calculate md5 for the content of all the files.
 

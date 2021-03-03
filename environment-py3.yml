@@ -6,6 +6,8 @@ channels:
   - defaults
 
 dependencies:
+  # Temporary workarounds
+  - astroid !=2.5  # https://github.com/PyCQA/astroid/issues/903
   # runtime
   - python =3.8
   - pip
@@ -39,6 +41,7 @@ dependencies:
   - mysqlclient
   - diraccfg
   - subprocess32
+  - ldap3
   # testing and development
   - autopep8
   - caniusepython3
