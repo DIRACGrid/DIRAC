@@ -81,4 +81,5 @@ class CERNLDAPSyncPlugin(object):
           "Expected exactly one match for CN=%s but found %s"
           % (commonName, len(response))
       )
-    return response[0]["attributes"]
+    # https://github.com/PyCQA/pylint/issues/4148
+    return response[0]["attributes"]  # pylint: disable=unsubscriptable-object

@@ -21,6 +21,8 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
+import six
+
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
@@ -39,7 +41,7 @@ def main():
   if len(args) < 1:
     Script.showHelp()
 
-  choice = raw_input("Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join(args))
+  choice = six.moves.input("Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join(args))
   choice = choice.lower()
   if choice not in ("yes", "y"):
     print("Delete aborted")

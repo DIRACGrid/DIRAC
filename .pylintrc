@@ -34,7 +34,6 @@ load-plugins=
 #I0011 = locally-disabling
 disable=R0903,C0326,I0011,redefined-variable-type,c-extension-no-member
 
-
 [REPORTS]
 
 # Set the output format. Available formats are text, parseable, colorized, msvs
@@ -47,7 +46,7 @@ output-format=colorized
 files-output=no
 
 # Tells whether to display a full report or only the messages
-reports=yes
+reports=no
 
 # Python expression which should return a note less than 10 (10 is the highest
 # note). You have access to the variables errors warning, statement which
@@ -137,15 +136,17 @@ ignore-docstrings=yes
 ignore-mixin-members=yes
 
 # List of classes names for which member attributes should not be checked
-# (useful for classes with attributes dynamically set).
-ignored-classes=SQLObject
+# Skip some sqlalchemy objects which cause trouble 
+ignored-classes=SQLObject,Session
 
 # List of members which are set dynamically and missed by pylint inference
 # system, and so shouldn't trigger E0201 when accessed.
 generated-members=REQUEST,acl_users,aq_parent
 
 # List of ignored modules
-ignored-modules = MySQLdb,numpy,six.moves.urllib
+# (useful for classes with attributes dynamically set).
+# subprocess32 is disabled due to https://github.com/PyCQA/astroid/issues/911
+ignored-modules = MySQLdb,numpy,six.moves.urllib,irods,subprocess32
 
 [VARIABLES]
 

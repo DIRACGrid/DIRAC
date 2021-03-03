@@ -30,13 +30,13 @@ __RCSID__ = "$Id$"
 
 # # imports
 import os
-from types import StringTypes
 try:
   from hashlib import md5
 except ImportError:
   from md5 import md5
 
 import json
+import six
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DErrno
@@ -172,7 +172,7 @@ class ReqProxyHandler(RequestHandler):
       return S_ERROR(err)
     return S_OK(cachedRequests)
 
-  types_putRequest = [StringTypes]
+  types_putRequest = [six.string_types]
 
   def export_putRequest(self, requestJSON):
     """ forward request from local RequestDB to central RequestManager
@@ -249,7 +249,7 @@ class ReqProxyHandler(RequestHandler):
     except OSError as e:
       return S_ERROR(DErrno.ERMSUKN, "Error listing %s: %s" % (cacheDir, repr(e)))
 
-  types_showCachedRequest = [StringTypes]
+  types_showCachedRequest = [six.string_types]
 
   def export_showCachedRequest(self, filename):
     """ Show the request cached in the given file """

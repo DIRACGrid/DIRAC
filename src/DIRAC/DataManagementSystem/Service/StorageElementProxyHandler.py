@@ -17,7 +17,7 @@ from six.moves import socketserver
 import threading
 import socket
 import random
-from types import DictType, ListType, StringTypes
+import six
 # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
@@ -110,7 +110,7 @@ class StorageElementProxyHandler(RequestHandler):
   .. class:: StorageElementProxyHandler
   """
 
-  types_callProxyMethod = [StringTypes, StringTypes, ListType, DictType]
+  types_callProxyMethod = [six.string_types, six.string_types, list, dict]
 
   def export_callProxyMethod(self, se, name, args, kargs):
     """ A generic method to call methods of the Storage Element.
@@ -141,7 +141,7 @@ class StorageElementProxyHandler(RequestHandler):
       return S_ERROR("Attribute '%s' isn't a method!" % name)
     return method(*args, **kargs)
 
-  types_uploadFile = [StringTypes, StringTypes]
+  types_uploadFile = [six.string_types, six.string_types]
 
   def export_uploadFile(self, se, pfn):
     """ This method uploads a file present in the local cache to the specified storage element
@@ -177,7 +177,7 @@ class StorageElementProxyHandler(RequestHandler):
       gLogger.exception("Failed to remove local file", localFileName, x)
     return res
 
-  types_prepareFile = [StringTypes, StringTypes]
+  types_prepareFile = [six.string_types, six.string_types]
 
   def export_prepareFile(self, se, pfn):
     """ This method simply gets the file to the local storage area
@@ -211,7 +211,7 @@ class StorageElementProxyHandler(RequestHandler):
       return res
     return S_OK()
 
-  types_prepareFileForHTTP = [list(StringTypes) + [ListType]]
+  types_prepareFileForHTTP = [list(six.string_types) + [list]]
 
   def export_prepareFileForHTTP(self, lfn):
     """ This method simply gets the file to the local storage area using LFN

@@ -57,7 +57,7 @@ class ListTestCase(unittest.TestCase):
     randList = List.randomize(aList)
     self.assertEqual(randList, [])
     # non empty
-    aList = [1, 2, 3]
+    aList = ["1", "2", "3"]
     randList = List.randomize(aList)
     self.assertEqual(len(aList), len(randList))
     for x in aList:

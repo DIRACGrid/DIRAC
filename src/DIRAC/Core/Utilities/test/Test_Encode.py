@@ -340,13 +340,13 @@ def test_types():
   import types as pythonTypes
   from DIRAC.Core.Utilities.DEncode import types as DIRACTypes
 
-  assert DIRACTypes.IntType is pythonTypes.IntType
-  assert DIRACTypes.LongType is pythonTypes.LongType
-  assert DIRACTypes.FloatType is pythonTypes.FloatType
-  assert DIRACTypes.BooleanType is pythonTypes.BooleanType
-  assert DIRACTypes.StringType is pythonTypes.StringType
-  assert DIRACTypes.UnicodeType is pythonTypes.UnicodeType
-  assert DIRACTypes.NoneType is pythonTypes.NoneType
-  assert DIRACTypes.ListType is pythonTypes.ListType
-  assert DIRACTypes.TupleType is pythonTypes.TupleType
-  assert DIRACTypes.DictType is pythonTypes.DictType
+  assert DIRACTypes.IntType is pythonTypes.IntType  # pylint: disable=no-member
+  assert DIRACTypes.LongType is pythonTypes.LongType  # pylint: disable=no-member
+  assert DIRACTypes.FloatType is pythonTypes.FloatType  # pylint: disable=no-member
+  assert DIRACTypes.BooleanType is pythonTypes.BooleanType  # pylint: disable=no-member
+  assert DIRACTypes.StringType is pythonTypes.StringType  # pylint: disable=no-member
+  assert DIRACTypes.UnicodeType is pythonTypes.UnicodeType  # pylint: disable=no-member
+  assert DIRACTypes.NoneType is pythonTypes.NoneType  # pylint: disable=no-member
+  assert DIRACTypes.ListType is pythonTypes.ListType  # pylint: disable=no-member
+  assert DIRACTypes.TupleType is pythonTypes.TupleType  # pylint: disable=no-member
+  assert DIRACTypes.DictType is pythonTypes.DictType  # pylint: disable=no-member
