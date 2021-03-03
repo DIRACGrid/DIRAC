@@ -107,6 +107,19 @@ NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
+[v7r1p31]
+
+*Resources
+FIX: (#4996) Getting access to $_CONDOR_JOB_AD in HTCondorResourceUsage
+
+*WMS
+CHANGE: (#5001) JobAgent: if we don't match a job, independently from the reason, we wait a
+        bit longer before trying again
+CHANGE: (#5001) JobAgent: moved check of availability of CE before doing anything else
+NEW: (#4998) JobWrapper - find executables from PATH if not using an absolute filename
+FIX: (#5009) As the job status is set AFTER the request is uploaded, it may happen that the request
+     is executed BEFORE the status is set... Add thus a delay of 2 minutes for execution
+
 [v7r1p30]
 
 *Configuration
@@ -655,6 +668,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p50]
+
+*Core
+CHANGE: (#4927) Added MySQL LIKE query feature.
 
 [v7r0p49]
 

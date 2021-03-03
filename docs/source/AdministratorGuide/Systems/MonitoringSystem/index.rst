@@ -13,12 +13,17 @@ Overview
 The Monitoring system is used to monitor various components of DIRAC. Currently, we have three monitoring types:
 
   - WMSHistory: for monitoring the DIRAC WMS
+<<<<<<< HEAD
   - Component Monitoring: for monitoring DIRAC components such as services, agents, etc.
   - RMS Monitoring: for monitoring the DIRAC RequestManagement System (mostly the Request Executing Agent).
+=======
+  - Component Monitoring: for monitoring  DIRAC components such as services, agents, etc (in preview mode, it will be fully working starting from DIRAC v7r2).
+>>>>>>> rel-v7r1
 
 It is based on Elasticsearch distributed search and analytics NoSQL database.
 If you want to use it, you have to install the Monitoring service, and of course connect to a ElasticSearch instance.
 
+<<<<<<< HEAD
 Install Elasticsearch
 ======================
 
@@ -81,6 +86,8 @@ can be defined with::
 
 The given periods above are also the default periods in the code.
 
+=======
+>>>>>>> rel-v7r1
 
 Enable WMSHistory monitoring
 ============================
