@@ -34,7 +34,8 @@ class HTCondorResourceUsage(ResourceUsage):
     #   only present on some Sites
     # - CurrentTime: current time
     # - JobCurrentStartDate: start of the job execution
-    cmd = 'condor_status -ads $_CONDOR_JOB_AD -af MaxRuntime CurrentTime-JobCurrentStartDate'
+    jobDescription = os.environ.get('_CONDOR_JOB_AD')
+    cmd = 'condor_status -ads %s -af MaxRuntime CurrentTime-JobCurrentStartDate' % jobDescription
     result = runCommand(cmd)
     if not result['OK']:
       return S_ERROR('Current batch system is not supported')
