@@ -352,6 +352,14 @@ class ComponentMonitoringHandler(RequestHandler):
 
     return S_OK(result['Value'])
 
+  types_getLogs = []
+
+  def export_getLogs(self):
+    """
+    Retrieves the logging information currently stored for all hosts
+    """
+    return ComponentMonitoringHandler.db.getLogs()
+
   types_removeLogs = [dict]
 
   def export_removeLogs(self, fields):
