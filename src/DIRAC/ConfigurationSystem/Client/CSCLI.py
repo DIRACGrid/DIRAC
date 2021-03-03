@@ -18,7 +18,7 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
 
 __RCSID__ = "$Id$"
 
@@ -127,7 +127,7 @@ class CSCLI(CLI):
   def _tryConnection(self):
     print("Trying connection to %s" % self.masterURL)
     try:
-      self.rpcClient = RPCClient(self.masterURL)
+      self.rpcClient = ConfigurationClient(url=self.masterURL)
       self._setStatus()
     except Exception as x:
       gLogger.error("Couldn't connect to master CS server", "%s (%s)" % (self.masterURL, str(x)))
