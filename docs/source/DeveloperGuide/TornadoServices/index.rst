@@ -147,6 +147,30 @@ Options available are:
 
 This start method can be useful for developing new service or create starting script for a specific service, like the Configuration System (as master).
 
+
+MasterCS special case
+*********************
+
+The master CS is different because it uses the same global variable (``gConfig``) but uses it also to write config. Because of that, it needs to run in a separate process. In order to do so:
+
+* Do NOT specify ``Protocol=https`` in the service description, otherwise it will be ran with all the other Tornado services
+* If you run on the same machine as other TornadoService, specify a ``Port`` in the service description
+
+Finally, there is no automatic installations script. So just install a CS as you normally would do, and then edit the ``run`` file like that::
+
+  diff --git a/run b/run.new
+  index d45dce1..f5f3b55 100755
+  --- a/run
+  +++ b/run.new
+  @@ -7,6 +7,6 @@
+    [ "service" = "agent" ] && renice 20 -p $$
+    #
+    #
+  -  exec python $DIRAC/DIRAC/Core/scripts/dirac-service.py Configuration/Server --cfg /opt/dirac/pro/etc/Configuration_Server.cfg < /dev/null
+  +  exec tornado-start-CS -ddd
+
+
+
 TransferClient
 **************
 

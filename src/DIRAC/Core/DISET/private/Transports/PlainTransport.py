@@ -84,7 +84,7 @@ class PlainTransport(BaseTransport):
         data = self.oSocket.recv(bufSize)
         return S_OK(data)
       except socket.error as e:
-        if e[0] == 11:
+        if e.errno == 11:
           time.sleep(0.001)
         else:
           return S_ERROR("Exception while reading from peer: %s" % str(e))
@@ -109,7 +109,7 @@ class PlainTransport(BaseTransport):
         if sent > 0:
           sentBytes += sent
       except socket.error as e:
-        if e[0] == 11:
+        if e.errno == 11:
           time.sleep(0.001)
         else:
           return S_ERROR("Exception while sending to peer: %s" % str(e))

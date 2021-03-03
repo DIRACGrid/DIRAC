@@ -9,10 +9,12 @@ __RCSID__ = "$Id$"
 import cmd
 import os
 
+import six
+
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
 
 
 class CSShellCLI(CLI):
@@ -52,7 +54,7 @@ class CSShellCLI(CLI):
 
     print("Trying to connect to " + self.serverURL + "...", end=' ')
 
-    self.modificator = Modificator(RPCClient(self.serverURL))
+    self.modificator = Modificator(ConfigurationClient(url=self.serverURL))
     rv = self.modificator.loadFromRemote()
     rv2 = self.modificator.loadCredentials()
 
@@ -72,7 +74,7 @@ class CSShellCLI(CLI):
   def do_disconnect(self, _line):
     """Disconnect from CS"""
     if self.connected and self.dirty:
-      res = raw_input("Do you want to commit your changes into the CS ? [y/N] ")
+      res = six.moves.input("Do you want to commit your changes into the CS ? [y/N] ")
       if res.lower() in ["y", "yes"]:
         self.do_commit("")
 

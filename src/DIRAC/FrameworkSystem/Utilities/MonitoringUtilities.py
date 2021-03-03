@@ -48,8 +48,8 @@ def monitorInstallation(componentType, system, component, module=None, cpu=None,
   result = monitoringClient.installationExists({'Instance': instance,
                                                 'UnInstallationTime': None},
                                                {'Type': componentType,
-                                                'System': system,
-                                                'Module': module},
+                                                'DIRACSystem': system,
+                                                'DIRACModule': module},
                                                {'HostName': hostname,
                                                 'CPU': cpu})
 
@@ -62,8 +62,8 @@ def monitorInstallation(componentType, system, component, module=None, cpu=None,
                                              'InstalledBy': user,
                                              'Instance': instance},
                                             {'Type': componentType,
-                                             'System': system,
-                                             'Module': module},
+                                             'DIRACSystem': system,
+                                             'DIRACModule': module},
                                             {'HostName': hostname,
                                              'CPU': cpu},
                                             True)
@@ -99,9 +99,9 @@ def monitorUninstallation(system, component, cpu=None, hostname=None):
     hostname = socket.getfqdn()
   instance = component[0: 32]
 
-  result = monitoringClient.updateInstallations({'Instance': instance, 'UnInstallationTime': None},
-                                                {'System': system},
-                                                {'HostName': hostname, 'CPU': cpu},
-                                                {'UnInstallationTime': datetime.datetime.utcnow(),
-                                                 'UnInstalledBy': user})
+  result = monitoringClient.updateInstallations(
+      {'Instance': instance, 'UnInstallationTime': None},
+      {'DIRACSystem': system},
+      {'HostName': hostname, 'CPU': cpu},
+      {'UnInstallationTime': datetime.datetime.utcnow(), 'UnInstalledBy': user})
   return result

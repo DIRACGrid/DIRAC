@@ -5,6 +5,7 @@ from __future__ import division
 
 import math
 import operator
+from functools import reduce
 
 from PIL import Image
 

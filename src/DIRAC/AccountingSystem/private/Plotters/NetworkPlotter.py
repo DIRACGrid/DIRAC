@@ -106,7 +106,7 @@ class NetworkPlotter(BaseReporter):
     values.extend([0] * 10)
 
     scale_data = dict(zip(boundaries, values))
-    scale_ticks = range(0, 11)
+    scale_ticks = list(range(0, 11))
     scale_ticks.append(100)
 
     metadata = {'title': 'Magnified packet loss rate by %s' % reportRequest['grouping'],

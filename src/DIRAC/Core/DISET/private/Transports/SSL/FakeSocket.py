@@ -31,4 +31,4 @@ class FakeSocket:
 
   def makefile(self, mode, bufsize=None):
     self.iCopies += 1
-    return socket._fileobject(self.sock, mode, bufsize)
+    return socket._fileobject(self.sock, mode, bufsize)  # pylint: disable=no-member

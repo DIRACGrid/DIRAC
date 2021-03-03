@@ -37,8 +37,8 @@ class Component(componentsBase):
                     'mysql_charset': 'utf8'}
 
   componentID = Column('ComponentID', Integer, primary_key=True)
-  system = Column('System', String(32), nullable=False)
-  module = Column('Module', String(32), nullable=False)
+  system = Column('DIRACSystem', String(32), nullable=False)
+  module = Column('DIRACModule', String(32), nullable=False)
   cType = Column('Type', String(32), nullable=False)
 
   def __init__(self, system=null(), module=null(), cType=null()):
@@ -56,8 +56,8 @@ class Component(componentsBase):
     """
 
     self.componentID = dictionary.get('ComponentID', self.componentID)
-    self.system = dictionary.get('System', self.system)
-    self.module = dictionary.get('Module', self.module)
+    self.system = dictionary.get('DIRACSystem', self.system)
+    self.module = dictionary.get('DIRACModule', self.module)
     self.cType = dictionary.get('Type', self.cType)
 
     return S_OK('Successfully read from dictionary')
@@ -72,8 +72,8 @@ class Component(componentsBase):
     """
 
     dictionary = {'ComponentID': self.componentID,
-                  'System': self.system,
-                  'Module': self.module,
+                  'DIRACSystem': self.system,
+                  'DIRACModule': self.module,
                   'Type': self.cType}
 
     if includeInstallations:

@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import types
 import os
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig, rootPath
@@ -46,7 +45,7 @@ def initializeSecurityLoggingHandler(serviceInfo):
 
 class SecurityLoggingHandler(RequestHandler):
 
-  types_logAction = [(types.ListType, types.TupleType)]
+  types_logAction = [(list, tuple)]
 
   def export_logAction(self, secMsg):
     """ Log a single action
@@ -56,7 +55,7 @@ class SecurityLoggingHandler(RequestHandler):
       return S_OK([(secMsg, result['Message'])])
     return S_OK()
 
-  types_logActionBundle = [(types.ListType, types.TupleType)]
+  types_logActionBundle = [(list, tuple)]
 
   def export_logActionBundle(self, secMsgList):
     """ Log a list of actions

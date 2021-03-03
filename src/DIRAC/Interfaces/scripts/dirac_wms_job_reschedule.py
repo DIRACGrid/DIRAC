@@ -44,7 +44,7 @@ def main():
   if result['OK']:
     print('Rescheduled job %s' % ','.join([str(j) for j in result['Value']]))
   else:
-    errorList.append((j, result['Message']))
+    errorList.append((result['Value'][-1], result['Message']))
     print(result['Message'])
     exitCode = 2
 

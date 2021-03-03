@@ -13,6 +13,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import six
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.FrameworkSystem.private.standardLogging.Message import tupleToMessage
@@ -47,8 +49,8 @@ class SystemLoggingHandler(RequestHandler):
     """ This is the function that actually adds the Message to the log Database
 
         :param messageObject: message object
-        :param basestring site: site name
-        :param basestring nodeFQDN: nodeFQDN
+        :param str site: site name
+        :param str nodeFQDN: nodeFQDN
 
         :return: S_OK()/S_ERROR()
     """
@@ -59,14 +61,14 @@ class SystemLoggingHandler(RequestHandler):
     remoteAddress = self.getRemoteAddress()[0]
     return gLogDB.insertMessage(messageObject, site, nodeFQDN, userDN, userGroup, remoteAddress)
 
-  types_addMessages = [list, basestring, basestring]
+  types_addMessages = [list, six.string_types, six.string_types]
 
   def export_addMessages(self, messagesList, site, nodeFQDN):
     """ This is the interface to the service
 
         :param list messagesList: contains a list of Message Objects.
-        :param basestring site: site name
-        :param basestring nodeFQDN: nodeFQDN
+        :param str site: site name
+        :param str nodeFQDN: nodeFQDN
 
         :return: S_OK()/S_ERROR() -- S_ERROR if an exception was raised
     """

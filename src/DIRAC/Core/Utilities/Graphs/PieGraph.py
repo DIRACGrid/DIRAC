@@ -119,9 +119,8 @@ class PieGraph(PlotBase):
                            horizontalalignment=halign,
                            verticalalignment=valign)
 
-          t.set_family(self.prefs['font_family'])
           t.set_fontname(self.prefs['font'])
-          t.set_size(pixelToPoint(self.prefs['text_size'], self.dpi))
+          t.set_fontsize(pixelToPoint(self.prefs['text_size'], self.dpi))
 
           texts.append(t)
 
@@ -139,9 +138,8 @@ class PieGraph(PlotBase):
                            horizontalalignment='center',
                            verticalalignment='center')
 
-          t.set_family(self.prefs['font_family'])
           t.set_fontname(self.prefs['font'])
-          t.set_size(pixelToPoint(self.prefs['text_size'], self.dpi))
+          t.set_fontsize(pixelToPoint(self.prefs['text_size'], self.dpi))
 
           autotexts.append(t)
 

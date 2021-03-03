@@ -75,7 +75,7 @@ class BundleManager(object):
       buffer_ = BytesIO()
       filesToBundle = sorted(File.getGlobbedFiles(bundlePaths))
       if filesToBundle:
-        commonPath = File.getCommonPath(filesToBundle)
+        commonPath = os.path.commonprefix(filesToBundle)
         commonEnd = len(commonPath)
         gLogger.info("Bundle will have %s files with common path %s" % (len(filesToBundle), commonPath))
         with tarfile.open('dummy', "w:gz", buffer_) as tarBuffer:
@@ -90,29 +90,24 @@ class BundleManager(object):
         self.__bundles[bId] = (None, None)
 
 
-gBundleManager = False
-
-
-def initializeBundleDeliveryHandler(serviceInfoDict):
-  global gBundleManager
-  csPath = serviceInfoDict['serviceSectionPath']
-  gBundleManager = BundleManager(csPath)
-  updateBundleTime = gConfig.getValue("%s/BundlesLifeTime" % csPath, 3600 * 6)
-  gLogger.info("Bundles will be updated each %s secs" % updateBundleTime)
-  gThreadScheduler.addPeriodicTask(updateBundleTime, gBundleManager.updateBundles)
-  return S_OK()
-
-
 class BundleDeliveryHandler(RequestHandler):
+
+  @classmethod
+  def initializeHandler(cls, serviceInfoDict):
+    csPath = serviceInfoDict['serviceSectionPath']
+    cls.bundleManager = BundleManager(csPath)
+    updateBundleTime = gConfig.getValue("%s/BundlesLifeTime" % csPath, 3600 * 6)
+    gLogger.info("Bundles will be updated each %s secs" % updateBundleTime)
+    gThreadScheduler.addPeriodicTask(updateBundleTime, cls.bundleManager.updateBundles)
+    return S_OK()
 
   types_getListOfBundles = []
 
-  def export_getListOfBundles(self):
-    global gBundleManager
-    return S_OK(gBundleManager.getBundles())
+  @classmethod
+  def export_getListOfBundles(cls):
+    return S_OK(cls.bundleManager.getBundles())
 
   def transfer_toClient(self, fileId, token, fileHelper):
-    global gBundleManager
     version = ""
     if isinstance(fileId, six.string_types):
       if fileId in ['CAs', 'CRLs']:
@@ -128,11 +123,11 @@ class BundleDeliveryHandler(RequestHandler):
       else:
         bId = fileId[0]
         version = fileId[1]
-    if not gBundleManager.bundleExists(bId):
+    if not self.bundleManager.bundleExists(bId):
       fileHelper.markAsTransferred()
       return S_ERROR("Unknown bundle %s" % bId)
 
-    bundleVersion = gBundleManager.getBundleVersion(bId)
+    bundleVersion = self.bundleManager.getBundleVersion(bId)
     if bundleVersion is None:
       fileHelper.markAsTransferred()
       return S_ERROR("Empty bundle %s" % bId)
@@ -141,7 +136,7 @@ class BundleDeliveryHandler(RequestHandler):
       fileHelper.markAsTransferred()
       return S_OK(bundleVersion)
 
-    buffer_ = BytesIO(gBundleManager.getBundleData(bId))
+    buffer_ = BytesIO(self.bundleManager.getBundleData(bId))
     result = fileHelper.DataSourceToNetwork(buffer_)
     buffer_.close()
     if not result['OK']:

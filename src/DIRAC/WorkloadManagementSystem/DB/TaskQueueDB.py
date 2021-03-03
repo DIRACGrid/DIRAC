@@ -1105,7 +1105,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       retVal = self._query(sqlCmd)
       if not retVal['OK']:
         self.log.error("Can't retrieve task queues field",
-                       "% info: %s" % (field, retVal['Message']))
+                       "%s info: %s" % (field, retVal['Message']))
         return retVal
       for record in retVal['Value']:
         tqId = record[0]

@@ -217,15 +217,13 @@ class PlotBase(object):
         # Set labels
         if xlabel:
           t = ax.set_xlabel(xlabel)
-          t.set_family(prefs['font_family'])
           t.set_fontname(prefs['font'])
-          t.set_size(label_text_size)
+          t.set_fontsize(label_text_size)
 
         if ylabel:
           t = ax.set_ylabel(ylabel)
-          t.set_family(prefs['font_family'])
           t.set_fontname(prefs['font'])
-          t.set_size(label_text_size)
+          t.set_fontsize(label_text_size)
       else:
         self.ax.set_axis_off()
 
@@ -240,7 +238,6 @@ class PlotBase(object):
                                    family=prefs['font_family'],
                                    fontname=prefs['font'])
       self.ax.title.set_transform(self.ax.transAxes)
-      self.ax.title.set_family(prefs['font_family'])
       self.ax.title.set_fontname(prefs['font'])
     if stats_line:
       self.ax.stats = self.ax.text(0.5, (-stats_line_space) / height,

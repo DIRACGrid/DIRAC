@@ -277,11 +277,7 @@ These files can be uploaded and updated at each commit done to the configuration
 
     StaticDirs = pilot
 
-Due to installation issue, the synchronization CS-Pilot is disabled by default, modify the ``/Operations/Defaults/Pilot`` section in the ``/opt/dirac/etc/dirac.cfg`` file as ``dirac``::
-
-    UpdatePilotCStoJSONFile = True
-
-Still as ``dirac``, create the pilot repository that will contain all the pilot files that will be updated whenever a CS update is triggered::
+As ``dirac``, create the pilot repository that will contain all the pilot files that will be updated whenever a CS update is triggered::
 
     mkdir -p /opt/dirac/webRoot/www/pilot
 

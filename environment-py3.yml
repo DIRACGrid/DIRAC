@@ -6,6 +6,8 @@ channels:
   - defaults
 
 dependencies:
+  # Temporary workarounds
+  - astroid !=2.5  # https://github.com/PyCQA/astroid/issues/903
   # runtime
   - python =3.8
   - pip
@@ -21,6 +23,7 @@ dependencies:
   - numpy
   - pexpect >=4.0.1
   - pillow
+  - prompt-toolkit >=3,<4
   - psutil >=4.2.0
   - pyasn1 >0.4.1
   - pyasn1-modules
@@ -39,6 +42,7 @@ dependencies:
   - mysqlclient
   - diraccfg
   - subprocess32
+  - ldap3
   # testing and development
   - autopep8
   - caniusepython3

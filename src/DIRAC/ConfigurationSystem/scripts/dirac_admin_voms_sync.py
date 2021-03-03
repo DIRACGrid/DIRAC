@@ -12,6 +12,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import six
+
 from DIRAC import gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
@@ -77,7 +79,7 @@ def main():
     if dryRun:
       gLogger.notice("There are changes to Registry ready to commit, skipped because of dry run")
     else:
-      yn = raw_input("There are changes to Registry ready to commit, do you want to proceed ? [Y|n]:")
+      yn = six.moves.input("There are changes to Registry ready to commit, do you want to proceed ? [Y|n]:")
       if yn == '' or yn[0].lower() == 'y':
         result = csapi.commitChanges()
         if not result['OK']:

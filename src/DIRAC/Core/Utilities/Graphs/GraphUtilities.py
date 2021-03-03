@@ -232,10 +232,6 @@ class PrettyScalarFormatter(ScalarFormatter):
     else:
       self.orderOfMagnitude = 0
 
-  def pprint_val(self, x):
-    pstring = ScalarFormatter.pprint_val(self, x)
-    return comma_format(pstring)
-
 
 class PrettyDateFormatter(AutoDateFormatter):
   """ This class provides a formatter which conforms to the

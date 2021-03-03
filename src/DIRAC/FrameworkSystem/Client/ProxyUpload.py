@@ -7,7 +7,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 import sys
-import getpass
+from prompt_toolkit import prompt
 import DIRAC
 
 from DIRAC import gLogger
@@ -129,11 +129,13 @@ def uploadProxy(params):
     testChain = X509Chain()
     retVal = testChain.loadKeyFromFile(keyLoc, password=params.userPasswd)
     if not retVal['OK']:
-      passwdPrompt = "Enter Certificate password:"
       if params.stdinPasswd:
         userPasswd = sys.stdin.readline().strip("\n")
       else:
-        userPasswd = getpass.getpass(passwdPrompt)
+        try:
+          userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
+        except KeyboardInterrupt:
+          return S_ERROR("Caught KeyboardInterrupt, exiting...")
       params.userPasswd = userPasswd
 
     DIRAC.gLogger.info("Loading cert and key")
