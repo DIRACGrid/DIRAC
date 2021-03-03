@@ -24,6 +24,7 @@ dependencies:
   - numpy >=1.10.1,<1.16  # Limit to 1.15 as Python 2 pylint has bugs with numpy 1.16
   - pexpect >=4.0.1
   - pillow
+  - prompt_toolkit
   - psutil >=4.2.0
   - pyasn1 >0.4.1
   - pyasn1-modules
