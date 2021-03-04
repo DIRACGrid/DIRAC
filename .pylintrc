@@ -146,7 +146,7 @@ generated-members=REQUEST,acl_users,aq_parent
 # List of ignored modules
 # (useful for classes with attributes dynamically set).
 # subprocess32 is disabled due to https://github.com/PyCQA/astroid/issues/911
-ignored-modules = MySQLdb,numpy,six.moves.urllib,irods,subprocess32
+ignored-modules = MySQLdb,numpy,six.moves.urllib,subprocess32
 
 [VARIABLES]
 
