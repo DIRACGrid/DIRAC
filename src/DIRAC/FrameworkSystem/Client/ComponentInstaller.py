@@ -386,8 +386,6 @@ class ComponentInstaller(object):
 
     # DIRAC/Extensions
     extensions = self.localCfg.getOption(cfgInstallPath('Extensions'), [])
-    while 'Web' in list(extensions):
-      extensions.remove('Web')
     centralCfg.createNewSection('DIRAC', '')
     if extensions:
       centralCfg['DIRAC'].addKey('Extensions', ','.join(extensions), '')  # pylint: disable=no-member
@@ -396,9 +394,11 @@ class ComponentInstaller(object):
     if vo:
       centralCfg['DIRAC'].addKey('VirtualOrganization', vo, '')  # pylint: disable=no-member
 
-    for section in ['Systems', 'Resources',
-                    'Resources/Sites', 'Resources/Sites/DIRAC',
-                    'Resources/Sites/LCG', 'Operations', 'Registry']:
+    for section in ['Systems',
+                    'Resources',
+                    'Resources/Sites',
+                    'Operations',
+                    'Registry']:
       if installCfg.isSection(section):
         centralCfg.createNewSection(section, contents=installCfg[section])
 

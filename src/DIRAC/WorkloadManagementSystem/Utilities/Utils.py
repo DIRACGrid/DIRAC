@@ -10,8 +10,6 @@ import sys
 import json
 import six
 
-import six
-
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.File import mkDir
 
