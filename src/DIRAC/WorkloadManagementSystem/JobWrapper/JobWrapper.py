@@ -249,10 +249,9 @@ class JobWrapper(object):
     """Sets some initial job parameters
     """
     parameters = []
+    parameters.append(('Pilot_Reference', self.ceArgs.get('PilotReference', self.pilotRef)))
     if 'LocalSE' in self.ceArgs:
       parameters.append(('AgentLocalSE', ','.join(self.ceArgs['LocalSE'])))
-    if 'PilotReference' in self.ceArgs:
-      parameters.append(('Pilot_Reference', self.ceArgs['PilotReference']))
     if 'CPUScalingFactor' in self.ceArgs:
       parameters.append(('CPUScalingFactor', self.ceArgs['CPUScalingFactor']))
     if 'CPUNormalizationFactor' in self.ceArgs:
