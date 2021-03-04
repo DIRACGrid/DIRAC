@@ -335,7 +335,7 @@ class JobDB(DB):
         ret = self._escapeString(x)
         if not ret['OK']:
           return ret
-        paramNameList.append(x)
+        paramNameList.append(ret['Value'])
       paramNames = ','.join(paramNameList)
       paramCondition = " AND Name in (%s)" % paramNames
     rCounter = ''
