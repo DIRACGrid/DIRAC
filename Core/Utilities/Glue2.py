@@ -87,7 +87,7 @@ def getGlue2CEInfo(vo, host):
 
   siteInfo = __getGlue2ShareInfo(host, shareInfoLists)
   if not siteInfo['OK']:
-    sLog.error("Could not get CE info for", shareID + "  " + siteInfo['Message'])
+    sLog.error("Could not get CE info for", "%s: %s" % (shareID, siteInfo['Message']))
     return siteInfo
   siteDict = siteInfo['Value']
   sLog.debug("Found Sites:\n%s" % pformat(siteDict))
