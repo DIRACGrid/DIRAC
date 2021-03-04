@@ -366,7 +366,7 @@ class JobAgent(AgentModule):
             jobID, errorMsg, self.stopOnApplicationFailure)
 
       self.log.debug('Before self._submitJob() (%sCE)' % (self.ceName))
-      result = self._submitJob(
+      result_submitJob = self._submitJob(
           jobID=jobID,
           jobParams=params,
           resourceParams=ceDict,
@@ -377,6 +377,25 @@ class JobAgent(AgentModule):
           wholeNode=wholeNode,
           maxNumberOfProcessors=maxNumberOfProcessors,
           mpTag=mpTag)
+
+      # Committing the JobReport before evaluating the job submission
+      res = jobReport.commit()
+      if not res['OK']:
+        resFD = jobReport.generateForwardDISET()
+        if not resFD['OK']:
+          self.log.error("Error generating ForwardDISET operation", resFD['Message'])
+        else:
+          # Here we create the Request.
+          op = resFD['Value']
+          request = Request()
+          requestName = 'jobAgent_%s' % jobID
+          request.RequestName = requestName.replace('"', '')
+          request.JobID = jobID
+          request.SourceComponent = "JobAgent_%s" % jobID
+          request.addOperation(op)
+          # This might fail, but only a message would be printed.
+          self._sendFailoverRequest(request)
+
       if not result['OK']:
         return self.__finish(result['Message'])
       elif 'PayloadFailed' in result:
@@ -594,7 +613,7 @@ class JobAgent(AgentModule):
       self.log.error('Job submission failed', jobID)
       jobReport.setJobParameter(par_name='ErrorMessage',
                                 par_value='%s CE Submission Error' % (self.ceName),
-                                sendFlag=False)
+                                sendFlag=True)
       if 'ReschedulePayload' in submission:
         self._rescheduleFailedJob(jobID, submission['Message'], self.stopOnApplicationFailure)
         return S_OK()  # Without this, the job is marked as failed
@@ -604,24 +623,6 @@ class JobAgent(AgentModule):
                          'exit code = %s' % (str(submission['Value'])))
       self.log.error("CE Error", "%s : %s" % (self.ceName, submission['Message']))
       submissionResult = submission
-
-    # Committing the JobReport
-    res = jobReport.commit()
-    if not res['OK']:
-      resFD = jobReport.generateForwardDISET()
-      if not resFD['OK']:
-        self.log.error("Error generating ForwardDISET operation", resFD['Message'])
-      else:
-        # Here we create the Request.
-        op = resFD['Value']
-        request = Request()
-        requestName = 'jobAgent_%s' % jobID
-        request.RequestName = requestName.replace('"', '')
-        request.JobID = jobID
-        request.SourceComponent = "JobAgent_%s" % jobID
-        request.addOperation(op)
-        # This might fail, but only a message would be printed.
-        self._sendFailoverRequest(request)
 
     return submissionResult
 
