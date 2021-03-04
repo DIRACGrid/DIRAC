@@ -45,7 +45,7 @@ class ServiceInterface(ServiceInterfaceBase, threading.Thread):
 
     :param set urlSet: a set of service URLs
     :param fromMaster: flag to force updating from the master CS
-    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    :return: Nothing
     """
     pool = ThreadPool(len(urlSet))
     for url in urlSet:
@@ -54,7 +54,6 @@ class ServiceInterface(ServiceInterfaceBase, threading.Thread):
                                  kwargs={},
                                  oCallback=self.__processResults)
     pool.processAllResults()
-    return S_OK()
 
   def __processResults(self, _id, result):
     if not result['OK']:
