@@ -128,7 +128,7 @@ class JobReport(object):
     """
 
     if self.jobParameters:
-      result = JobStateUpdateClient().setJobParameters(self.jobID, self.jobParametersparameters)
+      result = JobStateUpdateClient().setJobParameters(self.jobID, self.jobParameters)
       if result['OK']:
         # Empty the internal parameter container
         self.jobParameters = []

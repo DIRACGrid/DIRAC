@@ -347,11 +347,11 @@ class JobAgent(AgentModule):
       jobReport.setJobStatus(status='Matched',
                              minor='Job Received by Agent',
                              sendFlag=False)
-      result = self._setupProxy(ownerDN, jobGroup)
-      if not result['OK']:
+      result_setupProxy = self._setupProxy(ownerDN, jobGroup)
+      if not result_setupProxy['OK']:
         return self._rescheduleFailedJob(
-            jobID, result['Message'], self.stopOnApplicationFailure)
-      proxyChain = result.get('Value')
+            jobID, result_setupProxy['Message'], self.stopOnApplicationFailure)
+      proxyChain = result_setupProxy.get('Value')
 
       # Save the job jdl for external monitoring
       self.__saveJobJDLRequest(jobID, jobJDL)
@@ -378,7 +378,7 @@ class JobAgent(AgentModule):
           maxNumberOfProcessors=maxNumberOfProcessors,
           mpTag=mpTag)
 
-      # Committing the JobReport before evaluating the job submission
+      # Committing the JobReport before evaluating the result of job submission
       res = jobReport.commit()
       if not res['OK']:
         resFD = jobReport.generateForwardDISET()
@@ -396,11 +396,11 @@ class JobAgent(AgentModule):
           # This might fail, but only a message would be printed.
           self._sendFailoverRequest(request)
 
-      if not result['OK']:
-        return self.__finish(result['Message'])
-      elif 'PayloadFailed' in result:
+      if not result_submitJob['OK']:
+        return self.__finish(result_submitJob['Message'])
+      elif 'PayloadFailed' in result_submitJob:
         # Do not keep running and do not overwrite the Payload error
-        message = 'Payload execution failed with error code %s' % result['PayloadFailed']
+        message = 'Payload execution failed with error code %s' % result_submitJob['PayloadFailed']
         if self.stopOnApplicationFailure:
           return self.__finish(message, self.stopOnApplicationFailure)
         else:
@@ -571,8 +571,7 @@ class JobAgent(AgentModule):
 
     wrapperFile = result['Value']
     jobReport.setJobStatus(status='Matched',
-                           minor='Submitting To CE',
-                           sendFlag=False)
+                           minor='Submitting To CE')
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
@@ -613,7 +612,7 @@ class JobAgent(AgentModule):
       self.log.error('Job submission failed', jobID)
       jobReport.setJobParameter(par_name='ErrorMessage',
                                 par_value='%s CE Submission Error' % (self.ceName),
-                                sendFlag=True)
+                                sendFlag=False)
       if 'ReschedulePayload' in submission:
         self._rescheduleFailedJob(jobID, submission['Message'], self.stopOnApplicationFailure)
         return S_OK()  # Without this, the job is marked as failed
