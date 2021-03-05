@@ -17,17 +17,11 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import sys
 import os
 import shutil
 import ssl
 
-if sys.version_info < (3,):
-  from urllib2 import urlopen as url_library_urlopen  # pylint: disable=no-name-in-module,import-error
-  from urllib2 import URLError as url_library_URLError  # pylint: disable=no-name-in-module,import-error
-else:
-  from urllib.request import urlopen as url_library_urlopen  # pylint: disable=no-name-in-module,import-error
-  from urllib.error import URLError as url_library_URLError  # pylint: disable=no-name-in-module,import-error
+from six.moves.urllib.request import urlopen
 
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
@@ -81,15 +75,20 @@ def __downloadPilotScripts(basepath, diracpath):
   """
 
   context = ssl._create_unverified_context()
-  for fileName in ['dirac-pilot.py', 'dirac-install.py',
-                   'pilotCommands.py', 'pilotTools',
+  for fileName in ['dirac-pilot.py', 'pilotCommands.py', 'pilotTools',
                    'MessageSender', 'PilotLogger.py', 'PilotLoggerTools.py']:
-    remoteFile = url_library_urlopen(
+    remoteFile = urlopen(
         os.path.join('https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/', fileName),
         timeout=10,
         context=context)
     with open(fileName, 'wb') as localFile:
       localFile.write(remoteFile.read())
+  diracInstall = urlopen(
+      'https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py ',
+      timeout=10,
+      context=context)
+  with open('dirac-install.py', 'wb') as localFile:
+    localFile.write(diracInstall.read())
 
 
 def __configurePilot(basepath, vo):

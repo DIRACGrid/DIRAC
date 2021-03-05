@@ -55,7 +55,7 @@ fi
 
 # Get the version of dirac-install requested - if none is requested, the version will come from integration
 #
-curl -L -o dirac-install "https://github.com/DIRACGrid/DIRAC/raw/${DIRACVERSION}/Core/scripts/dirac-install.py" || exit
+curl -L -o dirac-install https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py || exit
 #
 # define the target Dir
 #

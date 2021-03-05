@@ -18,9 +18,11 @@ import shutil
 import tarfile
 import datetime
 
+from six.moves.urllib.request import urlopen
+
 from git import Repo
 
-from DIRAC import gLogger, S_OK, gConfig
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -299,7 +301,18 @@ class PilotCStoJSONSynchronizer(object):
     if not os.path.isfile(os.path.join(pilotLocalRepo,
                                        self.pilotScriptPath,
                                        "dirac-install.py")):
-      tarFiles.append(os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
+
+      # Download dirac-install.py
+      response = urlopen(
+          "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py"
+      )
+      code = response.getcode()
+      if code > 200 or code >= 300:
+        return S_ERROR("Failed to download dirac-install.py with code %s" % code)
+      with open('dirac-install.py', "wb") as fp:
+        fp.write(response.read())
+
+      tarFiles.append('dirac-install.py')
 
     tarPath = os.path.join(self.workDir, 'pilot.tar')
     with tarfile.TarFile(name=tarPath, mode='w') as tf:

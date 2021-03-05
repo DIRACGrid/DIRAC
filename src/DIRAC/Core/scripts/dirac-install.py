@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 """
-The main DIRAC installer script. It can be used to install the main DIRAC software, its
-modules, web, rest etc. and DIRAC extensions.
-
 See https://github.com/DIRACGrid/management/blob/master/dirac-install.py
 """
 import os
@@ -11,10 +8,10 @@ import sys
 import tempfile
 try:
   # For Python 3.0 and later
-  from urllib.request import urlopen, HTTPError, URLError
+  from urllib.request import urlopen
 except ImportError:
   # Fall back to Python 2's urllib2
-  from urllib2 import urlopen, HTTPError, URLError
+  from urllib2 import urlopen
 
 # Download dirac-install.py
 response = urlopen(
@@ -30,7 +27,7 @@ fp = os.fdopen(tmpHandle, "wb")
 fp.write(response.read())
 fp.close()
 
-# Make the dirac-install.py temporay file executable
+# Make the dirac-install.py temporary file executable
 st = os.stat(tmp)
 os.chmod(tmp, st.st_mode | stat.S_IEXEC)
 
