@@ -297,9 +297,10 @@ autodoc_mock_imports = DIRAC_DOC_MOCK_LIST
 
 
 # link with the python standard library docs
+import matplotlib
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/2.7', None),
-    'matplotlib': ('https://matplotlib.org/2.2.5/', None),
+    'python': ('https://docs.python.org/3.8/', None),
+    'matplotlib': ('https://matplotlib.org/%s/' % matplotlib.__version__, None),
 }
 
 
