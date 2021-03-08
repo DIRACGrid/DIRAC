@@ -6,14 +6,6 @@
 """
 Modify a user in the CS.
 
-Usage:
-  dirac-admin-modify-user [options] ... user DN group [group] ...
-
-Arguments:
-  user:     User name (mandatory)
-  DN:       DN of the User (mandatory)
-  group:    Add the user to the group (mandatory)
-
 Example:
   $ dirac-admin-modify-user vhamar /C=FR/O=Org/CN=User dirac_user
 """
@@ -32,12 +24,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main():
   Script.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
   Script.registerSwitch("f", "force", "create the user if it doesn't exist")
+  Script.registerArgument(" user:     User name")
+  Script.registerArgument(" DN:       DN of the User")
+  Script.registerArgument(["group:    Add the user to the group"])
   Script.parseCommandLine(ignoreErrors=True)
 
   args = Script.getPositionalArgs()
-
-  if len(args) < 3:
-    Script.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

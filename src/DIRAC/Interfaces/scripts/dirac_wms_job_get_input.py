@@ -6,12 +6,6 @@
 """
 Retrieve input sandbox for DIRAC Job
 
-Usage:
-  dirac-wms-job-get-input [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
-
 Example:
   $ dirac-wms-job-get-input 13
   Job input sandbox retrieved in InputSandbox13/
@@ -32,11 +26,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
+  Script.registerArgument(["JobID:    DIRAC Job ID"])
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()

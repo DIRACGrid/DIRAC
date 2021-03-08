@@ -6,12 +6,6 @@
 """
 Retrieve parameters associated to the given DIRAC job
 
-Usage:
-  dirac-wms-job-parameters [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
-
 Example:
   $ dirac-wms-job-parameters 1
   {'CPU(MHz)': '1596.479',
@@ -54,11 +48,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument(["JobID:    DIRAC Job ID"])
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()

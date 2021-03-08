@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 """
 Create a DIRAC MoveReplica request to be executed by the RMS
-
-Usage:
-  dirac-dms-move-replica-request [options] ... sourceSE LFN targetSE1 [targetSE2...]
-
-Arguments:
-  sourceSE:   source SE
-  targetSE:   target SE
-  LFN:        LFN or file containing a List of LFNs
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -37,15 +29,16 @@ def getLFNList(arg):
 @DIRACScript()
 def main():
   from DIRAC.Core.Base.Script import parseCommandLine
+  Script.registerArgument(" sourceSE:   source SE")
+  Script.registerArgument(" LFN:        LFN or file containing a List of LFNs")
+  Script.registerArgument(["targetSE:   target SE"])
+
   parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   args = Script.getPositionalArgs()
-
-  if len(args) < 3:
-    Script.showHelp()
 
   sourceSE = args[0]
   lfnList = getLFNList(args[1])

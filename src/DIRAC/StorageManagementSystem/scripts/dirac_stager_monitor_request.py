@@ -5,12 +5,6 @@
 ########################################################################
 """
 Report the summary of the stage task from the DB.
-
-Usage:
-  dirac-stager-monitor-request [options] ... Request ...
-
-Arguments:
-  Request:  ID of the Stage request in the StorageManager
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -24,6 +18,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument("Request:  ID of the Stage request in the StorageManager")
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()

@@ -2,12 +2,6 @@
 """
 Add or Modify a Group info in DIRAC
 
-Usage:
-  dirac-admin-add-group [options] ... Property=<Value> ...
-
-Arguments:
-  Property=<Value>: Other properties to be added to the Group like (VOMSRole=XXXX)
-
 Example:
   $ dirac-admin-add-group -G dirac_test
 """
@@ -67,6 +61,8 @@ def main():
       'Property:',
       'Property to be added to the Group (Allow Multiple instances or None)',
       addProperty)
+  Script.registerArgument(["Property=<Value>: Other properties to be added to the Group like (VOMSRole=XXXX)"],
+                          mandatory=False)
 
   Script.parseCommandLine(ignoreErrors=True)
 

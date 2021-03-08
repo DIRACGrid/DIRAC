@@ -6,12 +6,6 @@
 """
 Retrieve info about pilots that have matched a given Job
 
-Usage:
-  dirac-admin-get-job-pilots [options] ... JobID
-
-Arguments:
-  JobID:    DIRAC ID of the Job
-
 Example:
   $ dirac-admin-get-job-pilots 1848
   {'https://marlb.in2p3.fr:9000/bqYViq6KrVgGfr6wwgT45Q': {'AccountingSent': 'False',
@@ -46,11 +40,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument(["JobID:    DIRAC ID of the Job"])
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp()
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

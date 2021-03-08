@@ -5,13 +5,6 @@
 ########################################################################
 """
 Retrieve metadata for a PFN given a valid DIRAC SE
-
-Usage:
-  dirac-dms-pfn-metadata [options] ... PFN SE
-
-Arguments:
-  PFN:      Physical File Name or file containing PFNs (mandatory)
-  SE:       Valid DIRAC SE (mandatory)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -26,11 +19,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument("PFN:      Physical File Name or file containing PFNs")
+  Script.registerArgument("SE:       Valid DIRAC SE")
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-
-  if len(args) < 2:
-    Script.showHelp(exitCode=1)
 
   if len(args) > 2:
     print('Only one PFN SE pair will be considered')

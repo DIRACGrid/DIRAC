@@ -6,12 +6,6 @@
 """
 Retrieve output sandbox for a DIRAC job
 
-Usage:
-  dirac-wms-job-get-output [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID or a name of the file with JobID per line
-
 Example:
   $ dirac-wms-job-get-output 1
   Job output sandbox retrieved in 1/
@@ -35,7 +29,7 @@ def main():
   Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
   Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
   Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
-
+  Script.registerArgument(["JobID: DIRAC Job ID or a name of the file with JobID per line"], mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

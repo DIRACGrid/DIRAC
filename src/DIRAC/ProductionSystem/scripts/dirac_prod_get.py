@@ -2,12 +2,6 @@
 """
 Get informations for a given production
 
-Usage:
-  dirac-prod-get prodID
-
-Arguments:
-  prodID: Production ID (mandatory)
-
 Example:
   $ dirac-prod-get 381
 """
@@ -24,6 +18,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument("prodID: Production ID")
   Script.parseCommandLine()
 
   from DIRAC.Core.Utilities.PrettyPrint import printTable
@@ -33,8 +28,6 @@ def main():
 
   # get arguments
   args = Script.getPositionalArgs()
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
   else:
     prodID = args[0]
     res = prodClient.getProduction(prodID)

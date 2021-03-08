@@ -6,12 +6,6 @@
 """
 Peek StdOut of the given DIRAC job
 
-Usage:
-  dirac-wms-job-delete [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
-
 Example:
   $ dirac-wms-job-peek 1
 """
@@ -28,11 +22,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument(["JobID:    DIRAC Job ID"])
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()

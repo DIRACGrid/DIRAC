@@ -5,12 +5,6 @@
 ########################################################################
 """
 Decode Accounting plot URLs
-
-Usage:
-  dirac-accounting-decode-fileid [options] ... URL ...
-
-Arguments:
-  URL: encoded URL of a DIRAC Accounting plot
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -31,6 +25,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
+  Script.registerArgument(["URL: encoded URL of a DIRAC Accounting plot"])
   Script.parseCommandLine()
 
   fileIds = Script.getPositionalArgs()

@@ -5,12 +5,6 @@
 ########################################################################
 """
 Select DIRAC jobs matching the given conditions
-
-Usage:
-  dirac-wms-job-status [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
 """
 from __future__ import absolute_import
 from __future__ import division

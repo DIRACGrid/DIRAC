@@ -6,14 +6,6 @@
 """
 Retrieve a delegated proxy for the given user and group
 
-Usage:
-  dirac-admin-get-proxy [options] ... <DN|user> group
-
-Arguments:
-  DN:       DN of the user
-  user:     DIRAC user name (will fail if there is more than 1 DN registered)
-  group:    DIRAC group name
-
 Example:
   $ dirac-admin-get-proxy vhamar dirac_user
   Proxy downloaded to /afs/in2p3.fr/home/h/hamar/proxy.vhamar.dirac_user
@@ -106,7 +98,9 @@ class Params(object):
     Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
     Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
     Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
-
+    Script.registerArgument(("DN:       DN of the user",
+                             "user:     DIRAC user name (will fail if there is more than 1 DN registered)"))
+    Script.registerArgument(" group:    DIRAC group name")
 
 @DIRACScript()
 def main():
@@ -115,9 +109,6 @@ def main():
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-
-  if len(args) != 2:
-    Script.showHelp()
 
   userGroup = str(args[1])
   userDN = str(args[0])

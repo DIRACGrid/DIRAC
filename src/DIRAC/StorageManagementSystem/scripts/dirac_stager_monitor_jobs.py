@@ -5,12 +5,6 @@
 ########################################################################
 """
 Report the summary of the staging progress of jobs
-
-Usage:
-  dirac-stager-monitor-jobs jobID [jobID] [jobID] ...
-
-Arguments:
-  JobID: DIRAC job ID
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -24,12 +18,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument(["JobID:    DIRAC Job ID"])
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp()
 
   from DIRAC import exit as DIRACExit, gLogger
 

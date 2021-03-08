@@ -6,12 +6,6 @@
 """
 Remove User from Configuration
 
-Usage:
-  dirac-admin-delete-user [options] ... User ...
-
-Arguments:
-  User:     User name
-
 Example:
   $ dirac-admin-delete-user vhamar
 """
@@ -30,6 +24,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["User:     User name"])
   args = Script.getPositionalArgs()
 
   from DIRAC import exit as DIRACExit
@@ -37,9 +32,6 @@ def main():
   diracAdmin = DiracAdmin()
   exitCode = 0
   errorList = []
-
-  if len(args) < 1:
-    Script.showHelp()
 
   choice = six.moves.input("Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join(args))
   choice = choice.lower()

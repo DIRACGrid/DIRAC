@@ -3,11 +3,10 @@
 This script prints out how great is it, shows raw queries and sets the
 number of pings.
 
-Usage:
-  dirac-my-great-script [options] <Arguments>
-
-Arguments:
-  <service1> [<service2> ...]
+Example:
+  $ dirac-my-great-script MyService
+  Hello MyService!
+  We are done
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -62,6 +61,9 @@ def registerSwitches():
   for switch in switches:
     Script.registerSwitch(*switch)
 
+  # Register positional arguments
+  Script.registerArgument(["Service: service names"])
+
 
 def parseSwitches():
   '''
@@ -101,9 +103,9 @@ def main():
   from DIRAC.Interfaces.API.Dirac import Dirac
 
   # let's do something
-  if not len(switchDict['servicesList']):
-    gLogger.error('No services defined')
-    DIRACExit(1)
+  for s in switchDict['servicesList']:
+    gLogger.notice('Hello %s!' % s)
+
   gLogger.notice('We are done')
 
   DIRACExit(0)

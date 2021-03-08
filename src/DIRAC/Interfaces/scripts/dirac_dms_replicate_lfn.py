@@ -6,15 +6,6 @@
 """
 Replicate an existing LFN to another Storage Element
 
-Usage:
-  dirac-dms-replicate-lfn [options] ... LFN Dest [Source [Cache]]
-
-Arguments:
-  LFN:      Logical File Name or file containing LFNs (mandatory)
-  Dest:     Valid DIRAC SE (mandatory)
-  Source:   Valid DIRAC SE
-  Cache:    Local directory to be used as cache
-
 Example:
   $ dirac-dms-replicate-lfn /formation/user/v/vhamar/Test.txt DIRAC-USER
   {'Failed': {},
@@ -34,10 +25,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument("LFN:      Logical File Name or file containing LFNs")
+  Script.registerArgument("Dest:     Valid DIRAC SE")
+  Script.registerArgument("Source:   Valid DIRAC SE", mandatory=False)
+  Script.registerArgument("Cache:    Local directory to be used as cache", mandatory=False)
+  
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
-  if len(args) < 2 or len(args) > 4:
+  if len(args) > 4:
     Script.showHelp(exitCode=1)
 
   lfn = args[0]

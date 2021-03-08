@@ -12,13 +12,6 @@ Give monitoring information regarding a staging file uniquely identified with (L
 - SRM requestID
 - pin expiry time
 - pin length
-
-Usage:
-  dirac-stager-monitor-file LFN SE ...
-
-Arguments:
-  LFN: LFN of the staging file
-  SE: Storage Element for the staging file
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -32,10 +25,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument("LFN: LFN of the staging file")
+  Script.registerArgument("SE: Storage Element for the staging file")
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-  if len(args) < 2:
-    Script.showHelp()
 
   from DIRAC import exit as DIRACExit, gLogger
 

@@ -2,18 +2,6 @@
 """
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
-
-Usage:
-  dirac-rss-query-db [option] <query> <element> <tableType>
-
-Arguments:
-  Queries:    [select|add|modify|delete]
-  Elements:   [site|resource|component|node]
-  TableTypes: [status|log|history]
-
-Verbosity::
-
-  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -55,6 +43,10 @@ def registerSwitches():
 
   for switch in switches:
     Script.registerSwitch('', switch[0], switch[1])
+  
+  Script.registerArgument("Query:     queries", acceptedValues=['select', 'add', 'modify', 'delete'])
+  Script.registerArgument("Element:   elements", acceptedValues=['site', 'resource', 'component', 'node'])
+  Script.registerArgument("TableType: table types", acceptedValues=['status', 'log', 'history'])
 
 
 def registerUsageMessage():
@@ -75,16 +67,7 @@ def parseSwitches():
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-  if len(args) < 3:
-    error("Missing all mandatory 'query', 'element', 'tableType' arguments")
-  elif args[0].lower() not in ('select', 'add', 'modify', 'delete'):
-    error("Incorrect 'query' argument")
-  elif args[1].lower() not in ('site', 'resource', 'component', 'node'):
-    error("Incorrect 'element' argument")
-  elif args[2].lower() not in ('status', 'log', 'history'):
-    error("Incorrect 'tableType' argument")
-  else:
-    query = args[0].lower()
+  query = args[0].lower()
 
   switches = dict(Script.getUnprocessedSwitches())
 

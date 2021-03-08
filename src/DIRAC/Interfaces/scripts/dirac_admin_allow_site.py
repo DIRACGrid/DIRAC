@@ -6,13 +6,6 @@
 """
 Add Site to Active mask for current Setup
 
-Usage:
-  dirac-admin-allow-site [options] ... Site Comment
-
-Arguments:
-  Site:     Name of the Site
-  Comment:  Reason of the action
-
 Example:
   $ dirac-admin-allow-site LCG.IN2P3.fr "FRANCE"
 """
@@ -31,6 +24,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
+  Script.registerArgument("Site:     Name of the Site")
+  Script.registerArgument("Comment:  Reason of the action")
   Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -51,9 +46,6 @@ def main():
       email = getBoolean(switch[1])
 
   args = Script.getPositionalArgs()
-
-  if len(args) < 2:
-    Script.showHelp()
 
   diracAdmin = DiracAdmin()
   exitCode = 0

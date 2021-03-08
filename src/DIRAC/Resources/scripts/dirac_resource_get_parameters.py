@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 """
 Get parameters assigned to the CE
-
-Usage:
-  dirac-resource-get-parameters [option]... [cfgfile]
-
-Arguments:
-  cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import absolute_import
 from __future__ import division

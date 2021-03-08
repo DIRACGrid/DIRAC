@@ -6,12 +6,6 @@
 """
 Retrieve status of the given DIRAC job
 
-Usage:
-  dirac-wms-job-status [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
-
 Example:
   $ dirac-wms-job-status 2
   JobID=2 Status=Done; MinorStatus=Execution Complete; Site=EELA.UTFSM.cl;
@@ -31,7 +25,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main():
   Script.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
   Script.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
-
+  Script.registerArgument(["JobID:    DIRAC Job ID"], mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

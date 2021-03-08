@@ -2,14 +2,7 @@
 """
 Find files in the FileCatalog using file metadata
 
-Usage:
-  dirac-dms-find-lfns [options] metaspec [metaspec ...]
-
-Arguments:
-  metaspec: metadata index specification (of the form: "meta=value" or "meta<value", "meta!=value", etc.)
-
-Examples::
-
+Examples:
   $ dirac-dms-find-lfns Path=/lhcb/user "Size>1000" "CreationDate<2015-05-15"
 """
 
@@ -25,6 +18,8 @@ def main():
 
   Script.registerSwitch('', 'Path=', '    Path to search for')
   Script.registerSwitch('', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched')
+  Script.registerArgument(['metaspec: metadata index specification (of the form: \
+                            "meta=value" or "meta<value", "meta!=value", etc.)'], mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

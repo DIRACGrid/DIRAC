@@ -6,12 +6,6 @@
 """
 Delete DIRAC job from WMS, if running it will be killed
 
-Usage:
-  dirac-wms-job-delete [options] ... JobID ...
-
-Arguments:
-  JobID: DIRAC Job ID
-
 Example:
   $ dirac-wms-job-delete 12
   Deleted job 12
@@ -32,7 +26,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main():
   Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
   Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
-
+  Script.registerArgument(["JobID:    DIRAC Job ID"], mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

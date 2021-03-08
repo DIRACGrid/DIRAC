@@ -7,12 +7,6 @@
 Sort site names at CS in "/Resources" section. Sort can be alphabetic or by country postfix in a site name.
 Alphabetic sort is default (i.e. LCG.IHEP.cn, LCG.IHEP.su, LCG.IN2P3.fr)
 
-Usage:
-  dirac-admin-sort-cs-sites [options] <Section>
-
-Arguments:
-  Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)
-
 Example:
   $ dirac-admin-sort-cs-sites -C CLOUDS DIRAC
   sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection
@@ -62,6 +56,9 @@ def main():
       "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)",
       sortBy)
   Script.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
+
+  Script.registerArgument(["Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)"],
+                          mandatory=False)
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()

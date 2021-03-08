@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 """
 Monitor the jobs present in the repository
-
-Usage:
-  dirac-repo-monitor [options] ... RepoDir
-
-Arguments:
-  RepoDir:  Location of Job Repository
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -21,11 +15,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument("RepoDir:  Location of Job Repository")
   Script.parseCommandLine(ignoreErrors=False)
   args = Script.getPositionalArgs()
-
-  if len(args) != 1:
-    Script.showHelp()
 
   repoLocation = args[0]
   from DIRAC.Interfaces.API.Dirac import Dirac

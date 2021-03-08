@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 """
 Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
-
-Usage:
-  dirac-dms-create-removal-request [options] ... SE LFN ...
-
-Arguments:
-  SE:       StorageElement|All
-  LFN:      LFN or file containing a List of LFNs
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -25,11 +18,11 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 @DIRACScript()
 def main():
+  Script.registerArgument(" SE:   StorageElement|All")
+  Script.registerArgument(["LFN:  LFN or file containing a List of LFNs"])
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()
-  if len(args) < 2:
-    Script.showHelp()
 
   targetSE = args.pop(0)
 

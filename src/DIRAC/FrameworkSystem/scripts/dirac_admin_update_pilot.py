@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 """
 Script to update pilot version in CS
-
-Usage:
-  dirac-admin-update-pilot version
-
-Arguments:
-  version: pilot version you want to update to
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -27,12 +21,10 @@ def main():
       "Location of pilot version in CS /Operations/<vo>/Pilot/Version"
       " (default value specified in CS under /DIRAC/DefaultSetup)"
   )
-
+  Script.registerArgument("version: pilot version you want to update to")
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()
-  if len(args) < 1 or len(args) > 2:
-    Script.showHelp()
 
   version = args[0]
   vo = None

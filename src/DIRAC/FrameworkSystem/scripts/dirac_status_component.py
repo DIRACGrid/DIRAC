@@ -2,13 +2,6 @@
 """
 Status of DIRAC components using runsvstat utility
 
-Usage:
-  dirac-status-component [options] ... [system [service|agent]]
-
-Arguments:
-  system:        Name of the system for the component (default *: all)
-  service|agent: Name of the particular component (default *: all)
-
 Example:
   $ dirac-status-component
   DIRAC Root Path = /vo/dirac/versions/Lyon-HEAD-1296215324
@@ -27,6 +20,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.disableCS()
+  Script.registerArgument(" System:  Name of the system for the component (default *: all)", mandatory=False)
+  Script.registerArgument(("Service: Name of the particular component (default *: all)",
+                           "Agent:   Name of the particular component (default *: all)"), mandatory=False)
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
 

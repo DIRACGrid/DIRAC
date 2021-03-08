@@ -1,15 +1,6 @@
 #!/usr/bin/env python
 """
 Set the status of the replicas of given files at the provided SE
-
-Usage:
-  dirac-dms-set-replica-status [options] ... <LFN|File> SE Status
-
-Arguments:
-  LFN:      LFN
-  File:     File name containing a list of affected LFNs
-  SE:       Name of Storage Element
-  Status:   New Status for the replica
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -23,6 +14,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  Script.registerArgument(("LFN:      LFN",
+                           "File:     File name containing a list of affected LFNs"))
+  Script.registerArgument(" SE:       Name of Storage Element")
+  Script.registerArgument(" Status:   New Status for the replica")
   Script.parseCommandLine(ignoreErrors=False)
 
   import DIRAC
@@ -31,8 +26,6 @@ def main():
   import os
 
   args = Script.getPositionalArgs()
-  if not len(args) == 3:
-    Script.showHelp()
 
   inputFileName = args[0]
   storageElement = args[1]
