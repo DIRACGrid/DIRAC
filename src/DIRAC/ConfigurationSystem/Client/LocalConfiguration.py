@@ -203,7 +203,7 @@ class LocalConfiguration(object):
       argMarking = '{0} [{0}]'.format(description[0].split(':')[0].strip())
     else:
       raise Exception("Unknown argument description type.")
-    # Сheck the sequence of the mandatory arguments
+    # Check the sequence of the mandatory arguments
     if mandatory and not self.commandArgumentList[-1][2]:
       raise Exception("The mandatory argument cannot go after the optional one.")
     # Add to others
