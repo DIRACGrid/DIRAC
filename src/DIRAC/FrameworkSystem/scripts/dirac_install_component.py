@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 """
 Do the initial installation and configuration of a DIRAC component
-
-Usage:
-  dirac-install-component [options] ... System Component|System/Component
-
-Arguments:
-  System:  Name of the DIRAC system (ie: WorkloadManagement)
-  Service: Name of the DIRAC component (ie: Matcher)
 """
 
 from __future__ import absolute_import
@@ -61,6 +54,10 @@ def main():
   Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
   Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
   Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
+  Script.registerArgument(("System/Component: Full componrnt name (ie: WorkloadManagement/Matcher)",
+                           "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
+  Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)                  
+
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
 

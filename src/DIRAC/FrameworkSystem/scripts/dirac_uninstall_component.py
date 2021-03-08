@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 """
 Uninstallation of a DIRAC component
-
-Usage:
-  dirac-uninstall-component [options] ... System Component|System/Component
-
-Arguments:
-  System:  Name of the DIRAC system (ie: WorkloadManagement)
-  Component: Name of the DIRAC component (ie: Matcher)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -42,6 +35,10 @@ def main():
   gComponentInstaller.exitOnError = True
 
   Script.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
+  Script.registerArgument(("System/Component: Full componrnt name (ie: WorkloadManagement/Matcher)",
+                           "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
+  Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)                  
+
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
 

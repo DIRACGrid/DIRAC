@@ -1,13 +1,6 @@
 #!/bin/env python
 """
 Show request given its ID, a jobID or a transformation and a task
-
-Usage:
-  dirac-rms-request [options] [request[,request1,...]|<file>
-
-Arguments:
-  request:  a request ID or a unique request name
-  <file>:   a file containing a list of requests (Comma-separated on each line)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -56,6 +49,9 @@ def main():
   Script.registerSwitch('', 'Cancel', '   Cancel the request')
   Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
   Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
+  Script.registerArgument(("file:     a file containing a list of requests (Comma-separated on each line)",
+                           "request:  a request ID or a unique request name"), mandatory=False)
+  Script.registerArgument(["request:  a request ID or a unique request name"], mandatory=False)
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 

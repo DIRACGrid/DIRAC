@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-""" Get a proxy from the proxy manager
+"""
+Get a proxy from the proxy manager
+
+Usage:
+  dirac-proxy-download [options] ... DN
+
+Arguments:
+  DN: User DN
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -7,11 +14,6 @@ from __future__ import division
 import os
 
 from DIRAC.Core.Base import Script
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [options] UserName Role' % Script.scriptName,
-                                  'Arguments:',
-                                  '  UserName: User DN']))
 Script.registerSwitch('R:', 'role=', "set the User DN.")
 Script.parseCommandLine()
 

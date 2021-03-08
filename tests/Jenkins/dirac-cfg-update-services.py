@@ -7,15 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
-                                  'Usage:',
-                                  '  %s [options] ... DB ...' % Script.scriptName,
-                                  'Arguments:',
-                                  '  setup: Name of the build setup (mandatory)']))
-
 Script.parseCommandLine()
-
-args = Script.getPositionalArgs()
 
 # Setup the DFC
 #

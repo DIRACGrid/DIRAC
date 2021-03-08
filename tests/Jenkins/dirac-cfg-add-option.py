@@ -4,21 +4,15 @@ Do the initial configuration of a DIRAC component
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+Script.registerArgument(" ComponentType:    Name of the ComponentType (ie: agent)")
+Script.registerArgument(("System/Component: Full componrnt name (ie: WorkloadManagement/Matcher)",
+                         "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
+Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
 
-Script.setUsageMessage(
-    '\n'.join(
-        [
-            __doc__.split('\n')[1],
-            'Usage:',
-            '  %s [options] ... ComponentType System Component|System/Component' %
-            Script.scriptName,
-            'Arguments:',
-            '  ComponentType:  Name of the ComponentType (ie: agent)',
-            '  System:  Name of the DIRAC system (ie: WorkloadManagement)',
-            '  component:   Name of the DIRAC component (ie: JobCleaningAgent)']))
 Script.parseCommandLine()
 args = Script.getPositionalArgs()
 
