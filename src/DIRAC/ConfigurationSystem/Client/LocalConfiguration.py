@@ -210,7 +210,7 @@ class LocalConfiguration(object):
     self.commandArgumentList.append((argMarking, list(description), mandatory, acceptedValues, default))
 
     # If present list arguments
-    listArgs = [t[0] for t self.commandArgumentList if re.match(r"\w+ \[\w+\]", t[0])]
+    listArgs = [t[0] for t in self.commandArgumentList if re.match(r"\w+ \[\w+\]", t[0])]
     if len(listArgs) > 1:
       raise Exception("Can't calculate list of arguments when there are two such arguments of type.")
 
