@@ -5,7 +5,7 @@
 ########################################################################
 """
 Report the details of file staging requests, based on selection filters
-  
+
   WARNING: Query may be heavy, please use --limit switch!
 """
 from __future__ import absolute_import

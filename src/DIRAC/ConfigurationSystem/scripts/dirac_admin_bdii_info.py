@@ -27,7 +27,8 @@ def registerSwitches():
 
   Script.registerSwitch("H:", "host=", "BDII host")
   Script.registerSwitch("V:", "vo=", "vo")
-  Script.registerArgument(" info:  requested instance", acceptedValues=["ce", "ce-state", "ce-cluster", "ce-vo", "site"])
+  Script.registerArgument(" info:  requested instance",
+                          acceptedValues=["ce", "ce-state", "ce-cluster", "ce-vo", "site"])
   Script.registerArgument(("Site:  Name of the Site (i.e. CERN-PROD)",
                            "CE:    Name of the CE (i.e. cccreamceli05.in2p3.fr)"))
 

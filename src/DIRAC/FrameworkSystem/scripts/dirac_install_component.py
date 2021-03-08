@@ -56,7 +56,7 @@ def main():
   Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
   Script.registerArgument(("System/Component: Full componrnt name (ie: WorkloadManagement/Matcher)",
                            "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
-  Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)                  
+  Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
 
   Script.parseCommandLine()
   args = Script.getPositionalArgs()

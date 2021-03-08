@@ -29,7 +29,7 @@ def main():
   Script.registerArgument("Dest:     Valid DIRAC SE")
   Script.registerArgument("Source:   Valid DIRAC SE", mandatory=False)
   Script.registerArgument("Cache:    Local directory to be used as cache", mandatory=False)
-  
+
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

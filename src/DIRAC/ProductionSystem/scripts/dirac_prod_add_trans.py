@@ -19,7 +19,7 @@ def main():
   Script.registerArgument("prodID:         Production ID")
   Script.registerArgument("transID:        Transformation ID")
   Script.registerArgument("parentTransID:  Parent Transformation ID", mandatory=False)
-  
+
   Script.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient

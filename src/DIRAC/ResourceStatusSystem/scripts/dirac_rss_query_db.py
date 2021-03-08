@@ -43,7 +43,7 @@ def registerSwitches():
 
   for switch in switches:
     Script.registerSwitch('', switch[0], switch[1])
-  
+
   Script.registerArgument("Query:     queries", acceptedValues=['select', 'add', 'modify', 'delete'])
   Script.registerArgument("Element:   elements", acceptedValues=['site', 'resource', 'component', 'node'])
   Script.registerArgument("TableType: table types", acceptedValues=['status', 'log', 'history'])

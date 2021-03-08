@@ -155,7 +155,7 @@ class LocalConfiguration(object):
       if longOption and optTuple[1] == longOption:
         raise Exception("Long switch %s is already defined!" % longOption)
     self.commandOptionList.append((shortOption, longOption, helpString, function))
-  
+
   def registerCmdArg(self, description, mandatory=True, acceptedValues=None, default=None):
     """ Register a new command line argument
 
@@ -210,10 +210,10 @@ class LocalConfiguration(object):
     self.commandArgumentList.append((argMarking, list(description), mandatory, acceptedValues, default))
 
     # If present list arguments
-    listArgs = [t[0] for t self.commandArgumentList if re.match("\w+ \[\w+\]", t[0])]
+    listArgs = [t[0] for t self.commandArgumentList if re.match(r"\w+ \[\w+\]", t[0])]
     if len(listArgs) > 1:
       raise Exception("Can't calculate list of arguments when there are two such arguments of type.")
-    
+
     if listArgs:
       listArgIndex = self.commandArgumentList.index(listArgs[0])
       if not all([t[2] for t in self.commandArgumentList[listArgIndex:]]):
@@ -411,7 +411,7 @@ class LocalConfiguration(object):
         break
 
       # When we consider multiple value argument
-      isListArg = re.match("\w+ \[\w+\]", arg)
+      isListArg = re.match(r"\w+ \[\w+\]", arg)
 
       # Replace the default value with a defined one
       if isListArg:

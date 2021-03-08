@@ -28,10 +28,10 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 @DIRACScript()
 def main():
-  Script.registerArgument("DIRACSiteName:  Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
-  Script.registerArgument("GridSiteName:   Name of the site in the Grid (ie: CERN-PROD)")
+  Script.registerArgument(" DIRACSiteName: DIRAC Site name in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
+  Script.registerArgument(" GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
   Script.registerArgument(["CE:            Name of the CE to be included in the site (ie: ce111.cern.ch)"])
-  
+
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

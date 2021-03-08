@@ -8,12 +8,12 @@
   if necessary.
 
   To be used by VO specific scripts to configure new DIRAC installations
-  
+
   There are two mandatory options, others are optional:
-  
+
   -S --Setup=<setup>;
   -C --ConfigurationServer=<server>|-W --Gateway
-  
+
   Additionally all options can all be passed inside a .cfg file passed with --cfg option.
   The following options are recognized::
 

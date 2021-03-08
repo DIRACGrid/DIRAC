@@ -108,6 +108,7 @@ def initialize(script=False, ignoreErrors=False, initializeMonitor=False, enable
 def registerSwitch(showKey, longKey, helpString, callback=False):
   localCfg.registerCmdOpt(showKey, longKey, helpString, callback)
 
+
 def registerArgument(description, mandatory=True, acceptedValues=None, default=None):
   localCfg.registerCmdArg(description, mandatory, acceptedValues, default)
 
