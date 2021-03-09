@@ -126,7 +126,7 @@ class SandboxStoreClient(object):
           else:
             errorFiles.append(sFile)
 
-      elif isinstance(sFile, (BytesIO, StringIO)):
+      elif isinstance(sFile, StringIO):
         files2Upload.append(sFile)
       else:
         return S_ERROR("Objects of type %s can't be part of InputSandbox" % type(sFile))
@@ -144,10 +144,13 @@ class SandboxStoreClient(object):
       for sFile in files2Upload:
         if isinstance(sFile, six.string_types):
           tf.add(os.path.realpath(sFile), os.path.basename(sFile), recursive=True)
-        elif isinstance(sFile, BytesIO):
+        elif isinstance(sFile, StringIO):
           tarInfo = tarfile.TarInfo(name='jobDescription.xml')
-          tarInfo.size = len(sFile.getvalue())
-          tf.addfile(tarinfo=tarInfo, fileobj=sFile)
+          value = sFile.getvalue().encode()
+          tarInfo.size = len(value)
+          tf.addfile(tarinfo=tarInfo, fileobj=BytesIO(value))
+        else:
+          return S_ERROR("Unknown type to upload: %s" % repr(sFile))
 
     if sizeLimit > 0:
       # Evaluate the compressed size of the sandbox
