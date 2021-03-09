@@ -1,3 +1,10 @@
+[v7r1p32]
+
+*Core
+FIX: (#5021) Glue2: fix error when too many execution environments were looked for
+FIX: (#5021) Subprocess: when the systemCall failed, S_ERROR now contains a string
+             in 'Message' instead of an exception object
+
 [v7r1p31]
 
 *Resources
