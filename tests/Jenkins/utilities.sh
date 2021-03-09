@@ -332,7 +332,7 @@ installDIRAC() {
   else
     echo -n > "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
 
-    curl -L "https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/dirac-install.py" \
+    curl -L "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py" \
         > "${CLIENTINSTALLDIR}/dirac-install"
     chmod +x "${CLIENTINSTALLDIR}/dirac-install"
 
@@ -458,7 +458,8 @@ prepareForServer() {
   echo '==> [prepareForServer]'
 
   #get the necessary scripts: dirac-install.py file
-  cp "${TESTCODE}/DIRAC/src/DIRAC/Core/scripts/dirac-install.py" "${SERVERINSTALLDIR}/"
+  curl -O -L https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
+  cp dirac-install.py "${SERVERINSTALLDIR}/"
   chmod +x "${SERVERINSTALLDIR}/dirac-install.py"
 }
 

@@ -28,10 +28,11 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
 import re
 import os
 import shlex
+
+import six
 from six import StringIO
 from six.moves.urllib.parse import quote as urlquote
 
@@ -47,7 +48,7 @@ from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 
@@ -106,7 +107,6 @@ class Job(API):
       self.__setJobDefaults()
     else:
       self.workflow = Workflow(script)
-    self._siteSet = set(getSites().get('Value', []))
 
   #############################################################################
 
@@ -209,9 +209,9 @@ class Job(API):
     kwargs = {'jobname': jobName}
     if not isinstance(jobName, six.string_types):
       return self._reportError('Expected strings for job name', **kwargs)
-    else:
-      self.workflow.setName(jobName)
-      self._addParameter(self.workflow, 'JobName', 'JDL', jobName, 'User specified name')
+
+    self.workflow.setName(jobName)
+    self._addParameter(self.workflow, 'JobName', 'JDL', jobName, 'User specified name')
 
     return S_OK()
 
@@ -303,7 +303,7 @@ class Job(API):
        :type lfns: Single LFN string or list of LFNs
     """
     if isinstance(lfns, list) and lfns:
-      for i in range(len(lfns)):
+      for i, _ in enumerate(lfns):
         lfns[i] = lfns[i].replace('LFN:', '')
       inputData = ['LFN:' + x for x in lfns]
       inputDataStr = ';'.join(inputData)
@@ -550,7 +550,7 @@ class Job(API):
     if isinstance(destination, list):
       sites = set(site for site in destination if site.lower() != 'any')
       if sites:
-        result = self.__checkSiteIsValid(sites)
+        result = self._checkSiteIsValid(sites)
         if not result['OK']:
           return self._reportError('%s is not a valid destination site' % (destination), **kwargs)
       destSites = ';'.join(destination)
@@ -646,18 +646,6 @@ class Job(API):
                          "Max Number of processors the job applications may use")
 
     return S_OK()
-
-  #############################################################################
-  def __checkSiteIsValid(self, site):
-    """Internal function to check that a site name is valid.
-    """
-    if isinstance(site, (list, set, dict)):
-      site = set(site) - self._siteSet
-      if not site:
-        return S_OK()
-    elif site in self._siteSet:
-      return S_OK()
-    return self._reportError('Specified site %s is not in list of defined sites' % str(site))
 
   #############################################################################
   def setDestinationCE(self, ceName, diracSite=None):

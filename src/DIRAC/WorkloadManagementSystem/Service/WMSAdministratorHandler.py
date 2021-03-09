@@ -199,14 +199,13 @@ class WMSAdministratorHandler(RequestHandler):
     if not pilotReference:
       # Failed to get the pilot reference, try to look in the attic parameters
       res = self.jobDB.getAtticJobParameters(int(jobID), ['Pilot_Reference'])
-      if not res['OK']:
-        return res
-      c = -1
-      # Get the pilot reference for the last rescheduling cycle
-      for cycle in res['Value']:
-        if cycle > c:
-          pilotReference = res['Value'][cycle]['Pilot_Reference']
-          c = cycle
+      if res['OK']:
+        c = -1
+        # Get the pilot reference for the last rescheduling cycle
+        for cycle in res['Value']:
+          if cycle > c:
+            pilotReference = res['Value'][cycle]['Pilot_Reference']
+            c = cycle
 
     if pilotReference:
       return getGridJobOutput(pilotReference)

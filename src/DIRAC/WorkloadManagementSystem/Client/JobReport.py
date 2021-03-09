@@ -26,7 +26,7 @@ class JobReport(object):
     """
     self.jobStatusInfo = []  # where job status updates are cumulated
     self.appStatusInfo = []  # where application status updates are cumulated
-    self.jobParameters = {}
+    self.jobParameters = []  # where job parameters are cumulated
     self.jobID = int(jobid)
     self.source = source
     if not source:
@@ -75,11 +75,9 @@ class JobReport(object):
     return S_OK()
 
   def setJobParameter(self, par_name, par_value, sendFlag=True):
-    """ Send job parameter for jobID
+    """ Set job parameter for jobID
     """
-    timeStamp = Time.toString()
-    # add job parameter record
-    self.jobParameters[par_name] = (par_value, timeStamp)
+    self.jobParameters.append((par_name, par_value))
     if sendFlag and self.jobID:
       # and send
       return self.sendStoredJobParameters()
@@ -87,12 +85,10 @@ class JobReport(object):
     return S_OK()
 
   def setJobParameters(self, parameters, sendFlag=True):
-    """ Send job parameters for jobID
+    """ Set job parameters for jobID
     """
-    timeStamp = Time.toString()
-    # add job parameter record
     for pname, pvalue in parameters:
-      self.jobParameters[pname] = (pvalue, timeStamp)
+      self.jobParameters.append((pname, pvalue))
 
     if sendFlag and self.jobID:
       # and send
@@ -131,12 +127,11 @@ class JobReport(object):
     """ Send the job parameters stored in the internal cache
     """
 
-    parameters = [[pname, value[0]] for pname, value in self.jobParameters.items()]
-    if parameters:
-      result = JobStateUpdateClient().setJobParameters(self.jobID, parameters)
+    if self.jobParameters:
+      result = JobStateUpdateClient().setJobParameters(self.jobID, self.jobParameters)
       if result['OK']:
         # Empty the internal parameter container
-        self.jobParameters = {}
+        self.jobParameters = []
       return result
     else:
       return S_OK('Empty')
@@ -168,9 +163,8 @@ class JobReport(object):
       print(status.ljust(20), timeStamp)
 
     print("Job parameters:")
-    for pname, value in self.jobParameters.items():
-      pvalue, timeStamp = value
-      print(pname.ljust(20), pvalue.ljust(30), timeStamp)
+    for pname, pvalue in self.jobParameters:
+      print(pname.ljust(20), pvalue.ljust(30))
 
   def generateForwardDISET(self):
     """ Generate and return failover requests for the operations in the internal cache

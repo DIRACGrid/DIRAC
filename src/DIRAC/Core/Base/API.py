@@ -9,8 +9,9 @@ import sys
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Utilities.Version import getCurrentVersion
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 
 __RCSID__ = '$Id$'
 
@@ -73,6 +74,7 @@ class API(object):
     self.errorDict = {}
     self.setup = gConfig.getValue('/DIRAC/Setup', 'Unknown')
     self.diracInfo = getCurrentVersion()['Value']
+    self._siteSet = set(getSites().get('Value', []))
 
   #############################################################################
 
@@ -129,6 +131,19 @@ class API(object):
         :param object myObject: an object to pring
     """
     print(self.pPrint.pformat(myObject))
+
+  #############################################################################
+
+  def _checkSiteIsValid(self, site):
+    """Internal function to check that a site name is valid.
+    """
+    if isinstance(site, (list, set, dict)):
+      site = set(site) - self._siteSet
+      if not site:
+        return S_OK()
+    elif site in self._siteSet:
+      return S_OK()
+    return self._reportError('Specified site %s is not in list of defined sites' % str(site))
 
   #############################################################################
 

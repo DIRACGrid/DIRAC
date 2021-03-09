@@ -1,6 +1,6 @@
-======================
-1. Client Installation
-======================
+============================================
+1. Client Installation (for python2 clients)
+============================================
 
 The DIRAC client installation procedure consists of several steps. This example is destinated for tutorials.
 For more information about various options of installing DIRAC Client see the :ref:`Getting Started guide <dirac_install>`.
@@ -8,9 +8,9 @@ For more information about various options of installing DIRAC Client see the :r
 1.1 Install script
 ------------------
 
-Download the *dirac-install* script from `here <https://github.com/DIRACGrid/DIRAC/raw/master/Core/scripts/dirac-install.py>`_::
+Download the *dirac-install* script from `here <https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py>`_::
 
-  curl https://github.com/DIRACGrid/DIRAC/raw/master/Core/scripts/dirac-install.py --output=dirac-install
+  curl https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py --output=dirac-install
   chmod +x dirac-install
 
 

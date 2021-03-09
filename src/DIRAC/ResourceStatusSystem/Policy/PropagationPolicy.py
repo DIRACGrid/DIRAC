@@ -1,4 +1,4 @@
-''' DIRAC.ResourceStatusSystem.Policy.PropagationPolicy
+""" DIRAC.ResourceStatusSystem.Policy.PropagationPolicy
 
     The following lines are needed in the CS::
 
@@ -11,7 +11,7 @@
         policyType = PropagationPolicy
       }
 
-'''
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -56,6 +56,3 @@ class PropagationPolicy(PolicyBase):
       result['Status'] = commandResult['Status']
       result['Reason'] = commandResult['Reason']
       return S_OK(result)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

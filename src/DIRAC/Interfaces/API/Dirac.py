@@ -63,11 +63,11 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitor
 COMPONENT_NAME = 'DiracAPI'
 
 try:
-    # Python 2: "file" is built-in
-    file_types = file, io.IOBase
+  # Python 2: "file" is built-in
+  file_types = file, io.IOBase
 except NameError:
-    # Python 3: "file" fully replaced with IOBase
-    file_types = (io.IOBase,)
+  # Python 3: "file" fully replaced with IOBase
+  file_types = (io.IOBase,)
 
 
 def parseArguments(args):
@@ -1593,8 +1593,8 @@ class Dirac(API):
     result = WMSClient(useCertificates=self.useCertificates).deleteJob(jobID)
     if result['OK']:
       if self.jobRepo:
-        for jobID in result['Value']:
-          self.jobRepo.removeJob(jobID)
+        for jID in result['Value']:
+          self.jobRepo.removeJob(jID)
     return result
 
   #############################################################################
@@ -1624,8 +1624,8 @@ class Dirac(API):
     if result['OK']:
       if self.jobRepo:
         repoDict = {}
-        for jobID in result['Value']:
-          repoDict[jobID] = {'State': 'Submitted'}
+        for jID in result['Value']:
+          repoDict[jID] = {'State': 'Submitted'}
         self.jobRepo.updateJobs(repoDict)
     return result
 
@@ -1652,8 +1652,8 @@ class Dirac(API):
     result = WMSClient(useCertificates=self.useCertificates).killJob(jobID)
     if result['OK']:
       if self.jobRepo:
-        for jobID in result['Value']:
-          self.jobRepo.removeJob(jobID)
+        for jID in result['Value']:
+          self.jobRepo.removeJob(jID)
     return result
 
   #############################################################################

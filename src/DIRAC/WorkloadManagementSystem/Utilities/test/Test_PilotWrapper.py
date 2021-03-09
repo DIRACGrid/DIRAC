@@ -43,17 +43,17 @@ def test_scriptReal():
     diracInstall = fd.read()
   diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
 
-  diracPilot = os.path.join(os.getcwd(), 'src/DIRAC/Core/scripts/dirac-install.py')  # just some random file
+  diracPilot = os.path.join(os.getcwd(), 'src/DIRAC/Core/Base/API.py')  # just some random file
   with open(diracPilot, "rb") as fd:
     diracPilot = fd.read()
   diracPilotEncoded = base64.b64encode(bz2.compress(diracPilot, 9))
 
-  diracPilotTools = os.path.join(os.getcwd(), 'src/DIRAC/Core/scripts/dirac-install.py')  # just some random file
+  diracPilotTools = os.path.join(os.getcwd(), 'src/DIRAC/Core/Base/API.py')  # just some random file
   with open(diracPilotTools, "rb") as fd:
     diracPilotTools = fd.read()
   diracPilotToolsEncoded = base64.b64encode(bz2.compress(diracPilotTools, 9))
 
-  diracPilotCommands = os.path.join(os.getcwd(), 'src/DIRAC/Core/scripts/dirac-install.py')  # just some random file
+  diracPilotCommands = os.path.join(os.getcwd(), 'src/DIRAC/Core/Base/API.py')  # just some random file
   with open(diracPilotCommands, "rb") as fd:
     diracPilotCommands = fd.read()
   diracPilotCommandsEncoded = base64.b64encode(bz2.compress(diracPilotCommands, 9))

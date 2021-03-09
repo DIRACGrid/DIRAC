@@ -5,10 +5,10 @@ import sys
 import tempfile
 try:
   # For Python 3.0 and later
-  from urllib.request import urlopen, HTTPError, URLError
+  from urllib.request import urlopen
 except ImportError:
   # Fall back to Python 2's urllib2
-  from urllib2 import urlopen, HTTPError, URLError
+  from urllib2 import urlopen
 
 sys.stderr.write("#" * 100 + "\n")
 sys.stderr.write("#" * 100 + "\n")

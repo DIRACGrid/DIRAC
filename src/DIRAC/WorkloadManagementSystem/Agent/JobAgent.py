@@ -347,11 +347,11 @@ class JobAgent(AgentModule):
       jobReport.setJobStatus(status='Matched',
                              minor='Job Received by Agent',
                              sendFlag=False)
-      result = self._setupProxy(ownerDN, jobGroup)
-      if not result['OK']:
+      result_setupProxy = self._setupProxy(ownerDN, jobGroup)
+      if not result_setupProxy['OK']:
         return self._rescheduleFailedJob(
-            jobID, result['Message'], self.stopOnApplicationFailure)
-      proxyChain = result.get('Value')
+            jobID, result_setupProxy['Message'], self.stopOnApplicationFailure)
+      proxyChain = result_setupProxy.get('Value')
 
       # Save the job jdl for external monitoring
       self.__saveJobJDLRequest(jobID, jobJDL)
@@ -366,7 +366,7 @@ class JobAgent(AgentModule):
             jobID, errorMsg, self.stopOnApplicationFailure)
 
       self.log.debug('Before self._submitJob() (%sCE)' % (self.ceName))
-      result = self._submitJob(
+      result_submitJob = self._submitJob(
           jobID=jobID,
           jobParams=params,
           resourceParams=ceDict,
@@ -377,11 +377,30 @@ class JobAgent(AgentModule):
           wholeNode=wholeNode,
           maxNumberOfProcessors=maxNumberOfProcessors,
           mpTag=mpTag)
-      if not result['OK']:
-        return self.__finish(result['Message'])
-      elif 'PayloadFailed' in result:
+
+      # Committing the JobReport before evaluating the result of job submission
+      res = jobReport.commit()
+      if not res['OK']:
+        resFD = jobReport.generateForwardDISET()
+        if not resFD['OK']:
+          self.log.error("Error generating ForwardDISET operation", resFD['Message'])
+        else:
+          # Here we create the Request.
+          op = resFD['Value']
+          request = Request()
+          requestName = 'jobAgent_%s' % jobID
+          request.RequestName = requestName.replace('"', '')
+          request.JobID = jobID
+          request.SourceComponent = "JobAgent_%s" % jobID
+          request.addOperation(op)
+          # This might fail, but only a message would be printed.
+          self._sendFailoverRequest(request)
+
+      if not result_submitJob['OK']:
+        return self.__finish(result_submitJob['Message'])
+      elif 'PayloadFailed' in result_submitJob:
         # Do not keep running and do not overwrite the Payload error
-        message = 'Payload execution failed with error code %s' % result['PayloadFailed']
+        message = 'Payload execution failed with error code %s' % result_submitJob['PayloadFailed']
         if self.stopOnApplicationFailure:
           return self.__finish(message, self.stopOnApplicationFailure)
         else:
@@ -552,8 +571,7 @@ class JobAgent(AgentModule):
 
     wrapperFile = result['Value']
     jobReport.setJobStatus(status='Matched',
-                           minor='Submitting To CE',
-                           sendFlag=False)
+                           minor='Submitting To CE')
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
@@ -604,24 +622,6 @@ class JobAgent(AgentModule):
                          'exit code = %s' % (str(submission['Value'])))
       self.log.error("CE Error", "%s : %s" % (self.ceName, submission['Message']))
       submissionResult = submission
-
-    # Committing the JobReport
-    res = jobReport.commit()
-    if not res['OK']:
-      resFD = jobReport.generateForwardDISET()
-      if not resFD['OK']:
-        self.log.error("Error generating ForwardDISET operation", resFD['Message'])
-      else:
-        # Here we create the Request.
-        op = resFD['Value']
-        request = Request()
-        requestName = 'jobAgent_%s' % jobID
-        request.RequestName = requestName.replace('"', '')
-        request.JobID = jobID
-        request.SourceComponent = "JobAgent_%s" % jobID
-        request.addOperation(op)
-        # This might fail, but only a message would be printed.
-        self._sendFailoverRequest(request)
 
     return submissionResult
 
