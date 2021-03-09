@@ -23,6 +23,7 @@ from pprint import pformat
 from DIRAC import gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getGOCSiteName
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 __RCSID__ = "$Id$"
 
@@ -91,7 +92,7 @@ def getGlue2CEInfo(vo, host):
 
   siteInfo = __getGlue2ShareInfo(host, shareInfoLists)
   if not siteInfo['OK']:
-    sLog.error("Could not get CE info for", shareID + "  " + siteInfo['Message'])
+    sLog.error("Could not get CE info for", "%s: %s" % (shareID, siteInfo['Message']))
     return siteInfo
   siteDict = siteInfo['Value']
   sLog.debug("Found Sites:\n%s" % pformat(siteDict))
@@ -255,16 +256,23 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironments):
   :param list executionEnvironments: list of the execution environments to get some information from
   :returns: result of the ldapsearch for all executionEnvironments, Glue2 schema
   """
-  exeFilter = ''
-  for execEnv in executionEnvironments:
-    exeFilter += '(GLUE2ResourceID=%s)' % execEnv
-  filt = "(&(objectClass=GLUE2ExecutionEnvironment)(|%s))" % exeFilter
-  response = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
-  if not response['OK']:
-    return response
-  if not response['Value']:
-    return S_ERROR("No information found for %s" % executionEnvironments)
-  return response
+  listOfValues = []
+  # break up to avoid argument list too long, it started failing at about 1900 entries
+  for exeEnvs in breakListIntoChunks(executionEnvironments, 1000):
+    exeFilter = ''
+    for execEnv in exeEnvs:
+      exeFilter += '(GLUE2ResourceID=%s)' % execEnv
+    filt = "(&(objectClass=GLUE2ExecutionEnvironment)(|%s))" % exeFilter
+    response = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
+    if not response['OK']:
+      return response
+    if not response['Value']:
+      sLog.error("No information found for %s" % executionEnvironments)
+      continue
+    listOfValues += response['Value']
+  if not listOfValues:
+    return S_ERROR("No information found for executionEnvironments")
+  return S_OK(listOfValues)
 
 
 def __getGlue2ExecutionEnvironmentInfoForSite(sitename, foreignKeys, exeInfos):

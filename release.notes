@@ -115,6 +115,13 @@ NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
+[v7r1p32]
+
+*Core
+FIX: (#5021) Glue2: fix error when too many execution environments were looked for
+FIX: (#5021) Subprocess: when the systemCall failed, S_ERROR now contains a string
+             in 'Message' instead of an exception object
+
 [v7r1p31]
 
 *Resources
