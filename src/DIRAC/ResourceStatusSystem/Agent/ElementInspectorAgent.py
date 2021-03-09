@@ -212,7 +212,7 @@ class ElementInspectorAgent(AgentModule):
       except Queue.Empty:
         return S_OK()
 
-      self.log.verbose('%s ( vO=%s / status=%s / statusType=%s ) being processed' % (element['name'],
+      self.log.verbose('%s ( VO=%s / status=%s / statusType=%s ) being processed' % (element['name'],
                                                                                      element['vO'],
                                                                                      element['status'],
                                                                                      element['statusType']))
