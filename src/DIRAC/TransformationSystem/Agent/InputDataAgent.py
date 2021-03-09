@@ -18,7 +18,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from past.builtins import long
 import time
 import datetime
 
@@ -93,7 +92,7 @@ class InputDataAgent(AgentModule):
 
     # Process each transformation
     for transDict in result['Value']:
-      transID = long(transDict['TransformationID'])
+      transID = int(transDict['TransformationID'])
       # res = self.transClient.getTransformationInputDataQuery( transID )
       res = self.transClient.getTransformationMetaQuery(transID, 'Input')
       if not res['OK']:

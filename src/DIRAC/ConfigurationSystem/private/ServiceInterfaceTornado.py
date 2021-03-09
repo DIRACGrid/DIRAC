@@ -44,7 +44,7 @@ class ServiceInterfaceTornado(ServiceInterfaceBase):
 
     :param set urlSet: a set of service URLs
     :param fromMaster: flag to force updating from the master CS
-    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    :return: Nothing
     """
 
     for url in urlSet:

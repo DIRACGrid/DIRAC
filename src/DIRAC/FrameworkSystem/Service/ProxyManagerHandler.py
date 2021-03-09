@@ -119,7 +119,7 @@ class ProxyManagerHandler(RequestHandler):
   def export_completeDelegationUpload(self, requestId, pemChain):
     """ Upload result of delegation
 
-        :param int,long requestId: identity number
+        :param int requestId: identity number
         :param str pemChain: certificate as string
 
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies

@@ -6,25 +6,27 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
 import socket
 import os
 import re
 import time
+import getpass
+import importlib
+import shutil
+import psutil
+
+import six
+
 # TODO: This should be modernised to use subprocess(32)
 try:
   import commands
 except ImportError:
   # Python 3's subprocess module contains a compatibility layer
   import subprocess as commands
-import getpass
-import importlib
-import shutil
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 import six
 
-import psutil
 from diraccfg import CFG
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
@@ -34,14 +36,12 @@ from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities import Profiler
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
-from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 gProfilers = {}
 
@@ -76,15 +76,6 @@ class SystemAdministratorHandler(RequestHandler):
     if hostMonitoring:
       gThreadScheduler.addPeriodicTask(60, cls.__storeHostInfo)
       # the SystemAdministrator service does not has to use the client to report data about the host.
-
-    # Check the flag for dynamic monitoring
-    dynamicMonitoring = cls.srv_getCSOption('DynamicMonitoring', False)
-    messageQueue = cls.srv_getCSOption('MessageQueue', 'dirac.componentmonitoring')
-
-    if dynamicMonitoring:
-      cls.gMonitoringReporter = MonitoringReporter(
-          monitoringType="ComponentMonitoring", failoverQueueName=messageQueue)
-      gThreadScheduler.addPeriodicTask(120, cls.__storeProfiling)
 
     keepSoftwareVersions = cls.srv_getCSOption('KeepSoftwareVersions', 0)
     if keepSoftwareVersions > 0:
@@ -641,14 +632,14 @@ class SystemAdministratorHandler(RequestHandler):
         importedModule = importlib.import_module('%s.%sSystem.%s.%s' % (extension, system,
                                                                         cType.capitalize(), module))
         return S_OK(importedModule.__doc__)
-      except Exception as _e:
+      except Exception:
         pass
 
     # If not in an extension, try in base DIRAC
     try:
       importedModule = importlib.import_module('DIRAC.%sSystem.%s.%s' % (system, cType.capitalize(), module))
       return S_OK(importedModule.__doc__)
-    except Exception as _e:
+    except Exception:
       return S_ERROR('No documentation was found')
 
   @staticmethod
@@ -670,49 +661,6 @@ class SystemAdministratorHandler(RequestHandler):
       gLogger.error(result['Message'])
       return result
 
-    return S_OK('Profiling information logged correctly')
-
-  @classmethod
-  def __storeProfiling(cls):
-    """
-    Retrieves and stores into ElasticSearch profiling information about the components on the host
-    """
-    # TODO: if we have a component which is not running, we will not profile the running processes
-    result = gComponentInstaller.getStartupComponentStatus([])
-    if not result['OK']:
-      gLogger.error(result['Message'])
-      return S_ERROR(result['Message'])
-    startupComps = result['Value']
-
-    result = gComponentInstaller.getSetupComponents()
-    if not result['OK']:
-      gLogger.error(result['Message'])
-      return S_ERROR(result['Message'])
-    setupComps = result['Value']
-
-    # Get the profiling information for every running component and send it to MonitoringSystem
-    for cType in setupComps:
-      for system in setupComps[cType]:
-        for comp in setupComps[cType][system]:
-          instance = "%s_%s" % (system, comp)
-          if instance not in startupComps:
-            gLogger.error("Wrongly configured component: %s" % instance)
-            continue
-          pid = startupComps[instance]['PID']
-          if pid not in gProfilers:
-            gProfilers[pid] = Profiler.Profiler(pid)
-          profiler = gProfilers[pid]
-          result = profiler.getAllProcessData(withChildren=True)
-          if result['OK']:
-            log = result['Value']['stats']
-            log['host'] = socket.getfqdn()
-            log['component'] = instance
-            log['timestamp'] = result['Value']['datetime']
-            cls.gMonitoringReporter.addRecord(log)
-          else:
-            gLogger.error(result['Message'])
-            return result
-    cls.gMonitoringReporter.commit()
     return S_OK('Profiling information logged correctly')
 
   @staticmethod

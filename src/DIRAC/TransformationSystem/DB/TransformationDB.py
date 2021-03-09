@@ -9,7 +9,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from past.builtins import long
 import six
 import re
 import time
@@ -374,7 +373,7 @@ class TransformationDB(DB):
   def _getTransformationID(self, transName, connection=False):
     """ Method returns ID of transformation with the name=<name> """
     try:
-      transName = long(transName)
+      transName = int(transName)
       cmd = "SELECT TransformationID from Transformations WHERE TransformationID=%d;" % transName
     except ValueError:
       if not isinstance(transName, six.string_types):

@@ -1,6 +1,6 @@
-=========================================
+====================
 Component Monitoring
-=========================================
+====================
 
 The */Operations/Defaults/* section defines a flag to enable component monitoring or not.
 

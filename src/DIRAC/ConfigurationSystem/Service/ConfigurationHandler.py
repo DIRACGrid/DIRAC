@@ -83,7 +83,7 @@ class ConfigurationHandler(RequestHandler):
     """
     Attempt to request all the configured services to update their configuration
 
-    :return: S_OK, Value Successful/Failed dict with service URLs
+    :return: S_OK
     """
     return gServiceInterface.forceGlobalUpdate()
 
