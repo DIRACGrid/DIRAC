@@ -82,7 +82,3 @@ class JobRunningMatchedRatioPolicy(PolicyBase):
 
     result['Reason'] = 'Job Running / Matched ratio of %.2f' % efficiency
     return S_OK(result)
-
-
-# ...............................................................................
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -80,7 +80,3 @@ class JobDoneRatioPolicy(PolicyBase):
 
     result['Reason'] = 'Job Done ratio of %.2f' % efficiency
     return S_OK(result)
-
-
-# ...............................................................................
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

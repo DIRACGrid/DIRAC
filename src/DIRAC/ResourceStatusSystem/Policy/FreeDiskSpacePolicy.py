@@ -74,6 +74,3 @@ class FreeDiskSpacePolicy(PolicyBase):
       result['Reason'] = 'Enough free space'
 
     return S_OK(result)
-
-#...............................................................................
-# EOF

@@ -1,5 +1,5 @@
-''' CEAvailabilityPolicy module
-'''
+""" CEAvailabilityPolicy module
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -11,13 +11,13 @@ from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 
 class CEAvailabilityPolicy(PolicyBase):
-  '''
+  """
     The CEAvailabilityPolicy checks if the CE is in 'Production' or not on the BDII.
-  '''
+  """
 
   @staticmethod
   def _evaluate(commandResult):
-    '''
+    """
       It returns Active status if CE is in 'Production'.
       Banned if the CE is different from 'Production'.
 
@@ -32,7 +32,7 @@ class CEAvailabilityPolicy(PolicyBase):
         }
 
       Otherwise, it returns error.
-    '''
+    """
 
     result = {'Status': None,
               'Reason': None}
@@ -52,6 +52,3 @@ class CEAvailabilityPolicy(PolicyBase):
     result['Reason'] = commandResult['Reason']
 
     return S_OK(result)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

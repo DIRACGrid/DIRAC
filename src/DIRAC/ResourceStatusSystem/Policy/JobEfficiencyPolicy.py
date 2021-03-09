@@ -31,7 +31,6 @@ class JobEfficiencyPolicy(PolicyBase):
 
     efficiency < 0.5 :: Banned
     efficiency < 0.9 :: Degraded
-
     """
 
     result = {
@@ -81,7 +80,3 @@ class JobEfficiencyPolicy(PolicyBase):
 
     result['Reason'] = 'Jobs Efficiency of %.2f' % efficiency
     return S_OK(result)
-
-
-# ...............................................................................
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
