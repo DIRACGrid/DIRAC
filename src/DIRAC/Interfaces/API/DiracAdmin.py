@@ -19,7 +19,6 @@ from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView
@@ -60,7 +59,6 @@ class DiracAdmin(API):
     self.currentDir = os.getcwd()
     self.rssFlag = ResourceStatus().rssFlag
     self.sitestatus = SiteStatus()
-    self._siteSet = set(getSites().get('Value', []))
 
   #############################################################################
   def uploadProxy(self):
@@ -200,7 +198,7 @@ class DiracAdmin(API):
        :return: S_OK,S_ERROR
 
     """
-    result = self.__checkSiteIsValid(site)
+    result = self._checkSiteIsValid(site)
     if not result['OK']:
       return result
 
@@ -236,7 +234,7 @@ class DiracAdmin(API):
 
        :return: S_OK,S_ERROR
     """
-    result = self.__checkSiteIsValid(site)
+    result = self._checkSiteIsValid(site)
     if not result['OK']:
       return result
 
@@ -283,7 +281,7 @@ class DiracAdmin(API):
        :return: S_OK,S_ERROR
 
     """
-    result = self.__checkSiteIsValid(site)
+    result = self._checkSiteIsValid(site)
     if not result['OK']:
       return result
 
@@ -307,18 +305,6 @@ class DiracAdmin(API):
       gLogger.notice('Site %s status is set to Banned' % site)
 
     return result
-
-  #############################################################################
-  def __checkSiteIsValid(self, site):
-    """Internal function to check that a site name is valid.
-    """
-    if isinstance(site, (list, set, dict)):
-      site = set(site) - self._siteSet
-      if not site:
-        return S_OK()
-    elif site in self._siteSet:
-      return S_OK()
-    return S_ERROR('Specified site %s is not in list of defined sites' % str(site))
 
   #############################################################################
   def getServicePorts(self, setup='', printOutput=False):
@@ -682,7 +668,7 @@ class DiracAdmin(API):
     """
     Allows to set the defined protocols for each SE for a given site.
     """
-    result = self.__checkSiteIsValid(site)
+    result = self._checkSiteIsValid(site)
     if not result['OK']:
       return result
 
