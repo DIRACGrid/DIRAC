@@ -170,20 +170,17 @@ class CommandReference(object):
       self.exitcode = 1
 
   def createScriptDocFiles(self, script, sectionPath, sectionDict):
+    """Create the RST files for all the scripts.
+
+    Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
+    """
     scriptName = os.path.basename(script)
     if scriptName.endswith('.py'):
       scriptName = scriptName[:-3]
     scriptName = scriptName.replace("_", "-")
-    prefix = sectionDict[PREFIX].lower()
-    prefix = prefix + '_' if prefix else ''
-    return scriptName, self._createScriptDocFiles(script, sectionPath, scriptName, prefix)
+    referencePrefix = sectionDict[PREFIX].lower()
+    referencePrefix = referencePrefix + '_' if referencePrefix else ''
 
-  def _createScriptDocFiles(self, script, sectionPath, scriptName, referencePrefix):
-    """Create the RST files for all the scripts.
-
-    Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
-
-    """
     if scriptName in self.config.com_ignore_commands:
       return False
 

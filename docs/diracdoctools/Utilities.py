@@ -133,7 +133,7 @@ def makeLogger(name):
 
 
 def registerValidatingExitHandler():
-  """Registers an exit handler which checked for errors after the build completes"""
+  """Registers an exit handler which checks for errors after the build completes"""
   def check():
     """"""
     cmd = [
