@@ -28,7 +28,6 @@ import sys
 import datetime
 
 from DIRAC.Core.Base.CLI import CLI, colorize
-from DIRAC.Core.Utilities import ExitCallback
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC import gLogger
 
@@ -38,7 +37,6 @@ class ReportCLI(CLI):
   def __init__(self):
     CLI.__init__(self)
     self.do_connect(None)
-    ExitCallback.registerExitCallback(self.do_quit)
 
   def start(self):
     """
