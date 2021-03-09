@@ -28,11 +28,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from past.builtins import long
 import os
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
+__RCSID__ = "$Id$"
 
 
 @DIRACScript()
@@ -62,8 +63,6 @@ def main():
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   from DIRAC.Resources.Storage.StorageElement import StorageElement
 
-  __RCSID__ = "$Id$"
-
   def getSetOfLocalDirectoriesAndFiles(path):
     """Return a set of all directories and subdirectories and a set of
     files contained therein for a given local path
@@ -91,7 +90,7 @@ def main():
         fullFilename = fullFilename.replace(fullPath, '').lstrip('/')
         fileSize = os.path.getsize(fullPath + "/" + fullFilename)
         if fileSize > 0:
-          files.add((fullFilename, long(fileSize)))
+          files.add((fullFilename, int(fileSize)))
 
     tree = {}
     tree["Directories"] = directories

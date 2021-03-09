@@ -100,7 +100,7 @@ class StatesMonitoringAgent(AgentModule):
 
       retVal = self.monitoringReporter.commit()
       if retVal['OK']:
-         self.log.info("Records sent", "(%s)" % result['Value'])
+         self.log.info("Records sent", "(%s)" % retVal['Value'])
       else:
         self.log.error("Failed to insert the records, it will be retried in the next iteration", retVal['Message'])
 

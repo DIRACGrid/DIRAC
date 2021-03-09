@@ -1,11 +1,10 @@
 """ Transformation Database Client Command Line Interface.
 """
 
-#! /usr/bin/env python
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from past.builtins import long
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -100,7 +99,7 @@ class TransformationCLI(CLI, API):
   def check_id_or_name(self, id_or_name):
     """resolve name or Id by converting type of argument """
     if id_or_name.isdigit():
-      return long(id_or_name)  # its look like id
+      return int(id_or_name)  # its look like id
     return id_or_name
 
   ####################################################################

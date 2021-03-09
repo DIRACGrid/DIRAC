@@ -12,8 +12,8 @@ Understanding the key fields:
 Understanding the monitoring fields:
 'nbObject': This field is used to describe the number of objects in question during the operation.
 
-In order to enable 'RMSMonitoring' we need to set value of 'EnableActivityMonitoring' flag to 'yes/true' inside
-'/Operations/Defaults' or '/Systems/RequestManagement/<Instance>/Agents/RequestExecutingAgent' of the 'cfg' file.
+In order to enable 'RMSMonitoring' we need to set value of 'EnableRMSMonitoring' flag to 'yes/true' inside
+'/Systems/RequestManagement/<Instance>/Agents/RequestExecutingAgent' of the 'cfg' file.
 """
 
 from __future__ import absolute_import

@@ -55,35 +55,15 @@ You can configure the MQ in the local dirac.cfg file where the agent is running:
 Enable Component monitoring
 ===========================
 
-You have to set ``DynamicMonitoring=True`` in the CS::
+You have to set ``EnableActivityMonitoring=True`` in the CS.
+It can be done globally, the ``Operations`` section, or per single component.
 
-   Systems
-   {
-     Framework
-     {
-       <instance>
-       {
-         Services
-         {
-           SystemAdministrator
-           {
-             ...
-             DynamicMonitoring = True
-           }
-         }
-       }
-     }
-   }
-
-
-.. image:: cs.png
-   :align: center
 
 
 Enable RMS Monitoring
 =====================
 
-In order to enable RMSMonitoring we need to set value of ``EnableActivityMonitoring`` flag to yes/true in the CS::
+In order to enable RMSMonitoring we need to set value of ``EnableRMSMonitoring`` flag to yes/true in the CS::
 
 
    Systems
@@ -97,7 +77,7 @@ In order to enable RMSMonitoring we need to set value of ``EnableActivityMonitor
            RequestExecutingAgent
            {
              ...
-             EnableActivityMonitoring = True
+             EnableRMSMonitoring = True
            }
          }
        }
@@ -105,10 +85,8 @@ In order to enable RMSMonitoring we need to set value of ``EnableActivityMonitor
    }
 
 
-or inside the ``/Operations`` section as a general flag.
-
 
 Accessing the Monitoring information
 =====================================
 
-After you installed and configured the Monitoring system, you can use the Monitoring web application.
+After you installed and configured the Monitoring system, you can use the Monitoring web application (from the Accounting WebApp).
