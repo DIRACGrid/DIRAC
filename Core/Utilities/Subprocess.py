@@ -438,7 +438,7 @@ class Subprocess(object):
                                     universal_newlines=True)
       self.childPID = self.child.pid
     except OSError as v:
-      retDict = S_ERROR(v)
+      retDict = S_ERROR(repr(v))
       retDict['Value'] = (-1, '', str(v))
       return retDict
     except Exception as x:
@@ -447,7 +447,7 @@ class Subprocess(object):
         self.child.stderr.close()
       except Exception:
         pass
-      retDict = S_ERROR(x)
+      retDict = S_ERROR(repr(x))
       retDict['Value'] = (-1, '', str(x))
       return retDict
 
