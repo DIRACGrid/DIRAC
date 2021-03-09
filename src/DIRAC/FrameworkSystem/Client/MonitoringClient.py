@@ -189,7 +189,6 @@ class MonitoringClient(object):
     else:
       raise Exception("Component type has not been defined")
     gMonitoringFlusher.registerMonitoringClient(self)
-    # ExitCallback.registerExitCallback( self.forceFlush )
     self.__initialized = True
 
   def setComponentLocation(self, componentLocation=False):

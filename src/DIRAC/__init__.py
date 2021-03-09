@@ -129,7 +129,6 @@ rootPath = os.path.dirname(pythonPath)
 
 #from DIRAC.Core.Utilities import *
 from DIRAC.Core.Utilities.Network import getFQDN
-import DIRAC.Core.Utilities.ExitCallback as ExitCallback
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
@@ -188,9 +187,6 @@ def siteName():
   return __siteName
 
 
-# Callbacks
-ExitCallback.registerSignals()
-
 # platform detection
 from DIRAC.Core.Utilities.Platform import getPlatformString, getPlatform, getPlatformTuple
 
@@ -199,7 +195,6 @@ def exit(exitCode=0):
   """
   Finish execution using callbacks
   """
-  ExitCallback.execute(exitCode, [])
   sys.exit(exitCode)
 
 

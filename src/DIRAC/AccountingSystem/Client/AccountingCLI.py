@@ -14,7 +14,6 @@ import six
 
 from DIRAC import gLogger
 from DIRAC.Core.Base.CLI import CLI, colorize
-from DIRAC.Core.Utilities import ExitCallback
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 
 
@@ -23,7 +22,6 @@ class AccountingCLI(CLI):
   def __init__(self):
     CLI.__init__(self)
     self.do_connect(None)
-    ExitCallback.registerExitCallback(self.do_quit)
 
   def start(self):
     """
