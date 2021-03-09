@@ -29,7 +29,7 @@ from recommonmark.transform import AutoStructify
 import diracdoctools
 import diracdoctools.cmd
 from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
-from diracdoctools.Utilities import setUpReadTheDocsEnvironment
+from diracdoctools.Utilities import setUpReadTheDocsEnvironment, registerValidatingExitHandler
 
 logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
 LOG = logging.getLogger('conf.py')
@@ -302,7 +302,5 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org/', None),
 }
 
-
-#...............................................................................
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# check for :param / :return in html, points to faulty syntax, missing empty lines, etc.
+registerValidatingExitHandler()
