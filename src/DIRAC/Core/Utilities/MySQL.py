@@ -392,7 +392,7 @@ class MySQL(object):
     self.logger = self.log
 
     # let the derived class decide what to do with if is not 1
-    self._threadsafe = MySQLdb.thread_safe()
+    self._threadsafe = MySQLdb.threadsafety
     # self.log.debug('thread_safe = %s' % self._threadsafe)
 
     self.__hostName = str(hostName)
