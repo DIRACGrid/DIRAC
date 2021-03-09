@@ -130,7 +130,7 @@ def test_rescheduleJob(putAndDelete):
 
   res = jobDB.getJobAttribute(jobID, 'Status')
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == 'Received'
+  assert res['Value'] == JobStatus.RECEIVED
 
   res = jobDB.rescheduleJob(jobID)
   assert res['OK'] is True, res['Message']
@@ -155,7 +155,7 @@ def test_heartBeatLogging(putAndDelete):
   assert res['OK'] is True, res['Message']
   jobID = res['JobID']
 
-  res = jobDB.setJobStatus(jobID, status='Running')
+  res = jobDB.setJobStatus(jobID, status=JobStatus.RUNNING)
   assert res['OK'] is True, res['Message']
   res = jobDB.setHeartBeatData(jobID, dynamicDataDict={'CPU': 2345})
   assert res['OK'] is True, res['Message']
@@ -215,10 +215,13 @@ def test_attributes(putAndDelete):
 
   res = jobDB.getJobAttribute(jobID_1, 'Status')
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == 'Received'
+  assert res['Value'] == JobStatus.RECEIVED
   res = jobDB.getJobAttribute(jobID_2, 'Status')
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == 'Received'
+  assert res['Value'] == JobStatus.RECEIVED
+  res = jobDB.getJobsAttribute([jobID_1, jobID_2], 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == [JobStatus.RECEIVED, JobStatus.RECEIVED]
 
   res = jobDB.setJobAttributes(jobID_1, ['Status'], ['Waiting'], True)
   assert res['OK'] is True, res['Message']
@@ -226,34 +229,40 @@ def test_attributes(putAndDelete):
   assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Waiting'
 
-  res = jobDB.setJobAttributes(jobID_1, ['Status', 'MinorStatus'], ['Matched', 'minor'], True)
+  res = jobDB.setJobAttributes(jobID_1, ['Status', 'MinorStatus'], [JobStatus.MATCHED, 'minor'], True)
   assert res['OK'] is True, res['Message']
   res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
   assert res['OK'] is True, res['Message']
-  assert res['Value']['Status'] == 'Matched'
+  assert res['Value']['Status'] == JobStatus.MATCHED
   assert res['Value']['MinorStatus'] == 'minor'
   res = jobDB.getJobAttributes(jobID_2, ['Status'])
   assert res['OK'] is True, res['Message']
-  assert res['Value']['Status'] == 'Received'
+  assert res['Value']['Status'] == JobStatus.RECEIVED
+  res = jobDB.getJobsAttribute([jobID_1, jobID_2], 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == [JobStatus.MATCHED, JobStatus.RECEIVED]
 
-  res = jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], ['Running', 'minor_2'], True)
+  res = jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], [JobStatus.RUNNING, 'minor_2'], True)
   assert res['OK'] is True, res['Message']
   res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
   assert res['OK'] is True, res['Message']
-  assert res['Value']['Status'] == 'Running'
+  assert res['Value']['Status'] == JobStatus.RUNNING
   assert res['Value']['MinorStatus'] == 'minor_2'
   res = jobDB.getJobAttributes(jobID_2, ['Status', 'MinorStatus'])
   assert res['OK'] is True, res['Message']
-  assert res['Value']['Status'] == 'Running'
+  assert res['Value']['Status'] == JobStatus.RUNNING
   assert res['Value']['MinorStatus'] == 'minor_2'
 
-  jobDB.setJobAttributes(jobID_1, ['Status'], ['Done'], True)
-  jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], ['Completed', 'minor_3'], True)
+  jobDB.setJobAttributes(jobID_1, ['Status'], [JobStatus.DONE], True)
+  jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], [JobStatus.COMPLETED, 'minor_3'], True)
   res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
   assert res['OK'] is True, res['Message']
-  assert res['Value']['Status'] == 'Done'
+  assert res['Value']['Status'] == JobStatus.DONE
   assert res['Value']['MinorStatus'] == 'minor_2'
   res = jobDB.getJobAttributes(jobID_2, ['Status', 'MinorStatus'])
   assert res['OK'] is True, res['Message']
-  assert res['Value']['Status'] == 'Completed'
+  assert res['Value']['Status'] == JobStatus.COMPLETED
   assert res['Value']['MinorStatus'] == 'minor_3'
+  res = jobDB.getJobsAttribute([jobID_1, jobID_2], 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == [JobStatus.DONE, JobStatus.COMPLETED]

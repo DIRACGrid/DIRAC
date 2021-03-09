@@ -618,15 +618,15 @@ class JobDB(DB):
       if attrName not in self.jobAttributeNames:
 	return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
 
+    if 'Status' in attrNames:
+      res = self.getJobsAttribute(jIDList, 'Status')
+      if not res['OK']:
+	return res
+      # FIXME: use it! + StateMachine
+
     attr = []
 
     for name, value in zip(attrNames, attrValues):
-
-      if name in ('Status', 'MinorStatus', 'ApplicationStatus'):
-	# Need to check what's the current status, and if the state change is allowed
-	# TODO: check the state machine
-	pass
-
       ret = self._escapeString(value)
       if not ret['OK']:
         return ret
