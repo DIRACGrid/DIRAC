@@ -494,9 +494,9 @@ class FileCatalogClient(FileCatalogClientBase):
     return self._getRPC(timeout=timeout).isDirectory(lfns)
 
   @checkCatalogArguments
-  def getDirectorySize(self, lfns, longOut=False, fromFiles=False, timeout=120):
+  def getDirectorySize(self, lfns, longOut=False, fromFiles=False, timeout=120, recursiveSum=True):
     """ Get the size of the supplied directory """
-    return self._getRPC(timeout=timeout).getDirectorySize(lfns, longOut, fromFiles)
+    return self._getRPC(timeout=timeout).getDirectorySize(lfns, longOut, fromFiles, recursiveSum)
 
   ########################################################################
   #

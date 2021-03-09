@@ -350,9 +350,9 @@ class TornadoFileCatalogHandler(TornadoService):
     """ Get the size of the supplied directory """
     return self.gFileCatalogDB.getDirectoryMetadata(lfns, self.getRemoteCredentials())
 
-  def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False):
+  def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False, recursiveSum=True):
     """ Get the size of the supplied directory """
-    return self.gFileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, self.getRemoteCredentials())
+    return self.gFileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, recursiveSum, self.getRemoteCredentials())
 
   def export_getDirectoryReplicas(self, lfns, allStatus=False):
     """ Get replicas for files in the supplied directory """

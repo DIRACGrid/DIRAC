@@ -407,9 +407,9 @@ class FileCatalogHandler(RequestHandler):
 
   types_getDirectorySize = [[list, dict] + list(six.string_types)]
 
-  def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False):
+  def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False, recursiveSum=True):
     """ Get the size of the supplied directory """
-    return self.fileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, self.getRemoteCredentials())
+    return self.fileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, recursiveSum, self.getRemoteCredentials())
 
   types_getDirectoryReplicas = [[list, dict] + list(six.string_types), bool]
 
