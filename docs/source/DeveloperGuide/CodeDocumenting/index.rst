@@ -81,30 +81,20 @@ The DIRAC documentation is created using ``sphinx`` and makes use of the
 ``diracdoctools`` to create the code documentation, command references, and
 concatenate the ``ConfigTemplates`` into one file. The ``diracdoctools`` are
 located in the ``DIRAC/docs`` folder, but they can be ``pip installed`` for use
-outside of DIRAC. In ``ReadTheDocs`` we do not install DIRAC via
-:ref:`admin_dirac-install`, so we have to install dependencies via pip, or
-``Mock`` the packages if they cannot be installed.
+outside of DIRAC.
 
-This ``requirements.txt`` shows how the ``diracdoctools`` can be installed from the
-GitHub folder directly, and how other dependencies can also be installed.
+For local development the easiest way to build the docs is by running these
+commands from a standard Python 3 DIRAC development environment (see
+:ref:`create-dev-env-conda`.)
 
-For DIRAC extensions you also have to install DIRAC as a requirement, so add
-this line to your ``requirements.txt``
+.. code-block:: bash
 
-  git+https://github.com/DIRACGrid/DIRAC/@integration
+    pip install docs/
+    cd docs
+    make htmlall
+    python -m http.server -d build/html/
 
-Some packages (e.g., FTS3) cannot be installed in READTHEDOCS, so we let sphinx
-mock these packages in the ``source/conf.py`` add the import at the top and set
-the ``autodoc_mock_imports`` variable.
-
-  from diracdoctools import fakeEnvironment, DIRAC_DOC_MOCK_LIST
-  ...
-  autodoc_mock_imports = DIRAC_DOC_MOCK_LIST
-
-Using the ``DIRAC_DOC_MOCK_LIST`` you can inherit the packages that are mocked
-for DIRAC, and extend it with packages needed to be mocked for your extension.
-The ``fakeEnvironment`` sets up a special mock for GSI and simply needs to be
-imported.
+You can now browse the docs locally by going to the URL shown in your terminal.
 
 In the sphinx configuration file (``source/conf.py``), the functionality can
 then be called to create code reference, command reference and concatenated CFG
@@ -158,7 +148,6 @@ links itself, or warnings are generated for missing and superfluous entries.
 .. note ::
   The parsing of the ``--help`` output is extremely limited and naive. You must not end a line with a
   colon ``:`` unless you intend to create a verbatim block after it.
-
 
 
 CFG File

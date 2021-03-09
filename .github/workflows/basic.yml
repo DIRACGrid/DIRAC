@@ -13,7 +13,6 @@ jobs:
       matrix:
         command:
           - pytest --runslow
-          - tests/checkDocs.sh
           # TODO This should cover more than just tests/CI
           # Excluded codes related to sourcing files
           #     SC1090: Can't follow non-constant source
