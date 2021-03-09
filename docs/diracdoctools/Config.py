@@ -91,11 +91,11 @@ class Configuration(object):
       LOG.info('Parsed options: %s = %s', var, pformat(val))
 
   def _fullPath(self, path):
-    """Return absolut path based on docsPath."""
+    """Return absolute path based on docsPath."""
     return os.path.abspath(os.path.join(self.docsPath, path))
 
   def __str__(self):
-    """Return string containg options and values."""
+    """Return string containing options and values."""
     theStr = ''
     for var, val in vars(self).items():
       theStr += '%s = %s\n' % (var, val)

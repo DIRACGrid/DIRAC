@@ -88,9 +88,6 @@ outside of DIRAC. In ``ReadTheDocs`` we do not install DIRAC via
 This ``requirements.txt`` shows how the ``diracdoctools`` can be installed from the
 GitHub folder directly, and how other dependencies can also be installed.
 
-.. literalinclude:: ../../../requirements.txt
-   :caption: The docs/requirements.txt used in readthedocs
-
 For DIRAC extensions you also have to install DIRAC as a requirement, so add
 this line to your ``requirements.txt``
 

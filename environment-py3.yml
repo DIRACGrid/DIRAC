@@ -63,6 +63,7 @@ dependencies:
   # docs
   - pygments >=1.5
   - sphinx
+  - graphviz
   # unused
   - funcsigs
   - jinja2
