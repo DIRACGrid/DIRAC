@@ -243,7 +243,7 @@ class Modificator(object):
     return str(self.cfgData)
 
   def commit(self):
-    compressedData = zlib.compress(str(self.cfgData), 9)
+    compressedData = zlib.compress(str(self.cfgData).encode(), 9)
     return self.rpcClient.commitNewData(compressedData)
 
   def getHistory(self, limit=0):
