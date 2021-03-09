@@ -1,4 +1,4 @@
-[v7r2-pre37]
+[v7r2-pre38]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
@@ -9,6 +9,7 @@ NEW: Moved to a src/ repository layout
 NEW: (#4906) Deploy releases to PyPI
 FIX: (#4921) use six.moves for urllib
 CHANGE: (#4958) use __doc__ for script help message, remove filecfg as argument from usage description
+FIX: (#5015) Add prompt-toolkit to setuptools metadata
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -39,11 +40,13 @@ FIX: (#4956) use logging.warning in favor of deprecated logging.warn
 CHANGE: (#4997) Use prompt-toolkit for password input when generating proxies
 CHANGE: (#4994) dirac-install.py should now be taken from management
 CHANGE: (#5010) Use ConfigurationClient in CSCLI and CSShellCLI
+CHANGE: (#5026) Remove DIRAC.Core.Utilities.ExitCallback
 
 *Configuration
 CHANGE: (#4866) split standard and tornado refresher in two files to avoid tornado dependency on the client
 CHANGE: (#4958) setUsageMessage in LocalConfiguration will parse received str value for building help message
 FIX: (#5008) HTTPS: allow to run master CS in parallel of other tornado services
+FIX: (#5016) harmonize https and dips version of ServiceHandler, and make doc consistent with reality
 
 *Framework
 CHANGE: (#4787) expose deleteProxyBundle call to ProxyManagerClient
@@ -78,11 +81,16 @@ CHANGE: (#4925) SiteDirector - removed using of SubmitPools requirement by defau
 CHANGE: (#4925) SiteDirector, JobAgent - no more using ProxyManager tokens while user proxy retrieval
 NEW: (#4950) JobAgent adds GridCE and queue to Job Parameters
 CHANGE: (#4966) added flag to exclude the master CS from the list of servers synchronized by PilotCS2JSON
+FIX: (#5017) Fix uploading jobDescription.xml in upload sandboxes with Python 3
+
+*DataManagement
+CHANGE: (#5019) Remove IRODSStorageElementHandler
 
 *Monitoring
 FIX: (#4768) Adapting RMSMonitoring type to ES7
 FIX: (#4844) Correct the rounding of integers when computing buckets in MonitoringDB
 NEW: (#4898) added possibility to configure the period and so the indexing strategy
+CHANGE: (#4976) removed DynamicMonitoring (replaced by ActivityMonitoring)
 
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
