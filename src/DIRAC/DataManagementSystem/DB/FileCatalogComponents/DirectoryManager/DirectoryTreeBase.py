@@ -723,9 +723,15 @@ class DirectoryTreeBase(object):
 
     return S_OK({'Successful': successful, 'Failed': failed})
 
-  def getDirectorySize(self, lfns, longOutput=False, rawFileTables=False):
-    """ Get the total size of the requested directories. If long flag
+  def getDirectorySize(self, lfns, longOutput=False, rawFileTables=False, recursiveSum=True):
+    """
+        Get the total size of the requested directories. If longOutput flag
         is True, get also physical size per Storage Element
+
+        :param bool longOutput: if True, also fetches the physical size per SE
+        :param bool rawFileTables: if True, uses the File table instead of the pre-computed values
+        :param bool recursiveSum: if True (default), takes into account subdirectories
+
     """
     start = time.time()
 
@@ -735,9 +741,9 @@ class DirectoryTreeBase(object):
     connection = result['Value']
 
     if rawFileTables:
-      resultLogical = self._getDirectoryLogicalSize(lfns, connection)
+      resultLogical = self._getDirectoryLogicalSize(lfns, recursiveSum=recursiveSum, connection=connection)
     else:
-      resultLogical = self._getDirectoryLogicalSizeFromUsage(lfns, connection)
+      resultLogical = self._getDirectoryLogicalSizeFromUsage(lfns, recursiveSum=recursiveSum, connection=connection)
 
     if not resultLogical['OK']:
       connection.close()
@@ -751,9 +757,11 @@ class DirectoryTreeBase(object):
     if longOutput:
       # Continue with only successful directories
       if rawFileTables:
-        resultPhysical = self._getDirectoryPhysicalSize(resultDict['Successful'], connection)
+        resultPhysical = self._getDirectoryPhysicalSize(
+            resultDict['Successful'], recursiveSum=recursiveSum, connection=connection)
       else:
-        resultPhysical = self._getDirectoryPhysicalSizeFromUsage(resultDict['Successful'], connection)
+        resultPhysical = self._getDirectoryPhysicalSizeFromUsage(
+            resultDict['Successful'], recursiveSum=recursiveSum, connection=connection)
       if not resultPhysical['OK']:
         resultDict['QueryTime'] = time.time() - start
         result = S_OK(resultDict)
@@ -767,9 +775,15 @@ class DirectoryTreeBase(object):
 
     return S_OK(resultDict)
 
-  def _getDirectoryLogicalSizeFromUsage(self, lfns, connection):
+  def _getDirectoryLogicalSizeFromUsage(self, lfns, recursiveSum=True, connection=None):
     """ Get the total "logical" size of the requested directories
+
+        :param recursiveSum: If false, don't take subdir into account
     """
+
+    if not recursiveSum:
+      return S_ERROR("Not implemented")
+
     successful = {}
     failed = {}
     for path in lfns:
@@ -802,9 +816,15 @@ class DirectoryTreeBase(object):
 
     return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _getDirectoryLogicalSize(self, lfns, connection):
+  def _getDirectoryLogicalSize(self, lfns, recursiveSum=True, connection=None):
     """ Get the total "logical" size of the requested directories
+
+        :param bool recursiveSum: If false, don't take subdir into account
     """
+
+    if not recursiveSum:
+      return S_ERROR("Not implemented")
+
     successful = {}
     failed = {}
     treeTable = self.getTreeTable()
@@ -850,9 +870,15 @@ class DirectoryTreeBase(object):
 
     return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _getDirectoryPhysicalSizeFromUsage(self, lfns, connection):
+  def _getDirectoryPhysicalSizeFromUsage(self, lfns, recursiveSum=True, connection=None):
     """ Get the total size of the requested directories
+
+        :param recursiveSum: If false, don't take subdir into account
     """
+
+    if not recursiveSum:
+      return S_ERROR("Not implemented")
+
     successful = {}
     failed = {}
     for path in lfns:
@@ -945,9 +971,13 @@ class DirectoryTreeBase(object):
 
     return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _getDirectoryPhysicalSize(self, lfns, connection):
+  def _getDirectoryPhysicalSize(self, lfns, recursiveSum=True, connection=None):
     """ Get the total size of the requested directories
+        :param recursiveSum: If false, don't take subdir into account
     """
+    if not recursiveSum:
+      return S_ERROR("Not implemented")
+
     successful = {}
     failed = {}
     for path in lfns:

@@ -12,6 +12,7 @@ import unittest
 import itertools
 import os
 import sys
+from collections import defaultdict
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
@@ -737,7 +738,7 @@ class DirectoryCase(FileCatalogDBTestCase):
         (nonExistingDir,
          result))
 
-    result = self.db.getDirectorySize([testDir, nonExistingDir], False, False, credDict)
+    result = self.db.getDirectorySize([testDir, nonExistingDir], False, False, True, credDict)
     self.assertTrue(result["OK"], "getDirectorySize failed: %s" % result)
     self.assertTrue(
         testDir in result["Value"]["Successful"],
@@ -755,7 +756,7 @@ class DirectoryCase(FileCatalogDBTestCase):
         (nonExistingDir,
          result))
 
-    result = self.db.getDirectorySize([testDir, nonExistingDir], False, True, credDict)
+    result = self.db.getDirectorySize([testDir, nonExistingDir], False, True, True, credDict)
     self.assertTrue(result["OK"], "getDirectorySize (calc) failed: %s" % result)
     self.assertTrue(
         testDir in result["Value"]["Successful"],
@@ -1066,7 +1067,6 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
         and return the tuple (files, size) for a given
         directory and a se
     """
-
     val = sizeDict[dirName]['PhysicalSize'][seName]
     files = val['Files']
     size = val['Size']
@@ -1081,14 +1081,14 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     size = sizeDict[dirName]['LogicalSize']
     return (files, size)
 
-  def getAndCompareDirectorySize(self, dirList):
+  def getAndCompareDirectorySize(self, dirList, recursiveSum=True):
     """ Fetch the directory size from the DirectoryUsage table
         and calculate it, compare the results, and then return
         the values
     """
 
-    retTable = self.db.getDirectorySize(dirList, True, False, credDict)
-    retCalc = self.db.getDirectorySize(dirList, True, True, credDict)
+    retTable = self.db.getDirectorySize(dirList, True, False, recursiveSum, credDict)
+    retCalc = self.db.getDirectorySize(dirList, True, True, recursiveSum, credDict)
 
     self.assertTrue(retTable["OK"])
     self.assertTrue(retCalc["OK"])
@@ -1099,9 +1099,145 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     # Since we have simple type, the == is recursive for dict :-)
     retEquals = (succTable == succCalc)
 
-    self.assertTrue(retEquals, "Calc and table results different %s %s" % (succTable, succCalc))
+    self.assertTrue(
+        retEquals, "Calc and table results different with recursiveSum %s: %s %s" %
+        (recursiveSum, succTable, succCalc))
 
     return retTable
+
+  def checkNonRecursiveDirectorySize(self, curDir):
+    """ The tests here should be true at any point in time of the directory size testing
+        We basically make sure that the sum of the non recursive sum of subdirectories
+        is the same as the recursive size of the directory (read it a few times, slowly :-)
+    """
+
+    res = self.db.listDirectory(curDir, credDict)
+    subDirs = res['Value']['Successful'][curDir]['SubDirs']
+    files = res['Value']['Successful'][curDir]['Files']
+
+    nrDirSize = self.getAndCompareDirectorySize(curDir, recursiveSum=False)['Value']['Successful'][curDir]
+    rDirSize = self.getAndCompareDirectorySize(curDir, recursiveSum=True)['Value']['Successful'][curDir]
+
+    # If there are no files, the size should be 0
+    if not files:
+      self.assertEqual((nrDirSize['LogicalFiles'], nrDirSize['LogicalSize']), (0, 0))
+
+    # If there are no subdirectories, the recursive and non recursive sum should be the same
+    if not subDirs:
+      self.assertEqual(rDirSize, nrDirSize)
+
+    # If there are subdir, the recursive size of the subdir + the non recursive size of curdir
+    # should be equal to the recursive size of curdir
+    else:
+
+      # Get the logocal size of the subdirs
+      ret = self.getAndCompareDirectorySize(subDirs, recursiveSum=True)['Value']['Successful']
+
+      subLogicalDir = 0
+      subLogicalFiles = 0
+      subLogicalSize = 0
+
+      # It's a dict of SE, each of them having {Files: x, Size: y}
+      physicalSizePerSE = defaultdict(lambda: defaultdict(int))
+      physicalSizeTotalFiles = 0
+      physicalSizeTotalSize = 0
+
+      for subDir, subDirDict in ret.items():
+        subLogicalDir += subDirDict['LogicalDirectories']
+        subLogicalFiles += subDirDict['LogicalFiles']
+        subLogicalSize += subDirDict['LogicalSize']
+
+        subDirPhys = subDirDict['PhysicalSize']
+
+        physicalSizeTotalFiles += subDirPhys.pop('TotalFiles', 0)
+        physicalSizeTotalSize += subDirPhys.pop('TotalSize', 0)
+
+        for se, seDict in subDirPhys.items():
+          physicalSizePerSE[se]['Files'] += seDict['Files']
+          physicalSizePerSE[se]['Size'] += seDict['Size']
+
+      self.assertEqual(rDirSize['LogicalDirectories'], nrDirSize['LogicalDirectories'] + subLogicalDir)
+      self.assertEqual(rDirSize['LogicalFiles'], nrDirSize['LogicalFiles'] + subLogicalFiles)
+      self.assertEqual(rDirSize['LogicalSize'], nrDirSize['LogicalSize'] + subLogicalSize)
+
+      rDirPhys = rDirSize['PhysicalSize']
+      nrDirPhys = nrDirSize['PhysicalSize']
+
+      # We pop to be able to loop over the SEs later on
+      self.assertEqual(rDirPhys.pop('TotalFiles', 0), nrDirPhys.pop('TotalFiles', 0) + physicalSizeTotalFiles)
+      self.assertEqual(rDirPhys.pop('TotalSize', 0), nrDirPhys.pop('TotalSize', 0) + physicalSizeTotalSize)
+
+      # Add the curDir non recursive physical SE to the subdir
+      for se, seDict in nrDirPhys.items():
+        physicalSizePerSE[se]['Files'] += seDict['Files']
+        physicalSizePerSE[se]['Size'] += seDict['Size']
+
+      self.assertEqual(rDirPhys, physicalSizePerSE)
+
+      # Now do the check recursively
+      for subDir in subDirs:
+        self.checkNonRecursiveDirectorySize(subDir)
+
+    # # There are no subdir, so the size and the recursive size of d2 and d2 should be the same
+    # ret = self.getAndCompareDirectorySize([d1, d2], recursiveSum=False)
+
+    # self.assertTrue(ret["OK"])
+    # nonRecVal = ret['Value']['Successful']
+    # self.assertTrue(val == nonRecVal)
+
+    # nonRecD1s1 = self.getPhysicalSize(nonRecVal, d1, 'se1')
+    # nonRecD1s2 = self.getPhysicalSize(nonRecVal, d1, 'se2')
+    # nonRecD1l = self.getLogicalSize(nonRecVal, d1)
+
+    # try:
+    #   nonRecD2s1 = self.getPhysicalSize(nonRecVal, d2, 'se1')
+    # except KeyError:
+    #   nonRecD2s1 = (0, 0)
+
+    # try:
+    #   nonRecD2s2 = self.getPhysicalSize(nonRecVal, d2, 'se2')
+    # except KeyError:
+    #   nonRecD2s2 = (0, 0)
+    # nonRecD2l = self.getLogicalSize(nonRecVal, d2)
+
+    # # The size of the root dir should be zero
+    # ret = self.getAndCompareDirectorySize('/sizeTest', recursiveSum=False)
+
+    # self.assertTrue(ret["OK"])
+    # nonRecStVal = ret['Value']['Successful']
+    # print("CHRIS nonRecStVal %s" % nonRecStVal)
+
+    # # There should be no physical size there
+    # try:
+    #   stS1 = self.getPhysicalSize(nonRecStVal, '/sizeTest', 'se1')
+    #   self.assertTrue(False, "There should be no physical size")
+    # except KeyError:
+    #   pass
+    # try:
+    #   stS2 = self.getPhysicalSize(nonRecStVal, '/sizeTest', 'se2')
+    #   self.assertTrue(False, "There should be no physical size")
+    # except KeyError:
+    #   pass
+
+    # nonRecStl = self.getLogicalSize(nonRecStVal, '/sizeTest')
+
+    # self.assertEqual(nonRecStl, (0, 0), "Unexpected size %s, expected %s" % (d1l, (0, 0)))
+
+    # # The sum of the non recursive sizes of /sizeTest + /sizeTest/d1 + /siteTest
+    # # should be equal to the size of /sizeTest
+
+    # ret = self.getAndCompareDirectorySize('/sizeTest', recursiveSum=True)
+
+    # self.assertTrue(ret["OK"])
+    # recVal = ret['Value']['Successful']
+
+    # recSts1 = self.getPhysicalSize(recVal, '/sizeTest', 'se1')
+    # recSts2 = self.getPhysicalSize(recVal, '/sizeTest', 'se2')
+    # recStl = self.getLogicalSize(recVal, '/sizeTest')
+
+    # self.assertEqual(recStl, tuple(sum(x) for x in zip(nonRecStl, nonRecD1l, nonRecD2l)))
+    # self.assertEqual(recSts1, tuple(sum(x) for x in zip(nonRecD1s1, nonRecD2s1)))
+    # self.assertEqual(recSts2, tuple(sum(x) for x in zip(nonRecD1s2, nonRecD2s2)))
 
   def test_directoryUsage(self):
     """Testing DirectoryUsage related operation"""
@@ -1120,10 +1256,6 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     f1Size = 3000000000
     f2Size = 3000000001
     f3Size = 3000000002
-
-#     f1Size = 1
-#     f2Size = 2
-#     f3Size = 5
 
     for sen in ['se1', 'se2', 'se3']:
       ret = self.db.addSE(sen, credDict)
@@ -1146,7 +1278,7 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
 
     self.assertTrue(ret["OK"])
 
-    ret = self.getAndCompareDirectorySize([d1, d2])
+    ret = self.getAndCompareDirectorySize([d1, d2], recursiveSum=True)
 
     self.assertTrue(ret["OK"])
     val = ret['Value']['Successful']
@@ -1160,6 +1292,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     self.assertEqual(
         d1l, (2, f1Size + f2Size), "Unexpected size %s, expected %s" %
         (d1l, (2, f1Size + f2Size)))
+
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
 
     ret = self.db.addReplica({f1: {"PFN": "f1se2", "SE": "se2"},
                               f2: {"PFN": "f1se3", "SE": "se3"}},
@@ -1185,6 +1324,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
         d1l, (2, f1Size + f2Size), "Unexpected size %s, expected %s" %
         (d1l, (2, f1Size + f2Size)))
 
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
+
     ret = self.db.removeFile([f1], credDict)
     self.assertTrue(ret['OK'])
 
@@ -1206,6 +1352,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     self.assertEqual(d1s3, (1, f2Size), "Unexpected size %s, expected %s" % (d1s3, (1, f2Size)))
     self.assertEqual(d1l, (1, f2Size), "Unexpected size %s, expected %s" % (d1l, (1, f2Size)))
 
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
+
     ret = self.db.removeReplica({f2: {"SE": "se2"}}, credDict)
     self.assertTrue(ret['OK'])
 
@@ -1224,6 +1377,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     self.assertEqual(d1s2, (0, 0), "Unexpected size %s, expected %s" % (d1s2, (0, 0)))
     self.assertEqual(d1s3, (1, f2Size), "Unexpected size %s, expected %s" % (d1s3, (1, f2Size)))
     self.assertEqual(d1l, (1, f2Size), "Unexpected size %s, expected %s" % (d1l, (1, f2Size)))
+
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
 
     ret = self.db.addFile({f1: {'PFN': 'f1se1',
                                 'SE': 'se1',
@@ -1256,6 +1416,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
         (d1l, (2, f1Size + f2Size)))
     self.assertEqual(d2l, (1, f3Size), "Unexpected size %s, expected %s" % (d2l, (1, f3Size)))
 
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
+
     ret = self.db.removeReplica({f1: {"SE": "se1"}}, credDict)
     self.assertTrue(ret['OK'])
 
@@ -1282,6 +1449,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
         (d1l, (2, f1Size + f2Size)))
     self.assertEqual(d2l, (1, f3Size), "Unexpected size %s, expected %s" % (d2l, (1, f3Size)))
 
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
+
     ret = self.db.removeFile([f1], credDict)
     self.assertTrue(ret['OK'])
 
@@ -1304,6 +1478,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     self.assertEqual(d2s3, (1, f3Size), "Unexpected size %s, expected %s" % (d2s3, (1, f3Size)))
     self.assertEqual(d1l, (1, f2Size), "Unexpected size %s, expected %s" % (d1l, (1, f2Size)))
     self.assertEqual(d2l, (1, f3Size), "Unexpected size %s, expected %s" % (d2l, (1, f3Size)))
+
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
 
     ret = self.db.removeReplica({f2: {"SE": "se3"},
                                  f3: {"SE": "se3"}}, credDict)
@@ -1336,6 +1517,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     self.assertEqual(d1l, (1, f2Size), "Unexpected size %s, expected %s" % (d1l, (1, f2Size)))
     self.assertEqual(d2l, (1, f3Size), "Unexpected size %s, expected %s" % (d2l, (1, f3Size)))
 
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
+
     ret = self.db.removeFile([f2, f3], credDict)
     self.assertTrue(ret['OK'])
 
@@ -1366,6 +1554,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     self.assertEqual(d1l, (0, 0), "Unexpected size %s, expected %s" % (d1l, (0, 0)))
     self.assertEqual(d2l, (0, 0), "Unexpected size %s, expected %s" % (d2l, (0, 0)))
 
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
+
     # Removing Replicas and Files from the same directory
 
     ret = self.db.addFile({f1: {'PFN': 'f1se1',
@@ -1392,6 +1587,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     except KeyError:
       d1s1 = (0, 0)
     self.assertEqual(d1s1, (0, 0), "Unexpected size %s, expected %s" % (d1s1, (0, 0)))
+
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
 
     ret = self.db.removeFile([f1, f2], credDict)
     self.assertTrue(ret['OK'])
@@ -1423,6 +1625,13 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     except KeyError:
       d1s2 = (0, 0)
     self.assertEqual(d1s2, (0, 0), "Unexpected size %s, expected %s" % (d1s2, (0, 0)))
+
+    ###################
+    # Non recursive tests
+
+    self.checkNonRecursiveDirectorySize('/sizeTest')
+
+    ###################
 
 
 if __name__ == '__main__':
