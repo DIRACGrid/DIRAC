@@ -182,13 +182,13 @@ class CommandReference(object):
     referencePrefix = referencePrefix + '_' if referencePrefix else ''
 
     if scriptName in self.config.com_ignore_commands:
-      return False
+      return scriptName, False
 
     LOG.info('Creating Doc for %r in %r', scriptName, sectionPath)
     helpMessage = runCommand('python %s -h' % script)
     if not helpMessage:
       LOG.warning('NO DOC for %s', scriptName)
-      return False
+      return scriptName, False
 
     rstLines = []
     rstLines.append(' .. _%s%s:' % (referencePrefix, scriptName))
@@ -243,7 +243,7 @@ class CommandReference(object):
     # remove the standalone '-' when no short option exists
     fileContent = fileContent.replace('-   --', '--')
     writeLinesToFile(scriptRSTPath, fileContent)
-    return True
+    return scriptName, True
 
   def getContentFromModuleDocstring(self, script):
     """Parse the given python file and return its module docstring."""
