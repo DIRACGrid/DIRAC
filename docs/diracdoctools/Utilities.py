@@ -135,10 +135,15 @@ def makeLogger(name):
 def registerValidatingExitHandler():
   """Registers an exit handler which checks for errors after the build completes"""
   def check():
-    """"""
+    outputDir = "build/html"
+    for arg in sys.argv:
+      if arg.endswith("/html"):
+        outputDir = arg
+        LOG.info("Found outputDir as %s", outputDir)
+        break
     cmd = [
         "grep", "--color", "-nH", "-e", ":param",
-        "-e", ":return", "-r", "build/html/CodeDocumentation/"
+        "-e", ":return", "-r", os.path.join(outputDir, "CodeDocumentation")
     ]
     ret = subprocess.run(cmd, check=False)
     if ret.returncode != 1:
