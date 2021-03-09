@@ -151,7 +151,7 @@ class ServiceInterfaceBase(object):
 
     :param set urlSet: a set of service URLs
     :param fromMaster: flag to force updating from the master CS
-    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    :return: Nothing
     """
     raise NotImplementedError("Should be implemented by the children class")
 
@@ -159,7 +159,7 @@ class ServiceInterfaceBase(object):
     """
     Force updating configuration on all the slave configuration servers
 
-    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    :return: Nothing
     """
     gLogger.info("Updating configuration on slave servers")
     iGraceTime = gConfigurationData.getSlavesGraceTime()
@@ -167,13 +167,13 @@ class ServiceInterfaceBase(object):
     for slaveURL in self.dAliveSlaveServers:
       if time.time() - self.dAliveSlaveServers[slaveURL] <= iGraceTime:
         urlSet.add(slaveURL)
-    return self._updateServiceConfiguration(urlSet, fromMaster=True)
+    self._updateServiceConfiguration(urlSet, fromMaster=True)
 
   def forceGlobalUpdate(self):
     """
     Force updating configuration of all the registered services
 
-    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    :returns: S_OK (needed for DISET return call)
     """
     gLogger.info("Updating services configuration")
     # Get URLs of all the services except for Configuration services
@@ -184,7 +184,8 @@ class ServiceInterfaceBase(object):
         for url in cfg[system_][instance]['URLs']:
           urlSet = urlSet.union(set([u.strip() for u in cfg[system_][instance]['URLs'][url].split(',')
                                      if 'Configuration/Server' not in u]))
-    return self._updateServiceConfiguration(urlSet)
+    self._updateServiceConfiguration(urlSet)
+    return S_OK()
 
   def updateConfiguration(self, sBuffer, committer="", updateVersionOption=False):
     """
@@ -240,9 +241,7 @@ class ServiceInterfaceBase(object):
 
     # Attempt to update the configuration on currently registered slave services
     if gConfigurationData.getAutoSlaveSync():
-      result = self.forceSlavesUpdate()
-      if not result['OK']:
-        gLogger.warn('Failed to update slave servers')
+      self.forceSlavesUpdate()
 
     return retVal
 
