@@ -215,11 +215,11 @@ class PilotCache(rmsBase):
 
   site = Column('Site', String(64), nullable=False, primary_key=True)
   ce = Column('CE', String(64), nullable=False, primary_key=True)
+  vo = Column('VO', String(64), nullable=False, primary_key=True, server_default='all')
   status = Column('Status', String(16), nullable=False)
   pilotjobeff = Column('PilotJobEff', Float(asdecimal=False), nullable=False, server_default='0')
   pilotsperjob = Column('PilotsPerJob', Float(asdecimal=False), nullable=False, server_default='0')
   lastchecktime = Column('LastCheckTime', DateTime, nullable=False)
-  vo = Column('VO', String(64), nullable=False, primary_key=True, server_default='all')
 
   def fromDict(self, dictionary):
     """
