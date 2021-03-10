@@ -153,14 +153,14 @@ def wholenodeDiracBenchmark(copies=None, iterations=1, extraIteration=False):
   if copies is None and 'MACHINEFEATURES' in os.environ:
     try:
       copies = int(urlopen(os.environ['MACHINEFEATURES'] + '/total_cpu').read())
-    except BaseException:
+    except Exception:
       pass
 
   # If not given by caller or $MACHINEFEATURES/total_cpu then just count CPUs
   if copies is None:
     try:
       copies = multiprocessing.cpu_count()
-    except BaseException:
+    except Exception:
       copies = 1
 
   return multipleDiracBenchmark(copies=copies, iterations=iterations, extraIteration=extraIteration)
@@ -174,7 +174,7 @@ def jobslotDiracBenchmark(copies=None, iterations=1, extraIteration=False):
   if copies is None and 'JOBFEATURES' in os.environ:
     try:
       copies = int(urlopen(os.environ['JOBFEATURES'] + '/allocated_cpu').read())
-    except BaseException:
+    except Exception:
       pass
 
   # If not given by caller or $JOBFEATURES/allocated_cpu then just run one copy

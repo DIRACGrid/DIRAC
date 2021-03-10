@@ -81,7 +81,7 @@ def makeGuid(fileName=None):
       with open(fileName, 'rb') as fd:
         data = fd.read(10 * 1024 * 1024)
         myMd5.update(data)
-    except BaseException:
+    except Exception:
       return None
   else:
     myMd5.update(str(random.getrandbits(128)).encode())

@@ -18,7 +18,7 @@ def VmB(vmKey):
   try:
     with open(procFile) as myFile:
       value = myFile.read()
-  except BaseException:
+  except Exception:
     return 0.0  # non-Linux?
   # get vmKey line e.g. 'VmRSS:  9999  kB\n ...'
   i = value.index(vmKey)

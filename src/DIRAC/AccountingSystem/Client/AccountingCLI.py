@@ -95,7 +95,7 @@ class AccountingCLI(CLI):
         gLogger.info("Type registered successfully")
       else:
         gLogger.error("Error: %s" % retVal['Message'])
-    except BaseException:
+    except Exception:
       self.showTraceback()
 
   def do_resetBucketLength(self, args):
@@ -129,7 +129,7 @@ class AccountingCLI(CLI):
         gLogger.info("Type registered successfully")
       else:
         gLogger.error("Error: %s" % retVal['Message'])
-    except BaseException:
+    except Exception:
       self.showTraceback()
 
   def do_regenerateBuckets(self, args):
@@ -163,7 +163,7 @@ class AccountingCLI(CLI):
         gLogger.info("Buckets recalculated!")
       else:
         gLogger.error("Error: %s" % retVal['Message'])
-    except BaseException:
+    except Exception:
       self.showTraceback()
 
   def do_showRegisteredTypes(self, args):
@@ -184,7 +184,7 @@ class AccountingCLI(CLI):
         print(typeList[0])
         print(" Key fields:\n  %s" % "\n  ".join(typeList[1]))
         print(" Value fields:\n  %s" % "\n  ".join(typeList[2]))
-    except BaseException:
+    except Exception:
       self.showTraceback()
 
   def do_deleteType(self, args):
@@ -217,7 +217,7 @@ class AccountingCLI(CLI):
         gLogger.error("Error: %s" % retVal['Message'])
         return
       print("Hope you meant it, because it's done")
-    except BaseException:
+    except Exception:
       self.showTraceback()
 
   def do_compactBuckets(self, args):
@@ -232,5 +232,5 @@ class AccountingCLI(CLI):
         gLogger.error("Error: %s" % retVal['Message'])
         return
       gLogger.info("Done")
-    except BaseException:
+    except Exception:
       self.showTraceback()

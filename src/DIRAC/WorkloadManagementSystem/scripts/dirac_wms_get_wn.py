@@ -63,7 +63,7 @@ def main():
     elif switch[0] == 'BatchID':
       try:
         batchIDs = [int(id) for id in switch[1].split(',')]
-      except BaseException:
+      except Exception:
         gLogger.error('Invalid jobID', switch[1])
         DIRAC.exit(1)
     elif switch[0] == 'Full':

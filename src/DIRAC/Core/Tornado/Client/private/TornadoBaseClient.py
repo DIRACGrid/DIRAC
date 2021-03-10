@@ -226,7 +226,7 @@ class TornadoBaseClient(object):
       try:
         self.kwargs[self.KW_PROXY_STRING] = self.kwargs[self.KW_PROXY_CHAIN].dumpAllToString()['Value']
         del self.kwargs[self.KW_PROXY_CHAIN]
-      except BaseException:
+      except Exception:
         return S_ERROR("Invalid proxy chain specified on instantiation")
 
     # ==== REWRITED FROM HERE ====

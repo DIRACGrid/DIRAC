@@ -351,7 +351,7 @@ class Dirac(API):
         if not result['OK']:
           self.log.error('Pre-submission checks failed for job with message: "%s"' % (result['Message']))
           return result
-      except BaseException as x:
+      except Exception as x:
         msg = 'Error in VO specific function preSubmissionChecks: "%s"' % (x)
         self.log.error(msg)
         return S_ERROR(msg)
@@ -1947,7 +1947,7 @@ class Dirac(API):
     try:
       jobSummary = eval(result['Value'])
       # self.log.info(self.pPrint.pformat(jobSummary))
-    except BaseException as x:
+    except Exception as x:
       self.log.warn('Problem interpreting result from job monitoring service')
       return S_ERROR('Problem while converting result from job monitoring')
 
@@ -2029,7 +2029,7 @@ class Dirac(API):
         msg.append('Output Sandbox: Retrieval Failed')
       else:
         msg.append('Output Sandbox: Retrieved')
-    except BaseException as x:
+    except Exception as x:
       msg.append('Output Sandbox: Not Available')
 
     try:
@@ -2038,7 +2038,7 @@ class Dirac(API):
         msg.append('Input Sandbox: Retrieval Failed')
       else:
         msg.append('Input Sandbox: Retrieved')
-    except BaseException as x:
+    except Exception as x:
       msg.append('Input Sandbox: Not Available')
 
     try:
@@ -2048,7 +2048,7 @@ class Dirac(API):
       else:
         self.__writeFile(result['Value'], '%s/JobParameters' % (debugDir))
         msg.append('Job Parameters: Retrieved')
-    except BaseException as x:
+    except Exception as x:
       msg.append('Job Parameters: Not Available')
 
     try:
@@ -2430,7 +2430,7 @@ class Dirac(API):
           self.log.debug('Found standard parameter %s' % (param))
           parameters[param] = value.replace('"', '')
       return S_OK(parameters)
-    except BaseException as x:
+    except Exception as x:
       self.log.exception(lException=x)
       return S_ERROR('Exception while extracting JDL parameters for job')
 

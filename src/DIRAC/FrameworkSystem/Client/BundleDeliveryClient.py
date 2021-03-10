@@ -51,7 +51,7 @@ class BundleDeliveryClient(Client):
       with open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "r") as fd:
         bdHash = fd.read().strip()
         return bdHash
-    except BaseException:
+    except Exception:
       return ""
 
   def __setHash(self, bundleID, dirToSyncTo, bdHash):

@@ -88,7 +88,7 @@ class EventDispatcher(object):
     finally:
       try:
         gEventSync.unlock()
-      except BaseException:
+      except Exception:
         pass
     if not finalResult['OK']:
       return finalResult

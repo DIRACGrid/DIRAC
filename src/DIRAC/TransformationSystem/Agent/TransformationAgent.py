@@ -448,7 +448,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
       clearCache = os.path.exists(clearCacheFile)
       if clearCache:
         os.remove(clearCacheFile)
-    except BaseException:
+    except Exception:
       pass
     if clearCache or transDict['Status'] == 'Flush':
       self._logInfo("Replica cache cleared", method=method, transID=transID)
@@ -705,5 +705,5 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
           self._logInfo("Removed cached replicas for transformation", method='pluginCallBack', transID=transID)
           self.replicaCache.pop(transID)
           self.__writeCache(transID)
-      except BaseException:
+      except Exception:
         pass

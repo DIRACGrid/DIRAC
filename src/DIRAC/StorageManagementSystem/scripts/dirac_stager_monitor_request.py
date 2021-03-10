@@ -35,7 +35,7 @@ def main():
 
   try:
     taskID = int(args[0])
-  except BaseException:
+  except Exception:
     gLogger.fatal('Stage requestID must be an integer')
     DIRACExit(2)
 

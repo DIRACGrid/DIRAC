@@ -326,7 +326,7 @@ class TransformationCleaningAgent(AgentModule):
         if not isinstance(res['Value'], list):
           try:
             transDirectories = ast.literal_eval(res['Value'])
-          except BaseException:
+          except Exception:
             # It can happen if the res['Value'] is '/a/b/c' instead of '["/a/b/c"]'
             transDirectories.append(res['Value'])
         else:

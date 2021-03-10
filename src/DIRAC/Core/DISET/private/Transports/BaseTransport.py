@@ -65,7 +65,7 @@ class BaseTransport(object):
     if 'keepAliveLapse' in kwargs:
       try:
         self.__keepAliveLapse = max(150, int(kwargs['keepAliveLapse']))
-      except BaseException:
+      except Exception:
         pass
     self.iListenQueueSize = max(self.iListenQueueSize, int(kwargs.get('SocketBacklog', 0)))
     self.__lastActionTimestamp = time.time()

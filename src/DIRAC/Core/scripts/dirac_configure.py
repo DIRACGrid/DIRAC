@@ -416,7 +416,7 @@ def main():
     try:
       dirName = os.path.join(DIRAC.rootPath, 'etc', 'grid-security', 'certificates')
       mkDir(dirName)
-    except BaseException:
+    except Exception:
       DIRAC.gLogger.exception()
       DIRAC.gLogger.fatal('Fail to create directory:', dirName)
       DIRAC.exit(-1)

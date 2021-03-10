@@ -404,7 +404,7 @@ class Service(object):
         if not result['OK']:
           clientTransport.close()
           return
-      except BaseException:
+      except Exception:
         return
       # Add to the transport pool
       trid = self._transportPool.add(clientTransport)

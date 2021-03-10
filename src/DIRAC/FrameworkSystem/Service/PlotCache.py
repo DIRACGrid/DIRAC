@@ -74,7 +74,7 @@ def _deleteGraph(plotDict):
       value = plotDict[key]
       if value and os.path.isfile(value):
         os.unlink(value)
-  except BaseException:
+  except Exception:
     pass
 
 

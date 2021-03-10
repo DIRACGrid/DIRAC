@@ -163,7 +163,7 @@ class TaskQueueDB(DB):
           maxCPUSegments = self.__defaultCPUSegments
           break
         last = cpuS
-    except BaseException:
+    except Exception:
       maxCPUSegments = self.__defaultCPUSegments
     # Map to a segment
     for cpuSegment in maxCPUSegments:

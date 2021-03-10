@@ -572,7 +572,7 @@ class ProductionDB(DB):
     try:
       prodName = long(prodName)
       cmd = "SELECT ProductionID from Productions WHERE ProductionID=%d;" % prodName
-    except BaseException:
+    except Exception:
       if not isinstance(prodName, six.string_types):
         return S_ERROR("Production should be ID or name")
       cmd = "SELECT ProductionID from Productions WHERE ProductionName='%s';" % prodName

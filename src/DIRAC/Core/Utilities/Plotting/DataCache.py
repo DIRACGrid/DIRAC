@@ -94,5 +94,5 @@ class DataCache(object):
             os.unlink(fPath)
           else:
             gLogger.info("Plot has already been deleted", value)
-    except BaseException:
+    except Exception:
       pass

@@ -163,7 +163,7 @@ class Transformation(API):
     if isinstance(seList, six.string_types):
       try:
         seList = eval(seList)
-      except BaseException:
+      except Exception:
         seList = seList.split(',')
     elif isinstance(seList, (list, dict, tuple)):
       seList = list(seList)

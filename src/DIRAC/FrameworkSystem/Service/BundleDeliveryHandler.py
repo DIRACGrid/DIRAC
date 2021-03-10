@@ -53,13 +53,13 @@ class BundleManager(object):
   def getBundleVersion(self, bId):
     try:
       return self.__bundles[bId][0]
-    except BaseException:
+    except Exception:
       return ""
 
   def getBundleData(self, bId):
     try:
       return self.__bundles[bId][1]
-    except BaseException:
+    except Exception:
       return ""
 
   def updateBundles(self):

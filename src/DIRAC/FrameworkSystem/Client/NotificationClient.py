@@ -112,6 +112,6 @@ class NotificationClient(Client):
   def addNotificationForUser(self, user, message, lifetime=604800, deferToMail=True):
     try:
       lifetime = int(lifetime)
-    except BaseException:
+    except Exception:
       return S_ERROR("Message lifetime has to be a non decimal number")
     return self._getRPC().addNotificationForUser(user, message, lifetime, deferToMail)

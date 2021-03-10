@@ -40,7 +40,7 @@ def S_ERROR(*args):
   try:
     callStack = traceback.format_stack()
     callStack.pop()
-  except BaseException:
+  except Exception:
     callStack = []
 
   result["CallStack"] = callStack

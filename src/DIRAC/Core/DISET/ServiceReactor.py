@@ -90,7 +90,7 @@ class ServiceReactor(object):
       if 'transport' in self.__listeningConnections[svcName]:
         try:
           self.__listeningConnections[svcName]['transport'].close()
-        except BaseException:
+        except Exception:
           pass
         del(self.__listeningConnections[svcName]['transport'])
     gLogger.info("Connections closed")

@@ -227,26 +227,26 @@ class ConfigurationData(object):
   def getRefreshTime(self):
     try:
       return int(self.extractOptionFromCFG("%s/RefreshTime" % self.configurationPath, self.mergedCFG))
-    except BaseException:
+    except Exception:
       return 300
 
   def getPropagationTime(self):
     try:
       return int(self.extractOptionFromCFG("%s/PropagationTime" % self.configurationPath, self.mergedCFG))
-    except BaseException:
+    except Exception:
       return 300
 
   def getSlavesGraceTime(self):
     try:
       return int(self.extractOptionFromCFG("%s/SlavesGraceTime" % self.configurationPath, self.mergedCFG))
-    except BaseException:
+    except Exception:
       return 600
 
   def mergingEnabled(self):
     try:
       val = self.extractOptionFromCFG("%s/EnableAutoMerge" % self.configurationPath, self.mergedCFG)
       return val.lower() in ("yes", "true", "y")
-    except BaseException:
+    except Exception:
       return False
 
   def getAutoPublish(self):
