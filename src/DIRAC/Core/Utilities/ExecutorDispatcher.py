@@ -423,7 +423,7 @@ class ExecutorDispatcher(object):
       self.__executorsLock.release()
     try:
       self.__cbHolder.cbDisconectExecutor(eId)
-    except BaseException:
+    except Exception:
       self.__log.exception("Exception while disconnecting agent %s" % eId)
     for eType in eTypes:
       self.__fillExecutors(eType)
@@ -566,7 +566,7 @@ class ExecutorDispatcher(object):
   def __taskProcessedCallback(self, taskId, taskObj, eType):
     try:
       result = self.__cbHolder.cbTaskProcessed(taskId, taskObj, eType)
-    except BaseException:
+    except Exception:
       self.__log.exception("Exception while calling taskDone callback")
       return S_ERROR("Exception while calling taskDone callback")
 
@@ -580,7 +580,7 @@ class ExecutorDispatcher(object):
   def __taskFreezeCallback(self, taskId, taskObj, eType):
     try:
       result = self.__cbHolder.cbTaskFreeze(taskId, taskObj, eType)
-    except BaseException:
+    except Exception:
       self.__log.exception("Exception while calling taskFreeze callback")
       return S_ERROR("Exception while calling taskFreeze callback")
 
@@ -600,7 +600,7 @@ class ExecutorDispatcher(object):
       return S_ERROR(msg)
     try:
       result = self.__cbHolder.cbDispatch(taskId, eTask.taskObj, tuple(eTask.pathExecuted))
-    except BaseException:
+    except Exception:
       self.__log.exception("Exception while calling dispatch callback")
       return S_ERROR("Exception while calling dispatch callback")
 
@@ -810,7 +810,7 @@ class ExecutorDispatcher(object):
       return S_ERROR("Task %s has been deleted" % taskId)
     try:
       result = self.__cbHolder.cbSendTask(taskId, self.__tasks[taskId].taskObj, eId, eType)
-    except BaseException:
+    except Exception:
       self.__log.exception("Exception while sending task to executor")
       return S_ERROR("Exception while sending task to executor")
     if isReturnStructure(result):

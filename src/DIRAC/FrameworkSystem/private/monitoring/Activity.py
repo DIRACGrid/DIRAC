@@ -170,5 +170,5 @@ class Activity:
     label = self.getLabel()
     try:
       return label < act.getLabel()
-    except BaseException:
+    except Exception:
       return label < act

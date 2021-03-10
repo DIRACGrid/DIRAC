@@ -38,7 +38,7 @@ def colorize(text, color):
     return "%s%sm%s%s" % (startCode, color, text, endCode)
   try:
     return "%s%sm%s%s" % (startCode, gColors[color], text, endCode)
-  except BaseException:
+  except Exception:
     return text
 
 
@@ -62,7 +62,7 @@ class CLI(cmd.Cmd):
     for sigNum in (signal.SIGINT, signal.SIGQUIT, signal.SIGKILL, signal.SIGTERM):
       try:
         signal.signal(sigNum, self._handleSignal)
-      except BaseException:
+      except Exception:
         pass
 
   def _errMsg(self, errMsg):
@@ -144,7 +144,7 @@ class CLI(cmd.Cmd):
       command = args.split()[0].strip()
       try:
         obj = getattr(self, "do_%s" % command)
-      except BaseException:
+      except Exception:
         print("There's no such %s command" % command)
         return
       self.printPair(command, obj.__doc__[1:])

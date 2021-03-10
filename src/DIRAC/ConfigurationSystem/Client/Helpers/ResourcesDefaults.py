@@ -34,7 +34,7 @@ def getComputingElementDefaults(ceName='', ceType='', cfg=None, currentSectionPa
       if cesCfg.isSection(cesPath):
         for section in cfgPathToList(cesPath):
           cesCfg = cesCfg[section]
-    except BaseException:
+    except Exception:
       return CFG()
 
   # Overwrite the cfg with Command line arguments

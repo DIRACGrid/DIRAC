@@ -260,7 +260,7 @@ class RequestHandler(object):
     try:
       # Get the method we are trying to call
       oMethod = getattr(self, realMethod)
-    except BaseException:
+    except Exception:
       return S_ERROR("Unknown method %s" % method)
     # Check if the client sends correct arguments
     dRetVal = self.__checkExpectedArgumentTypes(method, args)
@@ -310,7 +310,7 @@ class RequestHandler(object):
     sListName = "types_%s" % method
     try:
       oTypesList = getattr(self, sListName)
-    except BaseException:
+    except Exception:
       gLogger.error("There's no types info for method", "export_%s" % method)
       return S_ERROR("Handler error for server %s while processing method %s" % (self.serviceInfoDict['serviceName'],
                                                                                  method))
@@ -381,7 +381,7 @@ class RequestHandler(object):
     gLogger.debug("Callback to %s" % realMethod)
     try:
       oMethod = getattr(self, realMethod)
-    except BaseException:
+    except Exception:
       # No callback defined by handler
       return S_OK()
     try:
@@ -403,7 +403,7 @@ class RequestHandler(object):
     startTime = time.time()
     try:
       oMethod = getattr(self, methodName)
-    except BaseException:
+    except Exception:
       return S_ERROR("Handler function for message %s does not exist!" % msgName)
     self.__lockManager.lock(methodName)
     try:

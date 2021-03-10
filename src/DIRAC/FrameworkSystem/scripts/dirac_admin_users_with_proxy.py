@@ -43,7 +43,7 @@ class Params(object):
     try:
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
-    except BaseException:
+    except Exception:
       print("Can't parse %s time! Is it a HH:MM?" % arg)
       return DIRAC.S_ERROR("Can't parse time argument")
     return DIRAC.S_OK()

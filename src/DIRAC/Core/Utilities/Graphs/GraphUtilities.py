@@ -75,7 +75,7 @@ def convert_to_datetime(dstring):
         timestamp = calendar.timegm(t)  # -time.timezone
         results = datetime.datetime.fromtimestamp(timestamp)
         break
-      except BaseException:
+      except Exception:
         pass
     if t is None:
       try:
@@ -83,7 +83,7 @@ def convert_to_datetime(dstring):
         t = time.strptime(dstring, dateformat)
         timestamp = time.mktime(t)  # -time.timezone
         results = datetime.datetime.fromtimestamp(timestamp)
-      except BaseException:
+      except Exception:
         raise ValueError("Unable to create time from string!\nExpecting "
                          "format of: '12/06/06 12:54:67'\nRecieved:%s" % orig_string)
   return results
@@ -95,7 +95,7 @@ def to_timestamp(val):
     v = float(val)
     if v > 1000000000 and v < 1900000000:
       return v
-  except BaseException:
+  except Exception:
     pass
 
   val = convert_to_datetime(val)
@@ -374,7 +374,7 @@ def pretty_float(num):
 
   try:
     floats = int(max(2 - max(numpy.floor(numpy.log(abs(num) + 1e-3) / numpy.log(10.)), 0), 0))
-  except BaseException:
+  except Exception:
     floats = 2
   format = "%." + str(floats) + "f"
   if isinstance(num, tuple):
@@ -382,7 +382,7 @@ def pretty_float(num):
   else:
     try:
       retval = format % float(num)
-    except BaseException:
+    except Exception:
       raise Exception("Unable to convert %s into a float." % (str(num)))
     return retval
 

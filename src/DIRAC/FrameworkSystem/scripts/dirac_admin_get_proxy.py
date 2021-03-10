@@ -74,7 +74,7 @@ class Params(object):
     try:
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
-    except BaseException:
+    except Exception:
       gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
       return S_ERROR("Can't parse time argument")
     return S_OK()

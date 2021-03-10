@@ -46,7 +46,7 @@ class Devloader(object):
         self.__log.always("Closing %s" % stuff)
         sys.stdout.flush()
         stuff.close()
-      except BaseException:
+      except Exception:
         gLogger.exception("Could not close %s" % stuff)
 
     python = sys.executable

@@ -386,5 +386,5 @@ def includeExtensionErrors():
         for err in getattr(ext_derrno, 'extra_compatErrorString', []):
           sys.modules[__name__].compatErrorString.setdefault(err, []).extend(ext_derrno.extra_compatErrorString[err])
 
-    except BaseException:
+    except Exception:
       pass

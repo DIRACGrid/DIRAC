@@ -370,7 +370,7 @@ class ModulesTestCase(unittest.TestCase):
     for directory in ['./job', 'job']:
       try:
         shutil.rmtree(directory)
-      except BaseException:
+      except Exception:
         continue
 
 #############################################################################

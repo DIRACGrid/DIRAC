@@ -44,7 +44,7 @@ def main():
   try:
     with open(pfn, 'r') as f:
       pfns = f.read().splitlines()
-  except BaseException:
+  except Exception:
     pfns = [pfn]
 
   for pfn in pfns:

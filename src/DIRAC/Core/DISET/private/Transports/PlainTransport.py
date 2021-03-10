@@ -52,7 +52,7 @@ class PlainTransport(BaseTransport):
     gLogger.debug("Closing socket")
     try:
       self.oSocket.shutdown(socket.SHUT_RDWR)
-    except BaseException:
+    except Exception:
       pass
     self.oSocket.close()
 

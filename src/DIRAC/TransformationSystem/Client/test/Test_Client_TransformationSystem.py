@@ -26,7 +26,7 @@ class reqValFake_C(object):
         try:
           if not f.LFN:
             return {'OK': False}
-        except BaseException:
+        except Exception:
           return {'OK': False}
     return {'OK': True}
 

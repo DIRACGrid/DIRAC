@@ -19,7 +19,7 @@ def getDBOrClient(DB, serverName):
     database = DB()
     if database._connected:
       return database
-  except BaseException:
+  except Exception:
     pass
 
   gLogger.info('Can not connect to DB will use %s' % serverName)
@@ -31,7 +31,7 @@ def getMonitoringDB():
   MonitoringDB = None
   try:
     from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
-  except BaseException:
+  except Exception:
     pass
   return getDBOrClient(MonitoringDB, serverName)
 

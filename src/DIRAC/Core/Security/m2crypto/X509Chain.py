@@ -283,7 +283,7 @@ class X509Chain(object):
     try:
       with open(chainLocation, 'rb') as fd:
         pemData = fd.read()
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
     return self.loadKeyFromString(pemData, password)
 
@@ -301,7 +301,7 @@ class X509Chain(object):
       password = password.encode()
     try:
       self._keyObj = M2Crypto.EVP.load_key_string(pemData, lambda x: password)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "%s (Probably bad pass phrase?)" % repr(e).replace(',)', ')'))
 
     return S_OK()
@@ -325,7 +325,7 @@ class X509Chain(object):
     try:
       with open(chainLocation, 'rb') as fd:
         pemData = fd.read()
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
     return self.loadProxyFromString(pemData)
 
@@ -496,11 +496,11 @@ class X509Chain(object):
     try:
       with open(filePath, 'wb') as fd:
         fd.write(retVal['Value'])
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.EWF, "%s :%s" % (filePath, repr(e).replace(',)', ')')))
     try:
       os.chmod(filePath, stat.S_IRUSR | stat.S_IWUSR)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.ESPF, "%s :%s" % (filePath, repr(e).replace(',)', ')')))
     return S_OK()
 
@@ -817,7 +817,7 @@ class X509Chain(object):
     try:
       req = M2Crypto.X509.load_request_string(pemData, format=M2Crypto.X509.FORMAT_PEM)
 
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "Can't load request data: %s" % repr(e).replace(',)', ')'))
 
     # I am not sure this test makes sense.
@@ -880,11 +880,11 @@ class X509Chain(object):
 
       os.write(fd, pemData)
       os.close(fd)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.EWF, "%s :%s" % (filename, repr(e).replace(',)', ')')))
     try:
       os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.ESPF, "%s :%s" % (filename, repr(e).replace(',)', ')')))
     return S_OK(filename)
 

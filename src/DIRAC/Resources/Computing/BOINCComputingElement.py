@@ -155,7 +155,7 @@ EOF
             wrapperContent,
             self.ceParameters['Platform'][0],
             self.ceParameters['MarketPlaceID'])
-      except BaseException:
+      except Exception:
         self.log.error('Could not submit the pilot to the BOINC CE',
                        'Pilot %s, BOINC CE %s' % (jobID, self.wsdl))
         break
