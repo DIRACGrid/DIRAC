@@ -102,7 +102,7 @@ class PilotSyncAgent(AgentModule):
         # same as the output from sha512sum commands
         chksums.write('%s  %s\n' % (chksum, filename))
 
-    allFiles = allFiles + [cksPath]
+    allFiles = list(set(allFiles + [cksPath]))
 
     if self.saveDir:
       # Moving files to the correct location
