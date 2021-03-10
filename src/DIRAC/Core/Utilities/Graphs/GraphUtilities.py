@@ -209,28 +209,17 @@ def comma_format(x_orig):
 
 
 class PrettyScalarFormatter(ScalarFormatter):
+  def __init__(self, *args, **kwargs):
+    super(PrettyScalarFormatter, self).__init__(*args, **kwargs)
+    self.set_powerlimits([-7, 9])
+    self._useLocale = True
 
-  def _set_orderOfMagnitude(self, range):
-    # if scientific notation is to be used, find the appropriate exponent
-    # if using an numerical offset, find the exponent after applying the offset
-    locs = numpy.absolute(self.locs)
+  def __call__(self, x, pos=None):
+    val = super(PrettyScalarFormatter, self).__call__(x, pos=pos)
     if self.offset:
-      oom = math.floor(math.log10(range))
+      return val
     else:
-      if locs[0] > locs[-1]:
-        val = locs[0]
-      else:
-        val = locs[-1]
-      if val == 0:
-        oom = 0
-      else:
-        oom = math.floor(math.log10(val))
-    if oom <= -7:
-      self.orderOfMagnitude = oom
-    elif oom >= 9:
-      self.orderOfMagnitude = oom
-    else:
-      self.orderOfMagnitude = 0
+      return comma_format(val)
 
 
 class PrettyDateFormatter(AutoDateFormatter):
