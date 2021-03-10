@@ -60,14 +60,18 @@ output = []
 result = None
 exitCode = None
 
+
 def mock_notice(*a):
   output.append(' '.join(a))
+
 
 def mock_exit(c=0):
   exitCode = c
 
+
 def mock_gnu(*a):
   return opts, args
+
 
 @pytest.fixture
 def localCFG():
@@ -79,12 +83,15 @@ def localCFG():
         localCFG.disableCS()
         yield localCFG
 
+
 @pytest.fixture
 def localCFG_withOptions(localCFG):
   localCFG.registerCmdOpt("V:", "vo=", "vo")
   return localCFG
 
+
 doc_blocks = [doc_usage, doc_options, doc_gen_opts, doc_arguments, doc_example]
+
 
 @pytest.mark.parametrize("blocks_order", [doc_blocks for i in range(10) if not random.shuffle(doc_blocks)])
 def test_script_head(localCFG, blocks_order):
@@ -94,10 +101,12 @@ def test_script_head(localCFG, blocks_order):
   localCFG.showHelp()
   assert '\n'.join(output) == ''.join([doc_description, doc_usage, doc_gen_opts, doc_arguments, doc_example])
 
+
 def action(a):
   global result
   result = a if a else 'no'
   return S_OK()
+
 
 def test_register_options(localCFG):
   global output, opts, args, result
@@ -108,11 +117,9 @@ def test_register_options(localCFG):
   localCFG.registerCmdOpt("A", "AnotherOpt", "my another option", action)
   localCFG.registerCmdOpt("N", "NoActionOp", "my noaction option")
   localCFG.showHelp()
-  optBlock = "\nOptions:\n  %s" % '\n  '.join([
-    "-O  --Option <value>         : my option",
-    "-A  --AnotherOpt             : my another option",
-    "-N  --NoActionOp             : my noaction option"
-  ])
+  optBlock = "\nOptions:\n  %s" % '\n  '.join(["-O  --Option <value>         : my option",
+                                               "-A  --AnotherOpt             : my another option",
+                                               "-N  --NoActionOp             : my noaction option"])
   assert optBlock in '\n'.join(output)
 
   # Check action result
@@ -127,6 +134,7 @@ def test_register_options(localCFG):
     assert localCFG.loadUserData() == S_OK()
     assert result == fn_res
     assert localCFG.getUnprocessedSwitches() == ([('N', None)] if opts[0] == ('-N', None) else [])
+
 
 sArg = ('SingArg', 'SingArg: my single argument', "  SingArg:  my single argument")
 fArg = ('<ThisArg|ThatArg>', ('ThisArg: my this argument', 'ThatArg: my that argument'),
@@ -144,32 +152,31 @@ list_checkvalues = (lArg, True, aValues, 'defVal')
 float_checkvalues = (fArg, True, aValues, 'defVal')
 single_checkvalues = (sArg, True, aValues, 'defVal')
 
-@pytest.mark.parametrize("argsData, expected", [
-  ([list_optional, float_optional, single_optional], []),
-  ([float_optional, list_optional, single_optional], []),
-  ([list_mandatory, list_mandatory], []),
-  ([single_mandatory, single_optional, single_mandatory], []),
-  ([single_mandatory, float_mandatory, list_optional],
-   [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', 'b', ['c', 'd']]),
-    (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', ['c']]),
-    (['a', 'b'], ['a', 'b'], ['a', 'b', 'defVal']),
-    (['a'], [], ())]),
-  ([single_mandatory, float_mandatory, list_mandatory],
-   [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', 'b', ['c', 'd']]),
-    (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', ['c']]),
-    (['a', 'b'], [], ())]),
-  ([single_mandatory, list_mandatory, float_mandatory],
-   [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', ['b', 'c'], 'd']),
-    (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', ['b'], 'c']),
-    (['a', 'b'], [], ())]),
-])
+params = [([list_optional, float_optional, single_optional], []),
+          ([float_optional, list_optional, single_optional], []),
+          ([list_mandatory, list_mandatory], []),
+          ([single_mandatory, single_optional, single_mandatory], []),
+          ([single_mandatory, float_mandatory, list_optional],
+          [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', 'b', ['c', 'd']]),
+            (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', ['c']]),
+            (['a', 'b'], ['a', 'b'], ['a', 'b', 'defVal']),
+            (['a'], [], ())]),
+          ([single_mandatory, float_mandatory, list_mandatory],
+          [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', 'b', ['c', 'd']]),
+            (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', ['c']]),
+            (['a', 'b'], [], ())]),
+          ([single_mandatory, list_mandatory, float_mandatory],
+          [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', ['b', 'c'], 'd']),
+            (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', ['b'], 'c']),
+            (['a', 'b'], [], ())])]
+@pytest.mark.parametrize("argsData, expected", params)
 def test_register_arguments(localCFG, argsData, expected):
   global output, opts, args, result
   output = []
   opts = ()
   useBlock = " [options] ..."
   argBlock = "\nArguments:"
-  
+
   if not expected:
     with pytest.raises(Exception):
       for arg, mandatory, values, default in argsData:
@@ -189,7 +196,7 @@ def test_register_arguments(localCFG, argsData, expected):
 
   if expected:
     localCFG.showHelp()
-    
+
     assert argBlock in '\n'.join(output)
     assert useBlock in '\n'.join(output)
 

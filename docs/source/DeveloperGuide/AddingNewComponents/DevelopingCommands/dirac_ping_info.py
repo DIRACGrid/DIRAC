@@ -42,7 +42,7 @@ def main():
   # Register accepted switches and their callbacks
   Script.registerSwitch("r", "showRaw", "show raw result from the query", cliParams.setRawResult)
   Script.registerSwitch("p:", "numPings=", "Number of pings to do (by default 1)", cliParams.setNumOfPingsToDo)
-  
+
   Script.registerArgument("System: system name")
 
   # Parse the command line and initialize DIRAC

@@ -386,7 +386,7 @@ class LocalConfiguration(object):
     if len(self.commandArgList) < len([t for t in self.commandArgumentList if t[2]]):
       gLogger.fatal('Error when parsing command line arguments: not all mandatory arguments are defined.')
       self.showHelp(exitCode=1)
-    
+
     groupArgs = []
     step = 0
     for i in range(len(self.commandArgumentList)):
