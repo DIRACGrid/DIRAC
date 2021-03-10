@@ -54,6 +54,8 @@ Example:
   Hello dirac
 """
 
+doc_blocks = [doc_usage, doc_options, doc_gen_opts, doc_arguments, doc_example]
+
 opts = ()
 args = []
 output = []
@@ -62,15 +64,24 @@ exitCode = None
 
 
 def mock_notice(*a):
+  global output
   output.append(' '.join(a))
 
 
 def mock_exit(c=0):
+  global exitCode
   exitCode = c
 
 
 def mock_gnu(*a):
+  global opts, args
   return opts, args
+
+
+def action(a):
+  global result
+  result = a if a else 'no'
+  return S_OK()
 
 
 @pytest.fixture
@@ -90,9 +101,6 @@ def localCFG_withOptions(localCFG):
   return localCFG
 
 
-doc_blocks = [doc_usage, doc_options, doc_gen_opts, doc_arguments, doc_example]
-
-
 @pytest.mark.parametrize("blocks_order", [doc_blocks for i in range(10) if not random.shuffle(doc_blocks)])
 def test_script_head(localCFG, blocks_order):
   global output
@@ -100,12 +108,6 @@ def test_script_head(localCFG, blocks_order):
   localCFG.setUsageMessage('\n'.join([doc_description, '\n'.join(blocks_order)]))
   localCFG.showHelp()
   assert '\n'.join(output) == ''.join([doc_description, doc_usage, doc_gen_opts, doc_arguments, doc_example])
-
-
-def action(a):
-  global result
-  result = a if a else 'no'
-  return S_OK()
 
 
 def test_register_options(localCFG):
@@ -171,9 +173,10 @@ params = [([list_optional, float_optional, single_optional], []),
             (['a', 'b'], [], ())])]
 @pytest.mark.parametrize("argsData, expected", params)
 def test_register_arguments(localCFG, argsData, expected):
-  global output, opts, args, result
+  global output, opts, args, result, exitCode
   output = []
   opts = ()
+  exitCode = 0
   useBlock = " [options] ..."
   argBlock = "\nArguments:"
 
@@ -206,7 +209,8 @@ def test_register_arguments(localCFG, argsData, expected):
       localCFG.initialized = False
       assert localCFG.loadUserData() == S_OK()
       if not getargs:
-        pytest.raises(Exception, localCFG.getPositionalArguments())
+        localCFG.getPositionalArguments()
+        assert exitCode == 1
       else:
         assert localCFG.getPositionalArguments() == getargs
         assert localCFG.getPositionalArguments(True) == getgroupargs

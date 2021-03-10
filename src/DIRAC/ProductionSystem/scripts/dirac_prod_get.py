@@ -28,9 +28,9 @@ def main():
 
   # get arguments
   args = Script.getPositionalArgs()
-  else:
-    prodID = args[0]
-    res = prodClient.getProduction(prodID)
+
+  prodID = args[0]
+  res = prodClient.getProduction(prodID)
 
   fields = [
       'ProductionName',
