@@ -49,7 +49,7 @@ class ResourceStatus(object):
     # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
     self.rssCache = RSSCache(cacheLifeTime, self.__updateRssCache)
 
-  def getElementStatus(self, elementName, elementType, statusType=None, default=None, vO=''):
+  def getElementStatus(self, elementName, elementType, statusType=None, default=None, vO=None):
     """
     Helper function, tries to get information from the RSS for the given
     Element, otherwise, it gets it from the CS.
