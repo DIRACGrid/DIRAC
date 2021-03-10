@@ -49,7 +49,6 @@ class LogPolicyResultAction(BaseAction):
     statusType = self.decisionParams['statusType']
     if statusType is None:
       return S_ERROR('statusType should not be None')
-    #vo =self.decisionParams['vO']
 
     for singlePolicyResult in self.singlePolicyResults:
 
