@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 Script.registerArgument(" ComponentType:    Name of the ComponentType (ie: agent)")
-Script.registerArgument(("System/Component: Full componrnt name (ie: WorkloadManagement/Matcher)",
+Script.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
                          "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
 Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
 

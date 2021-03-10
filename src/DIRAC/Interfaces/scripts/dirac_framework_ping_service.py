@@ -44,7 +44,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main():
   Script.registerArgument(("URL:            URL of the service to ping (instead of System and Service)",
-                           "System/Service: Full componrnt name (ie: WorkloadManagement/Matcher)",
+                           "System/Service: Full component name (ie: WorkloadManagement/Matcher)",
                            "System:         Name of the DIRAC system (ie: WorkloadManagement)"))
   Script.registerArgument(" Service:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)

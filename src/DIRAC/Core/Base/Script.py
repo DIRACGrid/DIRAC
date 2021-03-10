@@ -110,6 +110,14 @@ def registerSwitch(showKey, longKey, helpString, callback=False):
 
 
 def registerArgument(description, mandatory=True, acceptedValues=None, default=None):
+  """ Register a new command line argument
+
+      :param description: argument description
+      :type description: str, tuple or list
+      :param bool mandatory: an argument can be mandatory or optional
+      :param list acceptedValues: list of the accepted values
+      :param object default: default value
+  """
   localCfg.registerCmdArg(description, mandatory, acceptedValues, default)
 
 

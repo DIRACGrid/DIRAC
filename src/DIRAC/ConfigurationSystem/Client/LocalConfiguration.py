@@ -166,7 +166,7 @@ class LocalConfiguration(object):
           # which may be replaced by one of those described, e.g.:
           registerCmdArg(('ThisArg: my this argument', 'ThatArg: my that argument'))
 
-          # List description type describe an argument that may not be one
+          # List description type describe an argument that may have more than one value
           registerCmdArg(['ListArg: my single argument'])
 
         Result::
@@ -177,7 +177,7 @@ class LocalConfiguration(object):
             SingleArg: my single argument
             ThisArg: my this argument
             ThatArg: my that argument
-            ListArg: my single argument
+            ListArg: my list of arguments
 
         :param description: argument description
         :type description: str, tuple or list
@@ -705,7 +705,7 @@ class LocalConfiguration(object):
       gLogger.notice('\nArguments:')
       for arg, doc in allDescriptions:
         gLogger.notice('  %s:%s  %s' % (arg, ' ' * (maxArgLen - len(arg)), doc))
-    else:
+    elif self.__helpArgumentsDoc:
       gLogger.notice(self.__helpArgumentsDoc)
 
     # Describe example

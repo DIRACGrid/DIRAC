@@ -131,7 +131,7 @@ def test_register_options(localCFG):
 sArg = ('SingArg', 'SingArg: my single argument', "  SingArg:  my single argument")
 fArg = ('<ThisArg|ThatArg>', ('ThisArg: my this argument', 'ThatArg: my that argument'),
         "  ThisArg:  my this argument\n  ThatArg:  my that argument")
-lArg = ('ListArg [ListArg]', ['ListArg: my single argument'], "  ListArg:  my single argument")
+lArg = ('ListArg [ListArg]', ['ListArg: my list of arguments'], "  ListArg:  my list of arguments")
 aValues = ['yes', 'no']
 
 list_optional = (lArg, False, None, 'defVal')
