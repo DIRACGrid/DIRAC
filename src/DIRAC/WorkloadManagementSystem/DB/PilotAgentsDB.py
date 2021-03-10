@@ -639,8 +639,8 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
 
     :param selectDict: A dictionary to pass additional conditions to select statements, i.e.
                        it allows to define start time for Done and Aborted Pilots.
-    :param columnList  a list of column to consider when grouping to calculate efficiencies.
-                       e.g. ['GridSite', 'DestinationSite'] is used to calculate efficiences
+    :param columnList: A list of column to consider when grouping to calculate efficiencies.
+                       e.g. ['GridSite', 'DestinationSite'] is used to calculate efficiencies
                        for sites and  CEs. If we want to add an OwnerGroup it would be:
                        ['GridSite', 'DestinationSite', 'OwnerGroup'].
     :return: a dict containing the ParameterNames and Records lists.

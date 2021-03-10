@@ -61,7 +61,7 @@ class PilotEfficiencyPolicy(PolicyBase):
 
     if efficiency is None:
       result['Status'] = 'Unknown'
-      result['Reason'] = 'Pilot efficiency value is not present in the result obtained'
+      result['Reason'] = 'Not enough pilots to take a decision'
       return S_OK(result)
 
     if efficiency <= bannedLimit:
