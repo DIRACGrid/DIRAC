@@ -4,38 +4,34 @@
 # Author :  Ricardo Graciani
 ########################################################################
 """
-  Main script to write dirac.cfg for a new DIRAC installation and initial download of CAs and CRLs
-  if necessary.
+Main script to write dirac.cfg for a new DIRAC installation and initial download of CAs and CRLs if necessary.
 
-  To be used by VO specific scripts to configure new DIRAC installations
+To be used by VO specific scripts to configure new DIRAC installations
 
-  There are two mandatory options, others are optional:
+Additionally all options can all be passed inside a .cfg file, see the `--cfg` option.
+The following options are recognized::
 
-  -S --Setup=<setup>;
-  -C --ConfigurationServer=<server>|-W --Gateway
+    Setup
+    ConfigurationServer
+    IncludeAllServers
+    Gateway
+    SiteName
+    CEName
+    VirtualOrganization
+    UseServerCertificate
+    SkipCAChecks
+    SkipCADownload
+    UseVersionsDir
+    Architecture
+    LocalSE
+    LogLevel
 
-  Additionally all options can all be passed inside a .cfg file passed with --cfg option.
-  The following options are recognized::
+Setup and ConfigurationServer(Gateway) is mandatory options.
 
-      Setup
-      ConfigurationServer
-      IncludeAllServers
-      Gateway
-      SiteName
-      CEName
-      VirtualOrganization
-      UseServerCertificate
-      SkipCAChecks
-      SkipCADownload
-      UseVersionsDir
-      Architecture
-      LocalSE
-      LogLevel
+As in any other script command line option take precedence over .cfg files.
+The combination of both is written into the installed dirac.cfg.
 
-  As in any other script command line option take precedence over .cfg files passed with --cfg option.
-  The combination of both is written into the installed dirac.cfg.
-
-  Notice: It will not overwrite exiting info in current dirac.cfg if it exists.
+Notice: It will not overwrite exiting info in current dirac.cfg if it exists.
 
 Example:
   $ dirac-configure -d
@@ -43,7 +39,6 @@ Example:
                     -C 'dips://lhcbprod.pic.es:9135/Configuration/Server'
                     -W 'dips://lhcbprod.pic.es:9135'
                     --SkipCAChecks
-
 """
 from __future__ import absolute_import
 from __future__ import division

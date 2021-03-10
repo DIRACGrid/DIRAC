@@ -12,14 +12,11 @@ import sys
 import six
 import getopt
 
-import DIRAC
-from DIRAC import gLogger
-from DIRAC import S_OK, S_ERROR
-
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC import gLogger, S_OK, S_ERROR, rootPath, exit as DIRACExit
+from DIRAC.Core.Utilities.Devloader import Devloader
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection, getExecutorSection
-from DIRAC.Core.Utilities.Devloader import Devloader
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 
 class LocalConfiguration(object):
@@ -42,6 +39,7 @@ class LocalConfiguration(object):
     self.additionalCFGFiles = []
     self.parsedOptionList = []
     self.commandArgList = []
+    self.commandGroupArgList = []
     self.cliAdditionalCFGFiles = []
     self.__registerBasicOptions()
     self.isParsed = False
@@ -96,7 +94,7 @@ class LocalConfiguration(object):
     # Searched text
     context = r"(.*?)"
     # Start of any block description or end of __doc__
-    startAnyBlockOrEnd = r"(?:\n(?:Usage|Example|Arguments|Options):+\n|$)"
+    startAnyBlockOrEnd = r"(?:\n(?:Usage|Example|Arguments|Options|General options):+\n|$)"
 
     r = r"%s%s" % (context, startAnyBlockOrEnd)
     if usageMsg:
@@ -107,15 +105,15 @@ class LocalConfiguration(object):
       # The usage block starts with '\nUsage:\n' or '\nUsage::\n'
       usage = re.search(r"%s%s" % (r"Usage:+", r), usageMsg, re.DOTALL)
       if usage:
-        self.__helpUsageDoc = '\nUsage:\n' + usage.group(1).strip('\n') + '\n'
+        self.__helpUsageDoc = '\nUsage:\n' + usage.group(1).strip('\n')
       # The argument block starts with '\Arguments:\n' or '\Arguments::\n'
       args = re.search(r"%s%s" % (r"Arguments:+", r), usageMsg, re.DOTALL)
       if args:
-        self.__helpArgumentsDoc = '\nArguments:\n' + args.group(1).strip('\n') + '\n'
+        self.__helpArgumentsDoc = '\nArguments:\n' + args.group(1).strip('\n')
       # The example block starts with '\Example:\n' or '\Example::\n'
       expl = re.search(r"%s%s" % (r"Example:+", r), usageMsg, re.DOTALL)
       if expl:
-        self.__helpExampleDoc = '\nExample:\n' + expl.group(1).strip('\n') + '\n'
+        self.__helpExampleDoc = '\nExample:\n' + expl.group(1).strip('\n')
 
   def __setOptionValue(self, optionPath, value):
     gConfigurationData.setOptionInCFG(self.__getAbsolutePath(optionPath),
@@ -191,6 +189,7 @@ class LocalConfiguration(object):
     argMarking = ''
     if not description:
       raise Exception("No argument description defined")
+
     # Single argument, e.g.: Name
     if isinstance(description, six.string_types):
       argMarking = description.split(':')[0].strip()
@@ -203,40 +202,25 @@ class LocalConfiguration(object):
       argMarking = '{0} [{0}]'.format(description[0].split(':')[0].strip())
     else:
       raise Exception("Unknown argument description type.")
+
     # Check the sequence of the mandatory arguments
-    if mandatory and not self.commandArgumentList[-1][2]:
+    if mandatory and self.commandArgumentList and not self.commandArgumentList[-1][2]:
       raise Exception("The mandatory argument cannot go after the optional one.")
+
     # Add to others
-    self.commandArgumentList.append((argMarking, list(description), mandatory, acceptedValues, default))
+    description = [tuple([i.strip() for i in d.split(':', 1)]) for d in description]
+    self.commandArgumentList.append((argMarking, description, mandatory, acceptedValues, default))
 
     # If present list arguments
-    listArgs = [t[0] for t in self.commandArgumentList if re.match(r"\w+ \[\w+\]", t[0])]
+    listArgs = [t for t in self.commandArgumentList if re.match(r"\w+ \[\w+\]", t[0])]
     if len(listArgs) > 1:
       raise Exception("Can't calculate list of arguments when there are two such arguments of type.")
 
     if listArgs:
       listArgIndex = self.commandArgumentList.index(listArgs[0])
-      if not all([t[2] for t in self.commandArgumentList[listArgIndex:]]):
+      listArgLast = self.commandArgumentList[-1] == listArgs[0]
+      if not listArgLast and not all([t[2] for t in self.commandArgumentList[listArgIndex:]]):
         raise Exception("Can't calculate list of arguments when not all arguments defined as mandatory.")
-
-  def __parseDescription(self, argMarking):
-    # Marking an argument in a usage line
-    argMarking = ''
-    if not description:
-      raise Exception("No argument description defined")
-    # Single argument, e.g.: Name
-    if isinstance(description, six.string_types):
-      argMarking = description.split(':')[0].strip()
-      description = [description]
-    # Single argument that can have two names, e.g.: <User|DN>
-    elif isinstance(description, tuple):
-      argMarking = '<%s>' % '|'.join([d.split(':')[0].strip() for d in description])
-    # List arguments, e.g.: CE [CE]
-    elif isinstance(description, list):
-      argMarking = '{0} [{0}]'.format(description[0].split(':')[0].strip())
-    else:
-      raise Exception("Unknown argument description type.")
-
 
   def getExtraCLICFGFiles(self):
     """
@@ -255,7 +239,7 @@ class LocalConfiguration(object):
     """
     if not self.isParsed:
       self.__parseCommandLine()
-    return [t[-1] for t in self.commandArgumentList] if group else self.commandArgList
+    return self.commandGroupArgList if group else self.commandArgList
 
   def getUnprocessedSwitches(self):
     """
@@ -399,35 +383,36 @@ class LocalConfiguration(object):
           raise NotImplementedError("ERROR: using deprecated config file passing option.")
 
     # Check arguments
-    lenDefinedArgs = len(self.commandArgList)
-    lenRegistredArgs = len(self.commandArgumentList)
-    for i in range(lenRegistredArgs):
+    if len(self.commandArgList) < len([t for t in self.commandArgumentList if t[2]]):
+      gLogger.fatal('Error when parsing command line arguments: not all mandatory arguments are defined.')
+      self.showHelp(exitCode=1)
+    
+    groupArgs = []
+    step = 0
+    for i in range(len(self.commandArgumentList)):
       argMarking, description, mandatory, values, default = self.commandArgumentList[i]
-      # Check whether the required arguments are given
-      if len(self.commandArgList) <= i:
-        if mandatory:
-          gLogger.error('"%s" mandatory argument is not defined.' % arg)
-          self.showHelp(exitCode=1)
-        break
 
-      # When we consider multiple value argument
-      isListArg = re.match(r"\w+ \[\w+\]", arg)
+      # Check whether the required arguments are given in the command line
+      if len(self.commandArgList) <= (i + step):
+        groupArgs.append(default)
+        continue
 
       # Replace the default value with a defined one
-      if isListArg:
+      if re.match(r"\w+ \[\w+\]", argMarking):  # When we consider multiple value argument
         # The index of the last such argument
-        argsNum = i + lenDefinedArgs - lenRegistredArgs
-        self.commandArgumentList[i][-1] = [a for a in self.commandArgList[i:argsNum]]
+        step = len(self.commandArgList) - len(self.commandArgumentList)
+        groupArgs.append(self.commandArgList[i:i + 1 + step])
       else:
-        argsNum = i + 1
-        self.commandArgumentList[i][-1] = self.commandArgList[i]
+        groupArgs.append(self.commandArgList[i + step])
 
       # Check accepted values
-      for cArg in self.commandArgList[i:argsNum]:
+      for cArg in self.commandArgList[i:i + 1 + step]:
         if values and cArg not in values:
-          gLogger.error('"%s" argument must be one of the values: %s' % (arg, ', '.join(values)))
+          gLogger.fatal('Error when parsing command line arguments: \
+                         "%s" does not match the allowed values for %s' % (cArg, argMarking))
           self.showHelp(exitCode=1)
 
+    self.commandGroupArgList = groupArgs
     self.parsedOptionList = opts
     self.isParsed = True
 
@@ -641,7 +626,7 @@ class LocalConfiguration(object):
     """
     Print license
     """
-    lpath = os.path.join(DIRAC.rootPath, "DIRAC", "LICENSE")
+    lpath = os.path.join(rootPath, "DIRAC", "LICENSE")
     sys.stdout.write(" - DIRAC is GPLv3 licensed\n\n")
     try:
       with open(lpath) as fd:
@@ -649,7 +634,7 @@ class LocalConfiguration(object):
     except IOError:
       sys.stdout.write("Can't find GPLv3 license at %s. Somebody stole it!\n" % lpath)
       sys.stdout.write("Please check out http://www.gnu.org/licenses/gpl-3.0.html for more info\n")
-    DIRAC.exit(0)
+    DIRACExit(0)
 
   def showHelp(self, dummy=False, exitCode=0):
     """ Printout help message including a Usage message if defined via setUsageMessage method
@@ -666,8 +651,8 @@ class LocalConfiguration(object):
       gLogger.notice(self.__helpUsageDoc)
     else:
       gLogger.notice("\nUsage:")
-      gLogger.notice("  %s [options] ... %s" % (os.path.basename(sys.argv[0]),
-                                                ' '.join([tpl[0] for tpl in self.commandArgumentList])))
+      gLogger.notice("  %s [options] ..." % os.path.basename(sys.argv[0]).split('.')[0].replace('_', '-'),
+                     ' '.join([t[0] for t in self.commandArgumentList]))
       if dummy:
         gLogger.notice(dummy)
 
@@ -705,9 +690,7 @@ class LocalConfiguration(object):
       maxArgLen = 0
       allDescriptions = []
       for argMarking, descriptions, mandatory, values, default in self.commandArgumentList:
-        for dLine in descriptions:
-          aName = dLine.split(':', 1)[0].strip()
-          dText = dLine.split(':', 1)[1].strip()
+        for aName, dText in descriptions:
           maxArgLen = max(len(aName), maxArgLen)
           if values:
             dText += ' [%s]' % ', '.join(values)
@@ -729,7 +712,7 @@ class LocalConfiguration(object):
     gLogger.notice(self.__helpExampleDoc)
 
     gLogger.notice("")
-    DIRAC.exit(exitCode)
+    DIRACExit(exitCode)
 
   def deleteOption(self, optionPath):
     """

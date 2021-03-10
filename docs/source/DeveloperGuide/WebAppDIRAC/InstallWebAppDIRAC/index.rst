@@ -50,5 +50,5 @@ Quick install
 
 * python dirac-install -t server $installCfg
 * source $installDir/bashrc
-* dirac-configure $installCfg $DEBUG
+* dirac-configure --cfg $installCfg $DEBUG
 * dirac-setup-site $DEBUG
