@@ -875,7 +875,7 @@ class SystemAdministratorClientCLI(CLI):
 
       monitoringClient = ComponentMonitoringClient()
       result = monitoringClient.getInstallations({'Instance': component, 'UnInstallationTime': None},
-                                                 {'System': system},
+                                                 {'DIRACSystem': system},
                                                  {'HostName': self.host}, True)
       if not result['OK']:
         self._errMsg(result['Message'])

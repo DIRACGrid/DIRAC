@@ -6,6 +6,9 @@ This test assumes that there is a DIRAC master server running on the local machi
 This test assumes that the Notification service is not installed
 This test assumes that the FTS3DB database is not installed and doesn't exist in MySQL
 """
+
+# FIXME: to restore
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -106,14 +109,15 @@ class ComponentInstallationChain(TestComponentInstallation):
     if not service1Present:
       result = self.monitoringClient.getInstallations({'Instance': 'Notification',
                                                        'UnInstallationTime': None, 'InstalledBy': self.user},
-                                                      {'System': 'Framework', 'Type': 'service',
-                                                       'Module': 'Notification'},
+                                                      {'DIRACSystem': 'Framework', 'Type': 'service',
+                                                       'DIRACModule': 'Notification'},
                                                       {}, False)
     else:
       # We dont know who made the previous installation
       result = self.monitoringClient.getInstallations({'Instance': 'Notification', 'UnInstallationTime': None},
-                                                      {'System': 'Framework',
-                                                       'Type': 'service', 'Module': 'Notification'},
+                                                      {'DIRACSystem': 'Framework',
+                                                       'Type': 'service',
+                                                       'DIRACModule': 'Notification'},
                                                       {}, False)
 
     self.assertTrue(result['OK'] and len(result['Value']) == 1)
@@ -186,7 +190,7 @@ class ComponentInstallationChain(TestComponentInstallation):
     # Check in database
     result = self.monitoringClient.getInstallations({'Instance': 'FTS3DB',
                                                      'UnInstallationTime': None, 'InstalledBy': self.user},
-                                                    {'System': 'DataManagement', 'Type': 'DB', 'Module': 'FTS3DB'},
+                                                    {'DIRACSystem': 'DataManagement', 'Type': 'DB', 'DIRACModule': 'FTS3DB'},
                                                     {}, False)
     self.assertTrue(result['OK'] and len(result['Value']) == 1)
 
