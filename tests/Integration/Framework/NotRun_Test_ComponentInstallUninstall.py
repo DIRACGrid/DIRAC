@@ -188,10 +188,15 @@ class ComponentInstallationChain(TestComponentInstallation):
     self.assertTrue(cfg.isSection('Systems/DataManagement/' + self.frameworkSetup + '/Databases/FTS3DB/'))
 
     # Check in database
-    result = self.monitoringClient.getInstallations({'Instance': 'FTS3DB',
-                                                     'UnInstallationTime': None, 'InstalledBy': self.user},
-                                                    {'DIRACSystem': 'DataManagement', 'Type': 'DB', 'DIRACModule': 'FTS3DB'},
-                                                    {}, False)
+    result = self.monitoringClient.getInstallations(
+        {'Instance': 'FTS3DB',
+         'UnInstallationTime': None,
+         'InstalledBy': self.user},
+        {'DIRACSystem': 'DataManagement',
+         'Type': 'DB',
+         'DIRACModule': 'FTS3DB'},
+        {},
+        False)
     self.assertTrue(result['OK'] and len(result['Value']) == 1)
 
     # Uninstall database
