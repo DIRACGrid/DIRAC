@@ -160,17 +160,19 @@ params = [([list_optional, float_optional, single_optional], []),
           ([single_mandatory, single_optional, single_mandatory], []),
           ([single_mandatory, float_mandatory, list_optional],
           [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', 'b', ['c', 'd']]),
-            (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', ['c']]),
-            (['a', 'b'], ['a', 'b'], ['a', 'b', 'defVal']),
-            (['a'], [], ())]),
+           (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', ['c']]),
+           (['a', 'b'], ['a', 'b'], ['a', 'b', 'defVal']),
+           (['a'], [], ())]),
           ([single_mandatory, float_mandatory, list_mandatory],
           [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', 'b', ['c', 'd']]),
-            (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', ['c']]),
-            (['a', 'b'], [], ())]),
+           (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', ['c']]),
+           (['a', 'b'], [], ())]),
           ([single_mandatory, list_mandatory, float_mandatory],
           [(['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['a', ['b', 'c'], 'd']),
-            (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', ['b'], 'c']),
-            (['a', 'b'], [], ())])]
+           (['a', 'b', 'c'], ['a', 'b', 'c'], ['a', ['b'], 'c']),
+           (['a', 'b'], [], ())])]
+
+
 @pytest.mark.parametrize("argsData, expected", params)
 def test_register_arguments(localCFG, argsData, expected):
   global output, opts, args, result, exitCode
