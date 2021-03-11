@@ -23,9 +23,9 @@ try:
 except ImportError:
   # Python 3's subprocess module contains a compatibility layer
   import subprocess as commands
+
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
-import six
 
 from diraccfg import CFG
 

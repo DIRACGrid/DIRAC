@@ -477,7 +477,7 @@ class InstalledComponentsDB(object):
     The main difference with '__filterFields' is that this function is
     targeted towards the InstalledComponents table
     and accepts fields of the form <Component.Field> and <Host.Field>
-    ( e.g., 'Component.System' ) to filter installations using attributes
+    ( e.g., 'Component.DIRACSystem' ) to filter installations using attributes
     from their associated Components and Hosts.
     session argument is a Session instance used to retrieve the items
     matchFields also accepts fields of the form <Field.bigger> and
