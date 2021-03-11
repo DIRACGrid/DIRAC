@@ -49,7 +49,7 @@ LOG.info('DiracDocTools location %r', diracdoctools.cmd.__file__)
 os.environ['DIRAC_USE_M2CRYPTO'] = 'Yes'
 
 # AUTO SETUP START
-if os.environ.get('READTHEDOCS') == 'True':
+if False and os.environ.get('READTHEDOCS') == 'True':
   setUpReadTheDocsEnvironment(moduleName='DIRAC', location='../../src')
 
   # re-create the RST files for the command references
@@ -302,5 +302,3 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org/', None),
 }
 
-# check for :param / :return in html, points to faulty syntax, missing empty lines, etc.
-registerValidatingExitHandler()
