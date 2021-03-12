@@ -44,6 +44,8 @@ Regardless of which editor you choose it's worth investigating what plugins are 
 
 *python*: DIRAC is written in Python so you will need to have a Python environment available. While there are many possible ways of doing this, the simplest option for most people is to use either conda or DIRACOS2 (Linux only). Details about how to use both options are included below.
 
+.. _create-dev-env-conda:
+
 Creating a development environment with Conda
 ---------------------------------------------
 

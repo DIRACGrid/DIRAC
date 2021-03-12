@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 from builtins import open
 
+import atexit
 import os
 import re
 import sys
@@ -129,3 +130,27 @@ def makeLogger(name):
   logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s',
                       stream=sys.stdout)
   return logging.getLogger(name)
+
+
+def registerValidatingExitHandler():
+  """Registers an exit handler which checks for errors after the build completes"""
+  def check():
+    outputDir = "build/html"
+    for arg in sys.argv:
+      if arg.endswith("/html"):
+        outputDir = arg
+        LOG.info("Found outputDir as %s", outputDir)
+        break
+    cmd = [
+        "grep", "--color", "-nH", "-e", ":param",
+        "-e", ":return", "-r", os.path.join(outputDir, "CodeDocumentation")
+    ]
+    ret = subprocess.run(cmd, check=False)
+    if ret.returncode != 1:
+      print("Return code from {} was {}".format(" ".join(cmd), ret.returncode))
+      print("This means :param or :return in the html and points to faulty "
+            "syntax, missing empty lines, etc.")
+      # https://bugs.python.org/issue27035
+      os._exit(1)  # pylint: disable=protected-access
+
+  atexit.register(check)

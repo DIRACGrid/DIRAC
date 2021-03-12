@@ -31,5 +31,8 @@ fp.close()
 st = os.stat(tmp)
 os.chmod(tmp, st.st_mode | stat.S_IEXEC)
 
+# Suppress Python warnings in dirac-install.py
+os.environ["PYTHONWARNINGS"] = "ignore"
+
 # Replace the current process with the actual dirac-install.py script
 os.execv(tmp, sys.argv)

@@ -3,7 +3,9 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import ast
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import glob
 import os
@@ -89,14 +91,15 @@ class CommandReference(object):
     # these scripts use pre-existing rst files, cannot re-create them automatically
     listOfScripts.extend(sectionDict[MANUAL])
     sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
-    for script in sectionDict[SCRIPTS]:
-      scriptName = os.path.basename(script)
-      if scriptName.endswith('.py'):
-        scriptName = scriptName[:-3]
-      scriptName = scriptName.replace("_", "-")
-      prefix = sectionDict[PREFIX].lower()
-      prefix = prefix + '_' if prefix else ''
-      if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=prefix):
+
+    futures = []
+    with ThreadPoolExecutor() as pool:
+      for script in sectionDict[SCRIPTS]:
+        futures.append(pool.submit(self.createScriptDocFiles, script, sectionPath, sectionDict))
+
+    for future in futures:
+      scriptName, createdScriptDocs = future.result()
+      if createdScriptDocs:
         listOfScripts.append(scriptName)
 
     for scriptName in sorted(listOfScripts):
@@ -116,16 +119,15 @@ class CommandReference(object):
     with open(os.path.join(sectionPath, 'index.rst')) as indexFile:
       commandList = indexFile.read().replace('\n', '')
 
+    futures = []
+    with ThreadPoolExecutor() as pool:
+      for script in sectionDict[SCRIPTS] + sectionDict[MANUAL]:
+        futures.append(pool.submit(self.createScriptDocFiles, script, sectionPath, sectionDict))
+
     missingCommands = []
-    for script in sectionDict[SCRIPTS] + sectionDict[MANUAL]:
-      scriptName = os.path.basename(script)
-      if scriptName.endswith('.py'):
-        scriptName = scriptName[:-3]
-      scriptName = scriptName.replace("_", "-")
-      prefix = sectionDict[PREFIX].lower()
-      prefix = prefix + '_' if prefix else ''
-      if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=prefix) and \
-         scriptName not in commandList:
+    for future in futures:
+      scriptName, createdScriptDocs = future.result()
+      if createdScriptDocs and scriptName not in commandList:
         missingCommands.append(scriptName)
 
     if missingCommands:
@@ -167,20 +169,26 @@ class CommandReference(object):
           shutil.move(commandDocPath, os.path.join(sectionPath, 'obs_' + com + '.rst'))
       self.exitcode = 1
 
-  def createScriptDocFiles(self, script, sectionPath, scriptName, referencePrefix=''):
+  def createScriptDocFiles(self, script, sectionPath, sectionDict):
     """Create the RST files for all the scripts.
 
     Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
-
     """
+    scriptName = os.path.basename(script)
+    if scriptName.endswith('.py'):
+      scriptName = scriptName[:-3]
+    scriptName = scriptName.replace("_", "-")
+    referencePrefix = sectionDict[PREFIX].lower()
+    referencePrefix = referencePrefix + '_' if referencePrefix else ''
+
     if scriptName in self.config.com_ignore_commands:
-      return False
+      return scriptName, False
 
     LOG.info('Creating Doc for %r in %r', scriptName, sectionPath)
     helpMessage = runCommand('python %s -h' % script)
     if not helpMessage:
       LOG.warning('NO DOC for %s', scriptName)
-      return False
+      return scriptName, False
 
     rstLines = []
     rstLines.append(' .. _%s%s:' % (referencePrefix, scriptName))
@@ -235,7 +243,7 @@ class CommandReference(object):
     # remove the standalone '-' when no short option exists
     fileContent = fileContent.replace('-   --', '--')
     writeLinesToFile(scriptRSTPath, fileContent)
-    return True
+    return scriptName, True
 
   def getContentFromModuleDocstring(self, script):
     """Parse the given python file and return its module docstring."""

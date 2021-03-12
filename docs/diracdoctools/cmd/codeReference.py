@@ -152,7 +152,7 @@ class CodeReference(object):
     lines.append('.. automodule:: %s' % fullclassname)
     if buildtype == 'full':
       lines.append('   :members:')
-      if classname not in self.config.code_noInherited:
+      if not any(x in self.config.code_noInherited for x in [classname, fullclassname]):
         lines.append('   :inherited-members:')
       lines.append('   :undoc-members:')
       lines.append('   :show-inheritance:')
