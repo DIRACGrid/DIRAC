@@ -58,8 +58,8 @@ def main():
   Script.registerSwitch('', 'TargetSE=', 'SE1[,SE2,...]')
   Script.registerSwitch('', 'OutputFile=', 'CSV output file (default /tmp/protocol-matrix.csv)')
   Script.registerSwitch('', 'Bidirection', 'If FromSE or TargetSE are specified, make a square matrix ')
-  Script.registerSwitch( '', 'FTSOnly', 'Only display the protocols sent to FTS' )
-  Script.registerSwitch( '', 'ExcludeSE=', 'SEs to not take into account for the matrix' )
+  Script.registerSwitch('', 'FTSOnly', 'Only display the protocols sent to FTS')
+  Script.registerSwitch('', 'ExcludeSE=', 'SEs to not take into account for the matrix')
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   from DIRAC import gConfig, gLogger
