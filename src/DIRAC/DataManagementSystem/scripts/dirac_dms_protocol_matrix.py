@@ -56,9 +56,9 @@ def main():
   Script.registerSwitch('', 'Bidirection', 'If FromSE or TargetSE are specified, make a square matrix ')
   Script.registerSwitch('', 'FTSOnly', 'Only display the protocols sent to FTS')
   Script.registerSwitch('', 'ExcludeSE=', 'SEs to not take into account for the matrix')
-  Script.setUsageMessage( '\n'.join( [__doc__,
+  Script.setUsageMessage('\n'.join([__doc__,
                                       'Usage:',
-                                      ' %s [option|cfgfile]  % Script.scriptName'] ) )
+                                      ' %s [option|cfgfile]  % Script.scriptName']))
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   from DIRAC import gConfig, gLogger
