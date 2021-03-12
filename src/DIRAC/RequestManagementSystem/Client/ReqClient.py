@@ -506,12 +506,13 @@ def printFTSJobs(request):
             for fts3Op in res['Value']:
               associatedFTS3Jobs.extend(fts3Op.ftsJobs)
         if associatedFTS3Jobs:
+          # Display the direct url and the status
           gLogger.always(
               '\n\nFTS3 jobs associated: \n%s' %
               '\n'.join(
-                  '%s@%s (%s)' %
-                  (job.ftsGUID,
-                   job.ftsServer,
+                  '%s/fts3/ftsmon/#/job/%s (%s)' %
+                  (job.ftsServer.replace(':8446', ':8449'),  # Submission port is 8446, web port is 8449
+                   job.ftsGUID,
                    job.status) for job in associatedFTS3Jobs))
         return
 

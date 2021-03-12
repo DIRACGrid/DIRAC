@@ -48,6 +48,15 @@ from collections import defaultdict
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+Script.registerSwitch('', 'FromSE=', 'SE1[,SE2,...]')
+Script.registerSwitch('', 'TargetSE=', 'SE1[,SE2,...]')
+Script.registerSwitch('', 'OutputFile=', 'CSV output file (default /tmp/protocol-matrix.csv)')
+Script.registerSwitch('', 'Bidirection', 'If FromSE or TargetSE are specified, make a square matrix ')
+Script.registerSwitch('', 'FTSOnly', 'Only desplay the protocols sent to FTS')
+Script.registerSwitch('', 'ExcludeSE=', 'SEs to not take into account for the matrix')
+Script.setUsageMessage('\n'.join([__doc__,
+                                  'Usage:',
+                                  ' %s [option|cfgfile]  % Script.scriptName']))
 
 @DIRACScript()
 def main():
@@ -64,17 +73,23 @@ def main():
 
   fromSE = []
   targetSE = []
+  excludeSE = []
   outputFile = '/tmp/protocol-matrix.csv'
   bidirection = False
+  ftsOnly = False
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'FromSE':
       fromSE = switch[1].split(',')
     elif switch[0] == 'TargetSE':
       targetSE = switch[1].split(',')
+    elif switch[0] == 'ExcludeSE':
+      excludeSE = switch[1].split(',')
     elif switch[0] == 'OutputFile':
       outputFile = switch[1]
     elif switch[0] == 'Bidirection':
       bidirection = True
+    elif switch[0] == 'FTSOnly':
+      ftsOnly = True
 
   thirdPartyProtocols = DMSHelpers().getThirdPartyProtocols()
 
@@ -84,6 +99,9 @@ def main():
   seForSeBases = {}
 
   allSEs = gConfig.getSections('/Resources/StorageElements/')['Value']
+
+  # Remove the SEs that we want to exclude
+  allSEs = set(allSEs) - set(excludeSE)
 
   # We go through all the SEs and fill in the seForSEBases dict.
   # Basically, at the end of the loop, the dict will contain
@@ -131,7 +149,7 @@ def main():
   # Now we construct the SE object for each SE that we want to appear
   ses = {}
   for se in set(fromSE + targetSE):
-    ses[se] = StorageElement(seForSeBases[se])
+    ses[se] = StorageElement(seForSeBases.get(se, se))
 
   ret = getVOfromProxyGroup()
   if not ret['OK'] or not ret.get('Value', ''):
@@ -158,7 +176,10 @@ def main():
 
     # Add also the third party protocols
     proto = ','.join(ses[dst].negociateProtocolWithOtherSE(ses[src], thirdPartyProtocols)['Value'])
-    tpMatrix[src][dst] = '%s (%s)' % (surls, proto)
+    if ftsOnly:
+      tpMatrix[src][dst] = '%s' % surls
+    else:
+      tpMatrix[src][dst] = '%s (%s)' % (surls, proto)
     gLogger.verbose("%s -> %s: %s" % (src, dst, surls))
     gLogger.verbose("%s -> %s: %s" % (src, dst, proto))
 
