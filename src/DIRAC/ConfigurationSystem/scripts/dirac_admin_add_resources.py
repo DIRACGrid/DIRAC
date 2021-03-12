@@ -32,8 +32,6 @@ def main():
 
   def processScriptSwitches():
 
-    global vo, dry, doCEs, hostURL, glue2
-
     Script.registerSwitch("V:", "vo=", "Virtual Organization")
     Script.registerSwitch("D", "dry", "Dry run")
     Script.registerSwitch("C", "ce", "Process Computing Elements")
@@ -66,8 +64,6 @@ def main():
 
 
   def checkUnusedCEs():
-
-    global vo, dry, ceBdiiDict, hostURL, glue2
 
     gLogger.notice('looking for new computing resources in the BDII database...')
 
@@ -215,7 +211,6 @@ def main():
 
   def updateCS(changeSet):
 
-    global vo, dry, ceBdiiDict
 
     changeList = sorted(changeSet)
     if dry:
@@ -249,7 +244,6 @@ def main():
 
   def updateSites():
 
-    global vo, dry, ceBdiiDict, glue2
 
     result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, glue2=glue2)
     if not result['OK']:
@@ -268,8 +262,6 @@ def main():
 
   signal.signal(signal.SIGTERM, handler)
   signal.signal(signal.SIGINT, handler)
-
-  global vo, dry, doCEs, ceBdiiDict
 
   processScriptSwitches()
 

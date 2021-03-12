@@ -234,8 +234,6 @@ def main():
       DIRACExit(1)
 
 
-  global subLogger
-  global registerUsageMessage
 
   subLogger = gLogger.getSubLogger(__file__)
 

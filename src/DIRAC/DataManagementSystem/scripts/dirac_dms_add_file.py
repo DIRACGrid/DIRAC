@@ -42,35 +42,35 @@ import os
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-overwrite = False
 
-
-def setOverwrite(arg):
-  global overwrite
-  overwrite = True
-  return S_OK()
-
-
-def getDict(item_list):
-  """
-    From the input list, populate the dictionary
-  """
-  lfn_dict = {}
-  lfn_dict['lfn'] = item_list[0].replace('LFN:', '').replace('lfn:', '')
-  lfn_dict['localfile'] = item_list[1]
-  lfn_dict['SE'] = item_list[2]
-  guid = None
-  if len(item_list) > 3:
-    guid = item_list[3]
-  lfn_dict['guid'] = guid
-  return lfn_dict
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
 
-  global overwrite
+  overwrite = False
+
+
+  def setOverwrite(arg):
+    overwrite = True
+    return S_OK()
+
+
+  def getDict(item_list):
+    """
+      From the input list, populate the dictionary
+    """
+    lfn_dict = {}
+    lfn_dict['lfn'] = item_list[0].replace('LFN:', '').replace('lfn:', '')
+    lfn_dict['localfile'] = item_list[1]
+    lfn_dict['SE'] = item_list[2]
+    guid = None
+    if len(item_list) > 3:
+      guid = item_list[3]
+    lfn_dict['guid'] = guid
+    return lfn_dict
+    
   Script.registerSwitch("f", "force", "Force overwrite of existing file", setOverwrite)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()

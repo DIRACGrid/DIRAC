@@ -19,27 +19,25 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
 
-fullMatch = False
-sites = None
 
-
-def setFullMatch(optVal_):
-  global fullMatch
-  fullMatch = True
-  return S_OK()
-
-
-def setSites(optVal_):
-  global sites
-  sites = optVal_.split(',')
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
-  global fullMatch
-  global sites
+  fullMatch = False
+  sites = None
+
+
+  def setFullMatch(optVal_):
+    fullMatch = True
+    return S_OK()
+
+
+  def setSites(optVal_):
+    sites = optVal_.split(',')
+    return S_OK()
+    
   Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
   Script.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
 

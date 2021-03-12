@@ -26,22 +26,21 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 __RCSID__ = "$Id$"
 
-global excludedHosts
-excludedHosts = []
-
-
-def setExcludedHosts(value):
-  global excludedHosts
-
-  excludedHosts = value.split(',')
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
 
-  global excludedHosts
+  excludedHosts = []
+
+
+  def setExcludedHosts(value):
+    global excludedHosts
+
+    excludedHosts = value.split(',')
+    return S_OK()
+    
   Script.registerSwitch(
       "e:",
       "exclude=",

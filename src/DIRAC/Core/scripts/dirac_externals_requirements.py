@@ -28,25 +28,26 @@ from DIRAC import gLogger, rootPath, S_OK
 
 __RCSID__ = "$Id$"
 
-# Default installation type
-instType = "server"
 
-
-def setInstallType(val):
-  global instType
-  instType = val
-  return S_OK()
-
-
-def pipInstall(package, switches=""):
-  # The right pip should be in the PATH, which is the case after sourcing the DIRAC bashrc
-  cmd = "pip install --trusted-host pypi.python.org %s %s" % (switches, package)
-  gLogger.notice("Executing %s" % cmd)
-  return commands.getstatusoutput(cmd)
 
 
 @DIRACScript()
 def main():
+  # Default installation type
+  instType = "server"
+
+
+  def setInstallType(val):
+    instType = val
+    return S_OK()
+
+
+  def pipInstall(package, switches=""):
+    # The right pip should be in the PATH, which is the case after sourcing the DIRAC bashrc
+    cmd = "pip install --trusted-host pypi.python.org %s %s" % (switches, package)
+    gLogger.notice("Executing %s" % cmd)
+    return commands.getstatusoutput(cmd)
+    
   from DIRAC.Core.Base import Script
 
   Script.disableCS()

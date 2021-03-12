@@ -12,32 +12,28 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
-ceName = ''
-ceType = ''
-Queue = ''
 
-
-def setCEName(args):
-  global ceName
-  ceName = args
-
-
-def setSite(args):
-  global Site
-  Site = args
-
-
-def setQueue(args):
-  global Queue
-  Queue = args
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
-  global ceName
-  global Site
-  global Queue
+  ceName = ''
+  ceType = ''
+  Queue = ''
+
+
+  def setCEName(args):
+    ceName = args
+
+
+  def setSite(args):
+    Site = args
+
+
+  def setQueue(args):
+    Queue = args
+
   Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
   Script.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
   Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)

@@ -178,12 +178,7 @@ def main():
       subLogger.info('%s:%s %s' % (switchDict['name'], statusType, msg))
     return S_OK()
 
-  """
-  Main function of the script. Gets the username from the proxy loaded and sets
-  the token taking into account that user and the switchDict parameters.
-  """
-  global subLogger
-  global switchDict
+
 
   # Logger initialization
   subLogger = gLogger.getSubLogger(__file__)

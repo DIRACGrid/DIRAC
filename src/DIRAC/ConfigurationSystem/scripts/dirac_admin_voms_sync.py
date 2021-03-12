@@ -21,25 +21,23 @@ from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 
-dryRun = False
-voName = None
-
-
-def setDryRun(value):
-  global dryRun
-  dryRun = True
-  return S_OK()
-
-
-def setVO(value):
-  global voName
-  voName = value
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
+  dryRun = False
+  voName = None
+
+
+  def setDryRun(value):
+    dryRun = True
+    return S_OK()
+
+
+  def setVO(value):
+    voName = value
+    return S_OK()
 
   Script.registerSwitch("V:", "vo=", "VO name", setVO)
   Script.registerSwitch("D", "dryRun", "Dry run", setDryRun)

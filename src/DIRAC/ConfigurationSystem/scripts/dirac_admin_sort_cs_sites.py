@@ -30,32 +30,31 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGr
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.Core.Utilities.Time import dateTime, toString
 
-global SORTBYNAME, REVERSE
-SORTBYNAME = True
-REVERSE = False
 
-
-def sortBy(arg):
-  global SORTBYNAME
-  SORTBYNAME = False
-
-
-def isReverse(arg):
-  global REVERSE
-  REVERSE = True
-
-
-def country(arg):
-  cb = arg.split(".")
-  if not len(cb) == 3:
-    gLogger.error("%s is not in GRID.NAME.COUNTRY format ")
-    return False
-  return cb[2]
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
+
+  SORTBYNAME = True
+  REVERSE = False
+
+
+  def sortBy(arg):
+    SORTBYNAME = False
+
+
+  def isReverse(arg):
+    REVERSE = True
+
+
+  def country(arg):
+    cb = arg.split(".")
+    if not len(cb) == 3:
+      gLogger.error("%s is not in GRID.NAME.COUNTRY format ")
+      return False
+    return cb[2]
 
   Script.registerSwitch(
       "C",

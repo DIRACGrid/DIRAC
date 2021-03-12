@@ -30,26 +30,27 @@ from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
-userName = False
 
-
-def setUser(arg):
-  """ Set user
-
-      :param str arg: user name
-
-      :return: S_OK()
-  """
-  global userName
-  userName = arg
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
 
-  global userName
+  userName = False
+
+
+  def setUser(arg):
+    """ Set user
+
+        :param str arg: user name
+
+        :return: S_OK()
+    """
+    global userName
+    userName = arg
+    return S_OK()
+
   Script.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)
   Script.parseCommandLine()
 

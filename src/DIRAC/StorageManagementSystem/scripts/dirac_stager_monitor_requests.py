@@ -79,8 +79,6 @@ def main():
   # ...............................................................................
 
   def run():
-    global subLogger
-
     from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
     client = StorageManagerClient()
     queryDict = {}

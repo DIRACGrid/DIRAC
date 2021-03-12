@@ -17,31 +17,26 @@ __RCSID__ = "$Id$"
 import json
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-ceName = ''
-Queue = ''
-Site = ''
+
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
-  global ceName
-  global Queue
-  global Site
-
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
+  
+  ceName = ''
+  Queue = ''
+  Site = ''
 
   def setCEName(args):
-    global ceName
     ceName = args
 
   def setSite(args):
-    global Site
     Site = args
 
   def setQueue(args):
-    global Queue
     Queue = args
 
   Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)

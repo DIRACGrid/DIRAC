@@ -22,39 +22,36 @@ from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 
 __RCSID__ = "$Id$"
 
-overwrite = False
-module = ''
-specialOptions = {}
 
-
-def setOverwrite(opVal):
-  global overwrite
-  overwrite = True
-  return S_OK()
-
-
-def setModule(optVal):
-  global specialOptions, module
-  specialOptions['Module'] = optVal
-  module = optVal
-  return S_OK()
-
-
-def setSpecialOption(optVal):
-  global specialOptions
-  option, value = optVal.split('=')
-  specialOptions[option] = value
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
 
-  global overwrite
-  global specialOptions
-  global module
-  global specialOptions
+  overwrite = False
+  module = ''
+  specialOptions = {}
+
+
+  def setOverwrite(opVal):
+    global overwrite
+    overwrite = True
+    return S_OK()
+
+
+  def setModule(optVal):
+    global specialOptions, module
+    specialOptions['Module'] = optVal
+    module = optVal
+    return S_OK()
+
+
+  def setSpecialOption(optVal):
+    global specialOptions
+    option, value = optVal.split('=')
+    specialOptions[option] = value
+    return S_OK()
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   gComponentInstaller.exitOnError = True

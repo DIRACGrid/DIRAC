@@ -252,7 +252,6 @@ def main():
       return S_OK()
 
 
-  global piParams, pI
   piParams = Params()
   piParams.registerCLISwitches()
 

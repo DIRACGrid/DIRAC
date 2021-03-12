@@ -413,7 +413,6 @@ def main():
       tabularPrint(table)
     confirm(query, matches)
 
-  global subLogger
 
   subLogger = gLogger.getSubLogger(__file__)
 

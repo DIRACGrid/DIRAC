@@ -24,41 +24,36 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
 
-vo = None
 
-
-def setVO(arg):
-  global vo
-  vo = arg
-  return S_OK()
-
-
-allVOsFlag = False
-
-
-def setAllVO(arg):
-  global allVOsFlag
-  allVOsFlag = True
-  return S_OK()
-
-
-noVOFlag = False
-
-
-def setNoVO(arg):
-  global noVOFlag, allVOsFlag
-  noVOFlag = True
-  allVOsFlag = False
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
 
-  global vo
-  global noVOFlag
-  global allVOsFlag
+  vo = None
+
+
+  def setVO(arg):
+    vo = arg
+    return S_OK()
+
+
+  allVOsFlag = False
+
+
+  def setAllVO(arg):
+    allVOsFlag = True
+    return S_OK()
+
+
+  noVOFlag = False
+
+
+  def setNoVO(arg):
+    noVOFlag = True
+    allVOsFlag = False
+    return S_OK()
 
   Script.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
   Script.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)

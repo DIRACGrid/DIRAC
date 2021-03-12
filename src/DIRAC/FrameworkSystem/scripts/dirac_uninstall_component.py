@@ -24,18 +24,18 @@ from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMoni
 
 __RCSID__ = "$Id$"
 
-force = False
 
-
-def setForce(opVal):
-  global force
-  force = True
-  return S_OK()
 
 
 @DIRACScript()
 def main():
-  global force
+  force = False
+
+
+  def setForce(opVal):
+    force = True
+    return S_OK()
+
   from DIRAC.Core.Base import Script
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller

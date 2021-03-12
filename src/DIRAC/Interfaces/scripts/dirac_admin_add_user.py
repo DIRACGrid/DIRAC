@@ -30,21 +30,18 @@ def main():
 
 
   def setUserName(arg):
-    global userName
     if userName or not arg:
       Script.showHelp(exitCode=1)
     userName = arg
 
 
   def setUserDN(arg):
-    global userDN
     if userDN or not arg:
       Script.showHelp(exitCode=1)
     userDN = arg
 
 
   def setUserMail(arg):
-    global userMail
     if userMail or not arg:
       Script.showHelp(exitCode=1)
     if not arg.find('@') > 0:
@@ -54,17 +51,12 @@ def main():
 
 
   def addUserGroup(arg):
-    global userGroups
     if not arg:
       Script.showHelp(exitCode=1)
     if arg not in userGroups:
       userGroups.append(arg)
 
 
-  global userName
-  global userDN
-  global userMail
-  global userGroups
   Script.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName)
   Script.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', setUserDN)
   Script.registerSwitch('M:', 'UserMail:', 'eMail of the user (Mandatory)', setUserMail)

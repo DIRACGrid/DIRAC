@@ -85,7 +85,6 @@ def main():
       Given the element switch, adds rows to the <element>Status tables with Status
       `Unknown` and Reason `Synchronized`.
     '''
-    global DEFAULT_STATUS
 
     from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
 
@@ -253,10 +252,6 @@ def main():
           subLogger.error(result['Message'])
           DIRACExit(1)
 
-
-  global subLogger
-  global switchDict
-  global DEFAULT_STATUS
 
   subLogger = gLogger.getSubLogger(__file__)
   registerSwitches()

@@ -159,8 +159,6 @@ def main():
     tabularPrint(elements)
 
 
-  global subLogger
-  global switchDict
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization

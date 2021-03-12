@@ -16,34 +16,32 @@ import DIRAC
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-uuid = None
-jobid = None
 
-
-def setUUID(optVal):
-  """
-  Set UUID from arguments
-  """
-  global uuid
-  uuid = optVal
-  return S_OK()
-
-
-def setJobID(optVal):
-  """
-  Set JobID from arguments
-  """
-  global jobid
-  jobid = optVal
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
 
-  global uuid
-  global jobid
+  uuid = None
+  jobid = None
+
+
+  def setUUID(optVal):
+    """
+    Set UUID from arguments
+    """
+    uuid = optVal
+    return S_OK()
+
+
+  def setJobID(optVal):
+    """
+    Set JobID from arguments
+    """
+    jobid = optVal
+    return S_OK()
+    
   Script.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', setUUID)
   Script.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', setJobID)
   Script.parseCommandLine()

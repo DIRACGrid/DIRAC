@@ -26,15 +26,12 @@ def main():
   voName = None
 
   def setCEFlag(args_):
-    global ceFlag
     ceFlag = True
 
   def setSEFlag(args_):
-    global seFlag
     seFlag = True
 
   def setVOName(args):
-    global voName
     voName = args
 
   Script.registerSwitch("C", "ce", "Get CE info", setCEFlag)

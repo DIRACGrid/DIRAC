@@ -32,14 +32,12 @@ def main():
 
 
   def setGroupName(arg):
-    global groupName
     if groupName or not arg:
       Script.showHelp(exitCode=1)
     groupName = arg
 
 
   def addUserName(arg):
-    global userNames
     if not arg:
       Script.showHelp(exitCode=1)
     if arg not in userNames:
@@ -47,16 +45,12 @@ def main():
 
 
   def addProperty(arg):
-    global groupProperties
     if not arg:
       Script.showHelp(exitCode=1)
     if arg not in groupProperties:
       groupProperties.append(arg)
 
 
-  global groupName
-  global groupProperties
-  global userNames
   Script.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
   Script.registerSwitch(
       'U:',

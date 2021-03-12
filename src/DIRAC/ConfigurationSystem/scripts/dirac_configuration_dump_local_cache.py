@@ -26,14 +26,12 @@ def main():
   fileName = ""
 
   def setFilename(args):
-    global fileName
     fileName = args
     return DIRAC.S_OK()
 
   raw = False
 
   def setRaw(args):
-    global raw
     raw = True
     return DIRAC.S_OK()
 

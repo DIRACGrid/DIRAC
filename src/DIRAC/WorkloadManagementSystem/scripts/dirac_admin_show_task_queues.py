@@ -37,29 +37,27 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-verbose = False
 
-
-def setVerbose(optVal):
-  global verbose
-  verbose = True
-  return S_OK()
-
-
-taskQueueID = 0
-
-
-def setTaskQueueID(optVal):
-  global taskQueueID
-  taskQueueID = int(optVal)
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
-  global verbose
-  global taskQueueID
+  verbose = False
+
+
+  def setVerbose(optVal):
+    verbose = True
+    return S_OK()
+
+
+  taskQueueID = 0
+
+
+  def setTaskQueueID(optVal):
+    taskQueueID = int(optVal)
+    return S_OK()
+    
   Script.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)
   Script.registerSwitch("t:", "taskQueue=", "show this task queue only", setTaskQueueID)
   Script.parseCommandLine(initializeMonitor=False)

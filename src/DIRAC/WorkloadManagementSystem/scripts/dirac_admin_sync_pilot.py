@@ -19,19 +19,19 @@ from DIRAC import S_OK
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-includeMasterCS = True
 
-
-def setNoMasterCS(optVal):
-  global includeMasterCS
-  includeMasterCS = False
-  return S_OK()
 
 
 @DIRACScript()
 def main():
   from DIRAC.Core.Base import Script
-  global includeMasterCS
+  includeMasterCS = True
+
+
+  def setNoMasterCS(optVal):
+    includeMasterCS = False
+    return S_OK()
+    
   Script.registerSwitch("n", "noMasterCS", "do not include master CS", setNoMasterCS)
   Script.parseCommandLine()
 

@@ -343,9 +343,6 @@ def main():
       error(result['Message'])
 
 
-  global subLogger
-  global ResourceManagementClient
-
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization
