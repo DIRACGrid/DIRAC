@@ -1,3 +1,12 @@
+[v7r1p33]
+
+*DMS
+FIX: (#4960) FTS3 explicitly use verify_checksum
+NEW: (#4960) add --FTSOnly and --ExcludeSE options to dirac-dms-protocol-matrix
+
+*RMS
+CHANGE: (#4960) ReqClient prints the FTS3 job url directly
+
 [v7r1p32]
 
 *Core
