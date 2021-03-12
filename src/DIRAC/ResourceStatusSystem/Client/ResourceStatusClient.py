@@ -77,7 +77,7 @@ class ResourceStatusClient(Client):
 
   def insertStatusElement(self, element, tableType, name, statusType, status,
                           elementType, reason, dateEffective, lastCheckTime,
-                          tokenOwner, tokenExpiration=None, vo='all'):
+                          tokenOwner, tokenExpiration=None, vO='all'):
     """
     Inserts on <element><tableType> a new row with the arguments given.
 
@@ -120,7 +120,7 @@ class ResourceStatusClient(Client):
   def selectStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None,
-                          tokenOwner=None, tokenExpiration=None, meta=None, vo='all'):
+                          tokenOwner=None, tokenExpiration=None, meta=None, vO='all'):
     """
     Gets from <element><tableType> all rows that match the parameters given.
 
