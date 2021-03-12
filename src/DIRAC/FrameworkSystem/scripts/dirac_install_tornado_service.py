@@ -18,7 +18,6 @@ __RCSID__ = "$Id$"
 
 from DIRAC import exit as DIRACexit
 from DIRAC import gConfig, gLogger, S_OK
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
@@ -55,6 +54,8 @@ def setSpecialOption(optVal):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   global overwrite
   global specialOptions
   global module

@@ -20,7 +20,6 @@ import os
 import time
 from hashlib import md5
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -36,6 +35,8 @@ def getLFNList(arg):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 

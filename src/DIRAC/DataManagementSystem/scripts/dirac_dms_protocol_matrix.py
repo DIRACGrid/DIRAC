@@ -45,12 +45,13 @@ from __future__ import print_function
 import csv
 from collections import defaultdict
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   Script.registerSwitch('', 'FromSE=', 'SE1[,SE2,...]')
   Script.registerSwitch('', 'TargetSE=', 'SE1[,SE2,...]')
   Script.registerSwitch('', 'OutputFile=', 'CSV output file (default /tmp/protocol-matrix.csv)')

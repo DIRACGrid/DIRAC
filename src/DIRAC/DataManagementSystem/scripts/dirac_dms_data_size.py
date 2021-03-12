@@ -22,12 +22,13 @@ __RCSID__ = "$Id$"
 import os
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   unit = 'GB'
   Script.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
 

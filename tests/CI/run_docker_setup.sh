@@ -217,6 +217,10 @@ prepareEnvironment() {
     docker cp "${DIRACOS_TARBALL_PATH}" server:"${DIRACOS_TARBALL_PATH}"
     docker cp "${DIRACOS_TARBALL_PATH}" client:"${DIRACOS_TARBALL_PATH}"
   fi
+
+  # Open permissions for the dirac user after the above operations
+  docker exec server bash -c "chown -R dirac:dirac /home/dirac"
+  docker exec client bash -c "chown -R dirac:dirac /home/dirac"
 }
 
 installServer() {

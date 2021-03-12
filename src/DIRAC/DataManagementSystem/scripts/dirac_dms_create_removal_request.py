@@ -18,13 +18,13 @@ __RCSID__ = "ea64b42 (2012-07-29 16:45:05 +0200) ricardo <Ricardo.Graciani@gmail
 import os
 from hashlib import md5
 import time
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()

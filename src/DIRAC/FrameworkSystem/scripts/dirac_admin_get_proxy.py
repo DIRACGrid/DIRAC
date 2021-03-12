@@ -25,91 +25,91 @@ from __future__ import division
 import os
 
 import six
-
-import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-__RCSID__ = "$Id$"
-
-
-class Params(object):
-
-  limited = False
-  proxyPath = False
-  proxyLifeTime = 86400
-  enableVOMS = False
-  vomsAttr = None
-
-  def setLimited(self, args):
-    """ Set limited
-
-        :param bool args: is limited
-
-        :return: S_OK()/S_ERROR()
-    """
-    self.limited = True
-    return S_OK()
-
-  def setProxyLocation(self, args):
-    """ Set proxy location
-
-        :param str args: proxy path
-
-        :return: S_OK()/S_ERROR()
-    """
-    self.proxyPath = args
-    return S_OK()
-
-  def setProxyLifeTime(self, arg):
-    """ Set proxy lifetime
-
-        :param int arg: lifetime in a seconds
-
-        :return: S_OK()/S_ERROR()
-    """
-    try:
-      fields = [f.strip() for f in arg.split(":")]
-      self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
-    except BaseException:
-      gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
-      return S_ERROR("Can't parse time argument")
-    return S_OK()
-
-  def automaticVOMS(self, arg):
-    """ Enable VOMS
-
-        :param bool arg: enable VOMS
-
-        :return: S_OK()/S_ERROR()
-    """
-    self.enableVOMS = True
-    return S_OK()
-
-  def setVOMSAttr(self, arg):
-    """ Register CLI switches
-
-        :param str arg: VOMS attribute
-    """
-    self.enableVOMS = True
-    self.vomsAttr = arg
-    return S_OK()
-
-  def registerCLISwitches(self):
-    """ Register CLI switches
-    """
-    Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
-    Script.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
-    Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
-    Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
-    Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
-
 
 @DIRACScript()
 def main():
+  import DIRAC
+  from DIRAC import gLogger, S_OK, S_ERROR
+  from DIRAC.Core.Base import Script
+  from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+  from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
+  __RCSID__ = "$Id$"
+
+
+  class Params(object):
+
+    limited = False
+    proxyPath = False
+    proxyLifeTime = 86400
+    enableVOMS = False
+    vomsAttr = None
+
+    def setLimited(self, args):
+      """ Set limited
+
+          :param bool args: is limited
+
+          :return: S_OK()/S_ERROR()
+      """
+      self.limited = True
+      return S_OK()
+
+    def setProxyLocation(self, args):
+      """ Set proxy location
+
+          :param str args: proxy path
+
+          :return: S_OK()/S_ERROR()
+      """
+      self.proxyPath = args
+      return S_OK()
+
+    def setProxyLifeTime(self, arg):
+      """ Set proxy lifetime
+
+          :param int arg: lifetime in a seconds
+
+          :return: S_OK()/S_ERROR()
+      """
+      try:
+        fields = [f.strip() for f in arg.split(":")]
+        self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
+      except BaseException:
+        gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
+        return S_ERROR("Can't parse time argument")
+      return S_OK()
+
+    def automaticVOMS(self, arg):
+      """ Enable VOMS
+
+          :param bool arg: enable VOMS
+
+          :return: S_OK()/S_ERROR()
+      """
+      self.enableVOMS = True
+      return S_OK()
+
+    def setVOMSAttr(self, arg):
+      """ Register CLI switches
+
+          :param str arg: VOMS attribute
+      """
+      self.enableVOMS = True
+      self.vomsAttr = arg
+      return S_OK()
+
+    def registerCLISwitches(self):
+      """ Register CLI switches
+      """
+      Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
+      Script.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
+      Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
+      Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
+      Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
+
+
   params = Params()
   params.registerCLISwitches()
 

@@ -5,36 +5,37 @@ Script to call the DataRecoveryAgent functionality by hand.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
-__RCSID__ = '$Id$'
-
-
-class Params(object):
-  """Collection of Parameters set via CLI switches."""
-
-  def __init__(self):
-    self.enabled = False
-    self.transID = 0
-
-  def setEnabled(self, _):
-    self.enabled = True
-    return S_OK()
-
-  def setTransID(self, transID):
-    self.transID = int(transID)
-    return S_OK()
-
-  def registerSwitches(self):
-    Script.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
-    Script.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
-
 
 @DIRACScript()
 def main():
+
+  from DIRAC import S_OK, gLogger
+  from DIRAC.Core.Base import Script
+
+  __RCSID__ = '$Id$'
+
+
+  class Params(object):
+    """Collection of Parameters set via CLI switches."""
+
+    def __init__(self):
+      self.enabled = False
+      self.transID = 0
+
+    def setEnabled(self, _):
+      self.enabled = True
+      return S_OK()
+
+    def setTransID(self, transID):
+      self.transID = int(transID)
+      return S_OK()
+
+    def registerSwitches(self):
+      Script.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
+      Script.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
+
+
   PARAMS = Params()
   PARAMS.registerSwitches()
   Script.parseCommandLine(ignoreErrors=False)

@@ -17,7 +17,6 @@ from __future__ import division
 from __future__ import print_function
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
@@ -26,6 +25,8 @@ __RCSID__ = "$Id$"
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   Script.addDefaultOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
   Script.parseCommandLine(ignoreErrors=True)
 

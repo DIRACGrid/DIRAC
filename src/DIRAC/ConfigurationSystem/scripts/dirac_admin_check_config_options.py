@@ -21,11 +21,12 @@ __RCSID__ = "$Id$"
 
 import os
 from pprint import pformat
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
 
 from diraccfg import CFG
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
 from DIRAC.Core.Utilities.List import fromChar
 
 LOG = gLogger
@@ -34,6 +35,8 @@ LOG = gLogger
 class CheckConfig(object):
   """Compare the ConfigTemplate with current configuration."""
 
+  from DIRAC.Core.Base import Script
+  
   def __init__(self):
     self.systems = None
     self.showModified = False

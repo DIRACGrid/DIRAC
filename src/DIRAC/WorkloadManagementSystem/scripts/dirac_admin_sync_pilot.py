@@ -16,7 +16,6 @@ import hashlib
 
 
 from DIRAC import S_OK
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -31,6 +30,7 @@ def setNoMasterCS(optVal):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   global includeMasterCS
   Script.registerSwitch("n", "noMasterCS", "do not include master CS", setNoMasterCS)
   Script.parseCommandLine()

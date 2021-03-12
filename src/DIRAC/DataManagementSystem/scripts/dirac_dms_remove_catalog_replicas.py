@@ -16,13 +16,14 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as dexit
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   Script.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

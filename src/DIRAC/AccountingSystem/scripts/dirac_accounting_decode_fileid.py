@@ -24,12 +24,13 @@ from six.moves.urllib_parse import parse_qs
 from six.moves.urllib import parse as urlparse
 
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
   Script.parseCommandLine()
 

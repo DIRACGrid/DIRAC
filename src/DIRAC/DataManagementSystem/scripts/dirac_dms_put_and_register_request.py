@@ -22,12 +22,13 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 

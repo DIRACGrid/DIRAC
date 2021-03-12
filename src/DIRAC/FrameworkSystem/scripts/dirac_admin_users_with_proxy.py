@@ -23,37 +23,37 @@ Example:
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-
-import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-
-__RCSID__ = "$Id$"
-
-
-class Params(object):
-
-  limited = False
-  proxyPath = False
-  proxyLifeTime = 3600
-
-  def setProxyLifeTime(self, arg):
-    try:
-      fields = [f.strip() for f in arg.split(":")]
-      self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
-    except BaseException:
-      print("Can't parse %s time! Is it a HH:MM?" % arg)
-      return DIRAC.S_ERROR("Can't parse time argument")
-    return DIRAC.S_OK()
-
-  def registerCLISwitches(self):
-    Script.registerSwitch("v:", "valid=", "Required HH:MM for the users", self.setProxyLifeTime)
-
 
 @DIRACScript()
 def main():
+  import DIRAC
+  from DIRAC.Core.Base import Script
+  from DIRAC.Core.Utilities import Time
+  from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+
+  __RCSID__ = "$Id$"
+
+
+  class Params(object):
+
+    limited = False
+    proxyPath = False
+    proxyLifeTime = 3600
+
+    def setProxyLifeTime(self, arg):
+      try:
+        fields = [f.strip() for f in arg.split(":")]
+        self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
+      except BaseException:
+        print("Can't parse %s time! Is it a HH:MM?" % arg)
+        return DIRAC.S_ERROR("Can't parse time argument")
+      return DIRAC.S_OK()
+
+    def registerCLISwitches(self):
+      Script.registerSwitch("v:", "valid=", "Required HH:MM for the users", self.setProxyLifeTime)
+
+
   params = Params()
   params.registerCLISwitches()
   Script.parseCommandLine(ignoreErrors=True)

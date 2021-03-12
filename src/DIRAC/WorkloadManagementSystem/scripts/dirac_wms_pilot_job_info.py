@@ -18,7 +18,6 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -32,6 +31,7 @@ def _stringInList(subStr, sList):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
   Script.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
   Script.parseCommandLine(ignoreErrors=True)

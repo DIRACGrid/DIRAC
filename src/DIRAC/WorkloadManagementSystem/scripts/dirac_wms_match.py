@@ -14,7 +14,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from DIRAC.Core.Base import Script
 from DIRAC import S_OK, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
@@ -38,6 +37,7 @@ def setSites(optVal_):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   global fullMatch
   global sites
   Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)

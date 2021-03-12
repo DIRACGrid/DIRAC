@@ -39,12 +39,12 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   original = False
   Script.registerSwitch('O', 'Original', 'Gets the original JDL')
   Script.parseCommandLine(ignoreErrors=True)

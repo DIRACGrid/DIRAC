@@ -4,7 +4,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import sys
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
@@ -12,6 +11,8 @@ __RCSID__ = "$Id$"
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

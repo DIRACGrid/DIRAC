@@ -17,7 +17,6 @@ import socket
 
 from DIRAC import exit as DIRACexit
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
@@ -37,6 +36,7 @@ def setForce(opVal):
 @DIRACScript()
 def main():
   global force
+  from DIRAC.Core.Base import Script
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   gComponentInstaller.exitOnError = True

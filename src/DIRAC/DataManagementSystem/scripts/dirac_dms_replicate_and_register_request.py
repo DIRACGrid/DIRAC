@@ -15,7 +15,6 @@ from __future__ import division
 from __future__ import print_function
 __RCSID__ = "$Id$"
 import os
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger
 import DIRAC
@@ -33,6 +32,8 @@ def getLFNList(arg):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   catalog = None
   Script.registerSwitch("C:", "Catalog=", "Catalog to use")
   Script.parseCommandLine()

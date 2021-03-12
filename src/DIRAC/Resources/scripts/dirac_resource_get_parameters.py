@@ -15,7 +15,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import json
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 ceName = ''
@@ -25,6 +24,7 @@ Site = ''
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   global ceName
   global Queue
   global Site

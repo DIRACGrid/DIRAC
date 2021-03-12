@@ -31,7 +31,6 @@ __RCSID__ = "$Id$"
 import sys
 
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
@@ -58,6 +57,7 @@ def setTaskQueueID(optVal):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   global verbose
   global taskQueueID
   Script.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)

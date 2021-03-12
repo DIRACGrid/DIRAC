@@ -13,12 +13,13 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   host = None
   Script.registerSwitch("H:", "host=", "   Target host")
   Script.parseCommandLine(ignoreErrors=False)

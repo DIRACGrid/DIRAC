@@ -16,40 +16,40 @@ from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
-
-import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
-hostName = None
-hostDN = None
-hostProperties = []
-
-
-def setHostName(arg):
-  global hostName
-  if hostName or not arg:
-    Script.showHelp(exitCode=1)
-  hostName = arg
-
-
-def setHostDN(arg):
-  global hostDN
-  if hostDN or not arg:
-    Script.showHelp(exitCode=1)
-  hostDN = arg
-
-
-def addProperty(arg):
-  global hostProperties
-  if not arg:
-    Script.showHelp(exitCode=1)
-  if arg not in hostProperties:
-    hostProperties.append(arg)
-
-
 @DIRACScript()
 def main():
+
+  import DIRAC
+  from DIRAC.Core.Base import Script
+
+  hostName = None
+  hostDN = None
+  hostProperties = []
+
+
+  def setHostName(arg):
+    global hostName
+    if hostName or not arg:
+      Script.showHelp(exitCode=1)
+    hostName = arg
+
+
+  def setHostDN(arg):
+    global hostDN
+    if hostDN or not arg:
+      Script.showHelp(exitCode=1)
+    hostDN = arg
+
+
+  def addProperty(arg):
+    global hostProperties
+    if not arg:
+      Script.showHelp(exitCode=1)
+    if arg not in hostProperties:
+      hostProperties.append(arg)
+
+
   global hostName
   global hostDN
   global hostProperties

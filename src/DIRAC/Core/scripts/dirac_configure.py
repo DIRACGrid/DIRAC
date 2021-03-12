@@ -74,163 +74,165 @@ import os
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
-from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
-
-
-__RCSID__ = "$Id$"
-
-
-logLevel = None
-setup = None
-configurationServer = None
-includeAllServers = False
-gatewayServer = None
-siteName = None
-useServerCert = False
-skipCAChecks = False
-skipCADownload = False
-useVersionsDir = False
-architecture = None
-localSE = None
-ceName = None
-vo = None
-update = False
-outputFile = ''
-skipVOMSDownload = False
-extensions = ''
-
-
-def setGateway(optionValue):
-  global gatewayServer
-  gatewayServer = optionValue
-  setServer(gatewayServer + '/Configuration/Server')
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('Gateway'), gatewayServer)
-  return DIRAC.S_OK()
-
-
-def setOutput(optionValue):
-  global outputFile
-  outputFile = optionValue
-  return DIRAC.S_OK()
-
-
-def setServer(optionValue):
-  global configurationServer
-  configurationServer = optionValue
-  DIRAC.gConfig.setOptionValue('/DIRAC/Configuration/Servers', configurationServer)
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('ConfigurationServer'), configurationServer)
-  return DIRAC.S_OK()
-
-
-def setAllServers(optionValue):
-  global includeAllServers
-  includeAllServers = True
-
-
-def setSetup(optionValue):
-  global setup
-  setup = optionValue
-  DIRAC.gConfig.setOptionValue('/DIRAC/Setup', setup)
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('Setup'), setup)
-  return DIRAC.S_OK()
-
-
-def setSiteName(optionValue):
-  global siteName
-  siteName = optionValue
-  Script.localCfg.addDefaultEntry('/LocalSite/Site', siteName)
-  DIRAC.__siteName = False
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('SiteName'), siteName)
-  return DIRAC.S_OK()
-
-
-def setCEName(optionValue):
-  global ceName
-  ceName = optionValue
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('CEName'), ceName)
-  return DIRAC.S_OK()
-
-
-def setServerCert(optionValue):
-  global useServerCert
-  useServerCert = True
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('UseServerCertificate'), useServerCert)
-  return DIRAC.S_OK()
-
-
-def setSkipCAChecks(optionValue):
-  global skipCAChecks
-  skipCAChecks = True
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('SkipCAChecks'), skipCAChecks)
-  return DIRAC.S_OK()
-
-
-def setSkipCADownload(optionValue):
-  global skipCADownload
-  skipCADownload = True
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('SkipCADownload'), skipCADownload)
-  return DIRAC.S_OK()
-
-
-def setSkipVOMSDownload(optionValue):
-  global skipVOMSDownload
-  skipVOMSDownload = True
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('SkipVOMSDownload'), skipVOMSDownload)
-  return DIRAC.S_OK()
-
-
-def setUseVersionsDir(optionValue):
-  global useVersionsDir
-  useVersionsDir = True
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('UseVersionsDir'), useVersionsDir)
-  return DIRAC.S_OK()
-
-
-def setArchitecture(optionValue):
-  global architecture
-  architecture = optionValue
-  Script.localCfg.addDefaultEntry('/LocalSite/Architecture', architecture)
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('Architecture'), architecture)
-  return DIRAC.S_OK()
-
-
-def setLocalSE(optionValue):
-  global localSE
-  localSE = optionValue
-  Script.localCfg.addDefaultEntry('/LocalSite/LocalSE', localSE)
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('LocalSE'), localSE)
-  return DIRAC.S_OK()
-
-
-def setVO(optionValue):
-  global vo
-  vo = optionValue
-  Script.localCfg.addDefaultEntry('/DIRAC/VirtualOrganization', vo)
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('VirtualOrganization'), vo)
-  return DIRAC.S_OK()
-
-
-def forceUpdate(optionValue):
-  global update
-  update = True
-  return DIRAC.S_OK()
-
-
-def setExtensions(optionValue):
-  global extensions
-  extensions = optionValue
-  DIRAC.gConfig.setOptionValue('/DIRAC/Extensions', extensions)
-  DIRAC.gConfig.setOptionValue(cfgInstallPath('Extensions'), extensions)
-  return DIRAC.S_OK()
-
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
+  from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+  from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
+  from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+  from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
+
+
+  __RCSID__ = "$Id$"
+
+
+  logLevel = None
+  setup = None
+  configurationServer = None
+  includeAllServers = False
+  gatewayServer = None
+  siteName = None
+  useServerCert = False
+  skipCAChecks = False
+  skipCADownload = False
+  useVersionsDir = False
+  architecture = None
+  localSE = None
+  ceName = None
+  vo = None
+  update = False
+  outputFile = ''
+  skipVOMSDownload = False
+  extensions = ''
+
+
+  def setGateway(optionValue):
+    global gatewayServer
+    gatewayServer = optionValue
+    setServer(gatewayServer + '/Configuration/Server')
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('Gateway'), gatewayServer)
+    return DIRAC.S_OK()
+
+
+  def setOutput(optionValue):
+    global outputFile
+    outputFile = optionValue
+    return DIRAC.S_OK()
+
+
+  def setServer(optionValue):
+    global configurationServer
+    configurationServer = optionValue
+    DIRAC.gConfig.setOptionValue('/DIRAC/Configuration/Servers', configurationServer)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('ConfigurationServer'), configurationServer)
+    return DIRAC.S_OK()
+
+
+  def setAllServers(optionValue):
+    global includeAllServers
+    includeAllServers = True
+
+
+  def setSetup(optionValue):
+    global setup
+    setup = optionValue
+    DIRAC.gConfig.setOptionValue('/DIRAC/Setup', setup)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('Setup'), setup)
+    return DIRAC.S_OK()
+
+
+  def setSiteName(optionValue):
+    global siteName
+    siteName = optionValue
+    Script.localCfg.addDefaultEntry('/LocalSite/Site', siteName)
+    DIRAC.__siteName = False
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('SiteName'), siteName)
+    return DIRAC.S_OK()
+
+
+  def setCEName(optionValue):
+    global ceName
+    ceName = optionValue
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('CEName'), ceName)
+    return DIRAC.S_OK()
+
+
+  def setServerCert(optionValue):
+    global useServerCert
+    useServerCert = True
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('UseServerCertificate'), useServerCert)
+    return DIRAC.S_OK()
+
+
+  def setSkipCAChecks(optionValue):
+    global skipCAChecks
+    skipCAChecks = True
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('SkipCAChecks'), skipCAChecks)
+    return DIRAC.S_OK()
+
+
+  def setSkipCADownload(optionValue):
+    global skipCADownload
+    skipCADownload = True
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('SkipCADownload'), skipCADownload)
+    return DIRAC.S_OK()
+
+
+  def setSkipVOMSDownload(optionValue):
+    global skipVOMSDownload
+    skipVOMSDownload = True
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('SkipVOMSDownload'), skipVOMSDownload)
+    return DIRAC.S_OK()
+
+
+  def setUseVersionsDir(optionValue):
+    global useVersionsDir
+    useVersionsDir = True
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('UseVersionsDir'), useVersionsDir)
+    return DIRAC.S_OK()
+
+
+  def setArchitecture(optionValue):
+    global architecture
+    architecture = optionValue
+    Script.localCfg.addDefaultEntry('/LocalSite/Architecture', architecture)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('Architecture'), architecture)
+    return DIRAC.S_OK()
+
+
+  def setLocalSE(optionValue):
+    global localSE
+    localSE = optionValue
+    Script.localCfg.addDefaultEntry('/LocalSite/LocalSE', localSE)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('LocalSE'), localSE)
+    return DIRAC.S_OK()
+
+
+  def setVO(optionValue):
+    global vo
+    vo = optionValue
+    Script.localCfg.addDefaultEntry('/DIRAC/VirtualOrganization', vo)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('VirtualOrganization'), vo)
+    return DIRAC.S_OK()
+
+
+  def forceUpdate(optionValue):
+    global update
+    update = True
+    return DIRAC.S_OK()
+
+
+  def setExtensions(optionValue):
+    global extensions
+    extensions = optionValue
+    DIRAC.gConfig.setOptionValue('/DIRAC/Extensions', extensions)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('Extensions'), extensions)
+    return DIRAC.S_OK()
+
+
   global logLevel
   global setup
   global configurationServer

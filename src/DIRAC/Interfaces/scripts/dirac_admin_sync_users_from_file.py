@@ -21,7 +21,6 @@ from __future__ import division
 from diraccfg import CFG
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
@@ -29,6 +28,7 @@ __RCSID__ = "$Id$"
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   Script.registerSwitch("t", "test", "Only test. Don't commit changes")
   Script.parseCommandLine(ignoreErrors=True)
 

@@ -33,8 +33,6 @@ import threading
 import pytest
 
 ## from DIRAC
-# from DIRAC.Core.Base import Script
-# Script.parseCommandLine()
 from DIRAC import gLogger
 ## SUT
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool

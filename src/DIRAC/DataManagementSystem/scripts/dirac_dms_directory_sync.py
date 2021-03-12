@@ -30,7 +30,6 @@ from __future__ import print_function
 
 import os
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
@@ -38,6 +37,8 @@ __RCSID__ = "$Id$"
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   Script.registerSwitch("D", "sync", "Make target directory identical to source")
   Script.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
   Script.parseCommandLine(ignoreErrors=False)

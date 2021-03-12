@@ -25,12 +25,12 @@ import os
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   Script.registerSwitch("f:", "File=", "Writes job ids to file <value>")
   Script.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
   Script.parseCommandLine(ignoreErrors=True)

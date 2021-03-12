@@ -30,13 +30,13 @@ import sys
 import os
 
 from DIRAC import gLogger, exit as DIRACexit
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 

@@ -24,12 +24,12 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   Script.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
   Script.registerSwitch("f", "force", "create the user if it doesn't exist")
   Script.parseCommandLine(ignoreErrors=True)

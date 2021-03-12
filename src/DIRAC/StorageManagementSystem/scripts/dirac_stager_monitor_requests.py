@@ -22,7 +22,6 @@ from __future__ import print_function
 
 _RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
@@ -31,6 +30,7 @@ subLogger = None
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   def registerSwitches():
     '''
       Registers all switches that can be used while calling the script from the

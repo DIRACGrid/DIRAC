@@ -24,7 +24,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
@@ -56,6 +55,8 @@ def country(arg):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   Script.registerSwitch(
       "C",
       "country",

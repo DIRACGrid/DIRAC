@@ -12,13 +12,13 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
   """reads command line parameters, makes check and creates replication transformation"""
+  from DIRAC.Core.Base import Script
   from DIRAC import gLogger, exit as dexit
   from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
 

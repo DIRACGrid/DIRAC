@@ -14,7 +14,6 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 uuid = None
@@ -41,6 +40,8 @@ def setJobID(optVal):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   global uuid
   global jobid
   Script.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', setUUID)

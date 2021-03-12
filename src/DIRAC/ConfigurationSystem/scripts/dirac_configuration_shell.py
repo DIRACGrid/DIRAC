@@ -8,7 +8,6 @@ from __future__ import division
 from __future__ import print_function
 import sys
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 # Invariants:
@@ -18,6 +17,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   Script.parseCommandLine()
   from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
   shell = CSShellCLI()

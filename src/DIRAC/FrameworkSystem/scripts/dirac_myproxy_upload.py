@@ -11,7 +11,6 @@ __RCSID__ = "$Id$"
 
 import sys
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -36,6 +35,8 @@ class Params:
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   params = Params()
 
   Script.registerSwitch("f:", "file=", "File to use as proxy", params.setProxyLocation)

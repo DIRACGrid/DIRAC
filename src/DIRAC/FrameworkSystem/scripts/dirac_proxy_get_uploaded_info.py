@@ -24,7 +24,6 @@ __RCSID__ = "$Id$"
 import sys
 
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import Properties
@@ -48,6 +47,8 @@ def setUser(arg):
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   global userName
   Script.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)
   Script.parseCommandLine()

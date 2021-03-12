@@ -22,12 +22,12 @@ import os
 from shutil import rmtree
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   Script.registerSwitch("", "Status=", "Primary status")
   Script.registerSwitch("", "MinorStatus=", "Secondary status")
   Script.registerSwitch("", "ApplicationStatus=", "Application status")

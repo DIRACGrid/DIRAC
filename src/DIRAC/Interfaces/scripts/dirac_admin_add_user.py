@@ -16,51 +16,51 @@ from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
-
-import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
-userName = None
-userDN = None
-userMail = None
-userGroups = []
-
-
-def setUserName(arg):
-  global userName
-  if userName or not arg:
-    Script.showHelp(exitCode=1)
-  userName = arg
-
-
-def setUserDN(arg):
-  global userDN
-  if userDN or not arg:
-    Script.showHelp(exitCode=1)
-  userDN = arg
-
-
-def setUserMail(arg):
-  global userMail
-  if userMail or not arg:
-    Script.showHelp(exitCode=1)
-  if not arg.find('@') > 0:
-    Script.gLogger.error('Not a valid mail address', arg)
-    DIRAC.exit(-1)
-  userMail = arg
-
-
-def addUserGroup(arg):
-  global userGroups
-  if not arg:
-    Script.showHelp(exitCode=1)
-  if arg not in userGroups:
-    userGroups.append(arg)
-
-
 @DIRACScript()
 def main():
+
+  import DIRAC
+  from DIRAC.Core.Base import Script
+
+  userName = None
+  userDN = None
+  userMail = None
+  userGroups = []
+
+
+  def setUserName(arg):
+    global userName
+    if userName or not arg:
+      Script.showHelp(exitCode=1)
+    userName = arg
+
+
+  def setUserDN(arg):
+    global userDN
+    if userDN or not arg:
+      Script.showHelp(exitCode=1)
+    userDN = arg
+
+
+  def setUserMail(arg):
+    global userMail
+    if userMail or not arg:
+      Script.showHelp(exitCode=1)
+    if not arg.find('@') > 0:
+      Script.gLogger.error('Not a valid mail address', arg)
+      DIRAC.exit(-1)
+    userMail = arg
+
+
+  def addUserGroup(arg):
+    global userGroups
+    if not arg:
+      Script.showHelp(exitCode=1)
+    if arg not in userGroups:
+      userGroups.append(arg)
+
+
   global userName
   global userDN
   global userMail

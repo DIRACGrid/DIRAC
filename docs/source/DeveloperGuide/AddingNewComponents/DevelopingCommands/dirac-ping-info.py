@@ -17,31 +17,31 @@ __RCSID__ = "$Id$"
 import sys
 from DIRAC import exit as DIRACExit
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base import Script
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
-
-# Define a simple class to hold the script parameters
-class Params(object):
-
-  def __init__(self):
-    self.raw = False
-    self.pingsToDo = 1
-
-  def setRawResult(self, value):
-    self.raw = True
-    return S_OK()
-
-  def setNumOfPingsToDo(self, value):
-    try:
-      self.pingsToDo = max(1, int(value))
-    except ValueError:
-      return S_ERROR("Number of pings to do has to be a number")
-    return S_OK()
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+  # Define a simple class to hold the script parameters
+  class Params(object):
+
+    def __init__(self):
+      self.raw = False
+      self.pingsToDo = 1
+
+    def setRawResult(self, value):
+      self.raw = True
+      return S_OK()
+
+    def setNumOfPingsToDo(self, value):
+      try:
+        self.pingsToDo = max(1, int(value))
+      except ValueError:
+        return S_ERROR("Number of pings to do has to be a number")
+      return S_OK()
+
   # Instantiate the params class
   cliParams = Params()
 

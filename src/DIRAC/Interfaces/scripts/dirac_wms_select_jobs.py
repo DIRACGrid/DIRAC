@@ -20,12 +20,12 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   maxJobs = 100
   Script.registerSwitch("", "Status=", "Primary status")
   Script.registerSwitch("", "MinorStatus=", "Secondary status")

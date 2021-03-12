@@ -17,13 +17,14 @@ __RCSID__ = "$Id$"
 
 import sys
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
+
   cliParams = CLIParams()
   cliParams.registerCLISwitches()
 
