@@ -389,6 +389,7 @@ class ResourceManagementDB(SQLAlchemyDB):
 
     # Create required tables
     self._createTablesIfNotThere(self.tablesList)
+  ## Extended SQL methods ######################################################
 
   def addOrModify(self, table, params):
     """
