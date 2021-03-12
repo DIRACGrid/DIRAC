@@ -410,6 +410,7 @@ class FTS3Job(JSerializable):
                        bring_online=bring_online,
                        copy_pin_lifetime=copy_pin_lifetime,
                        retry=3,
+                       verify_checksum='target',  # Only check target vs specified, since we verify the source earlier
                        multihop=bool(allStageURLs),  # if we have stage urls, then we need multihop
                        metadata=job_metadata,
                        priority=self.priority)
