@@ -21,7 +21,7 @@ def main():
   ceName = ''
   ceType = ''
   Queue = ''
-
+  Site = ''
 
   def setCEName(args):
     ceName = args

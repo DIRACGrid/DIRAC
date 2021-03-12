@@ -29,18 +29,21 @@ def main():
 
 
   def setHostName(arg):
+    global hostName
     if hostName or not arg:
       Script.showHelp(exitCode=1)
     hostName = arg
 
 
   def setHostDN(arg):
+    global hostDN
     if hostDN or not arg:
       Script.showHelp(exitCode=1)
     hostDN = arg
 
 
   def addProperty(arg):
+    global hostProperties
     if not arg:
       Script.showHelp(exitCode=1)
     if arg not in hostProperties:
