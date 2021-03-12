@@ -45,21 +45,20 @@ from __future__ import print_function
 import csv
 from collections import defaultdict
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
-Script.setUsageMessage('\n'.join([__doc__,
-                                  'Usage:',
-                                  ' %s [option|cfgfile]  % Script.scriptName']))
 
 @DIRACScript()
 def main():
+  from DIRAC.Core.Base import Script
   Script.registerSwitch('', 'FromSE=', 'SE1[,SE2,...]')
   Script.registerSwitch('', 'TargetSE=', 'SE1[,SE2,...]')
   Script.registerSwitch('', 'OutputFile=', 'CSV output file (default /tmp/protocol-matrix.csv)')
   Script.registerSwitch('', 'Bidirection', 'If FromSE or TargetSE are specified, make a square matrix ')
   Script.registerSwitch('', 'FTSOnly', 'Only display the protocols sent to FTS')
   Script.registerSwitch('', 'ExcludeSE=', 'SEs to not take into account for the matrix')
+  Script.setUsageMessage( '\n'.join( [__doc__,
+                                      'Usage:',
+                                      ' %s [option|cfgfile]  % Script.scriptName'] ) )
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   from DIRAC import gConfig, gLogger
