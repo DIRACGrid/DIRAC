@@ -217,6 +217,10 @@ prepareEnvironment() {
     docker cp "${DIRACOS_TARBALL_PATH}" server:"${DIRACOS_TARBALL_PATH}"
     docker cp "${DIRACOS_TARBALL_PATH}" client:"${DIRACOS_TARBALL_PATH}"
   fi
+
+  # Open permissions for the dirac user after the above operations
+  docker exec server bash -c "chown -R dirac:dirac /home/dirac"
+  docker exec client bash -c "chown -R dirac:dirac /home/dirac"
 }
 
 installServer() {
@@ -230,7 +234,7 @@ installServer() {
   docker exec client bash -c "cp $WORKSPACE/ServerInstallDIR/user/client.* $USER_HOME/.globus/"
   server_uid=$(docker exec -u dirac server bash -c 'echo $UID')
   client_uid=$(docker exec -u dirac client bash -c 'echo $UID')
-  docker cp "server:/tmp/x509up_u${server_uid}" - | docker cp - client:/tmp/
+  docker cp server:"/tmp/x509up_u${server_uid}" - | docker cp - client:/tmp/
   docker exec client bash -c "chown -R dirac:dirac /home/dirac"
   docker exec client bash -c "chown -R dirac:dirac /tmp/x509up_u${client_uid}"
 }
