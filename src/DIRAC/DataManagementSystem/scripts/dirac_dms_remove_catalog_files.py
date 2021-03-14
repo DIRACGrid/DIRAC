@@ -18,7 +18,7 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-# from DIRAC.Core.Base import Script
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import exit as dexit
 from DIRAC import gLogger

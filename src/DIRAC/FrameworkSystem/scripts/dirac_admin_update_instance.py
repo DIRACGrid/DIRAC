@@ -17,7 +17,7 @@ __RCSID__ = "$Id$"
 from io import open
 
 import DIRAC
-# from DIRAC.Core.Base import Script
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 

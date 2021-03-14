@@ -16,7 +16,7 @@ if six.PY3:
   from DIRAC.Core.Utilities.Extensions import entrypointToExtension, extensionsByPriority
 
 
-localCfg = LocalConfiguration()
+# localCfg = LocalConfiguration()
 
 class DIRACScript(object):
   """Decorator for providing command line executables
@@ -27,11 +27,13 @@ class DIRACScript(object):
   def __init__(self):
     """ c'tor
     """
-    global localCfg
+    # global localCfg
+
     self.scriptName = None
     self.alreadyInitialized = False
     self.doc = inspect.currentframe().f_back.f_globals['__doc__']
-    self.localCfg = localCfg
+    # self.localCfg = localCfg
+    self.localCfg = LocalConfiguration()
     self.localCfg.setUsageMessage(self.doc)
     self.showHelp = self.localCfg.showHelp
 

@@ -79,7 +79,7 @@ class Params(object):
 def main(self):
   params = Params()
 
-  # from DIRAC.Core.Base import Script
+  
   self.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
   self.registerSwitch("i", "version", "Print version", params.showVersion)
   self.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)

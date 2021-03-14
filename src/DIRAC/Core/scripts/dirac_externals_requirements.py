@@ -23,7 +23,7 @@ except ImportError:
   import subprocess as commands
 
 from diraccfg import CFG
-# from DIRAC.Core.Base import Script
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger, rootPath, S_OK
 

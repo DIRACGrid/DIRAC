@@ -21,7 +21,7 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-# from DIRAC.Core.Base import Script
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup

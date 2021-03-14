@@ -329,11 +329,9 @@ class LocalConfiguration(object):
         optionPath = self.__getAbsolutePath(optionTuple[0])
         if not gConfigurationData.extractOptionFromCFG(optionPath):
           gConfigurationData.setOptionInCFG(optionPath, optionTuple[1])
-
       self.__initLogger(self.componentName, self.loggingSection)
       if not retVal['OK']:
         return retVal
-
       retVal = self.__checkMandatoryOptions()
       if not retVal['OK']:
         return retVal

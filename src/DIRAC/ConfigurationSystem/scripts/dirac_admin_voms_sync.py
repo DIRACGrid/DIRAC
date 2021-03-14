@@ -15,7 +15,7 @@ __RCSID__ = "$Id$"
 import six
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK
-# from DIRAC.Core.Base import Script
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy

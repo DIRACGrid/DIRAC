@@ -11,7 +11,7 @@ from prompt_toolkit import prompt
 import DIRAC
 
 from DIRAC import gLogger
-# from DIRAC.Core.Base import Script
+
 
 __RCSID__ = "$Id$"
 

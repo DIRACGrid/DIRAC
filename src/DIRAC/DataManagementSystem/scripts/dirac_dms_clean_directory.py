@@ -20,7 +20,7 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as DIRACExit, gLogger
-# from DIRAC.Core.Base import Script
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
