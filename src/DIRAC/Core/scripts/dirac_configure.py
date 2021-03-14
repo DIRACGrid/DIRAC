@@ -76,7 +76,6 @@ import six
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
