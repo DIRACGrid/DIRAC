@@ -28,9 +28,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -39,7 +39,7 @@ def main():
   errorList = []
 
   if len(args) < 1:
-    Script.showHelp()
+    self.showHelp()
 
   choice = six.moves.input("Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join(args))
   choice = choice.lower()

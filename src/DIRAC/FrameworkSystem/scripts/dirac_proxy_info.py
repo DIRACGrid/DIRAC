@@ -76,21 +76,21 @@ class Params(object):
 
 
 @DIRACScript()
-def main():
+def main(self):
   params = Params()
 
-  from DIRAC.Core.Base import Script
-  Script.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
-  Script.registerSwitch("i", "version", "Print version", params.showVersion)
-  Script.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)
-  Script.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck)
-  Script.registerSwitch("x", "nocs", "Disable CS", params.disableCS)
-  Script.registerSwitch("e", "steps", "Show steps info", params.showSteps)
-  Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck)
-  Script.registerSwitch("m", "uploadedinfo", "Show uploaded proxies info", params.setManagerInfo)
+  # from DIRAC.Core.Base import Script
+  self.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
+  self.registerSwitch("i", "version", "Print version", params.showVersion)
+  self.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)
+  self.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck)
+  self.registerSwitch("x", "nocs", "Disable CS", params.disableCS)
+  self.registerSwitch("e", "steps", "Show steps info", params.showSteps)
+  self.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck)
+  self.registerSwitch("m", "uploadedinfo", "Show uploaded proxies info", params.setManagerInfo)
 
-  Script.disableCS()
-  Script.parseCommandLine()
+  self.disableCS()
+  self.parseCommandLine()
 
   from DIRAC.Core.Utilities.NTP import getClockDeviation
   from DIRAC import gLogger
@@ -101,7 +101,7 @@ def main():
   from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
   if params.csEnabled:
-    retVal = Script.enableCS()
+    retVal = self.enableCS()
     if not retVal['OK']:
       print("Cannot contact CS to get user list")
 

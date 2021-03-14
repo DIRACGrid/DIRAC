@@ -17,8 +17,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
   from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
   shell = CSShellCLI()
   shell.cmdloop()

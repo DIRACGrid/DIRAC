@@ -20,13 +20,13 @@ from __future__ import division
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
-def main():
-  from DIRAC.Core.Base import Script
+def main(self):
+  # from DIRAC.Core.Base import Script
 
-  Script.registerSwitch('', 'Path=', '    Path to search for')
-  Script.registerSwitch('', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched')
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.registerSwitch('', 'Path=', '    Path to search for')
+  self.registerSwitch('', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched')
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   import DIRAC
   from DIRAC import gLogger
@@ -36,7 +36,7 @@ def main():
 
   path = '/'
   seList = None
-  for opt, val in Script.getUnprocessedSwitches():
+  for opt, val in self.getUnprocessedSwitches():
     if opt == 'Path':
       path = val
     elif opt == 'SE':
@@ -55,9 +55,9 @@ def main():
   typeDict.update(FILE_STANDARD_METAKEYS)
 
   if len(args) < 1:
-    print("Error: No argument provided\n%s:" % Script.scriptName)
+    print("Error: No argument provided\n%s:" % self.scriptName)
     gLogger.notice("MetaDataDictionary: \n%s" % str(typeDict))
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   mq = MetaQuery(typeDict=typeDict)
   result = mq.setMetaQuery(args)

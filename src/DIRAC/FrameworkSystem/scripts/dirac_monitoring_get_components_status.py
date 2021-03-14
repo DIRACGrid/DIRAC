@@ -11,9 +11,9 @@ __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   fieldsToShow = ('ComponentName', 'Type', 'Host', 'Port', 'Status', 'Message')
 

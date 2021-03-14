@@ -23,17 +23,17 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
   prodClient = ProductionClient()
 
   # get arguments
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   else:
     prodID = args[0]
     res = prodClient.getProduction(prodID)

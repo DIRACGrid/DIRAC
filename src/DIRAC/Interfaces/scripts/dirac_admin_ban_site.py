@@ -29,9 +29,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
-  Script.parseCommandLine(ignoreErrors=True)
+def main(self):
+  self.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
+  self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit, gConfig, gLogger
   from DIRAC.Core.Utilities.PromptUser import promptUser
@@ -44,17 +44,17 @@ def main():
     elif value.lower() == 'false':
       return False
     else:
-      Script.showHelp()
+      self.showHelp()
 
   email = True
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == "email":
       email = getBoolean(switch[1])
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   if len(args) < 2:
-    Script.showHelp()
+    self.showHelp()
 
   diracAdmin = DiracAdmin()
   exitCode = 0

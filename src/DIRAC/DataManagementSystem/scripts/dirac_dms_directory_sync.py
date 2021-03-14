@@ -30,25 +30,25 @@ from __future__ import print_function
 
 import os
 import DIRAC
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("D", "sync", "Make target directory identical to source")
-  Script.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
-  Script.parseCommandLine(ignoreErrors=False)
+def main(self):
+  self.registerSwitch("D", "sync", "Make target directory identical to source")
+  self.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
+  self.parseCommandLine(ignoreErrors=False)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if len(args) < 1 or len(args) > 3:
-    Script.showHelp()
+    self.showHelp()
 
   sync = False
   parallel = 1
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0].lower() == "s" or switch[0].lower() == "sync":
       sync = True
     if switch[0].lower() == "j" or switch[0].lower() == "parallel":

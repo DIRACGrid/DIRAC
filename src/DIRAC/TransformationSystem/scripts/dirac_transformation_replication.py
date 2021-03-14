@@ -17,18 +17,18 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   """reads command line parameters, makes check and creates replication transformation"""
   from DIRAC import gLogger, exit as dexit
   from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
 
   clip = Params()
-  clip.registerSwitches(Script)
-  Script.parseCommandLine()
+  clip.registerSwitches(self)
+  self.parseCommandLine()
 
   from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
 
-  if not clip.checkSettings(Script)['OK']:
+  if not clip.checkSettings(self)['OK']:
     gLogger.error("ERROR: Missing settings")
     dexit(1)
   for metaValue in clip.metaValues:

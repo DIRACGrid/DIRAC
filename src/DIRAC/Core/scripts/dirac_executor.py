@@ -22,11 +22,8 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 
 
 @DIRACScript()
-def main():
-  localCfg = LocalConfiguration()
-  localCfg.setUsageMessage(__doc__)
-
-  positionalArgs = localCfg.getPositionalArguments()
+def main(self):
+  positionalArgs = self.localCfg.getPositionalArguments()
   if len(positionalArgs) == 0:
     gLogger.fatal("You must specify which executor to run!")
     sys.exit(1)
@@ -36,12 +33,12 @@ def main():
   else:
     mainName = "Framework/MultiExecutor"
 
-  localCfg.setConfigurationForExecutor(mainName)
-  localCfg.addMandatoryEntry("/DIRAC/Setup")
-  localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
-  localCfg.addDefaultEntry("LogLevel", "INFO")
-  localCfg.addDefaultEntry("LogColor", True)
-  resultDict = localCfg.loadUserData()
+  self.localCfg.setConfigurationForExecutor(mainName)
+  self.localCfg.addMandatoryEntry("/DIRAC/Setup")
+  self.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
+  self.localCfg.addDefaultEntry("LogLevel", "INFO")
+  self.localCfg.addDefaultEntry("LogColor", True)
+  resultDict = self.localCfg.loadUserData()
   if not resultDict['OK']:
     gLogger.fatal("There were errors when loading configuration", resultDict['Message'])
     sys.exit(1)

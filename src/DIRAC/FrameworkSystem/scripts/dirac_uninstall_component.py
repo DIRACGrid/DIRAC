@@ -35,21 +35,21 @@ def setForce(opVal):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global force
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   gComponentInstaller.exitOnError = True
 
-  Script.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
+  self.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
+  self.parseCommandLine()
+  args = self.getPositionalArgs()
 
   if len(args) == 1:
     args = args[0].split('/')
 
   if len(args) < 2:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   system = args[0]
   component = args[1]

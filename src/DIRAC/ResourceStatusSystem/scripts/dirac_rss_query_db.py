@@ -34,7 +34,7 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 subLogger = None
 
 
-def registerSwitches():
+def registerSwitches(self):
   """
     Registers all switches that can be used while calling the script from the
     command line interface.
@@ -55,10 +55,10 @@ def registerSwitches():
   )
 
   for switch in switches:
-    Script.registerSwitch('', switch[0], switch[1])
+    self.registerSwitch('', switch[0], switch[1])
 
 
-def registerUsageMessage():
+def registerUsageMessage(self):
   """
     Takes the script __doc__ and adds the DIRAC version to it
   """
@@ -66,16 +66,16 @@ def registerUsageMessage():
   usageMessage = 'DIRAC version: %s \n' % version
   usageMessage += __doc__
 
-  Script.setUsageMessage(usageMessage)
+  self.setUsageMessage(usageMessage)
 
 
-def parseSwitches():
+def parseSwitches(self):
   """
     Parses the arguments passed by the user
   """
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
   if len(args) < 3:
     error("Missing all mandatory 'query', 'element', 'tableType' arguments")
   elif args[0].lower() not in ('select', 'add', 'modify', 'delete'):
@@ -87,7 +87,7 @@ def parseSwitches():
   else:
     query = args[0].lower()
 
-  switches = dict(Script.getUnprocessedSwitches())
+  switches = dict(self.getUnprocessedSwitches())
 
   # Default values
   switches.setdefault('name', None)
@@ -242,7 +242,7 @@ def error(msg):
   subLogger.error("\nERROR:")
   subLogger.error("\t" + msg)
   subLogger.error("\tPlease, check documentation below")
-  Script.showHelp(exitCode=1)
+  self.showHelp(exitCode=1)
 
 
 def confirm(query, matches):
@@ -417,15 +417,15 @@ def run(args, switchDictSet):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global subLogger
 
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization
-  registerSwitches()
-  registerUsageMessage()
-  args, switchDict = parseSwitches()
+  registerSwitches(self)
+  registerUsageMessage(self)
+  args, switchDict = parseSwitches(self)
 
   # Unpack switchDict if 'name' or 'statusType' have multiple values
   switchDictSet = unpack(switchDict)

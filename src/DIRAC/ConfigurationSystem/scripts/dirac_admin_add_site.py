@@ -26,7 +26,7 @@ __RCSID__ = "$Id$"
 
 import six
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
@@ -34,12 +34,12 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   if len(args) < 3:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   diracSiteName = args[0]
   gridSiteName = args[1]

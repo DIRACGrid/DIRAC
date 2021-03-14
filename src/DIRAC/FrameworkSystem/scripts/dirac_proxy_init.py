@@ -34,12 +34,25 @@ from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClie
 __RCSID__ = "$Id$"
 
 
+class Params(ProxyGeneration.CLIParams, ProxyUpload.CLIParams):
 
-class Params(ProxyGeneration.CLIParams):
-
-  addVOMSExt = False
-  uploadProxy = True
-  uploadPilot = False
+  def __init__(self):
+    ProxyUpload.CLIParams.__init__(self)
+    ProxyGeneration.CLIParams.__init__(self)
+    self.addVOMSExt = False
+    self.uploadProxy = True
+    self.uploadPilot = False
+    self.switches = [
+        ("U", "upload",
+         "Upload a long lived proxy to the ProxyManager (deprecated, see --no-upload)"),
+        ("N", "no-upload",
+         "Do not upload a long lived proxy to the ProxyManager", self.disableProxyUpload),
+        ("M", "VOMS", "Add voms extension", self.setVOMSExt)
+    ]
+    self.switches += self.proxyGenerationSwitches
+    for upSwitch in self.proxyUploadSwitches:
+      if upSwitch[0] not in [u[0] for u in self.switches]:
+        self.switches.append(upSwitch)
 
   def setVOMSExt(self, _arg):
     self.addVOMSExt = True
@@ -49,23 +62,11 @@ class Params(ProxyGeneration.CLIParams):
     self.uploadProxy = False
     return S_OK()
 
-  def registerCLISwitches(self):
-    ProxyGeneration.CLIParams.registerCLISwitches(self)
-    Script.registerSwitch(
-        "U",
-        "upload",
-        "Upload a long lived proxy to the ProxyManager (deprecated, see --no-upload)")
-    Script.registerSwitch(
-        "N",
-        "no-upload",
-        "Do not upload a long lived proxy to the ProxyManager",
-        self.disableProxyUpload)
-    Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
-
 
 class ProxyInit(object):
 
-  def __init__(self, piParams):
+  def __init__(self, piParams, script):
+    self.__script = script
     self.__piParams = piParams
     self.__issuerCert = False
     self.__proxyGenerated = False
@@ -128,7 +129,7 @@ class ProxyInit(object):
     """ Creates the proxy on disk
     """
     gLogger.notice("Generating proxy...")
-    resultProxyGenerated = ProxyGeneration.generateProxy(piParams)
+    resultProxyGenerated = ProxyGeneration.generateProxy(self.__piParams, self.__script)
     if not resultProxyGenerated['OK']:
       gLogger.error(resultProxyGenerated['Message'])
       sys.exit(1)
@@ -151,14 +152,12 @@ class ProxyInit(object):
         if issuerCert.getNotAfterDate()['Value'] - datetime.timedelta(minutes=10) < expiry:  # pylint: disable=no-member
           gLogger.info('Proxy with DN "%s" already uploaded' % userDN)
           return S_OK()
+
     gLogger.info("Uploading %s proxy to ProxyManager..." % userDN)
-    upParams = ProxyUpload.CLIParams()
-    upParams.onTheFly = True
-    upParams.proxyLifeTime = issuerCert.getRemainingSecs()['Value'] - 300  # pylint: disable=no-member
-    upParams.rfcIfPossible = self.__piParams.rfc
-    for k in ('certLoc', 'keyLoc', 'userPasswd'):
-      setattr(upParams, k, getattr(self.__piParams, k))
-    resultProxyUpload = ProxyUpload.uploadProxy(upParams)
+    self.__piParams.onTheFly = True
+    self.__piParams.proxyLifeTime = issuerCert.getRemainingSecs()['Value'] - 300  # pylint: disable=no-member
+    self.__piParams.rfcIfPossible = self.__piParams.rfc
+    resultProxyUpload = ProxyUpload.uploadProxy(self.__piParams)
     if not resultProxyUpload['OK']:
       gLogger.error(resultProxyUpload['Message'])
       return resultProxyUpload
@@ -228,8 +227,8 @@ class ProxyInit(object):
       return proxy
 
     self.checkCAs()
-    pI.certLifeTimeCheck()
-    resultProxyWithVOMS = pI.addVOMSExtIfNeeded()
+    self.certLifeTimeCheck()
+    resultProxyWithVOMS = self.addVOMSExtIfNeeded()
     if not resultProxyWithVOMS['OK']:
       if "returning a valid AC for the user" in resultProxyWithVOMS['Message']:
         gLogger.error(resultProxyWithVOMS['Message'])
@@ -242,7 +241,7 @@ class ProxyInit(object):
         return resultProxyWithVOMS
 
     if self.__piParams.uploadProxy:
-      resultProxyUpload = pI.uploadProxy()
+      resultProxyUpload = self.uploadProxy()
       if not resultProxyUpload['OK']:
         if self.__piParams.strict:
           return resultProxyUpload
@@ -251,16 +250,15 @@ class ProxyInit(object):
 
 
 @DIRACScript()
-def main():
-  global piParams, pI
+def main(self):
   piParams = Params()
-  piParams.registerCLISwitches()
+  self.registerSwitches(piParams.switches)
+  self.disableCS()
+  self.parseCommandLine(ignoreErrors=True)
 
-  Script.disableCS()
-  Script.parseCommandLine(ignoreErrors=True)
   DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
 
-  pI = ProxyInit(piParams)
+  pI = ProxyInit(piParams, self)
   resultDoTheMagic = pI.doTheMagic()
   if not resultDoTheMagic['OK']:
     gLogger.fatal(resultDoTheMagic['Message'])

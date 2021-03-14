@@ -71,7 +71,8 @@ def main():
   outputFile = '/tmp/protocol-matrix.csv'
   bidirection = False
   ftsOnly = False
-  for switch in Script.getUnprocessedSwitches():
+
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == 'FromSE':
       fromSE = switch[1].split(',')
     elif switch[0] == 'TargetSE':

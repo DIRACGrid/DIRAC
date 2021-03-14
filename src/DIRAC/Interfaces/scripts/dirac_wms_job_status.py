@@ -28,12 +28,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
-  Script.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
+def main(self):
+  self.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
+  self.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Core.Utilities.Time import toString, date, day
@@ -43,7 +43,7 @@ def main():
   exitCode = 0
 
   jobs = []
-  for key, value in Script.getUnprocessedSwitches():
+  for key, value in self.getUnprocessedSwitches():
     if key.lower() in ('f', 'file'):
       if os.path.exists(value):
         jFile = open(value)
@@ -59,7 +59,7 @@ def main():
       jobs += result['Value']
 
   if len(args) < 1 and not jobs:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   if len(args) > 0:
     jobs += parseArguments(args)

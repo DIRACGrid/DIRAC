@@ -24,7 +24,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 subLogger = None
 
 
-def registerSwitches():
+def registerSwitches(self):
   '''
     Registers all switches that can be used while calling the script from the
     command line interface.
@@ -41,32 +41,32 @@ def registerSwitches():
   )
 
   for switch in switches:
-    Script.registerSwitch('', switch[0], switch[1])
+    self.registerSwitch('', switch[0], switch[1])
 
 
-def registerUsageMessage():
+def registerUsageMessage(self):
   '''
     Takes the script __doc__ and adds the DIRAC version to it
   '''
   usageMessage = '  DIRAC %s\n' % version
   usageMessage += __doc__
 
-  Script.setUsageMessage(usageMessage)
+  self.setUsageMessage(usageMessage)
 
 
-def parseSwitches():
+def parseSwitches(self):
   '''
     Parses the arguments passed by the user
   '''
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
   if args:
     subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
     subLogger.error("Please, check documentation below")
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
-  switches = dict(Script.getUnprocessedSwitches())
+  switches = dict(self.getUnprocessedSwitches())
   switches.setdefault('statusType', None)
   switches.setdefault('VO', 'all')
 
@@ -75,19 +75,19 @@ def parseSwitches():
     if key not in switches:
       subLogger.error("%s Switch missing" % key)
       subLogger.error("Please, check documentation below")
-      Script.showHelp(exitCode=1)
+      self.showHelp(exitCode=1)
 
   if not switches['element'] in ('Site', 'Resource', 'Node'):
     subLogger.error("Found %s as element switch" % switches['element'])
     subLogger.error("Please, check documentation below")
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   statuses = StateMachine.RSSMachine(None).getStates()
 
   if not switches['status'] in statuses:
     subLogger.error("Found %s as element switch" % switches['element'])
     subLogger.error("Please, check documentation below")
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   subLogger.debug("The switches used are:")
   map(subLogger.debug, switches.items())
@@ -242,16 +242,16 @@ def run(switchDict):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global subLogger
   global registerUsageMessage
 
   subLogger = gLogger.getSubLogger(__file__)
 
   # Script initialization
-  registerSwitches()
-  registerUsageMessage()
-  switchDict = parseSwitches()
+  registerSwitches(self)
+  registerUsageMessage(self)
+  switchDict = parseSwitches(self)
   switchDictSets = unpack(switchDict)
 
   # Run script

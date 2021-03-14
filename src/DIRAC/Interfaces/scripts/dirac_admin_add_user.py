@@ -30,23 +30,23 @@ userGroups = []
 def setUserName(arg):
   global userName
   if userName or not arg:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   userName = arg
 
 
 def setUserDN(arg):
   global userDN
   if userDN or not arg:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   userDN = arg
 
 
 def setUserMail(arg):
   global userMail
   if userMail or not arg:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   if not arg.find('@') > 0:
-    Script.gLogger.error('Not a valid mail address', arg)
+    self.gLogger.error('Not a valid mail address', arg)
     DIRAC.exit(-1)
   userMail = arg
 
@@ -54,32 +54,32 @@ def setUserMail(arg):
 def addUserGroup(arg):
   global userGroups
   if not arg:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   if arg not in userGroups:
     userGroups.append(arg)
 
 
 @DIRACScript()
-def main():
+def main(self):
   global userName
   global userDN
   global userMail
   global userGroups
-  Script.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName)
-  Script.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', setUserDN)
-  Script.registerSwitch('M:', 'UserMail:', 'eMail of the user (Mandatory)', setUserMail)
-  Script.registerSwitch(
+  self.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName)
+  self.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', setUserDN)
+  self.registerSwitch('M:', 'UserMail:', 'eMail of the user (Mandatory)', setUserMail)
+  self.registerSwitch(
       'G:',
       'UserGroup:',
       'Name of the Group for the User (Allow Multiple instances or None)',
       addUserGroup)
 
-  Script.parseCommandLine(ignoreErrors=True)
+  self.parseCommandLine(ignoreErrors=True)
 
   if userName is None or userDN is None or userMail is None:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -97,7 +97,7 @@ def main():
     else:
       pName = pl[0]
       pValue = "=".join(pl[1:])
-      Script.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      self.gLogger.info("Setting property %s to %s" % (pName, pValue))
       userProps[pName] = pValue
 
   if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=True)['OK']:
@@ -110,7 +110,7 @@ def main():
       exitCode = 255
 
   for error in errorList:
-    Script.gLogger.error("%s: %s" % error)
+    self.gLogger.error("%s: %s" % error)
 
   DIRAC.exit(exitCode)
 

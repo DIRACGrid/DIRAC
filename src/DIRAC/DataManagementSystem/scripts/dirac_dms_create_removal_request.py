@@ -24,12 +24,12 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=False)
+def main(self):
+  self.parseCommandLine(ignoreErrors=False)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if len(args) < 2:
-    Script.showHelp()
+    self.showHelp()
 
   targetSE = args.pop(0)
 
@@ -51,7 +51,7 @@ def main():
     if not se.valid:
       print(se.errorReason)
       print()
-      Script.showHelp()
+      self.showHelp()
 
   from DIRAC.RequestManagementSystem.Client.Request import Request
   from DIRAC.RequestManagementSystem.Client.Operation import Operation

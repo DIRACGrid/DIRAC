@@ -27,17 +27,17 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("", "Status=", "Primary status")
-  Script.registerSwitch("", "MinorStatus=", "Secondary status")
-  Script.registerSwitch("", "ApplicationStatus=", "Application status")
-  Script.registerSwitch("", "Site=", "Execution site")
-  Script.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
-  Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
-  Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
-  Script.registerSwitch("", "File=", "File name,if not specified default is std.out ")
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.registerSwitch("", "Status=", "Primary status")
+  self.registerSwitch("", "MinorStatus=", "Secondary status")
+  self.registerSwitch("", "ApplicationStatus=", "Application status")
+  self.registerSwitch("", "Site=", "Execution site")
+  self.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
+  self.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
+  self.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
+  self.registerSwitch("", "File=", "File name,if not specified default is std.out ")
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   # Default values
   status = None
@@ -50,11 +50,11 @@ def main():
   filename = 'std.out'
 
   if len(args) != 1:
-    Script.showHelp()
+    self.showHelp()
 
   searchstring = str(args[0])
 
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0].lower() == "status":
       status = switch[1]
     elif switch[0].lower() == "minorstatus":

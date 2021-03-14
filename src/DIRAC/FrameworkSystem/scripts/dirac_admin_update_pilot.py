@@ -20,23 +20,23 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch(
+def main(self):
+  self.registerSwitch(
       "v:",
       "vo=",
       "Location of pilot version in CS /Operations/<vo>/Pilot/Version"
       " (default value specified in CS under /DIRAC/DefaultSetup)"
   )
 
-  Script.parseCommandLine(ignoreErrors=False)
+  self.parseCommandLine(ignoreErrors=False)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if len(args) < 1 or len(args) > 2:
-    Script.showHelp()
+    self.showHelp()
 
   version = args[0]
   vo = None
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == "v" or switch[0] == "vo":
       vo = switch[1]
 

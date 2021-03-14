@@ -24,7 +24,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
@@ -55,16 +55,16 @@ def country(arg):
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch(
+def main(self):
+  self.registerSwitch(
       "C",
       "country",
       "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)",
       sortBy)
-  Script.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
+  self.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   result = getProxyInfo()
   if not result["OK"]:
@@ -123,7 +123,7 @@ def main():
     DIRACExit(0)
 
   timestamp = toString(dateTime())
-  stamp = "Site names are sorted by %s script at %s" % (Script.scriptName, timestamp)
+  stamp = "Site names are sorted by %s script at %s" % (self.scriptName, timestamp)
   cs.setOptionComment("/Resources/Sites", stamp)
 
   result = cs.commit()

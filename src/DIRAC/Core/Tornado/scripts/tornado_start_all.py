@@ -30,7 +30,6 @@ def main():
   from DIRAC import gConfig
   from DIRAC.ConfigurationSystem.Client import PathFinder
   from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-  from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
   from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
   from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -43,13 +42,12 @@ def main():
     gLogger.fatal("You can't run the CS and services in the same server!")
     sys.exit(0)
 
-  localCfg = LocalConfiguration()
-  localCfg.setConfigurationForServer('Tornado/Tornado')
-  localCfg.addMandatoryEntry("/DIRAC/Setup")
-  localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
-  localCfg.addDefaultEntry("LogLevel", "INFO")
-  localCfg.addDefaultEntry("LogColor", True)
-  resultDict = localCfg.loadUserData()
+  self.localCfg.setConfigurationForServer('Tornado/Tornado')
+  self.localCfg.addMandatoryEntry("/DIRAC/Setup")
+  self.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
+  self.localCfg.addDefaultEntry("LogLevel", "INFO")
+  self.localCfg.addDefaultEntry("LogColor", True)
+  resultDict = self.localCfg.loadUserData()
   if not resultDict['OK']:
     gLogger.initialize("Tornado", "/")
     gLogger.error("There were errors when loading configuration", resultDict['Message'])

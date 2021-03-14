@@ -15,7 +15,7 @@ import os
 
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
@@ -31,7 +31,7 @@ __RCSID__ = '$Id$'
 class CreateMovingRequest(object):
   """Create the request to move files from one SE to another."""
 
-  def __init__(self):
+  def __init__(self, script):
     """Constructor."""
     self.requests = []
     self._reqClient = None
@@ -48,7 +48,7 @@ class CreateMovingRequest(object):
                    'Ensure the LFNs are migrated to tape before removing any replicas'),
                   ('X', 'Execute', 'Put Requests, else dryrun'),
                   ]
-    self.registerSwitchesAndParseCommandLine()
+    self.registerSwitchesAndParseCommandLine(script)
     self.getLFNList()
     self.getLFNMetadata()
 
@@ -88,7 +88,7 @@ class CreateMovingRequest(object):
     """Return the lfn folder path where to find the files of the request."""
     return self.switches.get('Path', None)
 
-  def registerSwitchesAndParseCommandLine(self):
+  def registerSwitchesAndParseCommandLine(self, script):
     """Register the default plus additional parameters and parse options.
 
     :param list options: list of three tuple for options to add to the script
@@ -96,15 +96,15 @@ class CreateMovingRequest(object):
     :param str opName
     """
     for short, longOption, doc in self.options:
-      Script.registerSwitch(short + ':' if short else '', longOption + '=', doc)
+      script.registerSwitch(short + ':' if short else '', longOption + '=', doc)
     for short, longOption, doc in self.flags:
-      Script.registerSwitch(short, longOption, doc)
+      script.registerSwitch(short, longOption, doc)
       self.switches[longOption] = False
-    Script.parseCommandLine()
-    if Script.getPositionalArgs():
-      Script.showHelp(exitCode=1)
+    script.parseCommandLine()
+    if script.getPositionalArgs():
+      script.showHelp(exitCode=1)
 
-    for switch in Script.getUnprocessedSwitches():
+    for switch in script.getUnprocessedSwitches():
       for short, longOption, doc in self.options:
         if switch[0] == short or switch[0].lower() == longOption.lower():
           sLog.verbose('Found switch %r with value %r' % (longOption, switch[1]))
@@ -284,9 +284,9 @@ class CreateMovingRequest(object):
 
 
 @DIRACScript()
-def main():
+def main(self):
   try:
-    CMR = CreateMovingRequest()
+    CMR = CreateMovingRequest(self)
     CMR.run()
   except Exception as e:
     if LogLevels.getLevelValue(sLog.getLevel()) <= LogLevels.VERBOSE:

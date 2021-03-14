@@ -21,7 +21,7 @@ Site = ''
 
 
 @DIRACScript()
-def main():
+def main(self):
   global ceName
   global Queue
   global Site
@@ -41,9 +41,9 @@ def main():
     global Queue
     Queue = args
 
-  Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
-  Script.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
-  Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
+  self.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
+  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
+  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
 
   Script.parseCommandLine(ignoreErrors=True)
 

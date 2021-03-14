@@ -31,13 +31,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
-  Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
-  Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
+def main(self):
+  self.registerSwitch("D:", "Dir=", "Store the output in this directory")
+  self.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
+  self.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   from DIRAC.Core.Utilities.Time import toString, date, day
@@ -50,7 +50,7 @@ def main():
   outputDir = None
   group = None
   jobs = []
-  for sw, value in Script.getUnprocessedSwitches():
+  for sw, value in self.getUnprocessedSwitches():
     if sw in ('D', 'Dir'):
       outputDir = value
     elif sw.lower() in ('f', 'file'):

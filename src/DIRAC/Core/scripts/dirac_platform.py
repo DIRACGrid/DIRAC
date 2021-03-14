@@ -156,7 +156,7 @@ else:
   from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
   @DIRACScript()
-  def main():
+  def main(self):
     print(getPlatformString())
 
 

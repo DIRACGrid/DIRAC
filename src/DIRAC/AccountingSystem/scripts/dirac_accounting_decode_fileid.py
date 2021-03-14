@@ -24,16 +24,16 @@ from six.moves.urllib_parse import parse_qs
 from six.moves.urllib import parse as urlparse
 
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
-  Script.parseCommandLine()
+  self.parseCommandLine()
 
-  fileIds = Script.getPositionalArgs()
+  fileIds = self.getPositionalArgs()
 
   for fileId in fileIds:
     # Try to find if it's a url

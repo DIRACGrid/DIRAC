@@ -28,40 +28,40 @@ switchDict = {}
 DEFAULT_STATUS = ""
 
 
-def registerSwitches():
+def registerSwitches(self):
   '''
     Registers all switches that can be used while calling the script from the
     command line interface.
   '''
 
-  Script.registerSwitch('', 'init', 'Initialize the element to the status in the CS ( applicable for StorageElements )')
-  Script.registerSwitch('', 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`')
-  Script.registerSwitch('', 'defaultStatus=', 'Default element status if not given in the CS')
+  self.registerSwitch('', 'init', 'Initialize the element to the status in the CS ( applicable for StorageElements )')
+  self.registerSwitch('', 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`')
+  self.registerSwitch('', 'defaultStatus=', 'Default element status if not given in the CS')
 
 
-def registerUsageMessage():
+def registerUsageMessage(self):
   '''
     Takes the script __doc__ and adds the DIRAC version to it
   '''
   usageMessage = 'DIRAC %s\n' % version
   usageMessage += __doc__
 
-  Script.setUsageMessage(usageMessage)
+  self.setUsageMessage(usageMessage)
 
 
-def parseSwitches():
+def parseSwitches(self):
   '''
     Parses the arguments passed by the user
   '''
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
   if args:
     subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
     subLogger.error("Please, check documentation below")
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
-  switches = dict(Script.getUnprocessedSwitches())
+  switches = dict(self.getUnprocessedSwitches())
 
   # Default values
   switches.setdefault('element', None)
@@ -69,7 +69,7 @@ def parseSwitches():
   if not switches['element'] in ('all', 'Site', 'Resource', 'Node', None):
     subLogger.error("Found %s as element switch" % switches['element'])
     subLogger.error("Please, check documentation below")
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   subLogger.debug("The switches used are:")
   map(subLogger.debug, switches.items())
@@ -252,15 +252,15 @@ def run():
 
 
 @DIRACScript()
-def main():
+def main(self):
   global subLogger
   global switchDict
   global DEFAULT_STATUS
 
   subLogger = gLogger.getSubLogger(__file__)
-  registerSwitches()
-  registerUsageMessage()
-  switchDict = parseSwitches()
+  registerSwitches(self)
+  registerUsageMessage(self)
+  switchDict = parseSwitches(self)
   DEFAULT_STATUS = switchDict.get('defaultStatus', 'Banned')
 
   # Run script

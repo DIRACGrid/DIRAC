@@ -24,13 +24,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.registerSwitch("D:", "Dir=", "Store the output in this directory")
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()
@@ -38,7 +38,7 @@ def main():
   errorList = []
 
   outputDir = ''
-  for sw, v in Script.getUnprocessedSwitches():
+  for sw, v in self.getUnprocessedSwitches():
     if sw in ('D', 'Dir'):
       outputDir = v
 

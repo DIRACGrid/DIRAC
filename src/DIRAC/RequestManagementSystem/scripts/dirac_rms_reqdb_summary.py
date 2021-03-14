@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 

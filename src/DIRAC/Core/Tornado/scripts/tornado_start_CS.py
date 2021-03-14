@@ -29,7 +29,6 @@ def main():
 
   from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
   from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-  from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
   from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
   from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
@@ -38,12 +37,11 @@ def main():
   if gConfigurationData.isMaster():
     gRefresher.disable()
 
-  localCfg = LocalConfiguration()
-  localCfg.addMandatoryEntry("/DIRAC/Setup")
-  localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
-  localCfg.addDefaultEntry("LogLevel", "INFO")
-  localCfg.addDefaultEntry("LogColor", True)
-  resultDict = localCfg.loadUserData()
+  self.localCfg.addMandatoryEntry("/DIRAC/Setup")
+  self.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
+  self.localCfg.addDefaultEntry("LogLevel", "INFO")
+  self.localCfg.addDefaultEntry("LogColor", True)
+  resultDict = self.localCfg.loadUserData()
   if not resultDict['OK']:
     gLogger.initialize("Tornado-CS", "/")
     gLogger.error("There were errors when loading configuration", resultDict['Message'])

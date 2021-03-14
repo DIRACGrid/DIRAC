@@ -34,14 +34,14 @@ def setQueue(args):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global ceName
   global Site
   global Queue
-  Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
-  Script.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
-  Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
-  Script.parseCommandLine(ignoreErrors=True)
+  self.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
+  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
+  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
+  self.parseCommandLine(ignoreErrors=True)
 
   gLogger.info("Getting number of processors")
   numberOfProcessor = JobParameters.getNumberOfProcessors(Site, ceName, Queue)

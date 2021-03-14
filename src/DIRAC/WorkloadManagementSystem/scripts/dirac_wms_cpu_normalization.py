@@ -30,15 +30,15 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
-  Script.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
-  Script.parseCommandLine(ignoreErrors=True)
+def main(self):
+  self.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
+  self.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
+  self.parseCommandLine(ignoreErrors=True)
 
   update = False
   configFile = None
 
-  for unprocSw in Script.getUnprocessedSwitches():
+  for unprocSw in self.getUnprocessedSwitches():
     if unprocSw[0] in ("U", "Update"):
       update = True
     elif unprocSw[0] in ("R", "Reconfig"):

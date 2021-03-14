@@ -39,14 +39,14 @@ def setExcludedHosts(value):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global excludedHosts
-  Script.registerSwitch(
+  self.registerSwitch(
       "e:",
       "exclude=",
       "Comma separated list of hosts to be excluded from the scanning process",
       setExcludedHosts)
-  Script.parseCommandLine(ignoreErrors=False)
+  self.parseCommandLine(ignoreErrors=False)
 
   componentType = ''
 

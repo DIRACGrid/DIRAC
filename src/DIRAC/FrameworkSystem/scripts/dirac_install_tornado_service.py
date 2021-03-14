@@ -54,7 +54,7 @@ def setSpecialOption(optVal):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global overwrite
   global specialOptions
   global module
@@ -63,17 +63,17 @@ def main():
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   gComponentInstaller.exitOnError = True
 
-  Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
-  Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
-  Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
+  self.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
+  self.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
+  self.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
+  self.parseCommandLine()
+  args = self.getPositionalArgs()
 
   if len(args) == 1:
     args = args[0].split('/')
 
   if len(args) != 2:
-    Script.showHelp()
+    self.showHelp()
     DIRACexit(1)
 
   system = args[0]

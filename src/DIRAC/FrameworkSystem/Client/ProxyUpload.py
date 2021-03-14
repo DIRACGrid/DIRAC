@@ -11,21 +11,31 @@ from prompt_toolkit import prompt
 import DIRAC
 
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 
 __RCSID__ = "$Id$"
 
 
 class CLIParams(object):
 
-  proxyLifeTime = 2592000
-  certLoc = False
-  keyLoc = False
-  proxyLoc = False
-  onTheFly = False
-  stdinPasswd = False
-  rfcIfPossible = False
-  userPasswd = ""
+  def __init__(self):
+    self.proxyLifeTime = 2592000
+    self.certLoc = False
+    self.keyLoc = False
+    self.proxyLoc = False
+    self.onTheFly = False
+    self.stdinPasswd = False
+    self.rfcIfPossible = False
+    self.userPasswd = ""
+    self.proxyUploadSwitches = [
+        ("v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime),
+        ("C:", "Cert=", "File to use as user certificate", self.setCertLocation),
+        ("K:", "Key=", "File to use as user key", self.setKeyLocation),
+        ("P:", "Proxy=", "File to use as proxy", self.setProxyLocation),
+        ("f", "onthefly", "Generate a proxy on the fly", self.setOnTheFly),
+        ("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd),
+        ("i", "version", "Print version", self.showVersion)
+    ]
 
   def __str__(self):
     data = []
@@ -84,16 +94,6 @@ class CLIParams(object):
     gLogger.notice(" ", __RCSID__)
     sys.exit(0)
     return DIRAC.S_OK()
-
-  def registerCLISwitches(self):
-    Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime)
-    Script.registerSwitch("C:", "Cert=", "File to use as user certificate", self.setCertLocation)
-    Script.registerSwitch("K:", "Key=", "File to use as user key", self.setKeyLocation)
-    Script.registerSwitch("P:", "Proxy=", "File to use as proxy", self.setProxyLocation)
-    Script.registerSwitch("f", "onthefly", "Generate a proxy on the fly", self.setOnTheFly)
-    Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
-    Script.registerSwitch("i", "version", "Print version", self.showVersion)
-    Script.addDefaultOptionValue("LogLevel", "always")
 
 
 from DIRAC import S_ERROR

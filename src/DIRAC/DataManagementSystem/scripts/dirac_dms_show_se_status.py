@@ -20,7 +20,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 from DIRAC import S_OK, exit as DIRACexit
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
@@ -54,16 +54,16 @@ def setNoVO(arg):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global vo
   global noVOFlag
   global allVOsFlag
 
-  Script.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
-  Script.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)
-  Script.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", setNoVO)
+  self.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
+  self.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)
+  self.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", setNoVO)
 
-  Script.parseCommandLine()
+  self.parseCommandLine()
 
   from DIRAC import gConfig, gLogger
   from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus

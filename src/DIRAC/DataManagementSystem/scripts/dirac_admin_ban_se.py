@@ -15,12 +15,12 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   read = True
   write = True
   check = True
@@ -28,20 +28,20 @@ def main():
   sites = []
   mute = False
 
-  Script.registerSwitch("r", "BanRead", "     Ban only reading from the storage element")
-  Script.registerSwitch("w", "BanWrite", "     Ban writing to the storage element")
-  Script.registerSwitch("k", "BanCheck", "     Ban check access to the storage element")
-  Script.registerSwitch("v", "BanRemove", "    Ban remove access to the storage element")
-  Script.registerSwitch("a", "All", "    Ban all access to the storage element")
-  Script.registerSwitch("m", "Mute", "     Do not send email")
-  Script.registerSwitch(
+  self.registerSwitch("r", "BanRead", "     Ban only reading from the storage element")
+  self.registerSwitch("w", "BanWrite", "     Ban writing to the storage element")
+  self.registerSwitch("k", "BanCheck", "     Ban check access to the storage element")
+  self.registerSwitch("v", "BanRemove", "    Ban remove access to the storage element")
+  self.registerSwitch("a", "All", "    Ban all access to the storage element")
+  self.registerSwitch("m", "Mute", "     Do not send email")
+  self.registerSwitch(
       "S:",
       "Site=",
       "     Ban all SEs associate to site (note that if writing is allowed, check is always allowed)")
-  Script.parseCommandLine(ignoreErrors=True)
+  self.parseCommandLine(ignoreErrors=True)
 
-  ses = Script.getPositionalArgs()
-  for switch in Script.getUnprocessedSwitches():
+  ses = self.getPositionalArgs()
+  for switch in self.getUnprocessedSwitches():
     if switch[0].lower() in ("r", "banread"):
       write = False
       check = False

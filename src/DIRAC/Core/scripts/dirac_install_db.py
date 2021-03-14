@@ -15,16 +15,16 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine()
+  args = self.getPositionalArgs()
   if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   # Script imports
   from DIRAC import gConfig

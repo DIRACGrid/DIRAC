@@ -28,14 +28,14 @@ __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("t", "test", "Only test. Don't commit changes")
-  Script.parseCommandLine(ignoreErrors=True)
+def main(self):
+  self.registerSwitch("t", "test", "Only test. Don't commit changes")
+  self.parseCommandLine(ignoreErrors=True)
 
-  args = Script.getExtraCLICFGFiles()
+  args = self.getExtraCLICFGFiles()
 
   if len(args) < 1:
-    Script.showHelp()
+    self.showHelp()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -43,7 +43,7 @@ def main():
   testOnly = False
   errorList = []
 
-  for unprocSw in Script.getUnprocessedSwitches():
+  for unprocSw in self.getUnprocessedSwitches():
     if unprocSw[0] in ("t", "test"):
       testOnly = True
 

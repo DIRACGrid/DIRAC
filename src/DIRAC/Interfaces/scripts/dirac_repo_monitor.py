@@ -20,12 +20,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=False)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=False)
+  args = self.getPositionalArgs()
 
   if len(args) != 1:
-    Script.showHelp()
+    self.showHelp()
 
   repoLocation = args[0]
   from DIRAC.Interfaces.API.Dirac import Dirac

@@ -28,13 +28,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   if len(args) < 1:
-    Script.showHelp()
+    self.showHelp()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

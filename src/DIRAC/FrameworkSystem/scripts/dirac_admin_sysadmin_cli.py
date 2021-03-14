@@ -13,16 +13,16 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   host = None
-  Script.registerSwitch("H:", "host=", "   Target host")
-  Script.parseCommandLine(ignoreErrors=False)
-  for switch in Script.getUnprocessedSwitches():
+  self.registerSwitch("H:", "host=", "   Target host")
+  self.parseCommandLine(ignoreErrors=False)
+  for switch in self.getUnprocessedSwitches():
     if switch[0].lower() == "h" or switch[0].lower() == "host":
       host = switch[1]
 

@@ -29,15 +29,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
-  Script.registerSwitch("f", "force", "create the user if it doesn't exist")
-  Script.parseCommandLine(ignoreErrors=True)
+def main(self):
+  self.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
+  self.registerSwitch("f", "force", "create the user if it doesn't exist")
+  self.parseCommandLine(ignoreErrors=True)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   if len(args) < 3:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -46,7 +46,7 @@ def main():
   errorList = []
 
   userProps = {}
-  for unprocSw in Script.getUnprocessedSwitches():
+  for unprocSw in self.getUnprocessedSwitches():
     if unprocSw[0] in ("f", "force"):
       forceCreation = True
     elif unprocSw[0] in ("p", "property"):

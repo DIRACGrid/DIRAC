@@ -22,17 +22,17 @@ __RCSID__ = "$Id$"
 import os
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   unit = 'GB'
-  Script.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
+  self.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
 
-  Script.parseCommandLine(ignoreErrors=False)
-  for switch in Script.getUnprocessedSwitches():
+  self.parseCommandLine(ignoreErrors=False)
+  for switch in self.getUnprocessedSwitches():
     if switch[0].lower() == "u" or switch[0].lower() == "unit":
       unit = switch[1]
   scaleDict = {'MB': 1000 * 1000.0,
@@ -44,7 +44,7 @@ def main():
     DIRAC.exit(2)
   scaleFactor = scaleDict[unit]
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   lfns = []
   for inputFileName in args:
     if os.path.exists(inputFileName):

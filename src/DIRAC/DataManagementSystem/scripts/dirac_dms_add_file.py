@@ -40,7 +40,7 @@ __RCSID__ = "$Id$"
 
 import os
 from DIRAC import S_OK
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 overwrite = False
@@ -68,13 +68,13 @@ def getDict(item_list):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global overwrite
-  Script.registerSwitch("f", "force", "Force overwrite of existing file", setOverwrite)
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.registerSwitch("f", "force", "Force overwrite of existing file", setOverwrite)
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
   if len(args) < 1 or len(args) > 4:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   from DIRAC import gLogger

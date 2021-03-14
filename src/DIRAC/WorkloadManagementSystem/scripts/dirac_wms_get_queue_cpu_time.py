@@ -18,13 +18,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known")
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.registerSwitch("C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known")
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   CPUNormalizationFactor = 0.0
-  for unprocSw in Script.getUnprocessedSwitches():
+  for unprocSw in self.getUnprocessedSwitches():
     if unprocSw[0] in ("C", "CPUNormalizationFactor"):
       CPUNormalizationFactor = float(unprocSw[1])
 

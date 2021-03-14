@@ -34,29 +34,29 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   import os
 
   import DIRAC
   from DIRAC import gConfig
-  from DIRAC.Core.Base import Script
+  # from DIRAC.Core.Base import Script
   from DIRAC.Core.Security.ProxyInfo import getProxyInfo
   from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
   from DIRAC.Core.Utilities.PrettyPrint import printTable
 
   def version(arg):
-    Script.disableCS()
+    self.disableCS()
     print(DIRAC.version)
     DIRAC.exit(0)
 
   def platform(arg):
-    Script.disableCS()
+    self.disableCS()
     print(DIRAC.getPlatform())
     DIRAC.exit(0)
 
-  Script.registerSwitch("v", "version", "print version of current DIRAC installation", version)
-  Script.registerSwitch("p", "platform", "print platform of current DIRAC installation", platform)
-  Script.parseCommandLine(ignoreErrors=True)
+  self.registerSwitch("v", "version", "print version of current DIRAC installation", version)
+  self.registerSwitch("p", "platform", "print platform of current DIRAC installation", platform)
+  self.parseCommandLine(ignoreErrors=True)
 
   records = []
 

@@ -17,7 +17,7 @@ import shlex
 
 import six
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates
@@ -28,7 +28,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getDIR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 
-def processScriptSwitches():
+def processScriptSwitches(self):
 
   global vo, dry, doCEs, hostURL
 
@@ -257,13 +257,13 @@ def handler(signum, frame):
 
 
 @DIRACScript()
-def main():
+def main(self):
   signal.signal(signal.SIGTERM, handler)
   signal.signal(signal.SIGINT, handler)
 
   global vo, dry, doCEs, ceBdiiDict
 
-  processScriptSwitches()
+  processScriptSwitches(self)
 
   if not vo:
     gLogger.error('No VO specified')

@@ -27,15 +27,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
   from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 
   if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   res = getCESiteMapping(args[0])
   if not res['OK']:

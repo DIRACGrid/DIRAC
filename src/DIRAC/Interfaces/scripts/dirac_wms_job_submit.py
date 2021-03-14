@@ -30,17 +30,17 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("f:", "File=", "Writes job ids to file <value>")
-  Script.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.registerSwitch("f:", "File=", "Writes job ids to file <value>")
+  self.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   if len(args) < 1:
-    Script.showHelp()
+    self.showHelp()
 
   from DIRAC.Interfaces.API.Dirac import Dirac
-  unprocessed_switches = Script.getUnprocessedSwitches()
+  unprocessed_switches = self.getUnprocessedSwitches()
   use_repo = False
   repo_name = ""
   for sw, value in unprocessed_switches:

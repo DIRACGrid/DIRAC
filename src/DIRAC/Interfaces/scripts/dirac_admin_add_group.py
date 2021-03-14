@@ -31,14 +31,14 @@ userNames = []
 def setGroupName(arg):
   global groupName
   if groupName or not arg:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   groupName = arg
 
 
 def addUserName(arg):
   global userNames
   if not arg:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   if arg not in userNames:
     userNames.append(arg)
 
@@ -46,34 +46,34 @@ def addUserName(arg):
 def addProperty(arg):
   global groupProperties
   if not arg:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   if arg not in groupProperties:
     groupProperties.append(arg)
 
 
 @DIRACScript()
-def main():
+def main(self):
   global groupName
   global groupProperties
   global userNames
-  Script.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
-  Script.registerSwitch(
+  self.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
+  self.registerSwitch(
       'U:',
       'UserName:',
       'Short Name of user to be added to the Group (Allow Multiple instances or None)',
       addUserName)
-  Script.registerSwitch(
+  self.registerSwitch(
       'P:',
       'Property:',
       'Property to be added to the Group (Allow Multiple instances or None)',
       addProperty)
 
-  Script.parseCommandLine(ignoreErrors=True)
+  self.parseCommandLine(ignoreErrors=True)
 
   if groupName is None:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -94,7 +94,7 @@ def main():
     else:
       pName = pl[0]
       pValue = "=".join(pl[1:])
-      Script.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      self.gLogger.info("Setting property %s to %s" % (pName, pValue))
       groupProps[pName] = pValue
 
   if not diracAdmin.csModifyGroup(groupName, groupProps, createIfNonExistant=True)['OK']:
@@ -107,7 +107,7 @@ def main():
       exitCode = 255
 
   for error in errorList:
-    Script.gLogger.error("%s: %s" % error)
+    self.gLogger.error("%s: %s" % error)
 
   DIRAC.exit(exitCode)
 

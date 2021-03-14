@@ -51,19 +51,19 @@ def setExtendedPrint(_arg):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global extendedPrint
-  Script.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
-  Script.parseCommandLine(ignoreErrors=True)
+  self.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
+  self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.Dirac import Dirac
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   if len(args) < 1:
-    Script.showHelp()
+    self.showHelp()
 
   diracAdmin = DiracAdmin()
   dirac = Dirac()

@@ -40,12 +40,12 @@ def setJobID(optVal):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global uuid
   global jobid
-  Script.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', setUUID)
-  Script.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', setJobID)
-  Script.parseCommandLine()
+  self.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', setUUID)
+  self.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', setJobID)
+  self.parseCommandLine()
 
   from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 

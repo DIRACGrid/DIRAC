@@ -22,14 +22,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
-  users = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine()
+  users = self.getPositionalArgs()
 
   from DIRAC import gLogger, gConfig
 

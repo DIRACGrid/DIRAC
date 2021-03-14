@@ -16,12 +16,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if not args:
-    Script.showHelp()
+    self.showHelp()
 
   from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent import TransformationCleaningAgent
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient

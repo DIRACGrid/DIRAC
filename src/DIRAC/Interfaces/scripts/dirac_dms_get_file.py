@@ -29,12 +29,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  lfns = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
+  lfns = self.getPositionalArgs()
 
   if len(lfns) < 1:
-    Script.showHelp()
+    self.showHelp()
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()

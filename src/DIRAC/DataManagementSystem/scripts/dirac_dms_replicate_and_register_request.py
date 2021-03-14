@@ -15,7 +15,7 @@ from __future__ import division
 from __future__ import print_function
 __RCSID__ = "$Id$"
 import os
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger
 import DIRAC
@@ -32,20 +32,20 @@ def getLFNList(arg):
 
 
 @DIRACScript()
-def main():
+def main(self):
   catalog = None
-  Script.registerSwitch("C:", "Catalog=", "Catalog to use")
-  Script.parseCommandLine()
-  for switch in Script.getUnprocessedSwitches():
+  self.registerSwitch("C:", "Catalog=", "Catalog to use")
+  self.parseCommandLine()
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == "C" or switch[0].lower() == "catalog":
       catalog = switch[1]
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   requestName = None
   targetSEs = None
   if len(args) < 3:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   requestName = args[0]
   lfnList = getLFNList(args[1])

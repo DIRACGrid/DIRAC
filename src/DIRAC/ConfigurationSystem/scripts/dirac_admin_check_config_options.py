@@ -24,7 +24,7 @@ from pprint import pformat
 
 from diraccfg import CFG
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.List import fromChar
 
@@ -40,6 +40,15 @@ class CheckConfig(object):
     self.showAdded = False
     self.showMissingSections = False
     self.showMissingOptions = False
+    self.switches = [
+        ("S:", "system=", "Systems to check, by default all of them are checked", self._setSystems),
+        ("M", "modified", "Show entries which differ from the default", self._setShowModified),
+        ("A", "added", "Show entries which do not exist in ConfigTemplate", self._setShowAdded),
+        ("U", "missingSection", "Show sections which do not exist in the current configuration",
+         self._setShowMissingSections),
+        ("O", "missingOption", "Show options which do not exist in the current configuration",
+         self._setShowMissingOptions)
+    ]
 
   def _setSystems(self, val):
     self.systems = fromChar(val)
@@ -60,20 +69,6 @@ class CheckConfig(object):
   def _setShowMissingOptions(self, _):
     self.showMissingOptions = True
     return S_OK()
-
-  def _setSwitches(self):
-    Script.registerSwitch("S:", "system=", "Systems to check, by default all of them are checked", self._setSystems)
-    Script.registerSwitch("M", "modified", "Show entries which differ from the default", self._setShowModified)
-    Script.registerSwitch("A", "added", "Show entries which do not exist in ConfigTemplate", self._setShowAdded)
-    Script.registerSwitch("U", "missingSection", "Show sections which do not exist in the current configuration",
-                          self._setShowMissingSections)
-    Script.registerSwitch("O", "missingOption", "Show options which do not exist in the current configuration",
-                          self._setShowMissingOptions)
-
-    Script.parseCommandLine(ignoreErrors=True)
-    if not any([self.showModified, self.showAdded, self.showMissingSections, self.showMissingOptions]):
-      LOG.error("\nERROR: Set at least one of the flags M A U O")
-      Script.showHelp()
 
   def _check(self):
     """Obtain default configuration and current configuration and print the diff."""
@@ -198,14 +193,22 @@ class CheckConfig(object):
 
   def run(self):
     """Run configuration comparison."""
-    self._setSwitches()
+    if not any([self.showModified, self.showAdded, self.showMissingSections, self.showMissingOptions]):
+      LOG.error("\nERROR: Set at least one of the flags M A U O")
+      return S_ERROR()
+
     self._check()
     return S_OK()
 
 
 @DIRACScript()
-def main():
-  CheckConfig().run()
+def main(self):
+  checkConfig = CheckConfig()
+  self.registerSwitches(checkConfig.switches)
+  self.parseCommandLine(ignoreErrors=True)
+  
+  if not checkConfig.run()['OK']:
+    self.showHelp()
 
 
 if __name__ == "__main__":

@@ -314,7 +314,7 @@ fullInstallDIRAC() {
   echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
   if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
-      exit 1
+      #exit 1
   fi
   #fix the DFC services options
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" "${DEBUG}"

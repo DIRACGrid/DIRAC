@@ -8,6 +8,9 @@ from collections import defaultdict
 import functools
 
 import six
+import sys
+import os.path
+import inspect
 
 if six.PY3:
   from DIRAC.Core.Utilities.Extensions import entrypointToExtension, extensionsByPriority
@@ -22,7 +25,12 @@ class DIRACScript(object):
   def __init__(self):
     """ c'tor
     """
-    pass
+    self.scriptName = None
+    self.alreadyInitialized = False
+    self.doc = inspect.currentframe().f_back.f_globals['__doc__']
+    self.localCfg = LocalConfiguration()
+    self.localCfg.setUsageMessage(self.doc)
+    self.showHelp = self.localCfg.showHelp
 
   def __call__(self, func=None):
     """Set the wrapped function or call the script
@@ -39,7 +47,7 @@ class DIRACScript(object):
 
     # Setuptools based installations aren't supported with Python 2
     if six.PY2:
-      return self._func()  # pylint: disable=not-callable
+      return self._func(self)  # pylint: disable=not-callable
 
     # This is only available in Python 3.8+ so it has to be here for now
     from importlib import metadata  # pylint: disable=no-name-in-module
@@ -64,7 +72,7 @@ class DIRACScript(object):
 
     if function_name is None:
       # TODO: This should an error once the integration tests modified to use pip install
-      return self._func()  # pylint: disable=not-callable
+      return self._func(self)  # pylint: disable=not-callable
       # raise NotImplementedError("Something is very wrong")
 
     # Call the entry_point from the extension with the highest priority

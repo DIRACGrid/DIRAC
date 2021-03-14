@@ -27,19 +27,19 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")
-  Script.parseCommandLine(ignoreErrors=True)
+def main(self):
+  self.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")
+  self.parseCommandLine(ignoreErrors=True)
 
   site = None
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0].lower() == "site":
       site = switch[1]
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   if not site or not args:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

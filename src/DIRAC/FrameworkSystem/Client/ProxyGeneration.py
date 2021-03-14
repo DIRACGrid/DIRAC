@@ -9,7 +9,7 @@ from __future__ import print_function
 import sys
 from prompt_toolkit import prompt
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 
 __RCSID__ = "$Id$"
@@ -17,21 +17,40 @@ __RCSID__ = "$Id$"
 
 class CLIParams(object):
 
-  proxyLifeTime = 86400
-  diracGroup = False
-  proxyStrength = 1024
-  limitedProxy = False
-  strict = False
-  summary = False
-  certLoc = False
-  keyLoc = False
-  proxyLoc = False
-  checkWithCS = True
-  stdinPasswd = False
-  userPasswd = ""
-  checkClock = True
-  embedDefaultGroup = True
-  rfc = True
+  def __init__(self):
+    self.proxyLifeTime = 86400
+    self.diracGroup = False
+    self.proxyStrength = 1024
+    self.limitedProxy = False
+    self.strict = False
+    self.summary = False
+    self.certLoc = False
+    self.keyLoc = False
+    self.proxyLoc = False
+    self.checkWithCS = True
+    self.stdinPasswd = False
+    self.userPasswd = ""
+    self.checkClock = True
+    self.embedDefaultGroup = True
+    self.rfc = True
+
+    self.proxyGenerationSwitches = [
+        ("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime),
+        ("g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup),
+        ("b:", "strength=", "Set the proxy strength in bytes", self.setProxyStrength),
+        ("l", "limited", "Generate a limited proxy", self.setProxyLimited),
+        ("t", "strict", "Fail on each error. Treat warnings as errors.", self.setStrict),
+        ("S", "summary", "Enable summary output when generating proxy", self.setSummary),
+        ("C:", "Cert=", "File to use as user certificate", self.setCertLocation),
+        ("K:", "Key=", "File to use as user key", self.setKeyLocation),
+        ("u:", "out=", "File to write as proxy", self.setProxyLocation),
+        ("x", "nocs", "Disable CS check", self.setDisableCSCheck),
+        ("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd),
+        ("i", "version", "Print version", self.showVersion),
+        ("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck),
+        ("r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC),
+        ("L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC)
+    ]
 
   def setProxyLifeTime(self, arg):
     """ Set proxy lifetime
@@ -225,32 +244,13 @@ class CLIParams(object):
     self.checkClock = False
     return S_OK()
 
-  def registerCLISwitches(self):
-    """ Register CLI switches
-    """
-    Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
-    Script.registerSwitch("g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup)
-    Script.registerSwitch("b:", "strength=", "Set the proxy strength in bytes", self.setProxyStrength)
-    Script.registerSwitch("l", "limited", "Generate a limited proxy", self.setProxyLimited)
-    Script.registerSwitch("t", "strict", "Fail on each error. Treat warnings as errors.", self.setStrict)
-    Script.registerSwitch("S", "summary", "Enable summary output when generating proxy", self.setSummary)
-    Script.registerSwitch("C:", "Cert=", "File to use as user certificate", self.setCertLocation)
-    Script.registerSwitch("K:", "Key=", "File to use as user key", self.setKeyLocation)
-    Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
-    Script.registerSwitch("x", "nocs", "Disable CS check", self.setDisableCSCheck)
-    Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
-    Script.registerSwitch("i", "version", "Print version", self.showVersion)
-    Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
-    Script.registerSwitch("r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC)
-    Script.registerSwitch("L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC)
-
 
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import Locations
 
 
-def generateProxy(params):
+def generateProxy(params, script):
   """ Generate proxy
 
       :param params: parameters
@@ -332,7 +332,7 @@ def generateProxy(params):
                                        rfc=params.rfc)
 
     gLogger.info("Contacting CS...")
-    retVal = Script.enableCS()
+    retVal = script.enableCS()
     if not retVal['OK']:
       gLogger.warn(retVal['Message'])
       if 'Unauthorized query' in retVal['Message']:

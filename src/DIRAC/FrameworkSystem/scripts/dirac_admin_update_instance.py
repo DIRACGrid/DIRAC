@@ -17,7 +17,7 @@ __RCSID__ = "$Id$"
 from io import open
 
 import DIRAC
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -29,7 +29,7 @@ def main():
                                              " excluded from update")
   Script.registerSwitch("", "retry=", "Number of retry attempts on hosts that have failed to update")
 
-  Script.parseCommandLine(ignoreErrors=False)
+  self.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()
   if len(args) < 1 or len(args) > 3:
@@ -40,7 +40,7 @@ def main():
   hosts = []
   excludeHosts = []
 
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == "hosts":
       hosts = switch[1]
     if switch[0] == "excludeHosts":

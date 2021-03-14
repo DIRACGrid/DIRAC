@@ -14,19 +14,19 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
 
   import os
   import DIRAC
   from DIRAC import gLogger
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   lfns = []
   for inputFileName in args:
     if os.path.exists(inputFileName):

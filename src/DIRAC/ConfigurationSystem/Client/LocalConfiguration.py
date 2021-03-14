@@ -298,31 +298,6 @@ class LocalConfiguration(object):
       gLogger.exception()
       return S_ERROR(str(e))
 
-  # TODO: Initialize if not previously initialized
-  def initialize(self, componentName):
-    """
-    Make sure DIRAC is properly initialized
-    """
-    if self.initialized:
-      return S_OK()
-    self.initialized = True
-    # Set that the command line has already been parsed
-    self.isParsed = True
-    if not self.componentType:
-      self.setConfigurationForScript(componentName)
-    try:
-      retVal = self.__addUserDataToConfiguration()
-      self.__initLogger(self.componentName, self.loggingSection)
-      if not retVal['OK']:
-        return retVal
-      retVal = self.__checkMandatoryOptions()
-      if not retVal['OK']:
-        return retVal
-    except Exception as e:
-      gLogger.exception()
-      return S_ERROR(str(e))
-    return S_OK()
-
   def __initLogger(self, componentName, logSection, forceInit=False):
     gLogger.initialize(componentName, logSection, forceInit=forceInit)
 
@@ -484,8 +459,10 @@ class LocalConfiguration(object):
     if not self.isParsed:
       self.__parseCommandLine()
 
+    ######################### gConfigurationData.loadFile
     errorsList = self.__loadCFGFiles()
 
+    ######################### gRefresher.forceRefresh
     if gConfigurationData.getServers():
       retVal = self.syncRemoteConfiguration()
       if not retVal['OK']:
@@ -493,6 +470,7 @@ class LocalConfiguration(object):
     else:
       gLogger.warn("Running without remote configuration")
 
+    ######################### set currentSectionPath
     try:
       if self.componentType == "service":
         self.__setDefaultSection(getServiceSection(self.componentName))
@@ -513,6 +491,7 @@ class LocalConfiguration(object):
     except Exception as e:
       errorsList.append(str(e))
 
+    ############################# get unprocessedSwitches
     self.unprocessedSwitches = []
 
     for optionName, optionValue in self.parsedOptionList:

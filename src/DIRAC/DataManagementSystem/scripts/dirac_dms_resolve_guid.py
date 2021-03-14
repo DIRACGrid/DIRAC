@@ -11,20 +11,20 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if len(args) != 1:
-    Script.showHelp()
+    self.showHelp()
   guids = args[0]
 
   try:

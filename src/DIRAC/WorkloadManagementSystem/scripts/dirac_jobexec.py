@@ -24,10 +24,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   # Register workflow parameter switch
-  Script.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
-  Script.parseCommandLine()
+  self.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
+  self.parseCommandLine()
 
   # from DIRAC.Core.Workflow.Parameter import *
   from DIRAC import gLogger
@@ -71,7 +71,7 @@ def main():
 
     return workflow.execute()
 
-  positionalArgs = Script.getPositionalArgs()
+  positionalArgs = self.getPositionalArgs()
   if len(positionalArgs) != 1:
     gLogger.debug('Positional arguments were %s' % (positionalArgs))
     DIRAC.abort(1, "Must specify the Job XML file description")
@@ -80,7 +80,7 @@ def main():
     gLogger.info('JobID: %s' % (os.environ['JOBID']))
 
   jobXMLfile = positionalArgs[0]
-  parList = Script.getUnprocessedSwitches()
+  parList = self.getUnprocessedSwitches()
   parDict = {}
   for switch, parameter in parList:
     if switch == "p":

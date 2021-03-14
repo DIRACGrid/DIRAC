@@ -57,12 +57,12 @@ def setTaskQueueID(optVal):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global verbose
   global taskQueueID
-  Script.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)
-  Script.registerSwitch("t:", "taskQueue=", "show this task queue only", setTaskQueueID)
-  Script.parseCommandLine(initializeMonitor=False)
+  self.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)
+  self.registerSwitch("t:", "taskQueue=", "show this task queue only", setTaskQueueID)
+  self.parseCommandLine(initializeMonitor=False)
 
   result = MatcherClient().getActiveTaskQueues()
   if not result['OK']:

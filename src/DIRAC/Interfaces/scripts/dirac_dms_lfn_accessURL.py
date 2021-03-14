@@ -32,15 +32,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   # pylint: disable=wrong-import-position
   from DIRAC.Interfaces.API.Dirac import Dirac
 
   if len(args) < 2:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   if len(args) > 3:
     print('Only one LFN SE pair will be considered')

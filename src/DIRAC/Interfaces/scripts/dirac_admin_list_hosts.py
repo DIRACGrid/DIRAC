@@ -23,11 +23,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("e", "extended", "Show extended info")
+def main(self):
+  self.registerSwitch("e", "extended", "Show extended info")
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -36,7 +36,7 @@ def main():
   errorList = []
   extendedInfo = False
 
-  for unprocSw in Script.getUnprocessedSwitches():
+  for unprocSw in self.getUnprocessedSwitches():
     if unprocSw[0] in ('e', 'extended'):
       extendedInfo = True
 

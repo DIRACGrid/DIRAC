@@ -29,15 +29,15 @@ class Params(object):
     return S_OK()
 
   def registerSwitches(self):
-    Script.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
-    Script.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
+    self.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
+    self.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
 
 
 @DIRACScript()
-def main():
+def main(self):
   PARAMS = Params()
-  PARAMS.registerSwitches()
-  Script.parseCommandLine(ignoreErrors=False)
+  PARAMS.registerSwitches(self)
+  self.parseCommandLine(ignoreErrors=False)
 
   # Create Data Recovery Agent and run over single transformation.
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient

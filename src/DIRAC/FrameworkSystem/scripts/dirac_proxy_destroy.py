@@ -35,6 +35,10 @@ class Params(object):
     """
     self.vos = []
     self.delete_all = False
+    self.switches = [
+        ("a", "all", "Delete the local and all uploaded proxies (the nuclear option)", self.setDeleteAll),
+        ("v:", "vo=", "Delete uploaded proxy for vo name given", self.addVO)
+    ]
 
   def addVO(self, voname):
     """
@@ -55,18 +59,6 @@ class Params(object):
     returns true if any remote operations are required
     """
     return self.vos or self.delete_all
-
-  # note the magic : and =
-  def registerCLISwitches(self):
-    """
-    add options to dirac option parser
-    """
-    Script.registerSwitch(
-        "a",
-        "all",
-        "Delete the local and all uploaded proxies (the nuclear option)",
-        self.setDeleteAll)
-    Script.registerSwitch("v:", "vo=", "Delete uploaded proxy for vo name given", self.addVO)
 
 
 def getProxyGroups():
@@ -127,14 +119,14 @@ def deleteLocalProxy(proxyLoc):
   gLogger.notice('Local proxy deleted.')
 
 
-def run():
+def run(self):
   """
   main program entry point
   """
   options = Params()
-  options.registerCLISwitches()
+  self.registerSwitches(options.switches)
 
-  Script.parseCommandLine(ignoreErrors=True)
+  self.parseCommandLine(ignoreErrors=True)
 
   if options.delete_all and options.vos:
     gLogger.error("-a and -v options are mutually exclusive. Please pick one or the other.")
@@ -182,9 +174,9 @@ def run():
 
 
 @DIRACScript()
-def main():
+def main(self):
   try:
-    retval = run()
+    retval = run(self)
     DIRAC.exit(retval)
   except RuntimeError as rtError:
     gLogger.error('Operation failed: %s' % str(rtError))

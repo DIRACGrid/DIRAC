@@ -35,9 +35,10 @@ __RCSID__ = "$Id$"
 
 class Params(object):
 
-  limited = False
-  proxyPath = False
-  proxyLifeTime = 3600
+  def __init__(self):
+    self.limited = False
+    self.proxyPath = False
+    self.proxyLifeTime = 3600
 
   def setProxyLifeTime(self, arg):
     try:
@@ -48,16 +49,13 @@ class Params(object):
       return DIRAC.S_ERROR("Can't parse time argument")
     return DIRAC.S_OK()
 
-  def registerCLISwitches(self):
-    Script.registerSwitch("v:", "valid=", "Required HH:MM for the users", self.setProxyLifeTime)
-
 
 @DIRACScript()
-def main():
+def main(self):
   params = Params()
-  params.registerCLISwitches()
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.registerCLISwitch(("v:", "valid=", "Required HH:MM for the users", prams.setProxyLifeTime))
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
   result = gProxyManager.getDBContents()
   if not result['OK']:
     print("Can't retrieve list of users: %s" % result['Message'])

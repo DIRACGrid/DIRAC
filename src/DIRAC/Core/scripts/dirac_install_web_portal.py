@@ -12,14 +12,14 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.disableCS()
-  Script.parseCommandLine()
+def main(self):
+  self.disableCS()
+  self.parseCommandLine()
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 

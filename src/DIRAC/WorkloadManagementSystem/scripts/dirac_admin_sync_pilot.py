@@ -30,10 +30,10 @@ def setNoMasterCS(optVal):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global includeMasterCS
-  Script.registerSwitch("n", "noMasterCS", "do not include master CS", setNoMasterCS)
-  Script.parseCommandLine()
+  self.registerSwitch("n", "noMasterCS", "do not include master CS", setNoMasterCS)
+  self.parseCommandLine()
 
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer

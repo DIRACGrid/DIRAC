@@ -12,15 +12,15 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
 
 
 @DIRACScript()
-def main():
-  Script.localCfg.addDefaultEntry("LogLevel", "fatal")
-  Script.parseCommandLine()
+def main(self):
+  self.localCfg.addDefaultEntry("LogLevel", "fatal")
+  self.parseCommandLine()
 
   CSCLI().start()
 

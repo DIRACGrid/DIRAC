@@ -25,19 +25,19 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   maxJobs = 100
-  Script.registerSwitch("", "Status=", "Primary status")
-  Script.registerSwitch("", "MinorStatus=", "Secondary status")
-  Script.registerSwitch("", "ApplicationStatus=", "Application status")
-  Script.registerSwitch("", "Site=", "Execution site")
-  Script.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
-  Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
-  Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
-  Script.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
-  Script.parseCommandLine(ignoreErrors=True)
+  self.registerSwitch("", "Status=", "Primary status")
+  self.registerSwitch("", "MinorStatus=", "Secondary status")
+  self.registerSwitch("", "ApplicationStatus=", "Application status")
+  self.registerSwitch("", "Site=", "Execution site")
+  self.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
+  self.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
+  self.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
+  self.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
+  self.parseCommandLine(ignoreErrors=True)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   # Default values
   status = None
@@ -49,11 +49,11 @@ def main():
   date = None
 
   if args:
-    Script.showHelp()
+    self.showHelp()
 
   exitCode = 0
 
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0].lower() == "status":
       status = switch[1]
     elif switch[0].lower() == "minorstatus":

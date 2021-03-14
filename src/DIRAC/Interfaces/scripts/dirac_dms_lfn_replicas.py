@@ -30,11 +30,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch('a', "All", "  Also show inactive replicas")
-  Script.parseCommandLine(ignoreErrors=True)
-  lfns = Script.getPositionalArgs()
-  switches = Script.getUnprocessedSwitches()
+def main(self):
+  self.registerSwitch('a', "All", "  Also show inactive replicas")
+  self.parseCommandLine(ignoreErrors=True)
+  lfns = self.getPositionalArgs()
+  switches = self.getUnprocessedSwitches()
 
   active = True
   for switch in switches:
@@ -42,7 +42,7 @@ def main():
     if opt in ("a", "all"):
       active = False
   if len(lfns) < 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()

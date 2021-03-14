@@ -20,17 +20,17 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as DIRACExit, gLogger
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if len(args) != 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   inputFileName = args[0]
 

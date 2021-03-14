@@ -29,12 +29,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
-  Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
+def main(self):
+  self.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
+  self.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   import DIRAC
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
@@ -42,7 +42,7 @@ def main():
   dirac = Dirac()
 
   jobs = []
-  for sw, value in Script.getUnprocessedSwitches():
+  for sw, value in self.getUnprocessedSwitches():
     if sw.lower() in ('f', 'file'):
       if os.path.exists(value):
         jFile = open(value)
@@ -64,7 +64,7 @@ def main():
 
   if not jobs:
     print("Warning: no jobs selected")
-    Script.showHelp()
+    self.showHelp()
     DIRAC.exit(0)
 
   result = dirac.deleteJob(jobs)

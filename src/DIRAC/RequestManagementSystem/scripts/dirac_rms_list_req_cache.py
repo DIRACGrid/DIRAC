@@ -17,15 +17,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.registerSwitch('', 'Full', '   Print full list of requests')
+def main(self):
+  self.registerSwitch('', 'Full', '   Print full list of requests')
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
   fullPrint = False
 
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == 'Full':
       fullPrint = True
 

@@ -23,7 +23,7 @@ except ImportError:
   import subprocess as commands
 
 from diraccfg import CFG
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import gLogger, rootPath, S_OK
 
@@ -47,11 +47,11 @@ def pipInstall(package, switches=""):
 
 
 @DIRACScript()
-def main():
-  Script.disableCS()
+def main(self):
+  self.disableCS()
 
-  Script.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)
-  Script.parseCommandLine(ignoreErrors=True)
+  self.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)
+  self.parseCommandLine(ignoreErrors=True)
 
   # Collect all the requested python modules to install
   reqDict = {}

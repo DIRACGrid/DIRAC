@@ -20,12 +20,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.disableCS()
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
+def main(self):
+  self.disableCS()
+  self.parseCommandLine()
+  args = self.getPositionalArgs()
   if len(args) > 2:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   system = '*'
   component = '*'

@@ -17,7 +17,7 @@ __RCSID__ = '$Id$'
 
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 
 
 class Params(object):
@@ -98,6 +98,7 @@ def parseSwitchesAndPositionalArguments():
   # Get unprocessed switches
   switches = dict(Script.getUnprocessedSwitches())
 
+  gLogger.info('This is the servicesList %s:' % servicesList)  
   gLogger.debug("The switches used are:")
   map(gLogger.debug, switches.iteritems())
 

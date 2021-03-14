@@ -136,15 +136,15 @@ def __runJobLocally(jobID, basepath, vo):
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=False)
-  Script.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
-  Script.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
+def main(self):
+  self.parseCommandLine(ignoreErrors=False)
+  self.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
+  self.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
 
   _downloadinputdata = False
   _jobID = None
 
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0] in ('D', 'Download'):
       _downloadinputdata = True
       _jobID = switch[1]

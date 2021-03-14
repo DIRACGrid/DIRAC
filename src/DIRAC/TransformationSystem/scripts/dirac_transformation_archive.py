@@ -16,12 +16,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine()
+  args = self.getPositionalArgs()
 
   if not args:
-    Script.showHelp()
+    self.showHelp()
 
   transIDs = [int(arg) for arg in args]
 

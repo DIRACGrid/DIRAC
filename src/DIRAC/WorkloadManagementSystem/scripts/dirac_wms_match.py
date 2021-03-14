@@ -37,18 +37,18 @@ def setSites(optVal_):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global fullMatch
   global sites
-  Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
-  Script.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
+  self.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
+  self.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   if len(args) == 0:
     gLogger.error("Error: No job description provided")
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources

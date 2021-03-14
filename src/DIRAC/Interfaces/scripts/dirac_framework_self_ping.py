@@ -19,7 +19,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   with open(os.devnull, 'w') as redirectStdout, open(os.devnull, 'w') as redirectStderr:
     from DIRAC import gLogger
     from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData

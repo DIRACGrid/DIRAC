@@ -39,7 +39,7 @@ class Params(object):
 
 
 @DIRACScript()
-def main():
+def main(self):
   # Instantiate the params class
   cliParams = Params()
 
@@ -49,10 +49,10 @@ def main():
   Script.registerArgument(['System: system names'])
 
   # Parse the command line and initialize DIRAC
-  Script.parseCommandLine(ignoreErrors=False)
+  self.parseCommandLine(ignoreErrors=False)
 
   # Get the list of services
-  servicesList = Script.getPositionalArgs()
+  servicesList = self.getPositionalArgs()
 
   # Do something!
   gLogger.notice('Ping %s!' % ', '.join(servicesList))

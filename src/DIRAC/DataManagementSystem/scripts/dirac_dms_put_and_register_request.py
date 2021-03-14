@@ -22,26 +22,26 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  from DIRAC.Core.Base.Script import parseCommandLine
-  parseCommandLine()
+def main(self):
+  # from DIRAC.Core.Base.Script import parseCommandLine
+  self.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   requestName = None
   LFN = None
   PFN = None
   targetSE = None
   if len(args) != 4:
-    Script.showHelp()
+    self.showHelp()
   else:
     requestName = args[0]
     LFN = args[1]

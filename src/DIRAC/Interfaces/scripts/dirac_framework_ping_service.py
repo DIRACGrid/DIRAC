@@ -50,9 +50,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
   system = None
   service = None
   url = None
@@ -64,14 +64,14 @@ def main():
     else:
       sys_serv = args[0].split('/')
       if len(sys_serv) != 2:
-        Script.showHelp(exitCode=1)
+        self.showHelp(exitCode=1)
       else:
         system, service = sys_serv
 
   elif len(args) == 2:
     system, service = args[0], args[1]
   else:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()

@@ -14,12 +14,12 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   read = False
   write = False
   check = False
@@ -27,18 +27,18 @@ def main():
   site = ''
   mute = False
 
-  Script.registerSwitch("r", "AllowRead", "     Allow only reading from the storage element")
-  Script.registerSwitch("w", "AllowWrite", "     Allow only writing to the storage element")
-  Script.registerSwitch("k", "AllowCheck", "     Allow only check access to the storage element")
-  Script.registerSwitch("v", "AllowRemove", "    Allow only remove access to the storage element")
-  Script.registerSwitch("a", "All", "    Allow all access to the storage element")
-  Script.registerSwitch("m", "Mute", "     Do not send email")
-  Script.registerSwitch("S:", "Site=", "     Allow all SEs associated to site")
+  self.registerSwitch("r", "AllowRead", "     Allow only reading from the storage element")
+  self.registerSwitch("w", "AllowWrite", "     Allow only writing to the storage element")
+  self.registerSwitch("k", "AllowCheck", "     Allow only check access to the storage element")
+  self.registerSwitch("v", "AllowRemove", "    Allow only remove access to the storage element")
+  self.registerSwitch("a", "All", "    Allow all access to the storage element")
+  self.registerSwitch("m", "Mute", "     Do not send email")
+  self.registerSwitch("S:", "Site=", "     Allow all SEs associated to site")
 
-  Script.parseCommandLine(ignoreErrors=True)
+  self.parseCommandLine(ignoreErrors=True)
 
-  ses = Script.getPositionalArgs()
-  for switch in Script.getUnprocessedSwitches():
+  ses = self.getPositionalArgs()
+  for switch in self.getUnprocessedSwitches():
     if switch[0].lower() in ("r", "allowread"):
       read = True
     if switch[0].lower() in ("w", "allowwrite"):

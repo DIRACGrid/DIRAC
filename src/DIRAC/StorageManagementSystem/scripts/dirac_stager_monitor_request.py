@@ -23,13 +23,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=False)
+def main(self):
+  self.parseCommandLine(ignoreErrors=False)
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   if not len(args) == 1:
-    Script.showHelp()
+    self.showHelp()
 
   from DIRAC import exit as DIRACExit, gLogger
 

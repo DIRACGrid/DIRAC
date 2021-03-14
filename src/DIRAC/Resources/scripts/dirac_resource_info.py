@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
 
   from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
 
@@ -37,11 +37,11 @@ def main():
     global voName
     voName = args
 
-  Script.registerSwitch("C", "ce", "Get CE info", setCEFlag)
-  Script.registerSwitch("S", "se", "Get SE info", setSEFlag)
-  Script.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", setVOName)
+  self.registerSwitch("C", "ce", "Get CE info", setCEFlag)
+  self.registerSwitch("S", "se", "Get SE info", setSEFlag)
+  self.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", setVOName)
 
-  Script.parseCommandLine(ignoreErrors=True)
+  self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources

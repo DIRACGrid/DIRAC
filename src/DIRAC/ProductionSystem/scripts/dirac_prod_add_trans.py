@@ -23,8 +23,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -33,13 +33,13 @@ def main():
   transClient = TransformationClient()
 
   # get arguments
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if len(args) == 3:
     parentTransID = args[2]
   elif len(args) == 2:
     parentTransID = ''
   else:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   prodID = args[0]
   transID = args[1]

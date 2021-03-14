@@ -18,21 +18,21 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC import exit as DIRACExit
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
   import os
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
 
   if not len(args) >= 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
   else:
     inputFileName = args[0]
     catalogs = []

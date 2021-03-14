@@ -44,22 +44,22 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   original = False
-  Script.registerSwitch('O', 'Original', 'Gets the original JDL')
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.registerSwitch('O', 'Original', 'Gets the original JDL')
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == 'Original' or switch[0] == 'O':
       original = True
 
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == 'Original':
       original = True
 
   if len(args) < 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()

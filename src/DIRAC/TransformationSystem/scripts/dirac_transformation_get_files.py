@@ -18,14 +18,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine()
+def main(self):
+  self.parseCommandLine()
 
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  args = Script.getPositionalArgs()
+  args = self.getPositionalArgs()
   if len(args) != 1:
-    Script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   tc = TransformationClient()
   res = tc.getTransformationFiles({'TransformationID': args[0]})

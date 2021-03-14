@@ -14,13 +14,13 @@ __RCSID__ = "$Id$"
 
 import sys
 import DIRAC
-from DIRAC.Core.Base import Script
+# from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.localCfg.addDefaultEntry("LogLevel", "fatal")
+def main(self):
+  self.localCfg.addDefaultEntry("LogLevel", "fatal")
 
   fileName = ""
 
@@ -36,9 +36,9 @@ def main():
     raw = True
     return DIRAC.S_OK()
 
-  Script.registerSwitch("f:", "file=", "Dump Configuration data into <file>", setFilename)
-  Script.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)
-  Script.parseCommandLine()
+  self.registerSwitch("f:", "file=", "Dump Configuration data into <file>", setFilename)
+  self.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)
+  self.parseCommandLine()
 
   from DIRAC import gConfig, gLogger
   result = gConfig.dumpCFGAsLocalCache(fileName, raw)

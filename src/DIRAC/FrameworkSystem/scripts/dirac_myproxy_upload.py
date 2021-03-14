@@ -35,15 +35,15 @@ class Params:
 
 
 @DIRACScript()
-def main():
+def main(self):
   params = Params()
 
-  Script.registerSwitch("f:", "file=", "File to use as proxy", params.setProxyLocation)
-  Script.registerSwitch("D", "DN", "Use DN as myproxy username", params.setDNAsUsername)
-  Script.registerSwitch("i", "version", "Print version", params.showVersion)
+  self.registerSwitch("f:", "file=", "File to use as proxy", params.setProxyLocation)
+  self.registerSwitch("D", "DN", "Use DN as myproxy username", params.setDNAsUsername)
+  self.registerSwitch("i", "version", "Print version", params.showVersion)
 
-  Script.addDefaultOptionValue("LogLevel", "always")
-  Script.parseCommandLine()
+  self.addDefaultOptionValue("LogLevel", "always")
+  self.parseCommandLine()
 
   from DIRAC.Core.Security.MyProxy import MyProxy
   from DIRAC.Core.Security import Locations

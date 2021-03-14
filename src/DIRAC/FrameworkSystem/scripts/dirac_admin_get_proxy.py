@@ -38,11 +38,19 @@ __RCSID__ = "$Id$"
 
 class Params(object):
 
-  limited = False
-  proxyPath = False
-  proxyLifeTime = 86400
-  enableVOMS = False
-  vomsAttr = None
+  def __init__(self):
+    self.limited = False
+    self.proxyPath = False
+    self.proxyLifeTime = 86400
+    self.enableVOMS = False
+    self.vomsAttr = None
+    self.switches = [
+        ("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime),
+        ("l", "limited", "Get a limited proxy", self.setLimited),
+        ("u:", "out=", "File to write as proxy", self.setProxyLocation),
+        ("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS),
+        ("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
+    ]
 
   def setLimited(self, args):
     """ Set limited
@@ -98,26 +106,17 @@ class Params(object):
     self.vomsAttr = arg
     return S_OK()
 
-  def registerCLISwitches(self):
-    """ Register CLI switches
-    """
-    Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
-    Script.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
-    Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
-    Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
-    Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
-
 
 @DIRACScript()
-def main():
+def main(self):
   params = Params()
-  params.registerCLISwitches()
+  self.registerSwitches(params.switches)
 
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   if len(args) != 2:
-    Script.showHelp()
+    self.showHelp()
 
   userGroup = str(args[1])
   userDN = str(args[0])

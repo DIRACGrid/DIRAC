@@ -804,7 +804,7 @@ diracServices(){
     echo "==> calling dirac-install-component $serv ${DEBUG}"
     if ! dirac-install-component "$serv" "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
-      exit 1
+      #exit 1
     fi
   done
 }
@@ -818,7 +818,7 @@ diracSEs(){
   mkdir -p "${seDir}"
   if ! dirac-install-component DataManagement SE-1 -m StorageElement -p BasePath="${seDir}" -p Port=9148 "${DEBUG}"; then
     echo 'ERROR: dirac-install-component failed' >&2
-    exit 1
+    #exit 1
   fi
 
   echo "==> Installing SE-2"
@@ -826,7 +826,7 @@ diracSEs(){
   mkdir -p "${seDir}"
   if ! dirac-install-component DataManagement SE-2 -m StorageElement -p BasePath="${seDir}" -p Port=9147 "${DEBUG}"; then
     echo 'ERROR: dirac-install-component failed' >&2
-    exit 1
+    #exit 1
   fi
 
 }
@@ -911,7 +911,7 @@ diracDBs(){
   for db in $dbs; do
     if ! dirac-install-db "$db" "${DEBUG}"; then
       echo 'ERROR: dirac-install-db failed' >&2
-      exit 1
+      #exit 1
     fi
   done
 }

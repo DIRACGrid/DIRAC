@@ -36,26 +36,26 @@ def convertDate(date):
 
 
 @DIRACScript()
-def main():
+def main(self):
   from DIRAC.Core.Base import Script
-  Script.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
-  Script.registerSwitch('', 'Transformation=', '   transformation ID')
-  Script.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
-  Script.registerSwitch('', 'Verbose', '   Print more information')
-  Script.registerSwitch('', 'Terse', '   Only print request status')
-  Script.registerSwitch('', 'Full', '   Print full request content')
-  Script.registerSwitch('', 'Status=', '   Select all requests in a given status')
-  Script.registerSwitch('', 'Since=',
+  self.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
+  self.registerSwitch('', 'Transformation=', '   transformation ID')
+  self.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
+  self.registerSwitch('', 'Verbose', '   Print more information')
+  self.registerSwitch('', 'Terse', '   Only print request status')
+  self.registerSwitch('', 'Full', '   Print full request content')
+  self.registerSwitch('', 'Status=', '   Select all requests in a given status')
+  self.registerSwitch('', 'Since=',
                         '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day')
-  Script.registerSwitch('', 'Until=', '      Associated to --Status, end date (default= now')
-  Script.registerSwitch('', 'Maximum=', '      Associated to --Status, max number of requests ')
-  Script.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
-  Script.registerSwitch('', 'Force', '   Force reset even if not Failed')
-  Script.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
-  Script.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
-  Script.registerSwitch('', 'Cancel', '   Cancel the request')
-  Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
-  Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
+  self.registerSwitch('', 'Until=', '      Associated to --Status, end date (default= now')
+  self.registerSwitch('', 'Maximum=', '      Associated to --Status, max number of requests ')
+  self.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
+  self.registerSwitch('', 'Force', '   Force reset even if not Failed')
+  self.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
+  self.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
+  self.registerSwitch('', 'Cancel', '   Cancel the request')
+  self.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
+  self.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
 
@@ -82,7 +82,7 @@ def main():
   listJobs = False
   force = False
   targetSE = set()
-  for switch in Script.getUnprocessedSwitches():
+  for switch in self.getUnprocessedSwitches():
     if switch[0] == 'Job':
       jobs = []
       job = "Unknown"
@@ -158,7 +158,7 @@ def main():
   if transID:
     if not taskIDs:
       gLogger.fatal("If Transformation is set, a list of Tasks should also be set")
-      Script.showHelp(exitCode=2)
+      self.showHelp(exitCode=2)
     # In principle, the task name is unique, so the request name should be unique as well
     # If ever this would not work anymore, we would need to use the transformationClient
     # to fetch the ExternalID
@@ -168,7 +168,7 @@ def main():
   elif not jobs:
     requests = []
     # Get full list of arguments, with and without comma
-    for arg in [x.strip() for arg in Script.getPositionalArgs() for x in arg.split(',')]:
+    for arg in [x.strip() for arg in self.getPositionalArgs() for x in arg.split(',')]:
       if os.path.exists(arg):
         lines = open(arg, 'r').readlines()
         requests += [reqID.strip() for line in lines for reqID in line.split(',')]
@@ -200,7 +200,7 @@ def main():
     gLogger.notice('Obtained %d requests %s between %s and %s' % (len(requests), status, since, until))
   if not requests:
     gLogger.notice('No request selected....')
-    Script.showHelp(exitCode=2)
+    self.showHelp(exitCode=2)
   okRequests = []
   warningPrinted = False
   jobIDList = []

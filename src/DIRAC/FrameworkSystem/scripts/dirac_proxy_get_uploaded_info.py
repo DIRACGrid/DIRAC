@@ -47,10 +47,10 @@ def setUser(arg):
 
 
 @DIRACScript()
-def main():
+def main(self):
   global userName
-  Script.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)
-  Script.parseCommandLine()
+  self.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)
+  self.parseCommandLine()
 
   result = getProxyInfo()
   if not result['OK']:

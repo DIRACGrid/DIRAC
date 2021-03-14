@@ -31,11 +31,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+def main(self):
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
   if len(args) < 2:
-    Script.showHelp()
+    self.showHelp()
 
   from DIRAC import exit as DIRACExit, gLogger
 
@@ -87,7 +87,7 @@ def main():
       outStr += '\nThere are no staging requests submitted to the site yet.'.ljust(8)
   else:
     outStr = "\nThere is no such file requested for staging. Check for typo's!"
-    # Script.showHelp()
+    # self.showHelp()
   gLogger.notice(outStr)
 
   DIRACExit(0)

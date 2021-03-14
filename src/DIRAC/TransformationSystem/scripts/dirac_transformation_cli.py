@@ -11,8 +11,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
-  Script.parseCommandLine(ignoreErrors=False)
+def main(self):
+  self.parseCommandLine(ignoreErrors=False)
 
   from DIRAC.TransformationSystem.Client.TransformationCLI import TransformationCLI
 
