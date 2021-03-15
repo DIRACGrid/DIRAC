@@ -52,7 +52,7 @@ class Params(object):
 @DIRACScript()
 def main(self):
   params = Params()
-  self.registerSwitch(("v:", "valid=", "Required HH:MM for the users", params.setProxyLifeTime))
+  self.registerSwitch("v:", "valid=", "Required HH:MM for the users", params.setProxyLifeTime)
   self.parseCommandLine(ignoreErrors=True)
   args = self.getPositionalArgs()
   result = gProxyManager.getDBContents()
