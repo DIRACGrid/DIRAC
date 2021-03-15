@@ -42,7 +42,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   def version(arg):
     self.disableCS()
     print(DIRAC.version)
@@ -103,4 +103,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

@@ -180,7 +180,7 @@ def setToken(user):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   """
   Main function of the script. Gets the username from the proxy loaded and sets
   the token taking into account that user and the switchDict parameters.
@@ -211,4 +211,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

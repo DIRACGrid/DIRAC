@@ -136,7 +136,7 @@ def __runJobLocally(jobID, basepath, vo):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   self.parseCommandLine(ignoreErrors=False)
   self.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
   self.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
@@ -176,4 +176,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

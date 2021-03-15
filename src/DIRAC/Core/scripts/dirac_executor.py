@@ -22,7 +22,7 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   positionalArgs = self.localCfg.getPositionalArguments()
   if len(positionalArgs) == 0:
     gLogger.fatal("You must specify which executor to run!")
@@ -61,4 +61,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

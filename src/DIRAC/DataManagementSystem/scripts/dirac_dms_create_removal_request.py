@@ -24,7 +24,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   self.parseCommandLine(ignoreErrors=False)
 
   args = self.getPositionalArgs()
@@ -115,4 +115,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

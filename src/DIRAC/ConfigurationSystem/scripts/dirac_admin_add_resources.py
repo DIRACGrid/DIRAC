@@ -257,7 +257,7 @@ def handler(signum, frame):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   signal.signal(signal.SIGTERM, handler)
   signal.signal(signal.SIGINT, handler)
 

@@ -25,7 +25,7 @@ __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   self.addDefaultOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
   self.parseCommandLine(ignoreErrors=True)
 
@@ -53,4 +53,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

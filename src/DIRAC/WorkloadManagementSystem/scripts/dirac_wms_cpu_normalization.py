@@ -30,7 +30,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   self.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
   self.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
   self.parseCommandLine(ignoreErrors=True)
@@ -69,4 +69,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

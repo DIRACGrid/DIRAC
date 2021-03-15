@@ -44,7 +44,7 @@ from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   subLogger = gLogger.getSubLogger(__file__)
 
   switches = (('status=', 'Filter per file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).'
@@ -157,4 +157,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

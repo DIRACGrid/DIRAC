@@ -30,7 +30,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   self.registerSwitch("D:", "Dir=", "Store the output in this directory")
   self.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
   self.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
@@ -125,4 +125,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

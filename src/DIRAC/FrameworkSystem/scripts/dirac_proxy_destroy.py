@@ -174,7 +174,7 @@ def run(self):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   try:
     retval = run(self)
     DIRAC.exit(retval)
@@ -184,4 +184,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

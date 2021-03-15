@@ -47,7 +47,7 @@ def pipInstall(package, switches=""):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   self.disableCS()
 
   self.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)
@@ -100,4 +100,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

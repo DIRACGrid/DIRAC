@@ -76,7 +76,7 @@ class Params(object):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   params = Params()
   self.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
   self.registerSwitch("i", "version", "Print version", params.showVersion)
@@ -181,4 +181,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

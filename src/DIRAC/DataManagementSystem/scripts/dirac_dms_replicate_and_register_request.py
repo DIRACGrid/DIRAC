@@ -32,7 +32,7 @@ def getLFNList(arg):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   catalog = None
   self.registerSwitch("C:", "Catalog=", "Catalog to use")
   self.parseCommandLine()
@@ -132,4 +132,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

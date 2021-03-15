@@ -39,7 +39,7 @@ class Params(object):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   # Instantiate the params class
   cliParams = Params()
 
@@ -58,4 +58,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
   gLogger.notice('Ping %s!' % ', '.join(servicesList))
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

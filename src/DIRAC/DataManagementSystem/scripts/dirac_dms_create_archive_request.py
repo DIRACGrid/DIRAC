@@ -514,7 +514,7 @@ class CreateArchiveRequest(object):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   try:
     CAR = CreateArchiveRequest(self)
     CAR.run()
@@ -528,4 +528,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

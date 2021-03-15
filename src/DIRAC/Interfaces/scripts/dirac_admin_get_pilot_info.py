@@ -52,7 +52,7 @@ class Params(object):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   params = Params()
   self.registerSwitch('e', 'extended', 'Get extended printout', params.setExtendedPrint)
   self.parseCommandLine(ignoreErrors=True)
@@ -118,4 +118,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

@@ -53,7 +53,7 @@ class Params(object):
 
 # IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   '''
     This is the script main method, which will hold all the logic.
   '''
@@ -86,4 +86,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

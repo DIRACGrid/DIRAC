@@ -252,7 +252,7 @@ def run():
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   global subLogger
   global switchDict
   global DEFAULT_STATUS
@@ -271,4 +271,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

@@ -39,7 +39,7 @@ def setVO(value):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   self.registerSwitch("V:", "vo=", "VO name", setVO)
   self.registerSwitch("D", "dryRun", "Dry run", setDryRun)
   self.parseCommandLine(ignoreErrors=True)
@@ -100,4 +100,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

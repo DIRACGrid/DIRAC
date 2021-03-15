@@ -341,7 +341,7 @@ def run(args, switchDict):
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   global subLogger
   global ResourceManagementClient
 
@@ -365,4 +365,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter

@@ -43,7 +43,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):  # pylint: disable=no-value-for-parameter
+def main(self):
   original = False
   self.registerSwitch('O', 'Original', 'Gets the original JDL')
   self.parseCommandLine(ignoreErrors=True)
@@ -79,4 +79,4 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
-  main()
+  main()  # pylint: disable=no-value-for-parameter
