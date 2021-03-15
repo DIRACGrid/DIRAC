@@ -60,7 +60,6 @@ class Params(object):
     for switch in switches:
       self.__script.registerSwitch('', switch[0], switch[1])
 
-
   def registerUsageMessage(self):
     """
       Takes the script __doc__ and adds the DIRAC version to it
@@ -70,7 +69,6 @@ class Params(object):
     usageMessage += __doc__
 
     self.__script.setUsageMessage(usageMessage)
-
 
   def parseSwitches(self):
     """
@@ -110,8 +108,6 @@ class Params(object):
     return (args, switches)
 
   # UTILS: for filtering 'select' output
-
-
   def filterDate(self, selectOutput, start, end):
     """
       Selects all the downtimes that meet the constraints of 'start' and 'end' dates
@@ -158,7 +154,6 @@ class Params(object):
 
     return downtimesFiltered
 
-
   def filterOngoing(self, selectOutput):
     """
       Selects all the ongoing downtimes
@@ -176,8 +171,7 @@ class Params(object):
 
     return downtimesFiltered
 
-
-  def filterDescription(self, electOutput, description):
+  def filterDescription(self, selectOutput, description):
     """
       Selects all the downtimes that match 'description'
     """
@@ -194,8 +188,6 @@ class Params(object):
     return downtimesFiltered
 
   # Utils: for formatting query output and notifications
-
-
   def error(self, msg):
     """
       Format error messages
@@ -206,14 +198,12 @@ class Params(object):
     self.subLogger.error("\tPlease, check documentation below")
     self.__script.showHelp(exitCode=1)
 
-
   def confirm(self, query, matches):
     """
       Format confirmation messages
     """
 
     self.subLogger.notice("\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % (query, matches))
-
 
   def tabularPrint(self, table):
 
@@ -235,7 +225,6 @@ class Params(object):
 
     self.subLogger.notice(output)
 
-
   def select(self, switchDict):
     """
       Given the switches, request a query 'select' on the ResourceManagementDB
@@ -249,10 +238,10 @@ class Params(object):
 
     result = {'output': None, 'OK': None, 'Message': None, 'match': None}
     output = rmsClient.selectDowntimeCache(downtimeID=switchDict['downtimeID'],
-                                          element=switchDict['element'],
-                                          name=switchDict['name'],
-                                          severity=switchDict['severity'],
-                                          meta=meta)
+                                           element=switchDict['element'],
+                                           name=switchDict['name'],
+                                           severity=switchDict['severity'],
+                                           meta=meta)
 
     if not output['OK']:
       return output
@@ -267,7 +256,6 @@ class Params(object):
     result['message'] = output['Message'] if 'Message' in output else None
 
     return result
-
 
   def add(self, switchDict):
     """
@@ -298,7 +286,6 @@ class Params(object):
 
     return result
 
-
   def delete(self, switchDict):
     """
       Given the switches, request a query 'delete' on the ResourceManagementDB
@@ -309,14 +296,13 @@ class Params(object):
 
     result = {'output': None, 'OK': None, 'Message': None, 'match': None}
     output = rmsClient.deleteDowntimeCache(downtimeID=switchDict['downtimeID'],
-                                          element=switchDict['element'],
-                                          name=switchDict['name'],
-                                          startDate=switchDict['startDate'],
-                                          endDate=switchDict['endDate'],
-                                          severity=switchDict['severity'],
-                                          description=switchDict['description'],
-                                          link=switchDict['link']
-                                          )
+                                           element=switchDict['element'],
+                                           name=switchDict['name'],
+                                           startDate=switchDict['startDate'],
+                                           endDate=switchDict['endDate'],
+                                           severity=switchDict['severity'],
+                                           description=switchDict['description'],
+                                           link=switchDict['link'])
     if not output['OK']:
       return output
 
@@ -326,7 +312,6 @@ class Params(object):
     result['Message'] = output['Message'] if 'Message' in output else None
 
     return result
-
 
   def run(self, args, switchDict):
     """

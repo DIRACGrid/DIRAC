@@ -204,12 +204,11 @@ def unpack(switchDict):
       if statusType not in acceptableStatusTypes and statusType != 'all':
         acceptableStatusTypes.append('all')
         self.error("'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
-              % (statusType, str(acceptableStatusTypes)))
+            % (statusType, str(acceptableStatusTypes)))
 
     if 'all' in statusType:
       return acceptableStatusTypes
     return statusTypes
-
 
   def unpack(self, switchDict):
     """
@@ -253,9 +252,7 @@ def unpack(switchDict):
 
     return switchDictSet
 
-
   # UTILS: for filtering 'select' output
-
   def filterReason(self, selectOutput, reason):
     """
       Selects all the elements that match 'reason'
@@ -272,9 +269,7 @@ def unpack(switchDict):
 
     return elementsFiltered
 
-
   # Utils: for formatting query output and notifications
-
   def error(self, msg):
     """
       Format error messages
@@ -285,14 +280,12 @@ def unpack(switchDict):
     self.subLogger.error("\tPlease, check documentation below")
     self.__script.showHelp(exitCode=1)
 
-
   def confirm(self, query, matches):
     """
       Format confirmation messages
     """
 
     self.subLogger.notice("\nNOTICE: '%s' request successfully executed ( matches' number: %s )! \n" % (query, matches))
-
 
   def tabularPrint(self, table):
 
@@ -314,7 +307,6 @@ def unpack(switchDict):
 
     self.subLogger.notice(output)
 
-
   def select(self, args, switchDict):
     """
       Given the switches, request a query 'select' on the ResourceStatusDB
@@ -328,14 +320,14 @@ def unpack(switchDict):
 
     result = {'output': None, 'successful': None, 'message': None, 'match': None}
     output = rssClient.selectStatusElement(element=args[1].title(),
-                                          tableType=args[2].title(),
-                                          name=switchDict['name'],
-                                          statusType=switchDict['statusType'],
-                                          status=switchDict['status'],
-                                          elementType=switchDict['elementType'],
-                                          lastCheckTime=switchDict['lastCheckTime'],
-                                          tokenOwner=switchDict['tokenOwner'],
-                                          meta=meta)
+                                           tableType=args[2].title(),
+                                           name=switchDict['name'],
+                                           statusType=switchDict['statusType'],
+                                           status=switchDict['status'],
+                                           elementType=switchDict['elementType'],
+                                           lastCheckTime=switchDict['lastCheckTime'],
+                                           tokenOwner=switchDict['tokenOwner'],
+                                           meta=meta)
     result['output'] = [dict(zip(output['Columns'], e)) for e in output['Value']]
     result['output'] = self.filterReason(result['output'], switchDict['reason'])
     result['match'] = len(result['output'])
@@ -343,7 +335,6 @@ def unpack(switchDict):
     result['message'] = output['Message'] if 'Message' in output else None
 
     return result
-
 
   def add(self, args, switchDict):
     """
@@ -372,7 +363,6 @@ def unpack(switchDict):
 
     return result
 
-
   def modify(self, args, switchDict):
     """
       Given the switches, request a query 'modify' on the ResourceStatusDB
@@ -383,15 +373,14 @@ def unpack(switchDict):
 
     result = {'output': None, 'successful': None, 'message': None, 'match': None}
     output = rssClient.modifyStatusElement(element=args[1].title(),
-                                          tableType=args[2].title(),
-                                          name=switchDict['name'],
-                                          statusType=switchDict['statusType'],
-                                          status=switchDict['status'],
-                                          elementType=switchDict['elementType'],
-                                          reason=switchDict['reason'],
-                                          tokenOwner=self.getToken('owner'),
-                                          tokenExpiration=self.getToken('expiration')
-                                          )
+                                           tableType=args[2].title(),
+                                           name=switchDict['name'],
+                                           statusType=switchDict['statusType'],
+                                           status=switchDict['status'],
+                                           elementType=switchDict['elementType'],
+                                           reason=switchDict['reason'],
+                                           tokenOwner=self.getToken('owner'),
+                                           tokenExpiration=self.getToken('expiration'))
 
     if output.get('Value'):
       result['match'] = int(output['Value'] if output['Value'] else 0)
@@ -399,7 +388,6 @@ def unpack(switchDict):
     result['message'] = output['Message'] if 'Message' in output else None
 
     return result
-
 
   def delete(self, args, switchDict):
     """
@@ -411,13 +399,13 @@ def unpack(switchDict):
 
     result = {'output': None, 'successful': None, 'message': None, 'match': None}
     output = rssClient.deleteStatusElement(element=args[1].title(),
-                                          tableType=args[2].title(),
-                                          name=switchDict['name'],
-                                          statusType=switchDict['statusType'],
-                                          status=switchDict['status'],
-                                          elementType=switchDict['elementType'],
-                                          reason=switchDict['reason'],
-                                          tokenOwner=switchDict['tokenOwner'])
+                                           tableType=args[2].title(),
+                                           name=switchDict['name'],
+                                           statusType=switchDict['statusType'],
+                                           status=switchDict['status'],
+                                           elementType=switchDict['elementType'],
+                                           reason=switchDict['reason'],
+                                           tokenOwner=switchDict['tokenOwner'])
 
     if 'Value' in output:
       result['match'] = int(output['Value'] if output['Value'] else 0)
@@ -425,7 +413,6 @@ def unpack(switchDict):
     result['message'] = output['Message'] if 'Message' in output else None
 
     return result
-
 
   def run(self, args, switchDictSet):
     """
