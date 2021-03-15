@@ -36,21 +36,21 @@ class Params(object):
          self.addProperty)
     ]
 
-    def setHostName(self, arg):
-      if self.hostName or not arg:
-        self.__script.showHelp(exitCode=1)
-      self.hostName = arg
+  def setHostName(self, arg):
+    if self.hostName or not arg:
+      self.__script.showHelp(exitCode=1)
+    self.hostName = arg
 
-    def setHostDN(self, arg):
-      if self.hostDN or not arg:
-        self.__script.showHelp(exitCode=1)
-      self.hostDN = arg
+  def setHostDN(self, arg):
+    if self.hostDN or not arg:
+      self.__script.showHelp(exitCode=1)
+    self.hostDN = arg
 
-    def addProperty(self, arg):
-      if not arg:
-        self.__script.showHelp(exitCode=1)
-      if arg not in self.hostProperties:
-        self.hostProperties.append(arg)
+  def addProperty(self, arg):
+    if not arg:
+      self.__script.showHelp(exitCode=1)
+    if arg not in self.hostProperties:
+      self.hostProperties.append(arg)
 
 
 @DIRACScript()
