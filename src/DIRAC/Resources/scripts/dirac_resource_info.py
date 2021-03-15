@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
 
   from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
 

@@ -37,7 +37,7 @@ __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch("D", "sync", "Make target directory identical to source")
   self.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
   self.parseCommandLine(ignoreErrors=False)

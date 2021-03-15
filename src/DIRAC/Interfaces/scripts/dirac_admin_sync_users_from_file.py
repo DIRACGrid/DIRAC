@@ -21,14 +21,13 @@ from __future__ import division
 from diraccfg import CFG
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch("t", "test", "Only test. Don't commit changes")
   self.parseCommandLine(ignoreErrors=True)
 

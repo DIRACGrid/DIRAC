@@ -39,21 +39,22 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-extendedPrint = False
 
+class Params(object):
 
-def setExtendedPrint(_arg):
-  global extendedPrint
-  extendedPrint = True
+  def __init__(self):
+    self.extendedPrint = False
+
+  def setExtendedPrint(self, _arg):
+    self.extendedPrint = True
 
 
 @DIRACScript()
-def main(self):
-  global extendedPrint
-  self.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
+def main(self):  # pylint: disable=no-value-for-parameter
+  params = Params()
+  self.registerSwitch('e', 'extended', 'Get extended printout', params.setExtendedPrint)
   self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
@@ -77,7 +78,7 @@ def main(self):
       exitCode = 2
     else:
       res = result['Value'][gridID]
-      if extendedPrint:
+      if params.extendedPrint:
         tab = ''
         for key in [
             'PilotJobReference',

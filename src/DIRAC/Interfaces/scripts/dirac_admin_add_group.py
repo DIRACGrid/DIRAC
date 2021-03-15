@@ -20,53 +20,48 @@ __RCSID__ = "$Id$"
 # pylint: disable=wrong-import-position
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-groupName = None
-groupProperties = []
-userNames = []
+class Params(object):
 
+  def __init__(self, script):
+    self.__script = script
+    self.groupName = None
+    self.groupProperties = []
+    self.userNames = []
 
-def setGroupName(arg):
-  global groupName
-  if groupName or not arg:
-    self.showHelp(exitCode=1)
-  groupName = arg
+  def setGroupName(self, arg):
+    if self.groupName or not arg:
+      self.__script.showHelp(exitCode=1)
+    self.groupName = arg
 
+  def addUserName(self, arg):
+    if not arg:
+      self.__script.showHelp(exitCode=1)
+    if arg not in self.userNames:
+      self.userNames.append(arg)
 
-def addUserName(arg):
-  global userNames
-  if not arg:
-    self.showHelp(exitCode=1)
-  if arg not in userNames:
-    userNames.append(arg)
-
-
-def addProperty(arg):
-  global groupProperties
-  if not arg:
-    self.showHelp(exitCode=1)
-  if arg not in groupProperties:
-    groupProperties.append(arg)
+  def addProperty(self, arg):
+    if not arg:
+      self.__script.showHelp(exitCode=1)
+    if arg not in self.groupProperties:
+      self.groupProperties.append(arg)
 
 
 @DIRACScript()
-def main(self):
-  global groupName
-  global groupProperties
-  global userNames
-  self.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', setGroupName)
+def main(self):  # pylint: disable=no-value-for-parameter
+  params = Params(self)
+  self.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', params.setGroupName)
   self.registerSwitch(
       'U:',
       'UserName:',
       'Short Name of user to be added to the Group (Allow Multiple instances or None)',
-      addUserName)
+      params.addUserName)
   self.registerSwitch(
       'P:',
       'Property:',
       'Property to be added to the Group (Allow Multiple instances or None)',
-      addProperty)
+      params.addProperty)
 
   self.parseCommandLine(ignoreErrors=True)
 

@@ -24,7 +24,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   # Register workflow parameter switch
   self.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
   self.parseCommandLine()

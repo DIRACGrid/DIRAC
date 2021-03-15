@@ -284,7 +284,7 @@ class CreateMovingRequest(object):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   try:
     CMR = CreateMovingRequest(self)
     CMR.run()

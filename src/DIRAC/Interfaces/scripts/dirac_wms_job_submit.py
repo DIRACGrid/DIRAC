@@ -25,12 +25,11 @@ import os
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch("f:", "File=", "Writes job ids to file <value>")
   self.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
   self.parseCommandLine(ignoreErrors=True)

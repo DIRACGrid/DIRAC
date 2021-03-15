@@ -35,7 +35,7 @@ def getLFNList(arg):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   # from DIRAC.Core.Base.Script import parseCommandLine
   self.parseCommandLine()
 

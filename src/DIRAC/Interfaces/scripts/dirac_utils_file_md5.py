@@ -22,12 +22,11 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.parseCommandLine(ignoreErrors=False)
   files = self.getPositionalArgs()
   if len(files) == 0:

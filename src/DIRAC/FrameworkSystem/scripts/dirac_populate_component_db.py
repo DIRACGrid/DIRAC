@@ -39,7 +39,7 @@ def setExcludedHosts(value):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global excludedHosts
   self.registerSwitch(
       "e:",

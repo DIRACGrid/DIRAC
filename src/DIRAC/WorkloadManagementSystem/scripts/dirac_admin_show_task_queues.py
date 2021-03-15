@@ -57,7 +57,7 @@ def setTaskQueueID(optVal):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global verbose
   global taskQueueID
   self.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)

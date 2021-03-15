@@ -33,12 +33,11 @@ __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.parseCommandLine(ignoreErrors=True)
   args = self.getPositionalArgs()
 

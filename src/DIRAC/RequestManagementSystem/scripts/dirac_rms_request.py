@@ -36,7 +36,7 @@ def convertDate(date):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   from DIRAC.Core.Base import Script
   self.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
   self.registerSwitch('', 'Transformation=', '   transformation ID')

@@ -33,7 +33,7 @@ class Params(object):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   cliParams = Params()
 
   self.disableCS()

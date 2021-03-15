@@ -20,7 +20,7 @@ Example:
   $ dirac-stager-show-requests.py --status=Staged --se=GRIDKA-RDST --limit=10 --showJobs=YES
   Query limited to 10 entries
 
-  Status          LastUpdate                     LFN                                                               SE       Reason     Jobs       PinExpiryTime   PinLength
+  Status          LastUpdate           LFN              SE       Reason     Jobs       PinExpiryTime        PinLength
   Staged   2013-06-05 20:10:50 /lhcb/LHCb/5.full.dst GRIDKA-RDST None    ['48498752']  2013-06-05 22:10:50  86400
   Staged   2013-06-06 15:54:29 /lhcb/LHCb/1.full.dst GRIDKA-RDST None    ['48516851']  2013-06-06 16:54:29  43200
   Staged   2013-06-07 02:35:41 /lhcb/LHCb/3.full.dst GRIDKA-RDST None    ['48520736']  2013-06-07 03:35:41  43200
@@ -44,7 +44,7 @@ from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   subLogger = gLogger.getSubLogger(__file__)
 
   switches = (('status=', 'Filter per file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).'

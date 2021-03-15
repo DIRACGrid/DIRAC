@@ -55,7 +55,7 @@ def country(arg):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch(
       "C",
       "country",

@@ -59,6 +59,7 @@ class CreateArchiveRequest(object):
 
   def __init__(self, script):
     """Constructor."""
+    self.__script = script
     self._fcClient = None
     self._reqClient = None
     self.switches = {}
@@ -86,7 +87,7 @@ class CreateArchiveRequest(object):
                   ('', 'SourceOnly', 'Only treat files that are already at the Source-SE'),
                   ('X', 'Execute', 'Put Requests, else dryrun'),
                   ]
-    self.registerSwitchesAndParseCommandLine(script)
+    self.registerSwitchesAndParseCommandLine()
 
     self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', MAX_SIZE))
     self.switches['MaxFiles'] = int(self.switches.setdefault('MaxFiles', MAX_FILES))
@@ -137,7 +138,7 @@ class CreateArchiveRequest(object):
     """Return the lfn folder path where to find the files of the request."""
     return self.switches.get('Path', None)
 
-  def registerSwitchesAndParseCommandLine(self, script):
+  def registerSwitchesAndParseCommandLine(self):
     """Register the default plus additional parameters and parse options.
 
     :param list options: list of three tuple for options to add to the script
@@ -145,13 +146,13 @@ class CreateArchiveRequest(object):
     :param str opName
     """
     for short, longOption, doc in self.options:
-      script.registerSwitch(short + ':' if short else '', longOption + '=', doc)
+      self.__script.registerSwitch(short + ':' if short else '', longOption + '=', doc)
     for short, longOption, doc in self.flags:
-      script.registerSwitch(short, longOption, doc)
-      script.switches[longOption] = False
-    script.parseCommandLine()
-    if script.getPositionalArgs():
-      script.showHelp(exitCode=1)
+      self.__script.registerSwitch(short, longOption, doc)
+      self.switches[longOption] = False
+    self.__script.parseCommandLine()
+    if self.__script.getPositionalArgs():
+      self.__script.showHelp(exitCode=1)
 
     ops = Operations()
     if not ops.getValue('DataManagement/ArchiveFiles/Enabled', False):
@@ -168,7 +169,7 @@ class CreateArchiveRequest(object):
         sLog.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
         self.switches[longOption] = defaultValue
 
-    for switch in script.getUnprocessedSwitches():
+    for switch in self.__script.getUnprocessedSwitches():
       for short, longOption, doc in self.options:
         if switch[0] == short or switch[0].lower() == longOption.lower():
           sLog.verbose('Found switch %r with value %r' % (longOption, switch[1]))
@@ -513,7 +514,7 @@ class CreateArchiveRequest(object):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   try:
     CAR = CreateArchiveRequest(self)
     CAR.run()

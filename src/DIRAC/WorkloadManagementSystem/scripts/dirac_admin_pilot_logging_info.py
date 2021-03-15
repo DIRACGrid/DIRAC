@@ -40,7 +40,7 @@ def setJobID(optVal):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global uuid
   global jobid
   self.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', setUUID)

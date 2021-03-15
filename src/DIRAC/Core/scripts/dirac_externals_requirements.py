@@ -47,7 +47,7 @@ def pipInstall(package, switches=""):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.disableCS()
 
   self.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)

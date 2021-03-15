@@ -42,7 +42,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   def version(arg):
     self.disableCS()
     print(DIRAC.version)

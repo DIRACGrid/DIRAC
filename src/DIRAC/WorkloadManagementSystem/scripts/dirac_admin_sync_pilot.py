@@ -30,7 +30,7 @@ def setNoMasterCS(optVal):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global includeMasterCS
   self.registerSwitch("n", "noMasterCS", "do not include master CS", setNoMasterCS)
   self.parseCommandLine()

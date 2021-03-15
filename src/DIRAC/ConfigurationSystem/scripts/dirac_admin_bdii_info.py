@@ -134,7 +134,7 @@ def showInfo(result, info):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   # Script initialization
   registerSwitches(self)
   # registerUsageMessage()

@@ -417,7 +417,7 @@ def run(args, switchDictSet):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global subLogger
 
   subLogger = gLogger.getSubLogger(__file__)

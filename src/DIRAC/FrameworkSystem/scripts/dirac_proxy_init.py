@@ -250,7 +250,7 @@ class ProxyInit(object):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   piParams = Params()
   self.registerSwitches(piParams.switches)
   self.disableCS()

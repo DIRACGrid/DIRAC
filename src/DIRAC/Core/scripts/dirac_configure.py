@@ -300,7 +300,7 @@ def runConfigurationWizard(params):
     DIRAC.gConfig.setOptionValue('/DIRAC/Extensions', self.extensions)
     DIRAC.gConfig.setOptionValue(cfgInstallPath('Extensions'), self.extensions)
     return DIRAC.S_OK()
-  
+
   def run(self):
     """ Run initialization """
     if not self.logLevel:
@@ -361,11 +361,11 @@ def runConfigurationWizard(params):
     if not self.vo:
       newVO = DIRAC.gConfig.getValue(cfgInstallPath('VirtualOrganization'), '')
       if newVO:
-        setVO(newVO)
+        self.setVO(newVO)
     if not self.extensions:
       newExtensions = DIRAC.gConfig.getValue(cfgInstallPath('Extensions'), '')
       if newExtensions:
-        setExtensions(newExtensions)
+        self.setExtensions(newExtensions)
 
     DIRAC.gLogger.notice('Executing: %s ' % (' '.join(sys.argv)))
     DIRAC.gLogger.notice('Checking DIRAC installation at "%s"' % DIRAC.rootPath)
@@ -586,13 +586,13 @@ def runConfigurationWizard(params):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.disableCS()
 
   confInit = ConfigureInit(self)
   self.registerSwitches(confInit.switches)
   self.parseCommandLine(ignoreErrors=True)
-  
+
   confInit.run()
 
 

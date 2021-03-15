@@ -37,7 +37,7 @@ def setSites(optVal_):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global fullMatch
   global sites
   self.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)

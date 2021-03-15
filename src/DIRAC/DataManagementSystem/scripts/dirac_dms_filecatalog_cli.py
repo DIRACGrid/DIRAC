@@ -34,7 +34,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   fcType = 'FileCatalog'
   self.registerSwitch("f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType)
   self.parseCommandLine(ignoreErrors=False)

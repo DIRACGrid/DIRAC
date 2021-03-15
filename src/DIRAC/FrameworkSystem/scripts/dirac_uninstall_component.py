@@ -35,7 +35,7 @@ def setForce(opVal):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global force
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller

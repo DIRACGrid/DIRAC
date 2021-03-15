@@ -25,7 +25,7 @@ __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   positionalArgs = self.localCfg.getPositionalArguments()
   if len(positionalArgs) == 0:
     gLogger.fatal("You must specify which server to run!")

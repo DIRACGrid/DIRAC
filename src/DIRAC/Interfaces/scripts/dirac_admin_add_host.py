@@ -18,49 +18,44 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-hostName = None
-hostDN = None
-hostProperties = []
+class Params(object):
 
+  def __init__(self, script):
+    self.__script = script
+    self.hostName = None
+    self.hostDN = None
+    self.hostProperties = []
+    self.switches = [
+        ('H:', 'HostName:', 'Name of the Host (Mandatory)', self.setHostName),
+        ('D:', 'HostDN:', 'DN of the Host Certificate (Mandatory)', self.setHostDN),
+        ('P:', 'Property:',
+         'Property to be added to the Host (Allow Multiple instances or None)',
+         self.addProperty)
+    ]
 
-def setHostName(arg):
-  global hostName
-  if hostName or not arg:
-    self.showHelp(exitCode=1)
-  hostName = arg
+    def setHostName(self, arg):
+      if self.hostName or not arg:
+        self.__script.showHelp(exitCode=1)
+      self.hostName = arg
 
+    def setHostDN(self, arg):
+      if self.hostDN or not arg:
+        self.__script.showHelp(exitCode=1)
+      self.hostDN = arg
 
-def setHostDN(arg):
-  global hostDN
-  if hostDN or not arg:
-    self.showHelp(exitCode=1)
-  hostDN = arg
-
-
-def addProperty(arg):
-  global hostProperties
-  if not arg:
-    self.showHelp(exitCode=1)
-  if arg not in hostProperties:
-    hostProperties.append(arg)
+    def addProperty(self, arg):
+      if not arg:
+        self.__script.showHelp(exitCode=1)
+      if arg not in self.hostProperties:
+        self.hostProperties.append(arg)
 
 
 @DIRACScript()
-def main(self):
-  global hostName
-  global hostDN
-  global hostProperties
-  self.registerSwitch('H:', 'HostName:', 'Name of the Host (Mandatory)', setHostName)
-  self.registerSwitch('D:', 'HostDN:', 'DN of the Host Certificate (Mandatory)', setHostDN)
-  self.registerSwitch(
-      'P:',
-      'Property:',
-      'Property to be added to the Host (Allow Multiple instances or None)',
-      addProperty)
-
+def main(self):  # pylint: disable=no-value-for-parameter
+  params = Params(self)
+  self.registerSwitches(params.switches)
   self.parseCommandLine(ignoreErrors=True)
 
   if hostName is None or hostDN is None:

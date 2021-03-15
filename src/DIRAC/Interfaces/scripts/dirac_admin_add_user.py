@@ -18,65 +18,58 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-userName = None
-userDN = None
-userMail = None
-userGroups = []
 
+class Params(object):
 
-def setUserName(arg):
-  global userName
-  if userName or not arg:
-    self.showHelp(exitCode=1)
-  userName = arg
+  def __init__(self, script):
+    self.__script = script
+    self.userName = None
+    self.userDN = None
+    self.userMail = None
+    self.userGroups = []
 
+  def setUserName(self, arg):
+    if self.userName or not arg:
+      self.__script.showHelp(exitCode=1)
+    self.userName = arg
 
-def setUserDN(arg):
-  global userDN
-  if userDN or not arg:
-    self.showHelp(exitCode=1)
-  userDN = arg
+  def setUserDN(self, arg):
+    if self.userDN or not arg:
+      self.__script.showHelp(exitCode=1)
+    self.userDN = arg
 
+  def setUserMail(self, arg):
+    if self.userMail or not arg:
+      self.__script.showHelp(exitCode=1)
+    if not arg.find('@') > 0:
+      self.gLogger.error('Not a valid mail address', arg)
+      DIRAC.exit(-1)
+    self.userMail = arg
 
-def setUserMail(arg):
-  global userMail
-  if userMail or not arg:
-    self.showHelp(exitCode=1)
-  if not arg.find('@') > 0:
-    self.gLogger.error('Not a valid mail address', arg)
-    DIRAC.exit(-1)
-  userMail = arg
-
-
-def addUserGroup(arg):
-  global userGroups
-  if not arg:
-    self.showHelp(exitCode=1)
-  if arg not in userGroups:
-    userGroups.append(arg)
+  def addUserGroup(self, arg):
+    if not arg:
+      self.__script.showHelp(exitCode=1)
+    if arg not in self.userGroups:
+      self.userGroups.append(arg)
 
 
 @DIRACScript()
-def main(self):
-  global userName
-  global userDN
-  global userMail
-  global userGroups
-  self.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', setUserName)
-  self.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', setUserDN)
-  self.registerSwitch('M:', 'UserMail:', 'eMail of the user (Mandatory)', setUserMail)
+def main(self):  # pylint: disable=no-value-for-parameter
+  params = Params(self)
+  self.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', params.setUserName)
+  self.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', params.setUserDN)
+  self.registerSwitch('M:', 'UserMail:', 'eMail of the user (Mandatory)', params.setUserMail)
   self.registerSwitch(
       'G:',
       'UserGroup:',
       'Name of the Group for the User (Allow Multiple instances or None)',
-      addUserGroup)
+      params.addUserGroup)
 
   self.parseCommandLine(ignoreErrors=True)
 
-  if userName is None or userDN is None or userMail is None:
+  if params.userName is None or params.userDN is None or params.userMail is None:
     self.showHelp(exitCode=1)
 
   args = self.getPositionalArgs()
@@ -86,9 +79,9 @@ def main(self):
   exitCode = 0
   errorList = []
 
-  userProps = {'DN': userDN, 'Email': userMail}
-  if userGroups:
-    userProps['Groups'] = userGroups
+  userProps = {'DN': params.userDN, 'Email': params.userMail}
+  if params.userGroups:
+    userProps['Groups'] = params.userGroups
   for prop in args:
     pl = prop.split("=")
     if len(pl) < 2:
@@ -100,8 +93,8 @@ def main(self):
       self.gLogger.info("Setting property %s to %s" % (pName, pValue))
       userProps[pName] = pValue
 
-  if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=True)['OK']:
-    errorList.append(("add user", "Cannot register user %s" % userName))
+  if not diracAdmin.csModifyUser(params.userName, userProps, createIfNonExistant=True)['OK']:
+    errorList.append(("add user", "Cannot register user %s" % params.userName))
     exitCode = 255
   else:
     result = diracAdmin.csCommitChanges()

@@ -68,7 +68,7 @@ def getDict(item_list):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global overwrite
   self.registerSwitch("f", "force", "Force overwrite of existing file", setOverwrite)
   self.parseCommandLine(ignoreErrors=True)

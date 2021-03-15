@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch('', 'Full', '   Print full list of requests')
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()

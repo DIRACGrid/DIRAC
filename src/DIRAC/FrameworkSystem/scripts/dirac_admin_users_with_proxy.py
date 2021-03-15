@@ -25,7 +25,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -51,9 +50,9 @@ class Params(object):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   params = Params()
-  self.registerCLISwitch(("v:", "valid=", "Required HH:MM for the users", prams.setProxyLifeTime))
+  self.registerSwitch(("v:", "valid=", "Required HH:MM for the users", params.setProxyLifeTime))
   self.parseCommandLine(ignoreErrors=True)
   args = self.getPositionalArgs()
   result = gProxyManager.getDBContents()

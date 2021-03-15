@@ -19,12 +19,11 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch("D:", "Dir=", "Store the output in this directory")
   self.parseCommandLine(ignoreErrors=True)
   args = self.getPositionalArgs()

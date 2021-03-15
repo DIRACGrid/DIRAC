@@ -32,7 +32,7 @@ def getLFNList(arg):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   catalog = None
   self.registerSwitch("C:", "Catalog=", "Catalog to use")
   self.parseCommandLine()

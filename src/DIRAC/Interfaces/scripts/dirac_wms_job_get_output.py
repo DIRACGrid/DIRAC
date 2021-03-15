@@ -26,12 +26,11 @@ import os
 import shutil
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch("D:", "Dir=", "Store the output in this directory")
   self.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
   self.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")

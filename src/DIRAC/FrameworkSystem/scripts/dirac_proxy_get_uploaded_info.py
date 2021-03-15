@@ -47,7 +47,7 @@ def setUser(arg):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global userName
   self.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)
   self.parseCommandLine()

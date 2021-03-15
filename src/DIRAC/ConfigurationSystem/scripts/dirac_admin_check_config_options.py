@@ -202,11 +202,11 @@ class CheckConfig(object):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   checkConfig = CheckConfig()
   self.registerSwitches(checkConfig.switches)
   self.parseCommandLine(ignoreErrors=True)
-  
+
   if not checkConfig.run()['OK']:
     self.showHelp()
 

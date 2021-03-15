@@ -53,12 +53,12 @@ class Params(object):
 
 # IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   '''
     This is the script main method, which will hold all the logic.
   '''
   params = Params()
-  
+
   # Script initialization
   self.registerSwitches(params.switches)
 
@@ -69,7 +69,7 @@ def main(self):
   servicesList = args
   switches = dict(unprogressSwitches)
 
-  gLogger.info('This is the servicesList %s:' % servicesList)  
+  gLogger.info('This is the servicesList %s:' % servicesList)
   gLogger.debug("The switches used are:")
   map(gLogger.debug, switches.iteritems())
 

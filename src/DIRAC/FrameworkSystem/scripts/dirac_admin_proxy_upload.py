@@ -23,7 +23,7 @@ from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   cliParams = CLIParams()
   self.registerSwitches(cliParams.proxyUploadSwitches)
 

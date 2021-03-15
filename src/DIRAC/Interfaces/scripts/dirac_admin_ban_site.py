@@ -24,12 +24,11 @@ __RCSID__ = "$Id$"
 
 import time
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
   self.parseCommandLine(ignoreErrors=True)
 

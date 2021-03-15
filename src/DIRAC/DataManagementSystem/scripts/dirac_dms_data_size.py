@@ -27,7 +27,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   unit = 'GB'
   self.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
 

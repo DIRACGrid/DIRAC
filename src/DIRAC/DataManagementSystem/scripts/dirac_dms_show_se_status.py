@@ -54,7 +54,7 @@ def setNoVO(arg):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global vo
   global noVOFlag
   global allVOsFlag

@@ -25,12 +25,11 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitch('a', "All", "  Also show inactive replicas")
   self.parseCommandLine(ignoreErrors=True)
   lfns = self.getPositionalArgs()

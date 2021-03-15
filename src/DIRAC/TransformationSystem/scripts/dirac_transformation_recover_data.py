@@ -19,6 +19,10 @@ class Params(object):
   def __init__(self):
     self.enabled = False
     self.transID = 0
+    self.switches = [
+        ('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID),
+        ('X', 'Enabled', 'Enable the changes', self.setEnabled)
+    ]
 
   def setEnabled(self, _):
     self.enabled = True
@@ -28,15 +32,11 @@ class Params(object):
     self.transID = int(transID)
     return S_OK()
 
-  def registerSwitches(self):
-    self.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
-    self.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
-
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   PARAMS = Params()
-  PARAMS.registerSwitches(self)
+  self.registerSwitches(PARAMS.switches)
   self.parseCommandLine(ignoreErrors=False)
 
   # Create Data Recovery Agent and run over single transformation.

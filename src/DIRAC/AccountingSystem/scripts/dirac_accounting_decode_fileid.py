@@ -29,7 +29,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
   self.parseCommandLine()
 

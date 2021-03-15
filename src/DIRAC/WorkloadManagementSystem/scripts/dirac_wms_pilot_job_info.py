@@ -31,7 +31,7 @@ def _stringInList(subStr, sList):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
   self.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
   self.parseCommandLine(ignoreErrors=True)

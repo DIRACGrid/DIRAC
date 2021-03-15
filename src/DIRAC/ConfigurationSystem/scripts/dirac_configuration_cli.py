@@ -18,7 +18,7 @@ from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   self.localCfg.addDefaultEntry("LogLevel", "fatal")
   self.parseCommandLine()
 

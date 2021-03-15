@@ -35,7 +35,7 @@ class Params:
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   params = Params()
 
   self.registerSwitch("f:", "file=", "File to use as proxy", params.setProxyLocation)

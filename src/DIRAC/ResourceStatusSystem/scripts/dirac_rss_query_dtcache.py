@@ -341,7 +341,7 @@ def run(args, switchDict):
 
 
 @DIRACScript()
-def main(self):
+def main(self):  # pylint: disable=no-value-for-parameter
   global subLogger
   global ResourceManagementClient
 
