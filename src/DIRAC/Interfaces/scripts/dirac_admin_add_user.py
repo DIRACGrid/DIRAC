@@ -44,7 +44,7 @@ class Params(object):
     if self.userMail or not arg:
       self.__script.showHelp(exitCode=1)
     if not arg.find('@') > 0:
-      self.gLogger.error('Not a valid mail address', arg)
+      self.__script.gLogger.error('Not a valid mail address', arg)
       DIRAC.exit(-1)
     self.userMail = arg
 
@@ -90,7 +90,7 @@ def main(self):
     else:
       pName = pl[0]
       pValue = "=".join(pl[1:])
-      self.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      self.__script.gLogger.info("Setting property %s to %s" % (pName, pValue))
       userProps[pName] = pValue
 
   if not diracAdmin.csModifyUser(params.userName, userProps, createIfNonExistant=True)['OK']:
@@ -103,7 +103,7 @@ def main(self):
       exitCode = 255
 
   for error in errorList:
-    self.gLogger.error("%s: %s" % error)
+    self.__script.gLogger.error("%s: %s" % error)
 
   DIRAC.exit(exitCode)
 

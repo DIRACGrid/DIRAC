@@ -289,4 +289,4 @@ if __name__ == "__main__":
   doCEs = False
   ceBdiiDict = None
 
-  main()
+  main()  # pylint: disable=no-value-for-parameter

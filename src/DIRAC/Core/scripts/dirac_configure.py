@@ -9,31 +9,6 @@
 
   To be used by VO specific scripts to configure new DIRAC installations
 
-  There are 2 mandatory arguments:
-
-  -S --Setup=<setup>                               To define the DIRAC setup for the current installation
-  -C --ConfigurationServer=<server>|-W --Gateway   To define the reference Configuration Servers/Gateway
-                                                   for the current installation
-
-  others are optional
-
-  -I --IncludeAllServers                           To include all Configuration Servers
-                                                   (by default only those in -C option are included)
-  -n --SiteName=<sitename>                         To define the DIRAC Site Name for the installation
-  -N --CEName=<cename>                             To determine the DIRAC Site Name from the CE Name
-  -V --VO=<vo>                                     To define the VO for the installation
-  -U  --UseServerCertificate                       To use Server Certificate for all clients
-  -H  --SkipCAChecks                               To skip check of CAs for all clients
-  -D  --SkipCADownload                             To skip download of CAs
-  -M  --SkipVOMSDownload                           To skip download of VOMS info
-  -v --UseVersionsDir                              Use versions directory
-                                                   (This option will properly define RootPath and InstancePath)
-  -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
-  -L --LocalSE=<localse>                           To define /LocalSite/LocalSE=<localse>
-  -F --ForceUpdate                                 Forces the update of cfg file (i.e. dirac.cfg),
-                                                   even if it does already exists (use with care)
-  -O --Output                                      define output configuration file
-
   Other arguments will take proper defaults if not defined.
 
   Additionally all options can all be passed inside a .cfg file passed as argument.
