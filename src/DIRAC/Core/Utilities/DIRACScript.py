@@ -26,12 +26,17 @@ class DIRACScript(object):
   def __init__(self):
     """ c'tor
     """
-    self.scriptName = None
     self.alreadyInitialized = False
     self.doc = inspect.currentframe().f_back.f_globals['__doc__']
+    self.scriptName = inspect.currentframe().f_back.f_globals['__name__'].split('.')[-1].replace('_', '-')
     self.localCfg = LocalConfiguration()
     self.localCfg.setUsageMessage(self.doc)
     self.showHelp = self.localCfg.showHelp
+    self.initializeScript()
+  
+  def initializeScript(self):
+    """ Script initialization """
+    pass
 
   def __call__(self, func=None):
     """Set the wrapped function or call the script
@@ -57,7 +62,7 @@ class DIRACScript(object):
     matches = defaultdict(list)
     function_name = None
     for entrypoint in metadata.entry_points()['console_scripts']:
-      if not entrypoint.name.startswith("dirac-"):
+      if not entrypoint.name.startswith("dirac-") or self.scriptName != entrypoint.name:
         continue
       entrypointFunc = entrypoint.load()
       if not isinstance(entrypointFunc, DIRACScript):
