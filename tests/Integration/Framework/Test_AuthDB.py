@@ -7,40 +7,17 @@ from __future__ import print_function
 
 # pylint: disable=invalid-name,wrong-import-position,protected-access
 import sys
-import unittest
-
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
+import pytest
 
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 
 
 db = AuthDB()
 
-
-class AuthDBTestCase(unittest.TestCase):
-
-  @classmethod
-  def setUpClass(cls):
-    pass
-
-  def setUp(self):
-    pass
-
-  def tearDown(self):
-    pass
-
-  @classmethod
-  def tearDownClass(cls):
-    pass
-
-class testDB(AuthDBTestCase):
-
-  def test_connectDB(self):
-    """ Try to connect to the AuthDB
-    """
-    res = db._connect()
-    self.assertTrue(res['OK'])
+def test_connectDB(self):
+  """ Try to connect to the AuthDB """
+  result = db._connect()
+  assert result['OK'] result['Message']
 
   def test_Clients(self):
     """ Try to store/get/remove Clients

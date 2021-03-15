@@ -92,6 +92,7 @@ class Token(Model, OAuth2TokenMixin):
   provider = Column(Text)
   user_id = Column(String(255), nullable=False)
 
+
 class AuthDB(SQLAlchemyDB):
   """ AuthDB class is a front-end to the OAuth Database
   """
