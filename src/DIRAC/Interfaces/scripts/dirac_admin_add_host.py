@@ -20,6 +20,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+
 class Params(object):
 
   def __init__(self, script):
@@ -58,7 +59,7 @@ def main(self):  # pylint: disable=no-value-for-parameter
   self.registerSwitches(params.switches)
   self.parseCommandLine(ignoreErrors=True)
 
-  if hostName is None or hostDN is None:
+  if params.hostName is None or params.hostDN is None:
     self.showHelp(exitCode=1)
 
   args = self.getPositionalArgs()
@@ -68,9 +69,9 @@ def main(self):  # pylint: disable=no-value-for-parameter
   exitCode = 0
   errorList = []
 
-  hostProps = {'DN': hostDN}
-  if hostProperties:
-    hostProps['Properties'] = ', '.join(hostProperties)
+  hostProps = {'DN': params.hostDN}
+  if params.hostProperties:
+    hostProps['Properties'] = ', '.join(params.hostProperties)
 
   for prop in args:
     pl = prop.split("=")
@@ -83,8 +84,8 @@ def main(self):  # pylint: disable=no-value-for-parameter
       self.gLogger.info("Setting property %s to %s" % (pName, pValue))
       hostProps[pName] = pValue
 
-  if not diracAdmin.csModifyHost(hostName, hostProps, createIfNonExistant=True)['OK']:
-    errorList.append(("add host", "Cannot register host %s" % hostName))
+  if not diracAdmin.csModifyHost(params.hostName, hostProps, createIfNonExistant=True)['OK']:
+    errorList.append(("add host", "Cannot register host %s" % params.hostName))
     exitCode = 255
   else:
     result = diracAdmin.csCommitChanges()
@@ -95,13 +96,13 @@ def main(self):  # pylint: disable=no-value-for-parameter
   if exitCode == 0:
     from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
     cmc = ComponentMonitoringClient()
-    ret = cmc.hostExists(dict(HostName=hostName))
+    ret = cmc.hostExists(dict(HostName=params.hostName))
     if not ret['OK']:
       self.gLogger.error('Cannot check if host is registered in ComponentMonitoring', ret['Message'])
     elif ret['Value']:
       self.gLogger.info('Host already registered in ComponentMonitoring')
     else:
-      ret = cmc.addHost(dict(HostName=hostName, CPU='TO_COME'))
+      ret = cmc.addHost(dict(HostName=params.hostName, CPU='TO_COME'))
       if not ret['OK']:
         self.gLogger.error('Failed to add Host to ComponentMonitoring', ret['Message'])
 

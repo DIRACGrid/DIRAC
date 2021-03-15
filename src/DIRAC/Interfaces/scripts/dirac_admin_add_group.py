@@ -22,6 +22,7 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+
 class Params(object):
 
   def __init__(self, script):
@@ -65,7 +66,7 @@ def main(self):  # pylint: disable=no-value-for-parameter
 
   self.parseCommandLine(ignoreErrors=True)
 
-  if groupName is None:
+  if params.groupName is None:
     self.showHelp(exitCode=1)
 
   args = self.getPositionalArgs()
@@ -76,10 +77,10 @@ def main(self):  # pylint: disable=no-value-for-parameter
   errorList = []
 
   groupProps = {}
-  if userNames:
-    groupProps['Users'] = ', '.join(userNames)
-  if groupProperties:
-    groupProps['Properties'] = ', '.join(groupProperties)
+  if params.userNames:
+    groupProps['Users'] = ', '.join(params.userNames)
+  if params.groupProperties:
+    groupProps['Properties'] = ', '.join(params.groupProperties)
 
   for prop in args:
     pl = prop.split("=")
@@ -92,8 +93,8 @@ def main(self):  # pylint: disable=no-value-for-parameter
       self.gLogger.info("Setting property %s to %s" % (pName, pValue))
       groupProps[pName] = pValue
 
-  if not diracAdmin.csModifyGroup(groupName, groupProps, createIfNonExistant=True)['OK']:
-    errorList.append(("add group", "Cannot register group %s" % groupName))
+  if not diracAdmin.csModifyGroup(params.groupName, groupProps, createIfNonExistant=True)['OK']:
+    errorList.append(("add group", "Cannot register group %s" % params.groupName))
     exitCode = 255
   else:
     result = diracAdmin.csCommitChanges()
