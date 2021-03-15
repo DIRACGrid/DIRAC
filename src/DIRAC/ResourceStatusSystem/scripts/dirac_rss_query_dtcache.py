@@ -349,7 +349,7 @@ class Params(object):
 
 @DIRACScript()
 def main(self):
-
+  params = Params(self)
   # Script initialization
   params.registerSwitches()
   params.registerUsageMessage()
