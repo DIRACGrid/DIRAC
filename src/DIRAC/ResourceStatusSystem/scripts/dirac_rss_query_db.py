@@ -204,7 +204,7 @@ def unpack(switchDict):
       if statusType not in acceptableStatusTypes and statusType != 'all':
         acceptableStatusTypes.append('all')
         self.error("'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
-            % (statusType, str(acceptableStatusTypes)))
+                   % (statusType, str(acceptableStatusTypes)))
 
     if 'all' in statusType:
       return acceptableStatusTypes
