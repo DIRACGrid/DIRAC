@@ -105,7 +105,6 @@ else:
   majorVersion = 7
   minorVersion = 2
   patchLevel = 0
-  patchLevel = 0
   preVersion = 0
 
   version = "v%sr%s" % (majorVersion, minorVersion)
