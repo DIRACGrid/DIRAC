@@ -18,6 +18,6 @@ pyasn1_modules
 pyparsing
 pytz
 recommonmark
-sqlalchemy
+sqlalchemy==1.3.23
 subprocess32
 suds
