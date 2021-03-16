@@ -1,4 +1,4 @@
-[v7r2-pre39]
+[v7r2]
 
 FIX: python 2-3 compatibility fixes
 NEW: (#4209) Extends the MonitoringSystem to support RMS and DMS/Agents/RequestOperations.
