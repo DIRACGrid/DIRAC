@@ -115,6 +115,10 @@ NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
+[v7r1p34]
+
+FIX: Fixes from v7r0p51 patch release
+
 [v7r1p33]
 
 *DMS
@@ -692,6 +696,12 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p51]
+
+*Configuration
+FIX: (#5037) VOMS2CSAgent: fix an issue in the agent that prevented users being added to
+     a second VO if they were already existing in another VO
 
 [v7r0p50]
 
