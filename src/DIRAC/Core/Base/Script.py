@@ -19,7 +19,6 @@ from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 
 localCfg = LocalConfiguration()
 
-doc = inspect.currentframe().f_back.f_globals['__doc__']
 caller = inspect.currentframe().f_back.f_globals['__name__']
 
 
@@ -51,12 +50,19 @@ i = 0 if i == len(sys.argv) else i
 scriptName = os.path.basename(sys.argv[i].split('::')[0]).replace('.py', '')
 # The first argument DIRAC should parse is the next one
 localCfg.firstOptionIndex = i + 1
-# Read and parse the script __doc__ to create a draft help message
-localCfg.setUsageMessage(doc)
+
+gIsAlreadySetUsageMsg = False
 gIsAlreadyInitialized = False
 
 
 def parseCommandLine(script=False, ignoreErrors=False, initializeMonitor=False):
+  global gIsAlreadySetUsageMsg, gIsAlreadyInitialized
+
+  # Read and parse the script __doc__ to create a draft help message
+  if not gIsAlreadySetUsageMsg:
+    localCfg.setUsageMessage(inspect.currentframe().f_back.f_globals['__doc__'])
+    gIsAlreadySetUsageMsg = True
+
   if gIsAlreadyInitialized:
     return False
   gLogger.showHeaders(False)
@@ -126,6 +132,9 @@ def addDefaultOptionValue(option, value):
 
 
 def setUsageMessage(usageMessage):
+  global gIsAlreadySetUsageMsg
+  gIsAlreadySetUsageMsg = True
+  localCfg.setUsageMessage(inspect.currentframe().f_back.f_globals['__doc__'])
   localCfg.setUsageMessage(usageMessage)
 
 
