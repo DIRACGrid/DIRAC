@@ -13,7 +13,7 @@ from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getVOMSRoleGroupMapping, \
-    getUsersInVO, getAllUsers, getUserOption
+    getUsersInVO, getAllUsers, getUserOption, getGroupsForUser
 
 
 def _getUserNameFromMail(mail):
@@ -341,6 +341,12 @@ class VOMS2CSSynchronizer(object):
         otherGroups = newAddedUserDict[diracName].get('Groups', [])
         userDict['Groups'] = list(set(keepGroups + otherGroups))
         modified = True
+      if not existingGroups and diracName in allDiracUsers:
+        groups = getGroupsForUser(diracName)
+        if groups['OK']:
+          self.log.info('Found groups for user %s %s' % (diracName, groups['Value']))
+          userDict['Groups'] = list(set(groups['Value'] + keepGroups))
+          modified = True
 
       # Check if something changed before asking CSAPI to modify
       if diracName in diracUserDict:
