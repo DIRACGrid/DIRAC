@@ -20,5 +20,4 @@ The databases associated to Framework System are:
 - ComponentMonitoringDB
 - NotificationDB
 - ProxyDB
-- SystemLoggingDB
 - UserProfileDB

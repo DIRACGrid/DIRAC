@@ -10,7 +10,7 @@ presented in the following table:
 | *LogLevel*              | Level of log                                 | LogLevel = INFO             |
 +-------------------------+----------------------------------------------+-----------------------------+
 | *LogBackends*           | Log backends                                 | LogBackends = stdout        |
-|                         |                                              | LogBackends += server       |
+|                         |                                              | LogBackends += ...          |
 +-------------------------+----------------------------------------------+-----------------------------+
 | *MaskRequestParameters* | Request to mask the values, possible values: | MaskRequestParameters = yes |
 |                         | yes or no                                    |                             |

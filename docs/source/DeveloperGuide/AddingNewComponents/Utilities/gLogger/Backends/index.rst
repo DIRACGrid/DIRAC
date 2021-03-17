@@ -52,21 +52,6 @@ Parameters
 | LogLevel  | log level of the backend: will only accept logs above this level | 'DEBUG'              |
 +-----------+------------------------------------------------------------------+----------------------+
 
-ServerBackend
--------------
-
-Description
-~~~~~~~~~~~
-Used to emit log records in the *SystemLogging* service of *DIRAC* in order to store them in the *SystemLoggingDB* database.
-This *Backend* only allows log records superior or equal to *Error* to be sent to the service.
-
-Parameters
-~~~~~~~~~~
-+-----------+----------------------------------------------------------+----------------------+
-| Option    | Description                                              | Default value        |
-+===========+==========================================================+======================+
-| SleepTime | sleep time in seconds                                    | 150                  |
-+-----------+----------------------------------------------------------+----------------------+
 
 ElasticSearchBackend
 --------------------

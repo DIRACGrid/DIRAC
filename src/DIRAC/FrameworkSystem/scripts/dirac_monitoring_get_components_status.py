@@ -30,14 +30,13 @@ def main():
     fieldLengths.append(len(param))
 
   for record in records:
-    for i in range(len(record)):
+    for i, _ in enumerate(record):
       if paramNames[i] in fieldsToShow:
         fieldLengths[i] = max(fieldLengths[i], len(str(record[i])))
   # Print time!
   line = []
   sepLine = []
-  for i in range(len(paramNames)):
-    param = paramNames[i]
+  for i, param in enumerate(paramNames):
     if param in fieldsToShow:
       line.append("%s%s" % (param, " " * (fieldLengths[i] - len(param))))
       sepLine.append("-" * fieldLengths[i])
@@ -46,7 +45,7 @@ def main():
   print(sepLine)
   for record in records:
     line = []
-    for i in range(len(record)):
+    for i, _ in enumerate(record):
       if paramNames[i] in fieldsToShow:
         val = str(record[i])
         line.append("%s%s" % (val, " " * (fieldLengths[i] - len(val))))

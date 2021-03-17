@@ -5,6 +5,7 @@ Logging Root
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import logging
@@ -78,7 +79,6 @@ class LoggingRoot(Logging):
     """
     Configure the root Logging.
     It can be possible to :
-
     - attach it some backends : LogBackends = stdout,stderr,file,server
     - attach backend options : BackendOptions { FileName = /tmp/file.log }
     - add colors and the path of the call : LogColor = True, LogShowLine = True

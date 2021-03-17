@@ -17,7 +17,7 @@ Common options for all the agents:
 +---------------------+---------------------------------------+------------------------------+
 | *LogLevel*          | Log Level associated to the agent     | LogLevel = DEBUG             |
 +---------------------+---------------------------------------+------------------------------+
-| *LogBackends*       |                                       | LogBackends = stdout, server |
+| *LogBackends*       |                                       | LogBackends = stdout, ...    |
 +---------------------+---------------------------------------+------------------------------+
 | *MaxCycles*         | Maximum number of cycles made for     | MaxCycles = 500              |
 |                     | Agent                                 |                              |
@@ -40,5 +40,3 @@ Agents associated with Framework System:
 
    CAUpdateAgent/index
    MyProxyRenewalAgent/index
-   SystemLoggingDBCleaner/index
-   TopErrorMessagesReporter/index

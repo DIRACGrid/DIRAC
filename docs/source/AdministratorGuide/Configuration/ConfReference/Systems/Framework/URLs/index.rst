@@ -29,9 +29,5 @@ Services associated with Framework System:
 +-----------------------+----------+
 | *SystemAdministrator* | 9162     |
 +-----------------------+----------+
-| *SystemLogging*       | 9141     |
-+-----------------------+----------+
-| *SystemLoggingReport* | 9144     |
-+-----------------------+----------+
 | *UserProfileManager*  | 9155     |
 +-----------------------+----------+
