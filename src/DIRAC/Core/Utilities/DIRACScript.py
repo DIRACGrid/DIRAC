@@ -106,3 +106,13 @@ def _extensionsByPriority():
     # If multiple are passed, sort the extensions so things are deterministic at least
     extensions.extend(sorted(extensionNames))
   return extensions
+
+
+def _getExtensionMetadata(extensionName):
+  """Get the metadata for a given extension name"""
+  # This is only available in Python 3.8+ so it has to be here for now
+  from importlib import metadata  # pylint: disable=no-name-in-module
+
+  for entrypoint in metadata.entry_points()['dirac']:
+    if extensionName == _entrypointToExtension(entrypoint):
+      return entrypoint.load()()
