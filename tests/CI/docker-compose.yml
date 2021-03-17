@@ -32,7 +32,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 5s
       timeout: 2s
-      retries: 10
+      retries: 15
 
   # Mock of an S3 storage
   s3-direct:

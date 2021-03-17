@@ -6,9 +6,11 @@ Script that emulates the behaviour of a shell to edit the CS config.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
+__RCSID__ = "$Id$"
+
 import sys
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 # Invariants:

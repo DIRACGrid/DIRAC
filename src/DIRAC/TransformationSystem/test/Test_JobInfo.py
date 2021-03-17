@@ -453,8 +453,12 @@ class TestJI(unittest.TestCase):
     self.jbi.inputFiles = []
     tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
     lfnTaskDict = {}
-    with self.assertRaisesRegex(TaskInfoException, "InputFiles is empty"):
-      self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
+    if six.PY3:
+      with self.assertRaisesRegex(TaskInfoException, "InputFiles is empty"):
+        self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
+    else:
+      with self.assertRaisesRegexp(TaskInfoException, "InputFiles is empty"):
+        self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   def test_getJobInformation(self):
     """Transformation.Utilities.JobInfo.getJobInformation........................................"""

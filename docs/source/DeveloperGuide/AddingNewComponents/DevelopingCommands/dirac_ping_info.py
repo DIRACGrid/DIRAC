@@ -13,9 +13,9 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import sys
+
 from DIRAC import exit as DIRACExit
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
