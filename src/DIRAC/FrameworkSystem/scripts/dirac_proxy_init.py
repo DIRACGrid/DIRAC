@@ -21,7 +21,6 @@ import time
 import datetime
 
 import DIRAC
-
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript

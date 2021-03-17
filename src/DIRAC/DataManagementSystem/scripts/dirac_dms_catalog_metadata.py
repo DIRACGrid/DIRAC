@@ -29,7 +29,7 @@ def main(self):
   self.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
 
   self.parseCommandLine()
-  inputFileName, catalogs = getPositionalArgs(group=True)
+  inputFileName, catalogs = self.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

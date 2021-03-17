@@ -23,9 +23,10 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 
 @DIRACScript()
 def main(self):
-  self.localCfg.registerCmdArg("Agent: specify which agent to run")
-  agentName = self.localCfg.getPositionalArguments(group=True)
+  self.localCfg.registerCmdArg(["Agent: specify which agent to run"])
+  agents = self.localCfg.getPositionalArguments(group=True)
 
+  agentName = agents[0]
   self.localCfg.setConfigurationForAgent(agentName)
   self.localCfg.addMandatoryEntry("/DIRAC/Setup")
   self.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
@@ -38,8 +39,8 @@ def main(self):
 
   includeExtensionErrors()
 
-  agentReactor = AgentReactor(positionalArgs[0])
-  result = agentReactor.loadAgentModules(positionalArgs)
+  agentReactor = AgentReactor(agentName)
+  result = agentReactor.loadAgentModules(agents)
   if result['OK']:
     agentReactor.go()
   else:

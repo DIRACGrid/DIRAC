@@ -131,31 +131,31 @@ def main(self):
     else:
       userDN = DNList[0]
 
-  if not params.proxyPath:
+  if not self.proxyPath:
     if not userName:
       result = Registry.getUsernameForDN(userDN)
       if not result['OK']:
         gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
         DIRAC.exit(2)
       userName = result['Value']
-    params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
+    self.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
 
-  if params.enableVOMS:
-    result = gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=params.limited,
-                                             requiredTimeLeft=params.proxyLifeTime,
-                                             requiredVOMSAttribute=params.vomsAttr)
+  if self.enableVOMS:
+    result = gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=self.limited,
+                                             requiredTimeLeft=self.proxyLifeTime,
+                                             requiredVOMSAttribute=self.vomsAttr)
   else:
-    result = gProxyManager.downloadProxy(userDN, userGroup, limited=params.limited,
-                                         requiredTimeLeft=params.proxyLifeTime)
+    result = gProxyManager.downloadProxy(userDN, userGroup, limited=self.limited,
+                                         requiredTimeLeft=self.proxyLifeTime)
   if not result['OK']:
     gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
     DIRAC.exit(2)
   chain = result['Value']
-  result = chain.dumpAllToFile(params.proxyPath)
+  result = chain.dumpAllToFile(self.proxyPath)
   if not result['OK']:
-    gLogger.notice('Proxy file cannot be written to %s: %s' % (params.proxyPath, result['Message']))
+    gLogger.notice('Proxy file cannot be written to %s: %s' % (self.proxyPath, result['Message']))
     DIRAC.exit(2)
-  gLogger.notice("Proxy downloaded to %s" % params.proxyPath)
+  gLogger.notice("Proxy downloaded to %s" % self.proxyPath)
   DIRAC.exit(0)
 
 

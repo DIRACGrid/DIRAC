@@ -19,8 +19,9 @@ def main(self):
   self.registerArgument(("Service: Name of the particular component (default *: all)",
                          "Agent:   Name of the particular component (default *: all)"),
                         mandatory=False, default='*')
-  self.parseCommandLine()
+  _, args = self.parseCommandLine()
   system, component = self.getPositionalArgs(group=True)
+  
   if len(args) > 2:
     self.showHelp(exitCode=1)
 

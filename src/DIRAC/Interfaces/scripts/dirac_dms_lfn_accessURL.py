@@ -27,7 +27,7 @@ def main(self):
   self.registerArgument("LFN:      Logical File Name or file containing LFNs")
   self.registerArgument("SE:       Valid DIRAC SE")
   self.registerArgument("PROTO:    Optional protocol for accessURL", default=False, mandatory=False)
-  self.parseCommandLine(ignoreErrors=True)
+  _, args = self.parseCommandLine(ignoreErrors=True)
   lfn, seName, proto = self.getPositionalArgs(group=True)
 
   # pylint: disable=wrong-import-position

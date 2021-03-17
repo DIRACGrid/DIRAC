@@ -28,7 +28,7 @@ def main(self):
   self.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
   self.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
   self.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
-  self.parseCommandLine(ignoreErrors=True)
+  switches, args = self.parseCommandLine(ignoreErrors=True)
 
   # Default values
   status = None
@@ -40,11 +40,11 @@ def main(self):
   date = None
 
   if args:
-    Script.showHelp()
+    self.showHelp()
 
   exitCode = 0
 
-  for switch in self.getUnprocessedSwitches():
+  for switch in switches:
     if switch[0].lower() == "status":
       status = switch[1]
     elif switch[0].lower() == "minorstatus":

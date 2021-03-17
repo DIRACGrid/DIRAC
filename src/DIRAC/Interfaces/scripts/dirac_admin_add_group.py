@@ -14,6 +14,7 @@ __RCSID__ = "$Id$"
 # pylint: disable=wrong-import-position
 
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -81,7 +82,7 @@ def main(self):
     else:
       pName = pl[0]
       pValue = "=".join(pl[1:])
-      self.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      gLogger.info("Setting property %s to %s" % (pName, pValue))
       groupProps[pName] = pValue
 
   if not diracAdmin.csModifyGroup(self.groupName, groupProps, createIfNonExistant=True)['OK']:
@@ -94,7 +95,7 @@ def main(self):
       exitCode = 255
 
   for error in errorList:
-    self.gLogger.error("%s: %s" % error)
+    gLogger.error("%s: %s" % error)
 
   DIRAC.exit(exitCode)
 

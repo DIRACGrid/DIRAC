@@ -84,8 +84,8 @@ class RSSSetToken(DIRACScript):
       subLogger.error("Please, check documentation above")
       self.showHelp(exitCode=1)
 
-    subLogger.debug("The switches used are:")
-    map(subLogger.debug, switches.items())
+    self.subLogger.debug("The switches used are:")
+    map(self.subLogger.debug, switches.items())
 
     return switches
 
@@ -178,7 +178,7 @@ def setToken(user):
 
     # If there list is empty they do not exist on the DB !
     if not elements:
-      subLogger.warn('Nothing found for %s, %s, %s' % (self.switchDict['element'],
+      self.subLogger.warn('Nothing found for %s, %s, %s' % (self.switchDict['element'],
                                                        self.switchDict['name'],
                                                        self.switchDict['statusType']))
       return S_OK()
@@ -191,13 +191,13 @@ def setToken(user):
       tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=int(self.switchDict['days']))
       newTokenOwner = user
 
-    subLogger.always('New token: %s --- until %s' % (newTokenOwner, tokenExpiration))
+    self.subLogger.always('New token: %s --- until %s' % (newTokenOwner, tokenExpiration))
 
     for statusType, tokenOwner in elements:
 
       # If a user different than the one issuing the command and RSS
       if tokenOwner != user and tokenOwner != 'rs_svc':
-        subLogger.info('%s(%s) belongs to the user: %s' % (self.switchDict['name'], statusType, tokenOwner))
+        self.subLogger.info('%s(%s) belongs to the user: %s' % (self.switchDict['name'], statusType, tokenOwner))
 
       # does the job
       result = rssClient.modifyStatusElement(self.switchDict['element'], 'Status',
@@ -216,7 +216,7 @@ def setToken(user):
       else:
         msg = '(aquired from %s)' % tokenOwner
 
-      subLogger.info('%s:%s %s' % (self.switchDict['name'], statusType, msg))
+      self.subLogger.info('%s:%s %s' % (self.switchDict['name'], statusType, msg))
     return S_OK()
 
 
@@ -233,13 +233,13 @@ def main(self):
 
   user = self.proxyUser()
   if not user['OK']:
-    subLogger.error(user['Message'])
+    self.subLogger.error(user['Message'])
     DIRACExit(1)
   user = user['Value']
 
   res = self.setToken(user)
   if not res['OK']:
-    subLogger.error(res['Message'])
+    self.subLogger.error(res['Message'])
     DIRACExit(1)
 
   DIRACExit(0)

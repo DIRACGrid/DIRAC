@@ -12,6 +12,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -37,7 +38,7 @@ class AddUser(DIRACScript):
     if self.userMail or not arg:
       self.showHelp(exitCode=1)
     if not arg.find('@') > 0:
-      self.gLogger.error('Not a valid mail address', arg)
+      gLogger.error('Not a valid mail address', arg)
       DIRAC.exit(-1)
     self.userMail = arg
 
@@ -83,7 +84,7 @@ def main(self):
     else:
       pName = pl[0]
       pValue = "=".join(pl[1:])
-      self.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      gLogger.info("Setting property %s to %s" % (pName, pValue))
       userProps[pName] = pValue
 
   if not diracAdmin.csModifyUser(self.userName, userProps, createIfNonExistant=True)['OK']:
@@ -96,7 +97,7 @@ def main(self):
       exitCode = 255
 
   for error in errorList:
-    self.gLogger.error("%s: %s" % error)
+    gLogger.error("%s: %s" % error)
 
   DIRAC.exit(exitCode)
 

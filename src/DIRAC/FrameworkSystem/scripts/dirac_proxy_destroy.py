@@ -58,7 +58,7 @@ class ProxyDestroy(DIRACScript):
     """
     return self.vos or self.delete_all
 
-  def getProxyGroups():
+  def getProxyGroups(self):
     """
     Returns a set of all remote proxy groups stored on the dirac server for the user invoking the command.
     """
@@ -73,7 +73,7 @@ class ProxyDestroy(DIRACScript):
 
     return user_groups
 
-  def mapVoToGroups(voname):
+  def mapVoToGroups(self, voname):
     """
     Returns all groups available for a given VO as a set.
     """
@@ -84,7 +84,7 @@ class ProxyDestroy(DIRACScript):
 
     return set(vo_dict['Value'])
 
-  def deleteRemoteProxy(userdn, vogroup):
+  def deleteRemoteProxy(self, userdn, vogroup):
     """
     Deletes proxy for a vogroup for the user envoking this function.
     Returns a list of all deleted proxies (if any).
@@ -97,7 +97,7 @@ class ProxyDestroy(DIRACScript):
     else:
       gLogger.error('Failed to delete proxy for %s.' % vogroup)
 
-  def deleteLocalProxy(proxyLoc):
+  def deleteLocalProxy(self, proxyLoc):
     """
     Deletes the local proxy.
     Returns false if no local proxy found.
@@ -116,12 +116,11 @@ class ProxyDestroy(DIRACScript):
     """
     main program entry point
     """
-    options = Params()
-    self.registerSwitches(options.switches)
+    self.registerSwitches(self.switches)
 
     self.parseCommandLine(ignoreErrors=True)
 
-    if options.delete_all and options.vos:
+    if self.delete_all and self.vos:
       gLogger.error("-a and -v options are mutually exclusive. Please pick one or the other.")
       return 1
 
@@ -135,33 +134,33 @@ class ProxyDestroy(DIRACScript):
     if not result['OK']:
       raise RuntimeError('Failed to get local proxy info.')
 
-    if result['Value']['secondsLeft'] < 60 and options.needsValidProxy():
+    if result['Value']['secondsLeft'] < 60 and self.needsValidProxy():
       raise RuntimeError('Lifetime of local proxy too short, please renew proxy.')
 
     userDN = result['Value']['identity']
 
-    if options.delete_all:
+    if self.delete_all:
       # delete remote proxies
-      remote_groups = getProxyGroups()
+      remote_groups = self.getProxyGroups()
       if not remote_groups:
         gLogger.notice('No remote proxies found.')
       for vo_group in remote_groups:
-        deleteRemoteProxy(userDN, vo_group)
+        self.deleteRemoteProxy(userDN, vo_group)
       # delete local proxy
-      deleteLocalProxy(proxyLoc)
-    elif options.vos:
+      self.deleteLocalProxy(proxyLoc)
+    elif self.vos:
       vo_groups = set()
-      for voname in options.vos:
-        vo_groups.update(mapVoToGroups(voname))
+      for voname in self.vos:
+        vo_groups.update(self.mapVoToGroups(voname))
       # filter set of all groups to only contain groups for which there is a user proxy
-      user_groups = getProxyGroups()
+      user_groups = self.getProxyGroups()
       vo_groups.intersection_update(user_groups)
       if not vo_groups:
         gLogger.notice('You have no proxies registered for any of the specified VOs.')
       for group in vo_groups:
-        deleteRemoteProxy(userDN, group)
+        self.deleteRemoteProxy(userDN, group)
     else:
-      deleteLocalProxy(proxyLoc)
+      self.deleteLocalProxy(proxyLoc)
 
     return 0
 

@@ -62,7 +62,7 @@ def main(self):
     DIRACexit(1)
 
   removeLogs = False
-  if force:
+  if self.force:
     removeLogs = True
   else:
     if result['Value'][0]['Component']['Type'] in gComponentInstaller.componentTypes:
