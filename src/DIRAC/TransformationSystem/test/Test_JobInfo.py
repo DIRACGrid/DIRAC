@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import unittest
 import sys
+import six
 from six import StringIO
 
 from mock import MagicMock as Mock
@@ -26,10 +27,6 @@ __RCSID__ = "$Id$"
 
 class TestJI(unittest.TestCase):
   """Test the JobInfo Module"""
-
-  # WARNING: In python 3 assertRaisesRegexp is deprecated, so this lines for compatability with python 2
-  if not hasattr(cls, 'assertRaisesRegex'):
-    setattr(cls, 'assertRaisesRegex', cls.assertRaisesRegexp)
 
   def setUp(self):
     self.jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
@@ -432,8 +429,12 @@ class TestJI(unittest.TestCase):
     self.jbi.inputFiles = ['otherLFN']
     tasksDict = {1234: [dict(FileID=123456, LFN='lfn', Status='Processed', ErrorCount=23)]}
     lfnTaskDict = {}
-    with self.assertRaisesRegex(TaskInfoException, "InputFiles do not agree"):
-      self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
+    if six.PY3:
+      with self.assertRaisesRegex(TaskInfoException, "InputFiles do not agree"):
+        self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
+    else:
+      with self.assertRaisesRegexp(TaskInfoException, "InputFiles do not agree"):
+        self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   # def test_getTaskInfo_4(self):
   #   # raise keyError

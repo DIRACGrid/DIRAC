@@ -37,9 +37,6 @@ reqValFake = reqValFake_C()
 class ClientsTestCase(unittest.TestCase):
   """ Base class for the clients test cases
   """
-  # WARNING: In python 3 assertRaisesRegexp is deprecated, so this lines for compatability with python 2
-  if not hasattr(cls, 'assertRaisesRegex'):
-    setattr(cls, 'assertRaisesRegex', cls.assertRaisesRegexp)
 
   def setUp(self):
     self.mockTransClient = mock.MagicMock()
@@ -224,22 +221,40 @@ class TransformationSuccess(ClientsTestCase):
     # # This is not true if any of the keys or values are not strings, e.g., integers
     self.assertEqual(json.loads(self.transformation.paramValues["Body"]), transBody)
 
-    with self.assertRaisesRegex(TypeError, "Expected list"):
-      self.transformation.setBody({"ReplicateAndRegister": {"foo": "bar"}})
-    with self.assertRaisesRegex(TypeError, "Expected tuple"):
-      self.transformation.setBody(["ReplicateAndRegister", "RemoveReplica"])
-    with self.assertRaisesRegex(TypeError, "Expected 2-tuple"):
-      self.transformation.setBody([("ReplicateAndRegister", "RemoveReplica", "LogUpload")])
-    with self.assertRaisesRegex(TypeError, "Expected string"):
-      self.transformation.setBody([(123, "Parameter:Value")])
-    with self.assertRaisesRegex(TypeError, "Expected dictionary"):
-      self.transformation.setBody([("ReplicateAndRegister", "parameter=foo")])
-    with self.assertRaisesRegex(TypeError, "Expected string"):
-      self.transformation.setBody([("ReplicateAndRegister", {123: "foo"})])
-    with self.assertRaisesRegex(ValueError, "Unknown attribute"):
-      self.transformation.setBody([("ReplicateAndRegister", {"Request": Request()})])
-    with self.assertRaisesRegex(TypeError, "Cannot encode"):
-      self.transformation.setBody([("ReplicateAndRegister", {"Arguments": Request()})])
+    if six.PY3:
+      with self.assertRaisesRegex(TypeError, "Expected list"):
+        self.transformation.setBody({"ReplicateAndRegister": {"foo": "bar"}})
+      with self.assertRaisesRegex(TypeError, "Expected tuple"):
+        self.transformation.setBody(["ReplicateAndRegister", "RemoveReplica"])
+      with self.assertRaisesRegex(TypeError, "Expected 2-tuple"):
+        self.transformation.setBody([("ReplicateAndRegister", "RemoveReplica", "LogUpload")])
+      with self.assertRaisesRegex(TypeError, "Expected string"):
+        self.transformation.setBody([(123, "Parameter:Value")])
+      with self.assertRaisesRegex(TypeError, "Expected dictionary"):
+        self.transformation.setBody([("ReplicateAndRegister", "parameter=foo")])
+      with self.assertRaisesRegex(TypeError, "Expected string"):
+        self.transformation.setBody([("ReplicateAndRegister", {123: "foo"})])
+      with self.assertRaisesRegex(ValueError, "Unknown attribute"):
+        self.transformation.setBody([("ReplicateAndRegister", {"Request": Request()})])
+      with self.assertRaisesRegex(TypeError, "Cannot encode"):
+        self.transformation.setBody([("ReplicateAndRegister", {"Arguments": Request()})])
+    else:
+      with self.assertRaisesRegexp(TypeError, "Expected list"):
+        self.transformation.setBody({"ReplicateAndRegister": {"foo": "bar"}})
+      with self.assertRaisesRegexp(TypeError, "Expected tuple"):
+        self.transformation.setBody(["ReplicateAndRegister", "RemoveReplica"])
+      with self.assertRaisesRegexp(TypeError, "Expected 2-tuple"):
+        self.transformation.setBody([("ReplicateAndRegister", "RemoveReplica", "LogUpload")])
+      with self.assertRaisesRegexp(TypeError, "Expected string"):
+        self.transformation.setBody([(123, "Parameter:Value")])
+      with self.assertRaisesRegexp(TypeError, "Expected dictionary"):
+        self.transformation.setBody([("ReplicateAndRegister", "parameter=foo")])
+      with self.assertRaisesRegexp(TypeError, "Expected string"):
+        self.transformation.setBody([("ReplicateAndRegister", {123: "foo"})])
+      with self.assertRaisesRegexp(ValueError, "Unknown attribute"):
+        self.transformation.setBody([("ReplicateAndRegister", {"Request": Request()})])
+      with self.assertRaisesRegexp(TypeError, "Cannot encode"):
+        self.transformation.setBody([("ReplicateAndRegister", {"Arguments": Request()})])
 
   def test_SetGetReset(self):
     """ Testing of the set, get and reset methods.
