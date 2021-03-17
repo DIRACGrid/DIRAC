@@ -1,11 +1,22 @@
 .. -*- mode: rst -*-
 
-Cite us:
+DIRAC
+=====
 
+.. image:: https://badge.fury.io/py/DIRAC.svg
+    :target: https://badge.fury.io/py/DIRAC
+.. image:: https://img.shields.io/conda/vn/conda-forge/dirac-grid
+    :target: https://github.com/conda-forge/dirac-grid-feedstock
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1451647.svg
-   :target: https://doi.org/10.5281/zenodo.1451647
+    :target: https://doi.org/10.5281/zenodo.1451647
 
+DIRAC is an interware, meaning a software framework for distributed computing.
 
+DIRAC provides a complete solution to one or more user community requiring access to distributed resources. DIRAC builds a layer between the users and the resources offering a common interface to a number of heterogeneous providers, integrating them in a seamless manner, providing interoperability, at the same time as an optimized, transparent and reliable usage of the resources.
+
+DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb/>`_ who still maintains it. It is now used by several communities (AKA VO=Virtual Organizations) for their distributed computing workflows.
+
+DIRAC is written in python 2.7.13 and transitioning to python 3.
 
 Status master branch (stable):
 
@@ -52,19 +63,6 @@ Status integration branch (devel):
    :target: http://dirac.readthedocs.io/en/integration/
    :alt: Documentation Status
 
-
-
-DIRAC
-=====
-
-DIRAC is an interware, meaning a software framework for distributed computing.
-
-DIRAC provides a complete solution to one or more user community requiring access to distributed resources. DIRAC builds a layer between the users and the resources offering a common interface to a number of heterogeneous providers, integrating them in a seamless manner, providing interoperability, at the same time as an optimized, transparent and reliable usage of the resources.
-
-DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb/>`_ who still maintains it. It is now used by several communities (AKA VO=Virtual Organizations) for their distributed computing workflows.
-
-DIRAC is written in python 2.7.13 and transitioning to python 3.
-
 Important links
 ===============
 
@@ -83,6 +81,26 @@ For DIRAC client installation instructions, see the `web page <http://dirac.read
 For DIRAC server installation instructions, see the `web page <https://dirac.readthedocs.io/en/latest/AdministratorGuide/ServerInstallations/InstallingDiracServer.html>`__.
 
 The supported distributions are EL6 (e.g. SLC6) and EL7 (e.g. CC7).
+
+As of DIRAC 7.2 there is also **experimental** support for Python 3 based clients. There are three available options for installation:
+
+.. _conda: https://conda.io/en/latest/index.html
+.. |conda| replace:: **Conda**
+.. _mamba: https://github.com/mamba-org/mamba#the-fast-cross-platform-package-manager
+.. |mamba| replace:: **Mamba**
+.. _condaforge: https://github.com/mamba-org/mamba#the-fast-cross-platform-package-manager
+.. |condaforge| replace:: **conda-forge**
+
+1. **DIRACOS2:** This is the only fully supported method, see the `DIRACOS 2 documentation <https://github.com/DIRACGrid/DIRACOS2/#installing-diracos2>`__.
+2. |conda|_ **/** |mamba|_ **from** |condaforge|_ **:**
+   We recommend making a new environment for DIRAC using
+
+   .. code-block:: bash
+
+     mamba create --name my-dirac-env -c conda-forge dirac-grid
+     conda activate my-dirac-env
+
+3. **Pip:** Provided suitable dependencies are available DIRAC can be installed with ``pip install DIRAC``. Support for installing the dependencies should be sought from the upstream projects.
 
 Development
 ===========
