@@ -15,33 +15,31 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 class FCConditionParser(object):
-  """
-    This objects allows to evaluate conditions on whether or not
-    a given operation should be evaluated on a given catalog
-    for a given lfn (be glad so many things are given to you !).
+  """ This objects allows to evaluate conditions on whether or not
+      a given operation should be evaluated on a given catalog
+      for a given lfn (be glad so many things are given to you !).
 
-    The conditions are expressed as boolean logic, where the basic bloc has
-    the form "pluginName=whateverThatWillBePassedToThePlugin".
-    The basic blocs will be evaluated by the respective plugins, and the result can
-    be combined using the standard boolean operators:
+      The conditions are expressed as boolean logic, where the basic bloc has
+      the form "pluginName=whateverThatWillBePassedToThePlugin".
+      The basic blocs will be evaluated by the respective plugins, and the result can
+      be combined using the standard boolean operators::
 
-      * ! for not
-      * & for and
-      * \| for or
-      * [ ] for prioritizing the operations
+        * `!` for not
+        * `&` for and
+        * `\|` for or
+        * `[ ]` for prioritizing the operations
 
-    All these characters, as well as the '=' symbol cannot be used in any expression to be
-    evaluated by a plugin.
+      All these characters, as well as the '=' symbol cannot be used in any expression to be
+      evaluated by a plugin.
 
-    The rule to evaluate can either be given at calling time, or can be retrieved
-    from the CS depending on the context (see doc of __call__ and __getConditionFromCS)
+      The rule to evaluate can either be given at calling time, or can be retrieved
+      from the CS depending on the context (see doc of __call__ and __getConditionFromCS)
 
 
-    Example of rules are:
+      Example of rules are::
 
-      * Filename=startswith('/lhcb') & Proxy=voms.has(/lhcb/Role->production)
-      * [Filename=startswith('/lhcb') & !Filename=find('/user/')] | Proxy=group.in(lhcb_mc, lhcb_data)
-
+        * Filename=startswith('/lhcb') & Proxy=voms.has(/lhcb/Role->production)
+        * [Filename=startswith('/lhcb') & !Filename=find('/user/')] | Proxy=group.in(lhcb_mc, lhcb_data)
   """
 
   # Some characters are reserved for the grammar
@@ -73,7 +71,7 @@ class FCConditionParser(object):
                     it is a list with only one element which itself is a list
                     [ [ Arg1, Operator, Arg2] ]
                     The arguments themselves can be of any type, but they need to
-                    provide an "eval" method that takes \*\*kwargs as input,
+                    provide an "eval" method that takes `kwargs` as input,
                     and return a boolean
       """
 
@@ -90,7 +88,7 @@ class FCConditionParser(object):
       """ Perform the evaluation of the boolean logic
           by applying the operator between the two arguments
 
-          :param \*\*kwargs: whatever information is given to plugin (typically lfn)
+          :param kwargs: whatever information is given to plugin (typically lfn)
       """
 
       return self.evalop(arg.eval(**kwargs) for arg in self.args)
@@ -118,7 +116,7 @@ class FCConditionParser(object):
                 it is a list with only one element which itself is a list
                 [ [ !, Arg1] ]
                 The argument itself can be of any type, but it needs to
-                provide an "eval" method that takes \*\*kwargs as input,
+                provide an "eval" method that takes `kwargs` as input,
                 and return a boolean
       """
 
@@ -129,7 +127,7 @@ class FCConditionParser(object):
       """ Perform the evaluation of the boolean logic
           by returning the negation of the evaluation of the argument
 
-          :param \*\*kwargs: whatever information is given to plugin (typically lfn)
+          :param kwargs: whatever information is given to plugin (typically lfn)
       """
       return not self.arg.eval(**kwargs)
 
@@ -181,7 +179,7 @@ class FCConditionParser(object):
     def eval(self, **kwargs):
       """Forward the evaluation call to the plugin
 
-        :param \*\*kwargs: contains all the information given to the plugin namely the lfns
+        :param kwargs: contains all the information given to the plugin namely the lfns
         :return: True or False
       """
 

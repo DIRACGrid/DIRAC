@@ -135,7 +135,7 @@ class ProxyInit(ProxyGeneration, ProxyUpload):
     gLogger.info("Uploading %s proxy to ProxyManager..." % userDN)
     self.onTheFly = True
     self.proxyLifeTime = self.__issuerCert.getRemainingSecs()['Value'] - 300  # pylint: disable=no-member
-    resultProxyUpload = self.uploadProxy(self)
+    resultProxyUpload = self.uploadProxy()
     if not resultProxyUpload['OK']:
       gLogger.error(resultProxyUpload['Message'])
       return resultProxyUpload

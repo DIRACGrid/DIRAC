@@ -22,7 +22,7 @@ def main(self):
                         mandatory=False, default='*')
   _, args = self.parseCommandLine()
   system, component = self.getPositionalArgs(group=True)
-  
+
   if len(args) > 2:
     self.showHelp(exitCode=1)
 

@@ -111,6 +111,8 @@ class Params(DIRACScript):
 
     if checkArguments:
       args = self.getPositionalArgs()
+      print('== args ==')
+      print(args)
       if len(args) == 2:
         self.setMetaValues(args[0])
         self.setTargetSE(args[1])

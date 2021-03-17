@@ -179,8 +179,8 @@ def setToken(user):
     # If there list is empty they do not exist on the DB !
     if not elements:
       self.subLogger.warn('Nothing found for %s, %s, %s' % (self.switchDict['element'],
-                                                       self.switchDict['name'],
-                                                       self.switchDict['statusType']))
+                                                            self.switchDict['name'],
+                                                            self.switchDict['statusType']))
       return S_OK()
 
     # If we want to release the token

@@ -13,6 +13,7 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
@@ -54,7 +55,7 @@ class BdiiInfo(DIRACScript):
     if ret['OK'] and 'group' in ret['Value']:
       params['vo'] = getVOForGroup(ret['Value']['group'])
     else:
-      self.gLogger.error('Could not determine VO')
+      gLogger.error('Could not determine VO')
       self.showHelp()
 
     if params['info'] in ['ce', 'ce-state', 'ce-cluster', 'ce-vo']:
@@ -62,7 +63,7 @@ class BdiiInfo(DIRACScript):
     elif params['info'] in ['site']:
       params['site'] = args[1]
     else:
-      self.gLogger.error('Wrong argument value')
+      gLogger.error('Wrong argument value')
       self.showHelp()
 
     for unprocSw in unprocSwitches:
