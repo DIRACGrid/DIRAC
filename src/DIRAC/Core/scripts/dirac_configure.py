@@ -49,8 +49,6 @@ __RCSID__ = "$Id$"
 import sys
 import os
 
-import six
-
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
