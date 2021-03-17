@@ -51,7 +51,6 @@ class RSSSetToken(DIRACScript):
     for switch in switches:
       self.registerSwitch('', switch[0], switch[1])
 
-
   def registerUsageMessage(self):
     """
     Takes the script __doc__ and adds the DIRAC version to it
@@ -89,7 +88,6 @@ class RSSSetToken(DIRACScript):
     map(subLogger.debug, switches.items())
 
     return switches
-
 
   def proxyUser(self):
     """
@@ -181,8 +179,8 @@ def setToken(user):
     # If there list is empty they do not exist on the DB !
     if not elements:
       subLogger.warn('Nothing found for %s, %s, %s' % (self.switchDict['element'],
-                                                      self.switchDict['name'],
-                                                      self.switchDict['statusType']))
+                                                       self.switchDict['name'],
+                                                       self.switchDict['statusType']))
       return S_OK()
 
     # If we want to release the token
@@ -203,11 +201,11 @@ def setToken(user):
 
       # does the job
       result = rssClient.modifyStatusElement(self.switchDict['element'], 'Status',
-                                            name=self.switchDict['name'],
-                                            statusType=statusType,
-                                            reason=self.switchDict['reason'],
-                                            tokenOwner=newTokenOwner,
-                                            tokenExpiration=tokenExpiration)
+                                             name=self.switchDict['name'],
+                                             statusType=statusType,
+                                             reason=self.switchDict['reason'],
+                                             tokenOwner=newTokenOwner,
+                                             tokenExpiration=tokenExpiration)
       if not result['OK']:
         return result
 

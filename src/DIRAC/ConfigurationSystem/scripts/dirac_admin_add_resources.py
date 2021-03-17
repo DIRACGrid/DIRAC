@@ -200,7 +200,7 @@ def checkUnusedCEs():
 
   def updateCS(self, changeSet):
     """ Update CS
-    
+
         :param str changeSet: changes to CS
     """
     changeList = sorted(changeSet)

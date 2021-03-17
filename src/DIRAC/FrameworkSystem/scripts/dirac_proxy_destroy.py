@@ -16,7 +16,6 @@ import os
 import DIRAC
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
 from DIRAC.Core.Security import Locations, ProxyInfo
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -59,7 +58,6 @@ class ProxyDestroy(DIRACScript):
     """
     return self.vos or self.delete_all
 
-
   def getProxyGroups():
     """
     Returns a set of all remote proxy groups stored on the dirac server for the user invoking the command.
@@ -75,7 +73,6 @@ class ProxyDestroy(DIRACScript):
 
     return user_groups
 
-
   def mapVoToGroups(voname):
     """
     Returns all groups available for a given VO as a set.
@@ -86,7 +83,6 @@ class ProxyDestroy(DIRACScript):
       raise RuntimeError('Could not retrieve groups for vo %s.' % voname)
 
     return set(vo_dict['Value'])
-
 
   def deleteRemoteProxy(userdn, vogroup):
     """
@@ -100,7 +96,6 @@ class ProxyDestroy(DIRACScript):
       gLogger.notice('Deleted proxy for %s.' % vogroup)
     else:
       gLogger.error('Failed to delete proxy for %s.' % vogroup)
-
 
   def deleteLocalProxy(proxyLoc):
     """
@@ -116,7 +111,6 @@ class ProxyDestroy(DIRACScript):
       gLogger.error('OSError: Failed to delete local proxy.')
       return
     gLogger.notice('Local proxy deleted.')
-
 
   def run(self):
     """

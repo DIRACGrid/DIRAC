@@ -23,7 +23,6 @@ class RSSSync(DIRACScript):
     self.switchDict = {}
     self.DEFAULT_STATUS = ""
 
-
   def registerSwitches(self):
     '''
       Registers all switches that can be used while calling the script from the
@@ -34,7 +33,6 @@ class RSSSync(DIRACScript):
     self.registerSwitch('', 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`')
     self.registerSwitch('', 'defaultStatus=', 'Default element status if not given in the CS')
 
-
   def registerUsageMessage(self):
     '''
       Takes the script __doc__ and adds the DIRAC version to it
@@ -43,7 +41,6 @@ class RSSSync(DIRACScript):
     usageMessage += __doc__
 
     self.setUsageMessage(usageMessage)
-
 
   def parseSwitches(self):
     '''
@@ -70,7 +67,6 @@ class RSSSync(DIRACScript):
     map(self.subLogger.debug, switches.items())
 
     return switches
-
 
   def synchronize(self):
     '''
@@ -101,7 +97,6 @@ class RSSSync(DIRACScript):
 
     return S_OK()
 
-
   def initSites(self):
     '''
       Initializes Sites statuses taking their values from the "SiteMask" table of "JobDB" database.
@@ -130,7 +125,6 @@ class RSSSync(DIRACScript):
         DIRACExit(1)
 
     return S_OK()
-
 
   def initSEs(self):
     '''
@@ -217,7 +211,6 @@ class RSSSync(DIRACScript):
           self.subLogger.error(result['Message'])
 
     return S_OK()
-
 
   def run(self):
     '''

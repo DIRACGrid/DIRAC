@@ -31,6 +31,7 @@ class ResourceGetParameters(DIRACScript):
   def setQueue(self, args):
     self.Queue = args
 
+
 @ResourceGetParameters()
 def main(self):
   from DIRAC import gLogger, exit as DIRACExit

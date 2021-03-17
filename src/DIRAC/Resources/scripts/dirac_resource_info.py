@@ -96,7 +96,8 @@ def main(self):
     fields = ('SE', 'Status', 'Protocols', 'Aliases')
     records = []
 
-    for se in DMSHelpers(self.voName).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
+    # this will get the full list of SEs, not only the vo's ones.
+    for se in DMSHelpers(self.voName).getStorageElements():
       seObject = StorageElement(se)
       if not (seObject.vo and self.voName in seObject.vo.strip().split(',') or not seObject.self.voName):
         continue

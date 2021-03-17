@@ -6,7 +6,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-  __RCSID__ = "$Id$"
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
@@ -18,7 +18,7 @@ def main(self):
                         mandatory=False, default='*')
   self.registerArgument(("Service: Name of the particular component (default *: all)",
                          "Agent:   Name of the particular component (default *: all)"),
-                         mandatory=False, default='*')
+                        mandatory=False, default='*')
   self.parseCommandLine()
   system, component = self.getPositionalArgs(group=True)
   if len(args) > 2:

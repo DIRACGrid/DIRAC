@@ -14,7 +14,6 @@ __RCSID__ = "$Id$"
 from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
 
 
-
 @Params()
 def main(self):
   """reads command line parameters, makes check and creates replication transformation"""

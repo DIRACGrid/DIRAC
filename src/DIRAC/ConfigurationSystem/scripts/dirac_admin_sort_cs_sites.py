@@ -24,6 +24,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 
+
 class SortCSSites(DIRACScript):
 
   def initParameters(self):

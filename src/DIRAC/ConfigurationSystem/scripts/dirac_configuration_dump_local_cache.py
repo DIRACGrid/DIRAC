@@ -13,8 +13,10 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import sys
+
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
 
 class ConfDumpLocalCaChe(DIRACScript):
 
@@ -30,6 +32,7 @@ class ConfDumpLocalCaChe(DIRACScript):
   def setRaw(self, args):
     self.raw = True
     return DIRAC.S_OK()
+
 
 @ConfDumpLocalCaChe()
 def main(self):

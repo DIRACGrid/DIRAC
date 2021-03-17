@@ -27,7 +27,7 @@ def main(self):
   self.registerArgument(("LocalFile: Path to local file containing LFNs",
                          "LFN:       Logical File Names"))
   self.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
-  
+
   self.parseCommandLine()
   inputFileName, catalogs = getPositionalArgs(group=True)
 

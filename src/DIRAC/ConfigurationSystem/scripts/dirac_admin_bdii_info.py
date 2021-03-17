@@ -36,7 +36,6 @@ class BdiiInfo(DIRACScript):
     self.registerArgument(("Site:  Name of the Site (i.e. CERN-PROD)",
                            "CE:    Name of the CE (i.e. cccreamceli05.in2p3.fr)"))
 
-
   def parseSwitches(self):
     '''
       Parses the arguments passed by the user

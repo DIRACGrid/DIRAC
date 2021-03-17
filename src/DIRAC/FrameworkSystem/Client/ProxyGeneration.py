@@ -322,10 +322,10 @@ class ProxyGeneration(DIRACScript):
 
     if self.checkWithCS:
       retVal = chain.generateProxyToFile(proxyLoc,
-                                        self.proxyLifeTime,
-                                        strength=self.proxyStrength,
-                                        limited=self.limitedProxy,
-                                        rfc=self.rfc)
+                                         self.proxyLifeTime,
+                                         strength=self.proxyStrength,
+                                         limited=self.limitedProxy,
+                                         rfc=self.rfc)
 
       gLogger.info("Contacting CS...")
       retVal = self.enableCS()
@@ -334,7 +334,7 @@ class ProxyGeneration(DIRACScript):
         if 'Unauthorized query' in retVal['Message']:
           # add hint for users
           return S_ERROR("Can't contact DIRAC CS: %s (User possibly not registered with dirac server) "
-                        % retVal['Message'])
+                         % retVal['Message'])
         return S_ERROR("Can't contact DIRAC CS: %s" % retVal['Message'])
       userDN = chain.getCertInChain(-1)['Value'].getSubjectDN()['Value']
 
@@ -375,11 +375,11 @@ class ProxyGeneration(DIRACScript):
       if self.limitedProxy:
         gLogger.notice("Proxy will be limited")
     retVal = chain.generateProxyToFile(proxyLoc,
-                                      self.proxyLifeTime,
-                                      self.diracGroup,
-                                      strength=self.proxyStrength,
-                                      limited=self.limitedProxy,
-                                      rfc=self.rfc)
+                                       self.proxyLifeTime,
+                                       self.diracGroup,
+                                       strength=self.proxyStrength,
+                                       limited=self.limitedProxy,
+                                       rfc=self.rfc)
     if not retVal['OK']:
       gLogger.warn(retVal['Message'])
       return S_ERROR("Couldn't generate proxy: %s" % retVal['Message'])

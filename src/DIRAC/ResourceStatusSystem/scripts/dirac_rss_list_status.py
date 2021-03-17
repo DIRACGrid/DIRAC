@@ -240,7 +240,6 @@ class ResourceGetParameters(DIRACScript):
 
     return elements
 
-
   def tabularPrint(self, elementsList):
     """
       Prints the list of elements on a tabular
@@ -263,7 +262,6 @@ class ResourceGetParameters(DIRACScript):
 
     self.subLogger.notice(printTable(titles, elementsList, printOut=False,
                           numbering=False, columnSeparator=' | '))
-
 
   def run(self):
     """

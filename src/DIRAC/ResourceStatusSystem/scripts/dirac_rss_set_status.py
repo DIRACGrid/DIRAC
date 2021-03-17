@@ -2,7 +2,7 @@
 """
 Script that facilitates the modification of a element through the command line.
 However, the usage of this script will set the element token to the command
-issuer with a duration of 1 day.
+issuer with a duration of 1 day
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -25,6 +25,7 @@ class RSSSetStatus(DIRACScript):
   def initParameters(self):
     self.subLogger = gLogger.getSubLogger(__file__)
 
+<<<<<<< HEAD
 
 <<<<<<< HEAD
   switches = (
@@ -37,6 +38,8 @@ class RSSSetStatus(DIRACScript):
               'VO=all sets the status for all VOs not explicitly listed in the RSS'),
   )
 =======
+=======
+>>>>>>> 75b47b9c9 (fix pylint)
   def registerSwitches(self):
     '''
       Registers all switches that can be used while calling the script from the
@@ -55,7 +58,6 @@ class RSSSetStatus(DIRACScript):
     for switch in switches:
       self.registerSwitch('', switch[0], switch[1])
 
-
   def registerUsageMessage(self):
     '''
       Takes the script __doc__ and adds the DIRAC version to it
@@ -64,7 +66,6 @@ class RSSSetStatus(DIRACScript):
     usageMessage += __doc__
 
     self.setUsageMessage(usageMessage)
-
 
   def parseSwitches(self):
     '''
@@ -116,6 +117,7 @@ class RSSSetStatus(DIRACScript):
 
     return switches
 
+<<<<<<< HEAD
 
 <<<<<<< HEAD
   if switchDict['name'] is not None:
@@ -125,6 +127,8 @@ class RSSSetStatus(DIRACScript):
     statusTypes = list(filter(None, switchDict['statusType'].split(',')))
     statusTypes = checkStatusTypes(statusTypes)
 =======
+=======
+>>>>>>> 75b47b9c9 (fix pylint)
   def checkStatusTypes(self, statusTypes):
     '''
       To check if values for 'statusType' are valid
@@ -138,12 +142,11 @@ class RSSSetStatus(DIRACScript):
       if statusType not in acceptableStatusTypes and statusType != 'all':
         acceptableStatusTypes.append('all')
         self.subLogger.error("'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
-                        % (statusType, str(acceptableStatusTypes)))
+                             % (statusType, str(acceptableStatusTypes)))
 
     if 'all' in statusType:
       return acceptableStatusTypes
     return statusTypes
-
 
   def unpack(self, switchDict):
     '''
@@ -187,7 +190,6 @@ class RSSSetStatus(DIRACScript):
 
     return switchDictSet
 
-
   def getTokenOwner(self):
     '''
       Function that gets the userName from the proxy
@@ -198,7 +200,6 @@ class RSSSetStatus(DIRACScript):
 
     userName = proxyInfo['Value']['username']
     return S_OK(userName)
-
 
   def setStatus(self, switchDict, tokenOwner):
     '''
@@ -217,10 +218,16 @@ class RSSSetStatus(DIRACScript):
                                            meta={'columns': ['Status', 'StatusType']})
 =======
     elements = rssClient.selectStatusElement(switchDict['element'], 'Status',
+<<<<<<< HEAD
                                             name=switchDict['name'],
                                             statusType=switchDict['statusType'],
                                             meta={'columns': ['Status', 'StatusType']})
 >>>>>>> 2411a4e56 (merge #5024)
+=======
+                                             name=switchDict['name'],
+                                             statusType=switchDict['statusType'],
+                                             meta={'columns': ['Status', 'StatusType']})
+>>>>>>> 75b47b9c9 (fix pylint)
 
     if not elements['OK']:
       return elements
@@ -236,8 +243,8 @@ class RSSSetStatus(DIRACScript):
 =======
     if not elements:
       self.subLogger.warn('Nothing found for %s, %s, %s' % (switchDict['element'],
-                                                      switchDict['name'],
-                                                      switchDict['statusType']))
+                                                            switchDict['name'],
+                                                            switchDict['statusType']))
       return S_OK()
 >>>>>>> 2411a4e56 (merge #5024)
 
@@ -248,7 +255,8 @@ class RSSSetStatus(DIRACScript):
       self.subLogger.debug('%s %s' % (status, statusType))
 
       if switchDict['status'] == status:
-        self.subLogger.notice('Status for %s (%s) is already %s. Ignoring..' % (switchDict['name'], statusType, status))
+        self.subLogger.notice('Status for %s (%s) is already %s. Ignoring..' % (switchDict['name'],
+                                                                                statusType, status))
         continue
 
 <<<<<<< HEAD
@@ -267,18 +275,17 @@ class RSSSetStatus(DIRACScript):
       return result
 =======
       result = rssClient.modifyStatusElement(switchDict['element'], 'Status',
-                                            name=switchDict['name'],
-                                            statusType=statusType,
-                                            status=switchDict['status'],
-                                            reason=switchDict['reason'],
-                                            tokenOwner=tokenOwner,
-                                            tokenExpiration=tomorrow)
+                                             name=switchDict['name'],
+                                             statusType=statusType,
+                                             status=switchDict['status'],
+                                             reason=switchDict['reason'],
+                                             tokenOwner=tokenOwner,
+                                             tokenExpiration=tomorrow)
       if not result['OK']:
         return result
 >>>>>>> 2411a4e56 (merge #5024)
 
     return S_OK()
-
 
   def run(self, switchDict):
     '''

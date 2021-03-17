@@ -34,9 +34,9 @@ def main(self):
   self.registerSwitch("D", "sync", "Make target directory identical to source")
   self.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
   self.registerArgument(("LFN:           Logical File Name (Path to directory)",
-                           "Path:          Local path to the file (Path to directory)"))
+                         "Path:          Local path to the file (Path to directory)"))
   self.registerArgument(("Path:          Local path to the file (Path to directory)",
-                           "LFN:           Logical File Name (Path to directory)"))
+                         "LFN:           Logical File Name (Path to directory)"))
   self.registerArgument(" SE:            DIRAC Storage Element", mandatory=False)
   self.parseCommandLine(ignoreErrors=False)
 

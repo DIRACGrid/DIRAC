@@ -36,7 +36,7 @@ class DIRACScript(object):
 
     self.showHelp = self.localCfg.showHelp
     self.initParameters()
-  
+
   def initParameters(self):
     """ Script initialization """
     pass

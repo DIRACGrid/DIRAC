@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerArgument(("LFN:      LFN",
-                           "File:     File name containing a list of affected LFNs"))
+                         "File:     File name containing a list of affected LFNs"))
   self.registerArgument(" SE:       Name of Storage Element")
   self.registerArgument(" Status:   New Status for the replica")
   self.parseCommandLine(ignoreErrors=False)

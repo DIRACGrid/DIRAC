@@ -275,10 +275,11 @@ def runConfigurationWizard(params):
     DIRAC.gConfig.setOptionValue(cfgInstallPath('Extensions'), self.extensions)
     return DIRAC.S_OK()
 
+
 @ConfigureInit()
 def main(self):
   self.disableCS()
-  
+
   self.registerSwitches(self.switches)
   self.parseCommandLine(ignoreErrors=True)
 

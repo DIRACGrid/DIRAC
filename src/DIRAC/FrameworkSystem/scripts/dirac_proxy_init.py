@@ -128,7 +128,8 @@ class ProxyInit(ProxyGeneration, ProxyUpload):
     if userDN in self.__uploadedInfo:
       expiry = self.__uploadedInfo[userDN].get('')
       if expiry:
-        if self.__issuerCert.getNotAfterDate()['Value'] - datetime.timedelta(minutes=10) < expiry:  # pylint: disable=no-member
+        # pylint: disable=no-member
+        if self.__issuerCert.getNotAfterDate()['Value'] - datetime.timedelta(minutes=10) < expiry:
           gLogger.info('Proxy with DN "%s" already uploaded' % userDN)
           return S_OK()
 
@@ -206,7 +207,7 @@ class ProxyInit(ProxyGeneration, ProxyUpload):
       gLogger.error(result['Message'])
       sys.exit(1)
     self.__proxyGenerated = result['Value']
-    
+
     self.checkCAs()
     self.getIssuerCert()
     self.certLifeTimeCheck()
