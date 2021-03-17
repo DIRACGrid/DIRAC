@@ -6,12 +6,6 @@
 """
 Sync users in Configuration with the cfg contents.
 
-Usage:
-  dirac-admin-sync-users-from-file [options] ... UserCfg
-
-Arguments:
-  UserCfg:  Cfg FileName with Users as sections containing DN, Groups, and other properties as options
-
 Example:
   $ dirac-admin-sync-users-from-file file_users.cfg
 """
@@ -29,12 +23,11 @@ __RCSID__ = "$Id$"
 @DIRACScript()
 def main(self):
   self.registerSwitch("t", "test", "Only test. Don't commit changes")
+  self.registerArgument("UserCfg:  Cfg FileName with Users as sections containing \
+                         DN, Groups, and other properties as options")
   self.parseCommandLine(ignoreErrors=True)
 
   args = self.getExtraCLICFGFiles()
-
-  if len(args) < 1:
-    self.showHelp()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

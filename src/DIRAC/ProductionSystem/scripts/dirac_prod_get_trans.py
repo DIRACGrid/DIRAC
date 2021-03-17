@@ -2,12 +2,6 @@
 """
 Get the transformations belonging to a given production
 
-Usage:
-  dirac-prod-get-trans prodID
-
-Arguments:
-  prodID: Production ID (mandatory)
-
 Example:
   $ dirac-prod-get-trans 381
 """
@@ -18,21 +12,17 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine()
+  self.registerArgument("prodID: Production ID")
+  _, args = self.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-
-  args = self.getPositionalArgs()
-  if len(args) < 1:
-    self.showHelp(exitCode=1)
 
   # get arguments
   prodID = args[0]

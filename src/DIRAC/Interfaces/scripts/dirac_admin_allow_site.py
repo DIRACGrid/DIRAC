@@ -6,13 +6,6 @@
 """
 Add Site to Active mask for current Setup
 
-Usage:
-  dirac-admin-allow-site [options] ... Site Comment
-
-Arguments:
-  Site:     Name of the Site
-  Comment:  Reason of the action
-
 Example:
   $ dirac-admin-allow-site LCG.IN2P3.fr "FRANCE"
 """
@@ -30,11 +23,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
+  self.registerArgument("Site:     Name of the Site")
+  self.registerArgument("Comment:  Reason of the action")
   self.parseCommandLine(ignoreErrors=True)
 
+  from DIRAC import exit as DIRACExit, gConfig, gLogger
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-  from DIRAC import exit as DIRACExit, gConfig, gLogger
 
   def getBoolean(value):
     if value.lower() == 'true':
@@ -48,11 +43,6 @@ def main(self):
   for switch in self.getUnprocessedSwitches():
     if switch[0] == "email":
       email = getBoolean(switch[1])
-
-  args = self.getPositionalArgs()
-
-  if len(args) < 2:
-    self.showHelp()
 
   diracAdmin = DiracAdmin()
   exitCode = 0
@@ -71,8 +61,7 @@ def main(self):
   #  print 'Script stopped'
   #  DIRACExit( 0 )
 
-  site = args[0]
-  comment = args[1]
+  site, comment = self.getPositionalArgs(group=True)
   result = diracAdmin.allowSite(site, comment, printOutput=True)
   if not result['OK']:
     errorList.append((site, result['Message']))

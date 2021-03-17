@@ -20,9 +20,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 # Define a simple class to hold the script parameters
-class Params(object):
+class MyPing(DIRACScript):
 
-  def __init__(self):
+  def initParameters(self):
     self.raw = False
     self.pingsToDo = 1
 
@@ -38,11 +38,8 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
+@MyPing()
 def main(self):
-  # Instantiate the params class
-  cliParams = Params()
-
   # Register accepted switches and their callbacks
   Script.registerSwitch("r", "showRaw", "show raw result from the query", cliParams.setRawResult)
   Script.registerSwitch("p:", "numPings=", "Number of pings to do (by default 1)", cliParams.setNumOfPingsToDo)

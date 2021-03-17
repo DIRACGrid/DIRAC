@@ -6,12 +6,6 @@
 """
 Issue a kill signal to a running DIRAC job
 
-Usage:
-  dirac-wms-job-kill [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
-
 Example:
   $ dirac-wms-job-kill 1918
   Killed job 1918
@@ -40,11 +34,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp(exitCode=1)
+  self.registerArgument(["JobID:    DIRAC Job ID"])
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 

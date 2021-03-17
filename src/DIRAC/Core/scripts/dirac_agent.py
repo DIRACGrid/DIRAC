@@ -23,12 +23,9 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 
 @DIRACScript()
 def main(self):
-  positionalArgs = self.localCfg.getPositionalArguments()
-  if len(positionalArgs) == 0:
-    gLogger.fatal("You must specify which agent to run!")
-    sys.exit(1)
+  self.localCfg.registerCmdArg("Agent: specify which agent to run")
+  agentName = self.localCfg.getPositionalArguments(group=True)
 
-  agentName = positionalArgs[0]
   self.localCfg.setConfigurationForAgent(agentName)
   self.localCfg.addMandatoryEntry("/DIRAC/Setup")
   self.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")

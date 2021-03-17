@@ -6,12 +6,6 @@
 """
 Retrieve logging info of a Grid pilot
 
-Usage:
-  dirac-admin-get-pilot-logging-info [options] ... PilotID ...
-
-Arguments:
-  PilotID:  Grid ID of the pilot
-
 Example:
   $ dirac-admin-get-pilot-logging-info https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw
   Pilot Reference: dirac-admin-get-pilot-logging-info https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw
@@ -38,17 +32,13 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp()
+  self.registerArgument(["PilotID:  Grid ID of the pilot"])
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

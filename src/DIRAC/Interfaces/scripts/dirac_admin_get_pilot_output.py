@@ -6,12 +6,6 @@
 """
 Retrieve output of a Grid pilot
 
-Usage:
-  dirac-admin-get-pilot-output [options] ... PilotID ...
-
-Arguments:
-  PilotID:  Grid ID of the pilot
-
 Example:
   $ dirac-admin-get-pilot-output https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw
   $ ls -la
@@ -28,11 +22,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp()
+  self.registerArgument(["PilotID:  Grid ID of the pilot"])
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

@@ -5,12 +5,6 @@
 ########################################################################
 """
 Select DIRAC jobs matching the given conditions
-
-Usage:
-  dirac-wms-job-status [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -36,8 +30,6 @@ def main(self):
   self.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
   self.parseCommandLine(ignoreErrors=True)
 
-  args = self.getPositionalArgs()
-
   # Default values
   status = None
   minorStatus = None
@@ -48,7 +40,7 @@ def main(self):
   date = None
 
   if args:
-    self.showHelp()
+    Script.showHelp()
 
   exitCode = 0
 

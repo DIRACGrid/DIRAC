@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 """
 Script to update pilot version in CS
-
-Usage:
-  dirac-admin-update-pilot version
-
-Arguments:
-  version: pilot version you want to update to
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -21,20 +15,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.registerSwitch(
-      "v:",
-      "vo=",
-      "Location of pilot version in CS /Operations/<vo>/Pilot/Version"
-      " (default value specified in CS under /DIRAC/DefaultSetup)"
-  )
-
+  self.registerSwitch("v:", "vo=",
+                      "Location of pilot version in CS /Operations/<vo>/Pilot/Version"
+                      " (default value specified in CS under /DIRAC/DefaultSetup)")
+  self.registerArgument("version: pilot version you want to update to")
   self.parseCommandLine(ignoreErrors=False)
 
-  args = self.getPositionalArgs()
-  if len(args) < 1 or len(args) > 2:
-    self.showHelp()
+  version = self.getPositionalArgs(group=True)
 
-  version = args[0]
   vo = None
   for switch in self.getUnprocessedSwitches():
     if switch[0] == "v" or switch[0] == "vo":

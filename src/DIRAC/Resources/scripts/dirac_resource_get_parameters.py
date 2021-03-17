@@ -12,42 +12,38 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import json
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-ceName = ''
-Queue = ''
-Site = ''
 
+class ResourceGetParameters(DIRACScript):
 
-@DIRACScript()
+  def initParameters(self):
+    self.ceName = ''
+    self.Queue = ''
+    self.Site = ''
+
+  def setCEName(self, args):
+    self.ceName = args
+
+  def setSite(self, args):
+    self.Site = args
+
+  def setQueue(self, args):
+    self.Queue = args
+
+@ResourceGetParameters()
 def main(self):
-  global ceName
-  global Queue
-  global Site
-
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 
-  def setCEName(args):
-    global ceName
-    ceName = args
-
-  def setSite(args):
-    global Site
-    Site = args
-
-  def setQueue(args):
-    global Queue
-    Queue = args
-
-  self.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
-  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
-  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
+  self.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)",
+                      self.setCEName)
+  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", self.setSite)
+  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", self.setQueue)
 
   Script.parseCommandLine(ignoreErrors=True)
 
-  result = Resources.getQueue(Site, ceName, Queue)
+  result = Resources.getQueue(self.Site, self.ceName, self.Queue)
 
   if not result['OK']:
     gLogger.error("Could not retrieve resource parameters", ": " + result['Message'])

@@ -6,12 +6,6 @@
 """
 Retrieve status of the given DIRAC job
 
-Usage:
-  dirac-wms-job-status [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
-
 Example:
   $ dirac-wms-job-status 2
   JobID=2 Status=Done; MinorStatus=Execution Complete; Site=EELA.UTFSM.cl;
@@ -30,9 +24,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   self.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
   self.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
-
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  self.registerArgument(["JobID:    DIRAC Job ID"], mandatory=False)
+  sws, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Core.Utilities.Time import toString, date, day
@@ -42,7 +35,7 @@ def main(self):
   exitCode = 0
 
   jobs = []
-  for key, value in self.getUnprocessedSwitches():
+  for key, value in sws:
     if key.lower() in ('f', 'file'):
       if os.path.exists(value):
         jFile = open(value)

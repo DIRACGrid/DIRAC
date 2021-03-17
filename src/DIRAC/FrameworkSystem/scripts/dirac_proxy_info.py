@@ -30,15 +30,16 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 
-class Params(object):
+class ProxyInfo(DIRACScript):
 
-  proxyLoc = False
-  vomsEnabled = True
-  csEnabled = True
-  steps = False
-  checkValid = False
-  checkClock = True
-  uploadedInfo = False
+  def initParameters(self):
+    self.steps = False
+    self.proxyLoc = False
+    self.csEnabled = True
+    self.checkValid = False
+    self.checkClock = True
+    self.vomsEnabled = True
+    self.uploadedInfo = False
 
   def showVersion(self, arg):
     print("Version:")
@@ -75,35 +76,34 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
+@ProxyInfo()
 def main(self):
-  params = Params()
-  self.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
-  self.registerSwitch("i", "version", "Print version", params.showVersion)
-  self.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)
-  self.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck)
-  self.registerSwitch("x", "nocs", "Disable CS", params.disableCS)
-  self.registerSwitch("e", "steps", "Show steps info", params.showSteps)
-  self.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck)
-  self.registerSwitch("m", "uploadedinfo", "Show uploaded proxies info", params.setManagerInfo)
+  self.registerSwitch("f:", "file=", "File to use as user key", self.setProxyLocation)
+  self.registerSwitch("i", "version", "Print version", self.showVersion)
+  self.registerSwitch("n", "novoms", "Disable VOMS", self.disableVOMS)
+  self.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", self.validityCheck)
+  self.registerSwitch("x", "nocs", "Disable CS", self.disableCS)
+  self.registerSwitch("e", "steps", "Show steps info", self.showSteps)
+  self.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
+  self.registerSwitch("m", "uploadedinfo", "Show uploaded proxies info", self.setManagerInfo)
 
   self.disableCS()
   self.parseCommandLine()
 
-  from DIRAC.Core.Utilities.NTP import getClockDeviation
   from DIRAC import gLogger
+  from DIRAC.Core.Security import VOMS
+  from DIRAC.Core.Utilities.NTP import getClockDeviation
   from DIRAC.Core.Security.ProxyInfo import getProxyInfo, getProxyStepsInfo
   from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString, formatProxyStepsInfoAsString
-  from DIRAC.Core.Security import VOMS
   from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
   from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
-  if params.csEnabled:
+  if self.csEnabled:
     retVal = self.enableCS()
     if not retVal['OK']:
       print("Cannot contact CS to get user list")
 
-  if params.checkClock:
+  if self.checkClock:
     result = getClockDeviation()
     if result['OK']:
       deviation = result['Value']
@@ -114,7 +114,7 @@ def main(self):
       elif deviation > 60:
         gLogger.error("Your host clock seems to be off by more than a minute! Thats not good.")
 
-  result = getProxyInfo(params.proxyLoc, not params.vomsEnabled)
+  result = getProxyInfo(self.proxyLoc, not self.vomsEnabled)
   if not result['OK']:
     gLogger.error(result['Message'])
     sys.exit(1)
@@ -123,7 +123,7 @@ def main(self):
   if not infoDict['isProxy']:
     gLogger.error('==============================\n!!! The proxy is not valid !!!')
 
-  if params.steps:
+  if self.steps:
     gLogger.notice("== Steps extended info ==")
     chain = infoDict['chain']
     stepInfo = getProxyStepsInfo(chain)['Value']
@@ -133,7 +133,7 @@ def main(self):
     gLogger.error("Invalid proxy:", msg)
     sys.exit(1)
 
-  if params.uploadedInfo:
+  if self.uploadedInfo:
     result = gProxyManager.getUserProxiesInfo()
     if not result['OK']:
       gLogger.error("Could not retrieve the uploaded proxies info", result['Message'])
@@ -156,10 +156,10 @@ def main(self):
                                               group.ljust(maxGroupLen),
                                               uploadedInfo[userDN][group].strftime("%Y/%m/%d %H:%M")))
 
-  if params.checkValid:
+  if self.checkValid:
     if infoDict['secondsLeft'] == 0:
       invalidProxy("Proxy is expired")
-    if params.csEnabled and not infoDict['validGroup']:
+    if self.csEnabled and not infoDict['validGroup']:
       invalidProxy("Group %s is not valid" % infoDict['group'])
     if 'hasVOMS' in infoDict and infoDict['hasVOMS']:
       requiredVOMS = Registry.getVOMSAttributeForGroup(infoDict['group'])

@@ -46,19 +46,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   original = False
   self.registerSwitch('O', 'Original', 'Gets the original JDL')
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  self.registerArgument(["JobID:    DIRAC Job ID"])
+  sws, args = self.parseCommandLine(ignoreErrors=True)
 
-  for switch in self.getUnprocessedSwitches():
+  for switch in sws:
     if switch[0] == 'Original' or switch[0] == 'O':
       original = True
-
-  for switch in self.getUnprocessedSwitches():
-    if switch[0] == 'Original':
-      original = True
-
-  if len(args) < 1:
-    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()

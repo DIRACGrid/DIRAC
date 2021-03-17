@@ -5,50 +5,38 @@ Get computing resources capable to execute a job with the given description.
 Note that only statically defined computing resource parameters are considered although sites
 can fail matching due to their dynamic state, e.g. occupancy by other jobs. Also input data
 proximity is not taken into account.
-
-Usage:
-  dirac-wms-match [option]... <job_JDL>
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from DIRAC.Core.Base import Script
+__RCSID__ = "$Id$"
+
 from DIRAC import S_OK, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-__RCSID__ = "$Id$"
 
-fullMatch = False
-sites = None
+class WMSMatch(DIRACScript):
 
+  def initParameters(self):
+    self.fullMatch = False
+    self.sites = None
 
-def setFullMatch(optVal_):
-  global fullMatch
-  fullMatch = True
-  return S_OK()
+  def setFullMatch(self, optVal_):
+    self.fullMatch = True
+    return S_OK()
 
-
-def setSites(optVal_):
-  global sites
-  sites = optVal_.split(',')
-  return S_OK()
+  def setSites(self, optVal_):
+    self.sites = optVal_.split(',')
+    return S_OK()
 
 
-@DIRACScript()
+@WMSMatch()
 def main(self):
-  global fullMatch
-  global sites
-  self.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
-  self.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
-
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) == 0:
-    gLogger.error("Error: No job description provided")
-    self.showHelp(exitCode=1)
+  self.registerSwitch("F", "full-match", "Check all the matching criteria", self.setFullMatch)
+  self.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", self.setSites)
+  self.registerArgument("job_JDL: file with job JDL description")
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
@@ -67,7 +55,7 @@ def main(self):
     DIRACExit(-1)
   voName = result['Value']
 
-  resultQueues = Resources.getQueues(siteList=sites, community=voName)
+  resultQueues = Resources.getQueues(siteList=self.sites, community=voName)
   if not resultQueues['OK']:
     gLogger.error('Failed to get CE information')
     DIRACExit(-1)
@@ -100,7 +88,7 @@ def main(self):
       if result['OK']:
         ceStatus = result['Value'][ce]['all']
 
-    result = matchQueue(jdl, queueInfo, fullMatch=fullMatch)
+    result = matchQueue(jdl, queueInfo, fullMatch=self.fullMatch)
     if not result['OK']:
       gLogger.error('Failed in getting match data', result['Message'])
       DIRACExit(-1)

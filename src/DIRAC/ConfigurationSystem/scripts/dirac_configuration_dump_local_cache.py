@@ -14,39 +14,38 @@ __RCSID__ = "$Id$"
 
 import sys
 import DIRAC
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+class ConfDumpLocalCaChe(DIRACScript):
 
-@DIRACScript()
+  def initParameters(self):
+    """ init """
+    self.fileName = ""
+    self.raw = False
+
+  def setFilename(self, args):
+    self.fileName = args
+    return DIRAC.S_OK()
+
+  def setRaw(self, args):
+    self.raw = True
+    return DIRAC.S_OK()
+
+@ConfDumpLocalCaChe()
 def main(self):
   self.localCfg.addDefaultEntry("LogLevel", "fatal")
 
-  fileName = ""
-
-  def setFilename(args):
-    global fileName
-    fileName = args
-    return DIRAC.S_OK()
-
-  raw = False
-
-  def setRaw(args):
-    global raw
-    raw = True
-    return DIRAC.S_OK()
-
-  self.registerSwitch("f:", "file=", "Dump Configuration data into <file>", setFilename)
-  self.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)
+  self.registerSwitch("f:", "file=", "Dump Configuration data into <file>", self.setFilename)
+  self.registerSwitch("r", "raw", "Do not make any modification to the data", self.setRaw)
   self.parseCommandLine()
 
   from DIRAC import gConfig, gLogger
-  result = gConfig.dumpCFGAsLocalCache(fileName, raw)
+  result = gConfig.dumpCFGAsLocalCache(self.fileName, self.raw)
   if not result['OK']:
     print("Error: %s" % result['Message'])
     sys.exit(1)
 
-  if not fileName:
+  if not self.fileName:
     print(result['Value'])
 
   sys.exit(0)

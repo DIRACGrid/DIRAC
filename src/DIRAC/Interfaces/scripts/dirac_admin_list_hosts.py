@@ -4,8 +4,7 @@
 # Author :  Adrian Casajus
 ########################################################################
 """
-Usage:
-  dirac-admin-list-hosts [options] ...
+List hosts
 
 Example:
   $ dirac-admin-list-hosts
@@ -26,7 +25,6 @@ def main(self):
   self.registerSwitch("e", "extended", "Show extended info")
 
   self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

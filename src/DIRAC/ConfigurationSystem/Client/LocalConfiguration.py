@@ -12,14 +12,11 @@ import sys
 import six
 import getopt
 
-import DIRAC
-from DIRAC import gLogger
-from DIRAC import S_OK, S_ERROR
-
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC import gLogger, S_OK, S_ERROR, rootPath, exit as DIRACExit
+from DIRAC.Core.Utilities.Devloader import Devloader
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection, getExecutorSection
-from DIRAC.Core.Utilities.Devloader import Devloader
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 
 class LocalConfiguration(object):
@@ -329,9 +326,11 @@ class LocalConfiguration(object):
         optionPath = self.__getAbsolutePath(optionTuple[0])
         if not gConfigurationData.extractOptionFromCFG(optionPath):
           gConfigurationData.setOptionInCFG(optionPath, optionTuple[1])
+
       self.__initLogger(self.componentName, self.loggingSection)
       if not retVal['OK']:
         return retVal
+
       retVal = self.__checkMandatoryOptions()
       if not retVal['OK']:
         return retVal
@@ -634,7 +633,7 @@ class LocalConfiguration(object):
     """
     Print license
     """
-    lpath = os.path.join(DIRAC.rootPath, "DIRAC", "LICENSE")
+    lpath = os.path.join(rootPath, "DIRAC", "LICENSE")
     sys.stdout.write(" - DIRAC is GPLv3 licensed\n\n")
     try:
       with open(lpath) as fd:
@@ -642,7 +641,7 @@ class LocalConfiguration(object):
     except IOError:
       sys.stdout.write("Can't find GPLv3 license at %s. Somebody stole it!\n" % lpath)
       sys.stdout.write("Please check out http://www.gnu.org/licenses/gpl-3.0.html for more info\n")
-    DIRAC.exit(0)
+    DIRACExit(0)
 
   def showHelp(self, dummy=False, exitCode=0):
     """ Printout help message including a Usage message if defined via setUsageMessage method
@@ -721,7 +720,7 @@ class LocalConfiguration(object):
       gLogger.notice(self.__helpExampleDoc)
 
     gLogger.notice("")
-    DIRAC.exit(exitCode)
+    DIRACExit(exitCode)
 
   def deleteOption(self, optionPath):
     """

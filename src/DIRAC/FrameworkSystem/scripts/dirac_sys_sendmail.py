@@ -14,15 +14,15 @@ Arguments:
   Other keys will be ommited.
   Message body is an arbitrary string.
 
-Examples::
-
-  dirac-sys-sendmail "From: source@email.com\\nTo: destination@email.com\\nSubject: Test\\n\\nMessage body"
+Examples:
+  $ dirac-sys-sendmail "From: source@email.com\\nTo: destination@email.com\\nSubject: Test\\n\\nMessage body"
   echo "From: source@email.com\\nSubject: Test\\n\\nMessage body" | dirac-sys-sendmail destination@email.com
 """
 
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import socket
@@ -30,15 +30,13 @@ import sys
 import os
 
 from DIRAC import gLogger, exit as DIRACexit
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
   arg = "".join(args)
 

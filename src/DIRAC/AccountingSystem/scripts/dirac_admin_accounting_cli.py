@@ -5,9 +5,6 @@
 ########################################################################
 """
 Command line administrative interface to DIRAC Accounting DataStore Service
-
-Usage:
-  dirac-admin-accounting-cli [options] ...
 """
 from __future__ import absolute_import
 from __future__ import division

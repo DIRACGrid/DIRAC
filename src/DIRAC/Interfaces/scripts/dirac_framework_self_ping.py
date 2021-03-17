@@ -11,10 +11,10 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-
 import sys
 import os
 import time
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 

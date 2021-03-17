@@ -2,9 +2,6 @@
 """
 Get information on resources available for the given VO: Computing and Storage.
 By default, resources for the VO corresponding to the current user identity are displayed
-
-Usage:
-  dirac-resource-info [option]...
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -12,34 +9,33 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-@DIRACScript()
-def main(self):
+class ResourceGetParameters(DIRACScript):
 
+  def initParameters(self):
+    self.ceFlag = False
+    self.seFlag = False
+    self.voName = None
+
+  def setCEFlag(self, args_):
+    self.ceFlag = True
+
+  def setSEFlag(self, args_):
+    self.seFlag = True
+
+  def setVOName(self, args):
+    self.voName = args
+
+
+@ResourceGetParameters()
+def main(self):
   from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
 
-  ceFlag = False
-  seFlag = False
-  voName = None
-
-  def setCEFlag(args_):
-    global ceFlag
-    ceFlag = True
-
-  def setSEFlag(args_):
-    global seFlag
-    seFlag = True
-
-  def setVOName(args):
-    global voName
-    voName = args
-
-  self.registerSwitch("C", "ce", "Get CE info", setCEFlag)
-  self.registerSwitch("S", "se", "Get SE info", setSEFlag)
-  self.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", setVOName)
+  self.registerSwitch("C", "ce", "Get CE info", self.setCEFlag)
+  self.registerSwitch("S", "se", "Get SE info", self.setSEFlag)
+  self.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", self.setVOName)
 
   self.parseCommandLine(ignoreErrors=True)
 
@@ -51,9 +47,9 @@ def main(self):
   from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
   from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
-  def printCEInfo(voName):
+  def printCEInfo(self):
 
-    resultQueues = Resources.getQueues(community=voName)
+    resultQueues = Resources.getQueues(community=self.voName)
     if not resultQueues['OK']:
       gLogger.error('Failed to get CE information')
       DIRACExit(-1)
@@ -95,14 +91,14 @@ def main(self):
     gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
     return S_OK()
 
-  def printSEInfo(voName):
+  def printSEInfo(self):
 
     fields = ('SE', 'Status', 'Protocols', 'Aliases')
     records = []
 
-    for se in DMSHelpers(voName).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
+    for se in DMSHelpers(self.voName).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
       seObject = StorageElement(se)
-      if not (seObject.vo and voName in seObject.vo.strip().split(',') or not seObject.voName):
+      if not (seObject.vo and self.voName in seObject.vo.strip().split(',') or not seObject.self.voName):
         continue
 
       result = seObject.status()
@@ -122,39 +118,38 @@ def main(self):
     gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
     return S_OK()
 
-  if __name__ == '__main__':
-    if not voName:
-      # Get the current VO
-      result = getVOfromProxyGroup()
-      if not result['OK']:
-        gLogger.error('No proxy found, please login')
-        DIRACExit(-1)
-      voName = result['Value']
-    else:
-      result = gConfig.getSections('/Registry/VO')
-      if not result['OK']:
-        gLogger.error('Failed to contact the CS')
-        DIRACExit(-1)
-      if voName not in result['Value']:
-        gLogger.error('Invalid VO name')
-        DIRACExit(-1)
-
-    if not (ceFlag or seFlag):
-      gLogger.error('Resource type is not specified')
+  if not self.voName:
+    # Get the current VO
+    result = getVOfromProxyGroup()
+    if not result['OK']:
+      gLogger.error('No proxy found, please login')
+      DIRACExit(-1)
+    self.voName = result['Value']
+  else:
+    result = gConfig.getSections('/Registry/VO')
+    if not result['OK']:
+      gLogger.error('Failed to contact the CS')
+      DIRACExit(-1)
+    if self.voName not in result['Value']:
+      gLogger.error('Invalid VO name')
       DIRACExit(-1)
 
-    if ceFlag:
-      result = printCEInfo(voName)
-      if not result['OK']:
-        gLogger.error(result['Message'])
-        DIRACExit(-1)
-    if seFlag:
-      result = printSEInfo(voName)
-      if not result['OK']:
-        gLogger.error(result['Message'])
-        DIRACExit(-1)
+  if not (self.ceFlag or self.seFlag):
+    gLogger.error('Resource type is not specified')
+    DIRACExit(-1)
 
-    DIRACExit(0)
+  if self.ceFlag:
+    result = printCEInfo(self.voName)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+      DIRACExit(-1)
+  if self.seFlag:
+    result = printSEInfo(self.voName)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+      DIRACExit(-1)
+
+  DIRACExit(0)
 
 
 if __name__ == "__main__":

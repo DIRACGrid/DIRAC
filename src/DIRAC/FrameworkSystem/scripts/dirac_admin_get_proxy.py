@@ -6,14 +6,6 @@
 """
 Retrieve a delegated proxy for the given user and group
 
-Usage:
-  dirac-admin-get-proxy [options] ... <DN|user> group
-
-Arguments:
-  DN:       DN of the user
-  user:     DIRAC user name (will fail if there is more than 1 DN registered)
-  group:    DIRAC group name
-
 Example:
   $ dirac-admin-get-proxy vhamar dirac_user
   Proxy downloaded to /afs/in2p3.fr/home/h/hamar/proxy.vhamar.dirac_user
@@ -28,7 +20,6 @@ import six
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -36,9 +27,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 __RCSID__ = "$Id$"
 
 
-class Params(object):
+class GetProxy(DIRACScript):
 
-  def __init__(self):
+  def initParameters(self):
     self.limited = False
     self.proxyPath = False
     self.proxyLifeTime = 86400
@@ -107,19 +98,16 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
+@GetProxy()
 def main(self):
-  params = Params()
-  self.registerSwitches(params.switches)
+  self.registerSwitches(self.switches)
+  self.registerArgument(("DN:       DN of the user",
+                         "user:     DIRAC user name (will fail if there is more than 1 DN registered)"))
+  self.registerArgument(" group:    DIRAC group name")
 
   self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  userDN, userGroup = self.getPositionalArgs(group=True)
 
-  if len(args) != 2:
-    self.showHelp()
-
-  userGroup = str(args[1])
-  userDN = str(args[0])
   userName = False
   if userDN.find("/") != 0:
     userName = userDN

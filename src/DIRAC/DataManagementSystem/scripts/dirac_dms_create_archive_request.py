@@ -34,6 +34,9 @@ Default values for any of the command line options can also be set in the CS
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
+__RCSID__ = '$Id$'
+
 import os
 
 import DIRAC
@@ -41,7 +44,6 @@ from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -49,17 +51,15 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 sLog = gLogger.getSubLogger('AddArchive')
-__RCSID__ = '$Id$'
-MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
-MAX_FILES = 2000
 
 
-class CreateArchiveRequest(object):
+class CreateArchiveRequest(DIRACScript):
   """Create the request to archive files."""
 
-  def __init__(self, script):
+  def initParameters(self):
     """Constructor."""
-    self.__script = script
+    self.MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
+    self.MAX_FILES = 2000
     self._fcClient = None
     self._reqClient = None
     self.switches = {}
@@ -72,8 +72,8 @@ class CreateArchiveRequest(object):
                     ('N', 'Name', 'Name of the Tarball, if not given: Path_Tars/Path_N.tar'
                      ' will be used to store tarballs'),
                     ('L', 'List', 'File containing list of LFNs to archive, requires Name to be given'),
-                    ('', 'MaxFiles', 'Maximum number to put in one tarball: Default %d' % MAX_FILES),
-                    ('', 'MaxSize', 'Maximum number of Bytes to put in one tarball: Default %d' % MAX_SIZE),
+                    ('', 'MaxFiles', 'Maximum number to put in one tarball: Default %d' % self.MAX_FILES),
+                    ('', 'MaxSize', 'Maximum number of Bytes to put in one tarball: Default %d' % self.MAX_SIZE),
                     ('S', 'SourceSE', 'Where to remove the LFNs from'),
                     ('T', 'TargetSE', 'Where to move the Tarball to'),
                     ]
@@ -89,8 +89,8 @@ class CreateArchiveRequest(object):
                   ]
     self.registerSwitchesAndParseCommandLine()
 
-    self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', MAX_SIZE))
-    self.switches['MaxFiles'] = int(self.switches.setdefault('MaxFiles', MAX_FILES))
+    self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', self.MAX_SIZE))
+    self.switches['MaxFiles'] = int(self.switches.setdefault('MaxFiles', self.MAX_FILES))
 
     self.getLFNList()
     self.getLFNMetadata()
@@ -146,13 +146,13 @@ class CreateArchiveRequest(object):
     :param str opName
     """
     for short, longOption, doc in self.options:
-      self.__script.registerSwitch(short + ':' if short else '', longOption + '=', doc)
+      self.registerSwitch(short + ':' if short else '', longOption + '=', doc)
     for short, longOption, doc in self.flags:
-      self.__script.registerSwitch(short, longOption, doc)
+      self.registerSwitch(short, longOption, doc)
       self.switches[longOption] = False
-    self.__script.parseCommandLine()
-    if self.__script.getPositionalArgs():
-      self.__script.showHelp(exitCode=1)
+    self.parseCommandLine()
+    if self.getPositionalArgs():
+      self.showHelp(exitCode=1)
 
     ops = Operations()
     if not ops.getValue('DataManagement/ArchiveFiles/Enabled', False):
@@ -169,7 +169,7 @@ class CreateArchiveRequest(object):
         sLog.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
         self.switches[longOption] = defaultValue
 
-    for switch in self.__script.getUnprocessedSwitches():
+    for switch in self.getUnprocessedSwitches():
       for short, longOption, doc in self.options:
         if switch[0] == short or switch[0].lower() == longOption.lower():
           sLog.verbose('Found switch %r with value %r' % (longOption, switch[1]))
@@ -513,11 +513,10 @@ class CreateArchiveRequest(object):
     request.addOperation(registerSource)
 
 
-@DIRACScript()
+@CreateArchiveRequest()
 def main(self):
   try:
-    CAR = CreateArchiveRequest(self)
-    CAR.run()
+    self.run()
   except Exception as e:
     if LogLevels.getLevelValue(sLog.getLevel()) <= LogLevels.VERBOSE:
       sLog.exception('Failed to create Archive Request')

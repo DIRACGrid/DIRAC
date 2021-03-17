@@ -8,42 +8,32 @@ Add a new DIRAC SiteName to DIRAC Configuration, including one or more CEs.
 If site is already in the CS with another name, error message will be produced.
 If site is already in the CS with the right name, only new CEs will be added.
 
-Usage:
-  dirac-admin-add-site [options] ... DIRACSiteName GridSiteName CE [CE] ...
-
-Arguments:
-  DIRACSiteName:  Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)
-  GridSiteName:   Name of the site in the Grid (ie: CERN-PROD)
-  CE:             Name of the CE to be included in the site (ie: ce111.cern.ch)
-
 Example:
-  $ dirac-admin-add-site LCG.IN2P3.fr IN2P3-Site
+  $ dirac-admin-add-site LCG.IN2P3.fr IN2P3-Site ce01.in2p3.fr
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import six
 
-
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC import exit as DIRACExit, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 
 
 @DIRACScript()
 def main(self):
+  self.registerArgument(" DIRACSiteName: DIRAC Site name in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
+  self.registerArgument(" GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
+  self.registerArgument(["CE:            Name of the CE to be included in the site (ie: ce111.cern.ch)"])
   self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
 
-  if len(args) < 3:
-    self.showHelp(exitCode=1)
+  diracSiteName, gridSiteName, ces = self.getPositionalArgs(group=True)
 
-  diracSiteName = args[0]
-  gridSiteName = args[1]
-  ces = args[2:]
   try:
     diracGridType, place, country = diracSiteName.split('.')
   except ValueError:

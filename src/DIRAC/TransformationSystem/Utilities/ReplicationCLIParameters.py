@@ -7,13 +7,14 @@ from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSVOForGroup
 
 
-class Params(object):
+class Params(DIRACScript):
   """Parameter Object"""
 
-  def __init__(self):
+  def initParameters(self):
     self.targetSE = []
     self.sourceSE = ''
     self.groupSize = 1
@@ -80,22 +81,17 @@ class Params(object):
     self.enable = True
     return S_OK()
 
-  def registerSwitches(self, script):
-    """ register command line arguments
-
-    :param script: Dirac.Core.Base Script Class
-    :type script: DIRAC.Core.Base.Script
-    """
-
-    script.registerSwitch("G:", "GroupSize=", "Number of Files per transformation task", self.setGroupSize)
-    script.registerSwitch("R:", "GroupName=", "TransformationGroup Name", self.setGroupName)
-    script.registerSwitch("S:", "SourceSEs=", "SourceSE(s) to use, comma separated list", self.setSourceSE)
-    script.registerSwitch("N:", "Extraname=", "String to append to transformation name", self.setExtraname)
-    script.registerSwitch("P:", "Plugin=", "Plugin to use for transformation", self.setPlugin)
-    script.registerSwitch("T:", "Flavour=", "Flavour to create: Replication or Moving", self.setTransFlavour)
-    script.registerSwitch("K:", "MetaKey=", "Meta Key to use: TransformationID", self.setMetaKey)
-    script.registerSwitch("M:", "MetaData=", "MetaData to use Key/Value Pairs: 'DataType:REC,'", self.setMetadata)
-    script.registerSwitch("x", "Enable", "Enable the transformation creation, otherwise dry-run", self.setEnable)
+  def registerSwitches(self):
+    """ register command line arguments """
+    self.registerSwitch("G:", "GroupSize=", "Number of Files per transformation task", self.setGroupSize)
+    self.registerSwitch("R:", "GroupName=", "TransformationGroup Name", self.setGroupName)
+    self.registerSwitch("S:", "SourceSEs=", "SourceSE(s) to use, comma separated list", self.setSourceSE)
+    self.registerSwitch("N:", "Extraname=", "String to append to transformation name", self.setExtraname)
+    self.registerSwitch("P:", "Plugin=", "Plugin to use for transformation", self.setPlugin)
+    self.registerSwitch("T:", "Flavour=", "Flavour to create: Replication or Moving", self.setTransFlavour)
+    self.registerSwitch("K:", "MetaKey=", "Meta Key to use: TransformationID", self.setMetaKey)
+    self.registerSwitch("M:", "MetaData=", "MetaData to use Key/Value Pairs: 'DataType:REC,'", self.setMetadata)
+    self.registerSwitch("x", "Enable", "Enable the transformation creation, otherwise dry-run", self.setEnable)
 
     useMessage = []
     useMessage.append("Create one replication transformation for each MetaValue given")
@@ -103,20 +99,18 @@ class Params(object):
     useMessage.append("MetaValue and TargetSEs can be comma separated lists")
     useMessage.append("Usage:")
     useMessage.append("  %s <MetaValue1[,val2,val3]> <TargetSEs> [-G<Files>] [-S<SourceSEs>]"
-                      "[-N<ExtraName>] [-T<Type>] [-M<Key>] [-K...] -x" % script.scriptName)
-    script.setUsageMessage('\n'.join(useMessage))
+                      "[-N<ExtraName>] [-T<Type>] [-M<Key>] [-K...] -x" % self.scriptName)
+    self.setUsageMessage('\n'.join(useMessage))
 
-  def checkSettings(self, script, checkArguments=True):
+  def checkSettings(self, checkArguments=True):
     """check if all required parameters are set, print error message and return S_ERROR if not
 
-    :param script: The script object
-    :type script: DIRAC.Core.Base.Script
     :param bool checkArguments: if false do not check for the correct number of arguments, should only be
         changed if using derived class
     """
 
     if checkArguments:
-      args = script.getPositionalArgs()
+      args = self.getPositionalArgs()
       if len(args) == 2:
         self.setMetaValues(args[0])
         self.setTargetSE(args[1])
@@ -133,7 +127,7 @@ class Params(object):
     if not self.errorMessages:
       return S_OK()
     gLogger.error("\n".join(self.errorMessages))
-    script.showHelp()
+    self.showHelp()
     return S_ERROR()
 
   def _checkProxy(self):

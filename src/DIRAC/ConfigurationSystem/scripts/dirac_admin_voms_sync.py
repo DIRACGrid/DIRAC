@@ -15,47 +15,42 @@ __RCSID__ = "$Id$"
 import six
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 
-dryRun = False
-voName = None
+class SortCSSites(DIRACScript):
 
+  def initParameters(self):
+    """ init """
+    self.dryRun = False
+    self.voName = None
 
-def setDryRun(value):
-  global dryRun
-  dryRun = True
-  return S_OK()
+  def setDryRun(self, value):
+    self.dryRun = True
+    return S_OK()
 
-
-def setVO(value):
-  global voName
-  voName = value
-  return S_OK()
+  def setVO(self, value):
+    self.voName = value
+    return S_OK()
 
 
 @DIRACScript()
 def main(self):
-  self.registerSwitch("V:", "vo=", "VO name", setVO)
-  self.registerSwitch("D", "dryRun", "Dry run", setDryRun)
+  self.registerSwitch("V:", "vo=", "VO name", self.setVO)
+  self.registerSwitch("D", "dryRun", "Dry run", self.setDryRun)
   self.parseCommandLine(ignoreErrors=True)
 
   @executeWithUserProxy
   def syncCSWithVOMS(vomsSync):
     return vomsSync.syncCSWithVOMS()
 
-  def getVOAdmin(voName):
-    voAdminUser = getVOOption(voName, "VOAdmin")
-    voAdminGroup = getVOOption(voName, "VOAdminGroup", getVOOption(voName, "DefaultGroup"))
-    return voAdminUser, voAdminGroup
+  voAdminUser = getVOOption(self.voName, "VOAdmin")
+  voAdminGroup = getVOOption(self.voName, "VOAdminGroup", getVOOption(self.voName, "DefaultGroup"))
 
-  voAdminUser, voAdminGroup = getVOAdmin(voName)
-
-  vomsSync = VOMS2CSSynchronizer(voName)
+  vomsSync = VOMS2CSSynchronizer(self.voName)
   result = syncCSWithVOMS(vomsSync,  # pylint: disable=unexpected-keyword-arg
                           proxyUserName=voAdminUser,
                           proxyUserGroup=voAdminGroup)
@@ -76,7 +71,7 @@ def main(self):
 
   csapi = resultDict.get("CSAPI")
   if csapi and csapi.csModified:
-    if dryRun:
+    if self.dryRun:
       gLogger.notice("There are changes to Registry ready to commit, skipped because of dry run")
     else:
       yn = six.moves.input("There are changes to Registry ready to commit, do you want to proceed ? [Y|n]:")

@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 """
 Do the initial installation and configuration of a DIRAC service based on tornado
-
-Usage:
-  dirac-install-tornado-service [options] ... System Component|System/Component
-
-Arguments:
-  System:  Name of the DIRAC system (ie: WorkloadManagement)
-  Service: Name of the DIRAC component (ie: Matcher)
 """
 
 from __future__ import absolute_import
@@ -16,56 +9,45 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC import exit as DIRACexit
-from DIRAC import gConfig, gLogger, S_OK
-from DIRAC.Core.Base import Script
+from DIRAC import gConfig, gLogger, S_OK, exit as DIRACexit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 
-__RCSID__ = "$Id$"
+
+class InstallTornadoService(DIRACScript):
+
+  def initParameters(self):
+    self.overwrite = False
+    self.module = ''
+    self.specialOptions = {}
+
+  def setOverwrite(self, opVal):
+    self.overwrite = True
+    return S_OK()
+
+  def setModule(self, optVal):
+    self.specialOptions['Module'] = optVal
+    self.module = optVal
+    return S_OK()
+
+  def setSpecialOption(self, optVal):
+    option, value = optVal.split('=')
+    self.specialOptions[option] = value
+    return S_OK()
 
 
-overwrite = False
-
-
-def setOverwrite(opVal):
-  global overwrite
-  overwrite = True
-  return S_OK()
-
-
-module = ''
-specialOptions = {}
-
-
-def setModule(optVal):
-  global specialOptions, module
-  specialOptions['Module'] = optVal
-  module = optVal
-  return S_OK()
-
-
-def setSpecialOption(optVal):
-  global specialOptions
-  option, value = optVal.split('=')
-  specialOptions[option] = value
-  return S_OK()
-
-
-@DIRACScript()
+@InstallTornadoService()
 def main(self):
-  global overwrite
-  global specialOptions
-  global module
-  global specialOptions
-
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   gComponentInstaller.exitOnError = True
 
-  self.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
-  self.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
-  self.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
+  self.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", self.setOverwrite)
+  self.registerSwitch("m:", "module=", "Python module name for the component code", self.setModule)
+  self.registerSwitch("p:", "parameter=", "Special component option ", self.setSpecialOption)
+  self.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
+                         "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
+  self.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
   self.parseCommandLine()
   args = self.getPositionalArgs()
 
@@ -78,7 +60,7 @@ def main(self):
 
   system = args[0]
   component = args[1]
-  compOrMod = module if module else component
+  compOrMod = self.module if self.module else component
 
   result = gComponentInstaller.addDefaultOptionsToCS(gConfig, 'service', system, component,
                                                      extensionsByPriority(),
@@ -105,7 +87,7 @@ def main(self):
     gLogger.error(result['Message'])
     DIRACexit(1)
 
-  result = MonitoringUtilities.monitorInstallation('service', system, component, module)
+  result = MonitoringUtilities.monitorInstallation('service', system, component, self.module)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)

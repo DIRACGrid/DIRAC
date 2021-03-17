@@ -23,10 +23,8 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 
 @DIRACScript()
 def main(self):
+  self.localCfg.registerCmdArg(["executor: specify which executor to run"])
   positionalArgs = self.localCfg.getPositionalArguments()
-  if len(positionalArgs) == 0:
-    gLogger.fatal("You must specify which executor to run!")
-    sys.exit(1)
 
   if len(positionalArgs) == 1 and positionalArgs[0].find("/") > -1:
     mainName = positionalArgs[0]

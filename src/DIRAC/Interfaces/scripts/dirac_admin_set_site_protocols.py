@@ -6,12 +6,6 @@
 """
 Defined protocols for each SE for a given site.
 
-Usage:
-  dirac-admin-set-site-protocols [options] ... Protocol ...
-
-Arguments:
-  Protocol: SE access protocol (mandatory)
-
 Example:
   $ dirac-admin-set-site-protocols --Site=LCG.IN2P3.fr SRM2
 """
@@ -28,14 +22,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")
-  self.parseCommandLine(ignoreErrors=True)
+  self.registerArgument(["Protocol: SE access protocol"], mandatory=False)
+  switches, args = self.parseCommandLine(ignoreErrors=True)
 
   site = None
-  for switch in self.getUnprocessedSwitches():
+  for switch in switches:
     if switch[0].lower() == "site":
       site = switch[1]
-
-  args = self.getPositionalArgs()
 
   if not site or not args:
     self.showHelp(exitCode=1)

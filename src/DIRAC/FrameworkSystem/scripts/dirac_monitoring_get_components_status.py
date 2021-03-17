@@ -3,17 +3,16 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-import sys
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
 __RCSID__ = "$Id$"
+
+import sys
+
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
   self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
 
   fieldsToShow = ('ComponentName', 'Type', 'Host', 'Port', 'Status', 'Message')
 

@@ -1,39 +1,31 @@
 #!/usr/bin/env python
 """
 Stop DIRAC component using runsvctrl utility
-
-Usage:
-  dirac-stop-component [options] ... [system [service|agent]]
-
-Arguments:
-  system:        Name of the system for the component (default *: all)
-  service|agent: Name of the particular component (default *: all)
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-from DIRAC.Core.Base import Script
+  __RCSID__ = "$Id$"
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
   self.disableCS()
+  self.registerArgument(" System:  Name of the system for the component (default *: all)",
+                        mandatory=False, default='*')
+  self.registerArgument(("Service: Name of the particular component (default *: all)",
+                         "Agent:   Name of the particular component (default *: all)"),
+                         mandatory=False, default='*')
   self.parseCommandLine()
-  args = self.getPositionalArgs()
-
-  from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-
-  __RCSID__ = "$Id$"
-
+  system, component = self.getPositionalArgs(group=True)
   if len(args) > 2:
     self.showHelp(exitCode=1)
 
-  system = '*'
-  component = '*'
-  if len(args) > 0:
-    system = args[0]
+  from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+
   if system != '*':
     if len(args) > 1:
       component = args[1]

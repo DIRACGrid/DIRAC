@@ -6,14 +6,6 @@
 """
 Modify a user in the CS.
 
-Usage:
-  dirac-admin-modify-user [options] ... user DN group [group] ...
-
-Arguments:
-  user:     User name (mandatory)
-  DN:       DN of the User (mandatory)
-  group:    Add the user to the group (mandatory)
-
 Example:
   $ dirac-admin-modify-user vhamar /C=FR/O=Org/CN=User dirac_user
 """
@@ -31,12 +23,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   self.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
   self.registerSwitch("f", "force", "create the user if it doesn't exist")
+  self.registerArgument(" user:     User name")
+  self.registerArgument(" DN:       DN of the User")
+  self.registerArgument(["group:    Add the user to the group"])
   self.parseCommandLine(ignoreErrors=True)
-
-  args = self.getPositionalArgs()
-
-  if len(args) < 3:
-    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -60,9 +50,7 @@ def main(self):
         print("Setting property %s to %s" % (pName, pValue))
         userProps[pName] = pValue
 
-  userName = args[0]
-  userProps['DN'] = args[1]
-  userProps['Groups'] = args[2:]
+  userName, userProps['DN'], userProps['Groups'] = self.getPositionalArgs(group=True)
 
   if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=forceCreation):
     errorList.append(("modify user", "Cannot modify user %s" % userName))

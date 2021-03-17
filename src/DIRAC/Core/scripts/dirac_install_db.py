@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 """
 Create a new DB in the MySQL server
-
-Usage:
-  dirac-install-db [options] ... DB ...
-
-Arguments:
-  DB: Name of the Database (mandatory)
 """
 # Script initialization and parseCommandLine
 from __future__ import print_function
@@ -15,16 +9,13 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine()
-  args = self.getPositionalArgs()
-  if len(args) < 1:
-    self.showHelp(exitCode=1)
+  self.registerArgument(["DB: Name of the Database"])
+  _, args = self.parseCommandLine()
 
   # Script imports
   from DIRAC import gConfig

@@ -32,9 +32,9 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 __RCSID__ = "$Id$"
 
 
-class Params(object):
+class UsersWithProxy(DIRACScript):
 
-  def __init__(self):
+  def initParameters(self):
     self.limited = False
     self.proxyPath = False
     self.proxyLifeTime = 3600
@@ -49,12 +49,10 @@ class Params(object):
     return DIRAC.S_OK()
 
 
-@DIRACScript()
+@UsersWithProxy()
 def main(self):
-  params = Params()
-  self.registerSwitch("v:", "valid=", "Required HH:MM for the users", params.setProxyLifeTime)
+  self.registerSwitch("v:", "valid=", "Required HH:MM for the users", self.setProxyLifeTime)
   self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
   result = gProxyManager.getDBContents()
   if not result['OK']:
     print("Can't retrieve list of users: %s" % result['Message'])
@@ -68,7 +66,7 @@ def main(self):
     expirationDate = record[3]
     dt = expirationDate - now
     secsLeft = dt.days * 86400 + dt.seconds
-    if secsLeft > params.proxyLifeTime:
+    if secsLeft > self.proxyLifeTime:
       userName, userDN, userGroup, _, persistent = record
       if userName not in dataDict:
         dataDict[userName] = []

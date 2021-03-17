@@ -5,12 +5,6 @@
 ########################################################################
 """
 Retrieve the output data files of a DIRAC job
-
-Usage:
-  dirac-wms-job-get-output-data [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -25,11 +19,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerSwitch("D:", "Dir=", "Store the output in this directory")
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp(exitCode=1)
+  self.registerArgument(["JobID:    DIRAC Job ID"])
+  sws, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()
@@ -37,7 +28,7 @@ def main(self):
   errorList = []
 
   outputDir = ''
-  for sw, v in self.getUnprocessedSwitches():
+  for sw, v in sws:
     if sw in ('D', 'Dir'):
       outputDir = v
 

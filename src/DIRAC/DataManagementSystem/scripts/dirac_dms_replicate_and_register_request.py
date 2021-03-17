@@ -1,24 +1,18 @@
 #!/bin/env python
 """
 Create and put 'ReplicateAndRegister' request.
-
-Usage:
-  dirac-dms-replicate-and-register-request [options] requestName LFNs targetSE1 [targetSE2 ...]
-
-Arguments:
-  requestName:  a request name
-  LFNs:         single LFN or file with LFNs
-  targetSE:     target SE
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
+
 import os
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC import gLogger
 import DIRAC
+from DIRAC import gLogger
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 def getLFNList(arg):
@@ -35,7 +29,11 @@ def getLFNList(arg):
 def main(self):
   catalog = None
   self.registerSwitch("C:", "Catalog=", "Catalog to use")
+  self.registerArgument(" requestName:  a request name")
+  self.registerArgument(" LFNs:         single LFN or file with LFNs")
+  self.registerArgument(["targetSE:     target SE"])
   self.parseCommandLine()
+
   for switch in self.getUnprocessedSwitches():
     if switch[0] == "C" or switch[0].lower() == "catalog":
       catalog = switch[1]

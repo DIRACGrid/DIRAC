@@ -6,12 +6,6 @@
 """
 Retrieve Site Associated to a given CE
 
-Usage:
-  dirac-admin-ce-info [options] ... CE ...
-
-Arguments:
-  CE:       Name of the CE (mandatory)
-
 Example:
   $ dirac-admin-ce-info LCG.IN2P3.fr
 """
@@ -27,22 +21,20 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  self.registerArgument("CE:  Name of the CE")
   self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  ce = self.getPositionalArgs(group=True)
 
   from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
   from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 
-  if len(args) < 1:
-    self.showHelp(exitCode=1)
-
-  res = getCESiteMapping(args[0])
+  res = getCESiteMapping(ce)
   if not res['OK']:
     gLogger.error(res['Message'])
     Dexit(1)
-  site = res['Value'][args[0]]
+  site = res['Value'][ce]
 
-  res = gConfig.getOptionsDict(cfgPath('Resources', 'Sites', site.split('.')[0], site, 'CEs', args[0]))
+  res = gConfig.getOptionsDict(cfgPath('Resources', 'Sites', site.split('.')[0], site, 'CEs', ce))
   if not res['OK']:
     gLogger.error(res['Message'])
     Dexit(1)

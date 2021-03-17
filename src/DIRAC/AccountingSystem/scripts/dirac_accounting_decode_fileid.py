@@ -5,12 +5,6 @@
 ########################################################################
 """
 Decode Accounting plot URLs
-
-Usage:
-  dirac-accounting-decode-fileid [options] ... URL ...
-
-Arguments:
-  URL: encoded URL of a DIRAC Accounting plot
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -24,16 +18,14 @@ from six.moves.urllib_parse import parse_qs
 from six.moves.urllib import parse as urlparse
 
 from DIRAC import gLogger
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
-  self.parseCommandLine()
-
-  fileIds = self.getPositionalArgs()
+  self.registerArgument(["URL: encoded URL of a DIRAC Accounting plot"])
+  _, fileIds = self.parseCommandLine()
 
   for fileId in fileIds:
     # Try to find if it's a url

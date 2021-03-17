@@ -2,9 +2,6 @@
 """
 Get the size of the given file or a list of files
 
-Usage:
-   dirac-dms-data-size <lfn | fileContainingLfns> <SE> <status>
-
 Example:
   $ dirac-dms-data-size  /formation/user/v/vhamar/Example.txt
   ------------------------------
@@ -22,7 +19,6 @@ __RCSID__ = "$Id$"
 import os
 import DIRAC
 from DIRAC import gLogger
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -30,9 +26,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   unit = 'GB'
   self.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
+  self.registerArgument(("LocalFile: Path to local file containing LFNs",
+                         "LFN:       Logical File Name"))
+  self.registerArgument(["LFN:       Logical File Name"], mandatory=False)
+  unprSwitches, args = self.parseCommandLine(ignoreErrors=False)
 
-  self.parseCommandLine(ignoreErrors=False)
-  for switch in self.getUnprocessedSwitches():
+  for switch in unprSwitches:
     if switch[0].lower() == "u" or switch[0].lower() == "unit":
       unit = switch[1]
   scaleDict = {'MB': 1000 * 1000.0,
@@ -44,7 +43,6 @@ def main(self):
     DIRAC.exit(2)
   scaleFactor = scaleDict[unit]
 
-  args = self.getPositionalArgs()
   lfns = []
   for inputFileName in args:
     if os.path.exists(inputFileName):

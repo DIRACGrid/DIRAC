@@ -24,32 +24,35 @@ __RCSID__ = "$Id$"
 import sys
 
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 
-userName = False
 
-
-def setUser(arg):
-  """ Set user
-
-      :param str arg: user name
-
-      :return: S_OK()
+class ProxyGetUploadedInfo(DIRACScript):
   """
-  global userName
-  userName = arg
-  return S_OK()
+  handles input options for dirac-proxy-destroy
+  """
+
+  def initParameters(self):
+    self.userName = False
+
+  def setUser(self, arg):
+    """ Set user
+
+        :param str arg: user name
+
+        :return: S_OK()
+    """
+    self.userName = arg
+    return S_OK()
 
 
-@DIRACScript()
+@ProxyGetUploadedInfo()
 def main(self):
-  global userName
-  self.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)
+  self.registerSwitch("u:", "user=", "User to query (by default oneself)", self.setUser)
   self.parseCommandLine()
 
   result = getProxyInfo()
@@ -59,26 +62,26 @@ def main(self):
     sys.exit(1)
   proxyProps = result['Value']
 
-  userName = userName or proxyProps.get('username')
-  if not userName:
+  self.userName = self.userName or proxyProps.get('username')
+  if not self.userName:
     gLogger.notice("Your proxy don`t have username extension")
     sys.exit(1)
 
-  if userName in Registry.getAllUsers():
+  if self.userName in Registry.getAllUsers():
     if Properties.PROXY_MANAGEMENT not in proxyProps['groupProperties']:
-      if userName != proxyProps['username'] and userName != proxyProps['issuer']:
+      if self.userName != proxyProps['username'] and self.userName != proxyProps['issuer']:
         gLogger.notice("You can only query info about yourself!")
         sys.exit(1)
-    result = Registry.getDNForUsername(userName)
+    result = Registry.getDNForUsername(self.userName)
     if not result['OK']:
       gLogger.notice("Oops %s" % result['Message'])
     dnList = result['Value']
     if not dnList:
-      gLogger.notice("User %s has no DN defined!" % userName)
+      gLogger.notice("User %s has no DN defined!" % self.userName)
       sys.exit(1)
     userDNs = dnList
   else:
-    userDNs = [userName]
+    userDNs = [self.userName]
 
   gLogger.notice("Checking for DNs %s" % " | ".join(userDNs))
   pmc = ProxyManagerClient()

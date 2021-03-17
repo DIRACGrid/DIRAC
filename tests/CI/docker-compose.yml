@@ -11,7 +11,7 @@ services:
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
-      retries: 20
+      retries: 10
 
   elasticsearch:
     image: elasticsearch:${ES_VER}
@@ -32,7 +32,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 5s
       timeout: 2s
-      retries: 20
+      retries: 10
 
   # Mock of an S3 storage
   s3-direct:

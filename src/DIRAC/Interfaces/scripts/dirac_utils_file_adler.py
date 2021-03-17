@@ -5,12 +5,6 @@
 """
 Calculate alder32 of the supplied file
 
-Usage:
-  dirac-utils-file-adler [options] ... File ...
-
-Arguments:
-  File:     File Name
-
 Example:
   $ dirac-utils-file-adler Example.tgz
   Example.tgz 88b4ca8b
@@ -26,10 +20,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=False)
-  files = self.getPositionalArgs()
-  if len(files) == 0:
-    self.showHelp()
+  self.registerArgument(["File:     File Name"])
+  _, files = self.parseCommandLine(ignoreErrors=False)
 
   exitCode = 0
 

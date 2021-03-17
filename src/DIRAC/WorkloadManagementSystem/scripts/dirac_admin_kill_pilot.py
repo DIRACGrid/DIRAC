@@ -5,27 +5,21 @@
 ########################################################################
 """
 Kill the specified pilot
-
-Usage:
-  dirac-admin-kill-pilot <pilot reference>
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp(exitCode=1)
+  self.registerArgument("PilotRef: pilot reference")
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
   pilotRef = args[0]
 

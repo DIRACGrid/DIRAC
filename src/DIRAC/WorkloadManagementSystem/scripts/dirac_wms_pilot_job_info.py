@@ -5,12 +5,6 @@
 ########################################################################
 """
 Retrieve info about jobs run by the given pilot
-
-Usage:
-  dirac-wms-pilot-job-info [options] ... PilotID ...
-
-Arguments:
-  PilotID:  Grid ID of the pilot
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -18,11 +12,10 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-def _stringInList(subStr, sList):
+def __stringInList(subStr, sList):
   resList = []
   for s in sList:
     if subStr.lower() in s.lower():
@@ -34,15 +27,12 @@ def _stringInList(subStr, sList):
 def main(self):
   parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
   self.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
-  self.parseCommandLine(ignoreErrors=True)
-  for switch in self.getUnprocessedSwitches():
+  self.registerArgument(["PilotID:  Grid ID of the pilot"])
+  switches, args = self.parseCommandLine(ignoreErrors=True)
+  for switch in switches:
     if switch[0] == 'Parameters':
       parameters += [par for par in switch[1].split(',')]
   parameters = [(i, par.lower()) for i, par in enumerate(parameters) if par]
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   from DIRAC.Interfaces.API.Dirac import Dirac
@@ -75,8 +65,8 @@ def main(self):
               params['CPUEfficiency'] = '%s %%' % (
                   100. * float(params['TotalCPUTime(s)']) / float(params['WallClockTime(s)']))
             for i, par in parameters:
-              for param in [p for p in _stringInList(str(par), str(params))
-                            if not _stringInList(str(p), str(result[jobID]))]:
+              for param in [p for p in __stringInList(str(par), str(params))
+                            if not __stringInList(str(p), str(result[jobID]))]:
                 if param == 'CPUEfficiency':
                   effRequested = True
                 result[jobID]['%d.%s' % (i, param)] = params[param]

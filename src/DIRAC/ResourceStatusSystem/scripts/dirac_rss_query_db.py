@@ -2,18 +2,6 @@
 """
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
-
-Usage:
-  dirac-rss-query-db [option] <query> <element> <tableType>
-
-Arguments:
-  Queries:    [select|add|modify|delete]
-  Elements:   [site|resource|component|node]
-  TableTypes: [status|log|history]
-
-Verbosity::
-
-  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -22,14 +10,14 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 import datetime
+
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 subLogger = None
 
@@ -278,7 +266,7 @@ def unpack(switchDict):
     self.subLogger.error("\nERROR:")
     self.subLogger.error("\t" + msg)
     self.subLogger.error("\tPlease, check documentation below")
-    self.__script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   def confirm(self, query, matches):
     """
@@ -584,19 +572,18 @@ def run(args, switchDictSet):
     self.confirm(query, matches)
 
 
-@DIRACScript()
+@RSSQueryDB()
 def main(self):
-  params = Params(self)
   # Script initialization
-  params.registerSwitches()
-  params.registerUsageMessage()
-  args, switchDict = params.parseSwitches()
+  self.registerSwitches()
+  self.registerUsageMessage()
+  args, switchDict = self.parseSwitches()
 
   # Unpack switchDict if 'name' or 'statusType' have multiple values
-  switchDictSet = params.unpack(switchDict)
+  switchDictSet = self.unpack(switchDict)
 
   # Run script
-  params.run(args, switchDictSet)
+  self.run(args, switchDictSet)
 
   # Bye
   DIRACExit(0)

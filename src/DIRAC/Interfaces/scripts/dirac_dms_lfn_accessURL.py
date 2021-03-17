@@ -6,14 +6,6 @@
 """
 Retrieve an access URL for an LFN replica given a valid DIRAC SE.
 
-Usage:
-  dirac-dms-lfn-accessURL [options] ... LFN SE [PROTO]
-
-Arguments:
-  LFN:      Logical File Name or file containing LFNs (mandatory)
-  SE:       Valid DIRAC SE (mandatory)
-  PROTO:    Optional protocol for accessURL
-
 Example:
   $ dirac-dms-lfn-accessURL /formation/user/v/vhamar/Example.txt DIRAC-USER
   {'Failed': {},
@@ -32,26 +24,20 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  self.registerArgument("LFN:      Logical File Name or file containing LFNs")
+  self.registerArgument("SE:       Valid DIRAC SE")
+  self.registerArgument("PROTO:    Optional protocol for accessURL", default=False, mandatory=False)
   self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  lfn, seName, proto = self.getPositionalArgs(group=True)
 
   # pylint: disable=wrong-import-position
   from DIRAC.Interfaces.API.Dirac import Dirac
-
-  if len(args) < 2:
-    self.showHelp(exitCode=1)
 
   if len(args) > 3:
     print('Only one LFN SE pair will be considered')
 
   dirac = Dirac()
   exitCode = 0
-
-  lfn = args[0]
-  seName = args[1]
-  proto = False
-  if len(args) > 2:
-    proto = args[2]
 
   try:
     with open(lfn, 'r') as f:

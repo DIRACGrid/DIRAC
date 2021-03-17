@@ -6,12 +6,6 @@
 """
 Print Configuration information for a given Site
 
-Usage:
-  dirac-admin-site-info [options] ... Site ...
-
-Arguments:
-  Site:     Name of the Site
-
 Example:
   $ dirac-admin-site-info LCG.IN2P3.fr
   {'CE': 'cclcgceli01.in2p3.fr, cclcgceli03.in2p3.fr, sbgce1.in2p3.fr',
@@ -33,18 +27,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp()
+  self.registerArgument(["Site:     Name of the Site"])
+  _, sites = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
   exitCode = 0
   errorList = []
 
-  for site in args:
+  for site in sites:
 
     result = diracAdmin.getSiteSection(site, printOutput=True)
     if not result['OK']:

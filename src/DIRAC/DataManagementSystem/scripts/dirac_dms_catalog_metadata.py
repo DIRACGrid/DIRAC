@@ -3,9 +3,6 @@
 Get metadata for the given file specified by its Logical File Name or for a list of files
 contained in the specifed file
 
-Usage:
-   dirac-dms-catalog-metadata <lfn | fileContainingLfns> [Catalog]
-
 Example:
   $ dirac-dms-catalog-metadata /formation/user/v/vhamar/Example.txt
   FileName                                     Size        GUID                                     Status   Checksum
@@ -17,27 +14,22 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC import exit as DIRACExit
+import os
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine()
-
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-  import os
-  args = self.getPositionalArgs()
-
-  if not len(args) >= 1:
-    self.showHelp(exitCode=1)
-  else:
-    inputFileName = args[0]
-    catalogs = []
-    if len(args) == 2:
-      catalogs = [args[1]]
+  self.registerArgument(("LocalFile: Path to local file containing LFNs",
+                         "LFN:       Logical File Names"))
+  self.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
+  
+  self.parseCommandLine()
+  inputFileName, catalogs = getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

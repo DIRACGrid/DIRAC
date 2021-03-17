@@ -3,9 +3,6 @@
 """
 Ban one or more Storage Elements for usage
 
-Usage:
-  dirac-admin-ban-se SE1 [SE2 ...]
-
 Example:
   $ dirac-admin-ban-se M3PEC-disk
 """
@@ -15,7 +12,6 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -38,10 +34,11 @@ def main(self):
       "S:",
       "Site=",
       "     Ban all SEs associate to site (note that if writing is allowed, check is always allowed)")
-  self.parseCommandLine(ignoreErrors=True)
+  self.registerArgument(["seGroupList: list of SEs or comma-separated SEs"])
 
-  ses = self.getPositionalArgs()
-  for switch in self.getUnprocessedSwitches():
+  switches, ses = self.parseCommandLine(ignoreErrors=True)
+
+  for switch in switches:
     if switch[0].lower() in ("r", "banread"):
       write = False
       check = False

@@ -1,49 +1,42 @@
 #!/usr/bin/env python
 """
 Uninstallation of a DIRAC component
-
-Usage:
-  dirac-uninstall-component [options] ... System Component|System/Component
-
-Arguments:
-  System:  Name of the DIRAC system (ie: WorkloadManagement)
-  Component: Name of the DIRAC component (ie: Matcher)
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+__RCSID__ = "$Id$"
+
 import socket
 
-from DIRAC import exit as DIRACexit
-from DIRAC import gLogger, S_OK
-from DIRAC.Core.Base import Script
+from DIRAC import gLogger, S_OK, exit as DIRACexit
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
-__RCSID__ = "$Id$"
 
-force = False
+class UninstallComponent(DIRACScript):
+
+  def initParameters(self):
+    self.force = False
+
+  def setForce(self, opVal):
+    self.force = True
+    return S_OK()
 
 
-def setForce(opVal):
-  global force
-  force = True
-  return S_OK()
-
-
-@DIRACScript()
+@UninstallComponent()
 def main(self):
-  global force
-
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   gComponentInstaller.exitOnError = True
 
-  self.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
-  self.parseCommandLine()
-  args = self.getPositionalArgs()
+  self.registerSwitch("f", "force", "Forces the removal of the logs", self.setForce)
+  self.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
+                         "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
+  self.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
+  _, args = self.parseCommandLine()
 
   if len(args) == 1:
     args = args[0].split('/')

@@ -6,12 +6,6 @@
 """
 Calculate md5 of the supplied file
 
-Usage:
-  dirac-utils-file-md5 [options] ... File ...
-
-Arguments:
-  File:     File Name
-
 Example:
   $ dirac-utils-file-md5 Example.tgz
   Example.tgz 5C1A1102-EAFD-2CBA-25BD-0EFCCFC3623E
@@ -27,10 +21,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=False)
-  files = self.getPositionalArgs()
-  if len(files) == 0:
-    self.showHelp()
+  self.registerArgument(["File:     File Name"])
+  _, files = self.parseCommandLine(ignoreErrors=False)
 
   exitCode = 0
 

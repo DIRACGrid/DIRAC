@@ -23,7 +23,7 @@ import datetime
 import DIRAC
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
@@ -34,14 +34,17 @@ from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClie
 __RCSID__ = "$Id$"
 
 
-class Params(ProxyGeneration.CLIParams, ProxyUpload.CLIParams):
+class ProxyInit(ProxyGeneration, ProxyUpload):
 
-  def __init__(self):
-    ProxyUpload.CLIParams.__init__(self)
-    ProxyGeneration.CLIParams.__init__(self)
+  def initParameters(self):
+    ProxyUpload.initParameters(self)
+    ProxyGeneration.initParameters(self)
     self.addVOMSExt = False
     self.uploadProxy = True
     self.uploadPilot = False
+    self.__issuerCert = False
+    self.__proxyGenerated = False
+    self.__uploadedInfo = {}
     self.switches = [
         ("U", "upload",
          "Upload a long lived proxy to the ProxyManager (deprecated, see --no-upload)"),
@@ -62,21 +65,11 @@ class Params(ProxyGeneration.CLIParams, ProxyUpload.CLIParams):
     self.uploadProxy = False
     return S_OK()
 
-
-class ProxyInit(object):
-
-  def __init__(self, piParams, script):
-    self.__script = script
-    self.__piParams = piParams
-    self.__issuerCert = False
-    self.__proxyGenerated = False
-    self.__uploadedInfo = {}
-
   def getIssuerCert(self):
     if self.__issuerCert:
       return self.__issuerCert
     proxyChain = X509Chain.X509Chain()
-    resultProxyChainFromFile = proxyChain.loadChainFromFile(self.__piParams.certLoc)
+    resultProxyChainFromFile = proxyChain.loadChainFromFile(self.certLoc)
     if not resultProxyChainFromFile['OK']:
       gLogger.error("Could not load the proxy: %s" % resultProxyChainFromFile['Message'])
       sys.exit(1)
@@ -85,12 +78,10 @@ class ProxyInit(object):
       gLogger.error("Could not load the proxy: %s" % resultIssuerCert['Message'])
       sys.exit(1)
     self.__issuerCert = resultIssuerCert['Value']
-    return self.__issuerCert
 
   def certLifeTimeCheck(self):
-    minLife = Registry.getGroupOption(self.__piParams.diracGroup, "SafeCertificateLifeTime", 2592000)
-    resultIssuerCert = self.getIssuerCert()
-    resultRemainingSecs = resultIssuerCert.getRemainingSecs()  # pylint: disable=no-member
+    minLife = Registry.getGroupOption(self.diracGroup, "SafeCertificateLifeTime", 2592000)
+    resultRemainingSecs = self.__issuerCert.getRemainingSecs()  # pylint: disable=no-member
     if not resultRemainingSecs['OK']:
       gLogger.error("Could not retrieve certificate expiration time", resultRemainingSecs['Message'])
       return
@@ -103,17 +94,17 @@ class ProxyInit(object):
       gLogger.notice(msg)
 
   def addVOMSExtIfNeeded(self):
-    addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption(self.__piParams.diracGroup, "AutoAddVOMS", False)
+    addVOMS = self.addVOMSExt or Registry.getGroupOption(self.diracGroup, "AutoAddVOMS", False)
     if not addVOMS:
       return S_OK()
 
-    vomsAttr = Registry.getVOMSAttributeForGroup(self.__piParams.diracGroup)
+    vomsAttr = Registry.getVOMSAttributeForGroup(self.diracGroup)
     if not vomsAttr:
       return S_ERROR("Requested adding a VOMS extension but no VOMS attribute defined for group %s" %
-                     self.__piParams.diracGroup)
+                     self.diracGroup)
 
     resultVomsAttributes = VOMS.VOMS().setVOMSAttributes(self.__proxyGenerated, attribute=vomsAttr,
-                                                         vo=Registry.getVOMSVOForGroup(self.__piParams.diracGroup))
+                                                         vo=Registry.getVOMSVOForGroup(self.diracGroup))
     if not resultVomsAttributes['OK']:
       return S_ERROR("Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" %
                      resultVomsAttributes['Message'])
@@ -125,22 +116,10 @@ class ProxyInit(object):
       return result
     return S_OK()
 
-  def createProxy(self):
-    """ Creates the proxy on disk
-    """
-    gLogger.notice("Generating proxy...")
-    resultProxyGenerated = ProxyGeneration.generateProxy(self.__piParams, self.__script)
-    if not resultProxyGenerated['OK']:
-      gLogger.error(resultProxyGenerated['Message'])
-      sys.exit(1)
-    self.__proxyGenerated = resultProxyGenerated['Value']
-    return resultProxyGenerated
-
-  def uploadProxy(self):
+  def _uploadProxy(self):
     """ Upload the proxy to the proxyManager service
     """
-    issuerCert = self.getIssuerCert()
-    resultUserDN = issuerCert.getSubjectDN()  # pylint: disable=no-member
+    resultUserDN = self.__issuerCert.getSubjectDN()  # pylint: disable=no-member
     if not resultUserDN['OK']:
       return resultUserDN
     userDN = resultUserDN['Value']
@@ -149,15 +128,14 @@ class ProxyInit(object):
     if userDN in self.__uploadedInfo:
       expiry = self.__uploadedInfo[userDN].get('')
       if expiry:
-        if issuerCert.getNotAfterDate()['Value'] - datetime.timedelta(minutes=10) < expiry:  # pylint: disable=no-member
+        if self.__issuerCert.getNotAfterDate()['Value'] - datetime.timedelta(minutes=10) < expiry:  # pylint: disable=no-member
           gLogger.info('Proxy with DN "%s" already uploaded' % userDN)
           return S_OK()
 
     gLogger.info("Uploading %s proxy to ProxyManager..." % userDN)
-    self.__piParams.onTheFly = True
-    self.__piParams.proxyLifeTime = issuerCert.getRemainingSecs()['Value'] - 300  # pylint: disable=no-member
-    self.__piParams.rfcIfPossible = self.__piParams.rfc
-    resultProxyUpload = ProxyUpload.uploadProxy(self.__piParams)
+    self.onTheFly = True
+    self.proxyLifeTime = self.__issuerCert.getRemainingSecs()['Value'] - 300  # pylint: disable=no-member
+    resultProxyUpload = self.uploadProxy(self)
     if not resultProxyUpload['OK']:
       gLogger.error(resultProxyUpload['Message'])
       return resultProxyUpload
@@ -222,12 +200,17 @@ class ProxyInit(object):
     return S_OK()
 
   def doTheMagic(self):
-    proxy = self.createProxy()
-    if not proxy['OK']:
-      return proxy
-
+    gLogger.notice("Generating proxy...")
+    result = self.generateProxy()
+    if not result['OK']:
+      gLogger.error(result['Message'])
+      sys.exit(1)
+    self.__proxyGenerated = result['Value']
+    
     self.checkCAs()
+    self.getIssuerCert()
     self.certLifeTimeCheck()
+
     resultProxyWithVOMS = self.addVOMSExtIfNeeded()
     if not resultProxyWithVOMS['OK']:
       if "returning a valid AC for the user" in resultProxyWithVOMS['Message']:
@@ -237,34 +220,32 @@ class ProxyInit(object):
         gLogger.notice("Failed to add VOMS extension: no standard grid interface available")
       else:
         gLogger.error(resultProxyWithVOMS['Message'])
-      if self.__piParams.strict:
+      if self.strict:
         return resultProxyWithVOMS
 
-    if self.__piParams.uploadProxy:
-      resultProxyUpload = self.uploadProxy()
+    if self.uploadProxy:
+      resultProxyUpload = self._uploadProxy()
       if not resultProxyUpload['OK']:
-        if self.__piParams.strict:
+        if self.strict:
           return resultProxyUpload
 
     return S_OK()
 
 
-@DIRACScript()
+@ProxyInit()
 def main(self):
-  piParams = Params()
-  self.registerSwitches(piParams.switches)
   self.disableCS()
+  self.registerSwitches(self.switches)
   self.parseCommandLine(ignoreErrors=True)
 
   DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
 
-  pI = ProxyInit(piParams, self)
-  resultDoTheMagic = pI.doTheMagic()
+  resultDoTheMagic = self.doTheMagic()
   if not resultDoTheMagic['OK']:
     gLogger.fatal(resultDoTheMagic['Message'])
     sys.exit(1)
 
-  pI.printInfo()
+  self.printInfo()
 
   sys.exit(0)
 

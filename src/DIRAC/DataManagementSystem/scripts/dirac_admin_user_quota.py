@@ -2,9 +2,6 @@
 """
 Show storage quotas for specified users or for all registered users if nobody is specified
 
-Usage:
-  dirac-admin-user-quota [user1 ...]
-
 Example:
   $ dirac-admin-user-quota
   ------------------------------
@@ -22,14 +19,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine()
-  users = self.getPositionalArgs()
+  self.registerArgument(["User: list of SEs or comma-separated SEs"], mandatory=False)
+
+  _, users = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import gLogger, gConfig
 

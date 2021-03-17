@@ -1,16 +1,16 @@
+""" DIRAC script """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from collections import defaultdict
-import functools
-
 import six
 import sys
 import os.path
 import inspect
+import functools
+from collections import defaultdict
 
 if six.PY3:
   from DIRAC.Core.Utilities.Extensions import entrypointToExtension, extensionsByPriority
@@ -29,12 +29,15 @@ class DIRACScript(object):
     self.alreadyInitialized = False
     self.doc = inspect.currentframe().f_back.f_globals['__doc__']
     self.scriptName = inspect.currentframe().f_back.f_globals['__name__'].split('.')[-1].replace('_', '-')
+
+    # Parse script __doc__'s to create a draft help message
     self.localCfg = LocalConfiguration()
     self.localCfg.setUsageMessage(self.doc)
+
     self.showHelp = self.localCfg.showHelp
-    self.initializeScript()
+    self.initParameters()
   
-  def initializeScript(self):
+  def initParameters(self):
     """ Script initialization """
     pass
 

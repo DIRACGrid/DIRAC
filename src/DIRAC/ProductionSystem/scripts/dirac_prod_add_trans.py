@@ -2,14 +2,6 @@
 """
 Add an existing transformation to an existing production.
 Transformations already belonging to another production cannot be added.
-
-Usage:
-  dirac-prod-add-trans prodID transID [parentTransID]
-
-Arguments:
-  prodID:         Production ID
-  transID:        Transformation ID
-  parentTransID:  Parent Transformation ID
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -24,7 +16,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine()
+  self.registerArgument("prodID:         Production ID")
+  self.registerArgument("transID:        Transformation ID")
+  self.registerArgument("parentTransID:  Parent Transformation ID", default='', mandatory=False)
+  _, args = self.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -33,16 +28,9 @@ def main(self):
   transClient = TransformationClient()
 
   # get arguments
-  args = self.getPositionalArgs()
-  if len(args) == 3:
-    parentTransID = args[2]
-  elif len(args) == 2:
-    parentTransID = ''
-  else:
+  prodID, transID, parentTransID = self.getPositionalArgs(group=True)
+  if len(args) > 3:
     self.showHelp(exitCode=1)
-
-  prodID = args[0]
-  transID = args[1]
 
   res = transClient.getTransformation(transID)
   if not res['OK']:

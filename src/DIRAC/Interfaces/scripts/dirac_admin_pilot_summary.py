@@ -4,8 +4,7 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-Usage:
-  dirac-admin-pilot-summary [options] ...
+Pilot summary
 
 Example:
   $ dirac-admin-pilot-summary
@@ -39,7 +38,6 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

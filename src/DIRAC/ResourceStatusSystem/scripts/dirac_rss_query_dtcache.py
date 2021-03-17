@@ -1,17 +1,6 @@
 #!/usr/bin/env python
 """
 Select/Add/Delete a new DownTime entry for a given Site or Service.
-
-Usage:
-  dirac-rss-query-dtcache [option] <query>
-
-Queries::
-
-  [select|add|delete]
-
-Verbosity::
-
-  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -22,17 +11,15 @@ __RCSID__ = '$Id$'
 import datetime
 
 from DIRAC import gLogger, exit as DIRACExit, version
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
-class Params(object):
+class RSSQueryDtcache(DIRACScript):
 
-  def __init__(self, script):
-    self.__script = script
+  def initParameters(self):
     self.subLogger = gLogger.getSubLogger(__file__)
     self.ResourceManagementClient = getattr(
         Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
@@ -58,7 +45,9 @@ class Params(object):
     )
 
     for switch in switches:
-      self.__script.registerSwitch('', switch[0], switch[1])
+      self.registerSwitch('', switch[0], switch[1])
+
+    self.registerArgument("Query:     queries", values=['select', 'add', 'delete'])
 
   def registerUsageMessage(self):
     """
@@ -68,23 +57,17 @@ class Params(object):
     usageMessage = 'DIRAC version: %s \n' % version
     usageMessage += __doc__
 
-    self.__script.setUsageMessage(usageMessage)
+    self.setUsageMessage(usageMessage)
 
   def parseSwitches(self):
     """
       Parses the arguments passed by the user
     """
 
-    self.__script.parseCommandLine(ignoreErrors=True)
-    args = self.__script.getPositionalArgs()
-    if not args:
-      self.error("Missing mandatory 'query' argument")
-    elif not args[0].lower() in ('select', 'add', 'delete'):
-      self.error("Missing mandatory argument")
-    else:
-      query = args[0].lower()
+    switches, args = self.parseCommandLine(ignoreErrors=True)
+    query = args[0].lower()
 
-    switches = dict(self.__script.getUnprocessedSwitches())
+    switches = dict(switches)
 
     # Default values
     switches.setdefault('downtimeID', None)
@@ -196,7 +179,7 @@ class Params(object):
     self.subLogger.error("\nERROR:")
     self.subLogger.error("\t" + msg)
     self.subLogger.error("\tPlease, check documentation below")
-    self.__script.showHelp(exitCode=1)
+    self.showHelp(exitCode=1)
 
   def confirm(self, query, matches):
     """
@@ -332,16 +315,15 @@ class Params(object):
       self.error(result['Message'])
 
 
-@DIRACScript()
+@RSSQueryDtcache()
 def main(self):
-  params = Params(self)
   # Script initialization
-  params.registerSwitches()
-  params.registerUsageMessage()
-  args, switchDict = params.parseSwitches()
+  self.registerSwitches()
+  self.registerUsageMessage()
+  args, switchDict = self.parseSwitches()
 
   # Run script
-  params.run(args, switchDict)
+  self.run(args, switchDict)
 
   # Bye
   DIRACExit(0)

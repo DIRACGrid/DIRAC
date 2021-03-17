@@ -20,49 +20,38 @@ from __future__ import absolute_import
 from __future__ import division
 
 from DIRAC import S_OK, exit as DIRACexit
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
 
-vo = None
+
+class ShowSEStatus(DIRACScript):
+
+  def initParameters(self):
+    """ init """
+    self.vo = None
+    self.allVOsFlag = False
+    self.noVOFlag = False
+
+  def setVO(self, arg):
+    self.vo = arg
+    return S_OK()
+
+  def setAllVO(self, arg):
+    self.allVOsFlag = True
+    return S_OK()
+
+  def setNoVO(self, arg):
+    self.noVOFlag = True
+    self.allVOsFlag = False
+    return S_OK()
 
 
-def setVO(arg):
-  global vo
-  vo = arg
-  return S_OK()
-
-
-allVOsFlag = False
-
-
-def setAllVO(arg):
-  global allVOsFlag
-  allVOsFlag = True
-  return S_OK()
-
-
-noVOFlag = False
-
-
-def setNoVO(arg):
-  global noVOFlag, allVOsFlag
-  noVOFlag = True
-  allVOsFlag = False
-  return S_OK()
-
-
-@DIRACScript()
+@ShowSEStatus()
 def main(self):
-  global vo
-  global noVOFlag
-  global allVOsFlag
-
-  self.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
-  self.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)
-  self.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", setNoVO)
-
+  self.registerSwitch("V:", "vo=", "Virtual Organization", self.setVO)
+  self.registerSwitch("a", "all", "All Virtual Organizations flag", self.setAllVO)
+  self.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", self.setNoVO)
   self.parseCommandLine()
 
   from DIRAC import gConfig, gLogger
@@ -92,21 +81,21 @@ def main(self):
   fields = ['SE', 'ReadAccess', 'WriteAccess', 'RemoveAccess', 'CheckAccess']
   records = []
 
-  if vo is None and not allVOsFlag:
+  if self.vo is None and not self.allVOsFlag:
     result = getVOfromProxyGroup()
     if not result['OK']:
       gLogger.error('Failed to determine the user VO')
       DIRACexit(1)
-    vo = result['Value']
+    self.vo = result['Value']
 
   for se, statusDict in res['Value'].items():
 
     # Check if the SE is allowed for the user VO
-    if not allVOsFlag:
+    if not self.allVOsFlag:
       voList = gConfig.getValue('/Resources/StorageElements/%s/VO' % se, [])
-      if noVOFlag and voList:
+      if self.noVOFlag and voList:
         continue
-      if voList and vo not in voList:
+      if voList and self.vo not in voList:
         continue
 
     record = [se]

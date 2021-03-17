@@ -6,12 +6,6 @@
 """
 Retrieve the output of the pilot that executed a given job
 
-Usage:
-  dirac-admin-get-job-pilot-output [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC ID of the Job
-
 Example:
   $ dirac-admin-get-job-pilot-output 34
 """
@@ -26,11 +20,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp()
+  self.registerArgument(["JobID:    DIRAC ID of the Job"])
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

@@ -24,14 +24,11 @@ from pprint import pformat
 
 from diraccfg import CFG
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.List import fromChar
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
-LOG = gLogger
 
-
-class CheckConfig(object):
+class CheckConfig(DIRACScript):
   """Compare the ConfigTemplate with current configuration."""
 
   def __init__(self):
@@ -70,6 +67,20 @@ class CheckConfig(object):
     self.showMissingOptions = True
     return S_OK()
 
+  def _setSwitches(self):
+    self.registerSwitch("S:", "system=", "Systems to check, by default all of them are checked", self._setSystems)
+    self.registerSwitch("M", "modified", "Show entries which differ from the default", self._setShowModified)
+    self.registerSwitch("A", "added", "Show entries which do not exist in ConfigTemplate", self._setShowAdded)
+    self.registerSwitch("U", "missingSection", "Show sections which do not exist in the current configuration",
+                          self._setShowMissingSections)
+    self.registerSwitch("O", "missingOption", "Show options which do not exist in the current configuration",
+                          self._setShowMissingOptions)
+
+    self.parseCommandLine(ignoreErrors=True)
+    if not any([self.showModified, self.showAdded, self.showMissingSections, self.showMissingOptions]):
+      gLogger.error("\nERROR: Set at least one of the flags M A U O")
+      self.showHelp()
+
   def _check(self):
     """Obtain default configuration and current configuration and print the diff."""
     cfg = CFG()
@@ -85,10 +96,10 @@ class CheckConfig(object):
     currentCfg = currentCfg['Value']
     diff = currentCfg.getModifications(cfg, ignoreOrder=True, ignoreComments=True)
 
-    LOG.debug("*" * 80)
-    LOG.debug("Default Configuration: %s" % str(cfg))
-    LOG.debug("*" * 80)
-    LOG.debug("Current Configuration: %s " % str(currentCfg))
+    gLogger.debug("*" * 80)
+    gLogger.debug("Default Configuration: %s" % str(cfg))
+    gLogger.debug("*" * 80)
+    gLogger.debug("Current Configuration: %s " % str(currentCfg))
     for entry in diff:
       self._printDiff(entry)
 
@@ -175,40 +186,32 @@ class CheckConfig(object):
         self._printDiff(change, fullPath)
     elif diffType == 'modOpt':
       if self.showModified:
-        LOG.notice("Changed option %r from %r" % (fullPath, changes))
+        gLogger.notice("Changed option %r from %r" % (fullPath, changes))
     elif diffType == 'delOpt':
       if self.showAdded:
-        LOG.notice("Option %r does not exist in template" % fullPath)
+        gLogger.notice("Option %r does not exist in template" % fullPath)
     elif diffType == 'delSec':
       if self.showAdded:
-        LOG.notice("Section %r does not exist in template" % fullPath)
+        gLogger.notice("Section %r does not exist in template" % fullPath)
     elif diffType == 'addSec':
       if self.showMissingSections:
-        LOG.notice("Section %r not found in current configuration: %s" % (fullPath, pformat(changes)))
+        gLogger.notice("Section %r not found in current configuration: %s" % (fullPath, pformat(changes)))
     elif diffType == 'addOpt':
       if self.showMissingOptions:
-        LOG.notice("Option %r not found in current configuration. Default value is %r" % (fullPath, changes))
+        gLogger.notice("Option %r not found in current configuration. Default value is %r" % (fullPath, changes))
     else:
-      LOG.error("Unknown DiffType", "%s, %s, %s" % (diffType, fullPath, changes))
+      gLogger.error("Unknown DiffType", "%s, %s, %s" % (diffType, fullPath, changes))
 
   def run(self):
-    """Run configuration comparison."""
-    if not any([self.showModified, self.showAdded, self.showMissingSections, self.showMissingOptions]):
-      LOG.error("\nERROR: Set at least one of the flags M A U O")
-      return S_ERROR()
-
+    """ Run configuration comparison."""
+    self._setSwitches()
     self._check()
     return S_OK()
 
 
-@DIRACScript()
+@CheckConfig()
 def main(self):
-  checkConfig = CheckConfig()
-  self.registerSwitches(checkConfig.switches)
-  self.parseCommandLine(ignoreErrors=True)
-
-  if not checkConfig.run()['OK']:
-    self.showHelp()
+  self.run()
 
 
 if __name__ == "__main__":

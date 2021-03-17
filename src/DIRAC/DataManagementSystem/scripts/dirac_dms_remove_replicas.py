@@ -3,9 +3,6 @@
 Remove the given file replica or a list of file replicas from the File Catalog
 and from the storage.
 
-Usage:
-   dirac-dms-remove-replicas <LFN | fileContainingLFNs> SE [SE]
-
 Example:
   $ dirac-dms-remove-replicas /formation/user/v/vhamar/Test.txt IBCP-disk
   Successfully removed DIRAC-USER replica of /formation/user/v/vhamar/Test.txt
@@ -23,29 +20,27 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  self.registerArgument(("LocalFile: Path to local file containing LFNs",
+                         "LFN:       Logical File Names"))
+  self.registerArgument(["SE:        Storage element"])
+
   self.parseCommandLine()
 
   from DIRAC.Core.Utilities.List import breakListIntoChunks
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   dm = DataManager()
   import os
-  inputFileName = ""
-  storageElementNames = []
-  args = self.getPositionalArgs()
 
-  if len(args) < 2:
-    self.showHelp(exitCode=1)
-  else:
-    inputFileName = args[0]
-    storageElementNames = args[1:]
+  first, storageElementNames = self.getPositionalArgs(group=True)
 
-  if os.path.exists(inputFileName):
-    inputFile = open(inputFileName, 'r')
+  if os.path.exists(first):
+    inputFile = open(first, 'r')
     string = inputFile.read()
     lfns = [lfn.strip() for lfn in string.splitlines()]
     inputFile.close()
   else:
-    lfns = [inputFileName]
+    lfns = [first]
+
   for lfnList in breakListIntoChunks(sorted(lfns, reverse=True), 500):
     for storageElementName in storageElementNames:
       res = dm.removeReplica(storageElementName, lfnList)

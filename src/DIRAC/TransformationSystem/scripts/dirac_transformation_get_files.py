@@ -2,9 +2,6 @@
 
 """
 Get the files attached to a transformation
-
-Usage:
-  dirac-transformation-get-files TransID
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -13,17 +10,16 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine()
+  self.registerArgument("transID: transformation ID")
+  _, args = self.parseCommandLine()
 
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  args = self.getPositionalArgs()
   if len(args) != 1:
     self.showHelp(exitCode=1)
 

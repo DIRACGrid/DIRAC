@@ -224,7 +224,6 @@ prepareEnvironment() {
 }
 
 installServer() {
-  docker exec server bash -c "chown -R dirac:dirac /home/dirac"
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" server bash ./install_server.sh |& tee "${BUILD_DIR}/log_server_install.txt"
 
   echo -e "\n**** $(date -u) Copying credentials and certificates ****"
@@ -241,7 +240,6 @@ installServer() {
 }
 
 installClient() {
-  docker exec client bash -c "chown -R dirac:dirac /home/dirac"
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" client bash ./install_client.sh |& tee "${BUILD_DIR}/log_client_install.txt"
 }
 

@@ -5,12 +5,6 @@
 ########################################################################
 """
 Initial installation and configuration of a new DIRAC server (DBs, Services, Agents, Web Portal,...)
-
-Usage:
-  dirac-setup-site [option] ... [cfgfile]
-
-Arguments:
-  cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -18,13 +12,12 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class Params(object):
+class SetupSite(DIRACScript):
 
-  def __init__(self):
+  def initParameters(self):
     self.exitOnError = False
 
   def setExitOnError(self, value):
@@ -32,16 +25,12 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
+@SetupSite()
 def main(self):
-  cliParams = Params()
-
   self.disableCS()
-  self.registerSwitch(
-      "e",
-      "exitOnError",
-      "flag to exit on error of any component installation",
-      cliParams.setExitOnError)
+  self.registerSwitch("e", "exitOnError",
+                      "flag to exit on error of any component installation",
+                      self.setExitOnError)
 
   self.addDefaultOptionValue('/DIRAC/Security/UseServerCertificate', 'yes')
   self.addDefaultOptionValue('LogLevel', 'INFO')
@@ -56,7 +45,7 @@ def main(self):
     cfg = args[0]
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
-  gComponentInstaller.exitOnError = cliParams.exitOnError
+  gComponentInstaller.exitOnError = self.exitOnError
 
   result = gComponentInstaller.setupSite(self.localCfg, cfg)
   if not result['OK']:

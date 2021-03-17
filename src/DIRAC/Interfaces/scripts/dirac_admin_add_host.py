@@ -2,12 +2,6 @@
 """
 Add or Modify a Host info in DIRAC
 
-Usage:
-  dirac-admin-add-host [options] ... Property=<Value> ...
-
-Arguments:
-  Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)
-
 Example:
   $ dirac-admin-add-host -H dirac.i2np3.fr -D /O=GRID-FR/C=FR/O=CNRS/OU=CC-IN2P3/CN=dirac.in2p3.fr
 """
@@ -21,10 +15,9 @@ import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class Params(object):
+class AddHost(DIRACScript):
 
-  def __init__(self, script):
-    self.__script = script
+  def initParameters(self):
     self.hostName = None
     self.hostDN = None
     self.hostProperties = []
@@ -38,40 +31,39 @@ class Params(object):
 
   def setHostName(self, arg):
     if self.hostName or not arg:
-      self.__script.showHelp(exitCode=1)
+      self.showHelp(exitCode=1)
     self.hostName = arg
 
   def setHostDN(self, arg):
     if self.hostDN or not arg:
-      self.__script.showHelp(exitCode=1)
+      self.showHelp(exitCode=1)
     self.hostDN = arg
 
   def addProperty(self, arg):
     if not arg:
-      self.__script.showHelp(exitCode=1)
+      self.showHelp(exitCode=1)
     if arg not in self.hostProperties:
       self.hostProperties.append(arg)
 
 
 @DIRACScript()
 def main(self):
-  params = Params(self)
-  self.registerSwitches(params.switches)
-  self.parseCommandLine(ignoreErrors=True)
+  self.registerSwitches(self.switches)
+  self.registerArgument(["Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)"],
+                        mandatory=False)
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
-  if params.hostName is None or params.hostDN is None:
+  if self.hostName is None or self.hostDN is None:
     self.showHelp(exitCode=1)
-
-  args = self.getPositionalArgs()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
   exitCode = 0
   errorList = []
 
-  hostProps = {'DN': params.hostDN}
-  if params.hostProperties:
-    hostProps['Properties'] = ', '.join(params.hostProperties)
+  hostProps = {'DN': self.hostDN}
+  if self.hostProperties:
+    hostProps['Properties'] = ', '.join(self.hostProperties)
 
   for prop in args:
     pl = prop.split("=")
@@ -84,8 +76,8 @@ def main(self):
       self.gLogger.info("Setting property %s to %s" % (pName, pValue))
       hostProps[pName] = pValue
 
-  if not diracAdmin.csModifyHost(params.hostName, hostProps, createIfNonExistant=True)['OK']:
-    errorList.append(("add host", "Cannot register host %s" % params.hostName))
+  if not diracAdmin.csModifyHost(self.hostName, hostProps, createIfNonExistant=True)['OK']:
+    errorList.append(("add host", "Cannot register host %s" % self.hostName))
     exitCode = 255
   else:
     result = diracAdmin.csCommitChanges()
@@ -96,13 +88,13 @@ def main(self):
   if exitCode == 0:
     from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
     cmc = ComponentMonitoringClient()
-    ret = cmc.hostExists(dict(HostName=params.hostName))
+    ret = cmc.hostExists(dict(HostName=self.hostName))
     if not ret['OK']:
       self.gLogger.error('Cannot check if host is registered in ComponentMonitoring', ret['Message'])
     elif ret['Value']:
       self.gLogger.info('Host already registered in ComponentMonitoring')
     else:
-      ret = cmc.addHost(dict(HostName=params.hostName, CPU='TO_COME'))
+      ret = cmc.addHost(dict(HostName=self.hostName, CPU='TO_COME'))
       if not ret['OK']:
         self.gLogger.error('Failed to add Host to ComponentMonitoring', ret['Message'])
 

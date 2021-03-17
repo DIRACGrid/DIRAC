@@ -6,12 +6,6 @@
 """
 Obtain replica metadata from file catalogue client.
 
-Usage:
-  dirac-dms-lfn-metadata [options] ... LFN ...
-
-Arguments:
-  LFN:      Logical File Name or file containing LFNs
-
 Example:
   $ dirac-dms-lfn-metadata /formation/user/v/vhamar/test.txt
   {'Failed': {},
@@ -41,11 +35,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=True)
-  lfns = self.getPositionalArgs()
-
-  if len(lfns) < 1:
-    self.showHelp()
+  self.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
+  _, lfns = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()

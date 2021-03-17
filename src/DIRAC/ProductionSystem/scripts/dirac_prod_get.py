@@ -2,12 +2,6 @@
 """
 Get informations for a given production
 
-Usage:
-  dirac-prod-get prodID
-
-Arguments:
-  prodID: Production ID (mandatory)
-
 Example:
   $ dirac-prod-get 381
 """
@@ -18,13 +12,13 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine()
+  self.registerArgument("prodID: Production ID")
+  _, args = self.parseCommandLine()
 
   from DIRAC.Core.Utilities.PrettyPrint import printTable
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
@@ -32,12 +26,8 @@ def main(self):
   prodClient = ProductionClient()
 
   # get arguments
-  args = self.getPositionalArgs()
-  if len(args) < 1:
-    self.showHelp(exitCode=1)
-  else:
-    prodID = args[0]
-    res = prodClient.getProduction(prodID)
+  prodID = args[0]
+  res = prodClient.getProduction(prodID)
 
   fields = [
       'ProductionName',

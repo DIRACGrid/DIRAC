@@ -11,20 +11,18 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
+  self.registerArgument("GUIDs: GUIDs separated by a comma")
   self.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   args = self.getPositionalArgs()
-  if len(args) != 1:
-    self.showHelp()
   guids = args[0]
 
   try:

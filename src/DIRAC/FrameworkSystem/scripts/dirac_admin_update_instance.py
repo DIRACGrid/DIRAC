@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 """
 Script to apply update to all or some dirac servers and restart them
-
-Usage:
-  dirac-admin-update-instance version
-
-Arguments:
-  version: version of DIRAC you want to update to
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -17,7 +11,6 @@ __RCSID__ = "$Id$"
 from io import open
 
 import DIRAC
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -35,7 +28,6 @@ def main():
   if len(args) < 1 or len(args) > 3:
     Script.showHelp()
 
-  version = args[0]
   retry = 0
   hosts = []
   excludeHosts = []

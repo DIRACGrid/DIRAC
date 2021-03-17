@@ -6,12 +6,6 @@
 """
 Submit jobs to DIRAC WMS
 
-Usage:
-  dirac-wms-job-submit [options] ... JDL ...
-
-Arguments:
-  JDL:    Path to JDL file
-
 Example:
   $ dirac-wms-job-submit Simple.jdl
   JobID = 11
@@ -32,14 +26,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   self.registerSwitch("f:", "File=", "Writes job ids to file <value>")
   self.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
-
-  if len(args) < 1:
-    self.showHelp()
+  self.registerArgument(["JDL:    Path to JDL file"])
+  sws, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
-  unprocessed_switches = self.getUnprocessedSwitches()
+  unprocessed_switches = sws
   use_repo = False
   repo_name = ""
   for sw, value in unprocessed_switches:

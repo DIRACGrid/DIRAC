@@ -3,7 +3,6 @@
 This is a simple script that can be used for synchronizing pilot files
 to the current directory.
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -14,25 +13,23 @@ import os
 import json
 import hashlib
 
-
 from DIRAC import S_OK
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-includeMasterCS = True
+class SyncPilot(DIRACScript):
+
+  def initParameters(self):
+    self.includeMasterCS = True
+
+  def setNoMasterCS(self, optVal):
+    self.includeMasterCS = False
+    return S_OK()
 
 
-def setNoMasterCS(optVal):
-  global includeMasterCS
-  includeMasterCS = False
-  return S_OK()
-
-
-@DIRACScript()
+@SyncPilot()
 def main(self):
-  global includeMasterCS
-  self.registerSwitch("n", "noMasterCS", "do not include master CS", setNoMasterCS)
+  self.registerSwitch("n", "noMasterCS", "do not include master CS", self.setNoMasterCS)
   self.parseCommandLine()
 
   from DIRAC import gLogger, exit as DIRACExit
@@ -50,7 +47,7 @@ def main(self):
   gLogger.verbose("pilotVORepoBranch=" + ps.pilotVORepoBranch)
 
   # pilot.json
-  res = ps.getCSDict(includeMasterCS=includeMasterCS)
+  res = ps.getCSDict(includeMasterCS=self.includeMasterCS)
   if not res['OK']:
     DIRACExit(1)
   pilotDict = res['Value']

@@ -20,7 +20,6 @@ import os
 import time
 from hashlib import md5
 
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -36,16 +35,15 @@ def getLFNList(arg):
 
 @DIRACScript()
 def main(self):
-  # from DIRAC.Core.Base.Script import parseCommandLine
+  self.registerArgument(" sourceSE:   source SE")
+  self.registerArgument(" LFN:        LFN or file containing a List of LFNs")
+  self.registerArgument(["targetSE:   target SE"])
   self.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   args = self.getPositionalArgs()
-
-  if len(args) < 3:
-    self.showHelp()
 
   sourceSE = args[0]
   lfnList = getLFNList(args[1])

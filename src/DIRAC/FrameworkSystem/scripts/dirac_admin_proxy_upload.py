@@ -17,19 +17,15 @@ __RCSID__ = "$Id$"
 
 import sys
 
-
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
+from DIRAC.FrameworkSystem.Client.ProxyUpload import ProxyUpload
 
 
-@DIRACScript()
+@ProxyUpload()
 def main(self):
-  cliParams = CLIParams()
-  self.registerSwitches(cliParams.proxyUploadSwitches)
-
+  self.registerSwitches(self.proxyUploadSwitches)
   self.parseCommandLine()
 
-  retVal = uploadProxy(cliParams)
+  retVal = self.uploadProxy()
   if not retVal['OK']:
     print(retVal['Message'])
     sys.exit(1)

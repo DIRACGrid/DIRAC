@@ -4,15 +4,6 @@ Create and put 'PutAndRegister' request with a single local file
 
   warning: make sure the file you want to put is accessible from DIRAC production hosts,
            i.e. put file on network fs (AFS or NFS), otherwise operation will fail!!!
-
-Usage:
-  dirac-dms-put-and-register-request [options] requestName LFN localFile targetSE
-
-Arguments:
-  requestName:  a request name
-  LFN:          logical file name
-  localFile:    local file you want to put
-  targetSE:     target SE
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -22,31 +13,21 @@ __RCSID__ = "$Id$"
 
 import os
 
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
-  # from DIRAC.Core.Base.Script import parseCommandLine
+  self.registerArgument("requestName:  a request name")
+  self.registerArgument("LFN:          logical file name")
+  self.registerArgument("localFile:    local file you want to put")
+  self.registerArgument("targetSE:     target SE")
   self.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
-  args = self.getPositionalArgs()
-
-  requestName = None
-  LFN = None
-  PFN = None
-  targetSE = None
-  if len(args) != 4:
-    self.showHelp()
-  else:
-    requestName = args[0]
-    LFN = args[1]
-    PFN = args[2]
-    targetSE = args[3]
+  requestName, LFN, PFN, targetSE = self.getPositionalArgs(group=True)
 
   if not os.path.isabs(LFN):
     gLogger.error("LFN should be absolute path!!!")

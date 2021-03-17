@@ -5,14 +5,6 @@
 ########################################################################
 """
 Check info on BDII for a given CE or site
-
-Usage:
-  dirac-admin-bdii-info [options] ... <info> <Site|CE>
-
-Arguments:
-  Site:     Name of the Site (i.e. CERN-PROD)
-  CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)
-  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -21,62 +13,66 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 
-def registerSwitches(self):
-  '''
-    Registers all switches that can be used while calling the script from the
-    command line interface.
-  '''
+class BdiiInfo(DIRACScript):
 
-  self.registerSwitch("H:", "host=", "BDII host")
-  self.registerSwitch("V:", "vo=", "vo")
+  def initParameters(self):
+    """ init """
+    pass
+
+  def registerSwitches(self):
+    '''
+      Registers all switches that can be used while calling the script from the
+      command line interface.
+    '''
+    self.registerSwitch("H:", "host=", "BDII host")
+    self.registerSwitch("V:", "vo=", "vo")
+    self.registerArgument(" info:  requested instance",
+                          values=["ce", "ce-state", "ce-cluster", "ce-vo", "site"])
+    self.registerArgument(("Site:  Name of the Site (i.e. CERN-PROD)",
+                           "CE:    Name of the CE (i.e. cccreamceli05.in2p3.fr)"))
 
 
-def parseSwitches(self):
-  '''
-    Parses the arguments passed by the user
-  '''
+  def parseSwitches(self):
+    '''
+      Parses the arguments passed by the user
+    '''
 
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+    unprocSwitches, args = self.parseCommandLine(ignoreErrors=True)
 
-  if not len(args) == 2:
-    self.showHelp()
+    params = {}
+    params['ce'] = None
+    params['site'] = None
+    params['host'] = None
+    params['vo'] = None
+    params['info'] = args[0]
+    ret = getProxyInfo(disableVOMS=True)
 
-  params = {}
-  params['ce'] = None
-  params['site'] = None
-  params['host'] = None
-  params['vo'] = None
-  params['info'] = args[0]
-  ret = getProxyInfo(disableVOMS=True)
+    if ret['OK'] and 'group' in ret['Value']:
+      params['vo'] = getVOForGroup(ret['Value']['group'])
+    else:
+      self.gLogger.error('Could not determine VO')
+      self.showHelp()
 
-  if ret['OK'] and 'group' in ret['Value']:
-    params['vo'] = getVOForGroup(ret['Value']['group'])
-  else:
-    self.gLogger.error('Could not determine VO')
-    self.showHelp()
+    if params['info'] in ['ce', 'ce-state', 'ce-cluster', 'ce-vo']:
+      params['ce'] = args[1]
+    elif params['info'] in ['site']:
+      params['site'] = args[1]
+    else:
+      self.gLogger.error('Wrong argument value')
+      self.showHelp()
 
-  if params['info'] in ['ce', 'ce-state', 'ce-cluster', 'ce-vo']:
-    params['ce'] = args[1]
-  elif params['info'] in ['site']:
-    params['site'] = args[1]
-  else:
-    self.gLogger.error('Wrong argument value')
-    self.showHelp()
+    for unprocSw in unprocSwitches:
+      if unprocSw[0] in ("H", "host"):
+        params['host'] = unprocSw[1]
+      if unprocSw[0] in ("V", "vo"):
+        params['vo'] = unprocSw[1]
 
-  for unprocSw in self.getUnprocessedSwitches():
-    if unprocSw[0] in ("H", "host"):
-      params['host'] = unprocSw[1]
-    if unprocSw[0] in ("V", "vo"):
-      params['vo'] = unprocSw[1]
-
-  return params
+    return params
 
 
 def getInfo(params):
@@ -133,12 +129,12 @@ def showInfo(result, info):
     print("}")
 
 
-@DIRACScript()
+@BdiiInfo()
 def main(self):
   # Script initialization
-  registerSwitches(self)
+  self.registerSwitches()
   # registerUsageMessage()
-  params = parseSwitches(self)
+  params = self.parseSwitches()
   result = getInfo(params)
   showInfo(result, params['info'])
 

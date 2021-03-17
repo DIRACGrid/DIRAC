@@ -6,12 +6,6 @@
 """
 Retrieve output sandbox for a DIRAC job
 
-Usage:
-  dirac-wms-job-get-output [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID or a name of the file with JobID per line
-
 Example:
   $ dirac-wms-job-get-output 1
   Job output sandbox retrieved in 1/
@@ -34,9 +28,8 @@ def main(self):
   self.registerSwitch("D:", "Dir=", "Store the output in this directory")
   self.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
   self.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
-
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  self.registerArgument(["JobID: DIRAC Job ID or a name of the file with JobID per line"], mandatory=False)
+  sws, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   from DIRAC.Core.Utilities.Time import toString, date, day
@@ -49,7 +42,7 @@ def main(self):
   outputDir = None
   group = None
   jobs = []
-  for sw, value in self.getUnprocessedSwitches():
+  for sw, value in sws:
     if sw in ('D', 'Dir'):
       outputDir = value
     elif sw.lower() in ('f', 'file'):

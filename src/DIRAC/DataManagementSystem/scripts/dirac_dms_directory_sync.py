@@ -11,18 +11,12 @@ Syncs the source destination folder recursivly into the target destination
 If option --sync is used contend that is not in the source directory but is
 only in the target directory will be deleted.
 
-Usage:
-  dirac-dms-directory-sync Source Destination
+Example:
 
   e.g.: Download
     dirac-dms-directory-sync LFN Path
   or Upload
     dirac-dms-directory-sync Path LFN SE
-
-Arguments:
-  LFN:           Logical File Name (Path to directory)
-  Path:          Local path to the file (Path to directory)
-  SE:            DIRAC Storage Element
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -30,7 +24,6 @@ from __future__ import print_function
 
 import os
 import DIRAC
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
@@ -40,10 +33,15 @@ __RCSID__ = "$Id$"
 def main(self):
   self.registerSwitch("D", "sync", "Make target directory identical to source")
   self.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
+  self.registerArgument(("LFN:           Logical File Name (Path to directory)",
+                           "Path:          Local path to the file (Path to directory)"))
+  self.registerArgument(("Path:          Local path to the file (Path to directory)",
+                           "LFN:           Logical File Name (Path to directory)"))
+  self.registerArgument(" SE:            DIRAC Storage Element", mandatory=False)
   self.parseCommandLine(ignoreErrors=False)
 
   args = self.getPositionalArgs()
-  if len(args) < 1 or len(args) > 3:
+  if len(args) > 3:
     self.showHelp()
 
   sync = False

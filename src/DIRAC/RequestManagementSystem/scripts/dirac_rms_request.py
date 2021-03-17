@@ -1,13 +1,6 @@
 #!/bin/env python
 """
 Show request given its ID, a jobID or a transformation and a task
-
-Usage:
-  dirac-rms-request [options] [request[,request1,...]|<file>
-
-Arguments:
-  request:  a request ID or a unique request name
-  <file>:   a file containing a list of requests (Comma-separated on each line)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -17,6 +10,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 import os
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -37,7 +31,6 @@ def convertDate(date):
 
 @DIRACScript()
 def main(self):
-  from DIRAC.Core.Base import Script
   self.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
   self.registerSwitch('', 'Transformation=', '   transformation ID')
   self.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
@@ -56,8 +49,10 @@ def main(self):
   self.registerSwitch('', 'Cancel', '   Cancel the request')
   self.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
   self.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
-  from DIRAC.Core.Base.Script import parseCommandLine
-  parseCommandLine()
+  self.registerArgument(("file:     a file containing a list of requests (Comma-separated on each line)",
+                         "request:  a request ID or a unique request name"), mandatory=False)
+  self.registerArgument(["request:  a request ID or a unique request name"], mandatory=False)
+  self.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger

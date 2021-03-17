@@ -3,11 +3,10 @@
 This script prints out how great is it, shows raw queries and sets the
 number of pings.
 
-Usage:
-  dirac-my-great-script [options] <Arguments>
-
-Arguments:
-  <service1> [<service2> ...]
+Example:
+  $ dirac-my-great-script MyService
+  Hello MyService!
+  We are done
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -19,8 +18,7 @@ from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-
-class Params(object):
+class MyGreatScript(DIRACScript):
   '''
     Class holding the parameters raw and pingsToDo, and callbacks for their
     respective switches.
@@ -52,15 +50,17 @@ class Params(object):
 
 
 # IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
-@DIRACScript()
+@MyGreatScript()
 def main(self):
   '''
     This is the script main method, which will hold all the logic.
   '''
-  params = Params()
 
   # Script initialization
-  self.registerSwitches(params.switches)
+  self.registerSwitches(self.switches)
+
+  # Register positional arguments
+  self.registerArgument(["Service: service names"])
 
   # Parse the command line and initialize DIRAC
   unprogressSwitches, args = self.parseCommandLine(ignoreErrors=False)
@@ -76,10 +76,6 @@ def main(self):
   # Import the required DIRAC modules
   from DIRAC.Interfaces.API.Dirac import Dirac
 
-  # let's do something
-  if not servicesList:
-    gLogger.error('No services defined')
-    DIRACExit(1)
   gLogger.notice('We are done')
 
   DIRACExit(0)

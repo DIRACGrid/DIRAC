@@ -4,8 +4,7 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-Usage:
-  dirac-admin-get-banned-sites [options] ...
+Get banned sites
 
 Example:
   $ dirac-admin-get-banned-sites

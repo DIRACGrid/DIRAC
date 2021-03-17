@@ -11,25 +11,25 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC import exit as DIRACExit
+import os
 
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
+  self.registerArgument(("LocalFile: Path to local file containing LFNs",
+                         "LFN:       Logical File Names"))
+  self.registerArgument(" SE:        Storage Element")
+  self.registerArgument(" status:    status")
+
   self.parseCommandLine()
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
   catalog = FileCatalog()
-  import os
-  args = self.getPositionalArgs()
-  if not len(args) == 3:
-    self.showHelp(exitCode=1)
-  else:
-    inputFileName = args[0]
-    se = args[1]
-    newStatus = args[2]
+
+  inputFileName, se, newStatus = self.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

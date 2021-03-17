@@ -7,12 +7,6 @@
 Sort site names at CS in "/Resources" section. Sort can be alphabetic or by country postfix in a site name.
 Alphabetic sort is default (i.e. LCG.IHEP.cn, LCG.IHEP.su, LCG.IN2P3.fr)
 
-Usage:
-  dirac-admin-sort-cs-sites [options] <Section>
-
-Arguments:
-  Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)
-
 Example:
   $ dirac-admin-sort-cs-sites -C CLOUDS DIRAC
   sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection
@@ -24,47 +18,44 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit
-
+from DIRAC.Core.Utilities.Time import dateTime, toString
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.Core.Utilities.Time import dateTime, toString
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 
-global SORTBYNAME, REVERSE
-SORTBYNAME = True
-REVERSE = False
+class SortCSSites(DIRACScript):
 
+  def initParameters(self):
+    """ init """
+    self.SORTBYNAME = True
+    self.REVERSE = False
 
-def sortBy(arg):
-  global SORTBYNAME
-  SORTBYNAME = False
+  def sortBy(self, arg):
+    self.SORTBYNAME = False
 
+  def isReverse(self, arg):
+    self.REVERSE = True
 
-def isReverse(arg):
-  global REVERSE
-  REVERSE = True
-
-
-def country(arg):
-  cb = arg.split(".")
-  if not len(cb) == 3:
-    gLogger.error("%s is not in GRID.NAME.COUNTRY format ")
-    return False
-  return cb[2]
+  def country(self, arg):
+    cb = arg.split(".")
+    if not len(cb) == 3:
+      gLogger.error("%s is not in GRID.NAME.COUNTRY format ")
+      return False
+    return cb[2]
 
 
-@DIRACScript()
+@SortCSSites()
 def main(self):
   self.registerSwitch(
       "C",
       "country",
       "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)",
-      sortBy)
-  self.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
-
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+      self.sortBy)
+  self.registerSwitch("R", "reverse", "Reverse the sort order", self.isReverse)
+  self.registerArgument(["Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)"],
+                        mandatory=False)
+  _, args = self.parseCommandLine(ignoreErrors=True)
 
   result = getProxyInfo()
   if not result["OK"]:
@@ -107,10 +98,10 @@ def main(self):
       gLogger.error("Subsection /Resources/Sites/%s does not exists" % i)
       continue
     hasRun = True
-    if SORTBYNAME:
-      dirty = cfg["Resources"]["Sites"][i].sortAlphabetically(ascending=not REVERSE)
+    if self.SORTBYNAME:
+      dirty = cfg["Resources"]["Sites"][i].sortAlphabetically(ascending=not self.REVERSE)
     else:
-      dirty = cfg["Resources"]["Sites"][i].sortByKey(key=country, reverse=REVERSE)
+      dirty = cfg["Resources"]["Sites"][i].sortByKey(key=self.country, reverse=self.REVERSE)
     if dirty:
       isDirty = True
 

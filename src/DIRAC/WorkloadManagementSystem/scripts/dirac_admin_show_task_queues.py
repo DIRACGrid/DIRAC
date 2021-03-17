@@ -6,12 +6,7 @@
 """
 Show details of currently active Task Queues
 
-Usage:
-
-  dirac-admin-show-task-queues [options]
-
 Example:
-
   $ dirac-admin-show-task-queues
   Getting TQs..
   * TQ 401
@@ -31,37 +26,31 @@ __RCSID__ = "$Id$"
 import sys
 
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PrettyPrint import printTable
-
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-
-verbose = False
 
 
-def setVerbose(optVal):
-  global verbose
-  verbose = True
-  return S_OK()
+class ShowTaskQueues(DIRACScript):
+
+  def initParameters(self):
+    self.verbose = False
+    self.taskQueueID = 0
+
+  def setVerbose(self, optVal):
+    self.verbose = True
+    return S_OK()
+
+  def setTaskQueueID(self, optVal):
+    self.taskQueueID = int(optVal)
+    return S_OK()
 
 
-taskQueueID = 0
-
-
-def setTaskQueueID(optVal):
-  global taskQueueID
-  taskQueueID = int(optVal)
-  return S_OK()
-
-
-@DIRACScript()
+@ShowTaskQueues()
 def main(self):
-  global verbose
-  global taskQueueID
-  self.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)
-  self.registerSwitch("t:", "taskQueue=", "show this task queue only", setTaskQueueID)
+  self.registerSwitch("v", "verbose", "give max details about task queues", self.setVerbose)
+  self.registerSwitch("t:", "taskQueue=", "show this task queue only", self.setTaskQueueID)
   self.parseCommandLine(initializeMonitor=False)
 
   result = MatcherClient().getActiveTaskQueues()
@@ -71,13 +60,13 @@ def main(self):
 
   tqDict = result['Value']
 
-  if not verbose:
+  if not self.verbose:
     fields = ['TaskQueue', 'Jobs', 'CPUTime', 'Owner', 'OwnerGroup', 'Sites',
               'Platforms', 'SubmitPools', 'Setup', 'Priority']
     records = []
 
     for tqId in sorted(tqDict):
-      if taskQueueID and tqId != taskQueueID:
+      if self.taskQueueID and tqId != self.taskQueueID:
         continue
       record = [str(tqId)]
       tqData = tqDict[tqId]
@@ -105,7 +94,7 @@ def main(self):
   else:
     fields = ['Key', 'Value']
     for tqId in sorted(tqDict):
-      if taskQueueID and tqId != taskQueueID:
+      if self.taskQueueID and tqId != self.taskQueueID:
         continue
       gLogger.notice("\n==> TQ %s" % tqId)
       records = []

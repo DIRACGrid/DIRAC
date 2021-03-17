@@ -18,12 +18,10 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
-import shutil
 import ssl
-
+import shutil
 from six.moves.urllib.request import urlopen
 
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -137,9 +135,9 @@ def __runJobLocally(jobID, basepath, vo):
 
 @DIRACScript()
 def main(self):
-  self.parseCommandLine(ignoreErrors=False)
   self.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
   self.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
+  self.parseCommandLine(ignoreErrors=False)
 
   _downloadinputdata = False
   _jobID = None

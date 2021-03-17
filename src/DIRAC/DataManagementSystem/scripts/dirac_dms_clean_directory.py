@@ -20,24 +20,23 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as DIRACExit, gLogger
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
+  self.registerArgument(("LocalFile: Path to local file containing LFNs",
+                         "LFN:       Logical File Name"))
+  self.registerArgument(["LFN:       Logical File Name"], mandatory=False)
+
   self.parseCommandLine()
 
-  args = self.getPositionalArgs()
-  if len(args) != 1:
-    self.showHelp(exitCode=1)
+  first, lfns = self.getPositionalArgs(group=True)
 
-  inputFileName = args[0]
-
-  if os.path.exists(inputFileName):
-    lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName, 'r').read().splitlines())]
+  if os.path.exists(first):
+    lfns = [lfn.strip().split()[0] for lfn in sorted(open(first, 'r').read().splitlines())]
   else:
-    lfns = [inputFileName]
+    lfns = [first]
 
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   dm = DataManager()

@@ -1,32 +1,35 @@
 ########################################################################
-# File :    dirac-proxy-init.py
+# File :    ProxyUpload.py
 # Author :  Adrian Casajus
 ########################################################################
 
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-import sys
-from prompt_toolkit import prompt
-import DIRAC
-
-from DIRAC import gLogger
-
 
 __RCSID__ = "$Id$"
 
+import sys
+from prompt_toolkit import prompt
 
-class CLIParams(object):
+import DIRAC
+from DIRAC import gLogger, S_ERROR
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
-  def __init__(self):
-    self.proxyLifeTime = 2592000
-    self.certLoc = False
+class ProxyUpload(DIRACScript):
+
+  def initParameters(self):
+    self.rfc = False
     self.keyLoc = False
+    self.certLoc = False
     self.proxyLoc = False
     self.onTheFly = False
-    self.stdinPasswd = False
-    self.rfcIfPossible = False
     self.userPasswd = ""
+    self.stdinPasswd = False
+    self.proxyLifeTime = 2592000
     self.proxyUploadSwitches = [
         ("v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime),
         ("C:", "Cert=", "File to use as user certificate", self.setCertLocation),
@@ -95,69 +98,62 @@ class CLIParams(object):
     sys.exit(0)
     return DIRAC.S_OK()
 
+  def uploadProxy(self):
+    DIRAC.gLogger.info("Loading user proxy")
+    proxyLoc = self.proxyLoc
+    if not proxyLoc:
+      proxyLoc = Locations.getDefaultProxyLocation()
+    if not proxyLoc:
+      return S_ERROR("Can't find any proxy")
 
-from DIRAC import S_ERROR
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+    if self.onTheFly:
+      DIRAC.gLogger.info("Uploading proxy on-the-fly")
+      certLoc = self.certLoc
+      keyLoc = self.keyLoc
+      if not certLoc or not keyLoc:
+        cakLoc = Locations.getCertificateAndKeyLocation()
+        if not cakLoc:
+          return S_ERROR("Can't find user certificate and key")
+        if not certLoc:
+          certLoc = cakLoc[0]
+        if not keyLoc:
+          keyLoc = cakLoc[1]
 
+      DIRAC.gLogger.info("Cert file %s" % certLoc)
+      DIRAC.gLogger.info("Key file  %s" % keyLoc)
 
-def uploadProxy(params):
-  DIRAC.gLogger.info("Loading user proxy")
-  proxyLoc = params.proxyLoc
-  if not proxyLoc:
-    proxyLoc = Locations.getDefaultProxyLocation()
-  if not proxyLoc:
-    return S_ERROR("Can't find any proxy")
+      testChain = X509Chain()
+      retVal = testChain.loadKeyFromFile(keyLoc, password=self.userPasswd)
+      if not retVal['OK']:
+        if self.stdinPasswd:
+          userPasswd = sys.stdin.readline().strip("\n")
+        else:
+          try:
+            userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
+          except KeyboardInterrupt:
+            return S_ERROR("Caught KeyboardInterrupt, exiting...")
+        self.userPasswd = userPasswd
 
-  if params.onTheFly:
-    DIRAC.gLogger.info("Uploading proxy on-the-fly")
-    certLoc = params.certLoc
-    keyLoc = params.keyLoc
-    if not certLoc or not keyLoc:
-      cakLoc = Locations.getCertificateAndKeyLocation()
-      if not cakLoc:
-        return S_ERROR("Can't find user certificate and key")
-      if not certLoc:
-        certLoc = cakLoc[0]
-      if not keyLoc:
-        keyLoc = cakLoc[1]
+      DIRAC.gLogger.info("Loading cert and key")
+      chain = X509Chain()
+      # Load user cert and key
+      retVal = chain.loadChainFromFile(certLoc)
+      if not retVal['OK']:
+        return S_ERROR("Can't load %s" % certLoc)
+      retVal = chain.loadKeyFromFile(keyLoc, password=self.userPasswd)
+      if not retVal['OK']:
+        return S_ERROR("Can't load %s" % keyLoc)
+      DIRAC.gLogger.info("User credentials loaded")
+      restrictLifeTime = self.proxyLifeTime
 
-    DIRAC.gLogger.info("Cert file %s" % certLoc)
-    DIRAC.gLogger.info("Key file  %s" % keyLoc)
+    else:
+      proxyChain = X509Chain()
+      retVal = proxyChain.loadProxyFromFile(proxyLoc)
+      if not retVal['OK']:
+        return S_ERROR("Can't load proxy file %s: %s" % (self.proxyLoc, retVal['Message']))
 
-    testChain = X509Chain()
-    retVal = testChain.loadKeyFromFile(keyLoc, password=params.userPasswd)
-    if not retVal['OK']:
-      if params.stdinPasswd:
-        userPasswd = sys.stdin.readline().strip("\n")
-      else:
-        try:
-          userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
-        except KeyboardInterrupt:
-          return S_ERROR("Caught KeyboardInterrupt, exiting...")
-      params.userPasswd = userPasswd
+      chain = proxyChain
+      restrictLifeTime = 0
 
-    DIRAC.gLogger.info("Loading cert and key")
-    chain = X509Chain()
-    # Load user cert and key
-    retVal = chain.loadChainFromFile(certLoc)
-    if not retVal['OK']:
-      return S_ERROR("Can't load %s" % certLoc)
-    retVal = chain.loadKeyFromFile(keyLoc, password=params.userPasswd)
-    if not retVal['OK']:
-      return S_ERROR("Can't load %s" % keyLoc)
-    DIRAC.gLogger.info("User credentials loaded")
-    restrictLifeTime = params.proxyLifeTime
-
-  else:
-    proxyChain = X509Chain()
-    retVal = proxyChain.loadProxyFromFile(proxyLoc)
-    if not retVal['OK']:
-      return S_ERROR("Can't load proxy file %s: %s" % (params.proxyLoc, retVal['Message']))
-
-    chain = proxyChain
-    restrictLifeTime = 0
-
-  DIRAC.gLogger.info(" Uploading...")
-  return gProxyManager.uploadProxy(proxy=chain, restrictLifeTime=restrictLifeTime, rfcIfPossible=params.rfcIfPossible)
+    DIRAC.gLogger.info(" Uploading...")
+    return gProxyManager.uploadProxy(proxy=chain, restrictLifeTime=restrictLifeTime, rfcIfPossible=self.rfc)

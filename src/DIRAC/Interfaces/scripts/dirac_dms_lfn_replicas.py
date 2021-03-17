@@ -6,12 +6,6 @@
 """
 Obtain replica information from file catalogue client.
 
-Usage:
-  dirac-admin-lfn-replicas [options] ... LFN ...
-
-Arguments:
-  LFN:      Logical File Name or file containing LFNs
-
 Example:
   $ dirac-dms-lfn-replicas /formation/user/v/vhamar/Test.txt
   {'Failed': {},
@@ -31,17 +25,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerSwitch('a', "All", "  Also show inactive replicas")
-  self.parseCommandLine(ignoreErrors=True)
-  lfns = self.getPositionalArgs()
-  switches = self.getUnprocessedSwitches()
+  self.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
+  switches, lfns = self.parseCommandLine(ignoreErrors=True)
 
   active = True
   for switch in switches:
     opt = switch[0].lower()
     if opt in ("a", "all"):
       active = False
-  if len(lfns) < 1:
-    self.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()
