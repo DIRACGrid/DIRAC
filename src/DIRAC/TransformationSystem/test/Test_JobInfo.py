@@ -23,13 +23,13 @@ __RCSID__ = "$Id$"
 
 # pylint: disable=W0212, E1101
 
-#WARNING: In python 3 assertRaisesRegexp is deprecated, so this lines for compatability with python 2
-if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
-    setattr(unittest.TestCase, 'assertRaisesRegex', unittest.TestCase.assertRaisesRegexp)
-
 
 class TestJI(unittest.TestCase):
   """Test the JobInfo Module"""
+
+  # WARNING: In python 3 assertRaisesRegexp is deprecated, so this lines for compatability with python 2
+  if not hasattr(cls, 'assertRaisesRegex'):
+    setattr(cls, 'assertRaisesRegex', cls.assertRaisesRegexp)
 
   def setUp(self):
     self.jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")

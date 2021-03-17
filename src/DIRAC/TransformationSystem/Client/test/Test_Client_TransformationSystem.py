@@ -16,9 +16,6 @@ from DIRAC.TransformationSystem.Client.TaskManager import TaskBase, RequestTasks
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
-#WARNING: In python 3 assertRaisesRegexp is deprecated, so this lines for compatability with python 2
-if not hasattr(unittest.TestCase, 'assertRaisesRegex'):
-    setattr(unittest.TestCase, 'assertRaisesRegex', unittest.TestCase.assertRaisesRegexp)
 
 class reqValFake_C(object):
   def validate(self, opsInput):
@@ -40,6 +37,9 @@ reqValFake = reqValFake_C()
 class ClientsTestCase(unittest.TestCase):
   """ Base class for the clients test cases
   """
+  # WARNING: In python 3 assertRaisesRegexp is deprecated, so this lines for compatability with python 2
+  if not hasattr(cls, 'assertRaisesRegex'):
+    setattr(cls, 'assertRaisesRegex', cls.assertRaisesRegexp)
 
   def setUp(self):
     self.mockTransClient = mock.MagicMock()

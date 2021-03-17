@@ -26,7 +26,7 @@ class FCConditionParser(object):
 
         * `!` for not
         * `&` for and
-        * `\|` for or
+        * `|` for or
         * `[ ]` for prioritizing the operations
 
       All these characters, as well as the '=' symbol cannot be used in any expression to be

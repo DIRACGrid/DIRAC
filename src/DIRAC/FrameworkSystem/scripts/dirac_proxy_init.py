@@ -39,8 +39,7 @@ class ProxyInit(ProxyGeneration, ProxyUpload):
     ProxyUpload.initParameters(self)
     ProxyGeneration.initParameters(self)
     self.addVOMSExt = False
-    self.uploadProxy = True
-    self.uploadPilot = False
+    self.needToUploadProxy = True
     self.__issuerCert = False
     self.__proxyGenerated = False
     self.__uploadedInfo = {}
@@ -61,7 +60,7 @@ class ProxyInit(ProxyGeneration, ProxyUpload):
     return S_OK()
 
   def disableProxyUpload(self, _arg):
-    self.uploadProxy = False
+    self.needToUploadProxy = False
     return S_OK()
 
   def getIssuerCert(self):
@@ -223,7 +222,7 @@ class ProxyInit(ProxyGeneration, ProxyUpload):
       if self.strict:
         return resultProxyWithVOMS
 
-    if self.uploadProxy:
+    if self.needToUploadProxy:
       resultProxyUpload = self._uploadProxy()
       if not resultProxyUpload['OK']:
         if self.strict:
