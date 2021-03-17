@@ -1,7 +1,7 @@
 """ Definition for WMSHistory Monitoring type.
     Drop-in replacement for the Accounting/WMSHistory accounting type.
 
-    Filled by the agent "WorkloadManagement/StatesMonitoringAgent"
+    Filled by the agent "WorkloadManagement/StatesAccountingAgent"
 """
 from __future__ import absolute_import
 from __future__ import division
