@@ -1,3 +1,19 @@
+[v7r3-pre1]
+
+FIX: (#5028) Replaced all the cases of BaseException use by Exception
+
+*Core
+FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
+NEW: (#4997) dirac-configure can now be ran without arguments when using Python 3
+CHANGE: (#4937) removed dirac-agent, dirac-service, dirac-executor scripts (use '_' counterparts instead)
+
+*Framework:
+CHANGE: (#4303) Removed completely the SystemLogging
+
+*WMS
+CHANGE: (#4884) JobDB: compress JDLs by default (no need for flag anymore)
+CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent instead)
+
 [v7r2]
 
 FIX: python 2-3 compatibility fixes

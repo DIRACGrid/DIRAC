@@ -103,9 +103,9 @@ if six.PY3:
     version = "Unknown"
 else:
   majorVersion = 7
-  minorVersion = 2
+  minorVersion = 3
   patchLevel = 0
-  preVersion = 0
+  preVersion = 1
 
   version = "v%sr%s" % (majorVersion, minorVersion)
   # Make it so that __version__ is always PEP-440 style
