@@ -107,7 +107,7 @@ class PlottingClient(object):
   def histogram(self, data, fileName, bins, *args, **kw):
     try:
       from pylab import hist
-    except BaseException:
+    except Exception:
       return S_ERROR("No pylab module available")
     values, vbins, patches = hist(data, bins)
     histo = dict(zip(vbins, values))

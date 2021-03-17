@@ -26,7 +26,7 @@ def getDBOrClient(DB, serverName):
     myDB = DB()
     if myDB._connected:
       return myDB
-  except BaseException:
+  except Exception:
     pass
 
   gLogger.info('Can not connect to DB will use %s' % serverName)
@@ -38,7 +38,7 @@ def getPilotAgentsDB():
   PilotAgentsDB = None
   try:
     from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-  except BaseException:
+  except Exception:
     pass
   return getDBOrClient(PilotAgentsDB, serverName)
 

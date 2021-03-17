@@ -62,7 +62,7 @@ def main():
     try:
       with open(reqFile, "r") as extfd:
         reqCFG = CFG().loadFromBuffer(extfd.read())
-    except BaseException:
+    except Exception:
       gLogger.verbose("%s not found" % reqFile)
       continue
     reqList = reqCFG.getOption("/RequiredExternals/%s" % instType.capitalize(), [])

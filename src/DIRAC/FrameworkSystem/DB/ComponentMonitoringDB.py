@@ -323,7 +323,7 @@ class ComponentMonitoringDB(DB):
         return compDict
       try:
         compDict['Port'] = int(result['Value'])
-      except BaseException:
+      except Exception:
         compDict['Status'] = 'Error'
         compDict['Message'] = "Port for component doesn't seem to be a number"
         return compDict

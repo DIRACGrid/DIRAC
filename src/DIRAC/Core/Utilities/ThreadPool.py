@@ -80,7 +80,7 @@ from six.moves import queue as Queue
 import threading
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
-except BaseException:
+except Exception:
   gLogger = False
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 

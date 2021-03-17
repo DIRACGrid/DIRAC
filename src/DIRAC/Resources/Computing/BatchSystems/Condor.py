@@ -143,7 +143,7 @@ class Condor(object):
             submittedJobs, cluster = result.groups()
             try:
               submittedJobs = int(submittedJobs)
-            except BaseException:
+            except Exception:
               submittedJobs = 0
 
     if submittedJobs > 0 and cluster:

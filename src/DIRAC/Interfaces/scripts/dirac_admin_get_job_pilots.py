@@ -62,7 +62,7 @@ def main():
 
     try:
       job = int(job)
-    except BaseException as x:
+    except Exception as x:
       errorList.append((job, 'Expected integer for jobID'))
       exitCode = 2
       continue

@@ -29,7 +29,7 @@ def main():
 
   try:
     guids = guids.split(',')
-  except BaseException:
+  except Exception:
     pass
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog

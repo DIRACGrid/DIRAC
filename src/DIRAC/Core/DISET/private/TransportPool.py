@@ -47,7 +47,7 @@ class TransportPool(object):
         tr.sendKeepAlive(now=time.time())
       except KeyError:
         continue
-      except BaseException:
+      except Exception:
         gLogger.exception("Cannot send keep alive")
 
   # exists

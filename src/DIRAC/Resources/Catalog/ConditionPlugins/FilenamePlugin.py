@@ -55,5 +55,5 @@ class FilenamePlugin(FCConditionBasePlugin):
         ret = False if ret == -1 else True
 
       return ret
-    except BaseException:
+    except Exception:
       return False

@@ -205,7 +205,7 @@ def fromString(myDate=None):
                 fromString(dateTimeTuple[1]))
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
-      except BaseException:
+      except Exception:
         try:
           return (datetime.datetime(year=int(dateTuple[0]),
                                     month=int(dateTuple[1]),
@@ -233,13 +233,13 @@ def fromString(myDate=None):
             return None
         else:
           return None
-      except BaseException:
+      except Exception:
         return None
     elif myDate.find('-') > 0:
       dateTuple = myDate.split('-')
       try:
         return datetime.date(int(dateTuple[0]), int(dateTuple[1]), int(dateTuple[2]))
-      except BaseException:
+      except Exception:
         return None
 
   return None

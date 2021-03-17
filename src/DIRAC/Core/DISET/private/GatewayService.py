@@ -108,7 +108,7 @@ class GatewayService(Service):
     # Handshake
     try:
       clientTransport.handshake()
-    except BaseException:
+    except Exception:
       return
     # Add to the transport pool
     trid = self._transportPool.add(clientTransport)
@@ -284,7 +284,7 @@ class GatewayService(Service):
     # Forward queries
     try:
       relayMethodObject = getattr(transferRelay, 'forward%s' % method)
-    except BaseException:
+    except Exception:
       return S_ERROR("Cannot forward unknown method %s" % method)
     result = relayMethodObject(cliFH, params)
     return result
@@ -505,7 +505,7 @@ class MessageForwarder(object):
   def msgFromSrv(self, srvEndCli, msgObj):
     try:
       cliTrid = self.__srvToCliTrid[srvEndCli.getTrid()]
-    except BaseException:
+    except Exception:
       gLogger.exception("This shouldn't happen")
       return S_ERROR("MsgFromSrv -> Mismatched srv2cli trid")
     gLogger.info("Message %s from %s service" % (msgObj.getName(), self.__byClient[cliTrid]['srvName']))

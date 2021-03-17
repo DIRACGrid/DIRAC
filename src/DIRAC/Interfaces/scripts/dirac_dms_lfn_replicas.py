@@ -52,7 +52,7 @@ def main():
     try:
       with open(lfns[0], 'r') as f:
         lfns = f.read().splitlines()
-    except BaseException:
+    except Exception:
       pass
 
   result = dirac.getReplicas(lfns, active=active, printOutput=True)

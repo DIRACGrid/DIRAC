@@ -235,7 +235,7 @@ class BaseClient(object):
       try:
         self.kwargs[self.KW_PROXY_STRING] = self.kwargs[self.KW_PROXY_CHAIN].dumpAllToString()['Value']
         del self.kwargs[self.KW_PROXY_CHAIN]
-      except BaseException:
+      except Exception:
         return S_ERROR("Invalid proxy chain specified on instantiation")
     return S_OK()
 
@@ -623,7 +623,7 @@ and this is thread %s
     if self.KW_KEEP_ALIVE_LAPSE in self.kwargs:
       try:
         kaa = max(0, int(self.kwargs[self.KW_KEEP_ALIVE_LAPSE]))
-      except BaseException:
+      except Exception:
         pass
     if kaa:
       kaa = max(150, kaa)

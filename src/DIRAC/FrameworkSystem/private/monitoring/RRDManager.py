@@ -109,7 +109,7 @@ class RRDManager(object):
       return S_OK()
     try:
       os.makedirs(os.path.dirname(rrdFilePath))
-    except BaseException:
+    except Exception:
       pass
     self.log.info("Creating rrd file %s" % rrdFile)
     cmd = "%s create '%s'" % (self.rrdExec, rrdFilePath)

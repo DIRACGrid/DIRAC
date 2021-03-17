@@ -35,7 +35,7 @@ def main():
 
   try:
     jobIDs = [int(arg) for arg in args]
-  except BaseException:
+  except Exception:
     gLogger.fatal('DIRAC Job IDs must be integers')
     DIRACExit(2)
 

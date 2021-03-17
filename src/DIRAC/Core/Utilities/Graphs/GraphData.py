@@ -43,7 +43,7 @@ def get_key_type(keys):
     if num_type:
       try:
         num_data = float(key)
-      except BaseException:
+      except Exception:
         num_type = False
     if not isinstance(key, six.string_types):
       string_type = False
@@ -351,25 +351,25 @@ class GraphData(object):
       try:
         s = "Max: " + pretty_float(max_value) + " " + unitString
         tmpList.append(s.strip())
-      except BaseException:
+      except Exception:
         pass
     if min_value:
       try:
         s = "Min: " + pretty_float(min_value) + " " + unitString
         tmpList.append(s.strip())
-      except BaseException:
+      except Exception:
         pass
     if average:
       try:
         s = "Average: " + pretty_float(average) + " " + unitString
         tmpList.append(s.strip())
-      except BaseException:
+      except Exception:
         pass
     if current:
       try:
         s = "Current: " + pretty_float(current) + " " + unitString
         tmpList.append(s.strip())
-      except BaseException:
+      except Exception:
         pass
 
     resultString = ', '.join(tmpList)
@@ -524,11 +524,11 @@ class PlotData(object):
 
     try:
       resultD = float(datum)
-    except BaseException:
+    except Exception:
       resultD = None
     try:
       resultE = float(error)
-    except BaseException:
+    except Exception:
       resultE = None
 
     return (resultD, resultE)

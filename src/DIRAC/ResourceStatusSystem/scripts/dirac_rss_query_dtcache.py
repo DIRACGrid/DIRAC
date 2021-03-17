@@ -116,14 +116,14 @@ def filterDate(selectOutput, start, end):
   if start is not None:
     try:
       start = Time.fromString(start)
-    except BaseException:
+    except Exception:
       error("datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]")
     start = Time.toEpoch(start)
 
   if end is not None:
     try:
       end = Time.fromString(end)
-    except BaseException:
+    except Exception:
       error("datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]")
     end = Time.toEpoch(end)
 

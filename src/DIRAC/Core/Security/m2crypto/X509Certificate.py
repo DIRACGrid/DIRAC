@@ -188,7 +188,7 @@ class X509Certificate(object):
     """
     try:
       self.__certObj = M2Crypto.X509.load_cert_string(pemData, M2Crypto.X509.FORMAT_PEM)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "Can't load pem data: %s" % e)
 
     self._certLoaded = True
@@ -319,7 +319,7 @@ class X509Certificate(object):
     """
     try:
       self.__certObj.sign(key, algo)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(repr(e))
 
     return S_OK()
@@ -445,7 +445,7 @@ class X509Certificate(object):
       sn = self.__certObj.get_ext_at(i).get_name()
       try:
         value = self.__certObj.get_ext_at(i).get_value()
-      except BaseException:
+      except Exception:
         value = "Cannot decode value"
       extList.append((sn, value))
 

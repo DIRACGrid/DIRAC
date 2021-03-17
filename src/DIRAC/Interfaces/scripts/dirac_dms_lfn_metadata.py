@@ -57,7 +57,7 @@ def main():
     try:
       with open(lfns[0], 'r') as f:
         lfns = f.read().splitlines()
-    except BaseException:
+    except Exception:
       pass
 
   result = dirac.getLfnMetadata(lfns, printOutput=True)

@@ -71,7 +71,7 @@ def writeChainToTemporaryFile(proxyChain):
   if not retVal['OK']:
     try:
       os.unlink(proxyLocation)
-    except BaseException:
+    except Exception:
       pass
     return retVal
   return S_OK(proxyLocation)
@@ -84,7 +84,7 @@ def deleteMultiProxy(multiProxyDict):
   if multiProxyDict['tempFile']:
     try:
       os.unlink(multiProxyDict['file'])
-    except BaseException:
+    except Exception:
       pass
 
 

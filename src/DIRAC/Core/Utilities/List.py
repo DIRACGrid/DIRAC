@@ -28,7 +28,7 @@ def uniqueElements(aList):
         result.append(i)
         seen.add(i)
     return result
-  except BaseException:
+  except Exception:
     return None
 
 

@@ -57,7 +57,7 @@ def main():
     f = open(lfn, 'r')
     lfns = f.read().splitlines()
     f.close()
-  except BaseException:
+  except Exception:
     lfns = [lfn]
 
   finalResult = {"Failed": [], "Successful": []}

@@ -56,7 +56,7 @@ def loadDIRACCFG():
   cfgPath = os.path.join(installPath, 'etc', 'dirac.cfg')
   try:
     diracCFG = CFG().loadFromFile(cfgPath)
-  except BaseException as excp:
+  except Exception as excp:
     return S_ERROR("Could not load dirac.cfg: %s" % repr(excp))
 
   return S_OK((cfgPath, diracCFG))

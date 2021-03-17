@@ -28,7 +28,7 @@ def initializePlottingHandler(serviceInfo):
   gLogger.info("Data will be written into %s" % dataPath)
   try:
     os.makedirs(dataPath)
-  except BaseException:
+  except Exception:
     pass
   try:
     testFile = "%s/plot__.test" % dataPath

@@ -40,7 +40,7 @@ class Host(object):
     self.nCores = 1
     try:
       self.nCores = multiprocessing.cpu_count()
-    except BaseException:
+    except Exception:
       pass
 
   def submitJob(self, **kwargs):

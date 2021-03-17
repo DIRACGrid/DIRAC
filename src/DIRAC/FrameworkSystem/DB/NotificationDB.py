@@ -207,12 +207,12 @@ class NotificationDB(DB):
     try:
       alarmId = int(alarmIdList)
       alarmIdList = [alarmId]
-    except BaseException:
+    except Exception:
       pass
 
     try:
       alarmIdList = [int(alarmId) for alarmId in alarmIdList]
-    except BaseException:
+    except Exception:
       self.log.error("At least one alarmId is not a number", str(alarmIdList))
       return S_ERROR("At least one alarmId is not a number: %s" % str(alarmIdList))
 
@@ -294,7 +294,7 @@ class NotificationDB(DB):
     author = result['Value']
     try:
       alarmId = int(updateReq['id'])
-    except BaseException:
+    except Exception:
       return S_ERROR("Oops, Alarm id is not valid!")
     result = self._query("SELECT AlarmId FROM `ntf_Alarms` WHERE AlarmId=%d" % alarmId)
     if not result['OK']:
@@ -507,7 +507,7 @@ class NotificationDB(DB):
   def getAlarmLog(self, alarmId):
     try:
       alarmId = int(alarmId)
-    except BaseException:
+    except Exception:
       return S_ERROR("Alarm id must be a non decimal number")
     sqlSel = "SELECT %s FROM `ntf_AlarmLog` WHERE AlarmId=%d ORDER BY Timestamp ASC" % (",".join(self.__alarmLogFields),
                                                                                         alarmId)

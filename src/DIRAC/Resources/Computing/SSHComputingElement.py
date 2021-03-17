@@ -87,7 +87,7 @@ class SSH(object):
     try:
       import pexpect
       expectFlag = True
-    except BaseException as x:
+    except Exception:
       from DIRAC.Core.Utilities.Subprocess import shellCall
       expectFlag = False
 
@@ -120,7 +120,7 @@ class SSH(object):
           child.expect(pexpect.EOF)
           return S_OK((0, child.before, ''))
         return S_ERROR((-2, child.before, ''))
-      except BaseException as x:
+      except Exception as x:
         res = (-1, 'Encountered exception %s: %s' % (Exception, str(x)))
         return S_ERROR(res)
     else:
@@ -478,7 +478,7 @@ class SSHComputingElement(ComputingElement):
       try:
         index = output.index('============= Start output ===============')
         output = output[index + 42:]
-      except BaseException:
+      except Exception:
         return S_ERROR("Invalid output from remote command: %s" % output)
       try:
         output = urlunquote(output)
@@ -486,7 +486,7 @@ class SSHComputingElement(ComputingElement):
         if isinstance(result, six.string_types) and result.startswith('Exception:'):
           return S_ERROR(result)
         return S_OK(result)
-      except BaseException:
+      except Exception:
         return S_ERROR('Invalid return structure from job submission')
     else:
       return S_ERROR('\n'.join([sshStdout, sshStderr]))

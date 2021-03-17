@@ -145,7 +145,7 @@ class ExecutorMindHandler(RequestHandler):
         return S_OK()
     try:
       numTasks = max(1, int(kwargs['maxTasks']))
-    except BaseException:
+    except Exception:
       numTasks = 1
     self.__eDispatch.addExecutor(trid, kwargs['executorTypes'])
     return self.exec_executorConnected(trid, kwargs['executorTypes'])
