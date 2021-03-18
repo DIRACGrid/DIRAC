@@ -1,4 +1,10 @@
 """ The OAuth service provides a toolkit to authenticate through an OIDC session.
+
+    .. literalinclude:: ../ConfigTemplate.cfg
+      :start-after: ##BEGIN AuthManager:
+      :end-before: ##END
+      :dedent: 2
+      :caption: AuthManager options
 """
 from __future__ import absolute_import
 from __future__ import division
