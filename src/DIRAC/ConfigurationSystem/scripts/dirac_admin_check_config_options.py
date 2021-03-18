@@ -31,7 +31,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 class CheckConfig(DIRACScript):
   """Compare the ConfigTemplate with current configuration."""
 
-  def __init__(self):
+  def initParameters(self):
     self.systems = None
     self.showModified = False
     self.showAdded = False

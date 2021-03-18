@@ -55,7 +55,7 @@ class ProxyInfo(DIRACScript):
     self.vomsEnabled = False
     return S_OK()
 
-  def disableCS(self, arg):
+  def setDisableCS(self, arg):
     self.csEnabled = False
     return S_OK()
 
@@ -82,7 +82,7 @@ def main(self):
   self.registerSwitch("i", "version", "Print version", self.showVersion)
   self.registerSwitch("n", "novoms", "Disable VOMS", self.disableVOMS)
   self.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", self.validityCheck)
-  self.registerSwitch("x", "nocs", "Disable CS", self.disableCS)
+  self.registerSwitch("x", "nocs", "Disable CS", self.setDisableCS)
   self.registerSwitch("e", "steps", "Show steps info", self.showSteps)
   self.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
   self.registerSwitch("m", "uploadedinfo", "Show uploaded proxies info", self.setManagerInfo)

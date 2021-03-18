@@ -47,7 +47,7 @@ class AddHost(DIRACScript):
       self.hostProperties.append(arg)
 
 
-@DIRACScript()
+@AddHost()
 def main(self):
   self.registerSwitches(self.switches)
   self.registerArgument(["Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)"],

@@ -38,7 +38,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 class GetPilotInfo(DIRACScript):
 
-  def __init__(self):
+  def initParameters(self):
     self.extendedPrint = False
 
   def setExtendedPrint(self, _arg):

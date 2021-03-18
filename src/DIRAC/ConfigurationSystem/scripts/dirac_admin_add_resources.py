@@ -273,7 +273,7 @@ def handler(signum, frame):
   DIRACExit(-1)
 
 
-@DIRACScript()
+@AddResources()
 def main(self):
   signal.signal(signal.SIGTERM, handler)
   signal.signal(signal.SIGINT, handler)

@@ -37,7 +37,7 @@ class SortCSSites(DIRACScript):
     return S_OK()
 
 
-@DIRACScript()
+@SortCSSites()
 def main(self):
   self.registerSwitch("V:", "vo=", "VO name", self.setVO)
   self.registerSwitch("D", "dryRun", "Dry run", self.setDryRun)

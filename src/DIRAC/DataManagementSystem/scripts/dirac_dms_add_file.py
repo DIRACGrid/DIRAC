@@ -39,6 +39,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
+
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
@@ -68,7 +69,7 @@ class DMSAddFile(DIRACScript):
     return lfn_dict
 
 
-@DIRACScript()
+@DMSAddFile()
 def main(self):
   self.registerSwitch("f", "force", "Force overwrite of existing file", self.setOverwrite)
   _, args = self.parseCommandLine(ignoreErrors=True)
