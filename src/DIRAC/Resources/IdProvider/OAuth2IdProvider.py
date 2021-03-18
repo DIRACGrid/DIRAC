@@ -123,18 +123,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
   @checkResponse
   def parseAuthResponse(self, response, session=None):
     """ Make user info dict:
-          - username(preferred user name)
-          - nosupport(VOs in response that not in DIRAC)
-          - UsrOptns(User profile that convert to DIRAC user options)
-          - Tokens(Contain refreshed tokens, type and etc.)
-          - Groups(New DIRAC groups that need created)
 
         :param dict response: response on request to get user profile
         :param object session: session
 
         :return: S_OK(dict)/S_ERROR()
     """
-    print('====>> IDP parseAuthResponse')
     pprint.pprint(response)
     
     response = createOAuth2Request(response)
@@ -213,11 +207,11 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     profile['FullName'] = gname and fname and ' '.join([gname, fname]) or name and ' '.join(name) or ''
     self.log.debug('Parse user profile:\n', profile)
 
-    # Default DIRAC groups
+    # Default DIRAC groups, configured for IdP
     profile['Groups'] = self.parameters.get('DiracGroups')
     if profile['Groups'] and not isinstance(profile['Groups'], list):
       profile['Groups'] = profile['Groups'].replace(' ', '').split(',')
-    self.log.debug('Default for groups:', ', '.join(profile['Groups'] or []))
+    self.log.debug('Default groups:', ', '.join(profile['Groups'] or []))
     self.log.debug('Response Information:', pprint.pformat(userProfile))
 
     # Read regex syntax to get DNs describe dictionary
@@ -232,7 +226,8 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
           listItemRegex = v
     except Exception as e:
       if not profile['Groups']:
-        self.log.warn('No "DiracGroups", no claim with DNs describe in Syntax/DNs section found.')
+        self.log.warn('No DNs described in Syntax/DNs IdP configuration section were found in the response.',
+                      "And no DiracGroups were found fo IdP.")
       return S_OK((username, profile))
 
     if not userProfile.get(dnClaim) and not profile['Groups']:

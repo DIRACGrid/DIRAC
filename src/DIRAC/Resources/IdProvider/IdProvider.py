@@ -56,7 +56,7 @@ class IdProvider(object):
     self.log = logger
 
   def isSessionManagerAble(self):
-    """ Check if session manager able
+    """ Check if session manager is available
 
         :return: S_OK()/S_ERROR()
     """
@@ -65,7 +65,7 @@ class IdProvider(object):
         #from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
         self.sessionManager = gSessionManager
       except Exception as e:
-        return S_ERROR('Session manager not able: %s' % e)
+        return S_ERROR('Session manager is not available: %s' % e)
     return S_OK()
 
   def getTokenWithAuth(self, *args, **kwargs):

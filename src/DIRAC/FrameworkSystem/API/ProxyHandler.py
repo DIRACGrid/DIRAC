@@ -84,4 +84,4 @@ class ProxyHandler(TornadoREST):
         return result
 
       else:
-        return S_ERROR("Wrone way")
+        return S_ERROR("Wrone request.")
