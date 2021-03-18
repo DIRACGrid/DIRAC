@@ -16,8 +16,6 @@ import os
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.API import API
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView

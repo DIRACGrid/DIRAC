@@ -3,15 +3,15 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import six
-import pprint
 import sys
+import pprint
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNsForUsername
 from DIRAC.Core.Utilities.Version import getCurrentVersion
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 
 __RCSID__ = '$Id$'

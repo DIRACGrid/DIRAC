@@ -349,7 +349,7 @@ class JobAgent(AgentModule):
       jobReport.setJobStatus(status='Matched',
                              minor='Job Received by Agent',
                              sendFlag=False)
-      result_setupProxy = self._setupProxy(ownerDN, jobGroup)
+      result_setupProxy = self._setupProxy(owner, jobGroup)
       if not result_setupProxy['OK']:
         return self._rescheduleFailedJob(
             jobID, result_setupProxy['Message'], self.stopOnApplicationFailure)
