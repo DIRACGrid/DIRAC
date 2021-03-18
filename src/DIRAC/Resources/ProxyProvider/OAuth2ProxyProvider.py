@@ -27,7 +27,8 @@ __RCSID__ = "$Id$"
 class OAuth2ProxyProvider(ProxyProvider):
 
   def __init__(self, parameters=None):
-    super(OAuth2ProxyProvider, self).__init__(parameters) # TODO: need do self.idpObj -- idP in contex(access tokens) we do request
+    # TODO: need do self.idpObj -- idP in contex(access tokens) we do request
+    super(OAuth2ProxyProvider, self).__init__(parameters)
     self.__idps = IdProviderFactory()
 
   def setParameters(self, parameters):
@@ -137,7 +138,7 @@ class OAuth2ProxyProvider(ProxyProvider):
     # Store proxy in proxy manager
     result = self.proxyManager._storeProxy(DN, chain)
 
-    return S_OK(chain) if result['OK'] else result # {'proxy': proxyStr, 'DN': DN})
+    return S_OK(chain) if result['OK'] else result  # {'proxy': proxyStr, 'DN': DN})
 
   def __getProxyRequest(self, token):
     """ Get user proxy from proxy provider

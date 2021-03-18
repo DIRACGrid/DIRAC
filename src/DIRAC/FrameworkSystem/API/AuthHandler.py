@@ -39,18 +39,19 @@ class AuthHandler(TornadoREST):
         :param dict ServiceInfoDict: infos about services
     """
     cls.server = AuthServer()
-  
+
   def initializeRequest(self):
     """ Called at every request """
     self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
 
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
+
   def web_index(self, instance):
     """ Well known endpoint, specified by
         `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_
 
         Request examples::
-          
+
           GET: /.well-known/openid-configuration
           GET: /.well-known/oauth-authorization-server
     """
@@ -71,7 +72,7 @@ class AuthHandler(TornadoREST):
       # # # self.finish(key.as_dict())
       return {'keys': [jwk.dumps(key, kty='RSA', alg='RS256')]}
     print('-----> web_jwk <-------')
-  
+
   #auth_userinfo = ["authenticated"]
   def web_userinfo(self):
     """ The UserInfo endpoint can be used to retrieve identity information about a user,
@@ -107,13 +108,13 @@ class AuthHandler(TornadoREST):
     print('-----> web_userinfo <-------')
 
   def web_register(self):
-    """ The Client Registration Endpoint, specified by 
+    """ The Client Registration Endpoint, specified by
         `RFC7591 <https://tools.ietf.org/html/rfc7591#section-3.1>`_
 
         POST /register?data..
 
         JSON data:
-        
+
           grant_types     - list of grant types, e.g.: ["authorization_code","refresh_token"]
                             more supported grant types in DIRAC.FrameworkSystem.private.authorization.grants
           scope           - list of scoupes separated by a space, e.g.: changeGroup something
@@ -121,7 +122,7 @@ class AuthHandler(TornadoREST):
           redirect_uris   - e.g.: ['https://dirac.egi.eu']
 
         https://wlcg.cloud.cnaf.infn.it/register
-        
+
         requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', json={'grant_types': ['implicit'], 'response_types': ['token'], 'redirect_uris': ['https://dirac.egi.eu'], 'token_endpoint_auth_method': 'none'}, verify=False).text
         requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', json={"scope":"changeGroup","token_endpoint_auth_method":"client_secret_basic","grant_types":["authorization_code","refresh_token"],"redirect_uris":["https://marosvn32.in2p3.fr/DIRAC","https://marosvn32.in2p3.fr/DIRAC/loginComplete"],"response_types":["token","id_token token","code"]}, verify=False).text
     """
@@ -132,6 +133,7 @@ class AuthHandler(TornadoREST):
     print('-----> web_register <-------')
 
   path_device = ['([A-z0-9-_]*)']
+
   def web_device(self, userCode=None):
     """ The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process.
@@ -139,7 +141,7 @@ class AuthHandler(TornadoREST):
         POST /device?client_id=.. &scope=..
           # group - optional
           provider - optional
-        
+
         GET /device/<user code>
     """
     print('------ web_device --------')
@@ -157,7 +159,7 @@ class AuthHandler(TornadoREST):
         authURL += '?%s&client_id=%s&user_code=%s' % (data['request'].query,
                                                       data['client_id'], userCode)
         return self.__response(code=302, headers=HTTPHeaders({"Location": authURL}))
-      
+
       # Device code entry interface
       t = Template('''<!DOCTYPE html>
       <html>
@@ -182,6 +184,7 @@ class AuthHandler(TornadoREST):
     print('-----> web_device <-------')
 
   path_authorization = ['([A-z0-9]*)']
+
   def web_authorization(self, provider=None):
     """ Authorization endpoint
 
@@ -201,7 +204,7 @@ class AuthHandler(TornadoREST):
     grant = None
     if self.request.method == 'GET':
       try:
-        grant, _ =self.server.validate_consent_request(self.request, None)
+        grant, _ = self.server.validate_consent_request(self.request, None)
       except OAuth2Error as error:
         return "%s</br>%s" % (error.error, error.description)
 
@@ -289,7 +292,7 @@ class AuthHandler(TornadoREST):
     if not sessionDict:
       return "%s session is expired." % session
     username = sessionDict['username']
-    request = sessionDict['request']    
+    request = sessionDict['request']
     userID = sessionDict['userID']
 
     scopes = request.data['scope'].split()
@@ -339,7 +342,7 @@ class AuthHandler(TornadoREST):
     for group in groups:
       status = groupStatuses[group]['Status']
       action = groupStatuses[group].get('Action')
-    
+
       if status == 'needToAuth':
         # Submit second auth flow through IdP
         idP = action[1][0]
@@ -355,7 +358,7 @@ class AuthHandler(TornadoREST):
 
     # self.server.updateSession(session, Status='authed')
 
-    ###### RESPONSE
+    # RESPONSE
     return self.__response(**self.server.create_authorization_response(request, username))
     print('-----> web_redirect <-------')
 
@@ -411,7 +414,7 @@ class AuthHandler(TornadoREST):
     if status not in ['ready', 'unknown']:
       return S_ERROR('%s - bad group status' % status)
     return S_OK(claims.sub)
-  
+
   def __response(self, *args, **kwargs):
     """ Return response as HTTPResponse object """
     return HTTPResponse(HTTPRequest(self.request.full_url(), self.request.method), *args, **kwargs)
@@ -447,6 +450,6 @@ class AuthHandler(TornadoREST):
       raise Exception("User is not valid.")
     claims['username'] = result['Value']
     return claims
-  
+
   def _gatherPeerCredentials(self):
     return {}

@@ -55,10 +55,12 @@ def getUsernameForDN(dn, usersList=None):
 
   return S_ERROR("No username found for dn %s" % dn)
 
+
 @deprecated("Use getDNsForUsername or getDNsForUsernameFromCS instead")
 def getDNForUsername(username):
   dnList = getDNsForUsernameFromCS(username)
   return S_OK(dnList) if dnList else S_ERROR("No DN found for user %s" % username)
+
 
 def getDNsForUsernameFromCS(username):
   """ Find DNs for DIRAC user only from CS
@@ -125,8 +127,7 @@ def getGroupsForDN(dn, groupsList=None):
       else:
         # If it's not VOMS VO or cannot get information from VOMS
         groups.append(group)
-  groups = list(set(groups))
-  groups.sort()
+  groups = sorted(set(groups))
   return S_OK(groups) if groups else S_ERROR('No groups found for %s' % dn)
 
 
@@ -168,8 +169,7 @@ def getGroupsForUser(username, groupsList=None):
   for group in groupsList:
     if username in getGroupOption(group, 'Users', []):
       groups.append(group)
-  groups = list(set(groups))
-  groups.sort()
+  groups = sorted(set(groups))
   return S_OK(groups) if groups else S_ERROR('No groups found for %s user' % username)
 
 
@@ -282,8 +282,7 @@ def getUsersInGroup(group, defaultValue=None):
 
       :return: list
   """
-  users = list(set(getGroupOption(group, 'Users', [])))
-  users.sort()
+  users = sorted(set(getGroupOption(group, 'Users', [])))
   return users or [] if defaultValue is None else defaultValue
 
 
@@ -300,8 +299,7 @@ def getUsersInVO(vo, defaultValue=None):
   if result['OK'] and result['Value']:
     for group in result['Value']:
       users += getUsersInGroup(group)
-  users = list(set(users))
-  users.sort()
+  users = sorted(set(users))
   return users or [] if defaultValue is None else defaultValue
 
 

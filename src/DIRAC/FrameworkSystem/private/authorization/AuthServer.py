@@ -19,31 +19,31 @@ from authlib.oauth2 import (
 )
 from authlib.oauth2.rfc6749.grants import ImplicitGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (
-  DeviceAuthorizationEndpoint,
-  DeviceCodeGrant
+    DeviceAuthorizationEndpoint,
+    DeviceCodeGrant
 )
 from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import (
-  OpenIDCode,
-  AuthorizationCodeGrant
+    OpenIDCode,
+    AuthorizationCodeGrant
 )
 from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import (
-  RefreshTokenGrant
+    RefreshTokenGrant
 )
 from DIRAC.FrameworkSystem.private.authorization.grants.ImplicitFlow import (
-  OpenIDImplicitGrant,
-  NotebookImplicitGrant
+    OpenIDImplicitGrant,
+    NotebookImplicitGrant
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import (
-  Client,
-  ClientRegistrationEndpoint,
-  ClientManager
+    Client,
+    ClientRegistrationEndpoint,
+    ClientManager
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import (
-  SessionManager
+    SessionManager
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import (
-  OAuth2Request,
-  createOAuth2Request
+    OAuth2Request,
+    createOAuth2Request
 )
 from authlib.oidc.core import UserInfo
 
@@ -87,7 +87,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
     self.metadata = {}
-    #TODO: move to conf utility
+    # TODO: move to conf utility
     result = gConfig.getOptionsDictRecursively('/Systems/Framework/Production/Services/AuthManager/AuthorizationServer')
     if result['OK']:
       data = {}
@@ -104,17 +104,17 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       deprecate('Define "get_jwt_config" in OpenID Connect grants', '1.0')
       self.init_jwt_config(self.metadata)
 
-    self.register_grant(NotebookImplicitGrant) #OpenIDImplicitGrant)
+    self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
     self.register_grant(RefreshTokenGrant)
     self.register_grant(DeviceCodeGrant)
     self.register_grant(AuthorizationCodeGrant,
                         [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
     self.register_endpoint(ClientRegistrationEndpoint)
     self.register_endpoint(DeviceAuthorizationEndpoint)
-  
+
   def saveToken(self, token, request):
     """ Store tokens
-    
+
         :param dict token: tokens
         :param object request: http Request object, implemented for compatibility with authlib library (unuse)
     """
@@ -151,7 +151,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
         :param str providerName: identity provider name
         :param dict response: authorization response
-        :param str session: session 
+        :param str session: session
 
         :return: S_OK(dict)/S_ERROR()
     """
@@ -171,7 +171,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     if not result['OK']:
       self.updateSession(session['mainSession'], Status='failed', Comment=result['Message'])
       return result
-    
+
     username, profile, _ = result['Value']
 
     if username and profile:
@@ -202,7 +202,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       key = f.read()
     # Need to use enum==0.3.1 for python 2.7
     return jwt.encode(header, payload, key)
-  
+
   def refresh_token_generator(self, client, grant_type, user, scope):
     """ A function to generate ``refresh_token``
 
@@ -284,7 +284,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       payload.pop('request', None)
       payload = json_dumps(payload)
     # return (payload, status_code, headers)
-    
+
     header = HTTPHeaders()
     for h in headers:
       header.add(*h)

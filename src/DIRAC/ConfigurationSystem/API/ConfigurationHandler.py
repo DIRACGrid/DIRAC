@@ -22,16 +22,17 @@ class ConfigurationHandler(TornadoREST):
   METHOD_PREFIX = 'web_'
 
   path_conf = ['([a-z]+)']
+
   def web_conf(self, key):
     """ REST endpoint for configuration system:
 
         **GET** /conf/<key>?<options> -- get configuration information
 
           Options:
-            * *path* -- path in the configuration structure, by default it's "/". 
+            * *path* -- path in the configuration structure, by default it's "/".
             * *version* -- the configuration version of the requester, if *version* is newer
-                           than the one present on the server, an empty result will be returned 
-        
+                           than the one present on the server, an empty result will be returned
+
           Response:
             +-----------+---------------------------------------+------------------------+
             | *key*     | Description                           | Type                   |

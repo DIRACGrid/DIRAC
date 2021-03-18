@@ -533,7 +533,8 @@ class ProxyManagerHandler(RequestHandler):
                              requester, requesterGroup)
     return self.__proxyDB.generateToken(requester, requesterGroup, numUses=tokenUses)
 
-  types_getVOMSProxyWithToken = [six.string_types, six.string_types, six.string_types, six.integer_types, [six.string_types, type(None)]]
+  types_getVOMSProxyWithToken = [six.string_types, six.string_types,
+                                 six.string_types, six.integer_types, [six.string_types, type(None)]]
 
   @deprecated("This method is deprecated, you can use export_getProxy with token and vomsAttribute parameter")
   def export_getVOMSProxyWithToken(self, user, userGroup, requestPem, requiredLifetime, token, vomsAttribute=None):
@@ -565,7 +566,8 @@ class ProxyManagerHandler(RequestHandler):
     """
     return self.export_getProxy(user, userGroup, requestPem, requiredLifetime, token=token)
 
-  types_getVOMSProxy = [six.string_types, six.string_types, six.string_types, six.integer_types, [six.string_types, type(None)]]
+  types_getVOMSProxy = [six.string_types, six.string_types,
+                        six.string_types, six.integer_types, [six.string_types, type(None)]]
 
   @deprecated("This method is deprecated, you can use export_getProxy with vomsAttribute parameter")
   def export_getVOMSProxy(self, user, userGroup, requestPem, requiredLifetime, vomsAttribute=None):
@@ -623,7 +625,7 @@ class ProxyManagerHandler(RequestHandler):
           statusDict[group] = [{'Status': 'failed', 'Comment': result['Message']}]
         continue
       # we get only fist DN for now
-      for dn in [result['Value'][0]]:  
+      for dn in [result['Value'][0]]:
         result = self.__proxyDB.getProxyProviderForDN(dn, username=username)
         if not result['OK']:
           return result

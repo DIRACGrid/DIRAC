@@ -42,7 +42,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
       return cls.LOCATION.split('/')[-1].strip('/')
     except Exception:
       return cls.__name__
-  
+
   @classmethod
   def _getServiceAuthSection(cls, serviceName):
     """ Search service auth section.

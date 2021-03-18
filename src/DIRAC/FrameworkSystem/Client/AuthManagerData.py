@@ -16,6 +16,7 @@ __RCSID__ = "$Id$"
 
 gCacheProfiles = ThreadSafe.Synchronizer()
 
+
 @six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class AuthManagerData(object):
   """ Authentication manager
@@ -172,5 +173,6 @@ class AuthManagerData(object):
     if dn in profile.get('DNs', []):
       return S_OK(profile['DNs'][dn].get(option))
     return S_OK(None)
+
 
 gAuthManagerData = AuthManagerData()

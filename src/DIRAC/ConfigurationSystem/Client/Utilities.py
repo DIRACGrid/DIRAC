@@ -591,6 +591,5 @@ def getAuthClientsFromCS():
   result = gConfig.getSections(path)
   if not result['OK']:
     return result
-  
-  return gConfig.getOptionsDictRecursively('%s/Clients' % path) if 'Clients' in result['Value'] else {}
 
+  return gConfig.getOptionsDictRecursively('%s/Clients' % path) if 'Clients' in result['Value'] else {}

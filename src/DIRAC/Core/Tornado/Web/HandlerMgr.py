@@ -23,6 +23,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 __RCSID__ = "$Id$"
 
+
 @six.add_metaclass(DIRACSingleton)
 class HandlerMgr(object):
 
@@ -151,7 +152,7 @@ class HandlerMgr(object):
             route = "%s(%s%s)" % (baseRoute, handlerRoute, '' if methodName == 'index' else ('/%s' % methodName))
             # Use request path as options/values, for ex. ../method/<option>/<file path>?<option>=..
             if args:
-              route += '[\/]?%s' % '/'.join(args)
+              route += r'[\/]?%s' % '/'.join(args)
             self.__routes.append((route, handler))
           self.log.debug("  * %s" % route)
     # Send to root
@@ -185,6 +186,6 @@ class HandlerMgr(object):
 
   def isAuthServer(self):
     return self.__isAuthServer
-  
+
   def isPortal(self):
     return self.__isPortal

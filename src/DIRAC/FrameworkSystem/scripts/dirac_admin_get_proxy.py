@@ -96,6 +96,7 @@ class Params(object):
     Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
     Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
 
+
 @DIRACScript()
 def main():
   params = Params()
@@ -126,10 +127,10 @@ def main():
 
   if params.enableVOMS:
     result = gProxyManager.downloadVOMSProxy(userDN or userName, userGroup, limited=params.limited,
-                                            requiredTimeLeft=params.proxyLifeTime)
+                                             requiredTimeLeft=params.proxyLifeTime)
   else:
     result = gProxyManager.downloadProxy(userDN or userName, userGroup, limited=params.limited,
-                                        requiredTimeLeft=params.proxyLifeTime)
+                                         requiredTimeLeft=params.proxyLifeTime)
   if not result['OK']:
     gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
     DIRAC.exit(2)

@@ -24,9 +24,9 @@ class NotebookImplicitGrant(_ImplicitGrant):
       # print("args:")
       # pprint(inspect.getargspec(self.generate_token))
       # inspect.getfullargspec(a_method)
-      token = self.generate_token(#client=self.request.client,
-                                  grant_type=self.GRANT_TYPE,
-                                  user=grant_user, scope=self.request.scope, include_refresh_token=False)
+      token = self.generate_token(  # client=self.request.client,
+          grant_type=self.GRANT_TYPE,
+          user=grant_user, scope=self.request.scope, include_refresh_token=False)
       return 200, token, []
     else:
       raise AccessDeniedError(state=state, redirect_uri=redirect_uri, redirect_fragment=True)
@@ -40,7 +40,7 @@ class OpenIDImplicitGrant(_OpenIDImplicitGrant):
     session = self.request.state or generate_token(10)
     self.server.updateSession(session, request=self.request, group=self.request.args.get('group'))
     return redirect_uri
-  
+
   def get_jwt_config(self):
     with open('/opt/dirac/etc/grid-security/jwtRS256.key', 'rb') as f:
       key = f.read()

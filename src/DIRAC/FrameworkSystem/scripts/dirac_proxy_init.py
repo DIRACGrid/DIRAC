@@ -388,7 +388,7 @@ class ProxyInit(object):
       try:
         r = requests.get('%s/option?path=/Systems/Framework/Production/URLs/ProxyAPI' % confUrl, verify=False)
         r.raise_for_status()
-        proxyAPI = r.text#decode(r.text)[0]
+        proxyAPI = r.text  # decode(r.text)[0]
       except requests.exceptions.Timeout:
         sys.exit('Time out')
       except requests.exceptions.RequestException as e:
@@ -397,7 +397,8 @@ class ProxyInit(object):
         sys.exit('Cannot read response: %s' % e)
 
       # Get token
-      result = gSessionManager.submitUserAuthorizationFlow(idP=self.__piParams.provider, group=self.__piParams.diracGroup, grant='device')
+      result = gSessionManager.submitUserAuthorizationFlow(
+          idP=self.__piParams.provider, group=self.__piParams.diracGroup, grant='device')
       if not result['OK']:
         sys.exit(result['Message'])
       response = result['Value']
@@ -405,7 +406,7 @@ class ProxyInit(object):
       for k in ['user_code', 'device_code', 'verification_uri']:
         if not response.get(k):
           sys.exit('Cannot get %s for authentication.' % k)
-      
+
     userCode = response['user_code']
     deviceCode = response['device_code']
     verURL = response['verification_uri']
@@ -440,7 +441,7 @@ class ProxyInit(object):
       clientID = result['Value']['client_id']
 
       __start = time.time()
-      #TODO: Fix hardcore url
+      # TODO: Fix hardcore url
       url = 'https://marosvn32.in2p3.fr/DIRAC/auth/token?client_id=%s' % clientID
       url += '&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=%s' % deviceCode
       while True:
@@ -469,7 +470,7 @@ class ProxyInit(object):
       # proxy = decode(r.text)[0]
       if not proxy:
         sys.exit("Result is empty.")
-      
+
       if not self.__piParams.proxyLoc:
         self.__piParams.proxyLoc = '/tmp/x509up_u%s' % os.getuid()
 

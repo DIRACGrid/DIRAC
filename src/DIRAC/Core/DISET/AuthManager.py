@@ -134,7 +134,7 @@ def __checkGroup(credDict, logObj=gLogger):
     return False
   # Set DN if authorization not througth certificate
   if not credDict.get(KW_DN):
-     credDict[KW_DN] = result['Value'][0]
+    credDict[KW_DN] = result['Value'][0]
   # Check if DN match for group
   if credDict[KW_DN] not in result["Value"]:
     logObj.error('%s DN is not match for %s group.' % (credDict[KW_DN], credDict[KW_GROUP]))
@@ -228,12 +228,12 @@ class AuthManager(object):
                                                                               'authenticated',
                                                                               'Authenticated']))):
       self.__authLogger.warn("Client is not authorized\nValid properties: %s\nClient: %s" %
-                              (requiredProperties, credDict))
+                             (requiredProperties, credDict))
       return False
     # Match allowed groups
     if validGroups and credDict[KW_GROUP] not in validGroups:
       self.__authLogger.warn("Client is not authorized\nValid groups: %s\nClient: %s" %
-                              (validGroups, credDict))
+                             (validGroups, credDict))
       return False
     # Access allowed
     if not authorized:

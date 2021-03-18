@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 
 class IdProvider(object):
 
-  def __init__(self, *args, **kwargs):  #parameters=None, sessionManager=None):
+  def __init__(self, *args, **kwargs):  # parameters=None, sessionManager=None):
     """ C'or
 
         :param dict parameters: parameters of the identity Provider
@@ -22,7 +22,7 @@ class IdProvider(object):
     self.parameters = kwargs.get('parameters', {})
     self.sessionManager = kwargs.get('sessionManager')
     self._initialization()
-  
+
   def loadMetadata(self):
     """ Load metadata to cache if needed
 
@@ -47,7 +47,7 @@ class IdProvider(object):
         :param object sessionManager: session manager
     """
     self.sessionManager = sessionManager
-  
+
   def setLogger(self, logger):
     """ Set logger
 

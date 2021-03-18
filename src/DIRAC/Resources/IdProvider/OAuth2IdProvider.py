@@ -131,7 +131,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         :return: S_OK(dict)/S_ERROR()
     """
     pprint.pprint(response)
-    
+
     response = createOAuth2Request(response)
     if not session:
       session = Session(response.args['state'])
@@ -147,7 +147,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     if not result['OK']:
       return result
     username, userProfile = result['Value']
-    
+
     # Store token
     print('---->> IDP Store token')
     pprint.pprint(self.token)
@@ -163,7 +163,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
     self.log.debug('Got response dictionary:\n', pprint.pformat(userProfile))
     return S_OK((username, userProfile, session.update(token=dict(self.token))))
-  
+
   def _fillUserProfile(self, useToken=None):
     result = self.__getUserInfo(useToken)
     return self._parseUserProfile(result['Value']) if result['OK'] else result
@@ -200,7 +200,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     # Set provider
     profile['Provider'] = self.name
 
-    # Collect user info    
+    # Collect user info
     profile['ID'] = userProfile.get('sub')
     if not profile['ID']:
       return S_ERROR('No ID of user found.')

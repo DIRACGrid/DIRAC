@@ -14,6 +14,7 @@ from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 
 db = AuthDB()
 
+
 def test_connectDB(self):
   """ Try to connect to the AuthDB """
   result = db._connect()
@@ -23,15 +24,24 @@ def test_connectDB(self):
     """ Try to store/get/remove Clients
     """
     # Example of client credentials
-    data = {'client_id': 'egfy1547e15s2ReUr0IsolSO0gPcQuLSWWulBWaH6g',
-            'client_id_issued_at': 1614204041,
-            'client_metadata': {'grant_types': ['authorization_code', 'refresh_token'],
-                                'redirect_uris': ['https://marosvn32.in2p3.fr/DIRAC', 'https://marosvn32.in2p3.fr/DIRAC/loginComplete'],
-                                'response_types': ['token', 'id_token token', 'code'],
-                                'token_endpoint_auth_method': 'client_secret_basic'},
-            'client_secret': '90092079a17f7f30930b1d981a2f426ff4fa90bb4698d736',
-            'client_secret_expires_at': 0}
-    
+    data = {
+        'client_id': 'egfy1547e15s2ReUr0IsolSO0gPcQuLSWWulBWaH6g',
+        'client_id_issued_at': 1614204041,
+        'client_metadata': {
+            'grant_types': [
+                'authorization_code',
+                'refresh_token'],
+            'redirect_uris': [
+                'https://marosvn32.in2p3.fr/DIRAC',
+                'https://marosvn32.in2p3.fr/DIRAC/loginComplete'],
+            'response_types': [
+                'token',
+                'id_token token',
+                'code'],
+            'token_endpoint_auth_method': 'client_secret_basic'},
+        'client_secret': '90092079a17f7f30930b1d981a2f426ff4fa90bb4698d736',
+        'client_secret_expires_at': 0}
+
     # Add client
     result = db.addClient(data)
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
@@ -55,7 +65,7 @@ def test_connectDB(self):
     """
     # Example of token
     token = {'access_token': '...',
-             'refresh_token': '...', 
+             'refresh_token': '...',
              'provider': 'IdProvider_1',
              'client_id': 'TKMR11HGRf3O4tciFP3ReIhBIvbgUjkXCzYJmqMhxC',
              'user_id': '20db3fc892432f769f172081dd59fedbd5debe42b45bf4b1'}
@@ -66,7 +76,7 @@ def test_connectDB(self):
                 'provider': 'IdProvider_1',
                 'client_id': 'TKMR11HGRf3O4tciFP3ReIhBIvbgUjkXCzYJmqMhxC',
                 'user_id': '20db3fc892432f769f172081dd59fedbd5debe42b45bf4b1'}
-    
+
     # Add token
     result = db.storeToken(token)
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))

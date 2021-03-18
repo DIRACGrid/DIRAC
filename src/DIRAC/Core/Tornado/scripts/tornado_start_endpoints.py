@@ -17,7 +17,6 @@ def main():
   # Must be define BEFORE any dirac import
   os.environ['DIRAC_USE_TORNADO_IOLOOP'] = "True"
 
-
   from DIRAC import gConfig
   from DIRAC.ConfigurationSystem.Client import PathFinder
   from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -26,14 +25,13 @@ def main():
   from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-
   # We check if there is no configuration server started as master
   # If you want to start a master CS you should use Configuration_Server.cfg and
   # use tornado-start-CS.py
   if gConfigurationData.isMaster() and gConfig.getValue(
       '/Systems/Configuration/%s/Services/Server/Protocol' %
       PathFinder.getSystemInstance('Configuration'),
-    'dips').lower() == 'https':
+          'dips').lower() == 'https':
     gLogger.fatal("You can't run the CS and services in the same server!")
     sys.exit(0)
 
@@ -50,12 +48,12 @@ def main():
 
   includeExtensionErrors()
 
-
   gLogger.initialize('Tornado', "/")
 
   endpoints = ['Configuration/Configuration', 'Framework/Auth', 'Framework/Proxy']
   serverToLaunch = TornadoServer(False, endpoints, 8000)
   serverToLaunch.startTornado()
+
 
 if __name__ == "__main__":
   main()

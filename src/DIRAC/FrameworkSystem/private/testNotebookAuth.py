@@ -11,6 +11,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 class notebookAuth(object):
   """ The main goal of this class provide authentication with access token
   """
+
   def __init__(self, group, lifetime=3600 * 12, voms=False, aToken=None, proxyPath=None):
     """ C'r
 
@@ -93,7 +94,7 @@ class notebookAuth(object):
       return S_ERROR(str(e))
     except Exception as e:
       return S_ERROR('Cannot read response: %s' % e)
-    
+
     # Fill the proxy request URL
     # url = '%ss:%s/g:%s/proxy?lifetime=%s' % (proxyAPI, setup, self.group, self.lifetime)
     url = '%sproxy?lifetime=%s' % (proxyAPI, self.lifetime)

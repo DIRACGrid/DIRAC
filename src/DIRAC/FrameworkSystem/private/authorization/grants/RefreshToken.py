@@ -14,12 +14,12 @@ class RefreshTokenGrant(_RefreshTokenGrant):
   def __init__(self, *args, **kwargs):
     super(RefreshTokenGrant, self).__init__(*args, **kwargs)
     self.validator = BearerTokenValidator()
-    
+
   def authenticate_refresh_token(self, refresh_token):
     """ Get credential for token
 
         :param str refresh_token: refresh token
-    
+
         :return: object
     """
     session = self.server.getSession(refresh_token)

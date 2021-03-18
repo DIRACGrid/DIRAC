@@ -16,6 +16,7 @@ __RCSID__ = "$Id$"
 gUsersSync = ThreadSafe.Synchronizer()
 gVOMSUsersSync = ThreadSafe.Synchronizer()
 
+
 @six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class ProxyManagerData(object):
   """ Proxy manager client

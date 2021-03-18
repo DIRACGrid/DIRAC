@@ -41,7 +41,7 @@ class BaseRequestHandler(RequestHandler):
   __init_done = False
   # Lock to make sure that two threads are not initializing at the same time
   __init_lock = threading.RLock()
-  
+
   # MonitoringClient, we don't use gMonitor which is not thread-safe
   # We also need to add specific attributes for each service
   _monitor = None
@@ -56,7 +56,7 @@ class BaseRequestHandler(RequestHandler):
 
   # Authentication types: SSL, JWT, VISITOR
   AUTHZ_GRANTS = ['SSL', 'JWT']
-  
+
   @classmethod
   def _initMonitoring(cls, serviceName, fullUrl):
     """
@@ -101,7 +101,7 @@ class BaseRequestHandler(RequestHandler):
         :return: str
     """
     raise NotImplementedError()
-  
+
   @classmethod
   def _getServiceAuthSection(cls, serviceName):
     """ Search service auth section.
@@ -111,7 +111,7 @@ class BaseRequestHandler(RequestHandler):
         :return: str
     """
     return "%s/Authorization" % PathFinder.getServiceSection(serviceName)
-  
+
   @classmethod
   def _getServiceInfo(cls, serviceName, request):
     """ Fill service information.
@@ -169,7 +169,7 @@ class BaseRequestHandler(RequestHandler):
       cls.__init_done = True
 
       return S_OK()
-  
+
   @classmethod
   def initializeHandler(cls, serviceInfo):
     """
@@ -188,7 +188,7 @@ class BaseRequestHandler(RequestHandler):
       Called at every request, may be overwritten in your handler.
     """
     pass
-  
+
   # This is a Tornado magic method
   def initialize(self):  # pylint: disable=arguments-differ
     """
@@ -406,7 +406,7 @@ class BaseRequestHandler(RequestHandler):
 
         :param object retVal: tornado.concurrent.Future
     """
-    
+
     # Wait result only if it's a Future object
     self.result = retVal.result() if isinstance(retVal, Future) else retVal
 
@@ -428,11 +428,11 @@ class BaseRequestHandler(RequestHandler):
       # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
       self.set_header("Content-Type", "application/octet-stream")
       self.write(self.result)
-    
+
     # Return simple text or html
     elif isinstance(self.result, str):
       self.write(self.result)
-    
+
     # DIRAC JSON
     else:
       self.set_header("Content-Type", "application/json")
@@ -480,7 +480,7 @@ class BaseRequestHandler(RequestHandler):
       if result['OK']:
         break
       err.append('%s authentication: %s' % (a.upper(), result['Message']))
-    
+
     # Report on failed authentication attempts
     if err:
       if result['OK']:
@@ -488,7 +488,7 @@ class BaseRequestHandler(RequestHandler):
           print(e)
       else:
         raise Exception('; '.join(err))
-    
+
     return result['Value']
 
   def __authzCertificate(self):
@@ -527,7 +527,7 @@ class BaseRequestHandler(RequestHandler):
       if extraCred:
         credDict['extraCredentials'] = decode(extraCred)[0]
     return S_OK(credDict)
-  
+
   def __authzToken(self):
     """ Load token claims in DIRAC and extract informations.
 
@@ -681,7 +681,7 @@ class BaseRequestHandler(RequestHandler):
     :return: Credentials dictionary of remote peer.
     """
     return self.credDict
-  
+
   def srv_getFormattedRemoteCredentials(self):
     """
       Return the DN of user

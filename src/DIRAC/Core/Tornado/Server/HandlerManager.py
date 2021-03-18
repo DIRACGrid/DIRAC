@@ -102,12 +102,12 @@ class HandlerManager(object):
       # URL can't be relative in Tornado
       if url and not url.startswith('/'):
         url = "/%s" % url
-      
+
       # Some new handler
       if handlerPath not in self.__handlers:
         gLogger.debug("Add new handler %s with port %s" % (handlerPath, port))
         self.__handlers[handlerPath] = {'URLs': [], 'Port': port}
-        
+
       # Check if URL already loaded
       if (url, handler) in self.__handlers[handlerPath]['URLs']:
         gLogger.debug("URL: %s already loaded for %s " % (url, handlerPath))
@@ -168,13 +168,13 @@ class HandlerManager(object):
 
       :return: S_OK()/S_ERROR()
     """
-     # list of services, e.g. ['Framework/Hello', 'Configuration/Server']
+    # list of services, e.g. ['Framework/Hello', 'Configuration/Server']
     if isinstance(services, string_types):
       services = [services]
     # list of services
     self.__services = self.__services if services is None else services if services else []
 
-    if self.__services == True:
+    if self.__services:
       self.__services = self.discoverHandlers('Services')
 
     if self.__services:
@@ -225,15 +225,15 @@ class HandlerManager(object):
 
       :return: S_OK()/S_ERROR()
     """
-    # list of endpoints, e.g. ['Framework/Hello', 'Configuration/Conf'] 
+    # list of endpoints, e.g. ['Framework/Hello', 'Configuration/Conf']
     if isinstance(endpoints, string_types):
       endpoints = [endpoints]
     # list of endpoints. If __endpoints is ``True`` than list of endpoints will dicover from CS
     self.__endpoints = self.__endpoints if endpoints is None else endpoints if endpoints else []
 
-    if self.__endpoints == True:
+    if self.__endpoints:
       self.__endpoints = self.discoverHandlers('APIs')
-    
+
     if self.__endpoints:
       # Extract ports
       ports, self.__endpoints = self.__extractPorts(self.__endpoints)
@@ -261,7 +261,7 @@ class HandlerManager(object):
             gLogger.debug(" - Route %s/%s ->  %s %s" % (handler.LOCATION, methodName, module['loadName'], mName))
             url = "%s%s" % (handler.LOCATION, '' if methodName == 'index' else ('/%s' % methodName))
             if args:
-              url += '[\/]?%s' % '/'.join(args)
+              url += r'[\/]?%s' % '/'.join(args)
             urls.append(url)
             gLogger.debug("  * %s" % url)
         self.__addHandler(module['loadName'], handler, urls, ports.get(module['modName']))
@@ -290,7 +290,7 @@ class HandlerManager(object):
                 and port as value for 'Port' key
     """
     return self.__handlers
-  
+
   def getRoutes(self, defaultPort):
     """ Get routes for each of the registred port
 

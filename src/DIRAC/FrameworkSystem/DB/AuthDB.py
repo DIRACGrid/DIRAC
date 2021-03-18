@@ -26,47 +26,50 @@ __RCSID__ = "$Id$"
 # Next two classes to help sqlalchemy work with dicts
 # https://docs.sqlalchemy.org/en/14/orm/extensions/mutable.html#establishing-mutability-on-scalar-column-values
 class MutableDict(Mutable, dict):
-    @classmethod
-    def coerce(cls, key, value):
-        "Convert plain dictionaries to MutableDict."
+  @classmethod
+  def coerce(cls, key, value):
+    "Convert plain dictionaries to MutableDict."
 
-        if not isinstance(value, MutableDict):
-            if isinstance(value, dict):
-                return MutableDict(value)
+    if not isinstance(value, MutableDict):
+      if isinstance(value, dict):
+        return MutableDict(value)
 
-            # this call will raise ValueError
-            return Mutable.coerce(key, value)
-        else:
-            return value
+      # this call will raise ValueError
+      return Mutable.coerce(key, value)
+    else:
+      return value
 
-    def __setitem__(self, key, value):
-        "Detect dictionary set events and emit change events."
+  def __setitem__(self, key, value):
+    "Detect dictionary set events and emit change events."
 
-        dict.__setitem__(self, key, value)
-        self.changed()
+    dict.__setitem__(self, key, value)
+    self.changed()
 
-    def __delitem__(self, key):
-        "Detect dictionary del events and emit change events."
+  def __delitem__(self, key):
+    "Detect dictionary del events and emit change events."
 
-        dict.__delitem__(self, key)
-        self.changed()
+    dict.__delitem__(self, key)
+    self.changed()
+
 
 class JSONEncodedDict(TypeDecorator):
-    "Represents an immutable structure as a json-encoded string."
+  "Represents an immutable structure as a json-encoded string."
 
-    impl = VARCHAR(255)
+  impl = VARCHAR(255)
 
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            value = json.dumps(value)
-        return value
+  def process_bind_param(self, value, dialect):
+    if value is not None:
+      value = json.dumps(value)
+    return value
 
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            value = json.loads(value)
-        return value
+  def process_result_value(self, value, dialect):
+    if value is not None:
+      value = json.loads(value)
+    return value
+
 
 Model = declarative_base()
+
 
 class Client(Model, OAuth2ClientMixin):
   __tablename__ = 'Clients'
@@ -96,6 +99,7 @@ class Token(Model, OAuth2TokenMixin):
 class AuthDB(SQLAlchemyDB):
   """ AuthDB class is a front-end to the OAuth Database
   """
+
   def __init__(self):
     """ Constructor
     """
@@ -134,7 +138,7 @@ class AuthDB(SQLAlchemyDB):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    #TODO: remove debug
+    # TODO: remove debug
     print('============ addClient ============')
     pprint(data)
     session = self.session()
@@ -155,7 +159,7 @@ class AuthDB(SQLAlchemyDB):
     except Exception as e:
       return self.__result(session, S_ERROR('Could not add Client: %s' % e))
     return self.__result(session, S_OK(res))
-  
+
   def removeClient(self, clientID):
     """ Remove client
 
@@ -165,7 +169,7 @@ class AuthDB(SQLAlchemyDB):
     """
     session = self.session()
     try:
-      session.query(Client).filter(Client.client_id==clientID).delete()
+      session.query(Client).filter(Client.client_id == clientID).delete()
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK())
@@ -187,11 +191,11 @@ class AuthDB(SQLAlchemyDB):
         cliDict['client_id_issued_at'] = cliDict.get('client_id_issued_at', int(time()))
         cliDict['client_secret_expires_at'] = cliDict.get('client_secret_expires_at', 0)
         return S_OK(cliDict)
-    
+
     # If not let's search it in the database
     session = self.session()
     try:
-      client = session.query(Client).filter(Client.client_id==clientID).first()
+      client = session.query(Client).filter(Client.client_id == clientID).first()
       session.commit()
       data = client.client_info
       data['client_metadata'] = client.client_metadata
@@ -245,7 +249,7 @@ class AuthDB(SQLAlchemyDB):
     except Exception as e:
       return self.__result(session, S_ERROR('Could not add Token: %s' % e))
     return self.__result(session, S_OK('Token successfully added'))
-  
+
   def updateToken(self, token, refreshToken):
     """ Update token
 
@@ -256,7 +260,7 @@ class AuthDB(SQLAlchemyDB):
     """
     session = self.session()
     try:
-      session.update(Token(**token)).where(Token.refresh_token==refreshToken)
+      session.update(Token(**token)).where(Token.refresh_token == refreshToken)
     except MultipleResultsFound:
       return self.__result(session, S_ERROR("%s is not unique." % refreshToken))
     except NoResultFound:
@@ -276,30 +280,30 @@ class AuthDB(SQLAlchemyDB):
     session = self.session()
     try:
       if access_token:
-        session.query(Token).filter(Token.access_token==access_token).delete()
+        session.query(Token).filter(Token.access_token == access_token).delete()
       if refresh_token:
-        session.query(Token).filter(Token.refresh_token==refresh_token).delete()
+        session.query(Token).filter(Token.refresh_token == refresh_token).delete()
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK('Token successfully removed'))
-  
+
   def getTokenByUserIDAndProvider(self, userID, provider):
     session = self.session()
     try:
-      token = session.query(Token).filter(Token.user_id==userID, Token.provider==provider).first()
+      token = session.query(Token).filter(Token.user_id == userID, Token.provider == provider).first()
     except NoResultFound:
       return self.__result(session, S_ERROR("Token not found."))
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK(self.__rowToDict(token)))
-  
+
   def getIdPTokens(self, IdP, userIDs=None):
     session = self.session()
     try:
       if userIDs:
-        tokens = session.query(Token).filter(Token.provider==IdP).filter(Token.user_id.in_(set(userIDs))).all()
+        tokens = session.query(Token).filter(Token.provider == IdP).filter(Token.user_id.in_(set(userIDs))).all()
       else:
-        tokens = session.query(Token).filter(Token.provider==IdP).all()
+        tokens = session.query(Token).filter(Token.provider == IdP).all()
     except NoResultFound:
       return self.__result(session, S_ERROR("Tokens not found."))
     except Exception as e:
@@ -322,7 +326,7 @@ class AuthDB(SQLAlchemyDB):
     """ Convert sqlalchemy row to dictionary
 
         :param object row: sqlalchemy row
-    
+
         :return: dict
     """
     return {c.name: str(getattr(row, c.name)) for c in row.__table__.columns} if row else {}

@@ -15,32 +15,33 @@ __RCSID__ = "$Id$"
 class ProxyHandler(TornadoREST):
   AUTH_PROPS = "authenticated"
   LOCATION = "/DIRAC"
-  
+
   def initializeRequest(self):
     """ Request initialization """
     self.proxyCli = ProxyManagerClient(delegatedGroup=self.getUserGroup(),
                                        delegatedID=self.getID(), delegatedDN=self.getDN())
 
-  path_proxy = ['([a-z]*)[\/]?([a-z]*)']
+  path_proxy = [r'([a-z]*)[\/]?([a-z]*)']
+
   def web_proxy(self, user=None, group=None):
     """ REST endpoints to user proxy management
 
         **GET** /proxy?<options> -- retrieve personal proxy
-        
+
           Options:
             * *voms* -- to get user proxy with VOMS extension(optional)
             * *lifetime* -- requested proxy live time(optional)
-          
+
           Response is a proxy certificate as text
 
-        **GET** /proxy/<user>/<group>?<options> -- retrieve proxy  
+        **GET** /proxy/<user>/<group>?<options> -- retrieve proxy
           * *user* -- user name
           * *group* -- group name
-        
+
           Options:
             * *voms* -- to get user proxy with VOMS extension(optional)
             * *lifetime* -- requested proxy live time(optional)
-          
+
           Response is a proxy certificate as text
 
         **GET** /proxy/metadata?<options> -- retrieve proxy metadata..
@@ -49,7 +50,7 @@ class ProxyHandler(TornadoREST):
     try:
       proxyLifeTime = int(self.get_argument('lifetime', 3600 * 12))
     except Exception:
-      return S_ERROR('Cannot read "lifetime" argument.') 
+      return S_ERROR('Cannot read "lifetime" argument.')
 
     # GET
     if self.request.method == 'GET':

@@ -12,6 +12,7 @@ import tornado
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+
 @DIRACScript()
 def main():
   # Must be define BEFORE any dirac import
@@ -31,7 +32,7 @@ def main():
   if gConfigurationData.isMaster() and gConfig.getValue(
       '/Systems/Configuration/%s/Services/Server/Protocol' %
       PathFinder.getSystemInstance('Configuration'),
-    'dips').lower() == 'https':
+          'dips').lower() == 'https':
     gLogger.fatal("You can't run the CS and services in the same server!")
     sys.exit(0)
 
@@ -69,6 +70,7 @@ def main():
   serverToLaunch = TornadoServer(services, endpoints, port=8000, balancer='nginx')
   serverToLaunch.addHandlers(app['routes'], app['settings'])
   serverToLaunch.startTornado()
+
 
 if __name__ == "__main__":
   main()

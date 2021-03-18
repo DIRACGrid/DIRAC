@@ -25,6 +25,7 @@ __RCSID__ = "$Id$"
 
 gProxiesSync = ThreadSafe.Synchronizer()
 
+
 @createClient('Framework/ProxyManager')
 @six.add_metaclass(DIRACSingleton.DIRACSingleton)
 class ProxyManagerClient(Client):
@@ -161,7 +162,7 @@ class ProxyManagerClient(Client):
     req = X509Request()
     req.generateProxyRequest(limited=limited)
     rpcClient = self._getRPC(proxyChain=proxyToConnect) if proxyToConnect else self._getRPC()
-    
+
     result = req.dumpRequest()
     if not result['OK']:
       return result
@@ -474,5 +475,6 @@ class ProxyManagerClient(Client):
     if 'rpcStub' in result:
       result.pop('rpcStub')
     return result
+
 
 gProxyManager = ProxyManagerClient()

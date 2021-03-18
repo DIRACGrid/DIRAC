@@ -21,11 +21,11 @@ class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
   def create_endpoint_response(self, req):
     c, data, h = super(DeviceAuthorizationEndpoint, self).create_endpoint_response(req)
     req.query += '&response_type=device&state=%s' % data['device_code']
-    self.server.updateSession(data['device_code'], request=req)   #, group=req.args.get('group'))
+    self.server.updateSession(data['device_code'], request=req)  # , group=req.args.get('group'))
     return c, data, h
 
   def get_verification_uri(self):
-    #TODO: Fix hardcore url
+    # TODO: Fix hardcore url
     return 'https://marosvn32.in2p3.fr/DIRAC/auth/device'
 
   def save_device_credential(self, client_id, scope, data):
@@ -47,10 +47,10 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     response_type = self.request.response_type
     if not client.check_response_type(response_type):
       raise UnauthorizedClientError('The client is not authorized to use '
-                                           '"response_type={}"'.format(response_type))
+                                    '"response_type={}"'.format(response_type))
     self.request.client = client
     self.validate_requested_scope()
-    
+
     # Check user_code, when user go to authorization endpoint
     userCode = self.request.args.get('user_code')
     if not userCode:
@@ -62,7 +62,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
       raise OAuth2Error('Session with %s user code is expired.' % userCode)
     self.execute_hook('after_validate_authorization_request')
     return None
-  
+
   def create_authorization_response(self, redirect_uri, grant_user):
     return 200, 'Authorization complite.', set()
 
@@ -72,7 +72,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
       return None
     data['expires_at'] = data['expires_in'] + int(time())
     data['interval'] = 5
-    #TODO: Fix hardcore url
+    # TODO: Fix hardcore url
     data['verification_uri'] = 'https://marosvn32.in2p3.fr/DIRAC/auth/device'
     return DeviceCredentialDict(data)
 

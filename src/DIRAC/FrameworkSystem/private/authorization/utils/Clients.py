@@ -52,7 +52,7 @@ class ClientManager(object):
 
   @gCacheClient
   def getClient(self, clientID):
-    print('getClient: %s ' % clientID) 
+    print('getClient: %s ' % clientID)
     client = self.__clients.get(clientID)
     print(client)
     if not client:
@@ -72,7 +72,8 @@ class ClientRegistrationEndpoint(_ClientRegistrationEndpoint):
       allow a client to be registered with the authorization server. See authlib
       :mod:`ClientRegistrationEndpoint <authlib.oauth2.rfc7591.ClientRegistrationEndpoint>` class.
   """
-  #TODO: align with version authlib
+  # TODO: align with version authlib
+
   def authenticate_user(self, request):
     return True
 

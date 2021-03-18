@@ -21,6 +21,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 # log.addHandler(logging.StreamHandler(gLogger.getSubLogger(__name__)))
 # log.setLevel(logging.DEBUG)
 
+
 class OAuth2Code(dict):
   def __init__(self, params):
     params['auth_time'] = params.get('auth_time', int(time()))
@@ -28,8 +29,8 @@ class OAuth2Code(dict):
 
   @property
   def user(self):
-    return self.get('user_id') #(self.get('user_id'), self.get('group'))
-  
+    return self.get('user_id')  # (self.get('user_id'), self.get('group'))
+
   @property
   def code_challenge(self):
     return self.get('code_challenge')
@@ -49,7 +50,7 @@ class OAuth2Code(dict):
 
   def get_auth_time(self):
     return self.get('auth_time')
-  
+
   def get_nonce(self):
     return self.get('nonce')
 
@@ -84,7 +85,7 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
 
   def save_authorization_code(self, code, request):
     pass
-  
+
   def delete_authorization_code(self, authorization_code):
     pass
 
@@ -113,7 +114,7 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
 
   def authenticate_user(self, authorization_code):
     return authorization_code.user
-  
+
   def generate_authorization_code(self):
     """ return code """
     print('========= generate_authorization_code =========')
@@ -128,7 +129,7 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
     jws = JsonWebSignature(algorithms=['RS256'])
     protected = {'alg': 'RS256'}
     code = OAuth2Code({'user_id': sessionDict['userID'],
-                      #  'group': sessionDict['group'],
+                       #  'group': sessionDict['group'],
                        'scope': self.request.data['scope'],
                        'redirect_uri': self.request.args['redirect_uri'],
                        'client_id': self.request.args['client_id'],

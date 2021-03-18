@@ -14,8 +14,10 @@ from authlib.oauth2.rfc6749.wrappers import OAuth2Token as _OAuth2Token
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
+
 class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):
   """ Implementation a Token object """
+
   def __init__(self, params=None, **kwargs):
     kwargs.update(params or {})
     self.sub = kwargs.get('sub')
@@ -47,7 +49,7 @@ class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):
                    'expires_in': self.expires_in,
                    'expires_at': self.expires_at})
     super(OAuth2Token, self).__init__(kwargs)
-  
+
   @property
   def scopes(self):
     """ Get tokens scopes
@@ -55,7 +57,7 @@ class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):
         :return: list
     """
     return scope_to_list(self.scope) or []
-  
+
   @property
   def groups(self):
     """ Get tokens groups
@@ -67,6 +69,7 @@ class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):
 
 class ResourceProtector(_ResourceProtector):
   """ A protecting method for resource servers. """
+
   def __init__(self):
     self.validator = BearerTokenValidator()
     self._token_validators = {self.validator.TOKEN_TYPE: self.validator}
@@ -86,11 +89,12 @@ class ResourceProtector(_ResourceProtector):
 
 class BearerTokenValidator(_BearerTokenValidator):
   """ Token validator """
+
   def authenticate_token(self, token):
     """ A method to query token from database with the given token string.
 
         :param str token: A string to represent the access_token.
-        
+
         :return: token
     """
     # Read public key of DIRAC auth service
@@ -99,10 +103,10 @@ class BearerTokenValidator(_BearerTokenValidator):
 
     # Get claims and verify signature
     claims = jwt.decode(token, key)
-    
+
     # Verify token
     claims.validate()
-    
+
     return OAuth2Token(claims, access_token=token)
 
   def request_invalid(self, request):

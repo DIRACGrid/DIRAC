@@ -117,7 +117,10 @@ class ProxyInit(object):
     """
     if not self.__piParams.diracGroup:
       return S_ERROR('Need to set user group.')
-    nAuth = notebookAuth(self.__piParams.diracGroup, voms=self.__piParams.addVOMSExt, proxyPath=self.__piParams.proxyLoc)
+    nAuth = notebookAuth(
+        self.__piParams.diracGroup,
+        voms=self.__piParams.addVOMSExt,
+        proxyPath=self.__piParams.proxyLoc)
     result = nAuth.getToken()
     if not result['OK']:
       return result

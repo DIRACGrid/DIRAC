@@ -17,14 +17,15 @@ gCacheSession = ThreadSafe.Synchronizer()
 
 class Session(dict):
   """ A dict instance to represent a authentication session object.
-  
+
       :param session:
       :type session: str or dict
   """
+
   def __init__(self, session, data=None, exp=300):
     if isinstance(session, Session):
       session = dict(session)
-    
+
     data = data or {}
     if isinstance(session, dict):
       session.update(data)
@@ -44,7 +45,7 @@ class Session(dict):
   @property
   def status(self):
     """ Session status
-    
+
         :return: int
     """
     return self.get('Status', 'submited')
@@ -52,19 +53,19 @@ class Session(dict):
   @property
   def age(self):
     """ Session age
-    
+
         :return: int
     """
     return int(time()) - self.created
-  
+
   @property
   def token(self):
     """ Tokens
-    
+
         :return: object
     """
     return self.get('token') and OAuth2Token(self['token'])
-  
+
   def update(self, data=None, **kwargs):
     """ Update session
 
@@ -80,6 +81,7 @@ class Session(dict):
 
 class SessionManager(object):
   """ Authentication sessions cache manager """
+
   def __init__(self, addTime=300, maxAge=3600 * 12):
     """ Con'r
 
@@ -129,7 +131,7 @@ class SessionManager(object):
         :return: dict
     """
     return self.__sessions.getDict()
-  
+
   @gCacheSession
   def removeSession(self, session):
     """ Remove session from cache

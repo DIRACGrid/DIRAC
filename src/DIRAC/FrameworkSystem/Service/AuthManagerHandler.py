@@ -125,7 +125,7 @@ class AuthManagerHandler(RequestHandler):
     cls.__idps = IdProviderFactory()
     #gThreadScheduler.addPeriodicTask(3600, cls.__cleanAuthDB)
     #result = cls.__cleanAuthDB()
-    return cls.__refreshProfiles() #if result['OK'] else result
+    return cls.__refreshProfiles()  # if result['OK'] else result
 
   @classmethod
   def __refreshProfiles(cls):
@@ -250,9 +250,9 @@ class AuthManagerHandler(RequestHandler):
     pprint.pprint(data)
     return S_OK(data)
 
-  types_parseAuthResponse = [six.string_types, dict, dict]  #, six.string_types, dict]
+  types_parseAuthResponse = [six.string_types, dict, dict]  # , six.string_types, dict]
 
-  def export_parseAuthResponse(self, providerName, response, sessionDict):  #, username, userProfile):
+  def export_parseAuthResponse(self, providerName, response, sessionDict):  # , username, userProfile):
     """ Fill session by user profile, tokens, comment, OIDC authorize status, etc.
         Prepare dict with user parameters, if DN is absent there try to get it.
         Create new or modify existing DIRAC user and store the session
@@ -284,7 +284,7 @@ class AuthManagerHandler(RequestHandler):
         comment += ' Please, contact the DIRAC administrators.'
       return S_ERROR(comment)
     self.__addProfiles({userProfile['ID']: userProfile})
-    
+
     print('================== export_parseAuthResponse ==================')
     print('userID: %s' % userProfile['ID'])
     print('profile: %s' % userProfile)
@@ -324,7 +324,7 @@ class AuthManagerHandler(RequestHandler):
     return result
 
   types_createClient = [dict]
-  auth_createClient = []#"authenticated", "TrustedHost"]
+  auth_createClient = []  # "authenticated", "TrustedHost"]
 
   def export_createClient(self, kwargs):
     """ Generates a state string to be used in authorizations
@@ -348,9 +348,10 @@ class AuthManagerHandler(RequestHandler):
   #       :return: S_OK(str)/S_ERROR()
   #   """
   #   return self.__db.getClientByID(clientID, **metadata)
-  
+
   types_storeToken = [dict]
   auth_storeToken = ["authenticated"]
+
   def export_storeToken(self, kwargs):
     """ Generates a state string to be used in authorizations
 
@@ -360,9 +361,10 @@ class AuthManagerHandler(RequestHandler):
         :return: S_OK(str)/S_ERROR()
     """
     return self.__db.storeToken(kwargs)
-  
+
   types_updateToken = []
   auth_updateToken = ["authenticated"]
+
   def export_updateToken(self, token, refreshToken):
     """ Generates a state string to be used in authorizations
 
@@ -376,6 +378,7 @@ class AuthManagerHandler(RequestHandler):
 
   types_getTokenByUserIDAndProvider = [six.string_types, six.string_types]
   auth_getTokenByUserIDAndProvider = ["authenticated"]
+
   def export_getTokenByUserIDAndProvider(self, uid, provider):
     """ Generates a state string to be used in authorizations
 

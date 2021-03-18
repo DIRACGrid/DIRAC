@@ -443,11 +443,11 @@ def getProvidersForInstance(instance, providerType=None):
     if instance not in result['Value']:
       return S_OK(data)
     result = gConfig.getSections('%s/%s' % (gBaseResourcesSection, instance))
-  
+
   # Return an empty list if the section does not exist
   if not result['OK'] or not result['Value'] or not providerType:
     return result
-  
+
   for prov in result['Value']:
     if providerType == gConfig.getValue('%s/%s/%s/ProviderType' % (gBaseResourcesSection, instance, prov)):
       data.append(prov)

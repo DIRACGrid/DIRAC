@@ -46,14 +46,14 @@ class AuthManagerClient(Client):
         :return: S_OK(dict)/S_ERROR()
     """
     clientMetadata = self.localCfg.getAsDict('/LocalInstallation/AuthorizationClient')
-    
+
     if clientMetadata:
       return S_OK(clientMetadata)
 
     self.log.info('Register new authorization client..')
 
     try:
-      #TODO: Fix hardcore url
+      # TODO: Fix hardcore url
       r = requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', {'redirect_uri': ''}, verify=False)
       r.raise_for_status()
       clientMetadata = r.json()
@@ -63,7 +63,7 @@ class AuthManagerClient(Client):
       return S_ERROR(r.content or ex)
     except Exception as ex:
       return S_ERROR('Cannot read response: %s' % ex)
-    
+
     if not clientMetadata:
       return S_ERROR('Cannot get authorization client credentials')
 
@@ -87,7 +87,7 @@ class AuthManagerClient(Client):
         return result
       client = result['Value']
 
-    #TODO: Fix hardcore url
+    # TODO: Fix hardcore url
     url = 'https://marosvn32.in2p3.fr/DIRAC/auth/device?client_id=%s' % client['client_id']
     if group:
       url += '&scope=g:%s' % group
@@ -116,10 +116,10 @@ class AuthManagerClient(Client):
                  Session -- session id, returned if status is 'needToAuth'
     """
     session = session or generate_token(10)
-    result = self.idps.getIdProvider(providerName)  #, sessionManager=self.__db)
+    result = self.idps.getIdProvider(providerName)  # , sessionManager=self.__db)
     return result['Value'].submitNewSession(session) if result['OK'] else result
 
-  def parseAuthResponse(self, providerName, response, session):  #, username, userProfile):
+  def parseAuthResponse(self, providerName, response, session):  # , username, userProfile):
     """ Fill session by user profile, tokens, comment, OIDC authorize status, etc.
         Prepare dict with user parameters, if DN is absent there try to get it.
         Create new or modify existing DIRAC user and store the session
@@ -131,11 +131,12 @@ class AuthManagerClient(Client):
         :return: S_OK(dict)/S_ERROR()
     """
     print('=== CLI parseAuthResponse')
-    result = self._getRPC().parseAuthResponse(providerName, response, dict(session))  #, username, userProfile)
+    result = self._getRPC().parseAuthResponse(providerName, response, dict(session))  # , username, userProfile)
     if result['OK']:
       username, profile, sessionDict = result['Value']
       if username and profile:
         gAuthManagerData.updateProfiles(profile['ID'], profile)
     return S_OK((username, profile, Session(sessionDict))) if result['OK'] else result
+
 
 gSessionManager = AuthManagerClient()

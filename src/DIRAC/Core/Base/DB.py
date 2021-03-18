@@ -74,7 +74,6 @@ class DB(DIRACDB, MySQL):
     self.log.info("DBName:         " + self.dbName)
     self.log.info("==================================================")
 
-
   def updateDBVersion(self, version):
     """ Update DB version
 
