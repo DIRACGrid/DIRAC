@@ -5,7 +5,6 @@ from __future__ import print_function
 
 import unittest
 import sys
-import six
 from six import StringIO
 
 from mock import MagicMock as Mock
@@ -429,12 +428,8 @@ class TestJI(unittest.TestCase):
     self.jbi.inputFiles = ['otherLFN']
     tasksDict = {1234: [dict(FileID=123456, LFN='lfn', Status='Processed', ErrorCount=23)]}
     lfnTaskDict = {}
-    if six.PY3:
-      with self.assertRaisesRegex(TaskInfoException, "InputFiles do not agree"):
-        self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
-    else:
-      with self.assertRaisesRegexp(TaskInfoException, "InputFiles do not agree"):
-        self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
+    with self.assertRaisesRegexp(TaskInfoException, "InputFiles do not agree"):
+      self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   # def test_getTaskInfo_4(self):
   #   # raise keyError
@@ -453,12 +448,8 @@ class TestJI(unittest.TestCase):
     self.jbi.inputFiles = []
     tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
     lfnTaskDict = {}
-    if six.PY3:
-      with self.assertRaisesRegex(TaskInfoException, "InputFiles is empty"):
-        self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
-    else:
-      with self.assertRaisesRegexp(TaskInfoException, "InputFiles is empty"):
-        self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
+    with self.assertRaisesRegexp(TaskInfoException, "InputFiles is empty"):
+      self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   def test_getJobInformation(self):
     """Transformation.Utilities.JobInfo.getJobInformation........................................"""
