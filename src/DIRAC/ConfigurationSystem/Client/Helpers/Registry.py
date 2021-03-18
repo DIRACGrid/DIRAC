@@ -27,16 +27,6 @@ __RCSID__ = "$Id$"
 gBaseRegistrySection = "/Registry"
 
 
-def getVOMSInfo(vo=None, dn=None):
-  """ Get cached information from VOMS API
-
-      :param list dn: requested DN
-
-      :return: S_OK(dict)/S_ERROR()
-  """
-  return gProxyManagerData.getActualVOMSesDNs(voList=[vo] if vo else vo, dnList=[dn] if dn else dn)
-
-
 def getUsernameForDN(dn, usersList=None):
   """ Find DIRAC user for DN
 
@@ -113,7 +103,7 @@ def getGroupsForDN(dn, groupsList=None):
   user = result['Value']
 
   # Get VOMS information cache
-  result = getVOMSInfo(dn=dn)
+  result = gProxyManagerData.getActualVOMSesDNs(dnList=[dn])
   if not result['OK']:
     return result
   vomsData = result['Value']
@@ -331,7 +321,7 @@ def getDNsInGroup(group, checkStatus=False):
   if not result['OK']:
     return result
   if result['Value']:
-    result = getVOMSInfo(vo=vo)
+    result = gProxyManagerData.getActualVOMSesDNs(voList=vo)
     if not result['OK']:
       return result
     vomsData = result['Value']
@@ -811,7 +801,7 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   if not result['OK']:
     return result
   if result['Value']:
-    result = getVOMSInfo(vo=vo)
+    result = gProxyManagerData.getActualVOMSesDNs(voList=[vo])
     if not result['OK']:
       return result
     vomsData = result['Value']
