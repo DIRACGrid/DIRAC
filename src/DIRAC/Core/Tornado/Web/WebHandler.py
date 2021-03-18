@@ -90,6 +90,18 @@ class WebHandler(TornadoREST):
   PATH_RE = None
   # Prefix of methods names
   METHOD_PREFIX = "web_"
+  # Change JWT authz method
+  AUTHZ_JWT_METHOD = cls.__authzToken
+
+  def _readToken(self, scope=None):
+    """ Fill credentionals from session
+
+        :param str scope: scope
+
+        :return: dict
+    """
+    scope = self.__group and ('g:%s' % self.__group)
+    return TornadoREST._readToken(self, scope)
 
   def threadTask(self, method, *args, **kwargs):
     def threadJob(*targs, **tkwargs):
@@ -266,15 +278,27 @@ class WebHandler(TornadoREST):
     self.application.updateSession(session)
     return {'ID': token.sub, 'issuer': token.issuer, 'group': self.__group, 'validGroup': False}
 
-  def _readToken(self, scope=None):
-    """ Fill credentionals from session
+  def __authzToken(self):
+    """ Load token claims in DIRAC and extract informations.
 
-        :param str scope: scope
-
-        :return: dict
+        :return: S_OK(dict)/S_ERROR()
     """
-    scope = self.__group and ('g:%s' % self.__group)
-    return TornadoREST._readToken(self, scope)
+    # TODO: provide scope validation
+    try:
+      token = ResourceProtector().acquire_token(self.request)
+    except Exception as e:
+      return S_ERROR(str(e))
+    return S_OK({'ID': token.sub, 'issuer': token.issuer, 'group': token.groups[0]})
+
+  # def _readToken(self, scope=None):
+  #   """ Fill credentionals from session
+
+  #       :param str scope: scope
+
+  #       :return: dict
+  #   """
+  #   scope = self.__group and ('g:%s' % self.__group)
+  #   return TornadoREST._readToken(self, scope)
 
   @property
   def log(self):

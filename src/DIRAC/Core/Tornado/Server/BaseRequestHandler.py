@@ -54,8 +54,19 @@ class BaseRequestHandler(RequestHandler):
   # Prefix of methods names
   METHOD_PREFIX = "export_"
 
-  # Authentication types: SSL, JWT, VISITOR
-  AUTHZ_GRANTS = ['SSL', 'JWT']
+  # Authentication types:
+  # Read certificate
+  AUTHZ_SSL = 'SSL'
+  AUTHZ_SSL_METHOD = cls.__authzCertificate
+  # Read token
+  AUTHZ_JWT = 'JWT'
+  AUTHZ_JWT_METHOD = cls.__authzToken
+  # Open access
+  AUTHZ_VISITOR = 'VISITOR'
+  AUTHZ_VISITOR_METHOD = lambda: S_OK({})
+
+  # Which grant type to use
+  USE_AUTHZ_GRANTS = [AUTHZ_SSL, AUTHZ_JWT]
 
   @classmethod
   def _initMonitoring(cls, serviceName, fullUrl):
@@ -468,15 +479,19 @@ class BaseRequestHandler(RequestHandler):
     """
     err = []
     result = None
-    for a in self.AUTHZ_GRANTS or ['VISITOR']:  # AUTHZ_GRANTS must contain something
-      if a.upper() == 'SSL':
-        result = self.__authzCertificate()
-      elif a.upper() == 'JWT':
-        result = self.__authzToken()
-      elif a.upper() == 'VISITOR':
-        result = S_OK({})
-      else:
+    for a in self.USE_AUTHZ_GRANTS or [self.AUTHZ_VISITOR]:  # USE_AUTHZ_GRANTS must contain something
+      try:
+        result = eval('self.AUTHZ_%s_METHOD' % a)()
+      except KeyError:
+      # if a.upper() == 'SSL':
+      #   result = self.__authzCertificate()
+      # elif a.upper() == 'JWT':
+      #   result = self.__authzToken()
+      # elif a.upper() == 'VISITOR':
+      #   result = S_OK({})
+      # else:
         raise Exception('%s authentication type is not supported.' % a)
+
       if result['OK']:
         break
       err.append('%s authentication: %s' % (a.upper(), result['Message']))
