@@ -67,9 +67,9 @@ The simplest way to test it is to upload your user proxy::
   Generating proxy...
   Uploading proxy for dirac_user...
   Proxy generated:
-  subject      : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=6045995638
-  issuer       : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
-  identity     : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
+  subject      : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/CN=6045995638
+  issuer       : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
+  identity     : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
   timeleft     : 23:59:59
   DIRAC group  : dirac_user
   rfc          : True
@@ -79,7 +79,7 @@ The simplest way to test it is to upload your user proxy::
 
   Proxies uploaded:
   DN                                                                     | Group      | Until (GMT)
-  /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch | dirac_user | 2020/04/09 14:43
+  /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser | dirac_user | 2020/04/09 14:43
 
 As you can see, the ProxyDB now contains a delegated proxy for the ``ciuser`` with the group ``dirac_user``.
 
@@ -88,9 +88,9 @@ If you use a proxy with the ``ProxyManagement`` permission, like the ``dirac_adm
   [diracuser@dirac-tuto ~]$ dirac-proxy-init -g dirac_admin
   Generating proxy...
   Proxy generated:
-  subject      : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=5472309786
-  issuer       : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
-  identity     : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
+  subject      : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/CN=5472309786
+  issuer       : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
+  identity     : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
   timeleft     : 23:59:59
   DIRAC group  : dirac_admin
   rfc          : True
@@ -118,9 +118,9 @@ You should now be able to get a proxy belonging to the `dirac_data` group that w
   Generating proxy...
   Uploading proxy for dirac_data...
   Proxy generated:
-  subject      : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=6009266000
-  issuer       : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
-  identity     : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
+  subject      : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/CN=6009266000
+  issuer       : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
+  identity     : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
   timeleft     : 23:59:59
   DIRAC group  : dirac_data
   rfc          : True
@@ -130,8 +130,8 @@ You should now be able to get a proxy belonging to the `dirac_data` group that w
 
   Proxies uploaded:
   DN                                                                     | Group      | Until (GMT)
-  /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch | dirac_data | 2020/04/09 14:43
-  /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch | dirac_user | 2020/04/09 14:43
+  /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser | dirac_data | 2020/04/09 14:43
+  /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser | dirac_user | 2020/04/09 14:43
 
 
 .. note:: if you get ``Unauthorized query ( 1111 : Unauthorized query)``, it means the ProxyManager has not yet updated its internal configuration. Just restart it to save time, or wait.

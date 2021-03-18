@@ -669,12 +669,12 @@ diracCredentials() {
 diracUserAndGroup() {
   echo '==> [diracUserAndGroup]'
 
-  if ! dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
+  if ! dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-user failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
+  if ! dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-user failed' >&2
     exit 1
   fi

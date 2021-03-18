@@ -22,8 +22,6 @@ C                   = ch
 O                   = DIRAC
 OU                  = DIRAC CI
 CN                  = #hostname#
-emailAddress        = lhcb-dirac-ci@cern.ch
-
 
 
 [ v3_req ]

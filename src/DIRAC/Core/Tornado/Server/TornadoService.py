@@ -338,15 +338,15 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
           ...:     print r.json()
           ...:
         {u'OK': True,
-            u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+            u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
             u'group': u'dirac_user',
-            u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+            u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
             u'isLimitedProxy': False,
             u'isProxy': True,
-            u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+            u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
             u'properties': [u'NormalUser'],
             u'secondsLeft': 85441,
-            u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=2409820262',
+            u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/CN=2409820262',
             u'username': u'adminusername',
             u'validDN': False,
             u'validGroup': False}}
