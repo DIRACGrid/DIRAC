@@ -22,9 +22,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
 __RCSID__ = "$Id$"
 
-
+@six.add_metaclass(DIRACSingleton)
 class HandlerMgr(object):
-  __metaclass__ = DIRACSingleton
 
   def __init__(self, sysService=[], baseURL="/"):
     """ Constructor
