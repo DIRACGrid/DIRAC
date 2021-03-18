@@ -147,7 +147,7 @@ def sf_getVOMSInfo(vo=None, dn=None):
   return S_OK(voDict)
 
 
-@mock.patch('DIRAC.ConfigurationSystem.Client.Helpers.Registry.getVOMSInfo',
+@mock.patch('DIRAC.ConfigurationSystem.Client.Helpers.Registry.gProxyManagerData.getActualVOMSesDNs',
             new=sf_getVOMSInfo)
 class AuthManagerTest(unittest.TestCase):
   """ Base class for the Modules test cases
