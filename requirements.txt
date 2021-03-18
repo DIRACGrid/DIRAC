@@ -61,9 +61,4 @@ caniusepython3
 subprocess32
 flaky
 ldap3
-<<<<<<< HEAD
-# setuptools_scm comes via tornado. newer versions of setuptools_scm do not support py2
-setuptools_scm<6.0
-=======
 authlib==0.15.3
->>>>>>> 5ae4e173c (add authlib)
