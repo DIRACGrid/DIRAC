@@ -33,10 +33,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
-
 gJobReport = None
-
-
 os.umask(0o22)
 
 
@@ -50,6 +47,9 @@ class JobWrapperError(Exception):
 
   def __str__(self):
     return str(self.value)
+
+  def __repr__(self):
+    return "JobWrapperError(%s)" % self
 
 
 def execute(arguments):
@@ -101,16 +101,11 @@ def execute(arguments):
       if not result['OK']:
         gLogger.warn(result['Message'])
         raise JobWrapperError(result['Message'])
-    except JobWrapperError:
-      gLogger.exception('JobWrapper failed to download input sandbox')
-      rescheduleResult = rescheduleFailedJob(jobID=jobID,
-                                             minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX,
-                                             jobReport=gJobReport)
-      job.sendJobAccounting(status=rescheduleResult,
-                            minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
-      return 1
     except Exception as exc:  # pylint: disable=broad-except
-      gLogger.exception('JobWrapper raised exception while downloading input sandbox', lException=exc)
+      if isinstance(exc, JobWrapperError):
+        gLogger.exception('JobWrapper failed to download input sandbox')
+      else:
+        gLogger.exception('JobWrapper raised exception while downloading input sandbox', lException=exc)
       rescheduleResult = rescheduleFailedJob(jobID=jobID,
                                              minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX,
                                              jobReport=gJobReport)
@@ -129,16 +124,11 @@ def execute(arguments):
         if not result['OK']:
           gLogger.warn(result['Message'])
           raise JobWrapperError(result['Message'])
-      except JobWrapperError:
-        gLogger.exception('JobWrapper failed to resolve input data')
-        rescheduleResult = rescheduleFailedJob(jobID=jobID,
-                                               minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION,
-                                               jobReport=gJobReport)
-        job.sendJobAccounting(status=rescheduleResult,
-                              minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION)
-        return 1
       except Exception as exc:  # pylint: disable=broad-except
-        gLogger.exception('JobWrapper raised exception while resolving input data', lException=exc)
+        if isinstance(exc, JobWrapperError):
+          gLogger.exception('JobWrapper failed to resolve input data')
+        else:
+          gLogger.exception('JobWrapper raised exception while resolving input data', lException=exc)
         rescheduleResult = rescheduleFailedJob(jobID=jobID,
                                                minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION,
                                                jobReport=gJobReport)
@@ -158,28 +148,21 @@ def execute(arguments):
     if not result['OK']:
       gLogger.error('Failed to execute job', result['Message'])
       raise JobWrapperError((result['Message'], result['Errno']))
-  except JobWrapperError as exc:
-    if exc.value[1] == 0 or str(exc.value[0]) == '0':
-      gLogger.verbose('JobWrapper exited with status=0 after execution')
-    if exc.value[1] == DErrno.EWMSRESC:
-      gLogger.warn("Asked to reschedule job")
-      rescheduleResult = rescheduleFailedJob(jobID=jobID,
-                                             minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION,
-                                             jobReport=gJobReport)
-      job.sendJobAccounting(status=rescheduleResult,
-                            minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION)
-      return 1
-    gLogger.exception('Job failed in execution phase')
-    gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
-    gJobReport.setJobStatus(status=JobStatus.FAILED,
-                            minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC,
-                            sendFlag=False)
-    job.sendFailoverRequest()
-    job.sendJobAccounting(status=JobStatus.FAILED,
-                          minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
-    return 1
   except Exception as exc:  # pylint: disable=broad-except
-    gLogger.exception('Job raised exception during execution phase', lException=exc)
+    if isinstance(exc, JobWrapperError):
+      if exc.value[1] == 0 or str(exc.value[0]) == '0':
+        gLogger.verbose('JobWrapper exited with status=0 after execution')
+      if exc.value[1] == DErrno.EWMSRESC:
+        gLogger.warn("Asked to reschedule job")
+        rescheduleResult = rescheduleFailedJob(jobID=jobID,
+                                              minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION,
+                                              jobReport=gJobReport)
+        job.sendJobAccounting(status=rescheduleResult,
+                              minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION)
+        return 1
+      gLogger.exception('Job failed in execution phase')
+    else:
+      gLogger.exception('Job raised exception during execution phase', lException=exc)
     gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
     gJobReport.setJobStatus(status=JobStatus.FAILED,
                             minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC,
@@ -195,19 +178,11 @@ def execute(arguments):
       if not result['OK']:
         gLogger.warn(result['Message'])
         raise JobWrapperError(result['Message'])
-    except JobWrapperError as exc:
-      gLogger.exception('JobWrapper failed to process output files')
-      gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
-      gJobReport.setJobStatus(status=JobStatus.FAILED,
-                              minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS,
-                              sendFlag=False)
-      job.sendFailoverRequest()
-      job.sendJobAccounting(status=JobStatus.FAILED,
-                            minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
-
-      return 2
     except Exception as exc:  # pylint: disable=broad-except
-      gLogger.exception('JobWrapper raised exception while processing output files', lException=exc)
+      if isinstance(exc, JobWrapperError):
+        gLogger.exception('JobWrapper failed to process output files')
+      else:
+        gLogger.exception('JobWrapper raised exception while processing output files', lException=exc)
       gJobReport.setJobParameter('Error Message', repr(exc), sendFlag=False)
       gJobReport.setJobStatus(status=JobStatus.FAILED,
                               minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS,
@@ -251,4 +226,6 @@ except Exception as exc:  # pylint: disable=broad-except
     gLogger.exception("Could not commit the job report", lException=exc)
     ret = -2
 
-sys.exit(ret)
+# We really want to use os._exit here to quit immediately, without the child
+# process might be stuck running causing the application to hang indefinitely
+os._exit(ret)
