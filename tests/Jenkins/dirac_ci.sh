@@ -181,6 +181,9 @@ installSite() {
     exit 1
   fi
 
+  #TODO: remove this hack for testing
+  pip install authlib==0.15.3
+
   if ! dirac-setup-site "${DEBUG}"; then
     echo "ERROR: dirac-setup-site failed" >&2
     exit 1
