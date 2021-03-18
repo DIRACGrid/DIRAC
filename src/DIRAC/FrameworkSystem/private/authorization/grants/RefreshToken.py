@@ -5,8 +5,9 @@ from __future__ import print_function
 from authlib.oauth2.rfc6749.util import scope_to_list
 from authlib.oauth2.rfc6749.grants import RefreshTokenGrant as _RefreshTokenGrant
 
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import BearerTokenValidator
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import BearerTokenValidator
 
 
 class RefreshTokenGrant(_RefreshTokenGrant):
@@ -29,6 +30,7 @@ class RefreshTokenGrant(_RefreshTokenGrant):
       reqGroups = [s.split(':')[1] for s in scopes if s.startswith('g:')]
       if len(reqGroups) != 1 or not reqGroups[0]:
         return None
+      group = reqGroups[0]
       result = Registry.getUsernameForID(session['sub'])
       if not result['OK']:
         return None

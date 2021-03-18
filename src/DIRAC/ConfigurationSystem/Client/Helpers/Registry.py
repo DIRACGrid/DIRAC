@@ -57,7 +57,7 @@ def getUsernameForDN(dn, usersList=None):
 
 @deprecated("Use getDNsForUsername or getDNsForUsernameFromCS instead")
 def getDNForUsername(username):
-  dnList = getDNsForUsernameFromSC(username)
+  dnList = getDNsForUsernameFromCS(username)
   return S_OK(dnList) if dnList else S_ERROR("No DN found for user %s" % username)
 
 def getDNsForUsernameFromCS(username):

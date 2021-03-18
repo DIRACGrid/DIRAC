@@ -17,7 +17,7 @@ db = AuthDB()
 def test_connectDB(self):
   """ Try to connect to the AuthDB """
   result = db._connect()
-  assert result['OK'] result['Message']
+  assert result['OK']
 
   def test_Clients(self):
     """ Try to store/get/remove Clients

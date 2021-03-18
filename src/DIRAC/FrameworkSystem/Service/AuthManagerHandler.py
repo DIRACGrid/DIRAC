@@ -292,25 +292,26 @@ class AuthManagerHandler(RequestHandler):
     print('==================  ==================')
     return S_OK((result['Value'], userProfile, dict(session)))
 
-  def __registerNewUser(self, provider, parseDict):
+  def __registerNewUser(self, provider, username, userProfile):
     """ Register new user
 
         :param str provider: provider
-        :param dict parseDict: user information dictionary
+        :param str username: user name
+        :param dict userProfile: user information dictionary
 
         :return: S_OK()/S_ERROR()
     """
     from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
     mail = {}
-    mail['subject'] = "[SessionManager] User %s to be added." % parseDict['username']
-    mail['body'] = 'User %s was authenticated by ' % parseDict['UserOptions']['FullName']
+    mail['subject'] = "[SessionManager] User %s to be added." % username
+    mail['body'] = 'User %s was authenticated by ' % userProfile['UserOptions']['FullName']
     mail['body'] += provider
     mail['body'] += "\n\nAuto updating of the user database is not allowed."
-    mail['body'] += " New user %s to be added," % parseDict['username']
+    mail['body'] += " New user %s to be added," % username
     mail['body'] += "with the following information:\n"
-    mail['body'] += "\nUser name: %s\n" % parseDict['username']
-    mail['body'] += "\nUser profile:\n%s" % pprint.pformat(parseDict['UserOptions'])
+    mail['body'] += "\nUser name: %s\n" % username
+    mail['body'] += "\nUser profile:\n%s" % pprint.pformat(userProfile['UserOptions'])
     mail['body'] += "\n\n------"
     mail['body'] += "\n This is a notification from the DIRAC AuthManager service, please do not reply.\n"
     result = S_OK()

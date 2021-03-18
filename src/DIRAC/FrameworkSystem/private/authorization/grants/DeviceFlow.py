@@ -5,6 +5,7 @@ from __future__ import print_function
 from time import time
 from authlib.oauth2 import OAuth2Error
 from authlib.oauth2.rfc6749.grants import AuthorizationEndpointMixin
+from authlib.oauth2.rfc6749.errors import InvalidClientError, UnauthorizedClientError
 from authlib.oauth2.rfc8628 import (
     DeviceAuthorizationEndpoint as _DeviceAuthorizationEndpoint,
     DeviceCodeGrant as _DeviceCodeGrant,
@@ -39,13 +40,13 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     client_id = self.request.client_id
     log.debug('Validate authorization request of %r', client_id)
     if client_id is None:
-      raise errors.InvalidClientError(state=self.request.state)
+      raise InvalidClientError(state=self.request.state)
     client = self.server.query_client(client_id)
     if not client:
-      raise errors.InvalidClientError(state=self.request.state)
+      raise InvalidClientError(state=self.request.state)
     response_type = self.request.response_type
     if not client.check_response_type(response_type):
-      raise errors.UnauthorizedClientError('The client is not authorized to use '
+      raise UnauthorizedClientError('The client is not authorized to use '
                                            '"response_type={}"'.format(response_type))
     self.request.client = client
     self.validate_requested_scope()

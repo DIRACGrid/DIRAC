@@ -28,6 +28,7 @@ sLog = gLogger.getSubLogger(__name__)
 class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
   METHOD_PREFIX = 'web_'
   AUTHZ_GRANTS = ['SSL', 'JWT', 'VISITOR']
+  LOCATION = '/'
 
   @classmethod
   def _getServiceName(cls, request):
@@ -39,7 +40,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     """
     try:
       return cls.LOCATION.split('/')[-1].strip('/')
-    except expression as identifier:
+    except Exception:
       return cls.__name__
   
   @classmethod

@@ -13,8 +13,10 @@ import shutil
 try:
   import commands
 except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commandsimport unittest
+  # PY3 subprocess module contains a compatibility layer
+  import subprocess as commands
+
+import unittest
 import tempfile
 import pytest
 

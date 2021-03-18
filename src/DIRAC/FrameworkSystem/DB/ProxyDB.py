@@ -682,7 +682,7 @@ class ProxyDB(DB):
     chainGroup = retVal['Value']
     if chainGroup != userGroup:
       return S_ERROR("Mismatch between renewed proxy group and expected: %s vs %s" % (userGroup, chainGroup))
-    retVal = self.__storeProxyOld(userDN, userGroup, mpChain)
+    retVal = self._storeProxy(userDN, mpChain)
     if not retVal['OK']:
       self.log.error("Cannot store proxy after renewal", retVal['Message'])
     retVal = myProxy.getServiceDN()

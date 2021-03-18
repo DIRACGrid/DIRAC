@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 import os
 import time
 import datetime
-
+import tempfile
 import M2Crypto
 
 import tornado.iostream

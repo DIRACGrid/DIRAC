@@ -65,9 +65,9 @@ class ConfigurationHandler(TornadoREST):
     elif key == 'sections':
       return gConfig.getSections(path)
     elif key == 'getGroupsStatusByUsername':
-      return gProxyManager.getgetGroupsStatusByUsername(**self.get_arguments)
+      return gProxyManager.getgetGroupsStatusByUsername(**dict(self.request.arguments))
     elif any([key == m and re.match('^[a-z][A-z]+', m) for m in dir(Registry)]) and self.isRegisteredUser():
       method = getattr(Registry, key)
-      return method(**self.get_arguments)
+      return method(**dict(self.request.arguments))
     else:
       return S_ERROR('%s request unsuported' % key)

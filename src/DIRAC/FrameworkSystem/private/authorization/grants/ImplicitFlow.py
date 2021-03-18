@@ -5,6 +5,7 @@ from __future__ import print_function
 from time import time
 from authlib.oauth2 import OAuth2Error
 from authlib.oauth2.rfc6749.grants import AuthorizationEndpointMixin, ImplicitGrant as _ImplicitGrant
+from authlib.oauth2.rfc6749.errors import AccessDeniedError
 from authlib.oidc.core.grants import OpenIDImplicitGrant as _OpenIDImplicitGrant
 
 from DIRAC import gLogger
@@ -18,10 +19,10 @@ class NotebookImplicitGrant(_ImplicitGrant):
     state = self.request.state
     if grant_user:
       self.request.user = grant_user
-      from pprint import pprint
-      import inspect
-      print("args:")
-      pprint(inspect.getargspec(self.generate_token))
+      # from pprint import pprint
+      # import inspect
+      # print("args:")
+      # pprint(inspect.getargspec(self.generate_token))
       # inspect.getfullargspec(a_method)
       token = self.generate_token(#client=self.request.client,
                                   grant_type=self.GRANT_TYPE,

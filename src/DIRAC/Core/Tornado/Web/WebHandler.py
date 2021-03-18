@@ -25,6 +25,7 @@ from tornado.ioloop import IOLoop
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 from DIRAC.Core.Security import Properties
+from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Tornado.Web import Conf
@@ -272,15 +273,16 @@ class WebHandler(TornadoREST):
 
         :return: dict
     """
-    return super(WebHandler, self)._readToken(self.__group and ('g:%s' % self.__group))
+    scope = self.__group and ('g:%s' % self.__group)
+    return TornadoREST._readToken(self, scope)
 
   @property
   def log(self):
     return sLog
 
-  @classmethod
-  def getLog(cls):
-    return cls.__log
+  # @classmethod
+  # def getLog(cls):
+  #   return cls.__log
 
   def getCurrentSession(self):
     return self.__session

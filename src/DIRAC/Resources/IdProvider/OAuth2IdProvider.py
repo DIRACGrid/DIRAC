@@ -21,6 +21,17 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 __RCSID__ = "$Id$"
 
 
+def checkResponse(func):
+  def function_wrapper(*args, **kwargs):
+    try:
+      return func(*args, **kwargs)
+    except exceptions.Timeout:
+      return S_ERROR('Time out')
+    except exceptions.RequestException as ex:
+      return S_ERROR(str(ex))
+  return function_wrapper
+
+
 class OAuth2IdProvider(IdProvider, OAuth2Session):
   def __init__(self, name=None, token_endpoint_auth_method=None,
                revocation_endpoint_auth_method=None,
@@ -69,16 +80,6 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
   def _updateToken(self, token, refresh_token):
     # Here "token" is `OAuth2Token` type
     self.sessionManager.updateToken(dict(token), refresh_token)
-
-  def checkResponse(func):
-    def function_wrapper(*args, **kwargs):
-      try:
-        return func(*args, **kwargs)
-      except exceptions.Timeout:
-        return S_ERROR('Time out')
-      except exceptions.RequestException as ex:
-        return S_ERROR(str(ex))
-    return function_wrapper
 
   def request(self, *args, **kwargs):
     self.token_endpoint_auth_methods_supported = self.metadata.get('token_endpoint_auth_methods_supported')

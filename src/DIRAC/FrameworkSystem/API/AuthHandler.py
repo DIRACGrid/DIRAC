@@ -260,15 +260,16 @@ class AuthHandler(TornadoREST):
     self.log.info(self.request.query)
     self.log.info(self.request.body)
     self.log.info(self.request.headers)
+
+    # Try to parse IdP session id
+    session = self.get_argument('state')
+
     # Try to catch errors
     error = self.get_argument('error', None)
     if error:
       description = self.get_argument('error_description', '')
       self.server.updateSession(session, Status='failed', Comment=': '.join([error, description]))
       return '%s session crashed with error:\n%s\n%s' % (session, error, description)
-
-    # Try to parse IdP session id
-    session = self.get_argument('state')
 
     # Added group
     choosedScope = self.get_arguments('chooseScope', None)
