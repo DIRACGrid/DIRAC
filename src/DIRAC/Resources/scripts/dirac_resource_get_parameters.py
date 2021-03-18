@@ -4,9 +4,6 @@ Get parameters assigned to the CE
 
 Usage:
   dirac-resource-get-parameters [option]... [cfgfile]
-
-Arguments:
-  cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -49,10 +46,6 @@ def main():
   Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
 
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getExtraCLICFGFiles()
-
-  if len(args) > 1:
-    Script.showHelp(exitCode=1)
 
   result = Resources.getQueue(Site, ceName, Queue)
 

@@ -1,7 +1,7 @@
 Systems / Framework / <INSTANCE> / Databases - Sub-subsection
 ===============================================================
 
-Databases used by DataManagement System. Note that each database is a separate subsection.
+Databases used by Framework System. Note that each database is a separate subsection.
 
 +--------------------------------+----------------------------------------------+----------------------+
 | **Name**                       | **Description**                              | **Example**          |
