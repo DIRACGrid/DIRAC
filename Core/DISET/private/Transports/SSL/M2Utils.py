@@ -2,6 +2,9 @@
 """
 Utilities for using M2Crypto SSL with DIRAC.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 from M2Crypto import SSL, m2, X509
@@ -12,6 +15,7 @@ from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
 
 # Verify depth of peer certs
 VERIFY_DEPTH = 50
+DEBUG_M2CRYPTO = os.getenv('DIRAC_DEBUG_M2CRYPTO', 'No').lower() in ('yes', 'true')
 
 
 def __loadM2SSLCTXHostcert(ctx):
@@ -45,6 +49,19 @@ def __loadM2SSLCTXProxy(ctx, proxyPath=None):
     raise RuntimeError("Proxy file (%s) is missing" % proxyPath)
   # See __loadM2SSLCTXHostcert for description of why lambda is needed.
   ctx.load_cert_chain(proxyPath, proxyPath, callback=lambda: "")
+
+
+def ssl_verify_callback_print_error(ok, store):
+  """ This callback method does nothing but printing the error.
+      It prints a few more useful info than the exception
+
+      :param ok: current validation status
+      :param store: pointer to the X509_CONTEXT_STORE
+  """
+  errnum = store.get_error()
+  if errnum:
+    print("SSL DEBUG ERRNUM %s ERRMSG %s" % (errnum, m2.x509_get_verify_error(errnum)))  # pylint: disable=no-member
+  return ok
 
 
 def getM2SSLContext(ctx=None, **kwargs):
@@ -91,13 +108,15 @@ def getM2SSLContext(ctx=None, **kwargs):
       # Use normal proxy
       __loadM2SSLCTXProxy(ctx, proxyPath=kwargs.get('proxyLocation', None))
 
+  verify_callback = ssl_verify_callback_print_error if DEBUG_M2CRYPTO else None
+
   # Set peer verification
   if kwargs.get('skipCACheck', False):
     # Don't validate peer, but still request creds
-    ctx.set_verify(SSL.verify_none, VERIFY_DEPTH)
+    ctx.set_verify(SSL.verify_none, VERIFY_DEPTH, callback=verify_callback)
   else:
     # Do validate peer
-    ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, VERIFY_DEPTH)
+    ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, VERIFY_DEPTH, callback=verify_callback)
     # Set CA location
     caPath = Locations.getCAsLocation()
     if not caPath:
@@ -141,7 +160,8 @@ def getM2SSLContext(ctx=None, **kwargs):
   ctx.set_cipher_list(ciphers)
 
   # log the debug messages
-  # ctx.set_info_callback()
+  if DEBUG_M2CRYPTO:
+    ctx.set_info_callback()
 
   return ctx
 
