@@ -181,11 +181,11 @@ class DIRACCAProxyProvider(ProxyProvider):
         return S_ERROR('%s must be /%s=%s.' % (err, field,
                                                ('/%s=' % field).joing(self.dnInfoDictCA[field])))
       if nid in self.maxDict:
-        rangeMax = range(min(len(values), len(self.maxDict[nid])))
+        rangeMax = list(range(min(len(values), len(self.maxDict[nid]))))
         if any([True if len(values[i]) > self.maxDict[nid][i] else False for i in rangeMax]):
           return S_ERROR('%s values must be less then %s.' % (err, ', '.join(self.maxDict[nid])))
       if nid in self.minDict:
-        rangeMin = range(min(len(values), len(self.minDict[nid])))
+        rangeMin = list(range(min(len(values), len(self.minDict[nid]))))
         if any([True if len(values[i]) < self.minDict[nid][i] else False for i in rangeMin]):
           return S_ERROR('%s values must be more then %s.' % (err, ', '.join(self.minDict[nid])))
 
