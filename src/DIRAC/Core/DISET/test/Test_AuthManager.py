@@ -143,7 +143,7 @@ Registry
 """
 
 
-def sf_getVOMSInfo(vo=None, dn=None):
+def sf_getVOMSInfo(**args, **kwargs):
   return S_OK(voDict)
 
 
