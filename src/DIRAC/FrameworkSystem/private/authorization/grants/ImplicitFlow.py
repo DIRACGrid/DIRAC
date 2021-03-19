@@ -7,6 +7,7 @@ from authlib.oauth2 import OAuth2Error
 from authlib.oauth2.rfc6749.grants import AuthorizationEndpointMixin, ImplicitGrant as _ImplicitGrant
 from authlib.oauth2.rfc6749.errors import AccessDeniedError
 from authlib.oidc.core.grants import OpenIDImplicitGrant as _OpenIDImplicitGrant
+from authlib.common.security import generate_token
 
 from DIRAC import gLogger
 
@@ -52,7 +53,8 @@ class OpenIDImplicitGrant(_OpenIDImplicitGrant):
     print(user)
     print(scopes)
     data = self.server.getSession(self.request.state)
-    return UserInfo(sub=data['userID'], profile=data['profile'], grp=data['group'])
+    # return UserInfo(sub=data['userID'], profile=data['profile'], grp=data['group'])
+    return dict(sub=data['userID'], profile=data['profile'], grp=data['group'])
 
   def exists_nonce(self, nonce, request):
     # TODO: need to implement

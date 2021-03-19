@@ -39,21 +39,21 @@ def test_Clients(self):
 
   # Add client
   result = db.addClient(data)
-  assert result['OK'] == True
+  assert result['OK']
   assert result['Value'] == data
 
   # Get Client
   result = db.getClient(data['client_id'])
-  assert result['OK'] == True
+  assert result['OK']
   assert result['Value'] == data
 
   # Remove Client
   result = db.removeClient(data['client_id'])
-  assert result['OK'] == True
+  assert result['OK']
 
   # Make sure that the Client is absent
   result = db.getClient(data['client_id'])
-  assert result['OK'] == True
+  assert result['OK']
 
 
 def test_Tokens(self):
@@ -61,10 +61,10 @@ def test_Tokens(self):
   """
   # Example of token
   token = {'access_token': '...',
-            'refresh_token': '...',
-            'provider': 'IdProvider_1',
-            'client_id': 'TKMR11HGRf3O4tciFP3ReIhBIvbgUjkXCzYJmqMhxC',
-            'user_id': '20db3fc892432f769f172081dd59fedbd5debe42b45bf4b1'}
+           'refresh_token': '...',
+           'provider': 'IdProvider_1',
+           'client_id': 'TKMR11HGRf3O4tciFP3ReIhBIvbgUjkXCzYJmqMhxC',
+           'user_id': '20db3fc892432f769f172081dd59fedbd5debe42b45bf4b1'}
   refreshToken = 'my_refresh_token_1234567890'
 
   # Example of new token
@@ -75,27 +75,27 @@ def test_Tokens(self):
 
   # Add token
   result = db.storeToken(token)
-  assert result['OK'] == True
+  assert result['OK']
 
   # Get token
   result = db.getTokenByUserIDAndProvider(token['user_id'], token['provider'])
-  assert result['OK'] == True
+  assert result['OK']
   assert result['Value'] == token
 
   # Update token
   result = db.updateToken(newToken, token['refresh_token'])
-  assert result['OK'] == True
+  assert result['OK']
   assert result['Value'] == newToken
 
   # Get token
   result = db.getIdPTokens(newToken['provider'])
-  assert result['OK'] == True
-  assert result['Value'] == [newToken
+  assert result['OK']
+  assert result['Value'] == newToken
 
   # Remove token
-  result= db.removeToken(newToken['access_token'])
-  assert result['OK'] == True
+  result = db.removeToken(newToken['access_token'])
+  assert result['OK']
 
   # Make sure that the Client is absent
-  result= db.getIdPTokens(newToken['provider'])
+  result = db.getIdPTokens(newToken['provider'])
   assert result['OK'] == False

@@ -278,7 +278,7 @@ class HandlerManager(object):
     urls = []
     for handlerData in self.__handlers.values():
       for url in handlerData['URLs']:
-        urls.append(TornadoURL(url))
+        urls.append(TornadoURL(*url))
     return urls
 
   def getHandlersDict(self):

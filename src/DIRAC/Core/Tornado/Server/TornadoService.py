@@ -128,7 +128,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
     """
     # Expected path: ``/<System>/<Component>``
     return request.path[1:]
-  
+
   @classmethod
   def _getServiceInfo(cls, serviceName, request):
     """ Fill service information.

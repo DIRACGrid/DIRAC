@@ -458,7 +458,8 @@ class ProxyInit(object):
 
       spin.color = 'green'
       spin.text = 'Download proxy..'
-      # url = '%ss:%s/g:%s/proxy?lifetime=%s' % (proxyAPI, setup, self.__piParams.diracGroup, self.__piParams.proxyLifeTime)
+      # url = '%ss:%s/g:%s/proxy?lifetime=%s' % (proxyAPI, setup,
+      #                                          self.__piParams.diracGroup, self.__piParams.proxyLifeTime)
       url = '%sproxy?lifetime=%s' % (proxyAPI, self.__piParams.proxyLifeTime)
       addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption(self.__piParams.diracGroup, "AutoAddVOMS", False)
       if addVOMS:

@@ -62,7 +62,7 @@ class IdProvider(object):
     """
     if not self.sessionManager:
       try:
-        #from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
+        # from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
         self.sessionManager = gSessionManager
       except Exception as e:
         return S_ERROR('Session manager is not available: %s' % e)

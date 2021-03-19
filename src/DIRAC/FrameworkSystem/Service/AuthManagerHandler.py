@@ -123,8 +123,8 @@ class AuthManagerHandler(RequestHandler):
     """
     cls.__db = AuthDB()
     cls.__idps = IdProviderFactory()
-    #gThreadScheduler.addPeriodicTask(3600, cls.__cleanAuthDB)
-    #result = cls.__cleanAuthDB()
+    # gThreadScheduler.addPeriodicTask(3600, cls.__cleanAuthDB)
+    # result = cls.__cleanAuthDB()
     return cls.__refreshProfiles()  # if result['OK'] else result
 
   @classmethod

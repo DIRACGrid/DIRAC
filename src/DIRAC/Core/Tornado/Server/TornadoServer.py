@@ -14,6 +14,7 @@ import time
 import datetime
 import tempfile
 import M2Crypto
+from io import open
 
 import tornado.iostream
 tornado.iostream.SSLIOStream.configure(
@@ -33,7 +34,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Security import Locations, X509Chain, X509CRL
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 
-## FROM WEB
+# FROM WEB
 import sys
 import signal
 import tornado.process
@@ -111,7 +112,7 @@ class TornadoServer(object):
 
     # Handler manager initialization with default settings
     self.handlerManager = HandlerManager(services, endpoints)
-    
+
     # Monitoring attributes
     self._monitor = MonitoringClient()
     # temp value for computation, used by the monitoring
@@ -133,7 +134,7 @@ class TornadoServer(object):
 
   def __calculateAppSettings(self):
     """ Calculate application information mapping on the ports
-    """  
+    """
     # if no service list is given, load services from configuration
     handlerDict = self.handlerManager.getHandlersDict()
     for data in handlerDict.values():
@@ -144,7 +145,7 @@ class TornadoServer(object):
         if hURL not in self.__appsSettings[port]['routes']:
           self.__appsSettings[port]['routes'].append(hURL)
     return bool(self.__appsSettings)
-  
+
   def loadServices(self, services):
     """ Load a services
 
@@ -155,7 +156,7 @@ class TornadoServer(object):
         :return: S_OK()/S_ERROR()
     """
     return self.handlerManager.loadServicesHandlers(services)
-  
+
   def loadEndpoints(self, endpoints):
     """ Load a endpoints
 
@@ -166,7 +167,7 @@ class TornadoServer(object):
         :return: S_OK()/S_ERROR()
     """
     return self.handlerManager.loadEndpointsHandlers(endpoints)
-  
+
   def addHandlers(self, routes, settings=None, port=None):
     """ Add new routes
 
@@ -249,7 +250,7 @@ class TornadoServer(object):
     self._initMonitoring()
     self.__monitorLastStatsUpdate = time.time()
     self.__report = self.__startReportToMonitoringLoop()
-    
+
     # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
     tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
 
@@ -360,7 +361,7 @@ class TornadoServer(object):
 
 def _logRequest(handler):
   """ This function will be called at the end of every request to log the result
-      
+
       :param object handler: RequestHandler object
   """
   print('=== _logRequest')

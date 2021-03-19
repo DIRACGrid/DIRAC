@@ -63,7 +63,7 @@ class BaseRequestHandler(RequestHandler):
   AUTHZ_JWT_METHOD = cls.__authzToken
   # Open access
   AUTHZ_VISITOR = 'VISITOR'
-  AUTHZ_VISITOR_METHOD = lambda: S_OK({})
+  AUTHZ_VISITOR_METHOD = cls.__authzVisitor
 
   # Which grant type to use
   USE_AUTHZ_GRANTS = [AUTHZ_SSL, AUTHZ_JWT]
@@ -483,13 +483,13 @@ class BaseRequestHandler(RequestHandler):
       try:
         result = eval('self.AUTHZ_%s_METHOD' % a)()
       except KeyError:
-      # if a.upper() == 'SSL':
-      #   result = self.__authzCertificate()
-      # elif a.upper() == 'JWT':
-      #   result = self.__authzToken()
-      # elif a.upper() == 'VISITOR':
-      #   result = S_OK({})
-      # else:
+        # if a.upper() == 'SSL':
+        #   result = self.__authzCertificate()
+        # elif a.upper() == 'JWT':
+        #   result = self.__authzToken()
+        # elif a.upper() == 'VISITOR':
+        #   result = S_OK({})
+        # else:
         raise Exception('%s authentication type is not supported.' % a)
 
       if result['OK']:
@@ -553,6 +553,13 @@ class BaseRequestHandler(RequestHandler):
     except Exception as e:
       return S_ERROR(str(e))
     return S_OK({'ID': token.sub, 'issuer': token.issuer, 'group': token.groups[0]})
+  
+  def __authzVisitor(self):
+    """ Visitor access
+
+        :return: S_OK(dict)
+    """
+    return S_OK({})
 
   @property
   def log(self):

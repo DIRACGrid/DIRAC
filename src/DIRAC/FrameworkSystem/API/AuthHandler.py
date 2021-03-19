@@ -73,7 +73,7 @@ class AuthHandler(TornadoREST):
       return {'keys': [jwk.dumps(key, kty='RSA', alg='RS256')]}
     print('-----> web_jwk <-------')
 
-  #auth_userinfo = ["authenticated"]
+  # auth_userinfo = ["authenticated"]
   def web_userinfo(self):
     """ The UserInfo endpoint can be used to retrieve identity information about a user,
         see `spec <https://openid.net/specs/openid-connect-core-1_0.html#UserInfo>`_
@@ -123,10 +123,19 @@ class AuthHandler(TornadoREST):
 
         https://wlcg.cloud.cnaf.infn.it/register
 
-        requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', json={'grant_types': ['implicit'], 'response_types': ['token'], 'redirect_uris': ['https://dirac.egi.eu'], 'token_endpoint_auth_method': 'none'}, verify=False).text
-        requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register', json={"scope":"changeGroup","token_endpoint_auth_method":"client_secret_basic","grant_types":["authorization_code","refresh_token"],"redirect_uris":["https://marosvn32.in2p3.fr/DIRAC","https://marosvn32.in2p3.fr/DIRAC/loginComplete"],"response_types":["token","id_token token","code"]}, verify=False).text
+        requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register',
+                      json={'grant_types': ['implicit'],
+                            'response_types': ['token'],
+                            'redirect_uris': ['https://dirac.egi.eu'],
+                            'token_endpoint_auth_method': 'none'}, verify=False).text
+        requests.post('https://marosvn32.in2p3.fr/DIRAC/auth/register',
+                      json={"scope":"changeGroup",
+                            "token_endpoint_auth_method":"client_secret_basic",
+                            "grant_types":["authorization_code","refresh_token"],
+                            "redirect_uris":["https://marosvn32.in2p3.fr/DIRAC","https://marosvn32.in2p3.fr/DIRAC/loginComplete"],
+                            "response_types":["token","id_token token","code"]}, verify=False).text
     """
-    #TODO: docs
+    # TODO: docs
     print('------ web_register --------')
     name = ClientRegistrationEndpoint.ENDPOINT_NAME
     return self.__response(**self.server.create_endpoint_response(name, self.request))

@@ -17,7 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getAuthAPI
 from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
-#from DIRAC.FrameworkSystem.Utilities.OAuth2 import OAuth2
+# from DIRAC.FrameworkSystem.Utilities.OAuth2 import OAuth2
 from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
 from DIRAC.FrameworkSystem.Client.AuthManagerData import gAuthManagerData
 

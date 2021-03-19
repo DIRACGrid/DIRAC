@@ -6,6 +6,7 @@ import os
 import uuid
 import tempfile
 import tornado.process
+from io import open
 
 from DIRAC import gConfig
 from DIRAC.Core.Security import Locations, X509Chain, X509CRL

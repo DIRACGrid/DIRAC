@@ -93,16 +93,6 @@ class WebHandler(TornadoREST):
   # Change JWT authz method
   AUTHZ_JWT_METHOD = cls.__authzToken
 
-  def _readToken(self, scope=None):
-    """ Fill credentionals from session
-
-        :param str scope: scope
-
-        :return: dict
-    """
-    scope = self.__group and ('g:%s' % self.__group)
-    return TornadoREST._readToken(self, scope)
-
   def threadTask(self, method, *args, **kwargs):
     def threadJob(*targs, **tkwargs):
       args = targs[0]

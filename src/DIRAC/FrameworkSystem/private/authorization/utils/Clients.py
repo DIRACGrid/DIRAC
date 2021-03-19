@@ -78,7 +78,7 @@ class ClientRegistrationEndpoint(_ClientRegistrationEndpoint):
     return True
 
   def authenticate_token(self, request):
-    #TODO: check
+    # TODO: check
     return True
 
   def save_client(self, client_info, client_metadata, request):
