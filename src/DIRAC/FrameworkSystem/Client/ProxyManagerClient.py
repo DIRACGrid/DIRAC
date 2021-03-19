@@ -161,7 +161,8 @@ class ProxyManagerClient(Client):
 
     req = X509Request()
     req.generateProxyRequest(limited=limited)
-    rpcClient = self._getRPC(proxyChain=proxyToConnect) if proxyToConnect else self._getRPC()
+    # TODO: self._getRPC cannot add new kwargs, so proxyChain need set to ProxyManagerClient()
+    rpcClient = self._getRPC()  # proxyChain=proxyToConnect) if proxyToConnect else self._getRPC()
 
     result = req.dumpRequest()
     if not result['OK']:
