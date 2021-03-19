@@ -324,9 +324,13 @@ class JobAgent(AgentModule):
     wholeNode = 'WholeNode' in params
     mpTag = 'MultiProcessor' in params.get('Tags', [])
 
-    if self.extraOptions and '$DIRACROOT' in params.get('Executable', '').strip():
-      params['Arguments'] = (params.get('Arguments', '') + ' ' + self.extraOptions).strip()
-      params['ExtraOptions'] = self.extraOptions
+    if self.extraOptions:
+      if (
+	  six.PY2 and '$DIRACROOT' in params.get('Executable', '').strip()
+	  or six.PY3 and 'dirac-jobexec' in params.get('Executable', '').strip()
+      ):
+	params['Arguments'] = (params.get('Arguments', '') + ' ' + self.extraOptions).strip()
+	params['ExtraOptions'] = self.extraOptions
 
     self.log.verbose('Job request successful: \n', jobRequest['Value'])
     self.log.info('Received',
