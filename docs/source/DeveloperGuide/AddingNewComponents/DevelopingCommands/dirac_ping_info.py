@@ -14,8 +14,7 @@ __RCSID__ = "$Id$"
 
 import sys
 
-from DIRAC import exit as DIRACExit
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
