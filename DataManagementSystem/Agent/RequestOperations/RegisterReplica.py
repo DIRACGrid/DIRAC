@@ -55,6 +55,7 @@ class RegisterReplica(DMSRequestOperationsBase):
     waitingFiles = self.getWaitingFilesList()
     # # loop over files
     registerOperations = {}
+    successReplicas = 0
     for opFile in waitingFiles:
 
       gMonitor.addMark("RegisterReplicaAtt", 1)
@@ -95,9 +96,8 @@ class RegisterReplica(DMSRequestOperationsBase):
               catMaster = catMaster and FileCatalog()._getCatalogConfigDetails(failedCatalog)\
                   .get('Value', {}).get('Master', False)
           # If one targets explicitly a catalog and it fails or if it fails on the master catalog
-          if (
-                  catalogs or catMaster) and (
-                  'file does not exist' in opFile.Error.lower() or 'no such file' in opFile.Error.lower()):
+          if (catalogs or catMaster) and \
+                  ('file does not exist' in opFile.Error.lower() or 'no such file' in opFile.Error.lower()):
             # Check if the file really exists in SE, if not, consider this file registration as Done
             res = self.dm.getReplicaMetadata(lfn, targetSE)
             notExist = bool('No such file' in res.get('Value', {}).get('Failed', {}).get(lfn, ''))
@@ -112,9 +112,9 @@ class RegisterReplica(DMSRequestOperationsBase):
       else:
         # All is OK
         gMonitor.addMark("RegisterReplicaOK", 1)
-
-        self.log.info("Replica %s has been registered at %s" %
-                      (lfn, ','.join(catalogs) if catalogs else "all catalogs"))
+        successReplicas += 1
+        self.log.verbose("Replica %s has been registered at %s" %
+                         (lfn, ','.join(catalogs) if catalogs else "all catalogs"))
         opFile.Status = "Done"
 
     # # if we have new replications to take place, put them at the end
@@ -123,8 +123,13 @@ class RegisterReplica(DMSRequestOperationsBase):
     for operation in registerOperations.values():
       self.operation._parent.addOperation(operation)
     # # final check
+    infoStr = ''
+    if successReplicas:
+      infoStr = "%d replicas successfully registered" % successReplicas
     if failedReplicas:
-      self.log.info("all replicas processed, %s replicas failed to register" % failedReplicas)
+      infoStr += ", %d replicas failed to register" % failedReplicas
+    self.log.info("All replicas processed", infoStr)
+    if failedReplicas:
       self.operation.Error = "some replicas failed to register"
       return S_ERROR(self.operation.Error)
 
