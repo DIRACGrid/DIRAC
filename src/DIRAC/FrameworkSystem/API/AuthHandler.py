@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from pprint import pprint
+import pprint
 import requests
 from io import open
 
@@ -96,7 +96,7 @@ class AuthHandler(TornadoREST):
 
         Request example::
 
-          GET /connect/userinfo
+          GET LOCATION/userinfo
           Authorization: Bearer <access_token>
 
         Response::
@@ -109,9 +109,9 @@ class AuthHandler(TornadoREST):
             "name": "Bob Smith",
             "given_name": "Bob",
             "family_name": "Smith",
-            "role": [
-              "user",
-              "admin"
+            "group": [
+              "dirac_user",
+              "dirac_admin"
             ]
           }
     """
@@ -126,7 +126,7 @@ class AuthHandler(TornadoREST):
     """ The Client Registration Endpoint, specified by
         `RFC7591 <https://tools.ietf.org/html/rfc7591#section-3.1>`_
 
-        POST /register?data..
+        POST LOCATION/register?data..
 
         JSON data:
 
@@ -172,7 +172,7 @@ class AuthHandler(TornadoREST):
 
         User code confirmation::
 
-          GET /device/<UserCode>
+          GET LOCATION/device/<UserCode>
 
           Parameters:
             UserCode - recived user code (optional)
@@ -221,7 +221,7 @@ class AuthHandler(TornadoREST):
   def web_authorization(self, provider=None):
     """ Authorization endpoint
 
-        GET: /authorization/<DIRACs IdP>?client_id=.. &response_type=(code|device)&scope=..      #group=..
+        GET: LOCATION/authorization/<DIRACs IdP>?client_id=.. &response_type=(code|device)&scope=..      #group=..
 
         Device flow:
           &user_code=..                         (required)
@@ -272,7 +272,8 @@ class AuthHandler(TornadoREST):
     if idP not in idPs:
       return '%s is not registered in DIRAC.' % idP
 
-    # IMPLICIT test
+    # TODO: integrate it with AuthServer
+    # IMPLICIT test for joopiter
     if grant.GRANT_TYPE == 'implicit' and self.get_argument('access_token', None):
       result = self.__implicitFlow()
       if not result['OK']:
@@ -285,12 +286,22 @@ class AuthHandler(TornadoREST):
       return result
     self.log.verbose('Redirect to', result['Value'])
     return self.__response(code=302, headers=HTTPHeaders({"Location": result['Value']}))
-    print('-----> web_authorization <-------')
 
   def web_redirect(self):
-    """ Redirect endpoint
+    """ Redirect endpoint.
+        After a user successfully authorizes an application, the authorization server will redirect
+        the user back to the application with either an authorization code or access token in the URL.
+        The full URL of this endpoint must be registered in the identity provider.
+      
+        Read more in `oauth.com <https://www.oauth.com/oauth2-servers/redirect-uris/>`_.
+        Specified by `RFC6749 <https://tools.ietf.org/html/rfc6749#section-3.1.2>`_.
+
+        GET LOCATION/redirect?
+
+        Parameters::
+
+          &chooseScope=..  to specify new scope(group in our case) (optional)
     """
-    print('------ web_redirect --------')
     # Redirect endpoint for response
     self.log.info('REDIRECT RESPONSE:\n', self.request)
     self.log.info(self.request.uri)
@@ -337,7 +348,7 @@ class AuthHandler(TornadoREST):
       self.server.updateSession(session, request=request)
 
     groups = [s.split(':')[1] for s in scopes if s.startswith('g:')]
-    print('GROUPS: %s' % groups)
+    self.log.debug('Next groups has been found for %s:' % username, ', '.join(groups))
 
     # Researche Group
     result = gProxyManager.getGroupsStatusByUsername(username, groups)
@@ -345,8 +356,7 @@ class AuthHandler(TornadoREST):
       self.server.updateSession(session, Status='failed', Comment=result['Message'])
       return result
     groupStatuses = result['Value']
-    print('======= Group STATUSES:')
-    pprint(groupStatuses)
+    self.log.debug('The state of %s user groups has been checked:' % username, pprint.ppformat(groupStatuses))
 
     if not groups:
       # Choose group interface
@@ -484,6 +494,3 @@ class AuthHandler(TornadoREST):
       raise Exception("User is not valid.")
     claims['username'] = result['Value']
     return claims
-
-  def _gatherPeerCredentials(self):
-    return {}
