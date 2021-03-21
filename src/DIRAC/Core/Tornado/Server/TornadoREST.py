@@ -26,8 +26,8 @@ sLog = gLogger.getSubLogger(__name__)
 
 
 class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
+  USE_AUTHZ_GRANTS = ['SSL', 'JWT', 'VISITOR']
   METHOD_PREFIX = 'web_'
-  AUTHZ_GRANTS = ['SSL', 'JWT', 'VISITOR']
   LOCATION = '/'
 
   @classmethod

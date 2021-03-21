@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from pprint import pprint
 import requests
+from io import open
 
 from tornado.template import Template
 from tornado.httputil import HTTPHeaders
@@ -52,18 +53,34 @@ class AuthHandler(TornadoREST):
 
         Request examples::
 
-          GET: /.well-known/openid-configuration
-          GET: /.well-known/oauth-authorization-server
+          GET: LOCATION/.well-known/openid-configuration
+          GET: LOCATION/.well-known/oauth-authorization-server
     """
-    print('------ web_.well-known --------')
     if self.request.method == "GET":
       return dict(self.server.metadata)
-    print('-----> web_.well-known <-------')
 
   def web_jwk(self):
     """ JWKs endpoint
+
+        Request example::
+
+          GET LOCATION/jwk
+
+        Response::
+
+          HTTP/1.1 200 OK
+          Content-Type: application/json
+
+          {
+            "keys": [
+              {
+                "e": "AQAB",
+                "kty": "RSA",
+                "n": "3Vv5h5...X3Y7k"
+              }
+            ]
+          }
     """
-    print('------ web_jwk --------')
     if self.request.method == "GET":
       with open('/opt/dirac/etc/grid-security/jwtRS256.key.pub', 'rb') as f:
         key = f.read()
@@ -71,7 +88,6 @@ class AuthHandler(TornadoREST):
       # # # key = JsonWebKey.import_key(key, {'kty': 'RSA'})
       # # # self.finish(key.as_dict())
       return {'keys': [jwk.dumps(key, kty='RSA', alg='RS256')]}
-    print('-----> web_jwk <-------')
 
   # auth_userinfo = ["authenticated"]
   def web_userinfo(self):
@@ -89,23 +105,22 @@ class AuthHandler(TornadoREST):
           Content-Type: application/json
 
           {
-              "sub": "248289761001",
-              "name": "Bob Smith",
-              "given_name": "Bob",
-              "family_name": "Smith",
-              "role": [
-                  "user",
-                  "admin"
-              ]
+            "sub": "248289761001",
+            "name": "Bob Smith",
+            "given_name": "Bob",
+            "family_name": "Smith",
+            "role": [
+              "user",
+              "admin"
+            ]
           }
     """
-    print('------ web_userinfo --------')
+    # Token verification
     token = ResourceProtector().acquire_token(self.request, '')
     return {'sub': token.sub, 'issuer': token.issuer, 'group': token.groups[0]}
     # return {'username': credDict['username'],
     #         'group': credDict['group']}
     # return self.__validateToken()
-    print('-----> web_userinfo <-------')
 
   def web_register(self):
     """ The Client Registration Endpoint, specified by
@@ -145,25 +160,35 @@ class AuthHandler(TornadoREST):
 
   def web_device(self, userCode=None):
     """ The device authorization endpoint can be used to request device and user codes.
-        This endpoint is used to start the device flow authorization process.
+        This endpoint is used to start the device flow authorization process and user code verification.
 
-        POST /device?client_id=.. &scope=..
-          # group - optional
-          provider - optional
+        To initialize a Device authentication flow::
 
-        GET /device/<user code>
+          POST /device?client_id=.. &scope=..
+
+          Parameters:
+            group - optional
+            provider - optional
+
+        User code confirmation::
+
+          GET /device/<UserCode>
+
+          Parameters:
+            UserCode - recived user code (optional)
     """
-    print('------ web_device --------')
     if self.request.method == 'POST':
+      self.log.verbose('Initialize a Device authentication flow.')
       name = DeviceAuthorizationEndpoint.ENDPOINT_NAME
       return self.__response(**self.server.create_endpoint_response(name, self.request))
 
     elif self.request.method == 'GET':
       userCode = self.get_argument('user_code', userCode)
       if userCode:
+        self.log.verbose('User code verification.')
         session, data = self.server.getSessionByOption('user_code', userCode)
         if not session:
-          return '%s authorization session expired.' % session
+          return 'Device flow authorization session %s expired.' % session
         authURL = self.server.metadata['authorization_endpoint']
         authURL += '?%s&client_id=%s&user_code=%s' % (data['request'].query,
                                                       data['client_id'], userCode)
@@ -190,14 +215,13 @@ class AuthHandler(TornadoREST):
         </body>
       </html>''')
       return t.generate(url=self.currentPath, query='?' + self.request.query)
-    print('-----> web_device <-------')
 
   path_authorization = ['([A-z0-9]*)']
 
   def web_authorization(self, provider=None):
     """ Authorization endpoint
 
-        GET: /authorization/< DIRACs IdP >?client_id=.. &response_type=(code|device)&scope=..      #group=..
+        GET: /authorization/<DIRACs IdP>?client_id=.. &response_type=(code|device)&scope=..      #group=..
 
         Device flow:
           &user_code=..                         (required)
@@ -209,7 +233,6 @@ class AuthHandler(TornadoREST):
           &code_challenge=..                    (PKCE, optional)
           &code_challenge_method=(pain|S256)    ('pain' by default, optional)
     """
-    print('------ web_authorization --------')
     grant = None
     if self.request.method == 'GET':
       try:
@@ -243,6 +266,8 @@ class AuthHandler(TornadoREST):
       </html>''')
       return t.generate(url=self.currentPath, query='?' + self.request.query, idPs=idPs)
 
+    self.log.debug('Start authorization with', idP)
+
     # Check IdP
     if idP not in idPs:
       return '%s is not registered in DIRAC.' % idP
@@ -258,7 +283,7 @@ class AuthHandler(TornadoREST):
     result = self.server.getIdPAuthorization(idP, self.get_argument('state'))
     if not result['OK']:
       return result
-    self.log.notice('Redirect to', result['Value'])
+    self.log.verbose('Redirect to', result['Value'])
     return self.__response(code=302, headers=HTTPHeaders({"Location": result['Value']}))
     print('-----> web_authorization <-------')
 
@@ -359,7 +384,7 @@ class AuthHandler(TornadoREST):
         if not result['OK']:
           self.server.updateSession(session, Status='failed', Comment=result['Message'])
           return result['Message']
-        self.log.notice('Redirect to', result['Value'])
+        self.log.verbose('Redirect to', result['Value'])
         return self.__response(code=302, headers=HTTPHeaders({"Location": result['Value']}))
 
       if status not in ['ready', 'unknown']:

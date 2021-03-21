@@ -409,7 +409,7 @@ def generateCAFile():
       expired = chain.hasExpired()
       if not expired['OK'] or expired['Value']:
         continue
-      fd.write(chain.dumpAllToString()['Value'])
+      fd.write(chain.dumpAllToString()['Value'].decode('utf-8'))
     fd.close()
     return fn
   return False
@@ -442,7 +442,7 @@ def generateRevokedCertsFile():
       result = chain.loadCRLFromFile(caFile)
       if not result['OK']:
         continue
-      fd.write(chain.dumpAllToString()['Value'])
+      fd.write(chain.dumpAllToString()['Value'].decode('utf-8'))
     fd.close()
     return fn
   return False

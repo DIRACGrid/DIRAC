@@ -98,4 +98,4 @@ def test_Tokens(self):
 
   # Make sure that the Client is absent
   result = db.getIdPTokens(newToken['provider'])
-  assert result['OK'] == False
+  assert not result['OK']
