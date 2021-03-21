@@ -491,60 +491,60 @@ class BaseRequestHandler(RequestHandler):
 
     return result['Value']
 
-   def _authzSSL(self):
-     """ Load client certchain in DIRAC and extract informations.
- 
-         :return: S_OK(dict)/S_ERROR()
-     """
-     peerChain = X509Chain()
-     derCert = self.request.get_ssl_certificate()
- 
-     # Get client certificate pem
-     if derCert:
-       chainAsText = derCert.as_pem()
-       # Here we read all certificate chain
-       cert_chain = self.request.get_ssl_certificate_chain()
-       for cert in cert_chain:
-         chainAsText  = cert.as_pem()
-     elif self.request.headers.get('X-Ssl_client_verify') == 'SUCCESS':
-       chainAsTextEncoded = self.request.headers.get('X-SSL-CERT')
-       chainAsText = unquote(chainAsTextEncoded)
-     else:
-       return S_ERROR('Not found a valide client certificate.')
- 
-     peerChain.loadChainFromString(chainAsText)
- 
-     # Retrieve the credentials
-     res = peerChain.getCredentials(withRegistryInfo=False)
-     if not res['OK']:
-       return res
- 
-     credDict = res['Value']
- 
-     # We check if client sends extra credentials...
-     if "extraCredentials" in self.request.arguments:
-       extraCred = self.get_argument("extraCredentials")
-       if extraCred:
-         credDict['extraCredentials'] = decode(extraCred)[0]
-     return S_OK(credDict)
- 
-   def _authzJWT(self):
-     """ Load token claims in DIRAC and extract informations.
- 
-         :return: S_OK(dict)/S_ERROR()
-     """
-     try:
-       token = ResourceProtector().acquire_token(self.request)
-     except Exception as e:
-       return S_ERROR(str(e))
-     return S_OK({'ID': token.sub, 'issuer': token.issuer, 'group': token.groups[0]})
- 
-   def _authzVISITOR(self):
-     """ Visitor access
- 
-         :return: S_OK(dict)
-     """
-     return S_OK({})
+  def _authzSSL(self):
+    """ Load client certchain in DIRAC and extract informations.
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    peerChain = X509Chain()
+    derCert = self.request.get_ssl_certificate()
+
+    # Get client certificate pem
+    if derCert:
+      chainAsText = derCert.as_pem()
+      # Here we read all certificate chain
+      cert_chain = self.request.get_ssl_certificate_chain()
+      for cert in cert_chain:
+        chainAsText  = cert.as_pem()
+    elif self.request.headers.get('X-Ssl_client_verify') == 'SUCCESS':
+      chainAsTextEncoded = self.request.headers.get('X-SSL-CERT')
+      chainAsText = unquote(chainAsTextEncoded)
+    else:
+      return S_ERROR('Not found a valide client certificate.')
+
+    peerChain.loadChainFromString(chainAsText)
+
+    # Retrieve the credentials
+    res = peerChain.getCredentials(withRegistryInfo=False)
+    if not res['OK']:
+      return res
+
+    credDict = res['Value']
+
+    # We check if client sends extra credentials...
+    if "extraCredentials" in self.request.arguments:
+      extraCred = self.get_argument("extraCredentials")
+      if extraCred:
+        credDict['extraCredentials'] = decode(extraCred)[0]
+    return S_OK(credDict)
+
+  def _authzJWT(self):
+    """ Load token claims in DIRAC and extract informations.
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    try:
+      token = ResourceProtector().acquire_token(self.request)
+    except Exception as e:
+      return S_ERROR(str(e))
+    return S_OK({'ID': token.sub, 'issuer': token.issuer, 'group': token.groups[0]})
+
+  def _authzVISITOR(self):
+    """ Visitor access
+
+        :return: S_OK(dict)
+    """
+    return S_OK({})
 
   @property
   def log(self):

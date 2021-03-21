@@ -31,7 +31,6 @@ from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Tornado.Web import Conf
 from DIRAC.Core.Tornado.Web.SessionData import SessionData
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
-from DIRAC.Core.Tornado.Server.BaseRequestHandler import BaseRequestHandler
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
@@ -90,8 +89,6 @@ class WebHandler(TornadoREST):
   PATH_RE = None
   # Prefix of methods names
   METHOD_PREFIX = "web_"
-  # Change JWT authz method
-  AUTHZ_JWT_METHOD = cls.__authzToken
 
   def threadTask(self, method, *args, **kwargs):
     def threadJob(*targs, **tkwargs):

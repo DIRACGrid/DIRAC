@@ -4,9 +4,9 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import urlparse
 import tornado.web
 from io import open
+from six.moves.urllib import parse
 
 from DIRAC.Core.Tornado.Web import Conf
 
@@ -18,7 +18,7 @@ class CoreHandler(tornado.web.RequestHandler):
 
   def get(self, setup, group, route):
     if self.__action == "addSlash":
-      o = urlparse.urlparse(self.request.uri)
+      o = parse(self.request.uri)
       proto = self.request.protocol
       if 'X-Scheme' in self.request.headers:
         proto = self.request.headers['X-Scheme']
