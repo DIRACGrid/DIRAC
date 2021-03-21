@@ -505,7 +505,7 @@ class BaseRequestHandler(RequestHandler):
       # Here we read all certificate chain
       cert_chain = self.request.get_ssl_certificate_chain()
       for cert in cert_chain:
-        chainAsText  = cert.as_pem()
+        chainAsText = cert.as_pem()
     elif self.request.headers.get('X-Ssl_client_verify') == 'SUCCESS':
       chainAsTextEncoded = self.request.headers.get('X-SSL-CERT')
       chainAsText = unquote(chainAsTextEncoded)

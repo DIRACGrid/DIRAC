@@ -292,7 +292,7 @@ class AuthHandler(TornadoREST):
         After a user successfully authorizes an application, the authorization server will redirect
         the user back to the application with either an authorization code or access token in the URL.
         The full URL of this endpoint must be registered in the identity provider.
-      
+
         Read more in `oauth.com <https://www.oauth.com/oauth2-servers/redirect-uris/>`_.
         Specified by `RFC6749 <https://tools.ietf.org/html/rfc6749#section-3.1.2>`_.
 
@@ -303,11 +303,7 @@ class AuthHandler(TornadoREST):
           &chooseScope=..  to specify new scope(group in our case) (optional)
     """
     # Redirect endpoint for response
-    self.log.info('REDIRECT RESPONSE:\n', self.request)
-    self.log.info(self.request.uri)
-    self.log.info(self.request.query)
-    self.log.info(self.request.body)
-    self.log.info(self.request.headers)
+    self.log.info('REDIRECT RESPONSE:\n', '\n'.join([self.request, self.request.uri, self.request.query, self.request.body, self.request.headers]))
 
     # Try to parse IdP session id
     session = self.get_argument('state')
@@ -356,7 +352,7 @@ class AuthHandler(TornadoREST):
       self.server.updateSession(session, Status='failed', Comment=result['Message'])
       return result
     groupStatuses = result['Value']
-    self.log.debug('The state of %s user groups has been checked:' % username, pprint.ppformat(groupStatuses))
+    self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(groupStatuses))
 
     if not groups:
       # Choose group interface
@@ -404,7 +400,6 @@ class AuthHandler(TornadoREST):
 
     # RESPONSE
     return self.__response(**self.server.create_authorization_response(request, username))
-    print('-----> web_redirect <-------')
 
   def web_token(self):
     """ The token endpoint

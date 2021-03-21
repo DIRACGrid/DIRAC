@@ -202,7 +202,6 @@ class AuthManager(object):
       else:
         return False
 
-    authorized = True
     # User/group authorization
     if not credDict.get(KW_USERNAME):
       if credDict.get(KW_DN):
@@ -212,9 +211,16 @@ class AuthManager(object):
         # With IdP session
         authorized = authorizeBySession(credDict, logObj=self.__authLogger)
       else:
+        # As visitor
         credDict[KW_USERNAME] = "anonymous"
         credDict[KW_GROUP] = "visitor"
         authorized = False
+    # Marked as visitor
+    elif credDict[KW_USERNAME].lower() == 'anonymous' or credDict[KW_GROUP].lower() == "visitor":
+      authorized = False
+    # User/group already checked
+    else:
+      authorized = True
 
     # Access to the service
 
