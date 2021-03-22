@@ -680,7 +680,7 @@ class Dirac(API):
     # (it is normally set by the JobWrapper)
     # We don't use DIRAC.rootPath as we assume that a DIRAC installation is already done at this point
     # DIRAC env variable is only set for python2 installations
-    if 'DIRAC' is os.environ:
+    if 'DIRAC' in os.environ:
       os.environ['DIRACROOT'] = os.environ['DIRAC']
       self.log.verbose('DIRACROOT = %s' % (os.environ['DIRACROOT']))
 

@@ -743,5 +743,3 @@ class JobAgent(AgentModule):
       self.log.warn('Issue setting the pilot status', result['Message'])
 
     return S_OK()
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

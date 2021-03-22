@@ -299,10 +299,14 @@ getCFGFile() {
 
 ####################################################
 # This installs the DIRAC client
-# it needs a $DIRAC_RELEASE env var defined
+#
+# To know what to install, it:
+# - can get a $DIRAC_RELEASE env var defined
+# - or list of $ALTERNATIVE_MODULES
+#
 # it also wants the env variables $DIRACSETUP and $CSURL
 #
-# dirac-install also accepts a env variable $INSTALLOPTIONS (e.g. useful for extensions)
+# for py2, dirac-install also accepts a env variable $INSTALLOPTIONS (e.g. useful for extensions)
 # dirac-configure also accepts a env variable $CONFIGUREOPTIONS
 #  (e.g. useful for extensions or for using the certificates:
 #   --UseServerCertificate -o /DIRAC/Security/CertFile=some/location.pem -o /DIRAC/Security/KeyFile=some/location.pem
@@ -326,7 +330,12 @@ installDIRAC() {
     # TODO: Remove
     echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
     source diracos/diracosrc
+    if [[ -n "${DIRAC_RELEASE+x}" ]]; then
+      pip install "${DIRAC_RELEASE}"
+    fi
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+      # ALTERNATIVE_MODULES can be a list of URLs to pip-installable modules
+      # or something like git+https://github.com/fstagni/DIRAC.git@v7r2-fixes33#egg=DIRAC[pilot]
       pip install "${module_path}"
     done
   else

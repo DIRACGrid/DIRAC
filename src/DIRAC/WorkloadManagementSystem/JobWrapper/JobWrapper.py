@@ -636,7 +636,7 @@ class JobWrapper(object):
         if not isinstance(lfnSize, six.integer_types):
           try:
             lfnSize = int(lfnSize)
-          except ValueError as x:
+	  except ValueError:
             lfnSize = 0
             self.log.info('File size for LFN was not an integer, setting size to 0', lfn)
         self.inputDataSize += lfnSize
