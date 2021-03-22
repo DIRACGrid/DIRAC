@@ -303,7 +303,10 @@ class AuthHandler(TornadoREST):
           &chooseScope=..  to specify new scope(group in our case) (optional)
     """
     # Redirect endpoint for response
-    self.log.debug('REDIRECT RESPONSE:\n', '\n'.join([self.request.uri, self.request.query, self.request.body, self.request.headers]))
+    self.log.debug('REDIRECT RESPONSE:\n', '\n'.join([self.request.uri,
+                                                      self.request.query,
+                                                      self.request.body,
+                                                      str(self.request.headers)]))
 
     # Try to parse IdP session id
     session = self.get_argument('state')
