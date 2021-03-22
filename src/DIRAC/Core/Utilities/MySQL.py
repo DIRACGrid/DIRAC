@@ -1117,10 +1117,15 @@ class MySQL(object):
                                                  attrName,
                                                  escapeInValue)
             else:
-              condition = ' %s %s %s = %s' % (condition,
-                                              conjunction,
-                                              attrName,
-                                              escapeInValue)
+              if escapeInValue == 'NULL':
+                condition = ' %s %s %s IS NULL' % (condition,
+                                                   conjunction,
+                                                   attrName)
+              else:
+                condition = ' %s %s %s = %s' % (condition,
+                                                conjunction,
+                                                attrName,
+                                                escapeInValue)
             conjunction = "AND"
 
     if timeStamp:
