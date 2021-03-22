@@ -96,8 +96,9 @@ class RegisterReplica(DMSRequestOperationsBase):
               catMaster = catMaster and FileCatalog()._getCatalogConfigDetails(failedCatalog)\
                   .get('Value', {}).get('Master', False)
           # If one targets explicitly a catalog and it fails or if it fails on the master catalog
-          if (catalogs or catMaster) and \
-                  ('file does not exist' in opFile.Error.lower() or 'no such file' in opFile.Error.lower()):
+          if (catalogs or catMaster) \
+                  and ('file does not exist' in opFile.Error.lower()
+                       or 'no such file' in opFile.Error.lower()):
             # Check if the file really exists in SE, if not, consider this file registration as Done
             res = self.dm.getReplicaMetadata(lfn, targetSE)
             notExist = bool('No such file' in res.get('Value', {}).get('Failed', {}).get(lfn, ''))
