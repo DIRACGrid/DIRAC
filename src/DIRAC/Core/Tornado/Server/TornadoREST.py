@@ -65,8 +65,10 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
   @gen.coroutine
   def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
+    """ Method to handle incoming ``GET`` requests.
+        Logic copied from :py:func:`~DIRAC.Core.Tornado.Server.BaseRequestHandler.post`.
     """
-    """
+    # Execute the method in an executor (basically a separate thread)
     retVal = yield IOLoop.current().run_in_executor(None, self._executeMethod, args)
 
     # retVal is :py:class:`tornado.concurrent.Future`
@@ -80,8 +82,9 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     result = retVal.result()
     try:
       if not result['OK']:
-        raise HTTPError(http_client.INTERNAL_SERVER_ERROR)
+        raise HTTPError(http_client.INTERNAL_SERVER_ERROR, result['Message'])
       result = result['Value']
     except (AttributeError, KeyError, TypeError):
       pass
+    
     super(TornadoREST, self)._finishFuture(result)
