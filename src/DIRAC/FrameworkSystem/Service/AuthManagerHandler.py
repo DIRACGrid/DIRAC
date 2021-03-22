@@ -263,7 +263,7 @@ class AuthManagerHandler(RequestHandler):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain username, profile and session
     """
-    print('==== export_parseAuthResponse')
+    self.log.debug('Try to parse authentification response from %s:\n' % providerName, pprint.pformat(response))
     # Parse response
     result = self.__idps.getIdProvider(providerName, sessionManager=self.__db)
     if result['OK']:
@@ -273,6 +273,7 @@ class AuthManagerHandler(RequestHandler):
     # FINISHING with IdP auth result
     username, userProfile, session = result['Value']
 
+    self.log.debug('The %s session is identified for %s:\n' % (session, username), pprint.pformat(userProfile))
     # Is ID registred?
     result = getUsernameForID(userProfile['ID'])
     if not result['OK']:
@@ -283,13 +284,15 @@ class AuthManagerHandler(RequestHandler):
       else:
         comment += ' Please, contact the DIRAC administrators.'
       return S_ERROR(comment)
+    
+    self.log.debug("Add %s session %s's profile to cache." % (session, username))
     self.__addProfiles({userProfile['ID']: userProfile})
 
-    print('================== export_parseAuthResponse ==================')
-    print('userID: %s' % userProfile['ID'])
-    print('profile: %s' % userProfile)
-    pprint.pprint(self.__getProfiles())
-    print('==================  ==================')
+    # print('================== export_parseAuthResponse ==================')
+    # print('userID: %s' % userProfile['ID'])
+    # print('profile: %s' % userProfile)
+    # pprint.pprint(self.__getProfiles())
+    # print('==================  ==================')
     return S_OK((result['Value'], userProfile, dict(session)))
 
   def __registerNewUser(self, provider, username, userProfile):
@@ -320,7 +323,7 @@ class AuthManagerHandler(RequestHandler):
       if not result['OK']:
         self.log.error(result['Message'])
     if result['OK']:
-      self.log.info(result['Value'], "administrators have been notified of a new user.")
+      self.log.info(result['Value'], "administrators have been notified about a new user.")
     return result
 
   types_createClient = [dict]
