@@ -308,13 +308,13 @@ class AuthManagerHandler(RequestHandler):
 
     mail = {}
     mail['subject'] = "[SessionManager] User %s to be added." % username
-    mail['body'] = 'User %s was authenticated by ' % userProfile['UserOptions']['FullName']
+    mail['body'] = 'User %s was authenticated by ' % userProfile['FullName']
     mail['body'] += provider
     mail['body'] += "\n\nAuto updating of the user database is not allowed."
     mail['body'] += " New user %s to be added," % username
     mail['body'] += "with the following information:\n"
     mail['body'] += "\nUser name: %s\n" % username
-    mail['body'] += "\nUser profile:\n%s" % pprint.pformat(userProfile['UserOptions'])
+    mail['body'] += "\nUser profile:\n%s" % pprint.pformat(userProfile)
     mail['body'] += "\n\n------"
     mail['body'] += "\n This is a notification from the DIRAC AuthManager service, please do not reply.\n"
     result = S_OK()
