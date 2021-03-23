@@ -245,7 +245,7 @@ class DiracAdmin(API):
 
       sitesLogging = result['Value']
       if isinstance(sitesLogging, dict):
-        for siteName, tupleList in sitesLogging.iteritems():
+        for siteName, tupleList in sitesLogging.items():
           if not siteName:
             gLogger.notice('\n===> %s\n' % siteName)
           for tup in tupleList:
