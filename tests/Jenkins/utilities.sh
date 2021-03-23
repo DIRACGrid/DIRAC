@@ -320,7 +320,11 @@ installDIRAC() {
 
   if [[ "${CLIENT_USE_PYTHON3:-}" == "Yes" ]]; then
     if [[ -n "${DIRACOSVER+x}" ]]; then
-      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+      if [[ "${DIRACOSVER:-}" == "latest" ]]; then
+	DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
+      else
+	DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+      fi
     else
       DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
     fi
@@ -331,7 +335,9 @@ installDIRAC() {
     echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
     source diracos/diracosrc
     if [[ -n "${DIRAC_RELEASE+x}" ]]; then
-      pip install "${DIRAC_RELEASE}"
+      if [[ -z "${ALTERNATIVE_MODULES}" ]]; then
+	pip install "${DIRAC_RELEASE}"
+      fi
     fi
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
       # ALTERNATIVE_MODULES can be a list of URLs to pip-installable modules
