@@ -50,7 +50,7 @@ class ProxyHandler(TornadoREST):
     try:
       proxyLifeTime = int(self.get_argument('lifetime', 3600 * 12))
     except Exception:
-      raise S_ERROR('Cannot read "lifetime" argument.')
+      self._raiseDIRACError(S_ERROR('Cannot read "lifetime" argument.'))
 
     # GET
     if self.request.method == 'GET':
@@ -73,7 +73,7 @@ class ProxyHandler(TornadoREST):
         # Get proxy to string
         result = getDNForUsernameInGroup(user, group)
         if not result['OK'] or not result.get('Value'):
-          raise '%s@%s has no registred DN: %s' % (user, group, result.get('Message') or "")
+          self._raiseDIRACError(S_ERROR('%s@%s has no registred DN: %s' % (user, group, result.get('Message') or "")))
 
         if voms:
           result = self.proxyCli.downloadVOMSProxy(user, group, requiredTimeLeft=proxyLifeTime)
@@ -85,4 +85,4 @@ class ProxyHandler(TornadoREST):
         return self._raiseDIRACError(result)
 
       else:
-        raise "Wrone request."
+        self._raiseDIRACError(S_ERROR("Wrone request."))

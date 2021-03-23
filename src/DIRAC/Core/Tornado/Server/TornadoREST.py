@@ -76,7 +76,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
   def _raiseDIRACError(self, result):
     """ Parse DIRAC result to raise S_ERROR or return S_OK value
-    
+
         :param object result: DIRAC result
 
         :return: Value if result is S_OK

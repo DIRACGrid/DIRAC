@@ -820,5 +820,5 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   print('-------------------------')
   pprint(dns)
   if dns:
-    return S_OK(list(set(dns)))
+    return S_OK(dns)
   return S_ERROR('For %s@%s not found DN%s.' % (username, group, ' or it suspended' if checkStatus else ''))
