@@ -284,7 +284,7 @@ class AuthManagerHandler(RequestHandler):
       else:
         comment += ' Please, contact the DIRAC administrators.'
       return S_ERROR(comment)
-    
+
     self.log.debug("Add %s session %s's profile to cache." % (session, username))
     self.__addProfiles({userProfile['ID']: userProfile})
 

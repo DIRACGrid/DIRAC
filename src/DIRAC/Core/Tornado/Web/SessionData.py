@@ -92,7 +92,7 @@ class SessionData(object):
     optionsList = result['Value']
     for opName in optionsList:
       opVal = gConfig.getValue("%s/%s" % (fullName, opName))
-      if opVal.find("link|") == 0:
+      if opVal.startswith("link|"):
         schema.append(("link", opName, opVal[5:]))
         continue
       if self.__isGroupAuthApp(opVal):

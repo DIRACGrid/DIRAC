@@ -176,7 +176,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       r.raise_for_status()
       return S_OK(r.json())
     except (self.exceptions.RequestException, ValueError) as e:
-      return S_ERROR("%s: %s" % (e.message, r.text if r else ''))
+      return S_ERROR("%s: %s" % (repr(e), r.text if r else ''))
 
   def _parseUserProfile(self, userProfile):
     """ Parse user profile

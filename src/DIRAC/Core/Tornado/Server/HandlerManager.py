@@ -294,7 +294,7 @@ class HandlerManager(object):
   def getRoutes(self, defaultPort):
     """ Get routes for each of the registred port
 
-        :return list -- contain tuples with port and list of tornado urls
+        :return: list -- contain tuples with port and list of tornado urls
     """
     routes = {}
     for data in self.__handlers.values():
