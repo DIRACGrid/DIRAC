@@ -19,23 +19,16 @@ def test_Clients(self):
   """ Try to store/get/remove Clients
   """
   # Example of client credentials
-  data = {
-      'client_id': 'egfy1547e15s2ReUr0IsolSO0gPcQuLSWWulBWaH6g',
-      'client_id_issued_at': 1614204041,
-      'client_metadata': {
-          'grant_types': [
-              'authorization_code',
-              'refresh_token'],
-          'redirect_uris': [
-              'https://marosvn32.in2p3.fr/DIRAC',
-              'https://marosvn32.in2p3.fr/DIRAC/loginComplete'],
-          'response_types': [
-              'token',
-              'id_token token',
-              'code'],
-          'token_endpoint_auth_method': 'client_secret_basic'},
-      'client_secret': '90092079a17f7f30930b1d981a2f426ff4fa90bb4698d736',
-      'client_secret_expires_at': 0}
+  data = {'client_id': 'egfy1547e15s2ReUr0IsolS2O0gPcQuLSWWulBWaH6g',
+          'client_id_issued_at': 1614204041,
+          'client_metadata': {'grant_types': ['authorization_code',
+                                              'refresh_token'],
+                              'redirect_uris': ['https://marosvn32.in2p3.fr/DIRAC',
+                                                'https://marosvn32.in2p3.fr/DIRAC/loginComplete'],
+                              'response_types': ['token', 'id_token token', 'code'],
+                              'token_endpoint_auth_method': 'client_secret_basic'},
+          'client_secret': '90092079a217f7f30930b1d981a2f426ff4fa90bb4698d736',
+          'client_secret_expires_at': 0}
 
   # Add client
   result = db.addClient(data)
@@ -59,43 +52,54 @@ def test_Clients(self):
 def test_Tokens(self):
   """ Try to store/get/remove Tokens
   """
-  # Example of token
-  token = {'access_token': '...',
-           'refresh_token': '...',
-           'provider': 'IdProvider_1',
-           'client_id': 'TKMR11HGRf3O4tciFP3ReIhBIvbgUjkXCzYJmqMhxC',
-           'user_id': '20db3fc892432f769f172081dd59fedbd5debe42b45bf4b1'}
-  refreshToken = 'my_refresh_token_1234567890'
-
-  # Example of new token
-  newToken = {'access_token': '...',
-              'provider': 'IdProvider_1',
-              'client_id': 'TKMR11HGRf3O4tciFP3ReIhBIvbgUjkXCzYJmqMhxC',
-              'user_id': '20db3fc892432f769f172081dd59fedbd5debe42b45bf4b1'}
+  # Example of the new token metadata
+  tData1 = {'access_token': 'eyJraWQiOiJvaWRjIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI5N2ZhZGY2M2U1NWixTokH0OMjseMTQMk36sU5O',
+            'client_id': '2C7823B4-4A85-A912-E5D06D955809',
+            'expires_at': 1616538163,
+            'expires_in': 3599,
+            'id_token': 'eyJraWQiOiJvaWRjIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI5N2ZhZGY2M2U1NWVhMzlkQGVnaS5ldSIsImF1ZCI61',
+            'provider': 'CheckIn',
+            'refresh_token': 'eyJhbGciOiJub25lIn0.eyJleHAImp0aSI6IjQwNDI5M2YwLTk4NztNDI0Yi04NDZjLWU1NDQzMWRjMmEzZSJ9.',
+            'scope': 'openid offline_access profile eduperson_scoped_affiliation eduperson_unique_id',
+            'token_type': 'Bearer',
+            'user_id': '97fadf63e5123358a4f084e4c136475e377357c6723269f23eb9aba437fd6d9d@egi.eu'}
+  
+  # Example of updated token
+  tData2 = {'access_token': 'eyJraWQiOiJvaWRjIiwi4e4c136475e377357c6723269f23eb9aba437fd6d9dk36sU5Od',
+            'client_id': '2C7823B4-4A85-A912-E5D06D955809',
+            'expires_at': 1616538163,
+            'expires_in': 3599,
+            'id_token': 'eyJraWQiOiJvaWRjIiwiYWxnIjoiUlMy4e4c136475e377357c6723269f23eb9aba4F1ZCI6d1',
+            'provider': 'CheckIn',
+            'refresh_token': 'eyJhbGciOiJub25lIn0.eyJleHAImp0aSI6IjQ475e377357c6723269f23eb9aba4Fd9.',
+            'scope': 'openid offline_access profile eduperson_scoped_affiliation eduperson_unique_id',
+            'token_type': 'Bearer',
+            'user_id': '97fadf63e5123358a4f084e4c136475e377357c6723269f23eb9aba437fd6d9d@egi.eu'}
 
   # Add token
-  result = db.storeToken(token)
+  result = db.storeToken(tData1)
   assert result['OK']
 
   # Get token
-  result = db.getTokenByUserIDAndProvider(token['user_id'], token['provider'])
+  result = db.getTokenByUserIDAndProvider(tData1['user_id'], tData1['provider'])
   assert result['OK']
-  assert result['Value'] == token
+  assert result['Value'] == tData1
 
   # Update token
-  result = db.updateToken(newToken, token['refresh_token'])
+  result = db.updateToken(tData2, tData1['refresh_token'])
   assert result['OK']
-  assert result['Value'] == newToken
+  assert result['Value'] == tData2
 
   # Get token
-  result = db.getIdPTokens(newToken['provider'])
+  result = db.getIdPTokens(tData2['provider'])
   assert result['OK']
-  assert result['Value'] == newToken
+  assert tData2 in result['Value']
+  assert tData1 not in result['Value']
 
   # Remove token
-  result = db.removeToken(newToken['access_token'])
+  result = db.removeToken(tData2['access_token'])
   assert result['OK']
 
   # Make sure that the Client is absent
-  result = db.getIdPTokens(newToken['provider'])
+  result = db.getIdPTokens(tData2['provider'])
   assert not result['OK']
