@@ -74,17 +74,15 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     # retVal is :py:class:`tornado.concurrent.Future`
     self._finishFuture(retVal)
 
-  def _finishFuture(self, retVal):
-    """ Handler Future result
-
-        :param object retVal: tornado.concurrent.Future
-    """
-    result = retVal.result()
-    try:
-      if not result['OK']:
-        raise HTTPError(http_client.INTERNAL_SERVER_ERROR, result['Message'])
-      result = result['Value']
-    except (AttributeError, KeyError, TypeError):
-      pass
+  def _raiseDIRACError(self, result):
+    """ Parse DIRAC result to raise S_ERROR or return S_OK value
     
-    super(TornadoREST, self)._finishFuture(result)
+        :param object result: DIRAC result
+
+        :return: Value if result is S_OK
+    """
+    # DIRAC errors convert to HTTP server error
+    if not self.result['OK']:
+      sLog.error(self.result['Message'])
+      raise HTTPError(http_client.INTERNAL_SERVER_ERROR, self.result['Message'])
+    return result['Value']
