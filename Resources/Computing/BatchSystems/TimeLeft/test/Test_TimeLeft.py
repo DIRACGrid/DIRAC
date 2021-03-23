@@ -7,7 +7,7 @@ import pytest
 from six.moves import reload_module
 
 from DIRAC import S_OK, gLogger
-from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft, enoughTimeLeft
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 
 
 gLogger.setLevel('DEBUG')
@@ -63,20 +63,6 @@ HTCONDOR_OUT_1 = "undefined 3600"
 HTCONDOR_OUT_2 = ""
 
 
-@pytest.mark.parametrize("cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallClockMargin, expected", [
-    (100., 1000., 50., 80., 3, 10, True),
-    (900., 1000., 0., 80., 3, 10, True),
-    (990., 1000., 0., 80., 3, 10, False),
-    (100., 1000., 90., 80., 3, 10, False),
-    (100., 1000., 50., 80., 0, 10, True),
-])
-def test_enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallClockMargin, expected):
-  """ Test enoughTimeLeft()
-  """
-  res = enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallClockMargin)
-  assert res is expected
-
-
 @pytest.mark.parametrize("batch, requiredVariables, returnValue, expected", [
     ('LSF', {}, LSF_OUT, 0.0),
     ('LSF', {'bin': '/usr/bin', 'hostNorm': 10.0}, LSF_OUT, 0.0),
@@ -124,7 +110,7 @@ def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
     ('SLURM', {}, SLURM_OUT_0, True, 72000.0),
     ('SLURM', {}, SLURM_OUT_1, True, 3528000.0),
     ('SLURM', {}, SLURM_OUT_2, True, 9000.0),
-    ('SLURM', {}, SLURM_OUT_3, False, 18000.0),
+    ('SLURM', {}, SLURM_OUT_3, True, 0.0),
     ('SLURM', {}, SLURM_OUT_4, False, 0.0),
     ('HTCondor', {}, HTCONDOR_OUT_0, True, 828000),
     ('HTCondor', {}, HTCONDOR_OUT_1, False, 0.0),
