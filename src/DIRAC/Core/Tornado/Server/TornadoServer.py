@@ -83,15 +83,18 @@ class TornadoServer(object):
 
   """
 
-  def __init__(self, services=None, endpoints=None, port=None, debug=False, balancer=None, processes=None):
+  def __init__(self, services=True, endpoints=False, port=None, debug=False, balancer=None, processes=None):
     """ C'r
 
-        :param list services: (default None) List of service handlers to load.
-            If ``None``, loads all described in the CS
-        :param list endpoints: (default None) List of endpoint handlers to load.
-            If ``None``, loads all described in the CS
+        :param list services: (default True) List of service handlers to load.
+            If ``True``, loads all described in the CS
+            If ``False``, do not load services
+        :param list endpoints: (default False) List of endpoint handlers to load.
+            If ``True``, loads all described in the CS
+            If ``False``, do not load endpoints
         :param int port: Port to listen to.
             If ``None``, the port is resolved following the logic described in the class documentation
+        :param bool debug: debug
         :param str balancer: if need to use balancer, e.g.:: `nginx`
         :param int processes: number of processes or if it's True just use all server CPUs
     """
@@ -103,7 +106,7 @@ class TornadoServer(object):
     self.processes = 1 if processes is None else 0 if processes is True else processes
     if processes:
       raise ImportError('Multiprocessor mode is not supported.')
-    # Applicatio metadata, routes and settings mapping on the ports
+    # Application metadata, routes and settings mapping on the ports
     self.__appsSettings = {}
     # Default port, if enother is not discover
     if port is None:

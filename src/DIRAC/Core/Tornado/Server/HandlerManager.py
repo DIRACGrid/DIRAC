@@ -52,16 +52,16 @@ class HandlerManager(object):
       ``System/Component`` (e.g. ``DataManagement/FileCatalog``)
   """
 
-  def __init__(self, services=True, endpoints=False):
+  def __init__(self, services, endpoints):
     """
-      Initialization function, you can set autoDiscovery=False to prevent automatic
-      discovery of handler. If disabled you can use loadHandlersByServiceName() to
-      load your handlers or loadHandlerInHandlerManager()
+      Initialization function, you can set False for both arguments to prevent automatic
+      discovery of handlers and use `loadServicesHandlers()` to
+      load your handlers or `loadEndpointsHandlers()`
 
-      :param services: (default True) List of service handlers to load.
+      :param services: List of service handlers to load.
           If ``True``, loads all services from CS
       :type services: bool or list
-      :param endpoints: (default False) List of endpoint handlers to load.
+      :param endpoints: List of endpoint handlers to load.
           If ``True``, loads all endpoints from CS
       :type endpoints: bool or list
     """
@@ -174,7 +174,7 @@ class HandlerManager(object):
     # list of services
     self.__services = self.__services if services is None else services if services else []
 
-    if self.__services:
+    if self.__services is True:
       self.__services = self.discoverHandlers('Services')
 
     if self.__services:
@@ -228,10 +228,10 @@ class HandlerManager(object):
     # list of endpoints, e.g. ['Framework/Hello', 'Configuration/Conf']
     if isinstance(endpoints, string_types):
       endpoints = [endpoints]
-    # list of endpoints. If __endpoints is ``True`` than list of endpoints will dicover from CS
+    # list of endpoints. If __endpoints is ``True`` then list of endpoints will dicover from CS
     self.__endpoints = self.__endpoints if endpoints is None else endpoints if endpoints else []
 
-    if self.__endpoints:
+    if self.__endpoints is True:
       self.__endpoints = self.discoverHandlers('APIs')
 
     if self.__endpoints:
