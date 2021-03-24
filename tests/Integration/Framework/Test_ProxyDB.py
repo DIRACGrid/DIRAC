@@ -65,6 +65,8 @@ usersDNs = {'user_ca': '/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@
             'user_3': '/C=CC/O=DN/O=DIRAC/CN=user_3',
             'user_4': '/C=CC/O=DN/O=DIRAC/CN=user_4'}
 
+userNames = list(usersDNs.keys())
+
 userCFG = """
 Registry
 {
@@ -324,12 +326,12 @@ class ProxyDBTestCase(unittest.TestCase):
     gLogger.debug('\n')
     if self.failed:
        self.fail(self.failed)
-    db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("%s")' % '", "'.join(usersDNs.keys()))
-    db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserDN IN ("%s")' % '", "'.join(usersDNs.values()))
+    db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("%s")' % '", "'.join(userNames))
+    db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserDN IN ("%s")' % '", "'.join(list(usersDNs.values())))
 
   def tearDown(self):
-    db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("%s")' % '", "'.join(usersDNs.keys()))
-    db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserDN IN ("%s")' % '", "'.join(usersDNs.values()))
+    db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("%s")' % '", "'.join(userNames))
+    db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserDN IN ("%s")' % '", "'.join(list(usersDNs.values())))
 
   @classmethod
   def tearDownClass(cls):
@@ -409,7 +411,7 @@ class testDB(ProxyDBTestCase):
     """ Testing get, store proxy
     """
     gLogger.info('\n* Check that DB is clean..')
-    result = db.getProxiesContent({'UserName': usersDNs.keys()})
+    result = db.getProxiesContent({'UserName': userNames})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -442,7 +444,7 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0), "GetProxy method didn't delete the last proxy.")
 
     gLogger.info('* Check that DB is clean..')
-    result = db.getProxiesContent({'UserName': usersDNs.keys()})
+    result = db.getProxiesContent({'UserName': userNames})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -462,7 +464,7 @@ class testDB(ProxyDBTestCase):
     gLogger.info('* Check that DB is clean..')
     result = db.deleteProxy(usersDNs['user_ca'])
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-    result = db.getProxiesContent({'UserName': usersDNs.keys()})
+    result = db.getProxiesContent({'UserName': userNames})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -544,7 +546,7 @@ class testDB(ProxyDBTestCase):
     gLogger.info('* Check that DB is clean..')
     result = db.deleteProxy(usersDNs['user'])
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-    result = db.getProxiesContent({'UserName': usersDNs.keys()})
+    result = db.getProxiesContent({'UserName': userNames})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -571,7 +573,7 @@ class testDB(ProxyDBTestCase):
     gLogger.info('* Check that DB is clean..')
     result = db.deleteProxy(usersDNs['user'])
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-    result = db.getProxiesContent({'UserName': usersDNs.keys()})
+    result = db.getProxiesContent({'UserName': userNames})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
