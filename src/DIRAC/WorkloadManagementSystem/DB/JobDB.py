@@ -17,10 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 
 import six
-import base64
 import zlib
 
-from six.moves import range
 import operator
 
 __RCSID__ = "$Id$"
@@ -35,7 +33,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJERR
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
@@ -590,11 +587,11 @@ class JobDB(DB):
 	of a job, as self.setJobsStatus also calls this method.
 	If the status is already final, we don't update it.
 
-        :param jobID: one or more job IDs
-        :type jobID: int or str or python:list
-        :param list attrNames: names of attributes to update
-        :param list attrValues: corresponding values of attributes to update
-        :param bool update: optional flag to update the job LastUpdateTime stamp
+	:param jobID: one or more job IDs
+	:type jobID: int or str or list
+	:param list attrNames: names of attributes to update
+	:param list attrValues: corresponding values of attributes to update
+	:param bool update: optional flag to update the job LastUpdateTime stamp
         :param str myDate: optional time stamp for the LastUpdateTime attribute
 
         :return: S_OK/S_ERROR
@@ -619,10 +616,10 @@ class JobDB(DB):
 	return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
 
     if 'Status' in attrNames:
-      res = self.getJobsAttribute(jIDList, 'Status')
-      if not res['OK']:
-	return res
-      # FIXME: use it! + StateMachine
+      # Treat this update separately
+      self.setJobsMajorStatus(jIDList, attrValues[attrNames.index('Status')])
+      attrNames.pop('Status')
+      attrValues.pop(attrNames.index('Status'))
 
     attr = []
 
@@ -643,7 +640,46 @@ class JobDB(DB):
 
     return self._update(cmd)
 
-#############################################################################
+  def setJobsMajorStatus(self, jIDList, candidateStatus):
+    """
+    :param list jIDList: list of one or more job IDs
+    :param str candidateStatus: candidate major Status
+    """
+
+    # FIXME: test this one
+
+    # get the current statuses of the jobs
+    res = self.getJobsAttribute(jIDList, 'Status')
+    if not res['OK']:
+      return res
+    jIDStatusList = res['Value']
+
+    newStatuses = {}
+    for jID, jIDStatus in zip(jIDList, jIDStatusList):
+      res = JobStatus.JobsStateMachine(jIDStatus).getNextState(candidateStatus)
+      if not res['OK']:
+	return res
+      nextState = res['Value']
+
+      # If the JobsStateMachine does not accept the candidate, add it to separate dictionary
+      if candidateStatus != nextState:
+	self.log.error("Job Status Error",
+		       "%s can't move from %s to %s: using %s" % (jID, jIDStatus, candidateStatus, nextState))
+
+      newStatuses[jID] = nextState
+
+    cmd = "INSERT INTO Jobs (JobID, Status) VALUES "
+
+    for jID, status in newStatuses.items():
+      ret = self._escapeString(status)
+      if not ret['OK']:
+	return ret
+      cmd += ','.join("(%s, %s)" % (jID, status))
+
+    cmd += " ON DUPLICATE KEY UPDATE Status=VALUES(Status)"
+
+    return self._update(cmd)
+
   def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus=''):
     """ Set status of the job specified by its jobID
     """
