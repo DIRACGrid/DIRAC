@@ -68,11 +68,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
           self.metadata[k] = v
       self.metadata_class(self.metadata).validate()
 
-    print('========= %s ===========' % self.name)
-    print(self.client_id)
-    print(self.client_secret)
-    print(self.token)
-    pprint.pprint(self.metadata)
+    self.log.debug('%s OAuth2 IdP initialization done:\
+                   \nclient_id: %s\nclient_secret: %s\ntoken:\n%s' % (self.name,
+                                                                      self.client_id,
+                                                                      self.client_secret,
+                                                                      pprint.pformat(self.token)),
+                   '\nmetadata:\n%s' % pprint.pformat(self.metadata))
 
   def _storeToken(self, token, session=None):
     return self.sessionManager.storeToken(dict(self.token))
@@ -130,38 +131,37 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    pprint.pprint(response)
+    self.log.debug('Try to parse authentication response:', pprint.pformat(response))
 
     response = createOAuth2Request(response)
     if not session:
       session = Session(response.args['state'])
-    print('Session:')
-    pprint.pprint(dict(session))
-    print('--> METADATA:')
-    pprint.pprint(self.metadata)
+
+    self.log.debug('Current session is:\n', pprint.pformat(dict(session)))
+    self.log.debug('Current metadata is:\n', pprint.pformat(self.metadata))
+
     self.fetch_access_token(authorization_response=response.uri,
                             code_verifier=session.get('code_verifier'))
-    print('---->> IDP __getUserInfo')
+
     # Get user info
     result = self._fillUserProfile()
     if not result['OK']:
       return result
     username, userProfile = result['Value']
 
+    self.log.debug('Got response dictionary:\n', pprint.pformat(userProfile))
+
     # Store token
-    print('---->> IDP Store token')
-    pprint.pprint(self.token)
     self.token['client_id'] = self.client_id
     self.token['provider'] = self.name
     self.token['user_id'] = userProfile['ID']
-    print(dict(self.token))
+    self.log.debug('Store token to the database:\n', pprint.pformat(dict(self.token)))
 
     if self.store_token:
       result = self.store_token(self.token, session.id)
       if not result['OK']:
         return result
 
-    self.log.debug('Got response dictionary:\n', pprint.pformat(userProfile))
     return S_OK((username, userProfile, session.update(token=dict(self.token))))
 
   def _fillUserProfile(self, useToken=None):
@@ -169,6 +169,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     return self._parseUserProfile(result['Value']) if result['OK'] else result
 
   def __getUserInfo(self, useToken=None):
+    self.log.debug('Sent request to userinfo endpoint..')
     r = None
     try:
       r = self.request('GET', self.metadata['userinfo_endpoint'],
@@ -215,7 +216,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     self.log.debug('Default groups:', ', '.join(profile['Groups'] or []))
     self.log.debug('Response Information:', pprint.pformat(userProfile))
 
-    # Read regex syntax to get DNs describe dictionary
+    self.log.debug('Read regex syntax to get DNs describetion dictionary..')
     userDNs = {}
     dictItemRegex, listItemRegex = {}, None
     try:
@@ -231,15 +232,18 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                       "And no DiracGroups were found fo IdP.")
       return S_OK((username, profile))
 
+    self.log.debug('Use next patterns:\n%s\n%s' % (dictItemRegex, listItemRegex))
     if not userProfile.get(dnClaim) and not profile['Groups']:
       self.log.warn('No "DiracGroups", no claim "%s" that describe DNs found.' % dnClaim)
     else:
-
+      self.log.debug('Found "%s" claim that describe user DNs' % dnClaim)
       if not isinstance(userProfile[dnClaim], list):
+        self.log.debug('Convert "%s" claim to list..' % dnClaim)
         userProfile[dnClaim] = userProfile[dnClaim].split(',')
 
       for item in userProfile[dnClaim]:
         dnInfo = {}
+        self.log.debug('Read "%s" item:' % dnClaim, item)
         if isinstance(item, dict):
           for subClaim, reg in dictItemRegex.items():
             result = re.compile(reg).match(item[subClaim])
@@ -252,16 +256,21 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             for k, v in result.groupdict().items():
               dnInfo[k] = v
 
+        self.log.debug('Read parsed DN information:\n', dnInfo)
         if dnInfo.get('DN'):
           if not dnInfo['DN'].startswith('/'):
+            self.log.debug('Convert %s to view with slashes.' % dnInfo['DN'])
             items = dnInfo['DN'].split(',')
             items.reverse()
             dnInfo['DN'] = '/' + '/'.join(items)
           if dnInfo.get('PROVIDER'):
+            self.log.debug('Found %s provider in item,' % dnInfo['PROVIDER'])
             result = getProviderByAlias(dnInfo['PROVIDER'], instance='Proxy')
             dnInfo['PROVIDER'] = result['Value'] if result['OK'] else 'Certificate'
+            self.log.debug('In the DIRAC configuration it corresponds to the ' % dnInfo['PROVIDER'])
           userDNs[dnInfo['DN']] = dnInfo
       if userDNs:
         profile['DNs'] = userDNs
 
+    self.log.verbose('We were able to compile the following profile for %s:\n' % username, profile)
     return S_OK((username, profile))
