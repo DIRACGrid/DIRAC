@@ -4,7 +4,8 @@
 ########################################################################
 
 """ CLI is the base class for all the DIRAC consoles ( CLIs ). It contains
-    several utilities and signal handlers of general purpose.
+this line away
+add some more lines
 """
 
 from __future__ import print_function
