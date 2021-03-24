@@ -63,7 +63,7 @@ def test_Tokens(self):
             'scope': 'openid offline_access profile eduperson_scoped_affiliation eduperson_unique_id',
             'token_type': 'Bearer',
             'user_id': '97fadf63e5123358a4f084e4c136475e377357c6723269f23eb9aba437fd6d9d@egi.eu'}
-  
+
   # Example of updated token
   tData2 = {'access_token': 'eyJraWQiOiJvaWRjIiwi4e4c136475e377357c6723269f23eb9aba437fd6d9dk36sU5Od',
             'client_id': '2C7823B4-4A85-A912-E5D06D955809',
