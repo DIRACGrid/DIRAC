@@ -17,8 +17,6 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
 
-FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
-
 
 class WMSAdministratorHandler(RequestHandler):
 

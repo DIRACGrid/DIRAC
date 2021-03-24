@@ -31,6 +31,7 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 class JobScheduling(OptimizerExecutor):
@@ -586,7 +587,7 @@ class JobScheduling(OptimizerExecutor):
         ["%s:%s" % (lfn, stageLFNs[lfn]) for lfn in stageLFNs]))
 
     stagerClient = StorageManagerClient()
-    result = jobState.setStatus(self.ex_getOption('StagingStatus', 'Staging'),
+    result = jobState.setStatus(JobStatus.STAGING,
                                 self.ex_getOption('StagingMinorStatus', 'Request To Be Sent'),
                                 appStatus="",
                                 source=self.ex_optimizerName())
@@ -604,7 +605,7 @@ class JobScheduling(OptimizerExecutor):
     self.jobLog.info("Stage request sent", "(%s)" % rid)
     self.storeOptimizerParam('StageRequest', rid)
 
-    result = jobState.setStatus(self.ex_getOption('StagingStatus', 'Staging'),
+    result = jobState.setStatus(JobStatus.STAGING,
                                 self.ex_getOption('StagingMinorStatus', 'Request Sent'),
                                 appStatus="",
                                 source=self.ex_optimizerName())

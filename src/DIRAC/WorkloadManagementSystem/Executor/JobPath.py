@@ -41,7 +41,7 @@ class JobPath(OptimizerExecutor):
       modName = List.fromChar(voPlugin, ".")[-1]
       try:
         module = __import__(voPlugin, globals(), locals(), [modName])
-      except ImportError as excp:
+      except ImportError:
         self.jobLog.exception("Could not import VO plugin", voPlugin)
         return S_ERROR("Could not import VO plugin")
 
@@ -56,7 +56,7 @@ class JobPath(OptimizerExecutor):
     try:
       modInstance = self.__voPlugins[voPlugin](argsDict)
       result = modInstance.execute()
-    except Exception as excp:
+    except Exception:
       self.jobLog.exception("Excp while executing", voPlugin)
       return S_ERROR("Could not execute VO plugin")
 

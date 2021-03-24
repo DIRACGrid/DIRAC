@@ -223,11 +223,11 @@ def test_attributes(putAndDelete):
   assert res['OK'] is True, res['Message']
   assert res['Value'] == [JobStatus.RECEIVED, JobStatus.RECEIVED]
 
-  res = jobDB.setJobAttributes(jobID_1, ['Status'], ['Waiting'], True)
+  res = jobDB.setJobAttributes(jobID_1, ['Status'], [JobStatus.WAITING], True)
   assert res['OK'] is True, res['Message']
   res = jobDB.getJobAttribute(jobID_1, 'Status')
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == 'Waiting'
+  assert res['Value'] == JobStatus.WAITING
 
   res = jobDB.setJobAttributes(jobID_1, ['Status', 'MinorStatus'], [JobStatus.MATCHED, 'minor'], True)
   assert res['OK'] is True, res['Message']

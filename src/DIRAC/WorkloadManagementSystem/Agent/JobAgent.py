@@ -35,6 +35,7 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
 
@@ -271,11 +272,11 @@ class JobAgent(AgentModule):
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if param not in matcherInfo:
-        jobReport.setJobStatus(status='Failed',
+	jobReport.setJobStatus(status=JobStatus.FAILED,
                                minor='Matcher did not return %s' % (param))
         return self.__finish('Matcher Failed')
       elif not matcherInfo[param]:
-        jobReport.setJobStatus(status='Failed',
+	jobReport.setJobStatus(status=JobStatus.FAILED,
                                minor='Matcher returned null %s' % (param))
         return self.__finish('Matcher Failed')
       else:
@@ -292,7 +293,7 @@ class JobAgent(AgentModule):
 
     parameters = self._getJDLParameters(jobJDL)
     if not parameters['OK']:
-      jobReport.setJobStatus(status='Failed',
+      jobReport.setJobStatus(status=JobStatus.FAILED,
                              minor='Could Not Extract JDL Parameters')
       self.log.warn('Could Not Extract JDL Parameters', parameters['Message'])
       return self.__finish('JDL Problem')
@@ -300,7 +301,7 @@ class JobAgent(AgentModule):
     params = parameters['Value']
     if 'JobID' not in params:
       msg = 'Job has not JobID defined in JDL parameters'
-      jobReport.setJobStatus(status='Failed', minor=msg)
+      jobReport.setJobStatus(status=JobStatus.FAILED, minor=msg)
       self.log.warn(msg)
       return self.__finish('JDL Problem')
     else:
@@ -681,7 +682,7 @@ class JobAgent(AgentModule):
     # instead set the status with the cause and then another status showing the
     # reschedule operation.
 
-    jobReport.setJobStatus(status='Rescheduled',
+    jobReport.setJobStatus(status=JobStatus.RESCHEDULED,
                            applicationStatus=message,
                            sendFlag=True)
 

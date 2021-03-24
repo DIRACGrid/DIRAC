@@ -13,6 +13,7 @@ from __future__ import print_function
 
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 __RCSID__ = '$Id$'
 
@@ -58,9 +59,9 @@ class JobRunningWaitingRatioPolicy(PolicyBase):
       result['Reason'] = 'No values to take a decision'
       return S_OK(result)
 
-    running = commandResult['Running']
-    waiting = commandResult['Waiting']
-    staging = commandResult['Staging']
+    running = commandResult[JobStatus.RUNNING]
+    waiting = commandResult[JobStatus.WAITING]
+    staging = commandResult[JobStatus.STAGING]
 
     total = running + waiting + staging
 
