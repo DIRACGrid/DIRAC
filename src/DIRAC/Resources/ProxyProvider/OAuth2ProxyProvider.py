@@ -105,7 +105,7 @@ class OAuth2ProxyProvider(ProxyProvider):
     if not token:
       return S_ERROR('Token not found for proxy request.')
 
-    self.log.verbose('For proxy request use token:', token)
+    self.log.verbose('For proxy request use token:\n', pprint.pformat(token))
 
     # Get proxy request
     result = self.__getProxyRequest(token)
@@ -152,16 +152,17 @@ class OAuth2ProxyProvider(ProxyProvider):
       return result
     provObj = result['Value']
 
+    provObj.token = token
+    url = '%s?access_type=offline' % self.proxy_endpoint
+    url += '&proxylifetime=%s' % self.parameters.get('MaxProxyLifetime', 3600 * 24)
+    url += '&client_id=%s&client_secret=%s' % (provObj.client_id, provObj.client_secret)
+
     # Get proxy request
-    self.log.verbose('Send proxy request to %s' % self.proxy_endpoint)
+    self.log.verbose('Send proxy request to %s, with token:\n' % self.proxy_endpoint, pprint.pformat(provObj.token))
+    self.log.debug("GET ", url)
 
     r = None
     try:
-      provObj.token = token
-      url = '%s?access_type=offline' % self.proxy_endpoint
-      url += '&proxylifetime=%s' % self.parameters.get('MaxProxyLifetime', 3600 * 24)
-      url += '&client_id=%s&client_secret=%s' % (provObj.client_id, provObj.client_secret)
-      self.log.debug("GET ", url)
       r = provObj.request('GET', url)
       r.raise_for_status()
       return S_OK(r.text)

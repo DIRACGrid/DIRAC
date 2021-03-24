@@ -273,7 +273,7 @@ class AuthManagerHandler(RequestHandler):
     # FINISHING with IdP auth result
     username, userProfile, session = result['Value']
 
-    self.log.debug('The %s session is identified for %s:\n' % (session, username), pprint.pformat(userProfile))
+    self.log.debug('The next session is identified for %s:\n' % username, pprint.pformat(session))
     # Is ID registred?
     result = getUsernameForID(userProfile['ID'])
     if not result['OK']:
@@ -285,7 +285,7 @@ class AuthManagerHandler(RequestHandler):
         comment += ' Please, contact the DIRAC administrators.'
       return S_ERROR(comment)
 
-    self.log.debug("Add %s session %s's profile to cache." % (session, username))
+    self.log.debug("Add %s's profile to cache:" % username, pprint.pformat(userProfile))
     self.__addProfiles({userProfile['ID']: userProfile})
 
     # print('================== export_parseAuthResponse ==================')

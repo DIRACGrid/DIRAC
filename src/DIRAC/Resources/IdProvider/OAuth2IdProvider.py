@@ -68,12 +68,11 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
           self.metadata[k] = v
       self.metadata_class(self.metadata).validate()
 
-    self.log.debug('%s OAuth2 IdP initialization done:\
-                   \nclient_id: %s\nclient_secret: %s\ntoken:\n%s' % (self.name,
-                                                                      self.client_id,
-                                                                      self.client_secret,
-                                                                      pprint.pformat(self.token)),
-                   '\nmetadata:\n%s' % pprint.pformat(self.metadata))
+    self.log.debug('"%s" OAuth2 IdP initialization done:\
+                   \nclient_id: %s\nclient_secret: %s\n' % (self.name,
+                                                            self.client_id,
+                                                            self.client_secret,
+                   'metadata:\n%s' % pprint.pformat(self.metadata))
 
   def _storeToken(self, token, session=None):
     return self.sessionManager.storeToken(dict(self.token))
@@ -232,7 +231,9 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                       "And no DiracGroups were found fo IdP.")
       return S_OK((username, profile))
 
-    self.log.debug('Use next patterns:\n%s\n%s' % (dictItemRegex, listItemRegex))
+    self.log.debug('Dict type items pattern:\n', pprint.pformat(dictItemRegex))
+    self.log.debug('List type items pattern:\n', pprint.pformat(listItemRegex))
+
     if not userProfile.get(dnClaim) and not profile['Groups']:
       self.log.warn('No "DiracGroups", no claim "%s" that describe DNs found.' % dnClaim)
     else:
@@ -267,7 +268,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
             self.log.debug('Found %s provider in item,' % dnInfo['PROVIDER'])
             result = getProviderByAlias(dnInfo['PROVIDER'], instance='Proxy')
             dnInfo['PROVIDER'] = result['Value'] if result['OK'] else 'Certificate'
-            self.log.debug('In the DIRAC configuration it corresponds to the ' % dnInfo['PROVIDER'])
+            self.log.debug('In the DIRAC configuration it corresponds to the ', dnInfo['PROVIDER'])
           userDNs[dnInfo['DN']] = dnInfo
       if userDNs:
         profile['DNs'] = userDNs
