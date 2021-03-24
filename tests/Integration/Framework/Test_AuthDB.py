@@ -8,10 +8,13 @@ from __future__ import print_function
 # pylint: disable=invalid-name,wrong-import-position,protected-access
 import sys
 import pytest
+import pprint
 
+from DIRAC import gConfig
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 
 
+pprint.pprint(gConfig.getOptionsDictRecursively('/Services'))
 db = AuthDB()
 
 
