@@ -14,7 +14,7 @@ from DIRAC import gConfig
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 
 
-pprint.pprint(gConfig.getOptionsDictRecursively('/Services'))
+pprint.pprint(gConfig.getOptionsDictRecursively('/'))
 db = AuthDB()
 
 
