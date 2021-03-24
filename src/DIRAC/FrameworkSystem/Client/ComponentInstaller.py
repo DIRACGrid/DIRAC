@@ -1130,6 +1130,9 @@ class ComponentInstaller(object):
         DIRAC.exit(-1)
       return S_ERROR(error)
 
+    if not cList:
+      return S_ERROR('No components found.')
+
     result = self.execCommand(0, ['runsvstat'] + cList)
     if not result['OK']:
       return result
