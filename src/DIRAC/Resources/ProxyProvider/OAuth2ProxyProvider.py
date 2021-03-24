@@ -109,10 +109,10 @@ class OAuth2ProxyProvider(ProxyProvider):
 
     # Get proxy request
     result = self.__getProxyRequest(token)
-    if not result['OK']:
-      # expire token to refresh
-      token['expires_at'] = 1
-      result = self.__getProxyRequest(token)
+    # if not result['OK']:
+    #   # expire token to refresh
+    #   token['expires_at'] = 1
+    #   result = self.__getProxyRequest(token)
     if not result['OK']:
       return result
     if not result['Value']:

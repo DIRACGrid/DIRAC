@@ -69,10 +69,10 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.metadata_class(self.metadata).validate()
 
     self.log.debug('"%s" OAuth2 IdP initialization done:\
-                   \nclient_id: %s\nclient_secret: %s\n' % (self.name,
-                                                            self.client_id,
-                                                            self.client_secret),
-                   'metadata:\n%s' % pprint.pformat(self.metadata))
+                   \nclient_id: %s\nclient_secret: %s\nmetadata:\n%s' % (self.name,
+                                                                         self.client_id,
+                                                                         self.client_secret,
+                                                                         pprint.pformat(self.metadata)))
 
   def _storeToken(self, token, session=None):
     return self.sessionManager.storeToken(dict(self.token))
