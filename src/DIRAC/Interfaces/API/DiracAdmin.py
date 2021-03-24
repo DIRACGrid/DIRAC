@@ -21,16 +21,15 @@ from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView
 from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 voName = ''
 ret = getProxyInfo(disableVOMS=True)
@@ -69,8 +68,6 @@ class DiracAdmin(API):
 
           >>> print diracAdmin.uploadProxy('dteam_pilot')
           {'OK': True, 'Value': 0L}
-
-        :param bool permanent: Indefinitely update proxy
 
         :return: S_OK,S_ERROR
     """
@@ -254,9 +251,11 @@ class DiracAdmin(API):
             gLogger.notice(stup)
           gLogger.notice(' ')
       elif isinstance(sitesLogging, list):
-        result = [(sl[1], sl[3], sl[4]) for sl in sitesLogging]
+        sitesLoggingList = [(sl[1], sl[3], sl[4]) for sl in sitesLogging]
+        for siteLog in sitesLoggingList:
+          gLogger.notice(siteLog)
 
-    return result
+    return S_OK()
 
   #############################################################################
   def banSite(self, site, comment, printOutput=False):
