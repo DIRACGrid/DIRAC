@@ -94,6 +94,8 @@ class Token(Model, OAuth2TokenMixin):
   client_id = Column(String(255))
   provider = Column(Text)
   user_id = Column(String(255), nullable=False)
+  expires_at = Column(Integer, nullable=False, default=0)
+  id_token = Column(Text, nullable=False)
 
 
 class AuthDB(SQLAlchemyDB):
