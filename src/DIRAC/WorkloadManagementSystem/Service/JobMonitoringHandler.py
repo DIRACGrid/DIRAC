@@ -18,6 +18,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -30,7 +31,6 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GE
 
 SUMMARY = []
 PRIMARY_SUMMARY = []
-FINAL_STATES = JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES
 
 
 class JobMonitoringHandler(RequestHandler):
@@ -211,6 +211,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getCurrentJobCounters = []
 
   @classmethod
+  @deprecated("Unused")
   def export_getCurrentJobCounters(cls, attrDict=None):
     """ Get job counters per Status with attrDict selection. Final statuses are given for
         the last day.
@@ -231,7 +232,7 @@ class JobMonitoringHandler(RequestHandler):
     for statusDict, count in result['Value']:
       status = statusDict['Status']
       resultDict[status] = count
-      if status in FINAL_STATES:
+      if status in JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES:
         resultDict[status] = 0
         for statusDayDict, ccount in resultDay['Value']:
           if status == statusDayDict['Status']:
