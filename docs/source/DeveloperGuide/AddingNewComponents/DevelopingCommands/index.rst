@@ -63,7 +63,7 @@ which will set the interpreter directive to the python on the environment.
 
 **5.** Users need to specify parameters to scripts to define what they want to do. To do so, they pass arguments when calling the script. The first thing any script has to do is define what  options and arguments the script accepts. Once the valid arguments are defined, the script can parse the command line. An example follows which is a typical command description part
 
-  .. literalinclude:: dirac-ping-info.py 
+.. literalinclude:: dirac_ping_info.py
 
 Let's follow the example step by step. First, we import the required modules from DIRAC. *S_OK* and *S_ERROR* are the default way DIRAC modules return values or errors. The *Script* module is the initialization and command line parser that scripts use to initialize themselves. **No other DIRAC module should be imported here**.
 
@@ -103,4 +103,4 @@ Example command
 
 Applying all the above recommendations, the command implementation can look like this yet another example:
 
-.. literalinclude:: dirac-my-great-script.py
+.. literalinclude:: dirac_my_great_script.py
