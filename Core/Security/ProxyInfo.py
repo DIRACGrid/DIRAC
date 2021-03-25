@@ -155,7 +155,9 @@ def formatProxyStepsInfoAsString(infoList):
       if key in stepInfo:
         value = stepInfo[key]
         if key == 'serial':
-          value = base64.b16encode(value)
+          # b16encode needs a string, while the serial
+          # may be a long
+          value = base64.b16encode("%s" % value)
         if key == 'lifetime':
           secs = value
           hours = int(secs / 3600)
