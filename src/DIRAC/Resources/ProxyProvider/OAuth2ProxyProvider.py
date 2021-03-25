@@ -163,8 +163,8 @@ class OAuth2ProxyProvider(ProxyProvider):
 
     r = None
     try:
-      r = provObj.request('GET', url)
+      r = provObj.request('GET', url, withhold_token=True)
       r.raise_for_status()
       return S_OK(r.text)
     except provObj.exceptions.RequestException as e:
-      return S_ERROR("%s: %s" % (e.message, r.text if r else ''))
+      return S_ERROR("%s: %s" % (repr(e), r.text if r else ''))

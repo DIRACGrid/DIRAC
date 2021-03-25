@@ -130,14 +130,15 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    self.log.debug('Try to parse authentication response:', pprint.pformat(response))
-
     response = createOAuth2Request(response)
+
+    self.log.debug('Try to parse authentication response:', pprint.pformat(response.data))
+
     if not session:
       session = Session(response.args['state'])
 
     self.log.debug('Current session is:\n', pprint.pformat(dict(session)))
-    self.log.debug('Current metadata is:\n', pprint.pformat(self.metadata))
+    # self.log.debug('Current metadata is:\n', pprint.pformat(self.metadata))
 
     self.fetch_access_token(authorization_response=response.uri,
                             code_verifier=session.get('code_verifier'))
