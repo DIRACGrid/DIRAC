@@ -79,6 +79,8 @@ def parseSwitches():
   # Get the list of services
   servicesList = Script.getPositionalArgs()
 
+  gLogger.info('This is the servicesList: %s' % ', '.join(servicesList))
+
   # Get unprocessed switches
   switches = dict(Script.getUnprocessedSwitches())
 
@@ -104,10 +106,9 @@ def main():
   from DIRAC.Interfaces.API.Dirac import Dirac
 
   # let's do something
-  if not servicesList:
+  if not len(switchDict['servicesList']):
     gLogger.error('No services defined')
     DIRACExit(1)
-  gLogger.notice('This is the servicesList:', ', '.join(servicesList))
   gLogger.notice('We are done')
 
   DIRACExit(0)
