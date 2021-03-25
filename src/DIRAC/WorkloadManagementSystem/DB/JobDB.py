@@ -618,8 +618,8 @@ class JobDB(DB):
     if 'Status' in attrNames:
       # Treat this update separately
       self.setJobsMajorStatus(jIDList, attrValues[attrNames.index('Status')])
-      attrNames.pop('Status')
       attrValues.pop(attrNames.index('Status'))
+      attrNames.remove('Status')
 
     attr = []
 
@@ -642,11 +642,11 @@ class JobDB(DB):
 
   def setJobsMajorStatus(self, jIDList, candidateStatus):
     """
+    Sets the job major status, considering the JobStateMachine result
+
     :param list jIDList: list of one or more job IDs
     :param str candidateStatus: candidate major Status
     """
-
-    # FIXME: test this one
 
     # get the current statuses of the jobs
     res = self.getJobsAttribute(jIDList, 'Status')
