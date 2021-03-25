@@ -34,7 +34,7 @@ default settings. Check with your VO managers if this mode of installation is av
 Once the client software is installed, it should be configured in order to access the corresponding DIRAC services.
 The minimal necessary configuration is done by the following command::
 
-dirac-configure --cfg defaults-formation.cfg
+  dirac-configure --cfg defaults-formation.cfg
 
 When you run this command for the first time you might see some errors messages about a failure to access DIRAC
 services. This is normal because at this point the configuration is not yet done and you do not have a valid proxy.
