@@ -8,6 +8,11 @@ Usage:
 
 Arguments:
   <service1> [<service2> ...]
+
+Example:
+  $ dirac-my-great-script MyService
+  This is the servicesList: MyService
+  We are done
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -74,9 +79,7 @@ def parseSwitches():
   # Get the list of services
   servicesList = Script.getPositionalArgs()
 
-  gLogger.info('This is the servicesList %s:' % servicesList)
-
-  # Gets the rest of the
+  # Get unprocessed switches
   switches = dict(Script.getUnprocessedSwitches())
 
   gLogger.debug("The switches used are:")
@@ -101,9 +104,10 @@ def main():
   from DIRAC.Interfaces.API.Dirac import Dirac
 
   # let's do something
-  if not len(switchDict['servicesList']):
+  if not servicesList:
     gLogger.error('No services defined')
     DIRACExit(1)
+  gLogger.notice('This is the servicesList:', ', '.join(servicesList))
   gLogger.notice('We are done')
 
   DIRACExit(0)

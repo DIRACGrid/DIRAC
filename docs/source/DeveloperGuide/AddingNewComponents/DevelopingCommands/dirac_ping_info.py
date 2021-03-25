@@ -7,6 +7,10 @@ Usage:
 
 Arguments:
   System:   system name(mandatory)
+
+Example:
+  $ dirac-ping-info MySystem
+  Ping MySystem!
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -60,7 +64,7 @@ def main():
     Script.showHelp(exitCode=1)
 
   # Do something!
-
+  gLogger.notice('Ping %s!' % ', '.join(servicesList))
 
 if __name__ == "__main__":
   main()
