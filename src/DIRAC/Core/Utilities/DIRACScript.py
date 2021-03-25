@@ -1,3 +1,4 @@
+""" DIRAC script """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -6,7 +7,7 @@ __RCSID__ = "$Id$"
 
 from collections import defaultdict
 import functools
-
+import inspect
 import six
 
 
@@ -19,6 +20,8 @@ class DIRACScript(object):
   def __init__(self):
     """ c'tor
     """
+    self.doc = inspect.currentframe().f_back.f_globals['__doc__']
+    self.scriptName = inspect.currentframe().f_back.f_globals['__name__'].split('.')[-1].replace('_', '-')
     pass
 
   def __call__(self, func=None):
@@ -45,7 +48,7 @@ class DIRACScript(object):
     matches = defaultdict(list)
     function_name = None
     for entrypoint in metadata.entry_points()['console_scripts']:
-      if not entrypoint.name.startswith("dirac-"):
+      if not entrypoint.name.startswith("dirac-") or self.scriptName != entrypoint.name:
         continue
       entrypointFunc = entrypoint.load()
       if not isinstance(entrypointFunc, DIRACScript):
