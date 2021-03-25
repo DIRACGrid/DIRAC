@@ -208,7 +208,7 @@ class ARCComputingElement(ComputingElement):
         ComputingElement._addCEConfigDefaults(self)
 
     #############################################################################
-    def __writeXRSL(self, executableFile):
+    def __writeXRSL(self, executableFile, inputs=None, outputs=None):
         """Create the JDL for submission"""
         diracStamp = makeGuid()[:8]
         # Evaluate the number of processors to allocate
@@ -226,20 +226,32 @@ class ARCComputingElement(ComputingElement):
                 "xrslMPExtraString": self.xrslMPExtraString,
             }
 
+        xrslInputs = ""
+        if inputs:
+            for inputFile in inputs:
+                xrslInputs += '(%s "%s")' % (os.path.basename(inputFile), inputFile)
+
+        xrslOutputs = '("%s.out" "") ("%s.err" "")' % (diracStamp, diracStamp)
+        if outputs:
+            for outputFile in outputs:
+                xrslOutputs += '(%s "")' % (outputFile)
+
         xrsl = """
 &(executable="%(executable)s")
-(inputFiles=(%(executable)s "%(executableFile)s"))
+(inputFiles=(%(executable)s "%(executableFile)s") %(xrslInputAdditions)s)
 (stdout="%(diracStamp)s.out")
 (stderr="%(diracStamp)s.err")
-(outputFiles=("%(diracStamp)s.out" "") ("%(diracStamp)s.err" ""))
+(outputFiles=%(xrslOutputFiles)s)
 (queue=%(queue)s)
 %(xrslMPAdditions)s
 %(xrslExtraString)s
     """ % {
             "executableFile": executableFile,
             "executable": os.path.basename(executableFile),
+            "xrslInputAdditions": xrslInputs,
             "diracStamp": diracStamp,
             "queue": self.arcQueue,
+            "xrslOutputFiles": xrslOutputs,
             "xrslMPAdditions": xrslMPAdditions,
             "xrslExtraString": self.xrslExtraString,
         }
@@ -254,7 +266,7 @@ class ARCComputingElement(ComputingElement):
         return S_OK()
 
     #############################################################################
-    def submitJob(self, executableFile, proxy, numberOfJobs=1):
+    def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
         """Method to submit job"""
 
         # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
@@ -287,7 +299,7 @@ class ARCComputingElement(ComputingElement):
             # The basic job description
             jobdescs = arc.JobDescriptionList()
             # Get the job into the ARC way
-            xrslString, diracStamp = self.__writeXRSL(executableFile)
+            xrslString, diracStamp = self.__writeXRSL(executableFile, inputs, outputs)
             self.log.debug("XRSL string submitted : %s" % xrslString)
             self.log.debug("DIRAC stamp for job : %s" % diracStamp)
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast

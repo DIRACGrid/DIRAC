@@ -15,7 +15,7 @@ import distutils.spawn  # pylint: disable=no-name-in-module,no-member,import-err
 
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.Subprocess import systemCall
-
+from DIRAC.WorkloadManagementSystem.Utilities.Runner import Runner
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase
 
 
@@ -88,10 +88,10 @@ class Script(ModuleBase):
         """execute the self.command (uses systemCall)"""
         failed = False
 
-        outputDict = systemCall(
-            timeout=0,
-            cmdSeq=shlex.split(self.command),
-            env=self.environment,
+        runner = Runner()
+        outputDict = runner.run(
+            command=self.command,
+            environment=self.environment,
             callbackFunction=self.callbackFunction,
             bufferLimit=self.bufferLimit,
         )

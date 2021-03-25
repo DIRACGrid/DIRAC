@@ -99,7 +99,8 @@ def test__rescheduleFailedJob(mocker, mockJMInput, expected):
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
 
-    result = jobAgent._rescheduleFailedJob(jobID, message, stop=False)
+    result = jobAgent._rescheduleFailedJob(jobID, message)
+    result = jobAgent._finish(result["Message"], False)
 
     assert result == expected
 
@@ -154,21 +155,6 @@ def test__setupProxy(mocker, mockGCReplyInput, mockPMReplyInput, expected):
 
     else:
         assert result["Message"] == expected["Message"]
-
-
-def test__getCPUWorkLeft(mocker):
-    """Testing JobAgent()._getCPUWorkLeft()"""
-
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule", side_effect=mockAM)
-
-    jobAgent = JobAgent("Test", "Test1")
-    jobAgent.log = gLogger
-    jobAgent.log.setLevel("DEBUG")
-
-    result = jobAgent._getCPUWorkLeft(0)
-
-    assert 0 == result
 
 
 @pytest.mark.parametrize(
