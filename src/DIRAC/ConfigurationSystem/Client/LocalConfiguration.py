@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 import re
 import os
 import sys
+import six
 import getopt
 
 import DIRAC
@@ -36,10 +37,12 @@ class LocalConfiguration(object):
     self.mandatoryEntryList = []
     self.optionalEntryList = []
     self.commandOptionList = []
+    self.commandArgumentList = []
     self.unprocessedSwitches = []
     self.additionalCFGFiles = []
     self.parsedOptionList = []
     self.commandArgList = []
+    self.commandGroupArgList = []
     self.cliAdditionalCFGFiles = []
     self.__registerBasicOptions()
     self.isParsed = False
@@ -94,7 +97,7 @@ class LocalConfiguration(object):
     # Searched text
     context = r"(.*?)"
     # Start of any block description or end of __doc__
-    startAnyBlockOrEnd = r"(?:\n(?:Usage|Example|Arguments|Options):+\n|$)"
+    startAnyBlockOrEnd = r"(?:\n(?:Usage|Example|Arguments|Options|General options):+\n|$)"
 
     r = r"%s%s" % (context, startAnyBlockOrEnd)
     if usageMsg:
@@ -105,15 +108,15 @@ class LocalConfiguration(object):
       # The usage block starts with '\nUsage:\n' or '\nUsage::\n'
       usage = re.search(r"%s%s" % (r"Usage:+", r), usageMsg, re.DOTALL)
       if usage:
-        self.__helpUsageDoc = '\nUsage:\n' + usage.group(1).strip('\n') + '\n'
+        self.__helpUsageDoc = '\nUsage:\n' + usage.group(1).strip('\n')
       # The argument block starts with '\Arguments:\n' or '\Arguments::\n'
       args = re.search(r"%s%s" % (r"Arguments:+", r), usageMsg, re.DOTALL)
       if args:
-        self.__helpArgumentsDoc = '\nArguments:\n' + args.group(1).strip('\n') + '\n'
+        self.__helpArgumentsDoc = '\nArguments:\n' + args.group(1).strip('\n')
       # The example block starts with '\Example:\n' or '\Example::\n'
       expl = re.search(r"%s%s" % (r"Example:+", r), usageMsg, re.DOTALL)
       if expl:
-        self.__helpExampleDoc = '\nExample:\n' + expl.group(1).strip('\n') + '\n'
+        self.__helpExampleDoc = '\nExample:\n' + expl.group(1).strip('\n')
 
   def __setOptionValue(self, optionPath, value):
     gConfigurationData.setOptionInCFG(self.__getAbsolutePath(optionPath),
@@ -154,6 +157,76 @@ class LocalConfiguration(object):
         raise Exception("Long switch %s is already defined!" % longOption)
     self.commandOptionList.append((shortOption, longOption, helpString, function))
 
+  def registerCmdArg(self, description, mandatory=True, values=None, default=None):
+    """ Register a new command line argument
+
+        Examples::
+
+          # String description type describe simple argument, e.g.:
+          registerCmdArg('SingleArg: my single argument')
+
+          # Tuple description type describe argument,
+          # which may be replaced by one of those described, e.g.:
+          registerCmdArg(('ThisArg: my this argument', 'ThatArg: my that argument'))
+
+          # List description type describe an argument that may have more than one value
+          registerCmdArg(['ListArg: my single argument'])
+
+        Result::
+
+          Usage:
+            command [options] ... SingleArg <ThisArg|ThatArg> ListArg [ListArg]
+          Arguments:
+            SingleArg: my single argument
+            ThisArg: my this argument
+            ThatArg: my that argument
+            ListArg: my list of arguments
+
+        :param description: argument description
+        :type description: str, tuple or list
+        :param bool mandatory: an argument can be mandatory or optional
+        :param list values: list of the accepted values
+        :param object default: default value
+    """
+    # Marking an argument in a usage line
+    argMarking = ''
+    if not description:
+      raise Exception("No argument description defined")
+
+    # Single argument, e.g.: Name
+    if isinstance(description, six.string_types):
+      argMarking = description.split(':')[0].strip()
+      description = [description]
+    # Single argument that can have two names, e.g.: <User|DN>
+    elif isinstance(description, tuple):
+      argMarking = '<%s>' % '|'.join([d.split(':')[0].strip() for d in description])
+    # List arguments, e.g.: CE [CE]
+    elif isinstance(description, list):
+      argMarking = '{0} [{0}]'.format(description[0].split(':')[0].strip())
+      if default is None:
+        default = []
+    else:
+      raise Exception("Unknown argument description type.")
+
+    # Check the sequence of the mandatory arguments
+    if mandatory and self.commandArgumentList and not self.commandArgumentList[-1][2]:
+      raise Exception("The mandatory argument cannot go after the optional one.")
+
+    # Add to others
+    description = [tuple([i.strip() for i in d.split(':', 1)]) for d in description]
+    self.commandArgumentList.append((argMarking, description, mandatory, values, default))
+
+    # If present list arguments
+    listArgs = [t for t in self.commandArgumentList if re.match(r"\w+ \[\w+\]", t[0])]
+    if len(listArgs) > 1:
+      raise Exception("Can't calculate list of arguments when there are two such arguments of type.")
+
+    if listArgs:
+      listArgIndex = self.commandArgumentList.index(listArgs[0])
+      listArgLast = self.commandArgumentList[-1] == listArgs[0]
+      if not listArgLast and not all([t[2] for t in self.commandArgumentList[listArgIndex:]]):
+        raise Exception("Can't calculate list of arguments when not all arguments defined as mandatory.")
+
   def getExtraCLICFGFiles(self):
     """
     Retrieve list of parsed .cfg files
@@ -162,12 +235,21 @@ class LocalConfiguration(object):
       self.__parseCommandLine()
     return self.cliAdditionalCFGFiles
 
-  def getPositionalArguments(self):
-    """
-    Retrieve list of command line positional arguments
+  def getPositionalArguments(self, group=False):
+    """ Retrieve list of command line positional arguments
+
+        :param bool group: to return grouped arguments as they were registered
+
+        :return: list
     """
     if not self.isParsed:
       self.__parseCommandLine()
+
+    if group:
+      if len(self.commandGroupArgList) == 1:
+        return self.commandGroupArgList[0]
+      return self.commandGroupArgList
+
     return self.commandArgList
 
   def getUnprocessedSwitches(self):
@@ -310,6 +392,38 @@ class LocalConfiguration(object):
           To modify the local configuration use '--cfg <configfile>' instead.""")
         if os.environ.get("DIRAC_DEPRECATED_FAIL", None):
           raise NotImplementedError("ERROR: using deprecated config file passing option.")
+
+    # Check arguments
+    if len(self.commandArgList) < len([t for t in self.commandArgumentList if t[2]]):
+      gLogger.fatal('Error when parsing command line arguments: not all mandatory arguments are defined.')
+      self.showHelp(exitCode=1)
+
+    groupArgs = []
+    step = 0
+    for i in range(len(self.commandArgumentList)):
+      argMarking, description, mandatory, values, default = self.commandArgumentList[i]
+
+      # Check whether the required arguments are given in the command line
+      if len(self.commandArgList) <= (i + step):
+        groupArgs.append(default)
+        continue
+
+      # Replace the default value with a defined one
+      if re.match(r"\w+ \[\w+\]", argMarking):  # When we consider multiple value argument
+        # The index of the last such argument
+        step = len(self.commandArgList) - len(self.commandArgumentList)
+        groupArgs.append(self.commandArgList[i:i + 1 + step])
+      else:
+        groupArgs.append(self.commandArgList[i + step])
+
+      # Check accepted values
+      for cArg in self.commandArgList[i:i + 1 + step]:
+        if values and cArg not in values:
+          gLogger.fatal('Error when parsing command line arguments: \
+                         "%s" does not match the allowed values for %s' % (cArg, argMarking))
+          self.showHelp(exitCode=1)
+
+    self.commandGroupArgList = groupArgs
     self.parsedOptionList = opts
     self.isParsed = True
 
@@ -378,11 +492,10 @@ class LocalConfiguration(object):
 
     for optionName, optionValue in self.parsedOptionList:
       optionName = optionName.lstrip("-")
-      for definedOptionTuple in self.commandOptionList:
-        if optionName == definedOptionTuple[0].replace(":", "") or \
-                optionName == definedOptionTuple[1].replace("=", ""):
-          if definedOptionTuple[3]:
-            retVal = definedOptionTuple[3](optionValue)
+      for shortOpt, longOpt, _, func in self.commandOptionList:
+        if optionName == shortOpt.replace(":", "") or optionName == longOpt.replace("=", ""):
+          if func:
+            retVal = func(optionValue)
             if not isinstance(retVal, dict):
               errorsList.append("Callback for switch '%s' does not return S_OK or S_ERROR" % optionName)
             elif not retVal['OK']:
@@ -534,20 +647,26 @@ class LocalConfiguration(object):
     DIRAC.exit(0)
 
   def showHelp(self, dummy=False, exitCode=0):
+    """ Printout help message including a Usage message if defined via setUsageMessage method
+
+        :param str dummy: dummy text
+        :param int exitCode: exit code
     """
-    Printout help message including a Usage message if defined via setUsageMessage method
-    """
+    # Intro
     if self.__scriptDescription:
       gLogger.notice(self.__scriptDescription)
 
+    # Usage line
     if self.__helpUsageDoc:
       gLogger.notice(self.__helpUsageDoc)
     else:
       gLogger.notice("\nUsage:")
-      gLogger.notice("\n  %s [options] ..." % os.path.basename(sys.argv[0]))
+      gLogger.notice("  %s [options] ..." % os.path.basename(sys.argv[0]).split('.')[0].replace('_', '-'),
+                     ' '.join([t[0] for t in self.commandArgumentList]))
       if dummy:
         gLogger.notice(dummy)
 
+    # Describe options
     gLogger.notice("\nGeneral options:")
     iLastOpt = 0
     for iPos, iVal in enumerate(self.commandOptionList):
@@ -575,9 +694,31 @@ class LocalConfiguration(object):
         else:
           gLogger.notice("  -%s --%s : %s" % (optionTuple[0].ljust(2), optionTuple[1].ljust(22), optionTuple[2]))
 
-    if self.__helpArgumentsDoc:
+    # Describe positional arguments
+    if self.commandArgumentList:
+      # Longest name of the argument
+      maxArgLen = 0
+      allDescriptions = []
+      for argMarking, descriptions, mandatory, values, default in self.commandArgumentList:
+        for aName, dText in descriptions:
+          maxArgLen = max(len(aName), maxArgLen)
+          if values:
+            dText += ' [%s]' % ', '.join(values)
+          if default:
+            dText += ' [default: %s]' % default
+          if not mandatory:
+            dText += ' (optional)'
+          # Do not duplicate descriptions
+          if (aName, dText) not in allDescriptions:
+            allDescriptions.append((aName, dText))
+      # Print Arguments block
+      gLogger.notice('\nArguments:')
+      for arg, doc in allDescriptions:
+        gLogger.notice('  %s:%s  %s' % (arg, ' ' * (maxArgLen - len(arg)), doc))
+    elif self.__helpArgumentsDoc:
       gLogger.notice(self.__helpArgumentsDoc)
 
+    # Describe example
     if self.__helpExampleDoc:
       gLogger.notice(self.__helpExampleDoc)
 
