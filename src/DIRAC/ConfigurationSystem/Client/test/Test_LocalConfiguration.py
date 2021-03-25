@@ -87,7 +87,7 @@ def action(a):
 @pytest.fixture
 def localCFG():
   with mock.patch('DIRAC.ConfigurationSystem.Client.LocalConfiguration.gLogger.notice', side_effect=mock_notice):
-    with mock.patch('DIRAC.ConfigurationSystem.Client.LocalConfiguration.DIRACExit', side_effect=mock_exit):
+    with mock.patch('DIRAC.ConfigurationSystem.Client.LocalConfiguration.DIRAC.exit', side_effect=mock_exit):
       with mock.patch('DIRAC.ConfigurationSystem.Client.LocalConfiguration.getopt.gnu_getopt', side_effect=mock_gnu):
         localCFG = DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration()
         # It's local test, do not contact Configuration Server
