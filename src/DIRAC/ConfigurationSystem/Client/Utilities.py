@@ -544,7 +544,7 @@ def getAuthAPI(instance='Production'):
 
       :return: str
   """
-  return gConfig.getValue("/Systems/Framework/%s/URLs/AuthAPI" % instance)
+  return gConfig.getValue("/Systems/Framework/%s/URLs/Auth" % instance)
 
 
 def getDIRACGOCDictionary():
