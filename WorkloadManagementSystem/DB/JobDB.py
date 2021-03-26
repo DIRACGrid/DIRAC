@@ -772,7 +772,7 @@ class JobDB(DB):
       startDate = ret['Value']
     else:
       startDate = "UTC_TIMESTAMP()"
-    # Set also the HeartBeatTime in case the job gets stucke before sending the first HeartBeat
+    # Set also the HeartBeatTime in case the job gets stuck before sending the first HeartBeat
     req = "UPDATE Jobs SET HeartBeatTime=%s WHERE JobID=%s AND HeartBeatTime IS NULL" % (startDate, jobID)
     ret = self._update(req)
     if not ret['OK']:
