@@ -346,7 +346,7 @@ class JobAgent(AgentModule):
                                     par_value=gConfig.getValue('/LocalSite/%s' % thisp, 'Unknown'),
                                     sendFlag=False)
 
-      jobReport.setJobStatus(status='Matched',
+      jobReport.setJobStatus(status=JobStatus.MATCHED,
                              minor='Job Received by Agent',
                              sendFlag=False)
       result_setupProxy = self._setupProxy(ownerDN, jobGroup)
@@ -528,7 +528,7 @@ class JobAgent(AgentModule):
       self.log.verbose(msg)
       return S_OK(msg)
 
-    jobReport.setJobStatus(status='Matched',
+    jobReport.setJobStatus(status=JobStatus.MATCHED,
                            minorStatus='Installing Software',
                            sendFlag=False)
     softwareDist = jobParams['SoftwareDistModule']
@@ -570,7 +570,7 @@ class JobAgent(AgentModule):
       return result
 
     wrapperFile = result['Value']
-    jobReport.setJobStatus(status='Matched',
+    jobReport.setJobStatus(status=JobStatus.MATCHED,
                            minor='Submitting To CE')
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')

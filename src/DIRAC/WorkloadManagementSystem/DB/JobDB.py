@@ -17,6 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 import six
+import base64
 import zlib
 
 import operator
@@ -34,6 +35,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJERR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -314,6 +316,19 @@ class JobDB(DB):
         attributes[jobID].setdefault(ax, tx)
 
     return S_OK(attributes)
+
+#############################################################################
+  @deprecated("Unused")
+  def getJobsAttribute(self, jobIDList, attribute):
+    """ Get one attribute for a list of jobs
+    :param list jobIDList: list of JobIDs
+    :param str attribute: job attribute
+    """
+    cmd = 'SELECT %s FROM Jobs WHERE JobID IN (%s)' % (attribute, ','.join(str(jID) for jID in jobIDList))
+    res = self._query(cmd)
+    if not res['OK']:
+      return res
+    return S_OK([v[0] for v in res['Value']])
 
 #############################################################################
   def getJobAttributes(self, jobID, attrList=None):
@@ -649,7 +664,7 @@ class JobDB(DB):
     """
 
     # get the current statuses of the jobs
-    res = self.getJobsAttribute(jIDList, 'Status')
+    res = self.getJobsAttributes(jIDList, ['Status'])
     if not res['OK']:
       return res
     jIDStatusList = res['Value']
@@ -671,9 +686,12 @@ class JobDB(DB):
     cmd = "INSERT INTO Jobs (JobID, Status) VALUES "
 
     for jID, status in newStatuses.items():
-      ret = self._escapeString(status)
-      if not ret['OK']:
-	return ret
+      # ret_status = self._escapeString(status)
+      # if not ret_status['OK']:
+      #   return ret_status
+      # ret_jID = self._escapeString(jID)
+      # if not ret_jID['OK']:
+      #   return ret_jID
       cmd += ','.join("(%s, %s)" % (jID, status))
 
     cmd += " ON DUPLICATE KEY UPDATE Status=VALUES(Status)"

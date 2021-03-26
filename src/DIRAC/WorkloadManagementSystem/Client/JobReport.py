@@ -37,17 +37,9 @@ class JobReport(object):
     """
     self.jobID = jobID
 
-  def setJobStatus(self, status='', minorStatus='', applicationStatus='', sendFlag=True, minor=None, application=None):
+  def setJobStatus(self, status='', minorStatus='', applicationStatus='', sendFlag=True):
     """ Send job status information to the JobState service for jobID
     """
-    # Backward compatibility
-    # FIXME: to remove in next version
-    if minor or application:
-      gLogger.warn("Use deprecated argument to setJobStatus()", "minor=%s, application=%s" % (minor, application))
-    if minor is not None:
-      minorStatus = minor
-    if application is not None:
-      applicationStatus = application
 
     timeStamp = Time.toString()
     # add job status record
