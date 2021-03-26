@@ -229,14 +229,10 @@ class JobWrapper(object):
       os.mkdir(str(self.jobID))
       os.chdir(str(self.jobID))
       extraOpts = self.jobArgs.get('ExtraOptions', '')
-      if extraOpts:
-	if (
-	    six.PY2 and '$DIRACROOT' in self.jobArgs.get('Executable', '').strip()
-	    or six.PY3 and 'dirac-jobexec' in self.jobArgs.get('Executable', '').strip()
-	):
-	  if os.path.exists('%s/%s' % (self.root, extraOpts)):
-	    shutil.copyfile('%s/%s' % (self.root, extraOpts), extraOpts)
-	  self.__loadLocalCFGFiles(self.localSiteRoot)
+      if extraOpts and 'dirac-jobexec' in self.jobArgs.get('Executable', '').strip():
+	if os.path.exists('%s/%s' % (self.root, extraOpts)):
+	  shutil.copyfile('%s/%s' % (self.root, extraOpts), extraOpts)
+	self.__loadLocalCFGFiles(self.localSiteRoot)
 
     else:
       self.log.info('JobID is not defined, running in current directory')
