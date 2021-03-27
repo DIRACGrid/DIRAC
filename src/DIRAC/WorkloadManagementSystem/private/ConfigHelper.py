@@ -11,7 +11,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Operations
 
 
-def findGenericPilotCredentials(vo=None, group=None, pilotDN=None, pilotGroup=None, pilotUser=None):
+def findGenericPilotCredentials(vo=False, group=False, pilotDN='', pilotGroup='', pilotUser=None):
   """ Looks into the Operations/<>/Pilot section of CS to find the pilot credentials.
       Then check if the user has a registered proxy in ProxyManager.
 
