@@ -18,7 +18,6 @@ from six.moves import http_client
 import DIRAC
 
 from DIRAC import gLogger
-from DIRAC.Core.Tornado.Web import Conf
 from DIRAC.Core.Tornado.Server.BaseRequestHandler import BaseRequestHandler
 # from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 
@@ -44,14 +43,14 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
       return cls.__name__
 
   @classmethod
-  def _getServiceAuthSection(cls, serviceName):
-    """ Search service auth section.
+  def _getServiceAuthSection(cls, endpointName):
+    """ Search endpoint auth section.
 
-        :param str serviceName: service name
+        :param str endpointName: endpoint name
 
         :return: str
     """
-    return Conf.getAuthSectionForHandler(serviceName)
+    return "%s/Authorization" % PathFinder.getAPISection(endpointName)
 
   def _getMethodName(self):
     """ Parse method name.
