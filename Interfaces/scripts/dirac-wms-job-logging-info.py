@@ -30,7 +30,7 @@ exitCode = 0
 errorList = []
 
 for job in parseArguments(args):
-
+  print("Job %s:" % job)
   result = dirac.getJobLoggingInfo(job, printOutput=True)
   if not result['OK']:
     errorList.append((job, result['Message']))

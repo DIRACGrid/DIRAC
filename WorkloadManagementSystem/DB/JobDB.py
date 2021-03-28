@@ -750,14 +750,14 @@ class JobDB(DB):
       if not ret['OK']:
         return ret
       endDate = ret['Value']
-      req = "UPDATE Jobs SET EndExecTime=%s WHERE JobID=%s AND EndExecTime IS NULL" % (endDate, jobID)
     else:
-      req = "UPDATE Jobs SET EndExecTime=UTC_TIMESTAMP() WHERE JobID=%s AND EndExecTime IS NULL" % jobID
+      endDate = "UTC_TIMESTAMP()"
+    req = "UPDATE Jobs SET EndExecTime=%s WHERE JobID=%s AND EndExecTime IS NULL" % (endDate, jobID)
     return self._update(req)
 
 #############################################################################
   def setStartExecTime(self, jobID, startDate=None):
-    """ Set StartExecTime time stamp
+    """ Set StartExecTime time stamp and HeartBeatTime if not already set
     """
 
     ret = self._escapeString(jobID)
@@ -770,9 +770,14 @@ class JobDB(DB):
       if not ret['OK']:
         return ret
       startDate = ret['Value']
-      req = "UPDATE Jobs SET StartExecTime=%s WHERE JobID=%s AND StartExecTime IS NULL" % (startDate, jobID)
     else:
-      req = "UPDATE Jobs SET StartExecTime=UTC_TIMESTAMP() WHERE JobID=%s AND StartExecTime IS NULL" % jobID
+      startDate = "UTC_TIMESTAMP()"
+    # Set also the HeartBeatTime in case the job gets stuck before sending the first HeartBeat
+    req = "UPDATE Jobs SET HeartBeatTime=%s WHERE JobID=%s AND HeartBeatTime IS NULL" % (startDate, jobID)
+    ret = self._update(req)
+    if not ret['OK']:
+      return ret
+    req = "UPDATE Jobs SET StartExecTime=%s WHERE JobID=%s AND StartExecTime IS NULL" % (startDate, jobID)
     return self._update(req)
 
 #############################################################################
