@@ -1,3 +1,7 @@
+[v7r2p1]
+
+NEW: (#5041) Add Python 3 install docs to README
+
 [v7r2]
 
 FIX: python 2-3 compatibility fixes
