@@ -146,7 +146,7 @@ class RegisterReplica(DMSRequestOperationsBase):
           gMonitor.addMark("RegisterReplicaOK", 1)
           successReplicas += 1
           self.log.verbose("Replica %s has been registered at %s" %
-                           (lfn, ','.join( catalogs ) if catalogs else "all catalogs"))
+                           (lfn, ','.join(catalogs) if catalogs else "all catalogs"))
 
         opFile.Status = "Done"
 
