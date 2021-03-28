@@ -17,12 +17,6 @@ import threading
 from datetime import datetime
 from six.moves import http_client
 
-# import tornado
-# import tornado.ioloop
-# from tornado import gen
-# from tornado.web import RequestHandler, HTTPError
-# from tornado.ioloop import IOLoop
-
 import DIRAC
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
