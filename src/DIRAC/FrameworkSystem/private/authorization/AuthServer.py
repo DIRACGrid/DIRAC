@@ -150,7 +150,6 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
         Prepare dict with user parameters, if DN is absent there try to get it.
         Create new or modify existing DIRAC user and store the session
 
-        :param str providerName: identity provider name
         :param dict response: authorization response
         :param str session: session
 
@@ -189,8 +188,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
         :return: jwt object
     """
-    print('GENERATE ACCESS TOKEN')
-    print('scope: %s' % scope)
+    gLogger.debug('GENERATE DIRAC ACCESS TOKEN for "%s" with "%s" scopes.' % (user, scope))
     header = {'alg': 'RS256'}
     payload = {'sub': user,
                'iss': self.metadata['issuer'],
@@ -214,8 +212,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
         :return: jwt object
     """
-    print('GENERATE REFRESH TOKEN')
-    print('scope: %s' % scope)
+    gLogger.debug('GENERATE DIRAC REFRESH TOKEN for "%s" with "%s" scopes.' % (user, scope))
     header = {'alg': 'RS256'}
     payload = {'sub': user,
                'iss': self.metadata['issuer'],
@@ -265,11 +262,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       return dict(error_uris)
 
   def create_oauth2_request(self, request, method_cls=OAuth2Request, use_json=False):
-    print('==== create_oauth2_request === USE JSON: %s' % use_json)
-    try:
-      print('REQUEST URI: %s' % str(request.uri))
-    except Exception:
-      print('REQUEST --- ')
+    gLogger.debug('Create OAuth2 request', 'with json' if use_json else '')
     return createOAuth2Request(request, method_cls, use_json)
 
   def create_json_request(self, request):
