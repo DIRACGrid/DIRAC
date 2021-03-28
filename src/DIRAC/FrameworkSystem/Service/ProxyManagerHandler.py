@@ -1,10 +1,15 @@
-""" ProxyManager is the implementation of the ProxyManagement service in the DISET framework
+""" ProxyManager is the implementation of the ProxyManagement service in the DISET framework.
 
     .. literalinclude:: ../ConfigTemplate.cfg
       :start-after: ##BEGIN ProxyManager:
       :end-before: ##END
       :dedent: 2
       :caption: ProxyManager options
+    
+    The main mission is to manage user proxies, namely upload / download, add DISET-specific extensions, such as group,
+    or VOMS extensions, and the like things. A :mod:`ProxyDB <FrameworkSystem.DB.ProxyDB>` database is used to store
+    proxies. The service also collects and caches real-time information about the status of users in registered VOMS
+    servers.
 """
 from __future__ import absolute_import
 from __future__ import division

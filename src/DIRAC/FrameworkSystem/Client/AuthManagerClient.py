@@ -1,5 +1,7 @@
-""" DIRAC AuthManager Client class encapsulates the methods exposed
-    by the AuthManager service.
+""" AuthManagerClient has the function to "talk" to the AuthManager service. Also, when requesting information
+    about users, this information is cached in a separate class
+    :mod:`AuthManagerData <FrameworkSystem.Client.AuthManagerData>`, and is used, in the Registry for example,
+    to reduce the number of requests to the server part
 """
 from __future__ import absolute_import
 from __future__ import division

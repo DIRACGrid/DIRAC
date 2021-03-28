@@ -1,4 +1,5 @@
-""" DIRAC AuthManager Client class encapsulates the cache data.
+""" This class is located between the client and server part and designed to cache user information requested
+    from the server part.
 """
 from __future__ import absolute_import
 from __future__ import division

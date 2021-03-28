@@ -1,4 +1,7 @@
-""" ProxyManagemerClient has the function to "talk" to the ProxyManager service
+""" ProxyManagerClient has the function to "talk" to the ProxyManager service. Also, when requesting information
+    about users, this information is cached in a separate class
+    :mod:`ProxyManagerData <FrameworkSystem.Client.ProxyManagerData>`, and is used, in the Registry for example,
+    to reduce the number of requests to the server part
 """
 from __future__ import absolute_import
 from __future__ import division

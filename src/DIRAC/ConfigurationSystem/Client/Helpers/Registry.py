@@ -1,9 +1,14 @@
-""" Helper for /Registry section
+""" Helper for **/Registry** section that contains information about DIRAC users, groups and communities (VOs).
 
-    Thare are present two important imports, that provide caching data(included VOMSes and IdPs)::
+    Currently, user registration is done by writing a user name with some metadata to the DIRAC configuration
+    in the Registry section. However, if an external resource, such as a VOMS server or an OAuth2 Identity Provider,
+    is used to obtain a user profile, information from these resources will also be considered only with
+    a lower priority than DIRAC configuration.
 
-      * :mod:`ProxyManagerData <FrameworkSystem.Client.ProxyManagerData>`
-      * :mod:`AuthManagerData <FrameworkSystem.Client.AuthManagerData>`
+    Thare are present two important imports, that provide caching data::
+
+      * :mod:`ProxyManagerData <FrameworkSystem.Client.ProxyManagerData>` caches information from VOMS 
+      * :mod:`AuthManagerData <FrameworkSystem.Client.AuthManagerData>` caches information from IdPs
 """
 from __future__ import absolute_import
 from __future__ import division

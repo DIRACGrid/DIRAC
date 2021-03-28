@@ -1,4 +1,4 @@
-""" The OAuth service provides a toolkit to authenticate through an OIDC session.
+""" The AuthManager service provides a toolkit to authenticate through an OIDC session.
 
     .. literalinclude:: ../ConfigTemplate.cfg
       :start-after: ##BEGIN AuthManager:
