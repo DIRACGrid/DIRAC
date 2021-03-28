@@ -11,6 +11,9 @@ when desired.
 DIRAC_DEBUG_DENCODE_CALLSTACK
   If set, debug information for the encoding and decoding will be printed out
 
+DIRAC_DEBUG_M2CRYPTO
+  If ``true`` or ``yes``, print a lot of SSL debug output
+
 DIRAC_DEBUG_STOMP
   If set, the stomp library will print out debug information
 
@@ -48,7 +51,7 @@ DIRAC_USE_NEWTHREADPOOL
   If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used (default=Yes)
 
 DIRAC_USE_M2CRYPTO
-  If ``true`` or ``yes`` DIRAC uses m2crypto instead of pyGSI for handling certificates, proxies, etc.
+  If anything else than ``true`` or ``yes`` (default) DIRAC will revert back to using pyGSI instead of m2crypto for handling certificates, proxies, etc.
 
 DIRACSYSCONFIG
   If set, its value should be (the full locations on the file system of) one of more DIRAC cfg file(s) (comma separated), whose content will be used for the DIRAC configuration

@@ -228,8 +228,8 @@ for the agent restart
     result = JobMonitoringClient().getJobParameter(jobID, 'Pilot_Reference')
     if not result['OK']:
       return result
-    pilotReference = result['Value'].get('Pilot_Reference')
-    if not pilotReference:
+    pilotReference = result['Value'].get('Pilot_Reference', 'Unknown')
+    if pilotReference == 'Unknown':
       # There is no pilot reference, hence its status is unknown
       return S_OK('NoPilot')
 

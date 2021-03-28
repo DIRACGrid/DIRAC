@@ -163,6 +163,7 @@ class JobAgent(AgentModule):
       # Only call timeLeft utility after a job has been picked up
       self.log.info('Attempting to check CPU time left for filling mode')
       if self.fillingMode:
+        self.timeLeft = self.computeCPUWorkLeft()
         self.log.info('normalized CPU units remaining in slot', self.timeLeft)
         if self.timeLeft <= self.minimumTimeLeft:
           return self.__finish('No more time left')
@@ -411,8 +412,6 @@ class JobAgent(AgentModule):
       self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
       return self._rescheduleFailedJob(jobID, 'Job processing failed with exception', self.stopOnApplicationFailure)
 
-    self.timeLeft = self.computeCPUWorkLeft(processors)
-
     return S_OK('Job Agent cycle complete')
 
   #############################################################################
@@ -428,7 +427,7 @@ class JobAgent(AgentModule):
     jdlFile.close()
 
   #############################################################################
-  def computeCPUWorkLeft(self, processors):
+  def computeCPUWorkLeft(self, processors=1):
     """
     Compute CPU Work Left in hepspec06 seconds
 
