@@ -7,7 +7,7 @@
 
     Thare are present two important imports, that provide caching data::
 
-      * :mod:`ProxyManagerData <FrameworkSystem.Client.ProxyManagerData>` caches information from VOMS 
+      * :mod:`ProxyManagerData <FrameworkSystem.Client.ProxyManagerData>` caches information from VOMS
       * :mod:`AuthManagerData <FrameworkSystem.Client.AuthManagerData>` caches information from IdPs
 """
 from __future__ import absolute_import
