@@ -269,10 +269,8 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     return self.create_oauth2_request(request, HttpRequest, True)
 
   def handle_response(self, status_code, payload, headers):
-    print('handle_response:')
-    print(status_code)
-    print(payload)
-    print(headers)
+    gLogger.debug('Handle authorization response with %s status code:' % status_code, payload)
+    gLogger.debug(headers)
     if isinstance(payload, dict):
       # `OAuth2Request` is not JSON serializable
       payload.pop('request', None)
