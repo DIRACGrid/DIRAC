@@ -38,10 +38,6 @@ class TimeLeft(object):
     if not self.normFactor:
       self.log.warn('/LocalSite/CPUNormalizationFactor not defined for site %s' % DIRAC.siteName())
 
-    # CPU and wall clock margins, which don't seem to be set anywhere
-    self.cpuMargin = gConfig.getValue('/LocalSite/CPUMargin', 2)  # percent
-    self.wallClockMargin = gConfig.getValue('/LocalSite/wallClockMargin', 8)  # percent
-
     result = self.__getBatchSystemPlugin()
     if result['OK']:
       self.batchPlugin = result['Value']
@@ -121,32 +117,27 @@ class TimeLeft(object):
       time = cpu
       timeLimit = cpuLimit
 
-    validTimeLeft = enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, self.cpuMargin, self.wallClockMargin)
-
-    if validTimeLeft:
-      if time and cpuConsumed > 3600. and self.normFactor:
-        # If there has been more than 1 hour of consumed CPU and
-        # there is a Normalization set for the current CPU
-        # use that value to renormalize the values returned by the batch system
-        # NOTE: cpuConsumed is non-zero for call by the JobAgent and 0 for call by the watchdog
-        # cpuLimit and cpu may be in the units of the batch system, not real seconds...
-        # (in this case the other case won't work)
-        # therefore renormalise it using cpuConsumed (which is in real seconds)
-        cpuWorkLeft = (timeLimit - time) * self.normFactor * cpuConsumed / time
-      elif self.normFactor:
-        # FIXME: this is always used by the watchdog... Also used by the JobAgent
-        #        if consumed less than 1 hour of CPU
-        # It was using self.scaleFactor but this is inconsistent: use the same as above
-        # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
-        cpuWorkLeft = (timeLimit - time) * self.normFactor
-      else:
-        # Last resort recovery...
-        cpuWorkLeft = (timeLimit - time) * self.scaleFactor
-
-      self.log.verbose('Remaining CPU in normalized units is: %.02f' % timeLeft)
-      return S_OK(cpuWorkLeft)
+    if time and cpuConsumed > 3600. and self.normFactor:
+      # If there has been more than 1 hour of consumed CPU and
+      # there is a Normalization set for the current CPU
+      # use that value to renormalize the values returned by the batch system
+      # NOTE: cpuConsumed is non-zero for call by the JobAgent and 0 for call by the watchdog
+      # cpuLimit and cpu may be in the units of the batch system, not real seconds...
+      # (in this case the other case won't work)
+      # therefore renormalise it using cpuConsumed (which is in real seconds)
+      cpuWorkLeft = (timeLimit - time) * self.normFactor * cpuConsumed / time
+    elif self.normFactor:
+      # FIXME: this is always used by the watchdog... Also used by the JobAgent
+      #        if consumed less than 1 hour of CPU
+      # It was using self.scaleFactor but this is inconsistent: use the same as above
+      # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
+      cpuWorkLeft = (timeLimit - time) * self.normFactor
     else:
-      return S_ERROR('No time left for slot')
+      # Last resort recovery...
+      cpuWorkLeft = (timeLimit - time) * self.scaleFactor
+
+    self.log.verbose('Remaining CPU in normalized units is: %.02f' % timeLeft)
+    return S_OK(cpuWorkLeft)
 
   def __getBatchSystemPlugin(self):
     """ Using the name of the batch system plugin, will return an instance of the plugin class.
@@ -215,31 +206,3 @@ def runCommand(cmd, timeout=120):
     return S_ERROR('Status %s while executing %s' % (status, cmd))
   else:
     return S_OK(str(stdout))
-
-
-def enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallClockMargin):
-  """ Is there enough time?
-
-      :returns: True/False
-  """
-
-  cpuRemainingFraction = 100 * (1. - cpu / cpuLimit)
-  wallClockRemainingFraction = 100 * (1. - wallClock / wallClockLimit)
-  fractionTuple = (cpuRemainingFraction, wallClockRemainingFraction, cpuMargin, wallClockMargin)
-  gLogger.verbose('Used CPU is %.1f s out of %.1f, Used WallClock is %.1f s out of %.1f.' % (cpu,
-                                                                                             cpuLimit,
-                                                                                             wallClock,
-                                                                                             wallClockLimit))
-  gLogger.verbose('Remaining CPU %.02f%%, Remaining WallClock %.02f%%, margin CPU %s%%, margin WC %s%%' % fractionTuple)
-
-  if cpuRemainingFraction > cpuMargin \
-          and wallClockRemainingFraction > wallClockMargin:
-    gLogger.verbose(
-        'Remaining CPU %.02f%% < Remaining WallClock %.02f%% and margins respected (%s%% and %s%%)' %
-        fractionTuple)
-    return True
-  else:
-    gLogger.verbose(
-        'Remaining CPU %.02f%% or WallClock %.02f%% fractions < margin (%s%% and %s%%) so no time left' %
-        fractionTuple)
-    return False
