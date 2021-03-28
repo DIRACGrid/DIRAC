@@ -5,6 +5,11 @@
       :end-before: ##END
       :dedent: 2
       :caption: AuthManager options
+
+    The main mission is to manage user tokens and clients, namely store/get it from the
+    :mod:`AuthDB <FrameworkSystem.DB.AuthDB>` database.
+    The service also collects and caches real-time information about the status of users in registered
+    identity providers servers.
 """
 from __future__ import absolute_import
 from __future__ import division

@@ -6,7 +6,7 @@
       :dedent: 2
       :caption: ProxyManager options
     
-    The main mission is to manage user proxies, namely upload / download, add DISET-specific extensions, such as group,
+    The main mission is to manage user proxies, namely upload/download, add DISET-specific extensions, such as group,
     or VOMS extensions, and the like things. A :mod:`ProxyDB <FrameworkSystem.DB.ProxyDB>` database is used to store
     proxies. The service also collects and caches real-time information about the status of users in registered VOMS
     servers.
