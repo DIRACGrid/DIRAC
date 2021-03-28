@@ -55,12 +55,26 @@ class AuthHandler(TornadoREST):
 
           GET: LOCATION/.well-known/openid-configuration
           GET: LOCATION/.well-known/oauth-authorization-server
+        
+        Responce::
+
+          HTTP/1.1 200 OK
+          Content-Type: application/json
+
+          {
+            ...
+          }
     """
     if self.request.method == "GET":
       return dict(self.server.metadata)
 
   def web_jwk(self):
     """ JWKs endpoint
+
+        GET LOCATION/jwk
+
+        Parameters:
+          * none
 
         Request example::
 
@@ -93,6 +107,15 @@ class AuthHandler(TornadoREST):
   def web_userinfo(self):
     """ The UserInfo endpoint can be used to retrieve identity information about a user,
         see `spec <https://openid.net/specs/openid-connect-core-1_0.html#UserInfo>`_
+
+        GET LOCATION/userinfo
+
+        Parameters:
+        +---------------+--------+---------------------------------+--------------------------------------------------+
+        | **name**      | **in** | **description**                 | **example**                                      |
+        +---------------+--------+---------------------------------+--------------------------------------------------+
+        | Authorization | header | Provide access token            | Bearer jkagfbfd3r4ubf887gqduyqwogasd87           |
+        +---------------+--------+---------------------------------+--------------------------------------------------+
 
         Request example::
 
@@ -128,13 +151,24 @@ class AuthHandler(TornadoREST):
 
         POST LOCATION/register?data..
 
-        JSON data:
+        Parameters:
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | **name**       | **in** | **description**                           | **example**                           |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | Authorization  | header | Provide access token                      | Bearer jkagfbfd3r4ubf887gqduyqwogasd8 |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | grant_types    | data   | list of grant types, more supported       | ["authorization_code","refresh_token"]|
+        |                |        | more supported grant types in *grants     |                                       |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | scope          | data   | list of scoupes separated by a space      | changeGroup something                 |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | response_types | data   | list of returned responses                | ["token","id_token token","code"]     |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | redirect_uris  | data   | Redirection URI to which the response will| ['https://dirac.egi.eu/redirect']     |
+        |                |        | be sent.                                  |                                       |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
 
-          grant_types     - list of grant types, e.g.: ["authorization_code","refresh_token"]
-                            more supported grant types in DIRAC.FrameworkSystem.private.authorization.grants
-          scope           - list of scoupes separated by a space, e.g.: changeGroup something
-          response_types  - list of returned responses, e.g: ["token","id_token token","code"]
-          redirect_uris   - e.g.: ['https://dirac.egi.eu']
+        *:mod:`grants <DIRAC.FrameworkSystem.private.authorization.grants>`
 
         https://wlcg.cloud.cnaf.infn.it/register
 
@@ -164,18 +198,23 @@ class AuthHandler(TornadoREST):
 
         To initialize a Device authentication flow::
 
-          POST /device?client_id=.. &scope=..
+          POST LOCATION/device?client_id=.. &scope=..
 
           Parameters:
-            group - optional
-            provider - optional
+            client_id:  client ID
+            scope:      requested scopes, in DIRAC cause it can be DIRAC user group, e.g.: &scope=g:dirac_user
+            provider:   identity provider to authorize (optional)
 
         User code confirmation::
 
           GET LOCATION/device/<UserCode>
 
           Parameters:
-            UserCode - recived user code (optional)
+            UserCode - recived user code (optional, it's possible to add it interactively)
+
+        Request example:
+
+          POST LOCATION/device?client_id=sdfkjk..ljdfl&scope=
     """
     if self.request.method == 'POST':
       self.log.verbose('Initialize a Device authentication flow.')
@@ -222,6 +261,9 @@ class AuthHandler(TornadoREST):
     """ Authorization endpoint
 
         GET: LOCATION/authorization/<DIRACs IdP>?client_id=.. &response_type=(code|device)&scope=..      #group=..
+
+        General options:
+          provider -- identity provider to autorize
 
         Device flow:
           &user_code=..                         (required)

@@ -181,7 +181,7 @@ installSite() {
     exit 1
   fi
 
-  #TODO: remove this hack for testing
+  #TODO: remove it, this hack for testing
   pip install authlib==0.15.3
 
   if ! dirac-setup-site "${DEBUG}"; then
