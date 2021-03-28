@@ -1,3 +1,24 @@
+[v7r1p35]
+
+FIX: Fixes from v7r0p52
+
+*Core
+NEW: (#5047) DIRAC_M2CRYPTO_DEBUG env variable for SSL debugging
+
+*WorkloadManagement
+FIX: (#5062) Move the CPU work left computation at the beginning of the JobAgent execution
+CHANGE: (#5053) Remove margins from the TimeLeft utility
+CHANGE: (#5051) if the HeartBeatTime of a job is not set, it cannot be seen as Stalled.
+        Hence set the HeartBeatTime (if not set) when setting the StartExecTime
+CHANGE (#5051) (StalledJobAgent): don't try and get pilot status if "Unknown"
+
+*Interfaces
+CHANGE: (#5051) print the jobID in dirac-wms-job-logging-info
+
+*DMS
+CHANGE: (#5051) lower logging level for individual LFNs (from INFO to VERBOSE) to decrease
+        amount of logged information. Replace with a summary
+
 [v7r1p34]
 
 FIX: Fixes from v7r0p51 patch release
