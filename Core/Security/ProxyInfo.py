@@ -158,7 +158,9 @@ def formatProxyStepsInfoAsString(infoList):
         value = stepInfo[key]
         if key == 'serial':
           try:
-            value = base64.b16encode(value)
+            # b16encode needs a string, while the serial
+            # may be a long
+            value = base64.b16encode("%s" % value)
           except Exception as e:
             gLogger.exception("Could not read serial:", lException=e)
         if key == 'lifetime':
