@@ -56,7 +56,7 @@ class AuthHandler(TornadoREST):
 
           GET: LOCATION/.well-known/openid-configuration
           GET: LOCATION/.well-known/oauth-authorization-server
-        
+
         Responce::
 
           HTTP/1.1 200 OK
@@ -71,11 +71,6 @@ class AuthHandler(TornadoREST):
 
   def web_jwk(self):
     """ JWKs endpoint
-
-        GET LOCATION/jwk
-
-        Parameters:
-          * none
 
         Request example::
 
