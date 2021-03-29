@@ -17,6 +17,7 @@ __RCSID__ = "$Id$"
 
 
 class ConfigurationHandler(TornadoREST):
+  SYSTEM = 'Configuration'
   AUTH_PROPS = "all"
   LOCATION = "/DIRAC"
   METHOD_PREFIX = 'web_'
@@ -71,4 +72,4 @@ class ConfigurationHandler(TornadoREST):
       method = getattr(Registry, key)
       return method(**dict(self.request.arguments))
     else:
-      return S_ERROR('%s request unsuported' % key)
+      return S_ERROR('%s request is not suported' % key)

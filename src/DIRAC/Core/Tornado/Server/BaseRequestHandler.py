@@ -46,8 +46,12 @@ class BaseRequestHandler(RequestHandler):
   # We also need to add specific attributes for each service
   _monitor = None
 
+  # System name with which this component is associated
+  SYSTEM = None
+
   # Auth requirements
   AUTH_PROPS = None
+
   # Type of component
   MONITORING_COMPONENT = MonitoringClient.COMPONENT_WEB
 

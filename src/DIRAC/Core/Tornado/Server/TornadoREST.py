@@ -31,16 +31,15 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
   @classmethod
   def _getServiceName(cls, request):
-    """ Search service name in request.
+    """ Define endpoint full name
 
         :param object request: tornado Request
 
         :return: str
     """
-    try:
-      return cls.LOCATION.split('/')[-1].strip('/')
-    except Exception:
-      return cls.__name__
+    if not cls.SYSTEM:
+      raise Exception("System name of '%s' REST API must be defined." % cls.__name__)
+    return "/".join([cls.SYSTEM, cls.__name__])
 
   @classmethod
   def _getServiceAuthSection(cls, endpointName):

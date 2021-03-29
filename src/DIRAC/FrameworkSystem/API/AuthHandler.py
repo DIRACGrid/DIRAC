@@ -30,6 +30,7 @@ __RCSID__ = "$Id$"
 
 
 class AuthHandler(TornadoREST):
+  SYSTEM = 'Framework'
   AUTH_PROPS = 'all'
   LOCATION = "/DIRAC/auth"
 
