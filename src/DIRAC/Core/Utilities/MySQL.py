@@ -333,7 +333,7 @@ class MySQL(object):
         now = time.time()
       self.__lastClean = now
       for thid in list(self.__assigned):
-        if not thid.isAlive():
+	if not thid.is_alive():
           self.__pop(thid)
         try:
           data = self.__assigned[thid]

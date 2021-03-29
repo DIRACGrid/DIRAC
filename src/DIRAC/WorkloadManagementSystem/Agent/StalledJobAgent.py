@@ -75,7 +75,7 @@ for the agent restart
     threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
     self.log.verbose("Multithreaded with %d threads" % maxNumberOfThreads)
 
-    for i in range(maxNumberOfThreads):
+    for _ in range(maxNumberOfThreads):
       threadPool.generateJobAndQueueIt(self._execute)
 
     return S_OK()
@@ -84,7 +84,6 @@ for the agent restart
   def execute(self):
     """ The main agent execution method
     """
-
     self.log.debug('Waking up Stalled Job Agent')
 
     # getting parameters
@@ -118,7 +117,7 @@ for the agent restart
 
     # Now we are getting what's going to be checked
 
-    # 1) For marking the jobs stalled
+    # 1) Queueing the jobs that might be marked Stalled
     # This is the minimum time we wait for declaring a job Stalled, therefore it is safe
     checkTime = dateTime() - self.stalledTime * second
     checkedStatuses = [JobStatus.RUNNING, JobStatus.COMPLETING]
@@ -134,7 +133,7 @@ for the agent restart
       for job in jobs:
 	self.jobsQueue.put('%s:_markStalledJobs' % job)
 
-    # 2) For marking the Stalled jobs to Failed
+    # 2) Queueing the Stalled jobs that might be marked Failed
     result = self.jobDB.selectJobs({'Status': JobStatus.STALLED})
     if not result['OK']:
       return result
@@ -154,6 +153,8 @@ for the agent restart
 	self.log.info('Stalled jobs will be Accounted', '(n=%d)' % (len(jobs)))
 	for job in jobs:
 	  self.jobsQueue.put('%s:__sendAccounting' % job)
+
+    # From here on we don't use the threads
 
     # 4) Fail submitting jobs
     result = self._failSubmittingJobs()

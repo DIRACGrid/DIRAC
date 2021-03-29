@@ -125,7 +125,7 @@ class DataStoreClient(Client):
     allowing to send more registers at once (reduces overheads).
     """
 
-    if not self.__commitTimer.isAlive():
+    if not self.__commitTimer.is_alive():
       self.__commitTimer = threading.Timer(5, self.commit)
       self.__commitTimer.start()
 
