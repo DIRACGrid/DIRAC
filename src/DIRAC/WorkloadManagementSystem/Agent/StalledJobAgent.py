@@ -88,8 +88,8 @@ for the agent restart
     self.matchedTime = self.am_getOption('MatchedTime', self.matchedTime)
     self.rescheduledTime = self.am_getOption('RescheduledTime', self.rescheduledTime)
 
-    self.log.verbose('StalledTime = %s cycles' % (stalledTime))
-    self.log.verbose('FailedTime = %s cycles' % (failedTime))
+    self.log.verbose('', 'StalledTime = %s cycles' % (stalledTime))
+    self.log.verbose('', 'FailedTime = %s cycles' % (failedTime))
 
     watchdogCycle = gConfig.getValue(cfgPath(wrapperSection, 'CheckingTime'), 30 * 60)
     watchdogCycle = max(watchdogCycle, gConfig.getValue(cfgPath(wrapperSection, 'MinCheckingTime'), 20 * 60))
@@ -137,8 +137,8 @@ for the agent restart
     if not result['Value']:
       return S_OK()
     jobs = sorted(result['Value'])
-    self.log.info('%d %s jobs will be checked for being stalled, heartbeat before %s' %
-                  (len(jobs), ' & '.join(checkedStatuses), str(checkTime)))
+    self.log.info('%s jobs will be checked for being stalled' % ' & '.join(checkedStatuses),
+		  '(n=%d, heartbeat before %s)' % (len(jobs), str(checkTime)))
 
     for job in jobs:
       delayTime = stalledTime
@@ -149,14 +149,14 @@ for the agent restart
       # Check if the job is really stalled
       result = self.__checkJobStalled(job, delayTime)
       if result['OK']:
-        self.log.verbose('Updating status to Stalled for job %s' % (job))
+	self.log.verbose('Updating status to Stalled', 'for job %s' % (job))
         self.__updateJobStatus(job, JobStatus.STALLED)
         stalledCounter += 1
       else:
         self.log.verbose(result['Message'])
         aliveCounter += 1
 
-    self.log.info('Total jobs: %d, Stalled jobs: %d, %s jobs: %d' %
+    self.log.info('', 'Total jobs: %d, Stalled jobs: %d, %s jobs: %d' %
                   (len(jobs), stalledCounter, '+'.join(checkedStatuses), aliveCounter))
     return S_OK()
 
@@ -174,7 +174,7 @@ for the agent restart
     minorStalledStatuses = (JobMinorStatus.STALLED_PILOT_NOT_RUNNING, 'Stalling for more than %d sec' % failedTime)
 
     if jobs:
-      self.log.info('%d jobs Stalled will be checked for failure' % len(jobs))
+      self.log.info('Jobs Stalled will be checked for failure', '(n=%d)' % len(jobs))
 
       for job in jobs:
         setFailed = False
@@ -213,7 +213,7 @@ for the agent restart
         return result
       if result['Value']:
         jobs = result['Value']
-        self.log.info('%s Stalled jobs will be Accounted' % (len(jobs)))
+	self.log.info('Stalled jobs will be Accounted', '(n=%d)' % (len(jobs)))
         for job in jobs:
           result = self.__sendAccounting(job)
           if not result['OK']:
@@ -225,9 +225,9 @@ for the agent restart
         break
 
     if failedCounter:
-      self.log.info('%d jobs set to Failed' % failedCounter)
+      self.log.info('jobs set to Failed', '(%d)' % failedCounter)
     if recoverCounter:
-      self.log.info('%d jobs properly Accounted' % recoverCounter)
+      self.log.info('jobs properly Accounted', '(%d)' % recoverCounter)
     return S_OK(failedCounter)
 
   #############################################################################
@@ -296,7 +296,7 @@ for the agent restart
     if not latestUpdate:
       return S_ERROR('LastUpdate and HeartBeat times are null for job %s' % job)
     else:
-      self.log.verbose('Latest update time from epoch for job %s is %s' % (job, latestUpdate))
+      self.log.verbose('', 'Latest update time from epoch for job %s is %s' % (job, latestUpdate))
       return S_OK(latestUpdate)
 
   #############################################################################
@@ -304,16 +304,16 @@ for the agent restart
     """ This method updates the job status in the JobDB, this should only be
         used to fail jobs due to the optimizer chain.
     """
-    self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (job, status))
 
     if self.am_getOption('Enable', True):
+      self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (job, status))
       result = self.jobDB.setJobAttribute(job, 'Status', status, update=True)
     else:
       result = S_OK('DisabledMode')
 
     if result['OK']:
       if minorStatus:
-        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorStatus))
+	self.log.debug("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorStatus))
         result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorStatus, update=True)
 
     if not minorStatus:  # Retain last minor status for stalled jobs
