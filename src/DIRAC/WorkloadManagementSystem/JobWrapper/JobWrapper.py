@@ -230,9 +230,9 @@ class JobWrapper(object):
       os.chdir(str(self.jobID))
       extraOpts = self.jobArgs.get('ExtraOptions', '')
       if extraOpts and 'dirac-jobexec' in self.jobArgs.get('Executable', '').strip():
-	if os.path.exists('%s/%s' % (self.root, extraOpts)):
-	  shutil.copyfile('%s/%s' % (self.root, extraOpts), extraOpts)
-	self.__loadLocalCFGFiles(self.localSiteRoot)
+        if os.path.exists('%s/%s' % (self.root, extraOpts)):
+          shutil.copyfile('%s/%s' % (self.root, extraOpts), extraOpts)
+        self.__loadLocalCFGFiles(self.localSiteRoot)
 
     else:
       self.log.info('JobID is not defined, running in current directory')
@@ -632,7 +632,7 @@ class JobWrapper(object):
         if not isinstance(lfnSize, six.integer_types):
           try:
             lfnSize = int(lfnSize)
-	  except ValueError:
+          except ValueError:
             lfnSize = 0
             self.log.info('File size for LFN was not an integer, setting size to 0', lfn)
         self.inputDataSize += lfnSize
