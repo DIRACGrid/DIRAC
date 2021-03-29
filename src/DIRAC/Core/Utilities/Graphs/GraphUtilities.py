@@ -235,10 +235,11 @@ class PrettyScalarFormatter(ScalarFormatter):
 
 class PrettyDateFormatter(AutoDateFormatter):
   """ This class provides a formatter which conforms to the
-      desired date formates for the Phedex system.
+      desired date formats for the Phedex system.
   """
 
   def __init__(self, locator):
+    """Format dates according to the Phedex system"""
     tz = pytz.timezone('UTC')
     AutoDateFormatter.__init__(self, locator, tz=tz)
 
