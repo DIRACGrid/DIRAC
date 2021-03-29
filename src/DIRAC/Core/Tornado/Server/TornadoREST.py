@@ -56,9 +56,8 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
 
         :return: str
     """
-    try:
-      return self.request.path.split(self.LOCATION)[1].split('?')[0].strip('/').split('/')[0].strip('/')
-    except Exception:
+    method = self.request.path.replace(self.LOCATION, '').strip('/').split('/')[0]:
+    if not method or not hasattr(cls, ''.join([cls.METHOD_PREFIX, method]):
       return 'index'
 
   @gen.coroutine
