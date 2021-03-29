@@ -50,7 +50,7 @@ for the agent restart
   def __init__(self, *args, **kwargs):
     """ c'tor
     """
-    AgentModule.__init__(self, *args, **kwargs)
+    super(StalledJobAgent, self).__init__(*args, **kwargs)
 
     self.jobDB = None
     self.logDB = None
@@ -120,7 +120,7 @@ for the agent restart
 
     # 1) For marking the jobs stalled
     # This is the minimum time we wait for declaring a job Stalled, therefore it is safe
-    checkTime = dateTime() - stalledTime * second
+    checkTime = dateTime() - self.stalledTime * second
     checkedStatuses = [JobStatus.RUNNING, JobStatus.COMPLETING]
     # Only get jobs whose HeartBeat is older than the stalledTime
     result = self.jobDB.selectJobs({'Status': checkedStatuses},
@@ -187,7 +187,10 @@ for the agent restart
     """
     delayTime = self.stalledTime
     # Add a tolerance time for some sites if required
-    site = self.jobDB.getJobAttribute(jobID, 'site')['Value']
+    result = self.jobDB.getJobAttribute(jobID, 'site')
+    if not result['OK']:
+      return result
+    site = result['Value']
     if site in self.stalledJobsTolerantSites:
       delayTime += self.stalledJobsToleranceTime
     # Check if the job is really stalled
