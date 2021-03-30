@@ -63,7 +63,29 @@ class AuthHandler(TornadoREST):
           Content-Type: application/json
 
           {
-            ...
+            "registration_endpoint": "https://marosvn32.in2p3.fr/DIRAC/auth/register",
+            "userinfo_endpoint": "https://marosvn32.in2p3.fr/DIRAC/auth/userinfo",
+            "jwks_uri": "https://marosvn32.in2p3.fr/DIRAC/auth/jwk",
+            "code_challenge_methods_supported": [
+              "S256"
+            ],
+            "grant_types_supported": [
+              "authorization_code",
+              "code",
+              "urn:ietf:params:oauth:grant-type:device_code",
+              "implicit",
+              "refresh_token"
+            ],
+            "token_endpoint": "https://marosvn32.in2p3.fr/DIRAC/auth/token",
+            "response_types_supported": [
+              "code",
+              "device",
+              "id_token token",
+              "id_token",
+              "token"
+            ],
+            "authorization_endpoint": "https://marosvn32.in2p3.fr/DIRAC/auth/authorization",
+            "issuer": "https://marosvn32.in2p3.fr/DIRAC/auth"
           }
     """
     if self.request.method == "GET":

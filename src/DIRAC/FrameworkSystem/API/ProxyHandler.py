@@ -45,7 +45,7 @@ class ProxyHandler(TornadoREST):
 
           Response is a proxy certificate as text
 
-        **GET** /proxy/metadata?<options> -- retrieve proxy metadata..
+        **GET** /proxy/metadata?<options> -- retrieve proxy metadata(NOT IMPLEMENTED)
     """
     voms = self.get_argument('voms', None)
     try:
