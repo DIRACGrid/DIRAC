@@ -416,15 +416,15 @@ class JobWrapper(object):
     if 'DisableCPUCheck' in self.jobArgs:
       watchdog.testCPUConsumed = False
 
-    if exeThread.isAlive():
+    if exeThread.is_alive():
       self.log.info('Application thread is started in Job Wrapper')
       watchdog.run()
     else:
       self.log.warn('Application thread stopped very quickly...')
 
-    if exeThread.isAlive():
+    if exeThread.is_alive():
       self.log.warn('Watchdog exited before completion of execution thread')
-      while exeThread.isAlive():
+      while exeThread.is_alive():
         time.sleep(5)
 
     outputs = None
