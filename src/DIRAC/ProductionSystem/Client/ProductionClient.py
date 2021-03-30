@@ -10,9 +10,8 @@ from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ProductionSystem.Utilities.StateMachine import ProductionsStateMachine
 
 
-@createClient('Framework/BundleDelivery')
+@createClient('Production/ProductionManager')
 class ProductionClient(Client):
-
   """ Exposes the functionality available in the ProductionSystem/ProductionManagerHandler
   """
 

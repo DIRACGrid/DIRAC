@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """
-Deploy all scripts and extensions.
+Deploy all scripts and extensions for python2 installations.
+Useless in python3.
+
 This script is not meant to be called by users (it's automatically called by dirac-install).
 
 Usage:
