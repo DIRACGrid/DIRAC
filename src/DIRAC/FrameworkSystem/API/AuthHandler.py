@@ -262,14 +262,24 @@ class AuthHandler(TornadoREST):
     """ The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process and user code verification.
 
-        To initialize a Device authentication flow::
+        POST LOCATION/device/<user code>?<query>
 
-          POST LOCATION/device?client_id=.. &scope=..
+        Parameters:
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | **name**       | **in** | **description**                           | **example**                           |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | user code      | path   | in the last step to confirm user code you | WE8R-WEN9                             |
+        |                |        | put it as path parameter (optional)       |                                       |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | client_id      | query  | The public client ID                      | 3f6eNw0E6JGq1VuzRkpWUL9XTxhL86efZw    |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | scope          | query  | list of scoupes separated by a space, to  | g:dirac_user                          |
+        |                |        | add a group you must add "g:" before the  |                                       |
+        |                |        | group name                                |                                       |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | provider       | query  | list of returned responses (optional)     | ["token","id_token token","code"]     |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
 
-          Parameters:
-            client_id:  client ID
-            scope:      requested scopes, in DIRAC cause it can be DIRAC user group, e.g.: &scope=g:dirac_user
-            provider:   identity provider to authorize (optional)
 
         User code confirmation::
 
@@ -278,7 +288,7 @@ class AuthHandler(TornadoREST):
           Parameters:
             UserCode - recived user code (optional, it's possible to add it interactively)
 
-        Request example::
+        Request example, to initialize a Device authentication flow::
 
           POST LOCATION/device?client_id=3f1DAj8z6eNw0E6JGq1Vu6efZwyV&scope=g:dirac_admin&provider=CheckIn_dev
         
@@ -295,6 +305,14 @@ class AuthHandler(TornadoREST):
             "verification_uri_complete": "https://marosvn32.in2p3.fr/DIRAC/auth/device/WSRL-HJMR",
             "user_code": "WSRL-HJMR"
           }
+        
+        Request example, to confirm the user code::
+
+          POST LOCATION/device/WSRL-HJMR
+        
+        Response::
+
+          HTTP/1.1 200 OK
     """
     if self.request.method == 'POST':
       self.log.verbose('Initialize a Device authentication flow.')
