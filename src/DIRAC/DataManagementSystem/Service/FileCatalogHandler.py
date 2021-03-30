@@ -20,16 +20,14 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 
 
-class FileCatalogHandler(RequestHandler):
+class FileCataloghandlerMixin(object):
   """
   A simple Replica and Metadata Catalog service.
   """
 
   @classmethod
   def initializeHandler(cls, serviceInfo):
-    """
-    Handler class initialization
-    """
+    """ Handler  initialization """
 
     dbLocation = getServiceOption(serviceInfo, 'Database', 'DataManagement/FileCatalogDB')
     cls.fileCatalogDB = FileCatalogDB(dbLocation)
@@ -407,9 +405,9 @@ class FileCatalogHandler(RequestHandler):
 
   types_getDirectorySize = [[list, dict] + list(six.string_types)]
 
-  def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False):
+  def export_getDirectorySize(self, lfns, longOut=False, fromFiles=False, recursiveSum=True):
     """ Get the size of the supplied directory """
-    return self.fileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, self.getRemoteCredentials())
+    return self.fileCatalogDB.getDirectorySize(lfns, longOut, fromFiles, recursiveSum, self.getRemoteCredentials())
 
   types_getDirectoryReplicas = [[list, dict] + list(six.string_types), bool]
 
@@ -430,10 +428,9 @@ class FileCatalogHandler(RequestHandler):
 
   types_rebuildDirectoryUsage = []
 
-  @classmethod
-  def export_rebuildDirectoryUsage(cls):
+  def export_rebuildDirectoryUsage(self):
     """ Rebuild DirectoryUsage table from scratch """
-    return cls.fileCatalogDB.rebuildDirectoryUsage()
+    return self.fileCatalogDB.rebuildDirectoryUsage()
 
   types_repairCatalog = []
 
@@ -731,6 +728,9 @@ class FileCatalogHandler(RequestHandler):
         :returns: S_OK with list of tuples (lfn, checksum, size)
     """
     return self.fileCatalogDB.getSEDump(seName)['Value']
+
+
+class FileCatalogHandler(FileCataloghandlerMixin, RequestHandler):
 
   def transfer_toClient(self, seName, token, fileHelper):
     """ This method used to transfer the SEDump to the client,
