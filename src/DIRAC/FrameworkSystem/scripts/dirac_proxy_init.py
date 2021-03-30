@@ -450,7 +450,9 @@ class ProxyInit(object):
           sys.exit('Time out.')
         r = requests.post(url, verify=False)
         token = r.json()
-        if token.get('error') not in ['authorization_pending', None]:
+        if 'error' not in token:
+          break
+        if token['error'] != 'authorization_pending':
           sys.exit(token['error'] + ' : ' + token.get('description', ''))
 
       spin.color = 'green'

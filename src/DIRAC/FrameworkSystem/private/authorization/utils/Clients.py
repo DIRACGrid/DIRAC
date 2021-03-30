@@ -35,9 +35,6 @@ class Client(OAuth2ClientMixin):
     allowed = set(self.scope.split())
     scopes = scope_to_list(scope)
     return list_to_scope([s for s in scopes if s in allowed or s.startswith('g:')])
-  
-  def check_response_type(self, response_type):
-    return response_type in self.response_type
 
 
 class ClientManager(object):

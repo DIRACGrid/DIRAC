@@ -13,6 +13,7 @@ __RCSID__ = "$Id$"
 
 
 class ProxyHandler(TornadoREST):
+  RAISE_DIRAC_ERROR = True
   SYSTEM = 'Framework'
   AUTH_PROPS = "authenticated"
   LOCATION = "/DIRAC"
@@ -51,7 +52,7 @@ class ProxyHandler(TornadoREST):
     try:
       proxyLifeTime = int(self.get_argument('lifetime', 3600 * 12))
     except Exception:
-      self._raiseDIRACError(S_ERROR('Cannot read "lifetime" argument.'))
+      S_ERROR('Cannot read "lifetime" argument.')
 
     # GET
     if self.request.method == 'GET':
@@ -66,7 +67,7 @@ class ProxyHandler(TornadoREST):
         if result['OK']:
           self.log.notice('Proxy was created.')
           result = result['Value'].dumpAllToString()
-        return self._raiseDIRACError(result)
+        return result
 
       # Return proxy
       elif user and group:
@@ -74,7 +75,7 @@ class ProxyHandler(TornadoREST):
         # Get proxy to string
         result = getDNForUsernameInGroup(user, group)
         if not result['OK'] or not result.get('Value'):
-          self._raiseDIRACError(S_ERROR('%s@%s has no registred DN: %s' % (user, group, result.get('Message') or "")))
+          S_ERROR('%s@%s has no registred DN: %s' % (user, group, result.get('Message') or ""))
 
         if voms:
           result = self.proxyCli.downloadVOMSProxy(user, group, requiredTimeLeft=proxyLifeTime)
@@ -83,7 +84,7 @@ class ProxyHandler(TornadoREST):
         if result['OK']:
           self.log.notice('Proxy was created.')
           result = result['Value'].dumpAllToString()
-        return self._raiseDIRACError(result)
+        return result
 
       else:
-        self._raiseDIRACError(S_ERROR("Wrone request."))
+        S_ERROR("Wrone request.")

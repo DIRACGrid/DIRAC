@@ -49,6 +49,9 @@ class BaseRequestHandler(RequestHandler):
   # System name with which this component is associated
   SYSTEM = None
 
+  # If need to return HTTP error instead DIRAC error, e.g.: in REST endpoints
+  RAISE_DIRAC_ERROR = False
+
   # Auth requirements
   AUTH_PROPS = None
 
@@ -417,7 +420,14 @@ class BaseRequestHandler(RequestHandler):
     # Here it is safe to write back to the client, because we are not
     # in a thread anymore
 
-    # Parse HTTPResponse
+    # Convert DIRAC error to HTTP error and return only result 'Value'
+    if RAISE_DIRAC_ERROR:
+      if not self.result['OK']:
+        sLog.error(self.result['Message'])
+        raise HTTPError(http_client.INTERNAL_SERVER_ERROR, self.result['Message'])
+      self.result = self.result['Value']
+
+    # Parse HTTPResponse object, e.g.: in AuthHandler endpoint
     if isinstance(self.result, HTTPResponse):
       self.set_status(self.result.code)
       for key in self.result.headers:
