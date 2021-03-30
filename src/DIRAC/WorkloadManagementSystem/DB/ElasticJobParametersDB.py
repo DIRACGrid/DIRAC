@@ -168,7 +168,7 @@ class ElasticJobParametersDB(ElasticDB):
     """
     self.log.debug('Inserting data in %s:%s' % (self.indexName, parameters))
 
-    result = self.bulk_index(self.indexName, data=parameters, withTimeStamp=False)
+    result = self.bulk_index(self.indexName, data=parameters, period=None, withTimeStamp=False)
     if not result['OK']:
       self.log.error("ERROR: Couldn't insert data", result['Message'])
     return result

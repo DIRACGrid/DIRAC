@@ -32,7 +32,7 @@ import unittest
 import sys
 import datetime
 import time
-import tempfile
+
 # from mock import Mock
 
 from DIRAC.Core.Base.Script import parseCommandLine
