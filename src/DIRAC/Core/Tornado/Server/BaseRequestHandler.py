@@ -421,7 +421,7 @@ class BaseRequestHandler(RequestHandler):
     # in a thread anymore
 
     # Convert DIRAC error to HTTP error and return only result 'Value'
-    if RAISE_DIRAC_ERROR:
+    if self.RAISE_DIRAC_ERROR:
       if not self.result['OK']:
         sLog.error(self.result['Message'])
         raise HTTPError(http_client.INTERNAL_SERVER_ERROR, self.result['Message'])
