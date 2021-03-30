@@ -50,7 +50,7 @@ class NotificationHandler(RequestHandler):
     self.client = credDict['username']
 
   ###########################################################################
-  types_sendMail = [six.string_types, six.string_types, six.string_types, six.string_types, bool]
+  types_sendMail = [six.string_types, six.string_types, six.string_types, six.string_types]
 
   def export_sendMail(self, address, subject, body, fromAddress):
     """ Send an email with supplied body to the specified address using the Mail utility.
