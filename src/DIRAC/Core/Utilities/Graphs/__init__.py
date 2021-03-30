@@ -10,6 +10,8 @@ from __future__ import absolute_import
 from __future__ import division
 __RCSID__ = "$Id$"
 
+from os.path import dirname, join
+
 # Make sure the the Agg backend is used despite arbitrary configuration
 import matplotlib
 matplotlib.use('agg')
@@ -136,7 +138,7 @@ def graph(data, fileName, *args, **kw):
 
 def __checkKW(kw):
   if 'watermark' not in kw:
-    kw['watermark'] = "%s/DIRAC/Core/Utilities/Graphs/Dwatermark.png" % DIRAC.rootPath
+    kw['watermark'] = join(dirname(DIRAC.__file__), "Core/Utilities/Graphs/Dwatermark.png")
   return kw
 
 
