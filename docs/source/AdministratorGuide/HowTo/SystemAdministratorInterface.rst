@@ -92,7 +92,7 @@ Show setup command allows administrators to know which components, Services and 
                                        'JobCleaningAgent',
                                        'StatesAccountingAgent']},
      'Services': {'Accounting': ['ReportGenerator',
-				 'DataStore'],
+                                 'DataStore'],
                   'Configuration': ['Server'],
                   'Framework': ['Monitoring',
                                 'BundleDelivery',

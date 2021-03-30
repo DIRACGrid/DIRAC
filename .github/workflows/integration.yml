@@ -50,7 +50,7 @@ jobs:
           #             CLIENT_USE_PYTHON3: No
           - TEST_NAME: "Python 3 client"
             CLIENT_USE_PYTHON3: Yes
-	    CLIENT_DIRACOSVER: latest
+            CLIENT_DIRACOSVER: latest
 
     steps:
     - uses: actions/checkout@v2

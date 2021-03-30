@@ -321,9 +321,9 @@ installDIRAC() {
   if [[ "${CLIENT_USE_PYTHON3:-}" == "Yes" ]]; then
     if [[ -n "${DIRACOSVER+x}" ]]; then
       if [[ "${DIRACOSVER:-}" == "latest" ]]; then
-	DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
+        DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
       else
-	DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+        DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
       fi
     else
       DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
@@ -336,7 +336,7 @@ installDIRAC() {
     source diracos/diracosrc
     if [[ -n "${DIRAC_RELEASE+x}" ]]; then
       if [[ -z "${ALTERNATIVE_MODULES}" ]]; then
-	pip install "${DIRAC_RELEASE}"
+        pip install "${DIRAC_RELEASE}"
       fi
     fi
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
