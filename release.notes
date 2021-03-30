@@ -1,6 +1,14 @@
 [v7r2p1]
 
 NEW: (#5041) Add Python 3 install docs to README
+FIX: (#5065) Explicitly convert variables assigned to range() into lists
+
+*WMS
+FIX: (#5039) dirac_wms_cpu_normalization: fix for python3 client, and stop looking for MJF
+
+*DMS
+NEW: (#5057) Allows to retrieve the non recursive size of a directory from the DFC
+CHANGE: (#5057) Factorize TornadoFileCatalogHandler and FileCatalogHander
 
 [v7r2]
 
