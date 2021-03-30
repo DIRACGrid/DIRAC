@@ -57,8 +57,13 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
         :return: str
     """
     method = self.request.path.replace(self.LOCATION, '').strip('/').split('/')[0]
-    if not method or not hasattr(self, ''.join([self.METHOD_PREFIX, method])):
+    if method and hasattr(self, ''.join([self.METHOD_PREFIX, method])):
+      return method
+    elif hasattr(self, '%sindex' % self.METHOD_PREFIX):
       return 'index'
+    else:
+      raise NotImplementedError('%s method not implemented for %s. \
+                                You can use the index method to handle this.' % (method, self.__name__))
 
   @gen.coroutine
   def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
