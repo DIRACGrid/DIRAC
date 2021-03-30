@@ -14,6 +14,22 @@ CHANGE: (#4303) Removed completely the SystemLogging
 CHANGE: (#4884) JobDB: compress JDLs by default (no need for flag anymore)
 CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent instead)
 
+[v7r2p1]
+
+NEW: (#5041) Add Python 3 install docs to README
+FIX: (#5065) Explicitly convert variables assigned to range() into lists
+
+*Core
+CHANGE: (#5052) Added IS NULL mySql condition
+
+*WMS
+FIX: (#5039) dirac_wms_cpu_normalization: fix for python3 client, and stop looking for MJF
+CHANGE: (#5070) Using ThreadPool in StalledJobAgent
+
+*DMS
+NEW: (#5057) Allows to retrieve the non recursive size of a directory from the DFC
+CHANGE: (#5057) Factorize TornadoFileCatalogHandler and FileCatalogHander
+
 [v7r2]
 
 FIX: python 2-3 compatibility fixes
@@ -130,6 +146,27 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p35]
+
+FIX: Fixes from v7r0p52
+
+*Core
+NEW: (#5047) DIRAC_M2CRYPTO_DEBUG env variable for SSL debugging
+
+*WorkloadManagement
+FIX: (#5062) Move the CPU work left computation at the beginning of the JobAgent execution
+CHANGE: (#5053) Remove margins from the TimeLeft utility
+CHANGE: (#5051) if the HeartBeatTime of a job is not set, it cannot be seen as Stalled.
+        Hence set the HeartBeatTime (if not set) when setting the StartExecTime
+CHANGE (#5051) (StalledJobAgent): don't try and get pilot status if "Unknown"
+
+*Interfaces
+CHANGE: (#5051) print the jobID in dirac-wms-job-logging-info
+
+*DMS
+CHANGE: (#5051) lower logging level for individual LFNs (from INFO to VERBOSE) to decrease
+        amount of logged information. Replace with a summary
 
 [v7r1p34]
 
@@ -712,6 +749,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p52]
+
+*Core
+FIX: (#5058) (M2Crypto) fixes in proxy serial parsing
 
 [v7r0p51]
 

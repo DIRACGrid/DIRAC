@@ -54,12 +54,12 @@ import sys
 # 1200: Framework
 # 1300: Interfaces
 # 1400: Config
-# 1500: WMS / Workflow
-# 1600: DMS/StorageManagement
+# 1500: WMS + Workflow
+# 1600: DMS + StorageManagement
 # 1700: RMS
-# 1800: Accounting
-# 1900: TS
-# 2000: Resources and RSS
+# 1800: Accounting + Monitoring
+# 1900: TS + Production
+# 2000: Resources + RSS
 
 # ## Generic (10XX)
 # Python related: 0X
@@ -116,6 +116,7 @@ EWMSUKN = 1500
 EWMSJDL = 1501
 EWMSRESC = 1502
 EWMSSUBM = 1503
+EWMSNOPILOT = 1550
 
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
@@ -190,6 +191,7 @@ dErrorCode = {
     1501: 'EWMSJDL',
     1502: 'EWMSRESC',
     1503: 'EWMSSUBM',
+    1550: 'EWMSNOPILOT',
     # DMS/StorageManagement
     1601: 'EFILESIZE',
     1602: 'EGFAL',
@@ -262,6 +264,7 @@ dStrError = {  # Generic (10XX)
     EWMSJDL: "Invalid job description",
     EWMSRESC: "Job to reschedule",
     EWMSSUBM: "Job submission error",
+    EWMSNOPILOT: "No pilots found",
     # DMS/StorageManagement
     EFILESIZE: "Bad file size",
     EGFAL: "Error with the gfal call",

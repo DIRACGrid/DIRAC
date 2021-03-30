@@ -969,12 +969,16 @@ class FileCatalogDB(DB):
     successful = res['Value']['Successful']
     return S_OK({'Successful': successful, 'Failed': failed})
 
-  def getDirectorySize(self, lfns, longOutput, fromFiles, credDict):
+  def getDirectorySize(self, lfns, longOutput, fromFiles, recursiveSum, credDict):
     """
         Get the sizes of a list of directories
 
         :param lfns: list of LFN to check
         :type lfns: python:list
+        :param longOutput: if True, get also the physical size per SE (takes longer)
+        :param fromFiles: if True, recompute the size from the file tables instead of the
+                         precomputed values (takes longer)
+        :param recursiveSum: if True (default), takes into account the subdirectories
         :param creDict: credential
 
         :return: Successful/Failed dict.
@@ -991,7 +995,7 @@ class FileCatalogDB(DB):
     if not res['Value']['Successful']:
       return S_OK({'Successful': {}, 'Failed': failed})
 
-    res = self.dtree.getDirectorySize(res['Value']['Successful'], longOutput, fromFiles)
+    res = self.dtree.getDirectorySize(res['Value']['Successful'], longOutput, fromFiles, recursiveSum)
     if not res['OK']:
       return res
     failed.update(res['Value']['Failed'])

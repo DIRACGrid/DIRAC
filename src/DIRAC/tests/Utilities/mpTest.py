@@ -16,7 +16,7 @@ def do_sum(q, l):
 
 
 def main():
-  my_list = range(20000000)
+  my_list = list(range(20000000))
 
   q = Queue()
 

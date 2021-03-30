@@ -38,7 +38,7 @@ if [[ "$INSTALLTYPE" == "server" ]]; then
         fi
     done
     for repo_path in "${TESTREPO[@]}"; do
-        source "$WORKSPACE/ServerInstallDIR/$(basename "${repo_path}")/tests/Integration/all_integration_server_tests.sh"
+        source "${repo_path}/tests/Integration/all_integration_server_tests.sh"
     done
 elif [[ "$INSTALLTYPE" == "client" ]]; then
     # shellcheck source=/dev/null

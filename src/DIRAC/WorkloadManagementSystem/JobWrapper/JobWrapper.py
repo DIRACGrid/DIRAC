@@ -229,7 +229,7 @@ class JobWrapper(object):
       os.mkdir(str(self.jobID))
       os.chdir(str(self.jobID))
       extraOpts = self.jobArgs.get('ExtraOptions', '')
-      if extraOpts and '$DIRACROOT' in self.jobArgs.get('Executable', '').strip():
+      if extraOpts and 'dirac-jobexec' in self.jobArgs.get('Executable', '').strip():
         if os.path.exists('%s/%s' % (self.root, extraOpts)):
           shutil.copyfile('%s/%s' % (self.root, extraOpts), extraOpts)
         self.__loadLocalCFGFiles(self.localSiteRoot)
@@ -416,15 +416,15 @@ class JobWrapper(object):
     if 'DisableCPUCheck' in self.jobArgs:
       watchdog.testCPUConsumed = False
 
-    if exeThread.isAlive():
+    if exeThread.is_alive():
       self.log.info('Application thread is started in Job Wrapper')
       watchdog.run()
     else:
       self.log.warn('Application thread stopped very quickly...')
 
-    if exeThread.isAlive():
+    if exeThread.is_alive():
       self.log.warn('Watchdog exited before completion of execution thread')
-      while exeThread.isAlive():
+      while exeThread.is_alive():
         time.sleep(5)
 
     outputs = None
@@ -632,7 +632,7 @@ class JobWrapper(object):
         if not isinstance(lfnSize, six.integer_types):
           try:
             lfnSize = int(lfnSize)
-          except ValueError as x:
+          except ValueError:
             lfnSize = 0
             self.log.info('File size for LFN was not an integer, setting size to 0', lfn)
         self.inputDataSize += lfnSize

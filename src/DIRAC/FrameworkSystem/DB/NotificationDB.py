@@ -398,7 +398,7 @@ class NotificationDB(DB):
     if showOnlyLast:
       logToShow = [-1]
     else:
-      logToShow = range(len(records) - 1, -1, -1)
+      logToShow = list(range(len(records) - 1, -1, -1))
     finalMessage = []
     for iD in logToShow:
       rec = records[iD]

@@ -1640,21 +1640,35 @@ DELIMITER ;
 --                           as written in DirectoryUsage
 --
 -- dir_id : id of the directory
+-- recursiveSum: take subdirectories into account
 --
 -- output : File Size, number of files
 
 DROP PROCEDURE IF EXISTS ps_get_dir_logical_size;
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_logical_size
-(IN dir_id INT)
+(IN dir_id INT, IN recursiveSum BOOLEAN)
 BEGIN
+    DECLARE log_size, log_files BIGINT DEFAULT 0;
 
-  SELECT SQL_NO_CACHE COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles),0) FROM FC_DirectoryUsage u
-  JOIN FC_DirectoryClosure c on c.ChildID = u.DirID
-  JOIN FC_StorageElements s ON s.SEID = u.SEID
-  WHERE s.SEName = 'FakeSE'
-  AND c.ParentID = dir_id;
+    IF recursiveSum THEN
 
+      SELECT SQL_NO_CACHE COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles),0) FROM FC_DirectoryUsage u
+      JOIN FC_DirectoryClosure c on c.ChildID = u.DirID
+      JOIN FC_StorageElements s ON s.SEID = u.SEID
+      WHERE s.SEName = 'FakeSE'
+      AND c.ParentID = dir_id;  
+
+    ELSE
+
+      SELECT SQL_NO_CACHE SESize, SEFiles INTO log_size, log_files FROM FC_DirectoryUsage u
+      JOIN FC_StorageElements s ON s.SEID = u.SEID
+      WHERE s.SEName = 'FakeSE'
+      AND u.DirID = dir_id;    
+
+      SELECT COALESCE(log_size, 0), COALESCE(log_files,0);
+      
+    END IF;
 
 END //
 DELIMITER ;
@@ -1665,26 +1679,40 @@ DELIMITER ;
 --                           It should be equal to ps_get_dir_logical_size
 --
 -- dir_id : id of the directory
+-- recursiveSum: take subdirectories into account
 --
 -- output : File Size, number of files
 
 DROP PROCEDURE IF EXISTS ps_calculate_dir_logical_size;
 DELIMITER //
 CREATE PROCEDURE ps_calculate_dir_logical_size
-(IN dir_id INT)
+(IN dir_id INT, IN recursiveSum BOOLEAN)
 BEGIN
   DECLARE log_size BIGINT DEFAULT 0;
   DECLARE log_files INT DEFAULT 0;
 
-  SELECT SQL_NO_CACHE COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
-  JOIN FC_DirectoryClosure d ON f.DirID = d.ChildID
-  WHERE ParentID = dir_id;
+  IF recursiveSum THEN
 
-  IF log_size IS NULL THEN
-    SET log_size = 0;
+
+    SELECT SQL_NO_CACHE COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
+    JOIN FC_DirectoryClosure d ON f.DirID = d.ChildID
+    WHERE ParentID = dir_id;
+
+    -- IF log_size IS NULL THEN
+    --   SET log_size = 0;
+    -- END IF;
+
+    
+  
+  ELSE
+
+    SELECT SQL_NO_CACHE COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
+    WHERE DirID = dir_id;
+
   END IF;
 
-  select log_size, log_files;
+  select COALESCE(log_size, 0), COALESCE(log_files, 0);
+
 END //
 DELIMITER ;
 
@@ -1694,25 +1722,39 @@ DELIMITER ;
 --                           It should be equal to ps_calculate_dir_physical_size
 --
 -- dir_id : id of the directory
+-- recursiveSum: take subdirectories into account
 --
 -- output : SEName, File Size, number of files
 
 DROP PROCEDURE IF EXISTS ps_get_dir_physical_size;
 DELIMITER //
 CREATE PROCEDURE ps_get_dir_physical_size
-(IN dir_id INT)
+(IN dir_id INT, IN recursiveSum BOOLEAN)
 BEGIN
 
-  SELECT SQL_NO_CACHE SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
-  FROM FC_DirectoryUsage u
-  JOIN FC_DirectoryClosure c on u.DirID = c.ChildID
-  JOIN FC_StorageElements se ON se.SEID = u.SEID
-  WHERE c.ParentID = dir_id
-  AND SEName != 'FakeSE'
-  AND (SESize != 0 OR SEFiles != 0)
-  GROUP BY se.SEName
-  ORDER BY NULL;
+  IF recursiveSum THEN
+    SELECT SQL_NO_CACHE SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
+    FROM FC_DirectoryUsage u
+    JOIN FC_DirectoryClosure c on u.DirID = c.ChildID
+    JOIN FC_StorageElements se ON se.SEID = u.SEID
+    WHERE c.ParentID = dir_id
+    AND SEName != 'FakeSE'
+    AND (SESize != 0 OR SEFiles != 0)
+    GROUP BY se.SEName
+    ORDER BY NULL;
+  
+  ELSE
 
+    SELECT SQL_NO_CACHE SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
+    FROM FC_DirectoryUsage u
+    JOIN FC_StorageElements se ON se.SEID = u.SEID
+    WHERE u.DirID = dir_id
+    AND SEName != 'FakeSE'
+    AND (SESize != 0 OR SEFiles != 0)
+    GROUP BY se.SEName
+    ORDER BY NULL;
+  
+  END IF;
 
 END //
 DELIMITER ;
@@ -1723,23 +1765,37 @@ DELIMITER ;
 --                           It should be equal to ps_get_dir_physical_size
 --
 -- dir_id : id of the directory
+-- recursiveSum: take subdirectories into account
 --
 -- output : SEName, File Size, number of files
 
 DROP PROCEDURE IF EXISTS ps_calculate_dir_physical_size;
 DELIMITER //
 CREATE PROCEDURE ps_calculate_dir_physical_size
-(IN dir_id INT)
+(IN dir_id INT, IN recursiveSum BOOLEAN)
 BEGIN
 
-  SELECT SQL_NO_CACHE se.SEName, COALESCE(SUM(f.Size), 0), count(*)
-  FROM FC_Replicas r
-  JOIN FC_Files f ON f.FileID = r.FileID
-  JOIN FC_StorageElements se ON se.SEID = r.SEID
-  JOIN FC_DirectoryClosure dc ON dc.ChildID = f.DirID
-  WHERE dc.ParentID = dir_id
-  GROUP BY se.SEName
-  ORDER BY NULL;
+  IF recursiveSum THEN
+
+    SELECT SQL_NO_CACHE se.SEName, COALESCE(SUM(f.Size), 0), count(*)
+    FROM FC_Replicas r
+    JOIN FC_Files f ON f.FileID = r.FileID
+    JOIN FC_StorageElements se ON se.SEID = r.SEID
+    JOIN FC_DirectoryClosure dc ON dc.ChildID = f.DirID
+    WHERE dc.ParentID = dir_id
+    GROUP BY se.SEName
+    ORDER BY NULL;
+  
+  ELSE
+    SELECT SQL_NO_CACHE se.SEName, COALESCE(SUM(f.Size), 0), count(*)
+    FROM FC_Replicas r
+    JOIN FC_Files f ON f.FileID = r.FileID
+    JOIN FC_StorageElements se ON se.SEID = r.SEID
+    WHERE f.DirID = dir_id
+    GROUP BY se.SEName
+    ORDER BY NULL;
+
+  END IF;
 
 END //
 DELIMITER ;

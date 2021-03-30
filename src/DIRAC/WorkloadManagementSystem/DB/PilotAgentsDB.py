@@ -28,6 +28,7 @@ import threading
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -300,7 +301,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         msg += " for PilotJobReference(s): %s" % pilotRef
       if parentId:
         msg += " with parent id: %s" % parentId
-      return S_ERROR(msg)
+      return S_ERROR(DErrno.EWMSNOPILOT, msg)
 
     resDict = {}
     pilotIDs = []
@@ -375,9 +376,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     e_error = result['Value']
     req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % (pilotID, e_output, e_error)
     result = self._update(req)
+    if not result['OK']:
+      return result
     req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
-    result = self._update(req)
-    return result
+    return self._update(req)
 
 ##########################################################################################
   def getPilotOutput(self, pilotRef):
@@ -439,8 +441,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         if not result['OK']:
           return result
       req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % (pilotID, jobID)
-      result = self._update(req)
-      return result
+      return self._update(req)
     else:
       return S_ERROR('PilotJobReference ' + pilotRef + ' not found')
 
@@ -450,8 +451,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     """
 
     req = "UPDATE PilotAgents SET CurrentJobID=%d WHERE PilotJobReference='%s'" % (jobID, pilotRef)
-    result = self._update(req)
-    return result
+    return self._update(req)
 
 ##########################################################################################
   def getJobsForPilot(self, pilotID):

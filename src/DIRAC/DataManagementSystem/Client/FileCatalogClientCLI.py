@@ -703,7 +703,7 @@ class FileCatalogClientCLI(CLI):
     depth = [1]
     if len(argss) > 1:
       depth = int(argss[1])
-      depth = range(1, depth + 1)
+      depth = list(range(1, depth + 1))
 
     try:
       result = self.fc.getFileAncestors([lfn], depth)
@@ -761,7 +761,7 @@ class FileCatalogClientCLI(CLI):
     depth = [1]
     if len(argss) > 1:
       depth = int(argss[1])
-      depth = range(1, depth + 1)
+      depth = list(range(1, depth + 1))
 
     try:
       result = self.fc.getFileDescendents([lfn], depth)

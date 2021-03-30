@@ -298,11 +298,15 @@ getCFGFile() {
 
 
 ####################################################
-# This installs the DIRAC client, considering the alternative modules
-# it needs a $DIRAC_RELEASE env var defined
+# This installs the DIRAC client
+#
+# To know what to install, it:
+# - can get a $DIRAC_RELEASE env var defined
+# - or list of $ALTERNATIVE_MODULES
+#
 # it also wants the env variables $DIRACSETUP and $CSURL
 #
-# dirac-install also accepts a env variable $INSTALLOPTIONS (e.g. useful for extensions)
+# for py2, dirac-install also accepts a env variable $INSTALLOPTIONS (e.g. useful for extensions)
 # dirac-configure also accepts a env variable $CONFIGUREOPTIONS
 #  (e.g. useful for extensions or for using the certificates:
 #   --UseServerCertificate -o /DIRAC/Security/CertFile=some/location.pem -o /DIRAC/Security/KeyFile=some/location.pem
@@ -316,7 +320,11 @@ installDIRAC() {
 
   if [[ "${CLIENT_USE_PYTHON3:-}" == "Yes" ]]; then
     if [[ -n "${DIRACOSVER+x}" ]]; then
-      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+      if [[ "${DIRACOSVER:-}" == "latest" ]]; then
+	DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
+      else
+	DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+      fi
     else
       DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
     fi
@@ -326,7 +334,14 @@ installDIRAC() {
     # TODO: Remove
     echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
     source diracos/diracosrc
+    if [[ -n "${DIRAC_RELEASE+x}" ]]; then
+      if [[ -z "${ALTERNATIVE_MODULES}" ]]; then
+	pip install "${DIRAC_RELEASE}"
+      fi
+    fi
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+      # ALTERNATIVE_MODULES can be a list of URLs to pip-installable modules
+      # or something like git+https://github.com/fstagni/DIRAC.git@v7r2-fixes33#egg=DIRAC[pilot]
       pip install "${module_path}"
     done
   else
