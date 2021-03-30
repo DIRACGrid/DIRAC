@@ -62,9 +62,6 @@ class WMSClient(object):
 
     return self._jobManager
 
-
-###############################################################################
-
   def __getInputSandboxEntries(self, classAdJob):
     if classAdJob.lookupAttribute("InputSandbox"):
       inputSandbox = classAdJob.get_expression("InputSandbox")

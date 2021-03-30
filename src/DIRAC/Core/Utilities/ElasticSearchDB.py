@@ -60,7 +60,7 @@ def generateDocs(data, withTimeStamp=True):
 
     if withTimeStamp:
       if 'timestamp' not in row:
-	sLog.warn("timestamp is not given! Note: the actual time is used!")
+	sLog.warn("timestamp is not given")
 
       # if the timestamp is not provided, we use the current utc time.
       timestamp = row.get('timestamp', int(Time.toEpoch()))
@@ -77,6 +77,7 @@ def generateDocs(data, withTimeStamp=True):
 	sLog.error("Wrong timestamp", e)
 	body['_source']['timestamp'] = int(Time.toEpoch()) * 1000
 
+    sLog.debug("yielding %s" % body)
     yield body
 
 class ElasticSearchDB(object):
