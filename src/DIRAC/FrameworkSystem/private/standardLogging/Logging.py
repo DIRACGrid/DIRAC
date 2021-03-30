@@ -12,14 +12,11 @@ import os
 
 from DIRAC import S_ERROR
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 
 
 class Logging(object):
   """
-
   - Logging is a wrapper of the logger object from the standard "logging" library which integrates some DIRAC concepts.
   - It aimed at seamlessly replacing the previous gLogger implementation and thus provides the same interface.
   - Logging is generally used to create log records, that are then sent to pre-determined backends.
@@ -453,4 +450,3 @@ class Logging(object):
       return childLogging
     finally:
       self._lockInit.release()
-      

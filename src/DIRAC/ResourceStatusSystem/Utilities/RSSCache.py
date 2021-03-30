@@ -59,7 +59,7 @@ class RSSCache(object):
     '''
     Returns status of the cache refreshing thread
     '''
-    return S_OK(self.__refreshThread.isAlive())
+    return S_OK(self.__refreshThread.is_alive())
 
   def setLifeTime(self, lifeTime):
     '''

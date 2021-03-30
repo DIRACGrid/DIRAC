@@ -195,7 +195,7 @@ class Watchdog(object):
     """ The main agent execution method of the Watchdog.
     """
 
-    if not self.exeThread.isAlive():
+    if not self.exeThread.is_alive():
       self.__getUsageSummary()
       self.log.info('Process to monitor has completed, Watchdog will exit.')
       return S_OK("Ended")

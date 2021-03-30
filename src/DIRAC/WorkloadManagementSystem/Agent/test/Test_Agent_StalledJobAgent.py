@@ -33,9 +33,9 @@ def test__failSubmittingJobs(mocker):
 
   stalledJobAgent = StalledJobAgent()
   stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.log = gLogger
   stalledJobAgent.initialize()
   stalledJobAgent.jobDB.log = gLogger
-  stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
   result = stalledJobAgent._failSubmittingJobs()
@@ -57,9 +57,9 @@ def test__kickStuckJobs(mocker):
 
   stalledJobAgent = StalledJobAgent()
   stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.log = gLogger
   stalledJobAgent.initialize()
   stalledJobAgent.jobDB.log = gLogger
-  stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
   result = stalledJobAgent._kickStuckJobs()
@@ -81,9 +81,9 @@ def test__failStalledJobs(mocker):
 
   stalledJobAgent = StalledJobAgent()
   stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.log = gLogger
   stalledJobAgent.initialize()
   stalledJobAgent.jobDB.log = gLogger
-  stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
   result = stalledJobAgent._failStalledJobs(0)
@@ -105,10 +105,11 @@ def test__markStalledJobs(mocker):
 
   stalledJobAgent = StalledJobAgent()
   stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.log = gLogger
   stalledJobAgent.initialize()
   stalledJobAgent.jobDB.log = gLogger
-  stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
+  stalledJobAgent.stalledTime = 120
 
   result = stalledJobAgent._markStalledJobs(0)
 
