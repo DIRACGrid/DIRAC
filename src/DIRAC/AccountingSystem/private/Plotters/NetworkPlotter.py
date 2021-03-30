@@ -57,7 +57,7 @@ class NetworkPlotter(BaseReporter):
 
     # prepare custom scale (10,20,...,100)
     scale_data = dict(zip(range(0, 101), range(100, -1, -1)))
-    scale_ticks = range(0, 101, 10)
+    scale_ticks = list(range(0, 101, 10))
 
     metadata = {'title': 'Packet loss rate by %s' % reportRequest['grouping'],
                 'starttime': reportRequest['startTime'],

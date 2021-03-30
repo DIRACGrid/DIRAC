@@ -1,9 +1,18 @@
 """ The StalledJobAgent hunts for stalled jobs in the Job database. Jobs in "running"
     state not receiving a heart beat signal for more than stalledTime
     seconds will be assigned the "Stalled" state.
+
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN StalledJobAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: PilotsSyncAgent options
+
 """
 
-from __future__ import print_function, absolute_import
+from __future__ import print_function
+from __future__ import absolute_import
 from __future__ import division
 
 __RCSID__ = "$Id$"

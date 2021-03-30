@@ -40,6 +40,5 @@ group.
    REST/index
    WebAppDIRAC/index
    Internals/index
-   WorkloadManagementSystem/index
    Externals/index
    TornadoServices/index

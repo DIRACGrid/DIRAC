@@ -57,7 +57,7 @@ def do_sum(l):
 
 def main(nProc):
   p = Pool(nProc)
-  r = range(1, 20000000)
+  r = list(range(1, 20000000))
   chunkSize = int(20000000 / nProc)
   rc = breakListIntoChunks(r, chunkSize)
   r = p.map(do_sum, rc[:nProc])

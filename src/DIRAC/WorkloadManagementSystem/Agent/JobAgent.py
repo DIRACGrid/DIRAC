@@ -325,7 +325,7 @@ class JobAgent(AgentModule):
     wholeNode = 'WholeNode' in params
     mpTag = 'MultiProcessor' in params.get('Tags', [])
 
-    if self.extraOptions and '$DIRACROOT' in params.get('Executable', '').strip():
+    if self.extraOptions and 'dirac-jobexec' in params.get('Executable', '').strip():
       params['Arguments'] = (params.get('Arguments', '') + ' ' + self.extraOptions).strip()
       params['ExtraOptions'] = self.extraOptions
 
@@ -738,5 +738,3 @@ class JobAgent(AgentModule):
       self.log.warn('Issue setting the pilot status', result['Message'])
 
     return S_OK()
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

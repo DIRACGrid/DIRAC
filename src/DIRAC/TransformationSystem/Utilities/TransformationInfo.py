@@ -114,7 +114,7 @@ class TransformationInfo(object):
   def __findAllDescendants(self, lfnList):
     """Find all descendants of a list of LFNs"""
     allDescendants = []
-    result = self.fcClient.getFileDescendents(lfnList, range(1, 8))
+    result = self.fcClient.getFileDescendents(lfnList, list(range(1, 8)))
     if not result['OK']:
       return allDescendants
     for dummy_lfn, descendants in result['Value']['Successful'].items():

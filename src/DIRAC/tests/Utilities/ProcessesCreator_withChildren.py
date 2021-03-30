@@ -19,7 +19,7 @@ def do_sum(li):
   print(proc_name)
 
 
-my_list = range(150000000)
+my_list = list(range(150000000))
 
 pool = Pool(3)
 pool.map(do_sum, [my_list[:50000000],

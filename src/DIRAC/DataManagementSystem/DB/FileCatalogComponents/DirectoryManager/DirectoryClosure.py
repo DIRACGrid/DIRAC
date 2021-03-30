@@ -545,7 +545,7 @@ class DirectoryClosure(DirectoryTreeBase):
     """
     return self._setDirectoryParameter(path, 'Mode', mode, recursive=recursive)
 
-  def __getLogicalSize(self, lfns, ps_name, connection):
+  def __getLogicalSize(self, lfns, ps_name, recursiveSum=True, connection=None):
     successful = {}
     failed = {}
     for path in lfns:
@@ -555,7 +555,7 @@ class DirectoryClosure(DirectoryTreeBase):
         continue
 
       dirID = result['Value']
-      result = self.db.executeStoredProcedureWithCursor(ps_name, (dirID, ))
+      result = self.db.executeStoredProcedureWithCursor(ps_name, (dirID, recursiveSum))
 
       if not result['OK']:
         failed[path] = result['Message']
@@ -575,17 +575,21 @@ class DirectoryClosure(DirectoryTreeBase):
 
     return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _getDirectoryLogicalSizeFromUsage(self, lfns, connection):
+  def _getDirectoryLogicalSizeFromUsage(self, lfns, recursiveSum=True, connection=None):
     """ Get the total "logical" size of the requested directories
     """
-    return self.__getLogicalSize(lfns, 'ps_get_dir_logical_size', connection)
+    return self.__getLogicalSize(lfns, 'ps_get_dir_logical_size', recursiveSum=recursiveSum, connection=connection)
 
-  def _getDirectoryLogicalSize(self, lfns, connection):
+  def _getDirectoryLogicalSize(self, lfns, recursiveSum=True, connection=None):
     """ Get the total "logical" size of the requested directories
     """
-    return self.__getLogicalSize(lfns, 'ps_calculate_dir_logical_size', connection)
+    return self.__getLogicalSize(
+        lfns,
+        'ps_calculate_dir_logical_size',
+        recursiveSum=recursiveSum,
+        connection=connection)
 
-  def __getPhysicalSize(self, lfns, ps_name, connection):
+  def __getPhysicalSize(self, lfns, ps_name, recursiveSum=True, connection=None):
     """ Get the total size of the requested directories
     """
 
@@ -601,8 +605,7 @@ class DirectoryClosure(DirectoryTreeBase):
         continue
       dirID = result['Value']
 
-      result = self.db.executeStoredProcedureWithCursor(ps_name, (dirID, ))
-
+      result = self.db.executeStoredProcedureWithCursor(ps_name, (dirID, recursiveSum))
       if not result['OK']:
         failed[path] = result['Message']
         continue
@@ -624,15 +627,15 @@ class DirectoryClosure(DirectoryTreeBase):
 
     return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _getDirectoryPhysicalSizeFromUsage(self, lfns, connection):
+  def _getDirectoryPhysicalSizeFromUsage(self, lfns, recursiveSum=True, connection=None):
     """ Get the total size of the requested directories
     """
-    return self.__getPhysicalSize(lfns, 'ps_get_dir_physical_size', connection)
+    return self.__getPhysicalSize(lfns, 'ps_get_dir_physical_size', recursiveSum=recursiveSum, connection=connection)
 
-  def _getDirectoryPhysicalSize(self, lfns, connection):
+  def _getDirectoryPhysicalSize(self, lfns, recursiveSum=True, connection=None):
     """ Get the total size of the requested directories
     """
-    return self.__getPhysicalSize(lfns, 'ps_calculate_dir_physical_size', connection)
+    return self.__getPhysicalSize(lfns, 'ps_calculate_dir_physical_size', recursiveSum=recursiveSum, connection=None)
 
   def _changeDirectoryParameter(self, paths,
                                 directoryFunction,
