@@ -97,6 +97,14 @@ def test_setAndGetJobFromDB():
   assert res['Value'][101]['someKey'] == 'value101'
   assert len(res['Value']) == 1
   assert len(res['Value'][101]) == 3
+  res = elasticJobParametersDB.setJobParameters(101, [('k', 'v'), ('k1', 'v1'), ('k2', 'v2')])
+  assert res['OK']
+  time.sleep(SLEEP_DELAY)
+  res = elasticJobParametersDB.getJobParameters(101)
+  assert res['OK']
+  assert res['Value'][101]['DIRAC'] == 'dirac@cern'
+  assert res['Value'][101]['k'] == 'v'
+  assert res['Value'][101]['k2'] == 'v2'
 
   # deleting
   res = elasticJobParametersDB.deleteJobParameters(100)
@@ -111,19 +119,19 @@ def test_setAndGetJobFromDB():
   time.sleep(SLEEP_DELAY)
   res = elasticJobParametersDB.getJobParameters(101)
   assert res['OK']
-  assert len(res['Value'][101]) == 2
+  assert len(res['Value'][101]) == 5
   res = elasticJobParametersDB.deleteJobParameters(101, 'someKey,key101')  # someKey is already deleted
   assert res['OK']
   time.sleep(SLEEP_DELAY)
   res = elasticJobParametersDB.getJobParameters(101)
   assert res['OK']
-  assert len(res['Value'][101]) == 1
+  assert len(res['Value'][101]) == 5
   res = elasticJobParametersDB.deleteJobParameters(101, 'nonExistingKey')
   assert res['OK']
   time.sleep(SLEEP_DELAY)
   res = elasticJobParametersDB.getJobParameters(101)
   assert res['OK']
-  assert len(res['Value'][101]) == 1
+  assert len(res['Value'][101]) == 5
 
   # delete the index
   res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB.indexName)

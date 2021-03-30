@@ -45,6 +45,40 @@ def ifConnected(method):
   return wrapper_decorator
 
 
+def generateDocs(data, withTimeStamp=True):
+  """ For fast bulk indexing, yields docs
+
+  :param list data: list of dictionaries or list of key/value tuples
+  """
+  for row in data:
+    body = {
+	'_source': {},
+    }
+    if isinstance(row, tuple):
+      row = {row[0]: row[1]}
+    body['_source'] = row
+
+    if withTimeStamp:
+      if 'timestamp' not in row:
+	sLog.warn("timestamp is not given! Note: the actual time is used!")
+
+      # if the timestamp is not provided, we use the current utc time.
+      timestamp = row.get('timestamp', int(Time.toEpoch()))
+      try:
+	if isinstance(timestamp, datetime):
+	  body['_source']['timestamp'] = int(timestamp.strftime('%s')) * 1000
+	elif isinstance(timestamp, six.string_types):
+	  timeobj = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
+	  body['_source']['timestamp'] = int(timeobj.strftime('%s')) * 1000
+	else:  # we assume  the timestamp is an unix epoch time (integer).
+	  body['_source']['timestamp'] = timestamp * 1000
+      except (TypeError, ValueError) as e:
+	# in case we are not able to convert the timestamp to epoch time....
+	sLog.error("Wrong timestamp", e)
+	body['_source']['timestamp'] = int(Time.toEpoch()) * 1000
+
+    yield body
+
 class ElasticSearchDB(object):
 
   """
@@ -55,7 +89,6 @@ class ElasticSearchDB(object):
   :param int timeout: the default time out to Elasticsearch
   :param int RESULT_SIZE: The number of data points which will be returned by the query.
   """
-  __chunk_size = 1000
   __url = ""
   __timeout = 120
   clusterName = ''
@@ -314,7 +347,7 @@ class ElasticSearchDB(object):
     sLog.info("Deleting index", indexName)
     try:
       retVal = self.client.indices.delete(indexName)
-    except NotFoundError as e:
+    except NotFoundError:
       sLog.warn("Index does not exist", indexName)
       return S_OK("Noting to delete")
     except ValueError as e:
@@ -356,7 +389,7 @@ class ElasticSearchDB(object):
     return S_ERROR(res)
 
   @ifConnected
-  def bulk_index(self, indexPrefix, data=None, mapping=None, period='day'):
+  def bulk_index(self, indexPrefix, data=None, mapping=None, period='day', withTimeStamp=True):
     """
     :param str indexPrefix: index name.
     :param list data: contains a list of dictionary
@@ -381,45 +414,18 @@ class ElasticSearchDB(object):
       retVal = self.createIndex(indexPrefix, mapping, period)
       if not retVal['OK']:
         return retVal
-    docs = []
-    for row in data:
-      body = {
-          '_index': indexName,
-          '_source': {},
-          '_type': '_doc'
-      }
-      body['_source'] = row
 
-      if 'timestamp' not in row:
-        sLog.warn("timestamp is not given! Note: the actual time is used!")
-
-      # if the timestamp is not provided, we use the current utc time.
-      timestamp = row.get('timestamp', int(Time.toEpoch()))
-      try:
-        if isinstance(timestamp, datetime):
-          body['_source']['timestamp'] = int(timestamp.strftime('%s')) * 1000
-        elif isinstance(timestamp, six.string_types):
-          timeobj = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
-          body['_source']['timestamp'] = int(timeobj.strftime('%s')) * 1000
-        else:  # we assume  the timestamp is an unix epoch time (integer).
-          body['_source']['timestamp'] = timestamp * 1000
-      except (TypeError, ValueError) as e:
-        # in case we are not able to convert the timestamp to epoch time....
-        sLog.error("Wrong timestamp", e)
-        body['_source']['timestamp'] = int(Time.toEpoch()) * 1000
-      docs += [body]
     try:
-      res = bulk(self.client, docs, chunk_size=self.__chunk_size)
+      res = bulk(client=self.client, index=indexName, actions=generateDocs(data, withTimeStamp))
     except (BulkIndexError, RequestError) as e:
       sLog.exception()
       return S_ERROR(e)
 
-    if res[0] == len(docs):
+    if res[0] == len(data):
       # we have inserted all documents...
-      return S_OK(len(docs))
+      return S_OK(len(data))
     else:
       return S_ERROR(res)
-    return res
 
   @ifConnected
   def getUniqueValue(self, indexName, key, orderBy=False):
