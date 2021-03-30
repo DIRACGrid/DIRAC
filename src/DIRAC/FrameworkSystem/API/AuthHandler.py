@@ -91,6 +91,54 @@ class AuthHandler(TornadoREST):
     if self.request.method == "GET":
       return dict(self.server.metadata)
 
+    def web_clientsinfo(self):
+    """ The ClientsInfo endpoint can be used to retrieve identity information about a user.
+
+        Request example::
+
+          GET LOCATION/clientsinfo
+
+        Response::
+
+          HTTP/1.1 200 OK
+          Content-Type: application/json
+
+          {
+            "CLI": {
+              "issuer": "https://marosvn32.in2p3.fr/DIRAC/auth",
+              "authority": "https://marosvn32.in2p3.fr/DIRAC/auth",
+              "client_id": "3f1DAj8z6eNw0E6JG3q1VuzRkpWUL9XTxhL86efZwyV",
+              "redirect_uri": "https://dirac.egi.eu",
+              "response_type": "token",
+            },
+            "WebApp": {
+              "issuer": "https://marosvn32.in2p3.fr/DIRAC/auth",
+              "authority": "https://marosvn32.in2p3.fr/DIRAC/auth",
+              "client_id": "1hlUgttap3P93oTSXUwpIT50TVHxCflN3O98uHP217Y",
+              "client_secret": "6c91a15c490bd1039f66cf9c0c5567825f41d7fc0db82de02",
+              "client_metadata": {
+                "grant_types": [
+                  "authorization_code",
+                  "refresh_token"
+                ],
+                "redirect_uris": [
+                  "https://marosvn32.in2p3.fr/DIRAC",
+                  "redirect_uris += https://marosvn32.in2p3.fr/DIRAC/loginComplete"
+                ],
+                "response_types": [
+                  "token",
+                  "id_token token",
+                  "code"
+                ],
+                "token_endpoint_auth_method": "client_secret_basic",
+                "scope": "changeGroup"
+              }
+            }
+          }
+    """
+    if self.request.method == "GET":
+      return dict(self.server.pubClients)
+
   def web_jwk(self):
     """ JWKs endpoint
 
@@ -230,9 +278,23 @@ class AuthHandler(TornadoREST):
           Parameters:
             UserCode - recived user code (optional, it's possible to add it interactively)
 
-        Request example:
+        Request example::
 
-          POST LOCATION/device?client_id=sdfkjk..ljdfl&scope=
+          POST LOCATION/device?client_id=3f1DAj8z6eNw0E6JGq1Vu6efZwyV&scope=g:dirac_admin&provider=CheckIn_dev
+        
+        Response::
+
+          HTTP/1.1 200 OK
+          Content-Type: application/json
+
+          {
+            "device_code": "TglwLiow0HUwowjB9aHH5HqH3bZKP9d420LkNhCEuR",
+            "verification_uri": "https://marosvn32.in2p3.fr/DIRAC/auth/device",
+            "interval": 5,
+            "expires_in": 1800,
+            "verification_uri_complete": "https://marosvn32.in2p3.fr/DIRAC/auth/device/WSRL-HJMR",
+            "user_code": "WSRL-HJMR"
+          }
     """
     if self.request.method == 'POST':
       self.log.verbose('Initialize a Device authentication flow.')
@@ -466,10 +528,28 @@ class AuthHandler(TornadoREST):
 
   def web_token(self):
     """ The token endpoint
+
+        POST LOCATION/token
+
+        Parameters:
+        +----------------+--------+-------------------------------------+---------------------------------------------+
+        | **name**       | **in** | **description**                     | **example**                                 |
+        +----------------+--------+-------------------------------------+---------------------------------------------+
+        | grant_type     | query  | what grant type to use, more        | urn:ietf:params:oauth:grant-type:device_code|
+        |                |        | supported grant types in *grants    |                                             |
+        +----------------+--------+-------------------------------------+---------------------------------------------+
+        | client_id      | query  | The public client ID                | 3f1DAj8z6eNw0E6JGq1VuzRkpWUL9XTxhL86efZw    |
+        +----------------+--------+-------------------------------------+---------------------------------------------+
+        | device_code    | query  | device code                         | uW5xL4hr2tqwBPKL5d0JO9Fcc67gLqhJsNqYTSp     |
+        +----------------+--------+-------------------------------------+---------------------------------------------+
+
+        *:mod:`grants <DIRAC.FrameworkSystem.private.authorization.grants>`
+
+        Request example::
+
+          POST LOCATION/token?client_id=3f1DAj8z6eNw0E6JGq1VuzRkpWUL9XTxhL86efZwyV&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=uW5xL4hr2tqwBPKrsqL5d0JO9Fcc67gLqhJsNqYTSp 
     """
-    print('------ web_token --------')
     return self.__response(**self.server.create_token_response(self.request))
-    print('-----> web_token <-------')
 
   def __implicitFlow(self):
     """ For implicit flow
