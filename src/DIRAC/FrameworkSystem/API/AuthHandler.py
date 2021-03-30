@@ -91,7 +91,7 @@ class AuthHandler(TornadoREST):
     if self.request.method == "GET":
       return dict(self.server.metadata)
 
-    def web_clientsinfo(self):
+  def web_clientsinfo(self):
     """ The ClientsInfo endpoint can be used to retrieve identity information about a user.
 
         Request example::
@@ -110,6 +110,11 @@ class AuthHandler(TornadoREST):
               "client_id": "3f1DAj8z6eNw0E6JG3q1VuzRkpWUL9XTxhL86efZwyV",
               "redirect_uri": "https://dirac.egi.eu",
               "response_type": "token",
+              "client_metadata": {
+                "grant_types": [
+                  "urn:ietf:params:oauth:grant-type:device_code"
+                ]
+              }
             },
             "WebApp": {
               "issuer": "https://marosvn32.in2p3.fr/DIRAC/auth",
@@ -123,7 +128,7 @@ class AuthHandler(TornadoREST):
                 ],
                 "redirect_uris": [
                   "https://marosvn32.in2p3.fr/DIRAC",
-                  "redirect_uris += https://marosvn32.in2p3.fr/DIRAC/loginComplete"
+                  "https://marosvn32.in2p3.fr/DIRAC/loginComplete"
                 ],
                 "response_types": [
                   "token",
@@ -268,8 +273,9 @@ class AuthHandler(TornadoREST):
         +----------------+--------+-------------------------------------------+---------------------------------------+
         | **name**       | **in** | **description**                           | **example**                           |
         +----------------+--------+-------------------------------------------+---------------------------------------+
-        | user code      | path   | in the last step to confirm user code you | WE8R-WEN9                             |
-        |                |        | put it as path parameter (optional)       |                                       |
+        | user code      | path   | in the last step to confirm recived user  | WE8R-WEN9                             |
+        |                |        | code put it as path parameter (optional)  |                                       |
+        |                |        | It's possible to add it interactively.    |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
         | client_id      | query  | The public client ID                      | 3f6eNw0E6JGq1VuzRkpWUL9XTxhL86efZw    |
         +----------------+--------+-------------------------------------------+---------------------------------------+
@@ -278,6 +284,7 @@ class AuthHandler(TornadoREST):
         |                |        | group name                                |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
         | provider       | query  | list of returned responses (optional)     | ["token","id_token token","code"]     |
+        |                |        | It's possible to add it interactively.    |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
 
 
@@ -377,8 +384,11 @@ class AuthHandler(TornadoREST):
     if self.request.method == 'GET':
       try:
         grant, _ = self.server.validate_consent_request(self.request, None)
-      except OAuth2Error as error:
-        return "%s</br>%s" % (error.error, error.description)
+      except OAuth2Error as e:
+        session = self.get_argument('state')
+        if session:
+          self.server.updateSession(session, Status='failed', Comment=': '.join([e.error, e.description]))
+        return "%s</br>%s" % (e.error, e.description)
 
     # Research supported IdPs
     result = getProvidersForInstance('Id')
@@ -565,7 +575,16 @@ class AuthHandler(TornadoREST):
 
         Request example::
 
-          POST LOCATION/token?client_id=3f1DAj8z6eNw0E6JGq1VuzRkpWUL9XTxhL86efZwyV&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=uW5xL4hr2tqwBPKrsqL5d0JO9Fcc67gLqhJsNqYTSp 
+          POST LOCATION/token?client_id=3f1DAj8z6eNw0E6JGq1VuzRkpWUL9XTxhL86efZwyV&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=uW5xL4hr2tqwBPKrsqL5d0JO9Fcc67gLqhJsNqYTSp
+
+        Response::
+
+          HTTP/1.1 400 OK
+          Content-Type: application/json
+
+          {
+            "error": "authorization_pending"
+          }
     """
     return self.__response(**self.server.create_token_response(self.request))
 

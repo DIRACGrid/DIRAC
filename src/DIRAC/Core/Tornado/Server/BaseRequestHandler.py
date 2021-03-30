@@ -33,7 +33,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 
-sLog = gLogger.getSubLogger(__name__.split('.'[-1]))
+sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
 
 class BaseRequestHandler(RequestHandler):

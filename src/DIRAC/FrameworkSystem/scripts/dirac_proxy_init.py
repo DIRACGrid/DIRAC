@@ -450,11 +450,8 @@ class ProxyInit(object):
           sys.exit('Time out.')
         r = requests.post(url, verify=False)
         token = r.json()
-        if 'error' in token:
-          spin.color = 'yellow'
-          spin.text = token['error'] + ' : ' + token.get('description', '')
-          continue
-        break
+        if token.get('error') not in ['authorization_pending', None]:
+          sys.exit(token['error'] + ' : ' + token.get('description', ''))
 
       spin.color = 'green'
       spin.text = 'Download proxy..'
