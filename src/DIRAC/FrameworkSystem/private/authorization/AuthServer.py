@@ -88,6 +88,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
     self.metadata = {}
+    self.pubClients = {}
     # TODO: move to conf utility
     result = gConfig.getOptionsDictRecursively('/Systems/Framework/Production/Services/AuthManager/AuthorizationServer')
     if result['OK']:
@@ -99,6 +100,10 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       metadata = self.metadata_class(data)
       metadata.validate()
       self.metadata = metadata
+    
+    result = gConfig.getOptionsDictRecursively('/Systems/Framework/Production/Services/AuthManager/AuthorizationServer/Clients')
+    if result['OK']:
+      self.pubClients = result['Value']
 
     self.config.setdefault('error_uris', self.metadata.get('OAUTH2_ERROR_URIS'))
     if self.metadata.get('OAUTH2_JWT_ENABLED'):
@@ -108,8 +113,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
     self.register_grant(RefreshTokenGrant)
     self.register_grant(DeviceCodeGrant)
-    self.register_grant(AuthorizationCodeGrant,
-                        [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
+    self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
     self.register_endpoint(ClientRegistrationEndpoint)
     self.register_endpoint(DeviceAuthorizationEndpoint)
 

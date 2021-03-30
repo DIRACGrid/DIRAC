@@ -21,7 +21,7 @@ class Client(OAuth2ClientMixin):
   def __init__(self, params):
     super(Client, self).__init__()
     self.client_id = params['client_id']
-    self.client_secret = params['client_secret']
+    self.client_secret = params.get('client_secret', '')
     self.client_id_issued_at = params['client_id_issued_at']
     self.client_secret_expires_at = params['client_secret_expires_at']
     if isinstance(params['client_metadata'], dict):
