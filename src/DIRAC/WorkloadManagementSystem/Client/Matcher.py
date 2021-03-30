@@ -209,7 +209,7 @@ class Matcher(object):
         nProcessors = None
     for param, key in [(maxRAM, 'GB'), (nProcessors, 'Processors')]:
       if param and param <= 1024:
-        paramList = range(2, param + 1)
+        paramList = list(range(2, param + 1))
         paramTags = ['%d%s' % (par, key) for par in paramList]
         if paramTags:
           resourceDict.setdefault("Tag", []).extend(paramTags)

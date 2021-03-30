@@ -290,7 +290,7 @@ class PrettyDateLocator(AutoDateLocator):
       self._freq = YEARLY
     elif numMonths >= numticks:
       self._freq = MONTHLY
-      bymonth = range(1, 13)
+      bymonth = list(range(1, 13))
       if (0 <= numMonths) and (numMonths <= 14):
         interval = 1      # show every month
       elif (15 <= numMonths) and (numMonths <= 29):
@@ -302,7 +302,7 @@ class PrettyDateLocator(AutoDateLocator):
     elif numDays >= numticks:
       self._freq = DAILY
       bymonth = None
-      bymonthday = range(1, 32)
+      bymonthday = list(range(1, 32))
       if (0 <= numDays) and (numDays <= 9):
         interval = 1      # show every day
       elif (10 <= numDays) and (numDays <= 19):
@@ -317,7 +317,7 @@ class PrettyDateLocator(AutoDateLocator):
       self._freq = HOURLY
       bymonth = None
       bymonthday = None
-      byhour = range(0, 24)      # show every hour
+      byhour = list(range(0, 24))      # show every hour
       if (0 <= numHours) and (numHours <= 14):
         interval = 1      # show every hour
       elif (15 <= numHours) and (numHours <= 30):
@@ -335,7 +335,7 @@ class PrettyDateLocator(AutoDateLocator):
       bymonth = None
       bymonthday = None
       byhour = None
-      byminute = range(0, 60)
+      byminute = list(range(0, 60))
       if numMinutes > (10.0 * numticks):
         interval = 10
       # end if
@@ -345,7 +345,7 @@ class PrettyDateLocator(AutoDateLocator):
       bymonthday = None
       byhour = None
       byminute = None
-      bysecond = range(0, 60)
+      bysecond = list(range(0, 60))
       if numSeconds > (10.0 * numticks):
         interval = 10
       # end if

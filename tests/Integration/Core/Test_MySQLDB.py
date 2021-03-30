@@ -78,7 +78,7 @@ reqFields = ['Name', 'Surname', 'Count']
 allFields = ['Name', 'Surname', 'Count', 'Time']
 
 cond0 = {}
-cond10 = {'Count': range(10)}
+cond10 = {'Count': list(range(10))}
 
 table = {'TestTable': {'Fields': {'ID': "INTEGER UNIQUE NOT NULL AUTO_INCREMENT",
                                   'Name': "VARCHAR(255) NOT NULL DEFAULT 'Yo'",
