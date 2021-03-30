@@ -33,7 +33,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 
-sLog = gLogger.getSubLogger(__name__)
+sLog = gLogger.getSubLogger(__name__.split('.'[-1]))
 
 
 class BaseRequestHandler(RequestHandler):
@@ -104,7 +104,7 @@ class BaseRequestHandler(RequestHandler):
 
         :return: str
     """
-    raise NotImplementedError()
+    raise NotImplementedError('Please, create the _getServiceName class method in %s.' % self.__name__)
 
   @classmethod
   def _getServiceAuthSection(cls, serviceName):
@@ -233,7 +233,7 @@ class BaseRequestHandler(RequestHandler):
 
         :return: str
     """
-    raise NotImplementedError()
+    raise NotImplementedError('Please, create the _getMethodName method in %s.' % self.__name__)
 
   def _getMethodArgs(self, args):
     """ Decode args.
@@ -489,7 +489,7 @@ class BaseRequestHandler(RequestHandler):
     if err:
       if result['OK']:
         for e in err:
-          print(e)
+          sLog.debug(e)
       else:
         raise Exception('; '.join(err))
 
