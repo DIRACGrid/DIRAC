@@ -23,6 +23,7 @@ from six.moves.queue import Queue
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Time import fromString, toEpoch, dateTime, second
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
@@ -37,15 +38,8 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
 
 
 class StalledJobAgent(AgentModule):
+  """ Agent for setting Running jobs Stalled, and Stalled jobs Failed. And a few more.
   """
-The specific agents must provide the following methods:
-- initialize() for initial settings
-- beginExecution()
-- execute() - the main method called in the agent cycle
-- endExecution()
-- finalize() - the graceful exit of the method, this one is usually used
-for the agent restart
-"""
 
   def __init__(self, *args, **kwargs):
     """ c'tor
@@ -125,7 +119,7 @@ for the agent restart
     result = self.jobDB.selectJobs({'Status': checkedStatuses},
 				   older=checkTime, timeStamp='HeartBeatTime')
     if not result['OK']:
-      return result
+      self.log.error("Issue selecting %s jobs" % ' & '.join(checkedStatuses), result['Message'])
     if result['Value']:
       jobs = sorted(result['Value'])
       self.log.info('%s jobs will be checked for being stalled' % ' & '.join(checkedStatuses),
@@ -136,7 +130,7 @@ for the agent restart
     # 2) Queueing the Stalled jobs that might be marked Failed
     result = self.jobDB.selectJobs({'Status': JobStatus.STALLED})
     if not result['OK']:
-      return result
+      self.log.error("Issue selecting Stalled jobs", result['Message'])
     if result['Value']:
       jobs = sorted(result['Value'])
       self.log.info('Jobs Stalled will be checked for failure', '(n=%d)' % len(jobs))
@@ -147,7 +141,7 @@ for the agent restart
     for minor in self.minorStalledStatuses:
       result = self.jobDB.selectJobs({'Status': JobStatus.FAILED, 'MinorStatus': minor, 'AccountedFlag': 'False'})
       if not result['OK']:
-	return result
+	self.log.error("Issue selecting jobs for accounting", result['Message'])
       if result['Value']:
 	jobs = result['Value']
 	self.log.info('Stalled jobs will be Accounted', '(n=%d)' % (len(jobs)))
@@ -166,7 +160,7 @@ for the agent restart
     if not result['OK']:
       self.log.error('Failed to kick stuck jobs', result['Message'])
 
-    return S_OK('Stalled Job Agent cycle complete')
+    return S_OK()
 
   def _execute(self):
     """
@@ -178,13 +172,16 @@ for the agent restart
       jobID = int(jobID)
       res = getattr(self, '%s' % jobOp)(jobID)
       if not res['OK']:
-	self.log.error("Failure executing %s" % jobOp, "on %d" % jobID)
+	self.log.error("Failure executing %s" % jobOp,
+		       "on %d: %s" % (jobID, res['Message']))
 
   #############################################################################
   def _markStalledJobs(self, jobID):
     """
     Identifies if JobID is stalled:
     running or completing without update longer than stalledTime.
+
+    Run inside thread.
     """
     delayTime = self.stalledTime
     # Add a tolerance time for some sites if required
@@ -196,16 +193,17 @@ for the agent restart
       delayTime += self.stalledJobsToleranceTime
     # Check if the job is really stalled
     result = self.__checkJobStalled(jobID, delayTime)
-    if result['OK']:
-      self.log.verbose('Updating status to Stalled', 'for job %s' % (jobID))
-      self.__updateJobStatus(jobID, JobStatus.STALLED)
-    else:
-      self.log.error(result['Message'])
-    return S_OK()
+    if not result['OK']:
+      return result
+    self.log.verbose('Updating status to Stalled', 'for job %s' % (jobID))
+    return self.__updateJobStatus(jobID, JobStatus.STALLED)
 
   #############################################################################
   def _failStalledJobs(self, jobID):
-    """ Changes the Stalled status to Failed for jobs long in the Stalled status
+    """
+    Changes the Stalled status to Failed for jobs long in the Stalled status.
+
+    Run inside thread.
     """
 
     setFailed = False
@@ -232,8 +230,8 @@ for the agent restart
     # Set the jobs Failed, send them a kill signal in case they are not really dead
     # and send accounting info
     if setFailed:
-      self.__sendKillCommand(jobID)
-      self.__updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed)
+      self.__sendKillCommand(jobID)  # always returns None
+      return self.__updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed)
 
     return S_OK()
 
@@ -250,12 +248,12 @@ for the agent restart
 
     result = PilotManagerClient().getPilotInfo(pilotReference)
     if not result['OK']:
-      if "No pilots found" in result['Message']:
-        self.log.warn(result['Message'])
+      if DErrno.cmpError(result, DErrno.EWMSNOPILOT):
+	self.log.warn("No pilot found", "for job %d: %s" % (jobID, result['Message']))
         return S_OK('NoPilot')
       self.log.error('Failed to get pilot information',
-                     'for job %d: ' % jobID + result['Message'])
-      return S_ERROR('Failed to get the pilot status')
+		     'for job %d: %s' % (jobID, result['Message']))
+      return result
     pilotStatus = result['Value'][pilotReference]['Status']
 
     return S_OK(pilotStatus)
@@ -283,10 +281,9 @@ for the agent restart
     """ Returns the most recent of HeartBeatTime and LastUpdateTime
     """
     result = self.jobDB.getJobAttributes(job, ['HeartBeatTime', 'LastUpdateTime'])
-    if not result['OK']:
-      self.log.error('Failed to get job attributes', result['Message'])
     if not result['OK'] or not result['Value']:
-      self.log.error('Could not get attributes for job', '%s' % job)
+      self.log.error('Failed to get job attributes',
+		     'for job %d: %s' % (job, result['Message'] if 'Message' in result else 'empty'))
       return S_ERROR('Could not get attributes for job')
 
     latestUpdate = 0
@@ -314,17 +311,21 @@ for the agent restart
     if not self.am_getOption('Enable', True):
       return S_OK('Disabled')
 
+    toRet = S_OK()
+
     self.log.debug("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (job, status))
     result = self.jobDB.setJobAttribute(job, 'Status', status, update=True)
     if not result['OK']:
       self.log.error("Failed setting Status",
 		     "%s for job %d: %s" % (status, job, result['Message']))
+      toRet = result
     if minorStatus:
       self.log.debug("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorStatus))
       result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorStatus, update=True)
-    if not result['OK']:
-      self.log.error("Failed setting MinorStatus",
-		     "%s for job %d: %s" % (minorStatus, job, result['Message']))
+      if not result['OK']:
+	self.log.error("Failed setting MinorStatus",
+		       "%s for job %d: %s" % (minorStatus, job, result['Message']))
+	toRet = result
 
     if not minorStatus:  # Retain last minor status for stalled jobs
       result = self.jobDB.getJobAttributes(job, ['MinorStatus'])
@@ -333,13 +334,15 @@ for the agent restart
       else:
 	self.log.error("Failed getting MinorStatus",
 		       "for job %d: %s" % (job, result['Message']))
-	minorStatus = 'Unknown'
+	minorStatus = 'idem'
+	toRet = result
 
     result = self.logDB.addLoggingRecord(job, status=status, minorStatus=minorStatus, source='StalledJobAgent')
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn("Failed adding logging record", result['Message'])
+      toRet = result
 
-    return result
+    return toRet
 
   def __getProcessingType(self, jobID):
     """ Get the Processing Type from the JDL, until it is promoted to a real Attribute
@@ -354,7 +357,10 @@ for the agent restart
     return processingType
 
   def __sendAccounting(self, jobID):
-    """ Send WMS accounting data for the given job
+    """
+    Send WMS accounting data for the given job.
+
+    Run inside thread.
     """
     try:
       accountingReport = Job()
@@ -572,5 +578,3 @@ for the agent restart
     else:
       self.log.error("Failed to get ownerDN or Group for job:", "%s: %s, %s" %
                      (job, ownerDN.get('Message', ''), ownerGroup.get('Message', '')))
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
