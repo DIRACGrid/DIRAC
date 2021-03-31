@@ -458,6 +458,8 @@ class MySQL(object):
       return retDict
     connection = retDict['Value']
 
+    if six.PY3 and isinstance(myString, bytes):
+      myString = myString.decode()
     try:
       myString = str(myString)
     except ValueError:
@@ -481,7 +483,10 @@ class MySQL(object):
           # self.log.debug('__escape_string: Could not escape string', '"%s"' % myString)
           return S_ERROR(DErrno.EMYSQL, '__escape_string: Could not escape string')
 
-      escape_string = connection.escape_string(str(myString))
+      if six.PY3:
+        escape_string = connection.escape_string(myString.encode()).decode()
+      else:
+        escape_string = connection.escape_string(myString)
       # self.log.debug('__escape_string: returns', '"%s"' % escape_string)
       return S_OK('"%s"' % escape_string)
     except Exception as x:
@@ -551,6 +556,8 @@ class MySQL(object):
       elif isinstance(value, bool):
         inEscapeValues = [str(value)]
       else:
+        if six.PY3 and isinstance(value, bytes):
+          value = value.decode()
         retDict = self.__escapeString(str(value))
         if not retDict['OK']:
           return retDict

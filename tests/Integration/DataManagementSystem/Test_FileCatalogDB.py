@@ -242,12 +242,18 @@ class FileCase(FileCatalogDBTestCase):
       this test requires the SE to be properly defined in the CS -> NO IT DOES NOT!!
     """
     # Adding a new file
-    result = self.db.addFile({testFile: {'PFN': 'testfile',
-                                         'SE': 'testSE',
-                                         'Size': 123,
-                                         'GUID': '1000',
-                                         'Checksum': '0'}}, credDict)
+    data = {
+        testFile: {
+            'PFN': 'testfile',
+            'SE': 'testSE',
+            'Size': 123,
+            'GUID': '1000',
+            'Checksum': '0',
+        }
+    }
+    result = self.db.addFile(data, credDict)
     self.assertTrue(result['OK'], "addFile failed when adding new file %s" % result)
+    self.assertEqual(set(result['Value']['Successful']), {testFile}, "Failed to add new file %s" % result)
     result = self.db.exists(testFile, credDict)
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'].get('Successful', {}).get(testFile),
@@ -1634,6 +1640,17 @@ class DirectoryUsageCase (FileCatalogDBTestCase):
     ###################
 
 
+def _makeTestSuite():
+  # In Python 3 TestSuite cannot easily be re-used as the tests are cleaned up by default
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(SECase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(UserGroupCase))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileCase))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ReplicaCase))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryCase))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryUsageCase))
+  return suite
+
+
 if __name__ == '__main__':
 
   managerTypes = list(MANAGER_TO_TEST)
@@ -1646,20 +1663,13 @@ if __name__ == '__main__':
     for i in range(numberOfManager):
       DATABASE_CONFIG[managerTypes[i]] = setup[i]
 
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(SECase)
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(UserGroupCase))
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileCase))
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ReplicaCase))
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryCase))
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryUsageCase))
-
     # Then run without admin privilege:
     isAdmin = False
     if FC_MANAGEMENT in credDict['properties']:
       credDict['properties'].remove(FC_MANAGEMENT)
     print("Running test without admin privileges")
 
-    testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+    testResult = unittest.TextTestRunner(verbosity=2).run(_makeTestSuite())
 
     # First run with admin privilege:
     isAdmin = True
@@ -1667,5 +1677,5 @@ if __name__ == '__main__':
       credDict['properties'].append(FC_MANAGEMENT)
     print("Running test with admin privileges")
 
-    testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+    testResult = unittest.TextTestRunner(verbosity=2).run(_makeTestSuite())
     sys.exit(not testResult.wasSuccessful())

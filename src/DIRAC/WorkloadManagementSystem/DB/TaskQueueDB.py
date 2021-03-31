@@ -36,6 +36,14 @@ mandatoryMatchFields = ('Setup', 'CPUTime')
 priorityIgnoredFields = ('Sites', 'BannedSites')
 
 
+def _lowerAndRemovePunctuation(s):
+  if six.PY3:
+    table = str.maketrans("", "", string.punctuation)  # pylint: disable=no-member
+    return s.lower().translate(table)
+  else:
+    return s.lower().translate(None, string.punctuation)
+
+
 class TaskQueueDB(DB):
   """ MySQL DB of "Task Queues"
   """
@@ -745,7 +753,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
             tag_fv = [tag_fv]
 
           # Is there something to consider?
-          if any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in tag_fv):
+          if any(_lowerAndRemovePunctuation(fvx) == 'any' for fvx in tag_fv):
             continue
           else:
             sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tag_fv))
@@ -756,10 +764,11 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           self.log.debug("Evaluating field %s of type %s" % (field, type(fv)))
 
           # Is there something to consider?
-          if not fv \
-                  or isinstance(fv, str) and fv.lower().translate(None, string.punctuation) == 'any' \
-                  or isinstance(fv, list) \
-                  and any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in fv):
+          if not fv:
+            continue
+          if isinstance(fv, str) and _lowerAndRemovePunctuation(fv) == 'any':
+            continue
+          if isinstance(fv, list) and any(_lowerAndRemovePunctuation(fvx) == 'any' for fvx in fv):
             continue
           # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
@@ -795,7 +804,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       rtag_fv = [rtag_fv]
 
     # Is there something to consider?
-    if not rtag_fv or any(fv.lower().translate(None, string.punctuation) == 'any' for fv in rtag_fv):
+    if not rtag_fv or any(_lowerAndRemovePunctuation(fv) == 'any' for fv in rtag_fv):
       pass
     elif not set(rtag_fv).issubset(set(tag_fv)):
       return S_ERROR('Wrong conditions')
@@ -810,9 +819,9 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       # Is there something to consider?
       b_fv = tqMatchDict.get(bannedField)
       if not b_fv \
-              or isinstance(b_fv, str) and b_fv.lower().translate(None, string.punctuation) == 'any' \
+              or isinstance(b_fv, str) and _lowerAndRemovePunctuation(b_fv) == 'any' \
               or isinstance(b_fv, list) \
-              and any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in b_fv):
+              and any(_lowerAndRemovePunctuation(fvx) == 'any' for fvx in b_fv):
         continue
 
       fullTableN = '`tq_TQTo%ss`' % field
