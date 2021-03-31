@@ -328,7 +328,7 @@ class ProxyManagerHandler(RequestHandler):
       if requestedUsername != credDict['username'] or requestedUserGroup != credDict['group']:
         return S_ERROR("You can't get %s@%s proxy!" % (credDict['username'], credDict['group']))
       elif not gConfig.getValue('%s/downloadablePersonalProxy' % csSection, False):
-        return S_ERROR("You can't get proxy, configuration settings not allow to do that.")
+        return S_ERROR("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
       else:
         return S_OK(False)
 

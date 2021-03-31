@@ -17,6 +17,7 @@ __RCSID__ = "$Id$"
 
 
 class ConfigurationHandler(TornadoREST):
+  RAISE_DIRAC_ERROR = True
   SYSTEM = 'Configuration'
   AUTH_PROPS = "all"
   LOCATION = "/DIRAC"

@@ -388,7 +388,7 @@ class ProxyInit(object):
       try:
         r = requests.get('%s/option?path=/Systems/Framework/Production/URLs/ProxyAPI' % confUrl, verify=False)
         r.raise_for_status()
-        proxyAPI = r.text  # decode(r.text)[0]
+        proxyAPI = r.text.strip('/')  # decode(r.text)[0]
       except requests.exceptions.Timeout:
         sys.exit('Time out')
       except requests.exceptions.RequestException as e:
@@ -459,7 +459,7 @@ class ProxyInit(object):
       spin.text = 'Download proxy..'
       # url = '%ss:%s/g:%s/proxy?lifetime=%s' % (proxyAPI, setup,
       #                                          self.__piParams.diracGroup, self.__piParams.proxyLifeTime)
-      url = '%sproxy?lifetime=%s' % (proxyAPI, self.__piParams.proxyLifeTime)
+      url = '%s/proxy?lifetime=%s' % (proxyAPI, self.__piParams.proxyLifeTime)
       addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption(self.__piParams.diracGroup, "AutoAddVOMS", False)
       if addVOMS:
         url += '&voms=%s' % addVOMS

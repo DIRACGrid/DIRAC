@@ -38,7 +38,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
 
   def validate_authorization_request(self):
     client_id = self.request.client_id
-    log.debug('Validate authorization request of %r', client_id)
+    log.debug('Validate authorization request of', client_id)
     if client_id is None:
       raise InvalidClientError(state=self.request.state)
     client = self.server.query_client(client_id)

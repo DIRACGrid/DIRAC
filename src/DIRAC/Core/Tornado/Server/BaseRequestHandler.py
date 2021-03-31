@@ -420,13 +420,6 @@ class BaseRequestHandler(RequestHandler):
     # Here it is safe to write back to the client, because we are not
     # in a thread anymore
 
-    # Convert DIRAC error to HTTP error and return only result 'Value'
-    if self.RAISE_DIRAC_ERROR:
-      if not self.result['OK']:
-        sLog.error(self.result['Message'])
-        raise HTTPError(http_client.INTERNAL_SERVER_ERROR, self.result['Message'])
-      self.result = self.result['Value']
-
     # Parse HTTPResponse object, e.g.: in AuthHandler endpoint
     if isinstance(self.result, HTTPResponse):
       self.set_status(self.result.code)
@@ -449,8 +442,17 @@ class BaseRequestHandler(RequestHandler):
 
     # DIRAC JSON
     else:
-      self.set_header("Content-Type", "application/json")
-      self.write(encode(self.result))
+      # Convert DIRAC error to HTTP error and return only result 'Value'
+      if self.RAISE_DIRAC_ERROR:
+        if not self.result['OK']:
+          sLog.error(self.result['Message'])
+          raise HTTPError(http_client.INTERNAL_SERVER_ERROR, self.result['Message'])
+        self.result = self.result['Value']
+      if isinstance(self.result, str):
+        self.write(self.result)
+      else:
+        self.set_header("Content-Type", "application/json")
+        self.write(encode(self.result))
 
     self.finish()
 

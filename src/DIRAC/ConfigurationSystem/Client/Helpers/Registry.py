@@ -345,9 +345,11 @@ def getDNsInGroup(group, checkStatus=False):
           if not role or role in voData[dn]['ActiveRoles' if checkStatus else 'VOMSRoles']:
             DNs.append(dn)
     else:
-      DNs += userDNs
+      for dn in userDNs:
+        if dn and dn not in DNs:
+          DNs.append(dn)
 
-  return list(set(DNs))
+  return DNs
 
 
 def getPropertiesForGroup(groupName, defaultValue=None):
@@ -761,8 +763,10 @@ def getDNsForUsername(username):
   for uid in getIDsForUsername(username):
     result = gAuthManagerData.getDNsForID(uid)
     if result['OK']:
-      userDNs += result['Value']
-  return S_OK(list(set(userDNs)))
+      for dn in result['Value']:
+        if dn not in userDNs:
+          userDNs.append(dn)
+  return S_OK(userDNs)
 
 
 def getDNForUsernameInGroup(username, group, checkStatus=False):
@@ -789,7 +793,6 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   """
   if username not in getGroupOption(group, 'Users', []):
     return S_ERROR('%s group not have %s user.' % (group, username))
-  DNs = []
   result = getDNsForUsername(username)
   if not result['OK']:
     return result
@@ -797,6 +800,7 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
   print('== getDNsForUsernameInGroup ==')
   pprint(userDNs)
 
+  DNs = []
   vo = getGroupOption(group, 'VO')
   if checkStatus and vo in getUserOption(username, 'Suspended', []):
     return S_ERROR('%s marked as suspended for %s VO.' % (username, vo))
@@ -816,12 +820,12 @@ def getDNsForUsernameInGroup(username, group, checkStatus=False):
           if not role or role in voData[dn]['ActiveRoles' if checkStatus else 'VOMSRoles']:
             DNs.append(dn)
     else:
-      DNs += userDNs
+      DNs = userDNs
   else:
-    DNs += userDNs
+    DNs = userDNs
   print('-------------------------')
   pprint(DNs)
-  dns = list(set([e for e in DNs if e]))
+  dns = [e for e in DNs if e]
   print('-------------------------')
   pprint(dns)
   if dns:
