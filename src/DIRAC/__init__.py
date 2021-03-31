@@ -122,9 +122,11 @@ errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
 
 # Set rootPath of DIRAC installation
-
-pythonPath = os.path.realpath(__path__[0])
-rootPath = os.path.dirname(pythonPath)
+if six.PY3:
+  rootPath = sys.base_prefix  # pylint: disable=no-member
+else:
+  pythonPath = os.path.realpath(__path__[0])
+  rootPath = os.path.dirname(pythonPath)
 
 # Import DIRAC.Core.Utils modules
 

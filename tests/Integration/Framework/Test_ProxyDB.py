@@ -25,12 +25,13 @@ from diraccfg import CFG
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Resources.ProxyProvider.DIRACCAProxyProvider import DIRACCAProxyProvider
 
-certsPath = os.path.join(os.environ['DIRAC'], 'DIRAC/Core/Security/test/certs')
+certsPath = os.path.join(os.path.dirname(DIRAC.__file__), 'Core/Security/test/certs')
 ca = DIRACCAProxyProvider()
 ca.setParameters({'CertFile': os.path.join(certsPath, 'ca/ca.cert.pem'),
                   'KeyFile': os.path.join(certsPath, 'ca/ca.key.pem')})

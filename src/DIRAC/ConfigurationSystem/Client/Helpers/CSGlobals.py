@@ -28,25 +28,32 @@ class Extensions(object):
     for extName in self.getCSExtensions() + ['']:
       try:
         if not extName.endswith("DIRAC"):
-          extension = '%sDIRAC' % extName
-        res = imp.find_module(extension)
+          extName = '%sDIRAC' % extName
+        res = imp.find_module(extName)
         if res[0]:
           res[0].close()
-        self.__orderedExtNames.append(extension)
-        self.__modules[extension] = res
+        self.__orderedExtNames.append(extName)
+        self.__modules[extName] = res
       except ImportError:
         pass
 
   def getCSExtensions(self):
     if not self.__csExt:
-      from DIRAC.ConfigurationSystem.Client.Config import gConfig
-      exts = gConfig.getValue('/DIRAC/Extensions', [])
+      if six.PY3:
+        from DIRAC.Core.Utilities.DIRACScript import _extensionsByPriority
+        exts = _extensionsByPriority()
+      else:
+        from DIRAC.ConfigurationSystem.Client.Config import gConfig
+        exts = gConfig.getValue('/DIRAC/Extensions', [])
+
+      self.__csExt = []
       for iP in range(len(exts)):
         ext = exts[iP]
         if ext.endswith("DIRAC"):
           ext = ext[:-5]
-          exts[iP] = ext
-      self.__csExt = exts
+        # If the extension is now "" (i.e. vanilla DIRAC), don't include it
+        if ext:
+          self.__csExt.append(ext)
     return self.__csExt
 
   def getInstalledExtensions(self):

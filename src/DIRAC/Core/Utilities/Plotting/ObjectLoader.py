@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 import re
 import os
+import six
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Utilities import List
@@ -27,7 +28,10 @@ def loadObjects(path, reFilter=None, parentClass=None):
   objectsToLoad = {}
   # Find which object files match
   for parentModule in parentModuleList:
-    objDir = os.path.join(DIRAC.rootPath, parentModule, *pathList)
+    if six.PY3:
+      objDir = os.path.join(os.path.dirname(os.path.dirname(DIRAC.__file__)), parentModule, *pathList)
+    else:
+      objDir = os.path.join(DIRAC.rootPath, parentModule, *pathList)
     if not os.path.isdir(objDir):
       continue
     for objFile in os.listdir(objDir):

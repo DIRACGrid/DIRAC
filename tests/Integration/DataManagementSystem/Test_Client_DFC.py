@@ -837,15 +837,10 @@ class DirectoryCase(DFCTestCase):
             (parentDir,
              result))
         self.assertEqual(
-            result2['Value'].get(
-                'Successful',
-                {}).get(
-                parentDir,
-                {}).get('Owner'),
+            result2['Value'].get('Successful', {}).get(parentDir, {}).get('Owner'),
             proxyUser,
-            "parentDir should not have changed Owner from %s ==> %s)" %
-            (proxyUser,
-             result2))
+            "parentDir should not have changed Owner from %s ==> %s)" % (proxyUser, result2)
+        )
         self.assertEqual(
             result2['Value'].get(
                 'Successful',

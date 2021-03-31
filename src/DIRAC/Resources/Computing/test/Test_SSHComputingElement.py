@@ -12,7 +12,7 @@ import subprocess32 as subprocess
 import shlex
 import pytest
 
-from DIRAC import rootPath
+import DIRAC
 
 from DIRAC.Resources.Computing.SSHComputingElement import SSHComputingElement
 from DIRAC.Resources.Computing.BatchSystems.executeBatch import executeBatchContent
@@ -53,7 +53,7 @@ def test_generateControlScript(batchSystem):
   with open(dest, 'r') as dst:
     dataDest = dst.read()
 
-  batchSystemDir = os.path.join(rootPath, "DIRAC", "Resources", "Computing", "BatchSystems")
+  batchSystemDir = os.path.join(os.path.dirname(DIRAC.__file__), "Resources", "Computing", "BatchSystems")
   batchSystemScript = os.path.join(batchSystemDir, '%s.py' % batchSystem)
   with open(batchSystemScript, 'r') as bsc:
     dataBatchSystemScript = bsc.read()

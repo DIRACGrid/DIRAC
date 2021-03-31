@@ -245,7 +245,7 @@ class FileCatalogDB(DB):
       successful = res['Value']['Successful']
 
       notExist = []
-      for lfn in res['Value']['Successful'].keys():
+      for lfn in list(res['Value']['Successful']):
         if not successful[lfn]:
           notExist.append(lfn)
           successful.pop(lfn)

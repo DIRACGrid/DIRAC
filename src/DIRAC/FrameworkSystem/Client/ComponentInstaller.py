@@ -72,6 +72,7 @@ import inspect
 import importlib
 
 from diraccfg import CFG
+import six
 
 import DIRAC
 from DIRAC import rootPath
@@ -282,8 +283,13 @@ class ComponentInstaller(object):
     """
     Get the list of installed extensions
     """
-    initList = glob.glob(os.path.join(rootPath, '*DIRAC', '__init__.py'))
-    extensions = [os.path.basename(os.path.dirname(k)) for k in initList]
+    if six.PY3:
+      from DIRAC.Core.Utilities.DIRACScript import _extensionsByPriority
+      extensions = _extensionsByPriority()
+    else:
+      initList = glob.glob(os.path.join(rootPath, '*DIRAC', '__init__.py'))
+      extensions = [os.path.basename(os.path.dirname(k)) for k in initList]
+
     try:
       extensions.remove('DIRAC')
     except Exception:
@@ -788,13 +794,21 @@ class ComponentInstaller(object):
     if addDefaultOptions:
       extensionsDIRAC = [x + 'DIRAC' for x in extensions] + extensions
       for ext in extensionsDIRAC + ['DIRAC']:
-        cfgTemplatePath = os.path.join(rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg')
-        if os.path.exists(cfgTemplatePath):
-          gLogger.notice('Loading configuration template', cfgTemplatePath)
-          # Look up the component in this template
-          loadCfg = CFG()
-          loadCfg.loadFromFile(cfgTemplatePath)
-          compCfg = loadCfg.mergeWith(compCfg)
+        if six.PY3:
+          import pkg_resources
+          try:
+            cfgTemplatePath = pkg_resources.resource_filename(ext, "%sSystem/ConfigTemplate.cfg" % system)
+          except ModuleNotFoundError:
+            continue
+        else:
+          cfgTemplatePath = os.path.join(rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg')
+          if not os.path.exists(cfgTemplatePath):
+            continue
+        gLogger.notice('Loading configuration template', cfgTemplatePath)
+        # Look up the component in this template
+        loadCfg = CFG()
+        loadCfg.loadFromFile(cfgTemplatePath)
+        compCfg = loadCfg.mergeWith(compCfg)
 
       compPath = cfgPath(sectionName, componentModule)
       if not compCfg.isSection(compPath):
@@ -976,14 +990,17 @@ class ComponentInstaller(object):
     Get the list of all systems (in all given extensions) locally available
     """
     systems = []
-
     for extension in extensions:
-      extensionPath = os.path.join(DIRAC.rootPath, extension, '*System')
-      for system in [os.path.basename(k).split('System')[0] for k in glob.glob(extensionPath)]:
-        if system not in systems:
-          systems.append(system)
-
-    return systems
+      if six.PY3:
+        from fnmatch import filter
+        import importlib.resources  # pylint: disable=import-error,no-name-in-module
+        systems += filter(importlib.resources.contents(extension), "*System")  # pylint: disable=no-member
+      else:
+        extensionPath = os.path.join(DIRAC.rootPath, extension, '*System')
+        for system in [os.path.basename(k).split('System')[0] for k in glob.glob(extensionPath)]:
+          if system not in systems:
+            systems.append(system)
+    return list(set(systems))
 
   def getSoftwareComponents(self, extensions):
     """
@@ -1010,14 +1027,18 @@ class ComponentInstaller(object):
       remainders[cType] = {}
 
     for extension in ['DIRAC'] + [x + 'DIRAC' for x in extensions]:
-      if not os.path.exists(os.path.join(rootPath, extension)):
+      import importlib
+      try:
+        extensionModule = importlib.import_module(extension)
+      except ImportError:
         # Not all the extensions are necessarily installed in this self.instance
         continue
-      systemList = os.listdir(os.path.join(rootPath, extension))
+      extensionDir = os.path.dirname(extensionModule.__file__)
+      systemList = os.listdir(extensionDir)
       for sys in systemList:
         system = sys.replace('System', '')
         try:
-          agentDir = os.path.join(rootPath, extension, sys, 'Agent')
+          agentDir = os.path.join(extensionDir, sys, 'Agent')
           agentList = os.listdir(agentDir)
           for agent in agentList:
             if os.path.splitext(agent)[1] == ".py":
@@ -1031,7 +1052,7 @@ class ComponentInstaller(object):
         except OSError:
           pass
         try:
-          serviceDir = os.path.join(rootPath, extension, sys, 'Service')
+          serviceDir = os.path.join(extensionDir, sys, 'Service')
           serviceList = os.listdir(serviceDir)
           for service in serviceList:
             if service.find('Handler') != -1 and os.path.splitext(service)[1] == '.py':
@@ -1043,7 +1064,7 @@ class ComponentInstaller(object):
         except OSError:
           pass
         try:
-          executorDir = os.path.join(rootPath, extension, sys, 'Executor')
+          executorDir = os.path.join(extensionDir, sys, 'Executor')
           executorList = os.listdir(executorDir)
           for executor in executorList:
             if os.path.splitext(executor)[1] == ".py":
@@ -1060,7 +1081,7 @@ class ComponentInstaller(object):
         # Rest of component types
         for cType in remainingTypes:
           try:
-            remainDir = os.path.join(rootPath, extension, sys, cType.title())
+            remainDir = os.path.join(extensionDir, sys, cType.title())
             remainList = os.listdir(remainDir)
             for remainder in remainList:
               if os.path.splitext(remainder)[1] == ".py":
@@ -1917,8 +1938,7 @@ exec 2>&1
 [[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
 #%(bashVariables)s
 #
-exec dirac-%(componentType)s \
-  %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
+exec dirac-%(componentType)s %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
     """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                 'bashVariables': bashVars,
                 'componentType': componentType.replace("-", "_"),
@@ -2203,15 +2223,24 @@ exec dirac-webapp-run -p < /dev/null
     """
     dbDict = {}
     for extension in extensions + ['']:
-      databases = glob.glob(os.path.join(rootPath,
-                                         ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
-                                         '*', 'DB', '*.sql'))
+      if six.PY3:
+        import importlib_resources  # pylint: disable=import-error
+        databases = list(
+            importlib_resources.files(('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'))
+            .glob('*/DB/*.sql')
+        )
+      else:
+        databases = glob.glob(os.path.join(
+            rootPath,
+            ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
+            '*', 'DB', '*.sql'
+        ))
       for dbPath in databases:
         dbName = os.path.basename(dbPath).replace('.sql', '')
         dbDict[dbName] = {}
         dbDict[dbName]['Type'] = 'MySQL'
         dbDict[dbName]['Extension'] = extension
-        dbDict[dbName]['System'] = dbPath.split('/')[-3].replace('System', '')
+        dbDict[dbName]['System'] = str(dbPath).split('/')[-3].replace('System', '')
 
     return S_OK(dbDict)
 
@@ -2237,16 +2266,28 @@ exec dirac-webapp-run -p < /dev/null
     for extension in extensions + ['']:
 
       # Find *DB.py definitions
-      pyDBs = glob.glob(os.path.join(rootPath,
-                                     ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
-                                     '*', 'DB', '*DB.py'))
-      pyDBs = [x.replace('.py', '') for x in pyDBs if '__init__' not in x]
+      if six.PY3:
+        import importlib_resources  # pylint: disable=import-error
+        pyDBs = list(importlib_resources.files('%sDIRAC' % extension).glob('*/DB/*DB.py'))
+      else:
+        pyDBs = glob.glob(os.path.join(
+            rootPath,
+            ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
+            '*', 'DB', '*DB.py'
+        ))
+      pyDBs = [str(x).replace('.py', '') for x in pyDBs if '__init__' not in str(x)]
 
       # Find sql files
-      sqlDBs = glob.glob(os.path.join(rootPath,
-                                      ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
-                                      '*', 'DB', '*.sql'))
-      sqlDBs = [x.replace('.sql', '') for x in sqlDBs]
+      if six.PY3:
+        import importlib_resources  # pylint: disable=import-error
+        sqlDBs = list(importlib_resources.files('%sDIRAC' % extension).glob('*/DB/*.sql'))
+      else:
+        sqlDBs = glob.glob(os.path.join(
+            rootPath,
+            ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
+            '*', 'DB', '*.sql'
+        ))
+      sqlDBs = [str(x).replace('.sql', '') for x in str(sqlDBs)]
 
       # Find *DB.py files that do not have a sql part
       possible = set(pyDBs) - set(sqlDBs)
@@ -2267,7 +2308,7 @@ exec dirac-webapp-run -p < /dev/null
         dbDict[dbName] = {}
         dbDict[dbName]['Type'] = 'ES'
         dbDict[dbName]['Extension'] = extension
-        dbDict[dbName]['System'] = dbPath.split('/')[-3].replace('System', '')
+        dbDict[dbName]['System'] = str(dbPath).split('/')[-3].replace('System', '')
 
     return S_OK(dbDict)
 
@@ -2302,26 +2343,25 @@ exec dirac-webapp-run -p < /dev/null
 
     gLogger.notice('Installing', dbName)
 
-    dbFile = glob.glob(os.path.join(rootPath, 'DIRAC', '*', 'DB', '%s.sql' % dbName))
     # is there by chance an extension of it?
-    for extension in CSGlobals.getCSExtensions():
-      dbFileInExtension = glob.glob(os.path.join(rootPath,
-                                                 '%sDIRAC' % extension,
-                                                 '*',
-                                                 'DB',
-                                                 '%s.sql' % dbName))
-      if dbFileInExtension:
-        dbFile = dbFileInExtension
+    for extension in CSGlobals.getCSExtensions() + [""]:
+      if six.PY3:
+        import importlib_resources  # pylint: disable=import-error
+        dbFile = list(importlib_resources.files('%sDIRAC' % extension).glob('*/DB/%s.sql' % dbName))
+      else:
+        dbFile = glob.glob(os.path.join(
+            rootPath, '%sDIRAC' % extension, '*', 'DB', '%s.sql' % dbName
+        ))
+      if dbFile:
         break
-
-    if not dbFile:
+    else:
       error = 'Database %s not found' % dbName
       gLogger.error(error)
       if self.exitOnError:
         DIRAC.exit(-1)
       return S_ERROR(error)
 
-    dbFile = dbFile[0]
+    dbFile = str(dbFile[0])
     gLogger.debug("Installing %s" % dbFile)
 
     # just check
