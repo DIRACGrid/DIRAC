@@ -167,7 +167,6 @@ class ProxyManagerData(object):
     vomsUsers.pop('Fresh', None)
     res = {}
     if not vomsUsers:
-      # use simulation here for tests
       return S_ERROR('VOMSes has not been updated.')
     for vo, voInfo in vomsUsers.items():
       if voList and vo not in voList:
