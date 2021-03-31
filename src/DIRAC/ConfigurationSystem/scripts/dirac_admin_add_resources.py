@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# File :   dirac-admin-add-resources
+# File :   dirac_admin_add_resources
 # Author : Andrei Tsaregorodtsev
 ########################################################################
 """

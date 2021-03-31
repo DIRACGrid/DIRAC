@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# File :   dirac-admin-accounting-cli
+# File :   dirac_admin_accounting_cli
 # Author : Adria Casajus
 ########################################################################
 """

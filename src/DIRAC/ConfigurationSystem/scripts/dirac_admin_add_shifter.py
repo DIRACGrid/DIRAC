@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# File :   dirac-admin-add-shifter
+# File :   dirac_admin_add_shifter
 # Author : Federico Stagni
 ########################################################################
 """

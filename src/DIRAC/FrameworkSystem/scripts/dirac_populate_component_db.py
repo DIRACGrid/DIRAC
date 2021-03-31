@@ -56,6 +56,9 @@ def main():
   # Retrieve information from all the hosts
   client = SystemAdministratorIntegrator(exclude=excludedHosts)
   resultAll = client.getOverallStatus()
+  if not resultAll['OK']:
+    gLogger.error(resultAll['Message'])
+    DIRACexit(-1)
 
   # Retrieve user installing the component
   result = getProxyInfo()
@@ -66,13 +69,12 @@ def main():
   if not user:
     user = 'unknown'
 
-  notificationClient = NotificationClient()
   for host in resultAll['Value']:
     if not resultAll['Value'][host]['OK']:
       # If the host cannot be contacted, exclude it and send message
       excludedHosts.append(host)
 
-      result = notificationClient.sendMail(
+      result = NotificationClient().sendMail(
           Operations().getValue(
               'EMail/Production',
               []),
@@ -82,9 +84,6 @@ def main():
       if not result['OK']:
         gLogger.error('Can not send unreachable host notification mail: %s' % result['Message'])
 
-  if not resultAll['OK']:
-    gLogger.error(resultAll['Message'])
-    DIRACexit(-1)
   resultHosts = client.getHostInfo()
   if not resultHosts['OK']:
     gLogger.error(resultHosts['Message'])

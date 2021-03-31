@@ -1103,7 +1103,7 @@ class ComponentInstaller(object):
             body = rFile.read()
 
           for cType in self.componentTypes:
-            if body.find('dirac-%s' % (cType)) != -1:
+	    if body.find('dirac_%s' % (cType)) != -1:
               if system not in resultDict[resultIndexes[cType]]:
                 resultDict[resultIndexes[cType]][system] = []
               resultDict[resultIndexes[cType]][system].append(component)
@@ -1137,7 +1137,7 @@ class ComponentInstaller(object):
           body = rfile.read()
 
         for cType in self.componentTypes:
-          if body.find('dirac-%s' % (cType)) != -1:
+	  if body.find('dirac_%s' % (cType)) != -1:
             system, compT = component.split('_', 1)
             if system not in resultDict[resultIndexes[cType]]:
               resultDict[resultIndexes[cType]][system] = []
@@ -2107,7 +2107,7 @@ rcfile=%(bashrc)s
 #
 exec 2>&1
 #
-exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
+exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac_webapp_run.py -p < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                   'DIRAC': self.linkedRootPath})
 
