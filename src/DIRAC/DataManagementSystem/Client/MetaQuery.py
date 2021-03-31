@@ -120,7 +120,7 @@ class MetaQuery(object):
       if name in metaDict:
         if isinstance(metaDict[name], dict):
           if isinstance(mvalue, dict):
-            op, value = mvalue.items()[0]
+            op, value = list(mvalue.items())[0]
             if op in metaDict[name]:
               if isinstance(metaDict[name][op], list):
                 if isinstance(value, list):

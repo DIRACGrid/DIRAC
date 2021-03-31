@@ -308,7 +308,7 @@ class RequestExecutingAgent(AgentModule):
         for rId in getRequests["Value"]["Failed"]:
           self.log.error("execute:", "%s" % getRequests["Value"]["Failed"][rId])
 
-        requestsToExecute = getRequests["Value"]["Successful"].values()
+        requestsToExecute = list(getRequests["Value"]["Successful"].values())
 
       self.log.info("execute: will execute requests ", "%s" % len(requestsToExecute))
 
