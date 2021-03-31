@@ -65,7 +65,7 @@ COMPONENT_NAME = 'DiracAPI'
 def parseArguments(args):
   argList = []
   for arg in args:
-    argList += arg.split(',')
+    argList += [a.strip() for a in arg.split(',') if a.strip()]
   return argList
 
 
