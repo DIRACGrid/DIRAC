@@ -582,14 +582,14 @@ class ComponentInstaller(object):
       cType = installation['Component']['Type']
 
       # Is the component a rename of another module?
-      if installation['Instance'] == installation['Component']['Module']:
+      if installation['Instance'] == installation['Component']['DIRACModule']:
         isRenamed = False
       else:
         isRenamed = True
 
       result = self.monitoringClient.getInstallations(
           {'UnInstallationTime': None},
-          {'DIRACSystem': system, 'DIRACModule': installation['Component']['Module']},
+          {'DIRACSystem': system, 'DIRACModule': installation['Component']['DIRACModule']},
           {},
           True)
       if not result['OK']:
@@ -1103,7 +1103,7 @@ class ComponentInstaller(object):
             body = rFile.read()
 
           for cType in self.componentTypes:
-	    if body.find('dirac_%s' % (cType)) != -1:
+            if body.find('dirac_%s' % (cType)) != -1:
               if system not in resultDict[resultIndexes[cType]]:
                 resultDict[resultIndexes[cType]][system] = []
               resultDict[resultIndexes[cType]][system].append(component)
@@ -1137,7 +1137,7 @@ class ComponentInstaller(object):
           body = rfile.read()
 
         for cType in self.componentTypes:
-	  if body.find('dirac_%s' % (cType)) != -1:
+          if body.find('dirac_%s' % (cType)) != -1:
             system, compT = component.split('_', 1)
             if system not in resultDict[resultIndexes[cType]]:
               resultDict[resultIndexes[cType]][system] = []
