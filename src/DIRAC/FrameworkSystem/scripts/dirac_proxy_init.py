@@ -329,11 +329,9 @@ class ProxyInit(object):
     import requests
     import threading
     import webbrowser
-    from pprint import pprint
 
     from DIRAC.FrameworkSystem.Utilities.halo import Halo
     from DIRAC.Core.Utilities.JEncode import decode, encode
-    from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
     from authlib.integrations.requests_client import OAuth2Session, OAuthError
     from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import submitUserAuthorizationFlow
     from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import waitFinalStatusOfUserAuthorizationFlow
