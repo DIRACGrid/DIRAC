@@ -582,14 +582,14 @@ class ComponentInstaller(object):
       cType = installation['Component']['Type']
 
       # Is the component a rename of another module?
-      if installation['Instance'] == installation['Component']['Module']:
+      if installation['Instance'] == installation['Component']['DIRACModule']:
         isRenamed = False
       else:
         isRenamed = True
 
       result = self.monitoringClient.getInstallations(
           {'UnInstallationTime': None},
-          {'DIRACSystem': system, 'DIRACModule': installation['Component']['Module']},
+	  {'DIRACSystem': system, 'DIRACModule': installation['Component']['DIRACModule']},
           {},
           True)
       if not result['OK']:
