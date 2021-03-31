@@ -10,6 +10,7 @@ import sys
 import time
 import pytest
 
+import DIRAC
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.MySQL import MySQL
@@ -108,9 +109,13 @@ def genVal2():
     ('mysql', 'Dirac', 'Dirac', 'AccountingDB', 3306, True),
     ('fake', 'fake', 'fake', 'FakeDB', 0000, False),
 ])
-def test_connection(host, user, password, dbName, port, expected):
+def test_connection(host, user, password, dbName, port, expected, monkeypatch):
   """ Try to connect to a DB
   """
+  # Avoid having many retries which sleep for long durations
+  monkeypatch.setattr(DIRAC.Core.Utilities.MySQL, "MAXCONNECTRETRY", 1)
+  monkeypatch.setattr(DIRAC.Core.Utilities.MySQL, "RETRY_SLEEP_DURATION", 0.5)
+
   mysqlDB = getDB(host, user, password, dbName, port)
   result = mysqlDB._connect()
   assert result['OK'] is expected

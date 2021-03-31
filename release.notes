@@ -17,6 +17,10 @@ CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent i
 *tests
 CHANGE: (#5046) don't use mail in the self generated certificates
 
+[v7r2p2]
+
+FIX: Fixes from v7r053 and v7r1p36
+
 [v7r2p1]
 
 NEW: (#5041) Add Python 3 install docs to README
@@ -149,6 +153,18 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p36]
+
+*DMS
+FIX: (#5080) SQLAlchemy 1.4 support for FTS3DB
+FIX: (#5054) Submit FTS3 jobs with lowercase checksum
+
+*RMS
+FIX: (#5080) SQLAlchemy 1.4 support for ReqDB
+
+*Resources
+FIX: (#5077) Host.py - Fix for the case where no subprocess32 module found
 
 [v7r1p35]
 
@@ -752,6 +768,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p53]
+
+*Interface
+FIX: (#5069) parseArguments strip arguments correctly
 
 [v7r0p52]
 
