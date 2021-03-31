@@ -1,4 +1,4 @@
-[v7r3-pre2]
+[v7r3-pre3]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
 
@@ -13,6 +13,9 @@ CHANGE: (#4303) Removed completely the SystemLogging
 *WMS
 CHANGE: (#4884) JobDB: compress JDLs by default (no need for flag anymore)
 CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent instead)
+
+*tests
+CHANGE: (#5046) don't use mail in the self generated certificates
 
 [v7r2p1]
 
