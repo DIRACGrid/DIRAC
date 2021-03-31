@@ -50,35 +50,32 @@ def generateDocs(data, withTimeStamp=True):
 
   :param list data: list of dictionaries or list of key/value tuples
   """
-  for row in data:
-    body = {
-	'_source': {},
-    }
-    if isinstance(row, tuple):
-      row = {row[0]: row[1]}
-    body['_source'] = row
+  for doc in data:
+    if isinstance(doc, tuple):
+      doc = {str(doc[0]): doc[1]}
+      doc["_id"] = str(doc[0]) + str(doc[1])
 
     if withTimeStamp:
-      if 'timestamp' not in row:
+      if 'timestamp' not in doc:
 	sLog.warn("timestamp is not given")
 
       # if the timestamp is not provided, we use the current utc time.
-      timestamp = row.get('timestamp', int(Time.toEpoch()))
+      timestamp = doc.get('timestamp', int(Time.toEpoch()))
       try:
 	if isinstance(timestamp, datetime):
-	  body['_source']['timestamp'] = int(timestamp.strftime('%s')) * 1000
+	  doc['timestamp'] = int(timestamp.strftime('%s')) * 1000
 	elif isinstance(timestamp, six.string_types):
 	  timeobj = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
-	  body['_source']['timestamp'] = int(timeobj.strftime('%s')) * 1000
+	  doc['timestamp'] = int(timeobj.strftime('%s')) * 1000
 	else:  # we assume  the timestamp is an unix epoch time (integer).
-	  body['_source']['timestamp'] = timestamp * 1000
+	  doc['timestamp'] = timestamp * 1000
       except (TypeError, ValueError) as e:
 	# in case we are not able to convert the timestamp to epoch time....
 	sLog.error("Wrong timestamp", e)
-	body['_source']['timestamp'] = int(Time.toEpoch()) * 1000
+	doc['timestamp'] = int(Time.toEpoch()) * 1000
 
-    sLog.debug("yielding %s" % body)
-    yield body
+    sLog.debug("yielding %s" % doc)
+    yield doc
 
 class ElasticSearchDB(object):
 
