@@ -2,7 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from time import time
+import time
+import requests
 from authlib.oauth2 import OAuth2Error
 from authlib.oauth2.rfc6749.grants import AuthorizationEndpointMixin
 from authlib.oauth2.rfc6749.errors import InvalidClientError, UnauthorizedClientError
@@ -15,6 +16,75 @@ from authlib.oauth2.rfc8628 import (
 from DIRAC import gLogger
 
 log = gLogger.getSubLogger(__name__)
+
+
+def submitUserAuthorizationFlow(self, client=None, idP=None, group=None):
+  """ Submit authorization flow
+  """
+  # TODO: Fix hardcore url
+  issuer = 'https://marosvn32.in2p3.fr/DIRAC/auth'
+
+  try:
+    # TODO: ask public client in REST API of the configuration
+    if not client:
+      # Prepare client
+      r = requests.get('%s/clientsinfo' % issuer, verify=False)
+      r.raise_for_status()
+      client = r.json().get("CLI")
+
+    url = '%s/device?client_id=%s' % (issuer, client['client_id'])
+    if group:
+      url += '&scope=g:%s' % group
+    if idP:
+      url += '&provider=%s' % idP
+
+    r = requests.post(url, verify=False)
+    r.raise_for_status()
+    authFlowData = r.json()
+
+    # Check if all main keys are present here
+    for k in ['user_code', 'device_code', 'verification_uri']:
+      if not authFlowData.get(k):
+        return S_ERROR('Mandatory %s key is absent in authentication response.' % k)
+
+    authFlowData['client_id'] = client['client_id']
+    return S_OK(authFlowData)
+  except requests.exceptions.Timeout:
+    return S_ERROR('Authentication server is not answer, timeout.')
+  except requests.exceptions.RequestException as ex:
+    return S_ERROR(r.content or repr(ex))
+  except Exception as ex:
+    return S_ERROR('Cannot read authentication response: %s' % repr(ex))
+
+
+def waitFinalStatusOfUserAuthorizationFlow(self, authFlowData, timeout=300):
+  """ Submit waiting loop process, that will monitor current authorization session status
+
+      :param dict authFlowData: authentication flow parameters
+      :param int timeout: max time of waiting
+
+      :return: S_OK(dict)/S_ERROR() - dictionary contain access/refresh token and some metadata
+  """
+  __start = time.time()
+
+  # TODO: Fix hardcore url
+  issuer = 'https://marosvn32.in2p3.fr/DIRAC/auth'
+
+  url = '%s/token?client_id=%s' % (issuer, authFlowData['client_id'])
+  url += '&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=%s' % authFlowData['device_code']
+  while True:
+    time.sleep(response.get('interval', 5))
+    if time.time() - __start > timeout:
+      return S_ERROR('Time out.')
+    r = requests.post(url, verify=False)
+    token = r.json()
+    if not token:
+      return S_ERROR('Resived token is empty!')
+    if 'error' not in token:
+      os.environ['DIRAC_TOKEN'] = r.text
+      return S_OK(token)
+    if token['error'] != 'authorization_pending':
+      return S_ERROR(token['error'] + ' : ' + token.get('description', ''))
 
 
 class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):

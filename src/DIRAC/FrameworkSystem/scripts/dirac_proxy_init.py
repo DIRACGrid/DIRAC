@@ -335,6 +335,8 @@ class ProxyInit(object):
     from DIRAC.Core.Utilities.JEncode import decode, encode
     from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
     from authlib.integrations.requests_client import OAuth2Session, OAuthError
+    from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import submitUserAuthorizationFlow
+    from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import waitFinalStatusOfUserAuthorizationFlow
 
     authAPI = None
     proxyAPI = None
@@ -397,15 +399,10 @@ class ProxyInit(object):
         sys.exit('Cannot read response: %s' % e)
 
       # Get token
-      result = gSessionManager.submitUserAuthorizationFlow(
-          idP=self.__piParams.provider, group=self.__piParams.diracGroup, grant='device')
+      result = submitUserAuthorizationFlow(idP=self.__piParams.provider, group=self.__piParams.diracGroup)
       if not result['OK']:
         sys.exit(result['Message'])
       response = result['Value']
-
-      for k in ['user_code', 'device_code', 'verification_uri']:
-        if not response.get(k):
-          sys.exit('Cannot get %s for authentication.' % k)
 
     userCode = response['user_code']
     deviceCode = response['device_code']
@@ -433,32 +430,15 @@ class ProxyInit(object):
     if webbrowser.open_new_tab(verURL):
       spinner.text = '%s opening in default browser..' % verURL
 
-    comment = ''
     with Halo('Waiting authorization status..') as spin:
-      result = gSessionManager.prepareClientCredentials()
+      result = waitFinalStatusOfUserAuthorizationFlow(response)
       if not result['OK']:
         sys.exit(result['Message'])
-      clientID = result['Value']['client_id']
-
-      __start = time.time()
-      # TODO: Fix hardcore url
-      url = 'https://marosvn32.in2p3.fr/DIRAC/auth/token?client_id=%s' % clientID
-      url += '&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=%s' % deviceCode
-      while True:
-        time.sleep(response.get('interval', 5))
-        if time.time() - __start > 300:
-          sys.exit('Time out.')
-        r = requests.post(url, verify=False)
-        token = r.json()
-        if 'error' not in token:
-          break
-        if token['error'] != 'authorization_pending':
-          sys.exit(token['error'] + ' : ' + token.get('description', ''))
+      token = result['Value']
 
       spin.color = 'green'
       spin.text = 'Download proxy..'
-      # url = '%ss:%s/g:%s/proxy?lifetime=%s' % (proxyAPI, setup,
-      #                                          self.__piParams.diracGroup, self.__piParams.proxyLifeTime)
+      # 's:%s/g:%s' % (setup, self.__piParams.diracGroup)
       url = '%s/proxy?lifetime=%s' % (proxyAPI, self.__piParams.proxyLifeTime)
       addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption(self.__piParams.diracGroup, "AutoAddVOMS", False)
       if addVOMS:
