@@ -125,13 +125,13 @@ def test_setAndGetJobFromDB():
   time.sleep(SLEEP_DELAY)
   res = elasticJobParametersDB.getJobParameters(101)
   assert res['OK']
-  assert len(res['Value'][101]) == 5
+  assert len(res['Value'][101]) == 4
   res = elasticJobParametersDB.deleteJobParameters(101, 'nonExistingKey')
   assert res['OK']
   time.sleep(SLEEP_DELAY)
   res = elasticJobParametersDB.getJobParameters(101)
   assert res['OK']
-  assert len(res['Value'][101]) == 5
+  assert len(res['Value'][101]) == 4
 
   # delete the index
   res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB.indexName)

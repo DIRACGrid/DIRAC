@@ -166,9 +166,16 @@ class ElasticJobParametersDB(ElasticDB):
 
     :returns: S_OK/S_ERROR as result of indexing
     """
-    self.log.debug('Inserting data in %s:%s' % (self.indexName, parameters))
+    self.log.debug(
+        'Inserting parameters',
+        "in %s: for job %s : %s" % (self.indexName, jobID, parameters))
 
-    result = self.bulk_index(self.indexName, data=parameters, period=None, withTimeStamp=False)
+    parametersListDict = [{"JobID": jobID,
+                           "Name": parName,
+                           "Value": parValue,
+                           "_id": str(parName) + str(parValue)} for parName, parValue in parameters]
+
+    result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=False)
     if not result['OK']:
       self.log.error("ERROR: Couldn't insert data", result['Message'])
     return result

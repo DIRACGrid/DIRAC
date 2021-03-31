@@ -375,7 +375,7 @@ class JobStateUpdateHandler(RequestHandler):
     if cls.elasticJobParametersDB:
       res = cls.elasticJobParametersDB.setJobParameters(jobID, parameters)
       if not res['OK']:
-	gLogger.error('Failed to add Job Parameters to ElasticJobParametersDB', res['Message'])
+        gLogger.error('Failed to add Job Parameters to ElasticJobParametersDB', res['Message'])
 
     else:
       result = cls.jobDB.setJobParameters(int(jobID), parameters)

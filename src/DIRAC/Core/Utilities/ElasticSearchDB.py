@@ -1,7 +1,6 @@
 """
-This class a wrapper around elasticsearch-py. It is used to query
-Elasticsearch database.
-
+This class a wrapper around elasticsearch-py.
+It is used to query Elasticsearch instances.
 """
 
 from __future__ import absolute_import
@@ -51,28 +50,24 @@ def generateDocs(data, withTimeStamp=True):
   :param list data: list of dictionaries or list of key/value tuples
   """
   for doc in data:
-    if isinstance(doc, tuple):
-      doc = {str(doc[0]): doc[1]}
-      doc["_id"] = str(doc[0]) + str(doc[1])
-
     if withTimeStamp:
       if 'timestamp' not in doc:
-	sLog.warn("timestamp is not given")
+        sLog.warn("timestamp is not given")
 
       # if the timestamp is not provided, we use the current utc time.
       timestamp = doc.get('timestamp', int(Time.toEpoch()))
       try:
-	if isinstance(timestamp, datetime):
-	  doc['timestamp'] = int(timestamp.strftime('%s')) * 1000
-	elif isinstance(timestamp, six.string_types):
-	  timeobj = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
-	  doc['timestamp'] = int(timeobj.strftime('%s')) * 1000
-	else:  # we assume  the timestamp is an unix epoch time (integer).
-	  doc['timestamp'] = timestamp * 1000
+        if isinstance(timestamp, datetime):
+          doc['timestamp'] = int(timestamp.strftime('%s')) * 1000
+        elif isinstance(timestamp, six.string_types):
+          timeobj = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
+          doc['timestamp'] = int(timeobj.strftime('%s')) * 1000
+        else:  # we assume  the timestamp is an unix epoch time (integer).
+          doc['timestamp'] = timestamp * 1000
       except (TypeError, ValueError) as e:
-	# in case we are not able to convert the timestamp to epoch time....
-	sLog.error("Wrong timestamp", e)
-	doc['timestamp'] = int(Time.toEpoch()) * 1000
+        # in case we are not able to convert the timestamp to epoch time....
+        sLog.error("Wrong timestamp", e)
+        doc['timestamp'] = int(Time.toEpoch()) * 1000
 
     sLog.debug("yielding %s" % doc)
     yield doc

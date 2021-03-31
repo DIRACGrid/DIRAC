@@ -589,7 +589,7 @@ class ComponentInstaller(object):
 
       result = self.monitoringClient.getInstallations(
           {'UnInstallationTime': None},
-	  {'DIRACSystem': system, 'DIRACModule': installation['Component']['DIRACModule']},
+          {'DIRACSystem': system, 'DIRACModule': installation['Component']['DIRACModule']},
           {},
           True)
       if not result['OK']:

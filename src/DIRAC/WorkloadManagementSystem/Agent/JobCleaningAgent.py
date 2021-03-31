@@ -186,7 +186,7 @@ class JobCleaningAgent(AgentModule):
       return res
     if res['Value']['Successful']:
       self.log.warn("Some jobs won't be removed, as still having Requests to complete",
-		    "(n=%d)" % len(res['Value']['Successful']))
+                    "(n=%d)" % len(res['Value']['Successful']))
       jobList = list(set(jobList).difference(set(res['Value']['Successful'])))
 
     result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)

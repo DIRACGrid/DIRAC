@@ -50,8 +50,6 @@ class ElasticTestCase(unittest.TestCase):
                      {"Color": "red", "quantity": 1, "Product": "i", "timestamp": "2015-02-09 11:15:00.0"},
                      {"Color": "red", "quantity": 1, "Product": "l", "timestamp": "2015-02-09 11:30:00.0"}]
 
-    self.dataTuples = [("Color", "red"), ("quantity", 1), ("Product", "a")]
-
     self.index_name = ''
 
     self.maxDiff = None
@@ -77,20 +75,6 @@ class ElasticBulkCreateChain(ElasticTestCase):
                                              self.data)
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 10)
-    time.sleep(5)
-    indexes = self.elasticSearchDB.getIndexes()
-    self.assertEqual(type(indexes), list)
-    for index in indexes:
-      res = self.elasticSearchDB.deleteIndex(index)
-      self.assertTrue(res['OK'])
-
-  def test_bulkindexTuple(self):
-    """ bulk_index test
-    """
-    result = self.elasticSearchDB.bulk_index('integrationtest',
-					     self.dataTuples)
-    self.assertTrue(result['OK'])
-    self.assertEqual(result['Value'], 3)
     time.sleep(5)
     indexes = self.elasticSearchDB.getIndexes()
     self.assertEqual(type(indexes), list)
