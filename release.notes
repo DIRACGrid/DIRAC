@@ -1,3 +1,15 @@
+[v7r1p36]
+
+*DMS
+FIX: (#5080) SQLAlchemy 1.4 support for FTS3DB
+FIX: (#5054) Submit FTS3 jobs with lowercase checksum
+
+*RMS
+FIX: (#5080) SQLAlchemy 1.4 support for ReqDB
+
+*Resources
+FIX: (#5077) Host.py - Fix for the case where no subprocess32 module found
+
 [v7r1p35]
 
 FIX: Fixes from v7r0p52
