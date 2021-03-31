@@ -14,7 +14,10 @@ import os
 import glob
 import shutil
 import signal
-import subprocess32 as subprocess
+try:
+  import subprocess32 as subprocess
+except:
+  import subprocess
 import stat
 import json
 import multiprocessing
