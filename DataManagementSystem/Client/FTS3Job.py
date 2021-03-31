@@ -380,9 +380,15 @@ class FTS3Job(JSerializable):
         transfers.append(stageTrans)
 
       trans_metadata = {'desc': 'Transfer %s' % ftsFileID, 'fileID': ftsFileID}
+
+      # because of an xroot bug (https://github.com/xrootd/xrootd/issues/1433)
+      # the checksum needs to be lowercase. It does not impact the other
+      # protocol, so it's fine to put it here.
+      # I only add it in this transfer and not the "staging" one above because it
+      # impacts only root -> root transfers
       trans = fts3.new_transfer(sourceSURL,
                                 targetSURL,
-                                checksum='ADLER32:%s' % ftsFile.checksum,
+                                checksum='ADLER32:%s' % ftsFile.checksum.lower(),
                                 filesize=ftsFile.size,
                                 metadata=trans_metadata,
                                 activity=self.activity)
