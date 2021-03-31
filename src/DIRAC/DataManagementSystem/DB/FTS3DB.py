@@ -140,6 +140,18 @@ mapper(FTS3StagingOperation, fts3OperationTable,
        )
 
 
+# About synchronize_session:
+# The FTS3DB class uses SQLAlchemy in a mixed mode:
+# both the ORM and the Core style.
+# Up to 1.3, the `session.execute` statements had no ORM functionality,
+# meaning that the session cache were not updated when using `update` or `delete`
+# Although it could be an issue, it was not really one in our case, since we always close
+# the session
+# As of 1.4, `session.execute` supports ORM functionality, and thus needs more info to know
+# how to manage `update` or `delete`. Hense the `synchronize_session` option.
+# We set it to `False` simply because we do not rely on the session cache.
+# Please see https://github.com/sqlalchemy/sqlalchemy/discussions/6159 for detailed discussion
+
 ########################################################################
 class FTS3DB(object):
   """
@@ -312,6 +324,7 @@ class FTS3DB(object):
                           .where(FTS3Job.jobID.in_(jobIds)
                                  )
                           .values({'assignment': jobAssignmentTag})
+                          .execution_options(synchronize_session=False)  # see comment about synchronize_session
                           )
 
       session.commit()
@@ -384,7 +397,8 @@ class FTS3DB(object):
         updateQuery = update(FTS3File)\
             .where(and_(*whereConditions)
                    )\
-            .values(updateDict)
+            .values(updateDict)\
+            .execution_options(synchronize_session=False)  # see comment about synchronize_session
 
         session.execute(updateQuery)
 
@@ -435,6 +449,7 @@ class FTS3DB(object):
                                     )
                                )
                         .values(updateDict)
+                        .execution_options(synchronize_session=False)  # see comment about synchronize_session
                         )
       session.commit()
 
@@ -480,7 +495,8 @@ class FTS3DB(object):
           .where(and_(FTS3File.operationID == FTS3Job.operationID,
                       FTS3File.ftsGUID == FTS3Job.ftsGUID,
                       FTS3Job.operationID == operationID,
-                      FTS3Job.ftsGUID == ftsGUID))
+                      FTS3Job.ftsGUID == ftsGUID))\
+          .execution_options(synchronize_session=False)  # see comment about synchronize_session
 
       session.execute(updStmt)
       session.commit()
@@ -541,6 +557,7 @@ class FTS3DB(object):
                           .where(FTS3Operation.operationID.in_(operationIDs)
                                  )
                           .values({'assignment': operationAssignmentTag})
+                          .execution_options(synchronize_session=False)  # see comment about synchronize_session
                           )
 
       session.commit()
@@ -588,7 +605,9 @@ class FTS3DB(object):
                             'INTERVAL %d HOUR' %
                             kickDelay)))) .values(
                 {
-                    'assignment': None}))
+                    'assignment': None})
+            .execution_options(synchronize_session=False)  # see comment about synchronize_session
+        )
         rowCount = result.rowcount
 
       session.commit()
@@ -636,7 +655,9 @@ class FTS3DB(object):
                             'INTERVAL %d HOUR' %
                             kickDelay)))) .values(
                 {
-                    'assignment': None}))
+                    'assignment': None})
+            .execution_options(synchronize_session=False)  # see comment about synchronize_session
+        )
         rowCount = result.rowcount
 
       session.commit()
@@ -677,7 +698,8 @@ class FTS3DB(object):
       rowCount = 0
       if opIDs:
         result = session.execute(delete(FTS3Operation)
-                                 .where(FTS3Operation.operationID.in_(opIDs)))
+                                 .where(FTS3Operation.operationID.in_(opIDs))
+                                 .execution_options(synchronize_session=False))
         rowCount = result.rowcount
 
       session.commit()

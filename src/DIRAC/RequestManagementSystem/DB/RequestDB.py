@@ -204,7 +204,8 @@ class RequestDB(object):
                                   .where(Request.RequestID == requestID)
                                   .values({Request._Status: 'Canceled',
                                            Request._LastUpdate: datetime.datetime.utcnow()
-                                           .strftime(Request._datetimeFormat)}))
+                                           .strftime(Request._datetimeFormat)})
+                                  .execution_options(synchronize_session=False))  # See FTS3DB for synchronize_session
       session.commit()
 
       # No row was changed

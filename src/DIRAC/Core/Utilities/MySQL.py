@@ -167,6 +167,7 @@ gInstancesCount = 0
 __RCSID__ = "$Id$"
 
 MAXCONNECTRETRY = 10
+RETRY_SLEEP_DURATION = 5
 
 
 def _checkFields(inFields, inValues):
@@ -254,7 +255,7 @@ class MySQL(object):
       return self.__getWithRetry(dbName, retries, retries)
 
     def __getWithRetry(self, dbName, totalRetries, retriesLeft):
-      sleepTime = 5 * (totalRetries - retriesLeft)
+      sleepTime = RETRY_SLEEP_DURATION * (totalRetries - retriesLeft)
       if sleepTime > 0:
         time.sleep(sleepTime)
       try:
