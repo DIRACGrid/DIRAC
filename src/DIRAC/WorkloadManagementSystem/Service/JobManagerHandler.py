@@ -329,8 +329,9 @@ class JobManagerHandler(RequestHandler):
       self.log.debug(str(result))
       if not result['OK']:
         return result
-      self.jobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
-                                     applicationStatus='Unknown', source='JobManager')
+      self.jobLoggingDB.addLoggingRecord(
+	  result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
+	  applicationStatus='Unknown', source='JobManager')
 
     if invalidJobList or nonauthJobList:
       result = S_ERROR('Some jobs failed reschedule')
@@ -345,12 +346,65 @@ class JobManagerHandler(RequestHandler):
     self.__sendJobsToOptimizationMind(validJobList)
     return result
 
+  types_removeJob = []
+
+  def export_removeJob(self, jobIDs):
+    """  Completely remove a list of jobs.
+
+    :param list jobIDs: list of job IDs
+    :return: S_OK()/S_ERROR() -- confirmed job IDs
+    """
+
+    # TODO: we should not remove a job if it still has requests in the RequestManager.
+
+    jobList = self.__getJobList(jobIDs)
+    if not jobList:
+      return S_ERROR('Invalid job specification: ' + str(jobIDs))
+
+    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights(jobList,
+												  RIGHT_DELETE)
+    count = 0
+    error_count = 0
+
+    result = self.jobDB.removeJobFromDB(validJobList)
+    if not result['OK']:
+      self.log.error('Failed to delete jobs from JobDB', '(n=%d)' % len(validJobList))
+    else:
+      self.log.info('Deleted jobs from JobDB', '(n=%d)' % len(validJobList))
+
+    for jobID in validJobList:
+      resultTQ = self.taskQueueDB.deleteJob(jobID)
+      if not resultTQ['OK']:
+	self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'])
+	error_count += 1
+      else:
+	count += 1
+
+    result = self.jobLoggingDB.deleteJob(validJobList)
+    if not result['OK']:
+      self.log.error('Failed to delete jobs from JobLoggingDB', '(n=%d)' % len(validJobList))
+    else:
+      self.log.info('Deleted jobs from JobLoggingDB', '(n=%d)' % len(validJobList))
+
+    if count > 0 or error_count > 0:
+      self.log.info('', 'Deleted %d jobs from JobDB, %d errors' % (count, error_count))
+
+    if invalidJobList or nonauthJobList:
+      result = S_ERROR('Some jobs failed removal')
+      if invalidJobList:
+	result['InvalidJobIDs'] = invalidJobList
+      if nonauthJobList:
+	result['NonauthorizedJobIDs'] = nonauthJobList
+      return result
+
+    return S_OK(validJobList)
+
   def __deleteJob(self, jobID):
-    """ Delete one job
+    """ Set the job status to "Deleted"
+    and remove the pilot that ran and its logging info if the pilot is finished.
 
-        :param int jobID: job ID
-
-        :return: S_OK()/S_ERROR()
+    :param int jobID: job ID
+    :return: S_OK()/S_ERROR()
     """
     result = self.jobDB.setJobStatus(
         jobID, JobStatus.DELETED, 'Checking accounting')
@@ -544,8 +598,9 @@ class JobManagerHandler(RequestHandler):
           badIDs.append(jobID)
         else:
           good_ids.append(jobID)
-        self.jobLoggingDB.addLoggingRecord(result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
-                                       applicationStatus='Unknown', source='JobManager')
+	self.jobLoggingDB.addLoggingRecord(
+	    result['JobID'], status=result['Status'], minorStatus=result['MinorStatus'],
+	    applicationStatus='Unknown', source='JobManager')
 
     self.__sendJobsToOptimizationMind(good_ids)
     if invalidJobList or nonauthJobList or badIDs:
