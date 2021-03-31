@@ -319,7 +319,7 @@ The Configuration service will serve the content of the file ``/opt/dirac/etc/My
     {
       ciuser
       {
-        DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
+        DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
         Email = adminUser@cern.ch
       }
     }
@@ -346,7 +346,7 @@ The Configuration service will serve the content of the file ``/opt/dirac/etc/My
     {
       dirac-tuto
       {
-        DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=dirac-tuto/emailAddress=lhcb-dirac-ci@cern.ch
+        DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=dirac-tuto
         Properties = TrustedHost
         Properties += CSAdministrator
         Properties += JobAdministrator
@@ -524,9 +524,9 @@ You should now be able to get a proxy::
   [diracuser@dirac-tuto DIRAC]$ dirac-proxy-init
   Generating proxy...
   Proxy generated:
-  subject      : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=460648814
-  issuer       : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
-  identity     : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
+  subject      : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/CN=460648814
+  issuer       : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
+  identity     : /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
   timeleft     : 23:59:59
   DIRAC group  : dirac_user
   rfc          : True

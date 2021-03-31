@@ -12,7 +12,6 @@ C                      = ch
 O                      = DIRAC
 OU                     = DIRAC CI
 CN                     = ciuser
-emailAddress           = lhcb-dirac-ci@cern.ch
 
 [ v3_req ]
 # Extensions for client certificates (`man x509v3_config`).

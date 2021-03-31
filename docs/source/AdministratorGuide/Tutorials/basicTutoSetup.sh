@@ -130,13 +130,13 @@ LocalInstallation
   # Name of the Admin user (from the user certificate we created )
   AdminUserName = ciuser
   # DN of the Admin user certificate (from the user certificate we created)
-  AdminUserDN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
+  AdminUserDN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser
   AdminUserEmail= adminUser@cern.ch
   # Name of the Admin group
   AdminGroupName = dirac_admin
 
   # DN of the host certificate (from the host certificate we created)
-  HostDN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=dirac-tuto/emailAddress=lhcb-dirac-ci@cern.ch
+  HostDN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=dirac-tuto
   # Define the Configuration Server as Master
   ConfigurationMaster = yes
 

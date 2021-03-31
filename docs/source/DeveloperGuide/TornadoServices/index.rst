@@ -272,15 +272,15 @@ Contacting the service using ``DIRAC``::
     ...: 
   Out[7]: 
   {u'OK': True,
-  u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+  u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
     u'group': u'dirac_user',
-    u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+    u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
     u'isLimitedProxy': False,
     u'isProxy': True,
-    u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+    u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
     u'properties': [u'NormalUser'],
     u'secondsLeft': 86141,
-    u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=2409820262',
+    u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/CN=2409820262',
     u'username': u'adminusername',
     u'validDN': False,
     u'validGroup': False},
@@ -301,7 +301,7 @@ Contacting the service using ``requests``::
       ...: with requests.post(url, data=kwargs, cert=cert, verify=caPath) as r:
       ...:     print r.json()
       ...:     
-  {u'OK': True, u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', u'username': u'adminusername', u'secondsLeft': 85846, u'group': u'dirac_user', u'isProxy': True, u'validGroup': False, u'validDN': False, u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', u'isLimitedProxy': False, u'properties': [u'NormalUser'], u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=2409820262'}}
+  {u'OK': True, u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', u'username': u'adminusername', u'secondsLeft': 85846, u'group': u'dirac_user', u'isProxy': True, u'validGroup': False, u'validDN': False, u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', u'isLimitedProxy': False, u'properties': [u'NormalUser'], u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/CN=2409820262'}}
 
 
 

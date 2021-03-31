@@ -101,7 +101,7 @@ The Request has a name (``myFirstRequest``) that we chose, but also an ID, retur
   [diracuser@dirac-tuto ~]$ dirac-rms-request myFirstRequest
   Request name='myFirstRequest' ID=8 Status='Waiting'
   Created 2019-04-23 14:37:05, Updated 2019-04-23 14:37:05, NotBefore 2019-04-23 14:37:05
-  Owner: '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', Group: dirac_data
+  Owner: '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', Group: dirac_data
     [0] Operation Type='ReplicateAndRegister' ID=8 Order=0 Status='Waiting'
         TargetSE: StorageElementTwo - Created 2019-04-23 14:37:05, Updated 2019-04-23 14:37:05
       [01] ID=2 LFN='/tutoVO/user/c/ciuser/myTestFile.txt' Status='Waiting' Checksum='1e750431'
@@ -109,7 +109,7 @@ The Request has a name (``myFirstRequest``) that we chose, but also an ID, retur
   [diracuser@dirac-tuto ~]$ dirac-rms-request 8
   Request name='myFirstRequest' ID=8 Status='Waiting'
   Created 2019-04-23 14:37:05, Updated 2019-04-23 14:37:05, NotBefore 2019-04-23 14:37:05
-  Owner: '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', Group: dirac_data
+  Owner: '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', Group: dirac_data
     [0] Operation Type='ReplicateAndRegister' ID=8 Order=0 Status='Waiting'
         TargetSE: StorageElementTwo - Created 2019-04-23 14:37:05, Updated 2019-04-23 14:37:05
       [01] ID=2 LFN='/tutoVO/user/c/ciuser/myTestFile.txt' Status='Waiting' Checksum='1e750431'
@@ -120,7 +120,7 @@ You can here clearly see that the Request consists of one ``ReplicateAndRegister
   [diracuser@dirac-tuto ~]$ dirac-rms-request 8
   Request name='myFirstRequest' ID=8 Status='Done'
   Created 2019-04-23 14:37:05, Updated 2019-04-23 14:37:29, NotBefore 2019-04-23 14:37:05
-  Owner: '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch', Group: dirac_data
+  Owner: '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser', Group: dirac_data
     [0] Operation Type='ReplicateAndRegister' ID=8 Order=0 Status='Done'
         TargetSE: StorageElementTwo - Created 2019-04-23 14:37:05, Updated 2019-04-23 14:37:29
       [01] ID=2 LFN='/tutoVO/user/c/ciuser/myTestFile.txt' Status='Done' Checksum='1e750431'

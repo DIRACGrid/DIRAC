@@ -110,7 +110,7 @@ class BaseTransport(object):
 
       In SSLTransport it contains (after the handshake):
 
-       - 'DN' : All identity name, e.g. ```/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch```
+       - 'DN' : All identity name, e.g. ```/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser```
        - 'CN' : Only the user name e.g. ciuser
        - 'x509Chain' : List of all certificates in the chain
        - 'isProxy' : True if the client use proxy certificate

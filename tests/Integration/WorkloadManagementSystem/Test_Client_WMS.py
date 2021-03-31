@@ -473,7 +473,7 @@ class Matcher (TestWMSTestCase):
     # insert a proper DN to run the test
     resourceDescription = {
         'OwnerGroup': 'prod',
-        'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+        'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
         'DIRACVersion': 'pippo',
         'ReleaseVersion': 'blabla',
         'VirtualOrganization': 'LHCb',
@@ -497,7 +497,7 @@ class Matcher (TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
 
     tqDB = TaskQueueDB()
-    tqDefDict = {'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
+    tqDefDict = {'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
                  'OwnerGroup': 'prod', 'Setup': 'dirac-JenkinsSetup', 'CPUTime': 86400}
     res = tqDB.insertJob(jobID, tqDefDict, 10)
     self.assertTrue(res['OK'], res.get('Message'))
