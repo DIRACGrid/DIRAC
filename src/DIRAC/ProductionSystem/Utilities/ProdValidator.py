@@ -128,7 +128,7 @@ class ProdValidator(object):
           return S_ERROR(msg)
         else:
           if not isinstance(list(value.values())[0], list):
-            MetaQueryDict[meta] = {"in": value.values()}
+            MetaQueryDict[meta] = {"in": list(value.values())}
       else:
         values.append(value)
         MetaQueryDict[meta] = {"in": values}

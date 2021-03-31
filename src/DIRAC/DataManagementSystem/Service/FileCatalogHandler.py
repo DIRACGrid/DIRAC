@@ -538,7 +538,7 @@ class FileCataloghandlerMixin(object):
     result = self.fileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
     if not result['OK']:
       return result
-    lfns = result['Value'].values()
+    lfns = list(result['Value'].values())
     return S_OK(lfns)
 
   types_getReplicasByMetadata = [dict, six.string_types, bool]
@@ -560,7 +560,7 @@ class FileCataloghandlerMixin(object):
     if not result['OK'] or not result['Value']:
       return result
 
-    lfns = result['Value'].values()
+    lfns = list(result['Value'].values())
     return self.fileCatalogDB.getFileDetails(lfns, self.getRemoteCredentials())
 
   types_findFilesByMetadataWeb = [dict, six.string_types, six.integer_types, six.integer_types]
@@ -580,7 +580,7 @@ class FileCataloghandlerMixin(object):
     if not result['OK']:
       return result
 
-    lfnsResultList = result['Value']['Successful'].values()
+    lfnsResultList = list(result['Value']['Successful'].values())
     resultDetails = self.fileCatalogDB.getFileDetails(lfnsResultList, self.getRemoteCredentials())
     if not resultDetails['OK']:
       return resultDetails

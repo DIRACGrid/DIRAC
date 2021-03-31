@@ -404,7 +404,7 @@ def statistics(results, span=None, is_timestamp=False):
       raise Exception("Unable to use all the values for the statistics")
   else:
     parsed_data = results
-  values = parsed_data.values()
+  values = list(parsed_data.values())
   data_min = min(values)
   data_max = max(values)
   data_avg = numpy.average(values)
