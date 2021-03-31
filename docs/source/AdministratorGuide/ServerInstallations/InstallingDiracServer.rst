@@ -126,7 +126,7 @@ the steps below. This procedure must be followed for the primary server and for 
 
      mkdir /home/dirac/DIRAC
      cd /home/dirac/DIRAC
-     curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/install_site.sh
+     curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/install_site.sh
 
 
 ----------------
