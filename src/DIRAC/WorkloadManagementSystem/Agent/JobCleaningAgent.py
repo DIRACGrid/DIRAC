@@ -36,16 +36,17 @@ import os
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 import DIRAC.Core.Utilities.Time as Time
 
@@ -123,7 +124,7 @@ class JobCleaningAgent(AgentModule):
     """ Remove jobs in various status
     """
     # Delete jobs in "Deleted" state
-    result = self.removeJobsByStatus({'Status': 'Deleted'})
+    result = self.removeJobsByStatus({'Status': JobStatus.DELETED})
     if not result['OK']:
       return result
 
@@ -177,7 +178,16 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    self.log.notice("Deleting %s jobs for %s" % (len(jobList), condDict))
+    self.log.notice("Deleting jobs", "(%d for %s)" % (len(jobList), condDict))
+
+    # remove from jobList those that have still Operations to do in RMS
+    res = ReqClient().getRequestIDsForJobs(jobList)
+    if not res['OK']:
+      return res
+    if res['Value']['Successful']:
+      self.log.warn("Some jobs won't be removed, as still having Requests to complete",
+		    "(n=%d)" % len(res['Value']['Successful']))
+      jobList = list(set(jobList).difference(set(res['Value']['Successful'])))
 
     result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
     if not result['OK']:
@@ -194,7 +204,7 @@ class JobCleaningAgent(AgentModule):
     for job in failedJobs:
       jobList.pop(jobList.index(job))
 
-    result = JobManagerClient().removeJob(jobList)
+    result = JobManagerClient(useCertificates=True).removeJob(jobList)
     if not result['OK']:
       self.log.error("Could not remove jobs", result['Message'])
       return result

@@ -355,14 +355,12 @@ class JobManagerHandler(RequestHandler):
     :return: S_OK()/S_ERROR() -- confirmed job IDs
     """
 
-    # TODO: we should not remove a job if it still has requests in the RequestManager.
-
     jobList = self.__getJobList(jobIDs)
     if not jobList:
       return S_ERROR('Invalid job specification: ' + str(jobIDs))
 
-    validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights(jobList,
-												  RIGHT_DELETE)
+    validJobList, invalidJobList, nonauthJobList, _ = self.jobPolicy.evaluateJobRights(jobList,
+										       RIGHT_DELETE)
     count = 0
     error_count = 0
 
@@ -496,7 +494,7 @@ class JobManagerHandler(RequestHandler):
           deleteJobList.append(jobID)
       else:
         markKilledJobList.append(jobID)
-      if sDict['Status'] in ['Staging']:
+      if sDict['Status'] in [JobStatus.STAGING]:
         stagingJobList.append(jobID)
 
     badIDs = []
