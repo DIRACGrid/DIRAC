@@ -41,17 +41,6 @@ class ReqDBTestCase(unittest.TestCase):
     self.bulkRequest = 1000
 
 
-class ReqDB(ReqDBTestCase):
-
-  def test_db(self):
-
-    # # empty DB at that stage
-    ret = RequestDB().getDBSummary()
-    self.assertEqual(ret,
-                     {'OK': True,
-                      'Value': {'Operation': {}, 'Request': {}, 'File': {}}})
-
-
 class ReqDBMix(ReqDBTestCase):
 
   def test01Stress(self):
@@ -224,7 +213,6 @@ class ReqDBMix(ReqDBTestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ReqDBTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ReqDB))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ReqDBMix))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   sys.exit(not testResult.wasSuccessful())
