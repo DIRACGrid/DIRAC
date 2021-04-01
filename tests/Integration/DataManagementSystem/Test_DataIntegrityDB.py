@@ -9,7 +9,6 @@ from __future__ import division
 from __future__ import print_function
 
 # pylint: disable=invalid-name,wrong-import-position
-import copy
 import time
 
 from DIRAC import gLogger
