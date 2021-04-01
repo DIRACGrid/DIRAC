@@ -49,14 +49,19 @@ python "${THIS_DIR}/WorkloadManagementSystem/Test_Client_WMS.py" --cfg "${WORKSP
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** DMS TESTS ****\n"
-## DFC
 pytest "${THIS_DIR}/DataManagementSystem/Test_DataIntegrityDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
+echo 'Reinitialize the DFC DB' |& tee -a "${SERVER_TEST_OUTPUT}"
+diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 echo "Test DFC DB" |& tee -a "${SERVER_TEST_OUTPUT}"
 python "${THIS_DIR}/DataManagementSystem/Test_FileCatalogDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 echo -e "*** $(date -u)  Reinitialize the DFC DB\n" |& tee -a "${SERVER_TEST_OUTPUT}"
 diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
+
+echo -e "*** $(date -u)  Restart the DFC service (required for Test_Client_DFC)\n" |& tee -a "${SERVER_TEST_OUTPUT}"
+dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Run the DFC client tests as user without admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a "${SERVER_TEST_OUTPUT}"
@@ -68,7 +73,7 @@ python "${THIS_DIR}/DataManagementSystem/Test_FileCatalogDB.py" |& tee -a "${SER
 echo 'Reinitialize the DFC DB' |& tee -a "${SERVER_TEST_OUTPUT}"
 diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 
-echo -e "*** $(date -u)  Restart the DFC service\n" |& tee -a "${SERVER_TEST_OUTPUT}"
+echo -e "*** $(date -u)  Restart the DFC service (required for Test_Client_DFC)\n" |& tee -a "${SERVER_TEST_OUTPUT}"
 dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 
@@ -82,7 +87,7 @@ python "${THIS_DIR}/DataManagementSystem/Test_FileCatalogDB.py" |& tee -a "${SER
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** FTS TESTS ****\n"
-# I know, it says Client, but it also instaciates a DB, so it needs to be here
+# I know, it says Client, but it also instantiates a DB, so it needs to be here
 pytest "${THIS_DIR}/DataManagementSystem/Test_Client_FTS3.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
