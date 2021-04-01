@@ -90,7 +90,7 @@ class OperationTests(unittest.TestCase):
     operation = Operation()
 
     operation.Arguments = "foobar"
-    self.assertEqual(operation.Arguments, "foobar", "wrong Arguments")
+    self.assertEqual(operation.Arguments, b"foobar", "wrong Arguments")
 
     operation.SourceSE = "CERN-RAW"
     self.assertEqual(operation.SourceSE, "CERN-RAW", "wrong SourceSE")
