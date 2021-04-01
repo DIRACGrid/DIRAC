@@ -69,6 +69,16 @@ def updateFlag():
   time.sleep(5)
 
 
+def _checkWithRetries(fcn, args, expected):
+  for i in range(3):
+    res = fcn(*args)
+    assert res['OK'], res['Message']
+    if res['Value'] == expected:
+      return
+    time.sleep(1)
+  assert res['Value'] == expected, "Failed to call %s after 3 retries"
+
+
 def test_MySQLandES_jobParameters():
   """ a basic put - remove test, changing the flag in between
   """
@@ -80,10 +90,11 @@ def test_MySQLandES_jobParameters():
 
   res = jobStateUpdateClient.setJobParameter(jobID, 'ParName-fromMySQL', 'ParValue-fromMySQL')
   assert res['OK'], res['Message']
-
-  res = jobMonitoringClient.getJobParameter(jobID, 'ParName-fromMySQL')  # This will be looked up in MySQL only
-  assert res['OK'], res['Message']
-  assert res['Value'] == {'ParName-fromMySQL': 'ParValue-fromMySQL'}, res['Value']
+  _checkWithRetries(
+      jobMonitoringClient.getJobParameter,
+      (jobID, 'ParName-fromMySQL'),
+      {'ParName-fromMySQL': 'ParValue-fromMySQL'},
+  )
 
   res = jobMonitoringClient.getJobParameters(jobID)  # This will be looked up in MySQL only
   assert res['OK'], res['Message']
@@ -96,10 +107,11 @@ def test_MySQLandES_jobParameters():
 
   res = jobStateUpdateClient.setJobsParameter({jobID: ['SomeStatus', 'Waiting']})
   assert res['OK'], res['Message']
-
-  res = jobMonitoringClient.getJobParameters(jobID)  # This will be looked up in MySQL only
-  assert res['OK'], res['Message']
-  assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'SomeStatus': 'Waiting'}}, res['Value']
+  _checkWithRetries(
+      jobMonitoringClient.getJobParameters,
+      (jobID,),
+      {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'SomeStatus': 'Waiting'}},
+  )
 
   res = jobMonitoringClient.getJobAttributes(jobID)
   assert res['OK'], res['Message']
