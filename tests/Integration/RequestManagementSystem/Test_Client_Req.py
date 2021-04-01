@@ -80,6 +80,13 @@ class ReqClientTestCase(unittest.TestCase):
 
 class ReqClientMix(ReqClientTestCase):
   def _checkSummary(self, initial, changes):
+    """Check if getDBSummary has be updated as expected
+
+    :param initial: Return value from ``self.requestClient.getDBSummary()``
+                    before the test was started.
+    :param changes: The expected changes to the database summary. Tuple
+                    consisting of ``(parentKey, key, state, delta)``.
+    """
     expected = copy.deepcopy(initial)
     for parent, key, state, delta in changes:
       if parent is None:
