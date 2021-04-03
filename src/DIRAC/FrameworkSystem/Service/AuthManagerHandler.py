@@ -35,8 +35,6 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import Session
 
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 
-# from DIRAC.FrameworkSystem.DB.AuthServerHandler import AuthServerHandler
-
 __RCSID__ = "$Id$"
 
 
