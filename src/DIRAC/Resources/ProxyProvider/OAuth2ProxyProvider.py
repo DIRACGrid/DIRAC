@@ -1,4 +1,4 @@
-""" ProxyProvider implementation for the proxy generation using OIDC flow
+""" ProxyProvider implementation for the proxy generation using OIDC authorization flow
 """
 from __future__ import absolute_import
 from __future__ import division

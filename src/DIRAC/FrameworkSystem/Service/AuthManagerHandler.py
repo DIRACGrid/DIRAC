@@ -270,7 +270,8 @@ class AuthManagerHandler(RequestHandler):
     # Parse response
     result = self.__idps.getIdProvider(providerName, sessionManager=self.__db)
     if result['OK']:
-      result = result['Value'].parseAuthResponse(response, Session(sessionDict))
+      provObj = result['Value']
+      result = provObj.parseAuthResponse(response, Session(sessionDict))
     if not result['OK']:
       return result
     # FINISHING with IdP auth result

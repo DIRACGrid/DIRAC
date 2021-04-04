@@ -49,7 +49,7 @@ class ProxyManagerHandler(RequestHandler):
 
       Contain __VOMSesUsersCache cache, with next structure:
         Key: VOMS VO name
-        Value: S_OK(dict)/S_ERROR() -- dictionary contain:
+        Value: S_OK(dict)/S_ERROR() -- dictionary formed by :func:`DIRAC.Core.Security.VOMSService.getUsers`
   """
   # # { <user DN>: {
   # #     Roles: [ <list of roles> ],
@@ -67,7 +67,7 @@ class ProxyManagerHandler(RequestHandler):
   @classmethod
   @gVOMSCacheSync
   def saveVOMSInfoToCache(cls, vo, infoDict):
-    """ Save cache to file
+    """ Cache VOMS VO information
 
         :param str vo: VO name
         :param dict infoDict: dictionary with information about users
