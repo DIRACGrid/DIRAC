@@ -61,4 +61,3 @@ caniusepython3
 subprocess32
 flaky
 ldap3
-authlib==0.15.3
