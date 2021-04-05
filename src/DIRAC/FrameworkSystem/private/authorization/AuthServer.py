@@ -111,7 +111,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       self.init_jwt_config(self.metadata)
 
     self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
-    self.register_grant(RefreshTokenGrant)
+    self.register_grant(TokenExchangeGrant)
     self.register_grant(DeviceCodeGrant)
     self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
     self.register_endpoint(ClientRegistrationEndpoint)
@@ -159,9 +159,8 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    print('=== AUTHSERV: parseIdPAuthorizationResponse ===')
-    pprint(self.getSessions())
-    print('----------------')
+    # print('All sessions')
+    # pprint(self.getSessions())
     # Get IdP authorization flows session
     session = self.getSession(session)
     if not session:
@@ -171,7 +170,6 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
     result = gSessionManager.parseAuthResponse(session['Provider'], createOAuth2Request(response).toDict(),
                                                session)
-    print('gSessionManager.parseAuthResponse: %s' % result)
     if not result['OK']:
       self.updateSession(session['mainSession'], Status='failed', Comment=result['Message'])
       return result

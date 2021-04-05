@@ -179,12 +179,12 @@ class ProxyManagerData(object):
         if dnList and dn not in dnList:
           continue
         if dn not in res[vo]['Value']:
-          res[vo]['Value'][dn] = {'Suspended': data['suspended'],
+          res[vo]['Value'][dn] = {'Suspended': data.get('suspended'),
                                   'VOMSRoles': [],
                                   'ActiveRoles': [],
                                   'SuspendedRoles': []}
         res[vo]['Value'][dn]['VOMSRoles'] = list(set(res[vo]['Value'][dn]['VOMSRoles'] + data['Roles']))
-        if data['certSuspended'] or data['suspended']:
+        if data['certSuspended'] or data.get('suspended'):
           res[vo]['Value'][dn]['SuspendedRoles'] = list(set(res[vo]['Value'][dn]['SuspendedRoles'] + data['Roles']))
         else:
           res[vo]['Value'][dn]['ActiveRoles'] = list(set(res[vo]['Value'][dn]['ActiveRoles'] + data['Roles']))

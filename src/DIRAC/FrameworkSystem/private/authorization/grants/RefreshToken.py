@@ -22,16 +22,22 @@ class RefreshTokenGrant(_RefreshTokenGrant):
 
         :return: object
     """
+    # Check auth session
     session = self.server.getSession(refresh_token)
     if not session:
       return None
+    
+    # Check token
+    token = self.validator(refresh_token, self.request.scope, self.request, 'OR')
+
+    # To special flow to change group
     if self.request.scope and 'changeGroup' in self.request.scope:
       scopes = scope_to_list(self.request.scope)
       reqGroups = [s.split(':')[1] for s in scopes if s.startswith('g:')]
       if len(reqGroups) != 1 or not reqGroups[0]:
         return None
       group = reqGroups[0]
-      result = Registry.getUsernameForID(session['sub'])
+      result = Registry.getUsernameForID(token['sub'])
       if not result['OK']:
         return None
       result = gProxyManager.getGroupsStatusByUsername(result['Value'], group)
@@ -48,6 +54,7 @@ class RefreshTokenGrant(_RefreshTokenGrant):
 
         :return: str
     """
+
     return credential.sub
 
   def revoke_old_credential(self, credential):

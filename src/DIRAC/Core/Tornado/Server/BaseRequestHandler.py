@@ -401,7 +401,7 @@ class BaseRequestHandler(RequestHandler):
     # Execute
     try:
       self.initializeRequest()
-      retVal = method(*args)
+      retVal = method(*methodArgs)
     except Exception as e:  # pylint: disable=broad-except
       sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
       raise HTTPError(http_client.INTERNAL_SERVER_ERROR)
@@ -502,6 +502,7 @@ class BaseRequestHandler(RequestHandler):
       if result['OK']:
         for e in err:
           sLog.debug(e)
+        sLog.debug('%s authentication success.' % a)
       else:
         raise Exception('; '.join(err))
 
