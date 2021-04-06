@@ -9,7 +9,7 @@ dependencies:
   # Temporary workarounds
   - astroid !=2.5  # https://github.com/PyCQA/astroid/issues/903
   # runtime
-  - python =3.8
+  - python =3.9
   - pip
   - boto3
   - certifi
