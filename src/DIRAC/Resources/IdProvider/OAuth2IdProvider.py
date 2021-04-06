@@ -10,6 +10,7 @@ from requests import exceptions
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oidc.discovery.well_known import get_well_known_url
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
+from authlib.oauth2.rfc6749.parameters import prepare_token_request
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
@@ -276,3 +277,56 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
     self.log.verbose('We were able to compile the following profile for %s:\n' % username, profile)
     return S_OK((username, profile))
+
+  def exchange_token(self, url, subject_token=None, subject_token_type=None, body='',
+                     refresh_token=None, access_token=None, auth=None, headers=None, **kwargs):
+    """ Fetch a new access token using a refresh token.
+
+        :param url: Refresh Token endpoint, must be HTTPS.
+        :param str subject_token: subject_token
+        :param str subject_token_type: token type https://tools.ietf.org/html/rfc8693#section-3
+        :param body: Optional application/x-www-form-urlencoded body to add the
+                      include in the token request. Prefer kwargs over body.
+        :param str refresh_token: refresh token
+        :param str access_token: access token
+        :param auth: An auth tuple or method as accepted by requests.
+        :param headers: Dict to default request headers with.
+        :return: A :class:`OAuth2Token` object (a dict too).
+    """
+    session_kwargs = self._extract_session_request_params(kwargs)
+    refresh_token = refresh_token or self.token.get('refresh_token')
+    access_token = access_token or self.token.get('access_token')
+    subject_token = subject_token or access_token
+    subject_token_type = subject_token_type or self.token.get('urn:ietf:params:oauth:token-type:access_token')
+    if 'scope' not in kwargs and self.scope:
+      kwargs['scope'] = self.scope
+    body = prepare_token_request('urn:ietf:params:oauth:grant-type:token-exchange', body,
+                                 subject_token=subject_token, subject_token_type=subject_token_type, **kwargs)
+
+    if headers is None:
+      headers = DEFAULT_HEADERS
+
+    for hook in self.compliance_hook['exchange_token_request']:
+      url, headers, body = hook(url, headers, body)
+
+    if auth is None:
+      auth = self.client_auth(self.token_endpoint_auth_method)
+
+    return self._exchange_token(url, subject_token=subject_token, subject_token_type=subject_token_type,
+                                refresh_token=refresh_token, body=body, headers=headers, auth=auth, **session_kwargs)
+
+  def _exchange_token(self, url, subject_token=None, subject_token_type=None, body='',
+                      refresh_token=None, headers=None, auth=None, **kwargs):
+    resp = self.session.post(url, data=dict(url_decode(body)), headers=headers, auth=auth, **kwargs)
+
+    for hook in self.compliance_hook['exchange_token_response']:
+      resp = hook(resp)
+
+    token = self.parse_response_token(resp.json())
+    if 'refresh_token' not in token:
+      self.token['refresh_token'] = refresh_token
+
+    if callable(self.update_token):
+      self.update_token(self.token, refresh_token=refresh_token)
+
+    return self.token

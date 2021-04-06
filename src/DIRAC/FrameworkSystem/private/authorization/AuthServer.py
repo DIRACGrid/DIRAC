@@ -27,9 +27,8 @@ from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import
     OpenIDCode,
     AuthorizationCodeGrant
 )
-from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import (
-    RefreshTokenGrant
-)
+from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
+from DIRAC.FrameworkSystem.private.authorization.grants.ExchangeToken import ExchangeTokenGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.ImplicitFlow import (
     OpenIDImplicitGrant,
     NotebookImplicitGrant
@@ -39,9 +38,7 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Clients import (
     ClientRegistrationEndpoint,
     ClientManager
 )
-from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import (
-    SessionManager
-)
+from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import SessionManager
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import (
     OAuth2Request,
     createOAuth2Request
@@ -111,7 +108,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       self.init_jwt_config(self.metadata)
 
     self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
-    self.register_grant(TokenExchangeGrant)
+    self.register_grant(ExchangeTokenGrant)
     self.register_grant(DeviceCodeGrant)
     self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
     self.register_endpoint(ClientRegistrationEndpoint)
