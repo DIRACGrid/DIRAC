@@ -7,6 +7,7 @@ from __future__ import print_function
 import re
 import pprint
 from requests import exceptions
+from authlib.common.urls import url_decode
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oidc.discovery.well_known import get_well_known_url
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
@@ -20,6 +21,11 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAu
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
 __RCSID__ = "$Id$"
+
+DEFAULT_HEADERS = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+}
 
 
 def checkResponse(func):
@@ -296,8 +302,8 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     session_kwargs = self._extract_session_request_params(kwargs)
     refresh_token = refresh_token or self.token.get('refresh_token')
     access_token = access_token or self.token.get('access_token')
-    subject_token = subject_token or access_token
-    subject_token_type = subject_token_type or self.token.get('urn:ietf:params:oauth:token-type:access_token')
+    subject_token = subject_token or refresh_token
+    subject_token_type = subject_token_type or 'urn:ietf:params:oauth:token-type:refresh_token'
     if 'scope' not in kwargs and self.scope:
       kwargs['scope'] = self.scope
     body = prepare_token_request('urn:ietf:params:oauth:grant-type:token-exchange', body,
@@ -306,17 +312,15 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     if headers is None:
       headers = DEFAULT_HEADERS
 
-    for hook in self.compliance_hook['exchange_token_request']:
+    for hook in self.compliance_hook.get('exchange_token_request', []):
       url, headers, body = hook(url, headers, body)
 
     if auth is None:
       auth = self.client_auth(self.token_endpoint_auth_method)
 
-    return self._exchange_token(url, subject_token=subject_token, subject_token_type=subject_token_type,
-                                refresh_token=refresh_token, body=body, headers=headers, auth=auth, **session_kwargs)
+    return self._exchange_token(url, refresh_token=refresh_token, body=body, headers=headers, auth=auth, **session_kwargs)
 
-  def _exchange_token(self, url, subject_token=None, subject_token_type=None, body='',
-                      refresh_token=None, headers=None, auth=None, **kwargs):
+  def _exchange_token(self, url, body='', refresh_token=None, headers=None, auth=None, **kwargs):
     resp = self.session.post(url, data=dict(url_decode(body)), headers=headers, auth=auth, **kwargs)
 
     for hook in self.compliance_hook['exchange_token_response']:

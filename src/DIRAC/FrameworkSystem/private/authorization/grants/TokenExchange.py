@@ -24,7 +24,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import BearerTokenValidator
 
 
-class _ExchangeTokenGrant(BaseGrant, TokenEndpointMixin):
+class _TokenExchangeGrant(BaseGrant, TokenEndpointMixin):
   """ A special grant endpoint for urn:ietf:params:oauth:grant-type:token-exchange grant_type.
       Exchanging an Access Token per `Section 6`_.
 
@@ -292,9 +292,9 @@ TOKEN_TYPE_IDENTIFIERS = [
   'urn:ietf:params:oauth:token-type:saml2'
 ]
 
-class ExchangeTokenGrant(_ExchangeTokenGrant):
+class TokenExchangeGrant(_TokenExchangeGrant):
   def __init__(self, *args, **kwargs):
-    super(ExchangeTokenGrant, self).__init__(*args, **kwargs)
+    super(TokenExchangeGrant, self).__init__(*args, **kwargs)
     self.validator = BearerTokenValidator()
 
   def authenticate_subject_token(self, subject_token, subject_token_type):
@@ -305,15 +305,19 @@ class ExchangeTokenGrant(_ExchangeTokenGrant):
 
         :return: object
     """
-    token_type = subject_token_type.split(':')[-1]
+    if subject_token_type.split(':')[-1] != 'refresh_token':
+      raise InvalidRequestError(
+        'Please set refresh_token to "subject_token" in request.',
+      )
 
     # Check auth session
-    session = self.server.getSessionByOption(token_type, subject_token)
+    session = self.server.getSession(subject_token)
     if not session:
       return None
     
     # Check token
     token = self.validator(subject_token, self.request.scope, self.request, 'OR')
+    token = session.token
 
     # To special flow to change group
     if not self.request.scope:
@@ -327,12 +331,12 @@ class ExchangeTokenGrant(_ExchangeTokenGrant):
     result = Registry.getUsernameForID(token['sub'])
     if not result['OK']:
       return None
-    result = gProxyManager.getGroupsStatusByUsername(result['Value'], group)
+    result = gProxyManager.getGroupsStatusByUsername(result['Value'], [group])
     if not result['OK']:
       return None
     if result['Value'][group]['Status'] not in ['ready', 'unknown']:
       return None
-    return self.validator(refresh_token, self.request.scope, self.request, 'OR')
+    return token
 
   def authenticate_user(self, credential):
     """ Authorize user

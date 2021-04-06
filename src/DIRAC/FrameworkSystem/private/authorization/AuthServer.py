@@ -28,7 +28,7 @@ from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import
     AuthorizationCodeGrant
 )
 from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
-from DIRAC.FrameworkSystem.private.authorization.grants.ExchangeToken import ExchangeTokenGrant
+from DIRAC.FrameworkSystem.private.authorization.grants.TokenExchange import TokenExchangeGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.ImplicitFlow import (
     OpenIDImplicitGrant,
     NotebookImplicitGrant
@@ -108,7 +108,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       self.init_jwt_config(self.metadata)
 
     self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
-    self.register_grant(ExchangeTokenGrant)
+    self.register_grant(TokenExchangeGrant)
     self.register_grant(DeviceCodeGrant)
     self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
     self.register_endpoint(ClientRegistrationEndpoint)
@@ -122,7 +122,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     """
     if 'refresh_token' in token:
       # Cache it for one month
-      self.addSession(token['refresh_token'], exp=int(time()) + (30 * 24 * 3600), **token)
+      self.addSession(token['refresh_token'], exp=int(time()) + (30 * 24 * 3600), token=token)
     return None
 
   def getIdPAuthorization(self, providerName, mainSession):
