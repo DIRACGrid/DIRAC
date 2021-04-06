@@ -17,7 +17,7 @@ import os
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
 
-elHost = os.environ["NoSQLDB_HOST"]
+elHost = os.environ.get("NoSQLDB_HOST", 'localhost')
 elPort = 9200
 
 

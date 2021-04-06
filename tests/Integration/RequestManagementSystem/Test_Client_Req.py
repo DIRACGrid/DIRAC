@@ -80,7 +80,7 @@ class ReqClientTestCase(unittest.TestCase):
 
 class ReqClientMix(ReqClientTestCase):
   def _checkSummary(self, initial, changes):
-    """Check if getDBSummary has be updated as expected
+    """Check if getDBSummary has been updated as expected
 
     :param initial: Return value from ``self.requestClient.getDBSummary()``
                     before the test was started.
