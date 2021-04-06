@@ -264,7 +264,7 @@ def test_TaskTimeOut_CallableClass(processPoolWithCallbacks2):
   i = 0
   while True:
     if processPoolWithCallbacks2.getFreeSlots() > 0:
-      timeWait = random.randint(0, 5) * 10
+      timeWait = random.randint(0, 5) * 1
       raiseException = False
       if not timeWait:
         raiseException = True
@@ -272,7 +272,7 @@ def test_TaskTimeOut_CallableClass(processPoolWithCallbacks2):
           CallableClass,
           taskID=i,
           args=(i, timeWait, raiseException),
-          timeOut=15,
+          timeOut=1.5,
           usePoolCallbacks=True,
           blocking=True,
       )
@@ -294,7 +294,7 @@ def test_TaskTimeOut_CallableFunc(processPoolWithCallbacks2):
   i = 0
   while True:
     if processPoolWithCallbacks2.getFreeSlots() > 0:
-      timeWait = random.randint(0, 5) * 5
+      timeWait = random.randint(0, 5) * 0.5
       raiseException = False
       if not timeWait:
         raiseException = True
@@ -302,7 +302,7 @@ def test_TaskTimeOut_CallableFunc(processPoolWithCallbacks2):
           CallableFunc,
           taskID=i,
           args=(i, timeWait, raiseException),
-          timeOut=15,
+          timeOut=1.5,
           usePoolCallbacks=True,
           blocking=True,
       )
@@ -326,18 +326,18 @@ def test_TaskTimeOut_LockedClass(processPoolWithCallbacks2):
     i = 0
     while i < 16:
       if processPoolWithCallbacks2.getFreeSlots() > 0:
-        timeWait = random.randint(0, 5) * 5
+        timeWait = random.randint(0, 5) * 0.5
         raiseException = False
-        if timeWait == 5:
+        if timeWait == 0.5:
           raiseException = True
         klass = CallableClass
-        if timeWait >= 20:
+        if timeWait >= 2.0:
           klass = LockedCallableClass
         result = processPoolWithCallbacks2.createAndQueueTask(
             klass,
             taskID=i,
             args=(i, timeWait, raiseException),
-            timeOut=15,
+            timeOut=1.5,
             usePoolCallbacks=True,
             blocking=True,
         )
