@@ -348,7 +348,12 @@ class VOMS2CSSynchronizer(object):
         if groups['OK']:
           self.log.info('Found groups for user %s %s' % (diracName, groups['Value']))
           userDict['Groups'] = list(set(groups['Value'] + keepGroups))
+          addedGroups = list(set(userDict['Groups']) - set(groups['Value']))
           modified = True
+          message = "\n  Modified user %s:\n" % diracName
+          message += "    Added to group(s) %s\n" % ','.join(addedGroups)
+          self.adminMsgs['Info'].append(message)
+
 
       # Check if something changed before asking CSAPI to modify
       if diracName in diracUserDict:
