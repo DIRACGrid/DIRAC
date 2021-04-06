@@ -22,7 +22,7 @@ import random
 import datetime
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
+from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload, mapper
 from sqlalchemy.sql import update
 from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey, \
     Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
@@ -200,7 +200,8 @@ class RequestDB(object):
                                   .where(Request.RequestID == requestID)
                                   .values({Request._Status: 'Canceled',
                                            Request._LastUpdate: datetime.datetime.utcnow()
-                                           .strftime(Request._datetimeFormat)}))
+                                           .strftime(Request._datetimeFormat)})
+                                  .execution_options(synchronize_session=False))  # See FTS3DB for synchronize_session
       session.commit()
 
       # No row was changed
@@ -345,9 +346,9 @@ class RequestDB(object):
         requestID = reqIDs[0]
 
       # If we are here, the request MUST exist, so no try catch
-      # the joinedload_all is to force the non-lazy loading of all the attributes, especially _parent
-      request = session.query(Request)\
-                       .options(joinedload_all('__operations__.__files__'))\
+      # the joinedload is to force the non-lazy loading of all the attributes, especially _parent
+      request = session.query(Request) \
+                       .options(joinedload('__operations__').joinedload('__files__')) \
                        .filter(Request.RequestID == requestID)\
                        .one()
 
@@ -395,7 +396,7 @@ class RequestDB(object):
 
     try:
       # If we are here, the request MUST exist, so no try catch
-      # the joinedload_all is to force the non-lazy loading of all the attributes, especially _parent
+      # the joinedload is to force the non-lazy loading of all the attributes, especially _parent
       try:
         now = datetime.datetime.utcnow().replace(microsecond=0)
         requestIDs = session.query(Request.RequestID)\
@@ -409,8 +410,8 @@ class RequestDB(object):
         requestIDs = [ridTuple[0] for ridTuple in requestIDs]
         log.debug("Got request ids %s" % requestIDs)
 
-        requests = session.query(Request)\
-                          .options(joinedload_all('__operations__.__files__'))\
+        requests = session.query(Request) \
+                          .options(joinedload('__operations__').joinedload('__files__')) \
                           .filter(Request.RequestID.in_(requestIDs))\
                           .all()
         log.debug("Got %s Request objects " % len(requests))
@@ -757,8 +758,8 @@ class RequestDB(object):
     session = self.DBSession(expire_on_commit=False)
 
     try:
-      ret = session.query(Request.JobID, Request)\
-                   .options(joinedload_all('__operations__.__files__'))\
+      ret = session.query(Request.JobID, Request) \
+                   .options(joinedload('__operations__').joinedload('__files__')) \
                    .filter(Request.JobID.in_(jobIDs)).all()
 
       reqDict['Successful'] = dict((jobId, reqObj) for jobId, reqObj in ret)
