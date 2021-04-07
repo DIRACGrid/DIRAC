@@ -38,7 +38,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
         :return: str
     """
     if not cls.SYSTEM:
-      raise Exception("System name of '%s' REST API must be defined." % cls.__name__)
+      raise Exception("System name must be defined.")
     return "/".join([cls.SYSTEM, cls.__name__])
 
   @classmethod
@@ -62,8 +62,8 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     elif hasattr(self, '%sindex' % self.METHOD_PREFIX):
       return 'index'
     else:
-      raise NotImplementedError('%s method not implemented for %s. \
-                                You can use the index method to handle this.' % (method, self.__name__))
+      raise NotImplementedError('%s method not implemented. \
+                                You can use the index method to handle this.' % method)
 
   @gen.coroutine
   def get(self, *args, **kwargs):  # pylint: disable=arguments-differ

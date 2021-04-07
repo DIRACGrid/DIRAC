@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import time
 import requests
 from authlib.oauth2 import OAuth2Error
@@ -13,12 +14,12 @@ from authlib.oauth2.rfc8628 import (
     DeviceCredentialDict
 )
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK, S_ERROR
 
 log = gLogger.getSubLogger(__name__)
 
 
-def submitUserAuthorizationFlow(self, client=None, idP=None, group=None):
+def submitUserAuthorizationFlow(client=None, idP=None, group=None):
   """ Submit authorization flow
   """
   # TODO: Fix hardcore url
@@ -57,7 +58,7 @@ def submitUserAuthorizationFlow(self, client=None, idP=None, group=None):
     return S_ERROR('Cannot read authentication response: %s' % repr(ex))
 
 
-def waitFinalStatusOfUserAuthorizationFlow(self, authFlowData, timeout=300):
+def waitFinalStatusOfUserAuthorizationFlow(authFlowData, timeout=300):
   """ Submit waiting loop process, that will monitor current authorization session status
 
       :param dict authFlowData: authentication flow parameters
@@ -73,7 +74,7 @@ def waitFinalStatusOfUserAuthorizationFlow(self, authFlowData, timeout=300):
   url = '%s/token?client_id=%s' % (issuer, authFlowData['client_id'])
   url += '&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=%s' % authFlowData['device_code']
   while True:
-    time.sleep(response.get('interval', 5))
+    time.sleep(authFlowData.get('interval', 5))
     if time.time() - __start > timeout:
       return S_ERROR('Time out.')
     r = requests.post(url, verify=False)
@@ -140,7 +141,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     _, data = self.server.getSessionByOption('device_code', device_code)
     if not data:
       return None
-    data['expires_at'] = data['expires_in'] + int(time())
+    data['expires_at'] = data['expires_in'] + int(time.time())
     data['interval'] = 5
     # TODO: Fix hardcore url
     data['verification_uri'] = 'https://marosvn32.in2p3.fr/DIRAC/auth/device'

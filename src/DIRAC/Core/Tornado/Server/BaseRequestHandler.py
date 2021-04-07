@@ -107,7 +107,7 @@ class BaseRequestHandler(RequestHandler):
 
         :return: str
     """
-    raise NotImplementedError('Please, create the _getServiceName class method in %s.' % self.__name__)
+    raise NotImplementedError('Please, create the _getServiceName class method')
 
   @classmethod
   def _getServiceAuthSection(cls, serviceName):
@@ -236,7 +236,7 @@ class BaseRequestHandler(RequestHandler):
 
         :return: str
     """
-    raise NotImplementedError('Please, create the _getMethodName method in %s.' % self.__name__)
+    raise NotImplementedError('Please, create the _getMethodName method')
 
   def _getMethodArgs(self, args):
     """ Decode args.
@@ -475,19 +475,24 @@ class BaseRequestHandler(RequestHandler):
                                                               self._serviceName,
                                                               elapsedTime, argsString))
 
-  def _gatherPeerCredentials(self):
+  def _gatherPeerCredentials(self, grants=None):
     """ Returne a dictionary designed to work with the AuthManager,
         already written for DISET and re-used for HTTPS.
+
+        :param list grants: grants to use
 
         :returns: a dict containing the return of :py:meth:`DIRAC.Core.Security.X509Chain.X509Chain.getCredentials`
                   (not a DIRAC structure !)
     """
     err = []
     result = None
-    if not self.USE_AUTHZ_GRANTS:
+
+    grants = grants or self.USE_AUTHZ_GRANTS
+
+    if not grants:
       raise Exception('USE_AUTHZ_GRANTS is not defined.')
 
-    for a in self.USE_AUTHZ_GRANTS:
+    for a in grants:
       try:
         result = eval('self._authz%s' % a)()
       except KeyError:

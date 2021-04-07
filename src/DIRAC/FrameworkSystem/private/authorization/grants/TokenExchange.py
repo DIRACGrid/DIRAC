@@ -50,22 +50,16 @@ class _TokenExchangeGrant(BaseGrant, TokenEndpointMixin):
   def _validate_request_token(self, client):
     subject_token = self.request.form.get('subject_token')
     if subject_token is None:
-      raise InvalidRequestError(
-        'Missing "subject_token" in request.',
-      )
+      raise InvalidRequestError('Missing "subject_token" in request.')
 
     subject_token_type = self.request.form.get('subject_token_type')
     if subject_token_type is None:
-      raise InvalidRequestError(
-        'Missing "subject_token_type" in request.',
-      )
-    
+      raise InvalidRequestError('Missing "subject_token_type" in request.')
+
     actor_token = self.request.form.get('actor_token')
     actor_token_type = self.request.form.get('actor_token_type')
     if actor_token and actor_token_type is None:
-      raise InvalidRequestError(
-        'Missing "actor_token_type" in request.',
-      )
+      raise InvalidRequestError('Missing "actor_token_type" in request.')
 
     token = self.authenticate_subject_token(subject_token, subject_token_type)
     if not token or token.get_client_id() != client.get_client_id():
@@ -274,23 +268,25 @@ class _TokenExchangeGrant(BaseGrant, TokenEndpointMixin):
     """
     raise NotImplementedError()
 
+
 TOKEN_TYPE_IDENTIFIERS = [
-  # Indicates that the token is an OAuth 2.0 access token issued by
-  # the given authorization server.
-  'urn:ietf:params:oauth:token-type:access_token',
-  # Indicates that the token is an OAuth 2.0 refresh token issued by
-  # the given authorization server.
-  'urn:ietf:params:oauth:token-type:refresh_token',
-  # Indicates that the token is an ID Token as defined in Section 2 of
-  # [OpenID.Core].
-  'urn:ietf:params:oauth:token-type:id_token',
-  # Indicates that the token is a base64url-encoded SAML 1.1
-  # [OASIS.saml-core-1.1] assertion.
-  'urn:ietf:params:oauth:token-type:saml1',
-  # Indicates that the token is a base64url-encoded SAML 2.0
-  # [OASIS.saml-core-2.0-os] assertion.
-  'urn:ietf:params:oauth:token-type:saml2'
+    # Indicates that the token is an OAuth 2.0 access token issued by
+    # the given authorization server.
+    'urn:ietf:params:oauth:token-type:access_token',
+    # Indicates that the token is an OAuth 2.0 refresh token issued by
+    # the given authorization server.
+    'urn:ietf:params:oauth:token-type:refresh_token',
+    # Indicates that the token is an ID Token as defined in Section 2 of
+    # [OpenID.Core].
+    'urn:ietf:params:oauth:token-type:id_token',
+    # Indicates that the token is a base64url-encoded SAML 1.1
+    # [OASIS.saml-core-1.1] assertion.
+    'urn:ietf:params:oauth:token-type:saml1',
+    # Indicates that the token is a base64url-encoded SAML 2.0
+    # [OASIS.saml-core-2.0-os] assertion.
+    'urn:ietf:params:oauth:token-type:saml2'
 ]
+
 
 class TokenExchangeGrant(_TokenExchangeGrant):
   def __init__(self, *args, **kwargs):
@@ -306,23 +302,21 @@ class TokenExchangeGrant(_TokenExchangeGrant):
         :return: object
     """
     if subject_token_type.split(':')[-1] != 'refresh_token':
-      raise InvalidRequestError(
-        'Please set refresh_token to "subject_token" in request.',
-      )
+      raise InvalidRequestError('Please set refresh_token to "subject_token" in request.')
 
     # Check auth session
     session = self.server.getSession(subject_token)
     if not session:
       return None
-    
+
     # Check token
     token = self.validator(subject_token, self.request.scope, self.request, 'OR')
-    token = session.token
+    # token = session.token
 
     # To special flow to change group
     if not self.request.scope:
       return token
-    
+
     scopes = scope_to_list(self.request.scope)
     reqGroups = [s.split(':')[1] for s in scopes if s.startswith('g:')]
     if len(reqGroups) != 1 or not reqGroups[0]:

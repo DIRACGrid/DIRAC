@@ -26,7 +26,7 @@ class RefreshTokenGrant(_RefreshTokenGrant):
     session = self.server.getSession(refresh_token)
     if not session:
       return None
-    
+
     # Check token
     token = self.validator(refresh_token, self.request.scope, self.request, 'OR')
 

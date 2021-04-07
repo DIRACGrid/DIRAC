@@ -97,8 +97,9 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       metadata = self.metadata_class(data)
       metadata.validate()
       self.metadata = metadata
-    
-    result = gConfig.getOptionsDictRecursively('/Systems/Framework/Production/Services/AuthManager/AuthorizationServer/Clients')
+
+    clientsData = '/Systems/Framework/Production/Services/AuthManager/AuthorizationServer/Clients'
+    result = gConfig.getOptionsDictRecursively(clientsData)
     if result['OK']:
       self.pubClients = result['Value']
 
@@ -121,8 +122,9 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
         :param object request: http Request object, implemented for compatibility with authlib library (unuse)
     """
     if 'refresh_token' in token:
+      gLogger.debug('Save long-token:\n', pprint.pformat(dict(token)))
       # Cache it for one month
-      self.addSession(token['refresh_token'], exp=int(time()) + (30 * 24 * 3600), token=token)
+      self.addSession(token['refresh_token'], exp=int(time()) + (30 * 24 * 3600), token=dict(token))
     return None
 
   def getIdPAuthorization(self, providerName, mainSession):
@@ -219,7 +221,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
                'exp': int(time()) + (30 * 24 * 3600),
                'scope': scope,
                'setup': getSetup(),
-               'client': client.client_id}
+               'client_id': client.client_id}
     # Read private key of DIRAC auth service
     with open('/opt/dirac/etc/grid-security/jwtRS256.key', 'r') as f:
       key = f.read()

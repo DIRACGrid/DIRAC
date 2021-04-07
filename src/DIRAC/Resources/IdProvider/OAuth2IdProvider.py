@@ -82,11 +82,13 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                                                                          pprint.pformat(self.metadata)))
 
   def _storeToken(self, token, session=None):
-    return self.sessionManager.storeToken(dict(self.token))
+    if self.sessionManager:
+      return self.sessionManager.storeToken(dict(self.token))
 
   def _updateToken(self, token, refresh_token):
-    # Here "token" is `OAuth2Token` type
-    self.sessionManager.updateToken(dict(token), refresh_token)
+    if self.sessionManager:
+      # Here "token" is `OAuth2Token` type
+      self.sessionManager.updateToken(dict(token), refresh_token)
 
   def request(self, *args, **kwargs):
     self.token_endpoint_auth_methods_supported = self.metadata.get('token_endpoint_auth_methods_supported')
@@ -318,12 +320,13 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     if auth is None:
       auth = self.client_auth(self.token_endpoint_auth_method)
 
-    return self._exchange_token(url, refresh_token=refresh_token, body=body, headers=headers, auth=auth, **session_kwargs)
+    return self._exchange_token(url, refresh_token=refresh_token, body=body, headers=headers,
+                                auth=auth, **session_kwargs)
 
   def _exchange_token(self, url, body='', refresh_token=None, headers=None, auth=None, **kwargs):
     resp = self.session.post(url, data=dict(url_decode(body)), headers=headers, auth=auth, **kwargs)
 
-    for hook in self.compliance_hook['exchange_token_response']:
+    for hook in self.compliance_hook.get('exchange_token_response', []):
       resp = hook(resp)
 
     token = self.parse_response_token(resp.json())

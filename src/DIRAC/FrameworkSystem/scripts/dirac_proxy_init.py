@@ -406,6 +406,7 @@ class ProxyInit(object):
     deviceCode = response['device_code']
     verURL = response['verification_uri']
     verURLComplete = response.get('verification_uri_complete')
+    clientID = response['client_id']
 
     # Notify user to go to authorization endpoint
     showURL = 'Use next link to continue, your user code is "%s"\n%s' % (userCode, verURL)

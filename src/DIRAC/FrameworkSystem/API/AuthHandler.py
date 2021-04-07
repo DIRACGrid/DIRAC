@@ -136,8 +136,7 @@ class AuthHandler(TornadoREST):
                   "id_token token",
                   "code"
                 ],
-                "token_endpoint_auth_method": "client_secret_basic",
-                "scope": "changeGroup"
+                "token_endpoint_auth_method": "client_secret_basic"
               }
             }
           }
@@ -232,7 +231,7 @@ class AuthHandler(TornadoREST):
         | grant_types    | data   | list of grant types, more supported       | ["authorization_code","refresh_token"]|
         |                |        | more supported grant types in *grants     |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
-        | scope          | data   | list of scoupes separated by a space      | changeGroup something                 |
+        | scope          | data   | list of scoupes separated by a space      | something                             |
         +----------------+--------+-------------------------------------------+---------------------------------------+
         | response_types | data   | list of returned responses                | ["token","id_token token","code"]     |
         +----------------+--------+-------------------------------------------+---------------------------------------+
@@ -299,7 +298,7 @@ class AuthHandler(TornadoREST):
         Request example, to initialize a Device authentication flow::
 
           POST LOCATION/device?client_id=3f1DAj8z6eNw0E6JGq1Vu6efZwyV&scope=g:dirac_admin&provider=CheckIn_dev
-        
+
         Response::
 
           HTTP/1.1 200 OK
@@ -313,11 +312,11 @@ class AuthHandler(TornadoREST):
             "verification_uri_complete": "https://marosvn32.in2p3.fr/DIRAC/auth/device/WSRL-HJMR",
             "user_code": "WSRL-HJMR"
           }
-        
+
         Request example, to confirm the user code::
 
           POST LOCATION/device/WSRL-HJMR
-        
+
         Response::
 
           HTTP/1.1 200 OK
@@ -576,7 +575,7 @@ class AuthHandler(TornadoREST):
 
         Request example::
 
-          POST LOCATION/token?client_id=3f1DAj8z6eNw0E6JGq1VuzRkpWUL9XTxhL86efZwyV&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=uW5xL4hr2tqwBPKrsqL5d0JO9Fcc67gLqhJsNqYTSp
+          POST LOCATION/token?client_id=L86..yV&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=uW5
 
         Response::
 
