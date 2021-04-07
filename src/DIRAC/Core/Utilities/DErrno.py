@@ -43,7 +43,7 @@ from __future__ import print_function
 
 import six
 import os
-import imp
+import importlib
 import sys
 
 # To avoid conflict, the error numbers should be greater than 1000
@@ -344,50 +344,22 @@ def includeExtensionErrors():
       Should be called only at the initialization of DIRAC, so by the parseCommandLine,
       dirac-agent.py, dirac-service.py, dirac-executor.py
   """
-
-  def __recurseImport(modName, parentModule=None, fullName=False):
-    """ Internal function to load modules
-    """
-    if isinstance(modName, six.string_types):
-      modName = modName.split(".")
-    if not fullName:
-      fullName = ".".join(modName)
-    try:
-      if parentModule:
-        impData = imp.find_module(modName[0], parentModule.__path__)
-      else:
-        impData = imp.find_module(modName[0])
-      impModule = imp.load_module(modName[0], *impData)
-      if impData[0]:
-        impData[0].close()
-    except ImportError:
-      return None
-    if len(modName) == 1:
-      return impModule
-    return __recurseImport(modName[1:], impModule, fullName=fullName)
-
   from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
-  allExtensions = CSGlobals.getCSExtensions()
 
-  for extension in allExtensions:
-    ext_derrno = None
+  for extension in CSGlobals.getCSExtensions():
     try:
-
-      ext_derrno = __recurseImport('%sDIRAC.Core.Utilities.DErrno' % extension)
-
-      if ext_derrno:
-        # The next 3 dictionary MUST be present for consistency
-
-        # Global name of errors
-        sys.modules[__name__].__dict__.update(ext_derrno.extra_dErrName)
-        # Dictionary with the error codes
-        sys.modules[__name__].dErrorCode.update(ext_derrno.extra_dErrorCode)
-        # Error description string
-        sys.modules[__name__].dStrError.update(ext_derrno.extra_dStrError)
-
-        # extra_compatErrorString is optional
-        for err in getattr(ext_derrno, 'extra_compatErrorString', []):
-          sys.modules[__name__].compatErrorString.setdefault(err, []).extend(ext_derrno.extra_compatErrorString[err])
-
-    except BaseException:
+      ext_derrno = importlib.import_module('%sDIRAC.Core.Utilities.DErrno' % extension)
+    except ImportError:
       pass
+    else:
+      # The next 3 dictionary MUST be present for consistency
+      # Global name of errors
+      sys.modules[__name__].__dict__.update(ext_derrno.extra_dErrName)
+      # Dictionary with the error codes
+      sys.modules[__name__].dErrorCode.update(ext_derrno.extra_dErrorCode)
+      # Error description string
+      sys.modules[__name__].dStrError.update(ext_derrno.extra_dStrError)
+
+      # extra_compatErrorString is optional
+      for err in getattr(ext_derrno, 'extra_compatErrorString', []):
+        sys.modules[__name__].compatErrorString.setdefault(err, []).extend(ext_derrno.extra_compatErrorString[err])

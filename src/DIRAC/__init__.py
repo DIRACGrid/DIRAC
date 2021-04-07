@@ -152,32 +152,6 @@ else:
 __siteName = False
 
 
-# # Update DErrno with the extensions errors
-# from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-# from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
-# allExtensions = CSGlobals.getCSExtensions()
-#
-# # Update for each extension. Careful to conflict :-)
-# for extension in allExtensions:
-#   ol = ObjectLoader( baseModules = ["%sDIRAC" % extension] )
-#   extraErrorModule = ol.loadModule( 'Core.Utilities.DErrno' )
-#   if extraErrorModule['OK']:
-#     extraErrorModule = extraErrorModule['Value']
-#
-#     # The next 3 dictionary MUST be present for consistency
-#
-#     # Global name of errors
-#     DErrno.__dict__.update( extraErrorModule.extra_dErrName )
-#     # Dictionary with the error codes
-#     DErrno.dErrorCode.update( extraErrorModule.extra_dErrorCode )
-#     # Error description string
-#     DErrno.dStrError.update( extraErrorModule.extra_dStrError )
-#
-#     # extra_compatErrorString is optional
-#     for err in getattr( extraErrorModule, 'extra_compatErrorString', [] ) :
-#       DErrno.compatErrorString.setdefault( err, [] ).extend( extraErrorModule.extra_compatErrorString[err] )
-
-
 def siteName():
   """
   Determine and return DIRAC name for current site
