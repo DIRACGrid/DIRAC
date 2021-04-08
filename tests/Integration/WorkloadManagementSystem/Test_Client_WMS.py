@@ -350,17 +350,21 @@ class JobMonitoringMore(TestWMSTestCase):
     res = jobMonitor.getJobGroups(None, datetime.datetime.utcnow() - datetime.timedelta(days=365))
     self.assertTrue(res['OK'], res.get('Message'))
     resJG_olderThanOneYear = res['Value']
-    self.assertTrue(set(resJG_olderThanOneYear).issubset(set(resJG_olderThanNow)))
+    self.assertTrue(set(resJG_olderThanOneYear).issubset(set(resJG_olderThanNow)),
+                    resJG_olderThanOneYear)
     res = jobMonitor.getStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertTrue(sorted(res['Value']) in [['Received'], sorted(['Received', 'Waiting'])])
+    self.assertTrue(sorted(res['Value']) in [['Received'], sorted(['Received', 'Waiting'])],
+                    res['Value'])
     res = jobMonitor.getMinorStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertTrue(sorted(res['Value']) in [['Job accepted'], sorted(['Job accepted', 'Job Rescheduled'])])
+    self.assertTrue(sorted(res['Value']) in [['Job accepted'], sorted(['Job accepted', 'Job Rescheduled'])],
+                    res['Value'])
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobs()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertTrue(set([str(x) for x in jobIDs]) <= set(res['Value']))
+    self.assertTrue(set([str(x) for x in jobIDs]) <= set(res['Value']),
+                    res['Value'])
 #     res = jobMonitor.getCounters(attrList)
 #     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getCurrentJobCounters()

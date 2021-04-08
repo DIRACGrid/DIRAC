@@ -53,7 +53,7 @@ import DIRAC.Core.Utilities.Time as Time
 
 class JobCleaningAgent(AgentModule):
   """
-  Remove jobs in status "Deleted", and not only
+  Agent for removing jobs in status "Deleted", and not only
   """
 
   def __init__(self, *args, **kwargs):

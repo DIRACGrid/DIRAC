@@ -45,9 +45,12 @@ def ifConnected(method):
 
 
 def generateDocs(data, withTimeStamp=True):
-  """ For fast bulk indexing, yields docs
+  """ Generator for fast bulk indexing, yields docs
 
-  :param list data: list of dictionaries or list of key/value tuples
+  :param list data: list of dictionaries
+  :param bool withTimeStamp: add the timestamps to the docs
+
+  :return: doc
   """
   for doc in data:
     if withTimeStamp:
