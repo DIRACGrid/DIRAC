@@ -7,13 +7,11 @@ from __future__ import print_function
 import os
 from DIRAC.Core.Utilities import List
 from DIRAC import gConfig, S_ERROR, S_OK, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers import getInstalledExtensions
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities.Extensions import recurseImport
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
 class ModuleLoader(object):
-
   def __init__(self, importLocation, sectionFinder, superClass, csSuffix=False, moduleSuffix=False):
     self.__modules = {}
     self.__loadedModules = {}
@@ -42,7 +40,7 @@ class ModuleLoader(object):
     for modName in modulesList:
       gLogger.verbose("Checking %s" % modName)
       # if it's a executor modName name just load it and be done with it
-      if modName.find("/") > -1:
+      if "/" in modName:
         gLogger.verbose("Module %s seems to be a valid name. Try to load it!" % modName)
         result = self.loadModule(modName, hideExceptions=hideExceptions)
         if not result['OK']:
@@ -63,7 +61,7 @@ class ModuleLoader(object):
             return result
       # Look what is installed
       parentModule = None
-      for rootModule in getInstalledExtensions():
+      for rootModule in extensionsByPriority():
         if not system.endswith("System"):
           system += "System"
         parentImport = "%s.%s.%s" % (rootModule, system, self.__csSuffix)
@@ -79,7 +77,7 @@ class ModuleLoader(object):
       parentPath = parentModule.__path__[0]
       gLogger.notice("Found modules path at %s" % parentImport)
       for entry in os.listdir(parentPath):
-        if entry[-3:] != ".py" or entry == "__init__.py":
+        if entry == "__init__.py" or not entry.endswith(".py"):
           continue
         if not os.path.isfile(os.path.join(parentPath, entry)):
           continue
@@ -109,7 +107,7 @@ class ModuleLoader(object):
     if loadGroup:
       gLogger.info("Found load group %s. Will load %s" % (modName, ", ".join(loadGroup)))
       for loadModName in loadGroup:
-        if loadModName.find("/") == -1:
+        if "/" not in loadModName:
           loadModName = "%s/%s" % (modList[0], loadModName)
         result = self.loadModule(loadModName, hideExceptions=hideExceptions)
         if not result['OK']:
@@ -121,7 +119,7 @@ class ModuleLoader(object):
       loadName = modName
       gLogger.info("Loading %s" % (modName))
     else:
-      if loadName.find("/") == -1:
+      if "/" not in loadName:
         loadName = "%s/%s" % (modList[0], loadName)
       gLogger.info("Loading %s (%s)" % (modName, loadName))
     # If already loaded, skip
@@ -141,7 +139,7 @@ class ModuleLoader(object):
         gLogger.info("Trying to %s from CS defined path %s" % (loadName, handlerPath))
         gLogger.verbose("Found handler for %s: %s" % (loadName, handlerPath))
         handlerPath = handlerPath.replace("/", ".")
-        if handlerPath.find(".py", len(handlerPath) - 3) > -1:
+        if handlerPath.endswith(".py"):
           handlerPath = handlerPath[:-3]
         className = List.fromChar(handlerPath, ".")[-1]
         result = recurseImport(handlerPath)
@@ -158,7 +156,7 @@ class ModuleLoader(object):
       else:
         # Check to see if the module exists in any of the root modules
         gLogger.info("Trying to autodiscover %s" % loadName)
-        rootModulesToLook = getInstalledExtensions()
+        rootModulesToLook = extensionsByPriority()
         for rootModule in rootModulesToLook:
           importString = '%s.%sSystem.%s.%s' % (rootModule, system, self.__importLocation, module)
           if self.__modSuffix:

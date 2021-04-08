@@ -13,9 +13,8 @@ import collections
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities import List, DIRACSingleton
-from DIRAC.Core.Utilities.Extensions import recurseImport
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.Core.Utilities import DIRACSingleton
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
 @six.add_metaclass(DIRACSingleton.DIRACSingleton)
@@ -70,23 +69,19 @@ class ObjectLoader(object):
         impName = "%s.%s" % (rootModule, impName)
       gLogger.debug("Trying to load %s" % impName)
       result = recurseImport(impName, hideExceptions=hideExceptions)
-      # Error. Something cannot be imported. Return error
       if not result['OK']:
         return result
-      # Huge success!
       if result['Value']:
         return S_OK((impName, result['Value']))
-      # Nothing found, continue
-    # Return nothing found
     return S_OK()
 
   def __generateRootModules(self, baseModules):
     """ Iterate over all the possible root modules
     """
     self.__rootModules = baseModules
-    for rootModule in reversed(CSGlobals.getCSExtensions()):
-      if not rootModule.endswith("DIRAC") and rootModule not in self.__rootModules:
-        self.__rootModules.append("%sDIRAC" % rootModule)
+    for rootModule in reversed(extensionsByPriority()):
+      if rootModule not in self.__rootModules:
+        self.__rootModules.append(rootModule)
     self.__rootModules.append("")
 
     # Reversing the order because we want first to look in the extension(s)
@@ -130,20 +125,14 @@ class ObjectLoader(object):
 
         :param continueOnError: if True, continue loading further module even if one fails
     """
-
-    if 'OrderedDict' in dir(collections):
-      modules = collections.OrderedDict()
-    else:
-      modules = {}
-
+    modules = collections.OrderedDict()
     if isinstance(reFilter, six.string_types):
       reFilter = re.compile(reFilter)
 
     for rootModule in self.__rootModules:
+      impPath = modulePath
       if rootModule:
-        impPath = "%s.%s" % (rootModule, modulePath)
-      else:
-        impPath = modulePath
+        impPath = "%s.%s" % (rootModule, impPath)
       gLogger.debug("Trying to load %s" % impPath)
 
       result = recurseImport(impPath)
@@ -151,10 +140,8 @@ class ObjectLoader(object):
         return result
       if not result['Value']:
         continue
-
       parentModule = result['Value']
-      fsPath = parentModule.__path__[0]
-      gLogger.verbose("Loaded module %s at %s" % (impPath, fsPath))
+      gLogger.verbose("Loaded module %s at %s" % (impPath, parentModule.__path__))
 
       for _modLoader, modName, isPkg in pkgutil.walk_packages(parentModule.__path__):
         if reFilter and not reFilter.match(modName):
@@ -171,7 +158,7 @@ class ObjectLoader(object):
         if modKeyName in modules:
           continue
         fullName = "%s.%s" % (impPath, modName)
-        result = recurseImport(modName, parentModule=parentModule, fullName=fullName)
+        result = recurseImport(fullName)
         if not result['OK']:
           if continueOnError:
             gLogger.error("Error loading module but continueOnError is true", "module %s error %s" % (fullName, result))
@@ -179,18 +166,15 @@ class ObjectLoader(object):
           return result
         if not result['Value']:
           continue
-        modObj = result['Value']
 
-        try:
-          modClass = getattr(modObj, modName)
-        except AttributeError:
+        modClass = getattr(result['Value'], modName, None)
+        if not modClass:
           gLogger.warn("%s does not contain a %s object" % (fullName, modName))
           continue
 
         if parentClass and not issubclass(modClass, parentClass):
           continue
 
-        # Huge success!
         modules[modKeyName] = modClass
 
     return S_OK(modules)

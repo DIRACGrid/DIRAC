@@ -20,8 +20,8 @@ from DIRAC import exit as DIRACexit
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 
 __RCSID__ = "$Id$"
 
@@ -81,7 +81,7 @@ def main():
   compOrMod = module if module else component
 
   result = gComponentInstaller.addDefaultOptionsToCS(gConfig, 'service', system, component,
-                                                     getCSExtensions(),
+                                                     extensionsByPriority(),
                                                      specialOptions=specialOptions,
                                                      overwrite=overwrite)
 
@@ -100,7 +100,7 @@ def main():
     DIRACexit(1)
 
   gLogger.notice('Successfully installed component %s in %s system, now setting it up' % (component, system))
-  result = gComponentInstaller.setupTornadoService(system, component, getCSExtensions(), module)
+  result = gComponentInstaller.setupTornadoService(system, component, extensionsByPriority(), module)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)

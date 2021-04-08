@@ -10,7 +10,7 @@ import six
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 
 def loadObjects(path, reFilter=None, parentClass=None):
@@ -24,10 +24,9 @@ def loadObjects(path, reFilter=None, parentClass=None):
     reFilter = re.compile(r".*[a-z1-9]\.py$")
   pathList = List.fromChar(path, "/")
 
-  parentModuleList = ["%sDIRAC" % ext for ext in CSGlobals.getCSExtensions()] + ['DIRAC']
   objectsToLoad = {}
   # Find which object files match
-  for parentModule in parentModuleList:
+  for parentModule in extensionsByPriority():
     if six.PY3:
       objDir = os.path.join(os.path.dirname(os.path.dirname(DIRAC.__file__)), parentModule, *pathList)
     else:

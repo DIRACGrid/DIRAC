@@ -6,7 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import ObjectLoader
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.DErrno import EMQUKN
 
 __RCSID__ = "$Id$"
@@ -50,8 +50,7 @@ def getMQConnectorClass(mqType):
     S_OK or S_ERROR: with loaded specialized class of MQConnector.
   """
   subClassName = mqType + 'MQConnector'
-  objectLoader = ObjectLoader.ObjectLoader()
-  result = objectLoader.loadObject('Resources.MessageQueue.%s' % subClassName, subClassName)
+  result = ObjectLoader().loadObject('Resources.MessageQueue.%s' % subClassName)
   if not result['OK']:
     gLogger.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
   return result

@@ -102,7 +102,7 @@ class SystemAdministratorHandler(RequestHandler):
     """  Get the list of all the components ( services and agents ) for which the software
          is installed on the system
     """
-    return gComponentInstaller.getSoftwareComponents(getCSExtensions())
+    return gComponentInstaller.getSoftwareComponents(extensionsByPriority())
 
   types_getInstalledComponents = []
 
@@ -126,7 +126,7 @@ class SystemAdministratorHandler(RequestHandler):
     """  Get the complete status information for the components in the
          given list
     """
-    result = gComponentInstaller.getOverallStatus(getCSExtensions())
+    result = gComponentInstaller.getOverallStatus(extensionsByPriority())
     if not result['OK']:
       return result
     statusDict = result['Value']
@@ -153,7 +153,7 @@ class SystemAdministratorHandler(RequestHandler):
   def export_installComponent(self, componentType, system, component, componentModule=''):
     """ Install runit directory for the specified component
     """
-    return gComponentInstaller.installComponent(componentType, system, component, getCSExtensions(), componentModule)
+    return gComponentInstaller.installComponent(componentType, system, component, extensionsByPriority(), componentModule)
 
   types_setupComponent = [six.string_types, six.string_types, six.string_types]
 
@@ -161,7 +161,7 @@ class SystemAdministratorHandler(RequestHandler):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
     """
-    result = gComponentInstaller.setupComponent(componentType, system, component, getCSExtensions(), componentModule)
+    result = gComponentInstaller.setupComponent(componentType, system, component, extensionsByPriority(), componentModule)
     gConfig.forceRefresh()
     return result
 
@@ -170,7 +170,7 @@ class SystemAdministratorHandler(RequestHandler):
   def export_addDefaultOptionsToComponentCfg(self, componentType, system, component):
     """ Add default component options local component cfg
     """
-    return gComponentInstaller.addDefaultOptionsToComponentCfg(componentType, system, component, getCSExtensions())
+    return gComponentInstaller.addDefaultOptionsToComponentCfg(componentType, system, component, extensionsByPriority())
 
   types_unsetupComponent = [six.string_types, six.string_types]
 
@@ -239,7 +239,7 @@ class SystemAdministratorHandler(RequestHandler):
   def export_getAvailableDatabases(self):
     """ Get the list of databases which software is installed in the system
     """
-    return gComponentInstaller.getAvailableDatabases(getCSExtensions())
+    return gComponentInstaller.getAvailableDatabases()
 
   types_installDatabase = [six.string_types]
 
@@ -272,7 +272,7 @@ class SystemAdministratorHandler(RequestHandler):
     """ Add default component options to the global CS or to the local options
     """
     return gComponentInstaller.addDefaultOptionsToCS(gConfig, componentType, system, component,
-                                                     getCSExtensions(),
+                                                     extensionsByPriority(),
                                                      overwrite=overwrite)
 
 #######################################################################################

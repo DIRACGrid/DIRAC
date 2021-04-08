@@ -11,7 +11,7 @@ from __future__ import division
 from __future__ import print_function
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Computing.ComputingElement import getCEConfigDict
-from DIRAC.Core.Utilities import ObjectLoader
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 __RCSID__ = "$Id$"
 
@@ -46,8 +46,7 @@ class ComputingElementFactory(object):
       return S_ERROR(error)
     subClassName = "%sComputingElement" % (ceTypeLocal)
 
-    objectLoader = ObjectLoader.ObjectLoader()
-    result = objectLoader.loadObject('Resources.Computing.%s' % subClassName, subClassName)
+    result = ObjectLoader().loadObject('Resources.Computing.%s' % subClassName)
     if not result['OK']:
       self.log.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
       return result

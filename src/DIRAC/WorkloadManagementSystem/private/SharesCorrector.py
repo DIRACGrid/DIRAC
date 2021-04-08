@@ -7,7 +7,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import ObjectLoader
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
 
@@ -22,7 +22,6 @@ class SharesCorrector(object):
     self.__shareCorrectors = {}
     self.__correctorsOrder = []
     self.__baseCS = "JobScheduling/ShareCorrections"
-    self.__objLoader = ObjectLoader.ObjectLoader()
 
   def __getCSValue(self, path, defaultValue=''):
     return self.__opsHelper.getValue("%s/%s" % (self.__baseCS, path), defaultValue)
@@ -30,7 +29,7 @@ class SharesCorrector(object):
   def __getCorrectorClass(self, correctorName):
     baseImport = "WorkloadManagementSystem.private.correctors"
     fullCN = "%s.%sCorrector" % (baseImport, correctorName)
-    result = self.__objLoader.getObjects(baseImport, ".*Corrector", parentClass=BaseCorrector)
+    result = ObjectLoader().getObjects(baseImport, ".*Corrector", parentClass=BaseCorrector)
     if not result['OK']:
       return result
     data = result['Value']
@@ -45,7 +44,7 @@ class SharesCorrector(object):
     for corrector in self.__shareCorrectors:
       if corrector not in correctorsToStart:
         self.__log.info("Stopping corrector %s" % corrector)
-        del(self.__shareCorrectors[corrector])
+        del self.__shareCorrectors[corrector]
     for corrector in correctorsToStart:
       if corrector not in self.__shareCorrectors:
         self.__log.info("Starting corrector %s" % corrector)

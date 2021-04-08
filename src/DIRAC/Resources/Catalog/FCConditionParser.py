@@ -171,7 +171,7 @@ class FCConditionParser(object):
 
       # Load the plugin, and give it the condition
       objLoader = ObjectLoader()
-      _class = objLoader.loadObject('Resources.Catalog.ConditionPlugins.%s' % self.pluginName, self.pluginName)
+      _class = objLoader.loadObject('Resources.Catalog.ConditionPlugins.%s' % self.pluginName)
 
       if not _class['OK']:
         raise Exception(_class['Message'])

@@ -18,13 +18,10 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 class FileCatalogDB(DB):
 
   def __init__(self, databaseLocation='DataManagement/FileCatalogDB'):
-    """ Standard Constructor
-    """
-
     # The database location can be specified in System/Database form or in just the Database name
     # in the DataManagement system
     db = databaseLocation
-    if db.find('/') == -1:
+    if "/" not in db:
       db = 'DataManagement/' + db
 
     super(FileCatalogDB, self).__init__('FileCatalogDB', db)
@@ -37,10 +34,8 @@ class FileCatalogDB(DB):
     self.dmeta = None
     self.fmeta = None
     self.datasetManager = None
-    self.objectLoader = None
 
   def setConfig(self, databaseConfig):
-
     self.directories = {}
     # In memory storage of the various parameters
     self.users = {}
@@ -63,9 +58,6 @@ class FileCatalogDB(DB):
     self.visibleFileStatus = databaseConfig['VisibleFileStatus']
     self.visibleReplicaStatus = databaseConfig['VisibleReplicaStatus']
 
-    # Obtain the plugins to be used for DB interaction
-    self.objectLoader = ObjectLoader()
-
     # Load the configured components
     for compAttribute, componentType in [("ugManager", "UserGroupManager"),
                                          ("seManager", "SEManager"),
@@ -87,7 +79,7 @@ class FileCatalogDB(DB):
     """ Create an object of a given catalog component
     """
     componentModule = 'DataManagementSystem.DB.FileCatalogComponents.%s.%s' % (componentType, componentName)
-    result = self.objectLoader.loadObject(componentModule, componentName)
+    result = ObjectLoader().loadObject(componentModule)
     if not result['OK']:
       gLogger.error('Failed to load catalog component', '%s: %s' % (componentName, result['Message']))
       return result

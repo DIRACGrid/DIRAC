@@ -404,7 +404,7 @@ class LocalConfiguration(object):
     """
     Force the connection the Configuration Server
 
-    (And incidentaly reinitialize the ObjectLoader and logger)
+    (And incidentally reinitialize the ObjectLoader and logger)
     """
     res = gRefresher.enable()
 

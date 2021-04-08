@@ -34,14 +34,14 @@ else:
 from DIRAC import gConfig
 from DIRAC import exit as DIRACexit
 
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
 
 gComponentInstaller.exitOnError = True
 
 result = gComponentInstaller.addDefaultOptionsToCS(gConfig, componentType, system, component,
-                                                   getCSExtensions(),
+                                                   extensionsByPriority(),
                                                    specialOptions={},
                                                    overwrite=False)
 if not result['OK']:

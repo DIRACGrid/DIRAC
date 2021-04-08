@@ -12,7 +12,9 @@ __RCSID__ = "$Id$"
 
 import imp
 import six
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 
 @six.add_metaclass(DIRACSingleton)
@@ -25,10 +27,8 @@ class Extensions(object):
   def __load(self):
     if self.__orderedExtNames:
       return
-    for extName in self.getCSExtensions() + ['']:
+    for extName in extensionsByPriority():
       try:
-        if not extName.endswith("DIRAC"):
-          extName = '%sDIRAC' % extName
         res = imp.find_module(extName)
         if res[0]:
           res[0].close()
@@ -40,15 +40,13 @@ class Extensions(object):
   def getCSExtensions(self):
     if not self.__csExt:
       if six.PY3:
-        from DIRAC.Core.Utilities.DIRACScript import _extensionsByPriority
-        exts = _extensionsByPriority()
+        exts = extensionsByPriority()
       else:
         from DIRAC.ConfigurationSystem.Client.Config import gConfig
         exts = gConfig.getValue('/DIRAC/Extensions', [])
 
       self.__csExt = []
-      for iP in range(len(exts)):
-        ext = exts[iP]
+      for ext in exts:
         if ext.endswith("DIRAC"):
           ext = ext[:-5]
         # If the extension is now "" (i.e. vanilla DIRAC), don't include it
@@ -56,9 +54,9 @@ class Extensions(object):
           self.__csExt.append(ext)
     return self.__csExt
 
+  @deprecated("Use DIRAC.Core.Utilities.Extensions.extensionsByPriority instead")
   def getInstalledExtensions(self):
-    self.__load()
-    return list(self.__orderedExtNames)
+    return extensionsByPriority()
 
   def getExtensionPath(self, extName):
     self.__load()
@@ -90,11 +88,12 @@ def getCSExtensions():
   return Extensions().getCSExtensions()
 
 
+@deprecated("Use DIRAC.Core.Utilities.Extensions.extensionsByPriority instead")
 def getInstalledExtensions():
   """
     Return list of extensions registered in the CS and available in local installation
   """
-  return Extensions().getInstalledExtensions()
+  return extensionsByPriority()
 
 
 def skipCACheck():

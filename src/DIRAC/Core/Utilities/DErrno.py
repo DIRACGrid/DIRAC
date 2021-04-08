@@ -46,6 +46,8 @@ import os
 import importlib
 import sys
 
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
+
 # To avoid conflict, the error numbers should be greater than 1000
 # We decided to group the by range of 100 per system
 
@@ -344,11 +346,11 @@ def includeExtensionErrors():
       Should be called only at the initialization of DIRAC, so by the parseCommandLine,
       dirac-agent.py, dirac-service.py, dirac-executor.py
   """
-  from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
-
-  for extension in CSGlobals.getCSExtensions():
+  for extension in reversed(extensionsByPriority()):
+    if extension == "DIRAC":
+      continue
     try:
-      ext_derrno = importlib.import_module('%sDIRAC.Core.Utilities.DErrno' % extension)
+      ext_derrno = importlib.import_module('%s.Core.Utilities.DErrno' % extension)
     except ImportError:
       pass
     else:

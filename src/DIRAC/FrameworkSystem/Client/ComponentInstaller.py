@@ -60,19 +60,22 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import os
-import io
-import re
+import getpass
 import glob
+import importlib
+import inspect
+import io
+import os
+import pkgutil
+import re
+import shutil
 import stat
 import time
-import subprocess32 as subprocess
-import shutil
-import inspect
-import importlib
+from collections import defaultdict
 
+import importlib_resources
+import subprocess32 as subprocess
 from diraccfg import CFG
-import six
 
 import DIRAC
 from DIRAC import rootPath
@@ -99,9 +102,46 @@ from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.Extensions import extensionsByPriority, findDatabases, findModules, findSystems
+from DIRAC.Core.Utilities.Extensions import (
+    extensionsByPriority, findDatabases, findModules, findAgents, findServices,
+    findExecutors, findSystems,
+)
 
 __RCSID__ = "$Id$"
+
+
+def _safeFloat(value):
+  try:
+    return float(value)
+  except ValueError:
+    return -1
+
+
+def _safeInt(value):
+  try:
+    return int(value)
+  except ValueError:
+    return -1
+
+
+def _makeComponentDict(component, setupDict, installedDict, compType, system, runitDict):
+  componentDict = {
+      'Setup': component in setupDict[compType][system],
+      'Installed': component in installedDict[compType][system],
+      'RunitStatus': 'Unknown',
+      'Timeup': 0,
+      'PID': 0,
+  }
+  compDir = system + '_' + component
+  if compDir in runitDict:
+    componentDict['RunitStatus'] = runitDict[compDir]['RunitStatus']
+    componentDict['Timeup'] = runitDict[compDir]['Timeup']
+    componentDict['PID'] = _safeInt(runitDict[compDir].get('PID', -1))
+    componentDict['CPU'] = _safeFloat(runitDict[compDir].get('CPU', -1))
+    componentDict['MEM'] = _safeFloat(runitDict[compDir].get('MEM', -1))
+    componentDict['RSS'] = _safeFloat(runitDict[compDir].get('RSS', -1))
+    componentDict['VSZ'] = _safeFloat(runitDict[compDir].get('VSZ', -1))
+  return componentDict
 
 
 class ComponentInstaller(object):
@@ -145,6 +185,15 @@ class ComponentInstaller(object):
     self.monitoringClient = None
 
     self.loadDiracCfg()
+
+  def resultIndexes(self, componentTypes):
+    resultIndexes = {}
+    for cType in componentTypes:
+      result = self._getSectionName(cType)
+      if not result['OK']:
+        return result
+      resultIndexes[cType] = result['Value']
+    return S_OK(resultIndexes)
 
   def loadDiracCfg(self):
     """ Read again defaults from dirac.cfg
@@ -274,10 +323,7 @@ class ComponentInstaller(object):
     if not result['OK']:
       return result
     rDict = result['Value']
-    if self.setup:
-      rDict['Setup'] = self.setup
-    else:
-      rDict['Setup'] = 'Unknown'
+    rDict['Setup'] = self.setup or 'Unknown'
     return S_OK(rDict)
 
   @deprecated("Use DIRAC.Core.Utilities.Extensions.extensionsByPriority instead")
@@ -298,10 +344,7 @@ class ComponentInstaller(object):
     """
     Merge cfg into existing dirac.cfg file
     """
-    if str(self.localCfg):
-      newCfg = self.localCfg.mergeWith(cfg)
-    else:
-      newCfg = cfg
+    newCfg = self.localCfg.mergeWith(cfg) if str(self.localCfg) else cfg
     result = newCfg.writeToFile(self.cfgFile)
     if not result:
       return result
@@ -341,10 +384,7 @@ class ComponentInstaller(object):
     csFile = os.path.join(rootPath, 'etc', '%s.cfg' % csName)
     if os.path.exists(csFile):
       csCfg.loadFromFile(csFile)
-    if str(csCfg):
-      newCfg = csCfg.mergeWith(cfg)
-    else:
-      newCfg = cfg
+    newCfg = csCfg.mergeWith(cfg) if str(csCfg) else cfg
     return newCfg.writeToFile(csFile)
 
   def _removeOptionFromCS(self, path):
@@ -392,11 +432,7 @@ class ComponentInstaller(object):
     if vo:
       centralCfg['DIRAC'].addKey('VirtualOrganization', vo, '')  # pylint: disable=no-member
 
-    for section in ['Systems',
-                    'Resources',
-                    'Resources/Sites',
-                    'Operations',
-                    'Registry']:
+    for section in ['Systems', 'Resources', 'Resources/Sites', 'Operations', 'Registry']:
       if installCfg.isSection(section):
         centralCfg.createNewSection(section, contents=installCfg[section])
 
@@ -580,10 +616,7 @@ class ComponentInstaller(object):
       cType = installation['Component']['Type']
 
       # Is the component a rename of another module?
-      if installation['Instance'] == installation['Component']['DIRACModule']:
-        isRenamed = False
-      else:
-        isRenamed = True
+      isRenamed = installation['Instance'] != installation['Component']['DIRACModule']
 
       result = self.monitoringClient.getInstallations(
           {'UnInstallationTime': None},
@@ -615,8 +648,8 @@ class ComponentInstaller(object):
           if not result['OK']:
             # It is maybe in the FailoverURLs ?
             result = self._removeOptionFromCS(cfgPath('Systems', system, compInstance, 'FailoverURLs', component))
-            if not result['OK']:
-              return result
+          if not result['OK']:
+            return result
 
       if removeMain:
         result = self._removeSectionFromCS(cfgPath('Systems', system,
@@ -637,14 +670,10 @@ class ComponentInstaller(object):
           if not result['OK']:
             # it is maybe in the FailoverURLs ?
             result = self._removeOptionFromCS(
-                cfgPath(
-                    'Systems',
-                    system,
-                    compInstance,
-                    'FailoverURLs',
-                    installation['Component']['Module']))
-            if not result['OK']:
-              return result
+                cfgPath('Systems', system, compInstance, 'FailoverURLs', installation['Component']['Module'])
+            )
+          if not result['OK']:
+            return result
 
       return S_OK('Successfully removed entries from CS')
     return S_OK('Instances of this component still exist. It won\'t be completely removed')
@@ -777,15 +806,10 @@ class ComponentInstaller(object):
       return result
     sectionName = result['Value']
 
-    componentModule = component
-    if "Module" in specialOptions and specialOptions['Module']:
-      componentModule = specialOptions['Module']
-
+    componentModule = specialOptions.get('Module', component)
     compCfg = CFG()
-
     if addDefaultOptions:
-      extensionsDIRAC = [x + 'DIRAC' for x in extensions] + extensions
-      for ext in extensionsDIRAC + ['DIRAC']:
+      for ext in extensions:
         cfgTemplateModule = "%s.%sSystem" % (ext, system)
         try:
           cfgTemplate = importlib_resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
@@ -982,94 +1006,47 @@ class ComponentInstaller(object):
     is installed on the system
     """
     # The Gateway does not need a handler
-    services = {'Framework': ['Gateway']}
-    agents = {}
-    executors = {}
-    remainders = {}
+    services = defaultdict(list, {"Framework": ["Gateway"]})
+    agents = defaultdict(list)
+    executors = defaultdict(list)
+    remainders = defaultdict(lambda: defaultdict(list))
 
-    resultDict = {}
-
-    remainingTypes = [cType for cType in self.componentTypes if cType not in ['service', 'agent', 'executor']]
-    resultIndexes = {}
     # Components other than services, agents and executors
-    for cType in remainingTypes:
-      result = self._getSectionName(cType)
-      if not result['OK']:
-        return result
-      resultIndexes[cType] = result['Value']
-      resultDict[resultIndexes[cType]] = {}
-      remainders[cType] = {}
+    remainingTypes = set(self.componentTypes) - {'service', 'agent', 'executor'}
+    result = self.resultIndexes(remainingTypes)
+    if not result["OK"]:
+      return result
+    resultIndexes = result["Value"]
 
-    for extension in ['DIRAC'] + [x + 'DIRAC' for x in extensions]:
-      import importlib
-      try:
-        extensionModule = importlib.import_module(extension)
-      except ImportError:
-        # Not all the extensions are necessarily installed in this self.instance
-        continue
-      extensionDir = os.path.dirname(extensionModule.__file__)
-      systemList = os.listdir(extensionDir)
-      for sys in systemList:
-        system = sys.replace('System', '')
-        try:
-          agentDir = os.path.join(extensionDir, sys, 'Agent')
-          agentList = os.listdir(agentDir)
-          for agent in agentList:
-            if os.path.splitext(agent)[1] == ".py":
-              agentFile = os.path.join(agentDir, agent)
-              with io.open(agentFile, 'rt') as afile:
-                body = afile.read()
-              if body.find('AgentModule') != -1 or body.find('OptimizerModule') != -1:
-                if system not in agents:
-                  agents[system] = []
-                agents[system].append(agent.replace('.py', ''))
-        except OSError:
-          pass
-        try:
-          serviceDir = os.path.join(extensionDir, sys, 'Service')
-          serviceList = os.listdir(serviceDir)
-          for service in serviceList:
-            if service.find('Handler') != -1 and os.path.splitext(service)[1] == '.py':
-              if system not in services:
-                services[system] = []
-              if system == 'Configuration' and service == 'ConfigurationHandler.py':
-                service = 'ServerHandler.py'
-              services[system].append(service.replace('.py', '').replace('Handler', ''))
-        except OSError:
-          pass
-        try:
-          executorDir = os.path.join(extensionDir, sys, 'Executor')
-          executorList = os.listdir(executorDir)
-          for executor in executorList:
-            if os.path.splitext(executor)[1] == ".py":
-              executorFile = os.path.join(executorDir, executor)
-              with io.open(executorFile, 'rt') as afile:
-                body = afile.read()
-              if body.find('OptimizerExecutor') != -1:
-                if system not in executors:
-                  executors[system] = []
-                executors[system].append(executor.replace('.py', ''))
-        except OSError:
-          pass
+    for extension in extensions:
+      for system, agent in findAgents(extension):
+        loader = pkgutil.get_loader(".".join([extension, system, "Agent", agent]))
+        with io.open(loader.get_filename(), "rt") as fp:
+          body = fp.read()
+        if "AgentModule" in body or "OptimizerModule" in body:
+          agents[system.replace("System", "")].append(agent)
 
-        # Rest of component types
-        for cType in remainingTypes:
-          try:
-            remainDir = os.path.join(extensionDir, sys, cType.title())
-            remainList = os.listdir(remainDir)
-            for remainder in remainList:
-              if os.path.splitext(remainder)[1] == ".py":
-                if system not in remainders[cType]:
-                  remainders[cType][system] = []
-                remainders[cType][system].append(remainder.replace('.py', ''))
-          except OSError:
-            pass
+      for system, service in findServices(extension):
+        if system == "Configuration" and service == "ConfigurationHandler":
+          service = "ServerHandler"
+        services[system.replace("System", "")].append(service.replace("Handler", ""))
 
-    resultDict['Services'] = services
-    resultDict['Agents'] = agents
-    resultDict['Executors'] = executors
-    for cType in remainingTypes:
-      resultDict[resultIndexes[cType]] = remainders[cType]
+      for system, executor in findExecutors(extension):
+        loader = pkgutil.get_loader(".".join([extension, system, "Executor", executor]))
+        with io.open(loader.get_filename(), "rt") as fp:
+          body = fp.read()
+        if "OptimizerExecutor" in body:
+          executors[system.replace("System", "")].append(executor)
+
+      # Rest of component types
+      for cType in remainingTypes:
+        for system, remainder in findModules(extension, cType.title()):
+          remainders[cType][system.replace("System", "")].append(remainder)
+
+    resultDict = {resultIndexes[cType]: dict(remainders[cType]) for cType in remainingTypes}
+    resultDict["Services"] = dict(services)
+    resultDict["Agents"] = dict(agents)
+    resultDict["Executors"] = dict(executors)
     return S_OK(resultDict)
 
   def getInstalledComponents(self):
@@ -1077,68 +1054,62 @@ class ComponentInstaller(object):
     Get the list of all the components ( services and agents )
     installed on the system in the runit directory
     """
-    resultDict = {}
-    resultIndexes = {}
-    for cType in self.componentTypes:
-      result = self._getSectionName(cType)
-      if not result['OK']:
-        return result
-      resultIndexes[cType] = result['Value']
-      resultDict[resultIndexes[cType]] = {}
+    result = self.resultIndexes(self.componentTypes)
+    if not result["OK"]:
+      return result
+    resultIndexes = result["Value"]
 
-    systemList = os.listdir(self.runitDir)
-    for system in systemList:
+    resultDict = defaultdict(lambda: defaultdict(list))
+    for system in os.listdir(self.runitDir):
       systemDir = os.path.join(self.runitDir, system)
-      components = os.listdir(systemDir)
-      for component in components:
+      for component in os.listdir(systemDir):
+        runFile = os.path.join(systemDir, component, 'run')
         try:
-          runFile = os.path.join(systemDir, component, 'run')
           with io.open(runFile, 'rt') as rFile:
             body = rFile.read()
-
-          for cType in self.componentTypes:
-            if body.find('dirac-%s' % (cType)) != -1:
-              if system not in resultDict[resultIndexes[cType]]:
-                resultDict[resultIndexes[cType]][system] = []
-              resultDict[resultIndexes[cType]][system].append(component)
         except IOError:
           pass
+        else:
+          for cType in self.componentTypes:
+            if 'dirac-%s' % (cType) in body:
+              resultDict[cType][system].append(component)
 
-    return S_OK(resultDict)
+    return S_OK({
+      resultIndexes[cType]: dict(resultDict[cType])
+      for cType in self.componentTypes
+    })
 
   def getSetupComponents(self):
     """
     Get the list of all the components ( services and agents )
     set up for running with runsvdir in startup directory
     """
-    resultDict = {}
-    resultIndexes = {}
-    for cType in self.componentTypes:
-      result = self._getSectionName(cType)
-      if not result['OK']:
-        return result
-      resultIndexes[cType] = result['Value']
-      resultDict[resultIndexes[cType]] = {}
-
     if not os.path.isdir(self.startDir):
       return S_ERROR('Startup Directory does not exit: %s' % self.startDir)
-    componentList = os.listdir(self.startDir)
-    for component in componentList:
+
+    result = self.resultIndexes(self.componentTypes)
+    if not result["OK"]:
+      return result
+    resultIndexes = result["Value"]
+
+    resultDict = defaultdict(lambda: defaultdict(list))
+    for component in os.listdir(self.startDir):
+      runFile = os.path.join(self.startDir, component, 'run')
       try:
-        runFile = os.path.join(self.startDir, component, 'run')
         with io.open(runFile, 'rt') as rfile:
           body = rfile.read()
-
-        for cType in self.componentTypes:
-          if body.find('dirac-%s' % (cType)) != -1:
-            system, compT = component.split('_', 1)
-            if system not in resultDict[resultIndexes[cType]]:
-              resultDict[resultIndexes[cType]][system] = []
-            resultDict[resultIndexes[cType]][system].append(compT)
       except IOError:
         pass
+      else:
+        for cType in self.componentTypes:
+          if 'dirac-%s' % (cType) in body:
+            system, compT = component.split('_', 1)
+            resultDict[cType][system].append(compT)
 
-    return S_OK(resultDict)
+    return S_OK({
+      resultIndexes[cType]: dict(resultDict[cType])
+      for cType in self.componentTypes
+    })
 
   def getStartupComponentStatus(self, componentTupleList):
     """
@@ -1262,119 +1233,33 @@ class ComponentInstaller(object):
     runitDict = result['Value']
 
     # Collect the info now
-    resultDict = {}
-    resultIndexes = {}
-    for cType in self.componentTypes:
-      result = self._getSectionName(cType)
-      if not result['OK']:
-        return result
-      resultIndexes[cType] = result['Value']
-      resultDict[resultIndexes[cType]] = {}
+    result = self.resultIndexes(self.componentTypes)
+    if not result["OK"]:
+      return result
+    resultIndexes = result["Value"]
 
-    for compType in resultIndexes.values():
+    resultDict = defaultdict(lambda: defaultdict(list))
+    for cType in resultIndexes.values():
       if 'Services' in softDict:
-        for system in softDict[compType]:
-          resultDict[compType][system] = {}
-          for component in softDict[compType][system]:
-            if system == 'Configuration' and component == 'Configuration':
+        for system in softDict[cType]:
+          for component in softDict[cType][system]:
+            if system == component == 'Configuration':
               # Fix to avoid missing CS due to different between Service name and Handler name
               component = 'Server'
-            resultDict[compType][system][component] = {}
-            resultDict[compType][system][component]['Setup'] = False
-            resultDict[compType][system][component]['Installed'] = False
-            resultDict[compType][system][component]['RunitStatus'] = 'Unknown'
-            resultDict[compType][system][component]['Timeup'] = 0
-            resultDict[compType][system][component]['PID'] = 0
-            # TODO: why do we need a try here?
-            try:
-              if component in setupDict[compType][system]:
-                resultDict[compType][system][component]['Setup'] = True
-            except Exception:
-              pass
-            try:
-              if component in installedDict[compType][system]:
-                resultDict[compType][system][component]['Installed'] = True
-            except Exception:
-              pass
-            try:
-              compDir = system + '_' + component
-              if compDir in runitDict:
-                resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
-                resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
-                try:
-                  resultDict[compType][system][component]['PID'] = int(runitDict[compDir]['PID'])
-                except ValueError:
-                  resultDict[compType][system][component]['PID'] = -1
-                try:
-                  resultDict[compType][system][component]['CPU'] = float(runitDict[compDir]['CPU'])
-                except ValueError:
-                  resultDict[compType][system][component]['CPU'] = -1
-                try:
-                  resultDict[compType][system][component]['MEM'] = float(runitDict[compDir]['MEM'])
-                except ValueError:
-                  resultDict[compType][system][component]['MEM'] = -1
-                try:
-                  resultDict[compType][system][component]['RSS'] = float(runitDict[compDir]['RSS'])
-                except ValueError:
-                  resultDict[compType][system][component]['RSS'] = -1
-                try:
-                  resultDict[compType][system][component]['VSZ'] = float(runitDict[compDir]['VSZ'])
-                except ValueError:
-                  resultDict[compType][system][component]['VSZ'] = -1
-            except Exception:
-              # print str(x)
-              pass
-
+            resultDict[cType][system][component] = _makeComponentDict(
+                component, setupDict, installedDict, cType, system, runitDict
+            )
       # Installed components can be not the same as in the software list
       if 'Services' in installedDict:
-        for system in installedDict[compType]:
-          for component in installedDict[compType][system]:
-            if compType in resultDict:
-              if system in resultDict[compType]:
-                if component in resultDict[compType][system]:
-                  continue
-            resultDict[compType][system][component] = {}
-            resultDict[compType][system][component]['Setup'] = False
-            resultDict[compType][system][component]['Installed'] = True
-            resultDict[compType][system][component]['RunitStatus'] = 'Unknown'
-            resultDict[compType][system][component]['Timeup'] = 0
-            resultDict[compType][system][component]['PID'] = 0
-            # TODO: why do we need a try here?
-            try:
-              if component in setupDict[compType][system]:
-                resultDict[compType][system][component]['Setup'] = True
-            except Exception:
-              pass
-            try:
-              compDir = system + '_' + component
-              if compDir in runitDict:
-                resultDict[compType][system][component]['RunitStatus'] = runitDict[compDir]['RunitStatus']
-                resultDict[compType][system][component]['Timeup'] = runitDict[compDir]['Timeup']
-                try:
-                  resultDict[compType][system][component]['PID'] = int(runitDict[compDir]['PID'])
-                except ValueError:
-                  resultDict[compType][system][component]['PID'] = -1
-                try:
-                  resultDict[compType][system][component]['CPU'] = float(runitDict[compDir]['CPU'])
-                except ValueError:
-                  resultDict[compType][system][component]['CPU'] = -1
-                try:
-                  resultDict[compType][system][component]['MEM'] = float(runitDict[compDir]['MEM'])
-                except ValueError:
-                  resultDict[compType][system][component]['MEM'] = -1
-                try:
-                  resultDict[compType][system][component]['RSS'] = float(runitDict[compDir]['RSS'])
-                except ValueError:
-                  resultDict[compType][system][component]['RSS'] = -1
-                try:
-                  resultDict[compType][system][component]['VSZ'] = float(runitDict[compDir]['VSZ'])
-                except ValueError:
-                  resultDict[compType][system][component]['VSZ'] = -1
-            except Exception:
-              # print str(x)
-              pass
+        for system in installedDict[cType]:
+          for component in installedDict[cType][system]:
+            if component in resultDict.get(cType, {}).get(system, {}):
+              continue
+            resultDict[cType][system][component] = _makeComponentDict(
+                component, setupDict, installedDict, cType, system, runitDict
+            )
 
-    return S_OK(resultDict)
+    return S_OK({k: dict(v) for k, v in resultDict.items()})
 
   def checkComponentModule(self, componentType, system, module):
     """
@@ -1463,11 +1348,7 @@ class ComponentInstaller(object):
       else:
         with io.open(logFileName, 'rt') as logFile:
           lines = [line.strip() for line in logFile.readlines()]
-
-        if len(lines) < length:
-          retDict[compName] = '\n'.join(lines)
-        else:
-          retDict[compName] = '\n'.join(lines[-length:])
+        retDict[compName] = '\n'.join(lines[-length:])
 
     return S_OK(retDict)
 
@@ -1515,12 +1396,8 @@ class ComponentInstaller(object):
     setupAddConfiguration = self.localCfg.getOption(cfgInstallPath('AddConfiguration'), True)
 
     for serviceTuple in setupServices:
-      error = ''
       if len(serviceTuple) != 2:
         error = 'Wrong service specification: system/service'
-      # elif serviceTuple[0] not in setupSystems:
-      #   error = 'System %s not available' % serviceTuple[0]
-      if error:
         if self.exitOnError:
           gLogger.error(error)
           DIRAC.exit(-1)
@@ -1530,12 +1407,8 @@ class ComponentInstaller(object):
         setupSystems.append(serviceSysInstance)
 
     for agentTuple in setupAgents:
-      error = ''
       if len(agentTuple) != 2:
         error = 'Wrong agent specification: system/agent'
-      # elif agentTuple[0] not in setupSystems:
-      #   error = 'System %s not available' % agentTuple[0]
-      if error:
         if self.exitOnError:
           gLogger.error(error)
           DIRAC.exit(-1)
@@ -1545,10 +1418,8 @@ class ComponentInstaller(object):
         setupSystems.append(agentSysInstance)
 
     for executorTuple in setupExecutors:
-      error = ''
       if len(executorTuple) != 2:
         error = 'Wrong executor specification: system/executor'
-      if error:
         if self.exitOnError:
           gLogger.error(error)
           DIRAC.exit(-1)
@@ -1558,10 +1429,7 @@ class ComponentInstaller(object):
         setupSystems.append(executorSysInstance)
 
     # And to find out the available extensions
-    result = self.getExtensions()
-    if not result['OK']:
-      return result
-    extensions = [k.replace('DIRAC', '') for k in result['Value']]
+    extensions = extensionsByPriority()
 
     # Make sure the necessary directories are there
     if self.basePath != self.instancePath:
@@ -1594,9 +1462,7 @@ class ComponentInstaller(object):
 
       # it is pointless to look for more detailed command.
       # Nobody uses runsvdir.... so if it is there, it is us.
-      cmdFound = any(['runsvdir' in process for process in processList])
-
-      if not cmdFound:
+      if all('runsvdir' not in process for process in processList):
         gLogger.notice('Starting runsvdir ...')
         with io.open(os.devnull, 'w') as devnull:
           subprocess.Popen(['nohup', 'runsvdir', self.startDir, 'log:  DIRAC runsv'],
@@ -1606,6 +1472,7 @@ class ComponentInstaller(object):
       # This server hosts the Master of the CS
       from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
       gLogger.notice('Installing Master Configuration Server')
+
       cfg = self.__getCfg(cfgPath('DIRAC', 'Setups', self.setup), 'Configuration', self.instance)
       self._addCfgToDiracCfg(cfg)
       cfg = self.__getCfg(cfgPath('DIRAC', 'Configuration'), 'Master', 'yes')
@@ -1631,19 +1498,15 @@ class ComponentInstaller(object):
       if not result['OK']:
         if self.exitOnError:
           DIRAC.exit(-1)
-        else:
-          return result
+        return result
       compCfg = result['Value']
       cfg = cfg.mergeWith(compCfg)
       gConfigurationData.mergeWithLocal(cfg)
 
-      self.addDefaultOptionsToComponentCfg('service', 'Configuration', 'Server', [])
-      if installCfg:
-        centralCfg = self._getCentralCfg(installCfg)
-      else:
-        centralCfg = self._getCentralCfg(self.localCfg)
+      self.addDefaultOptionsToComponentCfg('service', 'Configuration', 'Server', ["DIRAC"])
+      centralCfg = self._getCentralCfg(installCfg or self.localCfg)
       self._addCfgToLocalCS(centralCfg)
-      self.setupComponent('service', 'Configuration', 'Server', [], checkModule=False)
+      self.setupComponent('service', 'Configuration', 'Server', ["DIRAC"], checkModule=False)
       self.runsvctrlComponent('Configuration', 'Server', 't')
 
       while ['Configuration', 'Server'] in setupServices:
@@ -1721,7 +1584,7 @@ class ComponentInstaller(object):
           DIRAC.exit(-1)
         return result
       installedDatabases = result['Value']
-      result = self.getAvailableDatabases(CSGlobals.getCSExtensions())
+      result = self.getAvailableDatabases()
       gLogger.debug("Available databases", result)
       if not result['OK']:
         return result
@@ -1744,21 +1607,19 @@ class ComponentInstaller(object):
         if not result['OK']:
           gLogger.error('Database %s CS registration failed: %s' % (dbName, result['Message']))
 
-    if self.mysqlPassword:
-      if not self._addMySQLToDiracCfg():
-        error = 'Failed to add MySQL user/password to local configuration'
-        if self.exitOnError:
-          gLogger.error(error)
-          DIRAC.exit(-1)
-        return S_ERROR(error)
+    if self.mysqlPassword and not self._addMySQLToDiracCfg():
+      error = 'Failed to add MySQL user/password to local configuration'
+      if self.exitOnError:
+        gLogger.error(error)
+        DIRAC.exit(-1)
+      return S_ERROR(error)
 
-    if self.noSQLHost:
-      if not self._addNoSQLToDiracCfg():
-        error = 'Failed to add NoSQL connection details to local configuration'
-        if self.exitOnError:
-          gLogger.error(error)
-          DIRAC.exit(-1)
-        return S_ERROR(error)
+    if self.noSQLHost and not self._addNoSQLToDiracCfg():
+      error = 'Failed to add NoSQL connection details to local configuration'
+      if self.exitOnError:
+        gLogger.error(error)
+        DIRAC.exit(-1)
+      return S_ERROR(error)
 
     # 3.- Then installed requested services
     for system, service in setupServices:
@@ -1846,18 +1707,16 @@ exec svlogd .
     # Any "Load" or "Module" option in the configuration defining what modules the given "component"
     # needs to load will be taken care of by self.checkComponentModule.
     if checkModule:
-      cModule = componentModule
-      if not cModule:
-        cModule = component
+      cModule = componentModule or component
       result = self.checkComponentModule(componentType, system, cModule)
-      if not result['OK']:
-        if not self.checkComponentSoftware(componentType, system, cModule, extensions)[
-                'OK'] and componentType != 'executor':
-          error = 'Software for %s %s/%s is not installed' % (componentType, system, component)
-          if self.exitOnError:
-            gLogger.error(error)
-            DIRAC.exit(-1)
-          return S_ERROR(error)
+      if (not result['OK']
+          and not self.checkComponentSoftware(componentType, system, cModule, extensions)['OK']
+          and componentType != 'executor'):
+        error = 'Software for %s %s/%s is not installed' % (componentType, system, component)
+        if self.exitOnError:
+          gLogger.error(error)
+          DIRAC.exit(-1)
+        return S_ERROR(error)
 
     gLogger.notice('Installing %s %s/%s' % (componentType, system, component))
 
@@ -2010,11 +1869,9 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     """
     Remove startup and runit directories
     """
-    result = self.runsvctrlComponent(system, component, 'd')
-    if not result['OK']:
-      pass
+    self.runsvctrlComponent(system, component, 'd')
 
-    result = self.unsetupComponent(system, component)
+    self.unsetupComponent(system, component)
 
     if removeLogs:
       for runitCompDir in glob.glob(os.path.join(self.runitDir, system, component)):
@@ -2066,7 +1923,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     Install runit directories for the Web Portal
     """
     # Check that the software for the Web Portal is installed
-    error = ''
     webDir = os.path.join(self.linkedRootPath, 'WebAppDIRAC')
     if not os.path.exists(webDir):
       error = 'WebApp extension not installed at %s' % webDir
@@ -2118,15 +1974,14 @@ exec dirac-webapp-run -p < /dev/null
     """
     Get MySQL passwords from local configuration or prompt
     """
-    import getpass
     if not self.mysqlRootPwd:
       self.mysqlRootPwd = getpass.getpass('MySQL root password: ')
 
     if not self.mysqlPassword:
       # Take it if it is already defined
       self.mysqlPassword = self.localCfg.getOption('/Systems/Databases/Password', '')
-      if not self.mysqlPassword:
-        self.mysqlPassword = getpass.getpass('MySQL Dirac password: ')
+    if not self.mysqlPassword:
+      self.mysqlPassword = getpass.getpass('MySQL Dirac password: ')
 
     return S_OK()
 
@@ -2148,24 +2003,21 @@ exec dirac-webapp-run -p < /dev/null
     result = self.execCommand(0, ['mysqladmin', 'status'])
     if not result['OK']:
       return result
-    output = result['Value'][1]
-    _d1, uptime, nthreads, nquestions, nslow, nopens, nflash, nopen, nqpersec = output.split(':')
-    resDict = {}
-    resDict['UpTime'] = uptime.strip().split()[0]
-    resDict['NumberOfThreads'] = nthreads.strip().split()[0]
-    resDict['NumberOfQuestions'] = nquestions.strip().split()[0]
-    resDict['NumberOfSlowQueries'] = nslow.strip().split()[0]
-    resDict['NumberOfOpens'] = nopens.strip().split()[0]
-    resDict['OpenTables'] = nopen.strip().split()[0]
-    resDict['FlushTables'] = nflash.strip().split()[0]
-    resDict['QueriesPerSecond'] = nqpersec.strip().split()[0]
-    return S_OK(resDict)
 
-  def getAvailableDatabases(self, extensions=[]):
-    """ Find all databases defined
-    """
+    keys = [
+        None, "UpTime", "NumberOfThreads", "NumberOfQuestions",
+        "NumberOfSlowQueries", "NumberOfOpens", "FlushTables", "OpenTables",
+        "QueriesPerSecond"
+    ]
+    return S_OK({
+        key: output.strip().split()[0]
+        for key, output in zip(keys, result['Value'][1].split(":")) if key
+    })
+
+  def getAvailableDatabases(self, extensions=None):
+    """Find all databases defined"""
     if not extensions:
-      extensions = CSGlobals.getCSExtensions()
+      extensions = extensionsByPriority()
 
     res = self.getAvailableSQLDatabases(extensions)
     gLogger.debug("Available SQL databases", res)
@@ -2192,13 +2044,14 @@ exec dirac-webapp-run -p < /dev/null
     :return: dict of MySQL DBs
     """
     dbDict = {}
-    for extension in reversed(extensions + ['']):
-      databases = findDatabases(('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'))
+    for extension in extensions:
+      databases = findDatabases(extensions)
       for systemName, dbSql in databases:
         dbName = dbSql.replace('.sql', '')
         dbDict[dbName] = {}
         dbDict[dbName]['Type'] = 'MySQL'
-        dbDict[dbName]['Extension'] = extension
+        # TODO: Does this need to be replaced
+        dbDict[dbName]['Extension'] = extension.replace("DIRAC", "")
         dbDict[dbName]['System'] = systemName.replace('System', '')
     return S_OK(dbDict)
 
@@ -2221,16 +2074,15 @@ exec dirac-webapp-run -p < /dev/null
     :return: dict of ES DBs
     """
     dbDict = {}
-    for extension in reversed(extensions + ['']):
-      ext = ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC')
-      sqlDatabases = findDatabases(ext)
-      for systemName, dbName in findModules(ext, "DB", "*DB"):
+    for extension in extensions:
+      sqlDatabases = findDatabases(extension)
+      for systemName, dbName in findModules(extension, "DB", "*DB"):
         if (systemName, dbName + ".sql") in sqlDatabases:
           continue
 
         # Introspect all possible ones for a ElasticDB attribute
         try:
-          module = importlib.import_module(".".join([ext, systemName, "DB", dbName]))
+          module = importlib.import_module(".".join([extension, systemName, "DB", dbName]))
           dbClass = getattr(module, dbName)
         except (AttributeError, ImportError):
           continue
@@ -2239,7 +2091,8 @@ exec dirac-webapp-run -p < /dev/null
 
         dbDict[dbName] = {}
         dbDict[dbName]['Type'] = 'ES'
-        dbDict[dbName]['Extension'] = extension
+        # TODO: Does this need to be replaced
+        dbDict[dbName]['Extension'] = extension.replace("DIRAC", "")
         dbDict[dbName]['System'] = systemName
 
     return S_OK(dbDict)
@@ -2275,9 +2128,8 @@ exec dirac-webapp-run -p < /dev/null
     gLogger.notice('Installing', dbName)
 
     # is there by chance an extension of it?
-    for extension in CSGlobals.getCSExtensions() + [""]:
-      ext = ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC')
-      databases = {k: v for v, k in findDatabases(ext)}
+    for extension in extensionsByPriority():
+      databases = {k: v for v, k in findDatabases(extension)}
       filename = dbName + ".sql"
       if filename in databases:
         break
@@ -2288,7 +2140,7 @@ exec dirac-webapp-run -p < /dev/null
         DIRAC.exit(-1)
       return S_ERROR(error)
     systemName = databases[filename]
-    moduleName = ".".join([ext, systemName, "DB"])
+    moduleName = ".".join([extension, systemName, "DB"])
     gLogger.debug("Installing %s from %s" % (filename, moduleName))
     dbSql = importlib_resources.read_text(moduleName, filename)
 
@@ -2355,13 +2207,13 @@ exec dirac-webapp-run -p < /dev/null
         DIRAC.exit(-1)
       return S_ERROR(error)
 
-    return S_OK(extension, systemName)
+    return S_OK([extension, systemName])
 
   def uninstallDatabase(self, gConfig_o, dbName):
     """
     Remove a database from DIRAC
     """
-    result = self.getAvailableDatabases(CSGlobals.getCSExtensions())
+    result = self.getAvailableDatabases()
     if not result['OK']:
       return result
 
@@ -2385,10 +2237,9 @@ exec dirac-webapp-run -p < /dev/null
       if line.lower().startswith('source'):
         sourcedDBbFileName = line.split(' ')[1].replace('\n', '')
         gLogger.info("Found file to source: %s" % sourcedDBbFileName)
-        sourcedDBbFile = os.path.join(rootPath, sourcedDBbFileName)
-        with io.open(sourcedDBbFile, 'rt') as fdSourced:
-          dbLinesSourced = fdSourced.readlines()
-        for lineSourced in dbLinesSourced:
+        module, filename = sourcedDBbFileName.rsplit("/", 1)
+        dbSourced = importlib_resources.read_text(module.replace("/", "."), filename)
+        for lineSourced in dbSourced.split("\n"):
           if lineSourced.strip():
             cmdLines.append(lineSourced.strip())
 
@@ -2454,7 +2305,7 @@ exec dirac-webapp-run -p < /dev/null
     """
     Execute command tuple and handle Error cases
     """
-    gLogger.debug("executing command %s with timeout %d" % (cmd, timeout))
+    gLogger.debug("Executing command %s with timeout %d" % (cmd, timeout))
     result = systemCall(timeout, cmd)
     if not result['OK']:
       if timeout and result['Message'].find('Timeout') == 0:

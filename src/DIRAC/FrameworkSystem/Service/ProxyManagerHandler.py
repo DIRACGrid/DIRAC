@@ -30,7 +30,7 @@ class ProxyManagerHandler(RequestHandler):
   def initializeHandler(cls, serviceInfoDict):
     useMyProxy = cls.srv_getCSOption("UseMyProxy", False)
     try:
-      result = ObjectLoader().loadObject('FrameworkSystem.DB.ProxyDB', 'ProxyDB')
+      result = ObjectLoader().loadObject('FrameworkSystem.DB.ProxyDB')
       if not result['OK']:
         gLogger.error('Failed to load ProxyDB class: %s' % result['Message'])
         return result
