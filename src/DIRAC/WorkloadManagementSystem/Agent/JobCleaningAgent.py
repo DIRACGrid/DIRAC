@@ -172,13 +172,13 @@ class JobCleaningAgent(AgentModule):
     if not result['OK']:
       return result
 
-    jobList = result['Value']
+    jobList = [int(jID) for jID in result['Value']]
     if len(jobList) > self.maxJobsAtOnce:
       jobList = jobList[:self.maxJobsAtOnce]
     if not jobList:
       return S_OK()
 
-    self.log.notice("Deleting jobs", "(%d for %s)" % (len(jobList), condDict))
+    self.log.notice("Attempting to delete jobs", "(%d for %s)" % (len(jobList), condDict))
 
     # remove from jobList those that have still Operations to do in RMS
     res = ReqClient().getRequestIDsForJobs(jobList)
@@ -218,7 +218,7 @@ class JobCleaningAgent(AgentModule):
     failed = {}
     successful = {}
 
-    result = JobMonitoringClient().getJobParameters(jobIDList, 'OutputSandboxLFN')
+    result = JobMonitoringClient().getJobParameters(jobIDList, ['OutputSandboxLFN'])
     if not result['OK']:
       return result
     osLFNDict = result['Value']

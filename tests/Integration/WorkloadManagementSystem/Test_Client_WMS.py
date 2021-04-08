@@ -28,6 +28,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import unittest
 import sys
 import datetime
@@ -331,7 +332,7 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertEqual(sorted(res['Value']), sorted(types), msg="Got %s" % str(sorted(res['Value'])))
     res = jobMonitor.getApplicationStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(sorted(res['Value']), sorted(['Unknown']), msg="Got %s" % str(res['Value']))
+    self.assertEqual(sorted(res['Value']), sorted(['app status', 'Unknown']), msg="Got %s" % str(res['Value']))
 
     res = jobMonitor.getOwners()
     self.assertTrue(res['OK'], res.get('Message'))
