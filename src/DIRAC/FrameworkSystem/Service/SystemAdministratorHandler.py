@@ -32,6 +32,7 @@ from diraccfg import CFG
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Os
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
@@ -623,24 +624,15 @@ class SystemAdministratorHandler(RequestHandler):
   def export_getComponentDocumentation(self, cType, system, module):
     if cType == 'service':
       module = '%sHandler' % module
-
-    result = gComponentInstaller.getExtensions()
-    extensions = result['Value']
     # Look for the component in extensions
-    for extension in extensions:
+    for extension in extensionsByPriority():
+      moduleName = ([extension, system + "System", cType.capitalize(), module])
       try:
-        importedModule = importlib.import_module('%s.%sSystem.%s.%s' % (extension, system,
-                                                                        cType.capitalize(), module))
+        importedModule = importlib.import_module(moduleName)
         return S_OK(importedModule.__doc__)
       except Exception:
         pass
-
-    # If not in an extension, try in base DIRAC
-    try:
-      importedModule = importlib.import_module('DIRAC.%sSystem.%s.%s' % (system, cType.capitalize(), module))
-      return S_OK(importedModule.__doc__)
-    except Exception:
-      return S_ERROR('No documentation was found')
+    return S_ERROR('No documentation was found')
 
   @staticmethod
   def __storeHostInfo():

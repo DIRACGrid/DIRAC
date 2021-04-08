@@ -97,7 +97,9 @@ from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority, findDatabases, findModules, findSystems
 
 __RCSID__ = "$Id$"
 
@@ -147,7 +149,6 @@ class ComponentInstaller(object):
   def loadDiracCfg(self):
     """ Read again defaults from dirac.cfg
     """
-
     from DIRAC.Core.Utilities.Network import getFQDN
 
     self.localCfg = CFG()
@@ -279,17 +280,10 @@ class ComponentInstaller(object):
       rDict['Setup'] = 'Unknown'
     return S_OK(rDict)
 
+  @deprecated("Use DIRAC.Core.Utilities.Extensions.extensionsByPriority instead")
   def getExtensions(self):
-    """
-    Get the list of installed extensions
-    """
-    if six.PY3:
-      from DIRAC.Core.Utilities.DIRACScript import _extensionsByPriority
-      extensions = _extensionsByPriority()
-    else:
-      initList = glob.glob(os.path.join(rootPath, '*DIRAC', '__init__.py'))
-      extensions = [os.path.basename(os.path.dirname(k)) for k in initList]
-
+    """Get the list of installed extensions"""
+    extensions = extensionsByPriority()
     try:
       extensions.remove('DIRAC')
     except Exception:
@@ -298,7 +292,6 @@ class ComponentInstaller(object):
       if self.exitOnError:
         DIRAC.exit(-1)
       return S_ERROR(error)
-
     return S_OK(extensions)
 
   def _addCfgToDiracCfg(self, cfg):
@@ -319,7 +312,6 @@ class ComponentInstaller(object):
     """
     Merge cfg into central CS
     """
-
     gLogger.debug("Adding CFG to CS:")
     gLogger.debug(cfg)
 
@@ -794,20 +786,14 @@ class ComponentInstaller(object):
     if addDefaultOptions:
       extensionsDIRAC = [x + 'DIRAC' for x in extensions] + extensions
       for ext in extensionsDIRAC + ['DIRAC']:
-        if six.PY3:
-          import pkg_resources
-          try:
-            cfgTemplatePath = pkg_resources.resource_filename(ext, "%sSystem/ConfigTemplate.cfg" % system)
-          except ModuleNotFoundError:
-            continue
-        else:
-          cfgTemplatePath = os.path.join(rootPath, ext, '%sSystem' % system, 'ConfigTemplate.cfg')
-          if not os.path.exists(cfgTemplatePath):
-            continue
-        gLogger.notice('Loading configuration template', cfgTemplatePath)
-        # Look up the component in this template
+        cfgTemplateModule = "%s.%sSystem" % (ext, system)
+        try:
+          cfgTemplate = importlib_resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
+        except (ImportError, OSError):
+          continue
+        gLogger.notice('Loading configuration template from', cfgTemplateModule)
         loadCfg = CFG()
-        loadCfg.loadFromFile(cfgTemplatePath)
+        loadCfg.loadFromBuffer(cfgTemplate)
         compCfg = loadCfg.mergeWith(compCfg)
 
       compPath = cfgPath(sectionName, componentModule)
@@ -985,22 +971,10 @@ class ComponentInstaller(object):
 
     return S_OK()
 
+  @deprecated("Use DIRAC.Core.Utilities.Extensions.findSystems instead")
   def getAvailableSystems(self, extensions):
-    """
-    Get the list of all systems (in all given extensions) locally available
-    """
-    systems = []
-    for extension in extensions:
-      if six.PY3:
-        from fnmatch import filter
-        import importlib.resources  # pylint: disable=import-error,no-name-in-module
-        systems += filter(importlib.resources.contents(extension), "*System")  # pylint: disable=no-member
-      else:
-        extensionPath = os.path.join(DIRAC.rootPath, extension, '*System')
-        for system in [os.path.basename(k).split('System')[0] for k in glob.glob(extensionPath)]:
-          if system not in systems:
-            systems.append(system)
-    return list(set(systems))
+    """Get the list of all systems (in all given extensions) locally available"""
+    return list(findSystems(extensions))
 
   def getSoftwareComponents(self, extensions):
     """
@@ -1103,7 +1077,6 @@ class ComponentInstaller(object):
     Get the list of all the components ( services and agents )
     installed on the system in the runit directory
     """
-
     resultDict = {}
     resultIndexes = {}
     for cType in self.componentTypes:
@@ -1138,7 +1111,6 @@ class ComponentInstaller(object):
     Get the list of all the components ( services and agents )
     set up for running with runsvdir in startup directory
     """
-
     resultDict = {}
     resultIndexes = {}
     for cType in self.componentTypes:
@@ -1269,7 +1241,6 @@ class ComponentInstaller(object):
     Get the list of all the components ( services and agents )
     set up for running with runsvdir in startup directory
     """
-
     result = self.getSoftwareComponents(extensions)
     if not result['OK']:
       return result
@@ -2094,7 +2065,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     """
     Install runit directories for the Web Portal
     """
-
     # Check that the software for the Web Portal is installed
     error = ''
     webDir = os.path.join(self.linkedRootPath, 'WebAppDIRAC')
@@ -2222,26 +2192,14 @@ exec dirac-webapp-run -p < /dev/null
     :return: dict of MySQL DBs
     """
     dbDict = {}
-    for extension in extensions + ['']:
-      if six.PY3:
-        import importlib_resources  # pylint: disable=import-error
-        databases = list(
-            importlib_resources.files(('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'))
-            .glob('*/DB/*.sql')
-        )
-      else:
-        databases = glob.glob(os.path.join(
-            rootPath,
-            ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
-            '*', 'DB', '*.sql'
-        ))
-      for dbPath in databases:
-        dbName = os.path.basename(dbPath).replace('.sql', '')
+    for extension in reversed(extensions + ['']):
+      databases = findDatabases(('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'))
+      for systemName, dbSql in databases:
+        dbName = dbSql.replace('.sql', '')
         dbDict[dbName] = {}
         dbDict[dbName]['Type'] = 'MySQL'
         dbDict[dbName]['Extension'] = extension
-        dbDict[dbName]['System'] = str(dbPath).split('/')[-3].replace('System', '')
-
+        dbDict[dbName]['System'] = systemName.replace('System', '')
     return S_OK(dbDict)
 
   def getAvailableESDatabases(self, extensions):
@@ -2263,52 +2221,26 @@ exec dirac-webapp-run -p < /dev/null
     :return: dict of ES DBs
     """
     dbDict = {}
-    for extension in extensions + ['']:
+    for extension in reversed(extensions + ['']):
+      ext = ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC')
+      sqlDatabases = findDatabases(ext)
+      for systemName, dbName in findModules(ext, "DB", "*DB"):
+        if (systemName, dbName + ".sql") in sqlDatabases:
+          continue
 
-      # Find *DB.py definitions
-      if six.PY3:
-        import importlib_resources  # pylint: disable=import-error
-        pyDBs = list(importlib_resources.files('%sDIRAC' % extension).glob('*/DB/*DB.py'))
-      else:
-        pyDBs = glob.glob(os.path.join(
-            rootPath,
-            ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
-            '*', 'DB', '*DB.py'
-        ))
-      pyDBs = [str(x).replace('.py', '') for x in pyDBs if '__init__' not in str(x)]
-
-      # Find sql files
-      if six.PY3:
-        import importlib_resources  # pylint: disable=import-error
-        sqlDBs = list(importlib_resources.files('%sDIRAC' % extension).glob('*/DB/*.sql'))
-      else:
-        sqlDBs = glob.glob(os.path.join(
-            rootPath,
-            ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC'),
-            '*', 'DB', '*.sql'
-        ))
-      sqlDBs = [str(x).replace('.sql', '') for x in str(sqlDBs)]
-
-      # Find *DB.py files that do not have a sql part
-      possible = set(pyDBs) - set(sqlDBs)
-      databases = []
-      for p in possible:
-        # Introspect all possible ones
+        # Introspect all possible ones for a ElasticDB attribute
         try:
-          p_mod = p.replace(rootPath, '').lstrip('/').replace('/', '.')
-          mdb_mod = importlib.import_module(p_mod, p_mod.split('.')[-1])
-          cl = getattr(mdb_mod, p_mod.split('.')[-1])
-          if 'ElasticDB' in str(inspect.getmro(cl)):
-            databases.append(p)
+          module = importlib.import_module(".".join([ext, systemName, "DB", dbName]))
+          dbClass = getattr(module, dbName)
         except (AttributeError, ImportError):
-          pass
+          continue
+        if 'ElasticDB' not in str(inspect.getmro(dbClass)):
+          continue
 
-      for dbPath in databases:
-        dbName = os.path.basename(dbPath)
         dbDict[dbName] = {}
         dbDict[dbName]['Type'] = 'ES'
         dbDict[dbName]['Extension'] = extension
-        dbDict[dbName]['System'] = str(dbPath).split('/')[-3].replace('System', '')
+        dbDict[dbName]['System'] = systemName
 
     return S_OK(dbDict)
 
@@ -2330,7 +2262,6 @@ exec dirac-webapp-run -p < /dev/null
     """
     Install requested DB in MySQL server
     """
-
     if not self.mysqlRootPwd:
       rootPwdPath = cfgInstallPath('Database', 'RootPwd')
       return S_ERROR('Missing %s in %s' % (rootPwdPath, self.cfgFile))
@@ -2345,14 +2276,10 @@ exec dirac-webapp-run -p < /dev/null
 
     # is there by chance an extension of it?
     for extension in CSGlobals.getCSExtensions() + [""]:
-      if six.PY3:
-        import importlib_resources  # pylint: disable=import-error
-        dbFile = list(importlib_resources.files('%sDIRAC' % extension).glob('*/DB/%s.sql' % dbName))
-      else:
-        dbFile = glob.glob(os.path.join(
-            rootPath, '%sDIRAC' % extension, '*', 'DB', '%s.sql' % dbName
-        ))
-      if dbFile:
+      ext = ('%sDIRAC' % extension).replace('DIRACDIRAC', 'DIRAC')
+      databases = {k: v for v, k in findDatabases(ext)}
+      filename = dbName + ".sql"
+      if filename in databases:
         break
     else:
       error = 'Database %s not found' % dbName
@@ -2360,9 +2287,10 @@ exec dirac-webapp-run -p < /dev/null
       if self.exitOnError:
         DIRAC.exit(-1)
       return S_ERROR(error)
-
-    dbFile = str(dbFile[0])
-    gLogger.debug("Installing %s" % dbFile)
+    systemName = databases[filename]
+    moduleName = ".".join([ext, systemName, "DB"])
+    gLogger.debug("Installing %s from %s" % (filename, moduleName))
+    dbSql = importlib_resources.read_text(moduleName, filename)
 
     # just check
     result = self.execMySQL('SHOW STATUS')
@@ -2402,7 +2330,7 @@ exec dirac-webapp-run -p < /dev/null
 
     # first getting the lines to be executed, and then execute them
     try:
-      cmdLines = self._createMySQLCMDLines(dbFile)
+      cmdLines = self._createMySQLCMDLines(dbSql)
 
       # We need to run one SQL cmd at once, mysql is much happier that way.
       # Create a string of commands, ignoring comment lines
@@ -2427,7 +2355,7 @@ exec dirac-webapp-run -p < /dev/null
         DIRAC.exit(-1)
       return S_ERROR(error)
 
-    return S_OK(dbFile.split('/')[-4:-2])
+    return S_OK(extension, systemName)
 
   def uninstallDatabase(self, gConfig_o, dbName):
     """
@@ -2445,16 +2373,14 @@ exec dirac-webapp-run -p < /dev/null
 
     return S_OK('DB successfully uninstalled')
 
-  def _createMySQLCMDLines(self, dbFile):
-    """ Creates a list of MYSQL commands to be executed, inspecting the dbFile(s)
+  def _createMySQLCMDLines(self, dbSql):
+    """Creates a list of MYSQL commands to be executed, inspecting the SQL
+
+    :param str dbSql: The SQL to parse
+    :returns: list of str corresponding to executable SQL statements
     """
-
     cmdLines = []
-
-    with io.open(dbFile, 'rt') as fd:
-      dbLines = fd.readlines()
-
-    for line in dbLines:
+    for line in dbSql.split("\n"):
       # Should we first source an SQL file (is this sql file an extension)?
       if line.lower().startswith('source'):
         sourcedDBbFileName = line.split(' ')[1].replace('\n', '')
@@ -2606,7 +2532,6 @@ exec dirac-webapp-run -p < /dev/null
     """
     Add the section with the component options to the CS
     """
-
     if gConfig_o:
       gConfig_o.forceRefresh()
 
@@ -2629,7 +2554,6 @@ exec dirac-webapp-run -p < /dev/null
     """
     Install and create link in startup
     """
-
     # Create the startup entry now
     # Force the system and component to be 'Tornado' but preserve the interface and the code
     # just to allow for easier refactoring maybe later
