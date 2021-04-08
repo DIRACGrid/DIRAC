@@ -47,7 +47,6 @@ class RefresherBase(object):
     self._refreshEnabled = True
     self._timeout = 60
     self._callbacks = {'newVersion': []}
-    random.seed()
     gEventDispatcher.registerEvent("CSNewVersion")
 
   def disable(self):

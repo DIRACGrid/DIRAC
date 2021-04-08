@@ -10,7 +10,6 @@ __RCSID__ = "$Id$"
 import six
 import random
 import sys
-random.seed()
 
 
 def uniqueElements(aList):

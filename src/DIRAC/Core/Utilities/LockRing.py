@@ -2,7 +2,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-from __future__ import print_function
 import random
 import time
 import threading
@@ -18,7 +17,6 @@ __RCSID__ = "$Id$"
 @six.add_metaclass(DIRACSingleton)
 class LockRing(object):
   def __init__(self):
-    random.seed()
     self.__locks = {}
     self.__events = {}
 

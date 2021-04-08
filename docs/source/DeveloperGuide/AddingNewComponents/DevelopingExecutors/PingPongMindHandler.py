@@ -11,8 +11,6 @@ from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 
-random.seed()
-
 
 class PingPongMindHandler(ExecutorMindHandler):
 

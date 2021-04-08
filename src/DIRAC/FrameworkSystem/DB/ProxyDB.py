@@ -45,7 +45,6 @@ class ProxyDB(DB):
   def __init__(self,
                useMyProxy=False):
     DB.__init__(self, 'ProxyDB', 'Framework/ProxyDB')
-    random.seed()
     self.__defaultRequestLifetime = 300  # 5min
     self.__defaultTokenLifetime = 86400 * 7  # 1 week
     self.__defaultTokenMaxUses = 50
