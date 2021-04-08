@@ -220,12 +220,8 @@ class _TokenExchangeGrant(BaseGrant, TokenEndpointMixin):
     if not scope:
       scope = credential.get_scope()
 
-    token = self.generate_token(
-      user=user,
-      expires_in=expires_in,
-      scope=scope,
-      include_refresh_token=self.INCLUDE_NEW_REFRESH_TOKEN,
-    )
+    token = self.generate_token(user=user, expires_in=expires_in, scope=scope,
+                                include_refresh_token=self.INCLUDE_NEW_REFRESH_TOKEN)
     return token
 
   def authenticate_subject_token(self, subject_token, subject_token_type):

@@ -6,7 +6,7 @@ from __future__ import print_function
 import io
 import json
 from time import time
-from pprint import pprint
+import pprint
 from tornado.httpclient import HTTPResponse
 from tornado.httputil import HTTPHeaders
 
@@ -306,7 +306,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       grant.prompt = None
     print('==== Session: %s' % session)
     print('==== Request:')
-    pprint(req.data)
+    pprint.pprint(req.data)
     print('============')
     self.updateSession(session, request=req, createIfNotExist=True)
     return grant, session
