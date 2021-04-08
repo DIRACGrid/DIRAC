@@ -419,8 +419,10 @@ class LocalConfiguration(object):
       # Check accepted values
       for cArg in self.commandArgList[i:i + 1 + step]:
         if values and cArg not in values:
-          gLogger.fatal('Error when parsing command line arguments: \
-                         "%s" does not match the allowed values for %s' % (cArg, argMarking))
+          gLogger.fatal(
+              'Error when parsing command line arguments: '
+              '"%s" does not match the allowed values for %s' % (cArg, argMarking)
+          )
           self.showHelp(exitCode=1)
 
     self.commandGroupArgList = groupArgs
