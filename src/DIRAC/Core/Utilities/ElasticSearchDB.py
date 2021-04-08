@@ -53,6 +53,8 @@ def generateDocs(data, withTimeStamp=True):
   :return: doc
   """
   for doc in data:
+    if "_type" not in doc:
+      doc['_type'] = "_doc"
     if withTimeStamp:
       if 'timestamp' not in doc:
         sLog.warn("timestamp is not given")

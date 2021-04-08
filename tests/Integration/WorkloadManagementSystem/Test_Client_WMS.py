@@ -332,7 +332,7 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertEqual(sorted(res['Value']), sorted(types), msg="Got %s" % str(sorted(res['Value'])))
     res = jobMonitor.getApplicationStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(sorted(res['Value']), sorted(['app status', 'Unknown']), msg="Got %s" % str(res['Value']))
+    self.assertEqual(res['Value'], ['Unknown'], msg="Got %s" % str(res['Value']))
 
     res = jobMonitor.getOwners()
     self.assertTrue(res['OK'], res.get('Message'))
@@ -354,12 +354,15 @@ class JobMonitoringMore(TestWMSTestCase):
                     resJG_olderThanOneYear)
     res = jobMonitor.getStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertTrue(sorted(res['Value']) in [['Received'], sorted(['Received', 'Waiting'])],
+    self.assertTrue(sorted(res['Value']) in [['Received'],
+                                             sorted(['Received', 'Waiting'])],
                     res['Value'])
     res = jobMonitor.getMinorStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertTrue(sorted(res['Value']) in [['Job accepted'], sorted(['Job accepted', 'Job Rescheduled'])],
-                    res['Value'])
+    self.assertTrue(sorted(res['Value']) in [
+        ['Job accepted'],
+        sorted(['Job accepted', 'Job Rescheduled'])],
+        res['Value'])
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobs()
     self.assertTrue(res['OK'], res.get('Message'))

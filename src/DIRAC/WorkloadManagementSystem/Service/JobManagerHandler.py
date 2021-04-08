@@ -349,7 +349,10 @@ class JobManagerHandler(RequestHandler):
   types_removeJob = []
 
   def export_removeJob(self, jobIDs):
-    """  Completely remove a list of jobs.
+    """
+    Completely remove a list of jobs, also from TaskQueueDB,
+    and including its JobLogging info.
+    Only authorized users are allowed to remove jobs.
 
     :param list jobIDs: list of job IDs
     :return: S_OK()/S_ERROR() -- confirmed job IDs
@@ -364,42 +367,47 @@ class JobManagerHandler(RequestHandler):
     count = 0
     error_count = 0
 
-    self.log.verbose("Removing %d job" % len(validJobList))
+    self.log.verbose("Removing jobs", "(n=%d)" % len(validJobList))
     result = self.jobDB.removeJobFromDB(validJobList)
     if not result['OK']:
-      self.log.error('Failed to delete jobs from JobDB', '(n=%d)' % len(validJobList))
+      self.log.error("Failed to remove jobs from JobDB", "(n=%d)" % len(validJobList))
     else:
-      self.log.info('Deleted jobs from JobDB', '(n=%d)' % len(validJobList))
+      self.log.info("Removed jobs from JobDB", "(n=%d)" % len(validJobList))
 
     for jobID in validJobList:
       resultTQ = self.taskQueueDB.deleteJob(jobID)
       if not resultTQ['OK']:
-        self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'])
+        self.log.warn("Failed to remove job from TaskQueueDB",
+                      "(%d): %s" % (jobID, resultTQ['Message']))
         error_count += 1
       else:
         count += 1
 
     result = self.jobLoggingDB.deleteJob(validJobList)
     if not result['OK']:
-      self.log.error('Failed to delete jobs from JobLoggingDB', '(n=%d)' % len(validJobList))
+      self.log.error("Failed to remove jobs from JobLoggingDB", "(n=%d)" % len(validJobList))
     else:
-      self.log.info('Deleted jobs from JobLoggingDB', '(n=%d)' % len(validJobList))
+      self.log.info("Removed jobs from JobLoggingDB", "(n=%d)" % len(validJobList))
 
     if count > 0 or error_count > 0:
-      self.log.info('', 'Deleted %d jobs from JobDB, %d errors' % (count, error_count))
+      self.log.info("Removed jobs from DB",
+                    "(%d jobs with %d errors)" % (count, error_count))
 
     if invalidJobList or nonauthJobList:
       self.log.error(
           "Jobs can not be removed",
           ": %d invalid and %d in nonauthJobList" % (len(invalidJobList), len(nonauthJobList)))
-      result = S_ERROR('Some jobs failed removal')
+      errMsg = "Some jobs failed removal"
+      res = S_ERROR()
       if invalidJobList:
-        self.log.debug("Invalid jobs: %s" % ','.join(invalidJobList))
-        result['InvalidJobIDs'] = invalidJobList
+        self.log.debug("Invalid jobs: %s" % ','.join(str(ij) for ij in invalidJobList))
+        res['InvalidJobIDs'] = invalidJobList
+        res['Message'] = errMsg + ": invalid jobs"
       if nonauthJobList:
-        self.log.debug("nonauthJobList jobs: %s" % ','.join(nonauthJobList))
-        result['NonauthorizedJobIDs'] = nonauthJobList
-      return result
+        self.log.debug("nonauthJobList jobs: %s" % ','.join(str(nj) for nj in nonauthJobList))
+        res['NonauthorizedJobIDs'] = nonauthJobList
+        res['Message'] = res['Message'] + ": non-authorized jobs"
+      return res
 
     return S_OK(validJobList)
 

@@ -188,6 +188,8 @@ class JobCleaningAgent(AgentModule):
       self.log.warn("Some jobs won't be removed, as still having Requests to complete",
                     "(n=%d)" % len(res['Value']['Successful']))
       jobList = list(set(jobList).difference(set(res['Value']['Successful'])))
+    if not jobList:
+      return S_OK()
 
     result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
     if not result['OK']:
@@ -203,8 +205,10 @@ class JobCleaningAgent(AgentModule):
     failedJobs = result['Value']['Failed']
     for job in failedJobs:
       jobList.pop(jobList.index(job))
+    if not jobList:
+      return S_OK()
 
-    result = JobManagerClient(useCertificates=True).removeJob(jobList)
+    result = JobManagerClient().removeJob(jobList)
     if not result['OK']:
       self.log.error("Could not remove jobs", result['Message'])
       return result
