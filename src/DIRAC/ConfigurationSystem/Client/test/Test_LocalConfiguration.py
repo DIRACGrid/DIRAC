@@ -85,21 +85,14 @@ def action(a):
 
 
 @pytest.fixture
-def localCFG():
-  with mock.patch('DIRAC.ConfigurationSystem.Client.LocalConfiguration.gLogger.notice', side_effect=mock_notice):
-    with mock.patch('DIRAC.ConfigurationSystem.Client.LocalConfiguration.DIRAC.exit', side_effect=mock_exit):
-      with mock.patch('DIRAC.ConfigurationSystem.Client.LocalConfiguration.getopt.gnu_getopt', side_effect=mock_gnu):
-        localCFG = DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration()
-        # It's local test, do not contact Configuration Server
-        localCFG.disableCS()
-        yield localCFG
-
-
-@pytest.fixture
-def localCFG_withOptions(localCFG):
-  localCFG.registerCmdOpt("V:", "vo=", "vo")
+def localCFG(monkeypatch):
+  monkeypatch.setattr(DIRAC.ConfigurationSystem.Client.LocalConfiguration.DIRAC, "exit", mock_exit)
+  monkeypatch.setattr(DIRAC.ConfigurationSystem.Client.LocalConfiguration.getopt, "gnu_getopt", mock_gnu)
+  monkeypatch.setattr(DIRAC.ConfigurationSystem.Client.LocalConfiguration.gLogger, "notice", mock_notice)
+  localCFG = DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration()
+  # It's local test, do not contact Configuration Server
+  localCFG.disableCS()
   return localCFG
-
 
 @pytest.mark.parametrize("blocks_order", [doc_blocks for i in range(10) if not random.shuffle(doc_blocks)])
 def test_script_head(localCFG, blocks_order):
