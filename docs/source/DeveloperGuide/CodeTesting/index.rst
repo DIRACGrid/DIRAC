@@ -529,33 +529,18 @@ Running integration tests locally
 
 The integration tests which are ran on GitHub/GitLab can be ran locally using docker.
 
-To run all tests in one command, which takes around 20 minutes, 
-position yourself in the DIRAC root directory and then run:
+To run all tests in one command, which takes around 20 minutes, create a development environment, position yourself in the DIRAC root directory and then run:
 
 .. code-block:: bash
 
-    docker run --rm -it --privileged --name dirac-testing-host \
-      -e CI_PROJECT_DIR=/repo/DIRAC -e CI_REGISTRY_IMAGE=diracgrid \
-      -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo/DIRAC -w /repo \
-      diracgrid/docker-compose-dirac:latest bash \
-      DIRAC/tests/CI/run_docker_setup.sh
+    ./integration_tests.py create [FLAGS]
 
-As you can see from the command above, privileged runners are needed, as the test is done by running docker in docker ("dind"). 
-The tests will be done using the image `diracgrid/docker-compose:latest` 
-which already includes docker compose, which is necessary for running the tests.
+Where ``[FLAGS]`` is one or more feature flags ``SERVER_USE_PYTHON3=Yes``.
+See ``.github/workflows/integration.yml`` for the available feature flags for your release.
 
-After exiting the docker containers for the databases, server and client will still be running.
-This allows docker exec to be used to connect to the container for debugging.
-For example, to re-run the server and client tests:
+Once finished the containers can be removed using ``./integration_tests.py destroy``.
 
-.. code-block:: bash
-
-    docker exec -it -u dirac -w /home/dirac -e INSTALLROOT=/home/dirac -e INSTALLTYPE=server server \
-      bash TestCode/DIRAC/tests/CI/run_tests.sh
-    docker exec -it -u dirac -w /home/dirac -e INSTALLROOT=/home/dirac -e INSTALLTYPE=client client \
-      bash TestCode/DIRAC/tests/CI/run_tests.sh
-
-Once finished the containers can be removed using ``docker rm --force server client elasticsearch mysql s3-direct``.
+See ``./integration_tests.py --help`` for more information.
 
 
 Validation and System tests
