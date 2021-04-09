@@ -152,7 +152,7 @@ def executeWithoutServerCertificate(fcn):
   """
 
   def wrapped_fcn(*args, **kwargs):
-    """ Wraped fuction
+    """ Wrapped fuction
     """
     # Get the lock and acquire it
     executionLock = LockRing().getLock('_UseUserProxy_', recursive=True)

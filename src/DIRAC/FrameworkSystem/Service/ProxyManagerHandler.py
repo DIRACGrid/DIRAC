@@ -17,8 +17,6 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
-
 import os
 import six
 import pickle

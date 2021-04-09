@@ -3,7 +3,7 @@
 # Author : A.T.
 ########################################################################
 
-"""  The Identtity Provider Factory instantiates IdProvider objects
+"""  The Identity Provider Factory instantiates IdProvider objects
      according to their configuration
 """
 from __future__ import absolute_import
