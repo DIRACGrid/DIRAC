@@ -82,6 +82,7 @@ def registerArguments():
   Script.registerArgument(('Name:  user name', 'DN: user DN'))
   Script.registerArgument(['Service: list of services'], default='no elements', mandatory=False)
 
+
 def parseSwitchesAndPositionalArguments():
   """
     Parse switches and positional arguments given to the script

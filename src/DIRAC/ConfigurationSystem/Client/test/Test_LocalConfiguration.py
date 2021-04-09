@@ -94,6 +94,7 @@ def localCFG(monkeypatch):
   localCFG.disableCS()
   return localCFG
 
+
 @pytest.mark.parametrize("blocks_order", [doc_blocks for i in range(10) if not random.shuffle(doc_blocks)])
 def test_script_head(localCFG, blocks_order):
   global output
