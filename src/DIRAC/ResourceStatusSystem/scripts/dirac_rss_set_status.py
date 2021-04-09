@@ -36,7 +36,7 @@ def registerSwitches():
       ('statusType=', 'StatusType (or comma-separeted list of names), if none applies to all possible statusTypes'),
       ('status=', 'Status to be changed'),
       ('reason=', 'Reason to set the Status'),
-      ('VO=', 'VO to change a status for. Deafault: all '
+      ('VO=', 'VO to change a status for. Default: "all" '
               'VO=all sets the status for all VOs not explicitly listed in the RSS'),
   )
 
