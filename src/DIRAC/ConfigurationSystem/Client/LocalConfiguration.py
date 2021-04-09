@@ -123,6 +123,18 @@ class LocalConfiguration(object):
                                       str(value))
 
   def __registerBasicOptions(self):
+    """ Add the basic options::
+
+          General options:
+            -o  --option <value>         : Option=value to add
+            -s  --section <value>        : Set base section for relative parsed options
+            -c  --cert <value>           : Use server certificate to connect to Core Services
+            -d  --debug                  : Set debug mode (-ddd is extra debug)
+            -   --cfg=                   : Load additional config file
+            -   --autoreload             : Automatically restart if there's any change in the module
+            -   --license                : Show DIRAC's LICENSE
+            -h  --help                   : Shows this help
+    """
     self.registerCmdOpt("o:", "option=", "Option=value to add",
                         self.__setOptionByCmd)
     self.registerCmdOpt("s:", "section=", "Set base section for relative parsed options",
@@ -143,8 +155,16 @@ class LocalConfiguration(object):
                         self.showHelp)
 
   def registerCmdOpt(self, shortOption, longOption, helpString, function=False):
-    """
-    Register a new command line option
+    """ Register a new command line option. The options must be unique and do not coincide with the
+        :func:`basic options <__registerBasicOptions>`.
+
+        :param str shortOption: short option name. If the command accepts only long options, then should be ("").
+            If such a character is followed by a ':', the option requires an argument.
+        :param str longOption: long option name.
+            If such a character is followed by a '=', the option requires an argument.
+        :param str helpString: option description
+        :param function: the callback function to be called with the passed option argument.
+            if False, the argument can be retrieved using :func:`getUnprocessedSwitches`.
     """
     shortOption = shortOption.strip()
     longOption = longOption.strip()
@@ -160,7 +180,7 @@ class LocalConfiguration(object):
   def registerCmdArg(self, description, mandatory=True, values=None, default=None):
     """ Register a new command line argument
 
-        Examples::
+        Example::
 
           # String description type describe simple argument, e.g.:
           registerCmdArg('SingleArg: my single argument')
@@ -175,12 +195,15 @@ class LocalConfiguration(object):
         Result::
 
           Usage:
+
             command [options] ... SingleArg <ThisArg|ThatArg> ListArg [ListArg]
+
           Arguments:
+
             SingleArg: my single argument
-            ThisArg: my this argument
-            ThatArg: my that argument
-            ListArg: my list of arguments
+            ThisArg:   my this argument
+            ThatArg:   my that argument
+            ListArg:   my list of arguments
 
         :param description: argument description
         :type description: str, tuple or list
