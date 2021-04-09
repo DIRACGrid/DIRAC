@@ -637,9 +637,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     based on the same algorithm as in the Web version, basically takes into account Done and
     Aborted pilots only from the last day. The selection is done entirely in SQL.
 
-    :param selectDict: A dictionary to pass additional conditions to select statements, i.e.
-                       it allows to define start time for Done and Aborted Pilots.
-    :param columnList: A list of column to consider when grouping to calculate efficiencies.
+    :param dict selectDict: A dictionary to pass additional conditions to select statements, i.e.
+                            it allows to define start time for Done and Aborted Pilots.
+    :param list columnList: A list of column to consider when grouping to calculate efficiencies.
                        e.g. ['GridSite', 'DestinationSite'] is used to calculate efficiencies
                        for sites and  CEs. If we want to add an OwnerGroup it would be:
                        ['GridSite', 'DestinationSite', 'OwnerGroup'].
