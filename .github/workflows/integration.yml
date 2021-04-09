@@ -27,7 +27,7 @@ jobs:
             ARGS: DIRAC_USE_NEWTHREADPOOL=No
           ###### HTTPS tests
           - TEST_NAME: "HTTPS"
-            ARGS: TEST_HTTPS=Yes DIRACOSVER=https
+            ARGS: TEST_HTTPS=Yes
           ###### Python 3
           - TEST_NAME: "Python 3 client"
             ARGS: CLIENT_USE_PYTHON3=Yes
