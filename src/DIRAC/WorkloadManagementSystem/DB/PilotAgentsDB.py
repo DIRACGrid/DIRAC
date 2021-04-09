@@ -1147,7 +1147,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
 class PivotedPilotSummaryTable:
   """
   The class creates a 'pivoted' table by combining records with the same group
-  of self.columnList into a single row. It allows an easy calculateion of pilot efficiencies.
+  of self.columnList into a single row. It allows an easy calculation of pilot efficiencies.
   """
 
   def __init__(self, columnList):
