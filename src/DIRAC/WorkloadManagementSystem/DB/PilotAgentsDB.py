@@ -1173,7 +1173,7 @@ class PivotedPilotSummaryTable:
     Build an SQL query to create a table with all status counts in one row, ("pivoted")
     grouped by columns in the column list.
 
-    :param selectDict:
+    :param dict selectDict:
     :return: SQL query
     """
 
