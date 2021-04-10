@@ -484,6 +484,7 @@ class BaseRequestHandler(RequestHandler):
         :returns: a dict containing the return of :py:meth:`DIRAC.Core.Security.X509Chain.X509Chain.getCredentials`
                   (not a DIRAC structure !)
     """
+    # TODO: also check expired time for proxy/token
     err = []
     result = None
 
@@ -555,6 +556,7 @@ class BaseRequestHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
     """
+    # TODO: check if its DIRAC token
     try:
       token = ResourceProtector().acquire_token(self.request)
     except Exception as e:

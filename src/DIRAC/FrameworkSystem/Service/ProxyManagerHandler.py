@@ -319,7 +319,7 @@ class ProxyManagerHandler(RequestHandler):
         :param dict credDict: remote credentials
         :param bool personal: get personal proxy
 
-        :return: S_OK(bool)/S_ERROR()
+        :return: S_OK(bool)/S_ERROR() -- bool indicates whether there are limitation
     """
     if personal:
       csSection = PathFinder.getServiceSection('Framework/ProxyManager')
@@ -393,7 +393,7 @@ class ProxyManagerHandler(RequestHandler):
     result = self.__getDNAndUsername(instance, group)
     if not result['OK']:
       return result
-    user, userDN = result['Value']
+    user, userDNs = result['Value']
 
     credDict = self.getRemoteCredentials()
 
@@ -407,14 +407,23 @@ class ProxyManagerHandler(RequestHandler):
     result = self.__checkProperties(user, group, credDict, personal)
     if not result['OK']:
       return result
+    
+    # Set limitation if tokens are used
     forceLimited = True if token else result['Value']
 
     log = "download %sproxy%s" % ('VOMS ' if vomsAttribute else '', 'with token' if token else '')
     self.__proxyDB.logAction(log, credDict['username'], credDict['group'], user, group)
 
-    retVal = self.__proxyDB.getProxy(userDN, group, requiredLifeTime=requiredLifetime, voms=vomsAttribute)
+    errors = []
+    # Use loop to fix a possible case of having several DNs for one user/group
+    for userDN in userDNs:
+      retVal = self.__proxyDB.getProxy(userDN, group, requiredLifeTime=requiredLifetime, voms=vomsAttribute)
+      if retVal['OK']:
+        break
+      errors.append(retVal['Message'])
+
     if not retVal['OK']:
-      return retVal
+      return S_ERROR('; '.join(errors))
     chain, secsLeft = retVal['Value']
     # If possible we return a proxy 1.5 longer than requested
     requiredLifetime = int(min(secsLeft, requiredLifetime * self.__maxExtraLifeFactor))
@@ -466,15 +475,13 @@ class ProxyManagerHandler(RequestHandler):
     result = self.__getDNAndUsername(instance, userGroup)
     if not result['OK']:
       return result
-    username, userDN = result['Value']
-    if not userDN:
-      return S_ERROR('Not DN found for %s user in %s group' % (username, userGroup))
+    username, userDNs = result['Value']
 
     credDict = self.getRemoteCredentials()
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       if username != credDict['username']:
         return S_ERROR("You aren't allowed!")
-    retVal = self.__proxyDB.deleteProxy(userDN)
+    retVal = self.__proxyDB.deleteProxy(userDNs)
     if not retVal['OK']:
       return retVal
     self.__proxyDB.logAction("delete proxy", credDict['username'], credDict['group'], username, userGroup)
@@ -788,25 +795,34 @@ class ProxyManagerHandler(RequestHandler):
 
         :return S_OK(tuple)/S_ERROR() -- tuple contain username and userDN
     """
-    dn = None
-    user = instance
+    userDN = None
+    userName = instance
 
     # Is instance user DN?
     if instance.startswith('/'):
-      dn = instance
+      userDN = instance
       result = Registry.getUsernameForDN(instance)
       if not result['OK']:
         return result
-      user = result['Value']
+      userName = result['Value']
 
+    dns = [userDN] if userDN else []
     if group:
       result = Registry.getDNsForUsernameInGroup(instance, group)
       if not result['OK']:
         return result
-      if dn and dn not in result['Value']:
-        return S_ERROR('Requested %s DN not match with %s user, %s group' % (dn, user, group))
-      dn = result['Value'][0]
-    return S_OK((user, dn))
+      dns = result['Value']
+      if dns:
+        if len(dns) > 1:
+          gLogger.warn('For %s@%s found more than one DN:' % (user, group), dns)
+        if userDN:
+          if userDN not in dns:
+            return S_ERROR('Requested %s DN not match with %s user, %s group' % (dn, user, group))
+          dns = [userDN]
+
+    if not dns:
+      return S_ERROR('No DN were found for %s user' % userName, (', %s group' % group) if group else ''))
+    return S_OK((user, dns))
 
   types_setPersistency = []
 

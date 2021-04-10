@@ -560,20 +560,22 @@ class ProxyDB(DB):
         return result
     return S_OK(purged)
 
-  def deleteProxy(self, userDN):
+  def deleteProxy(self, userDNs):
     """ Remove proxy of the given user from the repository
 
-        :param str userDN: user DN
+        :param list userDNs: user DN list
 
         :return: S_OK()/S_ERROR()
     """
     tables = ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies', 'ProxyDB_CleanProxies']
-    result = self._escapeString(userDN)
-    if not result['OK']:
-      return S_ERROR("Invalid DN: %s" % result['Message'])
-    userDN = result['Value']
+    escapeUserDNs = []
+    for dn in userDNs:
+      result = self._escapeString(dn)
+      if not result['OK']:
+        return S_ERROR("Invalid DN: %s" % result['Message'])
+      escapeUserDNs.append(result['Value'])
     errMsgs = []
-    req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
+    req = "DELETE FROM `%%s` WHERE UserDN IN (%s)" % ', '.join(escapeUserDNs)
     for table in tables:
       result = self._update(req % table)
       if not result['OK']:
@@ -726,12 +728,12 @@ class ProxyDB(DB):
     chain = X509Chain()
     result = chain.loadProxyFromString(pemData)
     if not result['OK']:
-      self.deleteProxy(userDN)
+      self.deleteProxy([userDN])
       return S_ERROR("Checking %s@%s proxy failed: %s" % (userDN, userGroup, result['Message']))
 
     # Proxy is invalid for some reason, let's delete it
     if not chain.isValidProxy()['OK']:
-      self.deleteProxy(userDN)
+      self.deleteProxy([userDN])
       return S_ERROR("%s@%s has no proxy registered" % (userDN, userGroup))
 
     if voms:
