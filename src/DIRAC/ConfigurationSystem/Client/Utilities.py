@@ -579,7 +579,7 @@ def getDIRACGOCDictionary():
   return S_OK(dictionary)
 
 
-def getAuthClientsFromCS():
+def getAuthClients():
   """ Get all registred in the configuration authentication clients
 
       :return: S_OK(dict)/S_ERROR() -- dictionary contain all registred clients in the configuration

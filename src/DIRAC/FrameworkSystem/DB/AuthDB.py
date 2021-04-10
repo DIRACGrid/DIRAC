@@ -18,7 +18,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
-from DIRAC.ConfigurationSystem.Client.Utilities import getAuthClientsFromCS
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthClients
 
 __RCSID__ = "$Id$"
 
@@ -184,7 +184,7 @@ class AuthDB(SQLAlchemyDB):
         :return: S_OK(dict)/S_ERROR()
     """
     # To begin with, let's see if this client is described in the configuration
-    result = getAuthClientsFromCS()
+    result = getAuthClients()
     if not result['OK']:
       return result
     clientsDict = result['Value']

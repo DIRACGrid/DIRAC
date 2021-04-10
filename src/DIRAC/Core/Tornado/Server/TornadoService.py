@@ -30,7 +30,6 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 sLog = gLogger.getSubLogger(__name__)
 
 
-# class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
   """
     Base class for all the Handlers.
