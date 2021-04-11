@@ -81,9 +81,9 @@ class DB(DIRACDB, MySQL):
 
         :return: S_OK()/S_ERROR()
     """
-    result = self._query('DELETE FROM `%s_Version`' % self.dbName)
+    result = self._query('DELETE FROM `%s`' % self.versionTable)
     if result['OK']:
-      result = self._update("INSERT INTO `%s_Version` (Version) VALUES (%s)" % (self.dbName, version))
+      result = self._update("INSERT INTO `%s` (Version) VALUES (%s)" % (self.versionTable, version))
     if not result['OK']:
       return S_ERROR("Can not initialize %s version: %s" % (self.dbName, result['Message']))
     self.versionDB = version
