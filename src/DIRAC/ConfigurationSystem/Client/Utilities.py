@@ -597,5 +597,5 @@ def isDownloadablePersonalProxy():
 
       :return: S_OK(bool)/S_ERROR()
   """
-  cs_path = '/Systems/Framework/%s/Services/ProxyManager' % getSystemInstance("Framework")
+  cs_path = '/Systems/Framework/%s/APIs/Proxy' % getSystemInstance("Framework")
   return gConfig.getOption(cs_path + '/downloadablePersonalProxy')
