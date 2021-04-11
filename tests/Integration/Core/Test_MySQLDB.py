@@ -122,20 +122,6 @@ def test_connection(host, user, password, dbName, port, expected, monkeypatch):
   assert mysqlDB._connected is expected
 
 
-@pytest.mark.parametrize("name, fields, table, cond", [
-    (name, fields, table, cond0),
-])
-def test_initializeAndUpdateDBVersion(name, fields, table, cond):
-  """ Initalize DB, check if DB version is present, try to update version
-  """
-  mysqlDB = setupDB()
-  assert mysqlDB.versionDB == 0
-
-  result = mysqlDB.updateDBVersion(1)
-  assert result['OK']
-  assert mysqlDB.versionDB == 1
-
-
 @pytest.mark.parametrize("name, fields, table, cond, expected", [
     (name, fields, table, cond0, True),
 ])

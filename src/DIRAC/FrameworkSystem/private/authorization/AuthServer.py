@@ -216,7 +216,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     #   if not result['OK']:
     #     return S_ERROR("Cannot generate proxy: %s" % result['Message'])
     #   return S_OK((result['Value'], requiredLifeTime))
-  
+
     # Read private key of DIRAC auth service
     with open('/opt/dirac/etc/grid-security/jwtRS256.key', 'r') as f:
       key = f.read()

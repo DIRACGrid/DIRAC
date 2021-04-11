@@ -374,7 +374,7 @@ class ProxyManagerHandler(RequestHandler):
     result = self.__checkProperties(user, group, credDict)
     if not result['OK']:
       return result
-    
+
     # Set limitation if tokens are used
     forceLimited = True if token else result['Value']
 
@@ -781,15 +781,15 @@ class ProxyManagerHandler(RequestHandler):
       dns = result['Value']
       if dns:
         if len(dns) > 1:
-          gLogger.warn('For %s@%s found more than one DN:' % (user, group), dns)
+          gLogger.warn('For %s@%s found more than one DN:' % (userName, group), dns)
         if userDN:
           if userDN not in dns:
-            return S_ERROR('Requested %s DN not match with %s user, %s group' % (dn, user, group))
+            return S_ERROR('Requested %s DN not match with %s user, %s group' % (userDN, userName, group))
           dns = [userDN]
 
     if not dns:
       return S_ERROR('No DN were found for %s user' % userName, (', %s group' % group) if group else '')
-    return S_OK((user, dns))
+    return S_OK((userName, dns))
 
   types_setPersistency = []
 

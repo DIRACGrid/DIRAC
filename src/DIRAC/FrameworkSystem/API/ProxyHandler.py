@@ -64,10 +64,10 @@ class ProxyHandler(TornadoREST):
 
       # Return personal proxy
       if not user and not group:
-        return self.__getProxy(self.getUserName(), self.getUserGroup(), voms, requiredTimeLeft)
+        return self.__getProxy(self.getUserName(), self.getUserGroup(), voms, proxyLifeTime)
 
       elif user and group:
-        return self.__getProxy(user, group, voms, requiredTimeLeft)
+        return self.__getProxy(user, group, voms, proxyLifeTime)
 
       else:
         return S_ERROR("Wrone request.")
@@ -92,7 +92,7 @@ class ProxyHandler(TornadoREST):
       return S_ERROR("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
 
     if voms:
-      result = self.proxyCli.downloadVOMSProxy(user, group, requiredTimeLeft=proxyLifeTime)
+      result = self.proxyCli.downloadVOMSProxy(user, group, requiredTimeLeft=lifetime)
     else:
       result = self.proxyCli.downloadProxy(user, group, requiredTimeLeft=lifetime)
     if result['OK']:

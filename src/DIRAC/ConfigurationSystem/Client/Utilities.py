@@ -592,6 +592,7 @@ def getAuthClients():
 
   return gConfig.getOptionsDictRecursively('%s/Clients' % path) if 'Clients' in result['Value'] else {}
 
+
 def isDownloadablePersonalProxy():
   """ Get downloadablePersonalProxy flag
 
