@@ -1314,7 +1314,7 @@ Cheers,
       return S_OK(result['Value'][0])
 
     for userID in Registry.getIDsForUsername(username):
-      result = gAuthManagerData.getDNOptionForID(userID, userDN, 'PROVIDER')
+      result = gAuthManagerData.getDNOptionForID(userID, userDN, 'ProxyProvider')
       if not result['OK']:
         return result
       provider = result['Value']

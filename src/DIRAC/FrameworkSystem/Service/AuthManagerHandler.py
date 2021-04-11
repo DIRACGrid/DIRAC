@@ -275,13 +275,14 @@ class AuthManagerHandler(RequestHandler):
     if not result['OK']:
       return result
     # FINISHING with IdP auth result
-    username, userProfile, session = result['Value']
+    username, userID, profile, session = result['Value']
+    userProfile = profile[providerName][userID]
 
     self.log.debug('The next session is identified for %s:\n' % username, pprint.pformat(session))
     # Is ID registred?
-    result = getUsernameForID(userProfile['ID'])
+    result = getUsernameForID(userID)
     if not result['OK']:
-      comment = '%s ID is not registred in the DIRAC.' % userProfile['ID']
+      comment = '%s ID is not registred in the DIRAC.' % userID
       result = self.__registerNewUser(providerName, username, userProfile)
       if result['OK']:
         comment += ' Administrators have been notified about you.'
@@ -290,14 +291,14 @@ class AuthManagerHandler(RequestHandler):
       return S_ERROR(comment)
 
     self.log.debug("Add %s's profile to cache:" % username, pprint.pformat(userProfile))
-    self.__addProfiles({userProfile['ID']: userProfile})
+    self.__addProfiles({userID: userProfile})
 
     # print('================== export_parseAuthResponse ==================')
     # print('userID: %s' % userProfile['ID'])
     # print('profile: %s' % userProfile)
     # pprint.pprint(self.__getProfiles())
     # print('==================  ==================')
-    return S_OK((result['Value'], userProfile, dict(session)))
+    return S_OK((result['Value'], userID, userProfile, dict(session)))
 
   def __registerNewUser(self, provider, username, userProfile):
     """ Register new user

@@ -158,8 +158,6 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    # print('All sessions')
-    # pprint(self.getSessions())
     # Get IdP authorization flows session
     session = self.getSession(session)
     if not session:
@@ -173,10 +171,10 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       self.updateSession(session['mainSession'], Status='failed', Comment=result['Message'])
       return result
 
-    username, profile, _ = result['Value']
+    username, userID, _, _ = result['Value']
 
-    if username and profile:
-      self.updateSession(session['mainSession'], username=username, profile=profile, userID=profile['ID'])
+    if username and userID:
+      self.updateSession(session['mainSession'], username=username, userID=userID) #profile=profile,
     return S_OK(session['mainSession'])
 
   def access_token_generator(self, client, grant_type, user, scope):

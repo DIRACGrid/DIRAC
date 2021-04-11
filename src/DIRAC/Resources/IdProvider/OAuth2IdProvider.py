@@ -19,6 +19,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProviderByAlia
 from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import Session
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthClients
+from DIRAC.FrameworkSystem.private.authorization.utils.ProfileParser import ProfileParser
 
 __RCSID__ = "$Id$"
 
@@ -46,17 +48,26 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                update_token=None, **parameters):
     """ OIDCClient constructor
     """
+    result = getAuthClients()
+    if not result['OK']:
+      raise Exception('Cannot get clients dict from configuration.')
+    clientsData = result['Value']
+    if 'redirect_uri' not in parameters:
+      parameters['redirect_uri'] = clientsData.get('redirect_uri')
+    if 'ProviderName' not in parameters:
+      parameters['ProviderName'] = name
     IdProvider.__init__(self, **parameters)
     OAuth2Session.__init__(self, token_endpoint_auth_method=token_endpoint_auth_method,
                            revocation_endpoint_auth_method=revocation_endpoint_auth_method,
                            scope=scope, token=token, token_placement=token_placement,
                            update_token=update_token, **parameters)
     # Convert scope to list
+    self.parser = ProfileParser(**parameters)
     scope = scope or ''
     self.scope = [s.strip() for s in scope.strip().replace('+', ' ').split(',' if ',' in scope else ' ')]
     self.parameters = parameters
     self.exceptions = exceptions
-    self.name = name or parameters.get('ProviderName')
+    self.name = parameters['ProviderName']
 
     # Add hooks to raise HTTP errors
     self.hooks['response'] = lambda r, *args, **kwargs: r.raise_for_status()
@@ -113,10 +124,11 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.token = token
       result = self.__getUserInfo()
       if result['OK']:
-        result = self._parseUserProfile(result['Value'])
+        result = self.parser(result['Value'])
+        # result = self._parseUserProfile(result['Value'])
         if result['OK']:
-          _, profile = result['Value']
-          metadata[token['user_id']] = profile
+          _, _, profile = result['Value']
+          metadata[token['user_id']] = profile[self.name][token['user_id']]
 
     return S_OK(metadata)
 
@@ -156,14 +168,15 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     result = self._fillUserProfile()
     if not result['OK']:
       return result
-    username, userProfile = result['Value']
+    username, userID, userProfile = result['Value']
 
     self.log.debug('Got response dictionary:\n', pprint.pformat(userProfile))
 
     # Store token
     self.token['client_id'] = self.client_id
     self.token['provider'] = self.name
-    self.token['user_id'] = userProfile['ID']
+    # self.token['user_id'] = userProfile['ID']
+    self.token['user_id'] = userID
     self.log.debug('Store token to the database:\n', pprint.pformat(dict(self.token)))
 
     if self.store_token:
@@ -171,11 +184,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       if not result['OK']:
         return result
 
-    return S_OK((username, userProfile, session.update(token=dict(self.token))))
+    return S_OK((username, userID, userProfile, session.update(token=dict(self.token))))
 
   def _fillUserProfile(self, useToken=None):
     result = self.__getUserInfo(useToken)
-    return self._parseUserProfile(result['Value']) if result['OK'] else result
+    return self.parser(result['Value']) if result['OK'] else result
+    # return self._parseUserProfile(result['Value']) if result['OK'] else result
 
   def __getUserInfo(self, useToken=None):
     self.log.debug('Sent request to userinfo endpoint..')
@@ -188,103 +202,103 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     except (self.exceptions.RequestException, ValueError) as e:
       return S_ERROR("%s: %s" % (repr(e), r.text if r else ''))
 
-  def _parseUserProfile(self, userProfile):
-    """ Parse user profile
+  # def _parseUserProfile(self, userProfile):
+  #   """ Parse user profile
 
-        :param dict userProfile: user profile in OAuht2 format
+  #       :param dict userProfile: user profile in OAuht2 format
 
-        :return: S_OK()/S_ERROR()
-    """
-    # Generate username
-    gname = userProfile.get('given_name')
-    fname = userProfile.get('family_name')
-    pname = userProfile.get('preferred_username')
-    name = userProfile.get('name') and userProfile['name'].split(' ')
-    username = pname or gname and fname and gname[0] + fname
-    username = username or name and len(name) > 1 and name[0][0] + name[1] or ''
-    username = re.sub('[^A-Za-z0-9]+', '', username.lower())[:13]
-    self.log.debug('Parse user name:', username)
+  #       :return: S_OK()/S_ERROR()
+  #   """
+  #   # Generate username
+  #   gname = userProfile.get('given_name')
+  #   fname = userProfile.get('family_name')
+  #   pname = userProfile.get('preferred_username')
+  #   name = userProfile.get('name') and userProfile['name'].split(' ')
+  #   username = pname or gname and fname and gname[0] + fname
+  #   username = username or name and len(name) > 1 and name[0][0] + name[1] or ''
+  #   username = re.sub('[^A-Za-z0-9]+', '', username.lower())[:13]
+  #   self.log.debug('Parse user name:', username)
 
-    profile = {}
+  #   profile = {}
 
-    # Set provider
-    profile['Provider'] = self.name
+  #   # Set provider
+  #   profile['Provider'] = self.name
 
-    # Collect user info
-    profile['ID'] = userProfile.get('sub')
-    if not profile['ID']:
-      return S_ERROR('No ID of user found.')
-    profile['Email'] = userProfile.get('email')
-    profile['FullName'] = gname and fname and ' '.join([gname, fname]) or name and ' '.join(name) or ''
-    self.log.debug('Parse user profile:\n', profile)
+  #   # Collect user info
+  #   profile['ID'] = userProfile.get('sub')
+  #   if not profile['ID']:
+  #     return S_ERROR('No ID of user found.')
+  #   profile['Email'] = userProfile.get('email')
+  #   profile['FullName'] = gname and fname and ' '.join([gname, fname]) or name and ' '.join(name) or ''
+  #   self.log.debug('Parse user profile:\n', profile)
 
-    # Default DIRAC groups, configured for IdP
-    profile['Groups'] = self.parameters.get('DiracGroups')
-    if profile['Groups'] and not isinstance(profile['Groups'], list):
-      profile['Groups'] = profile['Groups'].replace(' ', '').split(',')
-    self.log.debug('Default groups:', ', '.join(profile['Groups'] or []))
-    self.log.debug('Response Information:', pprint.pformat(userProfile))
+  #   # Default DIRAC groups, configured for IdP
+  #   profile['Groups'] = self.parameters.get('DiracGroups')
+  #   if profile['Groups'] and not isinstance(profile['Groups'], list):
+  #     profile['Groups'] = profile['Groups'].replace(' ', '').split(',')
+  #   self.log.debug('Default groups:', ', '.join(profile['Groups'] or []))
+  #   self.log.debug('Response Information:', pprint.pformat(userProfile))
 
-    self.log.debug('Read regex syntax to get DNs describetion dictionary..')
-    userDNs = {}
-    dictItemRegex, listItemRegex = {}, None
-    try:
-      dnClaim = self.parameters['Syntax']['DNs']['claim']
-      for k, v in self.parameters['Syntax']['DNs'].items():
-        if isinstance(v, dict) and v.get('item'):
-          dictItemRegex[k] = v['item']
-        elif k == 'item':
-          listItemRegex = v
-    except Exception as e:
-      if not profile['Groups']:
-        self.log.warn('No DNs described in Syntax/DNs IdP configuration section were found in the response.',
-                      "And no DiracGroups were found fo IdP.")
-      return S_OK((username, profile))
+  #   self.log.debug('Read regex syntax to get DNs describetion dictionary..')
+  #   userDNs = {}
+  #   dictItemRegex, listItemRegex = {}, None
+  #   try:
+  #     dnClaim = self.parameters['Syntax']['DNs']['claim']
+  #     for k, v in self.parameters['Syntax']['DNs'].items():
+  #       if isinstance(v, dict) and v.get('item'):
+  #         dictItemRegex[k] = v['item']
+  #       elif k == 'item':
+  #         listItemRegex = v
+  #   except Exception as e:
+  #     if not profile['Groups']:
+  #       self.log.warn('No DNs described in Syntax/DNs IdP configuration section were found in the response.',
+  #                     "And no DiracGroups were found fo IdP.")
+  #     return S_OK((username, profile))
 
-    self.log.debug('Dict type items pattern:\n', pprint.pformat(dictItemRegex))
-    self.log.debug('List type items pattern:\n', pprint.pformat(listItemRegex))
+  #   self.log.debug('Dict type items pattern:\n', pprint.pformat(dictItemRegex))
+  #   self.log.debug('List type items pattern:\n', pprint.pformat(listItemRegex))
 
-    if not userProfile.get(dnClaim) and not profile['Groups']:
-      self.log.warn('No "DiracGroups", no claim "%s" that describe DNs found.' % dnClaim)
-    else:
-      self.log.debug('Found "%s" claim that describe user DNs' % dnClaim)
-      if not isinstance(userProfile[dnClaim], list):
-        self.log.debug('Convert "%s" claim to list..' % dnClaim)
-        userProfile[dnClaim] = userProfile[dnClaim].split(',')
+  #   if not userProfile.get(dnClaim) and not profile['Groups']:
+  #     self.log.warn('No "DiracGroups", no claim "%s" that describe DNs found.' % dnClaim)
+  #   else:
+  #     self.log.debug('Found "%s" claim that describe user DNs' % dnClaim)
+  #     if not isinstance(userProfile[dnClaim], list):
+  #       self.log.debug('Convert "%s" claim to list..' % dnClaim)
+  #       userProfile[dnClaim] = userProfile[dnClaim].split(',')
 
-      for item in userProfile[dnClaim]:
-        dnInfo = {}
-        self.log.debug('Read "%s" item:' % dnClaim, item)
-        if isinstance(item, dict):
-          for subClaim, reg in dictItemRegex.items():
-            result = re.compile(reg).match(item[subClaim])
-            if result:
-              for k, v in result.groupdict().items():
-                dnInfo[k] = v
-        elif listItemRegex:
-          result = re.compile(listItemRegex).match(item)
-          if result:
-            for k, v in result.groupdict().items():
-              dnInfo[k] = v
+  #     for item in userProfile[dnClaim]:
+  #       dnInfo = {}
+  #       self.log.debug('Read "%s" item:' % dnClaim, item)
+  #       if isinstance(item, dict):
+  #         for subClaim, reg in dictItemRegex.items():
+  #           result = re.compile(reg).match(item[subClaim])
+  #           if result:
+  #             for k, v in result.groupdict().items():
+  #               dnInfo[k] = v
+  #       elif listItemRegex:
+  #         result = re.compile(listItemRegex).match(item)
+  #         if result:
+  #           for k, v in result.groupdict().items():
+  #             dnInfo[k] = v
 
-        self.log.debug('Read parsed DN information:\n', dnInfo)
-        if dnInfo.get('DN'):
-          if not dnInfo['DN'].startswith('/'):
-            self.log.debug('Convert %s to view with slashes.' % dnInfo['DN'])
-            items = dnInfo['DN'].split(',')
-            items.reverse()
-            dnInfo['DN'] = '/' + '/'.join(items)
-          if dnInfo.get('PROVIDER'):
-            self.log.debug('Found %s provider in item,' % dnInfo['PROVIDER'])
-            result = getProviderByAlias(dnInfo['PROVIDER'], instance='Proxy')
-            dnInfo['PROVIDER'] = result['Value'] if result['OK'] else 'Certificate'
-            self.log.debug('In the DIRAC configuration it corresponds to the ', dnInfo['PROVIDER'])
-          userDNs[dnInfo['DN']] = dnInfo
-      if userDNs:
-        profile['DNs'] = userDNs
+  #       self.log.debug('Read parsed DN information:\n', dnInfo)
+  #       if dnInfo.get('DN'):
+  #         if not dnInfo['DN'].startswith('/'):
+  #           self.log.debug('Convert %s to view with slashes.' % dnInfo['DN'])
+  #           items = dnInfo['DN'].split(',')
+  #           items.reverse()
+  #           dnInfo['DN'] = '/' + '/'.join(items)
+  #         if dnInfo.get('ProxyProvider'):
+  #           self.log.debug('Found %s provider in item,' % dnInfo['ProxyProvider'])
+  #           result = getProviderByAlias(dnInfo['ProxyProvider'], instance='Proxy')
+  #           dnInfo['ProxyProvider'] = result['Value'] if result['OK'] else 'Certificate'
+  #           self.log.debug('In the DIRAC configuration it corresponds to the ', dnInfo['ProxyProvider'])
+  #         userDNs[dnInfo['DN']] = dnInfo
+  #     if userDNs:
+  #       profile['DNs'] = userDNs
 
-    self.log.verbose('We were able to compile the following profile for %s:\n' % username, profile)
-    return S_OK((username, profile))
+  #   self.log.verbose('We were able to compile the following profile for %s:\n' % username, profile)
+  #   return S_OK((username, profile))
 
   def exchange_token(self, url, subject_token=None, subject_token_type=None, body='',
                      refresh_token=None, access_token=None, auth=None, headers=None, **kwargs):

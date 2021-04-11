@@ -342,4 +342,4 @@ class TokenExchangeGrant(_TokenExchangeGrant):
 
         :param object credential: credential
     """
-    self.server.removeSession(credential['access_token'])
+    self.server.removeSession(credential['refresh_token'])

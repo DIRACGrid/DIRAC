@@ -22,7 +22,7 @@ gCacheProfiles = ThreadSafe.Synchronizer()
 class AuthManagerData(object):
   """ Authentication manager
   """
-  __cahceIdPToIDs = DictCache()
+  __cacheIdPToIDs = DictCache()
   # # {
   # #   <IdP1>: [ <IDs> ],
   # #   <IdP2>: ...
@@ -80,9 +80,9 @@ class AuthManagerData(object):
       if v is not None:
         profileDict[k] = v
     self.__cacheProfiles.add(userID, time, value=profileDict)
-    ids = self.__cahceIdPToIDs.get(profileDict['Provider'])
+    ids = self.__cacheIdPToIDs.get(profileDict['Provider'])
     if isinstance(ids, list) and userID not in ids:
-      self.__cahceIdPToIDs.add(profileDict['Provider'], time, userID)
+      self.__cacheIdPToIDs.add(profileDict['Provider'], time, userID)
 
   def __getRPC(self):
     """ Get RPC
@@ -125,7 +125,7 @@ class AuthManagerData(object):
     profile = self.getProfiles()
     for resfreshed in [0, 1]:
       for uid, data in profile.items():
-        if dn not in data.get('DNs', []) or (provider and data['DNs'][dn]['PROVIDER'] != provider):
+        if dn not in data.get('DNs', []) or (provider and data['DNs'][dn]['ProxyProvider'] != provider):
           continue
         userIDs.append(uid)
       if userIDs or resfreshed:
