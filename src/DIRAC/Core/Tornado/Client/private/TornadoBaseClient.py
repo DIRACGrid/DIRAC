@@ -43,6 +43,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import findDefaultGroupForDN
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
 
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
@@ -266,6 +267,10 @@ class TornadoBaseClient(object):
       self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
 
     if delegatedID or delegatedDN:
+      if not delegatedGroup:
+        result = findDefaultGroupForDN(self.kwargs[self.KW_DELEGATED_DN])
+        if not result['OK']:
+          return result
       self.__extraCredentials = (delegatedID or delegatedDN, delegatedGroup)
     return S_OK()
 

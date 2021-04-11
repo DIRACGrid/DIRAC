@@ -174,7 +174,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     username, userID, _, _ = result['Value']
 
     if username and userID:
-      self.updateSession(session['mainSession'], username=username, userID=userID) #profile=profile,
+      self.updateSession(session['mainSession'], username=username, userID=userID)  # profile=profile,
     return S_OK(session['mainSession'])
 
   def access_token_generator(self, client, grant_type, user, scope):

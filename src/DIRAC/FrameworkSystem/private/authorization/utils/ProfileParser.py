@@ -38,6 +38,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProviderByAlia
 }
 """
 
+
 def claimParser(claimDict, attributes):
   """ Parse claims to write it as DIRAC profile
 
@@ -47,7 +48,7 @@ def claimParser(claimDict, attributes):
 
       :return: dict
   """
-  profile={}
+  profile = {}
   result = None
   for claim, reg in attributes.items():
     if claim not in claimDict:
@@ -83,7 +84,7 @@ class ProfileParser(object):
     self.user_id = None
     self.username = None
     self.profile = {self.provider: {}}
-  
+
   def __call__(self, claimDict):
     """ Parse claims
     """
@@ -91,7 +92,7 @@ class ProfileParser(object):
     self.parseEduperson(claimDict)
     self.parseCertEntitlement(claimDict)
     return S_OK((self.username, self.user_id, self.profile))
-  
+
   def parseBasic(self, claimDict):
     """ Parse basic claims
 
