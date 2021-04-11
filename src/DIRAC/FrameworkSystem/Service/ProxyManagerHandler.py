@@ -311,25 +311,15 @@ class ProxyManagerHandler(RequestHandler):
       return self.__proxyDB.getUsers(validSecondsRequired, userMask=credDict['username'])
     return self.__proxyDB.getUsers(validSecondsRequired)
 
-  def __checkProperties(self, requestedUsername, requestedUserGroup, credDict, personal):
+  def __checkProperties(self, requestedUsername, requestedUserGroup, credDict):
     """ Check the properties and return if they can only download limited proxies if authorized
 
         :param str requestedUsername: user name
         :param str requestedUserGroup: DIRAC group
         :param dict credDict: remote credentials
-        :param bool personal: get personal proxy
 
         :return: S_OK(bool)/S_ERROR() -- bool indicates whether there are limitation
     """
-    if personal:
-      csSection = PathFinder.getServiceSection('Framework/ProxyManager')
-      if requestedUsername != credDict['username'] or requestedUserGroup != credDict['group']:
-        return S_ERROR("You can't get %s@%s proxy!" % (credDict['username'], credDict['group']))
-      elif not gConfig.getValue('%s/downloadablePersonalProxy' % csSection, False):
-        return S_ERROR("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
-      else:
-        return S_OK(False)
-
     if Properties.FULL_DELEGATION in credDict['properties']:
       return S_OK(False)
     if Properties.LIMITED_DELEGATION in credDict['properties']:
@@ -343,30 +333,9 @@ class ProxyManagerHandler(RequestHandler):
     # Not authorized!
     return S_ERROR("You can't get proxies!")
 
-  auth_getPersonalProxy = ['authenticated']
-  types_getPersonalProxy = [six.string_types, six.string_types, six.string_types, six.integer_types]
-
-  def export_getPersonalProxy(self, instance, group, requestPem, requiredLifetime, vomsAttribute=None):
-    """ Get a proxy for a user/group
-
-        :param str instance: user name or DN
-        :param str group: DIRAC group
-        :param str requestPem: PEM encoded request object for delegation
-        :param int requiredLifetime: Argument for length of proxy
-        :param bool vomsAttribute: make proxy with VOMS extension
-
-          * Properties for personal proxy:
-              * NormalUser
-
-        :return: S_OK(str)/S_ERROR()
-    """
-    return self.export_getProxy(instance, group, requestPem, requiredLifetime,
-                                token=None, vomsAttribute=vomsAttribute, personal=True)
-
   types_getProxy = [six.string_types, six.string_types, six.string_types, six.integer_types]
 
-  def export_getProxy(self, instance, group, requestPem, requiredLifetime,
-                      token=None, vomsAttribute=None, personal=True):
+  def export_getProxy(self, instance, group, requestPem, requiredLifetime, token=None, vomsAttribute=None):
     """ Get a proxy for a user/group
 
         :param str instance: user name or DN
@@ -375,8 +344,6 @@ class ProxyManagerHandler(RequestHandler):
         :param int requiredLifetime: Argument for length of proxy
         :param str token: token that need to use
         :param bool vomsAttribute: make proxy with VOMS extension
-        :param bool personal: get personal proxy
-        :param bool personal: get personal proxy
 
           * Properties:
               * FullDelegation <- permits full delegation of proxies
@@ -404,7 +371,7 @@ class ProxyManagerHandler(RequestHandler):
       if not result['Value']:
         return S_ERROR("Proxy token is invalid")
 
-    result = self.__checkProperties(user, group, credDict, personal)
+    result = self.__checkProperties(user, group, credDict)
     if not result['OK']:
       return result
     
@@ -821,7 +788,7 @@ class ProxyManagerHandler(RequestHandler):
           dns = [userDN]
 
     if not dns:
-      return S_ERROR('No DN were found for %s user' % userName, (', %s group' % group) if group else ''))
+      return S_ERROR('No DN were found for %s user' % userName, (', %s group' % group) if group else '')
     return S_OK((user, dns))
 
   types_setPersistency = []

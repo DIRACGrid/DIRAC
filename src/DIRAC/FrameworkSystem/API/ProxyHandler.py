@@ -7,12 +7,14 @@ from __future__ import print_function
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
+from DIRAC.ConfigurationSystem.Client.Utilities import isDownloadablePersonalProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsernameInGroup
 
 __RCSID__ = "$Id$"
 
 
 class ProxyHandler(TornadoREST):
+  USE_AUTHZ_GRANTS = ['JWT']
   RAISE_DIRAC_ERROR = True
   SYSTEM = 'Framework'
   AUTH_PROPS = "authenticated"
@@ -50,9 +52,9 @@ class ProxyHandler(TornadoREST):
     """
     voms = self.get_argument('voms', None)
     try:
-      proxyLifeTime = int(self.get_argument('lifetime', 3600 * 12))
+      proxyLifeTime = int(self.get_argument('lifetime', 3600 * 6))
     except Exception:
-      S_ERROR('Cannot read "lifetime" argument.')
+      return S_ERROR('Cannot read "lifetime" argument.')
 
     # GET
     if self.request.method == 'GET':
@@ -62,29 +64,38 @@ class ProxyHandler(TornadoREST):
 
       # Return personal proxy
       if not user and not group:
-        result = self.proxyCli.downloadPersonalProxy(self.getUserName(), self.getUserGroup(),
-                                                     requiredTimeLeft=proxyLifeTime, voms=voms)
-        if result['OK']:
-          self.log.notice('Proxy was created.')
-          result = result['Value'].dumpAllToString()
-        return result
+        return self.__getProxy(self.getUserName(), self.getUserGroup(), voms, requiredTimeLeft)
 
-      # Return proxy
       elif user and group:
-
-        # Get proxy to string
-        result = getDNForUsernameInGroup(user, group)
-        if not result['OK'] or not result.get('Value'):
-          S_ERROR('%s@%s has no registred DN: %s' % (user, group, result.get('Message') or ""))
-
-        if voms:
-          result = self.proxyCli.downloadVOMSProxy(user, group, requiredTimeLeft=proxyLifeTime)
-        else:
-          result = self.proxyCli.downloadProxy(user, group, requiredTimeLeft=proxyLifeTime)
-        if result['OK']:
-          self.log.notice('Proxy was created.')
-          result = result['Value'].dumpAllToString()
-        return result
+        return self.__getProxy(user, group, voms, requiredTimeLeft)
 
       else:
-        S_ERROR("Wrone request.")
+        return S_ERROR("Wrone request.")
+
+  def __getProxy(self, user, group, voms, lifetime):
+    """ Get proxy
+
+        :param str user: user name
+        :param str group: group name
+        :param bool voms: add voms ext
+        :param int lifetime: proxy lifetime
+
+        :return: S_OK(str)/S_ERROR()
+    """
+    lifetime = min(lifetime, 3600 * 6)
+
+    # Allowe to take only personal proxy
+    if self.getUserName() != user or self.getUserGroup() != group:
+      return S_ERROR('Sorry, only personal proxy is allowed to download')
+
+    if not isDownloadablePersonalProxy():
+      return S_ERROR("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
+
+    if voms:
+      result = self.proxyCli.downloadVOMSProxy(user, group, requiredTimeLeft=proxyLifeTime)
+    else:
+      result = self.proxyCli.downloadProxy(user, group, requiredTimeLeft=lifetime)
+    if result['OK']:
+      self.log.notice('Proxy was created.')
+      return result['Value'].dumpAllToString()
+    return result

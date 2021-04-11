@@ -591,3 +591,11 @@ def getAuthClients():
     return result
 
   return gConfig.getOptionsDictRecursively('%s/Clients' % path) if 'Clients' in result['Value'] else {}
+
+def isDownloadablePersonalProxy():
+  """ Get downloadablePersonalProxy flag
+
+      :return: S_OK(bool)/S_ERROR()
+  """
+  cs_path = '/Systems/Framework/%s/Services/ProxyManager' % getSystemInstance("Framework")
+  return gConfig.getOption(cs_path + '/downloadablePersonalProxy')

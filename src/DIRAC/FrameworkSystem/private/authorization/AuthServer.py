@@ -195,6 +195,28 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
                'exp': int(time()) + (12 * 3600),
                'scope': scope,
                'setup': getSetup()}
+    # #
+    # Return proxy with token in one response
+    # #
+    # if 'generate_access_proxy' in scope:
+
+    #   result = ProxyProviderFactory().getProxyProvider('DIRACCA', proxyManager=self)
+    #   if not result['OK']:
+    #     return result
+    #   providerObj = result['Value']
+
+    #   # Generate the proxy and store in the DB
+    #   result = providerObj.getProxy(userDN)
+    #   if not result['OK']:
+    #     return result
+    #   chain = result['Value']
+
+    #   # Add group
+    #   result = chain.generateProxyToString(requiredLifeTime, diracGroup=userGroup, rfc=True)
+    #   if not result['OK']:
+    #     return S_ERROR("Cannot generate proxy: %s" % result['Message'])
+    #   return S_OK((result['Value'], requiredLifeTime))
+  
     # Read private key of DIRAC auth service
     with open('/opt/dirac/etc/grid-security/jwtRS256.key', 'r') as f:
       key = f.read()
