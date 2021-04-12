@@ -31,6 +31,10 @@ jobs:
           ###### Python 3
           - TEST_NAME: "Python 3 client"
             ARGS: CLIENT_USE_PYTHON3=Yes
+          - TEST_NAME: "Python 3 server"
+            ARGS: SERVER_USE_PYTHON3=Yes
+          - TEST_NAME: "Python 3 server and client"
+            ARGS: CLIENT_USE_PYTHON3=Yes SERVER_USE_PYTHON3=Yes MYSQL_VER=8.0
 
     steps:
     - uses: actions/checkout@v2
