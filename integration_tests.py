@@ -99,7 +99,7 @@ The currently known features and their default values are:
   ES_VER: {DEFAULT_ES_VER!r}
   {(os.linesep + '  ').join(['%s: %r' % x for x in FEATURE_VARIABLES.items()])}
 
-All features can be prefixed with "Server" or "Client" to limit their scope.
+All features can be prefixed with "SERVER_" or "CLIENT_" to limit their scope.
 
 ## Extensions
 

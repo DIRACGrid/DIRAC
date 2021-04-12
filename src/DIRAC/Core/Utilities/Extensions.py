@@ -1,4 +1,4 @@
-"""TODO"""
+"""Helpers for working with extensions to DIRAC"""
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
@@ -40,6 +40,12 @@ except ImportError:
 
 
 def iterateThenSort(func):
+  """Convenience decorator the find* functions
+
+  Converts a function that takes a python module into one which accepts one or
+  modules/module names. The returned values are converted to a sorted list of
+  unique values.
+  """
   @functools.wraps(func)
   def newFunc(modules, *args, **kwargs):
     if not isinstance(modules, (list, tuple)):
@@ -56,28 +62,48 @@ def iterateThenSort(func):
 
 @iterateThenSort
 def findSystems(module):
-  """TODO"""
+  """Find the systems for one or more DIRAC extension(s)
+
+  :param list/str/module module: One or more Python modules or Python module names
+  :returns: list of system names
+  """
   return {x.name for x in _findSystems(module)}
 
 
 def findAgents(modules):
-  """TODO"""
+  """Find the agents for one or more DIRAC extension(s)
+
+  :param list/str/module module: One or more Python modules or Python module names
+  :returns: list of tuples of the form (SystemName, AgentName)
+  """
   return findModules(modules, "Agent", "*Agent")
 
 
 def findExecutors(modules):
-  """TODO"""
+  """Find the executors for one or more DIRAC extension(s)
+
+  :param list/str/module module: One or more Python modules or Python module names
+  :returns: list of tuples of the form (SystemName, ExecutorName)
+  """
   return findModules(modules, "Executor")
 
 
 def findServices(modules):
-  """TODO"""
+  """Find the services for one or more DIRAC extension(s)
+
+  :param list/str/module module: One or more Python modules or Python module names
+  :returns: list of tuples of the form (SystemName, ServiceName)
+  """
   return findModules(modules, "Service", "*Handler")
 
 
 @iterateThenSort
 def findDatabases(module):
-  """TODO"""
+  """Find the DB SQL schema defintions for one or more DIRAC extension(s)
+
+  :param list/str/module module: One or more Python modules or Python module names
+  :returns: list of tuples of the form (SystemName, dbSchemaFilename)
+  """
   # This can be "fn.name" when DIRAC is Python 3 only
   return {
       (system.name, os.path.basename(str(fn)))
@@ -87,7 +113,13 @@ def findDatabases(module):
 
 @iterateThenSort
 def findModules(module, submoduleName, pattern="*"):
-  """TODO"""
+  """Find the direct submodules from one or more DIRAC extension(s) that match a pattern
+
+  :param list/str/module module: One or more Python modules or Python module names
+  :param str submoduleName: The submodule under ``module`` in which to look
+  :param str pattern: A ``fnmatch``-style pattern that the submodule must match
+  :returns: list of tuples of the form (SystemName, ServiceName)
+  """
   for system in _findSystems(module):
     agentModule = PathFinder.find_spec(submoduleName, path=system.submodule_search_locations)
     if not agentModule:
@@ -105,9 +137,7 @@ def entrypointToExtension(entrypoint):
 
 
 def extensionsByPriority():
-  """
-  Get the list of installed extensions
-  """
+  """Get the list of installed extensions"""
   if six.PY3:
     return _extensionsByPriorityPy3()
   else:
@@ -173,14 +203,14 @@ def recurseImport(modName, parentModule=None, hideExceptions=False):
 
 
 def _findSystems(module):
-  """TODO"""
+  """Implementation of _findSystems that returns a generator of system names"""
   for _, name, _ in pkgutil.iter_modules(module.__path__):
     if name.endswith("System"):
       yield PathFinder.find_spec(name, path=module.__path__)
 
 
 def _findFile(module, submoduleName, pattern="*"):
-  """TODO"""
+  """Implementation of findDatabases"""
   for system in _findSystems(module):
     try:
       dbModule = importlib_resources.files(".".join([module.__name__, system.name, submoduleName]))
@@ -192,6 +222,7 @@ def _findFile(module, submoduleName, pattern="*"):
 
 
 def parseArgs():
+  """CLI interface for use with the DIRAC integration tests"""
   parser = argparse.ArgumentParser()
   if six.PY3:
     subparsers = parser.add_subparsers(required=True, dest='function')
