@@ -57,8 +57,9 @@ Script.setUsageMessage('\n'.join([__doc__,
 if __name__ == '__main__':
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
-  from DIRAC import gConfig, gLogger
+  from DIRAC import gConfig, gLogger, S_ERROR
   from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+  from DIRAC.DataManagementSystem.private.FTS3Utilities import getFTS3Plugin
   from DIRAC.Resources.Storage.StorageElement import StorageElement
   from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
@@ -82,6 +83,7 @@ if __name__ == '__main__':
     elif switch[0] == 'FTSOnly':
       ftsOnly = True
 
+  fts3Plugin = getFTS3Plugin()
   thirdPartyProtocols = DMSHelpers().getThirdPartyProtocols()
 
   # List all the BaseSE
@@ -157,7 +159,11 @@ if __name__ == '__main__':
 
   # For each source and destination, generate the url pair, and the compatible third party protocols
   for src, dst in ((x, y) for x in fromSE for y in targetSE):
-    res = ses[dst].generateTransferURLsBetweenSEs(lfn, ses[src], thirdPartyProtocols)
+    try:
+      fts3TpcProto = fts3Plugin.selectTPCProtocols(sourceSEName=src, destSEName=dst)
+      res = ses[dst].generateTransferURLsBetweenSEs(lfn, ses[src], fts3TpcProto)
+    except ValueError as e:
+      res = S_ERROR(str(e))
     if not res['OK']:
       surls = 'Error'
       gLogger.notice("Could not generate transfer URLS", "src:%s, dst:%s, error:%s" % (src, dst, res['Message']))

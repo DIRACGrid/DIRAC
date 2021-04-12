@@ -10,8 +10,9 @@ from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.DataManagementSystem.private.FTS3Utilities import groupFilesByTarget, \
-    selectUniqueRandomSource, \
+    selectUniqueSource, \
     FTS3ServerPolicy
+from DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin import DefaultFTS3Plugin
 
 
 def mock__checkSourceReplicas(ftsFiles, preferDisk=False):
@@ -73,10 +74,11 @@ class TestFileGrouping(unittest.TestCase):
   @mock.patch(
       'DIRAC.DataManagementSystem.private.FTS3Utilities._checkSourceReplicas',
       side_effect=mock__checkSourceReplicas)
-  def test_04_selectUniqueRandomSource(self, _mk_checkSourceReplicas):
+  def test_04_selectUniqueSource(self, _mk_checkSourceReplicas):
     """ Suppose they all go to the same target """
 
-    res = selectUniqueRandomSource(self.allFiles)
+    fts3Plugin = DefaultFTS3Plugin()
+    res = selectUniqueSource(self.allFiles, fts3Plugin)
 
     self.assertTrue(res['OK'])
 
