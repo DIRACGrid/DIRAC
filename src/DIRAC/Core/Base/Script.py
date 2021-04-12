@@ -60,7 +60,10 @@ def parseCommandLine(script=False, ignoreErrors=False, initializeMonitor=False):
 
   # Read and parse the script __doc__ to create a draft help message
   if not gIsAlreadySetUsageMsg:
-    localCfg.setUsageMessage(inspect.currentframe().f_back.f_globals['__doc__'])
+    try:
+      localCfg.setUsageMessage(inspect.currentframe().f_back.f_globals['__doc__'])
+    except KeyError:
+      pass
     gIsAlreadySetUsageMsg = True
 
   if gIsAlreadyInitialized:
@@ -134,7 +137,10 @@ def addDefaultOptionValue(option, value):
 def setUsageMessage(usageMessage):
   global gIsAlreadySetUsageMsg
   gIsAlreadySetUsageMsg = True
-  localCfg.setUsageMessage(inspect.currentframe().f_back.f_globals['__doc__'])
+  try:
+    localCfg.setUsageMessage(inspect.currentframe().f_back.f_globals['__doc__'])
+  except KeyError:
+    pass
   localCfg.setUsageMessage(usageMessage)
 
 
