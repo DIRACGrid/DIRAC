@@ -153,7 +153,9 @@ class SystemAdministratorHandler(RequestHandler):
   def export_installComponent(self, componentType, system, component, componentModule=''):
     """ Install runit directory for the specified component
     """
-    return gComponentInstaller.installComponent(componentType, system, component, extensionsByPriority(), componentModule)
+    return gComponentInstaller.installComponent(
+        componentType, system, component, extensionsByPriority(), componentModule
+    )
 
   types_setupComponent = [six.string_types, six.string_types, six.string_types]
 
@@ -161,7 +163,9 @@ class SystemAdministratorHandler(RequestHandler):
     """ Setup the specified component for running with the runsvdir daemon
         It implies installComponent
     """
-    result = gComponentInstaller.setupComponent(componentType, system, component, extensionsByPriority(), componentModule)
+    result = gComponentInstaller.setupComponent(
+        componentType, system, component, extensionsByPriority(), componentModule
+    )
     gConfig.forceRefresh()
     return result
 

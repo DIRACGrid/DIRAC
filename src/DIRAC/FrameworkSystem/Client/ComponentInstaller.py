@@ -1075,8 +1075,8 @@ class ComponentInstaller(object):
               resultDict[cType][system].append(component)
 
     return S_OK({
-      resultIndexes[cType]: dict(resultDict[cType])
-      for cType in self.componentTypes
+        resultIndexes[cType]: dict(resultDict[cType])
+        for cType in self.componentTypes
     })
 
   def getSetupComponents(self):
@@ -1107,8 +1107,8 @@ class ComponentInstaller(object):
             resultDict[cType][system].append(compT)
 
     return S_OK({
-      resultIndexes[cType]: dict(resultDict[cType])
-      for cType in self.componentTypes
+        resultIndexes[cType]: dict(resultDict[cType])
+        for cType in self.componentTypes
     })
 
   def getStartupComponentStatus(self, componentTupleList):
@@ -1709,9 +1709,11 @@ exec svlogd .
     if checkModule:
       cModule = componentModule or component
       result = self.checkComponentModule(componentType, system, cModule)
-      if (not result['OK']
+      if (
+          not result['OK']
           and not self.checkComponentSoftware(componentType, system, cModule, extensions)['OK']
-          and componentType != 'executor'):
+          and componentType != 'executor'
+      ):
         error = 'Software for %s %s/%s is not installed' % (componentType, system, component)
         if self.exitOnError:
           gLogger.error(error)
