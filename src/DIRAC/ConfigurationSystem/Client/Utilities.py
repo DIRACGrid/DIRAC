@@ -634,18 +634,20 @@ def getAuthClients(clientID=None, clientName=None):
   for cliName, cliDict in clients.items():
     cliDict['issuer'] = cliDict.get('issuer', getAuthAPI())
     cliDict['authority'] = cliDict.get('authority', getAuthAPI())
-    if not cliDict.get('client_metadata'):
-      if cliName == 'DIRACCLI':
+    if cliName == 'DIRACCLI':
+      if not cliDict.get('client_metadata'):
         cliDict['client_metadata'] = {'response_types': ['device'],
                                       'grant_types': ['urn:ietf:params:oauth:grant-type:device_code']}
-      elif cliName == 'WEBAPPDIRACCLI':
+    elif cliName == 'WEBAPPDIRACCLI':
+      cliDict['token_endpoint_auth_method'] = cliDict.get('token_endpoint_auth_method', 'client_secret_basic')
+      if not cliDict.get('client_metadata'):
         cliDict['client_metadata'] = {'response_types': ['code', 'id_token token', 'token'],
                                       'redirect_uris': [cliDict['redirect_uri']],
-                                      'token_endpoint_auth_method': 'client_secret_basic',
+                                      'token_endpoint_auth_method': cliDict['token_endpoint_auth_method'],
                                       'grant_types': ['device', 'authorization_code', 'refresh_token',
                                                       'urn:ietf:params:oauth:grant-type:token-exchange']}
-      if clientName and clientName == cliName:
-        return S_OK(cliDict)
+    if clientName and clientName == cliName:
+      return S_OK(cliDict)
 
     if clientID and clientID == cliDict['client_id']:
       return S_OK(cliDict)
