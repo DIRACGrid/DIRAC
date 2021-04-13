@@ -63,9 +63,10 @@ class ClientManager(object):
         result = self.__db.getClient(clientID)
       print('getClient result: %s' % result)
       if result['OK']:
+        cliDict = result['Value']
         cliDict['client_id_issued_at'] = cliDict.get('client_id_issued_at', int(time.time()))
         cliDict['client_secret_expires_at'] = cliDict.get('client_secret_expires_at', 0)
-        client = Client(result['Value'])
+        client = Client(cliDict)
         print('getClient client: %s' % str(client))
         self.__clients.add(clientID, 24 * 3600, client)
         print('getClient client added')

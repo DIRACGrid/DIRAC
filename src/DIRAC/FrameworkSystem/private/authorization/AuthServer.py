@@ -82,14 +82,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     _AuthorizationServer.__init__(self, query_client=self.getClient, save_token=self.saveToken)
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
-    self.metadata = {}
-    result = getAuthorisationServerMetadata()
-    if not result['OK']:
-      raise Exception('Cannot prepare authorization server metadata. %s' % result['Message'])
-    # Verify metadata
-    metadata = self.metadata_class(result['Value'])
-    metadata.validate()
-    self.metadata = metadata
+    self.collectMetadata()
 
     # self.config.setdefault('error_uris', self.metadata.get('OAUTH2_ERROR_URIS'))
     # if self.metadata.get('OAUTH2_JWT_ENABLED'):
@@ -102,6 +95,17 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
     self.register_endpoint(ClientRegistrationEndpoint)
     self.register_endpoint(DeviceAuthorizationEndpoint)
+
+  def collectMetadata(self):
+    """ Collect metadata """
+    self.metadata = {}
+    result = getAuthorisationServerMetadata()
+    if not result['OK']:
+      raise Exception('Cannot prepare authorization server metadata. %s' % result['Message'])
+    # Verify metadata
+    metadata = self.metadata_class(result['Value'])
+    metadata.validate()
+    self.metadata = metadata
 
   def saveToken(self, token, request):
     """ Store tokens

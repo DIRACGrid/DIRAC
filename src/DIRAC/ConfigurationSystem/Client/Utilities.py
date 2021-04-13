@@ -620,7 +620,7 @@ def getAuthClients(clientID=None, clientName=None):
       :return: S_OK(dict)/S_ERROR() -- dictionary contain all registred clients in the configuration
   """
   clients = {}
-  path = '/Systems/Framework/%s/API/Auth' % getSystemInstance("Framework")
+  path = '/Systems/Framework/%s/APIs/Auth' % getSystemInstance("Framework")
   result = gConfig.getSections(path)
   if not result['OK']:
     return result
@@ -644,6 +644,9 @@ def getAuthClients(clientID=None, clientName=None):
                                       'token_endpoint_auth_method': 'client_secret_basic',
                                       'grant_types': ['device', 'authorization_code', 'refresh_token',
                                                       'urn:ietf:params:oauth:grant-type:token-exchange']}
+      if clientName and clientName == cliName:
+        return S_OK(cliDict)
+
     if clientID and clientID == cliDict['client_id']:
       return S_OK(cliDict)
   return S_OK({} if clientID else clients)
@@ -654,11 +657,18 @@ def getAuthorisationServerMetadata():
 
       :return: S_OK(dict)/S_ERROR()
   """
-  path = '/Systems/Framework/%s/Services/AuthManager' % getSystemInstance("Framework")
-  result = gConfig.getOptionsDictRecursively('%s/AuthorizationServer' % path)
+  path = '/Systems/Framework/%s/APIs/Auth' % getSystemInstance("Framework")
+  result = gConfig.getSections(path)
   if not result['OK']:
     return result
-  data = result['Value']
+
+  data = {}
+  if 'AuthorizationServer' in result['Value']:
+    result = gConfig.getOptionsDictRecursively('%s/AuthorizationServer' % path)
+    if not result['OK']:
+      return result
+    data = result['Value']
+
   data['issuer'] = data.get('issuer', getAuthAPI())
   if not data['issuer']:
     return S_ERROR('Cannot found the Auth RESTful API base URL in the configuration.')
