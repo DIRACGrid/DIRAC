@@ -268,6 +268,13 @@ class BaseRequestHandler(RequestHandler):
       sLog.error("Invalid method", self.method)
       raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
 
+  def prepare(self):
+    """
+      Tornados prepare method that called before request
+    """
+
+    self._monitorRequest()
+
   def _prepare(self):
     """
       Prepare the request. It reads certificates and check authorizations.
@@ -282,8 +289,6 @@ class BaseRequestHandler(RequestHandler):
     # If the argument is not available, the method exists
     # and an error 400 ``Bad Request`` is returned to the client
     self.method = self._getMethodName()
-
-    self._monitorRequest()
 
     try:
       self.credDict = self._gatherPeerCredentials()
@@ -485,7 +490,6 @@ class BaseRequestHandler(RequestHandler):
         :returns: a dict containing the return of :py:meth:`DIRAC.Core.Security.X509Chain.X509Chain.getCredentials`
                   (not a DIRAC structure !)
     """
-    # TODO: also check expired time for proxy/token
     err = []
     result = None
 
