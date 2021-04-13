@@ -28,27 +28,33 @@ class ProxyHandler(TornadoREST):
   path_proxy = [r'([a-z]*)[\/]?([a-z]*)']
 
   def web_proxy(self, user=None, group=None):
-    """ REST endpoints to user proxy management
+    """ RESTful endpoints to user proxy management to retrieve personal proxy.
 
-        **GET** /proxy?<options> -- retrieve personal proxy
+        GET LOCATION/proxy
 
-          Options:
-            * *voms* -- to get user proxy with VOMS extension(optional)
-            * *lifetime* -- requested proxy live time(optional)
+        Parameters:
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | **name**       | **in** | **description**                           | **example**                           |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | Authorization  | header | Provide access token                      | Bearer jkagfbfd3r4ubf887gqduyqwogasd8 |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | lifetime       | query  | requested proxy live time in seconds      | 3600                                  |
+        |                |        | by default 6 hours (optional)             |                                       |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | voms           | query  | to get user proxy with VOMS extension,    | true                                  |
+        |                |        | by defaul false (optional)                |                                       |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
 
-          Response is a proxy certificate as text
+        Request example::
 
-        **GET** /proxy/<user>/<group>?<options> -- retrieve proxy
-          * *user* -- user name
-          * *group* -- group name
+          GET LOCATION/proxy
+          Authorization: Bearer <access_token>
 
-          Options:
-            * *voms* -- to get user proxy with VOMS extension(optional)
-            * *lifetime* -- requested proxy live time(optional)
+        Response::
 
-          Response is a proxy certificate as text
+          HTTP/1.1 200 OK
 
-        **GET** /proxy/metadata?<options> -- retrieve proxy metadata(NOT IMPLEMENTED)
+          <proxy as string>
     """
     voms = self.get_argument('voms', None)
     try:

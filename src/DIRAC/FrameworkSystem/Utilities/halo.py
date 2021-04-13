@@ -79,6 +79,7 @@ try:
 except ImportError:
   from backports.shutil_get_terminal_size import get_terminal_size
 
+from DIRAC import S_OK, S_ERROR
 
 def qrterminal(url):
   """ Show QR code

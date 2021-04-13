@@ -30,10 +30,10 @@ __RCSID__ = "$Id$"
 
 
 class AuthHandler(TornadoREST):
+  # Authorization access to all methods handled by AuthServer instance
   USE_AUTHZ_GRANTS = ['VISITOR']
   SYSTEM = 'Framework'
   AUTH_PROPS = 'all'
-  # TODO: change it to issuer path
   LOCATION = "/DIRAC/auth"
 
   @classmethod
@@ -65,9 +65,9 @@ class AuthHandler(TornadoREST):
           Content-Type: application/json
 
           {
-            "registration_endpoint": "https://marosvn32.in2p3.fr/DIRAC/auth/register",
-            "userinfo_endpoint": "https://marosvn32.in2p3.fr/DIRAC/auth/userinfo",
-            "jwks_uri": "https://marosvn32.in2p3.fr/DIRAC/auth/jwk",
+            "registration_endpoint": "https://domain.com/DIRAC/auth/register",
+            "userinfo_endpoint": "https://domain.com/DIRAC/auth/userinfo",
+            "jwks_uri": "https://domain.com/DIRAC/auth/jwk",
             "code_challenge_methods_supported": [
               "S256"
             ],
@@ -78,7 +78,7 @@ class AuthHandler(TornadoREST):
               "implicit",
               "refresh_token"
             ],
-            "token_endpoint": "https://marosvn32.in2p3.fr/DIRAC/auth/token",
+            "token_endpoint": "https://domain.com/DIRAC/auth/token",
             "response_types_supported": [
               "code",
               "device",
@@ -86,8 +86,8 @@ class AuthHandler(TornadoREST):
               "id_token",
               "token"
             ],
-            "authorization_endpoint": "https://marosvn32.in2p3.fr/DIRAC/auth/authorization",
-            "issuer": "https://marosvn32.in2p3.fr/DIRAC/auth"
+            "authorization_endpoint": "https://domain.com/DIRAC/auth/authorization",
+            "issuer": "https://domain.com/DIRAC/auth"
           }
     """
     if self.request.method == "GET":
@@ -232,7 +232,7 @@ class AuthHandler(TornadoREST):
         |                |        | add a group you must add "g:" before the  |                                       |
         |                |        | group name                                |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
-        | provider       | query  | list of returned responses (optional)     | ["token","id_token token","code"]     |
+        | provider       | query  | identity provider to autorize (optional)  | CheckIn                               |
         |                |        | It's possible to add it interactively.    |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
 
@@ -314,8 +314,23 @@ class AuthHandler(TornadoREST):
   def web_authorization(self, provider=None):
     """ Authorization endpoint
 
-        GET: LOCATION/authorization/<DIRACs IdP>?client_id=.. &response_type=(code|device)&scope=..      #group=..
+        GET: LOCATION/authorization/<provider>
 
+        Parameters:
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | **name**       | **in** | **description**                           | **example**                           |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | response_type  | query  | informs of the desired grant type         | code                                  |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | client_id      | query  | The client ID                             | 3f6eNw0E6JGq1VuzRkpWUL9XTxhL86efZw    |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | scope          | query  | list of scoupes separated by a space, to  | g:dirac_user                          |
+        |                |        | add a group you must add "g:" before the  |                                       |
+        |                |        | group name                                |                                       |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
+        | provider       | query  | identity provider to autorize (optional)  | CheckIn                               |
+        |                |        | It's possible to add it interactively.    |                                       |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
         General options:
           provider -- identity provider to autorize
 
@@ -395,7 +410,7 @@ class AuthHandler(TornadoREST):
         Read more in `oauth.com <https://www.oauth.com/oauth2-servers/redirect-uris/>`_.
         Specified by `RFC6749 <https://tools.ietf.org/html/rfc6749#section-3.1.2>`_.
 
-        GET LOCATION/redirect?
+        GET LOCATION/redirect
 
         Parameters::
 
@@ -504,7 +519,7 @@ class AuthHandler(TornadoREST):
     return self.__response(**self.server.create_authorization_response(request, username))
 
   def web_token(self):
-    """ The token endpoint
+    """ The token endpoint, the description of the parameters will differ depending on the selected grant_type
 
         POST LOCATION/token
 
