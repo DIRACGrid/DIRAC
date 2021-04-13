@@ -30,6 +30,7 @@ __RCSID__ = "$Id$"
 
 
 class AuthHandler(TornadoREST):
+  USE_AUTHZ_GRANTS = ['VISITOR']
   SYSTEM = 'Framework'
   AUTH_PROPS = 'all'
   # TODO: change it to issuer path
