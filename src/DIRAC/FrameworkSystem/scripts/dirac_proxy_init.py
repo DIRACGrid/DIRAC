@@ -324,89 +324,31 @@ class ProxyInit(object):
 
         :return: S_OK()/S_ERROR()
     """
-    import json
     import urllib3
-    import requests
     import threading
     import webbrowser
+    from authlib.integrations.requests_client import OAuth2Session
 
-    from DIRAC.FrameworkSystem.Utilities.halo import Halo
-    from DIRAC.Core.Utilities.JEncode import decode, encode
-    from authlib.integrations.requests_client import OAuth2Session, OAuthError
+    from DIRAC.Core.Utilities.JEncode import encode
+    from DIRAC.ConfigurationSystem.Client.Utilities import getProxyAPI, getDIRACClientID
+    from DIRAC.FrameworkSystem.Utilities.halo import Halo, qrterminal
     from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import submitUserAuthorizationFlow
     from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import waitFinalStatusOfUserAuthorizationFlow
 
-    authAPI = None
-    proxyAPI = None
     spinner = Halo()
+    proxyAPI = getProxyAPI()
 
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    def qrterminal(url):
-      """ Show QR code
-
-          :param str url: URL to convert to QRCode
-
-          :return: S_OK(str)/S_ERROR()
-      """
-      try:
-        import pyqrcode  # pylint: disable=import-error
-      except Exception as ex:
-        return S_ERROR('pyqrcode library is not installed.')
-      __qr = '\n'
-      qrA = pyqrcode.create(url).code
-      qrA.insert(0, [0 for i in range(0, len(qrA[0]))])
-      qrA.append([0 for i in range(0, len(qrA[0]))])
-      if not (len(qrA) % 2) == 0:
-        qrA.append([0 for i in range(0, len(qrA[0]))])
-      for i in range(0, len(qrA)):
-        if not (i % 2) == 0:
-          continue
-        __qr += '\033[0;30;47m '
-        for j in range(0, len(qrA[0])):
-          p = str(qrA[i][j]) + str(qrA[i + 1][j])
-          if p == '11':  # black bg
-            __qr += '\033[0;30;40m \033[0;30;47m'
-          if p == '10':  # upblock
-            __qr += u'\u2580'
-          if p == '01':  # downblock
-            __qr += u'\u2584'
-          if p == '00':  # white bg
-            __qr += ' '
-        __qr += ' \033[0m\n'
-      return S_OK(__qr)
-
+    # Submit Device authorisation flow
     with Halo('Authentification from %s.' % self.__piParams.provider) as spin:
-      confUrl = gConfig.getValue("/LocalInstallation/ConfigurationServerAPI")
-      if not confUrl:
-        sys.exit('Could not get configuration server API URL.')
-      setup = gConfig.getValue("/LocalInstallation/Setup")
-      if not setup:
-        sys.exit('Could not get setup name.')
-
-      # Get REST endpoints from ConfigurationService
-      try:
-        r = requests.get('%s/option?path=/Systems/Framework/Production/URLs/ProxyAPI' % confUrl, verify=False)
-        r.raise_for_status()
-        proxyAPI = r.text.strip('/')  # decode(r.text)[0]
-      except requests.exceptions.Timeout:
-        sys.exit('Time out')
-      except requests.exceptions.RequestException as e:
-        sys.exit(str(e))
-      except Exception as e:
-        sys.exit('Cannot read response: %s' % e)
-
-      # Get token
       result = submitUserAuthorizationFlow(idP=self.__piParams.provider, group=self.__piParams.diracGroup)
       if not result['OK']:
         sys.exit(result['Message'])
       response = result['Value']
-
     userCode = response['user_code']
-    deviceCode = response['device_code']
     verURL = response['verification_uri']
     verURLComplete = response.get('verification_uri_complete')
-    clientID = response['client_id']
 
     # Notify user to go to authorization endpoint
     showURL = 'Use next link to continue, your user code is "%s"\n%s' % (userCode, verURL)
@@ -437,18 +379,16 @@ class ProxyInit(object):
 
       spin.color = 'green'
       spin.text = 'Download proxy..'
-      # 's:%s/g:%s' % (setup, self.__piParams.diracGroup)
-      url = '%s/proxy?lifetime=%s' % (proxyAPI, self.__piParams.proxyLifeTime)
+      url = '%s?lifetime=%s' % (proxyAPI, self.__piParams.proxyLifeTime)
       addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption(self.__piParams.diracGroup, "AutoAddVOMS", False)
       if addVOMS:
         url += '&voms=%s' % addVOMS
-      with OAuth2Session(clientID, token=token) as sess:
+      with OAuth2Session(getDIRACClientID(), token=token) as sess:
         r = sess.get(url, verify=False)
         r.raise_for_status()
         proxy = r.text
-      # proxy = decode(r.text)[0]
       if not proxy:
-        sys.exit("Result is empty.")
+        sys.exit("Something went wrong, the proxy is empty.")
 
       if not self.__piParams.proxyLoc:
         self.__piParams.proxyLoc = '/tmp/x509up_u%s' % os.getuid()

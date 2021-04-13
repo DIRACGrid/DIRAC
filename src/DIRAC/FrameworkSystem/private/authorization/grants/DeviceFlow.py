@@ -11,29 +11,21 @@ from authlib.oauth2.rfc6749.errors import InvalidClientError, UnauthorizedClient
 from authlib.oauth2.rfc8628 import (
     DeviceAuthorizationEndpoint as _DeviceAuthorizationEndpoint,
     DeviceCodeGrant as _DeviceCodeGrant,
-    DeviceCredentialDict
+    DeviceCredentialDict,
+    DEVICE_CODE_GRANT_TYPE
 )
 
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthAPI, getDIRACClientID
 
 log = gLogger.getSubLogger(__name__)
 
 
-def submitUserAuthorizationFlow(client=None, idP=None, group=None):
+def submitUserAuthorizationFlow(idP=None, group=None):
   """ Submit authorization flow
   """
-  # TODO: Fix hardcore url
-  issuer = 'https://marosvn32.in2p3.fr/DIRAC/auth'
-
   try:
-    # TODO: ask public client in REST API of the configuration
-    if not client:
-      # Prepare client
-      r = requests.get('%s/clientsinfo' % issuer, verify=False)
-      r.raise_for_status()
-      client = r.json().get("CLI")
-
-    url = '%s/device?client_id=%s' % (issuer, client['client_id'])
+    url = '%s/device?client_id=%s' % (getAuthAPI(), getDIRACClientID())
     if group:
       url += '&scope=g:%s' % group
     if idP:
@@ -48,7 +40,6 @@ def submitUserAuthorizationFlow(client=None, idP=None, group=None):
       if not authFlowData.get(k):
         return S_ERROR('Mandatory %s key is absent in authentication response.' % k)
 
-    authFlowData['client_id'] = client['client_id']
     return S_OK(authFlowData)
   except requests.exceptions.Timeout:
     return S_ERROR('Authentication server is not answer, timeout.')
@@ -58,23 +49,21 @@ def submitUserAuthorizationFlow(client=None, idP=None, group=None):
     return S_ERROR('Cannot read authentication response: %s' % repr(ex))
 
 
-def waitFinalStatusOfUserAuthorizationFlow(authFlowData, timeout=300):
+def waitFinalStatusOfUserAuthorizationFlow(deviceCode, interval=5, timeout=300):
   """ Submit waiting loop process, that will monitor current authorization session status
 
-      :param dict authFlowData: authentication flow parameters
+      :param str deviceCode: received device code
+      :param int interval: waiting interval
       :param int timeout: max time of waiting
 
       :return: S_OK(dict)/S_ERROR() - dictionary contain access/refresh token and some metadata
   """
   __start = time.time()
 
-  # TODO: Fix hardcore url
-  issuer = 'https://marosvn32.in2p3.fr/DIRAC/auth'
-
-  url = '%s/token?client_id=%s' % (issuer, authFlowData['client_id'])
-  url += '&grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=%s' % authFlowData['device_code']
+  url = '%s/token?client_id=%s' % (getAuthAPI(), getDIRACClientID())
+  url += '&grant_type=%s&device_code=%s' % (DEVICE_CODE_GRANT_TYPE, deviceCode)
   while True:
-    time.sleep(authFlowData.get('interval', 5))
+    time.sleep(int(interval))
     if time.time() - __start > timeout:
       return S_ERROR('Time out.')
     r = requests.post(url, verify=False)
@@ -89,6 +78,8 @@ def waitFinalStatusOfUserAuthorizationFlow(authFlowData, timeout=300):
 
 
 class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
+  URL = '%s/device' % getAuthAPI()
+
   def create_endpoint_response(self, req):
     c, data, h = super(DeviceAuthorizationEndpoint, self).create_endpoint_response(req)
     req.query += '&response_type=device&state=%s' % data['device_code']
@@ -96,8 +87,7 @@ class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
     return c, data, h
 
   def get_verification_uri(self):
-    # TODO: Fix hardcore url
-    return 'https://marosvn32.in2p3.fr/DIRAC/auth/device'
+    return self.URL
 
   def save_device_credential(self, client_id, scope, data):
     data['verification_uri_complete'] = '%s/%s' % (data['verification_uri'], data['user_code'])
@@ -142,9 +132,8 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     if not data:
       return None
     data['expires_at'] = data['expires_in'] + int(time.time())
-    data['interval'] = 5
-    # TODO: Fix hardcore url
-    data['verification_uri'] = 'https://marosvn32.in2p3.fr/DIRAC/auth/device'
+    data['interval'] = DeviceAuthorizationEndpoint.INTERVAL
+    data['verification_uri'] = DeviceAuthorizationEndpoint.URL
     return DeviceCredentialDict(data)
 
   def query_user_grant(self, user_code):

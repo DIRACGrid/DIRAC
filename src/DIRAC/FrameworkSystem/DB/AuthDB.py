@@ -184,15 +184,14 @@ class AuthDB(SQLAlchemyDB):
         :return: S_OK(dict)/S_ERROR()
     """
     # To begin with, let's see if this client is described in the configuration
-    result = getAuthClients()
+    result = getAuthClients(clientID)
     if not result['OK']:
       return result
-    clientsDict = result['Value']
-    for cliDict in list(clientsDict.values()):
-      if clientID == cliDict['client_id']:
-        cliDict['client_id_issued_at'] = cliDict.get('client_id_issued_at', int(time()))
-        cliDict['client_secret_expires_at'] = cliDict.get('client_secret_expires_at', 0)
-        return S_OK(cliDict)
+    if result['Value']:
+      cliDict = result['Value']
+      cliDict['client_id_issued_at'] = cliDict.get('client_id_issued_at', int(time()))
+      cliDict['client_secret_expires_at'] = cliDict.get('client_secret_expires_at', 0)
+      return S_OK(cliDict)
 
     # If not let's search it in the database
     session = self.session()
@@ -208,24 +207,6 @@ class AuthDB(SQLAlchemyDB):
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK(data))  # client.client_info.update({'redirect_uri': redirect_uri})))
-
-  # def getClientByID(self, clientID, redirect_uri=None, **kwargs):
-  #   session = self.session()
-  #   try:
-  #     client = session.query(Client).filter(Client.client_id==clientID).one()
-  #     if not redirect_uri:
-  #       redirect_uri = client.get_default_redirect_uri()
-  #     elif not client.check_redirect_uri(redirect_uri):
-  #       self.__result(session, S_ERROR("redirect_uri: '%s' is wrong for %s client." % (redirect_uri, clientID)))
-  #     resDict = client.client_info
-  #     resDict['redirect_uri'] = redirect_uri
-  #   except MultipleResultsFound:
-  #     return self.__result(session, S_ERROR("%s is not unique ID." % clientID))
-  #   except NoResultFound:
-  #     return self.__result(session, S_ERROR("%s client not registred." % clientID))
-  #   except Exception as e:
-  #     return self.__result(session, S_ERROR(str(e)))
-  #   return self.__result(session, S_OK(resDict))#client.client_info.update({'redirect_uri': redirect_uri})))
 
   def storeToken(self, metadata):
     """ Save token

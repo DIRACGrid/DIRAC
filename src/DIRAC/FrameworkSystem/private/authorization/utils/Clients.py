@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import json
+import time
 
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
 from authlib.oauth2.rfc7591 import ClientRegistrationEndpoint as _ClientRegistrationEndpoint
@@ -11,6 +12,7 @@ from authlib.common.security import generate_token
 
 from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthClients
 
 __RCSID__ = "$Id$"
 
@@ -56,9 +58,13 @@ class ClientManager(object):
     client = self.__clients.get(clientID)
     print(client)
     if not client:
-      result = self.__db.getClient(clientID)
+      result = getAuthClients(clientID)
+      if not result['OK'] or not result['Value']:
+        result = self.__db.getClient(clientID)
       print('getClient result: %s' % result)
       if result['OK']:
+        cliDict['client_id_issued_at'] = cliDict.get('client_id_issued_at', int(time.time()))
+        cliDict['client_secret_expires_at'] = cliDict.get('client_secret_expires_at', 0)
         client = Client(result['Value'])
         print('getClient client: %s' % str(client))
         self.__clients.add(clientID, 24 * 3600, client)

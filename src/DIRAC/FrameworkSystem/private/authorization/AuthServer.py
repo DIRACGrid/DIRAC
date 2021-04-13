@@ -13,8 +13,6 @@ from tornado.httputil import HTTPHeaders
 from authlib.deprecate import deprecate
 from authlib.jose import jwt
 from authlib.oauth2 import (
-    OAuth2Error,
-    # OAuth2Request,
     HttpRequest,
     AuthorizationServer as _AuthorizationServer,
 )
@@ -34,7 +32,6 @@ from DIRAC.FrameworkSystem.private.authorization.grants.ImplicitFlow import (
     NotebookImplicitGrant
 )
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import (
-    Client,
     ClientRegistrationEndpoint,
     ClientManager
 )
@@ -43,19 +40,20 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Requests import (
     OAuth2Request,
     createOAuth2Request
 )
-from authlib.oidc.core import UserInfo
+# from authlib.oidc.core import UserInfo
 
 from authlib.oauth2.rfc6750 import BearerToken
 from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 from authlib.common.security import generate_token
-from authlib.common.encoding import to_unicode, json_dumps, json_b64encode, urlsafe_b64decode, json_loads
+from authlib.common.encoding import to_unicode, json_dumps
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorisationServerMetadata
 # from DIRAC.Core.Web.SessionData import SessionStorage
 
 import logging
@@ -69,7 +67,7 @@ log = gLogger.getSubLogger(__name__)
 class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
   """ Implementation of :class:`authlib.oauth2.rfc6749.AuthorizationServer`.
 
-      Initialize it ::
+      Initialize::
 
         server = AuthServer()
   """
@@ -85,28 +83,18 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
     self.metadata = {}
-    self.pubClients = {}
-    # TODO: move to conf utility
-    result = gConfig.getOptionsDictRecursively('/Systems/Framework/Production/Services/AuthManager/AuthorizationServer')
-    if result['OK']:
-      data = {}
-      # Search values with type list
-      for key, v in result['Value'].items():
-        data[key] = [e for e in v.replace(', ', ',').split(',') if e] if ',' in v else v
-      # Verify metadata
-      metadata = self.metadata_class(data)
-      metadata.validate()
-      self.metadata = metadata
+    result = getAuthorisationServerMetadata()
+    if not result['OK']:
+      raise Exception('Cannot prepare authorization server metadata. %s' % result['Message'])
+    # Verify metadata
+    metadata = self.metadata_class(result['Value'])
+    metadata.validate()
+    self.metadata = metadata
 
-    clientsData = '/Systems/Framework/Production/Services/AuthManager/AuthorizationServer/Clients'
-    result = gConfig.getOptionsDictRecursively(clientsData)
-    if result['OK']:
-      self.pubClients = result['Value']
-
-    self.config.setdefault('error_uris', self.metadata.get('OAUTH2_ERROR_URIS'))
-    if self.metadata.get('OAUTH2_JWT_ENABLED'):
-      deprecate('Define "get_jwt_config" in OpenID Connect grants', '1.0')
-      self.init_jwt_config(self.metadata)
+    # self.config.setdefault('error_uris', self.metadata.get('OAUTH2_ERROR_URIS'))
+    # if self.metadata.get('OAUTH2_JWT_ENABLED'):
+    #   deprecate('Define "get_jwt_config" in OpenID Connect grants', '1.0')
+    #   self.init_jwt_config(self.metadata)
 
     self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
     self.register_grant(TokenExchangeGrant)
@@ -196,26 +184,8 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
                'scope': scope,
                'setup': getSetup()}
     # #
-    # Return proxy with token in one response
+    # Return proxy with token in one response?
     # #
-    # if 'generate_access_proxy' in scope:
-
-    #   result = ProxyProviderFactory().getProxyProvider('DIRACCA', proxyManager=self)
-    #   if not result['OK']:
-    #     return result
-    #   providerObj = result['Value']
-
-    #   # Generate the proxy and store in the DB
-    #   result = providerObj.getProxy(userDN)
-    #   if not result['OK']:
-    #     return result
-    #   chain = result['Value']
-
-    #   # Add group
-    #   result = chain.generateProxyToString(requiredLifeTime, diracGroup=userGroup, rfc=True)
-    #   if not result['OK']:
-    #     return S_ERROR("Cannot generate proxy: %s" % result['Message'])
-    #   return S_OK((result['Value'], requiredLifeTime))
 
     # Read private key of DIRAC auth service
     with open('/opt/dirac/etc/grid-security/jwtRS256.key', 'r') as f:
@@ -248,34 +218,34 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     # Need to use enum==0.3.1 for python 2.7
     return jwt.encode(header, payload, key)
 
-  def init_jwt_config(self, config):
-    """ Initialize JWT related configuration. """
-    jwt_iss = config.get('OAUTH2_JWT_ISS')
-    if not jwt_iss:
-      raise RuntimeError('Missing "OAUTH2_JWT_ISS" configuration.')
+  # def init_jwt_config(self, config):
+  #   """ Initialize JWT related configuration. """
+  #   jwt_iss = config.get('OAUTH2_JWT_ISS')
+  #   if not jwt_iss:
+  #     raise RuntimeError('Missing "OAUTH2_JWT_ISS" configuration.')
 
-    jwt_key_path = config.get('OAUTH2_JWT_KEY_PATH')
-    if jwt_key_path:
-      with open(jwt_key_path, 'r') as f:
-        if jwt_key_path.endswith('.json'):
-          jwt_key = json.load(f)
-        else:
-          jwt_key = to_unicode(f.read())
-    else:
-      jwt_key = config.get('OAUTH2_JWT_KEY')
+  #   jwt_key_path = config.get('OAUTH2_JWT_KEY_PATH')
+  #   if jwt_key_path:
+  #     with open(jwt_key_path, 'r') as f:
+  #       if jwt_key_path.endswith('.json'):
+  #         jwt_key = json.load(f)
+  #       else:
+  #         jwt_key = to_unicode(f.read())
+  #   else:
+  #     jwt_key = config.get('OAUTH2_JWT_KEY')
 
-    if not jwt_key:
-      raise RuntimeError('Missing "OAUTH2_JWT_KEY" configuration.')
+  #   if not jwt_key:
+  #     raise RuntimeError('Missing "OAUTH2_JWT_KEY" configuration.')
 
-    jwt_alg = config.get('OAUTH2_JWT_ALG')
-    if not jwt_alg:
-      raise RuntimeError('Missing "OAUTH2_JWT_ALG" configuration.')
+  #   jwt_alg = config.get('OAUTH2_JWT_ALG')
+  #   if not jwt_alg:
+  #     raise RuntimeError('Missing "OAUTH2_JWT_ALG" configuration.')
 
-    jwt_exp = config.get('OAUTH2_JWT_EXP', 3600)
-    self.config.setdefault('jwt_iss', jwt_iss)
-    self.config.setdefault('jwt_key', jwt_key)
-    self.config.setdefault('jwt_alg', jwt_alg)
-    self.config.setdefault('jwt_exp', jwt_exp)
+  #   jwt_exp = config.get('OAUTH2_JWT_EXP', 3600)
+  #   self.config.setdefault('jwt_iss', jwt_iss)
+  #   self.config.setdefault('jwt_key', jwt_key)
+  #   self.config.setdefault('jwt_alg', jwt_alg)
+  #   self.config.setdefault('jwt_exp', jwt_exp)
 
   def get_error_uris(self, request):
     error_uris = self.config.get('error_uris')

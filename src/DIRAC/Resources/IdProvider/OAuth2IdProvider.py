@@ -48,12 +48,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                update_token=None, **parameters):
     """ OIDCClient constructor
     """
-    result = getAuthClients()
-    if not result['OK']:
-      raise Exception('Cannot get clients dict from configuration.')
-    clientsData = result['Value']
-    if 'redirect_uri' not in parameters:
-      parameters['redirect_uri'] = clientsData.get('redirect_uri')
+    # result = getAuthClients()
+    # if not result['OK']:
+    #   raise Exception('Cannot get clients dict from configuration.')
+    # clientsData = result['Value']
+    # if 'redirect_uri' not in parameters:
+    #   parameters['redirect_uri'] = clientsData.get('redirect_uri')
     if 'ProviderName' not in parameters:
       parameters['ProviderName'] = name
     IdProvider.__init__(self, **parameters)

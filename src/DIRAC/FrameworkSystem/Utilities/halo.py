@@ -80,6 +80,41 @@ except ImportError:
   from backports.shutil_get_terminal_size import get_terminal_size
 
 
+def qrterminal(url):
+  """ Show QR code
+
+      :param str url: URL to convert to QRCode
+
+      :return: S_OK(str)/S_ERROR()
+  """
+  try:
+    import pyqrcode  # pylint: disable=import-error
+  except Exception as ex:
+    return S_ERROR('pyqrcode library is not installed.')
+  __qr = '\n'
+  qrA = pyqrcode.create(url).code
+  qrA.insert(0, [0 for i in range(0, len(qrA[0]))])
+  qrA.append([0 for i in range(0, len(qrA[0]))])
+  if not (len(qrA) % 2) == 0:
+    qrA.append([0 for i in range(0, len(qrA[0]))])
+  for i in range(0, len(qrA)):
+    if not (i % 2) == 0:
+      continue
+    __qr += '\033[0;30;47m '
+    for j in range(0, len(qrA[0])):
+      p = str(qrA[i][j]) + str(qrA[i + 1][j])
+      if p == '11':  # black bg
+        __qr += '\033[0;30;40m \033[0;30;47m'
+      if p == '10':  # upblock
+        __qr += u'\u2580'
+      if p == '01':  # downblock
+        __qr += u'\u2584'
+      if p == '00':  # white bg
+        __qr += ' '
+    __qr += ' \033[0m\n'
+  return S_OK(__qr)
+
+
 class StreamWrapper(object):
   """ Wraps a stream (such as stdout), acting as a transparent proxy for all
       attribute access apart from method 'write()', which is delegated to our

@@ -92,58 +92,6 @@ class AuthHandler(TornadoREST):
     if self.request.method == "GET":
       return dict(self.server.metadata)
 
-  def web_clientsinfo(self):
-    """ The ClientsInfo endpoint can be used to retrieve identity information about a user.
-
-        Request example::
-
-          GET LOCATION/clientsinfo
-
-        Response::
-
-          HTTP/1.1 200 OK
-          Content-Type: application/json
-
-          {
-            "CLI": {
-              "issuer": "https://marosvn32.in2p3.fr/DIRAC/auth",
-              "authority": "https://marosvn32.in2p3.fr/DIRAC/auth",
-              "client_id": "3f1DAj8z6eNw0E6JG3q1VuzRkpWUL9XTxhL86efZwyV",
-              "redirect_uri": "https://dirac.egi.eu",
-              "response_type": "token",
-              "client_metadata": {
-                "grant_types": [
-                  "urn:ietf:params:oauth:grant-type:device_code"
-                ]
-              }
-            },
-            "WebApp": {
-              "issuer": "https://marosvn32.in2p3.fr/DIRAC/auth",
-              "authority": "https://marosvn32.in2p3.fr/DIRAC/auth",
-              "client_id": "1hlUgttap3P93oTSXUwpIT50TVHxCflN3O98uHP217Y",
-              "client_secret": "6c91a15c490bd1039f66cf9c0c5567825f41d7fc0db82de02",
-              "client_metadata": {
-                "grant_types": [
-                  "authorization_code",
-                  "refresh_token"
-                ],
-                "redirect_uris": [
-                  "https://marosvn32.in2p3.fr/DIRAC",
-                  "https://marosvn32.in2p3.fr/DIRAC/loginComplete"
-                ],
-                "response_types": [
-                  "token",
-                  "id_token token",
-                  "code"
-                ],
-                "token_endpoint_auth_method": "client_secret_basic"
-              }
-            }
-          }
-    """
-    if self.request.method == "GET":
-      return dict(self.server.pubClients)
-
   def web_jwk(self):
     """ JWKs endpoint
 
