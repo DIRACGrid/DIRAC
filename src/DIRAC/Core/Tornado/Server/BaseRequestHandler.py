@@ -273,6 +273,13 @@ class BaseRequestHandler(RequestHandler):
       Tornados prepare method that called before request
     """
 
+    # "method" argument of the POST call.
+    # This resolves into the ``export_<method>`` method
+    # on the handler side
+    # If the argument is not available, the method exists
+    # and an error 400 ``Bad Request`` is returned to the client
+    self.method = self._getMethodName()
+
     self._monitorRequest()
 
   def _prepare(self):
@@ -282,13 +289,6 @@ class BaseRequestHandler(RequestHandler):
       regardless of the HTTP method used
 
     """
-
-    # "method" argument of the POST call.
-    # This resolves into the ``export_<method>`` method
-    # on the handler side
-    # If the argument is not available, the method exists
-    # and an error 400 ``Bad Request`` is returned to the client
-    self.method = self._getMethodName()
 
     try:
       self.credDict = self._gatherPeerCredentials()
@@ -502,7 +502,7 @@ class BaseRequestHandler(RequestHandler):
       grant = a.upper()
       try:
         result = eval('self._authz%s' % grant)()
-      except KeyError:
+      except AttributeError:
         raise Exception('%s authentication type is not supported.' % grant)
 
       if result['OK']:
