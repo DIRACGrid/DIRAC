@@ -268,7 +268,7 @@ class BaseRequestHandler(RequestHandler):
       sLog.error("Invalid method", self.method)
       raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
 
-  def prepare(self):
+  def _prepare(self):
     """
       Prepare the request. It reads certificates and check authorizations.
       We make the assumption that there is always going to be a ``method`` argument
@@ -387,6 +387,7 @@ class BaseRequestHandler(RequestHandler):
         This method is called in an executor, and so cannot use methods like self.write
         See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
     """
+    self._prepare()
 
     sLog.notice(
         "Incoming request %s /%s: %s" %
@@ -494,21 +495,22 @@ class BaseRequestHandler(RequestHandler):
       raise Exception('USE_AUTHZ_GRANTS is not defined.')
 
     for a in grants:
+      grant = a.upper()
       try:
-        result = eval('self._authz%s' % a)()
+        result = eval('self._authz%s' % grant)()
       except KeyError:
-        raise Exception('%s authentication type is not supported.' % a)
+        raise Exception('%s authentication type is not supported.' % grant)
 
       if result['OK']:
         break
-      err.append('%s authentication: %s' % (a.upper(), result['Message']))
+      err.append('%s authentication: %s' % (grant, result['Message']))
 
     # Report on failed authentication attempts
     if err:
       if result['OK']:
         for e in err:
           sLog.debug(e)
-        sLog.debug('%s authentication success.' % a)
+        sLog.debug('%s authentication success.' % grant)
       else:
         raise Exception('; '.join(err))
 
