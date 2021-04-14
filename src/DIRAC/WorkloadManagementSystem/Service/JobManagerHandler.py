@@ -402,11 +402,12 @@ class JobManagerHandler(RequestHandler):
       if invalidJobList:
         self.log.debug("Invalid jobs: %s" % ','.join(str(ij) for ij in invalidJobList))
         res['InvalidJobIDs'] = invalidJobList
-        res['Message'] = errMsg + ": invalid jobs"
+        errMsg += ": invalid jobs"
       if nonauthJobList:
         self.log.debug("nonauthJobList jobs: %s" % ','.join(str(nj) for nj in nonauthJobList))
         res['NonauthorizedJobIDs'] = nonauthJobList
-        res['Message'] = res['Message'] + ": non-authorized jobs"
+        errMsg += ": non-authorized jobs"
+      res['Message'] = errMsg
       return res
 
     return S_OK(validJobList)

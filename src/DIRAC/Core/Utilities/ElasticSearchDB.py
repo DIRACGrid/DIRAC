@@ -392,8 +392,10 @@ class ElasticSearchDB(object):
     :param str indexPrefix: index name.
     :param list data: contains a list of dictionary
     :param dict mapping: the mapping used by elasticsearch
-    :param str period: We can specify which kind of indexes will be created.
-                       Currently only daily and monthly indexes are supported.
+    :param str period: Accepts 'day' and 'month'. We can specify which kind of indexes will be created.
+    :param bool withTimeStamp: add timestamp to data, if not there already.
+
+    :returns: S_OK/S_ERROR
     """
     sLog.verbose("Bulk indexing", "%d records will be inserted" % len(data))
     if mapping is None:
