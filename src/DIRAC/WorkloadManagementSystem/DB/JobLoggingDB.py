@@ -121,18 +121,16 @@ class JobLoggingDB(DB):
     """ Delete logging records for given jobs
     """
 
-    # Make sure that we have a list of jobs
+    # Make sure that we have a list of strings of jobIDs
     if isinstance(jobID, six.integer_types):
       jobList = [str(jobID)]
     elif isinstance(jobID, six.string_types):
-      jobList = [jobID]
+      jobList = jobID.replace(' ', '').split(',')
     else:
-      jobList = list(jobID)
+      jobList = list(str(j) for j in jobID)
 
-    jobString = ','.join(jobList)
-    req = "DELETE FROM LoggingInfo WHERE JobID IN (%s)" % jobString
-    result = self._update(req)
-    return result
+    req = "DELETE FROM LoggingInfo WHERE JobID IN (%s)" % ','.join(jobList)
+    return self._update(req)
 
 #############################################################################
   def getWMSTimeStamps(self, jobID):

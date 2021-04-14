@@ -14,7 +14,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
 
@@ -28,7 +27,6 @@ class WMSAdministratorHandler(RequestHandler):
     """ WMS AdministratorService initialization
     """
     cls.jobDB = JobDB()
-    cls.taskQueueDB = TaskQueueDB()
 
     cls.elasticJobParametersDB = None
     useESForJobParametersFlag = Operations().getValue(

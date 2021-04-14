@@ -7,7 +7,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getGroupsForUser, \
     getPropertiesForGroup, getUsersInGroup
@@ -44,6 +44,9 @@ PROPERTY_RIGHTS[Properties.JOB_ADMINISTRATOR] = ADMIN_RIGHTS
 PROPERTY_RIGHTS[Properties.NORMAL_USER] = [RIGHT_SUBMIT]
 PROPERTY_RIGHTS[Properties.GENERIC_PILOT] = [RIGHT_RESCHEDULE]
 PROPERTY_RIGHTS[Properties.JOB_MONITOR] = [RIGHT_GET_INFO]
+
+
+sLog = gLogger.getSubLogger(__name__)
 
 
 class JobPolicy(object):
@@ -141,6 +144,9 @@ class JobPolicy(object):
 
     result = self.jobDB.getAttributesForJobList(jobList, ['Owner', 'OwnerGroup'])
     if not result['OK']:
+      sLog.error(
+          "evaluateJobRights: failure while getAttributesForJobList",
+          "for %s : %s" % (','.join(str(j) for j in jobList), result['Message']))
       return validJobList, invalidJobList, nonauthJobList, ownerJobList
     jobDict = result['Value']
     for jID in jobList:
@@ -159,6 +165,9 @@ class JobPolicy(object):
           rightDict = result['Value']
           userRights[(owner, group)] = rightDict
         else:
+          sLog.error(
+              "evaluateJobRights: failure while getUserRightsForJob",
+              "for %s : %s" % (str(jobID), result['Message']))
           invalidJobList.append(jobID)
 
       if rightDict[right]:

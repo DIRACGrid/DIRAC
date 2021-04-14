@@ -1260,10 +1260,8 @@ class JobDB(DB):
 
 #############################################################################
   def removeJobFromDB(self, jobIDs):
-    """Remove job from DB
-
-       Remove job from the Job DB and clean up all the job related data
-       in various tables
+    """
+    Remove jobs from the Job DB and clean up all the job related data in various tables
     """
 
     # ret = self._escapeString(jobID)
@@ -1277,7 +1275,6 @@ class JobDB(DB):
       jobIDList = jobIDs
 
     failedTablesList = []
-    jobIDString = ','.join([str(j) for j in jobIDList])
     for table in ['InputData',
                   'JobParameters',
                   'AtticJobParameters',
@@ -1287,7 +1284,7 @@ class JobDB(DB):
                   'Jobs',
                   'JobJDLs']:
 
-      cmd = 'DELETE FROM %s WHERE JobID in (%s)' % (table, jobIDString)
+      cmd = 'DELETE FROM %s WHERE JobID in (%s)' % (table, ','.join(str(j) for j in jobIDList))
       result = self._update(cmd)
       if not result['OK']:
         failedTablesList.append(table)

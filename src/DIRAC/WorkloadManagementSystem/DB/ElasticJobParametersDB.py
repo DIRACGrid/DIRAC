@@ -42,7 +42,6 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 
-
 name = 'ElasticJobParametersDB'
 
 mapping = {
@@ -153,6 +152,30 @@ class ElasticJobParametersDB(ElasticDB):
     self.log.debug('Inserting data in %s:%s' % (self.indexName, data))
 
     result = self.index(self.indexName, body=data, docID=str(jobID) + key)
+    if not result['OK']:
+      self.log.error("ERROR: Couldn't insert data", result['Message'])
+    return result
+
+  def setJobParameters(self, jobID, parameters):
+    """
+    Inserts data into ElasticJobParametersDB index using bulk indexing
+
+    :param self: self reference
+    :param int jobID: Job ID
+    :param list parameters: list of tuples (name, value) pairs
+
+    :returns: S_OK/S_ERROR as result of indexing
+    """
+    self.log.debug(
+        'Inserting parameters',
+        "in %s: for job %s : %s" % (self.indexName, jobID, parameters))
+
+    parametersListDict = [{"JobID": jobID,
+                           "Name": parName,
+                           "Value": parValue,
+                           "_id": str(parName) + str(parValue)} for parName, parValue in parameters]
+
+    result = self.bulk_index(self.indexName, data=parametersListDict, period=None, withTimeStamp=False)
     if not result['OK']:
       self.log.error("ERROR: Couldn't insert data", result['Message'])
     return result

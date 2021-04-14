@@ -372,26 +372,16 @@ class JobStateUpdateHandler(RequestHandler):
     """ Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
     """
-    failed = False
-
     if cls.elasticJobParametersDB:
-      for key, value in parameters:  # FIXME: should use a bulk method
-        res = cls.elasticJobParametersDB.setJobParameter(jobID, key, value)
-        if not res['OK']:
-          gLogger.error('Failed to add Job Parameters to cls.elasticJobParametersDB', res['Message'])
-          failed = True
-          message = res['Message']
-
+      result = cls.elasticJobParametersDB.setJobParameters(jobID, parameters)
+      if not result['OK']:
+        gLogger.error('Failed to add Job Parameters to ElasticJobParametersDB', result['Message'])
     else:
       result = cls.jobDB.setJobParameters(int(jobID), parameters)
       if not result['OK']:
         gLogger.error('Failed to add Job Parameters to MySQL', result['Message'])
-        failed = True
-        message = result['Message']
 
-    if failed:
-      return S_ERROR(message)
-    return S_OK()
+    return result
 
   ###########################################################################
   types_sendHeartBeat = [[six.string_types, int], dict, dict]
