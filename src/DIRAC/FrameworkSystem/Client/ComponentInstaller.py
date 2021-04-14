@@ -582,14 +582,14 @@ class ComponentInstaller(object):
       cType = installation['Component']['Type']
 
       # Is the component a rename of another module?
-      if installation['Instance'] == installation['Component']['Module']:
+      if installation['Instance'] == installation['Component']['DIRACModule']:
         isRenamed = False
       else:
         isRenamed = True
 
       result = self.monitoringClient.getInstallations(
           {'UnInstallationTime': None},
-          {'DIRACSystem': system, 'DIRACModule': installation['Component']['Module']},
+          {'DIRACSystem': system, 'DIRACModule': installation['Component']['DIRACModule']},
           {},
           True)
       if not result['OK']:
@@ -1917,7 +1917,7 @@ exec 2>&1
 [[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
 #%(bashVariables)s
 #
-exec python $DIRAC/DIRAC/Core/scripts/dirac_%(componentType)s.py \
+exec dirac-%(componentType)s \
   %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
     """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                 'bashVariables': bashVars,
@@ -2107,7 +2107,7 @@ rcfile=%(bashrc)s
 #
 exec 2>&1
 #
-exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
+exec dirac-webapp-run -p < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                   'DIRAC': self.linkedRootPath})
 

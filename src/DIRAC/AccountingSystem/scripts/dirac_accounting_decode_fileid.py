@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-accounting-decode-fileid
+# File :    dirac_accounting_decode_fileid
 # Author :  Adria Casajus
 ########################################################################
 """
