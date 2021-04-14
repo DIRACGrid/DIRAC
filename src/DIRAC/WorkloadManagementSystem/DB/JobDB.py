@@ -46,16 +46,20 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 def compressJDL(jdl):
   """Return compressed JDL string."""
-  return zlib.compress(jdl, -1).encode('base64')
+  return base64.b64encode(zlib.compress(jdl.encode(), -1)).decode()
 
 
 def extractJDL(compressedJDL):
   """Return decompressed JDL string."""
   # the starting bracket is guaranteeed by JobManager.submitJob
   # we need the check to be backward compatible
-  if compressedJDL.startswith('['):
-    return compressedJDL
-  return zlib.decompress(compressedJDL.decode('base64'))
+  if isinstance(compressedJDL, bytes):
+    if compressedJDL.startswith(b'['):
+      return compressedJDL.decode()
+  else:
+    if compressedJDL.startswith('['):
+      return compressedJDL
+  return zlib.decompress(base64.b64decode(compressedJDL)).decode()
 
 
 #############################################################################
@@ -1888,7 +1892,10 @@ class JobDB(DB):
     result = []
     values = res['Value']
     for row in values:
-      result.append((str(row[0]), '%.01f' % (float(row[1].replace('"', ''))), str(row[2])))
+      name, value, heartbeattime = row
+      if six.PY3 and isinstance(value, bytes):
+        value = value.decode()
+      result.append((str(name), '%.01f' % (float(value.replace('"', ''))), str(heartbeattime)))
 
     return S_OK(result)
 

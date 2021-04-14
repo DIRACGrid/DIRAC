@@ -161,7 +161,7 @@ class AccountingDB(DB):
       typeName = typesEntry[0]
       keyFields = List.fromChar(typesEntry[1], ",")
       valueFields = List.fromChar(typesEntry[2], ",")
-      bucketsLength = DEncode.decode(typesEntry[3])[0]
+      bucketsLength = DEncode.decode(typesEntry[3].encode())[0]
       self.__addToCatalog(typeName, keyFields, valueFields, bucketsLength)
 
   def getWaitingRecordsLifeTime(self):
@@ -414,13 +414,11 @@ class AccountingDB(DB):
     if not retVal['OK']:
       return retVal
     typesList = []
-    for typeInfo in retVal['Value']:
-      typesList.append([typeInfo[0],
-                        List.fromChar(typeInfo[1]),
-                        List.fromChar(typeInfo[2]),
-                        DEncode.decode(typeInfo[3])
-                        ]
-                       )
+    for name, keyFields, valueFields, bucketsLength in retVal['Value']:
+      keyFields = List.fromChar(keyFields)
+      valueFields = List.fromChar(valueFields)
+      bucketsLength = DEncode.decode(bucketsLength.encode())
+      typesList.append([name, keyFields, valueFields, bucketsLength])
     return S_OK(typesList)
 
   def getKeyValues(self, typeName, condDict, connObj=False):

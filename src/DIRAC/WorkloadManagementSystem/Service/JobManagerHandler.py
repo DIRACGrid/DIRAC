@@ -146,7 +146,7 @@ class JobManagerHandler(RequestHandler):
       return result
     nJobs = result['Value']
     parametricJob = False
-    if nJobs > 0:
+    if nJobs is not None and nJobs > 0:
       # if we are here, then jobDesc was the description of a parametric job. So we start unpacking
       parametricJob = True
       if nJobs > self.maxParametricJobs:

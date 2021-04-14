@@ -531,6 +531,8 @@ def decode(data):
   if not data:
     return data
   # print("DECODE FUNCTION : %s" % g_dDecodeFunctions[ sStream [ iIndex ] ])
+  if not isinstance(data, bytes):
+    raise NotImplementedError("This should never happen")
   return g_dDecodeFunctions[data[0]](data, 0)
 
 
