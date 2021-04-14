@@ -618,6 +618,16 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p54]
+
+*Core
+FIX: (#5087) Undefined variable error when RabbitMQAdmin fails to connect
+
+*CS
+FIX: (#5090) VOMS2CSSynchronizer: add email information about a user joining groups for an additional VO, fix for #5037
+FIX: (#5090) VOMS2CSSynchronizer: When a user leaves a second VO, only the membership in these groups is removed
+CHANGE: (#5090) VOMS2CSSynchronizer: If email of user is known, do not replace it with None
+
 [v7r0p53]
 
 *Interface

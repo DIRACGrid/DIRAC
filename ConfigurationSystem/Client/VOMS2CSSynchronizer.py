@@ -313,9 +313,11 @@ class VOMS2CSSynchronizer(object):
       modified = False
       suspendedInVOMS = self.vomsUserDict[dn]['suspended'] or self.vomsUserDict[dn]['certSuspended']
       suspendedVOList = getUserOption(diracName, 'Suspended', [])
+      knownEmail = getUserOption(diracName, 'Email', None)
       userDict = {"DN": dn,
                   "CA": self.vomsUserDict[dn]['CA'],
-                  "Email": self.vomsUserDict[dn].get('mail', self.vomsUserDict[dn].get('emailAddress'))}
+                  "Email": self.vomsUserDict[dn].get('mail', self.vomsUserDict[dn].get('emailAddress')) or knownEmail,
+                  }
 
       # Set Suspended status for the user for this particular VO
       if suspendedInVOMS and self.vo not in suspendedVOList:
@@ -373,7 +375,12 @@ class VOMS2CSSynchronizer(object):
         if groups['OK']:
           self.log.info('Found groups for user %s %s' % (diracName, groups['Value']))
           userDict['Groups'] = list(set(groups['Value'] + keepGroups))
+          addedGroups = list(set(userDict['Groups']) - set(groups['Value']))
           modified = True
+          message = "\n  Modified user %s:\n" % diracName
+          message += "    Added to group(s) %s\n" % ','.join(addedGroups)
+          self.adminMsgs['Info'].append(message)
+
 
       # Check if something changed before asking CSAPI to modify
       if diracName in diracUserDict:
@@ -412,15 +419,37 @@ class VOMS2CSSynchronizer(object):
     for user in diracUserDict:
       dnSet = set(fromChar(diracUserDict[user]['DN']))
       if not dnSet.intersection(set(self.vomsUserDict)) and user not in nonVOUserDict:
-        for group in diracUserDict[user]['Groups']:
-          if group not in noVOMSGroups:
-            oldUsers.add(user)
+        existingGroups = diracUserDict.get(user, {}).get('Groups', [])
+        nonVOGroups = list(set(existingGroups) - set(diracVOMSMapping))
+        removedGroups = list(set(existingGroups) - set(nonVOGroups))
+        if removedGroups:
+          self.log.info("Checking user for deletion", "%s: %s" % (user, existingGroups))
+          self.log.info("User has groups in other VOs", "%s: %s" % (user, nonVOGroups))
+          userDict = diracUserDict[user]
+          userDict['Groups'] = nonVOGroups
+          if self.autoModifyUsers:
+            result = self.csapi.modifyUser(user, userDict)
+            if result['OK'] and result['Value']:
+              self.log.info("Modified user %s: %s" % (user, str(userDict)))
+              self.voChanged = True
+              message = "\n  Modified user %s:\n" % user
+              modMsg = "    Removed from group(s) %s\n" % ','.join(removedGroups)
+              self.adminMsgs['Info'].append(message + modMsg)
+              resultDict['ModifiedUsers'].append(user)
+          continue
+        if not any(group in noVOMSGroups for group in existingGroups):
+          oldUsers.add(user)
 
     # Check for obsoleted DNs
     for user in diracUserDict:
       dnSet = set(fromChar(diracUserDict[user]['DN']))
       for dn in dnSet:
         if dn in obsoletedDNs and user not in oldUsers:
+          existingGroups = diracUserDict.get(user, {}).get('Groups', [])
+          nonVOGroups = list(set(existingGroups) - set(diracVOMSMapping))
+          if nonVOGroups:
+            self.log.verbose("User has groups in other VOs", "%s: %s" % (user, nonVOGroups))
+            continue
           self.log.verbose("Modified user %s: dropped DN %s" % (user, dn))
           if self.autoModifyUsers:
             userDict = diracUserDict[user]
@@ -450,7 +479,7 @@ class VOMS2CSSynchronizer(object):
       else:
         self.adminMsgs['Info'].append('The following users to be checked for deletion:\n\t%s' %
                                       "\n\t".join(sorted(oldUsers)))
-        self.log.info('The following users to be checked for deletion: %s' % str(oldUsers))
+        self.log.info('The following users to be checked for deletion:', "\n\t".join(sorted(oldUsers)))
 
     resultDict['CSAPI'] = self.csapi
     resultDict['AdminMessages'] = self.adminMsgs
