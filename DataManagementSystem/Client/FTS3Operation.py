@@ -103,17 +103,26 @@ class FTS3Operation(JSerializable):
     self.reqClient = None
     self.dManager = None
     self._log = None
+    self.fts3Plugin = None
     self.init_on_load()
 
   @orm.reconstructor
   def init_on_load(self):
     """ This method initializes some attributes.
         It is called by sqlalchemy (which does not call __init__)
+
     """
     self._vo = None
 
+    # Note that in the case of an FTS3Operation created from an RMS
+    # object, the members here will probably be "wrong" in the sense
+    # that the VO will not be known by then.
+    # It does not really matter however, since we do not perform anything
+    # on an operation created this way, it's just to be then serialized
+    # in the DB.
     self.dManager = DataManager()
     self.rssClient = ResourceStatus()
+    self.fts3Plugin = FTS3Utilities.getFTS3Plugin(vo=self.vo)
 
     opID = getattr(self, 'operationID', None)
     loggerName = '%s/' % opID if opID else ''
@@ -402,7 +411,7 @@ class FTS3TransferOperation(FTS3Operation):
 
       sourceSEs = self.sourceSEs.split(',') if self.sourceSEs is not None else []
       # { sourceSE : [FTSFiles] }
-      res = FTS3Utilities.selectUniqueRandomSource(ftsFiles, allowedSources=sourceSEs)
+      res = FTS3Utilities.selectUniqueSource(ftsFiles, self.fts3Plugin, allowedSources=sourceSEs)
 
       if not res['OK']:
         return res
@@ -454,8 +463,7 @@ class FTS3TransferOperation(FTS3Operation):
     # we check whether we can generate transfer URLs
     # for a fake LFN, and see if the protocol we get
     # is compatible with staging
-
-    tpcProtocols = DMSHelpers(vo=self.vo).getThirdPartyProtocols()
+    tpcProtocols = self.fts3Plugin.selectTPCProtocols(sourceSEName=sourceSEName, destSEName=destSEName)
 
     res = dstSE.generateTransferURLsBetweenSEs('/%s/fakeLFN' % self.vo, srcSE, protocols=tpcProtocols)
 

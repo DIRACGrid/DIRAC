@@ -1,14 +1,13 @@
 """ Some utilities for FTS3...
 """
 
-import json
-import datetime
 import random
 import threading
 
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
@@ -29,22 +28,22 @@ def _checkSourceReplicas(ftsFiles, preferDisk=True):
   return res
 
 
-def selectUniqueRandomSource(ftsFiles, allowedSources=None):
+def selectUniqueSource(ftsFiles, fts3Plugin, allowedSources=None):
   """
       For a list of FTS3files object, select a random source, and group the files by source.
 
       We also return the FTS3Files for which we had problems getting replicas
 
-      :param allowedSources: list of allowed sources
       :param ftsFiles: list of FTS3File object
+      :param fts3Plugin: plugin instance to use to chose between sources
+      :param allowedSources: list of allowed sources
+
 
       :return:  S_OK(({ sourceSE: [ FTS3Files] }, {FTS3File: errors}))
 
   """
 
-  _log = gLogger.getSubLogger("selectUniqueRandomSource")
-
-  allowedSourcesSet = set(allowedSources) if allowedSources else set()
+  _log = gLogger.getSubLogger("selectUniqueSource")
 
   # destGroup will contain for each target SE a dict { source : [list of FTS3Files] }
   groupBySource = {}
@@ -73,16 +72,12 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
 
     replicaDict = filteredReplicas['Successful'][ftsFile.lfn]
 
-    # Only consider the allowed sources
-
-    # If we have a restriction, apply it, otherwise take all the replicas
-    allowedReplicaSource = (set(replicaDict) & allowedSourcesSet) if allowedSourcesSet else replicaDict
-
-    # pick a random source
-
-    randSource = random.choice(list(allowedReplicaSource))  # one has to convert to list
-
-    groupBySource.setdefault(randSource, []).append(ftsFile)
+    try:
+      uniqueSource = fts3Plugin.selectSourceSE(ftsFile, replicaDict, allowedSources)
+      groupBySource.setdefault(uniqueSource, []).append(ftsFile)
+    except ValueError as e:
+      _log.info('No allowed replica source for file', "%s: %s" % (ftsFile.lfn, repr(e)))
+      continue
 
   return S_OK((groupBySource, failedFiles))
 
@@ -103,6 +98,26 @@ def groupFilesByTarget(ftsFiles):
     destGroup.setdefault(ftsFile.targetSE, []).append(ftsFile)
 
   return S_OK(destGroup)
+
+
+def getFTS3Plugin(vo=None):
+  """
+    Return an instance of the FTS3Plugin configured in the CS
+
+    :param vo: vo config to look for
+  """
+  pluginName = opHelper(vo=vo).getValue('DataManagement/FTSPlacement/FTS3/FTS3Plugin', 'Default')
+
+  objLoader = ObjectLoader()
+  _class = objLoader.loadObject(
+      'DataManagementSystem.private.FTS3Plugins.%sFTS3Plugin' %
+      pluginName, '%sFTS3Plugin' % pluginName)
+
+  if not _class['OK']:
+    raise Exception(_class['Message'])
+
+  fts3Plugin = _class['Value'](vo=vo)
+  return fts3Plugin
 
 
 threadLocal = threading.local()
