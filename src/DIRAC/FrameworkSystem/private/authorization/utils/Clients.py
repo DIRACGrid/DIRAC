@@ -79,14 +79,14 @@ class ClientRegistrationEndpoint(_ClientRegistrationEndpoint):
       allow a client to be registered with the authorization server. See authlib
       :mod:`ClientRegistrationEndpoint <authlib.oauth2.rfc7591.ClientRegistrationEndpoint>` class.
   """
-  # TODO: align with version authlib
+  # TODO: align with last version authlib
 
   def authenticate_user(self, request):
     return True
 
   def authenticate_token(self, request):
-    # TODO: check
-    return True
+    # TODO: Provider token verification to allow regster clients only for reg users
+    return False
 
   def save_client(self, client_info, client_metadata, request):
     print("Save client:")

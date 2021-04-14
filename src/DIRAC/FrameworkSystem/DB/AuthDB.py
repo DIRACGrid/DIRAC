@@ -101,7 +101,7 @@ class Token(Model, OAuth2TokenMixin):
 class AuthDB(SQLAlchemyDB):
   """ AuthDB class is a front-end to the OAuth Database
   """
-
+  # TODO: provide logging instead of print
   def __init__(self):
     """ Constructor
     """
@@ -140,7 +140,6 @@ class AuthDB(SQLAlchemyDB):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    # TODO: remove debug
     print('============ addClient ============')
     pprint(data)
     session = self.session()

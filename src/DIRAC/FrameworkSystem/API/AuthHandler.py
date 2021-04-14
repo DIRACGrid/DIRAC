@@ -30,6 +30,7 @@ __RCSID__ = "$Id$"
 
 
 class AuthHandler(TornadoREST):
+  # TODO: docs
   # Authorization access to all methods handled by AuthServer instance
   USE_AUTHZ_GRANTS = ['VISITOR']
   SYSTEM = 'Framework'
@@ -204,11 +205,8 @@ class AuthHandler(TornadoREST):
                             "redirect_uris":["https://marosvn32.in2p3.fr/DIRAC","https://marosvn32.in2p3.fr/DIRAC/loginComplete"],
                             "response_types":["token","id_token token","code"]}, verify=False).text
     """
-    # TODO: docs
-    print('------ web_register --------')
     name = ClientRegistrationEndpoint.ENDPOINT_NAME
     return self.__response(**self.server.create_endpoint_response(name, self.request))
-    print('-----> web_register <-------')
 
   path_device = ['([A-z0-9-_]*)']
 
