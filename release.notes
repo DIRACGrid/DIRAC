@@ -8,6 +8,7 @@ FIX: (#5095) Avoid KeyError when calling parseCommandLine
 
 *Framework
 CHANGE: (#5092) Use String(64) for DIRACVersion column in InstalledComponentsDB.HostLogging
+CHANGE: (#5098) in the run files created by ComponentInstaller, execute directly the deployed scripts
 
 *WMS
 NEW: (#5073) JobManager service now exposes a "RemoveJob" RPC call
