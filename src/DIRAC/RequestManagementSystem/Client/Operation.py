@@ -81,14 +81,15 @@ class Operation(object):
 
     self.TargetSE = None
     self.SourceSE = None
-    self.Arguments = None
+    self._Arguments = None
     self.Error = None
     self.Type = None
     self._Catalog = None
 
-    fromDict = fromDict if isinstance(fromDict, dict)\
-        else json.loads(fromDict) if isinstance(fromDict, six.string_types)\
-        else {}
+    if isinstance(fromDict, six.string_types):
+      fromDict = json.loads(fromDict)
+    elif not isinstance(fromDict, dict):
+      fromDict = {}
 
     if "Files" in fromDict:
       for fileDict in fromDict.get("Files", []):
@@ -213,6 +214,18 @@ class Operation(object):
   def targetSEList(self):
     """ helper property returning target SEs as a list"""
     return self.TargetSE.split(",") if self.TargetSE else ['']
+
+  @property
+  def Arguments(self):
+    return self._Arguments
+
+  @Arguments.setter
+  def Arguments(self, value):
+    if isinstance(value, six.text_type):
+      value = value.encode()
+    if not isinstance(value, bytes):
+      raise TypeError("Arguments should be bytes!")
+    self._Arguments = value
 
   @property
   def Catalog(self):

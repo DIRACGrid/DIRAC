@@ -80,7 +80,7 @@ class Request(object):
     self.OwnerDN = None
     self.RequestName = None
     self.OwnerGroup = None
-    self.SourceComponent = None
+    self._SourceComponent = None
 
     self.dmsHelper = DMSHelpers()
 
@@ -93,9 +93,10 @@ class Request(object):
 
     self.__operations__ = []
 
-    fromDict = fromDict if isinstance(fromDict, dict)\
-        else json.loads(fromDict) if isinstance(fromDict, six.string_types)\
-        else {}
+    if isinstance(fromDict, six.string_types):
+      fromDict = json.loads(fromDict)
+    elif not isinstance(fromDict, dict):
+      fromDict = {}
 
     if "Operations" in fromDict:
       for opDict in fromDict.get("Operations", []):
@@ -278,6 +279,18 @@ class Request(object):
   def subStatusList(self):
     """ list of statuses for all operations """
     return [subReq.Status for subReq in self]
+
+  @property
+  def SourceComponent(self):
+    return self._SourceComponent
+
+  @SourceComponent.setter
+  def SourceComponent(self, value):
+    if isinstance(value, six.text_type):
+      value = value.encode()
+    if not isinstance(value, bytes):
+      raise TypeError("SourceComponent should be bytes!")
+    self._SourceComponent = value
 
   @property
   def CreationTime(self):
