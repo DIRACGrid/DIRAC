@@ -180,6 +180,7 @@ class VOMS2CSAgent(AgentModule):
             mailMsg += result['Message']
         if self.dryRun:
           self.log.info("Dry Run: mail won't be sent")
+          self.log.info(mailMsg)
         else:
           NotificationClient().sendMail(self.am_getOption('MailTo', voAdminMail),
                                         "VOMS2CSAgent run log", mailMsg,
