@@ -1917,7 +1917,7 @@ exec 2>&1
 [[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
 #%(bashVariables)s
 #
-exec python $DIRAC/DIRAC/Core/scripts/dirac_%(componentType)s.py \
+exec dirac-%(componentType)s \
   %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
     """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                 'bashVariables': bashVars,
@@ -2107,7 +2107,7 @@ rcfile=%(bashrc)s
 #
 exec 2>&1
 #
-exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
+exec dirac-webapp-run -p < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
                   'DIRAC': self.linkedRootPath})
 
@@ -2544,7 +2544,7 @@ exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
   exec 2>&1
   #
   #
-  exec python $DIRAC/DIRAC/Core/Tornado/scripts/tornado_start_all.py -ddd
+  exec tornado-start-all
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
 
       os.chmod(runFile, self.gDefaultPerms)
