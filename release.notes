@@ -1,8 +1,31 @@
+[v7r2p3]
+
+FIX: Fixes from v7r054 and v7r1p37
+FIX: (#5088) Fix various Python 3.9 deprecations
+
+*Core
+FIX: (#5095) Avoid KeyError when calling parseCommandLine
+
+*Framework
+CHANGE: (#5092) Use String(64) for DIRACVersion column in InstalledComponentsDB.HostLogging
+
+*WMS
+NEW: (#5073) JobManager service now exposes a "RemoveJob" RPC call
+NEW: (#5073) implementing bulk indexing for jobs parameters
+CHANGE: (#5073) JobCleaningAgent will not remove those jobs that, while marked "DELETED", have still Operations to do in RMS
+
+*RequestManagement
+FIX: (#5091) Ensure BLOB columns are always passed bytes data
+
+*Resources
+CHANGE: (#5050) StompMQConnector uses a single connection
+
+*tests
+NEW: (#5086) Integration tests can be re-ran locally without re-installing the entire setup
+
 [v7r2p2]
 
 FIX: Fixes from v7r053 and v7r1p36
-
-
 
 [v7r2p1]
 
