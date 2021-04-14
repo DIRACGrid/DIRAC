@@ -21,15 +21,9 @@ def bundleProxy(executableFile, proxy):
   """ Create a self extracting archive bundling together an executable script and a proxy
   """
 
-  compressedAndEncodedProxy = base64.encodestring(bz2.compress(proxy.dumpAllToString()['Value'])).replace('\n', '')
-  compressedAndEncodedExecutable = base64.encodestring(
-      bz2.compress(
-          open(
-              executableFile,
-              "rb").read(),
-          9)).replace(
-      '\n',
-      '')
+  compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value'])).decode()
+  with open(executableFile, "rb") as fp:
+    compressedAndEncodedExecutable = base64.b64encode(bz2.compress(fp.read(), 9)).decode()
 
   bundle = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
@@ -44,8 +38,8 @@ import shutil
 try:
   workingDirectory = tempfile.mkdtemp(suffix='_wrapper', prefix='TORQUE_')
   os.chdir(workingDirectory)
-  open('proxy', "w").write(bz2.decompress(base64.decodestring("%(compressedAndEncodedProxy)s")))
-  open('%(executable)s', "w").write(bz2.decompress(base64.decodestring("%(compressedAndEncodedExecutable)s")))
+  open('proxy', "w").write(bz2.decompress(base64.b64decode("%(compressedAndEncodedProxy)s")))
+  open('%(executable)s', "w").write(bz2.decompress(base64.b64decode("%(compressedAndEncodedExecutable)s")))
   os.chmod('proxy', stat.S_IRUSR | stat.S_IWUSR)
   os.chmod('%(executable)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
   os.environ["X509_USER_PROXY"] = os.path.join(workingDirectory, 'proxy')

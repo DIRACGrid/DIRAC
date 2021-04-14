@@ -33,6 +33,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
+
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
@@ -42,7 +43,6 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 
@@ -81,9 +81,6 @@ class FTS3Agent(AgentModule):
     srvDict = res['Value']
     serverPolicyType = opHelper().getValue('DataManagement/FTSPlacement/FTS3/ServerPolicy', 'Random')
     self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvDict, serverPolicy=serverPolicyType)
-
-    # List of third party protocols for transfers
-    self.thirdPartyProtocols = DMSHelpers().getThirdPartyProtocols()
 
     self.maxNumberOfThreads = self.am_getOption("MaxThreads", 10)
 
@@ -405,6 +402,7 @@ class FTS3Agent(AgentModule):
               continueOperationProcessing = False
 
         if continueOperationProcessing:
+
           res = operation.prepareNewJobs(
               maxFilesPerJob=self.maxFilesPerJob, maxAttemptsPerFile=self.maxAttemptsPerFile)
 
@@ -437,7 +435,14 @@ class FTS3Agent(AgentModule):
               continue
 
             context = res['Value']
-            res = ftsJob.submit(context=context, protocols=self.thirdPartyProtocols)
+
+            try:
+              tpcProtocols = operation.fts3Plugin.selectTPCProtocols(ftsJob=ftsJob)
+            except ValueError as e:
+              log.error("Could not select TPC list", repr(e))
+              continue
+
+            res = ftsJob.submit(context=context, protocols=tpcProtocols)
 
             if not res['OK']:
               log.error("Could not submit FTS3Job", "FTS3Operation %s : %s" %

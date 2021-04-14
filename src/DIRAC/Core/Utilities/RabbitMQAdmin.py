@@ -29,11 +29,9 @@ def executeRabbitmqctl(arg, *argv):
   command = ['sudo', '/usr/sbin/rabbitmqctl', '-q', arg] + list(argv)
   timeOut = 30
   result = Subprocess.systemCall(timeout=timeOut, cmdSeq=command)
-  if result['OK']:
-    errorcode, cmd_out, cmd_err = result['Value']
-  else:
-    return S_ERROR(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
-                                (command, errorcode, cmd_out, cmd_err))
+  if not result['OK']:
+    return S_ERROR(errno.EPERM, "%r failed to launch" % command)
+  errorcode, cmd_out, cmd_err = result['Value']
   if errorcode:
     # No idea what errno code should be used here.
     # Maybe we should define some specific for rabbitmqctl

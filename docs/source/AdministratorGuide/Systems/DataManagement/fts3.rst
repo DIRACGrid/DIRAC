@@ -50,6 +50,7 @@ Operations configuration
 
   * DataManagement/FTSVersion: FTS2/FTS3. Set it to FTS3...
   * DataManagement/FTSPlacement/FTS3/ServerPolicy: Policy to choose the FTS server see `FTSServer policy`_.
+  * DataManagement/FTSPlacement/FTS3/FTS3Plugin: Plugin to alter the behavior of the FTS3Agent
 
 
 ======================
@@ -92,11 +93,11 @@ The RMS will create one FTS3TransferOperation per RMS Operation, and one FTS3Fil
 The grouping into jobs is done following this logic:
     * Group by target SE
     * Group by source SE. If not specified, we take the active replicas as returned by the DataManager
-    * Since their might be several possible source SE, we need to pick one only. The choice is to select the SE where there is the most files of the operation present. This increases the likely hood to pick a good old Tier1
+    * Since there might be several possible source SEs, we need to pick one only. By default, the choice is random, but this can be changed (see FTS3Plugins)
     * Divide all that according to the maximum number of files we want per job
 
 Once the FTS jobs have been executed, and all the operation is completed, the callback takes place. The callback consists in fetching the RMS request which submitted the FTS3Operation, update the status of the RMS files, and insert a Registration Operation.
-Note that since the multiple targets are grouped in a single RMS operation, failing to transfer one file t one destination will result in the failure of the Operation. However, there is one Registration operation per target, and hence correctly transferred files will be registered.
+Note that since the multiple targets are grouped in a single RMS operation, failing to transfer one file to one destination will result in the failure of the Operation. However, there is one Registration operation per target, and hence correctly transferred files will be registered.
 
 ====================
 FTS3StagingOperation
@@ -170,3 +171,13 @@ States from the FTS3Job::
 The status of the FTS3Jobs and FTSFiles are updated every time we monitor the matching job.
 
 The FTS3Operation goes to Processed when all the files are in a final state, and to Finished when the callback has been called successfully
+
+
+FTS3 Plugins
+------------
+
+.. versionadded:: v7r1p37
+    The ``FTS3Plugin`` option
+
+
+The ``FTS3Plugin`` option allows one to specify a plugin to alter some default choices made by the FTS3 system. These choices concern the list of third party protocols used, as well as the selection of a source storage element. This can be useful if you want to implement a matrix-like selection of protocols, or if some links require specific protocols, etc. The plugins must be placed in :py:mod:`DIRAC.DataManagementSystem.private.FTS3Plugins`. The default behaviors, as well as the documentation on how to implement your own plugin can be found in :py:mod:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin`

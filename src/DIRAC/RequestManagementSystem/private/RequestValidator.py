@@ -81,19 +81,38 @@ class RequestValidator(object):
   # # dict with required attrs
   reqAttrs = {
       "ForwardDISET": {
-          "Operation": ["Arguments"], "Files": []}, "PutAndRegister": {
-          "Operation": ["TargetSE"], "Files": [
-              "LFN", "PFN"]}, "ReplicateAndRegister": {
-          "Operation": ["TargetSE"], "Files": ["LFN"]}, "PhysicalRemoval": {
-          "Operation": ["TargetSE"], "Files": ["PFN"]}, "RemoveFile": {
-              "Operation": [], "Files": ["LFN"]}, "RemoveReplica": {
-          "Operation": ["TargetSE"], "Files": ["LFN"]}, "ReTransfer": {
-                  "Operation": ["TargetSE"], "Files": [
-                      "LFN", "PFN"]}, "RegisterFile": {
-          "Operation": [], "Files": [
-              "LFN", "PFN", "ChecksumType", "Checksum", "GUID"]}, "RegisterReplica": {
-          "Operation": ["TargetSE"], "Files": [
-              "LFN", "PFN"]}}
+          "Operation": ["Arguments"], "Files": []
+      },
+      "PutAndRegister": {
+          "Operation": ["TargetSE"],
+          "Files": ["LFN", "PFN"]
+      },
+      "ReplicateAndRegister": {
+          "Operation": ["TargetSE"], "Files": ["LFN"]
+      },
+      "PhysicalRemoval": {
+          "Operation": ["TargetSE"], "Files": ["PFN"]
+      },
+      "RemoveFile": {
+          "Operation": [], "Files": ["LFN"]
+      },
+      "RemoveReplica": {
+          "Operation": ["TargetSE"],
+          "Files": ["LFN"]
+      },
+      "ReTransfer": {
+          "Operation": ["TargetSE"],
+          "Files": ["LFN", "PFN"],
+      },
+      "RegisterFile": {
+          "Operation": [],
+          "Files": ["LFN", "PFN", "ChecksumType", "Checksum", "GUID"],
+      },
+      "RegisterReplica": {
+          "Operation": ["TargetSE"],
+          "Files": ["LFN", "PFN"],
+      }
+  }
 
   # All the operationHandlers defined in the CS
   opHandlers = set()

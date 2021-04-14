@@ -9,6 +9,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import socket
+import six
 from six.moves.urllib import parse as urlparse
 import os
 import struct
@@ -23,30 +24,32 @@ def discoverInterfaces():
   max_possible = 128
   maxBytes = max_possible * 32
   mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  names = array.array('B', '\0' * maxBytes)
+  names = array.array('B', b'\0' * maxBytes)
   # 0x8912 SICGIFCONF
   fcntlOut = fcntl.ioctl(mySocket.fileno(), 0x8912, struct.pack('iL', maxBytes, names.buffer_info()[0]))
   outbytes = struct.unpack('iL', fcntlOut)[0]
-  namestr = names.tostring()
-  ifaces = {}
-  arch = platform.architecture()[0]
-  if arch.find('32') == 0:
-    for i in range(0, outbytes, 32):
-      name = namestr[i:i + 32].split('\0', 1)[0]
-      ip = namestr[i + 20:i + 24]
-      ifaces[name] = {'ip': socket.inet_ntoa(ip), 'mac': getMACFromInterface(name)}
+  namestr = names.tobytes() if six.PY3 else names.tostring()  # pylint: disable=no-member
+
+  if "32" in platform.architecture()[0]:
+    step = 32
+    offset = 32
   else:
-    for i in range(0, outbytes, 40):
-      name = namestr[i:i + 16].split('\0', 1)[0]
-      ip = namestr[i + 20:i + 24]
-      ifaces[name] = {'ip': socket.inet_ntoa(ip), 'mac': getMACFromInterface(name)}
+    step = 40
+    offset = 16
+
+  ifaces = {}
+  for i in range(0, outbytes, step):
+    name = namestr[i:i + offset].split(b'\0', 1)[0].decode()
+    ip = namestr[i + 20:i + 24]
+    ifaces[name] = {'ip': socket.inet_ntoa(ip), 'mac': getMACFromInterface(name)}
   return ifaces
 
 
 def getMACFromInterface(ifname):
   mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  info = fcntl.ioctl(mySocket.fileno(), 0x8927, struct.pack('256s', ifname[:15]))
-  return ''.join(['%02x:' % ord(char) for char in info[18:24]])[:-1]
+  # bytearray is only needed here for Python 2
+  info = bytearray(fcntl.ioctl(mySocket.fileno(), 0x8927, struct.pack('256s', ifname[:15].encode())))
+  return ''.join(['%02x:' % char for char in info[18:24]])[:-1]
 
 
 def getFQDN():

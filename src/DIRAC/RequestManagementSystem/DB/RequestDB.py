@@ -98,6 +98,7 @@ operationTable = Table('Operation', metadata,
 # Map the Operation object to the operationTable, with a few special attributes
 
 mapper(Operation, operationTable, properties={'_CreationTime': operationTable.c.CreationTime,
+                                              '_Arguments': operationTable.c.Arguments,
                                               '_Order': operationTable.c.Order,
                                               '_Status': operationTable.c.Status,
                                               '_LastUpdate': operationTable.c.LastUpdate,
@@ -131,8 +132,8 @@ requestTable = Table('Request', metadata,
                      mysql_engine='InnoDB')
 
 # Map the Request object to the requestTable, with a few special attributes
-
 mapper(Request, requestTable, properties={'_CreationTime': requestTable.c.CreationTime,
+                                          '_SourceComponent': requestTable.c.SourceComponent,
                                           '_Status': requestTable.c.Status,
                                           '_LastUpdate': requestTable.c.LastUpdate,
                                           '_SubmitTime': requestTable.c.SubmitTime,
@@ -829,7 +830,7 @@ class RequestDB(object):
 
       requestInfoQuery = session.query(Request.RequestID, Request._Status, Request.RequestName,
                                        Request.JobID, Request.OwnerDN, Request.OwnerGroup,
-                                       Request.DIRACSetup, Request.SourceComponent, Request._CreationTime,
+                                       Request.DIRACSetup, Request._SourceComponent, Request._CreationTime,
                                        Request._SubmitTime, Request._LastUpdate)\
           .filter(Request.RequestID == requestID)
 

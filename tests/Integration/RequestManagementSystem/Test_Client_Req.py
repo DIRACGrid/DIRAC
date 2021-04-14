@@ -10,6 +10,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
+import copy
 import unittest
 import sys
 import six
@@ -78,32 +79,57 @@ class ReqClientTestCase(unittest.TestCase):
 
 
 class ReqClientMix(ReqClientTestCase):
+  def _checkSummary(self, initial, changes):
+    """Check if getDBSummary has been updated as expected
+
+    :param initial: Return value from ``self.requestClient.getDBSummary()``
+                    before the test was started.
+    :param changes: The expected changes to the database summary. Tuple
+                    consisting of ``(parentKey, key, state, delta)``.
+    """
+    expected = copy.deepcopy(initial)
+    for parent, key, state, delta in changes:
+      if parent is None:
+        d = expected
+      else:
+        d = expected.setdefault(parent, {})
+      d.setdefault(key, {})
+      d[key].setdefault(state, 0)
+      d[key][state] += delta
+
+    res = self.requestClient.getDBSummary()
+    self.assertTrue(res['OK'])
+    self.assertEqual(res["Value"], expected)
 
   def test01fullChain(self):
+    ret = self.requestClient.getDBSummary()
+    self.assertTrue(ret['OK'])
+    initialSummary = ret["Value"]
+
     put = self.requestClient.putRequest(self.request)
     self.assertTrue(put['OK'], put)
 
     self.assertTrue(isinstance(put['Value'], six.integer_types))
     reqID = put['Value']
 
-    # # summary
+    # summary
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    self.assertEqual(ret['Value'],
-                     {'Operation': {'ReplicateAndRegister': {'Waiting': 1}},
-                      'Request': {'Waiting': 1},
-                      'File': {'Waiting': 2}})
+    self._checkSummary(initialSummary, [
+        ("Operation", "ReplicateAndRegister", "Waiting", 1),
+        (None, "Request", "Waiting", 1),
+        (None, "File", "Waiting", 2),
+    ])
 
     get = self.requestClient.getRequest(reqID)
     self.assertTrue(get['OK'])
     self.assertEqual(isinstance(get['Value'], Request), True)
     # # summary - the request became "Assigned"
-    res = self.requestClient.getDBSummary()
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'],
-                     {'Operation': {'ReplicateAndRegister': {'Waiting': 1}},
-                      'Request': {'Assigned': 1},
-                      'File': {'Waiting': 2}})
+    self._checkSummary(initialSummary, [
+        ("Operation", "ReplicateAndRegister", "Waiting", 1),
+        (None, "Request", "Assigned", 1),
+        (None, "File", "Waiting", 2),
+    ])
 
     res = self.requestClient.getRequestInfo(reqID)
     self.assertEqual(res['OK'], True, res['Message'] if 'Message' in res else 'OK')
@@ -138,10 +164,12 @@ class ReqClientMix(ReqClientTestCase):
     # # get summary again
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    self.assertEqual(ret['Value'],
-                     {'Operation': {'ReplicateAndRegister': {'Waiting': 2}},
-                      'Request': {'Waiting': 1, 'Assigned': 1},
-                      'File': {'Waiting': 4}})
+    self._checkSummary(initialSummary, [
+        ("Operation", "ReplicateAndRegister", "Waiting", 2),
+        (None, "Request", "Waiting", 1),
+        (None, "Request", "Assigned", 1),
+        (None, "File", "Waiting", 4),
+    ])
 
     delete = self.requestClient.deleteRequest(reqID)
     self.assertEqual(delete['OK'], True, delete['Message'] if 'Message' in delete else 'OK')
@@ -151,7 +179,7 @@ class ReqClientMix(ReqClientTestCase):
     # # should be empty now
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    self.assertEqual(ret['Value'], {'Operation': {}, 'Request': {}, 'File': {}})
+    self.assertEqual(ret['Value'], initialSummary)
 
   def test02Authorization(self):
     """ Test whether request sets on behalf of others are rejected, unless done with Delegation properties

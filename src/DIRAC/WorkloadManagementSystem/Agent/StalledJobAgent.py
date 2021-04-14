@@ -146,7 +146,7 @@ class StalledJobAgent(AgentModule):
         jobs = result['Value']
         self.log.info('Stalled jobs will be Accounted', '(n=%d)' % (len(jobs)))
         for job in jobs:
-          self.jobsQueue.put('%s:__sendAccounting' % job)
+          self.jobsQueue.put('%s:_sendAccounting' % job)
 
     # From here on we don't use the threads
 
@@ -192,11 +192,11 @@ class StalledJobAgent(AgentModule):
     if site in self.stalledJobsTolerantSites:
       delayTime += self.stalledJobsToleranceTime
     # Check if the job is really stalled
-    result = self.__checkJobStalled(jobID, delayTime)
+    result = self._checkJobStalled(jobID, delayTime)
     if not result['OK']:
       return result
     self.log.verbose('Updating status to Stalled', 'for job %s' % (jobID))
-    return self.__updateJobStatus(jobID, JobStatus.STALLED)
+    return self._updateJobStatus(jobID, JobStatus.STALLED)
 
   #############################################################################
   def _failStalledJobs(self, jobID):
@@ -208,7 +208,7 @@ class StalledJobAgent(AgentModule):
 
     setFailed = False
     # Check if the job pilot is lost
-    result = self.__getJobPilotStatus(jobID)
+    result = self._getJobPilotStatus(jobID)
     if not result['OK']:
       self.log.error('Failed to get pilot status',
                      "for job %d: %s" % (jobID, result['Message']))
@@ -218,7 +218,7 @@ class StalledJobAgent(AgentModule):
       setFailed = self.minorStalledStatuses[0]
     else:
       # Verify that there was no sign of life for long enough
-      result = self.__getLatestUpdateTime(jobID)
+      result = self._getLatestUpdateTime(jobID)
       if not result['OK']:
         self.log.error('Failed to get job update time',
                        "for job %d: %s" % (jobID, result['Message']))
@@ -230,12 +230,12 @@ class StalledJobAgent(AgentModule):
     # Set the jobs Failed, send them a kill signal in case they are not really dead
     # and send accounting info
     if setFailed:
-      self.__sendKillCommand(jobID)  # always returns None
-      return self.__updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed)
+      self._sendKillCommand(jobID)  # always returns None
+      return self._updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed)
 
     return S_OK()
 
-  def __getJobPilotStatus(self, jobID):
+  def _getJobPilotStatus(self, jobID):
     """ Get the job pilot status
     """
     result = JobMonitoringClient().getJobParameter(jobID, 'Pilot_Reference')
@@ -259,11 +259,11 @@ class StalledJobAgent(AgentModule):
     return S_OK(pilotStatus)
 
   #############################################################################
-  def __checkJobStalled(self, job, stalledTime):
+  def _checkJobStalled(self, job, stalledTime):
     """ Compares the most recent of LastUpdateTime and HeartBeatTime against
     the stalledTime limit.
     """
-    result = self.__getLatestUpdateTime(job)
+    result = self._getLatestUpdateTime(job)
     if not result['OK']:
       return result
 
@@ -277,7 +277,7 @@ class StalledJobAgent(AgentModule):
     return S_ERROR('Job %s is running and will be ignored' % job)
 
   #############################################################################
-  def __getLatestUpdateTime(self, job):
+  def _getLatestUpdateTime(self, job):
     """ Returns the most recent of HeartBeatTime and LastUpdateTime
     """
     result = self.jobDB.getJobAttributes(job, ['HeartBeatTime', 'LastUpdateTime'])
@@ -304,7 +304,7 @@ class StalledJobAgent(AgentModule):
       return S_OK(latestUpdate)
 
   #############################################################################
-  def __updateJobStatus(self, job, status, minorStatus=None):
+  def _updateJobStatus(self, job, status, minorStatus=None):
     """ This method updates the job status in the JobDB
     """
 
@@ -344,7 +344,7 @@ class StalledJobAgent(AgentModule):
 
     return toRet
 
-  def __getProcessingType(self, jobID):
+  def _getProcessingType(self, jobID):
     """ Get the Processing Type from the JDL, until it is promoted to a real Attribute
     """
     processingType = 'unknown'
@@ -356,7 +356,7 @@ class StalledJobAgent(AgentModule):
       processingType = classAdJob.getAttributeString('ProcessingType')
     return processingType
 
-  def __sendAccounting(self, jobID):
+  def _sendAccounting(self, jobID):
     """
     Send WMS accounting data for the given job.
 
@@ -372,8 +372,8 @@ class StalledJobAgent(AgentModule):
         return result
       jobDict = result['Value']
 
-      startTime, endTime = self.__checkLoggingInfo(jobID, jobDict)
-      lastCPUTime, lastWallTime, lastHeartBeatTime = self.__checkHeartBeat(jobID, jobDict)
+      startTime, endTime = self._checkLoggingInfo(jobID, jobDict)
+      lastCPUTime, lastWallTime, lastHeartBeatTime = self._checkHeartBeat(jobID, jobDict)
       lastHeartBeatTime = fromString(lastHeartBeatTime)
       if lastHeartBeatTime is not None and lastHeartBeatTime > endTime:
         endTime = lastHeartBeatTime
@@ -390,11 +390,11 @@ class StalledJobAgent(AgentModule):
         cpuNormalization = float(result['Value'].get('CPUNormalizationFactor'))
 
     except Exception as e:
-      self.log.exception("Exception in __sendAccounting",
+      self.log.exception("Exception in _sendAccounting",
                          "for job=%s: endTime=%s, lastHBTime=%s" % (str(jobID), str(endTime), str(lastHeartBeatTime)),
                          lException=e)
       return S_ERROR("Exception")
-    processingType = self.__getProcessingType(jobID)
+    processingType = self._getProcessingType(jobID)
 
     accountingReport.setStartTime(startTime)
     accountingReport.setEndTime(endTime)
@@ -439,7 +439,7 @@ class StalledJobAgent(AgentModule):
       self.log.error('Failed to send accounting report', 'Job: %d, Error: %s' % (int(jobID), result['Message']))
     return result
 
-  def __checkHeartBeat(self, jobID, jobDict):
+  def _checkHeartBeat(self, jobID, jobDict):
     """ Get info from HeartBeat
     """
     result = self.jobDB.getHeartBeatData(jobID)
@@ -470,7 +470,7 @@ class StalledJobAgent(AgentModule):
 
     return lastCPUTime, lastWallTime, lastHeartBeatTime
 
-  def __checkLoggingInfo(self, jobID, jobDict):
+  def _checkLoggingInfo(self, jobID, jobDict):
     """ Get info from JobLogging
     """
     logList = []
@@ -556,14 +556,14 @@ class StalledJobAgent(AgentModule):
       return result
 
     for jobID in result['Value']:
-      result = self.__updateJobStatus(jobID, JobStatus.FAILED)
+      result = self._updateJobStatus(jobID, JobStatus.FAILED)
       if not result['OK']:
         self.log.error('Failed to update job status', result['Message'])
         continue
 
     return S_OK()
 
-  def __sendKillCommand(self, job):
+  def _sendKillCommand(self, job):
     """Send a kill signal to the job such that it cannot continue running.
 
     :param int job: ID of job to send kill command

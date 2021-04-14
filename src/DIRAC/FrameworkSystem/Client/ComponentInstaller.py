@@ -2544,7 +2544,7 @@ exec dirac-webapp-run -p < /dev/null
   exec 2>&1
   #
   #
-  exec python $DIRAC/DIRAC/Core/Tornado/scripts/tornado_start_all.py -ddd
+  exec tornado-start-all
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
 
       os.chmod(runFile, self.gDefaultPerms)

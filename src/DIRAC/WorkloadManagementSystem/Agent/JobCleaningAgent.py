@@ -28,36 +28,32 @@ than 0.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
-import time
 import os
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
 import DIRAC.Core.Utilities.Time as Time
 
 
 class JobCleaningAgent(AgentModule):
   """
-      The specific agents must provide the following methods:
-
-         *  initialize() for initial settings
-         *  beginExecution()
-         *  execute() - the main method called in the agent cycle
-         *  endExecution()
-         *  finalize() - the graceful exit of the method, this one is usually used for the agent restart
+  Agent for removing jobs in status "Deleted", and not only
   """
 
   def __init__(self, *args, **kwargs):
@@ -98,8 +94,6 @@ class JobCleaningAgent(AgentModule):
     self.log.info("Will exclude the following Production types from cleaning %s" % (
         ', '.join(self.prodTypes)))
     self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce', 500)
-    self.jobByJob = self.am_getOption('JobByJob', False)
-    self.throttlingPeriod = self.am_getOption('ThrottlingPeriod', 0.)
 
     self.removeStatusDelay['Done'] = self.am_getOption('RemoveStatusDelay/Done', 7)
     self.removeStatusDelay['Killed'] = self.am_getOption('RemoveStatusDelay/Killed', 7)
@@ -126,12 +120,11 @@ class JobCleaningAgent(AgentModule):
     self.log.notice("JobTypes to clean %s" % cleanJobTypes)
     return S_OK(cleanJobTypes)
 
-  #############################################################################
   def execute(self):
     """ Remove jobs in various status
     """
     # Delete jobs in "Deleted" state
-    result = self.removeJobsByStatus({'Status': 'Deleted'})
+    result = self.removeJobsByStatus({'Status': JobStatus.DELETED})
     if not result['OK']:
       return result
 
@@ -179,16 +172,25 @@ class JobCleaningAgent(AgentModule):
     if not result['OK']:
       return result
 
-    jobList = result['Value']
+    jobList = [int(jID) for jID in result['Value']]
     if len(jobList) > self.maxJobsAtOnce:
       jobList = jobList[:self.maxJobsAtOnce]
     if not jobList:
       return S_OK()
 
-    self.log.notice("Deleting %s jobs for %s" % (len(jobList), condDict))
+    self.log.notice("Attempting to delete jobs", "(%d for %s)" % (len(jobList), condDict))
 
-    count = 0
-    error_count = 0
+    # remove from jobList those that have still Operations to do in RMS
+    res = ReqClient().getRequestIDsForJobs(jobList)
+    if not res['OK']:
+      return res
+    if res['Value']['Successful']:
+      self.log.warn("Some jobs won't be removed, as still having Requests to complete",
+                    "(n=%d)" % len(res['Value']['Successful']))
+      jobList = list(set(jobList).difference(set(res['Value']['Successful'])))
+    if not jobList:
+      return S_OK()
+
     result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
     if not result['OK']:
       self.log.error("Cannot unassign jobs to sandboxes", result['Message'])
@@ -203,54 +205,14 @@ class JobCleaningAgent(AgentModule):
     failedJobs = result['Value']['Failed']
     for job in failedJobs:
       jobList.pop(jobList.index(job))
+    if not jobList:
+      return S_OK()
 
-    # TODO: we should not remove a job if it still has requests in the RequestManager.
-    # But this logic should go in the client or in the service, and right now no service expose jobDB.removeJobFromDB
+    result = JobManagerClient().removeJob(jobList)
+    if not result['OK']:
+      self.log.error("Could not remove jobs", result['Message'])
+      return result
 
-    if self.jobByJob:
-      for jobID in jobList:
-        resultJobDB = self.jobDB.removeJobFromDB(jobID)
-        resultTQ = self.taskQueueDB.deleteJob(jobID)
-        resultLogDB = self.jobLoggingDB.deleteJob(jobID)
-        errorFlag = False
-        if not resultJobDB['OK']:
-          self.log.warn('Failed to remove job %d from JobDB' % jobID, result['Message'])
-          errorFlag = True
-        if not resultTQ['OK']:
-          self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, result['Message'])
-          errorFlag = True
-        if not resultLogDB['OK']:
-          self.log.warn('Failed to remove job %d from JobLoggingDB' % jobID, result['Message'])
-          errorFlag = True
-        if errorFlag:
-          error_count += 1
-        else:
-          count += 1
-        if self.throttlingPeriod:
-          time.sleep(self.throttlingPeriod)
-    else:
-      result = self.jobDB.removeJobFromDB(jobList)
-      if not result['OK']:
-        self.log.error('Failed to delete %d jobs from JobDB' % len(jobList))
-      else:
-        self.log.info('Deleted %d jobs from JobDB' % len(jobList))
-
-      for jobID in jobList:
-        resultTQ = self.taskQueueDB.deleteJob(jobID)
-        if not resultTQ['OK']:
-          self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'])
-          error_count += 1
-        else:
-          count += 1
-
-      result = self.jobLoggingDB.deleteJob(jobList)
-      if not result['OK']:
-        self.log.error('Failed to delete %d jobs from JobLoggingDB' % len(jobList))
-      else:
-        self.log.info('Deleted %d jobs from JobLoggingDB' % len(jobList))
-
-    if count > 0 or error_count > 0:
-      self.log.info('Deleted %d jobs from JobDB, %d errors' % (count, error_count))
     return S_OK()
 
   def deleteJobOversizedSandbox(self, jobIDList):
@@ -260,7 +222,7 @@ class JobCleaningAgent(AgentModule):
     failed = {}
     successful = {}
 
-    result = JobMonitoringClient().getJobParameters(jobIDList, 'OutputSandboxLFN')
+    result = JobMonitoringClient().getJobParameters(jobIDList, ['OutputSandboxLFN'])
     if not result['OK']:
       return result
     osLFNDict = result['Value']
