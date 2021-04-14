@@ -22,7 +22,6 @@ class ComponentMonitoringDB(DB):
         Initialize the DB
     """
     DB.__init__(self, 'ComponentMonitoringDB', 'Framework/ComponentMonitoringDB')
-    random.seed()
     retVal = self.__initializeDB()
     if not retVal['OK']:
       raise Exception("Can't create tables: %s" % retVal['Message'])

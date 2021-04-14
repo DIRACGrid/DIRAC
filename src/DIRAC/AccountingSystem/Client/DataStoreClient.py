@@ -19,8 +19,6 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.Core.Utilities.DErrno import ERMSUKN
 
-random.seed()
-
 
 @createClient("Accounting/DataStore")
 class DataStoreClient(Client):

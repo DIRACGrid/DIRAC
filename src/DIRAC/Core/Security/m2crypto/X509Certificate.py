@@ -26,11 +26,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.m2crypto import asn1_utils
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
 
-
-# Init the rand seed
-random.seed()
-
-
 # Decorator to execute the method only of the certificate has been loaded
 executeOnlyIfCertLoaded = executeOnlyIf('_certLoaded', S_ERROR(DErrno.ENOCERT))
 

@@ -41,7 +41,6 @@ class TaskQueueDB(DB):
   """
 
   def __init__(self):
-    random.seed()
     DB.__init__(self, 'TaskQueueDB', 'WorkloadManagement/TaskQueueDB')
     self.__maxJobsInTQ = 5000
     self.__defaultCPUSegments = [6 * 60,
