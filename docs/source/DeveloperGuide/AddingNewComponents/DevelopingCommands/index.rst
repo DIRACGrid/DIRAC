@@ -37,7 +37,7 @@ which will set the interpreter directive to the python on the environment.
   
 **2.** The next is the documentation line which is describing the command. This same documentation line will be used also the command help information available with the *-h* command switch.
 
-**3.** The majority of the code should be contained with a function, often called ``main`` though this is not required. This function should be wrapped with the ``@DiracScript()`` decorator to allow the DIRAC plugin mechanism to override the script with the function from the highest priority extension.
+**3.** The majority of the code should be contained with a function, often called ``main`` though this is not required. This function should be wrapped with the ``@DIRACScript()`` decorator to allow the DIRAC plugin mechanism to override the script with the function from the highest priority extension.
 
 .. code-block:: python
 
@@ -46,8 +46,8 @@ which will set the interpreter directive to the python on the environment.
    from DIRAC.Interfaces.API.DIRAC import DIRAC
    from DIRAC import gLogger
 
-   @DiracScript()
-   def main()
+   @DIRACScript()
+   def main():
      # Do stuff
 
    if __name__ == "__main__":
