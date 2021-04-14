@@ -61,7 +61,7 @@ def __modifyJobDescription(jobID, basepath, downloadinputdata):
   if not downloadinputdata:
     from xml.etree import ElementTree as et
     archive = et.parse(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
-    for element in archive.getiterator():
+    for element in archive.iter():
       if element.text == "DIRAC.WorkloadManagementSystem.Client.DownloadInputData":
         element.text = "DIRAC.WorkloadManagementSystem.Client.InputDataByProtocol"
         archive.write(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")

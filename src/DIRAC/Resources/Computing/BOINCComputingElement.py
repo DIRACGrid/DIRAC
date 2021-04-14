@@ -83,15 +83,9 @@ class BOINCComputingElement(ComputingElement):
     if proxy:
       self.log.verbose('Setting up proxy for payload')
 
-      compressedAndEncodedProxy = base64.encodestring(bz2.compress(proxy.dumpAllToString()['Value'])).replace('\n', '')
-      compressedAndEncodedExecutable = base64.encodestring(
-          bz2.compress(
-              open(
-                  executableFile,
-                  "rb").read(),
-              9)).replace(
-          '\n',
-          '')
+      compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()['Value'])).decode()
+      with open(executableFile, "rb") as fp:
+        compressedAndEncodedExecutable = base64.b64encode(bz2.compress(fp.read(), 9)).decode()
 
       wrapperContent = """#!/bin/bash
 /usr/bin/env python << EOF
@@ -106,8 +100,8 @@ import stat
 try:
   workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
   os.chdir( workingDirectory )
-  open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
-  open( '%(executable)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedExecutable)s" ) ) )
+  open( 'proxy', "w" ).write(bz2.decompress( base64.b64decode( "%(compressedAndEncodedProxy)s" ) ) )
+  open( '%(executable)s', "w" ).write(bz2.decompress( base64.b64decode( "%(compressedAndEncodedExecutable)s" ) ) )
   os.chmod('proxy',stat.S_IRUSR | stat.S_IWUSR)
   os.chmod('%(executable)s',stat.S_IRWXU)
   os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
@@ -140,7 +134,7 @@ EOF
 
     # Some special symbol can not be transported by xml,
     # such as less, greater, amp. So, base64 is used here.
-    wrapperContent = base64.encodestring(wrapperContent).replace("\n", '')
+    wrapperContent = base64.b64encode(wrapperContent).decode()
 
     prefix = os.path.splitext(os.path.basename(submitFile))[0].replace('_pilotwrapper', '').replace('DIRAC_', '')
     batchIDList = []
@@ -286,8 +280,8 @@ EOF
 
     self.log.debug('Got the outputs of job %s from the BOINC CE %s.' % (jobID, self.wsdl))
 
-    strOutfile = base64.decodestring(result['values'][0][0])
-    strErrorfile = base64.decodestring(result['values'][0][1])
+    strOutfile = base64.b64decode(result['values'][0][0])
+    strErrorfile = base64.b64decode(result['values'][0][1])
     if localDir:
       outFile = os.path.join(localDir, 'BOINC_%s.out' % jobID)
       self._fromStrToFile(strOutfile, outFile)
@@ -304,17 +298,12 @@ EOF
   def _fromFileToStr(self, fileName):
     """ Read a file and return the file content as a string
     """
-    strFile = ''
-    if(os.path.exists(fileName)):
-      try:
-        fileHander = open(fileName, "r")
+    strFile = b""
+    try:
+      with open(fileName, "rb") as fileHander:
         strFile = fileHander.read()
-      except Exception:
-        self.log.verbose("To read file %s failed!\n" % fileName)
-        pass
-      finally:
-        if fileHander:
-          fileHander.close()
+    except Exception:
+      self.log.verbose("To read file %s failed!\n" % fileName)
     return strFile
 
 #####################################################################
@@ -322,14 +311,10 @@ EOF
     """ Write a string to a file
     """
     try:
-      fileHander = open(fileName, "w")
-      _ = fileHander.write(strContent)
+      with open(fileName, "wb") as fileHander:
+        _ = fileHander.write(strContent)
     except Exception:
       self.log.verbose("To create %s failed!" % fileName)
-      pass
-    finally:
-      if fileHander:
-        fileHander.close()
 
 
 # testing this
