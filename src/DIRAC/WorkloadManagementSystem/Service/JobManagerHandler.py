@@ -480,7 +480,7 @@ class JobManagerHandler(RequestHandler):
     return S_OK()
 
   def __kill_delete_jobs(self, jobIDList, right):
-    """ Kill or delete jobs as necessary
+    """ Kill (== set the status to "KILLED") or delete (== set the status to "DELETED") jobs as necessary
 
         :param list jobIDList: job IDs
         :param str right: right

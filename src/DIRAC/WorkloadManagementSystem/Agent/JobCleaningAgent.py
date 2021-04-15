@@ -121,24 +121,26 @@ class JobCleaningAgent(AgentModule):
     return S_OK(cleanJobTypes)
 
   def execute(self):
-    """ Remove jobs in various status
+    """ Remove or delete jobs in various status
     """
-    # Delete jobs in "Deleted" state
+    # First, fully remove jobs in JobStatus.DELETED state
     result = self.removeJobsByStatus({'Status': JobStatus.DELETED})
     if not result['OK']:
-      return result
+      self.log.error('Failed to remove jobs with status %s' % JobStatus.DELETED)
 
-    # Get all the Job types that can be cleaned
+    # Second: set the status to JobStatus.DELETED for certain jobs
+
+    # Get all the Job types for which we can set the status to JobStatus.DELETED
     result = self._getAllowedJobTypes()
     if not result['OK']:
       return result
 
-    # No jobs in the system subject to removal
+    # No jobs in the system subject to deletion
     if not result['Value']:
       return S_OK()
 
     baseCond = {'JobType': result['Value']}
-    # Remove jobs with final status
+    # Delete jobs with final status
     for status in self.removeStatusDelay:
       delay = self.removeStatusDelay[status]
       if delay < 0:
@@ -148,9 +150,9 @@ class JobCleaningAgent(AgentModule):
       if status != 'Any':
         condDict['Status'] = status
       delTime = str(Time.dateTime() - delay * Time.day)
-      result = self.removeJobsByStatus(condDict, delTime)
+      result = self.deleteJobsByStatus(condDict, delTime)
       if not result['OK']:
-        self.log.warn('Failed to remove jobs in status %s' % status)
+	self.log.error('Failed to delete jobs', 'with condDict %s' % status)
 
     if self.maxHBJobsAtOnce > 0:
       for status, delay in self.removeStatusDelayHB.items():
@@ -160,43 +162,63 @@ class JobCleaningAgent(AgentModule):
     return S_OK()
 
   def removeJobsByStatus(self, condDict, delay=False):
-    """ Remove deleted jobs
+    """ Fully remove jobs that are already in status "DELETED", unless there are still requests.
+
+    :param dict condDict: a dict like {'JobType': 'User', 'Status': 'Killed'}
+    :param int delay: days of delay
+    :returns: S_OK/S_ERROR
     """
-    if delay:
-      self.log.verbose("Removing jobs with %s and older than %s day(s)" % (condDict, delay))
-      result = self.jobDB.selectJobs(condDict, older=delay, limit=self.maxJobsAtOnce)
-    else:
-      self.log.verbose("Removing jobs with %s " % condDict)
-      result = self.jobDB.selectJobs(condDict, limit=self.maxJobsAtOnce)
 
-    if not result['OK']:
-      return result
-
-    jobList = [int(jID) for jID in result['Value']]
-    if len(jobList) > self.maxJobsAtOnce:
-      jobList = jobList[:self.maxJobsAtOnce]
+    res = self._getJobsList(condDict, delay)
+    if not res['OK']:
+      return res
+    jobList = res['Value']
     if not jobList:
       return S_OK()
 
-    self.log.notice("Attempting to delete jobs", "(%d for %s)" % (len(jobList), condDict))
+    self.log.notice("Attempting to remove jobs", "(%d for %s)" % (len(jobList), condDict))
 
     # remove from jobList those that have still Operations to do in RMS
     res = ReqClient().getRequestIDsForJobs(jobList)
     if not res['OK']:
       return res
     if res['Value']['Successful']:
-      self.log.warn("Some jobs won't be removed, as still having Requests to complete",
+      self.log.info("Some jobs won't be removed, as still having Requests to complete",
                     "(n=%d)" % len(res['Value']['Successful']))
       jobList = list(set(jobList).difference(set(res['Value']['Successful'])))
     if not jobList:
       return S_OK()
+
+    result = JobManagerClient().removeJob(jobList)
+    if not result['OK']:
+      self.log.error("Could not remove jobs", result['Message'])
+      return result
+
+    return S_OK()
+
+  def deleteJobsByStatus(self, condDict, delay=False):
+    """ Sets the job status to "DELETED" for jobs in condDict.
+
+    :param dict condDict: a dict like {'JobType': 'User', 'Status': 'Killed'}
+    :param int delay: days of delay
+    :returns: S_OK/S_ERROR
+    """
+
+    res = self._getJobsList(condDict, delay)
+    if not res['OK']:
+      return res
+    jobList = res['Value']
+    if not jobList:
+      return S_OK()
+
+    self.log.notice("Attempting to delete jobs", "(%d for %s)" % (len(jobList), condDict))
 
     result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
     if not result['OK']:
       self.log.error("Cannot unassign jobs to sandboxes", result['Message'])
       return result
 
-    result = self.deleteJobOversizedSandbox(jobList)
+    result = self.deleteJobOversizedSandbox(jobList)  # This might set a request
     if not result['OK']:
       self.log.error(
           "Cannot schedule removal of oversized sandboxes", result['Message'])
@@ -208,15 +230,42 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    result = JobManagerClient().removeJob(jobList)
+    result = JobManagerClient().deleteJob(jobList)
     if not result['OK']:
-      self.log.error("Could not remove jobs", result['Message'])
+      self.log.error("Could not delete jobs", result['Message'])
       return result
 
     return S_OK()
 
+  def _getJobsList(self, condDict, delay=False):
+    """ Get jobs list according to conditions
+
+    :param dict condDict: a dict like {'JobType': 'User', 'Status': 'Killed'}
+    :param int delay: days of delay
+    :returns: S_OK with jobsList
+    """
+    if delay:
+      self.log.verbose("Get jobs with %s and older than %s day(s)" % (condDict, delay))
+      result = self.jobDB.selectJobs(condDict, older=delay, limit=self.maxJobsAtOnce)
+    else:
+      self.log.info("Get jobs with %s " % condDict)
+      result = self.jobDB.selectJobs(condDict, limit=self.maxJobsAtOnce)
+
+    if not result['OK']:
+      return result
+
+    jobList = [int(jID) for jID in result['Value']]
+    if len(jobList) > self.maxJobsAtOnce:
+      jobList = jobList[:self.maxJobsAtOnce]
+    return S_OK(jobList)
+
   def deleteJobOversizedSandbox(self, jobIDList):
-    """ Delete the job oversized sandbox files from storage elements
+    """
+    Deletes the job oversized sandbox files from storage elements.
+    Creates a request in RMS if not immediately possible.
+
+    :param list jobIDList: list of job IDs
+    :returns: S_OK/S_ERROR
     """
 
     failed = {}
