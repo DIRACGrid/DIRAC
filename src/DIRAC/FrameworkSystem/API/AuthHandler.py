@@ -335,10 +335,9 @@ class AuthHandler(TornadoREST):
       action += "'%s/' + document.getElementById('code').value + '?%s' }" % (self.currentPath, self.request.query)
       with self.doc:
         dom.div('Please, enter user code:',
-                style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
-          with dom.form(id="form", onsubmit="action()"):
-            dom._input(type="text", id="code", name="user_code")
-            dom.button('Submit', type="submit", id="submit")
+                style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;')
+        dom.form(dom._input(type="text", id="code", name="user_code"),
+                 dom.button('Submit', type="submit", id="submit"), id="form", onsubmit="action()")
         dom.script(action)
       return Template(self.doc.render()).generate()
 

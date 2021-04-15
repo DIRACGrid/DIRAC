@@ -501,16 +501,18 @@ class TornadoBaseClient(object):
         gLogger.error("No CAs found!")
         return S_ERROR("No CAs found!")
       verify = self.__ca_location
-
+    
     # getting certificate
     # Do we use the server certificate ?
     if self.kwargs[self.KW_USE_CERTIFICATES]:
-      cert = Locations.getHostCertificateAndKeyLocation()
+      auth = {'cert': Locations.getHostCertificateAndKeyLocation()}
     # CHRIS 04.02.21
     # TODO: add proxyLocation check ?
+    elif os.environ.get('DIRAC_TOKEN') and os.environ.get('DIRAC_TRY_USE_TOKEN'):
+      auth = {'headers': {"Authorization": "Bearer %s" % os.environ['DIRAC_TOKEN']}}
     else:
-      cert = Locations.getProxyLocation()
-      if not cert:
+      auth = {'cert': Locations.getProxyLocation()}
+      if not auth['cert']:
         gLogger.error("No proxy found")
         return S_ERROR("No proxy found")
 
@@ -527,7 +529,7 @@ class TornadoBaseClient(object):
         if not outputFile:
           call = requests.post(url, data=kwargs,
                                timeout=self.timeout, verify=verify,
-                               cert=cert)
+                               **auth)
           # raising the exception for status here
           # means essentialy that we are losing here the information of what is returned by the server
           # as error message, since it is not passed to the exception
@@ -547,7 +549,7 @@ class TornadoBaseClient(object):
           # Stream download
           # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
           with requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
-                             cert=cert, stream=True) as r:
+                             stream=True, **auth) as r:
             rawText = r.text
             r.raise_for_status()
 
