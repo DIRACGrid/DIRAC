@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # pylint: disable=unsubscriptable-object
 """ Beautiful terminal spinners in Python.
     Source: https://github.com/manrajgrover/halo

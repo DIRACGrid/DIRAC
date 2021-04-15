@@ -346,6 +346,7 @@ class ProxyInit(object):
       if not result['OK']:
         sys.exit(result['Message'])
       response = result['Value']
+    deviceCode = response['device_code']
     userCode = response['user_code']
     verURL = response['verification_uri']
     verURLComplete = response.get('verification_uri_complete')
@@ -372,7 +373,7 @@ class ProxyInit(object):
       spinner.text = '%s opening in default browser..' % verURL
 
     with Halo('Waiting authorization status..') as spin:
-      result = waitFinalStatusOfUserAuthorizationFlow(response)
+      result = waitFinalStatusOfUserAuthorizationFlow(deviceCode)
       if not result['OK']:
         sys.exit(result['Message'])
       token = result['Value']
