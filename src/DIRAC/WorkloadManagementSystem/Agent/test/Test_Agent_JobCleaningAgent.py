@@ -41,9 +41,7 @@ def test__getAllowedJobTypes(mocker, mockReplyInput, expected):
   mocker.patch(
       "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getDistinctJobAttributes",
       side_effect=mockReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   jobCleaningAgent = JobCleaningAgent()
   jobCleaningAgent.log = gLogger
@@ -76,9 +74,7 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
       side_effect=lambda x, y=None: y, create=True
   )
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   jobCleaningAgent = JobCleaningAgent()
   jobCleaningAgent.log = gLogger
@@ -111,9 +107,7 @@ def test_deleteJobsByStatus(mocker, conditions, mockReplyInput, expected):
       side_effect=lambda x, y=None: y, create=True
   )
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   jobCleaningAgent = JobCleaningAgent()
   jobCleaningAgent.log = gLogger
@@ -146,9 +140,7 @@ def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", return_value=mockAM)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB", return_value=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB", return_value=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB", return_value=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ReqClient", return_value=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobMonitoringClient", return_value=mockJMC)
 

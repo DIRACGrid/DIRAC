@@ -42,8 +42,6 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -63,15 +61,10 @@ class JobCleaningAgent(AgentModule):
 
     # clients
     self.jobDB = None
-    self.taskQueueDB = None
-    self.jobLoggingDB = None
+    self.wmsClient = None
 
     self.maxJobsAtOnce = 100
-    self.jobByJob = False
-    self.throttlingPeriod = 0.
-
     self.prodTypes = []
-
     self.removeStatusDelay = {}
     self.removeStatusDelayHB = {}
 
@@ -80,11 +73,9 @@ class JobCleaningAgent(AgentModule):
     """ Sets defaults
     """
 
-    self.am_setOption("PollingTime", 120)
     self.jobDB = JobDB()
-    self.taskQueueDB = TaskQueueDB()
-    self.jobLoggingDB = JobLoggingDB()
-    # self.sandboxDB = SandboxDB( 'SandboxDB' )
+    self.wmsClient = WMSClient(useCertificates=True)
+
     agentTSTypes = self.am_getOption('ProductionTypes', [])
     if agentTSTypes:
       self.prodTypes = agentTSTypes
@@ -192,7 +183,13 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    result = WMSClient().removeJob(jobList)
+    # FIXME: need to use something like
+    # ownerDN = self.jobDB.getJobAttribute(job, 'OwnerDN')
+    # ownerGroup = self.jobDB.getJobAttribute(job, 'OwnerGroup')
+    # if ownerDN['OK'] and ownerGroup['OK']:
+    #   wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN['Value'], delegatedGroup=ownerGroup['Value'])
+
+    result = self.wmsClient.removeJob(jobList)
     if not result['OK']:
       self.log.error("Could not remove jobs", result['Message'])
       return result
@@ -233,7 +230,7 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    result = WMSClient().deleteJob(jobList)
+    result = self.wmsClient.deleteJob(jobList)
     if not result['OK']:
       self.log.error("Could not delete jobs", result['Message'])
       return result

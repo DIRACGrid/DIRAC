@@ -359,10 +359,53 @@ class JobDB(DB):
       return S_ERROR('JobDB.getAtticJobParameters: failed to retrieve parameters')
 
 #############################################################################
+  def getJobsAttributes(self, jobIDs, attrList=None):
+    """ Get all Job Attributes for a given jobID.
+	Return a dictionary with all Job Attributes as value pairs
+    """
+
+    # If no list is given, return all attributes
+    if not attrList:
+      attrList = self.jobAttributeNames
+    if isinstance(attrList, six.string_types):
+      attrList = attrList.replace(' ', '').split(',')
+    attrList.sort()
+
+    if isinstance(jobIDs, six.string_types):
+      jobIDs = jobIDs.replace(' ', '').split(',')
+    if isinstance(jobIDs, int):
+      jobIDs = [jobIDs]
+
+    attrNameListS = []
+    for x in attrList:
+      ret = self._escapeString(x)
+      if not ret['OK']:
+	return ret
+      x = "`" + ret['Value'][1:-1] + "`"
+      attrNameListS.append(x)
+    attrNames = 'JobID,' + ','.join(attrNameListS)
+
+    cmd = 'SELECT %s FROM Jobs WHERE JobID IN (%s)' % (
+	attrNames, ','.join(str(jobID) for jobID in jobIDs))
+    res = self._query(cmd)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_OK({})
+
+    attributes = {}
+    for t_att in res['Value']:
+      jobID = int(t_att[0])
+      attributes.setdefault(jobID, {})
+      for tx, ax in zip(t_att[1:], attrList):
+	attributes[jobID].setdefault(ax, tx)
+
+    return S_OK(attributes)
+
+#############################################################################
   def getJobAttributes(self, jobID, attrList=None):
     """ Get all Job Attributes for a given jobID.
-        Return a dictionary with all Job Attributes,
-        return an empty dictionary if matching job found
+	Return a dictionary with all Job Attributes as value pairs
     """
 
     ret = self._escapeString(jobID)
