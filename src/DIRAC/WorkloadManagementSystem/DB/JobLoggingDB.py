@@ -120,6 +120,8 @@ class JobLoggingDB(DB):
   def deleteJob(self, jobID):
     """ Delete logging records for given jobs
     """
+    if not jobID:
+      return S_OK()
 
     # Make sure that we have a list of strings of jobIDs
     if isinstance(jobID, six.integer_types):

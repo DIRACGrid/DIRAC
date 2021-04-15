@@ -1269,6 +1269,9 @@ class JobDB(DB):
     #  return ret
     # e_jobID = ret['Value']
 
+    if not jobIDs:
+      return S_OK()
+
     if not isinstance(jobIDs, list):
       jobIDList = [jobIDs]
     else:

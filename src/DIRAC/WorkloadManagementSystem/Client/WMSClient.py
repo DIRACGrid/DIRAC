@@ -28,6 +28,7 @@ class WMSClient(object):
       submit
       kill
       delete
+      remove
       reschedule
       reset
   """
@@ -217,6 +218,12 @@ class WMSClient(object):
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
     return self.jobManager.deleteJob(jobID)
+
+  def removeJob(self, jobID):
+    """ Delete job(s) from the WMS Job database.
+	jobID can be an integer representing a single DIRAC job ID or a list of IDs
+    """
+    return self.jobManager.removeJob(jobID)
 
   def rescheduleJob(self, jobID):
     """ Reschedule job(s) in WMS Job database.
