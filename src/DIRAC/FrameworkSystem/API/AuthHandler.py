@@ -8,8 +8,7 @@ import pprint
 import requests
 from io import open
 
-import dominate
-from dominate.tags import link, style, head, div, a, button, form, _input, script
+from dominate import document, tags as dom
 from tornado.template import Template
 from tornado.httputil import HTTPHeaders
 from tornado.httpclient import HTTPResponse, HTTPRequest
@@ -88,10 +87,12 @@ class AuthHandler(TornadoREST):
   def initializeRequest(self):
     """ Called at every request """
     self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
-    self.doc = dominate.document(title='DIRAC authentication')
+    # Template for a html UI
+    self.doc = document('DIRAC authentication')
     with self.doc.head:
-      link(rel='stylesheet', href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
-      style(self.CSS)
+      dom.link(rel='stylesheet',
+               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
+      dom.style(self.CSS)
 
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
 
@@ -330,17 +331,15 @@ class AuthHandler(TornadoREST):
         return self.__response(code=302, headers=HTTPHeaders({"Location": authURL}))
 
       # Device code entry interface
+      action = "function action() { document.getElementById('form').action="
+      action += "'%s/' + document.getElementById('code').value + '?%s' }" % (self.currentPath, self.request.query)
       with self.doc:
-        with div(style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
-          'Please, enter user code:'
-          with form(id="form", onsubmit="f()"):
-            _input(type="text", id="c", name="user_code")
-            button('Submit', type="submit", id="submit")
-        script(
-            "function f(){document.getElementById('form').action='%s/'+document.getElementById('c').value+'?%s'}" % (
-            self.currentPath, self.request.query
-        ))
-
+        dom.div('Please, enter user code:',
+                style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
+          with dom.form(id="form", onsubmit="action()"):
+            dom._input(type="text", id="code", name="user_code")
+            dom.button('Submit', type="submit", id="submit")
+        dom.script(action)
       return Template(self.doc.render()).generate()
 
   path_authorization = ['([A-z0-9]*)']
@@ -398,13 +397,12 @@ class AuthHandler(TornadoREST):
     if not idP:
       # Choose IdP interface
       with self.doc:
-        with div(style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
-          'Please, choose a identity provider:'
-          with div(style='display:flex;justify-content:center;align-items:center;'):
+        with dom.div('Please, choose a identity provider:',
+                     style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
+          with dom.div(style='display:flex;justify-content:center;align-items:center;'):
             for idP in idPs:
               # data: Status, Comment, Action
-              href = '{url}/{idP}?{query}'.format(url=self.currentPath, idP=idP, query=self.request.query)
-              button(a(idP, href=href), cls='button')
+              dom.button(dom.a(idP, href='%s/%s?%s' % (self.currentPath, idP, self.request.query)), cls='button')
       return Template(self.doc.render()).generate()
 
     self.log.debug('Start authorization with', idP)
@@ -501,13 +499,13 @@ class AuthHandler(TornadoREST):
     if not groups:
       # Choose group interface
       with self.doc:
-        with div(style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
+        with dom.div(style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
           'Please, choose a identity provider:'
-          with div(style='display:flex;justify-content:center;align-items:center;'):
+          with dom.div(style='display:flex;justify-content:center;align-items:center;'):
             for group, data in groupStatuses.items():
               # data: Status, Comment, Action
-              href = '{url}?state={state}&chooseScope=g:{g}'.format(url=self.currentPath, state=session, g=group)
-              button(a(group, href=href), cls='button')
+              dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, session, group)),
+                         cls='button')
       return Template(self.doc.render()).generate()
 
     for group in groups:
