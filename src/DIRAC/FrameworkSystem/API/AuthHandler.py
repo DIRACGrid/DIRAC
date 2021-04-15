@@ -499,8 +499,8 @@ class AuthHandler(TornadoREST):
     if not groups:
       # Choose group interface
       with self.doc:
-        with dom.div(style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
-          'Please, choose a identity provider:'
+        with dom.div('Please, choose a identity provider:',
+                     style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
           with dom.div(style='display:flex;justify-content:center;align-items:center;'):
             for group, data in groupStatuses.items():
               # data: Status, Comment, Action
