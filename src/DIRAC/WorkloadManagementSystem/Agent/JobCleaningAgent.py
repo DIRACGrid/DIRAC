@@ -46,7 +46,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 
 import DIRAC.Core.Utilities.Time as Time
 
@@ -123,6 +123,9 @@ class JobCleaningAgent(AgentModule):
   def execute(self):
     """ Remove or delete jobs in various status
     """
+
+    # TODO: check the WMS SM before calling the functions below (v7r3)
+
     # First, fully remove jobs in JobStatus.DELETED state
     result = self.removeJobsByStatus({'Status': JobStatus.DELETED})
     if not result['OK']:
@@ -152,7 +155,7 @@ class JobCleaningAgent(AgentModule):
       delTime = str(Time.dateTime() - delay * Time.day)
       result = self.deleteJobsByStatus(condDict, delTime)
       if not result['OK']:
-	self.log.error('Failed to delete jobs', 'with condDict %s' % status)
+	self.log.error('Failed to delete jobs', 'with condDict %s' % condDict)
 
     if self.maxHBJobsAtOnce > 0:
       for status, delay in self.removeStatusDelayHB.items():
@@ -189,7 +192,7 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    result = JobManagerClient().removeJob(jobList)
+    result = WMSClient().removeJob(jobList)
     if not result['OK']:
       self.log.error("Could not remove jobs", result['Message'])
       return result
@@ -230,7 +233,7 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    result = JobManagerClient().deleteJob(jobList)
+    result = WMSClient().deleteJob(jobList)
     if not result['OK']:
       self.log.error("Could not delete jobs", result['Message'])
       return result

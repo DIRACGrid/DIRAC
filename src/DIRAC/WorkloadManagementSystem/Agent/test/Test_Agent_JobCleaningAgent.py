@@ -92,6 +92,41 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
 
 
 @pytest.mark.parametrize(
+    "conditions, mockReplyInput, expected", [
+	({'JobType': '', 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+	({'JobType': '', 'Status': 'Deleted'}, {'OK': False, 'Message': ''}, {'OK': False, 'Message': ''}),
+	({'JobType': [], 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+	({'JobType': ['some', 'status'],
+	  'Status': ['Deleted', 'Cancelled']}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None})
+    ])
+def test_deleteJobsByStatus(mocker, conditions, mockReplyInput, expected):
+  """ Testing JobCleaningAgent().deleteJobsByStatus()
+  """
+
+  mockReply.return_value = mockReplyInput
+
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
+  mocker.patch(
+      "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule._AgentModule__moduleProperties",
+      side_effect=lambda x, y=None: y, create=True
+  )
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB.__init__", side_effect=mockNone)
+
+  jobCleaningAgent = JobCleaningAgent()
+  jobCleaningAgent.log = gLogger
+  jobCleaningAgent.log.setLevel('DEBUG')
+  jobCleaningAgent._AgentModule__configDefaults = mockAM
+  jobCleaningAgent.initialize()
+
+  result = jobCleaningAgent.deleteJobsByStatus(conditions)
+
+  assert result == expected
+
+
+@pytest.mark.parametrize(
     "inputs, params, expected", [
         ([], {'OK': True, 'Value': {}}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
         (['a', 'b'], {'OK': True, 'Value': {}}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
