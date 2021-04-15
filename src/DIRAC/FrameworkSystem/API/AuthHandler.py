@@ -8,6 +8,8 @@ import pprint
 import requests
 from io import open
 
+import dominate
+from dominate.tags import link, style, head, div, a, button, form, _input, script
 from tornado.template import Template
 from tornado.httputil import HTTPHeaders
 from tornado.httpclient import HTTPResponse, HTTPRequest
@@ -36,6 +38,46 @@ class AuthHandler(TornadoREST):
   SYSTEM = 'Framework'
   AUTH_PROPS = 'all'
   LOCATION = "/DIRAC/auth"
+
+  button_style = """
+.button {
+  border-radius: 4px;
+  background-color: #ffffff00;
+  border: none;
+  color: black;
+  text-align: center;
+  font-size: 14px;
+  padding: 12px;
+  width: 100%;
+  transition: all 0.5s;
+  cursor: pointer;
+  margin: 5px;
+  display: block; /* Make the links appear below each other */
+}
+.button a {
+  color: black;
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+  text-decoration: none; /* Remove underline from links */
+}
+.button a:after {
+  content: '\\00bb';
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -20px;
+  transition: 0.5s;
+}
+.button:hover a {
+  padding-right: 25px;
+}
+.button:hover a:after {
+  opacity: 1;
+  right: 0;
+}"""
+
 
   @classmethod
   def initializeHandler(cls, serviceInfo):
@@ -286,26 +328,23 @@ class AuthHandler(TornadoREST):
         return self.__response(code=302, headers=HTTPHeaders({"Location": authURL}))
 
       # Device code entry interface
-      t = Template('''<!DOCTYPE html>
-      <html>
-        <head>
-          <title>Authentication</title>
-          <meta charset="utf-8" />
-        </head>
-        <body>
-          <form id="user_code_form" onsubmit="verification_uri_complete()">
-            <input type="text" id="user_code" name="user_code">
-            <button type="submit" id="submit">Submit</button>
-          </form>
-          <script>
-            function verification_uri_complete(){
-              var form = document.getElementById('user_code_form');
-              form.action = "{{url}}/" + document.getElementById('user_code').value + "{{query}}";
-            }
-          </script>
-        </body>
-      </html>''')
-      return t.generate(url=self.currentPath, query='?' + self.request.query)
+      doc = dominate.document(title='Authentication')
+      with doc.head:
+        link(rel='stylesheet', href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
+        style(self.button_style)
+      _div = div(style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;')
+      _div.add('Please, enter user code:')
+      _f = form(id="user_code_form", onsubmit="verification_uri_complete()")
+      _f.add(_input(type="text", id="user_code", name="user_code"))
+      _f.add(button('Submit', type="submit", id="submit"))
+      _div.add(_f)
+      doc.add(_div)
+      doc.add(script("""function verification_uri_complete(){
+          var form = document.getElementById('user_code_form');
+          form.action = "{{url}}/" + document.getElementById('user_code').value + "?{{query}}";
+          }""".format(url=self.currentPath, query=self.request.query)))
+
+      return Template(doc.render()).generate()
 
   path_authorization = ['([A-z0-9]*)']
 
@@ -360,23 +399,19 @@ class AuthHandler(TornadoREST):
 
     idP = self.get_argument('provider', provider)
     if not idP:
-
       # Choose IdP interface
-      t = Template('''<!DOCTYPE html>
-      <html>
-        <head>
-          <title>Authentication</title>
-          <meta charset="utf-8" />
-        </head>
-        <body>
-          <ul>
-            {% for idP in idPs %}
-              <li> <a href="{{url}}/{{idP}}{{query}}">{{idP}}</a> </li>
-            {% end %}
-          <ul>
-        </body>
-      </html>''')
-      return t.generate(url=self.currentPath, query='?' + self.request.query, idPs=idPs)
+      doc = dominate.document(title='Authentication')
+      with doc.head:
+        link(rel='stylesheet', href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
+        style(self.button_style)
+      with doc:
+        div(style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;').add('Please, choose a identity provider:')
+        with div(style='display:flex;justify-content:center;align-items:center;').add(div()):
+          for idP in idPs:
+            # data: Status, Comment, Action
+            href = '{url}/{idP}?{query}'.format(url=self.currentPath, idP=idP, query=self.request.query)
+            button(cls='button').add(a(idP, href=href))
+      return Template(doc.render()).generate()
 
     self.log.debug('Start authorization with', idP)
 
@@ -471,32 +506,23 @@ class AuthHandler(TornadoREST):
 
     if not groups:
       # Choose group interface
-      t = Template('''<!DOCTYPE html>
-      <html>
-        <head>
-          <title>Authentication</title>
-          <meta charset="utf-8" />
-        </head>
-        <body>
-          Please choose group:
-          <ul>
-            {% for group, data in groups.items() %}
-              <li> <a href="{{url}}?state={{session}}&chooseScope=g:{{group}}">{{group}}</a>
-                : {{data['Status']}} </br>
-                {{data.get('Comment', '')}} </br>
-                {% if data.get('Action', '') %}
-                  {{data['Action'][0]}} : {{data['Action'][1][0]}}
-                {% end %}
-              </li>
-            {% end %}
-          <ul>
-        </body>
-      </html>''')
-      return t.generate(url=self.currentPath, session=session, groups=groupStatuses)
+      doc = dominate.document(title='Authentication')
+      with doc.head:
+        link(rel='stylesheet', href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
+        style(self.button_style)
+      with doc:
+        div(style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;').add('Please, choose a group:')
+        with div(style='display:flex;justify-content:center;align-items:center;').add(div()):
+          for group, data in groupStatuses.items():
+            # data: Status, Comment, Action
+            href = '{url}?state={state}&chooseScope=g:{g}'.format(url=self.currentPath, state=session, g=group)
+            button(cls='button').add(a(group, href=href))
+      return Template(doc.render()).generate()
 
     for group in groups:
       status = groupStatuses[group]['Status']
       action = groupStatuses[group].get('Action')
+      comment = groupStatuses[group].get('Comment')
 
       if status == 'needToAuth':
         # Submit second auth flow through IdP
@@ -509,7 +535,7 @@ class AuthHandler(TornadoREST):
         return self.__response(code=302, headers=HTTPHeaders({"Location": result['Value']}))
 
       if status not in ['ready', 'unknown']:
-        return '%s - bad group status' % status
+        self.log.verbose('%s group has bad status: %s; %s' % (group, status, comment))
 
     # self.server.updateSession(session, Status='authed')
 

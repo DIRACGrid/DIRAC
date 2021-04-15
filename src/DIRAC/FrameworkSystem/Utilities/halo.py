@@ -81,6 +81,7 @@ except ImportError:
 
 from DIRAC import S_OK, S_ERROR
 
+
 def qrterminal(url):
   """ Show QR code
 
