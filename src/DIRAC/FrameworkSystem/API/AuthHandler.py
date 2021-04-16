@@ -83,6 +83,11 @@ class AuthHandler(TornadoREST):
         :param dict ServiceInfoDict: infos about services
     """
     cls.server = AuthServer()
+    cls.css = {}
+    cls.css_align_center = 'display:block;justify-content:center;align-items:center;'
+    cls.css_center_div = 'height:700px;width:100%;position:absolute;top:50%;left:0;margin-top:-350px;'
+    cls.css_big_text = 'font-size:28px;'
+    cls.css_main = ' '.join([cls.css_align_center, cls.css_center_div, cls.css_big_text])
 
   def initializeRequest(self):
     """ Called at every request """
@@ -334,10 +339,9 @@ class AuthHandler(TornadoREST):
       action = "function action() { document.getElementById('form').action="
       action += "'%s/' + document.getElementById('code').value + '?%s' }" % (self.currentPath, self.request.query)
       with self.doc:
-        dom.div('Please, enter user code:',
-                style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;')
-        dom.form(dom._input(type="text", id="code", name="user_code"),
-                 dom.button('Submit', type="submit", id="submit"), id="form", onsubmit="action()")
+        dom.div(dom.form(dom._input(type="text", id="code", name="user_code", style=self.css_big_text),
+                         dom.button('Submit', type="submit", style=self.css_big_text), id="form", onsubmit="action()"),
+                style=self.css_main)
         dom.script(action)
       return Template(self.doc.render()).generate()
 
@@ -394,15 +398,19 @@ class AuthHandler(TornadoREST):
 
     idP = self.get_argument('provider', provider)
     if not idP:
-      # Choose IdP interface
-      with self.doc:
-        with dom.div('Please, choose a identity provider:',
-                     style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
-          with dom.div(style='display:flex;justify-content:center;align-items:center;'):
-            for idP in idPs:
-              # data: Status, Comment, Action
-              dom.button(dom.a(idP, href='%s/%s?%s' % (self.currentPath, idP, self.request.query)), cls='button')
-      return Template(self.doc.render()).generate()
+      if not idPs:
+        return S_ERROR('No identity providers found.')
+      elif len(idPs) == 1:
+        idP = idPs[0]
+      else:
+        # Choose IdP interface
+        with self.doc:
+          with dom.div(style=self.css_main):
+            with dom.div('Choose identity provider', style=self.css_align_center):
+              for idP in idPs:
+                # data: Status, Comment, Action
+                dom.button(dom.a(idP, href='%s/%s?%s' % (self.currentPath, idP, self.request.query)), cls='button')
+        return Template(self.doc.render()).generate()
 
     self.log.debug('Start authorization with', idP)
 
@@ -496,16 +504,20 @@ class AuthHandler(TornadoREST):
     self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(groupStatuses))
 
     if not groups:
-      # Choose group interface
-      with self.doc:
-        with dom.div('Please, choose a identity provider:',
-                     style='display:flex;justify-content:center;align-items:center;padding:28px;font-size:28px;'):
-          with dom.div(style='display:flex;justify-content:center;align-items:center;'):
-            for group, data in groupStatuses.items():
-              # data: Status, Comment, Action
-              dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, session, group)),
-                         cls='button')
-      return Template(self.doc.render()).generate()
+      if not groupStatuses:
+        return S_ERROR('No groups found.')
+      elif len(groupStatuses) == 1:
+        groups = [groupStatuses[0]]
+      else:
+        # Choose group interface
+        with self.doc:
+          with dom.div(style=self.css_main):
+            with dom.div('Choose group', style=self.css_align_center):
+              for group, data in groupStatuses.items():
+                # data: Status, Comment, Action
+                dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, session, group)),
+                          cls='button')
+        return Template(self.doc.render()).generate()
 
     for group in groups:
       status = groupStatuses[group]['Status']
