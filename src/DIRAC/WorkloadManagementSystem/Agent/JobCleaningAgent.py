@@ -33,7 +33,7 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -61,7 +61,6 @@ class JobCleaningAgent(AgentModule):
 
     # clients
     self.jobDB = None
-    self.wmsClient = None
 
     self.maxJobsAtOnce = 100
     self.prodTypes = []
@@ -74,7 +73,6 @@ class JobCleaningAgent(AgentModule):
     """
 
     self.jobDB = JobDB()
-    self.wmsClient = WMSClient(useCertificates=True)
 
     agentTSTypes = self.am_getOption('ProductionTypes', [])
     if agentTSTypes:
@@ -183,16 +181,25 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    # FIXME: need to use something like
-    # ownerDN = self.jobDB.getJobAttribute(job, 'OwnerDN')
-    # ownerGroup = self.jobDB.getJobAttribute(job, 'OwnerGroup')
-    # if ownerDN['OK'] and ownerGroup['OK']:
-    #   wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN['Value'], delegatedGroup=ownerGroup['Value'])
+    ownerJobsDict = self._getownerJobsDict(jobList)
 
-    result = self.wmsClient.removeJob(jobList)
-    if not result['OK']:
-      self.log.error("Could not remove jobs", result['Message'])
-      return result
+    fail = False
+    for owner, jobsList in ownerJobsDict.items():
+      ownerDN = owner.split(';')[0]
+      ownerGroup = owner.split(';')[1]
+      self.log.verbose(
+	  "Attempting to remove jobs",
+	  "(n=%d) for %s : %s" % (len(jobsList), ownerDN, ownerGroup))
+      wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
+      result = wmsClient.removeJob(jobsList)
+      if not result['OK']:
+	self.log.error(
+	    "Could not remove jobs",
+	    "for %s : %s (n=%d) : %s" % (ownerDN, ownerGroup, len(jobsList), result['Message']))
+	fail = True
+
+    if fail:
+      return S_ERROR()
 
     return S_OK()
 
@@ -230,10 +237,25 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    result = self.wmsClient.deleteJob(jobList)
-    if not result['OK']:
-      self.log.error("Could not delete jobs", result['Message'])
-      return result
+    ownerJobsDict = self._getownerJobsDict(jobList)
+
+    fail = False
+    for owner, jobsList in ownerJobsDict.items():
+      ownerDN = owner.split(';')[0]
+      ownerGroup = owner.split(';')[1]
+      self.log.verbose(
+	  "Attempting to delete jobs",
+	  "(n=%d) for %s : %s" % (len(jobsList), ownerDN, ownerGroup))
+      wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
+      result = wmsClient.deleteJob(jobsList)
+      if not result['OK']:
+	self.log.error(
+	    "Could not delete jobs",
+	    "for %s : %s (n=%d) : %s" % (ownerDN, ownerGroup, len(jobsList), result['Message']))
+	fail = True
+
+    if fail:
+      return S_ERROR()
 
     return S_OK()
 
@@ -258,6 +280,22 @@ class JobCleaningAgent(AgentModule):
     if len(jobList) > self.maxJobsAtOnce:
       jobList = jobList[:self.maxJobsAtOnce]
     return S_OK(jobList)
+
+  def _getownerJobsDict(self, jobList):
+    """
+    gets in input a list of int(JobID) and return a dict with a grouping of them by owner, e.g.
+    {'dn;group': [1, 3, 4], 'dn;group_1': [5], 'dn_1;group': [2]}
+    """
+    res = self.jobDB.getJobsAttributes(jobList, ['OwnerDN', 'OwnerGroup'])
+    if not res['OK']:
+      self.log.error("Could not get the jobs attributes", res['Message'])
+      return res
+    jobsDictAttribs = res['Value']
+
+    ownerJobsDict = {}
+    for jobID, jobDict in jobsDictAttribs.items():
+      ownerJobsDict.setdefault(';'.join(jobDict.values()), []).append(jobID)
+    return ownerJobsDict
 
   def deleteJobOversizedSandbox(self, jobIDList):
     """

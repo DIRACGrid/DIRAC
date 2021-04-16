@@ -359,8 +359,10 @@ class JobDB(DB):
       return S_ERROR('JobDB.getAtticJobParameters: failed to retrieve parameters')
 
 #############################################################################
+  # TODO: the following 3 methods can be merged into 1.
+
   def getJobsAttributes(self, jobIDs, attrList=None):
-    """ Get all Job Attributes for a given jobID.
+    """ Get all Job(s) Attributes for a given list of jobIDs.
 	Return a dictionary with all Job Attributes as value pairs
     """
 
