@@ -535,10 +535,7 @@ class JobDB(DB):
     if myDate:
       cmd += ' AND LastUpdateTime < %s' % myDate
 
-    res = self._update(cmd)
-    if res['OK']:
-      return res
-    return S_ERROR('JobDB.setAttribute: failed to set attribute')
+    return self._update(cmd)
 
 #############################################################################
   def setJobAttributes(self, jobID, attrNames, attrValues, update=False, myDate=None):
