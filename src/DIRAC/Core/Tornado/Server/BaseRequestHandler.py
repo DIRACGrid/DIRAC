@@ -170,12 +170,24 @@ class BaseRequestHandler(RequestHandler):
       cls._serviceInfoDict = serviceInfo
 
       cls.__monitorLastStatsUpdate = time.time()
-
+      
+      # Some pre-initialization
+      cls._initializeHandler()
+      
       cls.initializeHandler(serviceInfo)
 
       cls.__init_done = True
 
       return S_OK()
+
+  @classmethod
+  def _initializeHandler(cls):
+    """
+      If you are writing your own framework that follows this class
+      and you need to add something before initializing the service,
+      such as initializing the OAuth client, then you need to change this method.
+    """
+    pass
 
   @classmethod
   def initializeHandler(cls, serviceInfo):
@@ -506,19 +518,14 @@ class BaseRequestHandler(RequestHandler):
         raise Exception('%s authentication type is not supported.' % grant)
 
       if result['OK']:
-        break
-      err.append('%s authentication: %s' % (grant, result['Message']))
-
-    # Report on failed authentication attempts
-    if err:
-      if result['OK']:
         for e in err:
           sLog.debug(e)
         sLog.debug('%s authentication success.' % grant)
-      else:
-        raise Exception('; '.join(err))
+        return result['Value']
+      err.append('%s authentication: %s' % (grant, result['Message']))
 
-    return result['Value']
+    # Report on failed authentication attempts
+    raise Exception('; '.join(err))
 
   def _authzSSL(self):
     """ Load client certchain in DIRAC and extract informations.
@@ -562,6 +569,25 @@ class BaseRequestHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
     """
+    # Export token
+    token = self.request.headers.get('Authorization')
+    if not token or len(token.split()) != 2:
+      return S_ERROR('Not found a bearer access token.')
+    tokenType, accessToken = token.split()
+    if tokenType.lower() != 'bearer':
+      return S_ERROR('Found a not bearer access token.')
+    
+    # # idp = self.application.idps.get(iss)
+    # # idp.verify(token)
+    # # idp.parsePayload()
+    # # credDict = idp.userDiscover()
+    # #
+    # # Read token data and verify signature
+    # data = jwt.decode(accessToken, self.application.jwks.getKeyForToken(accessToken),
+    #                   algorithms=[head['alg']])
+
+    # # parse scoupes
+    # return S_OK({'ID': data['sub'], 'issuer': data['iss'], 'group': token.groups[0]})
     # TODO: check if its DIRAC token
     try:
       token = ResourceProtector().acquire_token(self.request)

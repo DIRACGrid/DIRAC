@@ -30,21 +30,21 @@ class RefreshTokenGrant(_RefreshTokenGrant):
     # Check token
     token = self.validator(refresh_token, self.request.scope, self.request, 'OR')
 
-    # To special flow to change group
-    if self.request.scope and 'changeGroup' in self.request.scope:
-      scopes = scope_to_list(self.request.scope)
-      reqGroups = [s.split(':')[1] for s in scopes if s.startswith('g:')]
-      if len(reqGroups) != 1 or not reqGroups[0]:
-        return None
-      group = reqGroups[0]
-      result = Registry.getUsernameForID(token['sub'])
-      if not result['OK']:
-        return None
-      result = gProxyManager.getGroupsStatusByUsername(result['Value'], group)
-      if not result['OK']:
-        return None
-      if result['Value'][group]['Status'] not in ['ready', 'unknown']:
-        return None
+    # # To special flow to change group
+    # if self.request.scope and 'changeGroup' in self.request.scope:
+    #   scopes = scope_to_list(self.request.scope)
+    #   reqGroups = [s.split(':')[1] for s in scopes if s.startswith('g:')]
+    #   if len(reqGroups) != 1 or not reqGroups[0]:
+    #     return None
+    #   group = reqGroups[0]
+    #   result = Registry.getUsernameForID(token['sub'])
+    #   if not result['OK']:
+    #     return None
+    #   result = gProxyManager.getGroupsStatusByUsername(result['Value'], group)
+    #   if not result['OK']:
+    #     return None
+    #   if result['Value'][group]['Status'] not in ['ready', 'unknown']:
+    #     return None
     return self.validator(refresh_token, self.request.scope, self.request, 'OR')
 
   def authenticate_user(self, credential):

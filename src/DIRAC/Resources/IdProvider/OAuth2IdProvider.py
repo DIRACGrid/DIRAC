@@ -180,7 +180,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     self.log.debug('Store token to the database:\n', pprint.pformat(dict(self.token)))
 
     if self.store_token:
-      result = self.store_token(self.token, session.id)
+      result = self.store_token(self.token, session.get('id'))
       if not result['OK']:
         return result
 
