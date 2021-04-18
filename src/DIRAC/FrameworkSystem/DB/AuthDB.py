@@ -98,6 +98,24 @@ class Token(Model, OAuth2TokenMixin):
   id_token = Column(Text, nullable=False)
 
 
+class Session(Model):
+  __tablename__ = 'Sessions'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+  id = Column(BigInteger, unique=True, primary_key=True, nullable=False)
+
+  request = Column(String(255), nullable=False)
+  client_id = Column(String(255))
+  user_id = Column(String(255))
+  username = Column(String(255))
+  expires_at = Column(Integer, nullable=False, default=0)
+  expires_in = Column(Integer, nullable=False, default=0)
+  interval = Column(Integer, nullable=False, default=5)
+  verification_uri = Column(String(255))
+  verification_uri_complete = Column(String(255))
+  user_code = Column(String(255))
+
+
 class AuthDB(SQLAlchemyDB):
   """ AuthDB class is a front-end to the OAuth Database
   """
@@ -128,6 +146,13 @@ class AuthDB(SQLAlchemyDB):
     if 'Tokens' not in tablesInDB:
       try:
         Token.__table__.create(self.engine)  # pylint: disable=no-member
+      except Exception as e:
+        return S_ERROR(e)
+
+    # Sessions
+    if 'Sessions' not in tablesInDB:
+      try:
+        Session.__table__.create(self.engine)  # pylint: disable=no-member
       except Exception as e:
         return S_ERROR(e)
 
@@ -269,6 +294,16 @@ class AuthDB(SQLAlchemyDB):
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK('Token successfully removed'))
 
+  def getTokenByRefreshToken(self, refresh_token):
+    session = self.session()
+    try:
+      token = session.query(Token).filter(Token.refresh_token == refresh_token).first()
+    except NoResultFound:
+      return self.__result(session, S_ERROR("Token not found."))
+    except Exception as e:
+      return self.__result(session, S_ERROR(str(e)))
+    return self.__result(session, S_OK(self.__rowToDict(token)))
+
   def getTokenByUserIDAndProvider(self, userID, provider):
     session = self.session()
     try:
@@ -291,6 +326,74 @@ class AuthDB(SQLAlchemyDB):
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK([OAuth2Token(self.__rowToDict(t)) for t in tokens]))
+
+  def addSession(self, data):
+    """ Add new session
+
+        :param dict data: session metadata
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    print('============ addSession ============')
+    pprint(data)
+    session = self.session()
+    newAuthSession = Session(**data)
+
+    try:
+      session.add(newAuthSession)
+    except Exception as e:
+      return self.__result(session, S_ERROR('Could not add Session: %s' % e))
+    return self.__result(session, S_OK())
+
+  def removeSession(self, sessionID):
+    """ Remove session
+
+        :param str sessionID: session id
+
+        :return: S_OK()/S_ERROR()
+    """
+    session = self.session()
+    try:
+      session.query(Session).filter(Session.id == sessionID).delete()
+    except Exception as e:
+      return self.__result(session, S_ERROR(str(e)))
+    return self.__result(session, S_OK())
+
+  def getSession(self, sessionID):
+    """ Get client
+
+        :param str sessionID: session id
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    session = self.session()
+    try:
+      resData = session.query(Session).filter(Session.id == sessionID).first()
+    except MultipleResultsFound:
+      return self.__result(session, S_ERROR("%s is not unique ID." % sessionID))
+    except NoResultFound:
+      return self.__result(session, S_ERROR("%s session is expired." % sessionID))
+    except Exception as e:
+      return self.__result(session, S_ERROR(str(e)))
+    return self.__result(session, S_OK(self.__rowToDict(resData)))
+  
+  def getSessionByUserCode(self, userCode):
+    """ Get client
+
+        :param str userCode: user code
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    session = self.session()
+    try:
+      resData = session.query(Session).filter(Session.user_code == userCode).first()
+    except MultipleResultsFound:
+      return self.__result(session, S_ERROR("%s is not unique ID." % sessionID))
+    except NoResultFound:
+      return self.__result(session, S_ERROR("%s session is expired." % sessionID))
+    except Exception as e:
+      return self.__result(session, S_ERROR(str(e)))
+    return self.__result(session, S_OK(self.__rowToDict(resData)))
 
   def __result(self, session, result=None):
     try:

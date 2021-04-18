@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
 import pprint
 import requests
 from io import open
@@ -26,6 +27,8 @@ from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import ClientRegistrationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
+from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 __RCSID__ = "$Id$"
 
@@ -83,6 +86,7 @@ class AuthHandler(TornadoREST):
         :param dict ServiceInfoDict: infos about services
     """
     cls.server = AuthServer()
+    cls.idps = IdProviderFactory()
     cls.css = {}
     cls.css_align_center = 'display:block;justify-content:center;align-items:center;'
     cls.css_center_div = 'height:700px;width:100%;position:absolute;top:50%;left:0;margin-top:-350px;'
@@ -98,6 +102,39 @@ class AuthHandler(TornadoREST):
       dom.link(rel='stylesheet',
                href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
       dom.style(self.CSS)
+
+  def _parseDIRACResult(self, result):
+    """ Here the result which returns handle_response is processed
+    """
+    if not result['OK']:
+      raise Exception('%s:\n%s' % (result['Message'], '\n'.join(result['CallStack'])))
+    status_code, headers, payload, saves, removes = result['Value'][0]
+    if status_code:
+      self.set_status(status_code)
+    if headers:
+      for key, value in headers:
+        self.set_header(key, value)
+    if payload:
+      self.write(payload)
+    if saves:
+      for state, session in saves.items():
+        self.saveSession(state, session)
+    if removes:
+      for state in removes:
+        self.removeSession(state)
+    print('>>>> PARSE RESULT:')
+    pprint.pprint(result['Value'])
+    for method, args_kwargs in result['Value'][1].items():
+      eval('self.%s' % method)(*args_kwargs[0], **args_kwargs[1])
+  
+  def saveSession(self, state, payload):
+    self.set_secure_cookie(state, payload, secure=True, httponly=True)
+
+  def removeSession(self, state):
+    self.clear_cookie(state)
+  
+  def getSession(self, state):
+    return self.get_secure_cookie(state)
 
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
 
@@ -255,8 +292,7 @@ class AuthHandler(TornadoREST):
                             "redirect_uris":["https://marosvn32.in2p3.fr/DIRAC","https://marosvn32.in2p3.fr/DIRAC/loginComplete"],
                             "response_types":["token","id_token token","code"]}, verify=False).text
     """
-    name = ClientRegistrationEndpoint.ENDPOINT_NAME
-    return self.__response(**self.server.create_endpoint_response(name, self.request))
+    return self.server.create_endpoint_response(ClientRegistrationEndpoint.ENDPOINT_NAME, self.request)
 
   path_device = ['([A-z0-9-_]*)']
 
@@ -320,8 +356,7 @@ class AuthHandler(TornadoREST):
     """
     if self.request.method == 'POST':
       self.log.verbose('Initialize a Device authentication flow.')
-      name = DeviceAuthorizationEndpoint.ENDPOINT_NAME
-      return self.__response(**self.server.create_endpoint_response(name, self.request))
+      return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
 
     elif self.request.method == 'GET':
       userCode = self.get_argument('user_code', userCode)
@@ -333,7 +368,7 @@ class AuthHandler(TornadoREST):
         authURL = self.server.metadata['authorization_endpoint']
         authURL += '?%s&client_id=%s&user_code=%s' % (data['request'].query,
                                                       data['client_id'], userCode)
-        return self.__response(code=302, headers=HTTPHeaders({"Location": authURL}))
+        return self.server.handle_response(302, {}, [("Location", authURL)])
 
       # Device code entry interface
       action = "function action() { document.getElementById('form').action="
@@ -383,34 +418,25 @@ class AuthHandler(TornadoREST):
     grant = None
     if self.request.method == 'GET':
       try:
-        grant, _ = self.server.validate_consent_request(self.request, None)
-      except OAuth2Error as e:
-        session = self.get_argument('state')
-        if session:
-          self.server.updateSession(session, Status='failed', Comment=': '.join([e.error, e.description]))
-        return "%s</br>%s" % (e.error, e.description)
+        grant, request = self.server.validate_consent_request(self.request, None)
+      except OAuth2Error as error:
+        return self.server.handle_error_response(None, error)
 
     # Research supported IdPs
     result = getProvidersForInstance('Id')
     if not result['OK']:
       return result
     idPs = result['Value']
+    if not idPs:
+      return S_ERROR('No identity providers found.')
 
     idP = self.get_argument('provider', provider)
     if not idP:
-      if not idPs:
-        return S_ERROR('No identity providers found.')
-      elif len(idPs) == 1:
+      if len(idPs) == 1:
         idP = idPs[0]
       else:
         # Choose IdP interface
-        with self.doc:
-          with dom.div(style=self.css_main):
-            with dom.div('Choose identity provider', style=self.css_align_center):
-              for idP in idPs:
-                # data: Status, Comment, Action
-                dom.button(dom.a(idP, href='%s/%s?%s' % (self.currentPath, idP, self.request.query)), cls='button')
-        return Template(self.doc.render()).generate()
+        return self.__chooseIdP(idPs)
 
     self.log.debug('Start authorization with', idP)
 
@@ -418,20 +444,21 @@ class AuthHandler(TornadoREST):
     if idP not in idPs:
       return '%s is not registered in DIRAC.' % idP
 
-    # TODO: integrate it with AuthServer
-    # IMPLICIT test for joopiter
-    if grant.GRANT_TYPE == 'implicit' and self.get_argument('access_token', None):
-      result = self.__implicitFlow()
-      if not result['OK']:
-        return result
-      return self.__response(**self.server.create_authorization_response(self.request, result['Value']))
+    # # TODO: integrate it with AuthServer
+    # # IMPLICIT test for joopiter
+    # if grant.GRANT_TYPE == 'implicit' and self.get_argument('access_token', None):
+    #   result = self.__implicitFlow()
+    #   if not result['OK']:
+    #     return result
+    #   return self.server.create_authorization_response(self.request, result['Value'])
 
+    request = createOAuth2Request(self.request).toDict()
+    request.pop('headers')
+    request.get('body')
     # Submit second auth flow through IdP
-    result = self.server.getIdPAuthorization(idP, self.get_argument('state'))
-    if not result['OK']:
-      return result
-    self.log.verbose('Redirect to', result['Value'])
-    return self.__response(code=302, headers=HTTPHeaders({"Location": result['Value']}))
+    mainSession = {'scope': self.get_argument('scope', None), 'state': self.get_argument('state'),
+                   'request': request}
+    return self.server.getIdPAuthorization(idP, mainSession)
 
   def web_redirect(self):
     """ Redirect endpoint.
@@ -448,78 +475,68 @@ class AuthHandler(TornadoREST):
 
           &chooseScope=..  to specify new scope(group in our case) (optional)
     """
-    # Redirect endpoint for response
-    self.log.debug('REDIRECT RESPONSE:\n', '\n'.join([self.request.uri,
-                                                      self.request.query,
-                                                      self.request.body,
-                                                      str(self.request.headers)]))
-
-    # Try to parse IdP session id
-    session = self.get_argument('state')
+    # Current IdP session state
+    state = self.get_argument('state')
 
     # Try to catch errors
-    error = self.get_argument('error', None)
-    if error:
-      description = self.get_argument('error_description', '')
-      self.server.updateSession(session, Status='failed', Comment=': '.join([error, description]))
-      return '%s session crashed with error:\n%s\n%s' % (session, error, description)
+    if self.get_argument('error', None):
+      error = OAuth2Error(error=self.get_argument('error'), description=self.get_argument('error_description', ''))
+      return self.server.handle_error_response(state, error)
 
+    # Check current auth session
+    if not state or not self.getSession(state):
+      return S_ERROR("%s session is expired." % state)
+    # Current auth session
+    currentAuthSession = json.loads(self.getSession(state))
+    # Base DIRAC client auth session
+    mainAuthSession = json.loads(self.getSession(currentAuthSession['mainSessionState']))
+
+    # User info
+    username, userID, profile = (None, None, None)
     # Added group
-    choosedScope = self.get_arguments('chooseScope', None)
+    choosedScopeList = self.get_arguments('chooseScope', None)
 
-    if not choosedScope:
+    # Read requested groups by DIRAC client or user
+    requestedScopesList = mainAuthSession.get('scope', '').split()
+    if choosedScopeList:
+      userID = self.get_argument('userID', None)
+      username = self.get_argument('username', None)
+      requestedScopesList = list(set(requestedScopesList + choosedScopeList))
+    requestedGroups = [s.split(':')[1] for s in requestedScopesList if s.startswith('g:')]
+    self.log.debug('Next groups has been requeted:', ', '.join(requestedGroups))
+
+    if not choosedScopeList:
       # Parse result of the second authentication flow
-      self.log.info(session, 'session, parsing authorization response %s' % self.get_arguments)
-      result = self.server.parseIdPAuthorizationResponse(self.request, session)
+      self.log.info('%s session, parsing authorization response:\n' % state, '\n'.join([self.request.uri,
+                                                                                        self.request.query,
+                                                                                        self.request.body,
+                                                                                        str(self.request.headers)]))
+      
+      result = self.server.parseIdPAuthorizationResponse(self.request, currentAuthSession)
       if not result['OK']:
-        self.server.updateSession(session, Status='failed', Comment=result['Message'])
         return result
       # Return main session flow
-      session = result['Value']
+      username, userID, profile = result['Value']
 
-    # Main session metadata
-    sessionDict = self.server.getSession(session)
-    if not sessionDict:
-      return "%s session is expired." % session
-    username = sessionDict['username']
-    request = sessionDict['request']
-    userID = sessionDict['userID']
-
-    scopes = request.data['scope'].split()
-    if choosedScope:
-      # Modify scope in main session
-      scopes.extend(choosedScope)
-      request.data['scope'] = ' '.join(list(set(scopes)))
-      self.server.updateSession(session, request=request)
-
-    groups = [s.split(':')[1] for s in scopes if s.startswith('g:')]
-    self.log.debug('Next groups has been found for %s:' % username, ', '.join(groups))
+    self.log.debug('Next groups has been found for %s:' % username, ', '.join(requestedGroups))
 
     # Researche Group
-    result = gProxyManager.getGroupsStatusByUsername(username, groups)
+    result = gProxyManager.getGroupsStatusByUsername(username, requestedGroups)
     if not result['OK']:
-      self.server.updateSession(session, Status='failed', Comment=result['Message'])
       return result
     groupStatuses = result['Value']
+    if not groupStatuses:
+      return S_ERROR('No groups found.')
     self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(groupStatuses))
 
-    if not groups:
-      if not groupStatuses:
-        return S_ERROR('No groups found.')
-      elif len(groupStatuses) == 1:
-        groups = [groupStatuses[0]]
+    if not requestedGroups:
+      if len(groupStatuses) == 1:
+        requestedGroups = [groupStatuses[0]]
       else:
         # Choose group interface
-        with self.doc:
-          with dom.div(style=self.css_main):
-            with dom.div('Choose group', style=self.css_align_center):
-              for group, data in groupStatuses.items():
-                # data: Status, Comment, Action
-                dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, session, group)),
-                          cls='button')
-        return Template(self.doc.render()).generate()
+        return self.__chooseGroup(groupStatuses, username, userID)
 
-    for group in groups:
+    for group in requestedGroups:
       status = groupStatuses[group]['Status']
       action = groupStatuses[group].get('Action')
       comment = groupStatuses[group].get('Comment')
@@ -527,20 +544,18 @@ class AuthHandler(TornadoREST):
       if status == 'needToAuth':
         # Submit second auth flow through IdP
         idP = action[1][0]
-        result = self.server.getIdPAuthorization(idP, session)
-        if not result['OK']:
-          self.server.updateSession(session, Status='failed', Comment=result['Message'])
-          return result['Message']
-        self.log.verbose('Redirect to', result['Value'])
-        return self.__response(code=302, headers=HTTPHeaders({"Location": result['Value']}))
+        return self.server.getIdPAuthorization(idP, mainAuthSession)
 
       if status not in ['ready', 'unknown']:
         self.log.verbose('%s group has bad status: %s; %s' % (group, status, comment))
 
-    # self.server.updateSession(session, Status='authed')
-
-    # RESPONSE
-    return self.__response(**self.server.create_authorization_response(request, username))
+    # RESPONSE to basic DIRAC client request
+    request = createOAuth2Request(mainAuthSession['request'])
+    request.data['scope'] = ' '.join(requestedScopesList)
+    # Save session to DB
+    mainAuthSession.update(dict(id=currentAuthSession['mainSessionState'], user_id=userID))
+    self.server.addSession(mainAuthSession)
+    return self.server.create_authorization_response(request, {'username': username, 'user_id': userID})
 
   def web_token(self):
     """ The token endpoint, the description of the parameters will differ depending on the selected grant_type
@@ -574,86 +589,109 @@ class AuthHandler(TornadoREST):
             "error": "authorization_pending"
           }
     """
-    return self.__response(**self.server.create_token_response(self.request))
+    return self.server.create_token_response(self.request)
 
-  def __implicitFlow(self):
-    """ For implicit flow
-    """
-    accessToken = self.get_argument('access_token')
-    providerName = self.get_argument('provider')
-    result = self.server.idps.getIdProvider(providerName)
-    if not result['OK']:
-      return result
-    provObj = result['Value']
+  # def __implicitFlow(self):
+  #   """ For implicit flow
+  #   """
+  #   accessToken = self.get_argument('access_token')
+  #   providerName = self.get_argument('provider')
+  #   result = self.server.idps.getIdProvider(providerName)
+  #   if not result['OK']:
+  #     return result
+  #   provObj = result['Value']
 
-    # get keys
-    try:
-      r = requests.get(provObj.metadata['jwks_uri'], verify=False)
-      r.raise_for_status()
-      jwks = r.json()
-    except requests.exceptions.Timeout:
-      return S_ERROR('Authentication server is not answer.')
-    except requests.exceptions.RequestException as ex:
-      return S_ERROR(r.content or ex)
-    except Exception as ex:
-      return S_ERROR('Cannot read response: %s' % ex)
+  #   # get keys
+  #   try:
+  #     r = requests.get(provObj.metadata['jwks_uri'], verify=False)
+  #     r.raise_for_status()
+  #     jwks = r.json()
+  #   except requests.exceptions.Timeout:
+  #     return S_ERROR('Authentication server is not answer.')
+  #   except requests.exceptions.RequestException as ex:
+  #     return S_ERROR(r.content or ex)
+  #   except Exception as ex:
+  #     return S_ERROR('Cannot read response: %s' % ex)
 
-    # Get claims and verify signature
-    claims = jwt.decode(accessToken, jwks)
-    # Verify token
-    claims.validate()
+  #   # Get claims and verify signature
+  #   claims = jwt.decode(accessToken, jwks)
+  #   # Verify token
+  #   claims.validate()
 
-    result = Registry.getUsernameForID(claims.sub)
-    if not result['OK']:
-      return S_ERROR("User is not valid.")
-    username = result['Value']
+  #   result = Registry.getUsernameForID(claims.sub)
+  #   if not result['OK']:
+  #     return S_ERROR("User is not valid.")
+  #   username = result['Value']
 
-    # Check group
-    group = [s.split(':')[1] for s in self.get_arguments('scope') if s.startswith('g:')][0]
+  #   # Check group
+  #   group = [s.split(':')[1] for s in self.get_arguments('scope') if s.startswith('g:')][0]
 
-    # Researche Group
-    result = gProxyManager.getGroupsStatusByUsername(username, [group])
-    if not result['OK']:
-      return result
-    groupStatuses = result['Value']
+  #   # Researche Group
+  #   result = gProxyManager.getGroupsStatusByUsername(username, [group])
+  #   if not result['OK']:
+  #     return result
+  #   groupStatuses = result['Value']
 
-    status = groupStatuses[group]['Status']
-    if status not in ['ready', 'unknown']:
-      return S_ERROR('%s - bad group status' % status)
-    return S_OK(claims.sub)
+  #   status = groupStatuses[group]['Status']
+  #   if status not in ['ready', 'unknown']:
+  #     return S_ERROR('%s - bad group status' % status)
+  #   return S_OK(claims.sub)
 
-  def __response(self, *args, **kwargs):
-    """ Return response as HTTPResponse object """
-    return HTTPResponse(HTTPRequest(self.request.full_url(), self.request.method), *args, **kwargs)
+  # def __validateToken(self):
+  #   """ Load client certchain in DIRAC and extract informations.
 
-  def __validateToken(self):
-    """ Load client certchain in DIRAC and extract informations.
+  #       The dictionary returned is designed to work with the AuthManager,
+  #       already written for DISET and re-used for HTTPS.
 
-        The dictionary returned is designed to work with the AuthManager,
-        already written for DISET and re-used for HTTPS.
+  #       :returns: a dict containing the return of :py:meth:`DIRAC.Core.Security.X509Chain.X509Chain.getCredentials`
+  #                 (not a DIRAC structure !)
+  #   """
+  #   auth = self.request.headers.get("Authorization")
+  #   credDict = {}
+  #   if not auth:
+  #     raise Exception('401 Unauthorize')
+  #   # If present "Authorization" header it means that need to use another then certificate authZ
+  #   authParts = auth.split()
+  #   authType = authParts[0]
+  #   if len(authParts) != 2 or authType.lower() != "bearer":
+  #     raise Exception("Invalid header authorization")
+  #   token = authParts[1]
+  #   # Read public key of DIRAC auth service
+  #   with open('/opt/dirac/etc/grid-security/jwtRS256.key.pub', 'rb') as f:
+  #     key = f.read()
+  #   # Get claims and verify signature
+  #   claims = jwt.decode(token, key)
+  #   # Verify token
+  #   claims.validate()
+  #   result = Registry.getUsernameForID(claims.sub)
+  #   if not result['OK']:
+  #     raise Exception("User is not valid.")
+  #   claims['username'] = result['Value']
+  #   return claims
 
-        :returns: a dict containing the return of :py:meth:`DIRAC.Core.Security.X509Chain.X509Chain.getCredentials`
-                  (not a DIRAC structure !)
-    """
-    auth = self.request.headers.get("Authorization")
-    credDict = {}
-    if not auth:
-      raise Exception('401 Unauthorize')
-    # If present "Authorization" header it means that need to use another then certificate authZ
-    authParts = auth.split()
-    authType = authParts[0]
-    if len(authParts) != 2 or authType.lower() != "bearer":
-      raise Exception("Invalid header authorization")
-    token = authParts[1]
-    # Read public key of DIRAC auth service
-    with open('/opt/dirac/etc/grid-security/jwtRS256.key.pub', 'rb') as f:
-      key = f.read()
-    # Get claims and verify signature
-    claims = jwt.decode(token, key)
-    # Verify token
-    claims.validate()
-    result = Registry.getUsernameForID(claims.sub)
-    if not result['OK']:
-      raise Exception("User is not valid.")
-    claims['username'] = result['Value']
-    return claims
+  def __chooseIdP(self, idPs):
+    with self.doc:
+      with dom.div(style=self.css_main):
+        with dom.div('Choose identity provider', style=self.css_align_center):
+          for idP in idPs:
+            # data: Status, Comment, Action
+            dom.button(dom.a(idP, href='%s/%s?%s' % (self.currentPath, idP, self.request.query)), cls='button')
+    return Template(self.doc.render()).generate()
+
+  def __chooseGroup(self, groupStatuses, username, userID):
+    if not groupStatuses:
+      return S_ERROR('No groups found.')
+    elif len(groupStatuses) == 1:
+      groups = [groupStatuses[0]]
+    else:
+      # Choose group interface
+      with self.doc:
+        with dom.div(style=self.css_main):
+          with dom.div('Choose group', style=self.css_align_center):
+            for group, data in groupStatuses.items():
+              # data: Status, Comment, Action
+              dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s&username=%s&userID=%s' % (self.currentPath,
+                                                                                         self.get_argument('state'),
+                                                                                         group, username, userID)),
+                         cls='button')
+      return Template(self.doc.render()).generate()

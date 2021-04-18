@@ -9,6 +9,7 @@ import six
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProviderByAlias
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForID, getVOMSRoleGroupMapping
 
 
 """
@@ -76,6 +77,59 @@ def claimParser(claimDict, attributes):
             profile[claim].append(result.groupdict())
 
   return profile
+
+
+def parseBasic(claimDict):
+  """ Parse basic claims
+
+      :param dict claimDict: claims
+
+      :return: S_OK(dict)/S_ERROR()
+  """
+  credDict = {}
+  credDict['ID'] = claimDict['sub']
+  return credDict
+
+
+def parseEduperson(claimDict):
+  """ Parse eduperson claims
+
+      :param dict claimDict: claims
+
+      :return: dict
+  """
+  credDict = {}
+  attributes = {
+      'eduperson_unique_id': '^(?P<ID>.*)',
+      'eduperson_entitlement': '^(?P<NAMESPACE>[A-z,.,_,-,:]+):(group:registry|group):\
+                                (?P<VO>[A-z,.,_,-]+):role=(?P<VORole>[A-z,.,_,-]+)[:#].*'
+  }
+  resDict = claimParser(claimDict, attributes)
+  if not resDict:
+    return credDict
+  credDict['ID'] = resDict['eduperson_unique_id']['ID']
+  credDict['VOs'] = {}
+  for voDict in resDict['eduperson_entitlement']:
+    if voDict['VO'] not in credDict['VOs']:
+      credDict['VOs'][voDict['VO']] = {'VORoles': []}
+    if voDict['VORole'] not in credDict['VOs'][voDict['VO']]['VORoles']:
+      credDict['VOs'][voDict['VO']]['VORoles'].append(voDict['VORole'])
+  return credDict
+
+
+def userDiscover(credDict):
+  result = getUsernameForID(credDict['ID'])
+  credDict['DIRACUsername'] = result['Value'] if result['OK'] else 'anonymous'
+  credDict['DIRACGroups'] = []
+  for vo, voData in credDict.get('VOs', {}).items():
+    result = getVOMSRoleGroupMapping(vo)
+    if result['OK']:
+      avilGroups = result['Value']['VOMSDIRAC']
+      for role in voData['VORoles']:
+        groups = result['Value']['VOMSDIRAC'].get('/%s' % role)
+        if groups:
+          credDict['DIRACGroups'] = list(set(credDict['DIRACGroups'] + groups))
+  return credDict
 
 
 class ProfileParser(object):

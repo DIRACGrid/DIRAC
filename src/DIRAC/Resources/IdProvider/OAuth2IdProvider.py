@@ -8,6 +8,7 @@ import re
 import pprint
 from requests import exceptions
 from authlib.common.urls import url_decode
+from authlib.common.security import generate_token
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oidc.discovery.well_known import get_well_known_url
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
@@ -20,7 +21,7 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import Session
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthClients
-from DIRAC.FrameworkSystem.private.authorization.utils.ProfileParser import ProfileParser
+from DIRAC.FrameworkSystem.private.authorization.utils.ProfileParser import *
 
 __RCSID__ = "$Id$"
 
@@ -92,7 +93,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                                                                          self.client_secret,
                                                                          pprint.pformat(self.metadata)))
 
-  def _storeToken(self, token, session=None):
+  def _storeToken(self, token):
     if self.sessionManager:
       return self.sessionManager.storeToken(dict(self.token))
 
@@ -132,15 +133,15 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
     return S_OK(metadata)
 
-  def submitNewSession(self, session):
+  def submitNewSession(self, session=None):
     """ Submit new authorization session
 
         :param str session: session number
 
         :return: S_OK(str)/S_ERROR()
     """
-    url, _ = self.create_authorization_url(self.metadata['authorization_endpoint'], state=session)
-    return S_OK((url, {}))
+    url, state = self.create_authorization_url(self.metadata['authorization_endpoint'], state=self.generateState(session))
+    return S_OK((url, state, {}))
 
   @checkResponse
   def parseAuthResponse(self, response, session=None):
@@ -156,7 +157,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     self.log.debug('Try to parse authentication response:', pprint.pformat(response.data))
 
     if not session:
-      session = Session(response.args['state'])
+      session = {}  # Session(response.args['state'])
 
     self.log.debug('Current session is:\n', pprint.pformat(dict(session)))
     # self.log.debug('Current metadata is:\n', pprint.pformat(self.metadata))
@@ -165,26 +166,31 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                             code_verifier=session.get('code_verifier'))
 
     # Get user info
-    result = self._fillUserProfile()
+    result = self.__getUserInfo()
+    if not result['OK']:
+      return result
+    credDict = parseBasic(result['Value'])
+    credDict.update(parseEduperson(result['Value']))
+    cerdDict = userDiscover(credDict)
+    result = self.parser(result['Value'])
     if not result['OK']:
       return result
     username, userID, userProfile = result['Value']
+    userProfile['credDict'] = credDict
 
     self.log.debug('Got response dictionary:\n', pprint.pformat(userProfile))
 
     # Store token
     self.token['client_id'] = self.client_id
     self.token['provider'] = self.name
-    # self.token['user_id'] = userProfile['ID']
     self.token['user_id'] = userID
     self.log.debug('Store token to the database:\n', pprint.pformat(dict(self.token)))
 
-    if self.store_token:
-      result = self.store_token(self.token, session.get('id'))
-      if not result['OK']:
-        return result
+    result = self.store_token(self.token)
+    if not result['OK']:
+      return result
 
-    return S_OK((username, userID, userProfile, session.update(token=dict(self.token))))
+    return S_OK((username, userID, userProfile))
 
   def _fillUserProfile(self, useToken=None):
     result = self.__getUserInfo(useToken)
@@ -351,3 +357,6 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.update_token(self.token, refresh_token=refresh_token)
 
     return self.token
+
+  def generateState(self, session=None):
+    return session or generate_token(10)

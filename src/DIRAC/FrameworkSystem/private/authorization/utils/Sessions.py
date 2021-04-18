@@ -82,17 +82,18 @@ class Session(dict):
 class SessionManager(object):
   """ Authentication sessions cache manager """
 
-  def __init__(self, addTime=300, maxAge=3600 * 12):
+  def __init__(self, database, addTime=300, maxAge=3600 * 12):
     """ Con'r
 
         :param int addTime: additional time added to session life
         :param int maxAge: max session age
     """
-    self.__sessions = DictCache()
+    # self.__sessions = DictCache()
+    self.__db = database
     self.__addTime = addTime
     self.__maxAge = maxAge
 
-  @gCacheSession
+  # @gCacheSession
   def addSession(self, session, exp=None, **kwargs):
     """ Add session to cache
 
@@ -100,18 +101,19 @@ class SessionManager(object):
         :type session: str, dict or Session object
         :param int exp: expired time
     """
-    print('-- addSession')
-    pprint(session)
-    exp = min(exp or self.__addTime, self.__maxAge)
-    session = Session(session, data=kwargs, exp=exp)
-    pprint(session)
+    # print('-- addSession')
+    # pprint(session)
+    # exp = min(exp or self.__addTime, self.__maxAge)
+    # session = Session(session, data=kwargs, exp=exp)
+    # pprint(session)
 
     # if session.age > self.__maxAge:
     #   return self.__sessions.delete(session.id)
-    print('ADD SESSION: %s' % session.id)
-    return self.__sessions.add(session.id, exp, session)
+    # print('ADD SESSION: %s' % session.id)
+    return self.__db.addSession(dict(session))
+    # return self.__sessions.add(session.id, exp, session)
 
-  @gCacheSession
+  # @gCacheSession
   def getSession(self, session):
     """ Get session from cache
 
@@ -122,17 +124,18 @@ class SessionManager(object):
     """
     print('-- getSession')
     pprint(session)
-    return self.__sessions.get(session.id if isinstance(session, Session) else session)
+    return self.__db.getSession(session)
+    # return self.__sessions.get(session.id if isinstance(session, Session) else session)
 
-  @gCacheSession
-  def getSessions(self):
-    """ Get all sessions from cache
+  # # @gCacheSession
+  # def getSessions(self):
+  #   """ Get all sessions from cache
 
-        :return: dict
-    """
-    return self.__sessions.getDict()
+  #       :return: dict
+  #   """
+  #   return self.__sessions.getDict()
 
-  @gCacheSession
+  # @gCacheSession
   def removeSession(self, session):
     """ Remove session from cache
 
@@ -141,7 +144,8 @@ class SessionManager(object):
     """
     print('-- removeSession')
     pprint(session)
-    self.__sessions.delete(session.id if isinstance(session, Session) else session)
+    return self.__db.removeSession(session)
+    # self.__sessions.delete(session.id if isinstance(session, Session) else session)
 
   def updateSession(self, session, exp=None, createIfNotExist=None, **kwargs):
     """ Update session in cache

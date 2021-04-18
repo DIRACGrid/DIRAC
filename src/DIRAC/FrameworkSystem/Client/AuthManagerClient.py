@@ -134,10 +134,10 @@ class AuthManagerClient(Client):
     """
     result = self._getRPC().parseAuthResponse(providerName, response, dict(session))  # , username, userProfile)
     if result['OK']:
-      username, userID, profile, sessionDict = result['Value']
+      username, userID, profile = result['Value']
       if username and profile:
         gAuthManagerData.updateProfiles(userID, profile)
-    return S_OK((username, userID, profile, Session(sessionDict))) if result['OK'] else result
+    return S_OK((username, userID, profile)) if result['OK'] else result
 
 
 gSessionManager = AuthManagerClient()

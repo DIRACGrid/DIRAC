@@ -74,20 +74,15 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
   metadata_class = AuthorizationServerMetadata
 
   def __init__(self):
-    self.__db = AuthDB()
+    self.db = AuthDB()
     self.idps = IdProviderFactory()
-    ClientManager.__init__(self, self.__db)
+    ClientManager.__init__(self, self.db)
     SessionManager.__init__(self)
     # Privide two authlib methods query_client and save_token
     _AuthorizationServer.__init__(self, query_client=self.getClient, save_token=self.saveToken)
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
     self.collectMetadata()
-
-    # self.config.setdefault('error_uris', self.metadata.get('OAUTH2_ERROR_URIS'))
-    # if self.metadata.get('OAUTH2_JWT_ENABLED'):
-    #   deprecate('Define "get_jwt_config" in OpenID Connect grants', '1.0')
-    #   self.init_jwt_config(self.metadata)
 
     self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
     self.register_grant(TokenExchangeGrant)
@@ -107,6 +102,12 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     metadata.validate()
     self.metadata = metadata
 
+  def addSession(self, session):
+    self.db.addSession(session)
+  
+  def getSession(self, session):
+    self.db.getSession(session)
+
   def saveToken(self, token, request):
     """ Store tokens
 
@@ -114,12 +115,10 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
         :param object request: http Request object, implemented for compatibility with authlib library (unuse)
     """
     if 'refresh_token' in token:
-      gLogger.debug('Save long-token:\n', pprint.pformat(dict(token)))
-      # Cache it for one month
-      self.addSession(token['refresh_token'], exp=int(time()) + (30 * 24 * 3600), token=dict(token))
+      self.db.storeToken(token)
     return None
 
-  def getIdPAuthorization(self, providerName, mainSession):
+  def getIdPAuthorization(self, providerName, mainSession=None, oldState=''):
     """ Submit subsession and return dict with authorization url and session number
 
         :param str providerName: provider name
@@ -130,15 +129,22 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
                  UserName -- user name, returned if status is 'ready'
                  Session -- session id, returned if status is 'needToAuth'
     """
-    # Start subsession
-    session = generate_token(10)
-    self.addSession(session, mainSession=mainSession, Provider=providerName)
+    result = self.idps.getIdProvider(providerName)
+    if not result['OK']:
+      return result
+    idpObj = result['Value']
+    result = idpObj.submitNewSession()
+    if not result['OK']:
+      return result
+    authURL, state, session = result['Value']
+    session['Provider'] = providerName
+    session['mainSessionState'] = mainSession.pop('state')
 
-    result = gSessionManager.getIdPAuthorization(providerName, session)
-    if result['OK']:
-      authURL, sessionParams = result['Value']
-      self.updateSession(session, **sessionParams)
-    return S_OK(authURL) if result['OK'] else result
+    gLogger.verbose('Redirect to', authURL)
+    return self.handle_response(302, {}, [("Location", authURL)],
+                                saveSessions={state: json.dumps(session),
+                                              session['mainSessionState']: json.dumps(mainSession)},
+                                removeSessions=[oldState])
 
   def parseIdPAuthorizationResponse(self, response, session):
     """ Fill session by user profile, tokens, comment, OIDC authorize status, etc.
@@ -150,24 +156,8 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    # Get IdP authorization flows session
-    session = self.getSession(session)
-    if not session:
-      return S_ERROR("Session expired.")
-    # And remove it, the credentionals will be stored to the database.
-    self.removeSession(session)
-
-    result = gSessionManager.parseAuthResponse(session['Provider'], createOAuth2Request(response).toDict(),
-                                               session)
-    if not result['OK']:
-      self.updateSession(session['mainSession'], Status='failed', Comment=result['Message'])
-      return result
-
-    username, userID, _, _ = result['Value']
-
-    if username and userID:
-      self.updateSession(session['mainSession'], username=username, userID=userID)  # profile=profile,
-    return S_OK(session['mainSession'])
+    return gSessionManager.parseAuthResponse(session.pop('Provider'), createOAuth2Request(response).toDict(),
+                                             session)
 
   def access_token_generator(self, client, grant_type, user, scope):
     """ A function to generate ``access_token``
@@ -222,35 +212,6 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     # Need to use enum==0.3.1 for python 2.7
     return jwt.encode(header, payload, key)
 
-  # def init_jwt_config(self, config):
-  #   """ Initialize JWT related configuration. """
-  #   jwt_iss = config.get('OAUTH2_JWT_ISS')
-  #   if not jwt_iss:
-  #     raise RuntimeError('Missing "OAUTH2_JWT_ISS" configuration.')
-
-  #   jwt_key_path = config.get('OAUTH2_JWT_KEY_PATH')
-  #   if jwt_key_path:
-  #     with open(jwt_key_path, 'r') as f:
-  #       if jwt_key_path.endswith('.json'):
-  #         jwt_key = json.load(f)
-  #       else:
-  #         jwt_key = to_unicode(f.read())
-  #   else:
-  #     jwt_key = config.get('OAUTH2_JWT_KEY')
-
-  #   if not jwt_key:
-  #     raise RuntimeError('Missing "OAUTH2_JWT_KEY" configuration.')
-
-  #   jwt_alg = config.get('OAUTH2_JWT_ALG')
-  #   if not jwt_alg:
-  #     raise RuntimeError('Missing "OAUTH2_JWT_ALG" configuration.')
-
-  #   jwt_exp = config.get('OAUTH2_JWT_EXP', 3600)
-  #   self.config.setdefault('jwt_iss', jwt_iss)
-  #   self.config.setdefault('jwt_key', jwt_key)
-  #   self.config.setdefault('jwt_alg', jwt_alg)
-  #   self.config.setdefault('jwt_exp', jwt_exp)
-
   def get_error_uris(self, request):
     error_uris = self.config.get('error_uris')
     if error_uris:
@@ -263,21 +224,35 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
   def create_json_request(self, request):
     return self.create_oauth2_request(request, HttpRequest, True)
 
-  def handle_response(self, status_code, payload, headers):
+  def handle_response(self, status_code, payload, headers, saveSessions={}, removeSessions=[], **actions):
     gLogger.debug('Handle authorization response with %s status code:' % status_code, payload)
     gLogger.debug(headers)
-    if isinstance(payload, dict):
-      # `OAuth2Request` is not JSON serializable
-      payload.pop('request', None)
-      payload = json_dumps(payload)
-    # return (payload, status_code, headers)
+    # if isinstance(payload, dict):
+    #   # `OAuth2Request` is not JSON serializable
+    #   payload.pop('request', None)
+    #   payload = json_dumps(payload)
+    # # return (payload, status_code, headers)
 
-    header = HTTPHeaders()
-    for h in headers:
-      header.add(*h)
-    # Expected that 'data' is unicode string, for Python 2 => unicode(str, "utf-8")
-    return dict(code=status_code, headers=header, buffer=io.StringIO(to_unicode(payload)))
+    # header = HTTPHeaders()
+    # for h in headers:
+    #   header.add(*h)
+    # # Expected that 'data' is unicode string, for Python 2 => unicode(str, "utf-8")
+
+    # # # if state:
+    # # #   actions['clear_cookie'] = ([state], {})
+    # # # gLogger.debug(actions)
+    return S_OK(((status_code, headers, payload, saveSessions, removeSessions), actions))
+    
+    # return dict(code=status_code, headers=header, buffer=io.StringIO(to_unicode(payload)))
     # return HTTPResponse(self.request, status_code, headers=header, buffer=io.StringIO(payload))
+
+  def create_authorization_response(self, response, username):
+    result = super(AuthServer, self).create_authorization_response(response, username)
+    if result['OK']:
+      # Remove auth session
+      result['Value'][0][4].append(response.data['state'])
+      # result['Value'][1].update(dict(clear_cookie=([response.data['state']], {})))
+    return result
 
   def validate_consent_request(self, request, end_user=None):
     """ Validate current HTTP request for authorization page. This page
@@ -302,5 +277,5 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     print('==== Request:')
     pprint.pprint(req.data)
     print('============')
-    self.updateSession(session, request=req, createIfNotExist=True)
-    return grant, session
+    # self.updateSession(session, request=req, createIfNotExist=True)
+    return grant, req

@@ -80,18 +80,20 @@ def waitFinalStatusOfUserAuthorizationFlow(deviceCode, interval=5, timeout=300):
 class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
   URL = '%s/device' % getAuthAPI()
 
-  def create_endpoint_response(self, req):
-    c, data, h = super(DeviceAuthorizationEndpoint, self).create_endpoint_response(req)
-    req.query += '&response_type=device&state=%s' % data['device_code']
-    self.server.updateSession(data['device_code'], request=req)  # , group=req.args.get('group'))
-    return c, data, h
+  # def create_endpoint_response(self, req):
+  #   c, data, h = super(DeviceAuthorizationEndpoint, self).create_endpoint_response(req)
+  #   req.query += '&response_type=device&state=%s' % data['device_code']
+  #   self.server.updateSession(data['device_code'], request=req)  # , group=req.args.get('group'))
+  #   return c, data, h
 
   def get_verification_uri(self):
     return self.URL
 
   def save_device_credential(self, client_id, scope, data):
     data['verification_uri_complete'] = '%s/%s' % (data['verification_uri'], data['user_code'])
-    self.server.addSession(data['device_code'], client_id=client_id, scope=scope, **data)
+    # self.server.addSession(data['device_code'], client_id=client_id, scope=scope, **data)
+    data.update(dict(id=data['device_code'], client_id=client_id, scope=scope))
+    self.server.db.addSession(data)
 
 
 class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
@@ -116,9 +118,10 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     userCode = self.request.args.get('user_code')
     if not userCode:
       raise OAuth2Error('user_code is absent.')
-    session, _ = self.server.getSessionByOption('user_code', userCode)
-    from pprint import pprint
-    pprint(self.server.getSessions())
+    # session, _ = self.server.getSessionByOption('user_code', userCode)
+    session = self.server.db.getSessionByUserCode(userCode)
+    # from pprint import pprint
+    # pprint(self.server.getSessions())
     if not session:
       raise OAuth2Error('Session with %s user code is expired.' % userCode)
     self.execute_hook('after_validate_authorization_request')
@@ -128,7 +131,8 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     return 200, 'Authorization complite.', set()
 
   def query_device_credential(self, device_code):
-    _, data = self.server.getSessionByOption('device_code', device_code)
+    # _, data = self.server.getSessionByOption('device_code', device_code)
+    data = self.server.db.getSession(device_code)
     if not data:
       return None
     data['expires_at'] = data['expires_in'] + int(time.time())
@@ -137,8 +141,9 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     return DeviceCredentialDict(data)
 
   def query_user_grant(self, user_code):
-    _, data = self.server.getSessionByOption('user_code', user_code)
-    return (data['userID'], True) if data.get('username') else None
+    data = self.server.db.getSessionByUserCode(userCode)
+    # _, data = self.server.getSessionByOption('user_code', user_code)
+    return (data['user_id'], True) if data.get('username') else None
 
   def should_slow_down(self, credential, now):
     return False

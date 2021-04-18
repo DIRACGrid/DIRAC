@@ -271,14 +271,15 @@ class AuthManagerHandler(RequestHandler):
     result = self.__idps.getIdProvider(providerName, sessionManager=self.__db)
     if result['OK']:
       provObj = result['Value']
-      result = provObj.parseAuthResponse(response, Session(sessionDict))
+      result = provObj.parseAuthResponse(response, sessionDict)
     if not result['OK']:
       return result
     # FINISHING with IdP auth result
-    username, userID, profile, session = result['Value']
+    username, userID, profile = result['Value']
+    self.log.debug("Read %s's profile:" % username, pprint.pformat(profile))
     userProfile = profile[providerName][userID]
 
-    self.log.debug('The next session is identified for %s:\n' % username, pprint.pformat(session))
+    # self.log.debug('The next session is identified for %s:\n' % username, pprint.pformat(session))
     # Is ID registred?
     result = getUsernameForID(userID)
     if not result['OK']:
@@ -298,7 +299,7 @@ class AuthManagerHandler(RequestHandler):
     # print('profile: %s' % userProfile)
     # pprint.pprint(self.__getProfiles())
     # print('==================  ==================')
-    return S_OK((result['Value'], userID, userProfile, dict(session)))
+    return S_OK((result['Value'], userID, userProfile))
 
   def __registerNewUser(self, provider, username, userProfile):
     """ Register new user
@@ -403,3 +404,40 @@ class AuthManagerHandler(RequestHandler):
     # else:
     result = self.__db.getTokenByUserIDAndProvider(uid, provider)
     return result
+
+  types_addSession = [dict]
+
+  def export_addSession(self, session):
+    """ Add session to cache
+
+        :param session: session
+        :type session: str, dict or Session object
+        :param int exp: expired time
+    """
+    return self.__db.addSession(dict(session))
+
+  types_getSession = [six.string_types]
+
+  def export_getSession(self, session):
+    """ Get session from cache
+
+        :param session: session
+        :type session: str, Session object
+
+        :return: Session object
+    """
+    print('-- getSession')
+    pprint(session)
+    return self.__db.getSession(session)
+
+  types_removeSession = [six.string_types]
+
+  def export_removeSession(self, session):
+    """ Remove session from cache
+
+        :param session: session
+        :type session: str, Session object
+    """
+    print('-- removeSession')
+    pprint(session)
+    return self.__db.removeSession(session)

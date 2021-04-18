@@ -29,7 +29,7 @@ class OAuth2Code(dict):
 
   @property
   def user(self):
-    return self.get('user_id')  # (self.get('user_id'), self.get('group'))
+    return self.get('user_id')
 
   @property
   def code_challenge(self):
@@ -121,15 +121,16 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
     print('DICT:')
     pprint(self.__dict__)
     print('Reuest:')
+    pprint(self.request.user)
     pprint(self.request.data)
     print('Session:')
-    pprint(self.server.getSession(self.request.state))
+    # sessionDict = self.server.getSession(self.request.state)
+    # pprint(sessionDict)
     print('-----------------------------------------------')
-    sessionDict = self.server.getSession(self.request.state)
     jws = JsonWebSignature(algorithms=['RS256'])
     protected = {'alg': 'RS256'}
-    code = OAuth2Code({'user_id': sessionDict['userID'],
-                       #  'group': sessionDict['group'],
+    code = OAuth2Code({'user_id': self.request.user['user_id'],
+                       # These scopes already contain DIRAC groups
                        'scope': self.request.data['scope'],
                        'redirect_uri': self.request.args['redirect_uri'],
                        'client_id': self.request.args['client_id'],

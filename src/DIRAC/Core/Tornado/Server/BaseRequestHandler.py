@@ -12,6 +12,7 @@ from io import open
 import os
 import time
 import threading
+from six import string_types
 from datetime import datetime
 from six.moves import http_client
 from six.moves.urllib.parse import unquote
@@ -433,18 +434,14 @@ class BaseRequestHandler(RequestHandler):
     """
 
     # Wait result only if it's a Future object
-    self.result = retVal.result() if isinstance(retVal, Future) else retVal
+    self.result = retVal.result() if isinstance(retVal, Future) else retVal 
 
     # Here it is safe to write back to the client, because we are not
     # in a thread anymore
 
-    # Parse HTTPResponse object, e.g.: in AuthHandler endpoint
-    if isinstance(self.result, HTTPResponse):
-      self.set_status(self.result.code)
-      for key in self.result.headers:
-        self.set_header(key, self.result.headers[key])
-      if self.result.body:
-        self.write(self.result.body)
+    # Is it S_OK or S_ERROR
+    if isinstance(self.result, dict) and isinstance(self.result.get('OK'), bool) and ('Value' if self.result['OK'] else 'Message') in self.result:
+      self._parseDIRACResult(self.result)
 
     # If set to true, do not JEncode the return of the RPC call
     # This is basically only used for file download through
@@ -455,24 +452,59 @@ class BaseRequestHandler(RequestHandler):
       self.write(self.result)
 
     # Return simple text or html
-    elif isinstance(self.result, str):
+    elif isinstance(self.result, string_types):
       self.write(self.result)
 
-    # DIRAC JSON
+    # JSON
     else:
-      # Convert DIRAC error to HTTP error and return only result 'Value'
-      if self.RAISE_DIRAC_ERROR:
-        if not self.result['OK']:
-          sLog.error(self.result['Message'])
-          raise HTTPError(http_client.INTERNAL_SERVER_ERROR, self.result['Message'])
-        self.result = self.result['Value']
-      if isinstance(self.result, str):
-        self.write(self.result)
-      else:
-        self.set_header("Content-Type", "application/json")
-        self.write(encode(self.result))
+      # from authlib.consts import default_json_headers
+      self.set_header("Content-Type", "application/json")
+      self.write(encode(self.result))
 
     self.finish()
+  
+  def _parseDIRACResult(self, result):
+    """ Processing of a standard DIRAC result,
+        but in a separate method so that it can be modified for another class if necessary
+    """
+    self.set_header("Content-Type", "application/json")
+    self.write(encode(result))
+
+    # # Parse HTTPResponse object, e.g.: in AuthHandler endpoint
+    # if isinstance(self.result, HTTPResponse):
+    #   self.set_status(self.result.code)
+    #   for key in self.result.headers:
+    #     self.set_header(key, self.result.headers[key])
+    #   if self.result.body:
+    #     self.write(self.result.body)
+
+    # # If set to true, do not JEncode the return of the RPC call
+    # # This is basically only used for file download through
+    # # the 'streamToClient' method.
+    # elif self.get_argument('rawContent', default=False):
+    #   # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
+    #   self.set_header("Content-Type", "application/octet-stream")
+    #   self.write(self.result)
+
+    # # Return simple text or html
+    # elif isinstance(self.result, str):
+    #   self.write(self.result)
+
+    # # DIRAC JSON
+    # else:
+    #   # Convert DIRAC error to HTTP error and return only result 'Value'
+    #   if self.RAISE_DIRAC_ERROR:
+    #     if not self.result['OK']:
+    #       sLog.error(self.result['Message'])
+    #       raise HTTPError(http_client.INTERNAL_SERVER_ERROR, self.result['Message'])
+    #     self.result = self.result['Value']
+    #   if isinstance(self.result, str):
+    #     self.write(self.result)
+    #   else:
+    #     self.set_header("Content-Type", "application/json")
+    #     self.write(encode(self.result))
+
+    # self.finish()
 
   def on_finish(self):
     """
