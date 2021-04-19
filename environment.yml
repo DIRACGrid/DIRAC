@@ -33,7 +33,8 @@ dependencies:
   - recommonmark
   - requests >=2.9.1
   - six >=1.10
-  - sqlalchemy >=1.0.9
+  # Freeze until all problems with 1.4 are solved
+  - sqlalchemy ==1.3.*
   - subprocess32
   - stomp.py =4.1.23
   - suds-jurko >=0.6

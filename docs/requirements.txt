@@ -19,6 +19,7 @@ pyasn1_modules
 pyparsing
 pytz
 recommonmark
-sqlalchemy==1.3.23
+# Freeze until all problems with 1.4 are solved
+sqlalchemy==1.3.*
 subprocess32
 suds
