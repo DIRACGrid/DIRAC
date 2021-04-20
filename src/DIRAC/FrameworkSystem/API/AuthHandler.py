@@ -21,7 +21,6 @@ from authlib.oauth2.base import OAuth2Error
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
@@ -86,7 +85,7 @@ class AuthHandler(TornadoREST):
         :param dict ServiceInfoDict: infos about services
     """
     cls.server = AuthServer()
-    cls.idps = IdProviderFactory()
+    # cls.idps = IdProviderFactory()
     cls.css = {}
     cls.css_align_center = 'display:block;justify-content:center;align-items:center;'
     cls.css_center_div = 'height:700px;width:100%;position:absolute;top:50%;left:0;margin-top:-350px;'
@@ -107,34 +106,53 @@ class AuthHandler(TornadoREST):
     """ Here the result which returns handle_response is processed
     """
     if not result['OK']:
-      raise Exception('%s:\n%s' % (result['Message'], '\n'.join(result['CallStack'])))
-    status_code, headers, payload, saves, removes = result['Value'][0]
-    if status_code:
-      self.set_status(status_code)
-    if headers:
-      for key, value in headers:
-        self.set_header(key, value)
-    if payload:
-      self.write(payload)
-    if saves:
-      for state, session in saves.items():
-        self.saveSession(state, session)
-    if removes:
-      for state in removes:
-        self.removeSession(state)
-    print('>>>> PARSE RESULT:')
-    pprint.pprint(result['Value'])
-    for method, args_kwargs in result['Value'][1].items():
-      eval('self.%s' % method)(*args_kwargs[0], **args_kwargs[1])
+      # If response error is DIRAC server error, not OAuth2 flow error
+      self.removeSession()
+      self.set_status = 400
+      self.write({'error': 'server_error',
+                  'description': '%s:\n%s' % (result['Message'], '\n'.join(result['CallStack']))})
+    else:
+      # Successful responses and OAuth2 errors are processed here
+      status_code, headers, payload, new_session, error = result['Value'][0]
+      if status_code:
+        self.set_status(status_code)
+      if headers:
+        for key, value in headers:
+          self.set_header(key, value)
+      if payload:
+        self.write(payload)
+      if new_session:
+        self.saveSession(new_session)
+      if error:
+        self.removeSession()
+      for method, args_kwargs in result['Value'][1].items():
+        eval('self.%s' % method)(*args_kwargs[0], **args_kwargs[1])
   
-  def saveSession(self, state, payload):
-    self.set_secure_cookie(state, payload, secure=True, httponly=True)
+  def saveSession(self, session):
+    """ Save session to cookie
 
-  def removeSession(self, state):
-    self.clear_cookie(state)
+        :param dict session: session
+    """
+    self.set_secure_cookie('auth_session', json.dumps(session), secure=True, httponly=True)
+
+  def removeSession(self):
+    """ Remove session from cookie """
+    self.clear_cookie('auth_session')
   
-  def getSession(self, state):
-    return self.get_secure_cookie(state)
+  def getSession(self, state=None, **kw):
+    """ Get session from cookie
+
+        :param str state: state
+
+        :return: dict
+    """
+    try:
+      session = json.loads(self.get_secure_cookie('auth_session'))
+      checkState = (session['state'] == state) if state else None
+      checkOption = (session[kw.items()[0][0]] == kw.items()[0][0]) if kw else None
+    except Exception as e:
+      return None
+    return session if (checkState or checkOption) else None
 
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
 
@@ -296,18 +314,18 @@ class AuthHandler(TornadoREST):
 
   path_device = ['([A-z0-9-_]*)']
 
-  def web_device(self, userCode=None):
+  def web_device(self, provider=None):
     """ The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process and user code verification.
 
-        POST LOCATION/device/<user code>?<query>
+        POST LOCATION/device/<provider>?<query>
 
         Parameters:
         +----------------+--------+-------------------------------------------+---------------------------------------+
         | **name**       | **in** | **description**                           | **example**                           |
         +----------------+--------+-------------------------------------------+---------------------------------------+
-        | user code      | path   | in the last step to confirm recived user  | WE8R-WEN9                             |
-        |                |        | code put it as path parameter (optional)  |                                       |
+        | user code      | query  | in the last step to confirm recived user  | WE8R-WEN9                             |
+        |                |        | code put it as query parameter (optional) |                                       |
         |                |        | It's possible to add it interactively.    |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
         | client_id      | query  | The public client ID                      | 3f6eNw0E6JGq1VuzRkpWUL9XTxhL86efZw    |
@@ -316,21 +334,18 @@ class AuthHandler(TornadoREST):
         |                |        | add a group you must add "g:" before the  |                                       |
         |                |        | group name                                |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
-        | provider       | query  | identity provider to autorize (optional)  | CheckIn                               |
+        | provider       | path   | identity provider to autorize (optional)  | CheckIn                               |
         |                |        | It's possible to add it interactively.    |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
 
 
         User code confirmation::
 
-          GET LOCATION/device/<UserCode>
-
-          Parameters:
-            UserCode - recived user code (optional, it's possible to add it interactively)
+          GET LOCATION/device/<provider>?user_code=<user code>
 
         Request example, to initialize a Device authentication flow::
 
-          POST LOCATION/device?client_id=3f1DAj8z6eNw0E6JGq1Vu6efZwyV&scope=g:dirac_admin&provider=CheckIn_dev
+          POST LOCATION/device/CheckIn_dev?client_id=3f1DAj8z6eNw0E6JGq1Vu6efZwyV&scope=g:dirac_admin
 
         Response::
 
@@ -348,7 +363,7 @@ class AuthHandler(TornadoREST):
 
         Request example, to confirm the user code::
 
-          POST LOCATION/device/WSRL-HJMR
+          POST LOCATION/device/CheckIn_dev/WSRL-HJMR
 
         Response::
 
@@ -359,25 +374,24 @@ class AuthHandler(TornadoREST):
       return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
 
     elif self.request.method == 'GET':
-      userCode = self.get_argument('user_code', userCode)
+      userCode = self.get_argument('user_code', None)
       if userCode:
+        # If received a request with a user code, then prepare a request to authorization endpoint
         self.log.verbose('User code verification.')
-        session, data = self.server.getSessionByOption('user_code', userCode)
+        session, data = self.server.db.getSessionByOption('user_code', userCode)
         if not session:
           return 'Device flow authorization session %s expired.' % session
-        authURL = self.server.metadata['authorization_endpoint']
-        authURL += '?%s&client_id=%s&user_code=%s' % (data['request'].query,
-                                                      data['client_id'], userCode)
-        return self.server.handle_response(302, {}, [("Location", authURL)])
+        # Get original request from session
+        req = createOAuth2Request(dict(method='GET', uri=data['uri']))
+        authURL = '/authorization/%s?%s&user_code=%s' % (provider, req.query, userCode)
+        # Save session to cookie
+        return self.server.handle_response(302, {}, [("Location", authURL)], data)
 
-      # Device code entry interface
-      action = "function action() { document.getElementById('form').action="
-      action += "'%s/' + document.getElementById('code').value + '?%s' }" % (self.currentPath, self.request.query)
+      # If received a request without a user code, then send a form to enter the user code
       with self.doc:
-        dom.div(dom.form(dom._input(type="text", id="code", name="user_code", style=self.css_big_text),
-                         dom.button('Submit', type="submit", style=self.css_big_text), id="form", onsubmit="action()"),
-                style=self.css_main)
-        dom.script(action)
+        dom.div(dom.form(dom._input(type="text", name="user_code", style=self.css_big_text),
+                         dom.button('Submit', type="submit", style=self.css_big_text),
+                         action=self.currentPath, method="GET"), style=self.css_main)
       return Template(self.doc.render()).generate()
 
   path_authorization = ['([A-z0-9]*)']
@@ -399,7 +413,7 @@ class AuthHandler(TornadoREST):
         |                |        | add a group you must add "g:" before the  |                                       |
         |                |        | group name                                |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
-        | provider       | query  | identity provider to autorize (optional)  | CheckIn                               |
+        | provider       | path   | identity provider to autorize (optional)  | CheckIn                               |
         |                |        | It's possible to add it interactively.    |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
         General options:
@@ -415,50 +429,7 @@ class AuthHandler(TornadoREST):
           &code_challenge=..                    (PKCE, optional)
           &code_challenge_method=(pain|S256)    ('pain' by default, optional)
     """
-    grant = None
-    if self.request.method == 'GET':
-      try:
-        grant, request = self.server.validate_consent_request(self.request, None)
-      except OAuth2Error as error:
-        return self.server.handle_error_response(None, error)
-
-    # Research supported IdPs
-    result = getProvidersForInstance('Id')
-    if not result['OK']:
-      return result
-    idPs = result['Value']
-    if not idPs:
-      return S_ERROR('No identity providers found.')
-
-    idP = self.get_argument('provider', provider)
-    if not idP:
-      if len(idPs) == 1:
-        idP = idPs[0]
-      else:
-        # Choose IdP interface
-        return self.__chooseIdP(idPs)
-
-    self.log.debug('Start authorization with', idP)
-
-    # Check IdP
-    if idP not in idPs:
-      return '%s is not registered in DIRAC.' % idP
-
-    # # TODO: integrate it with AuthServer
-    # # IMPLICIT test for joopiter
-    # if grant.GRANT_TYPE == 'implicit' and self.get_argument('access_token', None):
-    #   result = self.__implicitFlow()
-    #   if not result['OK']:
-    #     return result
-    #   return self.server.create_authorization_response(self.request, result['Value'])
-
-    request = createOAuth2Request(self.request).toDict()
-    request.pop('headers')
-    request.get('body')
-    # Submit second auth flow through IdP
-    mainSession = {'scope': self.get_argument('scope', None), 'state': self.get_argument('state'),
-                   'request': request}
-    return self.server.getIdPAuthorization(idP, mainSession)
+    return self.server.validate_consent_request(self.request, provider)
 
   def web_redirect(self):
     """ Redirect endpoint.
@@ -483,79 +454,29 @@ class AuthHandler(TornadoREST):
       error = OAuth2Error(error=self.get_argument('error'), description=self.get_argument('error_description', ''))
       return self.server.handle_error_response(state, error)
 
-    # Check current auth session
-    if not state or not self.getSession(state):
+    # Check current auth session that was initiated for the selected external identity provider
+    sessionWithExtIdP = self.getSession(state)
+    if not sessionWithExtIdP:
       return S_ERROR("%s session is expired." % state)
-    # Current auth session
-    currentAuthSession = json.loads(self.getSession(state))
-    # Base DIRAC client auth session
-    mainAuthSession = json.loads(self.getSession(currentAuthSession['mainSessionState']))
 
-    # User info
-    username, userID, profile = (None, None, None)
-    # Added group
-    choosedScopeList = self.get_arguments('chooseScope', None)
-
-    # Read requested groups by DIRAC client or user
-    requestedScopesList = mainAuthSession.get('scope', '').split()
-    if choosedScopeList:
-      userID = self.get_argument('userID', None)
-      username = self.get_argument('username', None)
-      requestedScopesList = list(set(requestedScopesList + choosedScopeList))
-    requestedGroups = [s.split(':')[1] for s in requestedScopesList if s.startswith('g:')]
-    self.log.debug('Next groups has been requeted:', ', '.join(requestedGroups))
-
-    if not choosedScopeList:
+    if not sessionWithExtIdP.get('authed'):
       # Parse result of the second authentication flow
-      self.log.info('%s session, parsing authorization response:\n' % state, '\n'.join([self.request.uri,
-                                                                                        self.request.query,
-                                                                                        self.request.body,
-                                                                                        str(self.request.headers)]))
+      self.log.info('%s session, parsing authorization response:\n' % state,
+                    '\n'.join([self.request.uri, self.request.query, self.request.body, str(self.request.headers)]))
       
-      result = self.server.parseIdPAuthorizationResponse(self.request, currentAuthSession)
+      result = self.server.parseIdPAuthorizationResponse(self.request, sessionWithExtIdP)
       if not result['OK']:
         return result
       # Return main session flow
-      username, userID, profile = result['Value']
+      sessionWithExtIdP['authed'] = result['Value']
 
-    self.log.debug('Next groups has been found for %s:' % username, ', '.join(requestedGroups))
-
-    # Researche Group
-    result = gProxyManager.getGroupsStatusByUsername(username, requestedGroups)
-    if not result['OK']:
-      return result
-    groupStatuses = result['Value']
-    if not groupStatuses:
-      return S_ERROR('No groups found.')
-    self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(groupStatuses))
-
-    if not requestedGroups:
-      if len(groupStatuses) == 1:
-        requestedGroups = [groupStatuses[0]]
-      else:
-        # Choose group interface
-        return self.__chooseGroup(groupStatuses, username, userID)
-
-    for group in requestedGroups:
-      status = groupStatuses[group]['Status']
-      action = groupStatuses[group].get('Action')
-      comment = groupStatuses[group].get('Comment')
-
-      if status == 'needToAuth':
-        # Submit second auth flow through IdP
-        idP = action[1][0]
-        return self.server.getIdPAuthorization(idP, mainAuthSession)
-
-      if status not in ['ready', 'unknown']:
-        self.log.verbose('%s group has bad status: %s; %s' % (group, status, comment))
+    # Research group
+    grant_user, response = self.__researchDIRACGroup(sessionWithExtIdP)
+    if not grant_user:
+      return response
 
     # RESPONSE to basic DIRAC client request
-    request = createOAuth2Request(mainAuthSession['request'])
-    request.data['scope'] = ' '.join(requestedScopesList)
-    # Save session to DB
-    mainAuthSession.update(dict(id=currentAuthSession['mainSessionState'], user_id=userID))
-    self.server.addSession(mainAuthSession)
-    return self.server.create_authorization_response(request, {'username': username, 'user_id': userID})
+    return self.server.create_authorization_response(firstRequest, grant_user)
 
   def web_token(self):
     """ The token endpoint, the description of the parameters will differ depending on the selected grant_type
@@ -591,96 +512,37 @@ class AuthHandler(TornadoREST):
     """
     return self.server.create_token_response(self.request)
 
-  # def __implicitFlow(self):
-  #   """ For implicit flow
-  #   """
-  #   accessToken = self.get_argument('access_token')
-  #   providerName = self.get_argument('provider')
-  #   result = self.server.idps.getIdProvider(providerName)
-  #   if not result['OK']:
-  #     return result
-  #   provObj = result['Value']
+  def __researchDIRACGroup(self, extSession):
+    """ Research DIRAC groups for authorized user
 
-  #   # get keys
-  #   try:
-  #     r = requests.get(provObj.metadata['jwks_uri'], verify=False)
-  #     r.raise_for_status()
-  #     jwks = r.json()
-  #   except requests.exceptions.Timeout:
-  #     return S_ERROR('Authentication server is not answer.')
-  #   except requests.exceptions.RequestException as ex:
-  #     return S_ERROR(r.content or ex)
-  #   except Exception as ex:
-  #     return S_ERROR('Cannot read response: %s' % ex)
+        :param dict extSession: ended authorized external IdP session
 
-  #   # Get claims and verify signature
-  #   claims = jwt.decode(accessToken, jwks)
-  #   # Verify token
-  #   claims.validate()
+        :return: response
+    """
+    # Base DIRAC client auth session
+    firstRequest = createOAuth2Request(extSession['mainSession'])
+    # Read requested groups by DIRAC client or user
+    firstRequest.addScopes(self.get_arguments('chooseScope', []))
+    # Read already authed user
+    username, userID = extSession['authed']
+    self.log.debug('Next groups has been found for %s:' % username, ', '.join(firstRequest.groups))
 
-  #   result = Registry.getUsernameForID(claims.sub)
-  #   if not result['OK']:
-  #     return S_ERROR("User is not valid.")
-  #   username = result['Value']
-
-  #   # Check group
-  #   group = [s.split(':')[1] for s in self.get_arguments('scope') if s.startswith('g:')][0]
-
-  #   # Researche Group
-  #   result = gProxyManager.getGroupsStatusByUsername(username, [group])
-  #   if not result['OK']:
-  #     return result
-  #   groupStatuses = result['Value']
-
-  #   status = groupStatuses[group]['Status']
-  #   if status not in ['ready', 'unknown']:
-  #     return S_ERROR('%s - bad group status' % status)
-  #   return S_OK(claims.sub)
-
-  # def __validateToken(self):
-  #   """ Load client certchain in DIRAC and extract informations.
-
-  #       The dictionary returned is designed to work with the AuthManager,
-  #       already written for DISET and re-used for HTTPS.
-
-  #       :returns: a dict containing the return of :py:meth:`DIRAC.Core.Security.X509Chain.X509Chain.getCredentials`
-  #                 (not a DIRAC structure !)
-  #   """
-  #   auth = self.request.headers.get("Authorization")
-  #   credDict = {}
-  #   if not auth:
-  #     raise Exception('401 Unauthorize')
-  #   # If present "Authorization" header it means that need to use another then certificate authZ
-  #   authParts = auth.split()
-  #   authType = authParts[0]
-  #   if len(authParts) != 2 or authType.lower() != "bearer":
-  #     raise Exception("Invalid header authorization")
-  #   token = authParts[1]
-  #   # Read public key of DIRAC auth service
-  #   with open('/opt/dirac/etc/grid-security/jwtRS256.key.pub', 'rb') as f:
-  #     key = f.read()
-  #   # Get claims and verify signature
-  #   claims = jwt.decode(token, key)
-  #   # Verify token
-  #   claims.validate()
-  #   result = Registry.getUsernameForID(claims.sub)
-  #   if not result['OK']:
-  #     raise Exception("User is not valid.")
-  #   claims['username'] = result['Value']
-  #   return claims
-
-  def __chooseIdP(self, idPs):
-    with self.doc:
-      with dom.div(style=self.css_main):
-        with dom.div('Choose identity provider', style=self.css_align_center):
-          for idP in idPs:
-            # data: Status, Comment, Action
-            dom.button(dom.a(idP, href='%s/%s?%s' % (self.currentPath, idP, self.request.query)), cls='button')
-    return Template(self.doc.render()).generate()
-
-  def __chooseGroup(self, groupStatuses, username, userID):
+    # Researche Group
+    result = gProxyManager.getGroupsStatusByUsername(username, firstRequest.groups)
+    if not result['OK']:
+      return None, result
+    groupStatuses = result['Value']
     if not groupStatuses:
-      return S_ERROR('No groups found.')
+      return None, S_ERROR('No groups found.')
+    self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(groupStatuses))
+
+    if not firstRequest.groups:
+      if len(groupStatuses) == 1:
+        firstRequest.addScopes(['g:%s' % groupStatuses[0]])
+      else:
+        # Choose group interface
+        if not groupStatuses:
+      return None, S_ERROR('No groups found.')
     elif len(groupStatuses) == 1:
       groups = [groupStatuses[0]]
     else:
@@ -690,8 +552,23 @@ class AuthHandler(TornadoREST):
           with dom.div('Choose group', style=self.css_align_center):
             for group, data in groupStatuses.items():
               # data: Status, Comment, Action
-              dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s&username=%s&userID=%s' % (self.currentPath,
-                                                                                         self.get_argument('state'),
-                                                                                         group, username, userID)),
+              dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath,
+                                                                             self.get_argument('state'), group)),
                          cls='button')
-      return Template(self.doc.render()).generate()
+      return None, self.server.handle_response(payload=Template(self.doc.render()).generate(), newSession=extSession)
+
+    for group in firstRequest.groups:
+      status = groupStatuses[group]['Status']
+      action = groupStatuses[group].get('Action')
+      comment = groupStatuses[group].get('Comment')
+
+      if status == 'needToAuth':
+        # Submit second auth flow through IdP
+        idP = action[1][0]
+        return None, self.server.getIdPAuthorization(idP, firstRequest)
+
+      if status not in ['ready', 'unknown']:
+        self.log.verbose('%s group has bad status: %s; %s' % (group, status, comment))
+
+    # Return grant user
+    return {'username': username, 'user_id': userID}, None

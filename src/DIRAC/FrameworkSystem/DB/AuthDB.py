@@ -102,9 +102,9 @@ class Session(Model):
   __tablename__ = 'Sessions'
   __table_args__ = {'mysql_engine': 'InnoDB',
                     'mysql_charset': 'utf8'}
-  id = Column(BigInteger, unique=True, primary_key=True, nullable=False)
-
-  request = Column(String(255), nullable=False)
+  id = Column(String(255), unique=True, primary_key=True, nullable=False)
+  state = Column(String(255))
+  uri = Column(String(255))
   client_id = Column(String(255))
   user_id = Column(String(255))
   username = Column(String(255))
@@ -114,7 +114,8 @@ class Session(Model):
   verification_uri = Column(String(255))
   verification_uri_complete = Column(String(255))
   user_code = Column(String(255))
-
+  device_code = Column(String(255))
+  scope = Column(String(255))
 
 class AuthDB(SQLAlchemyDB):
   """ AuthDB class is a front-end to the OAuth Database
@@ -327,7 +328,7 @@ class AuthDB(SQLAlchemyDB):
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK([OAuth2Token(self.__rowToDict(t)) for t in tokens]))
 
-  def addSession(self, data):
+  def _addSession(self, data):
     """ Add new session
 
         :param dict data: session metadata
@@ -337,12 +338,33 @@ class AuthDB(SQLAlchemyDB):
     print('============ addSession ============')
     pprint(data)
     session = self.session()
-    newAuthSession = Session(**data)
-
+    # newAuthSession = Session(**data)
     try:
-      session.add(newAuthSession)
+      session.add(Session(**data))
     except Exception as e:
       return self.__result(session, S_ERROR('Could not add Session: %s' % e))
+    return self.__result(session, S_OK())
+
+  def addSession(self, data):
+    result = self._addSession(data)
+    if not result['OK']:
+      result = self.updateSession(data)
+    return result
+
+  def updateSession(self, data):
+    """ Update session
+
+        :param dict data: session data with 'id' key
+
+        :return: S_OK(object)/S_ERROR()
+    """
+    session = self.session()
+    try:
+      session.update(Session(**data)).where(Session.id == data['id'])
+    except MultipleResultsFound:
+      return self.__result(session, S_ERROR("%s is not unique." % sessionID))
+    except Exception as e:
+      return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK())
 
   def removeSession(self, sessionID):
@@ -369,6 +391,14 @@ class AuthDB(SQLAlchemyDB):
     session = self.session()
     try:
       resData = session.query(Session).filter(Session.id == sessionID).first()
+      # session.commit()
+      # data = self.__rowToDict(resData)
+      # print('====>>')
+      # print(data)
+      # data['request'] = resData.request
+      # # if data['request']:
+      # #   data['request'] = json.loads(data['request'])
+      # print(data)
     except MultipleResultsFound:
       return self.__result(session, S_ERROR("%s is not unique ID." % sessionID))
     except NoResultFound:

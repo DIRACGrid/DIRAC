@@ -23,7 +23,10 @@ class RefreshTokenGrant(_RefreshTokenGrant):
         :return: object
     """
     # Check auth session
-    return self.server.db.getTokenByRefreshToken(refresh_token)
+    result = self.server.db.getTokenByRefreshToken(refresh_token)
+    if not result['OK']:
+      raise OAuth2Error('Cannot get token', result['Message'])
+    return result['Value']
     # if not session:
     #   return None
 

@@ -7,39 +7,29 @@ import io
 import json
 from time import time
 import pprint
+import urlparse
 from tornado.httpclient import HTTPResponse
 from tornado.httputil import HTTPHeaders
+from tornado.template import Template
 
 from authlib.deprecate import deprecate
 from authlib.jose import jwt
-from authlib.oauth2 import (
-    HttpRequest,
-    AuthorizationServer as _AuthorizationServer,
-)
+from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.rfc6749.grants import ImplicitGrant
-from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (
-    DeviceAuthorizationEndpoint,
-    DeviceCodeGrant
-)
-from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import (
-    OpenIDCode,
-    AuthorizationCodeGrant
-)
+from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (DeviceAuthorizationEndpoint,
+                                                                           DeviceCodeGrant,
+                                                                           SaveSessionToDB)
+from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import (OpenIDCode,
+                                                                                  AuthorizationCodeGrant)
 from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.TokenExchange import TokenExchangeGrant
-from DIRAC.FrameworkSystem.private.authorization.grants.ImplicitFlow import (
-    OpenIDImplicitGrant,
-    NotebookImplicitGrant
-)
-from DIRAC.FrameworkSystem.private.authorization.utils.Clients import (
-    ClientRegistrationEndpoint,
-    ClientManager
-)
+from DIRAC.FrameworkSystem.private.authorization.grants.ImplicitFlow import (OpenIDImplicitGrant,
+                                                                             NotebookImplicitGrant)
+from DIRAC.FrameworkSystem.private.authorization.utils.Clients import (ClientRegistrationEndpoint,
+                                                                       ClientManager)
 from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import SessionManager
-from DIRAC.FrameworkSystem.private.authorization.utils.Requests import (
-    OAuth2Request,
-    createOAuth2Request
-)
+from DIRAC.FrameworkSystem.private.authorization.utils.Requests import (OAuth2Request,
+                                                                        createOAuth2Request)
 # from authlib.oidc.core import UserInfo
 
 from authlib.oauth2.rfc6750 import BearerToken
@@ -50,10 +40,12 @@ from authlib.common.encoding import to_unicode, json_dumps
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.Client.AuthManagerClient import gSessionManager
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorisationServerMetadata
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForID, getEmailsForGroup
 # from DIRAC.Core.Web.SessionData import SessionStorage
 
 import logging
@@ -64,7 +56,7 @@ log.setLevel(logging.DEBUG)
 log = gLogger.getSubLogger(__name__)
 
 
-class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
+class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
   """ Implementation of :class:`authlib.oauth2.rfc6749.AuthorizationServer`.
 
       Initialize::
@@ -77,7 +69,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     self.db = AuthDB()
     self.idps = IdProviderFactory()
     ClientManager.__init__(self, self.db)
-    SessionManager.__init__(self)
+    # SessionManager.__init__(self)
     # Privide two authlib methods query_client and save_token
     _AuthorizationServer.__init__(self, query_client=self.getClient, save_token=self.saveToken)
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
@@ -86,7 +78,7 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
     self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
     self.register_grant(TokenExchangeGrant)
-    self.register_grant(DeviceCodeGrant)
+    self.register_grant(DeviceCodeGrant, [SaveSessionToDB(db=self.db)])
     self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
     self.register_endpoint(ClientRegistrationEndpoint)
     self.register_endpoint(DeviceAuthorizationEndpoint)
@@ -118,16 +110,13 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
       self.db.storeToken(token)
     return None
 
-  def getIdPAuthorization(self, providerName, mainSession=None, oldState=''):
+  def getIdPAuthorization(self, providerName, request):
     """ Submit subsession and return dict with authorization url and session number
 
         :param str providerName: provider name
-        :param str mainSession: main session identificator
+        :param object request: main session request
 
-        :return: S_OK(dict)/S_ERROR() -- dictionary contain next keys:
-                 Status -- session status
-                 UserName -- user name, returned if status is 'ready'
-                 Session -- session id, returned if status is 'needToAuth'
+        :return: S_OK(response)/S_ERROR() -- dictionary contain response generated by `handle_response`
     """
     result = self.idps.getIdProvider(providerName)
     if not result['OK']:
@@ -137,14 +126,12 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
     if not result['OK']:
       return result
     authURL, state, session = result['Value']
-    session['Provider'] = providerName
-    session['mainSessionState'] = mainSession.pop('state')
+    session['state'] = state
+    session['provider'] = providerName
+    session['mainSession'] = request if isinstance(request, dict) else request.toDict()
 
     gLogger.verbose('Redirect to', authURL)
-    return self.handle_response(302, {}, [("Location", authURL)],
-                                saveSessions={state: json.dumps(session),
-                                              session['mainSessionState']: json.dumps(mainSession)},
-                                removeSessions=[oldState])
+    return self.handle_response(302, {}, [("Location", authURL)], session)
 
   def parseIdPAuthorizationResponse(self, response, session):
     """ Fill session by user profile, tokens, comment, OIDC authorize status, etc.
@@ -156,8 +143,36 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    return gSessionManager.parseAuthResponse(session.pop('Provider'), createOAuth2Request(response).toDict(),
-                                             session)
+    providerName = session.pop('Provider')
+    gLogger.debug('Try to parse authentification response from %s:\n' % providerName, pprint.pformat(response))
+    # Parse response
+    result = self.idps.getIdProvider(providerName, sessionManager=self.db)
+    if result['OK']:
+      return result
+    idpObj = result['Value']
+    result = provObj.parseAuthResponse(response, session)
+    if not result['OK']:
+      return result
+    # FINISHING with IdP auth result
+    username, userID, profile = result['Value']
+    self.log.debug("Read %s's profile:" % username, pprint.pformat(profile))
+    userProfile = profile[providerName][userID]
+    # Is ID registred?
+    result = getUsernameForID(userID)
+    if not result['OK']:
+      # if sync with extVO is turn on:
+      #   return autogenerated username and userID
+      # else:
+      comment = '%s ID is not registred in the DIRAC.' % userID
+      result = self.__registerNewUser(providerName, username, userProfile)
+      if result['OK']:
+        comment += ' Administrators have been notified about you.'
+      else:
+        comment += ' Please, contact the DIRAC administrators.'
+      return S_ERROR(comment)
+    return S_OK((username, userID))
+    # return gSessionManager.parseAuthResponse(session.pop('Provider'), createOAuth2Request(response).toDict(),
+    #                                          session)
 
   def access_token_generator(self, client, grant_type, user, scope):
     """ A function to generate ``access_token``
@@ -224,58 +239,118 @@ class AuthServer(_AuthorizationServer, SessionManager, ClientManager):
   def create_json_request(self, request):
     return self.create_oauth2_request(request, HttpRequest, True)
 
-  def handle_response(self, status_code, payload, headers, saveSessions={}, removeSessions=[], **actions):
+  def handle_error_response(self, request, error):
+    return self.handle_response(*error(translations=self.get_translations(request),
+                                       error_uris=self.get_error_uris(request), error=True))
+
+  def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, error=None, **actions):
     gLogger.debug('Handle authorization response with %s status code:' % status_code, payload)
-    gLogger.debug(headers)
-    # if isinstance(payload, dict):
-    #   # `OAuth2Request` is not JSON serializable
-    #   payload.pop('request', None)
-    #   payload = json_dumps(payload)
-    # # return (payload, status_code, headers)
-
-    # header = HTTPHeaders()
-    # for h in headers:
-    #   header.add(*h)
-    # # Expected that 'data' is unicode string, for Python 2 => unicode(str, "utf-8")
-
-    # # # if state:
-    # # #   actions['clear_cookie'] = ([state], {})
-    # # # gLogger.debug(actions)
-    return S_OK(((status_code, headers, payload, saveSessions, removeSessions), actions))
-    
-    # return dict(code=status_code, headers=header, buffer=io.StringIO(to_unicode(payload)))
+    gLogger.debug('Headers:', headers)
+    if newSession:
+      gLogger.debug('newSession:', newSession)
+    return S_OK(((status_code, headers, payload, newSession, error), actions))
     # return HTTPResponse(self.request, status_code, headers=header, buffer=io.StringIO(payload))
 
   def create_authorization_response(self, response, username):
     result = super(AuthServer, self).create_authorization_response(response, username)
     if result['OK']:
       # Remove auth session
-      result['Value'][0][4].append(response.data['state'])
-      # result['Value'][1].update(dict(clear_cookie=([response.data['state']], {})))
+      result['Value'][0][4] = True
     return result
 
-  def validate_consent_request(self, request, end_user=None):
+  def validate_consent_request(self, request, provider=None):
     """ Validate current HTTP request for authorization page. This page
         is designed for resource owner to grant or deny the authorization::
 
         :param object request: tornado request
-        :param end_user: end user
+        :param provider: provider
 
-        :return: grant instance
+        :return: response generated by `handle_response` or S_ERROR or html
     """
-    print('==== validate_consent_request ===')
-    req = self.create_oauth2_request(request)
-    req.user = end_user
-    grant = self.get_authorization_grant(req)
-    print('==== GRANT: %s ===' % grant)
-    grant.validate_consent_request()
-    session = req.state or generate_token(10)
-    # self.server.updateSession(session, request=req, group=req.args.get('group'))
-    if not hasattr(grant, 'prompt'):
-      grant.prompt = None
-    print('==== Session: %s' % session)
-    print('==== Request:')
-    pprint.pprint(req.data)
-    print('============')
-    # self.updateSession(session, request=req, createIfNotExist=True)
-    return grant, req
+    if request.method != 'GET':
+      return 'Use GET method to access this endpoint.'
+    try:
+      req.state = req.state or generate_token(10)
+      gLogger.info('Validate consent request for', req.state)
+      req = self.create_oauth2_request(request)
+      grant = self.get_authorization_grant(req)
+      gLogger.debug('Use grant:', grant)
+      grant.validate_consent_request()
+      if not hasattr(grant, 'prompt'):
+        grant.prompt = None
+
+      # Check Identity Provider
+      provider, providerChooser = self.validateIdentityProvider(req, provider)
+      if not provider:
+        return providerChooser
+
+      # Submit second auth flow through IdP
+      return self.getIdPAuthorization(idP, req)
+    except OAuth2Error as error:
+      return self.handle_error_response(None, error)
+
+  def validateIdentityProvider(self, request, provider):
+    """ Check if identity provider registred in DIRAC
+
+        :param object request: request
+        :param str provider: provider name
+
+        :return: str, S_OK()/S_ERROR() -- provider name and html page to choose it
+    """
+    # Research supported IdPs
+    result = getProvidersForInstance('Id')
+    if not result['OK']:
+      return None, result
+    idPs = result['Value']
+    if not idPs:
+      return None, S_ERROR('No identity providers found.')
+
+    if not provider:
+      if len(idPs) == 1:
+        return idPs[0], None
+      # Choose IdP interface
+      with self.doc:
+        with dom.div(style=self.css_main):
+          with dom.div('Choose identity provider', style=self.css_align_center):
+            for idP in idPs:
+              # data: Status, Comment, Action
+              dom.button(dom.a(idP, href='/authorization/%s?%s' % (idP, request.query)),
+                               cls='button')
+      return None, self.handle_response(payload=Template(self.doc.render()).generate())
+
+    # Check IdP
+    if provider not in idPs:
+      return None, S_ERROR('%s is not registered in DIRAC.' % provider)
+
+    return provider, None
+    
+  def __registerNewUser(self, provider, username, userProfile):
+    """ Register new user
+
+        :param str provider: provider
+        :param str username: user name
+        :param dict userProfile: user information dictionary
+
+        :return: S_OK()/S_ERROR()
+    """
+    from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+
+    mail = {}
+    mail['subject'] = "[SessionManager] User %s to be added." % username
+    mail['body'] = 'User %s was authenticated by ' % userProfile['FullName']
+    mail['body'] += provider
+    mail['body'] += "\n\nAuto updating of the user database is not allowed."
+    mail['body'] += " New user %s to be added," % username
+    mail['body'] += "with the following information:\n"
+    mail['body'] += "\nUser name: %s\n" % username
+    mail['body'] += "\nUser profile:\n%s" % pprint.pformat(userProfile)
+    mail['body'] += "\n\n------"
+    mail['body'] += "\n This is a notification from the DIRAC AuthManager service, please do not reply.\n"
+    result = S_OK()
+    for addresses in getEmailsForGroup('dirac_admin'):
+      result = NotificationClient().sendMail(addresses, mail['subject'], mail['body'], localAttempt=False)
+      if not result['OK']:
+        self.log.error(result['Message'])
+    if result['OK']:
+      self.log.info(result['Value'], "administrators have been notified about a new user.")
+    return result

@@ -21,7 +21,7 @@ tornado.iostream.SSLIOStream.configure(
     'tornado_m2crypto.m2iostream.M2IOStream')  # pylint: disable=wrong-import-position
 
 from tornado.httpserver import HTTPServer
-from tornado.web import Application as _Application, url
+from tornado.web import Application, url
 from tornado.ioloop import IOLoop
 import tornado.ioloop
 
@@ -43,12 +43,6 @@ import tornado.autoreload
 from DIRAC.FrameworkSystem.private.authorization.utils.Sessions import SessionManager
 
 sLog = gLogger.getSubLogger(__name__)
-
-
-class Application(_Application, SessionManager):
-  def __init__(self, *args, **kwargs):
-    _Application.__init__(self, *args, **kwargs)
-    SessionManager.__init__(self)
 
 
 class TornadoServer(object):

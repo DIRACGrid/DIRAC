@@ -23,24 +23,27 @@ log = gLogger.getSubLogger(__name__)
 
 def submitUserAuthorizationFlow(idP=None, group=None):
   """ Submit authorization flow
+
+      :param str idP: identity provider
+      :param str group: requested group
+
+      :return: S_OK(dict)/S_ERROR() -- dictionary with device code flow response
   """
   try:
-    url = '%s/device?client_id=%s' % (getAuthAPI(), getDIRACClientID())
-    if group:
-      url += '&scope=g:%s' % group
-    if idP:
-      url += '&provider=%s' % idP
-
-    r = requests.post(url, verify=False)
+    r = requests.post('{api}/device{provider}?client_id={client_id}{group}'.format(
+        api=getAuthAPI(), client_id = getDIRACClientID(),
+        provider=('/%s' % idP) if idP else '',
+        group = ('&scope=g:%s' % group) if group else ''
+    ), verify=False)
     r.raise_for_status()
-    authFlowData = r.json()
+    deviceResponse = r.json()
 
     # Check if all main keys are present here
     for k in ['user_code', 'device_code', 'verification_uri']:
-      if not authFlowData.get(k):
+      if not deviceResponse.get(k):
         return S_ERROR('Mandatory %s key is absent in authentication response.' % k)
 
-    return S_OK(authFlowData)
+    return S_OK(deviceResponse)
   except requests.exceptions.Timeout:
     return S_ERROR('Authentication server is not answer, timeout.')
   except requests.exceptions.RequestException as ex:
@@ -60,13 +63,13 @@ def waitFinalStatusOfUserAuthorizationFlow(deviceCode, interval=5, timeout=300):
   """
   __start = time.time()
 
-  url = '%s/token?client_id=%s' % (getAuthAPI(), getDIRACClientID())
-  url += '&grant_type=%s&device_code=%s' % (DEVICE_CODE_GRANT_TYPE, deviceCode)
   while True:
     time.sleep(int(interval))
     if time.time() - __start > timeout:
       return S_ERROR('Time out.')
-    r = requests.post(url, verify=False)
+    r = requests.post('{api}/token?client_id={client_id}&grant_type={grant}&device_code={device_code}'.format(
+        api=getAuthAPI(), client_id = getDIRACClientID(), grant=DEVICE_CODE_GRANT_TYPE, device_code=deviceCode
+    ), verify=False)
     token = r.json()
     if not token:
       return S_ERROR('Resived token is empty!')
@@ -80,26 +83,43 @@ def waitFinalStatusOfUserAuthorizationFlow(deviceCode, interval=5, timeout=300):
 class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
   URL = '%s/device' % getAuthAPI()
 
-  # def create_endpoint_response(self, req):
-  #   c, data, h = super(DeviceAuthorizationEndpoint, self).create_endpoint_response(req)
-  #   req.query += '&response_type=device&state=%s' % data['device_code']
-  #   self.server.updateSession(data['device_code'], request=req)  # , group=req.args.get('group'))
-  #   return c, data, h
+  def create_endpoint_response(self, req):
+    """ See :func:`authlib.oauth2.rfc8628.DeviceAuthorizationEndpoint.create_endpoint_response` """
+    # Share original request object to endpoint class before create_endpoint_response
+    self.req = req
+    return super(DeviceAuthorizationEndpoint, self).create_endpoint_response(req)
 
   def get_verification_uri(self):
-    return self.URL
+    """ Create verification uri when `DeviceCode` flow initialized
+
+        :return: str
+    """
+    return self.req.protocol + "://" + self.req.host + self.req.path
 
   def save_device_credential(self, client_id, scope, data):
-    data['verification_uri_complete'] = '%s/%s' % (data['verification_uri'], data['user_code'])
-    # self.server.addSession(data['device_code'], client_id=client_id, scope=scope, **data)
-    data.update(dict(id=data['device_code'], client_id=client_id, scope=scope))
-    self.server.db.addSession(data)
+    """ Save device credentials
+
+        :param str client_id: client id
+        :param str scope: request scopes
+        :param dict data: device credentials
+    """
+    data.update(dict(uri='{api}?{query}&response_type=device&client_id={client_id}&scope={scope}'}.format(
+        api=data['verification_uri'], query=self.req.query, client_id=client_id, scope=scope,
+    ), id=data['device_code']))
+    result = self.server.db.addSession(data)
+    if not result['OK']:
+      raise OAuth2Error('Cannot save device credentials', result['Message'])
 
 
 class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
   RESPONSE_TYPES = {'device'}
 
   def validate_authorization_request(self):
+    """ Validate authorization request
+    
+        :return: None
+    """
+    # Validate client for this request
     client_id = self.request.client_id
     log.debug('Validate authorization request of', client_id)
     if client_id is None:
@@ -109,8 +129,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
       raise InvalidClientError(state=self.request.state)
     response_type = self.request.response_type
     if not client.check_response_type(response_type):
-      raise UnauthorizedClientError('The client is not authorized to use '
-                                    '"response_type={}"'.format(response_type))
+      raise UnauthorizedClientError('The client is not authorized to use "response_type={}"'.format(response_type))
     self.request.client = client
     self.validate_requested_scope()
 
@@ -118,32 +137,74 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     userCode = self.request.args.get('user_code')
     if not userCode:
       raise OAuth2Error('user_code is absent.')
-    # session, _ = self.server.getSessionByOption('user_code', userCode)
-    session = self.server.db.getSessionByUserCode(userCode)
-    # from pprint import pprint
-    # pprint(self.server.getSessions())
-    if not session:
+
+    # Get session from cookie
+    if not self.getSession(user_code=userCode):
       raise OAuth2Error('Session with %s user code is expired.' % userCode)
-    self.execute_hook('after_validate_authorization_request')
+    # self.execute_hook('after_validate_authorization_request')
     return None
 
-  def create_authorization_response(self, redirect_uri, grant_user):
-    return 200, 'Authorization complite.', set()
+  def create_authorization_response(self, redirect_uri, user):
+    """ Mark session as authed with received user
+
+        :param str redirect_uri: redirect uri
+        :param dict user: dictionary with username and userID
+
+        :return: result of `handle_response`
+    """
+    # Save session with user
+    result = self.server.db.addSession(dict(id=self.request.state, user_id=user['userID'], uri=self.request.uri,
+                                            username=user['username'], scope=self.request.scope))
+    if not result['OK']:
+      raise OAuth2Error('Cannot save authorization result', result['Message'])
+    return 200, 'Authorization complite.'
 
   def query_device_credential(self, device_code):
     # _, data = self.server.getSessionByOption('device_code', device_code)
-    data = self.server.db.getSession(device_code)
+    result = self.server.db.getSession(device_code)
+    if not result['OK']:
+      raise OAuth2Error(result['Message'])
+    data = result['Value']
     if not data:
       return None
-    data['expires_at'] = data['expires_in'] + int(time.time())
+    data['expires_at'] = int(data['expires_in']) + int(time.time())
     data['interval'] = DeviceAuthorizationEndpoint.INTERVAL
     data['verification_uri'] = DeviceAuthorizationEndpoint.URL
     return DeviceCredentialDict(data)
 
   def query_user_grant(self, user_code):
-    data = self.server.db.getSessionByUserCode(userCode)
+    """ Check if user alredy authed and return it to token generator
+
+        :param str user_code: user code
+
+        :return: str, bool -- user dict and user auth status
+    """
+    result = self.server.db.getSessionByUserCode(user_code)
+    if not result['OK']:
+      raise OAuth2Error('Cannot found authorization session', result['Message'])
+    data = result['Value']
     # _, data = self.server.getSessionByOption('user_code', user_code)
-    return (data['user_id'], True) if data.get('username') else None
+    return (data['user_id'], True) if data.get('username') != "None" else None
 
   def should_slow_down(self, credential, now):
+    """ If need to slow down requests """
     return False
+
+
+class SaveSessionToDB(object):
+  """ SaveSessionToDB extension to Device Code Grant. It is used to
+      seve authorization session of Device Code flow for public clients in MySQL database.
+
+      Then register this extension via::
+
+        server.register_grant(DeviceCodeGrant, [SaveSessionToDB(db=self.db)])
+  """
+  def __init__(self, db):
+    self.db = db
+
+  def __call__(self, grant):
+    grant.register_hook('after_validate_consent_request', self.save_session)
+
+  def save_session(self, *args, **kwargs):
+    print('SAVE-SESSION')
+    print(args)
