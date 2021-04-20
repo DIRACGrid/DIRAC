@@ -32,7 +32,10 @@ def test_createEmail():
   ]
 
 
-def test_compareEmails():
+def test_compareEmails(monkeypatch):
+  # The hostname on GitHub actions can change randomly so mock it
+  monkeypatch.setattr("socket.getfqdn", lambda: "localhost.example")
+
   m1 = Mail()
   m2 = Mail()
   assert m1 == m2, (m1.__dict__, m2.__dict__)
