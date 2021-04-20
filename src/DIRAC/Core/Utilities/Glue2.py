@@ -32,7 +32,7 @@ __RCSID__ = "$Id$"
 sLog = gLogger.getSubLogger(__name__)
 
 
-def getGlue2CEInfo(vo, host):
+def getGlue2CEInfo(vo, host=None):
   """ call ldap for GLUE2 and get information
 
   :param str vo: Virtual Organisation
