@@ -76,28 +76,6 @@ def test_valid_properties():
   assert toJSON["OK"]
 
 
-def test_invalid_properties():
-  operation = Operation()
-
-  # with pytest.raises(AttributeError, match="can't set attribute"):
-  #   operation.RequestID = "foo"
-
-  # with pytest.raises(ValueError):
-  #   operation.OperationID = "foo"
-
-  # timestamps
-  with pytest.raises(ValueError, match="time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'"):
-    operation.SubmitTime = "foo"
-  with pytest.raises(ValueError, match="time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'"):
-    operation.LastUpdate = "foo"
-
-  # Status
-  operation = Operation()
-  with pytest.raises(ValueError, match="unknown Status 'foo'"):
-    operation.Status = "foo"
-  operation.addFile(File({"Status": "Waiting", "LFN": "/a"}))
-
-
 def test_StateMachine():
   """ state machine """
   op = Operation()
