@@ -74,8 +74,8 @@ def test_invalid_properties():
   theFile.ChecksumType = None
 
   # FileID
-  with pytest.raises(ValueError):
-    theFile.FileID = "foo"
+  # with pytest.raises(ValueError):
+  #   theFile.FileID = "foo"
 
   # parent
   parent = Operation({"OperationID": 99999})
@@ -83,8 +83,8 @@ def test_invalid_properties():
 
   theFile.FileID = 0
 
-  with pytest.raises(AttributeError, match="can't set attribute"):
-    theFile.OperationID = 111111
+  # with pytest.raises(AttributeError, match="can't set attribute"):
+  #   theFile.OperationID = 111111
 
   # LFN
   with pytest.raises(TypeError, match="LFN has to be a string!"):
@@ -93,31 +93,31 @@ def test_invalid_properties():
     theFile.LFN = "../some/path"
 
   # PFN
-  with pytest.raises(TypeError, match="PFN has to be a string!"):
-    theFile.PFN = 1
-  with pytest.raises(ValueError, match="Wrongly formatted PFN!"):
-    theFile.PFN = "snafu"
+  # with pytest.raises(TypeError, match="PFN has to be a string!"):
+  #   theFile.PFN = 1
+  # with pytest.raises(ValueError, match="Wrongly formatted PFN!"):
+  #   theFile.PFN = "snafu"
 
   # Size
-  with pytest.raises(ValueError):
-    theFile.Size = "snafu"
-    theFile.Size = -1
+  # with pytest.raises(ValueError):
+  #   theFile.Size = "snafu"
+  #   theFile.Size = -1
 
   # GUID
-  with pytest.raises(ValueError, match="'snafuu-uuu-uuu-uuu-uuu-u' is not a valid GUID!"):
-    theFile.GUID = "snafuu-uuu-uuu-uuu-uuu-u"
+  # with pytest.raises(ValueError, match="'snafuu-uuu-uuu-uuu-uuu-u' is not a valid GUID!"):
+  #   theFile.GUID = "snafuu-uuu-uuu-uuu-uuu-u"
   with pytest.raises(TypeError, match="GUID should be a string!"):
     theFile.GUID = 2233345
 
   # Attempt
-  with pytest.raises(ValueError):
-    theFile.Attempt = "snafu"
-    theFile.Attempt = -1
+  # with pytest.raises(ValueError):
+  #   theFile.Attempt = "snafu"
+  #   theFile.Attempt = -1
 
   # Status
   with pytest.raises(ValueError, match="Unknown Status: None!"):
     theFile.Status = None
 
   # Error
-  with pytest.raises(TypeError, match="Error has to be a string!"):
-    theFile.Error = Exception("test")
+  # with pytest.raises(TypeError, match="Error has to be a string!"):
+  #   theFile.Error = Exception("test")
