@@ -72,6 +72,9 @@ def test_valid_properties():
   operation.Error = "error"
   assert operation.Error == "error", "wrong Error"
 
+  toJSON = operation.toJSON()
+  assert toJSON["OK"]
+
 
 def test_invalid_properties():
   operation = Operation()

@@ -129,6 +129,9 @@ def test_CtorSerilization():
   assert req.JobID == 12345
   assert req.Status == "Waiting"
 
+  req.SourceComponent = "test component"
+  assert req.SourceComponent == b"test component"
+
   toJSON = req.toJSON()
   assert toJSON["OK"], "JSON serialization failed"
 
