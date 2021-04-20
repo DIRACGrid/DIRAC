@@ -13,6 +13,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id $"
 
+import pytest
+
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
@@ -74,37 +76,22 @@ def test_valid_properties():
 def test_invalid_properties():
   operation = Operation()
 
-  try:
+  with pytest.raises(AttributeError, match="can't set attribute"):
     operation.RequestID = "foo"
-  except Exception as error:
-    assert type(error) == AttributeError, "wrong exc raised"
-    assert str(error) == "can't set attribute", "wrong exc reason"
 
-  try:
+  with pytest.raises(ValueError):
     operation.OperationID = "foo"
-  except Exception as error:
-    assert type(error) == ValueError, "wrong exc raised"
 
-  # # timestamps
-  try:
+  # timestamps
+  with pytest.raises(ValueError, match="time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'"):
     operation.SubmitTime = "foo"
-  except Exception as error:
-    assert type(error) == ValueError, "wrong exp raised"
-    assert str(error) == "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'", "wrong exc reason"
-
-  try:
+  with pytest.raises(ValueError, match="time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'"):
     operation.LastUpdate = "foo"
-  except Exception as error:
-    assert type(error) == ValueError, "wrong exc raised"
-    assert str(error) == "time data 'foo' does not match format '%Y-%m-%d %H:%M:%S'", "wrong exc reason"
 
-  # # Status
+  # Status
   operation = Operation()
-  try:
+  with pytest.raises(ValueError, match="unknown Status 'foo'"):
     operation.Status = "foo"
-  except Exception as error:
-    assert type(error) == ValueError, "wrong exc raised"
-    assert str(error) == "unknown Status 'foo'", "wrong exc reason"
   operation.addFile(File({"Status": "Waiting", "LFN": "/a"}))
 
 

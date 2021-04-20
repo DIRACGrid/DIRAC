@@ -13,6 +13,8 @@ from __future__ import absolute_import
 from __future__ import division
 __RCSID__ = "$Id$"
 
+import pytest
+
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 
@@ -72,10 +74,8 @@ def test_invalid_properties():
   theFile.ChecksumType = None
 
   # FileID
-  try:
+  with pytest.raises(ValueError):
     theFile.FileID = "foo"
-  except Exception as error:
-    assert isinstance(error, ValueError)
 
   # parent
   parent = Operation({"OperationID": 99999})
@@ -83,81 +83,41 @@ def test_invalid_properties():
 
   theFile.FileID = 0
 
-#     assert  parent.OperationID == theFile.OperationID 
-  try:
+  with pytest.raises(AttributeError, match="can't set attribute"):
     theFile.OperationID = 111111
-  except Exception as error:
-    assert isinstance(error, AttributeError)
-    assert str(error) == "can't set attribute"
 
   # LFN
-  try:
+  with pytest.raises(TypeError, match="LFN has to be a string!"):
     theFile.LFN = 1
-  except Exception as error:
-    assert isinstance(error, TypeError)
-    assert str(error) == "LFN has to be a string!"
-  try:
+  with pytest.raises(ValueError, match="LFN should be an absolute path!"):
     theFile.LFN = "../some/path"
-  except Exception as error:
-    assert isinstance(error, ValueError)
-    assert str(error) == "LFN should be an absolute path!"
 
   # PFN
-  try:
+  with pytest.raises(TypeError, match="PFN has to be a string!"):
     theFile.PFN = 1
-  except Exception as error:
-    assert isinstance(error, TypeError)
-    assert str(error) == "PFN has to be a string!"
-  try:
+  with pytest.raises(ValueError, match="Wrongly formatted PFN!"):
     theFile.PFN = "snafu"
-  except Exception as error:
-    assert isinstance(error, ValueError)
-    assert str(error) == "Wrongly formatted PFN!"
 
   # Size
-  try:
+  with pytest.raises(ValueError):
     theFile.Size = "snafu"
-  except Exception as error:
-    assert isinstance(error, ValueError)
-  try:
     theFile.Size = -1
-  except Exception as error:
-    assert isinstance(error, ValueError)
-    assert str(error) == "Size should be a positive integer!"
 
   # GUID
-  try:
+  with pytest.raises(ValueError, match="'snafuu-uuu-uuu-uuu-uuu-u' is not a valid GUID!"):
     theFile.GUID = "snafuu-uuu-uuu-uuu-uuu-u"
-  except Exception as error:
-    assert isinstance(error, ValueError)
-    assert str(error) == "'snafuu-uuu-uuu-uuu-uuu-u' is not a valid GUID!"
-  try:
+  with pytest.raises(TypeError, match="GUID should be a string!"):
     theFile.GUID = 2233345
-  except Exception as error:
-    assert isinstance(error, TypeError)
-    assert str(error) == "GUID should be a string!"
 
   # Attempt
-  try:
+  with pytest.raises(ValueError):
     theFile.Attempt = "snafu"
-  except Exception as error:
-    assert isinstance(error, ValueError)
-  try:
     theFile.Attempt = -1
-  except Exception as error:
-    assert isinstance(error, ValueError)
-    assert str(error) == "Attempt should be a positive integer!"
 
   # Status
-  try:
+  with pytest.raises(ValueError, match="Unknown Status: None!"):
     theFile.Status = None
-  except Exception as error:
-    assert isinstance(error, ValueError)
-    assert str(error) == "Unknown Status: None!"
 
   # Error
-  try:
+  with pytest.raises(TypeError, match="Error has to be a string!"):
     theFile.Error = Exception("test")
-  except Exception as error:
-    assert isinstance(error, TypeError)
-    assert str(error) == "Error has to be a string!"
