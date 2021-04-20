@@ -52,7 +52,6 @@ Managing Resources:
     dirac-admin-allow-site
     dirac-admin-ban-se
     dirac-admin-ban-site
-    dirac-admin-bdii-info
     dirac-admin-ce-info
     dirac-admin-get-banned-sites
     dirac-admin-get-site-mask
