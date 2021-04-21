@@ -783,11 +783,11 @@ class JobWrapper(object):
       self.outputSandboxSize = getGlobbedTotalSize(fileList)
       self.log.info('Attempting to upload Sandbox with limit:', self.sandboxSizeLimit)
       sandboxClient = SandboxStoreClient()
-      result = sandboxClient.uploadFilesAsSandboxForJob(fileList, self.jobID,
-                                                        'Output', self.sandboxSizeLimit)  # 1024*1024*10
-      if not result['OK']:
-        self.log.error('Output sandbox upload failed with message', result['Message'])
-        outputSandboxData = result.get('SandboxFileName')
+      result_sbUpload = sandboxClient.uploadFilesAsSandboxForJob(
+          fileList, self.jobID, 'Output', self.sandboxSizeLimit)  # 1024*1024*10
+      if not result_sbUpload['OK']:
+        self.log.error('Output sandbox upload failed with message', result_sbUpload['Message'])
+        outputSandboxData = result_sbUpload.get('SandboxFileName')
         if outputSandboxData:
 
           self.log.info('Attempting to upload %s as output data' % (outputSandboxData))
@@ -822,9 +822,21 @@ class JobWrapper(object):
       if not outputSE and not self.defaultFailoverSE:
         return S_ERROR('No output SEs defined in VO configuration')
 
-      result = self.__transferOutputDataFiles(outputData, outputSE, outputPath)
-      if not result['OK']:
-        return result
+      result_transferODF = self.__transferOutputDataFiles(outputData, outputSE, outputPath)
+
+      # now that we (tried to) transfer the output files,
+      # including possibly oversized Output Sandboxes,
+      # we delete the local output sandbox tarfile in case it's still there.
+      if not result_sbUpload['OK']:
+        outputSandboxData = result_sbUpload.get('SandboxFileName')
+        if outputSandboxData:
+          try:
+            os.unlink(outputSandboxData)
+          except OSError:
+            pass
+
+      if not result_transferODF['OK']:
+        return result_transferODF
 
     return S_OK('Job outputs processed')
 
