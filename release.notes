@@ -1,3 +1,9 @@
+[v7r0p55]
+
+*TS
+FIX: (#5109) DataRecoveryAgent: immediately skip transformations without jobs, prevents
+     exception later on
+
 [v7r0p54]
 
 *Core
