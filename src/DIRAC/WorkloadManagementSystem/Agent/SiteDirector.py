@@ -328,7 +328,7 @@ class SiteDirector(AgentModule):
               self.queueDict[queueName]['ParametersDict'][tagFieldName] = queueTags
             if ceTags:
               if queueTags:
-                allTags = list(set(ceTags) + set(queueTags))
+                allTags = list(set(ceTags) | set(queueTags))
                 self.queueDict[queueName]['ParametersDict'][tagFieldName] = allTags
               else:
                 self.queueDict[queueName]['ParametersDict'][tagFieldName] = ceTags
