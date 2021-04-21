@@ -1,3 +1,11 @@
+[v7r2p4]
+
+*Core
+NEW: (#5094) DIRAC.Core.Utilities.Extensions module for interacting with extensions in a Python 3 compatible way
+
+*tests
+NEW: (#5094) ./integration_tests.py helper script for running the integration tests locally
+
 [v7r2p3]
 
 FIX: Fixes from v7r054 and v7r1p37
