@@ -334,6 +334,10 @@ class DataRecoveryAgent(AgentModule):
                                self.tClient, self.fcClient, self.jobMon)
     jobs, nDone, nFailed = tInfo.getJobs(statusList=self.jobStatus)
 
+    if not jobs:
+      self.log.notice('Skipping. No jobs for transformation', str(transID))
+      return
+
     if self.jobCache[transID][0] == nDone and self.jobCache[transID][1] == nFailed:
       self.log.notice('Skipping transformation %s because nothing changed' % transID)
       return
