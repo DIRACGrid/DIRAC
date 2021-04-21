@@ -215,6 +215,6 @@ def extension_metadata():
   return {
       "priority": 0,
       "setups": {
-          "DIRAC-Certification": "dips://lbcertifdirac70.cern.ch:9135/Configuration/Server",
+          "DIRAC-Certification": "https://lbcertifdirac70.cern.ch:9135/Configuration/Server",
       },
   }
