@@ -14,6 +14,7 @@
     getPilotOutput()
     setJobForPilot()
     getPilotsSummary()
+    getGroupedPilotSummary()
 
 """
 from __future__ import absolute_import
@@ -1150,6 +1151,9 @@ class PivotedPilotSummaryTable:
   of self.columnList into a single row. It allows an easy calculation of pilot efficiencies.
   """
 
+  pstates = ['Submitted', 'Done', 'Failed', 'Aborted',
+             'Running', 'Waiting', 'Scheduled', 'Ready']
+
   def __init__(self, columnList):
     """
     Initialise a table with columns to be grouped by.
@@ -1159,8 +1163,6 @@ class PivotedPilotSummaryTable:
     """
 
     self.columnList = columnList
-    self.pstates = ['Submitted', 'Done', 'Failed', 'Aborted',
-                    'Running', 'Waiting', 'Scheduled', 'Ready']
 
     # we want 'Site' and 'CE' in the final result
     colMap = {'GridSite': 'Site', 'DestinationSite': 'CE'}
@@ -1177,7 +1179,7 @@ class PivotedPilotSummaryTable:
     :return: SQL query
     """
 
-    last_update = Time.dateTime() - Time.day
+    lastUpdate = Time.dateTime() - Time.day
 
     pvtable = 'pivoted'
     innerGroupBy = "(SELECT %s, Status,\n " \
@@ -1187,34 +1189,34 @@ class PivotedPilotSummaryTable:
                    " AND \n" \
                    " LastUpdateTime > '%s')" \
                    " GROUP by %s, Status)\n AS %s" % (
-                       _quotedList(self.columnList), last_update,
+                       _quotedList(self.columnList), lastUpdate,
                        _quotedList(self.columnList), pvtable)
 
     # pivoted table: combine records with the same group of self.columnList into a single row.
 
     pivotedQuery = "SELECT %s,\n" % ', '.join([pvtable + '.' + item for item in self.columnList])
-    line_template = " SUM(if (pivoted.Status={state!r}, pivoted.qty, 0)) AS {state}"
-    pivotedQuery += ',\n'.join(line_template.format(state=state) for state in self.pstates)
+    lineTemplate = " SUM(if (pivoted.Status={state!r}, pivoted.qty, 0)) AS {state}"
+    pivotedQuery += ',\n'.join(lineTemplate.format(state=state) for state in self.pstates)
     pivotedQuery += ",\n  SUM(if (%s.Status='Done', %s.Empties,0)) AS Done_Empty,\n" \
                     "  SUM(%s.qty) AS Total " \
                     "FROM\n" % (pvtable, pvtable, pvtable)
 
-    outerGroupBy = " GROUP BY %s) \nAS pivoted_eff;" % _quotedList(self.columnList)
+    outerGroupBy = " GROUP BY %s) \nAS pivotedEff;" % _quotedList(self.columnList)
 
     # add efficiency columns using aliases defined in the pivoted table
-    eff_case = "(CASE\n  WHEN pivoted_eff.Done - pivoted_eff.Done_Empty > 0 \n" \
-               "  THEN pivoted_eff.Done/(pivoted_eff.Done-pivoted_eff.Done_Empty) \n" \
-               "  WHEN pivoted_eff.Done=0 THEN 0 \n" \
-               "  WHEN pivoted_eff.Done=pivoted_eff.Done_Empty \n" \
+    eff_case = "(CASE\n  WHEN pivotedEff.Done - pivotedEff.Done_Empty > 0 \n" \
+               "  THEN pivotedEff.Done/(pivotedEff.Done-pivotedEff.Done_Empty) \n" \
+               "  WHEN pivotedEff.Done=0 THEN 0 \n" \
+               "  WHEN pivotedEff.Done=pivotedEff.Done_Empty \n" \
                "  THEN 99.0 ELSE 0.0 END) AS PilotsPerJob,\n" \
-               " (pivoted_eff.Total - pivoted_eff.Aborted)/pivoted_eff.Total*100.0 AS PilotJobEff \nFROM \n("
-    eff_select_template = " CAST(pivoted_eff.{state} AS UNSIGNED) AS {state} "
+               " (pivotedEff.Total - pivotedEff.Aborted)/pivotedEff.Total*100.0 AS PilotJobEff \nFROM \n("
+    eff_select_template = " CAST(pivotedEff.{state} AS UNSIGNED) AS {state} "
     # now select the columns + states:
-    pivoted_eff = "SELECT %s,\n" % ', '.join(['pivoted_eff' + '.' + item for item in self.columnList]) + \
-                  ', '.join(eff_select_template.format(state=state) for state in self.pstates + ['Total']) + ", \n"
+    pivotedEff = "SELECT %s,\n" % ', '.join(['pivotedEff' + '.' + item for item in self.columnList]) + \
+        ', '.join(eff_select_template.format(state=state) for state in self.pstates + ['Total']) + ", \n"
 
-    finalQuery = pivoted_eff + eff_case + pivotedQuery + innerGroupBy + outerGroupBy
-    self.columns += [' Total', 'PilotsPerJob', 'PilotJobEff']
+    finalQuery = pivotedEff + eff_case + pivotedQuery + innerGroupBy + outerGroupBy
+    self.columns += ['Total', 'PilotsPerJob', 'PilotJobEff']
     return finalQuery
 
   def getColumnList(self):
