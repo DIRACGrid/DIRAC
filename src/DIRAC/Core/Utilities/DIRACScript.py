@@ -119,4 +119,3 @@ def _getExtensionMetadata(extensionName):
   for entrypoint in metadata.entry_points()['dirac']:
     if extensionName == _entrypointToExtension(entrypoint):
       return entrypoint.load()()
-
