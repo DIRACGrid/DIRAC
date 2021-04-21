@@ -53,6 +53,7 @@ dependencies:
   - pytest-mock
   - shellcheck
   - flaky
+  - importlib_resources
   # docs
   - pygments >=1.5
   - sphinx
