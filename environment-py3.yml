@@ -43,10 +43,12 @@ dependencies:
   - diraccfg
   - subprocess32
   - ldap3
+  - importlib_resources
   # testing and development
   - autopep8
   - caniusepython3
   - coverage
+  - docker-compose
   - hypothesis
   - ipython
   - make
@@ -59,6 +61,8 @@ dependencies:
   - pytest-mock
   - setuptools-scm
   - shellcheck
+  - typer
+  - typer-cli
   - flaky
   # docs
   - pygments >=1.5
@@ -75,6 +79,7 @@ dependencies:
   - simplejson >=3.8.1
   #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
+  - pyyaml
   - pip:
     # This is a fork of tornado with a patch to allow for configurable iostream
     # It should eventually be part of DIRACGrid

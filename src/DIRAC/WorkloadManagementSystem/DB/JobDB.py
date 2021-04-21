@@ -586,7 +586,7 @@ class JobDB(DB):
     if myDate:
       cmd += ' AND LastUpdateTime < %s' % myDate
 
-    return self._transaction([cmd])
+    return self._update(cmd)
 
 #############################################################################
   def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus='', minor=None, application=None):

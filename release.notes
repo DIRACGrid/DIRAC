@@ -17,6 +17,14 @@ CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent i
 *tests
 CHANGE: (#5046) don't use mail in the self generated certificates
 
+[v7r2p4]
+
+*Core
+NEW: (#5094) DIRAC.Core.Utilities.Extensions module for interacting with extensions in a Python 3 compatible way
+
+*tests
+NEW: (#5094) ./integration_tests.py helper script for running the integration tests locally
+
 [v7r2p3]
 
 FIX: Fixes from v7r054 and v7r1p37
@@ -179,6 +187,15 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p38]
+
+FIX: fixes from v7r0p55
+
+*WMS
+FIX: (#5108) delete the local output sandbox tarfile in case it's still there
+FIX: (#5106) SiteDirector - use | operand for the union of tests
+CHANGE: (#5104) JobDB.setJobAttributes: use _update instead of _transaction (as not needed)
 
 [v7r1p37]
 
@@ -799,6 +816,12 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p55]
+
+*TS
+FIX: (#5109) DataRecoveryAgent: immediately skip transformations without jobs, prevents
+     exception later on
 
 [v7r0p54]
 

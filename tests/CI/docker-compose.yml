@@ -49,6 +49,7 @@ services:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: server
     hostname: server
+    user: "${DIRAC_UID}:${DIRAC_GID}"
     depends_on:
       mysql:
         condition: service_healthy
@@ -59,6 +60,6 @@ services:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: client
     hostname: client
+    user: "${DIRAC_UID}:${DIRAC_GID}"
     depends_on:
       - dirac-server
-

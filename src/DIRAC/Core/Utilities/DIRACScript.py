@@ -9,6 +9,9 @@ import functools
 
 import six
 
+if six.PY3:
+  from DIRAC.Core.Utilities.Extensions import entrypointToExtension, extensionsByPriority
+
 
 class DIRACScript(object):
   """Decorator for providing command line executables
@@ -65,10 +68,10 @@ class DIRACScript(object):
       # raise NotImplementedError("Something is very wrong")
 
     # Call the entry_point from the extension with the highest priority
-    rankedExtensions = _extensionsByPriority()
+    rankedExtensions = extensionsByPriority()
     entrypoint = max(
         matches[function_name],
-        key=lambda e: rankedExtensions.index(_entrypointToExtension(e)),
+        key=lambda e: rankedExtensions.index(entrypointToExtension(e)),
     )
 
     return entrypoint.load()._func()
@@ -90,14 +93,14 @@ def _extensionsByPriority():
   # This is only available in Python 3.8+ so it has to be here for now
   from importlib import metadata  # pylint: disable=no-name-in-module
 
-  priorties = defaultdict(list)
+  priorities = defaultdict(list)
   for entrypoint in metadata.entry_points()['dirac']:
     extensionName = _entrypointToExtension(entrypoint)
     extension_metadata = entrypoint.load()()
-    priorties[extension_metadata["priority"]].append(extensionName)
+    priorities[extension_metadata["priority"]].append(extensionName)
 
   extensions = []
-  for priority, extensionNames in sorted(priorties.items()):
+  for priority, extensionNames in sorted(priorities.items()):
     if len(extensionNames) != 1:
       print(
           "WARNING: Found multiple extensions with priority",
@@ -116,3 +119,4 @@ def _getExtensionMetadata(extensionName):
   for entrypoint in metadata.entry_points()['dirac']:
     if extensionName == _entrypointToExtension(entrypoint):
       return entrypoint.load()()
+
