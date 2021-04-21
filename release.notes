@@ -1,3 +1,10 @@
+[v7r1p38]
+
+*WMS
+FIX: (#5108) delete the local output sandbox tarfile in case it's still there
+FIX: (#5106) SiteDirector - use | operand for the union of tests
+CHANGE: (#5104) JobDB.setJobAttributes: use _update instead of _transaction (as not needed)
+
 [v7r1p37]
 
 *DataManagement
