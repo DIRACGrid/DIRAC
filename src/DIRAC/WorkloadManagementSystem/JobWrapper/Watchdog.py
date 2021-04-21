@@ -877,12 +877,12 @@ class Watchdog(object):
     """
     try:
       parameters = []
-      self.log.info('==========================================================')
+      self.log.info('', '==========================================================')
       if title:
-        self.log.info('Watchdog will report %s' % (title))
+        self.log.info('Watchdog will report', title)
       else:
         self.log.info('Watchdog will report parameters')
-      self.log.info('==========================================================')
+      self.log.info('', '==========================================================')
       vals = params
       if 'Value' in params:
         if vals['Value']:
@@ -894,10 +894,10 @@ class Watchdog(object):
       if report:
         self.__setJobParamList(parameters)
 
-      self.log.info('==========================================================')
+      self.log.info('', '==========================================================')
     except Exception as x:
       self.log.warn('Problem while reporting parameters')
-      self.log.warn(str(x))
+      self.log.warn(repr(x))
 
   #############################################################################
   def __getWallClockTime(self):

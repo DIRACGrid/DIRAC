@@ -224,7 +224,7 @@ def _runConfigurationWizard(setups, defaultSetup):
       return None
 
   # Get the URL to the master CS
-  csURL = prompt(HTML("<b>Choose a configuration sever URL (leave blank for default):</b>\n"))
+  csURL = prompt(HTML("<b>Choose a configuration server URL (leave blank for default):</b>\n"))
   if not csURL:
     csURL = setups[setup]
 
