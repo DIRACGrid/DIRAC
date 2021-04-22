@@ -128,15 +128,13 @@ installSite() {
     curl -L "${DIRACOS2_URL}" > "installer.sh"
     bash "installer.sh"
     rm "installer.sh"
-    # TODO: Remove these two lines
     echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
-    echo "export X509_CERT_DIR=\"$PWD/diracos/etc/grid-security/certificates\"" >> "$PWD/bashrc"
+    # TODO: This will be fixed properly as part of https://github.com/DIRACGrid/DIRAC/issues/5082
     mv "${SERVERINSTALLDIR}/etc/grid-security/"* "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
     rm -rf "${SERVERINSTALLDIR}/etc"
     ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"
     source diracos/diracosrc
     pip install git+https://gitlab.cern.ch/chaen/fts-rest-flask.git@packaging
-    pip install 'sqlalchemy<1.4'
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
       pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}[server]"
     done
