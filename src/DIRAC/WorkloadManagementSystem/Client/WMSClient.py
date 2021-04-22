@@ -215,13 +215,13 @@ class WMSClient(object):
 
   def deleteJob(self, jobID):
     """ Delete job(s) (set their status to DELETED) from the WMS Job database.
-	jobID can be an integer representing a single DIRAC job ID or a list of IDs
+        jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
     return self.jobManager.deleteJob(jobID)
 
   def removeJob(self, jobID):
     """ Fully remove job(s) from the WMS Job database.
-	jobID can be an integer representing a single DIRAC job ID or a list of IDs
+        jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
     return self.jobManager.removeJob(jobID)
 

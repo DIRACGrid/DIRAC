@@ -89,11 +89,11 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
 
 @pytest.mark.parametrize(
     "conditions, mockReplyInput, expected", [
-	({'JobType': '', 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
-	({'JobType': '', 'Status': 'Deleted'}, {'OK': False, 'Message': ''}, {'OK': False, 'Message': ''}),
-	({'JobType': [], 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
-	({'JobType': ['some', 'status'],
-	  'Status': ['Deleted', 'Cancelled']}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None})
+        ({'JobType': '', 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+        ({'JobType': '', 'Status': 'Deleted'}, {'OK': False, 'Message': ''}, {'OK': False, 'Message': ''}),
+        ({'JobType': [], 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+        ({'JobType': ['some', 'status'],
+          'Status': ['Deleted', 'Cancelled']}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None})
     ])
 def test_deleteJobsByStatus(mocker, conditions, mockReplyInput, expected):
   """ Testing JobCleaningAgent().deleteJobsByStatus()

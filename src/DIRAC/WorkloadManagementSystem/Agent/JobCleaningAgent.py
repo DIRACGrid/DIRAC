@@ -144,7 +144,7 @@ class JobCleaningAgent(AgentModule):
       delTime = str(Time.dateTime() - delay * Time.day)
       result = self.deleteJobsByStatus(condDict, delTime)
       if not result['OK']:
-	self.log.error('Failed to delete jobs', 'with condDict %s' % condDict)
+        self.log.error('Failed to delete jobs', 'with condDict %s' % condDict)
 
     if self.maxHBJobsAtOnce > 0:
       for status, delay in self.removeStatusDelayHB.items():
@@ -181,22 +181,22 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    ownerJobsDict = self._getownerJobsDict(jobList)
+    ownerJobsDict = self._getOwnerJobsDict(jobList)
 
     fail = False
     for owner, jobsList in ownerJobsDict.items():
       ownerDN = owner.split(';')[0]
       ownerGroup = owner.split(';')[1]
       self.log.verbose(
-	  "Attempting to remove jobs",
-	  "(n=%d) for %s : %s" % (len(jobsList), ownerDN, ownerGroup))
+          "Attempting to remove jobs",
+          "(n=%d) for %s : %s" % (len(jobsList), ownerDN, ownerGroup))
       wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
       result = wmsClient.removeJob(jobsList)
       if not result['OK']:
-	self.log.error(
-	    "Could not remove jobs",
-	    "for %s : %s (n=%d) : %s" % (ownerDN, ownerGroup, len(jobsList), result['Message']))
-	fail = True
+        self.log.error(
+            "Could not remove jobs",
+            "for %s : %s (n=%d) : %s" % (ownerDN, ownerGroup, len(jobsList), result['Message']))
+        fail = True
 
     if fail:
       return S_ERROR()
@@ -237,22 +237,22 @@ class JobCleaningAgent(AgentModule):
     if not jobList:
       return S_OK()
 
-    ownerJobsDict = self._getownerJobsDict(jobList)
+    ownerJobsDict = self._getOwnerJobsDict(jobList)
 
     fail = False
     for owner, jobsList in ownerJobsDict.items():
       ownerDN = owner.split(';')[0]
       ownerGroup = owner.split(';')[1]
       self.log.verbose(
-	  "Attempting to delete jobs",
-	  "(n=%d) for %s : %s" % (len(jobsList), ownerDN, ownerGroup))
+          "Attempting to delete jobs",
+          "(n=%d) for %s : %s" % (len(jobsList), ownerDN, ownerGroup))
       wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
       result = wmsClient.deleteJob(jobsList)
       if not result['OK']:
-	self.log.error(
-	    "Could not delete jobs",
-	    "for %s : %s (n=%d) : %s" % (ownerDN, ownerGroup, len(jobsList), result['Message']))
-	fail = True
+        self.log.error(
+            "Could not delete jobs",
+            "for %s : %s (n=%d) : %s" % (ownerDN, ownerGroup, len(jobsList), result['Message']))
+        fail = True
 
     if fail:
       return S_ERROR()
@@ -281,7 +281,7 @@ class JobCleaningAgent(AgentModule):
       jobList = jobList[:self.maxJobsAtOnce]
     return S_OK(jobList)
 
-  def _getownerJobsDict(self, jobList):
+  def _getOwnerJobsDict(self, jobList):
     """
     gets in input a list of int(JobID) and return a dict with a grouping of them by owner, e.g.
     {'dn;group': [1, 3, 4], 'dn;group_1': [5], 'dn_1;group': [2]}

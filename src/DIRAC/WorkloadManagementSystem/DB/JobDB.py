@@ -363,7 +363,7 @@ class JobDB(DB):
 
   def getJobsAttributes(self, jobIDs, attrList=None):
     """ Get all Job(s) Attributes for a given list of jobIDs.
-	Return a dictionary with all Job Attributes as value pairs
+        Return a dictionary with all Job Attributes as value pairs
     """
 
     # If no list is given, return all attributes
@@ -382,13 +382,13 @@ class JobDB(DB):
     for x in attrList:
       ret = self._escapeString(x)
       if not ret['OK']:
-	return ret
+        return ret
       x = "`" + ret['Value'][1:-1] + "`"
       attrNameListS.append(x)
     attrNames = 'JobID,' + ','.join(attrNameListS)
 
     cmd = 'SELECT %s FROM Jobs WHERE JobID IN (%s)' % (
-	attrNames, ','.join(str(jobID) for jobID in jobIDs))
+        attrNames, ','.join(str(jobID) for jobID in jobIDs))
     res = self._query(cmd)
     if not res['OK']:
       return res
@@ -400,14 +400,14 @@ class JobDB(DB):
       jobID = int(t_att[0])
       attributes.setdefault(jobID, {})
       for tx, ax in zip(t_att[1:], attrList):
-	attributes[jobID].setdefault(ax, tx)
+        attributes[jobID].setdefault(ax, tx)
 
     return S_OK(attributes)
 
 #############################################################################
   def getJobAttributes(self, jobID, attrList=None):
     """ Get all Job Attributes for a given jobID.
-	Return a dictionary with all Job Attributes as value pairs
+        Return a dictionary with all Job Attributes as value pairs
     """
 
     ret = self._escapeString(jobID)
