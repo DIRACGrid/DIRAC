@@ -172,6 +172,14 @@ def test__submitPilotsToQueue(mocker):
                                                 'Setup': 'LHCb-Production',
                                                 'Site': 'LCG.CERN.cern',
                                                 'SubmitPool': ''}}}
+
+  # Create a MagicMock that does not have the workingDirectory
+  # attribute (https://cpython-test-docs.readthedocs.io/en/latest/library/unittest.mock.html#deleting-attributes)
+  # This is to use the SiteDirector's working directory, not the CE one
+  ceMock = MagicMock()
+  del ceMock.workingDirectory
+
+  sd.queueCECache = {'aQueue': {'CE': ceMock}}
   sd.queueSlots = {'aQueue': {'AvailableSlots': 10}}
   res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')
   assert res['OK'] is True
