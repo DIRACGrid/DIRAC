@@ -139,22 +139,24 @@ def create(
     prepare_environment(flags, editable, extra_module, release_var)
     install_server()
     install_client()
-    error = 0
+    exit_code = 0
     if run_server_tests:
         try:
             test_server()
         except TestExit as e:
-            error += e.exit_code
+            exit_code += e.exit_code
         else:
             raise NotImplementedError()
     if run_client_tests:
         try:
             test_client()
         except TestExit as e:
-            error += e.exit_code
+            exit_code += e.exit_code
         else:
             raise NotImplementedError()
-    raise typer.Exit(0)
+    if exit_code != 0:
+        typer.secho("One or more tests failed", err=True, fg=c.RED)
+    raise typer.Exit(exit_code)
 
 
 @app.command()
