@@ -20,10 +20,14 @@ import math
 import pytz
 import numpy
 
+from matplotlib.pyplot import rcParams
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.dates import AutoDateLocator, AutoDateFormatter, DateFormatter, RRuleLocator, \
     rrulewrapper, HOURLY, MINUTELY, SECONDLY, YEARLY, MONTHLY, DAILY
 from dateutil.relativedelta import relativedelta
+
+# This is a hack to workaround the use of float(ScalarFormatter.__call__(...))
+rcParams["axes.unicode_minus"] = False
 
 
 def evalPrefs(*args, **kw):
