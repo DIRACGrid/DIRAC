@@ -522,15 +522,15 @@ Queue %(nJobs)s
     # FIXME: again some issue with the working directory...
     # workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
 
-    if not self._cleanupLock.acquire(False):
+    if not HTCondorCEComputingElement._cleanupLock.acquire(False):
       return
 
     now = datetime.datetime.utcnow()
-    if (now - self._lastCleanupTime).total_seconds() < 60:
-      self._cleanupLock.release()
+    if (now - HTCondorCEComputingElement._lastCleanupTime).total_seconds() < 60:
+      HTCondorCEComputingElement._cleanupLock.release()
       return
 
-    self._lastCleanupTime = now
+    HTCondorCEComputingElement._lastCleanupTime = now
 
     self.log.debug("Cleaning working directory: %s" % self.workingDirectory)
 
