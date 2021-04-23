@@ -537,7 +537,8 @@ Queue %(nJobs)s
     # remove all files older than 120 minutes starting with DIRAC_ Condor will
     # push files on submission, but it takes at least a few seconds until this
     # happens so we can't directly unlink after condor_submit
-    status, stdout = commands.getstatusoutput('find %s -mmin +120 -name "DIRAC_*" -delete ' % self.workingDirectory)
+    status, stdout = commands.getstatusoutput('find -O3 %s -maxdepth 1 -mmin +120 -name "DIRAC_*" -delete ' %
+                                              self.workingDirectory)
     if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
 
