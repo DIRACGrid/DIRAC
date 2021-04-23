@@ -542,9 +542,9 @@ Queue %(nJobs)s
     if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
 
-    # remove all out/err/log files older than "DaysToKeepLogs" days in the CE part of the working Directory
-    workDir = os.path.join(self.workingDirectory, self.ceName)
-    findPars = dict(workDir=workDir, days=self.daysToKeepLogs)
+    # remove all out/err/log files older than "DaysToKeepLogs" days in the working directory
+    # not running this for each CE so we do global cleanup
+    findPars = dict(workDir=self.workingDirectory, days=self.daysToKeepLogs)
     # remove all out/err/log files older than "DaysToKeepLogs" days
     status, stdout = commands.getstatusoutput(
         r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete ' %
