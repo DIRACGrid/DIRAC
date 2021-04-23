@@ -45,7 +45,9 @@ When using a local condor_schedd look at the HTCondor documenation for enabling 
 import os
 import tempfile
 import commands
+import datetime
 import errno
+import threading
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -159,6 +161,10 @@ class HTCondorCEComputingElement(ComputingElement):
   """ HTCondorCE computing element class
       implementing the functions jobSubmit, getJobOutput
   """
+
+  # static variables to ensure single cleanup every minute
+  _lastCleanupTime = datetime.datetime.utcnow()
+  _cleanupLock = threading.Lock()
 
   #############################################################################
   def __init__(self, ceUniqueID):
@@ -516,6 +522,16 @@ Queue %(nJobs)s
     # FIXME: again some issue with the working directory...
     # workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
 
+    if not self._cleanupLock.acquire(False):
+      return
+
+    now = datetime.datetime.utcnow()
+    if (self._lastCleanupTime - now).total_seconds < 60:
+      self._cleanupLock.release()
+      return
+
+    self._lastCleanupTime = now
+
     self.log.debug("Cleaning working directory: %s" % self.workingDirectory)
 
     # remove all files older than 120 minutes starting with DIRAC_ Condor will
@@ -534,3 +550,4 @@ Queue %(nJobs)s
         findPars)
     if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
+    self._cleanupLock.release()
