@@ -526,7 +526,7 @@ Queue %(nJobs)s
       return
 
     now = datetime.datetime.utcnow()
-    if (self._lastCleanupTime - now).total_seconds < 60:
+    if (now - self._lastCleanupTime).total_seconds() < 60:
       self._cleanupLock.release()
       return
 
