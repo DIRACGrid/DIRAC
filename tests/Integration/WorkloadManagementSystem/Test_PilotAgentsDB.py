@@ -26,7 +26,8 @@ def preparePilots(stateCount, testSite, testCE, testGroup):
   """
   Set up a bunch of pilots in different states.
 
-  :param list stateCount:
+  :param list stateCount: number of pilots per state. States are:'Submitted', 'Done', 'Failed',
+  'Aborted', 'Running', 'Waiting', 'Scheduled', 'Ready'
   :param str testSite: Site name
   :param str testCE: CE name
   :param str testGroup: group name

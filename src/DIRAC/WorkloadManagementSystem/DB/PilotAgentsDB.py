@@ -1166,9 +1166,9 @@ class PivotedPilotSummaryTable:
 
     # we want 'Site' and 'CE' in the final result
     colMap = {'GridSite': 'Site', 'DestinationSite': 'CE'}
-    self.columns = [colMap.get(val, val) for val in columnList]
+    self._columns = [colMap.get(val, val) for val in columnList]
 
-    self.columns += self.pstates  # MySQL._query() does not give us column names, sadly.
+    self._columns += self.pstates  # MySQL._query() does not give us column names, sadly.
 
   def buildSQL(self, selectDict=None):
     """
@@ -1204,21 +1204,21 @@ class PivotedPilotSummaryTable:
     outerGroupBy = " GROUP BY %s) \nAS pivotedEff;" % _quotedList(self.columnList)
 
     # add efficiency columns using aliases defined in the pivoted table
-    eff_case = "(CASE\n  WHEN pivotedEff.Done - pivotedEff.Done_Empty > 0 \n" \
+    effCase = "(CASE\n  WHEN pivotedEff.Done - pivotedEff.Done_Empty > 0 \n" \
                "  THEN pivotedEff.Done/(pivotedEff.Done-pivotedEff.Done_Empty) \n" \
                "  WHEN pivotedEff.Done=0 THEN 0 \n" \
                "  WHEN pivotedEff.Done=pivotedEff.Done_Empty \n" \
                "  THEN 99.0 ELSE 0.0 END) AS PilotsPerJob,\n" \
                " (pivotedEff.Total - pivotedEff.Aborted)/pivotedEff.Total*100.0 AS PilotJobEff \nFROM \n("
-    eff_select_template = " CAST(pivotedEff.{state} AS UNSIGNED) AS {state} "
+    effSelectTemplate = " CAST(pivotedEff.{state} AS UNSIGNED) AS {state} "
     # now select the columns + states:
     pivotedEff = "SELECT %s,\n" % ', '.join(['pivotedEff' + '.' + item for item in self.columnList]) + \
-        ', '.join(eff_select_template.format(state=state) for state in self.pstates + ['Total']) + ", \n"
+        ', '.join(effSelectTemplate.format(state=state) for state in self.pstates + ['Total']) + ", \n"
 
-    finalQuery = pivotedEff + eff_case + pivotedQuery + innerGroupBy + outerGroupBy
-    self.columns += ['Total', 'PilotsPerJob', 'PilotJobEff']
+    finalQuery = pivotedEff + effCase + pivotedQuery + innerGroupBy + outerGroupBy
+    self._columns += ['Total', 'PilotsPerJob', 'PilotJobEff']
     return finalQuery
 
   def getColumnList(self):
 
-    return self.columns
+    return self._columns
