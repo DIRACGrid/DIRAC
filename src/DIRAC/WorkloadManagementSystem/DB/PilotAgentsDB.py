@@ -1205,11 +1205,11 @@ class PivotedPilotSummaryTable:
 
     # add efficiency columns using aliases defined in the pivoted table
     effCase = "(CASE\n  WHEN pivotedEff.Done - pivotedEff.Done_Empty > 0 \n" \
-               "  THEN pivotedEff.Done/(pivotedEff.Done-pivotedEff.Done_Empty) \n" \
-               "  WHEN pivotedEff.Done=0 THEN 0 \n" \
-               "  WHEN pivotedEff.Done=pivotedEff.Done_Empty \n" \
-               "  THEN 99.0 ELSE 0.0 END) AS PilotsPerJob,\n" \
-               " (pivotedEff.Total - pivotedEff.Aborted)/pivotedEff.Total*100.0 AS PilotJobEff \nFROM \n("
+        "  THEN pivotedEff.Done/(pivotedEff.Done-pivotedEff.Done_Empty) \n" \
+        "  WHEN pivotedEff.Done=0 THEN 0 \n" \
+        "  WHEN pivotedEff.Done=pivotedEff.Done_Empty \n" \
+        "  THEN 99.0 ELSE 0.0 END) AS PilotsPerJob,\n" \
+        " (pivotedEff.Total - pivotedEff.Aborted)/pivotedEff.Total*100.0 AS PilotJobEff \nFROM \n("
     effSelectTemplate = " CAST(pivotedEff.{state} AS UNSIGNED) AS {state} "
     # now select the columns + states:
     pivotedEff = "SELECT %s,\n" % ', '.join(['pivotedEff' + '.' + item for item in self.columnList]) + \
