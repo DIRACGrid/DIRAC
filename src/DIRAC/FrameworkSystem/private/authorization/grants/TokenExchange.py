@@ -300,9 +300,10 @@ class TokenExchangeGrant(_TokenExchangeGrant):
     if subject_token_type.split(':')[-1] != 'refresh_token':
       raise InvalidRequestError('Please set refresh_token to "subject_token" in request.')
 
-    # Check auth session
-    session = self.server.getSession(subject_token)
-    if not session:
+    ######################## TODO ##################
+    # Check token in DB
+    token = self.server.db.getToken(subject_token)
+    if not token:
       return None
 
     # Check token

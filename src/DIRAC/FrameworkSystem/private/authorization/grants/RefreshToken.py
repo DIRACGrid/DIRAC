@@ -4,6 +4,7 @@ from __future__ import print_function
 
 # from authlib.oauth2.rfc6749.util import scope_to_list
 from authlib.oauth2.rfc6749.grants import RefreshTokenGrant as _RefreshTokenGrant
+from authlib.oauth2.base import OAuth2Error
 
 # from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 # from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager

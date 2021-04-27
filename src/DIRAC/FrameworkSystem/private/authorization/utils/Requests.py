@@ -2,9 +2,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
-from authlib.oauth2 import OAuth2Request as _OAuth2Request
+import re
+
 from tornado.escape import json_decode
+from authlib.oauth2 import OAuth2Request as _OAuth2Request
+from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
 __RCSID__ = "$Id$"
 
