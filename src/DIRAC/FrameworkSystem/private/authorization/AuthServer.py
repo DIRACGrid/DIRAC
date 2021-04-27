@@ -37,6 +37,7 @@ from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 from authlib.common.security import generate_token
 from authlib.common.encoding import to_unicode, json_dumps
+from authlib.oauth2.base import OAuth2Error
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
@@ -69,15 +70,15 @@ class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
     self.db = AuthDB()
     self.idps = IdProviderFactory()
     ClientManager.__init__(self, self.db)
-    # SessionManager.__init__(self)
     # Privide two authlib methods query_client and save_token
     _AuthorizationServer.__init__(self, query_client=self.getClient, save_token=self.saveToken)
     self.generate_token = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
     self.collectMetadata()
 
-    self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
+    # self.register_grant(NotebookImplicitGrant)  # OpenIDImplicitGrant)
     self.register_grant(TokenExchangeGrant)
+    self.register_grant(RefreshTokenGrant)
     self.register_grant(DeviceCodeGrant, [SaveSessionToDB(db=self.db)])
     self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True), OpenIDCode(require_nonce=False)])
     self.register_endpoint(ClientRegistrationEndpoint)
@@ -107,8 +108,8 @@ class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
         :param object request: http Request object, implemented for compatibility with authlib library (unuse)
     """
     if 'refresh_token' in token:
-      self.db.storeToken(token)
-    return None
+      return self.db.storeToken(token)
+    return S_OK(None)
 
   def getIdPAuthorization(self, providerName, request):
     """ Submit subsession and return dict with authorization url and session number
@@ -127,7 +128,7 @@ class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
       return result
     authURL, state, session = result['Value']
     session['state'] = state
-    session['provider'] = providerName
+    session['Provider'] = providerName
     session['mainSession'] = request if isinstance(request, dict) else request.toDict()
 
     gLogger.verbose('Redirect to', authURL)
@@ -147,15 +148,15 @@ class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
     gLogger.debug('Try to parse authentification response from %s:\n' % providerName, pprint.pformat(response))
     # Parse response
     result = self.idps.getIdProvider(providerName, sessionManager=self.db)
-    if result['OK']:
+    if not result['OK']:
       return result
-    idpObj = result['Value']
+    provObj = result['Value']
     result = provObj.parseAuthResponse(response, session)
     if not result['OK']:
       return result
     # FINISHING with IdP auth result
     username, userID, profile = result['Value']
-    self.log.debug("Read %s's profile:" % username, pprint.pformat(profile))
+    gLogger.debug("Read %s's profile:" % username, pprint.pformat(profile))
     userProfile = profile[providerName][userID]
     # Is ID registred?
     result = getUsernameForID(userID)
@@ -170,6 +171,7 @@ class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
       else:
         comment += ' Please, contact the DIRAC administrators.'
       return S_ERROR(comment)
+    username = result['Value']
     return S_OK((username, userID))
     # return gSessionManager.parseAuthResponse(session.pop('Provider'), createOAuth2Request(response).toDict(),
     #                                          session)
@@ -241,14 +243,14 @@ class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
 
   def handle_error_response(self, request, error):
     return self.handle_response(*error(translations=self.get_translations(request),
-                                       error_uris=self.get_error_uris(request), error=True))
+                                       error_uris=self.get_error_uris(request)), error=True)
 
   def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, error=None, **actions):
     gLogger.debug('Handle authorization response with %s status code:' % status_code, payload)
     gLogger.debug('Headers:', headers)
     if newSession:
       gLogger.debug('newSession:', newSession)
-    return S_OK(((status_code, headers, payload, newSession, error), actions))
+    return S_OK([[status_code, headers, payload, newSession, error], actions])
     # return HTTPResponse(self.request, status_code, headers=header, buffer=io.StringIO(payload))
 
   def create_authorization_response(self, response, username):
@@ -270,9 +272,9 @@ class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
     if request.method != 'GET':
       return 'Use GET method to access this endpoint.'
     try:
-      req.state = req.state or generate_token(10)
-      gLogger.info('Validate consent request for', req.state)
       req = self.create_oauth2_request(request)
+      # req.data['state'] = req.state or generate_token(10)
+      gLogger.info('Validate consent request for', req.state)
       grant = self.get_authorization_grant(req)
       gLogger.debug('Use grant:', grant)
       grant.validate_consent_request()
@@ -285,7 +287,7 @@ class AuthServer(_AuthorizationServer, ClientManager):  #SessionManager
         return providerChooser
 
       # Submit second auth flow through IdP
-      return self.getIdPAuthorization(idP, req)
+      return self.getIdPAuthorization(provider, req)
     except OAuth2Error as error:
       return self.handle_error_response(None, error)
 
