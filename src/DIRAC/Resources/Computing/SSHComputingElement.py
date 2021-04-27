@@ -3,7 +3,71 @@
 # Author : Dumitru Laurentiu, A.T.
 ########################################################################
 
-""" SSH (Virtual) Computing Element: For a given IP/host it will send jobs directly through ssh
+""" SSH (Virtual) Computing Element
+
+For a given IP/host it will send jobs directly through ssh
+
+**Configuration Parameters**
+
+Configuration for the SSHComputingElement submission can be done via the configuration system.
+
+BatchSystem:
+   Underlying batch system that is going to be used to orchestrate executable files. The Batch System has to be
+   accessible from the LocalCE. By default, the LocalComputingElement submits directly on the host via the Host class.
+
+ParallelLibrary:
+   Underlying parallel library used to generate a wrapper around the executable files to run them in parallel on
+   multiple nodes.
+
+SharedArea:
+   Area used to store executable/output/error files if they are not aready defined via BatchOutput, BatchError,
+   InfoArea, ExecutableArea and/or WorkArea. The path should be absolute.
+
+BatchOutput:
+   Area where the job outputs are stored.
+   If not defined: SharedArea + '/data' is used.
+   If not absolute: SharedArea + path is used.
+
+BatchError:
+   Area where the job errors are stored.
+   If not defined: SharedArea + '/data' is used.
+   If not absolute: SharedArea + path is used.
+
+ExecutableArea:
+   Area where the executable files are stored if necessary: this is the case when a parallel library is used.
+   Indeed, the executable has to be accessible to the batch system. This might not be the case
+   if multiple file systems are present on the host.
+   If not defined: SharedArea + '/data' is used.
+   If not absolute: SharedArea + path is used.
+
+SSHHost:
+   SSH host name
+
+SSHUser:
+   SSH user login
+
+SSHPassword:
+   SSH password
+
+SSHPort:
+   Port number if not standard, e.g. for the gsissh access
+
+SSHKey:
+   Location of the ssh private key for no-password connection
+
+SSHOptions:
+   Any other SSH options to be used
+
+SSHTunnel:
+   String defining the use of intermediate SSH host. Example::
+
+     ssh -i /private/key/location -l final_user final_host
+
+SSHType:
+   SSH (default) or gsissh
+
+**Code Documentation**
+
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -20,6 +84,7 @@ import errno
 from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import quote as urlquote
 from six.moves.urllib.parse import unquote as urlunquote
+from six.moves import shlex_quote
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import rootPath
@@ -187,6 +252,10 @@ class SSH(object):
     :param str postUploadCommand: command executed on the remote side after file upload
     :param bool upload: upload if True, download otherwise
     """
+    # shlex_quote aims to prevent any security issue or problems with filepath containing spaces
+    # it returns a shell-escaped version of the filename
+    localFile = shlex_quote(localFile)
+    remoteFile = shlex_quote(remoteFile)
     if upload:
       if self.sshTunnel:
         remoteFile = remoteFile.replace('$', r'\\\\\$')
@@ -243,7 +312,6 @@ class SSHComputingElement(ComputingElement):
 
     self.ceType = 'SSH'
     self.execution = "SSH"
-    self.batchSystem = 'Host'
     self.submittedJobs = 0
     self.outputTemplate = ''
     self.errorTemplate = ''
@@ -297,10 +365,13 @@ class SSHComputingElement(ComputingElement):
   def _reset(self):
     """ Process CE parameters and make necessary adjustments
     """
-    self.batchSystem = self.ceParameters.get('BatchSystem', 'Host')
+    batchSystemName = self.ceParameters.get('BatchSystem', 'Host')
     if 'BatchSystem' not in self.ceParameters:
-      self.ceParameters['BatchSystem'] = self.batchSystem
-    self.loadBatchSystem()
+      self.ceParameters['BatchSystem'] = batchSystemName
+    result = self.loadBatchSystem(batchSystemName)
+    if not result['OK']:
+      self.log.error('Failed to load the batch system plugin %s', batchSystemName)
+      return result
 
     self.user = self.ceParameters['SSHUser']
     self.queue = self.ceParameters['Queue']
@@ -326,6 +397,13 @@ class SSHComputingElement(ComputingElement):
     self.workArea = self.ceParameters['WorkArea']
     if not self.workArea.startswith('/'):
       self.workArea = os.path.join(self.sharedArea, self.workArea)
+
+    parallelLibraryName = self.ceParameters.get('ParallelLibrary')
+    if parallelLibraryName:
+      result = self.loadParallelLibrary(parallelLibraryName)
+      if not result['OK']:
+        self.log.error('Failed to load the parallel library plugin %s', parallelLibraryName)
+        return result
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -377,7 +455,7 @@ class SSHComputingElement(ComputingElement):
       self.log.warn('Failed generating control script')
       return result
     localScript = result['Value']
-    self.log.verbose('Uploading %s script to %s' % (self.batchSystem, self.ceParameters['SSHHost']))
+    self.log.verbose('Uploading %s script to %s' % (self.batchSystem.__class__.__name__, self.ceParameters['SSHHost']))
     remoteScript = '%s/execute_batch' % self.sharedArea
     result = ssh.scpCall(30,
                          localScript,
@@ -425,7 +503,7 @@ class SSHComputingElement(ComputingElement):
     """
     # Get the batch system module to use
     batchSystemDir = os.path.join(rootPath, "DIRAC", "Resources", "Computing", "BatchSystems")
-    batchSystemScript = os.path.join(batchSystemDir, '%s.py' % self.batchSystem)
+    batchSystemScript = os.path.join(batchSystemDir, '%s.py' % self.batchSystem.__class__.__name__)
 
     # Get the executeBatch.py content: an str variable composed of code content that has to be extracted
     # The control script is generated from the batch system module and this variable
@@ -445,7 +523,7 @@ class SSHComputingElement(ComputingElement):
     if not ssh:
       ssh = SSH(host=host, parameters=self.ceParameters)
 
-    options['BatchSystem'] = self.batchSystem
+    options['BatchSystem'] = self.batchSystem.__class__.__name__
     options['Method'] = command
     options['SharedDir'] = self.sharedArea
     options['OutputDir'] = self.batchOutput
@@ -509,21 +587,37 @@ class SSHComputingElement(ComputingElement):
     else:  # no proxy
       submitFile = executableFile
 
-    result = self._submitJobToHost(submitFile, numberOfJobs)
-    if proxy:
+    inputs = None
+    if self.parallelLibrary:
+      # In this case, the executable becomes a dependency of a parallel library script.
+      # It needs to be submitted along with the submitFile, which is a parallel library wrapper.
+      inputs = [submitFile]
+      submitFile = self.parallelLibrary.generateWrapper(submitFile)
+
+    result = self._submitJobToHost(submitFile, numberOfJobs, inputs=inputs)
+    if proxy or self.parallelLibrary:
       os.remove(submitFile)
+      for inputFile in inputs:
+        os.remove(inputFile)
 
     return result
 
-  def _submitJobToHost(self, executableFile, numberOfJobs, host=None):
+  def _submitJobToHost(self, executableFile, numberOfJobs, host=None, inputs=None):
     """  Submit prepared executable to the given host
     """
     ssh = SSH(host=host, parameters=self.ceParameters)
     # Copy the executable
-    submitFile = '%s/%s' % (self.executableArea, os.path.basename(executableFile))
+    submitFile = os.path.join(self.executableArea, os.path.basename(executableFile))
     result = ssh.scpCall(30, executableFile, submitFile, postUploadCommand='chmod +x %s' % submitFile)
     if not result['OK']:
       return result
+
+    # Copy the executable dependencies if any
+    for localInput in inputs:
+      remoteInput = os.path.join(self.executableArea, os.path.basename(localInput))
+      result = ssh.scpCall(30, localInput, remoteInput, postUploadCommand='chmod +x %s' % remoteInput)
+      if not result['OK']:
+        return result
 
     jobStamps = []
     for _i in range(numberOfJobs):
@@ -531,6 +625,9 @@ class SSHComputingElement(ComputingElement):
 
     numberOfProcessors = self.ceParameters.get('NumberOfProcessors', 1)
     wholeNode = self.ceParameters.get('WholeNode', False)
+    # numberOfNodes is treated as a string as it can contain values such as "2-4"
+    # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
+    numberOfNodes = self.ceParameters.get('NumberOfNodes', '1')
 
     # Collect command options
     commandOptions = {'Executable': submitFile,
@@ -539,6 +636,7 @@ class SSHComputingElement(ComputingElement):
                       'JobStamps': jobStamps,
                       'WholeNode': wholeNode,
                       'NumberOfProcessors': numberOfProcessors,
+                      'NumberOfNodes': numberOfNodes,
                       'Preamble': self.preamble}
 
     resultCommand = self.__executeHostCommand('submitJob', commandOptions, ssh=ssh, host=host)
@@ -554,7 +652,8 @@ class SSHComputingElement(ComputingElement):
         ceHost = host
         if host is None:
           ceHost = self.ceName
-        jobIDs = ['%s%s://%s/%s' % (self.ceType.lower(), self.batchSystem.lower(), ceHost, _id) for _id in batchIDs]
+        batchSystemName = self.batchSystem.__class__.__name__.lower()
+        jobIDs = ['%s%s://%s/%s' % (self.ceType.lower(), batchSystemName, ceHost, _id) for _id in batchIDs]
       else:
         return S_ERROR('No jobs IDs returned')
 
@@ -675,8 +774,11 @@ class SSHComputingElement(ComputingElement):
       self.errorTemplate = self.ceParameters['ErrorTemplate']
       output = self.outputTemplate % jobStamp
       error = self.errorTemplate % jobStamp
-    elif hasattr(self.batch, 'getJobOutputFiles'):
-      resultCommand = self.__executeHostCommand('getJobOutputFiles', {'JobIDList': [jobStamp]}, host=host)
+    elif hasattr(self.batchSystem, 'getJobOutputFiles'):
+      commandOptions = {'JobIDList': [jobStamp],
+                        'OutputDir': self.batchOutput,
+                        'ErrorDir': self.batchError}
+      resultCommand = self.__executeHostCommand('getJobOutputFiles', commandOptions, host=host)
       if not resultCommand['OK']:
         return resultCommand
 
@@ -701,12 +803,12 @@ class SSHComputingElement(ComputingElement):
         the output is returned as file in this directory. Otherwise, the output is returned
         as strings.
     """
+    self.log.verbose('Getting output for jobID', jobID)
     result = self._getJobOutputFiles(jobID)
     if not result['OK']:
       return result
 
     jobStamp, _host, outputFile, errorFile = result['Value']
-    self.log.verbose('Getting output for jobID %s' % jobID)
 
     if localDir:
       localOutputFile = '%s/%s.out' % (localDir, jobStamp)
@@ -719,15 +821,19 @@ class SSHComputingElement(ComputingElement):
     result = ssh.scpCall(30, localOutputFile, outputFile, upload=False)
     if not result['OK']:
       return result
-    output = result['Value'][1]
-    if localDir:
-      output = localOutputFile
 
     result = ssh.scpCall(30, localErrorFile, errorFile, upload=False)
     if not result['OK']:
       return result
-    error = result['Value'][1]
+
     if localDir:
+      output = localOutputFile
       error = localErrorFile
+    else:
+      output = result['Value'][1]
+      error = result['Value'][1]
+
+    if self.parallelLibrary:
+      output, error = self.parallelLibrary.processOutput(output, error, isFile=bool(localDir))
 
     return S_OK((output, error))

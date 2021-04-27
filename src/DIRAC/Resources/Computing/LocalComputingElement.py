@@ -4,6 +4,44 @@
 ########################################################################
 
 """ LocalComputingElement is a class to handle non-grid computing clusters
+
+Allows direct submission to underlying Batch Systems.
+
+**Configuration Parameters**
+
+Configuration for the LocalComputingElement submission can be done via the configuration system.
+
+BatchSystem:
+   Underlying batch system that is going to be used to orchestrate executable files. The Batch System has to be
+   accessible from the LocalCE. By default, the LocalComputingElement submits directly on the host via the Host class.
+
+ParallelLibrary:
+   Underlying parallel library used to generate a wrapper around the executable files to run them in parallel on
+   multiple nodes.
+
+SharedArea:
+   Area used to store executable/output/error files if they are not aready defined via BatchOutput, BatchError,
+   InfoArea, ExecutableArea and/or WorkArea. The path should be absolute.
+
+BatchOutput:
+   Area where the job outputs are stored.
+   If not defined: SharedArea + '/data' is used.
+   If not absolute: SharedArea + path is used.
+
+BatchError:
+   Area where the job errors are stored.
+   If not defined: SharedArea + '/data' is used.
+   If not absolute: SharedArea + path is used.
+
+ExecutableArea:
+   Area where the executable files are stored if necessary: this is the case when a parallel library is used.
+   Indeed, the executable has to be accessible to the batch system. This might not be the case
+   if multiple file systems are present on the host.
+   If not defined: SharedArea + '/data' is used.
+   If not absolute: SharedArea + path is used.
+
+**Code Documentation**
+
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -36,16 +74,17 @@ class LocalComputingElement(ComputingElement):
 
     self.ceType = ''
     self.execution = "Local"
-    self.batchSystem = self.ceParameters.get('BatchSystem', 'Host')
-    self.batchModuleFile = None
     self.submittedJobs = 0
     self.userName = getpass.getuser()
 
   def _reset(self):
     """ Process CE parameters and make necessary adjustments
     """
-    self.batchSystem = self.ceParameters.get('BatchSystem', 'Host')
-    self.loadBatchSystem()
+    batchSystemName = self.ceParameters.get('BatchSystem', 'Host')
+    result = self.loadBatchSystem(batchSystemName)
+    if not result['OK']:
+      self.log.error('Failed to load the batch system plugin %s', self.batchSystem)
+      return result
 
     self.queue = self.ceParameters['Queue']
     if 'ExecQueue' not in self.ceParameters or not self.ceParameters['ExecQueue']:
@@ -70,6 +109,13 @@ class LocalComputingElement(ComputingElement):
     if not self.workArea.startswith('/'):
       self.workArea = os.path.join(self.sharedArea, self.workArea)
 
+    parallelLibraryName = self.ceParameters.get('ParallelLibrary')
+    if parallelLibraryName:
+      result = self.loadParallelLibrary(parallelLibraryName, self.executableArea)
+      if not result['OK']:
+        self.log.error('Failed to load the parallel library plugin %s', parallelLibraryName)
+        return result
+
     result = self._prepareHost()
     if not result['OK']:
       self.log.error('Failed to initialize CE', self.ceName)
@@ -83,6 +129,9 @@ class LocalComputingElement(ComputingElement):
     self.submitOptions = self.ceParameters.get('SubmitOptions', '')
     self.numberOfProcessors = self.ceParameters.get('NumberOfProcessors', 1)
     self.wholeNode = self.ceParameters.get('WholeNode', False)
+    # numberOfNodes is treated as a string as it can contain values such as "2-4"
+    # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
+    self.numberOfNodes = self.ceParameters.get('NumberOfNodes', '1')
 
     return S_OK()
 
@@ -139,6 +188,13 @@ class LocalComputingElement(ComputingElement):
     return S_OK()
 
   def submitJob(self, executableFile, proxy=None, numberOfJobs=1):
+    copyExecutable = os.path.join(self.executableArea, os.path.basename(executableFile))
+    if self.parallelLibrary and executableFile != copyExecutable:
+      # Because we use a parallel library, the executable will become a dependency of the parallel library script
+      # Thus, it has to be defined in a specific area (executableArea) to be found and executed properly
+      # For this reason, we copy the executable from its location to executableArea
+      shutil.copy(executableFile, copyExecutable)
+      executableFile = copyExecutable
 
     if not os.access(executableFile, 5):
       os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
@@ -157,6 +213,10 @@ class LocalComputingElement(ComputingElement):
     else:  # no proxy
       submitFile = executableFile
 
+    if self.parallelLibrary:
+      # Wrap the executable to be executed multiple times in parallel via a parallel library
+      submitFile = self.parallelLibrary.generateWrapper(submitFile)
+
     jobStamps = []
     for _i in range(numberOfJobs):
       jobStamps.append(makeGuid()[:8])
@@ -170,9 +230,10 @@ class LocalComputingElement(ComputingElement):
                  'JobStamps': jobStamps,
                  'Queue': self.queue,
                  'WholeNode': self.wholeNode,
-                 'NumberOfProcessors': self.numberOfProcessors}
-    resultSubmit = self.batch.submitJob(**batchDict)
-    if proxy:
+                 'NumberOfProcessors': self.numberOfProcessors,
+                 'NumberOfNodes': self.numberOfNodes}
+    resultSubmit = self.batchSystem.submitJob(**batchDict)
+    if proxy or self.parallelLibrary:
       os.remove(submitFile)
 
     if resultSubmit['Status'] == 0:
@@ -182,7 +243,8 @@ class LocalComputingElement(ComputingElement):
       # making this illogical fix, but there is no good way for pilotCommands to know its origin ceType.
       # So, the jobIDs here need to start with 'ssh', not ceType, to accomodate
       # them to those hardcoded in pilotCommands.__setFlavour
-      jobIDs = ['ssh' + self.batchSystem.lower() + '://' + self.ceName + '/' + _id for _id in resultSubmit['Jobs']]
+      batchSystemName = self.batchSystem.__class__.__name__.lower()
+      jobIDs = ['ssh' + batchSystemName + '://' + self.ceName + '/' + _id for _id in resultSubmit['Jobs']]
       result = S_OK(jobIDs)
     else:
       result = S_ERROR(resultSubmit['Message'])
@@ -195,7 +257,7 @@ class LocalComputingElement(ComputingElement):
 
     batchDict = {'JobIDList': jobIDList,
                  'Queue': self.queue}
-    resultKill = self.batch.killJob(**batchDict)
+    resultKill = self.batchSystem.killJob(**batchDict)
     if resultKill['Status'] == 0:
       return S_OK()
     return S_ERROR(resultKill['Message'])
@@ -210,7 +272,7 @@ class LocalComputingElement(ComputingElement):
 
     batchDict = {'User': self.userName,
                  'Queue': self.queue}
-    resultGet = self.batch.getCEStatus(**batchDict)
+    resultGet = self.batchSystem.getCEStatus(**batchDict)
     if resultGet['Status'] == 0:
       result['RunningJobs'] = resultGet.get('Running', 0)
       result['WaitingJobs'] = resultGet.get('Waiting', 0)
@@ -238,7 +300,7 @@ class LocalComputingElement(ComputingElement):
     batchDict = {'JobIDList': stampList,
                  'User': self.userName,
                  'Queue': self.queue}
-    resultGet = self.batch.getJobStatus(**batchDict)
+    resultGet = self.batchSystem.getJobStatus(**batchDict)
 
     if resultGet['Status'] != 0:
       return S_ERROR(resultGet['Message'])
@@ -254,13 +316,15 @@ class LocalComputingElement(ComputingElement):
         the output is returned as file in this directory. Otherwise, the output is returned
         as strings.
     """
+    self.log.verbose('Getting output for jobID', jobID)
     result = self._getJobOutputFiles(jobID)
     if not result['OK']:
       return result
 
     jobStamp, _host, outputFile, errorFile = result['Value']
-
-    self.log.verbose('Getting output for jobID %s' % jobID)
+    if self.parallelLibrary:
+      # outputFile and errorFile are directly modified by parallelLib
+      self.parallelLibrary.processOutput(outputFile, errorFile)
 
     if not localDir:
       tempDir = tempfile.mkdtemp()
@@ -303,10 +367,16 @@ class LocalComputingElement(ComputingElement):
     jobStamp = os.path.basename(urlparse(jobID).path)
     host = urlparse(jobID).hostname
 
-    if hasattr(self.batch, 'getOutputFiles'):
-      output, error = self.batch.getOutputFiles(jobStamp,
-                                                self.batchOutput,
-                                                self.batchError)
+    if hasattr(self.batchSystem, 'getJobOutputFiles'):
+      batchDict = {'JobIDList': [jobStamp],
+                   'OutputDir': self.batchOutput,
+                   'ErrorDir': self.batchError}
+      result = self.batchSystem.getJobOutputFiles(**batchDict)
+      if result['Status'] != 0:
+        return S_ERROR('Failed to get job output files: %s' % result['Message'])
+
+      output = result['Jobs'][jobStamp]['Output']
+      error = result['Jobs'][jobStamp]['Error']
     else:
       output = '%s/%s.out' % (self.batchOutput, jobStamp)
       error = '%s/%s.out' % (self.batchError, jobStamp)

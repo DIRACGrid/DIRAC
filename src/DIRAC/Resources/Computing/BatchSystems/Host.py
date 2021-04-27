@@ -39,7 +39,6 @@ CLEAN_DELAY = timedelta(7)
 class Host(object):
 
   def __init__(self):
-
     self.nCores = 1
     try:
       self.nCores = multiprocessing.cpu_count()

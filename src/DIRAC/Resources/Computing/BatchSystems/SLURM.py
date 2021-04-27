@@ -12,14 +12,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-# TODO: This should be modernised to use subprocess(32)
-try:
-  import commands
-except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
+
 import os
 import re
+import commands
 
 __RCSID__ = "$Id$"
 
@@ -50,7 +46,10 @@ class SLURM(object):
     queue = kwargs['Queue']
     submitOptions = kwargs['SubmitOptions']
     executable = kwargs['Executable']
-    numberOfProcessors = kwargs['NumberOfProcessors']
+    numberOfProcessors = kwargs.get('NumberOfProcessors', 1)
+    # numberOfNodes is treated as a string as it can contain values such as "2-4"
+    # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
+    numberOfNodes = kwargs.get('NumberOfNodes', '1')
     preamble = kwargs.get('Preamble')
 
     outFile = os.path.join(outputDir, "%jobid%")
@@ -66,10 +65,17 @@ class SLURM(object):
       # By default, all the environment variables of the submitter node are propagated to the workers
       # It can create conflicts during the installation of the pilots
       # --export restricts the propagation to the PATH variable to get a clean environment in the workers
-      cmd += "sbatch --export=PATH -o %s/%%j.out --partition=%s -n %s %s %s " % (
-          outputDir, queue, numberOfProcessors, submitOptions, executable)
+      cmd += "sbatch --export=PATH "
+      cmd += "-o %s/%%j.out " % outputDir
+      cmd += "-e %s/%%j.err " % errorDir
+      cmd += "--partition=%s " % queue
+      # One pilot (task) per node, allocating a certain number of processors
+      cmd += "--ntasks-per-node=1 "
+      cmd += "--nodes=%s " % numberOfNodes
+      cmd += "--cpus-per-task=%d " % numberOfProcessors
+      # Additional options
+      cmd += "%s %s" % (submitOptions, executable)
       status, output = commands.getstatusoutput(cmd)
-
       if status != 0 or not output:
         break
 
@@ -93,6 +99,7 @@ class SLURM(object):
       resultDict['Status'] = status
       resultDict['Message'] = output
     return resultDict
+
 
   def killJob(self, **kwargs):
     """ Delete a job from OAR batch scheduler. Input: list of jobs output: int
@@ -120,7 +127,6 @@ class SLURM(object):
     for job in jobIDList:
       cmd = 'scancel --partition=%s %s' % (queue, job)
       status, output = commands.getstatusoutput(cmd)
-
       if status != 0:
         failed.append(job)
       else:
@@ -154,7 +160,6 @@ class SLURM(object):
     # displays accounting data for all jobs in the Slurm job accounting log or Slurm database
     cmd = "sacct -j %s -o JobID,STATE" % jobIDs
     status, output = commands.getstatusoutput(cmd)
-
     if status != 0:
       resultDict['Status'] = 1
       resultDict['Message'] = output
@@ -214,10 +219,10 @@ class SLURM(object):
 
     cmd = "squeue --partition=%s --user=%s --format='%%j %%T' " % (queue, user)
     status, output = commands.getstatusoutput(cmd)
-
     if status != 0:
       resultDict['Status'] = 1
       resultDict['Message'] = output
+      return resultDict
 
     waitingJobs = 0
     runningJobs = 0
