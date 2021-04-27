@@ -31,7 +31,7 @@ def submitUserAuthorizationFlow(idP=None, group=None):
   """
   try:
     r = requests.post('{api}/device{provider}?client_id={client_id}{group}'.format(
-        api=getAuthAPI(), client_id = getDIRACClientID(),
+        api=getAuthAPI(), client_id=getDIRACClientID(),
         provider=('/%s' % idP) if idP else '',
         group = ('&scope=g:%s' % group) if group else ''
     ), verify=False)
@@ -103,7 +103,7 @@ class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
         :param str scope: request scopes
         :param dict data: device credentials
     """
-    data.update(dict(uri='{api}?{query}&response_type=device&client_id={client_id}&scope={scope}'}.format(
+    data.update(dict(uri='{api}?{query}&response_type=device&client_id={client_id}&scope={scope}'.format(
         api=data['verification_uri'], query=self.req.query, client_id=client_id, scope=scope,
     ), id=data['device_code']))
     result = self.server.db.addSession(data)
@@ -160,7 +160,6 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     return 200, 'Authorization complite.'
 
   def query_device_credential(self, device_code):
-    # _, data = self.server.getSessionByOption('device_code', device_code)
     result = self.server.db.getSession(device_code)
     if not result['OK']:
       raise OAuth2Error(result['Message'])
@@ -183,7 +182,6 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     if not result['OK']:
       raise OAuth2Error('Cannot found authorization session', result['Message'])
     data = result['Value']
-    # _, data = self.server.getSessionByOption('user_code', user_code)
     return (data['user_id'], True) if data.get('username') != "None" else None
 
   def should_slow_down(self, credential, now):
