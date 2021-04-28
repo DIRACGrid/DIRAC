@@ -1,3 +1,11 @@
+[v7r0p56]
+
+*Resources
+FIX: (#5119) HTCondorCE: Limit calls to actual cleanup (find and delete files on disk) to
+     once per minute per SiteDirector, fixes #5118
+CHANGE: (#5119) HTCondorCE cleanup: Run the DIRAC_ executable purge with -O3 and -maxdepth
+        1 to speed up the find
+
 [v7r0p55]
 
 *TS
