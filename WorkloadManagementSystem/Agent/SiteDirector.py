@@ -1075,7 +1075,17 @@ class SiteDirector(AgentModule):
       pilotsSubmitted = pilotsToSubmit
     pilotOptions = ' '.join(pilotOptions)
     self.log.verbose('pilotOptions: %s' % pilotOptions)
-    executable = self._writePilotScript(workingDirectory=self.workingDirectory,
+
+    # if a global workingDirectory is defined for the CEType (like HTCondor)
+    # use it (otherwise the __cleanup done by HTCondor will be in the wrong folder !)
+    # Note that this means that if you run multiple HTCondorCE
+    # in your machine, the executable files will be in the same place
+    # but it does not matter since they are very temporary
+
+    ce = self.queueCECache[queue]['CE']
+    workingDirectory = getattr(ce, 'workingDirectory', self.workingDirectory)
+
+    executable = self._writePilotScript(workingDirectory=workingDirectory,
                                         pilotOptions=pilotOptions,
                                         proxy=proxy,
                                         pilotExecDir=jobExecDir,
