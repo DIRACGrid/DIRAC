@@ -6,7 +6,8 @@
 
 # pylint: disable=wrong-import-position
 
-from __future__ import print_function, absolute_import
+from __future__ import print_function
+from __future__ import absolute_import
 from __future__ import division
 
 from datetime import datetime, timedelta
@@ -17,6 +18,9 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 from DIRAC import gLogger
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
+
+# sut
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 jdl = """[
@@ -63,16 +67,32 @@ def test_insertAndRemoveJobIntoDB():
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
-  jobID = res['JobID']
+  jobID = int(res['JobID'])
   res = jobDB.getJobAttribute(jobID, 'Status')
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == 'Received'
+  assert res['Value'] == JobStatus.RECEIVED
   res = jobDB.getJobAttribute(jobID, 'MinorStatus')
   assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Job accepted'
+  res = jobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {'Status': JobStatus.RECEIVED, 'MinorStatus': 'Job accepted'}
+  res = jobDB.getJobsAttributes(jobID, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {jobID: {'Status': JobStatus.RECEIVED, 'MinorStatus': 'Job accepted'}}
   res = jobDB.getJobOptParameters(jobID)
   assert res['OK'] is True, res['Message']
   assert res['Value'] == {}
+
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
+  assert res['OK'] is True, res['Message']
+  jobID_2 = int(res['JobID'])
+
+  res = jobDB.getJobsAttributes([jobID, jobID_2], ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID: {'Status': JobStatus.RECEIVED, 'MinorStatus': 'Job accepted'},
+      jobID_2: {'Status': JobStatus.RECEIVED, 'MinorStatus': 'Job accepted'}}
 
   res = jobDB.selectJobs({})
   assert res['OK'] is True, res['Message']
@@ -93,7 +113,7 @@ def test_rescheduleJob():
 
   res = jobDB.getJobAttribute(jobID, 'Status')
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == 'Received'
+  assert res['Value'] == JobStatus.RECEIVED
   res = jobDB.getJobAttribute(jobID, 'MinorStatus')
   assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Job Rescheduled'
@@ -136,12 +156,12 @@ def test_heartBeatLogging():
     else:
       assert False, 'Unknown entry: %s: %s' % (name, value)
 
-  res = jobDB.setJobStatus(jobID, status='Done')
+  res = jobDB.setJobStatus(jobID, status=JobStatus.DONE)
   assert res['OK'] is True, res['Message']
 
   tomorrow = datetime.today() + timedelta(1)
   delTime = datetime.strftime(tomorrow, '%Y-%m-%d')
-  res = jobDB.removeInfoFromHeartBeatLogging(status='Done', delTime=delTime, maxLines=100)
+  res = jobDB.removeInfoFromHeartBeatLogging(status=JobStatus.DONE, delTime=delTime, maxLines=100)
   assert res['OK'] is True, res['Message']
 
   res = jobDB.getHeartBeatData(jobID)

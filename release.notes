@@ -28,6 +28,13 @@ CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent i
 *tests
 CHANGE: (#5046) don't use mail in the self generated certificates
 
+[v7r2p5]
+
+FIX: fixes from v7r0p56, v7r1p39
+
+*WMS
+CHANGE: (#5102) JobCleaningAgent will first DELETE and only then REMOVE jobs
+
 [v7r2p4]
 
 *Core
@@ -198,6 +205,11 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p39]
+
+*WMS
+CHANGE: (#5121) for HTCondor, the SiteDirectory write the executable in the globally defined working directory
 
 [v7r1p38]
 
@@ -827,6 +839,14 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p56]
+
+*Resources
+FIX: (#5119) HTCondorCE: Limit calls to actual cleanup (find and delete files on disk) to
+     once per minute per SiteDirector, fixes #5118
+CHANGE: (#5119) HTCondorCE cleanup: Run the DIRAC_ executable purge with -O3 and -maxdepth
+        1 to speed up the find
 
 [v7r0p55]
 

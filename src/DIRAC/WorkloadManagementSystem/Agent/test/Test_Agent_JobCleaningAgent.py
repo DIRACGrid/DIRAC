@@ -41,9 +41,7 @@ def test__getAllowedJobTypes(mocker, mockReplyInput, expected):
   mocker.patch(
       "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getDistinctJobAttributes",
       side_effect=mockReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   jobCleaningAgent = JobCleaningAgent()
   jobCleaningAgent.log = gLogger
@@ -76,9 +74,7 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
       side_effect=lambda x, y=None: y, create=True
   )
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   jobCleaningAgent = JobCleaningAgent()
   jobCleaningAgent.log = gLogger
@@ -87,6 +83,39 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
   jobCleaningAgent.initialize()
 
   result = jobCleaningAgent.removeJobsByStatus(conditions)
+
+  assert result == expected
+
+
+@pytest.mark.parametrize(
+    "conditions, mockReplyInput, expected", [
+        ({'JobType': '', 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+        ({'JobType': '', 'Status': 'Deleted'}, {'OK': False, 'Message': ''}, {'OK': False, 'Message': ''}),
+        ({'JobType': [], 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+        ({'JobType': ['some', 'status'],
+          'Status': ['Deleted', 'Cancelled']}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None})
+    ])
+def test_deleteJobsByStatus(mocker, conditions, mockReplyInput, expected):
+  """ Testing JobCleaningAgent().deleteJobsByStatus()
+  """
+
+  mockReply.return_value = mockReplyInput
+
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
+  mocker.patch(
+      "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule._AgentModule__moduleProperties",
+      side_effect=lambda x, y=None: y, create=True
+  )
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
+
+  jobCleaningAgent = JobCleaningAgent()
+  jobCleaningAgent.log = gLogger
+  jobCleaningAgent.log.setLevel('DEBUG')
+  jobCleaningAgent._AgentModule__configDefaults = mockAM
+  jobCleaningAgent.initialize()
+
+  result = jobCleaningAgent.deleteJobsByStatus(conditions)
 
   assert result == expected
 
@@ -111,9 +140,7 @@ def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", return_value=mockAM)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB", return_value=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB", return_value=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB", return_value=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ReqClient", return_value=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobMonitoringClient", return_value=mockJMC)
 
