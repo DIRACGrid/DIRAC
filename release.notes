@@ -1,3 +1,8 @@
+[v7r1p39]
+
+*WMS
+CHANGE: (#5121) for HTCondor, the SiteDirectory write the executable in the globally defined working directory
+
 [v7r1p38]
 
 FIX: fixes from v7r0p55

@@ -95,7 +95,7 @@ if pythonVersion[0] == "3":
 else:
   majorVersion = 7
   minorVersion = 1
-  patchLevel = 38
+  patchLevel = 39
   preVersion = 0
 
 version = "v%sr%s" % (majorVersion, minorVersion)
