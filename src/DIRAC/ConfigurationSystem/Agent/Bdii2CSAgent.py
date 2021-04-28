@@ -25,7 +25,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOptio
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Grid import getBdiiCEInfo
+from DIRAC.Core.Utilities.Glue2 import getGlue2CEInfo
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
@@ -45,8 +45,6 @@ class Bdii2CSAgent(AgentModule):
     self.voBdiiCEDict = {}
     self.voBdiiSEDict = {}
     self.host = 'cclcgtopbdii01.in2p3.fr:2170'
-    self.glue2URLs = []
-    self.glue2Only = True
 
     self.csAPI = None
 
@@ -66,8 +64,6 @@ class Bdii2CSAgent(AgentModule):
     # Create a list of alternative bdii urls
     self.alternativeBDIIs = self.am_getOption('AlternativeBDIIs', self.alternativeBDIIs)
     self.host = self.am_getOption('Host', self.host)
-    self.glue2URLs = self.am_getOption('GLUE2URLs', self.glue2URLs)
-    self.glue2Only = self.am_getOption('GLUE2Only', self.glue2Only)
 
     # Check if the bdii url is appended by a port number, if not append the default 2170
     for index, url in enumerate(self.alternativeBDIIs):
@@ -142,7 +138,7 @@ class Bdii2CSAgent(AgentModule):
         knownCEs.update(ces)
       knownCEs.update(bannedCEs)
 
-      result = self.__getBdiiCEInfo(vo)
+      result = self.__getGlue2CEInfo(vo)
       if not result['OK']:
         continue
       bdiiInfo = result['Value']
@@ -203,7 +199,7 @@ class Bdii2CSAgent(AgentModule):
 
     return S_OK()
 
-  def __getBdiiCEInfo(self, vo):
+  def __getGlue2CEInfo(self, vo):
 
     if vo in self.voBdiiCEDict:
       return S_OK(self.voBdiiCEDict[vo])
@@ -211,29 +207,18 @@ class Bdii2CSAgent(AgentModule):
     totalResult = S_OK({})
     message = ''
 
-    mainResult = getBdiiCEInfo(vo, host=self.host, glue2=self.glue2Only)
+    mainResult = getGlue2CEInfo(vo, host=self.host)
     if not mainResult['OK']:
       self.log.error("Failed getting information from default bdii", mainResult['Message'])
       message = mainResult['Message']
 
     for bdii in reversed(self.alternativeBDIIs):
-      resultAlt = getBdiiCEInfo(vo, host=bdii, glue2=self.glue2Only)
+      resultAlt = getGlue2CEInfo(vo, host=bdii)
       if resultAlt['OK']:
         totalResult['Value'].update(resultAlt['Value'])
       else:
         self.log.error("Failed getting information from %s " % bdii, resultAlt['Message'])
         message = (message + "\n" + resultAlt['Message']).strip()
-
-    for glue2URL in self.glue2URLs:
-      if self.glue2Only:
-        break
-      resultGlue2 = getBdiiCEInfo(vo, host=glue2URL, glue2=True)
-      if resultGlue2['OK']:
-        totalResult['Value'].update(resultGlue2['Value'])
-      else:
-        self.log.error("Failed getting GLUE2 information for", "%s, %s: %s" %
-                       (glue2URL, vo, resultGlue2['Message']))
-        message = (message + "\n" + resultGlue2['Message']).strip()
 
     if mainResult['OK']:
       totalResult['Value'].update(mainResult['Value'])
@@ -254,7 +239,7 @@ class Bdii2CSAgent(AgentModule):
     bdiiChangeSet = set()
 
     for vo in self.voName:
-      result = self.__getBdiiCEInfo(vo)
+      result = self.__getGlue2CEInfo(vo)
       if not result['OK']:
         continue
       ceBdiiDict = result['Value']

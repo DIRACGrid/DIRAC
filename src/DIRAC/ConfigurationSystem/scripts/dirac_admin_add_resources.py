@@ -30,21 +30,18 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 def processScriptSwitches():
 
-  global vo, dry, doCEs, hostURL, glue2
+  global vo, dry, doCEs, hostURL
 
   Script.registerSwitch("V:", "vo=", "Virtual Organization")
   Script.registerSwitch("D", "dry", "Dry run")
   Script.registerSwitch("C", "ce", "Process Computing Elements")
   Script.registerSwitch("H:", "host=", "use this url for information querying")
-  Script.registerSwitch("G", "glue2", "DEPRECATED: query GLUE2 information schema")
-  Script.registerSwitch("g", "glue1", "query GLUE1 information schema")
   Script.parseCommandLine(ignoreErrors=True)
 
   vo = ''
   dry = False
   doCEs = False
   hostURL = None
-  glue2 = True
   for sw in Script.getUnprocessedSwitches():
     if sw[0] in ("V", "vo"):
       vo = sw[1]
@@ -54,10 +51,6 @@ def processScriptSwitches():
       doCEs = True
     if sw[0] in ("H", "host"):
       hostURL = sw[1]
-    if sw[0] in ("G", "glue2"):
-      gLogger.notice(" The '-G' flag is deprecated, Glue2 is the default now")
-    if sw[0] in ("g", "glue1"):
-      glue2 = False
 
 
 ceBdiiDict = None
@@ -65,7 +58,7 @@ ceBdiiDict = None
 
 def checkUnusedCEs():
 
-  global vo, dry, ceBdiiDict, hostURL, glue2
+  global vo, dry, ceBdiiDict, hostURL
 
   gLogger.notice('looking for new computing resources in the BDII database...')
 
@@ -78,7 +71,7 @@ def checkUnusedCEs():
   for _site, ces in res['Value'].items():
     knownCEs.update(ces)
 
-  result = getGridCEs(vo, ceBlackList=knownCEs, hostURL=hostURL, glue2=glue2)
+  result = getGridCEs(vo, ceBlackList=knownCEs, hostURL=hostURL)
   if not result['OK']:
     gLogger.error('ERROR: failed to get CEs from BDII', result['Message'])
     DIRACExit(-1)
@@ -247,9 +240,9 @@ def updateCS(changeSet):
 
 def updateSites():
 
-  global vo, dry, ceBdiiDict, glue2
+  global vo, dry, ceBdiiDict
 
-  result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict, glue2=glue2)
+  result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict)
   if not result['OK']:
     gLogger.error('Failed to get site updates', result['Message'])
     DIRACExit(-1)

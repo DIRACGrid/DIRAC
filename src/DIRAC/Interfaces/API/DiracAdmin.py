@@ -20,8 +20,6 @@ from DIRAC.Core.Base.API import API
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
-from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -861,47 +859,5 @@ class DiracAdmin(API):
       return S_ERROR('Exceeded maximum SMS length of 160 characters')
     notification = NotificationClient()
     return notification.sendSMS(userName, body, fromAddress)
-
-  #############################################################################
-  def getBDIISite(self, site, host=None):
-    """
-    Get information about site from BDII at host
-    """
-    return ldapSite(site, host=host)
-
-  #############################################################################
-  def getBDIICluster(self, ce, host=None):
-    """
-    Get information about ce from BDII at host
-    """
-    return ldapCluster(ce, host=host)
-
-  #############################################################################
-  def getBDIICE(self, ce, host=None):
-    """
-    Get information about ce from BDII at host
-    """
-    return ldapCE(ce, host=host)
-
-  #############################################################################
-  def getBDIIService(self, ce, host=None):
-    """
-    Get information about ce from BDII at host
-    """
-    return ldapService(ce, host=host)
-
-  #############################################################################
-  def getBDIICEState(self, ce, useVO=voName, host=None):
-    """
-    Get information about ce state from BDII at host
-    """
-    return ldapCEState(ce, useVO, host=host)
-
-  #############################################################################
-  def getBDIICEVOView(self, ce, useVO=voName, host=None):
-    """
-    Get information about ce voview from BDII at host
-    """
-    return ldapCEVOView(ce, useVO, host=host)
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

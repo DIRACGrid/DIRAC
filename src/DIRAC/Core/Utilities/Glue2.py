@@ -24,6 +24,7 @@ from DIRAC import gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getGOCSiteName
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.Grid import ldapsearchBDII
 
 __RCSID__ = "$Id$"
 
@@ -31,13 +32,7 @@ __RCSID__ = "$Id$"
 sLog = gLogger.getSubLogger(__name__)
 
 
-def __ldapsearchBDII(*args, **kwargs):
-  """ wrap `DIRAC.Core.Utilities.Grid.ldapsearchBDII` to avoid circular import """
-  from DIRAC.Core.Utilities.Grid import ldapsearchBDII
-  return ldapsearchBDII(*args, **kwargs)
-
-
-def getGlue2CEInfo(vo, host):
+def getGlue2CEInfo(vo, host=None):
   """ call ldap for GLUE2 and get information
 
   :param str vo: Virtual Organisation
@@ -48,7 +43,7 @@ def getGlue2CEInfo(vo, host):
 
   # get all Policies allowing given VO
   filt = "(&(objectClass=GLUE2Policy)(|(GLUE2PolicyRule=VO:%s)(GLUE2PolicyRule=vo:%s)))" % (vo, vo)
-  polRes = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
+  polRes = ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
 
   if not polRes['OK']:
     return S_ERROR("Failed to get policies for this VO")
@@ -75,7 +70,7 @@ def getGlue2CEInfo(vo, host):
     shareFilter += '(GLUE2ShareID=%s)' % shareID
 
   filt = '(&(objectClass=GLUE2Share)(|%s))' % shareFilter
-  shareRes = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
+  shareRes = ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
   if not shareRes['OK']:
     sLog.error("Could not get share information", shareRes['Message'])
     return shareRes
@@ -263,7 +258,7 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironments):
     for execEnv in exeEnvs:
       exeFilter += '(GLUE2ResourceID=%s)' % execEnv
     filt = "(&(objectClass=GLUE2ExecutionEnvironment)(|%s))" % exeFilter
-    response = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
+    response = ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
     if not response['OK']:
       return response
     if not response['Value']:
