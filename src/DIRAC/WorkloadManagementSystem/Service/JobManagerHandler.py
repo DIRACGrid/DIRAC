@@ -367,31 +367,32 @@ class JobManagerHandler(RequestHandler):
     count = 0
     error_count = 0
 
-    self.log.verbose("Removing jobs", "(n=%d)" % len(validJobList))
-    result = self.jobDB.removeJobFromDB(validJobList)
-    if not result['OK']:
-      self.log.error("Failed to remove jobs from JobDB", "(n=%d)" % len(validJobList))
-    else:
-      self.log.info("Removed jobs from JobDB", "(n=%d)" % len(validJobList))
-
-    for jobID in validJobList:
-      resultTQ = self.taskQueueDB.deleteJob(jobID)
-      if not resultTQ['OK']:
-        self.log.warn("Failed to remove job from TaskQueueDB",
-                      "(%d): %s" % (jobID, resultTQ['Message']))
-        error_count += 1
+    if validJobList:
+      self.log.verbose("Removing jobs", "(n=%d)" % len(validJobList))
+      result = self.jobDB.removeJobFromDB(validJobList)
+      if not result['OK']:
+        self.log.error("Failed to remove jobs from JobDB", "(n=%d)" % len(validJobList))
       else:
-        count += 1
+        self.log.info("Removed jobs from JobDB", "(n=%d)" % len(validJobList))
 
-    result = self.jobLoggingDB.deleteJob(validJobList)
-    if not result['OK']:
-      self.log.error("Failed to remove jobs from JobLoggingDB", "(n=%d)" % len(validJobList))
-    else:
-      self.log.info("Removed jobs from JobLoggingDB", "(n=%d)" % len(validJobList))
+      for jobID in validJobList:
+        resultTQ = self.taskQueueDB.deleteJob(jobID)
+        if not resultTQ['OK']:
+          self.log.warn("Failed to remove job from TaskQueueDB",
+                        "(%d): %s" % (jobID, resultTQ['Message']))
+          error_count += 1
+        else:
+          count += 1
 
-    if count > 0 or error_count > 0:
-      self.log.info("Removed jobs from DB",
-                    "(%d jobs with %d errors)" % (count, error_count))
+      result = self.jobLoggingDB.deleteJob(validJobList)
+      if not result['OK']:
+        self.log.error("Failed to remove jobs from JobLoggingDB", "(n=%d)" % len(validJobList))
+      else:
+        self.log.info("Removed jobs from JobLoggingDB", "(n=%d)" % len(validJobList))
+
+      if count > 0 or error_count > 0:
+        self.log.info("Removed jobs from DB",
+                      "(%d jobs with %d errors)" % (count, error_count))
 
     if invalidJobList or nonauthJobList:
       self.log.error(
@@ -480,7 +481,7 @@ class JobManagerHandler(RequestHandler):
     return S_OK()
 
   def __kill_delete_jobs(self, jobIDList, right):
-    """ Kill or delete jobs as necessary
+    """ Kill (== set the status to "KILLED") or delete (== set the status to "DELETED") jobs as necessary
 
         :param list jobIDList: job IDs
         :param str right: right
@@ -493,47 +494,49 @@ class JobManagerHandler(RequestHandler):
 
     validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights(jobList, right)
 
-    # Get job status to see what is to be killed or deleted
-    result = self.jobDB.getAttributesForJobList(validJobList, ['Status'])
-    if not result['OK']:
-      return result
-    killJobList = []
-    deleteJobList = []
-    markKilledJobList = []
-    stagingJobList = []
-    for jobID, sDict in result['Value'].items():  # can be an iterator
-      if sDict['Status'] in (JobStatus.RUNNING, JobStatus.MATCHED, JobStatus.STALLED):
-        killJobList.append(jobID)
-      elif sDict['Status'] in (JobStatus.DONE, JobStatus.FAILED, JobStatus.KILLED):
-        if not right == RIGHT_KILL:
-          deleteJobList.append(jobID)
-      else:
-        markKilledJobList.append(jobID)
-      if sDict['Status'] in [JobStatus.STAGING]:
-        stagingJobList.append(jobID)
-
     badIDs = []
-    for jobID in markKilledJobList:
-      result = self.__killJob(jobID, sendKillCommand=False)
-      if not result['OK']:
-        badIDs.append(jobID)
 
-    for jobID in killJobList:
-      result = self.__killJob(jobID)
+    if validJobList:
+      # Get job status to see what is to be killed or deleted
+      result = self.jobDB.getAttributesForJobList(validJobList, ['Status'])
       if not result['OK']:
-        badIDs.append(jobID)
+        return result
+      killJobList = []
+      deleteJobList = []
+      markKilledJobList = []
+      stagingJobList = []
+      for jobID, sDict in result['Value'].items():  # can be an iterator
+        if sDict['Status'] in (JobStatus.RUNNING, JobStatus.MATCHED, JobStatus.STALLED):
+          killJobList.append(jobID)
+        elif sDict['Status'] in (JobStatus.DONE, JobStatus.FAILED, JobStatus.KILLED):
+          if not right == RIGHT_KILL:
+            deleteJobList.append(jobID)
+        else:
+          markKilledJobList.append(jobID)
+        if sDict['Status'] in [JobStatus.STAGING]:
+          stagingJobList.append(jobID)
 
-    for jobID in deleteJobList:
-      result = self.__deleteJob(jobID)
-      if not result['OK']:
-        badIDs.append(jobID)
+      for jobID in markKilledJobList:
+        result = self.__killJob(jobID, sendKillCommand=False)
+        if not result['OK']:
+          badIDs.append(jobID)
 
-    if stagingJobList:
-      stagerClient = StorageManagerClient()
-      self.log.info('Going to send killing signal to stager as well!')
-      result = stagerClient.killTasksBySourceTaskID(stagingJobList)
-      if not result['OK']:
-        self.log.warn('Failed to kill some Stager tasks', result['Message'])
+      for jobID in killJobList:
+        result = self.__killJob(jobID)
+        if not result['OK']:
+          badIDs.append(jobID)
+
+      for jobID in deleteJobList:
+        result = self.__deleteJob(jobID)
+        if not result['OK']:
+          badIDs.append(jobID)
+
+      if stagingJobList:
+        stagerClient = StorageManagerClient()
+        self.log.info('Going to send killing signal to stager as well!')
+        result = stagerClient.killTasksBySourceTaskID(stagingJobList)
+        if not result['OK']:
+          self.log.warn('Failed to kill some Stager tasks', result['Message'])
 
     if nonauthJobList or badIDs:
       result = S_ERROR('Some jobs failed deletion')

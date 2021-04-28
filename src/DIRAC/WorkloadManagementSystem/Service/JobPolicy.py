@@ -79,8 +79,7 @@ class JobPolicy(object):
       else:
         return S_ERROR('Job not found')
 
-    result = self.getJobPolicy(owner, group)
-    return result
+    return self.getJobPolicy(owner, group)
 
   def __getUserJobPolicy(self):
     """ Get the job rights for the primary user for which the JobPolicy object
