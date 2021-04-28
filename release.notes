@@ -1,3 +1,10 @@
+[v7r2p5]
+
+FIX: fixes from v7r0p56, v7r1p39
+
+*WMS
+CHANGE: (#5102) JobCleaningAgent will first DELETE and only then REMOVE jobs
+
 [v7r2p4]
 
 *Core
