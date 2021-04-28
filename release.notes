@@ -1,4 +1,4 @@
-[v7r3-pre5]
+[v7r3-pre6]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
 
@@ -6,6 +6,17 @@ FIX: (#5028) Replaced all the cases of BaseException use by Exception
 FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
 NEW: (#4997) dirac-configure can now be ran without arguments when using Python 3
 CHANGE: (#4937) removed dirac-agent, dirac-service, dirac-executor scripts (use '_' counterparts instead)
+CHANGE: (#5110) Removed Core.Utilities.Grid.getBdiiCEInfo function use Utilities.Glue2.getGlue2CEInfo.
+        Also dropped ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView, ldapService functions
+
+*Configuration
+CHANGE: (#5110) Dropped Glue2Only and Glue2URLS options from Bdii2CSAgent, Glue2 is now the only way
+CHANGE: (#5110) dirac-admin-add-resources: drop -g -G options, Glue2 is now the only way
+CHANGE: (#5110) Configuration.Client.Utilities functions getGridCEs, getSiteUpdates no longer take glue2 parameter
+
+*Interfaces
+CHANGE: (#5110) DiracAdmin: dropped getBDII* functions, which were looking for Glue1 information
+CHANGE: (#5110) removed dirac-admin-bdii-info command
 
 *Framework:
 CHANGE: (#4303) Removed completely the SystemLogging
