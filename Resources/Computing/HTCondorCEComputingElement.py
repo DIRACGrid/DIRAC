@@ -54,7 +54,9 @@ import six
 import os
 import tempfile
 import commands
+import datetime
 import errno
+import threading
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -169,6 +171,10 @@ class HTCondorCEComputingElement(ComputingElement):
   """ HTCondorCE computing element class
       implementing the functions jobSubmit, getJobOutput
   """
+
+  # static variables to ensure single cleanup every minute
+  _lastCleanupTime = datetime.datetime.utcnow()
+  _cleanupLock = threading.Lock()
 
   #############################################################################
   def __init__(self, ceUniqueID):
@@ -535,21 +541,33 @@ Queue %(nJobs)s
     # FIXME: again some issue with the working directory...
     # workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
 
+    if not HTCondorCEComputingElement._cleanupLock.acquire(False):
+      return
+
+    now = datetime.datetime.utcnow()
+    if (now - HTCondorCEComputingElement._lastCleanupTime).total_seconds() < 60:
+      HTCondorCEComputingElement._cleanupLock.release()
+      return
+
+    HTCondorCEComputingElement._lastCleanupTime = now
+
     self.log.debug("Cleaning working directory: %s" % self.workingDirectory)
 
     # remove all files older than 120 minutes starting with DIRAC_ Condor will
     # push files on submission, but it takes at least a few seconds until this
     # happens so we can't directly unlink after condor_submit
-    status, stdout = commands.getstatusoutput('find %s -mmin +120 -name "DIRAC_*" -delete ' % self.workingDirectory)
+    status, stdout = commands.getstatusoutput('find -O3 %s -maxdepth 1 -mmin +120 -name "DIRAC_*" -delete ' %
+                                              self.workingDirectory)
     if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
 
-    # remove all out/err/log files older than "DaysToKeepLogs" days in the CE part of the working Directory
-    workDir = os.path.join(self.workingDirectory, self.ceName)
-    findPars = dict(workDir=workDir, days=self.daysToKeepLogs)
+    # remove all out/err/log files older than "DaysToKeepLogs" days in the working directory
+    # not running this for each CE so we do global cleanup
+    findPars = dict(workDir=self.workingDirectory, days=self.daysToKeepLogs)
     # remove all out/err/log files older than "DaysToKeepLogs" days
     status, stdout = commands.getstatusoutput(
         r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete ' %
         findPars)
     if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
+    self._cleanupLock.release()
