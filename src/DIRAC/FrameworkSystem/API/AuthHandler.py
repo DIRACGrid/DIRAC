@@ -85,7 +85,7 @@ class AuthHandler(TornadoREST):
         :param dict ServiceInfoDict: infos about services
     """
     cls.server = AuthServer()
-    # cls.idps = IdProviderFactory()
+    cls.idps = IdProviderFactory()
     cls.css = {}
     cls.css_align_center = 'display:block;justify-content:center;align-items:center;'
     cls.css_center_div = 'height:700px;width:100%;position:absolute;top:50%;left:0;margin-top:-350px;'
@@ -370,6 +370,19 @@ class AuthHandler(TornadoREST):
           HTTP/1.1 200 OK
     """
     if self.request.method == 'POST':
+      group = self.get_argument('group', None)
+      if group:
+        provider = Registry.getIdPForGroup(group)
+        if not provider:
+          return S_ERROR('No provider found for %s' % group)
+        result = self.idps.getIdProvider(provider + '_public')
+        if result['OK']:
+          idPObj = result['Value']
+          result = idPObj.submitDeviceCodeAuthorizationFlow(group)
+        if not result['OK']:
+          return result
+        return result['Value']
+
       self.log.verbose('Initialize a Device authentication flow.')
       return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
 
@@ -476,7 +489,7 @@ class AuthHandler(TornadoREST):
       return response
 
     # RESPONSE to basic DIRAC client request
-    return self.server.create_authorization_response(firstRequest, grant_user)
+    return self.server.create_authorization_response(response, grant_user)
 
   def web_token(self):
     """ The token endpoint, the description of the parameters will differ depending on the selected grant_type
@@ -541,21 +554,15 @@ class AuthHandler(TornadoREST):
         firstRequest.addScopes(['g:%s' % groupStatuses[0]])
       else:
         # Choose group interface
-        if not groupStatuses:
-      return None, S_ERROR('No groups found.')
-    elif len(groupStatuses) == 1:
-      groups = [groupStatuses[0]]
-    else:
-      # Choose group interface
-      with self.doc:
-        with dom.div(style=self.css_main):
-          with dom.div('Choose group', style=self.css_align_center):
-            for group, data in groupStatuses.items():
-              # data: Status, Comment, Action
-              dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath,
-                                                                             self.get_argument('state'), group)),
-                         cls='button')
-      return None, self.server.handle_response(payload=Template(self.doc.render()).generate(), newSession=extSession)
+        with self.doc:
+          with dom.div(style=self.css_main):
+            with dom.div('Choose group', style=self.css_align_center):
+              for group, data in groupStatuses.items():
+                # data: Status, Comment, Action
+                dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath,
+                                                                               self.get_argument('state'), group)),
+                           cls='button')
+        return None, self.server.handle_response(payload=Template(self.doc.render()).generate(), newSession=extSession)
 
     for group in firstRequest.groups:
       status = groupStatuses[group]['Status']
@@ -571,4 +578,4 @@ class AuthHandler(TornadoREST):
         self.log.verbose('%s group has bad status: %s; %s' % (group, status, comment))
 
     # Return grant user
-    return {'username': username, 'user_id': userID}, None
+    return {'username': username, 'user_id': userID}, firstRequest
