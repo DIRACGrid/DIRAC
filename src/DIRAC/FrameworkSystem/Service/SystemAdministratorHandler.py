@@ -175,7 +175,7 @@ class SystemAdministratorHandler(RequestHandler):
     """ Add default component options local component cfg
     """
     return gComponentInstaller.addDefaultOptionsToComponentCfg(
-	componentType, system, component, extensionsByPriority())
+        componentType, system, component, extensionsByPriority())
 
   types_unsetupComponent = [six.string_types, six.string_types]
 
