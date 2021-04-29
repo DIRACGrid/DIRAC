@@ -4,15 +4,27 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import six
+
+# TODO: only for python 3
+# import jwt
+# from jwt import PyJWKClient
+
+from authlib.jose import JsonWebKey, jwt
+
 import re
+import time
 import pprint
+import requests
 from requests import exceptions
+from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 from authlib.common.urls import url_decode
 from authlib.common.security import generate_token
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oidc.discovery.well_known import get_well_known_url
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 from authlib.oauth2.rfc6749.parameters import prepare_token_request
+from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
@@ -22,6 +34,8 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAu
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthClients
 from DIRAC.FrameworkSystem.private.authorization.utils.ProfileParser import *
+from authlib.oauth2.rfc8628 import DEVICE_CODE_GRANT_TYPE
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSRoleGroupMapping, getVOForGroup, getGroupOption
 
 __RCSID__ = "$Id$"
 
@@ -49,12 +63,6 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                update_token=None, **parameters):
     """ OIDCClient constructor
     """
-    # result = getAuthClients()
-    # if not result['OK']:
-    #   raise Exception('Cannot get clients dict from configuration.')
-    # clientsData = result['Value']
-    # if 'redirect_uri' not in parameters:
-    #   parameters['redirect_uri'] = clientsData.get('redirect_uri')
     if 'ProviderName' not in parameters:
       parameters['ProviderName'] = name
     IdProvider.__init__(self, **parameters)
@@ -79,23 +87,27 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     try:
       self.metadata_class(self.metadata).validate()
     except ValueError:
-      r = self.request('GET', self.server_metadata_url, withhold_token=True)
-      r.raise_for_status()
-      metadata = self.metadata_class(r.json())
-      for k, v in metadata.items():
-        if k not in self.metadata:
-          self.metadata[k] = v
+      metadata = self.metadata_class(self.fetch_metadata())
+      self.metadata.update(dict((k, v) for k, v in metadata.items() if k not in self.metadata))
+      # for k, v in metadata.items():
+      #   if k not in self.metadata:
+      #     self.metadata[k] = v
       self.metadata_class(self.metadata).validate()
+    
+    # Set JWKs
+    self.jwks = parameters.get('jwks', self.fetch_metadata(self.metadata['jwks_uri']))
+    if not self.jwks:
+      raise Exception('Cannot load JWKs for %s' % self.name)
 
-    self.log.debug('"%s" OAuth2 IdP initialization done:\
-                   \nclient_id: %s\nclient_secret: %s\nmetadata:\n%s' % (self.name,
-                                                                         self.client_id,
-                                                                         self.client_secret,
-                                                                         pprint.pformat(self.metadata)))
+    self.log.debug('"%s" OAuth2 IdP initialization done:' % self.name,
+                   '\nclient_id: %s\nclient_secret: %s\nmetadata:\n%s' % (self.client_id,
+                                                                          self.client_secret,
+                                                                          pprint.pformat(self.metadata)))
 
   def _storeToken(self, token):
     if self.sessionManager:
       return self.sessionManager.storeToken(dict(self.token))
+    return S_OK(None)
 
   def _updateToken(self, token, refresh_token):
     if self.sessionManager:
@@ -108,6 +120,38 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       if self.token_endpoint_auth_method not in self.token_endpoint_auth_methods_supported:
         self.token_endpoint_auth_method = self.token_endpoint_auth_methods_supported[0]
     return OAuth2Session.request(self, verify=False, *args, **kwargs)
+
+  def verifyToken(self, token):
+    """ Token verification
+
+        :param token: token
+    """
+    # Research public keys for issuer
+    # # TODO: only for python 3
+    # if not self.jwks:
+    #   self.jwks = PyJWKClient(self.metadata['jwks_uri'])
+    # signing_key = self.jwks.get_signing_key_from_jwt(token)
+
+    try:
+      return self._verify_jwt(token)
+    except Exception:
+      self.jwks = self.fetch_metadata(self.metadata['jwks_uri'])
+      return self._verify_jwt(token)
+  
+  def _verify_jwt(self, token):
+    """
+    """
+    return jwt.decode(token, JsonWebKey.import_key_set(self.jwks))
+
+  def fetch_metadata(self, url=None):
+    """
+    """
+    return self.get(url or self.server_metadata_url, withhold_token=True).json()
+
+  def researchGroup(self, payload, token):
+    """ Research group
+    """
+    return {}
 
   def getIDsMetadata(self, ids=None):
     """ Metadata for IDs
@@ -132,6 +176,66 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
           metadata[token['user_id']] = profile[self.name][token['user_id']]
 
     return S_OK(metadata)
+
+  def submitDeviceCodeAuthorizationFlow(self, group=None):
+    """ Submit authorization flow
+
+        :return: S_OK(dict)/S_ERROR() -- dictionary with device code flow response
+    """
+    if group:
+      idPRole = getGroupOption(group, 'IdPRole')
+      if not idPRole:
+        return S_ERROR('Cannot find role for %s' % group)
+      group_scopes = [self.PARAM_SCOPE + idPRole]
+
+    try:
+      r = requests.post(self.metadata['device_authorization_endpoint'], data=dict(
+        client_id=self.client_id, scope=list_to_scope(self.scope + group_scopes)
+      ))
+      r.raise_for_status()
+      deviceResponse = r.json()
+      if 'error' in deviceResponse:
+        return S_ERROR('%s: %s' % (deviceResponse['error'], deviceResponse.get('description', '')))
+
+      # Check if all main keys are present here
+      for k in ['user_code', 'device_code', 'verification_uri']:
+        if not deviceResponse.get(k):
+          return S_ERROR('Mandatory %s key is absent in authentication response.' % k)
+
+      return S_OK(deviceResponse)
+    except requests.exceptions.Timeout:
+      return S_ERROR('Authentication server is not answer, timeout.')
+    except requests.exceptions.RequestException as ex:
+      return S_ERROR(r.content or repr(ex))
+    except Exception as ex:
+      return S_ERROR('Cannot read authentication response: %s' % repr(ex))
+
+  def waitFinalStatusOfDeviceCodeAuthorizationFlow(self, deviceCode, interval=5, timeout=300):
+    """ Submit waiting loop process, that will monitor current authorization session status
+
+        :param str deviceCode: received device code
+        :param int interval: waiting interval
+        :param int timeout: max time of waiting
+
+        :return: S_OK(dict)/S_ERROR() - dictionary contain access/refresh token and some metadata
+    """
+    __start = time.time()
+
+    while True:
+      time.sleep(int(interval))
+      if time.time() - __start > timeout:
+        return S_ERROR('Time out.')
+      r = requests.post(self.metadata['token_endpoint'], data=dict(client_id=self.client_id,
+                                                                   grant_type=DEVICE_CODE_GRANT_TYPE,
+                                                                   device_code=deviceCode))
+      token = r.json()
+      if not token:
+        return S_ERROR('Resived token is empty!')
+      if 'error' not in token:
+        # os.environ['DIRAC_TOKEN'] = r.text
+        return S_OK(token)
+      if token['error'] != 'authorization_pending':
+        return S_ERROR(token['error'] + ' : ' + token.get('description', ''))
 
   def submitNewSession(self, session=None):
     """ Submit new authorization session

@@ -327,6 +327,8 @@ class ProxyInit(object):
     import urllib3
     import threading
     import webbrowser
+    import requests
+    import json
     from authlib.integrations.requests_client import OAuth2Session
 
     from DIRAC.Core.Utilities.JEncode import encode
@@ -334,22 +336,52 @@ class ProxyInit(object):
     from DIRAC.FrameworkSystem.Utilities.halo import Halo, qrterminal
     from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import submitUserAuthorizationFlow
     from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import waitFinalStatusOfUserAuthorizationFlow
+    from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+    from DIRAC.ConfigurationSystem.Client.Utilities import getAuthAPI, getDIRACClientID
 
     spinner = Halo()
     proxyAPI = getProxyAPI()
 
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+    # Get IdP
+    result = IdProviderFactory().getIdProvider(self.__piParams.provider + '_public')
+    if not result['OK']:
+      return result
+
+    idpObj = result['Value']
+
     # Submit Device authorisation flow
     with Halo('Authentification from %s.' % self.__piParams.provider) as spin:
-      result = submitUserAuthorizationFlow(idP=self.__piParams.provider, group=self.__piParams.diracGroup)
-      if not result['OK']:
-        sys.exit(result['Message'])
-      response = result['Value']
+      if Script.enableCS()['OK']:
+        result = idpObj.submitDeviceCodeAuthorizationFlow(self.__piParams.diracGroup)
+        if not result['OK']:
+          sys.exit(result['Message'])
+        response = result['Value']
+      else:
+        try:
+          r = requests.post('{api}/device?{group}'.format(
+              api=getAuthAPI(),
+              group = ('group=%s' % self.__piParams.diracGroup) if self.__piParams.diracGroup else ''
+          ), verify=False)
+          r.raise_for_status()
+          response = r.json()
+          # Check if all main keys are present here
+          for k in ['user_code', 'device_code', 'verification_uri']:
+            if not response.get(k):
+              sys.exit('Mandatory %s key is absent in authentication response.' % k)
+        except requests.exceptions.Timeout:
+          sys.exit('Authentication server is not answer, timeout.')
+        except requests.exceptions.RequestException as ex:
+          sys.exit(r.content or repr(ex))
+        except Exception as ex:
+          sys.exit('Cannot read authentication response: %s' % repr(ex))
+      
     deviceCode = response['device_code']
     userCode = response['user_code']
     verURL = response['verification_uri']
     verURLComplete = response.get('verification_uri_complete')
+    interval = response.get('interval', 5)
 
     # Notify user to go to authorization endpoint
     showURL = 'Use next link to continue, your user code is "%s"\n%s' % (userCode, verURL)
@@ -373,21 +405,27 @@ class ProxyInit(object):
       spinner.text = '%s opening in default browser..' % verURL
 
     with Halo('Waiting authorization status..') as spin:
-      result = waitFinalStatusOfUserAuthorizationFlow(deviceCode)
+      result = idpObj.waitFinalStatusOfDeviceCodeAuthorizationFlow(deviceCode)
       if not result['OK']:
         sys.exit(result['Message'])
-      token = result['Value']
+      idpObj.token = result['Value']
 
       spin.color = 'green'
+      spin.text = 'Saving token.. to env DIRAC_TOKEN..'
+
+      os.environ["DIRAC_TOKEN"] = json.dumps(idpObj.token)
+
       spin.text = 'Download proxy..'
       url = '%s?lifetime=%s' % (proxyAPI, self.__piParams.proxyLifeTime)
       addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption(self.__piParams.diracGroup, "AutoAddVOMS", False)
       if addVOMS:
         url += '&voms=%s' % addVOMS
-      with OAuth2Session(getDIRACClientID(), token=token) as sess:
-        r = sess.get(url, verify=False)
-        r.raise_for_status()
-        proxy = r.text
+      if not idpObj.token.get('refresh_token'):
+        sys.exit('Refresh token is absent in response.')
+      url += '&refresh_token=%s' % idpObj.token['refresh_token']
+      r = idpObj.get(url)
+      r.raise_for_status()
+      proxy = r.text
       if not proxy:
         sys.exit("Something went wrong, the proxy is empty.")
 
