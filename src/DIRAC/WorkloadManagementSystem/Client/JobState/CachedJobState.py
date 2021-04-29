@@ -113,11 +113,11 @@ class CachedJobState(object):
 
   def serialize(self):
     if self.__manifest:
-      manifest = (self.__manifest.dumpAsCFG(), self.__manifest.isDirty())
+      manifest = [self.__manifest.dumpAsCFG(), self.__manifest.isDirty()]
     else:
       manifest = None
     return DEncode.encode((self.__jid, self.__cache, self.__jobLog, manifest,
-                           self.__initState, self.__insertIntoTQ, tuple(self.__dirtyKeys)))
+                           self.__initState, self.__insertIntoTQ, list(self.__dirtyKeys)))
 
   @staticmethod
   def deserialize(stub):
@@ -134,7 +134,7 @@ class CachedJobState(object):
     if not isinstance(dataTuple[2], list):
       return S_ERROR("Invalid stub 2")
     # manifest
-    if dataTuple[3] is not None and (not isinstance(dataTuple[3], tuple) and len(dataTuple[3]) != 2):
+    if dataTuple[3] is not None and (not isinstance(dataTuple[3], (tuple,list)) and len(dataTuple[3]) != 2):
       return S_ERROR("Invalid stub 3")
     # initstate
     if not isinstance(dataTuple[4], dict):
@@ -143,7 +143,7 @@ class CachedJobState(object):
     if not isinstance(dataTuple[5], bool):
       return S_ERROR("Invalid stub 5")
     # Dirty Keys
-    if not isinstance(dataTuple[6], tuple):
+    if not isinstance(dataTuple[6], (tuple,list)):
       return S_ERROR("Invalid stub 6")
     cjs = CachedJobState(dataTuple[0], skipInitState=True)
     cjs.__cache = dataTuple[1]
@@ -284,7 +284,7 @@ class CachedJobState(object):
       return
     if not source:
       source = "Unknown"
-    self.__jobLog.append((record, Time.dateTime(), source))
+    self.__jobLog.append([record, Time.dateTime(), source])
 
   def setStatus(self, majorStatus, minorStatus=None, appStatus=None, source=None):
     self.__cacheAdd('att.Status', majorStatus)

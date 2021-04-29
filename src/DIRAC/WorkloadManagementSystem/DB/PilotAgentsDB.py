@@ -691,7 +691,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       else:
         eff = 0.
       lrow.append(self._getElementStatus(total, eff))
-      rows.append(tuple(lrow))
+      rows.append(list(lrow))
 # If not grouped by CE and more then 1 CE in the result:
     if multiple:
       columns.append('CE')  # 'DestinationSite' re-mapped to 'CE' already
