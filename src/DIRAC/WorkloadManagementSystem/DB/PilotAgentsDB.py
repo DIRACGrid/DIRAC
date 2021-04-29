@@ -644,7 +644,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
                        e.g. ['GridSite', 'DestinationSite'] is used to calculate efficiencies
                        for sites and  CEs. If we want to add an OwnerGroup it would be:
                        ['GridSite', 'DestinationSite', 'OwnerGroup'].
-    :return: a dict containing the ParameterNames and Records lists.
+    :return: S_OK/S_ERROR with a dict containing the ParameterNames and Records lists.
     """
 
     table = PivotedPilotSummaryTable(columnList)
@@ -691,8 +691,8 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       else:
         eff = 0.
       lrow.append(self._getElementStatus(total, eff))
-      rows.append(tuple(lrow))
-# If not grouped by CE and more then 1 CE in the result:
+      rows.append(list(lrow))
+    # If not grouped by CE and more then 1 CE in the result:
     if multiple:
       columns.append('CE')  # 'DestinationSite' re-mapped to 'CE' already
     columns.append('Status')
