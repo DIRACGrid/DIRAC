@@ -101,6 +101,8 @@ class TornadoBaseClient(object):
       raise TypeError("Service name expected to be a string. Received %s type %s" %
                       (str(serviceName), type(serviceName)))
 
+    self.client = None
+
     self._destinationSrv = serviceName
     self._serviceName = serviceName
     self.__ca_location = False
@@ -221,6 +223,11 @@ class TornadoBaseClient(object):
         self.kwargs[self.KW_SKIP_CA_CHECK] = False
       else:
         self.kwargs[self.KW_SKIP_CA_CHECK] = skipCACheck()
+    
+    if not self.__useCertificates:
+      if os.environ.get('DIRAC_TOKEN') and os.environ.get('DIRAC_TRY_USE_TOKEN'):
+        self.client = IdProviderFactory().getIdProviderForToken(os.environ['DIRAC_TOKEN'])
+        self.client.token = os.environ['DIRAC_TOKEN']
 
     # Rewrite a little bit from here: don't need the proxy string, we use the file
     if self.KW_PROXY_CHAIN in self.kwargs:
@@ -506,10 +513,15 @@ class TornadoBaseClient(object):
     # Do we use the server certificate ?
     if self.kwargs[self.KW_USE_CERTIFICATES]:
       auth = {'cert': Locations.getHostCertificateAndKeyLocation()}
+
+    # Use access token?
+    elif os.environ.get('DIRAC_TOKEN') and os.environ.get('DIRAC_TRY_USE_TOKEN'):
+      # TODO: idp check and refresh tokens
+      self.client.fetch_access_token()
+      auth = {'headers': {"Authorization": "Bearer %s" % self.client.token['access_token']}}
+
     # CHRIS 04.02.21
     # TODO: add proxyLocation check ?
-    elif os.environ.get('DIRAC_TOKEN') and os.environ.get('DIRAC_TRY_USE_TOKEN'):
-      auth = {'headers': {"Authorization": "Bearer %s" % os.environ['DIRAC_TOKEN']}}
     else:
       auth = {'cert': Locations.getProxyLocation()}
       if not auth['cert']:

@@ -345,7 +345,7 @@ class ProxyInit(object):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Get IdP
-    result = IdProviderFactory().getIdProvider(self.__piParams.provider + '_public')
+    result = IdProviderFactory().getIdProvider(self.__piParams.provider)
     if not result['OK']:
       return result
 

@@ -375,7 +375,7 @@ class AuthHandler(TornadoREST):
         provider = Registry.getIdPForGroup(group)
         if not provider:
           return S_ERROR('No provider found for %s' % group)
-        result = self.idps.getIdProvider(provider + '_public')
+        result = self.idps.getIdProvider(provider)
         if result['OK']:
           idPObj = result['Value']
           result = idPObj.submitDeviceCodeAuthorizationFlow(group)

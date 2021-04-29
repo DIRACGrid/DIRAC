@@ -38,6 +38,22 @@ class IdProviderFactory(object):
     if data:
       self.cacheMetadata.add(idP, time, data)
 
+  def getIdProviderForToken(self, token):
+    """ This method returns a IdProvider instance corresponding to the supplied
+        issuer in a token.
+
+        :param str token: token jwt
+
+        :return: S_OK(IdProvider)/S_ERROR()
+    """
+    # Read token without verification to get issuer
+    issuer = jwt.decode(accessToken, options=dict(verify_signature=False))['iss'].strip('/')
+    result = getIdProviderForIssuer(issuer)
+    if not result['OK']
+      return result
+    return self.getIdProvider(result['Value'])
+
+
   #############################################################################
   def getIdProvider(self, idProvider, sessionManager=None):
     """ This method returns a IdProvider instance corresponding to the supplied
