@@ -1,6 +1,7 @@
-[v7r3-pre6]
+[v7r3-pre7]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
+NEW: (#5000) Initial support for Python 3 server installations
 
 *Core
 FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
@@ -13,6 +14,8 @@ CHANGE: (#5110) Removed Core.Utilities.Grid.getBdiiCEInfo function use Utilities
 CHANGE: (#5110) Dropped Glue2Only and Glue2URLS options from Bdii2CSAgent, Glue2 is now the only way
 CHANGE: (#5110) dirac-admin-add-resources: drop -g -G options, Glue2 is now the only way
 CHANGE: (#5110) Configuration.Client.Utilities functions getGridCEs, getSiteUpdates no longer take glue2 parameter
+CHANGE: (#5000) Deprecate CSGlobals.getInstalledExtensions, DIRAC.Core.Utilities.Extensions.extensionsByPriority should be used instead
+CHANGE: (#5000) Deprecate getCSExtensions, DIRAC.Core.Utilities.Extensions.extensionsByPriority should be used instead
 
 *Interfaces
 CHANGE: (#5110) DiracAdmin: dropped getBDII* functions, which were looking for Glue1 information
@@ -24,6 +27,9 @@ CHANGE: (#4303) Removed completely the SystemLogging
 *WMS
 CHANGE: (#4884) JobDB: compress JDLs by default (no need for flag anymore)
 CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent instead)
+
+*RSS
+NEW: (#5042) Multi-VO mode of operation support
 
 *tests
 CHANGE: (#5046) don't use mail in the self generated certificates
