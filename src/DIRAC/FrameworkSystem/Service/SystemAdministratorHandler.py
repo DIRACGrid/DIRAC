@@ -174,7 +174,8 @@ class SystemAdministratorHandler(RequestHandler):
   def export_addDefaultOptionsToComponentCfg(self, componentType, system, component):
     """ Add default component options local component cfg
     """
-    return gComponentInstaller.addDefaultOptionsToComponentCfg(componentType, system, component, extensionsByPriority())
+    return gComponentInstaller.addDefaultOptionsToComponentCfg(
+	componentType, system, component, extensionsByPriority())
 
   types_unsetupComponent = [six.string_types, six.string_types]
 
@@ -532,7 +533,6 @@ class SystemAdministratorHandler(RequestHandler):
         fields = lines[i].split()
         if len(fields) == 1:
           fields += lines[i + 1].split()
-        _disk = fields[0].replace('/dev/sd', '')
         partition = fields[5]
         occupancy = fields[4]
         summary += ",%s:%s" % (partition, occupancy)
@@ -576,7 +576,6 @@ class SystemAdministratorHandler(RequestHandler):
       result['SecondsLeft'] = resultCert['Value']['secondsLeft']
       result['CertificateValidity'] = str(timedelta(seconds=resultCert['Value']['secondsLeft']))
       result['CertificateDN'] = resultCert['Value']['subject']
-      result['HostProperties'] = resultCert['Value']['groupProperties']
       result['CertificateIssuer'] = resultCert['Value']['issuer']
 
     # Host uptime
