@@ -18,8 +18,8 @@ from DIRAC import exit as DIRACexit
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 
 __RCSID__ = "$Id$"
 
@@ -70,67 +70,62 @@ def main():
   if len(args) != 2:
     Script.showHelp(exitCode=1)
 
-  cType = None
   system = args[0]
   component = args[1]
-  compOrMod = module if module else component
+  compOrMod = module or component
 
-  result = gComponentInstaller.getSoftwareComponents(getCSExtensions())
+  result = gComponentInstaller.getSoftwareComponents(extensionsByPriority())
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)
-  else:
-    availableComponents = result['Value']
+  availableComponents = result['Value']
 
   for compType in availableComponents:
     if system in availableComponents[compType] and compOrMod in availableComponents[compType][system]:
       cType = compType[:-1].lower()
       break
-
-  if not cType:
+  else:
     gLogger.error('Component %s/%s is not available for installation' % (system, component))
     DIRACexit(1)
 
   if module:
     result = gComponentInstaller.addDefaultOptionsToCS(gConfig, cType, system, module,
-                                                       getCSExtensions(),
+                                                       extensionsByPriority(),
                                                        overwrite=overwrite)
     result = gComponentInstaller.addDefaultOptionsToCS(gConfig, cType, system, component,
-                                                       getCSExtensions(),
+                                                       extensionsByPriority(),
                                                        specialOptions=specialOptions,
                                                        overwrite=overwrite,
                                                        addDefaultOptions=False)
   else:
     result = gComponentInstaller.addDefaultOptionsToCS(gConfig, cType, system, component,
-                                                       getCSExtensions(),
+                                                       extensionsByPriority(),
                                                        specialOptions=specialOptions,
                                                        overwrite=overwrite)
 
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)
-  else:
-    result = gComponentInstaller.installComponent(cType, system, component, getCSExtensions(), module)
+  result = gComponentInstaller.installComponent(cType, system, component, extensionsByPriority(), module)
+  if not result['OK']:
+    gLogger.error(result['Message'])
+    DIRACexit(1)
+  gLogger.notice('Successfully installed component %s in %s system, now setting it up' % (component, system))
+  result = gComponentInstaller.setupComponent(cType, system, component, extensionsByPriority(), module)
+  if not result['OK']:
+    gLogger.error(result['Message'])
+    DIRACexit(1)
+  if component == 'ComponentMonitoring':
+    result = MonitoringUtilities.monitorInstallation('DB', system, 'InstalledComponentsDB')
     if not result['OK']:
       gLogger.error(result['Message'])
       DIRACexit(1)
-    else:
-      gLogger.notice('Successfully installed component %s in %s system, now setting it up' % (component, system))
-      result = gComponentInstaller.setupComponent(cType, system, component, getCSExtensions(), module)
-      if not result['OK']:
-        gLogger.error(result['Message'])
-        DIRACexit(1)
-      if component == 'ComponentMonitoring':
-        result = MonitoringUtilities.monitorInstallation('DB', system, 'InstalledComponentsDB')
-        if not result['OK']:
-          gLogger.error(result['Message'])
-          DIRACexit(1)
-      result = MonitoringUtilities.monitorInstallation(cType, system, component, module)
-      if not result['OK']:
-        gLogger.error(result['Message'])
-        DIRACexit(1)
-      gLogger.notice('Successfully completed the installation of %s/%s' % (system, component))
-      DIRACexit()
+  result = MonitoringUtilities.monitorInstallation(cType, system, component, module)
+  if not result['OK']:
+    gLogger.error(result['Message'])
+    DIRACexit(1)
+  gLogger.notice('Successfully completed the installation of %s/%s' % (system, component))
+  DIRACexit()
 
 
 if __name__ == "__main__":

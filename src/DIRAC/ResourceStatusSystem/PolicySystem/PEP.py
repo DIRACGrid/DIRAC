@@ -46,22 +46,19 @@ class PEP(object):
 
     # Creating the client in the PEP is a convenience for the PDP, that uses internally the RSS clients
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient',
-                                    'ResourceStatusClient')
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient')
     if not res['OK']:
       self.log.error('Failed to load ResourceStatusClient class: %s' % res['Message'])
       raise ImportError(res['Message'])
     rsClass = res['Value']
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
-                                    'ResourceManagementClient')
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient')
     if not res['OK']:
       self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
       raise ImportError(res['Message'])
     rmClass = res['Value']
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus',
-                                    'SiteStatus')
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus')
     if not res['OK']:
       self.log.error('Failed to load SiteStatus class: %s' % res['Message'])
       raise ImportError(res['Message'])

@@ -47,15 +47,13 @@ class CacheFeederAgent(AgentModule):
     """ Define the commands to be executed, and instantiate the clients that will be used.
     """
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient',
-                                    'ResourceStatusClient')
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient')
     if not res['OK']:
       self.log.error('Failed to load ResourceStatusClient class: %s' % res['Message'])
       return res
     rsClass = res['Value']
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
-                                    'ResourceManagementClient')
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient')
     if not res['OK']:
       self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
       return res

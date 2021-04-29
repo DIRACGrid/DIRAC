@@ -21,6 +21,7 @@ from six.moves.urllib.parse import urlparse
 from six.moves.urllib.parse import quote as urlquote
 from six.moves.urllib.parse import unquote as urlunquote
 
+import DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC import rootPath
 from DIRAC import gLogger
@@ -424,7 +425,7 @@ class SSHComputingElement(ComputingElement):
         :return: a path containing the script generated
     """
     # Get the batch system module to use
-    batchSystemDir = os.path.join(rootPath, "DIRAC", "Resources", "Computing", "BatchSystems")
+    batchSystemDir = os.path.join(os.path.dirname(DIRAC.__file__), "Resources", "Computing", "BatchSystems")
     batchSystemScript = os.path.join(batchSystemDir, '%s.py' % self.batchSystem)
 
     # Get the executeBatch.py content: an str variable composed of code content that has to be extracted

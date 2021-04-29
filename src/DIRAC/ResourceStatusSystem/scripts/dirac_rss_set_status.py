@@ -124,10 +124,10 @@ def unpack(switchDict):
   statusTypes = []
 
   if switchDict['name'] is not None:
-    names = filter(None, switchDict['name'].split(','))
+    names = list(filter(None, switchDict['name'].split(',')))
 
   if switchDict['statusType'] is not None:
-    statusTypes = filter(None, switchDict['statusType'].split(','))
+    statusTypes = list(filter(None, switchDict['statusType'].split(',')))
     statusTypes = checkStatusTypes(statusTypes)
 
   if len(names) > 0 and len(statusTypes) > 0:

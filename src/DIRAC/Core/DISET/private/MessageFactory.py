@@ -7,7 +7,7 @@ import DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 
 class MessageFactory(object):
@@ -256,10 +256,9 @@ def loadObjects(path, reFilter=None, parentClass=None):
     reFilter = re.compile(r".*[a-z1-9]\.py$")
   pathList = List.fromChar(path, "/")
 
-  parentModuleList = ["%sDIRAC" % ext for ext in CSGlobals.getCSExtensions()] + ['DIRAC']
   objectsToLoad = {}
   # Find which object files match
-  for parentModule in parentModuleList:
+  for parentModule in extensionsByPriority():
     objDir = os.path.join(DIRAC.rootPath, parentModule, *pathList)
     if not os.path.isdir(objDir):
       continue

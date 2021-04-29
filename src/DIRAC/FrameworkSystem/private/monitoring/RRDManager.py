@@ -126,7 +126,7 @@ class RRDManager(object):
     # 1m res for 1 month
     # cmd += " RRA:%s:0.9:1:43200" % cf
     # 1m red for 1 year
-    cmd += " RRA:%s:0.999:1:%s" % (cf, 31536000 / bucketLength)
+    cmd += " RRA:%s:0.999:1:%s" % (cf, int(31536000 / bucketLength))
     return self.__exec(cmd, rrdFilePath)
 
   def __getLastUpdateTime(self, rrdFile):

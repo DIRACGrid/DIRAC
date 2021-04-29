@@ -66,15 +66,13 @@ class SiteInspectorAgent(AgentModule):
     maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', self.__maxNumberOfThreads)
     self.threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus',
-                                    'SiteStatus')
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus')
     if not res['OK']:
       self.log.error('Failed to load SiteStatus class: %s' % res['Message'])
       return res
     siteStatusClass = res['Value']
 
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
-                                    'ResourceManagementClient')
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient')
     if not res['OK']:
       self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
       return res

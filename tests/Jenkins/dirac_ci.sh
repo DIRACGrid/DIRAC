@@ -118,37 +118,60 @@ installSite() {
 
   echo "==> Started installing"
 
-  if [[ -n "${DEBUG+x}" ]]; then
-    INSTALLOPTIONS+=("${DEBUG}")
-  fi
-
-  if [[ "${DIRACOSVER}" ]]; then
-    INSTALLOPTIONS+=("--dirac-os")
-    INSTALLOPTIONS+=("--dirac-os-version=${DIRACOSVER}")
-  fi
-
-  if [[ "$DIRACOS_TARBALL_PATH" ]]; then
-    {
-      echo "DIRACOS = $DIRACOS_TARBALL_PATH"
-    } >> "${SERVERINSTALLDIR}/dirac-ci-install.cfg"
-  fi
-
-  if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
-    echo "Installing from non-release code"
-    option="--module="
+  if [[ "${USE_PYTHON3:-}" == "Yes" ]]; then
+    if [[ -n "${DIRACOSVER:-}" ]] && [[ "${DIRACOSVER}" != "master" ]]; then
+      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+    else
+      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
+    fi
+    cd "$SERVERINSTALLDIR"
+    curl -L "${DIRACOS2_URL}" > "installer.sh"
+    bash "installer.sh"
+    rm "installer.sh"
+    echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
+    # TODO: This will be fixed properly as part of https://github.com/DIRACGrid/DIRAC/issues/5082
+    mv "${SERVERINSTALLDIR}/etc/grid-security/"* "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
+    rm -rf "${SERVERINSTALLDIR}/etc"
+    ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"
+    source diracos/diracosrc
+    pip install git+https://gitlab.cern.ch/chaen/fts-rest-flask.git@packaging
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-      if [[ -d "${module_path}" ]]; then
-        option+="${module_path}:::$(basename "${module_path}"):::local,"
-      else
-        option+="${module_path},"
-      fi
+      pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}[server]"
     done
-    INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
-  fi
+    cd -
+  else
+    if [[ -n "${DEBUG+x}" ]]; then
+      INSTALLOPTIONS+=("${DEBUG}")
+    fi
 
-  if ! "${SERVERINSTALLDIR}/dirac-install.py" "${INSTALLOPTIONS[@]}" "${SERVERINSTALLDIR}/install.cfg" "${SERVERINSTALLDIR}/dirac-ci-install.cfg"; then
-    echo "ERROR: dirac-install.py failed" >&2
-    exit 1
+    if [[ "${DIRACOSVER}" ]]; then
+      INSTALLOPTIONS+=("--dirac-os")
+      INSTALLOPTIONS+=("--dirac-os-version=${DIRACOSVER}")
+    fi
+
+    if [[ "$DIRACOS_TARBALL_PATH" ]]; then
+      {
+        echo "DIRACOS = $DIRACOS_TARBALL_PATH"
+      } >> "${SERVERINSTALLDIR}/dirac-ci-install.cfg"
+    fi
+
+    if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
+      echo "Installing from non-release code"
+      option="--module="
+      for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+        if [[ -d "${module_path}" ]]; then
+          option+="${module_path}:::$(basename "${module_path}"):::local,"
+        else
+          option+="${module_path},"
+        fi
+      done
+      INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
+    fi
+
+    if ! "${SERVERINSTALLDIR}/dirac-install.py" "${INSTALLOPTIONS[@]}" "${SERVERINSTALLDIR}/install.cfg" "${SERVERINSTALLDIR}/dirac-ci-install.cfg"; then
+      echo "ERROR: dirac-install.py failed" >&2
+      exit 1
+    fi
   fi
 
   echo "==> Done installing, now configuring"

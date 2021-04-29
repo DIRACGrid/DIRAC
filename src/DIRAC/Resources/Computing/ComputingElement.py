@@ -203,8 +203,7 @@ class ComputingElement(object):
     """
     if self.batchSystem is None:
       self.batchSystem = self.ceParameters['BatchSystem']
-    objectLoader = ObjectLoader()
-    result = objectLoader.loadObject('Resources.Computing.BatchSystems.%s' % self.batchSystem, self.batchSystem)
+    result = ObjectLoader().loadObject('Resources.Computing.BatchSystems.%s' % self.batchSystem)
     if not result['OK']:
       self.log.error('Failed to load batch object: %s' % result['Message'])
       return result

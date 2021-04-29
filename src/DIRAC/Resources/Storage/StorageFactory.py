@@ -402,7 +402,7 @@ class StorageFactory(object):
       storageType = 'Proxy'
 
     objectLoader = ObjectLoader()
-    result = objectLoader.loadObject('Resources.Storage.%sStorage' % storageType, storageType + 'Storage',
+    result = objectLoader.loadObject('Resources.Storage.%sStorage' % storageType,
                                      hideExceptions=hideExceptions)
     if not result['OK']:
       gLogger.error('Failed to load storage object: %s' % result['Message'])

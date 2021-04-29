@@ -6,10 +6,11 @@ from __future__ import division
 from __future__ import print_function
 import re
 import os
+import six
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Utilities import List
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 
 def loadObjects(path, reFilter=None, parentClass=None):
@@ -23,11 +24,13 @@ def loadObjects(path, reFilter=None, parentClass=None):
     reFilter = re.compile(r".*[a-z1-9]\.py$")
   pathList = List.fromChar(path, "/")
 
-  parentModuleList = ["%sDIRAC" % ext for ext in CSGlobals.getCSExtensions()] + ['DIRAC']
   objectsToLoad = {}
   # Find which object files match
-  for parentModule in parentModuleList:
-    objDir = os.path.join(DIRAC.rootPath, parentModule, *pathList)
+  for parentModule in extensionsByPriority():
+    if six.PY3:
+      objDir = os.path.join(os.path.dirname(os.path.dirname(DIRAC.__file__)), parentModule, *pathList)
+    else:
+      objDir = os.path.join(DIRAC.rootPath, parentModule, *pathList)
     if not os.path.isdir(objDir):
       continue
     for objFile in os.listdir(objDir):

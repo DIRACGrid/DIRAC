@@ -8,7 +8,7 @@ from __future__ import print_function
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.Resources.Catalog.FileCatalogProxyClient import FileCatalogProxyClient
-from DIRAC.Core.Utilities import ObjectLoader
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 __RCSID__ = "$Id$"
 
@@ -45,12 +45,9 @@ class FileCatalogFactory(object):
     return self.__createCatalog(catalogName, catalogType, catalogURL, optionsDict)
 
   def __getCatalogClass(self, catalogType):
-
-    objectLoader = ObjectLoader.ObjectLoader()
-    result = objectLoader.loadObject('Resources.Catalog.%sClient' % catalogType, catalogType + 'Client')
+    result = ObjectLoader().loadObject('Resources.Catalog.%sClient' % catalogType)
     if not result['OK']:
       gLogger.error('Failed to load catalog object', '%s' % result['Message'])
-
     return result
 
   def __createCatalog(self, catalogName, catalogType, catalogURL, optionsDict):

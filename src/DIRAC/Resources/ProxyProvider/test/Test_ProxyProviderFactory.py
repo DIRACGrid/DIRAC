@@ -7,11 +7,12 @@ import os
 import mock
 import unittest
 
-from DIRAC import S_OK, S_ERROR, gLogger, rootPath
+import DIRAC
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 
-certsPath = os.path.join(rootPath, 'DIRAC/Core/Security/test/certs')
+certsPath = os.path.join(os.path.dirname(DIRAC.__file__), 'Core/Security/test/certs')
 
 
 def sf_getInfoAboutProviders(of, providerName, option, section):

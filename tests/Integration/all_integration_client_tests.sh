@@ -2,8 +2,7 @@
 #-------------------------------------------------------------------------------
 # A convenient way to run all the integration tests for client -> server interaction
 #
-# It supposes that DIRAC client is installed in "${CLIENTINSTALLDIR}"
-# and that there's a DIRAC server running with all the services running.
+# It supposes that there's a DIRAC server running with all the services running.
 #-------------------------------------------------------------------------------
 
 echo -e '****************************************'

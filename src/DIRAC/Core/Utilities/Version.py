@@ -3,50 +3,34 @@ from __future__ import division
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-import DIRAC
+import importlib
 
 from DIRAC import S_OK
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 
 def getCurrentVersion():
   """ Get a string corresponding to the current version of the DIRAC package and all the installed
       extension packages
   """
-
-  version = 'DIRAC ' + DIRAC.version
-
-  for ext in getCSExtensions():
+  for ext in extensionsByPriority():
     try:
-      import imp
-      module = imp.find_module("%sDIRAC" % ext)
-      extModule = imp.load_module("%sDIRAC" % ext, *module)
-      version = extModule.version
-    except ImportError:
+      return S_OK(importlib.import_module(ext).version)
+    except (ImportError, AttributeError):
       pass
-    except AttributeError:
-      pass
-
-  return S_OK(version)
 
 
 def getVersion():
   """ Get a dictionary corresponding to the current version of the DIRAC package and all the installed
       extension packages
   """
-
   vDict = {'Extensions': {}}
-  vDict['DIRAC'] = DIRAC.version
-
-  for ext in getCSExtensions():
+  for ext in extensionsByPriority():
     try:
-      import imp
-      module = imp.find_module("%sDIRAC" % ext)
-      extModule = imp.load_module("%sDIRAC" % ext, *module)
-      vDict['Extensions'][ext] = extModule.version
-    except ImportError:
+      version = importlib.import_module(ext).version
+    except (ImportError, AttributeError):
       pass
-    except AttributeError:
-      pass
-
+    if ext.endswith("DIRAC") and ext != "DIRAC":
+      ext = ext[:len("DIRAC")]
+    vDict['Extensions'][ext] = version
   return S_OK(vDict)

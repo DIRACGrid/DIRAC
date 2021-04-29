@@ -245,11 +245,11 @@ def runConfigurationWizard(params):
   """Interactively configure DIRAC using metadata from installed extensions"""
   import subprocess
   from prompt_toolkit import prompt, print_formatted_text, HTML
-  from DIRAC.Core.Utilities.DIRACScript import _extensionsByPriority, _getExtensionMetadata
+  from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 
-  extensions = _extensionsByPriority()
+  extensions = extensionsByPriority()
 
-  extensionMetadata = _getExtensionMetadata(extensions[-1])
+  extensionMetadata = getExtensionMetadata(extensions[-1])
   defaultSetup = extensionMetadata.get("default_setup", "")
   setups = extensionMetadata.get("setups", {})
 

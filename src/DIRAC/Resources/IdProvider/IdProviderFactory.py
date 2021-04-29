@@ -11,7 +11,7 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import ObjectLoader
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
 
 __RCSID__ = "$Id$"
@@ -43,8 +43,7 @@ class IdProviderFactory(object):
     self.log.verbose('Creating IdProvider', 'of %s type with the name %s' % (pType, idProvider))
     subClassName = "%sIdProvider" % (pType)
 
-    objectLoader = ObjectLoader.ObjectLoader()
-    result = objectLoader.loadObject('Resources.IdProvider.%s' % subClassName, subClassName)
+    result = ObjectLoader().loadObject('Resources.IdProvider.%s' % subClassName)
     if not result['OK']:
       self.log.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
       return result

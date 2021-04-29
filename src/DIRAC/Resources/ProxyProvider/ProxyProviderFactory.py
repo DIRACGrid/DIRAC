@@ -10,7 +10,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import ObjectLoader
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
 
 __RCSID__ = "$Id$"
@@ -46,8 +46,7 @@ class ProxyProviderFactory(object):
     self.log.verbose('Creating ProxyProvider of %s type with the name %s' % (ppType, proxyProvider))
     subClassName = "%sProxyProvider" % (ppType)
 
-    objectLoader = ObjectLoader.ObjectLoader()
-    result = objectLoader.loadObject('Resources.ProxyProvider.%s' % subClassName, subClassName)
+    result = ObjectLoader().loadObject('Resources.ProxyProvider.%s' % subClassName)
     if not result['OK']:
       self.log.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
       return result

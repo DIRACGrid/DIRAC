@@ -21,7 +21,7 @@ from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMoni
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.PrettyPrint import printTable
@@ -713,19 +713,19 @@ class SystemAdministratorClientCLI(CLI):
       # Install Module section if not yet there
       if module:
         result = gComponentInstaller.addDefaultOptionsToCS(gConfig, option, system, module,
-                                                           getCSExtensions(), hostSetup)
+                                                           extensionsByPriority(), hostSetup)
         # in case of Error we must stop, this can happen when the module name is wrong...
         if not result['OK']:
           self._errMsg(result['Message'])
           return
         # Add component section with specific parameters only
         result = gComponentInstaller.addDefaultOptionsToCS(gConfig, option, system, component,
-                                                           getCSExtensions(), hostSetup, specialOptions,
+                                                           extensionsByPriority(), hostSetup, specialOptions,
                                                            addDefaultOptions=True)
       else:
         # Install component section
         result = gComponentInstaller.addDefaultOptionsToCS(gConfig, option, system, component,
-                                                           getCSExtensions(), hostSetup, specialOptions)
+                                                           extensionsByPriority(), hostSetup, specialOptions)
 
       if not result['OK']:
         self._errMsg(result['Message'])
