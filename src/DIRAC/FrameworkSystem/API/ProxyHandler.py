@@ -20,13 +20,14 @@ class ProxyHandler(TornadoREST):
   AUTH_PROPS = "authenticated"
   LOCATION = "/DIRAC"
 
-  def initializeRequest(self):
+  @classmethod
+  def initializeHandler(cls, serviceInfo):
     """ Request initialization """
-    self.proxyCli = ProxyManagerClient(delegatedGroup=self.getUserGroup(),
-                                       delegatedID=self.getID(), delegatedDN=self.getDN())
+    cls.proxyCli = ProxyManagerClient()
 
-  path_proxy = [r'([a-z]*)[\/]?([a-z]*)']
+  # path_proxy = [r'([a-z]*)[\/]?([a-z]*)']
 
+  # def web_proxy(self, user=None, group=None):
   def web_proxy(self, user=None, group=None):
     """ RESTful endpoints to user proxy management to retrieve personal proxy.
 
@@ -44,6 +45,8 @@ class ProxyHandler(TornadoREST):
         | voms           | query  | to get user proxy with VOMS extension,    | true                                  |
         |                |        | by defaul false (optional)                |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
+        | refresh_token  | query  | to get user proxy need provide all tokens |  jkagfbfd3r4ubf887gqduyqwogasd89823hf |
+        +----------------+--------+-------------------------------------------+---------------------------------------+
 
         Request example::
 
@@ -59,8 +62,8 @@ class ProxyHandler(TornadoREST):
     voms = self.get_argument('voms', None)
     try:
       proxyLifeTime = int(self.get_argument('lifetime', 3600 * 6))
-    except Exception:
-      return S_ERROR('Cannot read "lifetime" argument.')
+    except Exception as e:
+      return S_ERROR('Cannot read "lifetime" argument. %s' % repr(e))
 
     # GET
     if self.request.method == 'GET':
@@ -69,14 +72,20 @@ class ProxyHandler(TornadoREST):
       #   pass
 
       # Return personal proxy
-      if not user and not group:
-        return self.__getProxy(self.getUserName(), self.getUserGroup(), voms, proxyLifeTime)
+      # if not user and not group:
+      from pprint import pprint
+      print('=============== PROXY =================')
+      pprint(self.getRemoteCredentials())
+      result = self.__getProxy(self.getUserName(), self.getUserGroup(), voms, proxyLifeTime)
+      if result['OK']:
+        return result['Value']
+      return result
 
-      elif user and group:
-        return self.__getProxy(user, group, voms, proxyLifeTime)
+      # elif user and group:
+      #   return self.__getProxy(user, group, voms, proxyLifeTime)
 
-      else:
-        return S_ERROR("Wrone request.")
+    else:
+      return S_ERROR("Wrone request.")
 
   def __getProxy(self, user, group, voms, lifetime):
     """ Get proxy
