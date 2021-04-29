@@ -512,6 +512,16 @@ def getVOForGroup(group):
   return getVO() or gConfig.getValue("%s/Groups/%s/VO" % (gBaseRegistrySection, group), "")
 
 
+def getIdPForGroup(group):
+  """ Get identity provider for group VO
+
+      :param str group: group name
+
+      :return: str
+  """
+  return getVOOption(getVOForGroup(group), 'IdP')
+
+
 def getDefaultVOMSAttribute():
   """ Get default VOMS attribute
 
