@@ -14,6 +14,7 @@
     getPilotOutput()
     setJobForPilot()
     getPilotsSummary()
+    getGroupedPilotSummary()
 
 """
 from __future__ import absolute_import
@@ -24,14 +25,16 @@ __RCSID__ = "$Id$"
 
 import six
 import threading
+import decimal
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername, getVOForGroup
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.Core.Utilities.MySQL import _quotedList
 
 
 class PilotAgentsDB(DB):
@@ -629,6 +632,96 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
 #     return S_OK( result )
 
 ##########################################################################################
+  def getGroupedPilotSummary(self, selectDict, columnList):
+    """
+    The simplified pilot summary based on getPilotSummaryWeb method. It calculates pilot efficiency
+    based on the same algorithm as in the Web version, basically takes into account Done and
+    Aborted pilots only from the last day. The selection is done entirely in SQL.
+
+    :param dict selectDict: A dictionary to pass additional conditions to select statements, i.e.
+                            it allows to define start time for Done and Aborted Pilots.
+    :param list columnList: A list of column to consider when grouping to calculate efficiencies.
+                       e.g. ['GridSite', 'DestinationSite'] is used to calculate efficiencies
+                       for sites and  CEs. If we want to add an OwnerGroup it would be:
+                       ['GridSite', 'DestinationSite', 'OwnerGroup'].
+    :return: a dict containing the ParameterNames and Records lists.
+    """
+
+    table = PivotedPilotSummaryTable(columnList)
+    sqlQuery = table.buildSQL()
+
+    self.logger.info("SQL query : ")
+    self.logger.info("\n" + sqlQuery)
+
+    res = self._query(sqlQuery)
+    if not res['OK']:
+      return res
+
+    self.logger.info(res)
+    # TODO add site or CE status, while looping
+    rows = []
+    columns = table.getColumnList()
+    try:
+      groupIndex = columns.index('OwnerGroup')
+      # should probably change a column name to VO here as well to avoid confusion
+    except ValueError:
+      groupIndex = None
+    result = {'ParameterNames': columns}
+    multiple = False
+    # If not grouped by CE:
+    if 'CE' not in columns:
+      multiple = True
+
+    for row in res['Value']:
+      lrow = list(row)
+      if groupIndex:
+        lrow[groupIndex] = getVOForGroup(row[groupIndex])
+      if multiple:
+        lrow.append('Multiple')
+      for index, value in enumerate(row):
+        if isinstance(value, decimal.Decimal):
+          lrow[index] = float(value)
+      # get the value of the Total column
+      if 'Total' in columnList:
+        total = lrow[columnList.index('Total')]
+      else:
+        total = 0
+      if 'PilotJobEff' in columnList:
+        eff = lrow[columnList.index('PilotJobEff')]
+      else:
+        eff = 0.
+      lrow.append(self._getElementStatus(total, eff))
+      rows.append(tuple(lrow))
+# If not grouped by CE and more then 1 CE in the result:
+    if multiple:
+      columns.append('CE')  # 'DestinationSite' re-mapped to 'CE' already
+    columns.append('Status')
+    result['Records'] = rows
+
+    return S_OK(result)
+
+  def _getElementStatus(self, total, eff):
+    """
+    Assign status to a site or resource based on pilot efficiency.
+    :param total: number of pilots to assign the status, otherwise 'Idle'
+    :param eff:  efficiency in %
+
+    :return: status string
+    """
+
+    # Evaluate the quality status of the Site/CE
+    if total > 10:
+      if eff < 25.:
+        return 'Bad'
+      elif eff < 60.:
+        return 'Poor'
+      elif eff < 85.:
+        return 'Fair'
+      else:
+        return 'Good'
+    else:
+      return 'Idle'
+
   def getPilotSummaryWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
     """
@@ -1050,3 +1143,82 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     resultDict['Records'] = records
 
     return S_OK(resultDict)
+
+
+class PivotedPilotSummaryTable:
+  """
+  The class creates a 'pivoted' table by combining records with the same group
+  of self.columnList into a single row. It allows an easy calculation of pilot efficiencies.
+  """
+
+  pstates = ['Submitted', 'Done', 'Failed', 'Aborted',
+             'Running', 'Waiting', 'Scheduled', 'Ready']
+
+  def __init__(self, columnList):
+    """
+    Initialise a table with columns to be grouped by.
+
+    :param columnList: i.e. ['GridSite', 'DestinationSite']
+    :return:
+    """
+
+    self.columnList = columnList
+
+    # we want 'Site' and 'CE' in the final result
+    colMap = {'GridSite': 'Site', 'DestinationSite': 'CE'}
+    self._columns = [colMap.get(val, val) for val in columnList]
+
+    self._columns += self.pstates  # MySQL._query() does not give us column names, sadly.
+
+  def buildSQL(self, selectDict=None):
+    """
+    Build an SQL query to create a table with all status counts in one row, ("pivoted")
+    grouped by columns in the column list.
+
+    :param dict selectDict:
+    :return: SQL query
+    """
+
+    lastUpdate = Time.dateTime() - Time.day
+
+    pvtable = 'pivoted'
+    innerGroupBy = "(SELECT %s, Status,\n " \
+                   "count(CASE WHEN CurrentJobID=0  THEN 1 END) AS Empties," \
+                   " count(*) AS qty FROM PilotAgents\n " \
+                   "WHERE Status NOT IN ('Done', 'Aborted') OR (Status in ('Done', 'Aborted') \n" \
+                   " AND \n" \
+                   " LastUpdateTime > '%s')" \
+                   " GROUP by %s, Status)\n AS %s" % (
+                       _quotedList(self.columnList), lastUpdate,
+                       _quotedList(self.columnList), pvtable)
+
+    # pivoted table: combine records with the same group of self.columnList into a single row.
+
+    pivotedQuery = "SELECT %s,\n" % ', '.join([pvtable + '.' + item for item in self.columnList])
+    lineTemplate = " SUM(if (pivoted.Status={state!r}, pivoted.qty, 0)) AS {state}"
+    pivotedQuery += ',\n'.join(lineTemplate.format(state=state) for state in self.pstates)
+    pivotedQuery += ",\n  SUM(if (%s.Status='Done', %s.Empties,0)) AS Done_Empty,\n" \
+                    "  SUM(%s.qty) AS Total " \
+                    "FROM\n" % (pvtable, pvtable, pvtable)
+
+    outerGroupBy = " GROUP BY %s) \nAS pivotedEff;" % _quotedList(self.columnList)
+
+    # add efficiency columns using aliases defined in the pivoted table
+    effCase = "(CASE\n  WHEN pivotedEff.Done - pivotedEff.Done_Empty > 0 \n" \
+        "  THEN pivotedEff.Done/(pivotedEff.Done-pivotedEff.Done_Empty) \n" \
+        "  WHEN pivotedEff.Done=0 THEN 0 \n" \
+        "  WHEN pivotedEff.Done=pivotedEff.Done_Empty \n" \
+        "  THEN 99.0 ELSE 0.0 END) AS PilotsPerJob,\n" \
+        " (pivotedEff.Total - pivotedEff.Aborted)/pivotedEff.Total*100.0 AS PilotJobEff \nFROM \n("
+    effSelectTemplate = " CAST(pivotedEff.{state} AS UNSIGNED) AS {state} "
+    # now select the columns + states:
+    pivotedEff = "SELECT %s,\n" % ', '.join(['pivotedEff' + '.' + item for item in self.columnList]) + \
+        ', '.join(effSelectTemplate.format(state=state) for state in self.pstates + ['Total']) + ", \n"
+
+    finalQuery = pivotedEff + effCase + pivotedQuery + innerGroupBy + outerGroupBy
+    self._columns += ['Total', 'PilotsPerJob', 'PilotJobEff']
+    return finalQuery
+
+  def getColumnList(self):
+
+    return self._columns

@@ -77,7 +77,7 @@ class ResourceStatusClient(Client):
 
   def insertStatusElement(self, element, tableType, name, statusType, status,
                           elementType, reason, dateEffective, lastCheckTime,
-                          tokenOwner, tokenExpiration=None, vo='all'):
+                          tokenOwner, tokenExpiration=None, vO='all'):
     """
     Inserts on <element><tableType> a new row with the arguments given.
 
@@ -113,14 +113,14 @@ class ResourceStatusClient(Client):
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, vO]
 
     return self._getRPC().insert(element + tableType, prepareDict(columnNames, columnValues))
 
   def selectStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None,
-                          tokenOwner=None, tokenExpiration=None, meta=None, vo='all'):
+                          tokenOwner=None, tokenExpiration=None, meta=None, vO='all'):
     """
     Gets from <element><tableType> all rows that match the parameters given.
 
@@ -159,14 +159,14 @@ class ResourceStatusClient(Client):
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, meta, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, meta, vO]
 
     return self._getRPC().select(element + tableType, prepareDict(columnNames, columnValues))
 
   def deleteStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None,
-                          tokenOwner=None, tokenExpiration=None, meta=None, vo='all'):
+                          tokenOwner=None, tokenExpiration=None, meta=None, vO='all'):
     """
     Deletes from <element><tableType> all rows that match the parameters given.
 
@@ -204,7 +204,7 @@ class ResourceStatusClient(Client):
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "Meta", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, meta, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, meta, vO]
 
     return self._getRPC().delete(element + tableType, prepareDict(columnNames, columnValues))
 
@@ -212,7 +212,7 @@ class ResourceStatusClient(Client):
                                statusType=None, status=None,
                                elementType=None, reason=None,
                                dateEffective=None, lastCheckTime=None,
-                               tokenOwner=None, tokenExpiration=None, vo='all'):
+                               tokenOwner=None, tokenExpiration=None, vO='all'):
     """
     Adds or updates-if-duplicated from <element><tableType> and also adds a log
     if flag is active.
@@ -249,14 +249,14 @@ class ResourceStatusClient(Client):
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, vO]
 
     return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
 
   def modifyStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
                           dateEffective=None, lastCheckTime=None, tokenOwner=None,
-                          tokenExpiration=None, vo='all'):
+                          tokenExpiration=None, vO='all'):
     """
     Updates from <element><tableType> and also adds a log if flag is active.
 
@@ -292,7 +292,7 @@ class ResourceStatusClient(Client):
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, vO]
 
     return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
 
@@ -300,7 +300,7 @@ class ResourceStatusClient(Client):
                                  statusType=None, status=None,
                                  elementType=None, reason=None,
                                  dateEffective=None, lastCheckTime=None,
-                                 tokenOwner=None, tokenExpiration=None, vo='all'):
+                                 tokenOwner=None, tokenExpiration=None, vO='all'):
     """
     Adds if-not-duplicated from <element><tableType> and also adds a log if flag
     is active.
@@ -337,7 +337,7 @@ class ResourceStatusClient(Client):
     columnNames = ["Name", "StatusType", "Status", "ElementType", "Reason",
                    "DateEffective", "LastCheckTime", "TokenOwner", "TokenExpiration", "VO"]
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
-                    lastCheckTime, tokenOwner, tokenExpiration, vo]
+                    lastCheckTime, tokenOwner, tokenExpiration, vO]
 
     return self._getRPC().addIfNotThere(element + tableType, prepareDict(columnNames, columnValues))
 

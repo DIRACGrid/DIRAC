@@ -299,6 +299,8 @@ class PDP(object):
     if not nextState['OK']:
       return nextState
     nextState = nextState['Value']
+    # most restrictive status defines the VO affected. VO='all' will affect all VOs
+    policyCombined['VO'] = policiesToCombine[0].get('VO', 'all')
 
     # If the RssMachine does not accept the candidate, return forcing message
     if candidateState != nextState:

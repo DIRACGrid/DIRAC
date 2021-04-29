@@ -43,11 +43,12 @@ class PilotCommand(Command):
 
     for pilotDict in result:
 
-      resQuery = self.rmClient.addOrModifyPilotCache(pilotDict['Site'],
-                                                     pilotDict['CE'],
-                                                     pilotDict['PilotsPerJob'],
-                                                     pilotDict['PilotJobEff'],
-                                                     pilotDict['Status'])
+      resQuery = self.rmClient.addOrModifyPilotCache(site=pilotDict['Site'],
+                                                     cE=pilotDict['CE'],
+                                                     vO=pilotDict.get('OwnerGroup', None),
+                                                     pilotsPerJob=pilotDict['PilotsPerJob'],
+                                                     pilotJobEff=pilotDict['PilotJobEff'],
+                                                     status=pilotDict['Status'])
       if not resQuery['OK']:
         return resQuery
 
@@ -59,6 +60,7 @@ class PilotCommand(Command):
       - name : <str>
     """
 
+    self.log.debug("_prepareCommand: args:", self.args)
     if 'name' not in self.args:
       return S_ERROR('"name" not found in self.args')
     name = self.args['name']
@@ -67,13 +69,18 @@ class PilotCommand(Command):
       return S_ERROR('element is missing')
     element = self.args['element']
 
+    if 'vO' not in self.args:
+      return S_ERROR('_prepareCommand: "vO" not found in self.args')
+    vo = self.args['vO']
+
     if element not in ['Site', 'Resource']:
       return S_ERROR('"%s" is not Site nor Resource' % element)
 
-    return S_OK((element, name))
+    return S_OK((element, name, vo))
 
   def doNew(self, masterParams=None):
 
+    self.log.debug('PilotCommand doNew')
     if masterParams is not None:
       element, name = masterParams
     else:
@@ -92,11 +99,17 @@ class PilotCommand(Command):
       # You should never see this error
       return S_ERROR('"%s" is not  Site nor Resource' % element)
 
-    pilotsResults = self.pilots.getPilotSummaryWeb(wmsDict, [], 0, 0)
+    if element == 'Resource':
+      pilotsResultPivot = self.pilots.getGroupedPilotSummary({}, ['GridSite', 'DestinationSite', 'OwnerGroup'])
+    elif element == 'Site':
+      pilotsResultPivot = self.pilots.getGroupedPilotSummary({}, ['GridSite', 'OwnerGroup'])
+    else:
+      # You should never see this error
+      return S_ERROR('"%s" is not  Site nor Resource' % element)
 
-    if not pilotsResults['OK']:
-      return pilotsResults
-    pilotsResults = pilotsResults['Value']
+    if not pilotsResultPivot['OK']:
+      return pilotsResultPivot
+    pilotsResults = pilotsResultPivot['Value']
 
     if 'ParameterNames' not in pilotsResults:
       return S_ERROR('Wrong result dictionary, missing "ParameterNames"')
@@ -129,10 +142,11 @@ class PilotCommand(Command):
 
   def doCache(self):
 
+    self.log.debug('PilotCommand doCache')
     params = self._prepareCommand()
     if not params['OK']:
       return params
-    element, name = params['Value']
+    element, name, vo = params['Value']
 
     if element == 'Site':
       # WMS returns Site entries with CE = 'Multiple'
@@ -143,14 +157,15 @@ class PilotCommand(Command):
       # You should never see this error
       return S_ERROR('"%s" is not  Site nor Resource' % element)
 
-    result = self.rmClient.selectPilotCache(site, ce)
+    result = self.rmClient.selectPilotCache(site=site, cE=ce)
     if result['OK']:
       result = S_OK([dict(zip(result['Columns'], res)) for res in result['Value']])
-
+    self.log.debug("PilotCommand doCache result: ", result)
     return result
 
   def doMaster(self):
 
+    self.log.debug('PilotCommand doMaster')
     siteNames = getSites()
     if not siteNames['OK']:
       return siteNames

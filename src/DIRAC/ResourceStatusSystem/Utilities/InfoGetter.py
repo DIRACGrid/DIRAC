@@ -178,7 +178,7 @@ def _sanitizedecisionParams(decisionParams):
   """
 
   # active is a hook to disable the policy / action if needed
-  params = ('element', 'name', 'elementType', 'statusType', 'status', 'reason', 'tokenOwner', 'active')
+  params = ('element', 'name', 'vO', 'elementType', 'statusType', 'status', 'reason', 'tokenOwner', 'active')
 
   sanitizedParams = {}
 

@@ -25,6 +25,7 @@ queueFilled = Queue.Queue()
 queueFilled.put({'status': 'status',
                  'name': 'site',
                  'site': 'site',
+                 'vO': 'all',
                  'element': 'Site',
                  'statusType': 'all',
                  'elementType': 'Site'})

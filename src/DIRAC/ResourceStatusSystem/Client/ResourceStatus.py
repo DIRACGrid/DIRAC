@@ -49,7 +49,7 @@ class ResourceStatus(object):
     # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
     self.rssCache = RSSCache(cacheLifeTime, self.__updateRssCache)
 
-  def getElementStatus(self, elementName, elementType, statusType=None, default=None):
+  def getElementStatus(self, elementName, elementType, statusType=None, default=None, vO=None):
     """
     Helper function, tries to get information from the RSS for the given
     Element, otherwise, it gets it from the CS.
@@ -106,7 +106,7 @@ class ResourceStatus(object):
         statusType = ['all']
 
     if self.rssFlag:
-      return self.__getRSSElementStatus(elementName, elementType, statusType)
+      return self.__getRSSElementStatus(elementName, elementType, statusType, vO)
     else:
       return self.__getCSElementStatus(elementName, elementType, statusType, default)
 
@@ -147,7 +147,7 @@ class ResourceStatus(object):
         It will try 5 times to contact the RSS before giving up
     """
 
-    meta = {'columns': ['Name', 'ElementType', 'StatusType', 'Status']}
+    meta = {'columns': ['Name', 'ElementType', 'StatusType', 'Status', 'VO']}
 
     for ti in range(5):
       rawCache = self.rssClient.selectStatusElement('Resource', 'Status', meta=meta)
@@ -163,7 +163,7 @@ class ResourceStatus(object):
 
 ################################################################################
 
-  def __getRSSElementStatus(self, elementName, elementType, statusType):
+  def __getRSSElementStatus(self, elementName, elementType, statusType, vO):
     """ Gets from the cache or the RSS the Elements status. The cache is a
         copy of the DB table. If it is not on the cache, most likely is not going
         to be on the DB.
@@ -182,7 +182,7 @@ class ResourceStatus(object):
     :type statusType: str, list
     """
 
-    cacheMatch = self.rssCache.match(elementName, elementType, statusType)
+    cacheMatch = self.rssCache.match(elementName, elementType, statusType, vO)
 
     self.log.debug('__getRSSElementStatus')
     self.log.debug(cacheMatch)
@@ -350,26 +350,27 @@ def getDictFromList(fromList):
 
 def getCacheDictFromRawData(rawList):
   """
-  Formats the raw data list, which we know it must have tuples of four elements.
-  ( element1, element2, element3, elementt4 ) into a dictionary of tuples with the format
-  { ( element1, element2, element3 ): element4 )}.
+  Formats the raw data list, which we know it must have tuples of five elements.
+  ( element1, element2, element3, elementt4, element5 ) into a dictionary of tuples with the format
+  { ( element1, element2, element3, element5 ): element4 )}.
   The resulting dictionary will be the new Cache.
 
   It happens that element1 is elementName,
                   element2 is elementType,
                   element3 is statusType,
                   element4 is status.
+                  element5 is vO
 
   :Parameters:
     **rawList** - `list`
-      list of three element tuples [( element1, element2, element3, element4 ),... ]
+      list of three element tuples [( element1, element2, element3, element4, element5 ),... ]
 
-  :return: dict of the form { ( elementName, elementType, statusType ) : status, ... }
+  :return: dict of the form { ( elementName, elementType, statusType, vO ) : status, ... }
   """
 
   res = {}
   for entry in rawList:
-    res.update({(entry[0], entry[1], entry[2]): entry[3]})
+    res.update({(entry[0], entry[1], entry[2], entry[4]): entry[3]})
 
   return res
 
