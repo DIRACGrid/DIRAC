@@ -9,6 +9,9 @@ __RCSID__ = "$Id$"
 
 from io import open
 
+import jwt
+# from jwt import PyJWKClient
+
 import os
 import time
 import threading
@@ -32,7 +35,8 @@ from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import ResourceProtector
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
@@ -153,6 +157,22 @@ class BaseRequestHandler(RequestHandler):
       # while we were waiting for the lock
       if cls.__init_done:
         return S_OK()
+
+      cls._idps = {}
+
+      # Set Identity Providers
+      idps = IdProviderFactory()
+      result = getProvidersForInstance('Id')
+      if result['OK']:
+        for providerName in result['Value']:
+          result = idps.getIdProvider(providerName)
+          if not result['OK']:
+            break
+          idpObj = result['Value']
+          cls._idps[idpObj.metadata['issuer'].strip('/')] = idpObj
+      if not result['OK']:
+        raise Exception("There was a problem loading Identity Providers: %s" % result['Message'])
+
 
       # absoluteUrl: full URL e.g. ``https://<host>:<port>/<System>/<Component>``
       absoluteUrl = request.path
@@ -609,23 +629,18 @@ class BaseRequestHandler(RequestHandler):
     if tokenType.lower() != 'bearer':
       return S_ERROR('Found a not bearer access token.')
     
-    # # idp = self.application.idps.get(iss)
-    # # idp.verify(token)
-    # # idp.parsePayload()
-    # # credDict = idp.userDiscover()
-    # #
-    # # Read token data and verify signature
-    # data = jwt.decode(accessToken, self.application.jwks.getKeyForToken(accessToken),
-    #                   algorithms=[head['alg']])
+    # Read token without verification to get issuer
+    issuer = jwt.decode(accessToken, options=dict(verify_signature=False))['iss'].strip('/')
 
-    # # parse scoupes
-    # return S_OK({'ID': data['sub'], 'issuer': data['iss'], 'group': token.groups[0]})
-    # TODO: check if its DIRAC token
-    try:
-      token = ResourceProtector().acquire_token(self.request)
-    except Exception as e:
-      return S_ERROR(str(e))
-    return S_OK({'ID': token.sub, 'issuer': token.issuer, 'group': token.groups[0]})
+    if not self._idps.get(issuer):
+      return S_ERROR('%s issuer not registred in DIRAC.' % issuer)
+    
+    payload = self._idps[issuer].verifyToken(accessToken)
+
+    # {'ID':.., 'group':.., 'provider':..}
+    credDict = self._idps[issuer].researchGroup(payload, accessToken)
+    credDict['token'] = accessToken
+    return S_OK(credDict)
 
   def _authzVISITOR(self):
     """ Visitor access
