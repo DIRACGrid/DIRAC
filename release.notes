@@ -34,6 +34,11 @@ NEW: (#5042) Multi-VO mode of operation support
 *tests
 CHANGE: (#5046) don't use mail in the self generated certificates
 
+[v7r2p6]
+
+*Core
+FIX: (#5000) Display thousands separators in PrettyScalarFormatter again
+
 [v7r2p5]
 
 FIX: fixes from v7r0p56, v7r1p39
