@@ -171,7 +171,7 @@ class ObjectLoader(object):
         if modKeyName in modules:
           continue
         fullName = "%s.%s" % (impPath, modName)
-        result = recurseImport(modName, parentModule=parentModule, fullName=fullName)
+        result = recurseImport(fullName)
         if not result['OK']:
           if continueOnError:
             gLogger.error("Error loading module but continueOnError is true", "module %s error %s" % (fullName, result))
