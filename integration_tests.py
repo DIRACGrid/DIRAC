@@ -206,7 +206,7 @@ def prepare_environment(
     server_config = _make_config(modules, server_flags, release_var, editable)
     client_config = _make_config(modules, client_flags, release_var, editable)
 
-    typer.secho("Running docker-compose to create contianers", fg=c.GREEN)
+    typer.secho("Running docker-compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules) as docker_compose_fn:
         subprocess.run(
             ["docker-compose", "-f", docker_compose_fn, "up", "-d"],
@@ -561,7 +561,7 @@ def _find_dirac_release_and_branch():
     try:
         upstream = repo.remote("upstream")
     except ValueError:
-        typer.secho("No upstream remote found, adding", err=True, fg=c.YELLOW )
+	typer.secho("No upstream remote found, adding", err=True, fg=c.YELLOW)
         upstream = repo.create_remote(
             "upstream", "https://github.com/DIRACGrid/DIRAC.git"
         )

@@ -542,6 +542,29 @@ Once finished the containers can be removed using ``./integration_tests.py destr
 
 See ``./integration_tests.py --help`` for more information.
 
+Running the above might take a while. Supposing you are interested in running one single integration test, let's say for the sake of example a server integration test, you can:
+
+.. code-block:: bash
+
+    ./integration_tests.py prepare-environment
+    ./integration_tests.py install-server
+
+which will give you a full dockerized server setup (`docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`). Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`. You can run it with:
+
+.. code-block:: bash
+
+    docker exec -it -e=TERM=xterm-color -e=INSTALLROOT=/home/dirac -e=INSTALLTYPE=server -u=dirac -w=/home/dirac server /bin/bash
+    cd $INSTALLROOT
+    source ServerInstallDIR/bashrc
+    cp -r TestCode/DIRAC/tests/ ServerInstallDIR/DIRAC/
+
+and then run the test with:
+
+.. code-block:: bash
+
+    pytest ServerInstallDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py
+
+
 
 Validation and System tests
 ---------------------------
