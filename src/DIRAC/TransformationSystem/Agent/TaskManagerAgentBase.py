@@ -343,7 +343,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                                                           JobStatus.RESCHEDULED,
                                                           JobStatus.COMPLETING,
                                                           JobStatus.COMPLETED,
-							  JobStatus.SUBMITTING,
+                                                          JobStatus.SUBMITTING,
                                                           JobStatus.RECEIVED,
                                                           JobStatus.WAITING,
                                                           JobStatus.RUNNING,

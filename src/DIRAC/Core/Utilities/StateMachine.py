@@ -28,10 +28,10 @@ class State(object):
 
   :param int level: each state is mapped to an integer, which is used to sort the states according to that integer.
   :param stateMap: it is a list (of strings) with the reachable states from this particular
-		   status. If not defined, we assume there are no restrictions.
+                   status. If not defined, we assume there are no restrictions.
   :type stateMap: python:list
   :param defState: default state used in case the next state it is not stateMap (not defined
-	or simply not there).
+        or simply not there).
   :type defState: None or str
 
   """
@@ -54,13 +54,13 @@ class State(object):
 
     examples:
       >>> s0.transitionRule('nextState')
-	  'nextState'
+          'nextState'
       >>> s1.transitionRule('StateName2')
-	  'StateName2'
+          'StateName2'
       >>> s1.transitionRule('StateNameNotInMap')
-	  'StateName1'
+          'StateName1'
       >>> s2.transitionRule('StateNameNotInMap')
-	  'StateNameNotInMap'
+          'StateNameNotInMap'
 
     :param str nextState: name of the state in the stateMap
     :return: state name
@@ -87,8 +87,8 @@ class StateMachine(object):
       >>> sm1 = StateMachine(state = 'Active')
 
     :param state: current state of the StateMachine, could be None if we do not use the
-	StateMachine to calculate transitions. Beware, it is not checked if the
-	state is on the states map !
+        StateMachine to calculate transitions. Beware, it is not checked if the
+        state is on the states map !
     :type state: None or str
 
   """
@@ -107,9 +107,9 @@ class StateMachine(object):
     Given a state name, it returns its level (integer), which defines the hierarchy.
 
     >>> sm0.levelOfState('Nirvana')
-	100
+        100
     >>> sm0.levelOfState('AnotherState')
-	-1
+        -1
 
     :param str state: name of the state, it should be on <self.states> key set
     :return: `int` || -1 (if not in <self.states>)
@@ -121,15 +121,15 @@ class StateMachine(object):
 
   def setState(self, candidateState, noWarn=False):
     """ Makes sure the state is either None or known to the machine, and that it is a valid state to move into.
-	Final states are also checked.
+        Final states are also checked.
 
     examples:
       >>> sm0.setState(None)['OK']
-	  True
+          True
       >>> sm0.setState('Nirvana')['OK']
-	  True
+          True
       >>> sm0.setState('AnotherState')['OK']
-	  False
+          False
 
     :param state: state which will be set as current state of the StateMachine
     :type state: None or str
@@ -143,15 +143,15 @@ class StateMachine(object):
       self.state = candidateState
     elif candidateState in self.states:
       if not self.states[self.state].stateMap:
-	if not noWarn:
-	  gLogger.warn("Final state, won't move",
-		       "(%s, asked to move to %s)" % (self.state, candidateState))
-	return S_OK(self.state)
+        if not noWarn:
+          gLogger.warn("Final state, won't move",
+                       "(%s, asked to move to %s)" % (self.state, candidateState))
+        return S_OK(self.state)
       if candidateState not in self.states[self.state].stateMap:
-	gLogger.warn("Can't move from %s to %s, choosing a good one" % (self.state, candidateState))
+        gLogger.warn("Can't move from %s to %s, choosing a good one" % (self.state, candidateState))
       result = self.getNextState(candidateState)
       if not result['OK']:
-	return result
+        return result
       self.state = result['Value']
       # If the StateMachine does not accept the candidate, return error message
     else:
@@ -165,7 +165,7 @@ class StateMachine(object):
 
     examples:
       >>> sm0.getStates()
-	  [ 'Nirvana' ]
+          [ 'Nirvana' ]
 
     :return: list(stateNames)
     """
@@ -182,9 +182,9 @@ class StateMachine(object):
 
     examples:
       >>> sm0.getNextState(None)
-	  S_OK(None)
+          S_OK(None)
       >>> sm0.getNextState('NextState')
-	  S_OK('NextState')
+          S_OK('NextState')
 
     :param str candidateState: name of the next state
     :return: S_OK(nextState) || S_ERROR

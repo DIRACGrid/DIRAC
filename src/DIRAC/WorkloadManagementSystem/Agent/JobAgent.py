@@ -272,12 +272,12 @@ class JobAgent(AgentModule):
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if param not in matcherInfo:
-	jobReport.setJobStatus(status=JobStatus.FAILED,
-                               minor='Matcher did not return %s' % (param))
+        jobReport.setJobStatus(status=JobStatus.FAILED,
+                               minorStatus='Matcher did not return %s' % (param))
         return self.__finish('Matcher Failed')
       elif not matcherInfo[param]:
-	jobReport.setJobStatus(status=JobStatus.FAILED,
-                               minor='Matcher returned null %s' % (param))
+        jobReport.setJobStatus(status=JobStatus.FAILED,
+                               minorStatus='Matcher returned null %s' % (param))
         return self.__finish('Matcher Failed')
       else:
         self.log.verbose('Matcher returned', '%s = %s ' % (param, matcherInfo[param]))
@@ -294,14 +294,14 @@ class JobAgent(AgentModule):
     parameters = self._getJDLParameters(jobJDL)
     if not parameters['OK']:
       jobReport.setJobStatus(status=JobStatus.FAILED,
-                             minor='Could Not Extract JDL Parameters')
+                             minorStatus='Could Not Extract JDL Parameters')
       self.log.warn('Could Not Extract JDL Parameters', parameters['Message'])
       return self.__finish('JDL Problem')
 
     params = parameters['Value']
     if 'JobID' not in params:
       msg = 'Job has not JobID defined in JDL parameters'
-      jobReport.setJobStatus(status=JobStatus.FAILED, minor=msg)
+      jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=msg)
       self.log.warn(msg)
       return self.__finish('JDL Problem')
     else:
@@ -347,7 +347,7 @@ class JobAgent(AgentModule):
                                     sendFlag=False)
 
       jobReport.setJobStatus(status=JobStatus.MATCHED,
-                             minor='Job Received by Agent',
+                             minorStatus='Job Received by Agent',
                              sendFlag=False)
       result_setupProxy = self._setupProxy(ownerDN, jobGroup)
       if not result_setupProxy['OK']:
@@ -571,7 +571,7 @@ class JobAgent(AgentModule):
 
     wrapperFile = result['Value']
     jobReport.setJobStatus(status=JobStatus.MATCHED,
-                           minor='Submitting To CE')
+                           minorStatus='Submitting To CE')
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')

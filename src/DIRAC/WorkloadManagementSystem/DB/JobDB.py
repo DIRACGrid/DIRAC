@@ -35,7 +35,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJERR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -318,19 +317,6 @@ class JobDB(DB):
     return S_OK(attributes)
 
 #############################################################################
-  @deprecated("Unused")
-  def getJobsAttribute(self, jobIDList, attribute):
-    """ Get one attribute for a list of jobs
-    :param list jobIDList: list of JobIDs
-    :param str attribute: job attribute
-    """
-    cmd = 'SELECT %s FROM Jobs WHERE JobID IN (%s)' % (attribute, ','.join(str(jID) for jID in jobIDList))
-    res = self._query(cmd)
-    if not res['OK']:
-      return res
-    return S_OK([v[0] for v in res['Value']])
-
-#############################################################################
   def getJobAttributes(self, jobID, attrList=None):
     """ Get all Job Attributes for a given jobID.
         Return a dictionary with all Job Attributes as value pairs
@@ -598,15 +584,15 @@ class JobDB(DB):
     """ Set one or more attribute values for one or more jobs specified by jobID.
         The LastUpdate time stamp is refreshed if explicitly requested with the update flag
 
-	This method is also used for updating the Status, MinorStatus, ApplicationStatus
-	of a job, as self.setJobsStatus also calls this method.
-	If the status is already final, we don't update it.
+        This method is also used for updating the Status, MinorStatus, ApplicationStatus
+        of a job, as self.setJobsStatus also calls this method.
+        If the status is already final, we don't update it.
 
-	:param jobID: one or more job IDs
-	:type jobID: int or str or list
-	:param list attrNames: names of attributes to update
-	:param list attrValues: corresponding values of attributes to update
-	:param bool update: optional flag to update the job LastUpdateTime stamp
+        :param jobID: one or more job IDs
+        :type jobID: int or str or list
+        :param list attrNames: names of attributes to update
+        :param list attrValues: corresponding values of attributes to update
+        :param bool update: optional flag to update the job LastUpdateTime stamp
         :param str myDate: optional time stamp for the LastUpdateTime attribute
 
         :return: S_OK/S_ERROR
@@ -620,7 +606,7 @@ class JobDB(DB):
     for jID in jobIDList:
       ret = self._escapeString(jID)
       if not ret['OK']:
-	return ret
+        return ret
       jIDList.append(ret['Value'])
 
     if len(attrNames) != len(attrValues):
@@ -628,7 +614,7 @@ class JobDB(DB):
 
     for attrName in attrNames:
       if attrName not in self.jobAttributeNames:
-	return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
+        return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
 
     if 'Status' in attrNames:
       # Treat this update separately
@@ -657,7 +643,7 @@ class JobDB(DB):
 
   def setJobsMajorStatus(self, jIDList, candidateStatus):
     """
-    Sets the job major status, considering the JobStateMachine result
+    Sets jobs major status, considering the JobStateMachine result
 
     :param list jIDList: list of one or more job IDs
     :param str candidateStatus: candidate major Status
@@ -667,32 +653,34 @@ class JobDB(DB):
     res = self.getJobsAttributes(jIDList, ['Status'])
     if not res['OK']:
       return res
-    jIDStatusList = res['Value']
+    jIDStatusDict = res['Value']
 
     newStatuses = {}
-    for jID, jIDStatus in zip(jIDList, jIDStatusList):
-      res = JobStatus.JobsStateMachine(jIDStatus).getNextState(candidateStatus)
+    for jID, jIDStatus in jIDStatusDict.items():
+      res = JobStatus.JobsStateMachine(jIDStatus['Status']).getNextState(candidateStatus)
       if not res['OK']:
-	return res
+        return res
       nextState = res['Value']
 
       # If the JobsStateMachine does not accept the candidate, add it to separate dictionary
       if candidateStatus != nextState:
-	self.log.error("Job Status Error",
-		       "%s can't move from %s to %s: using %s" % (jID, jIDStatus, candidateStatus, nextState))
+        self.log.error(
+            "Job Status Error",
+            "%s can't move from %s to %s: using %s" % (
+                jID, jIDStatus['Status'], candidateStatus, nextState))
 
       newStatuses[jID] = nextState
 
     cmd = "INSERT INTO Jobs (JobID, Status) VALUES "
 
+    ns = []
     for jID, status in newStatuses.items():
-      # ret_status = self._escapeString(status)
-      # if not ret_status['OK']:
-      #   return ret_status
-      # ret_jID = self._escapeString(jID)
-      # if not ret_jID['OK']:
-      #   return ret_jID
-      cmd += ','.join("(%s, %s)" % (jID, status))
+      ret_status = self._escapeString(status)
+      if not ret_status['OK']:
+        return ret_status
+      status = ret_status['Value']
+      ns.append("(%s, %s)" % (jID, status))
+    cmd += ','.join(ns)
 
     cmd += " ON DUPLICATE KEY UPDATE Status=VALUES(Status)"
 

@@ -155,6 +155,12 @@ def test_heartBeatLogging(putAndDelete):
   assert res['OK'] is True, res['Message']
   jobID = res['JobID']
 
+  res = jobDB.setJobStatus(jobID, status=JobStatus.CHECKING)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobStatus(jobID, status=JobStatus.WAITING)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobStatus(jobID, status=JobStatus.MATCHED)
+  assert res['OK'] is True, res['Message']
   res = jobDB.setJobStatus(jobID, status=JobStatus.RUNNING)
   assert res['OK'] is True, res['Message']
   res = jobDB.setHeartBeatData(jobID, dynamicDataDict={'CPU': 2345})
@@ -183,7 +189,7 @@ def test_heartBeatLogging(putAndDelete):
 
   res = jobDB.getHeartBeatData(jobID)
   assert res['OK'] is True, res['Message']
-  assert res['Value'], str(res)
+  assert not res['Value'], str(res)
 
 
 def test_jobParameters(putAndDelete):
@@ -289,6 +295,8 @@ def test_attributes(putAndDelete):
   assert res['OK'] is True, res['Message']
   assert res['Value'] == 'DIRAC.Client.org'
 
+  res = jobDB.setJobAttributes(jobID_1, ['Status'], [JobStatus.CHECKING], True)
+  assert res['OK'] is True, res['Message']
   res = jobDB.setJobAttributes(jobID_1, ['Status'], [JobStatus.WAITING], True)
   assert res['OK'] is True, res['Message']
   res = jobDB.getJobAttribute(jobID_1, 'Status')
@@ -306,7 +314,16 @@ def test_attributes(putAndDelete):
   assert res['Value']['Status'] == JobStatus.RECEIVED
   res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == [JobStatus.MATCHED, JobStatus.RECEIVED]
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.MATCHED},
+      jobID_2: {'Status': JobStatus.RECEIVED}}
+
+  res = jobDB.setJobAttributes(jobID_2, ['Status'], [JobStatus.CHECKING], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobAttributes(jobID_2, ['Status'], [JobStatus.WAITING], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobAttributes(jobID_2, ['Status'], [JobStatus.MATCHED], True)
+  assert res['OK'] is True, res['Message']
 
   res = jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], [JobStatus.RUNNING, 'minor_2'], True)
   assert res['OK'] is True, res['Message']
@@ -324,11 +341,13 @@ def test_attributes(putAndDelete):
   res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
   assert res['OK'] is True, res['Message']
   assert res['Value']['Status'] == JobStatus.DONE
-  assert res['Value']['MinorStatus'] == 'minor_2'
+  assert res['Value']['MinorStatus'] == 'minor_3'
   res = jobDB.getJobAttributes(jobID_2, ['Status', 'MinorStatus'])
   assert res['OK'] is True, res['Message']
-  assert res['Value']['Status'] == JobStatus.COMPLETED
+  assert res['Value']['Status'] == JobStatus.RUNNING
   assert res['Value']['MinorStatus'] == 'minor_3'
   res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
   assert res['OK'] is True, res['Message']
-  assert res['Value'] == [JobStatus.DONE, JobStatus.COMPLETED]
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.DONE},
+      jobID_2: {'Status': JobStatus.RUNNING}}

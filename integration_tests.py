@@ -561,7 +561,7 @@ def _find_dirac_release_and_branch():
     try:
         upstream = repo.remote("upstream")
     except ValueError:
-	typer.secho("No upstream remote found, adding", err=True, fg=c.YELLOW)
+        typer.secho("No upstream remote found, adding", err=True, fg=c.YELLOW)
         upstream = repo.create_remote(
             "upstream", "https://github.com/DIRACGrid/DIRAC.git"
         )

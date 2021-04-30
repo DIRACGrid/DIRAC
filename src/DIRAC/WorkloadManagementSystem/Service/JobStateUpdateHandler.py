@@ -13,7 +13,6 @@ from __future__ import print_function
 
 import time
 import six
-from six.moves import range
 
 __RCSID__ = "$Id$"
 
@@ -51,11 +50,11 @@ class JobStateUpdateHandler(RequestHandler):
   @classmethod
   def export_updateJobFromStager(cls, jobID, status):
     """ Simple call back method to be used by the stager. """
-    if status == 'Done':
-      jobStatus = 'Checking'
+    if status == JobStatus.DONE:
+      jobStatus = JobStatus.CHECKING
       minorStatus = 'JobScheduling'
-    elif status == 'Failed':
-      jobStatus = 'Failed'
+    elif status == JobStatus.FAILED:
+      jobStatus = JobStatus.FAILED
       minorStatus = 'Staging input files failed'
     else:
       return S_ERROR("updateJobFromStager: %s status not known." % status)
@@ -70,12 +69,12 @@ class JobStateUpdateHandler(RequestHandler):
         # if there is no matching Job it returns an empty dictionary
         return S_OK('No Matching Job')
       status = result['Value']['Status']
-      if status == 'Staging':
+      if status == JobStatus.STAGING:
         if i:
           infoStr = "Found job in Staging after %d seconds" % i
         break
       time.sleep(1)
-    if status != 'Staging':
+    if status != JobStatus.STAGING:
       return S_OK('Job is not in Staging after %d seconds' % trials)
 
     result = cls.__setJobStatus(

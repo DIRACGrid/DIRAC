@@ -122,7 +122,11 @@ class WMSChain(TestWMSTestCase):
                      msg="Got %s" % str(res['Value']))
 
     # updating the status again
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.MATCHED, 'matching', 'source')
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.CHECKING, 'checking', 'source')
+    self.assertTrue(res['OK'], res.get('Message'))
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.WAITING, 'waiting', 'source')
+    self.assertTrue(res['OK'], res.get('Message'))
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.MATCHED, 'matched', 'source')
     self.assertTrue(res['OK'], res.get('Message'))
 
     # kill the job
@@ -131,18 +135,6 @@ class WMSChain(TestWMSTestCase):
     res = jobMonitor.getJobStatus(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(res['Value'], JobStatus.KILLED, msg="Got %s" % str(res['Value']))
-
-    # updating the status aaaagain
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.DONE, 'matching', 'source')
-    self.assertTrue(res['OK'], res.get('Message'))
-
-    # kill the job
-    res = wmsClient.killJob(jobID)
-    self.assertTrue(res['OK'], res.get('Message'))
-    res = jobMonitor.getJobStatus(jobID)
-    self.assertTrue(res['OK'], res.get('Message'))
-    # this time it won't kill... it's done!
-    self.assertEqual(res['Value'], JobStatus.DONE, msg="Got %s" % str(res['Value']))
 
     # delete the job - this will just set its status to "deleted"
     res = wmsClient.deleteJob(jobID)
@@ -379,12 +371,12 @@ class JobMonitoringMore(TestWMSTestCase):
     res = jobStateUpdate.setJobStatusBulk(
         jobID,
         {str(datetime.datetime.utcnow()): {
-	    'Status': JobStatus.MATCHED,
+            'Status': JobStatus.MATCHED,
             'MinorStatus': 'MinorStatus',
             'ApplicationStatus': 'ApplicationStatus',
             'Source': 'Unknown'},
          str(datetime.datetime.utcnow() + datetime.timedelta(hours=1)): {
-	    'Status': JobStatus.RUNNING,
+            'Status': JobStatus.RUNNING,
             'MinorStatus': 'MinorStatus',
             'ApplicationStatus': 'ApplicationStatus',
             'Source': 'Unknown'},
