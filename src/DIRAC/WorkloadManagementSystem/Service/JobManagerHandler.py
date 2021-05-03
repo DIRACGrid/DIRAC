@@ -230,8 +230,7 @@ class JobManagerHandler(RequestHandler):
       return S_ERROR(
           EWMSSUBM, 'Requested jobs for bulk transaction are not valid')
 
-    result = self.jobDB.getAttributesForJobList(
-        jobList, ['Status', 'MinorStatus'])
+    result = self.jobDB.getJobsAttributes(jobList, ['Status', 'MinorStatus'])
     if not result['OK']:
       return S_ERROR(
           EWMSSUBM, 'Requested jobs for bulk transaction are not valid')
@@ -498,7 +497,7 @@ class JobManagerHandler(RequestHandler):
 
     if validJobList:
       # Get job status to see what is to be killed or deleted
-      result = self.jobDB.getAttributesForJobList(validJobList, ['Status'])
+      result = self.jobDB.getJobsAttributes(validJobList, ['Status'])
       if not result['OK']:
         return result
       killJobList = []
@@ -506,9 +505,18 @@ class JobManagerHandler(RequestHandler):
       markKilledJobList = []
       stagingJobList = []
       for jobID, sDict in result['Value'].items():  # can be an iterator
-        if sDict['Status'] in (JobStatus.RUNNING, JobStatus.MATCHED, JobStatus.STALLED):
+        if sDict['Status'] in (JobStatus.RUNNING,
+                               JobStatus.MATCHED,
+                               JobStatus.STALLED):
           killJobList.append(jobID)
-        elif sDict['Status'] in (JobStatus.DONE, JobStatus.FAILED, JobStatus.KILLED):
+        elif sDict['Status'] in (JobStatus.SUBMITTING,
+                                 JobStatus.RECEIVED,
+                                 JobStatus.CHECKING,
+                                 JobStatus.WAITING,
+                                 JobStatus.RESCHEDULED,
+                                 JobStatus.DONE,
+                                 JobStatus.FAILED,
+                                 JobStatus.KILLED):
           if not right == RIGHT_KILL:
             deleteJobList.append(jobID)
         else:
