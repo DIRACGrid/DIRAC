@@ -166,11 +166,12 @@ class WMSChain(TestWMSTestCase):
     self.assertEqual(set(jobNames), set(['parametric_helloWorld_%s' % nJob for nJob in range(3)]))
 
     for jobID in jobIDList:
-      res = jobStateUpdate.setJobStatus(jobID, JobStatus.DONE, 'matching', 'source')
+      res = jobStateUpdate.setJobStatus(jobID, JobStatus.CHECKING, 'checking', 'source')
       self.assertTrue(res['OK'], res.get('Message'))
 
     res = wmsClient.deleteJob(jobIDList)
     self.assertTrue(res['OK'], res.get('Message'))
+    print(res)
 
     for jobID in jobIDList:
       res = jobMonitor.getJobStatus(jobID)
@@ -207,7 +208,13 @@ class JobMonitoring(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
 
     # Adding stuff
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.MATCHED, 'matching', 'source')
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.CHECKING, 'checking', 'source')
+    self.assertTrue(res['OK'], res.get('Message'))
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.WAITING, 'waiting', 'source')
+    self.assertTrue(res['OK'], res.get('Message'))
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.MATCHED, 'matched', 'source')
+    self.assertTrue(res['OK'], res.get('Message'))
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.RUNNING, 'running', 'source')
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobParameters(jobID, [('par1', 'par1Value'), ('par2', 'par2Value')])
     time.sleep(5)
@@ -486,6 +493,8 @@ class Matcher (TestWMSTestCase):
 
     jobID = res['Value']
 
+    res = JobStateUpdateClient().setJobStatus(jobID, JobStatus.CHECKING, 'matching', 'source')
+    self.assertTrue(res['OK'], res.get('Message'))
     res = JobStateUpdateClient().setJobStatus(jobID, JobStatus.WAITING, 'matching', 'source')
     self.assertTrue(res['OK'], res.get('Message'))
 
