@@ -280,7 +280,10 @@ class JobDB(DB):
         Return a dictionary with all Job Attributes as value pairs
     """
 
-    # If no list is given, return all attributes
+    if not jobIDs:
+      return S_OK({})
+
+    # If no list of attributes is given, return all attributes
     if not attrList:
       attrList = self.jobAttributeNames
     if isinstance(attrList, six.string_types):
@@ -288,7 +291,7 @@ class JobDB(DB):
     attrList.sort()
 
     if isinstance(jobIDs, six.string_types):
-      jobIDs = jobIDs.replace(' ', '').split(',')
+      jobIDs = [int(jID) for jID in jobIDs.replace(' ', '').split(',')]
     if isinstance(jobIDs, int):
       jobIDs = [jobIDs]
 

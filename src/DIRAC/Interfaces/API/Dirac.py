@@ -1667,7 +1667,10 @@ class Dirac(API):
        Example Usage:
 
        >>> print dirac.getJobStatus(79241)
-       {79241: {'status': 'Done', 'site': 'LCG.CERN.ch'}}
+       {79241: {'Status': 'Done',
+                'MinorStatus': 'Execution Complete',
+                'ApplicationStatus': 'some app status'
+                'Site': 'LCG.CERN.ch'}}
 
        :param jobID: JobID
        :type jobID: int, str or python:list
@@ -1679,34 +1682,28 @@ class Dirac(API):
     jobID = ret['Value']
 
     monitoring = JobMonitoringClient()
-    statusDict = monitoring.getJobsStatus(jobID)
-    minorStatusDict = monitoring.getJobsMinorStatus(jobID)
-    siteDict = monitoring.getJobsSites(jobID)
-
-    if not statusDict['OK']:
+    res = monitoring.getJobsStates(jobID)
+    if not res['OK']:
       self.log.warn('Could not obtain job status information')
-      return statusDict
-    if not siteDict['OK']:
+      return res
+    statusDict = res['Value']
+
+    res = monitoring.getJobsSites(jobID)
+    if not res['OK']:
       self.log.warn('Could not obtain job site information')
-      return siteDict
-    if not minorStatusDict['OK']:
-      self.log.warn('Could not obtain job minor status information')
-      return minorStatusDict
+      return res
+    siteDict = res['Value']
 
     result = {}
     repoDict = {}
-    for job, vals in statusDict['Value'].items():  # can be an iterator
+    for job, vals in statusDict.items():  # can be an iterator
       result[job] = vals
       if self.jobRepo:
         repoDict[job] = {'State': vals['Status']}
     if self.jobRepo:
       self.jobRepo.updateJobs(repoDict)
-    for job, vals in siteDict['Value'].items():  # can be an iterator
+    for job, vals in siteDict.items():  # can be an iterator
       result[job].update(vals)
-    for job, vals in minorStatusDict['Value'].items():  # can be an iterator
-      result[job].update(vals)
-    for job in result:
-      result[job].pop('JobID', None)
 
     return S_OK(result)
 
