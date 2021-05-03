@@ -72,7 +72,7 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
-from DIRAC.WorkloadManagementSystem.Client.JobStatus import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 __RCSID__ = "$Id$"
@@ -218,7 +218,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.allFilesMissing() and \
                           not job.otherTasks and \
-                          job.status == JobStatus.FAILED and \
+                          job.status == JobStatus.DONE and \
                           job.allFilesAssigned() and \
                           not set(job.inputFiles).issubset(self.inputFilesProcessed) and \
                           job.allInputFilesExist(),

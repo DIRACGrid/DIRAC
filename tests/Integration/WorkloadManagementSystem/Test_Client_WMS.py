@@ -111,7 +111,7 @@ class WMSChain(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobsStatus(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value'], JobStatus.RECEIVED, msg="Got %s" % str(res['Value']))
+    self.assertEqual(res['Value'][jobID]['Status'], JobStatus.RECEIVED, msg="Got %s" % str(res['Value']))
     res = jobMonitor.getJobsMinorStatus([jobID])
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(res['Value'], {jobID: {'MinorStatus': 'Job Rescheduled'}},
@@ -140,14 +140,14 @@ class WMSChain(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobsStatus(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value'], JobStatus.KILLED, msg="Got %s" % str(res['Value']))
+    self.assertEqual(res['Value'][jobID]['Status'], JobStatus.KILLED, msg="Got %s" % str(res['Value']))
 
     # delete the job - this will just set its status to "deleted"
     res = wmsClient.deleteJob(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobsStatus(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value'], JobStatus.DELETED, msg="Got %s" % str(res['Value']))
+    self.assertEqual(res['Value'][jobID]['Status'], JobStatus.DELETED, msg="Got %s" % str(res['Value']))
 
   def test_ParametricChain(self):
     """ This test will submit a parametric job which should generate 3 actual jobs
@@ -182,7 +182,7 @@ class WMSChain(TestWMSTestCase):
     for jobID in jobIDList:
       res = jobMonitor.getJobsStatus(jobID)
       self.assertTrue(res['OK'], res.get('Message'))
-      self.assertEqual(res['Value'], JobStatus.DELETED, msg="Got %s" % str(res['Value']))
+      self.assertEqual(res['Value'][jobID]['Status'], JobStatus.DELETED, msg="Got %s" % str(res['Value']))
 
 
 class JobMonitoring(TestWMSTestCase):
@@ -209,17 +209,13 @@ class JobMonitoring(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobsParameters([jobID], [])
     self.assertTrue(res['OK'], res.get('Message'))
-    res = jobMonitor.getJobOwner([jobID])
+    res = jobMonitor.getJobOwner(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
 
     # Adding stuff
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.CHECKING, 'checking', 'source')
-    self.assertTrue(res['OK'], res.get('Message'))
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.WAITING, 'waiting', 'source')
-    self.assertTrue(res['OK'], res.get('Message'))
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.MATCHED, 'matched', 'source')
-    self.assertTrue(res['OK'], res.get('Message'))
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.RUNNING, 'running', 'source')
+
+    # forcing the update
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.CHECKING, 'checking', 'source', True)
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobParameters(jobID, [('par1', 'par1Value'), ('par2', 'par2Value')])
     time.sleep(5)
@@ -236,7 +232,7 @@ class JobMonitoring(TestWMSTestCase):
     # now checking few things
     res = jobMonitor.getJobsStatus(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value'], JobStatus.RUNNING, msg="Got %s" % str(res['Value']))
+    self.assertEqual(res['Value'][jobID]['Status'], JobStatus.RUNNING, msg="Got %s" % str(res['Value']))
     res = jobMonitor.getJobParameter(jobID, 'par1')
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(res['Value'], {'par1': 'par1Value'}, msg="Got %s" % str(res['Value']))

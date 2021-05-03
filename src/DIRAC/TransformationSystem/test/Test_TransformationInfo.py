@@ -226,7 +226,7 @@ def test_updateJobStatus(tiFixture):
   res = tiFixture._TransformationInfo__updateJobStatus(1234, 'Failed', minorstatus=None)
   assert res['OK']
   assert res['Value'] == 'added record'
-  tiFixture.jobStateClient.setJobStatus.assert_called_once_with(1234, 'Failed', None, 'DataRecoveryAgent')
+  tiFixture.jobStateClient.setJobStatus.assert_called_once_with(1234, 'Failed', None, 'DataRecoveryAgent', True)
 
   tiFixture.jobStateClient.setJobStatus.return_value = S_ERROR('Error setting job status')
   tiFixture.enabled = True

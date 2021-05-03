@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import UserProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
-from DIRAC.WorkloadManagementSystem.Client.JobStatus import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 __RCSID__ = "$Id$"
@@ -104,7 +104,7 @@ class TransformationInfo(object):
     """Update the job status."""
     if self.enabled:
       source = 'DataRecoveryAgent'
-      result = self.jobStateClient.setJobStatus(jobID, status, minorstatus, source)
+      result = self.jobStateClient.setJobStatus(jobID, status, minorstatus, source, True)
     else:
       return S_OK('DisabledMode')
     if not result['OK']:

@@ -99,9 +99,10 @@ class JobStateUpdateHandler(RequestHandler):
                           source='Unknown',
                           datetime=None,
                           force=False):
-    """ Set the major and minor status for job specified by its JobId.
-        Set optionally the status date and source component which sends the
-        status information.
+    """
+    Sets the major and minor status for job specified by its JobId.
+    Sets optionally the status date and source component which sends the status information.
+    The "force" flag will override the WMS state machine decision.
     """
     return cls.__setJobStatus(int(jobID),
                               status=status,
