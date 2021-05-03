@@ -553,9 +553,11 @@ which will give you a full dockerized server setup (`docker container ls` will l
 
 .. code-block:: bash
 
-    docker exec -it -e=TERM=xterm-color -e=INSTALLROOT=/home/dirac -e=INSTALLTYPE=server -u=dirac -w=/home/dirac server /bin/bash
-    cd $INSTALLROOT
-    source ServerInstallDIR/bashrc
+    ./integration_tests.py exec-server
+
+If you're using Python 2 you will also need to copy the test code (Python 3 installations automatically pick up external changes to the DIRAC code and tests):
+
+.. code-block:: bash
     cp -r TestCode/DIRAC/tests/ ServerInstallDIR/DIRAC/
 
 and then run the test with:
