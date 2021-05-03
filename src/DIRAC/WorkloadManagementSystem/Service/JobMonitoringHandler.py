@@ -66,10 +66,10 @@ class JobMonitoringHandler(RequestHandler):
     return S_OK()
 
   @classmethod
-  def getAttributesForJobList(cls, *args, **kwargs):
+  def getJobsAttributes(cls, *args, **kwargs):
     """ Utility function for unpacking
     """
-    res = cls.jobDB.getAttributesForJobList(*args, **kwargs)
+    res = cls.jobDB.getJobsAttributes(*args, **kwargs)
     if not res['OK']:
       return res
     return S_OK(strToIntDict(res['Value']))
@@ -289,7 +289,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobsParameters(cls, jobIDs, parameters):
     if not (jobIDs and parameters):
       return S_OK({})
-    return cls.getAttributesForJobList(jobIDs, parameters)
+    return cls.getJobsAttributes(jobIDs, parameters)
 
 ##############################################################################
   types_getJobsStatus = [list]
@@ -299,7 +299,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobsStatus(cls, jobIDs):
     if not jobIDs:
       return S_OK({})
-    return cls.getAttributesForJobList(jobIDs, ['Status'])
+    return cls.getJobsAttributes(jobIDs, ['Status'])
 
 ##############################################################################
   types_getJobsMinorStatus = [list]
@@ -308,7 +308,7 @@ class JobMonitoringHandler(RequestHandler):
   @ignoreEncodeWarning
   def export_getJobsMinorStatus(cls, jobIDs):
 
-    return cls.getAttributesForJobList(jobIDs, ['MinorStatus'])
+    return cls.getJobsAttributes(jobIDs, ['MinorStatus'])
 
 ##############################################################################
   types_getJobsApplicationStatus = [list]
@@ -317,7 +317,7 @@ class JobMonitoringHandler(RequestHandler):
   @ignoreEncodeWarning
   def export_getJobsApplicationStatus(cls, jobIDs):
 
-    return cls.getAttributesForJobList(jobIDs, ['ApplicationStatus'])
+    return cls.getJobsAttributes(jobIDs, ['ApplicationStatus'])
 
 ##############################################################################
   types_getJobsSites = [list]
@@ -326,7 +326,7 @@ class JobMonitoringHandler(RequestHandler):
   @ignoreEncodeWarning
   def export_getJobsSites(cls, jobIDs):
 
-    return cls.getAttributesForJobList(jobIDs, ['Site'])
+    return cls.getJobsAttributes(jobIDs, ['Site'])
 
 ##############################################################################
   types_getJobSummary = [int]
@@ -351,7 +351,7 @@ class JobMonitoringHandler(RequestHandler):
     if not jobIDs:
       return S_ERROR('JobMonitoring.getJobsSummary: Received empty job list')
 
-    result = cls.getAttributesForJobList(jobIDs, SUMMARY)
+    result = cls.getJobsAttributes(jobIDs, SUMMARY)
     return S_OK(str(result['Value']))
 
 ##############################################################################
@@ -435,7 +435,7 @@ class JobMonitoringHandler(RequestHandler):
                                                                                            RIGHT_GET_INFO)
         summaryJobList = validJobs
 
-      result = self.getAttributesForJobList(summaryJobList, SUMMARY)
+      result = self.getJobsAttributes(summaryJobList, SUMMARY)
       if not result['OK']:
         return S_ERROR('Failed to get job summary: ' + result['Message'])
 
@@ -519,7 +519,7 @@ class JobMonitoringHandler(RequestHandler):
   @classmethod
   @ignoreEncodeWarning
   def export_getJobsPrimarySummary(cls, jobIDs):
-    return cls.getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
+    return cls.getJobsAttributes(jobIDs, PRIMARY_SUMMARY)
 
 ##############################################################################
   types_getJobParameter = [six.string_types + six.integer_types, six.string_types]

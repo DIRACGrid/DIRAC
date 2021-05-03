@@ -35,6 +35,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJERR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -119,6 +120,7 @@ class JobDB(DB):
     return S_OK()
 
 #############################################################################
+  @deprecated("Use getJobsAttributes")
   def getAttributesForJobList(self, jobIDList, attrList=None):
     """ Get attributes for the jobs in the the jobIDList.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
