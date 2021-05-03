@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import UserProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
+from DIRAC.WorkloadManagementSystem.Client.JobStatus import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 __RCSID__ = "$Id$"
@@ -57,16 +58,16 @@ class TransformationInfo(object):
     if not self.enabled:
       return
     self.__setTaskStatus(job, 'Done')
-    if job.status != 'Done':
-      self.__updateJobStatus(job.jobID, 'Done', "Job forced to Done")
+    if job.status != JobStatus.DONE:
+      self.__updateJobStatus(job.jobID, JobStatus.DONE, "Job forced to Done")
 
   def setJobFailed(self, job):
     """ set the taskID to Done"""
     if not self.enabled:
       return
     self.__setTaskStatus(job, 'Failed')
-    if job.status != 'Failed':
-      self.__updateJobStatus(job.jobID, "Failed", "Job forced to Failed")
+    if job.status != JobStatus.FAILED:
+      self.__updateJobStatus(job.jobID, JobStatus.FAILED, "Job forced to Failed")
 
   def setInputUnused(self, job):
     """Set the inputfiles to unused"""
@@ -173,21 +174,21 @@ class TransformationInfo(object):
     done = S_OK([])
     failed = S_OK([])
     if statusList is None:
-      statusList = ['Done', 'Failed']
+      statusList = [JobStatus.DONE, JobStatus.FAILED]
     if 'Done' in statusList:
       self.log.notice("Getting 'Done' Jobs...")
-      done = self.__getJobs(["Done"])
+      done = self.__getJobs([JobStatus.DONE])
     if 'Failed' in statusList:
       self.log.notice("Getting 'Failed' Jobs...")
-      failed = self.__getJobs(["Failed"])
+      failed = self.__getJobs([JobStatus.FAILED])
     done = done['Value']
     failed = failed['Value']
 
     jobsUnsorted = {}
     for job in done:
-      jobsUnsorted[int(job)] = JobInfo(job, "Done", self.tID, self.transType)
+      jobsUnsorted[int(job)] = JobInfo(job, JobStatus.DONE, self.tID, self.transType)
     for job in failed:
-      jobsUnsorted[int(job)] = JobInfo(job, "Failed", self.tID, self.transType)
+      jobsUnsorted[int(job)] = JobInfo(job, JobStatus.FAILED, self.tID, self.transType)
     jobs = OrderedDict(sorted(jobsUnsorted.items(), key=lambda t: t[0]))
 
     self.log.notice("Found %d Done Jobs " % len(done))

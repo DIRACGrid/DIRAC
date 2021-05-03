@@ -547,7 +547,7 @@ class JobDB(DB):
     return S_OK([self._to_value(i) for i in res['Value']])
 
 #############################################################################
-  def setJobAttribute(self, jobID, attrName, attrValue, update=False, myDate=None):
+  def setJobAttribute(self, jobID, attrName, attrValue, update=False, myDate=None, force=False):
     """ Set an attribute value for job specified by jobID.
         The LastUpdate time stamp is refreshed if explicitly requested
 
@@ -564,6 +564,18 @@ class JobDB(DB):
     if attrName not in self.jobAttributeNames:
       return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
 
+    if attrName == 'Status':
+      # Treat this update separately
+      res = self.setJobsMajorStatus([jobID], attrValue, force=force)
+      if not res['OK']:
+        return res
+      if update:
+        cmd = "UPDATE Jobs SET LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % jobID
+      if myDate:
+        cmd += ' AND LastUpdateTime < %s' % myDate
+      return self._update(cmd)
+
+    # if we are here it's because we are not updating the status
     ret = self._escapeString(jobID)
     if not ret['OK']:
       return ret
@@ -585,7 +597,7 @@ class JobDB(DB):
     return self._update(cmd)
 
 #############################################################################
-  def setJobAttributes(self, jobID, attrNames, attrValues, update=False, myDate=None):
+  def setJobAttributes(self, jobID, attrNames, attrValues, update=False, myDate=None, force=False):
     """ Set one or more attribute values for one or more jobs specified by jobID.
         The LastUpdate time stamp is refreshed if explicitly requested with the update flag
 
@@ -623,7 +635,9 @@ class JobDB(DB):
 
     if 'Status' in attrNames:
       # Treat this update separately
-      self.setJobsMajorStatus(jIDList, attrValues[attrNames.index('Status')])
+      res = self.setJobsMajorStatus(jIDList, attrValues[attrNames.index('Status')], force=force)
+      if not res['OK']:
+        return res
       attrValues.pop(attrNames.index('Status'))
       attrNames.remove('Status')
 
@@ -646,7 +660,7 @@ class JobDB(DB):
 
     return self._update(cmd)
 
-  def setJobsMajorStatus(self, jIDList, candidateStatus):
+  def setJobsMajorStatus(self, jIDList, candidateStatus, force=False):
     """
     Sets jobs major status, considering the JobStateMachine result
 
@@ -662,17 +676,20 @@ class JobDB(DB):
 
     newStatuses = {}
     for jID, jIDStatus in jIDStatusDict.items():
-      res = JobStatus.JobsStateMachine(jIDStatus['Status']).getNextState(candidateStatus)
-      if not res['OK']:
-        return res
-      nextState = res['Value']
+      if force:
+        nextState = candidateStatus
+      else:
+        res = JobStatus.JobsStateMachine(jIDStatus['Status']).getNextState(candidateStatus)
+        if not res['OK']:
+          return res
+        nextState = res['Value']
 
-      # If the JobsStateMachine does not accept the candidate, add it to separate dictionary
-      if candidateStatus != nextState:
-        self.log.error(
-            "Job Status Error",
-            "%s can't move from %s to %s: using %s" % (
-                jID, jIDStatus['Status'], candidateStatus, nextState))
+        # If the JobsStateMachine does not accept the candidate, add it to separate dictionary
+        if candidateStatus != nextState:
+          self.log.error(
+              "Job Status Error",
+              "%s can't move from %s to %s: using %s" % (
+                  jID, jIDStatus['Status'], candidateStatus, nextState))
 
       newStatuses[jID] = nextState
 

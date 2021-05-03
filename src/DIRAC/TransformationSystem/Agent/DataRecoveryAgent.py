@@ -48,7 +48,8 @@ Requirements/Assumptions:
 
 .. note::
 
-  For the ``TransformationsNoInput`` or ``TransformationsWithInput`` to take their default value, the options need to be
+  For the ``TransformationsNoInput`` or ``TransformationsWithInput``
+  to take their default value, the options need to be
   removed from the configuration, otherwise no transformations of this type will be treated.
 
 """
@@ -71,6 +72,7 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
+from DIRAC.WorkloadManagementSystem.Client.JobStatus import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 __RCSID__ = "$Id$"
@@ -91,7 +93,9 @@ class DataRecoveryAgent(AgentModule):
 
     self.__getCSOptions()
 
-    self.jobStatus = ['Failed', 'Done']  # This needs to be both otherwise we cannot account for all cases
+    # This needs to be both otherwise we cannot account for all cases
+    self.jobStatus = [JobStatus.DONE,
+                      JobStatus.FAILED]
 
     self.jobMon = JobMonitoringClient()
     self.fcClient = FileCatalogClient()
@@ -103,13 +107,13 @@ class DataRecoveryAgent(AgentModule):
                  [dict(Message="NoInputFiles: OutputExists: Job 'Done'",
                        ShortMessage="NoInputFiles: job 'Done' ",
                        Counter=0,
-                       Check=lambda job: job.allFilesExist() and job.status == 'Failed',
+                       Check=lambda job: job.allFilesExist() and job.status == JobStatus.FAILED,
                        Actions=lambda job, tInfo: [job.setJobDone(tInfo)],
                        ),
                   dict(Message="NoInputFiles: OutputMissing: Job 'Failed'",
                        ShortMessage="NoInputFiles: job 'Failed' ",
                        Counter=0,
-                       Check=lambda job: job.allFilesMissing() and job.status == 'Done',
+                       Check=lambda job: job.allFilesMissing() and job.status == JobStatus.DONE,
                        Actions=lambda job, tInfo: [job.setJobFailed(tInfo)],
                        ),
                   ],
@@ -129,7 +133,7 @@ class DataRecoveryAgent(AgentModule):
                           ShortMessage="Other Tasks --> Fail",
                           Counter=0,
                           Check=lambda job: set(job.inputFiles).issubset(self.inputFilesProcessed) and \
-                          job.allFilesMissing() and job.status != 'Failed',
+                          job.allFilesMissing() and job.status != JobStatus.FAILED,
                           Actions=lambda job, tInfo: [job.setJobFailed(tInfo)]
                           ),
                      dict(Message="Other Task processed Input: Fail and clean",
@@ -160,7 +164,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.allFilesExist() and \
                           not job.otherTasks and \
-                          job.status == 'Failed' and \
+                          job.status == JobStatus.FAILED and \
                           not job.allFilesProcessed() and \
                           job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.setJobDone(tInfo), job.setInputProcessed(tInfo)]
@@ -170,7 +174,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.allFilesExist() and \
                           not job.otherTasks and \
-                          job.status == 'Failed' and \
+                          job.status == JobStatus.FAILED and \
                           job.allFilesProcessed() and \
                           job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.setJobDone(tInfo)]
@@ -180,7 +184,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.allFilesExist() and \
                           not job.otherTasks and \
-                          job.status == 'Done' and \
+                          job.status == JobStatus.DONE and \
                           not job.allFilesProcessed() and \
                           job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.setInputProcessed(tInfo)]
@@ -191,7 +195,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.allFilesMissing() and \
                           not job.otherTasks and \
-                          job.status == 'Failed' and \
+                          job.status == JobStatus.FAILED and \
                           job.allFilesAssigned() and \
                           not set(job.inputFiles).issubset(self.inputFilesProcessed) and \
                           job.allInputFilesExist() and \
@@ -203,7 +207,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.allFilesMissing() and \
                           not job.otherTasks and \
-                          job.status == 'Failed' and \
+                          job.status == JobStatus.FAILED and \
                           job.allFilesAssigned() and \
                           not set(job.inputFiles).issubset(self.inputFilesProcessed) and \
                           job.allInputFilesExist(),
@@ -214,7 +218,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.allFilesMissing() and \
                           not job.otherTasks and \
-                          job.status == 'Done' and \
+                          job.status == JobStatus.FAILED and \
                           job.allFilesAssigned() and \
                           not set(job.inputFiles).issubset(self.inputFilesProcessed) and \
                           job.allInputFilesExist(),
@@ -230,7 +234,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.someFilesMissing() and \
                           not job.otherTasks and \
-                          job.status == 'Failed' and \
+                          job.status == JobStatus.FAILED and \
                           job.allFilesAssigned() and \
                           job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.cleanOutputs(tInfo), job.setInputUnused(tInfo)]
@@ -240,7 +244,7 @@ class DataRecoveryAgent(AgentModule):
                           Counter=0,
                           Check=lambda job: job.someFilesMissing() and \
                           not job.otherTasks and \
-                          job.status == 'Done' and \
+                          job.status == JobStatus.DONE and \
                           job.allFilesAssigned() and \
                           job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [
@@ -255,7 +259,7 @@ class DataRecoveryAgent(AgentModule):
                      dict(Message="Something Strange",
                           ShortMessage="Strange",
                           Counter=0,
-                          Check=lambda job: job.status not in ("Failed", "Done"),
+                          Check=lambda job: job.status not in (JobStatus.FAILED, JobStatus.DONE),
                           Actions=lambda job, tInfo: []
                           ),
                      # should always be the last one!

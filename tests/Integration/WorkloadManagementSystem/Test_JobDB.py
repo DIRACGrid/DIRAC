@@ -233,8 +233,6 @@ def test_setJobsMajorStatus(putAndDelete):
       jobID_1: {'Status': JobStatus.CHECKING},
       jobID_2: {'Status': JobStatus.CHECKING}}
 
-  [JobStatus.CHECKING, JobStatus.CHECKING]
-
   res = jobDB.setJobsMajorStatus([jobID_1, jobID_2], JobStatus.RUNNING)
   assert res['OK'] is True, res['Message']
   res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
@@ -249,6 +247,22 @@ def test_setJobsMajorStatus(putAndDelete):
   assert res['OK'] is True, res['Message']
   assert res['Value'] == {
       jobID_1: {'Status': JobStatus.WAITING},
+      jobID_2: {'Status': JobStatus.CHECKING}}
+
+  res = jobDB.setJobsMajorStatus([jobID_1], JobStatus.KILLED)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.WAITING},
+      jobID_2: {'Status': JobStatus.CHECKING}}
+
+  res = jobDB.setJobsMajorStatus([jobID_1], JobStatus.KILLED, force=True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.KILLED},
       jobID_2: {'Status': JobStatus.CHECKING}}
 
 
