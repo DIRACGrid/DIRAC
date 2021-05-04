@@ -18,41 +18,7 @@ pprint.pprint(gConfig.getOptionsDictRecursively('/'))
 db = AuthDB()
 
 
-def test_Clients(self):
-  """ Try to store/get/remove Clients
-  """
-  # Example of client credentials
-  data = {'client_id': 'egfy1547e15s2ReUr0IsolS2O0gPcQuLSWWulBWaH6g',
-          'client_id_issued_at': 1614204041,
-          'client_metadata': {'grant_types': ['authorization_code',
-                                              'refresh_token'],
-                              'redirect_uris': ['https://marosvn32.in2p3.fr/DIRAC',
-                                                'https://marosvn32.in2p3.fr/DIRAC/loginComplete'],
-                              'response_types': ['token', 'id_token token', 'code'],
-                              'token_endpoint_auth_method': 'client_secret_basic'},
-          'client_secret': '90092079a217f7f30930b1d981a2f426ff4fa90bb4698d736',
-          'client_secret_expires_at': 0}
-
-  # Add client
-  result = db.addClient(data)
-  assert result['OK']
-  assert result['Value'] == data
-
-  # Get Client
-  result = db.getClient(data['client_id'])
-  assert result['OK']
-  assert result['Value'] == data
-
-  # Remove Client
-  result = db.removeClient(data['client_id'])
-  assert result['OK']
-
-  # Make sure that the Client is absent
-  result = db.getClient(data['client_id'])
-  assert result['OK']
-
-
-def test_Tokens(self):
+def test_Tokens():
   """ Try to store/get/remove Tokens
   """
   # Example of the new token metadata
@@ -79,30 +45,47 @@ def test_Tokens(self):
             'token_type': 'Bearer',
             'user_id': '97fadf63e5123358a4f084e4c136475e377357c6723269f23eb9aba437fd6d9d@egi.eu'}
 
+  # Remove token
+  db.removeToken(tData1['access_token'])
+  db.removeToken(tData2['access_token'])
+
   # Add token
   result = db.storeToken(tData1)
-  assert result['OK']
+  assert result['OK'], result['Message']
 
   # Get token
   result = db.getTokenByUserIDAndProvider(tData1['user_id'], tData1['provider'])
-  assert result['OK']
-  assert result['Value'] == tData1
+  assert result['OK'], result['Message']
+  assert result['Value']['refresh_token'] == tData1['refresh_token']
+  assert result['Value']['access_token'] == tData1['access_token']
 
   # Update token
   result = db.updateToken(tData2, tData1['refresh_token'])
-  assert result['OK']
-  assert result['Value'] == tData2
+  assert result['OK'], result['Message']
+
+  # Get token
+  result = db.getTokenByUserIDAndProvider(tData1['user_id'], tData1['provider'])
+  assert result['OK'], result['Message']
+  assert result['Value']['refresh_token'] == tData2['refresh_token']
+  assert result['Value']['access_token'] == tData2['access_token']
 
   # Get token
   result = db.getIdPTokens(tData2['provider'])
-  assert result['OK']
-  assert tData2 in result['Value']
-  assert tData1 not in result['Value']
+  assert result['OK'], result['Message']
+  aTokens = []
+  for token in result['Value']:
+    aTokens.append(token['access_token'])
+  assert tData2['access_token'] in aTokens
+  assert tData1['access_token'] not in aTokens
 
   # Remove token
   result = db.removeToken(tData2['access_token'])
-  assert result['OK']
+  assert result['OK'], result['Message']
 
   # Make sure that the Client is absent
   result = db.getIdPTokens(tData2['provider'])
-  assert not result['OK']
+  assert result['OK'], result['Message']
+  aTokens = []
+  for token in result['Value']:
+    aTokens.append(token['access_token'])
+  assert tData2['access_token'] not in aTokens

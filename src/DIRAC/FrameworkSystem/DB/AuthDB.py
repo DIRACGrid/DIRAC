@@ -23,69 +23,13 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getAuthClients
 __RCSID__ = "$Id$"
 
 
-# Next two classes to help sqlalchemy work with dicts
-# https://docs.sqlalchemy.org/en/14/orm/extensions/mutable.html#establishing-mutability-on-scalar-column-values
-class MutableDict(Mutable, dict):
-  @classmethod
-  def coerce(cls, key, value):
-    "Convert plain dictionaries to MutableDict."
-
-    if not isinstance(value, MutableDict):
-      if isinstance(value, dict):
-        return MutableDict(value)
-
-      # this call will raise ValueError
-      return Mutable.coerce(key, value)
-    else:
-      return value
-
-  def __setitem__(self, key, value):
-    "Detect dictionary set events and emit change events."
-
-    dict.__setitem__(self, key, value)
-    self.changed()
-
-  def __delitem__(self, key):
-    "Detect dictionary del events and emit change events."
-
-    dict.__delitem__(self, key)
-    self.changed()
-
-
-class JSONEncodedDict(TypeDecorator):
-  "Represents an immutable structure as a json-encoded string."
-
-  impl = VARCHAR(255)
-
-  def process_bind_param(self, value, dialect):
-    if value is not None:
-      value = json.dumps(value)
-    return value
-
-  def process_result_value(self, value, dialect):
-    if value is not None:
-      value = json.loads(value)
-    return value
-
-
 Model = declarative_base()
-
-
-class Client(Model, OAuth2ClientMixin):
-  __tablename__ = 'Clients'
-  __table_args__ = {'mysql_engine': 'InnoDB',
-                    'mysql_charset': 'utf8'}
-  id = Column(Integer, primary_key=True, nullable=False)
-  # Parameter names must match field names to avoid AttributeError exception
-  client_metadata = Column('client_metadata', MutableDict.as_mutable(JSONEncodedDict))
-  _client_metadata = None
 
 
 class Token(Model, OAuth2TokenMixin):
   __tablename__ = 'Tokens'
   __table_args__ = {'mysql_engine': 'InnoDB',
                     'mysql_charset': 'utf8'}
-  id = Column(BigInteger, unique=True, primary_key=True, nullable=False)
   # access_token too large for varchar(255)
   # 767 bytes is the stated prefix limitation for InnoDB tables in MySQL version 5.6
   # https://stackoverflow.com/questions/1827063/mysql-error-key-specification-without-a-key-length
@@ -93,12 +37,12 @@ class Token(Model, OAuth2TokenMixin):
   # client_id too large
   client_id = Column(String(255))
   provider = Column(Text)
-  user_id = Column(String(255), nullable=False)
+  user_id = Column(String(255), nullable=False, unique=True, primary_key=True)
   expires_at = Column(Integer, nullable=False, default=0)
   id_token = Column(Text, nullable=False)
 
 
-class Session(Model):
+class AuthSession(Model):
   __tablename__ = 'Sessions'
   __table_args__ = {'mysql_engine': 'InnoDB',
                     'mysql_charset': 'utf8'}
@@ -116,6 +60,7 @@ class Session(Model):
   user_code = Column(String(255))
   device_code = Column(String(255))
   scope = Column(String(255))
+
 
 class AuthDB(SQLAlchemyDB):
   """ AuthDB class is a front-end to the OAuth Database
@@ -136,13 +81,6 @@ class AuthDB(SQLAlchemyDB):
     """
     tablesInDB = self.inspector.get_table_names()
 
-    # Clients
-    if 'Clients' not in tablesInDB:
-      try:
-        Client.__table__.create(self.engine)  # pylint: disable=no-member
-      except Exception as e:
-        return S_ERROR(e)
-
     # Tokens
     if 'Tokens' not in tablesInDB:
       try:
@@ -153,85 +91,11 @@ class AuthDB(SQLAlchemyDB):
     # Sessions
     if 'Sessions' not in tablesInDB:
       try:
-        Session.__table__.create(self.engine)  # pylint: disable=no-member
+        AuthSession.__table__.create(self.engine)  # pylint: disable=no-member
       except Exception as e:
         return S_ERROR(e)
 
     return S_OK()
-
-  def addClient(self, data):
-    """ Add new client
-
-        :param dict data: client metadata
-
-        :return: S_OK(dict)/S_ERROR()
-    """
-    print('============ addClient ============')
-    pprint(data)
-    session = self.session()
-    client = Client(**data)
-    print('------ client')
-    pprint(client.client_metadata)
-    client.set_client_metadata(data['client_metadata'])
-    pprint(client.client_metadata)
-    print('-------------')
-
-    try:
-      res = client.client_info
-      res['client_metadata'] = client.client_metadata
-      pprint(res)
-      session.add(client)
-      print('======== session.add(client)')
-      pprint(res)
-    except Exception as e:
-      return self.__result(session, S_ERROR('Could not add Client: %s' % e))
-    return self.__result(session, S_OK(res))
-
-  def removeClient(self, clientID):
-    """ Remove client
-
-        :param str clientID: client id
-
-        :return: S_OK()/S_ERROR()
-    """
-    session = self.session()
-    try:
-      session.query(Client).filter(Client.client_id == clientID).delete()
-    except Exception as e:
-      return self.__result(session, S_ERROR(str(e)))
-    return self.__result(session, S_OK())
-
-  def getClient(self, clientID):
-    """ Get client
-
-        :param str clientID: client id
-
-        :return: S_OK(dict)/S_ERROR()
-    """
-    # To begin with, let's see if this client is described in the configuration
-    result = getAuthClients(clientID)
-    if not result['OK']:
-      return result
-    if result['Value']:
-      cliDict = result['Value']
-      cliDict['client_id_issued_at'] = cliDict.get('client_id_issued_at', int(time()))
-      cliDict['client_secret_expires_at'] = cliDict.get('client_secret_expires_at', 0)
-      return S_OK(cliDict)
-
-    # If not let's search it in the database
-    session = self.session()
-    try:
-      client = session.query(Client).filter(Client.client_id == clientID).first()
-      session.commit()
-      data = client.client_info
-      data['client_metadata'] = client.client_metadata
-    except MultipleResultsFound:
-      return self.__result(session, S_ERROR("%s is not unique ID." % clientID))
-    except NoResultFound:
-      return self.__result(session, S_ERROR("%s client not registred." % clientID))
-    except Exception as e:
-      return self.__result(session, S_ERROR(str(e)))
-    return self.__result(session, S_OK(data))  # client.client_info.update({'redirect_uri': redirect_uri})))
 
   def storeToken(self, metadata):
     """ Save token
@@ -249,8 +113,6 @@ class AuthDB(SQLAlchemyDB):
         self.log.warn('%s is not expected as token attribute.' % k)
       else:
         attrts[k] = v
-    attrts['id'] = hash(attrts['access_token'])
-
     session = self.session()
     try:
       session.add(Token(**attrts))
@@ -266,16 +128,8 @@ class AuthDB(SQLAlchemyDB):
 
         :return: S_OK(object)/S_ERROR()
     """
-    session = self.session()
-    try:
-      session.update(Token(**token)).where(Token.refresh_token == refreshToken)
-    except MultipleResultsFound:
-      return self.__result(session, S_ERROR("%s is not unique." % refreshToken))
-    except NoResultFound:
-      return self.__result(session, S_ERROR("%s token not found." % refreshToken))
-    except Exception as e:
-      return self.__result(session, S_ERROR(str(e)))
-    return self.__result(session, S_OK(OAuth2Token(token)))
+    self.removeToken(refresh_token=refreshToken)
+    return self.storeToken(token)
 
   def removeToken(self, access_token=None, refresh_token=None):
     """ Remove token
@@ -289,7 +143,7 @@ class AuthDB(SQLAlchemyDB):
     try:
       if access_token:
         session.query(Token).filter(Token.access_token == access_token).delete()
-      if refresh_token:
+      elif refresh_token:
         session.query(Token).filter(Token.refresh_token == refresh_token).delete()
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
@@ -360,7 +214,7 @@ class AuthDB(SQLAlchemyDB):
     """
     session = self.session()
     try:
-      session.update(Session(**data)).where(Session.id == data['id'])
+      session.update(AuthSession(**data)).where(AuthSession.id == data['id'])
     except MultipleResultsFound:
       return self.__result(session, S_ERROR("%s is not unique." % sessionID))
     except Exception as e:
@@ -376,7 +230,7 @@ class AuthDB(SQLAlchemyDB):
     """
     session = self.session()
     try:
-      session.query(Session).filter(Session.id == sessionID).delete()
+      session.query(AuthSession).filter(AuthSession.id == sessionID).delete()
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK())
@@ -390,15 +244,7 @@ class AuthDB(SQLAlchemyDB):
     """
     session = self.session()
     try:
-      resData = session.query(Session).filter(Session.id == sessionID).first()
-      # session.commit()
-      # data = self.__rowToDict(resData)
-      # print('====>>')
-      # print(data)
-      # data['request'] = resData.request
-      # # if data['request']:
-      # #   data['request'] = json.loads(data['request'])
-      # print(data)
+      resData = session.query(AuthSession).filter(AuthSession.id == sessionID).first()
     except MultipleResultsFound:
       return self.__result(session, S_ERROR("%s is not unique ID." % sessionID))
     except NoResultFound:
@@ -416,7 +262,7 @@ class AuthDB(SQLAlchemyDB):
     """
     session = self.session()
     try:
-      resData = session.query(Session).filter(Session.user_code == userCode).first()
+      resData = session.query(AuthSession).filter(AuthSession.user_code == userCode).first()
     except MultipleResultsFound:
       return self.__result(session, S_ERROR("%s is not unique ID." % sessionID))
     except NoResultFound:
