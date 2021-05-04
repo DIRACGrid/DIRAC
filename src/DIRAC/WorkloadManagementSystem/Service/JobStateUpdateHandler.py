@@ -145,7 +145,7 @@ class JobStateUpdateHandler(RequestHandler):
   def export_setJobStatusBulk(cls, jobID, statusDict, force):
     """ Set various job status fields with a time stamp and a source
     """
-    return cls.__setJobStatusBulk(jobID, statusDict, force)
+    return cls.__setJobStatusBulk(jobID, statusDict, force=force)
 
   @classmethod
   def __setJobStatusBulk(cls, jobID, statusDict, force=False):

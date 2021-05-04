@@ -105,7 +105,7 @@ class JobReport(object):
         statusDict[dtime]['ApplicationStatus'] = appStatus
 
     if statusDict:
-      result = JobStateUpdateClient().setJobStatusBulk(self.jobID, dict(statusDict))
+      result = JobStateUpdateClient().setJobStatusBulk(self.jobID, dict(statusDict), False)
       if result['OK']:
         # Empty the internal status containers
         self.jobStatusInfo = []
