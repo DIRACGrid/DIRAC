@@ -104,7 +104,7 @@ class TransformationInfo(object):
     """Update the job status."""
     if self.enabled:
       source = 'DataRecoveryAgent'
-      result = self.jobStateClient.setJobStatus(jobID, status, minorstatus, source, True)
+      result = self.jobStateClient.setJobStatus(jobID, status, minorstatus, source, None, True)
     else:
       return S_OK('DisabledMode')
     if not result['OK']:

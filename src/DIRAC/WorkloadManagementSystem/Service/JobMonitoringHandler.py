@@ -30,7 +30,6 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
 SUMMARY = []
-PRIMARY_SUMMARY = []
 
 
 class JobMonitoringHandler(RequestHandler):
@@ -354,7 +353,7 @@ class JobMonitoringHandler(RequestHandler):
   @classmethod
   @deprecated("Use getJobSummary")
   def export_getJobPrimarySummary(cls, jobID):
-    return cls.jobDB.getJobAttributes(jobID, PRIMARY_SUMMARY)
+    return cls.jobDB.getJobAttributes(jobID, [])
 
 ##############################################################################
   types_getJobsSummary = [list]
@@ -534,7 +533,7 @@ class JobMonitoringHandler(RequestHandler):
   @ignoreEncodeWarning
   @deprecated("Use getJobsSummary")
   def export_getJobsPrimarySummary(cls, jobIDs):
-    return cls.getJobsAttributes(jobIDs, PRIMARY_SUMMARY)
+    return cls.getJobsAttributes(jobIDs, [])
 
 ##############################################################################
   types_getJobParameter = [six.string_types + six.integer_types, six.string_types]

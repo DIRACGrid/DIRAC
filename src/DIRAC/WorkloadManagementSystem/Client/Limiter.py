@@ -14,6 +14,7 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 class Limiter(object):
@@ -178,7 +179,7 @@ class Limiter(object):
         result = self.jobDB.getCounters(
             'Jobs', [attName], {
                 'Site': siteName, 'Status': [
-                    'Running', 'Matched', 'Stalled']})
+                    JobStatus.RUNNING, JobStatus.MATCHED, JobStatus.STALLED]})
         if not result['OK']:
           return result
         data = result['Value']

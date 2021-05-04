@@ -272,7 +272,7 @@ class StalledJobAgent(AgentModule):
     if elapsedTime > stalledTime:
       self.log.info('Job is identified as stalled',
                     ": jobID %d with last update > %s secs ago" % (job, elapsedTime))
-      return S_OK('Stalled')
+      return S_OK()
 
     return S_ERROR('Job %s is running and will be ignored' % job)
 
@@ -408,7 +408,7 @@ class StalledJobAgent(AgentModule):
               'JobClass': jobDict['JobSplitType'],
               'ProcessingType': processingType,
               'FinalMajorStatus': JobStatus.FAILED,
-              'FinalMinorStatus': JobStatus.STALLED,
+              'FinalMinorStatus': JobMinorStatus.STALLED_PILOT_NOT_RUNNING,
               'CPUTime': lastCPUTime,
               'NormCPUTime': lastCPUTime * cpuNormalization,
               'ExecTime': lastWallTime,

@@ -139,7 +139,7 @@ class JobStateUpdateHandler(RequestHandler):
     return S_OK()
 
   ###########################################################################
-  types_setJobStatusBulk = [[six.string_types, int], dict, bool]
+  types_setJobStatusBulk = [[six.string_types, int], dict]
 
   @classmethod
   def export_setJobStatusBulk(cls, jobID, statusDict, force):

@@ -527,7 +527,7 @@ in case you are testing only one specific service.
 Running integration tests locally
 ---------------------------------
 
-The integration tests which are ran on GitHub/GitLab can be ran locally using docker.
+The integration tests which are ran on GitHub/GitLab can be ran locally using docker. So, start by installing docker, if you haven't.
 
 To run all tests in one command, which takes around 20 minutes, create a development environment, position yourself in the DIRAC root directory and then run:
 
@@ -546,10 +546,10 @@ Running the above might take a while. Supposing you are interested in running on
 
 .. code-block:: bash
 
-    ./integration_tests.py prepare-environment
+    ./integration_tests.py prepare-environment [FLAGS]
     ./integration_tests.py install-server
 
-which will give you a full dockerized server setup (`docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`). Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`. You can run it with:
+which (in some minutes) will give you a fully dockerized server setup (`docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`). Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`. You can run it with:
 
 .. code-block:: bash
 
@@ -558,6 +558,7 @@ which will give you a full dockerized server setup (`docker container ls` will l
 If you're using Python 2 you will also need to copy the test code (Python 3 installations automatically pick up external changes to the DIRAC code and tests):
 
 .. code-block:: bash
+
     cp -r TestCode/DIRAC/tests/ ServerInstallDIR/DIRAC/
 
 and then run the test with:

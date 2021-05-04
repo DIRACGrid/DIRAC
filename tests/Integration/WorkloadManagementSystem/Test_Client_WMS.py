@@ -215,7 +215,7 @@ class JobMonitoring(TestWMSTestCase):
     # Adding stuff
 
     # forcing the update
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.CHECKING, 'checking', 'source', None, True)
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.RUNNING, 'running', 'source', None, True)
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobParameters(jobID, [('par1', 'par1Value'), ('par2', 'par2Value')])
     time.sleep(5)
@@ -494,9 +494,8 @@ class Matcher (TestWMSTestCase):
 
     jobID = res['Value']
 
-    res = JobStateUpdateClient().setJobStatus(jobID, JobStatus.CHECKING, 'matching', 'source')
-    self.assertTrue(res['OK'], res.get('Message'))
-    res = JobStateUpdateClient().setJobStatus(jobID, JobStatus.WAITING, 'matching', 'source')
+    # forcing the update
+    res = JobStateUpdateClient().setJobStatus(jobID, JobStatus.WAITING, 'matching', 'source', None, True)
     self.assertTrue(res['OK'], res.get('Message'))
 
     tqDB = TaskQueueDB()

@@ -611,6 +611,7 @@ class JobDB(DB):
         :param list attrValues: corresponding values of attributes to update
         :param bool update: optional flag to update the job LastUpdateTime stamp
         :param str myDate: optional time stamp for the LastUpdateTime attribute
+        :param bool force: force update of Status (override State Machine decision)
 
         :return: S_OK/S_ERROR
     """
@@ -677,6 +678,7 @@ class JobDB(DB):
     newStatuses = {}
     for jID, jIDStatus in jIDStatusDict.items():
       if force:
+        self.log.warn("Status update forced" "(%s)" % candidateStatus)
         nextState = candidateStatus
       else:
         res = JobStatus.JobsStateMachine(jIDStatus['Status']).getNextState(candidateStatus)
