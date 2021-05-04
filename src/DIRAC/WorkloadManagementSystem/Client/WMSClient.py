@@ -11,13 +11,13 @@ import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import File
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import getParameterVectorLength
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 
 __RCSID__ = "$Id$"
 
@@ -55,11 +55,11 @@ class WMSClient(object):
   @property
   def jobManager(self):
     if not self._jobManager:
-      self._jobManager = RPCClient('WorkloadManagement/JobManager',
-                                   useCertificates=self.useCertificates,
-                                   delegatedDN=self.delegatedDN,
-                                   delegatedGroup=self.delegatedGroup,
-                                   timeout=self.timeout)
+      self._jobManager = JobManagerClient(
+          useCertificates=self.useCertificates,
+          delegatedDN=self.delegatedDN,
+          delegatedGroup=self.delegatedGroup,
+          timeout=self.timeout)
 
     return self._jobManager
 

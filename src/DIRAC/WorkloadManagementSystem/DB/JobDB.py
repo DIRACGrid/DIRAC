@@ -1353,7 +1353,7 @@ class JobDB(DB):
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
       self.log.warn('Maximum number of reschedulings is reached', 'Job %s' % jobID)
-      res = self.setJobStatus(jobID, status='Failed', minorStatus='Maximum of reschedulings reached')
+      res = self.setJobStatus(jobID, status=JobStatus.FAILED, minorStatus='Maximum of reschedulings reached')
       if not res['OK']:
         return res
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)

@@ -28,6 +28,8 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 
 @createClient('RequestManagement/ReqManager')
@@ -294,8 +296,7 @@ class ReqClient(Client):
     :param str requestID: request id
     :param int jobID: job id
     """
-    # FIXME: use JobStateUpdateClient
-    stateServer = RPCClient("WorkloadManagement/JobStateUpdate", useCertificates=useCertificates)
+    stateServer = JobStateUpdateClient(useCertificates=useCertificates)
 
     # Checking if to update the job status - we should fail here, so it will be re-tried later
     # Checking the state, first
@@ -309,8 +310,7 @@ class ReqClient(Client):
                      (requestID, res['Value']))
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
-    # FIXME: use JobMonitoringClient
-    monitorServer = RPCClient("WorkloadManagement/JobMonitoring", useCertificates=useCertificates)
+    monitorServer = JobMonitoringClient(useCertificates=useCertificates)
     res = monitorServer.getJobSummary(int(jobID))
     if not res["OK"]:
       self.log.error("finalizeRequest: Failed to get job status", "JobID: %d" % jobID)

@@ -104,6 +104,16 @@ class JobMonitoringHandler(RequestHandler):
     return cls.jobDB.getDistinctJobAttributes('Owner', condDict, older, newer)
 
 ##############################################################################
+  types_getOwnerGroup = []
+
+  @classmethod
+  def export_getOwnerGroup(cls):
+    """
+    Return Distinct Values of OwnerGroup from the JobDB
+    """
+    return cls.jobDB.getDistinctJobAttributes('OwnerGroup')
+
+##############################################################################
   types_getProductionIds = []
 
   @classmethod
@@ -342,6 +352,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobPrimarySummary = [int]
 
   @classmethod
+  @deprecated("Use getJobSummary")
   def export_getJobPrimarySummary(cls, jobID):
     return cls.jobDB.getJobAttributes(jobID, PRIMARY_SUMMARY)
 
@@ -521,6 +532,7 @@ class JobMonitoringHandler(RequestHandler):
 
   @classmethod
   @ignoreEncodeWarning
+  @deprecated("Use getJobsSummary")
   def export_getJobsPrimarySummary(cls, jobIDs):
     return cls.getJobsAttributes(jobIDs, PRIMARY_SUMMARY)
 
@@ -647,15 +659,3 @@ class JobMonitoringHandler(RequestHandler):
     """ Get input data for the specified jobs
     """
     return cls.jobDB.getInputData(jobID)
-
-##############################################################################
-  types_getOwnerGroup = []
-
-  @classmethod
-  def export_getOwnerGroup(cls):
-    """
-    Return Distinct Values of OwnerGroup from the JobsDB
-    """
-    return cls.jobDB.getDistinctJobAttributes('OwnerGroup')
-
-##############################################################################

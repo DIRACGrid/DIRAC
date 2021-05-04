@@ -215,7 +215,7 @@ class JobMonitoring(TestWMSTestCase):
     # Adding stuff
 
     # forcing the update
-    res = jobStateUpdate.setJobStatus(jobID, JobStatus.CHECKING, 'checking', 'source', True)
+    res = jobStateUpdate.setJobStatus(jobID, JobStatus.CHECKING, 'checking', 'source', None, True)
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobParameters(jobID, [('par1', 'par1Value'), ('par2', 'par2Value')])
     time.sleep(5)
@@ -265,7 +265,7 @@ class JobMonitoring(TestWMSTestCase):
     res = jobMonitor.getInputData(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(res['Value'], [], msg="Got %s" % str(res['Value']))
-    res = jobMonitor.getJobPrimarySummary(jobID)
+    res = jobMonitor.getJobSummary(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getAtticJobParameters(jobID)
     self.assertTrue(res['OK'], res.get('Message'))
