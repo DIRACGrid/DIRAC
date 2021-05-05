@@ -11,11 +11,26 @@ __RCSID__ = "$Id$"
 import ast
 from io import open
 import os
+from functools import partial
+try:
+  from functools import partialmethod
+except ImportError:
+  class partialmethod(partial):
+    def __get__(self, instance, owner):
+      if instance is None:
+        return self
+      return partial(
+          self.func,
+          instance,
+          *(self.args or ()),
+          **(self.keywords or {})
+      )
 
 import six
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
 
 
@@ -23,7 +38,6 @@ class Client(object):
   """ Simple class to redirect unknown actions directly to the server. Arguments
       to the constructor are passed to the RPCClient constructor as they are.
       Some of them can however be overwritten at each call (url and timeout).
-      This class is not thread safe !
 
       - The self.serverURL member should be set by the inheriting class
   """
@@ -38,7 +52,6 @@ class Client(object):
                       the RPCClient
     """
     self.serverURL = kwargs.pop('url', None)
-    self.call = None  # I suppose it is initialized here to make pylint happy
     self.__kwargs = kwargs
     self.timeout = DEFAULT_RPC_TIMEOUT
 
@@ -49,8 +62,7 @@ class Client(object):
     # This allows the dir() method to work as well as tab completion in ipython
     if name == '__dir__':
       return super(Client, self).__getattr__()  # pylint: disable=no-member
-    self.call = name
-    return self.executeRPC
+    return partial(self.executeRPC, call=name)
 
   def setServer(self, url):
     """ Set the server URL used by default
@@ -64,6 +76,11 @@ class Client(object):
     """
     return self.serverURL
 
+  @property
+  @deprecated("To be removed once we're sure self.call has been removed")
+  def call(self):
+    raise NotImplementedError("This should be unreachable")
+
   def executeRPC(self, *parms, **kws):
     """ This method extracts some parameters from kwargs that
         are used as parameter of the constructor or RPCClient.
@@ -74,7 +91,7 @@ class Client(object):
         :param timeout: we can change the timeout on a per call bases. Default is self.timeout
         :param url: We can specify which url to use
     """
-    toExecute = self.call
+    toExecute = kws.pop('call')
     # Check whether 'rpc' keyword is specified
     rpc = kws.pop('rpc', False)
     # Check whether the 'timeout' keyword is specified
@@ -134,14 +151,7 @@ def createClient(serviceName):
       arguments = arguments[1:]
 
     # Create the actual functions, with or without arguments, **kwargs can be: rpc, timeout, url
-    if arguments:
-      def func(self, *args, **kwargs):  # pylint: disable=missing-docstring
-        self.call = funcName
-        return self.executeRPC(*args, **kwargs)
-    else:
-      def func(self, **kwargs):  # pylint: disable=missing-docstring
-        self.call = funcName
-        return self.executeRPC(**kwargs)
+    func = partialmethod(Client.executeRPC, call=funcName)
     func.__doc__ = funcDocString + doc + \
         "\n\nAutomatically created for the service function :func:`~%s.export_%s`" % \
         (handlerClassPath, funcName)
