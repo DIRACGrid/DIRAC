@@ -10,7 +10,7 @@ DIRAC
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1451647.svg
     :target: https://doi.org/10.5281/zenodo.1451647
 
-DIRAC is an interware, meaning a software framework for distributed computing.
+DIRAC-test is an interware, meaning a software framework for distributed computing.
 
 DIRAC provides a complete solution to one or more user community requiring access to distributed resources. DIRAC builds a layer between the users and the resources offering a common interface to a number of heterogeneous providers, integrating them in a seamless manner, providing interoperability, at the same time as an optimized, transparent and reliable usage of the resources.
 
