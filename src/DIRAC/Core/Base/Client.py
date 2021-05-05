@@ -9,8 +9,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import ast
-from io import open
-import os
 from functools import partial
 try:
   from functools import partialmethod
@@ -26,10 +24,12 @@ except ImportError:
           **(self.keywords or {})
       )
 
+import importlib_resources
 import six
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
 
@@ -127,20 +127,11 @@ def createClient(serviceName):
 
   :param str serviceName: system/service. e.g. WorkloadManagement/JobMonitoring
   """
-  parts = serviceName.split('/')
-  systemName, handlerName = parts[0], parts[1]
+  systemName, handlerName = serviceName.split('/')
   handlerModuleName = handlerName + 'Handler'
   # by convention they are the same
   handlerClassName = handlerModuleName
   handlerClassPath = '%sSystem.Service.%s.%s' % (systemName, handlerModuleName, handlerClassName)
-  handlerFilePath = '%sSystem/Service/%s.py' % (systemName, handlerModuleName)
-
-  # Find possible locations in extensions which end in DIRAC
-  basepath = os.environ.get('DIRAC', './')
-  locations = [folder for folder in os.listdir(basepath) if
-               folder != 'DIRAC' and folder.endswith('DIRAC') and os.path.isdir(os.path.join(basepath, folder))]
-  # DIRAC Should be last, so functions defined in extensions take precedence
-  locations.append('DIRAC')
 
   def genFunc(funcName, arguments, handlerClassPath, doc):
     """Create a function with *funcName* taking *arguments*."""
@@ -152,28 +143,29 @@ def createClient(serviceName):
 
     # Create the actual functions, with or without arguments, **kwargs can be: rpc, timeout, url
     func = partialmethod(Client.executeRPC, call=funcName)
-    func.__doc__ = funcDocString + doc + \
-        "\n\nAutomatically created for the service function :func:`~%s.export_%s`" % \
-        (handlerClassPath, funcName)
-    parameterDoc = ''
+    func.__doc__ = funcDocString + doc
+    func.__doc__ += "\n\nAutomatically created for the service function "
+    func.__doc__ += ":func:`~%s.export_%s`" % (handlerClassPath, funcName)
     # add description for parameters, if that is not already done for the docstring of function in the service
     if arguments and ":param " not in doc:
-      parameterDoc = "\n".join(":param %(par)s: %(par)s" % dict(par=par)
-                               for par in arguments)
-      func.__doc__ += "\n\n" + parameterDoc
+      func.__doc__ += "\n\n"
+      func.__doc__ += "\n".join(":param %s: %s" % (par, par) for par in arguments)
     return func
 
   def addFunctions(clientCls):
     """Add the functions to the decorated class."""
     attrDict = dict(clientCls.__dict__)
-    for location in locations:
-      fullPath = os.path.join(basepath, location, handlerFilePath)
-      fullHandlerClassPath = '%s.%s' % (location, handlerClassPath)
-      if not os.path.exists(fullPath):
+    for extension in extensionsByPriority()[::-1]:
+      try:
+        path = importlib_resources.path(
+            "%s.%sSystem.Service" % (extension, systemName),
+            "%s.py" % handlerModuleName,
+        )
+      except (ImportError, OSError):
         continue
-      with open(fullPath, 'rt') as moduleFile:
-        # parse the handler module into abstract syntax tree
-        handlerAst = ast.parse(moduleFile.read(), fullPath)
+      fullHandlerClassPath = '%s.%s' % (extension, handlerClassPath)
+      with path as fp:
+        handlerAst = ast.parse(fp.read_text(), str(path))
 
       # loop over all the nodes (classes, functions, imports) in the handlerModule
       for node in ast.iter_child_nodes(handlerAst):
