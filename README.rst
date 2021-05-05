@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-DIRAC
+DIRAC-big
 =====
 
 .. image:: https://badge.fury.io/py/DIRAC.svg
