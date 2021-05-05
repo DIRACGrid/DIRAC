@@ -1,0 +1,15 @@
+name: python
+
+on: [push, pull_request]
+
+jobs:
+  python-lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: aidasoft/sweeper@main
+      with:
+        since: "1 day"
+        github-pat: ${{ secrets.PAT }}
