@@ -142,6 +142,9 @@ class RequestHandler(object):
       retVal = S_ERROR(message)
     elapsedTime = time.time() - startTime
     self.__logRemoteQueryResponse(retVal, elapsedTime)
+    # Strip the exception info from S_ERROR responses
+    if isinstance(retVal, dict) and "ExecInfo" in retVal:
+        del retVal["ExecInfo"]
     result = self.__trPool.send(self.__trid, retVal)  # this will delete the value from the S_OK(value)
     del retVal
     return S_OK([result, elapsedTime])
