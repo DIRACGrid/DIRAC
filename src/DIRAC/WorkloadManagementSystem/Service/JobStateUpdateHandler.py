@@ -205,6 +205,24 @@ class JobStateUpdateHandler(RequestHandler):
       if sDict.get('ApplicationStatus') and newStat == JobStatus.MATCHED:
         sDict['Status'] = JobStatus.RUNNING
       newStat = sDict.get('Status', newStat)
+
+      # evaluate the state machine
+      if not force:
+        res = JobStatus.JobsStateMachine(currentStatus).getNextState(newStat)
+        if not res['OK']:
+          return res
+        nextState = res['Value']
+
+        # If the JobsStateMachine does not accept the candidate, don't update
+        if newStat != nextState:
+          log.error(
+              "Job Status Error",
+              "%s can't move from %s to %s: using %s" % (
+                  jobID, currentStatus, newStat, nextState))
+          newStat = nextState
+        sDict['Status'] = newStat
+        currentStatus = newStat
+
       if newStat == JobStatus.RUNNING and not startTime:
         # Pick up the start date when the job starts running if not existing
         startTime = date
@@ -237,8 +255,9 @@ class JobStateUpdateHandler(RequestHandler):
       if application:
         attrNames.append('ApplicationStatus')
         attrValues.append(application)
+      # Here we are forcing the update as it's always updating to the last status
       result = cls.jobDB.setJobAttributes(
-          jobID, attrNames, attrValues, update=True, force=force)
+          jobID, attrNames, attrValues, update=True, force=True)
       if not result['OK']:
         return result
 
