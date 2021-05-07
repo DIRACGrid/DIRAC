@@ -34,6 +34,14 @@ from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
 
 
+class partialmethodWithDoc(partialmethod):
+  """Extension of meth:`functools.partialmethod` that preserves docstrings"""
+  def __get__(self, instance, owner):
+    func = super(partialmethodWithDoc, self).__get__(instance, owner)
+    func.__doc__ = self.__doc__
+    return func
+
+
 class Client(object):
   """ Simple class to redirect unknown actions directly to the server. Arguments
       to the constructor are passed to the RPCClient constructor as they are.
@@ -142,7 +150,7 @@ def createClient(serviceName):
       arguments = arguments[1:]
 
     # Create the actual functions, with or without arguments, **kwargs can be: rpc, timeout, url
-    func = partialmethod(Client.executeRPC, call=funcName)
+    func = partialmethodWithDoc(Client.executeRPC, call=funcName)
     func.__doc__ = funcDocString + doc
     func.__doc__ += "\n\nAutomatically created for the service function "
     func.__doc__ += ":func:`~%s.export_%s`" % (handlerClassPath, funcName)
