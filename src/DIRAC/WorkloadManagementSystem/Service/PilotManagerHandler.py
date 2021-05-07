@@ -8,7 +8,8 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import six
-from DIRAC import S_OK, S_ERROR
+import shutil
+from DIRAC import S_OK, S_ERROR, gLogger
 import DIRAC.Core.Utilities.Time as Time
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -17,8 +18,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
-    getPilotLoggingInfo,
-    getGridJobOutput,
+    getPilotCE,
+    getPilotProxy,
+    getPilotRef,
     killPilotsInQueues,
 )
 
@@ -97,13 +99,77 @@ class PilotManagerHandler(RequestHandler):
     ##############################################################################
     types_getPilotOutput = [six.string_types]
 
-    @staticmethod
-    def export_getPilotOutput(pilotReference):
+    def export_getPilotOutput(self, pilotReference):
         """Get the pilot job standard output and standard error files for the Grid
         job reference
         """
+        result = self.pilotAgentsDB.getPilotInfo(pilotReference)
+        if not result["OK"]:
+            gLogger.error("Failed to get info for pilot", result["Message"])
+            return S_ERROR("Failed to get info for pilot")
+        if not result["Value"]:
+            gLogger.warn("The pilot info is empty", pilotReference)
+            return S_ERROR("Pilot info is empty")
 
-        return getGridJobOutput(pilotReference)
+        pilotDict = result["Value"][pilotReference]
+
+        owner = pilotDict["OwnerDN"]
+        group = pilotDict["OwnerGroup"]
+
+        # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
+        result = self.pilotAgentsDB.getPilotOutput(pilotReference)
+        if result["OK"]:
+            stdout = result["Value"]["StdOut"]
+            error = result["Value"]["StdErr"]
+            if stdout or error:
+                resultDict = {}
+                resultDict["StdOut"] = stdout
+                resultDict["StdErr"] = error
+                resultDict["OwnerDN"] = owner
+                resultDict["OwnerGroup"] = group
+                resultDict["FileList"] = []
+                return S_OK(resultDict)
+            else:
+                gLogger.warn("Empty pilot output found", "for %s" % pilotReference)
+
+        result = getPilotCE(pilotDict)
+        if not result["OK"]:
+            return result
+
+        ce = result["Value"]
+        if not hasattr(ce, "getJobOutput"):
+            return S_ERROR("Pilot output not available for %s CEs" % pilotDict["GridType"])
+
+        result = getPilotProxy(pilotDict)
+        if not result["OK"]:
+            return result
+
+        proxy = result["Value"]
+        ce.setProxy(proxy)
+
+        result = getPilotRef(pilotReference, pilotDict)
+        if not result["OK"]:
+            return result
+        pRef = result["Value"]
+
+        result = ce.getJobOutput(pRef)
+        if not result["OK"]:
+            shutil.rmtree(ce.ceParameters["WorkingDirectory"])
+            return result
+        stdout, error = result["Value"]
+        if stdout:
+            result = self.pilotAgentsDB.storePilotOutput(pilotReference, stdout, error)
+            if not result["OK"]:
+                gLogger.error("Failed to store pilot output:", result["Message"])
+
+        resultDict = {}
+        resultDict["StdOut"] = stdout
+        resultDict["StdErr"] = error
+        resultDict["OwnerDN"] = owner
+        resultDict["OwnerGroup"] = group
+        resultDict["FileList"] = []
+        shutil.rmtree(ce.ceParameters["WorkingDirectory"])
+        return S_OK(resultDict)
 
     ##############################################################################
     types_getPilotInfo = [(list,) + six.string_types]
@@ -135,22 +201,43 @@ class PilotManagerHandler(RequestHandler):
     @classmethod
     def export_getPilotLoggingInfo(cls, pilotReference):
         """Get the pilot logging info for the Grid job reference"""
-
         result = cls.pilotAgentsDB.getPilotInfo(pilotReference)
-        if not result["OK"] or not result["Value"]:
-            return S_ERROR("Failed to determine owner for pilot " + pilotReference)
+        if not result["OK"]:
+            gLogger.error("Failed to get info for pilot", result["Message"])
+            return S_ERROR("Failed to get info for pilot")
+        if not result["Value"]:
+            gLogger.warn("The pilot info is empty", pilotReference)
+            return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
-        owner = pilotDict["OwnerDN"]
-        group = pilotDict["OwnerGroup"]
-        gridType = pilotDict["GridType"]
-        pilotStamp = pilotDict["PilotStamp"]
+        result = getPilotCE(pilotDict)
+        if not result["OK"]:
+            return result
 
-        # Add the pilotStamp to the pilot Reference, some CEs may need it to retrieve the logging info
-        pilotReference = pilotReference + ":::" + pilotStamp
-        return getPilotLoggingInfo(  # pylint: disable=unexpected-keyword-arg
-            gridType, pilotReference, proxyUserDN=owner, proxyUserGroup=group
-        )
+        ce = result["Value"]
+        if not hasattr(ce, "getJobLog"):
+            return S_ERROR("Pilot logging not available for %s CEs" % pilotDict["GridType"])
+
+        result = getPilotProxy(pilotDict)
+        if not result["OK"]:
+            return result
+
+        proxy = result["Value"]
+        ce.setProxy(proxy)
+
+        result = getPilotRef(pilotReference, pilotDict)
+        if not result["OK"]:
+            return result
+        pRef = result["Value"]
+
+        result = ce.getJobLog(pRef)
+        if not result["OK"]:
+            shutil.rmtree(ce.ceParameters["WorkingDirectory"])
+            return result
+        loggingInfo = result["Value"]
+        shutil.rmtree(ce.ceParameters["WorkingDirectory"])
+
+        return S_OK(loggingInfo)
 
     ##############################################################################
     types_getPilotSummary = []

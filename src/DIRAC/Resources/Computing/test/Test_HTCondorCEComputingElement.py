@@ -67,7 +67,6 @@ def test_getJobStatus(mocker):
     patchPopen = mocker.patch("DIRAC.Resources.Computing.BatchSystems.Condor.subprocess.Popen")
     patchPopen.return_value.communicate.side_effect = [("\n".join(HISTORY_LINES), "")]
     patchPopen.return_value.returncode = 0
-    mocker.patch(MODNAME + ".HTCondorCEComputingElement._HTCondorCEComputingElement__cleanup")
 
     htce = HTCE.HTCondorCEComputingElement(12345)
     ret = htce.getJobStatus(
@@ -154,7 +153,7 @@ def test_reset(setUp, localSchedd, expected):
     "localSchedd, expected",
     [
         (False, "condor_submit -terse -pool condorce.cern.ch:9619 -remote condorce.cern.ch dirac_pilot"),
-        (True, "condor_submit -terse dirac_pilot"),
+        (True, "condor_submit -terse -spool dirac_pilot"),
     ],
 )
 def test_submitJob(setUp, mocker, localSchedd, expected):

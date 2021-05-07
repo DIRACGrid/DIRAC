@@ -14,7 +14,8 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+
 
 
 class WMSAdministratorHandler(RequestHandler):
@@ -41,6 +42,8 @@ class WMSAdministratorHandler(RequestHandler):
                 cls.elasticJobParametersDB = result["Value"]()
             except RuntimeError as excp:
                 return S_ERROR("Can't connect to DB: %s" % excp)
+
+        cls.pilotManager = PilotManagerClient()
 
         return S_OK()
 
@@ -214,7 +217,7 @@ class WMSAdministratorHandler(RequestHandler):
                         c = cycle
 
         if pilotReference:
-            return getGridJobOutput(pilotReference)
+            return self.pilotManager.getPilotOutput(pilotReference)
         return S_ERROR("No pilot job reference found")
 
     ##############################################################################

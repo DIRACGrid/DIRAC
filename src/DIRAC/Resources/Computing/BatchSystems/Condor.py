@@ -122,7 +122,9 @@ class Condor(object):
         jdlFile.flush()
 
         cmd = "%s; " % preamble if preamble else ""
-        cmd += "condor_submit %s %s" % (submitOptions, jdlFile.name)
+        # we add the -spool option to spool the executable so that it can immediately deleted after the submission
+        # without it, the job will never run: missing input.
+        cmd += "condor_submit -spool %s %s" % (submitOptions, jdlFile.name)
         sp = subprocess.Popen(
             cmd,
             shell=True,
