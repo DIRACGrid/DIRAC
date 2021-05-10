@@ -5,6 +5,7 @@ on: [push]
 jobs:
   pr-sweep:
     runs-on: ubuntu-latest
+    concurrency: pr-sweep
     if: github.repository == 'DIRACGrid/DIRAC'
     steps:
     - uses: actions/checkout@v2
