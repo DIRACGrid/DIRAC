@@ -34,15 +34,16 @@ def getServiceOption(serviceInfo, optionName, defaultValue):
   return defaultValue
 
 
+class ConnectionError(Exception):
+
+  def __init__(self, msg):
+    self.__msg = msg
+
+  def __str__(self):
+    return "ConnectionError: %s" % self.__msg
+
+
 class RequestHandler(object):
-
-  class ConnectionError(Exception):
-
-    def __init__(self, msg):
-      self.__msg = msg
-
-    def __str__(self):
-      return "ConnectionError: %s" % self.__msg
 
   def __init__(self, handlerInitDict, trid):
     """
@@ -133,7 +134,7 @@ class RequestHandler(object):
         retVal = self.__doConnection(actionTuple[1])
       else:
         return S_ERROR("Unknown action %s" % actionType)
-    except RequestHandler.ConnectionError as excp:
+    except ConnectionError as excp:
       gLogger.error("ConnectionError", str(excp))
       return S_ERROR(excp)
     if not isReturnStructure(retVal):
@@ -162,8 +163,8 @@ class RequestHandler(object):
     """
     retVal = self.__trPool.receive(self.__trid)
     if not retVal['OK']:
-      raise RequestHandler.ConnectionError("Error while receiving file description %s %s" %
-                                           (self.srv_getFormattedRemoteCredentials(), retVal['Message']))
+      raise ConnectionError("Error while receiving file description %s %s" %
+                            (self.srv_getFormattedRemoteCredentials(), retVal['Message']))
 
     # Reconvert to tuple
     fileInfo = tuple(retVal['Value'])
@@ -240,8 +241,8 @@ class RequestHandler(object):
     """
     retVal = self.__trPool.receive(self.__trid)
     if not retVal['OK']:
-      raise RequestHandler.ConnectionError("Error while receiving arguments %s %s" %
-                                           (self.srv_getFormattedRemoteCredentials(), retVal['Message']))
+      raise ConnectionError("Error while receiving arguments %s %s" %
+                            (self.srv_getFormattedRemoteCredentials(), retVal['Message']))
     args = retVal['Value']
     self.__logRemoteQuery("RPC/%s" % method, args)
     return self.__RPCCallFunction(method, args)
@@ -356,7 +357,7 @@ class RequestHandler(object):
     """
     retVal = self.__trPool.receive(self.__trid)
     if not retVal['OK']:
-      raise RequestHandler.ConnectionError(
+      raise ConnectionError(
           "Error while receiving arguments %s %s" % (self.srv_getFormattedRemoteCredentials(), retVal['Message']))
     args = retVal['Value']
     return self._rh_executeConnectionCallback(methodName, args)
