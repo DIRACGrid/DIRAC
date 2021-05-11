@@ -408,13 +408,20 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertEqual(res['Value']['Status'], JobStatus.MATCHED)
     self.assertEqual(res['Value']['MinorStatus'], 'MinorStatus-matched')
 
-    res = jobStateUpdate.setJobsParameter({jobID: ['Status', JobStatus.RUNNING]})
+    res = jobStateUpdate.setJobsParameter({jobID: ['Whatever', 'booh']})
+    self.assertTrue(res['OK'], res.get('Message'))
+
+    res = jobMonitor.getJobSummary(int(jobID))
+    self.assertTrue(res['OK'], res.get('Message'))
+    self.assertEqual(res['Value']['Status'], JobStatus.MATCHED)
+    self.assertEqual(res['Value']['MinorStatus'], 'MinorStatus-matched')
+
+    res = jobStateUpdate.setJobAttribute(jobID, 'Status', JobStatus.RUNNING)
     self.assertTrue(res['OK'], res.get('Message'))
 
     res = jobMonitor.getJobSummary(int(jobID))
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(res['Value']['Status'], JobStatus.RUNNING)
-    self.assertEqual(res['Value']['MinorStatus'], 'MinorStatus-matched')
 
     # delete the jobs - this will just set its status to "deleted"
     wmsClient.deleteJob(jobIDs)

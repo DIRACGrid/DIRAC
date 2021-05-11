@@ -571,9 +571,11 @@ class JobDB(DB):
         return res
       if update:
         cmd = "UPDATE Jobs SET LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % jobID
-      if myDate:
-        cmd += ' AND LastUpdateTime < %s' % myDate
-      return self._update(cmd)
+        if myDate:
+          cmd += ' AND LastUpdateTime < %s' % myDate
+        return self._update(cmd)
+      else:
+        return res
 
     # if we are here it's because we are not updating the status
     ret = self._escapeString(jobID)

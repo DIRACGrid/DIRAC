@@ -438,6 +438,20 @@ def exec_client():
 
 
 @app.command()
+def exec_mysql():
+    """Start an interactive session in the server container."""
+    _check_containers_running()
+    cmd = _build_docker_cmd("mysql", use_root=True, cwd='/')
+    cmd += [
+        "bash",
+        "-c",
+        f"exec mysql --user={DB_USER} --password={DB_PASSWORD}",
+    ]
+    typer.secho("Opening prompt inside server container", err=True, fg=c.GREEN)
+    os.execvp(cmd[0], cmd)
+
+
+@app.command()
 def list_services():
     """List the services which have been running.
 
