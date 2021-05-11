@@ -199,8 +199,8 @@ for loc in locations:
         pt.extractall()
         pt.close()
       except Exception as x:
-        print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
-        logger.error("tarfile failed with message %%s" %% repr(x))
+        print("tarfile failed with message (this is normal!) %%s" %% repr(x), file=sys.stderr)
+        logger.error("tarfile failed with message (this is normal!) %%s" %% repr(x))
         logger.warn("Trying tar command (tar -xvf pilot.tar)")
         res = os.system("tar -xvf pilot.tar")
         if res:
