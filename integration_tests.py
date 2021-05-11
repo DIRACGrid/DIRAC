@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import fnmatch
-import io
 import os
 from pathlib import Path
 import re
@@ -197,9 +196,9 @@ def prepare_environment(
     client_flags = {}
     for key, value in flags.items():
         if key.startswith("SERVER_"):
-            server_flags[key[len("SERVER_") :]] = value
+            server_flags[key[len("SERVER_"):]] = value
         elif key.startswith("CLIENT_"):
-            client_flags[key[len("CLIENT_") :]] = value
+            client_flags[key[len("CLIENT_"):]] = value
         else:
             server_flags[key] = value
             client_flags[key] = value
@@ -725,7 +724,7 @@ def _list_services():
     cmd += [
         "bash",
         "-c",
-        'cd ServerInstallDIR/runit/ && for fn in */*/log/current; do echo "$(dirname "$(dirname "$fn")")"; done',
+        'cd ServerInstallDIR/runit/ && for fn in */*/log/current; do echo "$(dirname "$(dirname "$fn")")"; done'
     ]
     ret = subprocess.run(cmd, check=False, stdout=subprocess.PIPE, text=True)
     if ret.returncode:
