@@ -204,8 +204,8 @@ for loc in locations:
         logger.warn("Trying tar command (tar -xvf pilot.tar)")
         res = os.system("tar -xvf pilot.tar")
         if res:
-          logger.error("tar failed with exit code %%d, giving up" %% int(res))
-          print("tar failed with exit code %%d, giving up" %% int(res), file=sys.stderr)
+          logger.error("tar failed with exit code %%d, giving up (this is normal!)" %% int(res))
+          print("tar failed with exit code %%d, giving up (this is normal!)" %% int(res), file=sys.stderr)
           raise
     # if we get here we break out of the loop of locations
     break
