@@ -78,13 +78,10 @@ class Job(API):
       vo = getVOForGroup(ret['Value']['group'])
     self.group = vo
     self.site = None
-    # self.setup = 'Development'
-    self.origin = 'DIRAC'
     self.stdout = stdout
     self.stderr = stderr
-    self.logLevel = 'info'
+    self.logLevel = 'INFO'
     self.executable = 'dirac-jobexec'  # to be clarified
-    # $DIRACROOT is set by the JobWrapper at execution time
     self.addToInputSandbox = []
     self.addToOutputSandbox = []
     self.addToInputData = []
@@ -127,14 +124,10 @@ class Job(API):
        >>> job = Job()
        >>> job.setExecutable('myScript.py')
 
-       :param executable: Executable
-       :type executable: string
-       :param arguments: Optional arguments to executable
-       :type arguments: string
-       :param logFile: Optional log file name
-       :type logFile: string
-       :param modulesList: Optional list of modules (to be used mostly when extending this method)
-       :type modulesList: python:list
+       :param str executable: Executable
+       :param str arguments: Optional arguments to executable
+       :param str logFile: Optional log file name
+       :param list modulesList: Optional list of modules (to be used mostly when extending this method)
        :param parameters: Optional list of parameters (to be used mostly when extending this method)
        :type parameters: python:list of tuples
        :param paramValues: Optional list of parameters values (to be used mostly when extending this method)
@@ -202,8 +195,7 @@ class Job(API):
        >>> job=Job()
        >>> job.setName("myJobName")
 
-       :param jobName: Name of job
-       :type jobName: string
+       :param str jobName: Name of job
     """
     kwargs = {'jobname': jobName}
     if not isinstance(jobName, six.string_types):
@@ -323,11 +315,10 @@ class Job(API):
     """ Function to define a sequence of values for parametric jobs.
 
     :param str name: sequence parameter name
-    :param parameterList: list of parameter values
-    :type parameterList: python:list
+    :param list parameterList: list of parameter values
     :param bool addToWorkflow: flag to add parameter to the workflow on the fly, if str, then
                                use as the workflow parameter
-    :return:
+    :return: S_OK/S_ERROR
     """
 
     if self.numberOfParameters == 0:
@@ -460,7 +451,7 @@ class Job(API):
 
   #############################################################################
   def setPlatform(self, platform):
-    """Developer function: sets the target platform, e.g. Linux_x86_64_glibc-2.5.
+    """Developer function: sets the target platform, e.g. Linux_x86_64_glibc-2.17.
        This platform is in the form of what it is returned by the dirac-platform script
        (or dirac-architecture if your extension provides it)
     """
@@ -600,12 +591,9 @@ class Job(API):
        >>> job.setNumberOfProcessors(numberOfProcessors=3, minNumberOfProcessors=2)
        will lead to ignore the second parameter
 
-       :param processors: number of processors required by the job (exact number, unless a min/max are set)
-       :type processors: int
-       :param minNumberOfProcessors: optional min number of processors the job applications can use
-       :type minNumberOfProcessors: int
-       :param maxNumberOfProcessors: optional max number of processors the job applications can use
-       :type maxNumberOfProcessors: int
+       :param int processors: number of processors required by the job (exact number, unless a min/max are set)
+       :param int minNumberOfProcessors: optional min number of processors the job applications can use
+       :param int maxNumberOfProcessors: optional max number of processors the job applications can use
 
        :return: S_OK/S_ERROR
     """
