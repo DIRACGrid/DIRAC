@@ -25,25 +25,18 @@ class State(object):
       # nextState, e.g. 'StateNext'. But, it is not on the stateMap, and there
       # is no default defined, so it will end up going to StateNext anyway. You
       # must be careful while defining states and their stateMaps and defaults.
-
-  :param int level: each state is mapped to an integer, which is used to sort the states according to that integer.
-  :param stateMap: it is a list (of strings) with the reachable states from this particular
-                   status. If not defined, we assume there are no restrictions.
-  :type stateMap: python:list
-  :param defState: default state used in case the next state is not in stateMap (not defined
-        or simply not there).
-  :type defState: None or str
-
   """
 
   def __init__(self, level, stateMap=None, defState=None):
     """
-    Constructor.
+   :param int level: each state is mapped to an integer, which is used to sort the states according to that integer.
+   :param list stateMap: it is a list (of strings) with the reachable states from this particular status.
+                         If not defined, we assume there are no restrictions.
+   :param str defState: default state used in case the next state is not in stateMap (not defined or simply not there).
     """
 
     self.level = level
-    if stateMap is None:
-      self.stateMap = stateMap if stateMap else []
+    self.stateMap = stateMap if stateMap else []
     self.default = defState
 
   def transitionRule(self, nextState):
