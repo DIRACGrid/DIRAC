@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: RequestTask.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 12:42:45
@@ -21,7 +20,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 # #
 # @file RequestTask.py

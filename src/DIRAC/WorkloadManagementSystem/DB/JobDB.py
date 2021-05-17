@@ -33,7 +33,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJERR
+from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -562,7 +562,7 @@ class JobDB(DB):
     """
 
     if attrName not in self.jobAttributeNames:
-      return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
+      return S_ERROR(EWMSJMAN, 'Request to set non-existing job attribute')
 
     if attrName == 'Status':
       # Treat this update separately
@@ -634,7 +634,7 @@ class JobDB(DB):
 
     for attrName in attrNames:
       if attrName not in self.jobAttributeNames:
-        return S_ERROR(EWMSJERR, 'Request to set non-existing job attribute')
+        return S_ERROR(EWMSJMAN, 'Request to set non-existing job attribute')
 
     if 'Status' in attrNames:
       # Treat this update separately

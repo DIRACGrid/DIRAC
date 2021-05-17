@@ -30,19 +30,20 @@ class State(object):
   :param stateMap: it is a list (of strings) with the reachable states from this particular
                    status. If not defined, we assume there are no restrictions.
   :type stateMap: python:list
-  :param defState: default state used in case the next state it is not stateMap (not defined
+  :param defState: default state used in case the next state is not in stateMap (not defined
         or simply not there).
   :type defState: None or str
 
   """
 
-  def __init__(self, level, stateMap=list(), defState=None):
+  def __init__(self, level, stateMap=None, defState=None):
     """
     Constructor.
     """
 
     self.level = level
-    self.stateMap = stateMap
+    if stateMap is None:
+      self.stateMap = stateMap if stateMap else []
     self.default = defState
 
   def transitionRule(self, nextState):
@@ -74,7 +75,7 @@ class State(object):
     # If not, calculate defaultState:
     # if there is a default, that one
     # otherwise is nextState (states with empty list have no movement restrictions)
-    defaultNext = (1 and self.default) or nextState
+    defaultNext = self.default if self.default else nextState
     return defaultNext
 
 
