@@ -63,8 +63,7 @@ class GGUSTicketsPolicy(PolicyBase):
       result['Status'] = 'Active'
       result['Reason'] = 'NO GGUSTickets unsolved'
     else:
-      # FIXME: setting to Probing is way too aggresive, as we do not know the
-      # nature of the tickets
+      # Setting to Probing is way too aggresive, as we do not know the nature of the tickets
       result['Status'] = 'Degraded'
       result['Reason'] = '%s GGUSTickets unsolved: %s' % (openTickets, commandResult['Tickets'])
 

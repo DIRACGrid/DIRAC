@@ -220,8 +220,6 @@ class TokenAgent(AgentModule):
     mail += " Or you can use the dirac-rss-set-token script\n\n"
     mail += "Through the same interfaces you can release the token any time\n"
 
-    # FIXME: you can re-take control of them using this or that...
-
     resEmail = self.diracAdmin.sendMail(tokenOwner, subject, mail)
     if not resEmail['OK']:
       return S_ERROR('Cannot send email to user "%s"' % tokenOwner)

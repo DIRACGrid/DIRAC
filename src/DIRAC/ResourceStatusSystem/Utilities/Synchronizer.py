@@ -174,8 +174,6 @@ class Synchronizer(object):
     if not removingResources['OK']:
       gLogger.error(removingResources['Message'])
 
-    # FIXME: VOMS
-
     return S_OK()
 
   def _syncNodes(self):

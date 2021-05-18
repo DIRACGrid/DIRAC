@@ -230,13 +230,17 @@ class DMSHelpers(object):
     if result['OK']:
       for site in self.siteSEMapping[LOCAL] if withStorage else self.siteSet:
         grid, shortSite, _country = site.split('.')
-        if isinstance(tier, six.integer_types) and \
-            (grid != 'LCG' or
-             gConfig.getValue('/Resources/Sites/%s/%s/MoUTierLevel' % (grid, site), 999) != tier):
+        if isinstance(tier, six.integer_types) and (
+            grid != "LCG"
+            or gConfig.getValue("/Resources/Sites/%s/%s/MoUTierLevel" % (grid, site), 999)
+            != tier
+        ):
           continue
-        if isinstance(tier, (list, tuple, dict, set)) and \
-            (grid != 'LCG' or
-             gConfig.getValue('/Resources/Sites/%s/%s/MoUTierLevel' % (grid, site), 999) not in tier):
+        if isinstance(tier, (list, tuple, dict, set)) and (
+            grid != "LCG"
+            or gConfig.getValue("/Resources/Sites/%s/%s/MoUTierLevel" % (grid, site), 999)
+            not in tier
+        ):
           continue
         if withStorage or tier is not None:
           siteDict[shortSite] = site
