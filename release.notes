@@ -1,3 +1,19 @@
+[v7r1p40]
+
+*Core
+CHANGE: (#5123) Read X509_CERT_DIR from central place
+
+*WorkloadManagement
+CHANGE: (#5143) Clarify that "tarfile failed with message" can be normal
+FIX: (#5146) SiteDirector._getPilotsWeMayWantToSubmit: fix return type in case of error
+
+*DataManagement
+CHANGE: (#5144) FileManagerPS has bulk method for getReplicas
+
+*Resources
+CHANGE: (#5137) HTCondorCE submits jobs with -spool option when a local schedd is used to
+        spool the pilot wrappers that can be deleted afterwards
+
 [v7r1p39]
 
 *WMS
