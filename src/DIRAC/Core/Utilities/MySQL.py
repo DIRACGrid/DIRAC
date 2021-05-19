@@ -207,173 +207,174 @@ def _quotedList(fieldList=None):
   return ', '.join(quotedFields)
 
 
+class ConnectionPool(object):
+  """
+  Management of connections per thread
+  """
+
+  def __init__(self, host, user, passwd, port=3306, graceTime=600):
+    self.__host = host
+    self.__user = user
+    self.__passwd = passwd
+    self.__port = port
+    self.__graceTime = graceTime
+    self.__spares = collections.deque()
+    self.__maxSpares = 10
+    self.__lastClean = 0
+    self.__assigned = {}
+
+  @property
+  def __thid(self):
+    return threading.current_thread()
+
+  def __newConn(self):
+    conn = MySQLdb.connect(host=self.__host,
+                           port=self.__port,
+                           user=self.__user,
+                           passwd=self.__passwd)
+
+    self.__execute(conn, "SET AUTOCOMMIT=1")
+    return conn
+
+  def __execute(self, conn, cmd):
+    cursor = conn.cursor()
+    res = cursor.execute(cmd)
+    conn.commit()
+    cursor.close()
+    return res
+
+  def get(self, dbName, retries=10):
+    retries = max(0, min(MAXCONNECTRETRY, retries))
+    self.clean()
+    return self.__getWithRetry(dbName, retries, retries)
+
+  def __getWithRetry(self, dbName, totalRetries, retriesLeft):
+    sleepTime = RETRY_SLEEP_DURATION * (totalRetries - retriesLeft)
+    if sleepTime > 0:
+      time.sleep(sleepTime)
+    try:
+      conn, lastName, thid = self.__innerGet()
+    except MySQLdb.MySQLError as excp:
+      if retriesLeft > 0:
+        return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
+      return S_ERROR(DErrno.EMYSQL, "Could not connect: %s" % excp)
+
+    if not self.__ping(conn):
+      try:
+        self.__assigned.pop(thid)
+      except KeyError:
+        pass
+      if retriesLeft > 0:
+        return self.__getWithRetry(dbName, totalRetries, retriesLeft)
+      return S_ERROR(DErrno.EMYSQL, "Could not connect")
+
+    if lastName != dbName:
+      try:
+        conn.select_db(dbName)
+      except MySQLdb.MySQLError as excp:
+        if retriesLeft > 0:
+          return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
+        return S_ERROR(DErrno.EMYSQL, "Could not select db %s: %s" % (dbName, excp))
+      try:
+        self.__assigned[thid][1] = dbName
+      except KeyError:
+        if retriesLeft > 0:
+          return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
+        return S_ERROR(DErrno.EMYSQL, "Could not connect")
+    return S_OK(conn)
+
+  def __ping(self, conn):
+    try:
+      conn.ping(True)
+      return True
+    except Exception:
+      return False
+
+  def __innerGet(self):
+    thid = self.__thid
+    now = time.time()
+    if thid in self.__assigned:
+      data = self.__assigned[thid]
+      conn = data[0]
+      data[2] = now
+      return data[0], data[1], thid
+    # Not cached
+    try:
+      conn, dbName = self.__spares.pop()
+    except IndexError:
+      conn = self.__newConn()
+      dbName = ""
+
+    self.__assigned[thid] = [conn, dbName, now]
+    return conn, dbName, thid
+
+  def __pop(self, thid):
+    try:
+      data = self.__assigned.pop(thid)
+      if len(self.__spares) < self.__maxSpares:
+        self.__spares.append((data[0], data[1]))
+      else:
+        try:
+          data[0].close()
+        except MySQLdb.ProgrammingError as exc:
+          gLogger.warn("ProgrammingError exception while closing MySQL connection: %s" % exc)
+        except Exception as exc:
+          gLogger.warn("Exception while closing MySQL connection: %s" % exc)
+    except KeyError:
+      pass
+
+  def clean(self, now=False):
+    if not now:
+      now = time.time()
+    self.__lastClean = now
+    for thid in list(self.__assigned):
+      if not thid.is_alive():
+        self.__pop(thid)
+      try:
+        data = self.__assigned[thid]
+      except KeyError:
+        continue
+      if now - data[2] > self.__graceTime:
+        self.__pop(thid)
+
+  def transactionStart(self, dbName):
+    result = self.get(dbName)
+    if not result['OK']:
+      return result
+    conn = result['Value']
+    try:
+      return S_OK(self.__execute(conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT"))
+    except MySQLdb.MySQLError as excp:
+      return S_ERROR(DErrno.EMYSQL, "Could not begin transaction: %s" % excp)
+
+  def transactionCommit(self, dbName):
+    result = self.get(dbName)
+    if not result['OK']:
+      return result
+    conn = result['Value']
+    try:
+      result = self.__execute(conn, "COMMIT")
+      return S_OK(result)
+    except MySQLdb.MySQLError as excp:
+      return S_ERROR(DErrno.EMYSQL, "Could not commit transaction: %s" % excp)
+
+  def transactionRollback(self, dbName):
+    result = self.get(dbName)
+    if not result['OK']:
+      return result
+    conn = result['Value']
+    try:
+      result = self.__execute(conn, "ROLLBACK")
+      return S_OK(result)
+    except MySQLdb.MySQLError as excp:
+      return S_ERROR(DErrno.EMYSQL, "Could not rollback transaction: %s" % excp)
+
+
 class MySQL(object):
   """
   Basic multithreaded DIRAC MySQL Client Class
   """
   __initialized = False
-
-  class ConnectionPool(object):
-    """
-    Management of connections per thread
-    """
-
-    def __init__(self, host, user, passwd, port=3306, graceTime=600):
-      self.__host = host
-      self.__user = user
-      self.__passwd = passwd
-      self.__port = port
-      self.__graceTime = graceTime
-      self.__spares = collections.deque()
-      self.__maxSpares = 10
-      self.__lastClean = 0
-      self.__assigned = {}
-
-    @property
-    def __thid(self):
-      return threading.current_thread()
-
-    def __newConn(self):
-      conn = MySQLdb.connect(host=self.__host,
-                             port=self.__port,
-                             user=self.__user,
-                             passwd=self.__passwd)
-
-      self.__execute(conn, "SET AUTOCOMMIT=1")
-      return conn
-
-    def __execute(self, conn, cmd):
-      cursor = conn.cursor()
-      res = cursor.execute(cmd)
-      conn.commit()
-      cursor.close()
-      return res
-
-    def get(self, dbName, retries=10):
-      retries = max(0, min(MAXCONNECTRETRY, retries))
-      self.clean()
-      return self.__getWithRetry(dbName, retries, retries)
-
-    def __getWithRetry(self, dbName, totalRetries, retriesLeft):
-      sleepTime = RETRY_SLEEP_DURATION * (totalRetries - retriesLeft)
-      if sleepTime > 0:
-        time.sleep(sleepTime)
-      try:
-        conn, lastName, thid = self.__innerGet()
-      except MySQLdb.MySQLError as excp:
-        if retriesLeft > 0:
-          return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
-        return S_ERROR(DErrno.EMYSQL, "Could not connect: %s" % excp)
-
-      if not self.__ping(conn):
-        try:
-          self.__assigned.pop(thid)
-        except KeyError:
-          pass
-        if retriesLeft > 0:
-          return self.__getWithRetry(dbName, totalRetries, retriesLeft)
-        return S_ERROR(DErrno.EMYSQL, "Could not connect")
-
-      if lastName != dbName:
-        try:
-          conn.select_db(dbName)
-        except MySQLdb.MySQLError as excp:
-          if retriesLeft > 0:
-            return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
-          return S_ERROR(DErrno.EMYSQL, "Could not select db %s: %s" % (dbName, excp))
-        try:
-          self.__assigned[thid][1] = dbName
-        except KeyError:
-          if retriesLeft > 0:
-            return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
-          return S_ERROR(DErrno.EMYSQL, "Could not connect")
-      return S_OK(conn)
-
-    def __ping(self, conn):
-      try:
-        conn.ping(True)
-        return True
-      except Exception:
-        return False
-
-    def __innerGet(self):
-      thid = self.__thid
-      now = time.time()
-      if thid in self.__assigned:
-        data = self.__assigned[thid]
-        conn = data[0]
-        data[2] = now
-        return data[0], data[1], thid
-      # Not cached
-      try:
-        conn, dbName = self.__spares.pop()
-      except IndexError:
-        conn = self.__newConn()
-        dbName = ""
-
-      self.__assigned[thid] = [conn, dbName, now]
-      return conn, dbName, thid
-
-    def __pop(self, thid):
-      try:
-        data = self.__assigned.pop(thid)
-        if len(self.__spares) < self.__maxSpares:
-          self.__spares.append((data[0], data[1]))
-        else:
-          try:
-            data[0].close()
-          except MySQLdb.ProgrammingError as exc:
-            gLogger.warn("ProgrammingError exception while closing MySQL connection: %s" % exc)
-          except Exception as exc:
-            gLogger.warn("Exception while closing MySQL connection: %s" % exc)
-      except KeyError:
-        pass
-
-    def clean(self, now=False):
-      if not now:
-        now = time.time()
-      self.__lastClean = now
-      for thid in list(self.__assigned):
-        if not thid.is_alive():
-          self.__pop(thid)
-        try:
-          data = self.__assigned[thid]
-        except KeyError:
-          continue
-        if now - data[2] > self.__graceTime:
-          self.__pop(thid)
-
-    def transactionStart(self, dbName):
-      result = self.get(dbName)
-      if not result['OK']:
-        return result
-      conn = result['Value']
-      try:
-        return S_OK(self.__execute(conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT"))
-      except MySQLdb.MySQLError as excp:
-        return S_ERROR(DErrno.EMYSQL, "Could not begin transaction: %s" % excp)
-
-    def transactionCommit(self, dbName):
-      result = self.get(dbName)
-      if not result['OK']:
-        return result
-      conn = result['Value']
-      try:
-        result = self.__execute(conn, "COMMIT")
-        return S_OK(result)
-      except MySQLdb.MySQLError as excp:
-        return S_ERROR(DErrno.EMYSQL, "Could not commit transaction: %s" % excp)
-
-    def transactionRollback(self, dbName):
-      result = self.get(dbName)
-      if not result['OK']:
-        return result
-      conn = result['Value']
-      try:
-        result = self.__execute(conn, "ROLLBACK")
-        return S_OK(result)
-      except MySQLdb.MySQLError as excp:
-        return S_ERROR(DErrno.EMYSQL, "Could not rollback transaction: %s" % excp)
 
   __connectionPools = {}
 
@@ -403,7 +404,7 @@ class MySQL(object):
     self.__port = port
     cKey = (self.__hostName, self.__userName, self.__passwd, self.__port)
     if cKey not in MySQL.__connectionPools:
-      MySQL.__connectionPools[cKey] = MySQL.ConnectionPool(*cKey)
+      MySQL.__connectionPools[cKey] = ConnectionPool(*cKey)
     self.__connectionPool = MySQL.__connectionPools[cKey]
 
     self.__initialized = True

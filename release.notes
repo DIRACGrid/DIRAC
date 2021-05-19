@@ -39,6 +39,18 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p7]
+
+*Core
+CHANGE: (#5142) Move MySQL.ConnectionPool class to the module level
+CHANGE: (#5142) Move RequestHandler.ConnectionError to the module level
+FIX: (#5133) The RPC Client class should now be threadsafe
+FIX: (#5133) Correctly add RPC attributes to client objects in Python 3
+FIX: (#5130) Avoid race when importing modules which can cause classes to be redefined
+
+*Transformation
+FIX: (#5135) TransformationBody update is too long for parameters
+
 [v7r2p6]
 
 *Core
@@ -221,6 +233,22 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p40]
+
+*Core
+CHANGE: (#5123) Read X509_CERT_DIR from central place
+
+*WorkloadManagement
+CHANGE: (#5143) Clarify that "tarfile failed with message" can be normal
+FIX: (#5146) SiteDirector._getPilotsWeMayWantToSubmit: fix return type in case of error
+
+*DataManagement
+CHANGE: (#5144) FileManagerPS has bulk method for getReplicas
+
+*Resources
+CHANGE: (#5137) HTCondorCE submits jobs with -spool option when a local schedd is used to
+        spool the pilot wrappers that can be deleted afterwards
 
 [v7r1p39]
 

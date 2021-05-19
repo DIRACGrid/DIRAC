@@ -431,7 +431,10 @@ class TransformationDB(DB):
         if not pv['OK']:
           return S_ERROR("Failed to parse parameter value")
         paramValue = pv['Value']
-        message = '%s updated to %s' % (paramName, paramValue)
+        if paramName == 'Body':
+          message = 'Body updated'
+        else:
+          message = '%s updated to %s' % (paramName, paramValue)
     else:
       res = self.__addAdditionalTransformationParameter(transID, paramName, paramValue, connection=connection)
       if res['OK']:
@@ -1585,8 +1588,11 @@ class TransformationDB(DB):
     return {"OK": True, "Value": len(res['Value']['Successful']), "Successful": successful, "Failed": failed}
 
   def setMetadata(self, path, usermetadatadict):
-    """ It can be applied to a file or to a directory (path). For a file, add the file to Transformations if the updated metadata dictionary passes the filter.
-        For a directory, add the files contained in the directory to the Transformations if the the updated metadata dictionary passes the filter.
+    """
+    It can be applied to a file or to a directory (path).
+    For a file, add the file to Transformations if the updated metadata dictionary passes the filter.
+    For a directory, add the files contained in the directory to the Transformations
+    if the the updated metadata dictionary passes the filter.
     """
     gLogger.info("setMetadata: Attempting to set metadata %s to: %s" % (usermetadatadict, path))
     transFiles = {}

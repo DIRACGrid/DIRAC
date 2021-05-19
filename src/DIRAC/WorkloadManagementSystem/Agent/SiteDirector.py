@@ -788,7 +788,7 @@ class SiteDirector(AgentModule):
     result = self.matcherClient.getMatchingTaskQueues(ceDict)
     if not result['OK']:
       self.log.error('Could not retrieve TaskQueues from TaskQueueDB', result['Message'])
-      return result
+      return 0, {}
     taskQueueDict = result['Value']
     if not taskQueueDict:
       self.log.verbose('No matching TQs found',

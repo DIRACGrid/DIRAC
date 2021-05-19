@@ -220,7 +220,9 @@ def prepare_environment(
         cmd = _build_docker_cmd(container_name, use_root=True, cwd="/")
         gid = str(os.getgid())
         uid = str(os.getuid())
-        subprocess.run(cmd + ["groupadd", "--gid", gid, "dirac"], check=True)
+        ret = subprocess.run(cmd + ["groupadd", "--gid", gid, "dirac"], check=False)
+        if ret.returncode != 0:
+            typer.secho(f"Failed to add add group dirac with id={gid}", fg=c.YELLOW)
         subprocess.run(
             cmd
             + [
