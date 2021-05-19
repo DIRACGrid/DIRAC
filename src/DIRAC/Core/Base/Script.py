@@ -115,26 +115,37 @@ def initialize(script=False, ignoreErrors=False, initializeMonitor=False, enable
 
 
 def registerSwitch(showKey, longKey, helpString, callback=False):
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.registerCmdOpt`. """
   localCfg.registerCmdOpt(showKey, longKey, helpString, callback)
 
 
-def getPositionalArgs():
-  return localCfg.getPositionalArguments()
+def registerArgument(description, mandatory=True, values=None, default=None):
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.registerCmdArg`. """
+  localCfg.registerCmdArg(description, mandatory, values, default)
+
+
+def getPositionalArgs(group=False):
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getPositionalArguments`. """
+  return localCfg.getPositionalArguments(group)
 
 
 def getExtraCLICFGFiles():
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getExtraCLICFGFiles`. """
   return localCfg.getExtraCLICFGFiles()
 
 
 def getUnprocessedSwitches():
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getUnprocessedSwitches`. """
   return localCfg.getUnprocessedSwitches()
 
 
 def addDefaultOptionValue(option, value):
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.addDefaultEntry`. """
   localCfg.addDefaultEntry(option, value)
 
 
 def setUsageMessage(usageMessage):
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.setUsageMessage`. """
   global gIsAlreadySetUsageMsg
   gIsAlreadySetUsageMsg = True
   try:
@@ -145,10 +156,12 @@ def setUsageMessage(usageMessage):
 
 
 def disableCS():
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.disableCS`. """
   localCfg.disableCS()
 
 
 def enableCS():
+  """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.enableCS`. """
   return localCfg.enableCS()
 
 

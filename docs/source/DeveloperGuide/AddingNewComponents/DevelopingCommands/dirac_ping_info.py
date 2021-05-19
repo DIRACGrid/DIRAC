@@ -2,11 +2,9 @@
 """
 Ping a list of services and show the result
 
-Usage:
-  dirac-ping-info [options] ... System ...
-
-Arguments:
-  System:   system name(mandatory)
+Example:
+  $ dirac-ping-info MySystem
+  Ping MySystem!
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -16,7 +14,7 @@ __RCSID__ = "$Id$"
 
 import sys
 from DIRAC import exit as DIRACExit
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
@@ -48,6 +46,7 @@ def main():
   # Register accepted switches and their callbacks
   Script.registerSwitch("r", "showRaw", "show raw result from the query", cliParams.setRawResult)
   Script.registerSwitch("p:", "numPings=", "Number of pings to do (by default 1)", cliParams.setNumOfPingsToDo)
+  Script.registerArgument(['System: system names'])
 
   # Parse the command line and initialize DIRAC
   Script.parseCommandLine(ignoreErrors=False)
@@ -55,12 +54,8 @@ def main():
   # Get the list of services
   servicesList = Script.getPositionalArgs()
 
-  # Check and process the command line switches and options
-  if not servicesList:
-    Script.showHelp(exitCode=1)
-
   # Do something!
-
+  gLogger.notice('Ping %s!' % ', '.join(servicesList))
 
 if __name__ == "__main__":
   main()
