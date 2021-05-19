@@ -127,7 +127,7 @@ def _safeInt(value):
 def _makeComponentDict(component, setupDict, installedDict, compType, system, runitDict):
   componentDict = {
       'Setup': component in setupDict.get(compType, []).get(system, []),
-      'Installed': component in installedDict.get(compType, []).get(system, []),
+      'Installed': component in installedDict.get(compType, {}).get(system, {}),
       'RunitStatus': 'Unknown',
       'Timeup': 0,
       'PID': 0,
