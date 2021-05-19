@@ -84,7 +84,14 @@ def test__rescheduleFailedJob(mocker, mockJMInput, expected):
   mockJM.return_value = mockJMInput
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobManagerClient.executeRPC", side_effect=mockJM)
+  mocker.patch(
+      "DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient.JobStateUpdateClient.setJobStatusBulk",
+      side_effect=mockJM,
+  )
+  mocker.patch(
+      "DIRAC.WorkloadManagementSystem.Client.JobManagerClient.JobManagerClient.rescheduleJob",
+      side_effect=mockJM,
+  )
 
   jobAgent = JobAgent('Test', 'Test1')
 

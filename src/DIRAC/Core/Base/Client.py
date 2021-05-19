@@ -9,21 +9,43 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import ast
-from io import open
-import os
+from functools import partial
+try:
+  from functools import partialmethod
+except ImportError:
+  class partialmethod(partial):
+    def __get__(self, instance, owner):
+      if instance is None:
+        return self
+      return partial(
+          self.func,
+          instance,
+          *(self.args or ()),
+          **(self.keywords or {})
+      )
 
+import importlib_resources
 import six
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
+
+
+class partialmethodWithDoc(partialmethod):
+  """Extension of meth:`functools.partialmethod` that preserves docstrings"""
+  def __get__(self, instance, owner):
+    func = super(partialmethodWithDoc, self).__get__(instance, owner)
+    func.__doc__ = self.__doc__
+    return func
 
 
 class Client(object):
   """ Simple class to redirect unknown actions directly to the server. Arguments
       to the constructor are passed to the RPCClient constructor as they are.
       Some of them can however be overwritten at each call (url and timeout).
-      This class is not thread safe !
 
       - The self.serverURL member should be set by the inheriting class
   """
@@ -38,7 +60,6 @@ class Client(object):
                       the RPCClient
     """
     self.serverURL = kwargs.pop('url', None)
-    self.call = None  # I suppose it is initialized here to make pylint happy
     self.__kwargs = kwargs
     self.timeout = DEFAULT_RPC_TIMEOUT
 
@@ -49,8 +70,7 @@ class Client(object):
     # This allows the dir() method to work as well as tab completion in ipython
     if name == '__dir__':
       return super(Client, self).__getattr__()  # pylint: disable=no-member
-    self.call = name
-    return self.executeRPC
+    return partial(self.executeRPC, call=name)
 
   def setServer(self, url):
     """ Set the server URL used by default
@@ -64,6 +84,11 @@ class Client(object):
     """
     return self.serverURL
 
+  @property
+  @deprecated("To be removed once we're sure self.call has been removed")
+  def call(self):
+    raise NotImplementedError("This should be unreachable")
+
   def executeRPC(self, *parms, **kws):
     """ This method extracts some parameters from kwargs that
         are used as parameter of the constructor or RPCClient.
@@ -74,7 +99,7 @@ class Client(object):
         :param timeout: we can change the timeout on a per call bases. Default is self.timeout
         :param url: We can specify which url to use
     """
-    toExecute = self.call
+    toExecute = kws.pop('call')
     # Check whether 'rpc' keyword is specified
     rpc = kws.pop('rpc', False)
     # Check whether the 'timeout' keyword is specified
@@ -110,20 +135,11 @@ def createClient(serviceName):
 
   :param str serviceName: system/service. e.g. WorkloadManagement/JobMonitoring
   """
-  parts = serviceName.split('/')
-  systemName, handlerName = parts[0], parts[1]
+  systemName, handlerName = serviceName.split('/')
   handlerModuleName = handlerName + 'Handler'
   # by convention they are the same
   handlerClassName = handlerModuleName
   handlerClassPath = '%sSystem.Service.%s.%s' % (systemName, handlerModuleName, handlerClassName)
-  handlerFilePath = '%sSystem/Service/%s.py' % (systemName, handlerModuleName)
-
-  # Find possible locations in extensions which end in DIRAC
-  basepath = os.environ.get('DIRAC', './')
-  locations = [folder for folder in os.listdir(basepath) if
-               folder != 'DIRAC' and folder.endswith('DIRAC') and os.path.isdir(os.path.join(basepath, folder))]
-  # DIRAC Should be last, so functions defined in extensions take precedence
-  locations.append('DIRAC')
 
   def genFunc(funcName, arguments, handlerClassPath, doc):
     """Create a function with *funcName* taking *arguments*."""
@@ -134,36 +150,30 @@ def createClient(serviceName):
       arguments = arguments[1:]
 
     # Create the actual functions, with or without arguments, **kwargs can be: rpc, timeout, url
-    if arguments:
-      def func(self, *args, **kwargs):  # pylint: disable=missing-docstring
-        self.call = funcName
-        return self.executeRPC(*args, **kwargs)
-    else:
-      def func(self, **kwargs):  # pylint: disable=missing-docstring
-        self.call = funcName
-        return self.executeRPC(**kwargs)
-    func.__doc__ = funcDocString + doc + \
-        "\n\nAutomatically created for the service function :func:`~%s.export_%s`" % \
-        (handlerClassPath, funcName)
-    parameterDoc = ''
+    func = partialmethodWithDoc(Client.executeRPC, call=funcName)
+    func.__doc__ = funcDocString + doc
+    func.__doc__ += "\n\nAutomatically created for the service function "
+    func.__doc__ += ":func:`~%s.export_%s`" % (handlerClassPath, funcName)
     # add description for parameters, if that is not already done for the docstring of function in the service
     if arguments and ":param " not in doc:
-      parameterDoc = "\n".join(":param %(par)s: %(par)s" % dict(par=par)
-                               for par in arguments)
-      func.__doc__ += "\n\n" + parameterDoc
+      func.__doc__ += "\n\n"
+      func.__doc__ += "\n".join(":param %s: %s" % (par, par) for par in arguments)
     return func
 
   def addFunctions(clientCls):
     """Add the functions to the decorated class."""
     attrDict = dict(clientCls.__dict__)
-    for location in locations:
-      fullPath = os.path.join(basepath, location, handlerFilePath)
-      fullHandlerClassPath = '%s.%s' % (location, handlerClassPath)
-      if not os.path.exists(fullPath):
+    for extension in extensionsByPriority()[::-1]:
+      try:
+        path = importlib_resources.path(
+            "%s.%sSystem.Service" % (extension, systemName),
+            "%s.py" % handlerModuleName,
+        )
+      except (ImportError, OSError):
         continue
-      with open(fullPath, 'rt') as moduleFile:
-        # parse the handler module into abstract syntax tree
-        handlerAst = ast.parse(moduleFile.read(), fullPath)
+      fullHandlerClassPath = '%s.%s' % (extension, handlerClassPath)
+      with path as fp:
+        handlerAst = ast.parse(fp.read_text(), str(path))
 
       # loop over all the nodes (classes, functions, imports) in the handlerModule
       for node in ast.iter_child_nodes(handlerAst):
