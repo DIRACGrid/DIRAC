@@ -84,14 +84,14 @@ class JobCleaningAgent(AgentModule):
         ', '.join(self.prodTypes)))
     self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce', 500)
 
-    self.removeStatusDelay['Done'] = self.am_getOption('RemoveStatusDelay/Done', 7)
-    self.removeStatusDelay['Killed'] = self.am_getOption('RemoveStatusDelay/Killed', 7)
-    self.removeStatusDelay['Failed'] = self.am_getOption('RemoveStatusDelay/Failed', 7)
+    self.removeStatusDelay[JobStatus.DONE] = self.am_getOption('RemoveStatusDelay/Done', 7)
+    self.removeStatusDelay[JobStatus.KILLED] = self.am_getOption('RemoveStatusDelay/Killed', 7)
+    self.removeStatusDelay[JobStatus.FAILED] = self.am_getOption('RemoveStatusDelay/Failed', 7)
     self.removeStatusDelay['Any'] = self.am_getOption('RemoveStatusDelay/Any', -1)
 
-    self.removeStatusDelayHB['Done'] = self.am_getOption('RemoveStatusDelayHB/Done', -1)
-    self.removeStatusDelayHB['Killed'] = self.am_getOption('RemoveStatusDelayHB/Killed', -1)
-    self.removeStatusDelayHB['Failed'] = self.am_getOption('RemoveStatusDelayHB/Failed', -1)
+    self.removeStatusDelayHB[JobStatus.DONE] = self.am_getOption('RemoveStatusDelayHB/Done', -1)
+    self.removeStatusDelayHB[JobStatus.KILLED] = self.am_getOption('RemoveStatusDelayHB/Killed', -1)
+    self.removeStatusDelayHB[JobStatus.FAILED] = self.am_getOption('RemoveStatusDelayHB/Failed', -1)
     self.maxHBJobsAtOnce = self.am_getOption('MaxHBJobsAtOnce', 0)
 
     return S_OK()
@@ -231,7 +231,7 @@ class JobCleaningAgent(AgentModule):
           "Cannot schedule removal of oversized sandboxes", result['Message'])
       return result
 
-    failedJobs = result['Value']['Failed']
+    failedJobs = result['Value'][JobStatus.FAILED]
     for job in failedJobs:
       jobList.pop(jobList.index(job))
     if not jobList:

@@ -944,8 +944,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
         return retVal
       connObj = retVal['Value']
 
-    jobString = ','.join([str(x) for x in jobIDs])
-    retVal = self._query('SELECT JobId,TQId FROM `tq_Jobs` WHERE JobId in (%s) ' % jobString, conn=connObj)
+    cmd = 'SELECT JobId,TQId FROM `tq_Jobs` WHERE JobId IN (%s) ' % ','.join(str(x) for x in jobIDs)
+    retVal = self._query(cmd, conn=connObj)
 
     if not retVal['OK']:
       return retVal

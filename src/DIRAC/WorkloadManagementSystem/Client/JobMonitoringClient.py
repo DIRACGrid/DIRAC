@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 @createClient('WorkloadManagement/JobMonitoring')
@@ -74,6 +75,7 @@ class JobMonitoringClient(Client):
     return res
 
   @ignoreEncodeWarning
+  @deprecated("Use getJobsSummary")
   def getJobsPrimarySummary(self, jobIDs):
     res = self._getRPC().getJobsPrimarySummary(jobIDs)
 

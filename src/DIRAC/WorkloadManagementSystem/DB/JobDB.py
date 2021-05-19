@@ -20,7 +20,6 @@ import six
 import base64
 import zlib
 
-from six.moves import range
 import operator
 
 __RCSID__ = "$Id$"
@@ -34,8 +33,9 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.DErrno import EWMSSUBM
+from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -120,6 +120,7 @@ class JobDB(DB):
     return S_OK()
 
 #############################################################################
+  @deprecated("Use getJobsAttributes")
   def getAttributesForJobList(self, jobIDList, attrList=None):
     """ Get attributes for the jobs in the the jobIDList.
         Returns an S_OK structure with a dictionary of dictionaries as its Value:
@@ -279,7 +280,10 @@ class JobDB(DB):
         Return a dictionary with all Job Attributes as value pairs
     """
 
-    # If no list is given, return all attributes
+    if not jobIDs:
+      return S_OK({})
+
+    # If no list of attributes is given, return all attributes
     if not attrList:
       attrList = self.jobAttributeNames
     if isinstance(attrList, six.string_types):
@@ -287,7 +291,7 @@ class JobDB(DB):
     attrList.sort()
 
     if isinstance(jobIDs, six.string_types):
-      jobIDs = jobIDs.replace(' ', '').split(',')
+      jobIDs = [int(jID) for jID in jobIDs.replace(' ', '').split(',')]
     if isinstance(jobIDs, int):
       jobIDs = [jobIDs]
 
@@ -364,11 +368,9 @@ class JobDB(DB):
     """
 
     result = self.getJobAttributes(jobID, [attribute])
-    if result['OK']:
-      value = result['Value'][attribute]
-      return S_OK(value)
-
-    return result
+    if not result['OK']:
+      return result
+    return S_OK(result['Value'].get(attribute))
 
 #############################################################################
   def getJobParameter(self, jobID, parameter):
@@ -545,7 +547,7 @@ class JobDB(DB):
     return S_OK([self._to_value(i) for i in res['Value']])
 
 #############################################################################
-  def setJobAttribute(self, jobID, attrName, attrValue, update=False, myDate=None):
+  def setJobAttribute(self, jobID, attrName, attrValue, update=False, myDate=None, force=False):
     """ Set an attribute value for job specified by jobID.
         The LastUpdate time stamp is refreshed if explicitly requested
 
@@ -560,8 +562,22 @@ class JobDB(DB):
     """
 
     if attrName not in self.jobAttributeNames:
-      return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
+      return S_ERROR(EWMSJMAN, 'Request to set non-existing job attribute')
 
+    if attrName == 'Status':
+      # Treat this update separately
+      res = self.setJobsMajorStatus([jobID], attrValue, force=force)
+      if not res['OK']:
+        return res
+      if update:
+        cmd = "UPDATE Jobs SET LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s" % jobID
+        if myDate:
+          cmd += ' AND LastUpdateTime < %s' % myDate
+        return self._update(cmd)
+      else:
+        return res
+
+    # if we are here it's because we are not updating the status
     ret = self._escapeString(jobID)
     if not ret['OK']:
       return ret
@@ -583,16 +599,21 @@ class JobDB(DB):
     return self._update(cmd)
 
 #############################################################################
-  def setJobAttributes(self, jobID, attrNames, attrValues, update=False, myDate=None):
+  def setJobAttributes(self, jobID, attrNames, attrValues, update=False, myDate=None, force=False):
     """ Set one or more attribute values for one or more jobs specified by jobID.
         The LastUpdate time stamp is refreshed if explicitly requested with the update flag
 
+        This method is also used for updating the Status, MinorStatus, ApplicationStatus
+        of a job, as self.setJobsStatus also calls this method.
+        If the status is already final, we don't update it.
+
         :param jobID: one or more job IDs
-        :type jobID: int or str or python:list
+        :type jobID: int or str or list
         :param list attrNames: names of attributes to update
         :param list attrValues: corresponding values of attributes to update
         :param bool update: optional flag to update the job LastUpdateTime stamp
         :param str myDate: optional time stamp for the LastUpdateTime attribute
+        :param bool force: force update of Status (override State Machine decision)
 
         :return: S_OK/S_ERROR
     """
@@ -613,9 +634,18 @@ class JobDB(DB):
 
     for attrName in attrNames:
       if attrName not in self.jobAttributeNames:
-        return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
+        return S_ERROR(EWMSJMAN, 'Request to set non-existing job attribute')
+
+    if 'Status' in attrNames:
+      # Treat this update separately
+      res = self.setJobsMajorStatus(jIDList, attrValues[attrNames.index('Status')], force=force)
+      if not res['OK']:
+        return res
+      attrValues.pop(attrNames.index('Status'))
+      attrNames.remove('Status')
 
     attr = []
+
     for name, value in zip(attrNames, attrValues):
       ret = self._escapeString(value)
       if not ret['OK']:
@@ -633,20 +663,61 @@ class JobDB(DB):
 
     return self._update(cmd)
 
-#############################################################################
-  def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus='', minor=None, application=None):
+  def setJobsMajorStatus(self, jIDList, candidateStatus, force=False):
+    """
+    Sets jobs major status, considering the JobStateMachine result
+
+    :param list jIDList: list of one or more job IDs
+    :param str candidateStatus: candidate major Status
+    """
+
+    # get the current statuses of the jobs
+    res = self.getJobsAttributes(jIDList, ['Status'])
+    if not res['OK']:
+      return res
+    jIDStatusDict = res['Value']
+
+    newStatuses = {}
+    for jID, jIDStatus in jIDStatusDict.items():
+      if force:
+        self.log.warn("Status update forced" "(%s)" % candidateStatus)
+        nextState = candidateStatus
+      else:
+        res = JobStatus.JobsStateMachine(jIDStatus['Status']).getNextState(candidateStatus)
+        if not res['OK']:
+          return res
+        nextState = res['Value']
+
+        # If the JobsStateMachine does not accept the candidate, add it to separate dictionary
+        if candidateStatus != nextState:
+          self.log.error(
+              "Job Status Error",
+              "%s can't move from %s to %s: using %s" % (
+                  jID, jIDStatus['Status'], candidateStatus, nextState))
+
+      newStatuses[jID] = nextState
+
+    cmd = "INSERT INTO Jobs (JobID, Status) VALUES "
+
+    ns = []
+    for jID, status in newStatuses.items():
+      ret_status = self._escapeString(status)
+      if not ret_status['OK']:
+        return ret_status
+      status = ret_status['Value']
+      ns.append("(%s, %s)" % (jID, status))
+    cmd += ','.join(ns)
+
+    cmd += " ON DUPLICATE KEY UPDATE Status=VALUES(Status)"
+
+    return self._update(cmd)
+
+  def setJobStatus(self, jobID, status='', minorStatus='', applicationStatus=''):
     """ Set status of the job specified by its jobID
     """
-    # Backward compatibility
-    # FIXME: to remove in next version
-    if minor:
-      minorStatus = minor
-    if application:
-      applicationStatus = application
-
     # Do not update the LastUpdate time stamp if setting the Stalled status
     update_flag = True
-    if status == "Stalled":
+    if status == JobStatus.STALLED:
       update_flag = False
 
     attrNames = []
@@ -1286,7 +1357,7 @@ class JobDB(DB):
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
       self.log.warn('Maximum number of reschedulings is reached', 'Job %s' % jobID)
-      res = self.setJobStatus(jobID, status='Failed', minorStatus='Maximum of reschedulings reached')
+      res = self.setJobStatus(jobID, status=JobStatus.FAILED, minorStatus='Maximum of reschedulings reached')
       if not res['OK']:
         return res
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)

@@ -82,55 +82,16 @@ This module provides a rich set of tools for constructing and running tests, sup
 - *suites*: collection of test cases for aggregation of test that should be executed together
 - *runners*: classes for executing tests, checking all the spotted asserts and providing output results to the user.
 
-The developers are encouraged to make themselves familiar with unittest_ module documentation, which could be found
-`here <http://docs.python.org/library/unittest.html>`__. It is suggested to read at least documentation for TestCase_, TestSuite_
-and TestLoader_ classes and follow the examples over there.
+The developers are encouraged to make themselves familiar with pytest_ module documentation, which could be found
+`here <https://docs.pytest.org/en/latest/>`__.
 
 One of the requirements for writing a suitable test is an isolation from depended-on code and the same time from production environment.
 This could be obtained by objects mocking technique, where all fragile components used in a particular test suite are replaced by their false and dummy
-equivalents - test doubles. For that it is recommended to use mock_ module, which should be accessible in DIRAC externals for server installation.
+equivalents - test doubles. For that it is recommended to use mock_ module.
 Hence it is clear that knowledge of mock_ module API is essential.
 
 Unit tests are typically created by the developer who will also write the code that is being tested. The tests may therefore share the same blind spots with the code: for example, a developer does not realize that certain input parameters must be checked, most likely neither the test nor the code will verify these input parameters. If the developer misinterprets the requirements specification for the module being developed, both the tests and the code will be wrong. Hence if the developer is going to prepare her own unit tests, she should pay attention and take extra care to implement proper testing suite, checking for every spot of possible failure (i.e. interactions with other components) and not trusting that someone else's code is always returning proper type and/or values.
 
-Testing the code, and so proper code developing cycle, can be done in four well defined steps:
-
-Step 1. **Preparation**
-
-The first step on such occasions is to find all possible use cases scenarios. The code [#]_ should be read carefully to isolate all the paths of executions. For each of such cases the developer should prepare, formulate and define all required inputs and outputs, configurations, internal and external objects states, underlying components etc.. Spending more time on this preparation phase will help to understand all possible branches, paths and points of possible failures inside the code and accelerate the second step, which is the test suite implementation.
-
-Amongst all scenarios one is very special - so special, that it even has got its own name: *the main success scenario*. This is the path in execution process, in which it is assumed that all components are working fine so the  system is producing results correct to the last bit. The developer should focus on this scenario first, as all the others are most probably branching from it if some error condition would appear.
-
-Step 2. **Implementation**
-
-Once the set of use cases is well defined, the developer should prepare and implement test case for each of use cases which should define:
-
-- initial and final states of the system being tested,
-- runtime configuration,
-- set of input values, associated objects and their internal states,
-- correct behaviour,
-- set of output results.
-
-Each test case should be instrumented with a special method: *setUp*,  which is preparing the testing environment. This is the correct place
-for constructing input and output data stubs, mock objects that the production code is using from the outside world and initial state of object
-being tested. It is a good practice to implement also second special method: *tearDown*, which is doing a clean up after the tests execution, destroying all
-objects created inside *setUp* function.
-
-A test case should try to cover as much as possible the API of software under test and the developer is free to decide how many tests
-and asserts she would be implementing and executing, but of course there should be at least one test method inside each of test cases and at least
-one assert in every test method. The developer should also keep in her mind that being greedy is not a good practice: her test cases should check
-only her own code and nothing else.
-
-Step 3. **Test execution**
-
-Every developer is encouraged to execute her test suites by herself. Execution code of test suite should be put into unit test module in a various ways. Of course once the test results are obtained, it is the high time for fixing all places in the tested code, in which tests have failed.
-
-
-Step 4. **Refactoring**
-
-Once the code is tested and all tests are passed, the developer can start thinking about evolution of the code. This includes
-performance issues, cleaning up the code from repetitions, new features, patching, removing obsolete or not used methods.
-So from this point the whole developing cycle can start again and again and again...
 
 Test doubles
 ============
@@ -173,207 +134,7 @@ It is clear that in such cases the developer should try to instrument the test s
 In a dynamically typed language like Python_ every test double is easy to create as there is no need to simulate the full API of depended-on
 components and the developer can freely choose only those that are used in her own code.
 
-
-Example
--------
-
-NOTA BENE: the example that follows suppose that the reader has already a basic familiarity with some DIRAC constructs. If this is not the case, we suggest the reader to first read :ref:`adding_new_components`.
-
-Let's assume we are coding a client to the ``CheeseShopSystem`` inside DIRAC. The depended-on components are ``CheeseShopSystem.Service.CheeseShopOwner`` with
-``CheeseShopSystem.DB.CheeseShopDB`` database behind it. Our ``CheeseShopSystem.Client.CheeseShopClient`` could only ask the owner for a specific cheese or try to buy it [#]_.
-We know the answers for all question that have been asked already, there was no cheese at all in original script, but here for teaching
-purposes we can just pretend for a while that the owner is really checking the shop's depot and even more, the Cheddar is present. The code
-for ``CheeseShopOwner``:
-
-.. code-block:: python
-
-   import six
-
-   from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-   from DIRAC.Core.DISET.RequestHandler import RequestHandler
-   from DIRAC.CheeseShopSystem.DB.CheeseShopDB import CheeseShopDB
-
-   # global instance of a cheese shop database
-   cheeseShopDB = False
-
-   # initialize it first
-   def initializeCheeseShopOwner(serviceInfo):
-     global cheeseShopDB
-     cheeseShopDB = CheeseShopDB()
-     return S_OK()
-
-   class CheeseShopOwner(RequestHandler):
-
-     types_isThere = [six.string_types]
-     def export_isThere(self, cheese):
-       return cheeseShopDB.isThere(cheese)
-
-     types_buyCheese = [six.string_types, float]
-     def export_buyCheese(self, cheese, quantity):
-       return cheeseShopDB.buyCheese(cheese, quantity)
-
-     # ... and so on, so on and so on, i.e:
-     types_insertCheese = [six.string_types, float, float]
-     def export_insertCheese(self, cheeseName, price, quantity):
-       return cheeseShopDB.insertCheese(cheeseName, price, quantity)
-
-
-
-And here for ``CheeseShopClient`` class:
-
-.. code-block:: python
-
-   from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-   from DIRAC.Core.Base.Client import Client
-
-   class Cheese(object):
-
-     def __init__(self, name):
-       self.name = name
-
-   class SpanishInquisitionError(Exception):
-     pass
-
-   class CheeseShopClient(Client):
-
-     def __init__(self, money, shopOwner = None):
-       self.__money = money
-       self.shopOwner = shopOwner
-
-     def buy(self, cheese, quantity = 1.0):
-
-       # is it really cheese, you're asking for?
-       if not isinstance(cheese, Cheese):
-         raise SpanishInquisitionError("It's stone dead!")
-
-       # and the owner is in?
-       if not self.shopOwner:
-         return S_ERROR("Shop is closed!")
-
-       # and cheese is in the shop depot?
-       res = self.shopOwner.isThere(cheese.name)
-       if not res["OK"]:
-         return res
-
-       # and you are not asking for too much?
-       if quantity > res["Value"]["Quantity"]:
-         return S_ERROR("Not enough %s, sorry!" % cheese.name)
-
-       # and you have got enough money perhaps?
-       price = quantity * res["Value"]["Price"]
-       if self.__money < price:
-         return S_ERROR("Not enough money in your pocket, get lost!")
-
-       # so we're buying
-       res = self.shopOwner.buyCheese(cheese.name, quantity)
-       if not res["OK"]:
-         return res
-       self.__money -= price
-
-       # finally transaction is over
-       return S_OK(self.__money)
-
-This maybe oversimplified code example already has several hot spots of failure for chess buying task: first of all, your input parameters
-could be wrong (i.e. you want to buy rather parrot, not cheese); the shop owner could be out; they haven't got cheese you are asking for in the store;
-or maybe it is there, but not enough for your order; or you haven't got enough money to pay and at least the transaction itself could be interrupted
-for some reason (connection lost, database operation failure etc.).
-
-We have skipped ``CheeseShopDB`` class implementation on purpose: our ``CheeseShopClient`` directly depends on ``CheeseShopOwner`` and we shoudn't
-care on any deeper dependencies.
-
-Now for our test suite we will assume that there is a 20 lbs of Cheddar priced 9.95 pounds, hence the test case for success is i.e. asking for
-1 lb of Cheddar (the main success scenario) having at least 9.95 pounds in a wallet:
-
-  - input: ``Cheese("Cheddar")``, 1.0 lb, 9.95 pounds in your pocket
-  - expected output: ``S_OK = {"OK" : True, "Value" : 0.0 }``
-
-Other scenarios are:
-
-1. Wrong order [#]_:
-
-  * Want to buy Norwegian blue parrot:
-
-    - input: ``Parrot("Norwegian Blue")``
-    - expected output: an exception ``SpanishInquisitionError("It's stone dead!")`` thrown in a client
-
-  * Asking for wrong quantity:
-
-    - input: ``Cheese("Cheddar")``, ``quantity = "not a number"`` or ``quantity = 0``
-    - expected output: an exception ``SpanishInquisitionError("It's stone dead!")`` thrown in a client
-
-3. The shop is closed:
-
-  - input: ``Cheese("Cheddar")``
-  - expected output: ``S_ERROR = {"OK" : False, "Message": "Shop is closed!"}``
-
-4. Asking for any other cheese:
-
-  - input: ``Cheese("Greek feta")``, 1.0 lb
-  - expected output: ``S_ERROR = {"OK" : False, "Message": "Ah, not as such!"}``
-
-5. Asking for too much of Cheddar:
-
-  - input: ``Cheese("Cheddar")``, 21.0 lb
-  - expected output: ``S_ERROR = {"OK" : False, "Message": "Not enough Cheddar, sorry!"}``
-
-6. No money on you to pay the bill:
-
-  - input: ``Cheese("Cheddar")``, 1.0 lb, 8.0 pounds in your pocket
-  - expected output: ``S_ERROR = {"OK" : False, "Message": "Not enough money in your pocket, get lost!"}``
-
-7. Some other unexpected problems in underlying components, which by the way we are not going to be test or explore here. *You just can't test everything,
-keep track on testing your code!*
-
-The test suite code itself follows:
-
-
-.. code-block:: python
-
-   import unittest
-   from mock import Mock
-
-   from DIRAC import S_OK, S_ERROR
-   from DIRAC.CheeseShopSystem.Client.CheeseShopClient import Cheese, CheeseShopClient
-   from DIRAC.CheeseShopSystem.Service.CheeseShopOwner import CheeseShopOwner
-
-   class CheeseClientMainSuccessScenario(unittest.TestCase):
-
-     def setUp(self):
-       # stub, as we are going to use it's name but nothing else
-       self.cheese = Chesse("Cheddar")
-       # money, dummy
-       self.money = 9.95
-       # amount, dummy
-       self.amount = 1.0
-       # real object to use
-       self.shopOwner = CheeseShopOwner("CheeseShop/CheeseShopOwner")
-       # but with mocking of isThere
-       self.shopOwner.isThere = Mock(return_value = S_OK({"Price" : 9.95, "Quantity" : 20.0}))
-       # and buyCheese methods
-       self.shopOwner.buyCheese = Mock()
-
-     def tearDown(self):
-       del self.shopOwner
-       del self.money
-       del self.amount
-       del self.cheese
-
-     def test_buy(self):
-        client = CheeseShopClient(money = self.money, shopOwner = self.shopOwner)
-        # check if test object has been created
-        self.assertEqual(isinstance(client, CheeseShopClient), True)
-        # and works as expected
-        self.assertEqual(client.buy(self.cheese, self.amount), {"OK" : True, "Value" : 0.0})
-        ## and now for mocked objects
-        # asking for cheese
-        self.shopOwner.isThere.assert_called_once_with(self.cheese.name)
-        # and buying it
-        self.shopOwner.buyCheese.assert_called_once_with(self.cheese.name, self.amount)
-
-
-   if __name__ == "__main__":
-     unittest.main()
-     #testSuite = unittest.TestSuite(["CheeseClientMainSuccessScenario"])
+There are several excellent guides on how to write good and meaningful unit tests out there. Make sure to follow one of them.
 
 
 Conventions
@@ -404,7 +165,7 @@ All test modules should follow those conventions:
 
 **T7**
   The test modules should be kept as close as possible to the modules they are testing, preferably in a *test* subdirectory on DIRAC subsystem
-  package directory, i.e: all tests modules for WMS should be kept in *DIRAC/WMS/tests* directory.
+  package directory, i.e: all tests modules for WMS should be kept in *src/DIRAC/WorkloadManegementSystem/Client/test* directory.
 
 
 Integration and System tests
@@ -527,7 +288,7 @@ in case you are testing only one specific service.
 Running integration tests locally
 ---------------------------------
 
-The integration tests which are ran on GitHub/GitLab can be ran locally using docker.
+The integration tests which are ran on GitHub/GitLab can be ran locally using docker. So, start by installing docker, if you haven't.
 
 To run all tests in one command, which takes around 20 minutes, create a development environment, position yourself in the DIRAC root directory and then run:
 
@@ -541,6 +302,37 @@ See ``.github/workflows/integration.yml`` for the available feature flags for yo
 Once finished the containers can be removed using ``./integration_tests.py destroy``.
 
 See ``./integration_tests.py --help`` for more information.
+
+Running the above might take a while. Supposing you are interested in running one single integration test, let's say for the sake of example a server integration test, you can:
+
+.. code-block:: bash
+
+    ./integration_tests.py prepare-environment [FLAGS]
+    ./integration_tests.py install-server
+
+which (in some minutes) will give you a fully dockerized server setup (`docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`). Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`.
+The first thing to do is that you should first login in the docker container, by doing:
+
+.. code-block:: bash
+
+    ./integration_tests.py exec-server
+
+Now, if you're using Python 2 you will need to copy the test code:
+
+.. code-block:: bash
+
+    cp -r TestCode/DIRAC/tests/ ServerInstallDIR/DIRAC/
+
+while if you are using Python 3 server, the installations automatically pick up external changes to the DIRAC code and tests)
+
+Now you can run the test with:
+
+.. code-block:: bash
+
+    pytest ServerInstallDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py (py2)
+    pytest LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py (py3)
+
+For py3 installations, You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
 
 
 Validation and System tests

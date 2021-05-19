@@ -35,6 +35,7 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
 
@@ -271,12 +272,12 @@ class JobAgent(AgentModule):
     matcherParams = ['JDL', 'DN', 'Group']
     for param in matcherParams:
       if param not in matcherInfo:
-        jobReport.setJobStatus(status='Failed',
-                               minor='Matcher did not return %s' % (param))
+        jobReport.setJobStatus(status=JobStatus.FAILED,
+                               minorStatus='Matcher did not return %s' % (param))
         return self.__finish('Matcher Failed')
       elif not matcherInfo[param]:
-        jobReport.setJobStatus(status='Failed',
-                               minor='Matcher returned null %s' % (param))
+        jobReport.setJobStatus(status=JobStatus.FAILED,
+                               minorStatus='Matcher returned null %s' % (param))
         return self.__finish('Matcher Failed')
       else:
         self.log.verbose('Matcher returned', '%s = %s ' % (param, matcherInfo[param]))
@@ -292,15 +293,15 @@ class JobAgent(AgentModule):
 
     parameters = self._getJDLParameters(jobJDL)
     if not parameters['OK']:
-      jobReport.setJobStatus(status='Failed',
-                             minor='Could Not Extract JDL Parameters')
+      jobReport.setJobStatus(status=JobStatus.FAILED,
+                             minorStatus='Could Not Extract JDL Parameters')
       self.log.warn('Could Not Extract JDL Parameters', parameters['Message'])
       return self.__finish('JDL Problem')
 
     params = parameters['Value']
     if 'JobID' not in params:
       msg = 'Job has not JobID defined in JDL parameters'
-      jobReport.setJobStatus(status='Failed', minor=msg)
+      jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=msg)
       self.log.warn(msg)
       return self.__finish('JDL Problem')
     else:
@@ -345,8 +346,8 @@ class JobAgent(AgentModule):
                                     par_value=gConfig.getValue('/LocalSite/%s' % thisp, 'Unknown'),
                                     sendFlag=False)
 
-      jobReport.setJobStatus(status='Matched',
-                             minor='Job Received by Agent',
+      jobReport.setJobStatus(status=JobStatus.MATCHED,
+                             minorStatus='Job Received by Agent',
                              sendFlag=False)
       result_setupProxy = self._setupProxy(ownerDN, jobGroup)
       if not result_setupProxy['OK']:
@@ -527,7 +528,7 @@ class JobAgent(AgentModule):
       self.log.verbose(msg)
       return S_OK(msg)
 
-    jobReport.setJobStatus(status='Matched',
+    jobReport.setJobStatus(status=JobStatus.MATCHED,
                            minorStatus='Installing Software',
                            sendFlag=False)
     softwareDist = jobParams['SoftwareDistModule']
@@ -569,8 +570,8 @@ class JobAgent(AgentModule):
       return result
 
     wrapperFile = result['Value']
-    jobReport.setJobStatus(status='Matched',
-                           minor='Submitting To CE')
+    jobReport.setJobStatus(status=JobStatus.MATCHED,
+                           minorStatus='Submitting To CE')
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
@@ -681,7 +682,7 @@ class JobAgent(AgentModule):
     # instead set the status with the cause and then another status showing the
     # reschedule operation.
 
-    jobReport.setJobStatus(status='Rescheduled',
+    jobReport.setJobStatus(status=JobStatus.RESCHEDULED,
                            applicationStatus=message,
                            sendFlag=True)
 

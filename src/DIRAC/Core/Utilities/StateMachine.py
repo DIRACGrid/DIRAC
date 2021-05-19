@@ -1,176 +1,194 @@
-########################################################################
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2013/07/03 10:33:02
-########################################################################
-"""
-:mod: State
+""" StateMachine
 
-.. module: State
-
-
-:synopsis: state machine
-
-.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
-state machine
+  This module contains the basic blocks to build a state machine (State and StateMachine)
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
+from DIRAC import S_OK, S_ERROR, gLogger
+
+__RCSID__ = '$Id$'
 
 
 class State(object):
   """
-  .. class:: State
+    State class that represents a single step on a StateMachine, with all the
+    possible transitions, the default transition and an ordering level.
 
-  single state
+
+    examples:
+      >>> s0 = State(100)
+      >>> s1 = State(0, ['StateName1', 'StateName2'], defState='StateName1')
+      >>> s2 = State(0, ['StateName1', 'StateName2'])
+      # this example is tricky. The transition rule says that will go to
+      # nextState, e.g. 'StateNext'. But, it is not on the stateMap, and there
+      # is no default defined, so it will end up going to StateNext anyway. You
+      # must be careful while defining states and their stateMaps and defaults.
   """
 
-  def __str__(self):
-    """ str() op """
-    return self.__class__.__name__
+  def __init__(self, level, stateMap=None, defState=None):
+    """
+   :param int level: each state is mapped to an integer, which is used to sort the states according to that integer.
+   :param list stateMap: it is a list (of strings) with the reachable states from this particular status.
+                         If not defined, we assume there are no restrictions.
+   :param str defState: default state used in case the next state is not in stateMap (not defined or simply not there).
+    """
+
+    self.level = level
+    self.stateMap = stateMap if stateMap else []
+    self.default = defState
+
+  def transitionRule(self, nextState):
+    """
+    Method that selects next state, knowing the default and the transitions
+    map, and the proposed next state. If <nextState> is in stateMap, goes there.
+    If not, then goes to <self.default> if any. Otherwise, goes to <nextState>
+    anyway.
+
+    examples:
+      >>> s0.transitionRule('nextState')
+          'nextState'
+      >>> s1.transitionRule('StateName2')
+          'StateName2'
+      >>> s1.transitionRule('StateNameNotInMap')
+          'StateName1'
+      >>> s2.transitionRule('StateNameNotInMap')
+          'StateNameNotInMap'
+
+    :param str nextState: name of the state in the stateMap
+    :return: state name
+    :rtype: str
+    """
+
+    # If next state is on the list of next states, go ahead.
+    if nextState in self.stateMap:
+      return nextState
+
+    # If not, calculate defaultState:
+    # if there is a default, that one
+    # otherwise is nextState (states with empty list have no movement restrictions)
+    defaultNext = self.default if self.default else nextState
+    return defaultNext
 
 
 class StateMachine(object):
   """
-  .. class:: StateMachine
+    StateMachine class that represents the whole state machine with all transitions.
 
-  simple state machine
+    examples:
+      >>> sm0 = StateMachine()
+      >>> sm1 = StateMachine(state = 'Active')
+
+    :param state: current state of the StateMachine, could be None if we do not use the
+        StateMachine to calculate transitions. Beware, it is not checked if the
+        state is on the states map !
+    :type state: None or str
 
   """
 
-  def __init__(self, state=None, transTable=None):
-    """ c'tor
-
-    :param self: self reference
-    :param mixed state: initial state
-    :param dict transTable: transition table
+  def __init__(self, state=None):
+    """
+    Constructor.
     """
 
-    if not issubclass(state.__class__, State):
-      raise TypeError("state should be inherited from State")
-    self.__state = state
-    self.transTable = transTable if isinstance(transTable, dict) else {}
+    self.state = state
+    # To be overwritten by child classes, unless you like Nirvana state that much.
+    self.states = {'Nirvana': State(100)}
 
-  def setState(self, state):
-    """ set state """
-    assert issubclass(state.__class__, State)
-    self.__state = state
-
-  def addTransition(self, fromState, toState, condition):
-    """ add transtion rule from :fromState: to :toState: upon condition :condition: """
-    if not callable(condition):
-      raise TypeError("condition should be callable")
-    if not issubclass(fromState.__class__, State):
-      raise TypeError("fromState should be inherited from State")
-    if not issubclass(toState.__class__, State):
-      raise TypeError("toState should be inherited from State")
-
-    if fromState not in self.transTable:
-      self.transTable[fromState] = {}
-    self.transTable[fromState][toState] = condition
-
-  def next(self, *args, **kwargs):
-    """ make transition to the next state
-
-    :param tuple args: args passed to condition
-    :param dict kwargs: kwargs passed to condition
+  def levelOfState(self, state):
     """
-    for nextState, condition in self.transTable[self.__state].items():
-      if condition(*args, **kwargs):
-        self.__state = nextState
-        break
+    Given a state name, it returns its level (integer), which defines the hierarchy.
 
-  @property
-  def state(self):
-    """ get current state """
-    return self.__state
+    >>> sm0.levelOfState('Nirvana')
+        100
+    >>> sm0.levelOfState('AnotherState')
+        -1
 
-  @state.setter
-  def state(self, state):
-    assert issubclass(state.__class__, State)
-    self.__state = state
+    :param str state: name of the state, it should be on <self.states> key set
+    :return: `int` || -1 (if not in <self.states>)
+    """
 
+    if state not in self.states:
+      return -1
+    return self.states[state].level
 
-# class Waiting( State ):
-#  pass
+  def setState(self, candidateState, noWarn=False):
+    """ Makes sure the state is either None or known to the machine, and that it is a valid state to move into.
+        Final states are also checked.
 
-# class Done( State ):
-#  pass
+    examples:
+      >>> sm0.setState(None)['OK']
+          True
+      >>> sm0.setState('Nirvana')['OK']
+          True
+      >>> sm0.setState('AnotherState')['OK']
+          False
 
-# class Failed( State ):
-#  pass
+    :param state: state which will be set as current state of the StateMachine
+    :type state: None or str
+    :return: S_OK || S_ERROR
+    """
 
-# class Scheduled( State ):
-#  pass
+    if candidateState == self.state:
+      return S_OK(candidateState)
 
-# waiting = Waiting()
-# done = Done()
-# failed = Failed()
-# scheduled = Scheduled()
+    if candidateState is None:
+      self.state = candidateState
+    elif candidateState in self.states:
+      if not self.states[self.state].stateMap:
+        if not noWarn:
+          gLogger.warn("Final state, won't move",
+                       "(%s, asked to move to %s)" % (self.state, candidateState))
+        return S_OK(self.state)
+      if candidateState not in self.states[self.state].stateMap:
+        gLogger.warn("Can't move from %s to %s, choosing a good one" % (self.state, candidateState))
+      result = self.getNextState(candidateState)
+      if not result['OK']:
+        return result
+      self.state = result['Value']
+      # If the StateMachine does not accept the candidate, return error message
+    else:
+      return S_ERROR("%s is not a valid state" % candidateState)
 
-# def toDone( slist ):
-#  return list(set(slist)) == [ "Done" ]
+    return S_OK(self.state)
 
-# def toFailed( slist ):
-#  return "Failed" in slist
+  def getStates(self):
+    """
+    Returns all possible states in the state map
 
-# def toWaiting( slist ):
-#  for st in slist:
-#    if st == "Done":
-#      continue
-#    if st in ( "Failed", "Scheduled", "Queued" ):
-#      return False
-#    if st == "Waiting":
-#      return True
-#  return False
+    examples:
+      >>> sm0.getStates()
+          [ 'Nirvana' ]
 
-# def toScheduled( slist ):
-#  for st in slist:
-#    if st == "Done":
-#      continue
-#    if st in ( "Failed", "Waiting", "Queued" ):
-#      return False
-#    if st == "Scheduled":
-#      return True
-#  return False
-"""
-tr = { waiting: { done: toDone,
-                  failed: toFailed,
-                  scheduled: toScheduled,
-                  waiting: toWaiting },
-       scheduled: { failed: toFailed,
-                    waiting: toWaiting,
-                    done: toDone,
-                    scheduled: toScheduled },
-       done: { waiting: toWaiting,
-               failed: toFailed,
-               scheduled: toScheduled,
-               done: toDone },
-       failed: { waiting: toWaiting,
-                 scheduled: toScheduled,
-                 done: toDone,
-                 failed: toFailed } }
+    :return: list(stateNames)
+    """
 
-sm = StateMachine( waiting, tr )
+    return list(self.states)
 
-sm.setState( scheduled )
-print sm.state
+  def getNextState(self, candidateState):
+    """
+    Method that gets the next state, given the proposed transition to candidateState.
+    If candidateState is not on the state map <self.states>, it is rejected. If it is
+    not the case, we have two options: if <self.state> is None, then the next state
+    will be <candidateState>. Otherwise, the current state is using its own
+    transition rule to decide.
 
-sm.next( slist = [ "Waiting", "Queued", "Queued", "Queued" ] )
-print sm.state
-sm.next( slist = [ "Done", "Queued", "Queued", "Queued" ] )
-print sm.state
-sm.next( slist = [ "Done", "Done", "Waiting", "Queued" ] )
-print sm.state
-sm.next( slist = [ "Done", "Done", "Scheduled", "Queued" ] )
-print sm.state
-sm.next( slist = [ "Done", "Done", "Done", "Waiting" ] )
-print sm.state
-sm.next( slist = [ "Done", "Done", "Done", "Failed" ] )
-print sm.state
+    examples:
+      >>> sm0.getNextState(None)
+          S_OK(None)
+      >>> sm0.getNextState('NextState')
+          S_OK('NextState')
 
+    :param str candidateState: name of the next state
+    :return: S_OK(nextState) || S_ERROR
+    """
 
-"""
+    if candidateState not in self.states:
+      return S_ERROR('%s is not a valid state' % candidateState)
+
+    # FIXME: do we need this anymore ?
+    if self.state is None:
+      return S_OK(candidateState)
+
+    return S_OK(self.states[self.state].transitionRule(candidateState))

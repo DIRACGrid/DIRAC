@@ -144,22 +144,15 @@ def main():
   statusCounters = {}
   if allJobs:
     allJobs = sorted(allJobs, reverse=True)
-    res = monitoring.getJobsStatus(allJobs)
-    if res['OK']:
-      jobStatus = res['Value']
-      res = monitoring.getJobsMinorStatus(allJobs)
-      if res['OK']:
-        jobMinorStatus = res['Value']
-        res = monitoring.getJobsApplicationStatus(allJobs)
-        if res['OK']:
-          jobApplicationStatus = res['Value']
+    res = monitoring.getJobsStates(allJobs)
     if not res['OK']:
       gLogger.error('Error getting job parameter', res['Message'])
     else:
+      jobStates = res['Value']
       for job in allJobs:
-        stat = jobStatus.get(job, {}).get('Status', 'Unknown') + '; ' + \
-            jobMinorStatus.get(job, {}).get('MinorStatus', 'Unknown') + '; ' + \
-            jobApplicationStatus.get(job, {}).get('ApplicationStatus', 'Unknown')
+        stat = jobStates.get(job, {}).get('Status', 'Unknown') + '; ' + \
+            jobStates.get(job, {}).get('MinorStatus', 'Unknown') + '; ' + \
+            jobStates.get(job, {}).get('ApplicationStatus', 'Unknown')
         result[job]['Status'] = stat
         statusCounters[stat] = statusCounters.setdefault(stat, 0) + 1
   elif not workerNodes and not batchIDs:

@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: RequestTask.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 12:42:45
@@ -20,7 +19,9 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-__RCSID__ = "$Id $"
+
+__RCSID__ = "$Id$"
+
 # #
 # @file RequestTask.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -32,18 +33,17 @@ import time
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Utilities import Time, Network
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.Core.Utilities import Time, Network
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 ########################################################################
 
@@ -379,8 +379,8 @@ class RequestTask(object):
 
           if self.request.JobID:
             # Check if the job exists
-            monitorServer = RPCClient("WorkloadManagement/JobMonitoring", useCertificates=True)
-            res = monitorServer.getJobPrimarySummary(int(self.request.JobID))
+            monitorServer = JobMonitoringClient(useCertificates=True)
+            res = monitorServer.getJobSummary(int(self.request.JobID))
             if not res["OK"]:
               self.log.error("RequestTask: Failed to get job status", "%d" % self.request.JobID)
             elif not res['Value']:

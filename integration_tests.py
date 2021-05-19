@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import fnmatch
-import io
 import os
 from pathlib import Path
 import re
@@ -197,16 +196,16 @@ def prepare_environment(
     client_flags = {}
     for key, value in flags.items():
         if key.startswith("SERVER_"):
-            server_flags[key[len("SERVER_") :]] = value
+            server_flags[key[len("SERVER_"):]] = value
         elif key.startswith("CLIENT_"):
-            client_flags[key[len("CLIENT_") :]] = value
+            client_flags[key[len("CLIENT_"):]] = value
         else:
             server_flags[key] = value
             client_flags[key] = value
     server_config = _make_config(modules, server_flags, release_var, editable)
     client_config = _make_config(modules, client_flags, release_var, editable)
 
-    typer.secho("Running docker-compose to create contianers", fg=c.GREEN)
+    typer.secho("Running docker-compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules) as docker_compose_fn:
         subprocess.run(
             ["docker-compose", "-f", docker_compose_fn, "up", "-d"],
@@ -439,6 +438,20 @@ def exec_client():
 
 
 @app.command()
+def exec_mysql():
+    """Start an interactive session in the server container."""
+    _check_containers_running()
+    cmd = _build_docker_cmd("mysql", use_root=True, cwd='/')
+    cmd += [
+        "bash",
+        "-c",
+        f"exec mysql --user={DB_USER} --password={DB_PASSWORD}",
+    ]
+    typer.secho("Opening prompt inside server container", err=True, fg=c.GREEN)
+    os.execvp(cmd[0], cmd)
+
+
+@app.command()
 def list_services():
     """List the services which have been running.
 
@@ -561,7 +574,7 @@ def _find_dirac_release_and_branch():
     try:
         upstream = repo.remote("upstream")
     except ValueError:
-        typer.secho("No upstream remote found, adding", err=True, fg=c.YELLOW )
+        typer.secho("No upstream remote found, adding", err=True, fg=c.YELLOW)
         upstream = repo.create_remote(
             "upstream", "https://github.com/DIRACGrid/DIRAC.git"
         )
@@ -725,7 +738,7 @@ def _list_services():
     cmd += [
         "bash",
         "-c",
-        'cd ServerInstallDIR/runit/ && for fn in */*/log/current; do echo "$(dirname "$(dirname "$fn")")"; done',
+        'cd ServerInstallDIR/runit/ && for fn in */*/log/current; do echo "$(dirname "$(dirname "$fn")")"; done'
     ]
     ret = subprocess.run(cmd, check=False, stdout=subprocess.PIPE, text=True)
     if ret.returncode:

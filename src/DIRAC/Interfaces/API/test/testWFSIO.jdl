@@ -1,10 +1,10 @@
  
-    Arguments = "jobDescription.xml -o LogLevel=info";
+    Arguments = "jobDescription.xml -o LogLevel=INFO";
     Executable = "dirac-jobexec";
     JobGroup = jobGroup;
     JobName = jobName;
     JobType = jobType;
-    LogLevel = info;
+    LogLevel = INFO;
     OutputSandbox = 
         {
             Script1_CodeOutput.log,

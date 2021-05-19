@@ -1005,7 +1005,7 @@ class WorkflowTasks(TaskBase):
       return res
     jobNameIDs = {}
     for wmsID in res['Value']:
-      res = self.jobMonitoringClient.getJobPrimarySummary(int(wmsID))
+      res = self.jobMonitoringClient.getJobSummary(int(wmsID))
       if not res['OK']:
         self._logWarn("Failed to get task summary from WMS", res['Message'],
                       transID=transID, method='updateTransformationReservedTasks')

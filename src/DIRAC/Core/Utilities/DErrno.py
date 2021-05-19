@@ -118,6 +118,8 @@ EWMSUKN = 1500
 EWMSJDL = 1501
 EWMSRESC = 1502
 EWMSSUBM = 1503
+EWMSJMAN = 1504
+EWMSSTATUS = 1505
 EWMSNOPILOT = 1550
 
 # ## DMS/StorageManagement (16XX)
@@ -193,6 +195,8 @@ dErrorCode = {
     1501: 'EWMSJDL',
     1502: 'EWMSRESC',
     1503: 'EWMSSUBM',
+    1504: 'EWMSJMAN',
+    1505: 'EWMSSTATUS',
     1550: 'EWMSNOPILOT',
     # DMS/StorageManagement
     1601: 'EFILESIZE',
@@ -266,6 +270,8 @@ dStrError = {  # Generic (10XX)
     EWMSJDL: "Invalid job description",
     EWMSRESC: "Job to reschedule",
     EWMSSUBM: "Job submission error",
+    EWMSJMAN: "Job management error",
+    EWMSSTATUS: "Job status error",
     EWMSNOPILOT: "No pilots found",
     # DMS/StorageManagement
     EFILESIZE: "Bad file size",

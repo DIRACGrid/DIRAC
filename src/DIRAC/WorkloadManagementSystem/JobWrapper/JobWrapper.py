@@ -35,6 +35,7 @@ from six.moves.urllib.parse import unquote as urlunquote
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities import DEncode
@@ -46,7 +47,6 @@ from DIRAC.Core.Utilities.Subprocess import Subprocess
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 from DIRAC.Core.Utilities.Adler import fileAdler
-from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

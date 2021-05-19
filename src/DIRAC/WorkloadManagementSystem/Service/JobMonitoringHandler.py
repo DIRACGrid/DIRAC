@@ -18,9 +18,11 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
@@ -28,8 +30,6 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
 SUMMARY = []
-PRIMARY_SUMMARY = []
-FINAL_STATES = ['Done', 'Completed', 'Stalled', 'Failed', 'Killed']
 
 
 class JobMonitoringHandler(RequestHandler):
@@ -65,10 +65,10 @@ class JobMonitoringHandler(RequestHandler):
     return S_OK()
 
   @classmethod
-  def getAttributesForJobList(cls, *args, **kwargs):
+  def getJobsAttributes(cls, *args, **kwargs):
     """ Utility function for unpacking
     """
-    res = cls.jobDB.getAttributesForJobList(*args, **kwargs)
+    res = cls.jobDB.getJobsAttributes(*args, **kwargs)
     if not res['OK']:
       return res
     return S_OK(strToIntDict(res['Value']))
@@ -103,9 +103,20 @@ class JobMonitoringHandler(RequestHandler):
     return cls.jobDB.getDistinctJobAttributes('Owner', condDict, older, newer)
 
 ##############################################################################
+  types_getOwnerGroup = []
+
+  @classmethod
+  def export_getOwnerGroup(cls):
+    """
+    Return Distinct Values of OwnerGroup from the JobDB
+    """
+    return cls.jobDB.getDistinctJobAttributes('OwnerGroup')
+
+##############################################################################
   types_getProductionIds = []
 
   @classmethod
+  @deprecated("Unused")
   def export_getProductionIds(cls, condDict=None, older=None, newer=None):
     """
     Return Distinct Values of ProductionId job Attribute in WMS
@@ -210,6 +221,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getCurrentJobCounters = []
 
   @classmethod
+  @deprecated("Unused")
   def export_getCurrentJobCounters(cls, attrDict=None):
     """ Get job counters per Status with attrDict selection. Final statuses are given for
         the last day.
@@ -230,7 +242,7 @@ class JobMonitoringHandler(RequestHandler):
     for statusDict, count in result['Value']:
       status = statusDict['Status']
       resultDict[status] = count
-      if status in FINAL_STATES:
+      if status in JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES:
         resultDict[status] = 0
         for statusDayDict, ccount in resultDay['Value']:
           if status == statusDayDict['Status']:
@@ -243,6 +255,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobStatus = [int]
 
   @classmethod
+  @deprecated("Use getJobsStatus")
   def export_getJobStatus(cls, jobID):
 
     return cls.jobDB.getJobAttribute(jobID, 'Status')
@@ -280,51 +293,52 @@ class JobMonitoringHandler(RequestHandler):
     return cls.jobLoggingDB.getJobLoggingInfo(jobID)
 
 ##############################################################################
-  types_getJobsParameters = [list, list]
+  types_getJobsParameters = [[six.string_types, int, list], list]
 
   @classmethod
   @ignoreEncodeWarning
   def export_getJobsParameters(cls, jobIDs, parameters):
-    if not (jobIDs and parameters):
-      return S_OK({})
-    return cls.getAttributesForJobList(jobIDs, parameters)
+    return cls.getJobsAttributes(jobIDs, parameters)
 
 ##############################################################################
-  types_getJobsStatus = [list]
+  types_getJobsStates = [[six.string_types, int, list]]
+
+  @classmethod
+  @ignoreEncodeWarning
+  def export_getJobsStates(cls, jobIDs):
+    return cls.getJobsAttributes(jobIDs, ['Status', 'MinorStatus', 'ApplicationStatus'])
+
+##############################################################################
+  types_getJobsStatus = [[six.string_types, int, list]]
 
   @classmethod
   @ignoreEncodeWarning
   def export_getJobsStatus(cls, jobIDs):
-    if not jobIDs:
-      return S_OK({})
-    return cls.getAttributesForJobList(jobIDs, ['Status'])
+    return cls.getJobsAttributes(jobIDs, ['Status'])
 
 ##############################################################################
-  types_getJobsMinorStatus = [list]
+  types_getJobsMinorStatus = [[six.string_types, int, list]]
 
   @classmethod
   @ignoreEncodeWarning
   def export_getJobsMinorStatus(cls, jobIDs):
-
-    return cls.getAttributesForJobList(jobIDs, ['MinorStatus'])
+    return cls.getJobsAttributes(jobIDs, ['MinorStatus'])
 
 ##############################################################################
-  types_getJobsApplicationStatus = [list]
+  types_getJobsApplicationStatus = [[six.string_types, int, list]]
 
   @classmethod
   @ignoreEncodeWarning
   def export_getJobsApplicationStatus(cls, jobIDs):
-
-    return cls.getAttributesForJobList(jobIDs, ['ApplicationStatus'])
+    return cls.getJobsAttributes(jobIDs, ['ApplicationStatus'])
 
 ##############################################################################
-  types_getJobsSites = [list]
+  types_getJobsSites = [[six.string_types, int, list]]
 
   @classmethod
   @ignoreEncodeWarning
   def export_getJobsSites(cls, jobIDs):
-
-    return cls.getAttributesForJobList(jobIDs, ['Site'])
+    return cls.getJobsAttributes(jobIDs, ['Site'])
 
 ##############################################################################
   types_getJobSummary = [int]
@@ -337,20 +351,16 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobPrimarySummary = [int]
 
   @classmethod
+  @deprecated("Use getJobSummary")
   def export_getJobPrimarySummary(cls, jobID):
-    return cls.jobDB.getJobAttributes(jobID, PRIMARY_SUMMARY)
+    return cls.jobDB.getJobAttributes(jobID, [])
 
 ##############################################################################
   types_getJobsSummary = [list]
 
   @classmethod
   def export_getJobsSummary(cls, jobIDs):
-
-    if not jobIDs:
-      return S_ERROR('JobMonitoring.getJobsSummary: Received empty job list')
-
-    result = cls.getAttributesForJobList(jobIDs, SUMMARY)
-    return S_OK(str(result['Value']))
+    return cls.getJobsAttributes(jobIDs, SUMMARY)
 
 ##############################################################################
   types_getJobPageSummaryWeb = [dict, list, int, int]
@@ -389,7 +399,7 @@ class JobMonitoringHandler(RequestHandler):
 
     result = self.jobPolicy.getControlledUsers(RIGHT_GET_INFO)
     if not result['OK']:
-      return S_ERROR('Failed to evaluate user rights')
+      return result
     if result['Value'] != 'ALL':
       selectDict[('Owner', 'OwnerGroup')] = result['Value']
 
@@ -399,17 +409,18 @@ class JobMonitoringHandler(RequestHandler):
     else:
       orderAttribute = None
 
-    statusDict = {}
     result = self.jobDB.getCounters('Jobs', ['Status'], selectDict,
                                     newer=startDate,
                                     older=endDate,
                                     timeStamp='LastUpdateTime')
+    if not result['OK']:
+      return result
 
+    statusDict = {}
     nJobs = 0
-    if result['OK']:
-      for stDict, count in result['Value']:
-        nJobs += count
-        statusDict[stDict['Status']] = count
+    for stDict, count in result['Value']:
+      nJobs += count
+      statusDict[stDict['Status']] = count
 
     resultDict['TotalRecords'] = nJobs
     if nJobs == 0:
@@ -425,7 +436,7 @@ class JobMonitoringHandler(RequestHandler):
       result = self.jobDB.selectJobs(selectDict, orderAttribute=orderAttribute,
                                      newer=startDate, older=endDate, limit=(maxItems, iniJob))
       if not result['OK']:
-        return S_ERROR('Failed to select jobs: ' + result['Message'])
+        return result
 
       summaryJobList = result['Value']
       if not self.globalJobsInfo:
@@ -433,36 +444,38 @@ class JobMonitoringHandler(RequestHandler):
                                                                                            RIGHT_GET_INFO)
         summaryJobList = validJobs
 
-      result = self.getAttributesForJobList(summaryJobList, SUMMARY)
+      result = self.getJobsAttributes(summaryJobList, SUMMARY)
       if not result['OK']:
-        return S_ERROR('Failed to get job summary: ' + result['Message'])
+        return result
 
       summaryDict = result['Value']
+      # If no jobs can be selected after the properties check
+      if not summaryDict:
+        return S_OK(resultDict)
 
       # Evaluate last sign of life time
       for jobID, jobDict in summaryDict.items():
-        if jobDict['HeartBeatTime'] == 'None':
+        if 'HeartBeatTime' not in jobDict or \
+           not jobDict['HeartBeatTime'] or \
+           jobDict['HeartBeatTime'] == 'None':
           jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
         else:
           lastTime = Time.fromString(jobDict['LastUpdateTime'])
           hbTime = Time.fromString(jobDict['HeartBeatTime'])
           # Not only Stalled jobs but also Failed jobs because Stalled
-          if ((hbTime - lastTime) > timedelta(0) or
-                  jobDict['Status'] == "Stalled" or
-                  jobDict['MinorStatus'].startswith('Job stalled') or
-                  jobDict['MinorStatus'].startswith('Stalling')):
+          if (hbTime - lastTime) > timedelta(0) or \
+             jobDict['Status'] == JobStatus.STALLED or \
+             jobDict['MinorStatus'].startswith('Job stalled') or \
+             jobDict['MinorStatus'].startswith('Stalling'):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
 
       tqDict = {}
       result = self.taskQueueDB.getTaskQueueForJobs(summaryJobList)
-      if result['OK']:
-        tqDict = result['Value']
-
-      # If no jobs can be selected after the properties check
-      if not summaryDict.keys():
-        return S_OK(resultDict)
+      if not result['OK']:
+        return result
+      tqDict = result['Value']
 
       # prepare the standard structure now
       key = list(summaryDict)[0]
@@ -504,10 +517,12 @@ class JobMonitoringHandler(RequestHandler):
                                    newer=startDate,
                                    older=endDate,
                                    timeStamp='LastUpdateTime')
+    if not result['OK']:
+      return result
+
     resultDict = {}
-    if result['OK']:
-      for cDict, count in result['Value']:
-        resultDict[cDict[attribute]] = count
+    for cDict, count in result['Value']:
+      resultDict[cDict[attribute]] = count
 
     return S_OK(resultDict)
 
@@ -516,8 +531,9 @@ class JobMonitoringHandler(RequestHandler):
 
   @classmethod
   @ignoreEncodeWarning
+  @deprecated("Use getJobsSummary")
   def export_getJobsPrimarySummary(cls, jobIDs):
-    return cls.getAttributesForJobList(jobIDs, PRIMARY_SUMMARY)
+    return cls.getJobsAttributes(jobIDs, [])
 
 ##############################################################################
   types_getJobParameter = [six.string_types + six.integer_types, six.string_types]
@@ -642,15 +658,3 @@ class JobMonitoringHandler(RequestHandler):
     """ Get input data for the specified jobs
     """
     return cls.jobDB.getInputData(jobID)
-
-##############################################################################
-  types_getOwnerGroup = []
-
-  @classmethod
-  def export_getOwnerGroup(cls):
-    """
-    Return Distinct Values of OwnerGroup from the JobsDB
-    """
-    return cls.jobDB.getDistinctJobAttributes('OwnerGroup')
-
-##############################################################################

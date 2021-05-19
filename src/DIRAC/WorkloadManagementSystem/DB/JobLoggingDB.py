@@ -41,9 +41,7 @@ class JobLoggingDB(DB):
                        minorStatus='idem',
                        applicationStatus='idem',
                        date=None,
-                       source='Unknown',
-                       minor=None,
-                       application=None):
+                       source='Unknown'):
     """ Add a new entry to the JobLoggingDB table. One, two or all the three status
         components (status, minorStatus, applicationStatus) can be specified.
         Optionally the time stamp of the status can
@@ -51,14 +49,6 @@ class JobLoggingDB(DB):
         as datetime.datetime object. If the time stamp is not provided the current
         UTC time is used.
     """
-
-    # Backward compatibility
-    # FIXME: to remove in next version
-    if minor:
-      minorStatus = minor
-    if application:
-      applicationStatus = application
-
     event = 'status/minor/app=%s/%s/%s' % (status, minorStatus, applicationStatus)
     self.log.info("Adding record for job ", str(jobID) + ": '" + event + "' from " + source)
 

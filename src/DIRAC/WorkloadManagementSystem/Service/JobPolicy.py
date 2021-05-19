@@ -141,10 +141,10 @@ class JobPolicy(object):
     ownerJobList = []
     userRights = {}
 
-    result = self.jobDB.getAttributesForJobList(jobList, ['Owner', 'OwnerGroup'])
+    result = self.jobDB.getJobsAttributes(jobList, ['Owner', 'OwnerGroup'])
     if not result['OK']:
       sLog.error(
-          "evaluateJobRights: failure while getAttributesForJobList",
+          "evaluateJobRights: failure while getJobsAttributes",
           "for %s : %s" % (','.join(str(j) for j in jobList), result['Message']))
       return validJobList, invalidJobList, nonauthJobList, ownerJobList
     jobDict = result['Value']

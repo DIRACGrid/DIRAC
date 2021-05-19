@@ -35,11 +35,11 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import MJF
 from DIRAC.Core.Utilities.Profiler import Profiler
-from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 
@@ -584,7 +584,7 @@ class Watchdog(object):
           self.log.warn('N.B. job would be declared as stalled but CPU / WallClock check is disabled by payload')
           return S_OK()
         self.log.info("Job is stalled!")
-        return S_ERROR('Watchdog identified this job as stalled')
+        return S_ERROR(JobMinorStatus.WATCHDOG_STALLED)
     except Exception as e:
       self.log.error("Cannot convert CPU consumed from string to int", str(e))
 

@@ -12,6 +12,8 @@ from __future__ import division
 
 from datetime import datetime, timedelta
 
+import pytest
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Script import parseCommandLine
@@ -55,6 +57,22 @@ jdl = """[
 gLogger.setLevel('DEBUG')
 
 
+# fixture for teardown
+@pytest.fixture
+def putAndDelete():
+
+  yield putAndDelete
+  # from here on is teardown
+
+  # remove the job entries
+  res = jobDB.selectJobs({})
+  assert res['OK'] is True, res['Message']
+  jobs = res['Value']
+  for job in jobs:
+    res = jobDB.removeJobFromDB(job)
+    assert res['OK'] is True, res['Message']
+
+
 def fakegetDIRACPlatform(OSList):
   return {'OK': True, 'Value': 'pippo'}
 
@@ -63,7 +81,9 @@ jobDB = JobDB()
 jobDB.getDIRACPlatform = fakegetDIRACPlatform
 
 
-def test_insertAndRemoveJobIntoDB():
+# #### real tests #
+
+def test_insertAndRemoveJobIntoDB(putAndDelete):
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
@@ -102,11 +122,15 @@ def test_insertAndRemoveJobIntoDB():
     assert res['OK'] is True, res['Message']
 
 
-def test_rescheduleJob():
+def test_rescheduleJob(putAndDelete):
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
   jobID = res['JobID']
+
+  res = jobDB.getJobAttribute(jobID, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == JobStatus.RECEIVED
 
   res = jobDB.rescheduleJob(jobID)
   assert res['OK'] is True, res['Message']
@@ -118,13 +142,6 @@ def test_rescheduleJob():
   assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Job Rescheduled'
 
-  res = jobDB.selectJobs({})
-  assert res['OK'] is True, res['Message']
-  jobs = res['Value']
-  for job in jobs:
-    res = jobDB.removeJobFromDB(job)
-    assert res['OK'] is True, res['Message']
-
 
 def test_getCounters():
 
@@ -132,13 +149,19 @@ def test_getCounters():
   assert res['OK'] is True, res['Message']
 
 
-def test_heartBeatLogging():
+def test_heartBeatLogging(putAndDelete):
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
   jobID = res['JobID']
 
-  res = jobDB.setJobStatus(jobID, status='Running')
+  res = jobDB.setJobStatus(jobID, status=JobStatus.CHECKING)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobStatus(jobID, status=JobStatus.WAITING)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobStatus(jobID, status=JobStatus.MATCHED)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobStatus(jobID, status=JobStatus.RUNNING)
   assert res['OK'] is True, res['Message']
   res = jobDB.setHeartBeatData(jobID, dynamicDataDict={'CPU': 2345})
   assert res['OK'] is True, res['Message']
@@ -168,15 +191,8 @@ def test_heartBeatLogging():
   assert res['OK'] is True, res['Message']
   assert not res['Value'], str(res)
 
-  res = jobDB.selectJobs({})
-  assert res['OK'] is True, res['Message']
-  jobs = res['Value']
-  for job in jobs:
-    res = jobDB.removeJobFromDB(job)
-    assert res['OK'] is True, res['Message']
 
-
-def test_jobParameters():
+def test_jobParameters(putAndDelete):
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
   jobID = res['JobID']
@@ -193,9 +209,159 @@ def test_jobParameters():
   assert res['OK'] is True, res['Message']
   assert res['Value'] == {}, res['Value']
 
-  res = jobDB.selectJobs({})
+
+def test_setJobsMajorStatus(putAndDelete):
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner_1', '/DN/OF/owner', 'ownerGroup', 'someSetup')
   assert res['OK'] is True, res['Message']
-  jobs = res['Value']
-  for job in jobs:
-    res = jobDB.removeJobFromDB(job)
-    assert res['OK'] is True, res['Message']
+  jobID_1 = res['JobID']
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner_2', '/DN/OF/owner', 'ownerGroup', 'someSetup')
+  assert res['OK'] is True, res['Message']
+  jobID_2 = res['JobID']
+
+  res = jobDB.getJobAttribute(jobID_1, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == JobStatus.RECEIVED
+  res = jobDB.getJobAttribute(jobID_2, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == JobStatus.RECEIVED
+
+  res = jobDB.setJobsMajorStatus([jobID_1, jobID_2], JobStatus.CHECKING)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.CHECKING},
+      jobID_2: {'Status': JobStatus.CHECKING}}
+
+  res = jobDB.setJobsMajorStatus([jobID_1, jobID_2], JobStatus.RUNNING)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.CHECKING},
+      jobID_2: {'Status': JobStatus.CHECKING}}
+
+  res = jobDB.setJobsMajorStatus([jobID_1], JobStatus.WAITING)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.WAITING},
+      jobID_2: {'Status': JobStatus.CHECKING}}
+
+  res = jobDB.setJobsMajorStatus([jobID_1], JobStatus.KILLED)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.WAITING},
+      jobID_2: {'Status': JobStatus.CHECKING}}
+
+  res = jobDB.setJobsMajorStatus([jobID_1], JobStatus.KILLED, force=True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.KILLED},
+      jobID_2: {'Status': JobStatus.CHECKING}}
+
+
+def test_attributes(putAndDelete):
+
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner_1', '/DN/OF/owner', 'ownerGroup', 'someSetup')
+  assert res['OK'] is True, res['Message']
+  jobID_1 = res['JobID']
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner_2', '/DN/OF/owner', 'ownerGroup', 'someSetup')
+  assert res['OK'] is True, res['Message']
+  jobID_2 = res['JobID']
+
+  res = jobDB.getJobAttribute(jobID_1, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == JobStatus.RECEIVED
+  res = jobDB.getJobAttribute(jobID_2, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == JobStatus.RECEIVED
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.RECEIVED},
+      jobID_2: {'Status': JobStatus.RECEIVED}}
+
+  res = jobDB.setJobAttributes(jobID_1, ['ApplicationStatus'], ['ApplicationStatus_1'], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttribute(jobID_1, 'ApplicationStatus')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == 'ApplicationStatus_1'
+
+  res = jobDB.setJobAttributes(jobID_1, ['ApplicationStatus'], ['ApplicationStatus_1_2'], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttribute(jobID_1, 'ApplicationStatus')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == 'ApplicationStatus_1_2'
+
+  res = jobDB.setJobAttributes(
+      jobID_1,
+      ['JobName', 'Site'],
+      ['JobName_1', 'DIRAC.Client.org'],
+      True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttribute(jobID_1, 'Site')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == 'DIRAC.Client.org'
+
+  res = jobDB.setJobAttributes(jobID_1, ['Status'], [JobStatus.CHECKING], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobAttributes(jobID_1, ['Status'], [JobStatus.WAITING], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttribute(jobID_1, 'Status')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == JobStatus.WAITING
+
+  res = jobDB.setJobAttributes(jobID_1, ['Status', 'MinorStatus'], [JobStatus.MATCHED, 'minor'], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == JobStatus.MATCHED
+  assert res['Value']['MinorStatus'] == 'minor'
+  res = jobDB.getJobAttributes(jobID_2, ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == JobStatus.RECEIVED
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.MATCHED},
+      jobID_2: {'Status': JobStatus.RECEIVED}}
+
+  res = jobDB.setJobAttributes(jobID_2, ['Status'], [JobStatus.CHECKING], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobAttributes(jobID_2, ['Status'], [JobStatus.WAITING], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.setJobAttributes(jobID_2, ['Status'], [JobStatus.MATCHED], True)
+  assert res['OK'] is True, res['Message']
+
+  res = jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], [JobStatus.RUNNING, 'minor_2'], True)
+  assert res['OK'] is True, res['Message']
+  res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == JobStatus.RUNNING
+  assert res['Value']['MinorStatus'] == 'minor_2'
+  res = jobDB.getJobAttributes(jobID_2, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == JobStatus.RUNNING
+  assert res['Value']['MinorStatus'] == 'minor_2'
+
+  jobDB.setJobAttributes(jobID_1, ['Status'], [JobStatus.DONE], True)
+  jobDB.setJobAttributes([jobID_1, jobID_2], ['Status', 'MinorStatus'], [JobStatus.COMPLETED, 'minor_3'], True)
+  res = jobDB.getJobAttributes(jobID_1, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == JobStatus.DONE
+  assert res['Value']['MinorStatus'] == 'minor_3'
+  res = jobDB.getJobAttributes(jobID_2, ['Status', 'MinorStatus'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value']['Status'] == JobStatus.RUNNING
+  assert res['Value']['MinorStatus'] == 'minor_3'
+  res = jobDB.getJobsAttributes([jobID_1, jobID_2], ['Status'])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {
+      jobID_1: {'Status': JobStatus.DONE},
+      jobID_2: {'Status': JobStatus.RUNNING}}

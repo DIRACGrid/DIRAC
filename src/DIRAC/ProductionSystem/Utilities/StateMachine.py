@@ -5,9 +5,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
-from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import State, StateMachine
+from DIRAC.Core.Utilities.StateMachine import State, StateMachine
 
 
 class ProductionsStateMachine(StateMachine):

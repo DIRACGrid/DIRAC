@@ -13,7 +13,6 @@ from __future__ import print_function
 
 import time
 import six
-from six.moves import range
 
 __RCSID__ = "$Id$"
 
@@ -51,11 +50,11 @@ class JobStateUpdateHandler(RequestHandler):
   @classmethod
   def export_updateJobFromStager(cls, jobID, status):
     """ Simple call back method to be used by the stager. """
-    if status == 'Done':
-      jobStatus = 'Checking'
+    if status == JobStatus.DONE:
+      jobStatus = JobStatus.CHECKING
       minorStatus = 'JobScheduling'
-    elif status == 'Failed':
-      jobStatus = 'Failed'
+    elif status == JobStatus.FAILED:
+      jobStatus = JobStatus.FAILED
       minorStatus = 'Staging input files failed'
     else:
       return S_ERROR("updateJobFromStager: %s status not known." % status)
@@ -70,12 +69,12 @@ class JobStateUpdateHandler(RequestHandler):
         # if there is no matching Job it returns an empty dictionary
         return S_OK('No Matching Job')
       status = result['Value']['Status']
-      if status == 'Staging':
+      if status == JobStatus.STAGING:
         if i:
           infoStr = "Found job in Staging after %d seconds" % i
         break
       time.sleep(1)
-    if status != 'Staging':
+    if status != JobStatus.STAGING:
       return S_OK('Job is not in Staging after %d seconds' % trials)
 
     result = cls.__setJobStatus(
@@ -88,19 +87,38 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobStatus = [[six.string_types, int]]
+  types_setJobStatus = [[six.string_types, int],
+                        six.string_types,
+                        six.string_types,
+                        six.string_types]
 
   @classmethod
-  def export_setJobStatus(cls, jobID, status='', minorStatus='', source='Unknown', datetime=None):
-    """ Set the major and minor status for job specified by its JobId.
-        Set optionally the status date and source component which sends the
-        status information.
+  def export_setJobStatus(cls, jobID,
+                          status='',
+                          minorStatus='',
+                          source='Unknown',
+                          datetime=None,
+                          force=False):
     """
-    return cls.__setJobStatus(
-        int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime)
+    Sets the major and minor status for job specified by its JobId.
+    Sets optionally the status date and source component which sends the status information.
+    The "force" flag will override the WMS state machine decision.
+    """
+    return cls.__setJobStatus(int(jobID),
+                              status=status,
+                              minorStatus=minorStatus,
+                              source=source,
+                              datetime=datetime,
+                              force=force)
 
   @classmethod
-  def __setJobStatus(cls, jobID, status=None, minorStatus=None, appStatus=None, source=None, datetime=None):
+  def __setJobStatus(cls, jobID,
+                     status=None,
+                     minorStatus=None,
+                     appStatus=None,
+                     source=None,
+                     datetime=None,
+                     force=False):
     """ update the job provided statuses (major, minor and application)
         If sets also the source and the time stamp (or current time)
         This method calls the bulk method internally
@@ -117,20 +135,20 @@ class JobStateUpdateHandler(RequestHandler):
         sDict['Source'] = source
       if not datetime:
         datetime = Time.toString()
-      return cls.__setJobStatusBulk(jobID, {datetime: sDict})
+      return cls.__setJobStatusBulk(jobID, {datetime: sDict}, force=force)
     return S_OK()
 
   ###########################################################################
   types_setJobStatusBulk = [[six.string_types, int], dict]
 
   @classmethod
-  def export_setJobStatusBulk(cls, jobID, statusDict):
+  def export_setJobStatusBulk(cls, jobID, statusDict, force):
     """ Set various job status fields with a time stamp and a source
     """
-    return cls.__setJobStatusBulk(jobID, statusDict)
+    return cls.__setJobStatusBulk(jobID, statusDict, force=force)
 
   @classmethod
-  def __setJobStatusBulk(cls, jobID, statusDict):
+  def __setJobStatusBulk(cls, jobID, statusDict, force=False):
     """ Set various status fields for job specified by its JobId.
         Set only the last status in the JobDB, updating all the status
         logging information in the JobLoggingDB. The statusDict has datetime
@@ -187,6 +205,24 @@ class JobStateUpdateHandler(RequestHandler):
       if sDict.get('ApplicationStatus') and newStat == JobStatus.MATCHED:
         sDict['Status'] = JobStatus.RUNNING
       newStat = sDict.get('Status', newStat)
+
+      # evaluate the state machine
+      if not force:
+        res = JobStatus.JobsStateMachine(currentStatus).getNextState(newStat)
+        if not res['OK']:
+          return res
+        nextState = res['Value']
+
+        # If the JobsStateMachine does not accept the candidate, don't update
+        if newStat != nextState:
+          log.error(
+              "Job Status Error",
+              "%s can't move from %s to %s: using %s" % (
+                  jobID, currentStatus, newStat, nextState))
+          newStat = nextState
+        sDict['Status'] = newStat
+        currentStatus = newStat
+
       if newStat == JobStatus.RUNNING and not startTime:
         # Pick up the start date when the job starts running if not existing
         startTime = date
@@ -219,7 +255,9 @@ class JobStateUpdateHandler(RequestHandler):
       if application:
         attrNames.append('ApplicationStatus')
         attrValues.append(application)
-      result = cls.jobDB.setJobAttributes(jobID, attrNames, attrValues, update=True)
+      # Here we are forcing the update as it's always updating to the last status
+      result = cls.jobDB.setJobAttributes(
+          jobID, attrNames, attrValues, update=True, force=True)
       if not result['OK']:
         return result
 
@@ -399,7 +437,8 @@ class JobStateUpdateHandler(RequestHandler):
 
     status = result['Value']['Status']
     if status in (JobStatus.STALLED, JobStatus.MATCHED):
-      result = cls.jobDB.setJobAttribute(jobID, 'Status', JobStatus.RUNNING, True)
+      result = cls.jobDB.setJobAttribute(
+          jobID=jobID, attrName='Status', attrValue=JobStatus.RUNNING, update=True)
       if not result['OK']:
         gLogger.warn('Failed to restore the job status to Running')
 

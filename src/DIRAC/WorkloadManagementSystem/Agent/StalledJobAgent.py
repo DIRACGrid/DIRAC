@@ -185,7 +185,7 @@ class StalledJobAgent(AgentModule):
     """
     delayTime = self.stalledTime
     # Add a tolerance time for some sites if required
-    result = self.jobDB.getJobAttribute(jobID, 'site')
+    result = self.jobDB.getJobAttribute(jobID, 'Site')
     if not result['OK']:
       return result
     site = result['Value']
@@ -272,7 +272,7 @@ class StalledJobAgent(AgentModule):
     if elapsedTime > stalledTime:
       self.log.info('Job is identified as stalled',
                     ": jobID %d with last update > %s secs ago" % (job, elapsedTime))
-      return S_OK('Stalled')
+      return S_OK()
 
     return S_ERROR('Job %s is running and will be ignored' % job)
 
@@ -407,8 +407,8 @@ class StalledJobAgent(AgentModule):
               'JobType': jobDict['JobType'],
               'JobClass': jobDict['JobSplitType'],
               'ProcessingType': processingType,
-              'FinalMajorStatus': 'Failed',
-              'FinalMinorStatus': 'Stalled',
+              'FinalMajorStatus': JobStatus.FAILED,
+              'FinalMinorStatus': JobMinorStatus.STALLED_PILOT_NOT_RUNNING,
               'CPUTime': lastCPUTime,
               'NormCPUTime': lastCPUTime * cpuNormalization,
               'ExecTime': lastWallTime,
