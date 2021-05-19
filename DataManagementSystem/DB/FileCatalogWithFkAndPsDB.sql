@@ -1322,6 +1322,7 @@ DELIMITER ;
 
 
 
+-- TO BE DEPRECATED IN FAVOR OF THE BULK METHOD
 -- ps_get_all_info_of_replicas : get the info of all replicas of a given file
 --
 -- file_id : id of the file
@@ -1353,7 +1354,7 @@ BEGIN
                     JOIN FC_StorageElements se on r.SEID = se.SEID
                     JOIN FC_Statuses st on r.Status = st.StatusID
                     WHERE FileID =',file_id,
-                    ' and st.Status  in (',visibleReplicaStatus,') ');
+                    ' AND st.Status IN (', visibleReplicaStatus, ')');
 
     PREPARE stmt FROM @sql;
     EXECUTE stmt;
@@ -1363,6 +1364,52 @@ BEGIN
 
 END //
 DELIMITER ;
+
+-- ps_get_all_info_of_replicas_bulk : get the info of all replicas for a list of file ids
+--
+-- file_ids : list of file IDs
+-- allStatus : if False, consider visibleReplicaStatus
+-- visibleReplicaStatus : list of status we are interested in
+--
+-- output :  FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+
+DROP PROCEDURE IF EXISTS ps_get_all_info_of_replicas_bulk;
+DELIMITER //
+CREATE PROCEDURE ps_get_all_info_of_replicas_bulk
+(IN file_ids TEXT, IN allStatus BOOLEAN, IN visibleReplicaStatus TEXT)
+BEGIN
+
+
+  IF allStatus THEN
+
+    SET @sql = CONCAT('SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+                      FROM FC_Replicas r
+                      JOIN FC_StorageElements se on r.SEID = se.SEID
+                      JOIN FC_Statuses st on r.Status = st.StatusID
+                      WHERE FileID IN (', file_ids, ')');
+    PREPARE stmt FROM @sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+  ELSE
+
+    SET @sql = CONCAT(
+                    'SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+                    FROM FC_Replicas r
+                    JOIN FC_StorageElements se on r.SEID = se.SEID
+                    JOIN FC_Statuses st on r.Status = st.StatusID
+                    WHERE FileID IN (', file_ids, ') ',
+                    'AND st.Status IN (', visibleReplicaStatus, ')');
+
+    PREPARE stmt FROM @sql;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+
+  END IF;
+
+END //
+DELIMITER ;
+
 
 -- ps_get_all_directory_info : get all the info of a given directory
 --

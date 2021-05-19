@@ -775,51 +775,51 @@ class FileManagerPs(FileManagerBase):
   # _getFileReplicas related methods
   #
 
-  def _getFileReplicas(self, fileIDs, fields_input=['PFN'], allStatus=False, connection=False):
+  def _getFileReplicas(self, fileIDs, fields_input=None, allStatus=False, connection=False):
     """ Get replicas for the given list of files specified by their fileIDs
         :param fileIDs : list of file ids
-        :param fields_input : metadata of the Replicas we are interested in
+        :param fields_input : metadata of the Replicas we are interested in (default to PFN)
         :param allStatus : if True, all the Replica statuses will be considered,
                            otherwise, only the db.visibleReplicaStatus
 
         :returns S_OK with a dict { fileID : { SE name : dict of metadata } }
     """
 
-    connection = self._getConnection(connection)
+    if fields_input is None:
+      fields_input = ['PFN']
 
     fields = list(fields_input)
 
+    # always add Status in the list of required fields
     if 'Status' not in fields:
       fields.append('Status')
 
-    replicas = {}
+    # We initialize the dictionary with empty dict
+    # as default value, because this is what we want for
+    # non existing replicas
+    replicas = {fileID: {} for fileID in fileIDs}
 
     # Format the status to be used in a IN clause in the stored procedure
     fStatus = stringListToString(self.db.visibleReplicaStatus)
 
     fieldNames = ["FileID", "SE", "Status", "RepType", "CreationDate", "ModificationDate", "PFN"]
 
-    for fileID in fileIDs:
-
-      result = self.db.executeStoredProcedureWithCursor('ps_get_all_info_of_replicas',
-                                                        (fileID, allStatus, fStatus))
+    for chunks in breakListIntoChunks(fileIDs, 1000):
+      # Format the FileIDs to be used in a IN clause in the stored procedure
+      formatedFileIds = intListToString(chunks)
+      result = self.db.executeStoredProcedureWithCursor('ps_get_all_info_of_replicas_bulk',
+                                                        (formatedFileIds, allStatus, fStatus))
 
       if not result['OK']:
         return result
 
       rows = result['Value']
 
-      if not rows:
-        replicas[fileID] = {}
-
       for row in rows:
-
         rowDict = dict(zip(fieldNames, row))
-
-        # Returns only the required metadata
         se = rowDict["SE"]
-        repForFile = replicas.setdefault(fileID, {})
-        repForFile[se] = dict((key, rowDict.get(key, "Unknown metadata field")) for key in fields)
+        fileID = rowDict['FileID']
+        replicas[fileID][se] = dict((key, rowDict.get(key, "Unknown metadata field")) for key in fields)
 
     return S_OK(replicas)
 
