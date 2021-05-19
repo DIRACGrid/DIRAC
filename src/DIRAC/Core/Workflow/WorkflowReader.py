@@ -19,7 +19,6 @@ __RCSID__ = "$Id$"
 
 
 class WorkflowXMLHandler(ContentHandler):
-
   def __init__(self, new_wf=None):
     """ If new_wf defined, it will be used as root of document """
     # this is an attribute for the object to be created from the XML document
@@ -67,14 +66,15 @@ class WorkflowXMLHandler(ContentHandler):
 
     elif name == "Parameter":
       obj = Parameter(
-          str(
-              attrs['name']), None, str(
-              attrs['type']), str(
-              attrs['linked_module']), str(
-              attrs['linked_parameter']), str(
-              attrs['in']), str(
-              attrs['out']), str(
-              attrs['description']))
+          str(attrs['name']),
+          None,
+          str(attrs['type']),
+          str(attrs['linked_module']),
+          str(attrs['linked_parameter']),
+          str(attrs['in']),
+          str(attrs['out']),
+          str(attrs['description'])
+      )
       self.stack.append(obj)
 
     # TEMPORARY CODE
@@ -89,36 +89,31 @@ class WorkflowXMLHandler(ContentHandler):
       pass
 
   def endElement(self, name):
-    # print name, "endElement"
     # attributes
     if name == "origin":
-      self.stack[len(self.stack) - 1].setOrigin(self.getCharacters())
+      self.stack[-1].setOrigin(self.getCharacters())
     elif name == "version":
-      self.stack[len(self.stack) - 1].setVersion(self.getCharacters())
+      self.stack[-1].setVersion(self.getCharacters())
     elif name == "name":
-      self.stack[len(self.stack) - 1].setName(self.getCharacters())
+      self.stack[-1].setName(self.getCharacters())
     elif name == "type":
-      self.stack[len(self.stack) - 1].setType(self.getCharacters())
+      self.stack[-1].setType(self.getCharacters())
     elif name == "required":
-      self.stack[len(self.stack) - 1].setRequired(self.getCharacters())
+      self.stack[-1].setRequired(self.getCharacters())
     elif name == "descr_short":
-      self.stack[len(self.stack) - 1].setDescrShort(self.getCharacters())
-    elif name == "name":
-      self.stack[len(self.stack) - 1].setName(self.getCharacters())
-    elif name == "type":
-      self.stack[len(self.stack) - 1].setType(self.getCharacters())
+      self.stack[-1].setDescrShort(self.getCharacters())
     elif name == "description":
-      self.stack[len(self.stack) - 1].setDescription(self.getCharacters())
+      self.stack[-1].setDescription(self.getCharacters())
     elif name == "body":
-      self.stack[len(self.stack) - 1].setBody(self.getCharacters())
+      self.stack[-1].setBody(self.getCharacters())
     elif name == "value":
       ch = self.getCharacters()
       # to keep compatibility with the old version
       # were """ was not used for the string
-      if self.stack[len(self.stack) - 1].isTypeString():
-        self.stack[len(self.stack) - 1].setValue(ch)
+      if self.stack[-1].isTypeString():
+        self.stack[-1].setValue(ch)
       else:
-        self.stack[len(self.stack) - 1].setValue(eval(ch))
+        self.stack[-1].setValue(eval(ch))
 
     # objects
     elif name == "Workflow":
@@ -131,10 +126,10 @@ class WorkflowXMLHandler(ContentHandler):
       self.root.addModule(self.stack.pop())
     elif name == "ModuleInstance":
       obj = self.stack.pop()
-      self.stack[len(self.stack) - 1].module_instances.append(obj)
+      self.stack[-1].module_instances.append(obj)
     elif name == "Parameter":
       obj = self.stack.pop()
-      self.stack[len(self.stack) - 1].addParameter(obj)
+      self.stack[-1].addParameter(obj)
     else:
       print("UNTREATED! endElement", name)
 

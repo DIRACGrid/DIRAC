@@ -110,12 +110,7 @@ class Parameter(object):
 
   def isTypeString(self):
     """returns True if type is the string kind"""
-    type = self.type.lower()  # change the register
-    if type == 'string' or type == 'jdl' or \
-            type == 'option' or type == 'parameter' or \
-            type == 'jdlreqt':
-      return True
-    return False
+    return self.type.lower() in ('string', 'jdl', 'option', 'parameter', 'jdlreqt')
 
   def getDescription(self):
     return self.description
@@ -185,10 +180,7 @@ class Parameter(object):
       self.typeout = bool(i)
 
   def __setBooleanFromString(self, i):
-    if i.upper() == "TRUE":
-      return True
-    else:
-      return False
+    return i.upper() == "TRUE"
 
   def __str__(self):
     return str(type(self)) + ": name=" + self.name + " value=" \
@@ -205,8 +197,6 @@ class Parameter(object):
         + '<value><![CDATA[' + str(self.getValue()) + ']]></value>'\
         + '</Parameter>\n'
 
-# we got a problem with the index() function
-#    def __eq__(self, s):
   def compare(self, s):
     if isinstance(s, Parameter):
       return (self.name == s.name) and \
@@ -219,28 +209,20 @@ class Parameter(object):
           (self.description == s.description)
     else:
       return False
-#
-#    def __deepcopy__(self, memo):
-#        return Parameter(parameter=self)
-#
-#    def __copy__(self):
-#        return self.__deepcopy__({})
 
   def copy(self, parameter):
-    if isinstance(parameter, Parameter):
-      self.name = parameter.name
-      self.value = parameter.value
-      self.type = parameter.type
-      self.description = parameter.description
-      self.linked_module = parameter.linked_module
-      self.linked_parameter = parameter.linked_parameter
-      self.typein = parameter.typein
-      self.typeout = parameter.typeout
-    else:
+    if not isinstance(parameter, Parameter):
       raise TypeError('Can not make a copy of object ' + str(type(self)) + ' from the ' + str(type(parameter)))
+    self.name = parameter.name
+    self.value = parameter.value
+    self.type = parameter.type
+    self.description = parameter.description
+    self.linked_module = parameter.linked_module
+    self.linked_parameter = parameter.linked_parameter
+    self.typein = parameter.typein
+    self.typeout = parameter.typeout
 
   def createParameterCode(self, ind=0, instance_name=None):
-
     if (instance_name is None) or (instance_name == ''):
       ret = indent(ind) + self.getName() + ' = ' + self.getValueTypeCorrected()
     else:
@@ -256,7 +238,6 @@ class Parameter(object):
 class ParameterCollection(list):
   """ Parameter collection class representing a list of Parameters
   """
-
   def __init__(self, coll=None):
     list.__init__(self)
     if isinstance(coll, ParameterCollection):
@@ -316,7 +297,7 @@ class ParameterCollection(list):
 
   def setValue(self, name, value, vtype=None):
     """ Method finds parameter with the name "name" and if exists its set value
-    Returns True if sucsessfull
+    Returns True if successful
     """
     par = self.find(name)
     if par is None:
@@ -330,19 +311,16 @@ class ParameterCollection(list):
   def getInput(self):
     """ Get input linked parameters
     """
-
     return self.get(input=True)
 
   def getOutput(self):
     """ Get output linked parameters
     """
-
     return self.get(output=True)
 
   def getLinked(self):
     """ Get linked parameters
     """
-
     return self.get(input=True, output=True)
 
   def get(self, input=False, output=False):
@@ -367,7 +345,7 @@ class ParameterCollection(list):
 
   def setLink(self, name, module_name, parameter_name):
     """ Method finds parameter with the name "name" and if exists its set value
-    Returns True if sucsessfull
+    Returns True if successful
     """
     par = self.find(name)
     if par is None:
@@ -383,7 +361,7 @@ class ParameterCollection(list):
     """ This is a GROUP method operates on the 'obj' parameters using only parameters listed in 'opt' list
     Method will link self.parameters with the outer object (self) perameters using prefix and postfix
     for example if we want to link module instance with the step or step instance with the workflow
-    opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changing!!!)
+    opt - ParameterCollection or single Parameter (WARNING: used as reference to get a names, opt is not changing!!!)
     opt ALSO can be a list of string with the names of parameters to link
     objname - name of the object to connect with, usually 'self'
     """
@@ -417,7 +395,7 @@ class ParameterCollection(list):
   def unlink(self, opt):
     """ This is a GROUP method operates on the 'obj' parameters using only parameters listed in 'opt' list
     Method will unlink some self.parameters
-    opt - ParameterCollection or sigle Parameter (WARNING!! used as reference to get a names!!! opt is not changing!!!)
+    opt - ParameterCollection or single Parameter (WARNING: used as reference to get a names, opt is not changing!!!)
     opt ALSO can be a list of string with the names of parameters to link
     objname - name of the object to connect with, usually 'self'
     """
@@ -499,60 +477,46 @@ class ParameterCollection(list):
     return v
 
   def findIndex(self, name):
-    i = 0
-    for v in self:
+    for i, v in enumerate(self):
       if v.getName() == name:
         return i
-      i = i + 1
-    return - 1
+    return -1
 
   def getParametersNames(self):
-    li = []
-    for v in self:
-      li.append(v.getName())
-    return li
+    return [v.getName() for v in self]
 
   def compare(self, s):
-    # we comparing parameters only, the attributes will be compared in hierarhy above
+    # we comparing parameters only, the attributes will be compared in hierarchy above
     # we ignore the position of the Parameter in the list
-    # we assume that names of the Parameters are DIFFERENT otherwise we have to change alghorithm!!!
+    # we assume that names of the Parameters are DIFFERENT otherwise we have to change algorithm!!!
     if (not isinstance(s, ParameterCollection)) or (len(s) != len(self)):
       return False
     for v in self:
       for i in s:
-        if v.getName() == i.getName():
-          if not v.compare(i):
-            return False
-          else:
-            break
+        if v.getName() == i.getName() and v.compare(i):
+          break
         else:
-          # if we reached this place naturally we can not find matching name
           return False
       return True
 
   def __str__(self):
-    ret = str(type(self)) + ':\n'
+    ret = [str(type(self)) + ':']
     for v in self:
-      ret = ret + str(v) + '\n'
-    return ret
+      ret += [str(v)]
+    return "\n".join(ret + [""])
 
   def toXML(self):
-    ret = ""
-    for v in self:
-      ret = ret + v.toXML()
-    return ret
+    return "".join(v.toXML() for v in self)
 
   def createParametersCode(self, indent=0, instance_name=None):
-    str = ''
-    for v in self:
-      if v.preExecute():
-        str = str + v.createParameterCode(indent, instance_name)
-    return str
+    return "".join(
+        v.createParameterCode(indent, instance_name)
+        for v in self if v.preExecute()
+    )
 
   def resolveGlobalVars(self, wf_parameters=None, step_parameters=None):
     """This function resolves global parameters of type @{value} within the ParameterCollection
     """
-
     recurrency_max = 12
     for v in self:
       recurrency = 0
@@ -572,7 +536,7 @@ class ParameterCollection(list):
           if v_other is None and wf_parameters is not None:
             v_other = wf_parameters.findLinked(substitute_var, False)
 
-          # finaly the action itself
+          # finally the action itself
           if v_other is not None and not v_other.isLinked():
             v.value = substitute(v.value, substitute_var, v_other.value)
           elif v_other is not None:
@@ -630,7 +594,7 @@ class AttributeCollection(dict):
     for v in sorted(self):
       if v == 'parent':
         continue  # doing nothing
-      elif v == 'body' or v == 'description':
+      elif v in ['body', 'description']:
         ret = ret + '<' + v + '><![CDATA[' + str(self[v]) + ']]></' + v + '>\n'
       else:
         ret = ret + '<' + v + '>' + str(self[v]) + '</' + v + '>\n'
