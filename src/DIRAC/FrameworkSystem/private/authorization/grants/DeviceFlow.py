@@ -56,7 +56,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
 
   def validate_authorization_request(self):
     """ Validate authorization request
-    
+
         :return: None
     """
     # Validate client for this request

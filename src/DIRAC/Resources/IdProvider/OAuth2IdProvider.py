@@ -120,7 +120,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.jwks = self.fetch_metadata(self.get_metadata('jwks_uri'))
       pprint.pprint(self.jwks)
       return jwt.decode(accessToken, JsonWebKey.import_key_set(self.jwks))
-    
+
   def update_token(self, token, refresh_token):
     pass
 
@@ -152,6 +152,8 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     """ Fetch metada
     """
     data = self.get(url or self.server_metadata_url, withhold_token=True).json()
+    if url:
+      return data
     self.metadata.update(data)
 
   def researchGroup(self, payload, token):
@@ -211,7 +213,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       session = {}
 
     self.log.debug('Current session is:\n', pprint.pformat(session))
-    
+
     self.fetchToken(authorization_response=response.uri, code_verifier=session.get('code_verifier'))
     # Get user info
     claims = self.getUserProfile()
@@ -256,7 +258,8 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     credDict = {}
     attributes = {
         'eduperson_unique_id': '^(?P<ID>.*)',
-        'eduperson_entitlement': '^(?P<NAMESPACE>[A-z,.,_,-,:]+):(group:registry|group):(?P<VO>[A-z,.,_,-]+):role=(?P<VORole>[A-z,.,_,-]+)[:#].*'
+        'eduperson_entitlement': '%s:%s' % ('^(?P<NAMESPACE>[A-z,.,_,-,:]+):(group:registry|group)',
+                                            '(?P<VO>[A-z,.,_,-]+):role=(?P<VORole>[A-z,.,_,-]+)[:#].*')
     }
     if 'eduperson_entitlement' not in claimDict:
       claimDict = self.getUserProfile()
@@ -300,7 +303,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
     try:
       r = requests.post(self.get_metadata('device_authorization_endpoint'), data=dict(
-        client_id=self.client_id, scope=list_to_scope(scope_to_list(self.scope) + groupScopes)
+          client_id=self.client_id, scope=list_to_scope(scope_to_list(self.scope) + groupScopes)
       ), verify=self.verify)
       r.raise_for_status()
       deviceResponse = r.json()
@@ -337,8 +340,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       if time.time() - __start > timeout:
         return S_ERROR('Time out.')
       r = requests.post(self.get_metadata('token_endpoint'), data=dict(client_id=self.client_id,
-                                                                   grant_type=DEVICE_CODE_GRANT_TYPE,
-                                                                   device_code=deviceCode), verify=self.verify)
+                        grant_type=DEVICE_CODE_GRANT_TYPE, device_code=deviceCode), verify=self.verify)
       token = r.json()
       if not token:
         return S_ERROR('Resived token is empty!')
@@ -379,7 +381,6 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         return S_ERROR('Cannot exchange token with %s group.' % group)
       self.token = token
       return S_OK(token)
-      
     except Exception as e:
       return S_ERROR(repr(e))
 

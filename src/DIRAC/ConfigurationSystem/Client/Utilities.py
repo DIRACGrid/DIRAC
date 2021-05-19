@@ -20,6 +20,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Utilities.Glue2 import getGlue2CEInfo
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 

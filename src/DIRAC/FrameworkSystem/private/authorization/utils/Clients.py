@@ -17,18 +17,19 @@ DEFAULT_SCOPE = 'proxy g: lifetime:'
 
 DEFAULT_CLIENTS = {
     'DIRACCLI': dict(
-        ProviderType = 'DIRAC',
+        ProviderType='DIRAC',
         client_id='DIRAC_CLI',
         response_types=['device'],
         grant_types=['urn:ietf:params:oauth:grant-type:device_code']
     ),
     'WebAppDIRAC': dict(
-        ProviderType = 'DIRAC',
+        ProviderType='DIRAC',
         token_endpoint_auth_method='client_secret_basic',
         response_types=['code'],
         grant_types=['authorization_code', 'refresh_token']
     )
 }
+
 
 class Client(OAuth2ClientMixin):
   def __init__(self, params):

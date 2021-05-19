@@ -49,7 +49,7 @@ class Params(object):
     """
     self.proxy = True
     return S_OK()
-  
+
   def setGroup(self, arg):
     """ Set email
 
@@ -59,7 +59,7 @@ class Params(object):
     """
     self.group = arg
     return S_OK()
-  
+
   def setProvider(self, arg):
     """ Set email
 
@@ -69,7 +69,7 @@ class Params(object):
     """
     self.provider = arg
     return S_OK()
-  
+
   def setIssuer(self, arg):
     """ Set email
 
@@ -79,7 +79,7 @@ class Params(object):
     """
     self.issuer = arg
     return S_OK()
-  
+
   def setLivetime(self, arg):
     """ Set email
 
@@ -136,7 +136,7 @@ class Params(object):
       idpObj.scope += '+proxy'
     if self.lifetime:
       idpObj.scope += '+lifetime:%s' % (int(self.lifetime) * 3600)
-    
+
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Submit Device authorisation flow
@@ -146,7 +146,7 @@ class Params(object):
       return S_ERROR(repr(e))
     if not result['OK']:
       return result
-    
+
     if self.proxy:
       result = writeToProxyFile(idpObj.token['proxy'].encode("UTF-8"), self.proxyLoc)
       if not result['OK']:

@@ -196,10 +196,10 @@ class BaseRequestHandler(RequestHandler):
       cls._serviceInfoDict = serviceInfo
 
       cls.__monitorLastStatsUpdate = time.time()
-      
+
       # Some pre-initialization
       cls._initializeHandler()
-      
+
       cls.initializeHandler(serviceInfo)
 
       cls.__init_done = True
@@ -468,8 +468,9 @@ class BaseRequestHandler(RequestHandler):
     # in a thread anymore
 
     # Is it S_OK or S_ERROR
-    if isinstance(self.result, dict) and isinstance(self.result.get('OK'), bool) and ('Value' if self.result['OK'] else 'Message') in self.result:
-      self._parseDIRACResult(self.result)
+    if isinstance(self.result, dict):
+      if isinstance(self.result.get('OK'), bool) and ('Value' if self.result['OK'] else 'Message') in self.result:
+        self._parseDIRACResult(self.result)
 
     # If set to true, do not JEncode the return of the RPC call
     # This is basically only used for file download through
@@ -489,7 +490,7 @@ class BaseRequestHandler(RequestHandler):
       self.write(encode(self.result))
 
     self.finish()
-  
+
   def _parseDIRACResult(self, result):
     """ Processing of a standard DIRAC result,
         but in a separate method so that it can be modified for another class if necessary
@@ -614,7 +615,7 @@ class BaseRequestHandler(RequestHandler):
         :return: S_OK(dict)
     """
     return S_OK({})
-  
+
   @property
   def log(self):
     return sLog

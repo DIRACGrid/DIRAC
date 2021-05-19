@@ -85,7 +85,7 @@ class AuthHandler(TornadoREST):
     cls.server = AuthServer()
     cls.server.css = dict(CSS=cls.CSS, css_align_center=cls.css_align_center, css_main=cls.css_main)
     cls.server.LOCATION = cls.LOCATION
-    
+
   def initializeRequest(self):
     """ Called at every request """
     self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
@@ -102,7 +102,7 @@ class AuthHandler(TornadoREST):
     if not result['OK']:
       # If response error is DIRAC server error, not OAuth2 flow error
       self.removeSession()
-      self.set_status = 400
+      self.set_status(400)
       self.write({'error': 'server_error',
                   'description': '%s:\n%s' % (result['Message'], '\n'.join(result['CallStack']))})
     else:
@@ -121,7 +121,7 @@ class AuthHandler(TornadoREST):
         self.removeSession()
       for method, args_kwargs in result['Value'][1].items():
         eval('self.%s' % method)(*args_kwargs[0], **args_kwargs[1])
-  
+
   def saveSession(self, session):
     """ Save session to cookie
 
@@ -132,7 +132,7 @@ class AuthHandler(TornadoREST):
   def removeSession(self):
     """ Remove session from cookie """
     self.clear_cookie('auth_session')
-  
+
   def getSession(self, state=None, **kw):
     """ Get session from cookie
 
@@ -346,7 +346,7 @@ class AuthHandler(TornadoREST):
         # Get original request from session
         req = createOAuth2Request(dict(method='GET', uri=session['uri']))
 
-        groups = [s.split(':')[1] for s in scope_to_list(req.scope) if s.startswith('g:')]
+        groups = [s.split(':')[1] for s in scope_to_list(req.scope) if s.startswith('g:')]  # pylint: disable=no-member
         group = groups[0] if groups else None
 
         if group and not provider:
@@ -355,7 +355,7 @@ class AuthHandler(TornadoREST):
 
         print('Use provider:', provider)
 
-        authURL = '%s/authorization/%s?%s&user_code=%s' % (self.LOCATION, provider, req.query, userCode)
+        authURL = '%s/authorization/%s?%s&user_code=%s' % (self.LOCATION, provider, req.query, userCode)  # pylint: disable=no-member
         # Save session to cookie
         return self.server.handle_response(302, {}, [("Location", authURL)], session)
 
@@ -435,7 +435,7 @@ class AuthHandler(TornadoREST):
       # Parse result of the second authentication flow
       self.log.info('%s session, parsing authorization response:\n' % state,
                     '\n'.join([self.request.uri, self.request.query, self.request.body, str(self.request.headers)]))
-      
+
       result = self.server.parseIdPAuthorizationResponse(self.request, sessionWithExtIdP)
       if not result['OK']:
         return result

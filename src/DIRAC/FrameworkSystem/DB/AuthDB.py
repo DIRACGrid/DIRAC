@@ -172,7 +172,7 @@ class AuthDB(SQLAlchemyDB):
 
   def removeTokens(self):
     """ Get active keys
-    
+
         :return: S_OK(list)/S_ERROR()
     """
     session = self.session()
@@ -184,14 +184,14 @@ class AuthDB(SQLAlchemyDB):
 
   def generateRSAKeys(self):
     """ Generate an RSA keypair with an exponent of 65537 in PEM format
-    
+
         :return: S_OK/S_ERROR
     """
     key = RSAKey.generate_key(key_size=1024, is_private=True)
     dictKey = dict(key=json.dumps(key.as_dict()),
-                   expires_at=time() + (30 * 24 *3600),
+                   expires_at=time() + (30 * 24 * 3600),
                    kid=KeySet([key]).as_dict()['keys'][0]['kid'])
-    
+
     session = self.session()
     try:
       session.add(JWK(**dictKey))
@@ -201,7 +201,7 @@ class AuthDB(SQLAlchemyDB):
 
   def getKeySet(self):
     """ Get key set
-    
+
         :return: S_OK(obj)/S_ERROR()
     """
     keys = []
@@ -216,10 +216,10 @@ class AuthDB(SQLAlchemyDB):
       key = RSAKey.import_key(json.loads(keyDict['key']))
       keys.append(key)
     return S_OK(KeySet(keys))
-  
+
   def getJWKs(self):
     """ Get JWKs list
-    
+
         :return: S_OK(dict)/S_ERROR()
     """
     keys = []
@@ -229,10 +229,10 @@ class AuthDB(SQLAlchemyDB):
     for k in result['Value'].as_dict()['keys']:
       keys.append({'n': k['n'], "kty": k['kty'], "e": k['e'], "kid": k['kid']})
     return S_OK({'keys': keys})
-  
+
   def getPrivateKey(self):
     """ Get private key
-    
+
         :return: S_OK(obj)/S_ERROR()
     """
     result = self.getActiveKeys()
@@ -251,7 +251,7 @@ class AuthDB(SQLAlchemyDB):
 
   def getActiveKeys(self):
     """ Get active keys
-    
+
         :return: S_OK(list)/S_ERROR()
     """
     session = self.session()
@@ -264,10 +264,10 @@ class AuthDB(SQLAlchemyDB):
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK([self.__rowToDict(jwk) for jwk in jwks]))
-  
+
   def removeKeys(self):
     """ Get active keys
-    
+
         :return: S_OK(list)/S_ERROR()
     """
     session = self.session()
@@ -344,7 +344,7 @@ class AuthDB(SQLAlchemyDB):
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK(self.__rowToDict(resData)))
-  
+
   def getSessionByUserCode(self, userCode):
     """ Get client
 
@@ -356,9 +356,9 @@ class AuthDB(SQLAlchemyDB):
     try:
       resData = session.query(AuthSession).filter(AuthSession.user_code == userCode).first()
     except MultipleResultsFound:
-      return self.__result(session, S_ERROR("%s is not unique ID." % sessionID))
+      return self.__result(session, S_ERROR("%s is not unique ID." % userCode))
     except NoResultFound:
-      return self.__result(session, S_ERROR("%s session is expired." % sessionID))
+      return self.__result(session, S_ERROR("Session for %s user code is expired." % userCode))
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK(self.__rowToDict(resData)))

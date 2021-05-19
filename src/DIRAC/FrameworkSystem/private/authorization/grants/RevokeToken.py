@@ -12,7 +12,7 @@ class RevocationEndpoint(_RevocationEndpoint):
 
   def query_token(self, token, token_type_hint, client):
     """ Query requested token from database.
-    
+
         :param str token: token
         :param str token_type_hint: token type
         :param client: client

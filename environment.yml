@@ -72,6 +72,10 @@ dependencies:
   # Pin OpenSSL to avoid: https://github.com/DIRACGrid/DIRAC/issues/4489
   - openssl <1.1
   - selectors2
+  # OAuth2
+  - authlib == 1.0.0
+  - pyjwt
+  - dominate
   - pip:
     - diraccfg
     # This is a fork of tornado with a patch to allow for configurable iostream

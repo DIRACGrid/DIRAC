@@ -68,7 +68,7 @@ def test_Token():
   assert result['OK'], result['Message']
   assert result['Value']['access_token'] == token['access_token']
   assert result['Value']['refresh_token'] == token['refresh_token']
-  assert result['Value']['revoked'] == False
+  assert not result['Value']['revoked']
 
   # Check expired token
   result = db.getToken(exp_token['refresh_token'])
@@ -81,7 +81,7 @@ def test_Token():
   # Check if token revoked
   result = db.getToken(token['refresh_token'])
   assert result['OK'], result['Message']
-  assert result['Value']['revoked'] == True
+  assert result['Value']['revoked']
 
 
 def test_keys():
@@ -90,10 +90,10 @@ def test_keys():
   # JWS
   jws = JsonWebSignature(algorithms=['RS256'])
   code_payload = {'user_id': 'user',
-                 'scope': 'scope',
-                 'redirect_uri': 'redirect_uri',
-                 'client_id': 'client',
-                 'code_challenge': 'code_challenge'}
+                  'scope': 'scope',
+                  'redirect_uri': 'redirect_uri',
+                  'client_id': 'client',
+                  'code_challenge': 'code_challenge'}
 
   # Token metadata
   header = {'alg': 'RS256'}
@@ -153,7 +153,7 @@ def test_Sessions():
             'user_code': 'MDKP-MXMF',
             'verification_uri': 'https://domain.com/DIRAC/auth/device',
             'verification_uri_complete': u'https://domain.com/DIRAC/auth/device?user_code=MDKP-MXMF'}
-  
+
   # Example of the updated session
   sData2 = {'client_id': 'DIRAC_CLI',
             'device_code': 'SsoGTDglu6LThpx0CigM9i9J72B5atZ24ULr6R1awm',

@@ -26,5 +26,5 @@ class CheckInIdProvider(OAuth2IdProvider):
     credDict.update(self.parseEduperson(claims))
     cerdDict = self.userDiscover(credDict)
     credDict['provider'] = self.name
-    
+
     return credDict

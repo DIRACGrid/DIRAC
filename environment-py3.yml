@@ -88,6 +88,10 @@ dependencies:
   #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
   - pyyaml
+  # OAuth2
+  - authlib == 1.0.0
+  - pyjwt
+  - dominate
   - pip:
     # This is a fork of tornado with a patch to allow for configurable iostream
     # It should eventually be part of DIRACGrid

@@ -21,13 +21,12 @@ from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import Revoc
 from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (DeviceAuthorizationEndpoint,
                                                                            DeviceCodeGrant)
-from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import AuthorizationCodeGrant  #, OpenIDCode
+from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import AuthorizationCodeGrant
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import Client, DEFAULT_CLIENTS
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import OAuth2Request, createOAuth2Request
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
-from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorisationServerMetadata, isDownloadablePersonalProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getEmailsForGroup, getDNForUsername
@@ -74,7 +73,7 @@ class AuthServer(_AuthorizationServer):
 
   def __init__(self):
     self.db = AuthDB()
-    self.__tokenDB = TokenDB()
+    # self.__tokenDB = TokenDB()
     self.proxyCli = ProxyManagerClient()
     self.idps = IdProviderFactory()
     # Privide two authlib methods query_client and save_token
@@ -89,11 +88,11 @@ class AuthServer(_AuthorizationServer):
     self.register_grant(DeviceCodeGrant)
     self.register_endpoint(DeviceAuthorizationEndpoint)
     self.register_endpoint(RevocationEndpoint)
-    self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True)])#, OpenIDCode(require_nonce=False)])      
+    self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True)])
 
   def addSession(self, session):
     self.db.addSession(session)
-  
+
   def getSession(self, session):
     self.db.getSession(session)
 
@@ -108,7 +107,7 @@ class AuthServer(_AuthorizationServer):
       result = self.db.storeToken(token)
       if not result['OK']:
         gLogger.error(result['Message'])
-  
+
   def getClient(self, clientID):
     """ Search authorization client
 
@@ -147,7 +146,7 @@ class AuthServer(_AuthorizationServer):
     """
     try:
       return [s.split(':')[1] for s in scope_to_list(scope) if s.startswith('%s:' % param)][0]
-    except:
+    except Exception:
       return None
 
   def generateProxyOrToken(self, client, grant_type, user=None, scope=None,
@@ -228,13 +227,15 @@ class AuthServer(_AuthorizationServer):
     result = provObj.parseAuthResponse(response, session)
     if not result['OK']:
       return result
-    
+
     # FINISHING with IdP auth result
     credDict = result['Value']
 
-    result = self.__tokenDB.updateToken(provObj.token, user_id=provObj.token['user_id'])
-    if not result['OK']:
-      return result
+
+    # ########### TODO: This place will store the original tokens ############ #
+    # result = self.__tokenDB.updateToken(provObj.token, user_id=provObj.token['user_id'])
+    # if not result['OK']:
+    #   return result
 
     gLogger.debug("Read profile:", pprint.pformat(credDict))
     # Is ID registred?
@@ -352,7 +353,7 @@ class AuthServer(_AuthorizationServer):
       grant.validate_consent_request()
       if not hasattr(grant, 'prompt'):
         grant.prompt = None
-      
+
       # Check Identity Provider
       provider, providerChooser = self.validateIdentityProvider(req, provider)
       if not provider:
@@ -403,7 +404,7 @@ class AuthServer(_AuthorizationServer):
             for idP in idPs:
               # data: Status, Comment, Action
               dom.button(dom.a(idP, href='%s/authorization/%s?%s' % (self.LOCATION, idP, request.query)),
-                               cls='button')
+                         cls='button')
       return None, self.handle_response(payload=Template(doc.render()).generate())
 
     # Check IdP
@@ -411,7 +412,7 @@ class AuthServer(_AuthorizationServer):
       return None, S_ERROR('%s is not registered in DIRAC.' % provider)
 
     return provider, None
-    
+
   def __registerNewUser(self, provider, userProfile):
     """ Register new user
 

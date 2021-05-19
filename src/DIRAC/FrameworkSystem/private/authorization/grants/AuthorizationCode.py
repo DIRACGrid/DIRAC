@@ -92,14 +92,14 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
 
   def authenticate_user(self, authorization_code):
     """ Authenticate the user related to this authorization_code.
-    
+
         :param authorization_code: authorization code
     """
     return authorization_code.user
 
   def generate_authorization_code(self):
     """ The method to generate "code" value for authorization code data.
-    
+
         :return: str
     """
     gLogger.debug('Generate authorization code for credentials:', self.request.user)
