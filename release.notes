@@ -1,3 +1,15 @@
+[v7r2p7]
+
+*Core
+CHANGE: (#5142) Move MySQL.ConnectionPool class to the module level
+CHANGE: (#5142) Move RequestHandler.ConnectionError to the module level
+FIX: (#5133) The RPC Client class should now be threadsafe
+FIX: (#5133) Correctly add RPC attributes to client objects in Python 3
+FIX: (#5130) Avoid race when importing modules which can cause classes to be redefined
+
+*Transformation
+FIX: (#5135) TransformationBody update is too long for parameters
+
 [v7r2p6]
 
 *Core
