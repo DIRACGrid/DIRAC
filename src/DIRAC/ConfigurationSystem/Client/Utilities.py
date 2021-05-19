@@ -536,16 +536,6 @@ def getElasticDBParameters(fullname):
   return S_OK(parameters)
 
 
-def getOAuthAPI(instance='Production'):
-  """ Get OAuth API url
-
-      :param str instance: instance
-
-      :return: str
-  """
-  return gConfig.getValue("/Systems/Framework/%s/URLs/OAuthAPI" % instance)
-
-
 def getDIRACGOCDictionary():
   """
   Create a dictionary containing DIRAC site names and GOCDB site names
@@ -578,3 +568,46 @@ def getDIRACGOCDictionary():
 
   log.debug('End function.')
   return S_OK(dictionary)
+
+
+def getAuthAPI():
+  """ Get Auth REST API url
+
+      :return: str
+  """
+  return gConfig.getValue("/Systems/Framework/%s/URLs/AuthAPI" % getSystemInstance("Framework"))
+
+
+def getAuthorisationServerMetadata(issuer=None):
+  """ Get authoraisation server metadata
+
+      :return: S_OK(dict)/S_ERROR()
+  """
+  data = {'issuer': issuer}
+
+  result = gConfig.getSections('/DIRAC')
+  if result['OK']:
+    if 'Authorization' in result['Value']:
+      result = gConfig.getOptionsDictRecursively('/DIRAC/Authorization')
+      if result['OK']:
+        data.update(result['Value'])
+  if not result['OK']:
+    return result
+  if not data['issuer']:
+    data['issuer'] = getAuthAPI()
+  if not data['issuer']:
+    return S_ERROR('No issuer found in DIRAC authorization server configuration.')
+
+  # Search values with type list
+  for key, v in data.items():
+    data[key] = [e for e in v.replace(', ', ',').split(',') if e] if ',' in v else v
+  return S_OK(data)
+
+
+def isDownloadablePersonalProxy():
+  """ Get downloadablePersonalProxy flag
+
+      :return: S_OK(bool)/S_ERROR()
+  """
+  cs_path = '/Systems/Framework/%s/APIs/Auth' % getSystemInstance("Framework")
+  return gConfig.getOption(cs_path + '/downloadablePersonalProxy')

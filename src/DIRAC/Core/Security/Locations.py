@@ -12,6 +12,23 @@ from DIRAC import gConfig
 g_SecurityConfPath = "/DIRAC/Security"
 
 
+def getTokenLocation():
+  """ Get the path of the currently active access token file
+  """
+  envVar = 'DIRAC_TOKEN_FILE'
+  if envVar in os.environ:
+    tokenPath = os.path.realpath(os.environ[envVar])
+    if os.path.isfile(tokenPath):
+      return tokenPath
+  # /tmp/JWTup_u<uid>
+  tokenName = "JWTup_u%d" % os.getuid()
+  if os.path.isfile("/tmp/%s" % tokenName):
+    return "/tmp/%s" % tokenName
+
+  # No access token found
+  return False
+
+
 def getProxyLocation():
   """ Get the path of the currently active grid proxy file
   """

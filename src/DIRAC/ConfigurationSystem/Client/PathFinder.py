@@ -131,8 +131,12 @@ def getExecutorSection(system, executorName=None, component=False, setup=False):
   return getComponentSection(system, component=executorName, setup=setup, componentCategory="Executors")
 
 
-def getDatabaseSection(system, dbName=False, setup=False):
-  """ Get DB section in a system
+def getAPISection(APIName, APITuple=False, setup=False):
+  return getComponentSection(APIName, APITuple, setup, "APIs")
+
+
+def getServiceSection(serviceName, serviceTuple=False, setup=False):
+  return getComponentSection(serviceName, serviceTuple, setup, "Services")
 
       :param str system: system name
       :param str dbName: DB name

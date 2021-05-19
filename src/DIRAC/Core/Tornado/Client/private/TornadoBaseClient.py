@@ -34,6 +34,7 @@ from io import open
 import errno
 import requests
 import six
+import os
 from six.moves import http_client
 
 
@@ -46,7 +47,8 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURLs, getGatew
 
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import Network
+from DIRAC.Core.Security.TokenFile import readTokenFromFile
+from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
 
 
@@ -62,6 +64,7 @@ class TornadoBaseClient(object):
   __threadConfig = ThreadConfig()
   VAL_EXTRA_CREDENTIALS_HOST = "hosts"
 
+  KW_USE_ACCESS_TOKEN = "useAccessToken"
   KW_USE_CERTIFICATES = "useCertificates"
   KW_EXTRA_CREDENTIALS = "extraCredentials"
   KW_TIMEOUT = "timeout"
@@ -103,6 +106,7 @@ class TornadoBaseClient(object):
     self.__ca_location = False
 
     self.kwargs = kwargs
+    self.__useAccessToken = None
     self.__useCertificates = None
     # The CS useServerCertificate option can be overridden by explicit argument
     self.__forceUseCertificates = self.kwargs.get(self.KW_USE_CERTIFICATES)
@@ -218,6 +222,15 @@ class TornadoBaseClient(object):
         self.kwargs[self.KW_SKIP_CA_CHECK] = False
       else:
         self.kwargs[self.KW_SKIP_CA_CHECK] = skipCACheck()
+
+    # Use tokens?
+    if self.KW_USE_ACCESS_TOKEN in self.kwargs:
+      self.__useAccessToken = self.kwargs[self.KW_USE_ACCESS_TOKEN]
+    else:
+      if not gConfig.useServerCertificate():
+        self.__useAccessToken = gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true")
+      if os.environ.get('DIRAC_USE_ACCESS_TOKEN'):
+        self.__useAccessToken = os.environ['DIRAC_USE_ACCESS_TOKEN']
 
     # Rewrite a little bit from here: don't need the proxy string, we use the file
     if self.KW_PROXY_CHAIN in self.kwargs:
@@ -490,12 +503,20 @@ class TornadoBaseClient(object):
     # getting certificate
     # Do we use the server certificate ?
     if self.kwargs[self.KW_USE_CERTIFICATES]:
-      cert = Locations.getHostCertificateAndKeyLocation()
+      auth = {'cert': Locations.getHostCertificateAndKeyLocation()}
+
+    # Use access token?
+    elif self.__useAccessToken:
+      result = readTokenFromFile()
+      if not result['OK']:
+        return result
+      auth = {'headers': {"Authorization": "Bearer %s" % result['Value']['access_token']}}
+
     # CHRIS 04.02.21
     # TODO: add proxyLocation check ?
     else:
-      cert = Locations.getProxyLocation()
-      if not cert:
+      auth = {'cert': Locations.getProxyLocation()}
+      if not auth['cert']:
         gLogger.error("No proxy found")
         return S_ERROR("No proxy found")
 
@@ -510,9 +531,8 @@ class TornadoBaseClient(object):
 
         # Default case, just return the result
         if not outputFile:
-          call = requests.post(url, data=kwargs,
-                               timeout=self.timeout, verify=verify,
-                               cert=cert)
+          call = requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
+                               **auth)
           # raising the exception for status here
           # means essentialy that we are losing here the information of what is returned by the server
           # as error message, since it is not passed to the exception
@@ -532,7 +552,7 @@ class TornadoBaseClient(object):
           # Stream download
           # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
           with requests.post(url, data=kwargs, timeout=self.timeout, verify=verify,
-                             cert=cert, stream=True) as r:
+                             stream=True, **auth) as r:
             rawText = r.text
             r.raise_for_status()
 
