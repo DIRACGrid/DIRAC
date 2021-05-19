@@ -27,6 +27,7 @@ from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
+from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
@@ -190,10 +191,10 @@ class ProxyInit(object):
                                             self.__uploadedInfo[userDN][group].strftime("%Y/%m/%d %H:%M")))
 
   def checkCAs(self):
-    if "X509_CERT_DIR" not in os.environ:
-      gLogger.warn("X509_CERT_DIR is unset. Abort check of CAs")
+    caDir = getCAsLocation()
+    if not caDir:
+      gLogger.warn("No valid CA dir found.")
       return
-    caDir = os.environ["X509_CERT_DIR"]
     # In globus standards .r0 files are CRLs. They have the same names of the CAs but diffent file extension
     searchExp = os.path.join(caDir, "*.r0")
     crlList = glob.glob(searchExp)
