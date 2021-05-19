@@ -154,7 +154,6 @@ def helloWorldCloud():
   return endOfAllJobs(J)
 
 
-
 def mpJob():
   """ simple hello world job, with 4Processors and MultiProcessor tags
   """

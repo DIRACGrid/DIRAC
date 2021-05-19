@@ -288,7 +288,7 @@ class SiteStatus(object):
     return result
 
 
-def getCacheDictFromRawData(rawList):  # FIXME: to remove?
+def getCacheDictFromRawData(rawList):
   """
   Formats the raw data list, which we know it must have tuples of four elements.
   ( element1, element2 ) into a dictionary of tuples with the format

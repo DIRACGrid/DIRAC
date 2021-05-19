@@ -97,11 +97,11 @@ def getGlue2CEInfo(vo, host=None):
   else:
     sLog.notice("Found information for all known sites")
 
-  # remap siteDict to assign CEs to known sites, in case their names differ from the "gocdb name" in
-  # the CS.
+  # remap siteDict to assign CEs to known sites,
+  # in case their names differ from the "gocdb name" in the CS.
   newSiteDict = {}
   ceSiteMapping = getCESiteMapping().get('Value', {})
-  # FIXME: pylint thinks siteDict is a tuple, so we cast
+  # pylint thinks siteDict is a tuple, so we cast
   for siteName, infoDict in dict(siteDict).items():
     for ce, ceInfo in infoDict.get('CEs', {}).items():
       ceSiteName = ceSiteMapping.get(ce, siteName)

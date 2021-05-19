@@ -126,8 +126,8 @@ def _safeInt(value):
 
 def _makeComponentDict(component, setupDict, installedDict, compType, system, runitDict):
   componentDict = {
-      'Setup': component in setupDict[compType][system],
-      'Installed': component in installedDict[compType][system],
+      'Setup': component in setupDict.get(compType, {}).get(system, {}),
+      'Installed': component in installedDict.get(compType, {}).get(system, {}),
       'RunitStatus': 'Unknown',
       'Timeup': 0,
       'PID': 0,
@@ -1002,7 +1002,7 @@ class ComponentInstaller(object):
 
   def getSoftwareComponents(self, extensions):
     """
-    Get the list of all the components ( services and agents ) for which the software
+    Get the list of all the components (services, agents, executors) for which the software
     is installed on the system
     """
     # The Gateway does not need a handler
@@ -1051,7 +1051,7 @@ class ComponentInstaller(object):
 
   def getInstalledComponents(self):
     """
-    Get the list of all the components ( services and agents )
+    Get the list of all the components (services, agents, executors)
     installed on the system in the runit directory
     """
     result = self.resultIndexes(self.componentTypes)
@@ -1081,7 +1081,7 @@ class ComponentInstaller(object):
 
   def getSetupComponents(self):
     """
-    Get the list of all the components ( services and agents )
+    Get the list of all the components (services, agents, executors)
     set up for running with runsvdir in startup directory
     """
     if not os.path.isdir(self.startDir):
@@ -1113,7 +1113,7 @@ class ComponentInstaller(object):
 
   def getStartupComponentStatus(self, componentTupleList):
     """
-    Get the list of all the components ( services and agents )
+    Get the list of all the components (services, agents, executors)
     set up for running with runsvdir in startup directory
     """
     try:
@@ -1209,7 +1209,7 @@ class ComponentInstaller(object):
 
   def getOverallStatus(self, extensions):
     """
-    Get the list of all the components ( services and agents )
+    Get the list of all the components (services and agents)
     set up for running with runsvdir in startup directory
     """
     result = self.getSoftwareComponents(extensions)
@@ -1238,7 +1238,7 @@ class ComponentInstaller(object):
       return result
     resultIndexes = result["Value"]
 
-    resultDict = defaultdict(lambda: defaultdict(list))
+    resultDict = defaultdict(lambda: defaultdict(dict))
     for cType in resultIndexes.values():
       if 'Services' in softDict:
         for system in softDict[cType]:
