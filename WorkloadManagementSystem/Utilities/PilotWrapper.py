@@ -199,19 +199,19 @@ for loc in locations:
         pt.extractall()
         pt.close()
       except Exception as x:
-        print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
-        logger.error("tarfile failed with message %%s" %% repr(x))
+        print("tarfile failed with message (this is normal!) %%s" %% repr(x), file=sys.stderr)
+        logger.error("tarfile failed with message (this is normal!) %%s" %% repr(x))
         logger.warn("Trying tar command (tar -xvf pilot.tar)")
         res = os.system("tar -xvf pilot.tar")
         if res:
-          logger.error("tar failed with exit code %%d, giving up" %% int(res))
-          print("tar failed with exit code %%d, giving up" %% int(res), file=sys.stderr)
+          logger.error("tar failed with exit code %%d, giving up (this is normal!)" %% int(res))
+          print("tar failed with exit code %%d, giving up (this is normal!)" %% int(res), file=sys.stderr)
           raise
     # if we get here we break out of the loop of locations
     break
   except (url_library_URLError, Exception) as e:
-    print('%%s unreacheable' %% loc, file=sys.stderr)
-    logger.error('%%s unreacheable' %% loc)
+    print('%%s unreacheable (this is normal!)' %% loc, file=sys.stderr)
+    logger.error('%%s unreacheable (this is normal!)' %% loc)
     logger.exception(e)
 
 else:
