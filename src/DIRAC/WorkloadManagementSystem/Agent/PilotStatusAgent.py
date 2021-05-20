@@ -270,7 +270,10 @@ class PilotStatusAgent(AgentModule):
       retVal = Registry.getUsernameForDN(pData['OwnerDN'])
       if not retVal['OK']:
         userName = 'unknown'
-        self.log.error("Can't determine username for dn:", pData['OwnerDN'])
+        self.log.error(
+            "Can't determine username for dn",
+            ": %s : %s" % (pData["OwnerDN"], retVal["Message"]),
+        )
       else:
         userName = retVal['Value']
       pA.setValueByKey('User', userName)
@@ -300,7 +303,9 @@ class PilotStatusAgent(AgentModule):
       if result['OK'] and i in result['Value'] and 'Status' in result['Value'][i]:
         ret = self.diracadmin.killPilot(str(i))
         if ret['OK']:
-          self.log.info("Successfully deleted: %s (Status : %s)" % (i, result['Value'][i]['Status']))
+          self.log.info(
+              "Successfully deleted", ": %s (Status : %s)" % (i, result["Value"][i]["Status"])
+          )
         else:
           self.log.error("Failed to delete pilot: ", "%s : %s" % (i, ret['Message']))
       else:

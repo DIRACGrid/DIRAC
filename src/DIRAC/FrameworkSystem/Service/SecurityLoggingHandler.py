@@ -1,5 +1,4 @@
-""" ProxyManager is the implementation of the ProxyManagement service
-    in the DISET framework
+""" Handler for logging in security.log.csv files
 """
 from __future__ import absolute_import
 from __future__ import division

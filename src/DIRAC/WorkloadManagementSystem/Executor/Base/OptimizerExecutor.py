@@ -123,7 +123,7 @@ class OptimizerExecutor(ExecutorModule):
     if chainLength - 1 == opIndex:
       # This is the last optimizer in the chain!
       result = jobState.setStatus(JobStatus.WAITING,
-                                  minorStatus=self.ex_getOption(JobMinorStatus.PILOT_AGENT_SUBMISSION),
+                                  minorStatus=JobMinorStatus.PILOT_AGENT_SUBMISSION,
                                   appStatus='Unknown',
                                   source=opName)
       if not result['OK']:

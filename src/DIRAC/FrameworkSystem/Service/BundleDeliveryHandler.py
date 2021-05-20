@@ -1,5 +1,4 @@
-""" ProxyManager is the implementation of the ProxyManagement service
-    in the DISET framework
+""" Handler for CAs + CRLs bundles
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -8,7 +7,6 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import six
-from six import BytesIO
 import tarfile
 import os
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -72,7 +70,7 @@ class BundleManager(object):
     for bId in dirsToBundle:
       bundlePaths = dirsToBundle[bId]
       gLogger.info("Updating %s bundle %s" % (bId, bundlePaths))
-      buffer_ = BytesIO()
+      buffer_ = six.BytesIO()
       filesToBundle = sorted(File.getGlobbedFiles(bundlePaths))
       if filesToBundle:
         commonPath = os.path.commonprefix(filesToBundle)
@@ -136,7 +134,7 @@ class BundleDeliveryHandler(RequestHandler):
       fileHelper.markAsTransferred()
       return S_OK(bundleVersion)
 
-    buffer_ = BytesIO(self.bundleManager.getBundleData(bId))
+    buffer_ = six.BytesIO(self.bundleManager.getBundleData(bId))
     result = fileHelper.DataSourceToNetwork(buffer_)
     buffer_.close()
     if not result['OK']:
