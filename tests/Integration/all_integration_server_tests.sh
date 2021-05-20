@@ -27,6 +27,7 @@ pytest "${THIS_DIR}/Core/Test_MySQLDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( 
 echo -e "*** $(date -u) **** FRAMEWORK TESTS (partially skipped) ****\n"
 pytest "${THIS_DIR}/Framework/Test_InstalledComponentsDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 python "${THIS_DIR}/Framework/Test_ProxyDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+python "${THIS_DIR}/Framework/Test_AuthDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 #pytest ${THIS_DIR}/Framework/Test_LoggingDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
