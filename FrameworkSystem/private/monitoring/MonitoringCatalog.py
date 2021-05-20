@@ -5,6 +5,7 @@ import six
 import sqlite3
 import os
 import hashlib
+import random
 import time
 
 import DIRAC
@@ -30,7 +31,14 @@ class MonitoringCatalog(object):
     """
     if not self.dbConn:
       dbPath = "%s/monitoring.db" % self.dataPath
-      self.dbConn = sqlite3.connect(dbPath, isolation_level=None)
+      self.dbConn = sqlite3.connect(dbPath, timeout=20, isolation_level=None)
+      # These two settings dramatically increase the performance
+      # at the cost of a small corruption risk in case of OS crash
+      # It is acceptable though, given the nature of the data
+      # details here https://www.sqlite.org/pragma.html
+      c = self.dbConn.cursor()
+      c.execute("PRAGMA synchronous = OFF")
+      c.execute("PRAGMA journal_mode = TRUNCATE")
 
   def __dbExecute(self, query, values=False):
     """
@@ -50,7 +58,7 @@ class MonitoringCatalog(object):
         executed = True
       except Exception as e:
         self.log.exception("Exception executing statement", "query: %s, values: %s" % (query, values))
-        time.sleep(0.01)
+        time.sleep(random.random())
     if not executed:
       self.log.error("Could not execute query, big mess ahead", "query: %s, values: %s" % (query, values))
     return cursor
