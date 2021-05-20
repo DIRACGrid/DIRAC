@@ -497,7 +497,7 @@ class MonitoringAgent(AgentModule):
     if not res['OK']:
       return S_ERROR('Failure to get running services')
     self.services = res['Value']
-    for service, options in self.services.items():
+    for service, options in sorted(self.services.items()):
       self.log.debug('Checking URL for %s with options %s' % (service, options))
       # ignore SystemAdministrator, does not have URLs
       if 'SystemAdministrator' in service:

@@ -559,11 +559,11 @@ class TestMonitoringAgent(unittest.TestCase):
     """Success."""
     self.restartAgent.errors = []
     self.restartAgent.accounting.clear()
-    host = socket.gethostname()
+    host = "foo.server"
     urls, tempurls, newurls = [], [], []
     for i in [1, 2]:
       urls.append('dips://%(host)s:100%(i)s/Sys/Serv%(i)s' % dict(i=i, host=host))
-    for i in [1, 2, 3]:
+    for i in [1]:
       tempurls.append('dips://%(host)s:100%(i)s/Sys/Serv%(i)s' % dict(i=i, host=host))
     for i in [1, 3]:
       newurls.append('dips://%(host)s:100%(i)s/Sys/Serv%(i)s' % dict(i=i, host=host))
@@ -589,7 +589,8 @@ class TestMonitoringAgent(unittest.TestCase):
                                      }}}
     self.restartAgent.sysAdminClient.getOverallStatus.return_value = S_OK(services)
 
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=gConfigMock):
+    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=gConfigMock), \
+         patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.socket.gethostname', return_value=host):
       res = self.restartAgent.checkURLs()
     self.assertTrue(res['OK'])
     self.restartAgent.csAPI.modifyValue.assert_has_calls([call('/Systems/Sys/Production/URLs/Serv', ','.join(tempurls)),
