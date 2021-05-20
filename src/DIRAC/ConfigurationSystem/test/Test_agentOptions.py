@@ -17,6 +17,7 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['Mess
           ('DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent', {'IgnoreOptions': ['VO']}),
           ('DIRAC.DataManagementSystem.Agent.FTS3Agent', {}),
           ('DIRAC.FrameworkSystem.Agent.CAUpdateAgent', {}),
+          ('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent', {}),
           ('DIRAC.FrameworkSystem.Agent.MyProxyRenewalAgent', {'IgnoreOptions': ['MinValidity', 'ValidityPeriod',
                                                                                  'MinimumLifeTime',
                                                                                  'RenewedLifeTime']}),
