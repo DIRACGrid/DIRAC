@@ -96,13 +96,13 @@ class StateMachine(object):
     # To be overwritten by child classes, unless you like Nirvana state that much.
     self.states = {'Nirvana': State(100)}
 
-  def levelOfState(self, state):
+  def getLevelOfState(self, state):
     """
     Given a state name, it returns its level (integer), which defines the hierarchy.
 
-    >>> sm0.levelOfState('Nirvana')
+    >>> sm0.getLevelOfState('Nirvana')
         100
-    >>> sm0.levelOfState('AnotherState')
+    >>> sm0.getLevelOfState('AnotherState')
         -1
 
     :param str state: name of the state, it should be on <self.states> key set

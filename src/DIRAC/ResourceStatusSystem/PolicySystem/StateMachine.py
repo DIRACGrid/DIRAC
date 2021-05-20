@@ -74,24 +74,21 @@ class RSSMachine(StateMachine):
     """
 
     # We really do not need to return, as the list is mutable
-    policyResults.sort(key=self.levelOfPolicyState)
+    policyResults.sort(key=self.getLevelOfPolicyState)
 
-  def levelOfPolicyState(self, policyResult):
+  def getLevelOfPolicyState(self, policyResult):
     """
     Returns the level of the state associated with the policy, -1 if something
     goes wrong. It is mostly used while sorting policies with method `orderPolicyResults`.
 
     examples:
-      >>> rsm0.levelOfPolicyState( { 'Status' : 'Active', 'A' : 'A' } )
+      >>> rsm0.getLevelOfPolicyState( { 'Status' : 'Active', 'A' : 'A' } )
           5
-      >>> rsm0.levelOfPolicyState( { 'Status' : 'Rubbish', 'R' : 'R' } )
+      >>> rsm0.getLevelOfPolicyState( { 'Status' : 'Rubbish', 'R' : 'R' } )
           -1
 
     :param dict policyResult: dictionary that must have the `Status` key.
     :return: int || -1 ( if policyResult[ 'Status' ] is not known by the StateMachine )
     """
 
-    return self.levelOfState(policyResult['Status'])
-
-# ...............................................................................
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+    return self.getLevelOfState(policyResult['Status'])
