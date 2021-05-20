@@ -12,7 +12,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
 
 
 class OptimizerExecutor(ExecutorModule):
@@ -123,8 +123,8 @@ class OptimizerExecutor(ExecutorModule):
     if chainLength - 1 == opIndex:
       # This is the last optimizer in the chain!
       result = jobState.setStatus(JobStatus.WAITING,
-                                  minorStatus=self.ex_getOption('WaitingMinorStatus', 'Pilot Agent Submission'),
-                                  appStatus="Unknown",
+                                  minorStatus=self.ex_getOption(JobMinorStatus.PILOT_AGENT_SUBMISSION),
+                                  appStatus='Unknown',
                                   source=opName)
       if not result['OK']:
         return result
