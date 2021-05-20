@@ -1,7 +1,8 @@
 """Monitoring Agent for monitoring agent, executor or service behaviour and intervene if necessary.
 
 This agent is designed to supervise the Agents, Executors and Services, and restarts them in case
-they get stuck.
+they get stuck. It can only control components running on the same machine as the agent. One agent
+per server is needed.
 
 * The agent checks the age of the log file and if it is deemed too old will kill the agent so that
   it is restarted automatically. (Option RestartAgents)
