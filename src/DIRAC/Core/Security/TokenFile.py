@@ -52,11 +52,11 @@ def writeToTokenFile(tokenContents, fileName=False):
     with open(fileName, 'wt') as fd:
       fd.write(tokenContents)
   except Exception as e:
-    return S_ERROR(DErrno.EWF, " %s: %s" % (fileName, repr(e).replace(',)', ')')))
+    return S_ERROR(DErrno.EWF, " %s: %s" % (fileName, repr(e)))
   try:
     os.chmod(fileName, stat.S_IRUSR | stat.S_IWUSR)
   except Exception as e:
-    return S_ERROR(DErrno.ESPF, "%s: %s" % (fileName, repr(e).replace(',)', ')')))
+    return S_ERROR(DErrno.ESPF, "%s: %s" % (fileName, repr(e)))
   return S_OK(fileName)
 
 

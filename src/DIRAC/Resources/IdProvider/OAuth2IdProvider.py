@@ -6,7 +6,6 @@ from __future__ import print_function
 
 import re
 import six
-import jwt as _jwt
 import time
 import pprint
 import requests
@@ -16,7 +15,6 @@ from authlib.common.urls import url_decode
 from authlib.common.security import generate_token
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 from authlib.oauth2.rfc6749.parameters import prepare_token_request
-from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 from authlib.oauth2.rfc8628 import DEVICE_CODE_GRANT_TYPE
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oidc.discovery.well_known import get_well_known_url
@@ -27,7 +25,7 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSRoleGroupMapping, getVOForGroup, getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSRoleGroupMapping, getGroupOption
 
 __RCSID__ = "$Id$"
 
@@ -109,7 +107,6 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
         :param str accessToken: access token
     """
-    pprint.pprint(self.jwks)
     try:
       # Try to decode token
       gLogger.debug("Try to decode token:", accessToken)
@@ -118,7 +115,6 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       # If we have outdated keys, we try to update them from identity provider
       gLogger.debug("Try to update %s jwks.." % self.metadata['issuer'])
       self.jwks = self.fetch_metadata(self.get_metadata('jwks_uri'))
-      pprint.pprint(self.jwks)
       return jwt.decode(accessToken, JsonWebKey.import_key_set(self.jwks))
 
   def update_token(self, token, refresh_token):
@@ -279,7 +275,6 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     credDict['DIRACGroups'] = []
     for vo, voData in credDict.get('VOs', {}).items():
       result = getVOMSRoleGroupMapping(vo)
-      pprint.pprint(result)
       if result['OK']:
         for role in voData['VORoles']:
           groups = result['Value']['VOMSDIRAC'].get('/%s' % role)

@@ -4,22 +4,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import jwt
 import json
-import jwt as _jwt
 
 from time import time
-from pprint import pprint
-from M2Crypto import RSA, BIO
 from sqlalchemy import Column, Integer, Text, String
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
-from authlib.jose import KeySet, RSAKey, jwk
-from authlib.common.security import generate_token
+from authlib.jose import KeySet, RSAKey
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
@@ -159,7 +156,7 @@ class AuthDB(SQLAlchemyDB):
 
         :return: S_OK(str)/S_ERROR()
     """
-    token['expires_at'] = int(_jwt.decode(token['refresh_token'], options=dict(verify_signature=False))['exp'])
+    token['expires_at'] = int(jwt.decode(token['refresh_token'], options=dict(verify_signature=False))['exp'])
     gLogger.debug('Store token:', dict(token))
     attrts = dict((k, v) for k, v in dict(token).items() if k in list(Token.__dict__.keys()))
     session = self.session()
@@ -256,14 +253,13 @@ class AuthDB(SQLAlchemyDB):
     """
     session = self.session()
     try:
-      # Remove all expired jwks
-      session.query(JWK).filter(JWK.expires_at < time()).delete()
-      jwks = session.query(JWK).filter(JWK.expires_at > time()).all()
+      # Remove all expis
+      session.query(JWK).filter(JWK.expires_at < time()).delete()s = session.query(JWK).filter(JWK.expires_at > time()).all()
     except NoResultFound:
       return self.__result(session, S_OK([]))
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
-    return self.__result(session, S_OK([self.__rowToDict(jwk) for jwk in jwks]))
+    return self.__result(session, S_OK([self.__rowToD) s]))
 
   def removeKeys(self):
     """ Get active keys

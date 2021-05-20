@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################################################
 # File :    dirac-login.py
-# Author :  Adrian Casajus
+# Author :  Andrii Lytovchenko
 ########################################################################
 """
 Login to DIRAC.
@@ -15,7 +15,6 @@ from __future__ import print_function
 
 import os
 import sys
-import urllib3
 import requests
 import threading
 
@@ -136,8 +135,6 @@ class Params(object):
       idpObj.scope += '+proxy'
     if self.lifetime:
       idpObj.scope += '+lifetime:%s' % (int(self.lifetime) * 3600)
-
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Submit Device authorisation flow
     try:

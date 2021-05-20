@@ -1,11 +1,11 @@
 """
- Set of utilities to retrieve Information from proxy
+ Set of utilities to retrieve Information from token
 """
 from __future__ import division
 from __future__ import absolute_import
 from __future__ import print_function
 
-import jwt as _jwt
+import jwt
 import six
 import time
 
@@ -39,7 +39,7 @@ def getTokenInfo(token=False):
       return result
     token = OAuth2Token(result['Value'])
 
-  payload = _jwt.decode(token['access_token'], options=dict(verify_signature=False))
+  payload = jwt.decode(token['access_token'], options=dict(verify_signature=False))
   result = Registry.getUsernameForDN('/O=DIRAC/CN=%s' % payload['sub'])
   if not result['OK']:
     return result

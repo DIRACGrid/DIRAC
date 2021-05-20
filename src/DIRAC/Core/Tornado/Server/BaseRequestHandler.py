@@ -9,20 +9,13 @@ __RCSID__ = "$Id$"
 
 from io import open
 
-import jwt as _jwt
-
 import os
 import time
-import pprint
-import requests
 import threading
 from datetime import datetime
 from six import string_types
 from six.moves import http_client
 from six.moves.urllib.parse import unquote
-from authlib.jose import JsonWebKey, jwt
-from authlib.oauth2.rfc6749.util import scope_to_list
-
 
 import tornado
 from tornado import gen
@@ -38,7 +31,6 @@ from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance, getProviderInfo
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 sLog = gLogger.getSubLogger(__name__.split('.')[-1])

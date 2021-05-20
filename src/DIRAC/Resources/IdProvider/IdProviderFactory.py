@@ -10,7 +10,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import jwt as _jwt
+import jwt
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader, ThreadSafe
@@ -52,7 +52,7 @@ class IdProviderFactory(object):
     data = {}
 
     # Read token without verification to get issuer
-    issuer = _jwt.decode(token, options=dict(verify_signature=False))['iss'].strip('/')
+    issuer = jwt.decode(token, options=dict(verify_signature=False))['iss'].strip('/')
 
     result = getSettingsNamesForIdPIssuer(issuer)
     if result['OK']:
