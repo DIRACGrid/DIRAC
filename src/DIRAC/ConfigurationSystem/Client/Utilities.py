@@ -580,7 +580,7 @@ def getAuthAPI():
 
 
 def getAuthorisationServerMetadata(issuer=None):
-  """ Get authoraisation server metadata
+  """ Get authorization server metadata
 
       :return: S_OK(dict)/S_ERROR()
   """
