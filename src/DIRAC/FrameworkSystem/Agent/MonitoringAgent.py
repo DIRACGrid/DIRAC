@@ -36,6 +36,9 @@ component. Values for the entries in the list are ignored, Syntax is ``<System>_
   :caption: MonitoringAgent options
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # imports
 from collections import defaultdict
@@ -149,7 +152,7 @@ class MonitoringAgent(AgentModule):
 
     emailBody = ''
     rows = []
-    for instanceName, val in self.accounting.iteritems():
+    for instanceName, val in self.accounting.items():
       rows.append([[instanceName],
                    [val.get('Treatment', 'No Treatment')],
                    [str(val.get('LogAge', 'Not Relevant'))]])
@@ -190,8 +193,8 @@ class MonitoringAgent(AgentModule):
 
     val = res['Value'][instanceType]
     runningAgents = defaultdict(dict)
-    for system, agents in val.iteritems():
-      for agentName, agentInfo in agents.iteritems():
+    for system, agents in val.items():
+      for agentName, agentInfo in agents.items():
         if agentInfo['Setup'] and agentInfo['Installed']:
           if runitStatus != 'All' and agentInfo['RunitStatus'] != runitStatus:
             continue
@@ -215,7 +218,7 @@ class MonitoringAgent(AgentModule):
   def execute(self):
     """Execute checks for agents, executors, services."""
     for instanceType in ('executor', 'agent', 'service'):
-      for name, options in getattr(self, instanceType + 's').iteritems():
+      for name, options in getattr(self, instanceType + 's').items():
         # call checkAgent, checkExecutor, checkService
         res = getattr(self, 'check' + instanceType.capitalize())(name, options)
         if not res['OK']:
@@ -447,8 +450,8 @@ class MonitoringAgent(AgentModule):
       return resRunning
     if not resStopped['OK']:
       return resStopped
-    defaultStatus['Run'] = set(resRunning['Value'].keys())
-    defaultStatus['Down'] = set(resStopped['Value'].keys())
+    defaultStatus['Run'] = set(resRunning['Value'])
+    defaultStatus['Down'] = set(resStopped['Value'])
     defaultStatus['All'] = defaultStatus['Run'] | defaultStatus['Down']
 
     if defaultStatus['Run'].intersection(defaultStatus['Down']):
@@ -494,7 +497,7 @@ class MonitoringAgent(AgentModule):
     if not res['OK']:
       return S_ERROR('Failure to get running services')
     self.services = res['Value']
-    for service, options in self.services.iteritems():
+    for service, options in self.services.items():
       self.log.debug('Checking URL for %s with options %s' % (service, options))
       # ignore SystemAdministrator, does not have URLs
       if 'SystemAdministrator' in service:
