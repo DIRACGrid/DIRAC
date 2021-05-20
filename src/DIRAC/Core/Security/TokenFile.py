@@ -49,7 +49,7 @@ def writeToTokenFile(tokenContents, fileName=False):
       return S_ERROR(DErrno.ECTMPF)
     fileName = tokenLocation
   try:
-    with open(fileName, 'wb') as fd:
+    with open(fileName, 'wt') as fd:
       fd.write(tokenContents)
   except Exception as e:
     return S_ERROR(DErrno.EWF, " %s: %s" % (fileName, repr(e).replace(',)', ')')))
