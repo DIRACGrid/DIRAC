@@ -1,4 +1,5 @@
-"""Monitoring Agent for monitoring agent, executor or service behaviour and intervene if necessary.
+"""Component Supervision Agent for monitoring agent, executor or service behaviour and intervene if
+necessary.
 
 This agent is designed to supervise the Agents, Executors and Services, and restarts them in case
 they get stuck. It can only control components running on the same machine as the agent. One agent
@@ -19,7 +20,7 @@ The configuration for Running and Stopped components are two sub-sections in Reg
     {
       Configuration__Server =
       Framework__SystemAdministrator =
-      Framework__MonitoringAgent =
+      Framework__ComponentSupervisionAgent =
     }
     Stopped
     {
@@ -27,14 +28,14 @@ The configuration for Running and Stopped components are two sub-sections in Reg
       Framework__Monitoring =
     }
 
-By moving from one to the other section we can make the MonitoringAgent Stop/Start the given
+By moving from one to the other section we can make the ComponentSupervisionAgent Stop/Start the given
 component. Values for the entries in the list are ignored, Syntax is ``<System>__<ComponentName>``.
 
 .. literalinclude:: ../ConfigTemplate.cfg
-  :start-after: ##BEGIN MonitoringAgent
+  :start-after: ##BEGIN ComponentSupervisionAgent
   :end-before: ##END
   :dedent: 2
-  :caption: MonitoringAgent options
+  :caption: ComponentSupervisionAgent options
 
 """
 from __future__ import absolute_import
@@ -62,7 +63,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 __RCSID__ = "$Id$"
-AGENT_NAME = 'Framework/MonitoringAgent'
+AGENT_NAME = 'Framework/ComponentSupervisionAgent'
 
 # Define units
 HOUR = 3600
@@ -75,13 +76,13 @@ CHECKING_JOBS = 'CHECKING_JOBS'
 NO_RESTART = 'NO_RESTART'
 
 
-class MonitoringAgent(AgentModule):
-  """MonitoringAgent class."""
+class ComponentSupervisionAgent(AgentModule):
+  """ComponentSupervisionAgent class."""
 
   def __init__(self, *args, **kwargs):
     """Initialize the agent, clients, default values."""
     AgentModule.__init__(self, *args, **kwargs)
-    self.name = 'MonitoringAgent'
+    self.name = 'ComponentSupervisionAgent'
     self.setup = 'Production'
     self.enabled = False
     self.restartAgents = False
@@ -104,7 +105,7 @@ class MonitoringAgent(AgentModule):
 
     self.addressTo = []
     self.addressFrom = ''
-    self.emailSubject = 'MonitoringAgent on %s' % socket.gethostname()
+    self.emailSubject = 'ComponentSupervisionAgent on %s' % socket.gethostname()
 
   def logError(self, errStr, varMsg=''):
     """Append errors to a list, which is sent in email notification."""

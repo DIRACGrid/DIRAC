@@ -1,4 +1,4 @@
-"""Test MonitoringAgent."""
+"""Test ComponentSupervisionAgent."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 from mock import MagicMock, call, patch
 import psutil
 
-import DIRAC.FrameworkSystem.Agent.MonitoringAgent as MAA
-from DIRAC.FrameworkSystem.Agent.MonitoringAgent import MonitoringAgent, NO_RESTART
+import DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent as MAA
+from DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent import ComponentSupervisionAgent, NO_RESTART
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC import gLogger
@@ -29,8 +29,8 @@ def clientMock(ret):
   return clientModuleMock
 
 
-class TestMonitoringAgent(unittest.TestCase):
-  """TestMonitoringAgent class."""
+class TestComponentSupervisionAgent(unittest.TestCase):
+  """TestComponentSupervisionAgent class."""
 
   def setUp(self):
     """Set up test environment."""
@@ -38,7 +38,7 @@ class TestMonitoringAgent(unittest.TestCase):
     self.agent.AgentModule = MagicMock()
     self.agent.NotificationClient = MagicMock(spec=DIRAC.FrameworkSystem.Client.NotificationClient.NotificationClient)
 
-    self.restartAgent = MonitoringAgent()
+    self.restartAgent = ComponentSupervisionAgent()
     self.restartAgent.log = gLogger
     self.restartAgent.log.setLevel('DEBUG')
     self.restartAgent.sysAdminClient = MagicMock()
@@ -50,7 +50,7 @@ class TestMonitoringAgent(unittest.TestCase):
   @classmethod
   def tearDownClass(cls):
     """Remove monitoragent module after tests to avoid side effects."""
-    sys.modules.pop('DIRAC.FrameworkSystem.Agent.MonitoringAgent')
+    sys.modules.pop('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent')
 
   @staticmethod
   def getPSMock():
@@ -65,7 +65,7 @@ class TestMonitoringAgent(unittest.TestCase):
 
   def test_init(self):
     """Test the init function."""
-    self.assertIsInstance(self.restartAgent, MonitoringAgent)
+    self.assertIsInstance(self.restartAgent, ComponentSupervisionAgent)
     self.assertIsInstance(self.restartAgent.nClient, MagicMock)
     self.assertIsInstance(self.restartAgent.sysAdminClient, MagicMock)
     self.assertTrue(self.restartAgent.enabled)
@@ -81,7 +81,7 @@ class TestMonitoringAgent(unittest.TestCase):
                       call('MailFrom', self.restartAgent.addressFrom)]
 
     self.restartAgent.getRunningInstances = MagicMock(return_value=S_OK())
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.CSAPI', new=MagicMock()):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.CSAPI', new=MagicMock()):
       self.restartAgent.beginExecution()
 
     self.restartAgent.am_getOption.assert_has_calls(getOptionCalls, any_order=True)
@@ -160,7 +160,7 @@ class TestMonitoringAgent(unittest.TestCase):
       self.assertTrue('LogFileLocation' in res['Value'][agent])
       self.assertTrue('PID' in res['Value'][agent])
 
-  @patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=MagicMock())
+  @patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock())
   def test_execute(self):
     """Test for the execute function."""
     self.restartAgent.sendNotification = MagicMock()
@@ -195,7 +195,7 @@ class TestMonitoringAgent(unittest.TestCase):
     # email notification should be sent at the end of every agent cycle
     self.restartAgent.sendNotification.assert_called()
 
-  @patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=MagicMock())
+  @patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock())
   def test_execute_2a(self):
     """Test for the execute function."""
     self.restartAgent.sendNotification = MagicMock()
@@ -206,7 +206,7 @@ class TestMonitoringAgent(unittest.TestCase):
     # email notification should be sent at the end of every agent cycle
     self.restartAgent.sendNotification.assert_called()
 
-  @patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=MagicMock())
+  @patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock())
   def test_execute_2b(self):
     """Test for the execute function."""
     self.restartAgent.sendNotification = MagicMock()
@@ -219,7 +219,7 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.sendNotification.assert_called()
     self.restartAgent.checkURLs.assert_not_called()
 
-  @patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=MagicMock())
+  @patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock())
   def test_execute_2c(self):
     """Test for the execute function."""
     self.restartAgent.sendNotification = MagicMock()
@@ -337,13 +337,13 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.restartServices = False
 
     # service responds ok
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.Client', new=clientMock(S_OK())):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.Client', new=clientMock(S_OK())):
       res = self.restartAgent.checkService(agentName, options)
     self.assertTrue(res['OK'])
     self.restartAgent.restartInstance.assert_not_called()
 
     # service responds not ok
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.Client', new=clientMock(S_ERROR())):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.Client', new=clientMock(S_ERROR())):
       res = self.restartAgent.checkService(agentName, options)
     self.assertTrue(res['OK'])
     self.restartAgent.restartInstance.assert_called_once_with(int(pid), agentName, False)
@@ -352,7 +352,7 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.restartInstance.reset_mock()
     self.restartAgent.restartInstance.return_value = S_OK('NO_RESTART')
     self.restartAgent.restartServices = False
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.Client', new=clientMock(S_ERROR())):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.Client', new=clientMock(S_ERROR())):
       res = self.restartAgent.checkService(agentName, options)
     self.assertTrue(res['OK'])
     self.restartAgent.restartInstance.assert_called_once_with(int(pid), agentName, False)
@@ -361,7 +361,7 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.restartInstance.reset_mock()
     self.restartAgent.restartServices = True
     self.restartAgent.restartInstance.return_value = S_ERROR()
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.Client', new=clientMock(S_ERROR())):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.Client', new=clientMock(S_ERROR())):
       res = self.restartAgent.checkService(agentName, options)
     self.assertFalse(res['OK'])
     self.restartAgent.restartInstance.assert_called_once_with(int(pid), agentName, True)
@@ -384,7 +384,7 @@ class TestMonitoringAgent(unittest.TestCase):
 
   def test_restartInstance(self):
     """Test restartInstance function."""
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.psutil', new=self.getPSMock()):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.psutil', new=self.getPSMock()):
       res = self.restartAgent.restartInstance(12345, 'agentX', True)
     self.assertTrue(res['OK'])
 
@@ -392,18 +392,18 @@ class TestMonitoringAgent(unittest.TestCase):
     psMock.Process = MagicMock('RaisingProc')
     psMock.Error = psutil.Error
     psMock.Process.side_effect = psutil.Error()
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.psutil', new=psMock):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.psutil', new=psMock):
       res = self.restartAgent.restartInstance(12345, 'agentX', True)
     self.assertFalse(res['OK'])
 
     # restarting forbidden
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.psutil', new=self.getPSMock()):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.psutil', new=self.getPSMock()):
       res = self.restartAgent.restartInstance(12345, 'agentFoo', True)
     self.assertTrue(res['OK'])
     assert res['Value'] == NO_RESTART
 
     # restarting disabled
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.psutil', new=self.getPSMock()):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.psutil', new=self.getPSMock()):
       res = self.restartAgent.restartInstance(12345, 'agentY', False)
     self.assertTrue(res['OK'])
     assert res['Value'] == NO_RESTART
@@ -461,7 +461,7 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.sysAdminClient.startComponent = MagicMock()
     self.restartAgent.sysAdminClient.stopComponent = MagicMock()
 
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=gConfigMock):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=gConfigMock):
       res = self.restartAgent.componentControl()
     self.assertTrue(res['OK'])
     self.restartAgent.sysAdminClient.startComponent.assert_called_with('Framework', 'StartMe')
@@ -496,7 +496,7 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.sysAdminClient.startComponent = MagicMock()
     self.restartAgent.sysAdminClient.stopComponent = MagicMock()
 
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=gConfigMock):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=gConfigMock):
       res = self.restartAgent.componentControl()
     self.assertTrue(res['OK'])
     self.restartAgent.sysAdminClient.startComponent.assert_not_called()
@@ -526,7 +526,7 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.sysAdminClient.startComponent = MagicMock()
     self.restartAgent.sysAdminClient.stopComponent = MagicMock()
 
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=gConfigMock):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=gConfigMock):
       res = self.restartAgent.componentControl()
     self.assertFalse(res['OK'])
     self.assertIn('No Stopped', res['Message'])
@@ -550,7 +550,7 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.sysAdminClient.startComponent = MagicMock()
     self.restartAgent.sysAdminClient.stopComponent = MagicMock()
 
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=gConfigMock):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=gConfigMock):
       res = self.restartAgent.componentControl()
     self.assertFalse(res['OK'])
     self.assertIn('Bad host configuration', res['Message'])
@@ -589,8 +589,8 @@ class TestMonitoringAgent(unittest.TestCase):
                                      }}}
     self.restartAgent.sysAdminClient.getOverallStatus.return_value = S_OK(services)
 
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=gConfigMock), \
-         patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.socket.gethostname', return_value=host):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=gConfigMock), \
+            patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.socket.gethostname', return_value=host):
       res = self.restartAgent.checkURLs()
     self.assertTrue(res['OK'])
     self.restartAgent.csAPI.modifyValue.assert_has_calls([call('/Systems/Sys/Production/URLs/Serv', ','.join(tempurls)),
@@ -606,18 +606,18 @@ class TestMonitoringAgent(unittest.TestCase):
     self.restartAgent.sysAdminClient.getOverallStatus.return_value = S_OK(dict(Services={}))
 
     self.restartAgent.csAPI.commit = MagicMock(return_value=S_ERROR('Nope'))
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=MagicMock()):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock()):
       res = self.restartAgent.checkURLs()
     self.assertFalse(res['OK'])
     self.assertIn('Failed to commit', res['Message'])
     self.assertIn('Commit to CS failed', self.restartAgent.errors[0])
 
     self.restartAgent.csAPI.commit = MagicMock(return_value=S_OK())
-    with patch('DIRAC.FrameworkSystem.Agent.MonitoringAgent.gConfig', new=MagicMock()):
+    with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock()):
       res = self.restartAgent.checkURLs()
     self.assertTrue(res['OK'])
 
 
 if __name__ == '__main__':
-  SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(TestMonitoringAgent)
+  SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(TestComponentSupervisionAgent)
   TESTRESULT = unittest.TextTestRunner(verbosity=3).run(SUITE)
