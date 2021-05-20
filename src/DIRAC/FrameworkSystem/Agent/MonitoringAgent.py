@@ -300,7 +300,7 @@ class MonitoringAgent(AgentModule):
       res = self.restartInstance(int(options['PID']), serviceName, self.restartServices)
       if not res['OK']:
         return res
-      elif res['OK'] and res['Value'] != NO_RESTART:
+      if res['Value'] != NO_RESTART:
         self.accounting[serviceName]['Treatment'] = 'Successfully Restarted'
         self.log.info('Agent %s has been successfully restarted' % serviceName)
     self.log.info('Service responded OK')
@@ -330,7 +330,7 @@ class MonitoringAgent(AgentModule):
     res = self.restartInstance(int(pid), agentName, self.restartAgents)
     if not res['OK']:
       return res
-    elif res['OK'] and res['Value'] != NO_RESTART:
+    if res['Value'] != NO_RESTART:
       self.accounting[agentName]['Treatment'] = 'Successfully Restarted'
       self.log.info('Agent %s has been successfully restarted' % agentName)
 
