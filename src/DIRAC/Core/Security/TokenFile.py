@@ -26,7 +26,7 @@ def readTokenFromFile(fileName=None):
   if not fileName:
     fileName = getTokenLocation() or os.environ.get('DIRAC_TOKEN_FILE', "/tmp/JWTup_u%d" % os.getuid())
   try:
-    with open(fileName, 'r') as f:
+    with open(fileName, 'rt') as f:
       data = f.read()
     return S_OK(json.loads(data))
   except Exception as e:
