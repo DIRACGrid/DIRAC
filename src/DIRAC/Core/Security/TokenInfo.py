@@ -5,7 +5,6 @@ from __future__ import division
 from __future__ import absolute_import
 from __future__ import print_function
 
-import jwt
 import six
 import time
 
@@ -16,6 +15,7 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.TokenFile import readTokenFromFile
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 __RCSID__ = "$Id$"
 
@@ -34,12 +34,17 @@ def getTokenInfo(token=False):
     tokenLocation = token if isinstance(token, six.string_types) else Locations.getTokenLocation()
     if not tokenLocation:
       return S_ERROR("Cannot find token location.")
-    result = readTokenFromFile()
+    result = readTokenFromFile(tokenLocation)
     if not result['OK']:
       return result
     token = OAuth2Token(result['Value'])
 
-  payload = jwt.decode(token['access_token'], options=dict(verify_signature=False))
+  result = IdProviderFactory().getIdProviderForToken(accessToken)
+  if not result['OK']:
+    return result
+  cli = result['Value']
+  payload = cli.verifyToken(accessToken)
+
   result = Registry.getUsernameForDN('/O=DIRAC/CN=%s' % payload['sub'])
   if not result['OK']:
     return result
@@ -56,18 +61,14 @@ def formatTokenInfoAsString(infoDict):
 
       :return: str
   """
-  secs = int(infoDict['exp']) - time.time()
-  hours = int(secs / 3600)
-  secs -= hours * 3600
-  mins = int(secs / 60)
-  secs -= mins * 60
-  exp = "%02d:%02d:%02d" % (hours, mins, secs)
+  secsLeft = int(infoDict['exp']) - time.time()
+  strTimeleft = datetime.fromtimestamp(secs).strftime("%I:%M:%S")
 
   leftAlign = 13
   contentList = []
   contentList.append('%s: %s' % ('subject'.ljust(leftAlign), infoDict['sub']))
   contentList.append('%s: %s' % ('issuer'.ljust(leftAlign), infoDict['iss']))
-  contentList.append('%s: %s' % ('timeleft'.ljust(leftAlign), exp))
+  contentList.append('%s: %s' % ('timeleft'.ljust(leftAlign), strTimeleft))
   contentList.append('%s: %s' % ('username'.ljust(leftAlign), infoDict['username']))
   if infoDict.get('group'):
     contentList.append('%s: %s' % ('DIRAC group'.ljust(leftAlign), infoDict['group']))

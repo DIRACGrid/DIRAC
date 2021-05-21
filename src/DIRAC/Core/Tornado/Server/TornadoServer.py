@@ -62,7 +62,7 @@ class TornadoServer(object):
     Example 2:We want to debug service1 and service2 only, and use another port for that ::
 
       services = ['component/service1:port1', 'component/service2']
-      endpoints = ['component/endpoint1:port1', 'component/endpoint2']
+      endpoints = ['component/endpoint1', 'component/endpoint2']
       serverToLaunch = TornadoServer(services=services, endpoints=endpoints, port=1234)
       serverToLaunch.startTornado()
 

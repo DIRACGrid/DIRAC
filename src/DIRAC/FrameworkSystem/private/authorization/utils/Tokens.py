@@ -3,16 +3,10 @@ from __future__ import division
 from __future__ import print_function
 
 from time import time
-import functools
-from contextlib import contextmanager
 
-from authlib.jose import jwt
-from authlib.oauth2 import OAuth2Error, ResourceProtector as _ResourceProtector
-from authlib.oauth2.rfc6749 import MissingAuthorizationError, HttpRequest
-from authlib.oauth2.rfc6750 import BearerTokenValidator as _BearerTokenValidator
+from authlib.oauth2.rfc6749.util import scope_to_list
 from authlib.oauth2.rfc6749.wrappers import OAuth2Token as _OAuth2Token
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
-from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
 
 class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):

@@ -30,7 +30,7 @@ def readTokenFromFile(fileName=None):
       data = f.read()
     return S_OK(json.loads(data))
   except Exception as e:
-    return S_ERROR('Cannot read token.')
+    return S_ERROR('Cannot read token. %s' % repr(e))
 
 
 def writeToTokenFile(tokenContents, fileName=False):
@@ -73,7 +73,7 @@ def writeTokenDictToTokenFile(tokenDict, fileName=None):
   try:
     retVal = json.dumps(tokenDict)
   except Exception as e:
-    return S_ERROR('Cannot read token.')
+    return S_ERROR('Cannot read token. %s' % repr(e))
   return writeToTokenFile(retVal, fileName)
 
 

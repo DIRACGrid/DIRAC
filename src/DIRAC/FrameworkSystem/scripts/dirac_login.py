@@ -40,6 +40,7 @@ class Params(object):
     self.provider = 'DIRACCLI'
     self.issuer = None
     self.proxyLoc = '/tmp/x509up_u%s' % os.getuid()
+    self.tokenLoc = '/tmp/JWTup_u%s' % os.getuid()
 
   def returnProxy(self, _arg):
     """ Set email
@@ -139,8 +140,8 @@ class Params(object):
     # Submit Device authorisation flow
     try:
       result = idpObj.authorization()
-    except KeyboardInterrupt as e:
-      return S_ERROR(repr(e))
+    except KeyboardInterrupt:
+      return S_ERROR('User canceled the operation..')
     if not result['OK']:
       return result
 
@@ -150,10 +151,10 @@ class Params(object):
         return result
       gLogger.notice('Proxy is saved to %s.' % self.proxyLoc)
     else:
-      result = writeTokenDictToTokenFile(idpObj.token)
+      result = writeTokenDictToTokenFile(idpObj.token, self.tokenLoc)
       if not result['OK']:
         return result
-      gLogger.notice('Token is saved in %s.' % result['Value'])
+      gLogger.notice('Token is saved in %s.' % self.tokenLoc)
 
     result = Script.enableCS()
     if not result['OK']:
@@ -166,12 +167,12 @@ class Params(object):
         return result['Message']
       gLogger.notice(formatProxyInfoAsString(result['Value']))
     else:
-      result = getTokenInfo(self.proxyLoc)
+      result = getTokenInfo(self.tokenLoc)
       if not result['OK']:
         return result['Message']
       gLogger.notice(formatTokenInfoAsString(result['Value']))
 
-    return S_OK(self.proxyLoc)
+    return S_OK()
 
 
 @DIRACScript()

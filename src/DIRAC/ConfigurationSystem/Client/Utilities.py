@@ -600,8 +600,11 @@ def getAuthorisationServerMetadata(issuer=None):
     return S_ERROR('No issuer found in DIRAC authorization server configuration.')
 
   # Search values with type list
-  for key, v in data.items():
-    data[key] = [e for e in v.replace(', ', ',').split(',') if e] if ',' in v else v
+  for key in data:
+    if ',' in data[key]:
+      # Convert to list
+      data[key] = data[key].replace(', ', ',').split(',')
+      data[key] = [item for item in data[key] if item]
   return S_OK(data)
 
 
