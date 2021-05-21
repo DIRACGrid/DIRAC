@@ -11,6 +11,8 @@ import stat
 import tempfile
 import shutil
 
+import six
+
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
@@ -243,7 +245,11 @@ class VOMS(BaseSecurity):
           return vomsesPath
         tmpDir = tempfile.mkdtemp()
         tmpDir = os.path.join(tmpDir, "vomses")
-        shutil.copytree(vomsesPath, tmpDir)
+        if six.PY2:
+          shutil.copytree(vomsesPath, tmpDir)
+        else:
+          # https://bugs.python.org/issue44205
+          shutil.copytree(vomsesPath, tmpDir, copy_function=shutil.copy)
         os.chmod(tmpDir, requiredDirPerms)
         for fP in os.listdir(tmpDir):
           os.chmod(os.path.join(tmpDir, fP), requiredFilePerms)
