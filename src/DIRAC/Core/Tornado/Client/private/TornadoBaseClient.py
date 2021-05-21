@@ -206,6 +206,11 @@ class TornadoBaseClient(object):
            -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates,
                 set KW_SKIP_CA_CHECK to false in kwargs
            -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the skipCACheck
+        * Baerer token:
+          -> If KW_USE_ACCESS_TOKEN in kwargs, sets it in self.__useAccessToken
+          -> If not, check "/DIRAC/Security/UseTokens", and sets it in self.__useAccessToken
+              and kwargs[KW_USE_ACCESS_TOKEN]
+          -> If DIRAC_USE_ACCESS_TOKEN' in os.environ, sets it in self.__useAccessToken
         * Proxy Chain
 
         WARNING: MOSTLY COPY/PASTE FROM Core/Diset/private/BaseClient
@@ -227,9 +232,9 @@ class TornadoBaseClient(object):
     if self.KW_USE_ACCESS_TOKEN in self.kwargs:
       self.__useAccessToken = self.kwargs[self.KW_USE_ACCESS_TOKEN]
     else:
-      if not gConfig.useServerCertificate():
-        self.__useAccessToken = gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true")
-      if os.environ.get('DIRAC_USE_ACCESS_TOKEN'):
+      self.__useAccessToken = gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true")
+      self.kwargs[self.KW_USE_ACCESS_TOKEN] = self.__useAccessToken
+      if 'DIRAC_USE_ACCESS_TOKEN' in os.environ:
         self.__useAccessToken = os.environ['DIRAC_USE_ACCESS_TOKEN']
 
     # Rewrite a little bit from here: don't need the proxy string, we use the file
