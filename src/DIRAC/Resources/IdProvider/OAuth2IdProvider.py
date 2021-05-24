@@ -9,7 +9,6 @@ import six
 import time
 import pprint
 import requests
-from requests import exceptions
 from authlib.jose import JsonWebKey, jwt
 from authlib.common.urls import url_decode
 from authlib.common.security import generate_token
@@ -23,7 +22,7 @@ from authlib.oauth2.rfc7636 import create_s256_code_challenge
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSRoleGroupMapping, getGroupOption
 
@@ -75,50 +74,42 @@ def claimParser(claimDict, attributes):
 
 
 class OAuth2IdProvider(IdProvider, OAuth2Session):
+  """ Base class to describe the configuration of the OAuth2 client of the corresponding provider.
+  """
 
-  def __init__(self, name=None, token_endpoint_auth_method='client_secret_post', revocation_endpoint_auth_method=None,
-               scope='', token=None, token_placement='header', update_token=None, **parameters):
-    """ OIDCClient constructor
-    """
-    if 'ProviderName' not in parameters:
-      parameters['ProviderName'] = name
-    IdProvider.__init__(self, **parameters)
-    OAuth2Session.__init__(self, token_endpoint_auth_method=token_endpoint_auth_method,
-                           revocation_endpoint_auth_method=revocation_endpoint_auth_method,
-                           scope=scope, token=token, token_placement=token_placement,
-                           update_token=update_token, **parameters)
-    self.jwks = parameters.get('jwks')
-    # Convert scope to list
-    scope = scope or ''
-    self.scope = list_to_scope([s.strip() for s in scope.strip().replace('+', ' ').split(',' if ',' in scope else ' ')])
-    self.parameters = parameters
-    self.name = parameters['ProviderName']
-    self.verify = False
-
-    self.server_metadata_url = parameters.get('server_metadata_url', get_well_known_url(self.metadata['issuer'], True))
-
+  def __init__(self, **kwargs):
+    """ Initialization """
+    IdProvider.__init__(self, **kwargs)
+    OAuth2Session.__init__(self, **kwargs)
+    self.jwks_fetch_last = 0
+    self.metadata_fetch_last = 0
+    self.issuer = self.metadata['issuer']
+    self.scope = self.scope or ''
+    self.jwks = kwargs.get('jwks')
+    self.verify = kwargs.get('verify', False)
+    self.token_placement = kwargs.get('token_placement', 'header')
+    self.code_challenge_method = 'S256'
+    self.token_endpoint_auth_method = kwargs.get('token_endpoint_auth_method', 'client_secret_post')
+    self.server_metadata_url = kwargs.get('server_metadata_url', get_well_known_url(self.metadata['issuer'], True))
+    self.metadata_fetch_last = time.time() - self.METADATA_REFRESH_RATE
     self.log.debug('"%s" OAuth2 IdP initialization done:' % self.name,
                    '\nclient_id: %s\nclient_secret: %s\nmetadata:\n%s' % (self.client_id,
                                                                           self.client_secret,
                                                                           pprint.pformat(self.metadata)))
 
-  def verifyToken(self, accessToken):
+  def verifyToken(self, accessToken, jwks=None):
     """ Verify access token
 
         :param str accessToken: access token
-    """
-    try:
-      # Try to decode token
-      gLogger.debug("Try to decode token:", accessToken)
-      return jwt.decode(accessToken, JsonWebKey.import_key_set(self.jwks))
-    except Exception:
-      # If we have outdated keys, we try to update them from identity provider
-      gLogger.debug("Try to update %s jwks.." % self.metadata['issuer'])
-      self.jwks = self.fetch_metadata(self.get_metadata('jwks_uri'))
-      return jwt.decode(accessToken, JsonWebKey.import_key_set(self.jwks))
 
-  def update_token(self, token, refresh_token):
-    pass
+        :return: dict
+    """
+    jwks = jwks or self.jwks
+    self.log.debug("Try to decode token %s with JWKs:\n" % accessToken, pprint.pformat(jwks))
+    if not jwks:
+      raise Exception("JWKs not found.")
+    # Try to decode and verify token
+    return jwt.decode(accessToken, JsonWebKey.import_key_set(jwks))
 
   def refreshToken(self, refresh_token):
     """ Refresh token
@@ -139,18 +130,21 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
   def get_metadata(self, option=None):
     """ Get metadata
+
+        :param str option: option
+
+        :return: option value
     """
     if not self.metadata.get(option):
       self.fetch_metadata()
     return self.metadata.get(option)
 
-  def fetch_metadata(self, url=None):
+  def fetch_metadata(self):
     """ Fetch metada
     """
-    data = self.get(url or self.server_metadata_url, withhold_token=True).json()
-    if url:
-      return data
-    self.metadata.update(data)
+    if self.metadata_fetch_last < (time.time() - self.METADATA_REFRESH_RATE):
+      data = self.get(self.server_metadata_url, withhold_token=True).json()
+      self.metadata.update(data)
 
   def researchGroup(self, payload, token):
     """ Research group
@@ -172,7 +166,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     # Notify user to go to authorization endpoint
     showURL = 'Use next link to continue, your user code is "%s"\n%s' % (response['user_code'],
                                                                          response['verification_uri'])
-    gLogger.notice(showURL)
+    self.log.notice(showURL)
 
     return self.waitFinalStatusOfDeviceCodeAuthorizationFlow(response['device_code'])
 
@@ -227,6 +221,8 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
   def fetchToken(self, **kwargs):
     """ Fetch token
+
+        :return: dict
     """
     self.fetch_access_token(self.get_metadata('token_endpoint'), **kwargs)
     self.token['client_id'] = self.client_id
@@ -311,9 +307,9 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
           return S_ERROR('Mandatory %s key is absent in authentication response.' % k)
 
       return S_OK(deviceResponse)
-    except requests.exceptions.Timeout:
+    except requests..Timeout:
       return S_ERROR('Authentication server is not answer, timeout.')
-    except requests.exceptions.RequestException as ex:
+    except requests..RequestException as ex:
       return S_ERROR(repr(ex))
     except Exception as ex:
       return S_ERROR('Cannot read authentication response: %s' % repr(ex))
@@ -329,7 +325,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     """
     __start = time.time()
 
-    gLogger.notice('Authorization pending.. (use CNTL + C to stop)')
+    self.log.notice('Authorization pending.. (use CNTL + C to stop)')
     while True:
       time.sleep(int(interval))
       if time.time() - __start > timeout:
@@ -377,7 +373,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.token = token
       return S_OK(token)
     except Exception as e:
-      return S_ERROR(repr(e))
+      return S_ERROR('Cannot exchange token with %s group: %s' % (group,repr(e)))
 
   def getUserProfile(self):
     return self.get(self.get_metadata('userinfo_endpoint')).json()

@@ -4,21 +4,25 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger
 
 __RCSID__ = "$Id$"
 
 
 class IdProvider(object):
 
-  def __init__(self, *args, **kwargs):
+  DEFAULT_METADATA = {}
+
+  def __init__(self, **kwargs):
     """ C'or
     """
     self.log = gLogger.getSubLogger(self.__class__.__name__)
-    self.parameters = kwargs.get('parameters', {})
-    self._initialization()
+    meta = self.DEFAULT_METADATA
+    meta.update(kwargs)
+    self.setParameters(meta)
+    self._initialization(**meta)
 
-  def _initialization(self):
+  def _initialization(self, **kwargs):
     """ Initialization """
     pass
 
@@ -28,3 +32,4 @@ class IdProvider(object):
         :param dict parameters: parameters of the identity Provider
     """
     self.parameters = parameters
+    self.name = parameters.get('ProviderName')

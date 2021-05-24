@@ -16,7 +16,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader, ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProviderInfo, getSettingsNamesForIdPIssuer
-from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorisationServerMetadata
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import DEFAULT_CLIENTS
 
 __RCSID__ = "$Id$"
@@ -34,7 +34,7 @@ class IdProviderFactory(object):
 
   @gCacheMetadata
   def getMetadata(self, idP):
-    return self.cacheMetadata.get(idP)
+    return self.cacheMetadata.get(idP) or {}
 
   @gCacheMetadata
   def addMetadata(self, idP, data, time=24 * 3600):
@@ -58,7 +58,7 @@ class IdProviderFactory(object):
     if result['OK']:
       return self.getIdProvider(result['Value'][0])
 
-    _result = getAuthorisationServerMetadata()
+    _result = getAuthorizationServerMetadata()
     if not _result['OK']:
       return _result
     if issuer == _result['Value'].get('issuer', '').strip('/'):
@@ -77,7 +77,7 @@ class IdProviderFactory(object):
     self.log.debug('Search %s configuration..' % name)
     pDict = DEFAULT_CLIENTS.get(name, {})
     if pDict:
-      result = getAuthorisationServerMetadata()
+      result = getAuthorizationServerMetadata()
       if not result['OK']:
         return result
       pDict.update(result['Value'])
@@ -106,12 +106,7 @@ class IdProviderFactory(object):
 
     pClass = result['Value']
     try:
-      meta = self.getMetadata(name)
-      if meta:
-        pDict.update(meta)
       provider = pClass(**pDict)
-      if not meta and hasattr(provider, 'metadata'):
-        self.addMetadata(name, provider.metadata)
     except Exception as x:
       msg = 'IdProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
       self.log.exception()
