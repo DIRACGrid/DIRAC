@@ -5,9 +5,11 @@ from __future__ import print_function
 import six
 import json
 import time
+import pprint
 
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance, getProviderInfo
 
 from DIRAC import gLogger
 
@@ -17,26 +19,58 @@ DEFAULT_SCOPE = 'proxy g: lifetime:'
 
 DEFAULT_CLIENTS = {
     'DIRACCLI': dict(
-        ProviderType='DIRAC',
+        verify=False,
         client_id='DIRAC_CLI',
         response_types=['device'],
-        grant_types=['urn:ietf:params:oauth:grant-type:device_code']
+        grant_types=['urn:ietf:params:oauth:grant-type:device_code'],
+        ProviderType='DIRACCLI'
     ),
-    'WebAppDIRAC': dict(
-        ProviderType='DIRAC',
-        token_endpoint_auth_method='client_secret_basic',
+    'DIRACWeb': dict(
+        # token_endpoint_auth_method='client_secret_basic',
+        token_endpoint_auth_method='client_secret_post',
         response_types=['code'],
-        grant_types=['authorization_code', 'refresh_token']
+        grant_types=['authorization_code', 'refresh_token'],
+        ProviderType='DIRACWeb'
     )
 }
 
 
+def getDIACClientByID(clientID):
+  """ Search authorization client
+
+      :param str clientID: client ID
+
+      :return: object or None
+  """
+  gLogger.debug('Try to query %s client' % clientID)
+  if clientID == DEFAULT_CLIENTS['DIRACCLI']['client_id']:
+    gLogger.debug('Found client:\n', pprint.pformat(DEFAULT_CLIENTS['DIRACCLI']))
+    return Client(DEFAULT_CLIENTS['DIRACCLI'])
+
+  result = getProvidersForInstance('Id')
+  if not result['OK']:
+    gLogger.error(result['Message'])
+    return None
+
+  for client in result['Value']:
+    result = getProviderInfo(client)
+    if not result['OK']:
+      gLogger.debug(result['Message'])
+      continue
+    data = DEFAULT_CLIENTS.get(result['Value']['ProviderType'], {})
+    data.update(result['Value'])
+    if data.get('client_id') and data['client_id'] == clientID:
+      gLogger.debug('Found client:\n', pprint.pformat(data))
+      return Client(data)
+
+  return None
+
+
 class Client(OAuth2ClientMixin):
   def __init__(self, params):
-
     super(Client, self).__init__()
     client_metadata = params.get('client_metadata', params)
-    client_metadata['scope'] = ' '.join([client_metadata.get('scope', ''), DEFAULT_SCOPE])
+    client_metadata['scope'] = ' '.join(list(set([client_metadata.get('scope', ''), DEFAULT_SCOPE])))
     if params.get('redirect_uri') and not client_metadata.get('redirect_uris'):
       client_metadata['redirect_uris'] = [params['redirect_uri']]
     self.client_id = params['client_id']

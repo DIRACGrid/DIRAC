@@ -11,7 +11,7 @@ from authlib.oauth2.rfc8628 import (DeviceAuthorizationEndpoint as _DeviceAuthor
                                     DeviceCredentialDict)
 
 from DIRAC import gLogger
-from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorisationServerMetadata
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 
 log = gLogger.getSubLogger(__name__)
 
@@ -30,7 +30,7 @@ class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
 
         :return: str
     """
-    result = getAuthorisationServerMetadata()
+    result = getAuthorizationServerMetadata()
     if not result['OK']:
       raise OAuth2Error('Cannot prepare authorization server metadata. %s' % result['Message'])
     return result['Value']['issuer'] + '/device'
@@ -116,7 +116,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     data = result['Value']
     if not data:
       return None
-    result = getAuthorisationServerMetadata()
+    result = getAuthorizationServerMetadata()
     if not result['OK']:
       raise OAuth2Error('Cannot prepare authorization server metadata. %s' % result['Message'])
     data['verification_uri'] = result['Value']['issuer'] + '/device'

@@ -22,13 +22,13 @@ from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import Refr
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (DeviceAuthorizationEndpoint,
                                                                            DeviceCodeGrant)
 from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import AuthorizationCodeGrant
-from DIRAC.FrameworkSystem.private.authorization.utils.Clients import Client, DEFAULT_CLIENTS
+from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIACClientByID
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import OAuth2Request, createOAuth2Request
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorisationServerMetadata, isDownloadablePersonalProxy
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata, isDownloadablePersonalProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getEmailsForGroup, getDNForUsername
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance, getProviderInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
@@ -44,7 +44,7 @@ log = gLogger.getSubLogger(__name__)
 
 def collectMetadata(issuer=None):
   """ Collect metadata """
-  result = getAuthorisationServerMetadata()
+  result = getAuthorizationServerMetadata(issuer)
   if not result['OK']:
     raise Exception('Cannot prepare authorization server metadata. %s' % result['Message'])
   metadata = result['Value']
@@ -77,7 +77,7 @@ class AuthServer(_AuthorizationServer):
     self.proxyCli = ProxyManagerClient()
     self.idps = IdProviderFactory()
     # Privide two authlib methods query_client and save_token
-    _AuthorizationServer.__init__(self, query_client=self.getClient, save_token=self.saveToken)
+    _AuthorizationServer.__init__(self, query_client=getDIACClientByID, save_token=self.saveToken)
     self.generate_token = self.generateProxyOrToken
     self.bearerToken = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
@@ -107,34 +107,6 @@ class AuthServer(_AuthorizationServer):
       result = self.db.storeToken(token)
       if not result['OK']:
         gLogger.error(result['Message'])
-
-  def getClient(self, clientID):
-    """ Search authorization client
-
-        :param str clientID: client ID
-
-        :return: object
-    """
-    data = {}
-    gLogger.debug('Try to query %s client' % clientID)
-    result = getProvidersForInstance('Id', 'DIRAC')
-    if not result['OK']:
-      gLogger.error(result['Message'])
-      return None
-
-    clients = list(set(result['Value'] + list(DEFAULT_CLIENTS.keys())))
-    for client in clients:
-      data = DEFAULT_CLIENTS.get(client, {})
-      result = getProviderInfo(client)
-      if not result['OK']:
-        gLogger.debug(result['Message'])
-      else:
-        data.update(result['Value'])
-      if data.get('client_id') and data['client_id'] == clientID:
-        gLogger.debug('Found client:\n', pprint.pformat(data))
-        return Client(data)
-
-    return None
 
   def __getScope(self, scope, param):
     """ Get parameter scope
