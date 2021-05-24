@@ -10,7 +10,10 @@ __RCSID__ = "$Id$"
 from io import open
 
 import os
+import jwt as _jwt
+from authlib.jose import JsonWebKey, jwt
 import time
+import requests
 import threading
 from datetime import datetime
 from six import string_types
@@ -32,6 +35,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance
 
 sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
@@ -79,6 +83,14 @@ class BaseRequestHandler(RequestHandler):
 
   # Which grant type to use
   USE_AUTHZ_GRANTS = ['SSL', 'JWT']
+
+  # Key updates are started at initialization, ie at the first request,
+  # this parameter shows that the first request of keys is made and
+  # it is possible to use them for check of tokens
+  __init_jwk_done = False
+  _idps = IdProviderFactory()
+  _idp = {}
+  _jwks = {}
 
   @classmethod
   def _initMonitoring(cls, serviceName, fullUrl):
@@ -147,6 +159,47 @@ class BaseRequestHandler(RequestHandler):
     return {}
 
   @classmethod
+  @gen.coroutine
+  def __refreshJWKsLoop(cls):
+    """ Auto refresh JWKs
+    """
+    while True:
+
+      # Research Identity Providers
+      result = getProvidersForInstance('Id')
+      if result['OK']:
+        for providerName in list(set(result['Value'] + ['DIRACCLI'])):
+          result = cls._idps.getIdProvider(providerName)
+          if result['OK']:
+            issuer = result['Value'].issuer.strip('/')
+            jwks_uri = result['Value'].get_metadata('jwks_uri')
+            cls._idp[issuer] = result['Value']
+
+            gLogger.debug('Updating public keys..')
+            retVal = yield IOLoop.current().run_in_executor(None, cls.__refreshJWKs, jwks_uri)
+            result = retVal.result()
+            if not result['OK']:
+              gLogger.error('%s keys not updated' % issuer, result['Message'])
+            else:
+              gLogger.debug('%s keys updated' % issuer, result['Value'])
+              cls._jwks[issuer] = result['Value']
+
+      cls.__init_jwk_done = True
+      yield gen.sleep(24 * 3600)
+
+  @classmethod
+  @gen.coroutine
+  def __refreshJWKs(cls, jwks_uri):
+    """ Updating public keys
+    """
+    try:
+      response = requests.get(jwks_uri, verify=False)
+      response.raise_for_status()
+      return S_OK(response.json())
+    except requests.exceptions.RequestException as e:
+      return S_ERROR("Error %s" % e)
+
+  @classmethod
   def __initializeService(cls, request):
     """
       Initialize a service.
@@ -169,7 +222,8 @@ class BaseRequestHandler(RequestHandler):
       if cls.__init_done:
         return S_OK()
 
-      cls._idps = IdProviderFactory()
+      # Run automatic public key updates
+      IOLoop.current().spawn_callback(cls.__refreshJWKsLoop)
 
       # absoluteUrl: full URL e.g. ``https://<host>:<port>/<System>/<Component>``
       absoluteUrl = request.path
@@ -311,7 +365,6 @@ class BaseRequestHandler(RequestHandler):
     self.method = self._getMethodName()
 
     self._monitorRequest()
-    self._prepare()
 
   def _prepare(self):
     """
@@ -422,6 +475,9 @@ class BaseRequestHandler(RequestHandler):
         This method is called in an executor, and so cannot use methods like self.write
         See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
     """
+    # Because the keys are updated during the first initialization, the
+    # first authorization process must start after initialization
+    self._prepare()
 
     sLog.notice(
         "Incoming request %s /%s: %s" %
@@ -452,17 +508,12 @@ class BaseRequestHandler(RequestHandler):
     # Wait result only if it's a Future object
     self.result = retVal.result() if isinstance(retVal, Future) else retVal
 
-    print('FUTURE RESULT >>>')
-    print(self.result)
-    print(self.get_status())
-
     # Here it is safe to write back to the client, because we are not
     # in a thread anymore
 
     # Is it S_OK or S_ERROR
-    if isinstance(self.result, dict):
-      if isinstance(self.result.get('OK'), bool) and ('Value' if self.result['OK'] else 'Message') in self.result:
-        self._parseDIRACResult(self.result)
+    if self.isDIRACResult(self.result):
+      self._parseDIRACResult(self.result)
 
     # If set to true, do not JEncode the return of the RPC call
     # This is basically only used for file download through
@@ -482,6 +533,13 @@ class BaseRequestHandler(RequestHandler):
       self.write(encode(self.result))
 
     self.finish()
+
+  def isDIRACResult(self, result):
+    """ Check if it DIRAC result
+    """
+    if isinstance(result, dict):
+      if isinstance(result.get('OK'), bool) and ('Value' if result['OK'] else 'Message') in result:
+        return True
 
   def _parseDIRACResult(self, result):
     """ Processing of a standard DIRAC result,
@@ -579,25 +637,31 @@ class BaseRequestHandler(RequestHandler):
         credDict['extraCredentials'] = decode(extraCred)[0]
     return S_OK(credDict)
 
-  def _authzJWT(self):
+  def _authzJWT(self, accessToken=None):
     """ Load token claims in DIRAC and extract informations.
+
+        :param str accessToken: access_token
 
         :return: S_OK(dict)/S_ERROR()
     """
-    # Export token from headers
-    token = self.request.headers.get('Authorization')
-    if not token or len(token.split()) != 2:
-      return S_ERROR('Not found a bearer access token.')
-    tokenType, accessToken = token.split()
-    if tokenType.lower() != 'bearer':
-      return S_ERROR('Found a not bearer access token.')
+    if not self.__init_jwk_done:
+      time.sleep(5)
 
-    result = self._idps.getIdProviderForToken(accessToken)
-    if not result['OK']:
-      return result
-    cli = result['Value']
-    payload = cli.verifyToken(accessToken)
-    credDict = cli.researchGroup(payload, accessToken)
+    if not accessToken:
+      # Export token from headers
+      token = self.request.headers.get('Authorization')
+      if not token or len(token.split()) != 2:
+        return S_ERROR('Not found a bearer access token.')
+      tokenType, accessToken = token.split()
+      if tokenType.lower() != 'bearer':
+        return S_ERROR('Found a not bearer access token.')
+
+    # Read token without verification to get issuer
+    issuer = _jwt.decode(accessToken, options=dict(verify_signature=False))['iss'].strip('/')
+
+    # Verify token
+    payload = self._idp[issuer].verifyToken(accessToken, self._jwks[issuer])
+    credDict = self._idp[issuer].researchGroup(payload, accessToken)
 
     return S_OK(credDict)
 
