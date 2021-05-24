@@ -1,9 +1,9 @@
 #!/bin/bash
 
-testdir=`echo $PWD`
+testdir=$(pwd)
 
 JDLFILE="${testdir}/multiVO.jdl"
-cat > ${JDLFILE} <<EOF
+cat > "${JDLFILE}" <<EOF
 [
 Executable = "multiVOexe.sh";
 StdOutput = "job.log";
@@ -17,26 +17,27 @@ EOF
 
 
 EXEFILE="${testdir}/multiVOexe.sh"
-cat > ${EXEFILE} <<EOF
-echo $DIRACSITE
-ghostname=`hostname --long 2>&1`
-gipname=`hostname --ip-address 2>&1`
-echo $ghostname "has address" $gipname
+cat > "${EXEFILE}" <<EOF
+echo "\\\$DIRACSITE: \$DIRACSITE"
+IPADDRESS=\$(hostname --ip-address 2>&1)
+echo "\$(hostname) has address " \${IPADDRESS}
+echo "Operating System:" 
 uname -a
 cat /etc/redhat-release
 EOF
 
-MYDATE=`date +%s`
-env > testfile.${MYDATE}.txt
+MYDATE=$(date +%s)
+env > "testfile.${MYDATE}.txt"
 
 
 echo -e "\nTesting first VO: gridpp"
 # just writing the proxy to a different file causes this command to fail
 # need to tell DIRAC beforehand where the user proxy will be
-export X509_USER_PROXY=${testdir}/gridpp.proxy
+export X509_USER_PROXY="${testdir}/gridpp.proxy"
 echo "dirac-proxy-init -g gridpp_user --out ${testdir}/gridpp.proxy"
-dirac-proxy-init -g gridpp_user --out ${testdir}/gridpp.proxy
+dirac-proxy-init -g gridpp_user --out "${testdir}/gridpp.proxy"
 if [[ "${?}" -ne 0 ]]; then
+   echo "Could not acquire gridpp proxy. Giving up." 
    exit 1
 fi
 
@@ -46,19 +47,20 @@ sleep 30
 dirac-wms-job-status -f gridpp_jobid.log
 
 echo -e "\nUploading file as a gridpp_user"
-dirac-dms-add-file /gridpp/diraccert/testfile.${MYDATE}.txt testfile.${MYDATE}.txt UKI-LT2-IC-HEP-disk
+dirac-dms-add-file "/gridpp/diraccert/testfile.${MYDATE}.txt" "testfile.${MYDATE}.txt" UKI-LT2-IC-HEP-disk
 if [[ "${?}" -ne 0 ]]; then
    echo "That didn't go well, please check the error."
 fi
 echo -e "\nRemoving file"
-dirac-dms-remove-files /gridpp/diraccert/testfile.${MYDATE}.txt
+dirac-dms-remove-files "/gridpp/diraccert/testfile.${MYDATE}.txt"
 
 
-export X509_USER_PROXY=${testdir}/dteam.proxy
+export X509_USER_PROXY="${testdir}/dteam.proxy"
 echo -e "\nChanging VO to dteam."
 echo "dirac-proxy-init -g dteam_user --out ${testdir}/dteam.proxy"
-dirac-proxy-init -g dteam_user --out ${testdir}/dteam.proxy
+dirac-proxy-init -g dteam_user --out "${testdir}/dteam.proxy"
 if [[ "${?}" -ne 0 ]]; then
+   echo "Could not acquire dteam proxy. Giving up."
    exit 1
 fi
 
@@ -68,15 +70,16 @@ sleep 30
 dirac-wms-job-status -f dteam_jobid.log
 
 echo -e "\nUploading file as a dteam_user"
-dirac-dms-add-file /dteam/diraccert/testfile.${MYDATE}.txt testfile.${MYDATE}.txt UKI-LT2-IC-HEP-disk
+dirac-dms-add-file "/dteam/diraccert/testfile.${MYDATE}.txt" "testfile.${MYDATE}.txt" UKI-LT2-IC-HEP-disk
 if [[ "${?}" -ne 0 ]]; then
    echo "That didn't go well, please check the error."
 fi
 echo -e "\nRemoving file"
-dirac-dms-remove-files /dteam/diraccert/testfile.${MYDATE}.txt
+dirac-dms-remove-files "/dteam/diraccert/testfile.${MYDATE}.txt"
 
 echo -e "\nBonus test: Try to add file to gridpp storage as a dteam user."
 echo "This should fail."
-dirac-dms-add-file /gridpp/diraccert/testfile.${MYDATE}.txt testfile.${MYDATE}.txt UKI-LT2-IC-HEP-disk
+dirac-dms-add-file "/gridpp/diraccert/testfile.${MYDATE}.txt" "testfile.${MYDATE}.txt" UKI-LT2-IC-HEP-disk
 
 echo -e "\nThe client_multivo script has finished. Please check that the jobs run and the output looks OK before considering this test to be passing."
+
