@@ -203,11 +203,8 @@ class AuthServer(_AuthorizationServer):
     # FINISHING with IdP auth result
     credDict = result['Value']
 
-
-    # ########### TODO: This place will store the original tokens ############ #
-    # result = self.__tokenDB.updateToken(provObj.token, user_id=provObj.token['user_id'])
-    # if not result['OK']:
-    #   return result
+    # ########### TODO: This line will store the original tokens ############ #
+    # updateToken(provObj.token, user_id=provObj.token['user_id'])
 
     gLogger.debug("Read profile:", pprint.pformat(credDict))
     # Is ID registred?
@@ -412,7 +409,7 @@ class AuthServer(_AuthorizationServer):
     for addresses in getEmailsForGroup('dirac_admin'):
       result = NotificationClient().sendMail(addresses, mail['subject'], mail['body'], localAttempt=False)
       if not result['OK']:
-        self.log.error(result['Message'])
+        gLogger.error(result['Message'])
     if result['OK']:
-      self.log.info(result['Value'], "administrators have been notified about a new user.")
+      gLogger.info(result['Value'], "administrators have been notified about a new user.")
     return result

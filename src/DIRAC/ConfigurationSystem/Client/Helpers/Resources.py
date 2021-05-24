@@ -500,13 +500,9 @@ def getProvidersForInstance(instance, providerType=None):
 
       :return: S_OK(list)/S_ERROR()
   """
-  data = []
+  providers = []
   instance = "%sProviders" % instance
-  result = gConfig.getSections(gBaseResourcesSection)
-  if result['OK']:
-    if instance not in result['Value']:
-      return S_OK(data)
-    result = gConfig.getSections('%s/%s' % (gBaseResourcesSection, instance))
+  result = gConfig.getSections('%s/%s' % (gBaseResourcesSection, instance))
 
   # Return an empty list if the section does not exist
   if not result['OK'] or not result['Value'] or not providerType:
@@ -514,8 +510,8 @@ def getProvidersForInstance(instance, providerType=None):
 
   for prov in result['Value']:
     if providerType == gConfig.getValue('%s/%s/%s/ProviderType' % (gBaseResourcesSection, instance, prov)):
-      data.append(prov)
-  return S_OK(data)
+      providers.append(prov)
+  return S_OK(providers)
 
 
 def getProviderInfo(provider):

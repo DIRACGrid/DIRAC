@@ -77,11 +77,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
   """ Base class to describe the configuration of the OAuth2 client of the corresponding provider.
   """
 
+  METADATA_REFRESH_RATE = 24 * 3600
+
   def __init__(self, **kwargs):
     """ Initialization """
     IdProvider.__init__(self, **kwargs)
     OAuth2Session.__init__(self, **kwargs)
-    self.jwks_fetch_last = 0
     self.metadata_fetch_last = 0
     self.issuer = self.metadata['issuer']
     self.scope = self.scope or ''
@@ -145,6 +146,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     if self.metadata_fetch_last < (time.time() - self.METADATA_REFRESH_RATE):
       data = self.get(self.server_metadata_url, withhold_token=True).json()
       self.metadata.update(data)
+      self.metadata_fetch_last = time.time()
 
   def researchGroup(self, payload, token):
     """ Research group
@@ -373,7 +375,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.token = token
       return S_OK(token)
     except Exception as e:
-      return S_ERROR('Cannot exchange token with %s group: %s' % (group,repr(e)))
+      return S_ERROR('Cannot exchange token with %s group: %s' % (group, repr(e)))
 
   def getUserProfile(self):
     return self.get(self.get_metadata('userinfo_endpoint')).json()

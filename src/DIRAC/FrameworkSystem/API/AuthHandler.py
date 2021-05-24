@@ -350,12 +350,11 @@ class AuthHandler(TornadoREST):
         group = groups[0] if groups else None
 
         if group and not provider:
-          print(group)
           provider = Registry.getIdPForGroup(group)
 
-        print('Use provider:', provider)
-
-        authURL = '%s/authorization/%s?%s&user_code=%s' % (self.LOCATION, provider, req.query, userCode)  # pylint: disable=no-member
+        self.log.debug('Use provider:', provider)
+        # pylint: disable=no-member
+        authURL = '%s/authorization/%s?%s&user_code=%s' % (self.LOCATION, provider, req.query, userCode)
         # Save session to cookie
         return self.server.handle_response(302, {}, [("Location", authURL)], session)
 

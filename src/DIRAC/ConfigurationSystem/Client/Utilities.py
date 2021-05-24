@@ -596,7 +596,7 @@ def getAuthorizationServerMetadata(issuer=None):
       data['issuer'] = getAuthAPI()
     except Exception as e:
       return S_ERROR('No issuer found in DIRAC authorization server: %s' % repr(e))
-    
+
   return S_OK(data)
 
 
