@@ -39,10 +39,7 @@ def main():
 
   gLogger.initialize('Tornado', "/")
 
-  services = ['DataManagement/TornadoFileCatalog']
-  endpoints = False
-
-  serverToLaunch = TornadoServer(services, endpoints, port=8000)
+  serverToLaunch = TornadoServer(False)
 
   try:
     from WebAppDIRAC.Core.App import App

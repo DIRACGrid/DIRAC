@@ -209,7 +209,7 @@ class TornadoServer(object):
       router = Application(app['routes'], **settings)
       server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)
       try:
-        server.listen(port)
+        server.listen(int(port))
       except Exception as e:  # pylint: disable=broad-except
         sLog.exception("Exception starting HTTPServer", e)
         raise

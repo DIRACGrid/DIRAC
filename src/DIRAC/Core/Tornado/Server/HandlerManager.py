@@ -139,18 +139,20 @@ class HandlerManager(object):
           sysInstance = PathFinder.getSystemInstance(system)
           result = gConfig.getSections('/Systems/%s/%s/%s' % (system, sysInstance, handlerInstance))
           if result['OK']:
-            for inst in result['Value']:
-              newInst = ("%s/%s" % (system, inst))
+            for instName in result['Value']:
+              newInst = ("%s/%s" % (system, instName))
+              port = gConfig.getValue('/Systems/%s/%s/%s/%s/Port' % (system, sysInstance,
+                                                                     handlerInstance, instName))
+              if port:
+                newInst += ':%s' % port
 
               if handlerInstance == 'Services':
                 # We search in the CS all handlers which used HTTPS as protocol
-                isHTTPS = gConfig.getValue('/Systems/%s/%s/Services/%s/Protocol' % (system, sysInstance, inst))
+                isHTTPS = gConfig.getValue('/Systems/%s/%s/%s/%s/Protocol' % (system, sysInstance,
+                                                                              handlerInstance, instName))
                 if isHTTPS and isHTTPS.lower() == 'https':
                   urls.append(newInst)
               else:
-                port = gConfig.getValue('/Systems/%s/%s/Services/%s/Port' % (system, sysInstance, inst))
-                if port:
-                  newInst += ':%s' % port
                 urls.append(newInst)
         # On systems sometime you have things not related to services...
         except RuntimeError:
@@ -178,6 +180,9 @@ class HandlerManager(object):
       self.__services = self.discoverHandlers('Services')
 
     if self.__services:
+      # Extract ports
+      ports, self.__services = self.__extractPorts(self.__services)
+
       self.loader = ModuleLoader("Service", PathFinder.getServiceSection, RequestHandler, moduleSuffix="Handler")
 
       # Use DIRAC system to load: search in CS if path is given and if not defined
@@ -192,7 +197,7 @@ class HandlerManager(object):
         # Here we just want the service name, for tornado
         serviceTuple = url.replace('https://', '').split('/')[-2:]
         url = "%s/%s" % (serviceTuple[0], serviceTuple[1])
-        self.__addHandler(module['loadName'], module['classObj'], url)
+        self.__addHandler(module['loadName'], module['classObj'], url, ports.get(module['modName']))
     return S_OK()
 
   def __extractPorts(self, urls):
@@ -225,7 +230,7 @@ class HandlerManager(object):
 
       :return: S_OK()/S_ERROR()
     """
-    # list of endpoints, e.g. ['Framework/Proxy', ...]
+    # list of endpoints, e.g. ['Framework/Auth', ...]
     if isinstance(endpoints, string_types):
       endpoints = [endpoints]
     # list of endpoints. If __endpoints is ``True`` then list of endpoints will dicover from CS
