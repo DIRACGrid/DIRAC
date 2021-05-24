@@ -253,13 +253,14 @@ class AuthDB(SQLAlchemyDB):
     """
     session = self.session()
     try:
-      # Remove all expis
-      session.query(JWK).filter(JWK.expires_at < time()).delete()s = session.query(JWK).filter(JWK.expires_at > time()).all()
+      # Remove all expired jwks
+      session.query(JWK).filter(JWK.expires_at < time()).delete()
+      jwks = session.query(JWK).filter(JWK.expires_at > time()).all()
     except NoResultFound:
       return self.__result(session, S_OK([]))
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
-    return self.__result(session, S_OK([self.__rowToD) s]))
+    return self.__result(session, S_OK([self.__rowToDict(jwk) for jwk in jwks]))
 
   def removeKeys(self):
     """ Get active keys
