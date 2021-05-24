@@ -579,32 +579,24 @@ def getAuthAPI():
   return gConfig.getValue("/Systems/Framework/%s/URLs/AuthAPI" % getSystemInstance("Framework"))
 
 
-def getAuthorisationServerMetadata(issuer=None):
+def getAuthorizationServerMetadata(issuer=None):
   """ Get authorization server metadata
 
       :return: S_OK(dict)/S_ERROR()
   """
-  data = {'issuer': issuer}
-
-  result = gConfig.getSections('/DIRAC')
-  if result['OK']:
-    if 'Authorization' in result['Value']:
-      result = gConfig.getOptionsDictRecursively('/DIRAC/Authorization')
-      if result['OK']:
-        data.update(result['Value'])
+  result = gConfig.getOptionsDictRecursively('/DIRAC/Authorization')
   if not result['OK']:
-    return result
-  if not data['issuer']:
-    data['issuer'] = getAuthAPI()
-  if not data['issuer']:
-    return S_ERROR('No issuer found in DIRAC authorization server configuration.')
+    return {'issuer': issuer} if issuer else result
+  data = result['Value']
 
-  # Search values with type list
-  for key in data:
-    if ',' in data[key]:
-      # Convert to list
-      data[key] = data[key].replace(', ', ',').split(',')
-      data[key] = [item for item in data[key] if item]
+  # Research DIRAC Authorization Server issuer
+  data['issuer'] = data.get('issuer', issuer)
+  if not data['issuer']:
+    try:
+      data['issuer'] = getAuthAPI()
+    except Exception as e:
+      return S_ERROR('No issuer found in DIRAC authorization server: %s' % repr(e))
+    
   return S_OK(data)
 
 
