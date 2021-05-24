@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import six
 import time
+import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -37,13 +38,14 @@ def getTokenInfo(token=False):
     result = readTokenFromFile(tokenLocation)
     if not result['OK']:
       return result
-    token = OAuth2Token(result['Value'])
+    token = OAuth2Token(result['Value'])['access_token']
 
-  result = IdProviderFactory().getIdProviderForToken(accessToken)
+  result = IdProviderFactory().getIdProviderForToken(token)
   if not result['OK']:
     return result
   cli = result['Value']
-  payload = cli.verifyToken(accessToken)
+  cli.updateJWKs()
+  payload = cli.verifyToken(token)
 
   result = Registry.getUsernameForDN('/O=DIRAC/CN=%s' % payload['sub'])
   if not result['OK']:
@@ -62,7 +64,7 @@ def formatTokenInfoAsString(infoDict):
       :return: str
   """
   secsLeft = int(infoDict['exp']) - time.time()
-  strTimeleft = datetime.fromtimestamp(secs).strftime("%I:%M:%S")
+  strTimeleft = datetime.datetime.fromtimestamp(secsLeft).strftime("%I:%M:%S")
 
   leftAlign = 13
   contentList = []
