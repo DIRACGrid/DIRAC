@@ -14,12 +14,8 @@ from __future__ import absolute_import
 from __future__ import division
 import re
 import tempfile
-# TODO: This should be modernised to use subprocess(32)
-try:
-  import commands
-except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
+import subprocess
+import shlex
 import os
 
 __RCSID__ = "$Id$"
@@ -59,11 +55,13 @@ def treatCondorHistory(condorHistCall, qList):
   :type qList: python:list
   :returns: None
   """
-  status_history, stdout_history_temp = commands.getstatusoutput(condorHistCall)
+  sp = subprocess.Popen(shlex.split(condorHistCall), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  output, _ = sp.communicate()
+  status = sp.returncode
 
   # Join the ClusterId and the ProcId and add to existing list of statuses
-  if status_history == 0:
-    for line in stdout_history_temp.split('\n'):
+  if status == 0:
+    for line in output.split('\n'):
       values = line.strip().split()
       if len(values) == 3:
         qList.append("%s.%s %s" % tuple(values))
@@ -123,28 +121,29 @@ class Condor(object):
 
     cmd = '%s; ' % preamble if preamble else ''
     cmd += 'condor_submit %s %s' % (submitOptions, jdlFile.name)
-    status, output = commands.getstatusoutput(cmd)
+    sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     jdlFile.close()
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     submittedJobs = 0
     cluster = ''
-    if status == 0:
-      lines = output.split('\n')
-      for line in lines:
-        if 'cluster' in line:
-          result = re.match(r'(\d+) job.*cluster (\d+)\.', line)
-          if result:
-            submittedJobs, cluster = result.groups()
-            try:
-              submittedJobs = int(submittedJobs)
-            except BaseException:
-              submittedJobs = 0
+    lines = output.split('\n')
+    for line in lines:
+      if 'cluster' in line:
+        result = re.match(r'(\d+) job.*cluster (\d+)\.', line)
+        if result:
+          submittedJobs, cluster = result.groups()
+          try:
+            submittedJobs = int(submittedJobs)
+          except BaseException:
+            submittedJobs = 0
 
     if submittedJobs > 0 and cluster:
       resultDict['Status'] = 0
@@ -153,7 +152,7 @@ class Condor(object):
         resultDict['Jobs'].append('.'.join([cluster, str(i)]))
     else:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
     return resultDict
 
   def killJob(self, **kwargs):
@@ -177,17 +176,21 @@ class Condor(object):
 
     successful = []
     failed = []
+    errors = ''
     for job in jobIDList:
-      status, output = commands.getstatusoutput('condor_rm %s' % job)
+      sp = subprocess.Popen(shlex.split('condor_rm %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status != 0:
         failed.append(job)
+        errors += error
       else:
         successful.append(job)
 
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
-      resultDict['Message'] = output
+      resultDict['Message'] = errors
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
@@ -219,14 +222,17 @@ class Condor(object):
       resultDict['Message'] = 'No user name'
       return resultDict
 
-    status, stdout_q = commands.getstatusoutput('condor_q -submitter %s -af:j JobStatus  ' % user)
+    cmd = 'condor_q -submitter %s -af:j JobStatus' % user
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = stdout_q
+      resultDict['Message'] = error
       return resultDict
 
-    qList = stdout_q.strip().split('\n')
+    qList = output.strip().split('\n')
 
     # FIXME: condor_history does only support j for autoformat from 8.5.3,
     # format adds whitespace for each field This will return a list of 1245 75 3
@@ -264,7 +270,10 @@ class Condor(object):
     waitingJobs = 0
     runningJobs = 0
 
-    status, output = commands.getstatusoutput('condor_q -submitter %s' % user)
+    sp = subprocess.Popen(shlex.split('condor_q -submitter %s' % user), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
+
     if status != 0:
       if "no record" in output:
         resultDict['Status'] = 0
@@ -272,7 +281,7 @@ class Condor(object):
         resultDict["Running"] = runningJobs
         return resultDict
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     if "no record" in output:

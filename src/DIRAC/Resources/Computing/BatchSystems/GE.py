@@ -18,12 +18,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 import re
-# TODO: This should be modernised to use subprocess(32)
-try:
-  import commands
-except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
+import shlex
+import subprocess
 import os
 
 __RCSID__ = "$Id$"
@@ -51,7 +47,9 @@ class GE(object):
     for _i in range(int(nJobs)):
       cmd = '%s; ' % preamble if preamble else ''
       cmd += "qsub -o %(OutputDir)s -e %(ErrorDir)s -N DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
-      status, output = commands.getstatusoutput(cmd)
+      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status == 0:
         outputs.append(output)
       else:
@@ -66,7 +64,7 @@ class GE(object):
           resultDict['Jobs'].append(match.groups()[0])
     else:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
 
     return resultDict
 
@@ -91,17 +89,21 @@ class GE(object):
 
     successful = []
     failed = []
+    errors = ''
     for job in jobIDList:
-      status, output = commands.getstatusoutput('qdel %s' % job)
+      sp = subprocess.Popen(shlex.split('qdel %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status != 0:
         failed.append(job)
+        errors += error
       else:
         successful.append(job)
 
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
-      resultDict['Message'] = output
+      resultDict['Message'] = errors
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
@@ -131,11 +133,13 @@ class GE(object):
       resultDict['Message'] = 'Empty job list'
       return resultDict
 
-    status, output = commands.getstatusoutput('qstat -u %s' % user)
+    sp = subprocess.Popen(shlex.split('qstat -u %s' % user), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     jobDict = {}
@@ -153,7 +157,9 @@ class GE(object):
             elif jobStatus in ['qw', 'h']:
               jobDict[job] = 'Waiting'
 
-    status, output = commands.getstatusoutput('qstat -u %s -s z' % user)
+    sp = subprocess.Popen(shlex.split('qstat -u %s -s -z' % user), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     if status == 0:
       if output:
@@ -189,11 +195,13 @@ class GE(object):
       return resultDict
 
     cmd = 'qstat -u %s' % user
-    status, output = commands.getstatusoutput(cmd)
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     waitingJobs = 0

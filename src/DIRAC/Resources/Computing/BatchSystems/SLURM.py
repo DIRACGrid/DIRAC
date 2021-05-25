@@ -15,7 +15,8 @@ from __future__ import division
 
 import os
 import re
-import commands
+import subprocess
+import shlex
 
 __RCSID__ = "$Id$"
 
@@ -75,7 +76,9 @@ class SLURM(object):
       cmd += "--cpus-per-task=%d " % numberOfProcessors
       # Additional options
       cmd += "%s %s" % (submitOptions, executable)
-      status, output = commands.getstatusoutput(cmd)
+      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status != 0 or not output:
         break
 
@@ -97,7 +100,7 @@ class SLURM(object):
       resultDict['Jobs'] = jobIDs
     else:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
     return resultDict
 
 
@@ -124,18 +127,22 @@ class SLURM(object):
 
     successful = []
     failed = []
+    errors = ''
     for job in jobIDList:
       cmd = 'scancel --partition=%s %s' % (queue, job)
-      status, output = commands.getstatusoutput(cmd)
+      sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status != 0:
         failed.append(job)
+        errors += error
       else:
         successful.append(job)
 
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
-      resultDict['Message'] = output
+      resultDict['Message'] = errors
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
@@ -159,10 +166,12 @@ class SLURM(object):
 
     # displays accounting data for all jobs in the Slurm job accounting log or Slurm database
     cmd = "sacct -j %s -o JobID,STATE" % jobIDs
-    status, output = commands.getstatusoutput(cmd)
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
     if status != 0:
       resultDict['Status'] = 1
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     statusDict = {}
@@ -218,10 +227,12 @@ class SLURM(object):
     queue = kwargs['Queue']
 
     cmd = "squeue --partition=%s --user=%s --format='%%j %%T' " % (queue, user)
-    status, output = commands.getstatusoutput(cmd)
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
     if status != 0:
       resultDict['Status'] = 1
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     waitingJobs = 0
