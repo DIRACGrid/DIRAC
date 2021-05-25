@@ -12,7 +12,6 @@ import datetime
 import pytest
 from mock import MagicMock
 
-from DIRAC import gLogger
 # sut
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Agent.TransformationAgent import TransformationAgent
@@ -20,29 +19,11 @@ from DIRAC.TransformationSystem.Agent.TransformationAgent import TransformationA
 mockAM = MagicMock()
 
 
-@pytest.mark.parametrize("operationsOnTransformationsDict, expected", [
-    ({1: {'Operations': ['op1', 'op2'], 'Body':'veryBigBody'}}, ([1], 1)),
-    ({2: {'Operations': ['op3', 'op2'], 'Body':'veryveryBigBody'}}, ([2], 1)),
-    ({2: {'Operations': ['op3', 'op2'], 'Body':'veryveryBigBody'}}, ([2], 1))
-])
-def test__fillTheQueue(mocker, operationsOnTransformationsDict, expected):
-  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.AgentModule', side_effect=mockAM)
-  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.FileReport', side_effect=MagicMock())
-  tmab = TaskManagerAgentBase()
-  tmab.log = gLogger
-  tmab.am_getOption = mockAM
-  tmab._fillTheQueue(operationsOnTransformationsDict)
-  assert tmab.transInQueue == expected[0]
-  assert tmab.transQueue.qsize() == expected[1]
-
-
-# useful stuff
-
 tc_mock = MagicMock()
 tm_mock = MagicMock()
 clients = {'TransformationClient': tc_mock, 'TaskManager': tm_mock}
 
-transIDOPBody = {1: {'Operations': ['op1', 'op2'], 'Body': 'veryBigBody'}}
+transDict = {'TransformationID': 1, 'Operations': ['op1', 'op2'], 'Body': 'veryBigBody'}
 tasks = {'OK': True, 'Value': [{'CreationTime': None,
                                 'ExternalID': '1',
                                 'ExternalStatus': 'Reserved',
@@ -78,18 +59,19 @@ def test_updateTaskStatusSuccess(mocker, tcMockReturnValue, tmMockGetSubmittedTa
   tmab = TaskManagerAgentBase()
   tc_mock.getTransformationTasks.return_value = tcMockReturnValue
   tm_mock.getSubmittedTaskStatus.return_value = tmMockGetSubmittedTaskStatusReturnvalue
-  res = tmab.updateTaskStatus(transIDOPBody, clients)
+  res = tmab.updateTaskStatus(transDict, clients)
   assert res['OK'] == expected
 
 
-@pytest.mark.parametrize("tcMockGetTransformationFilesReturnValue, tmMockGetSubmittedFileStatusReturnValue, expected", [
-    (sError, None, False),  # errors
-    (sOk, None, True),  # no files
-    ({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]}, sError, False),  # files, failing to update
-    ({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]}, sOk, True),  # files, nothing to update
-    ({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]},
-     {'OK': True, 'Value': {'file1': 'OK', 'file2': 'NOK'}}, True),  # files, something to update
-])
+@pytest.mark.parametrize(
+    "tcMockGetTransformationFilesReturnValue, tmMockGetSubmittedFileStatusReturnValue, expected", [
+	(sError, None, False),  # errors
+	(sOk, None, True),  # no files
+	({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]}, sError, False),  # files, failing to update
+	({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]}, sOk, True),  # files, nothing to update
+	({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]},
+	 {'OK': True, 'Value': {'file1': 'OK', 'file2': 'NOK'}}, True),  # files, something to update
+    ])
 def test_updateFileStatusSuccess(mocker,
                                  tcMockGetTransformationFilesReturnValue,
                                  tmMockGetSubmittedFileStatusReturnValue,
@@ -99,7 +81,7 @@ def test_updateFileStatusSuccess(mocker,
   tmab = TaskManagerAgentBase()
   tc_mock.getTransformationFiles.return_value = tcMockGetTransformationFilesReturnValue
   tm_mock.getSubmittedFileStatus.return_value = tmMockGetSubmittedFileStatusReturnValue
-  res = tmab.updateFileStatus(transIDOPBody, clients)
+  res = tmab.updateFileStatus(transDict, clients)
   assert res['OK'] == expected
 
 
@@ -128,12 +110,12 @@ def test_checkReservedTasks(mocker,
   tc_mock.getTransformationTasks.return_value = tcMockGetTransformationTasksReturnValue
   tm_mock.updateTransformationReservedTasks.return_value = tmMockUpdateTransformationReservedTasksReturnValue
   tc_mock.setTaskStatusAndWmsID.return_value = tcMockSetTaskStatusAndWmsIDReturnValue
-  res = tmab.checkReservedTasks(transIDOPBody, clients)
+  res = tmab.checkReservedTasks(transDict, clients)
   assert res['OK'] == expected
 
 
-transIDOPBody = {1: {'Operations': ['op1', 'op2'], 'Body': 'veryBigBody',
-                     'Owner': 'prodMan', 'OwnerDN': '/ca=man/user=prodMan', 'OwnerGroup': 'prodMans'}}
+transDict = {'TransformationID': 1, 'Operations': ['op1', 'op2'], 'Body': 'veryBigBody',
+	     'Owner': 'prodMan', 'OwnerDN': '/ca=man/user=prodMan', 'OwnerGroup': 'prodMans'}
 sOkJobDict = {'OK': True, 'Value': {'JobDictionary': {123: 'foo', 456: 'bar'}}}
 sOkJobs = {'OK': True, 'Value': {123: 'foo', 456: 'bar'}}
 
@@ -163,11 +145,11 @@ def test_submitTasks(mocker,
   tm_mock.prepareTransformationTasks.return_value = tmMockPrepareTransformationTasksReturnValue
   tm_mock.submitTransformationTasks.return_value = tmMockSubmitTransformationTasksReturnValue
   tm_mock.updateDBAfterTaskSubmission.return_value = tmMockUpdateDBAfterTaskSubmissionReturnValue
-  res = tmab.submitTasks(transIDOPBody, clients)
+  res = tmab.submitTasks(transDict, clients)
   assert res['OK'] == expected
   tmab.maxParametricJobs = 10
   tmab.bulkSubmissionFlag = True
-  res = tmab.submitTasks(transIDOPBody, clients)
+  res = tmab.submitTasks(transDict, clients)
   assert res['OK'] == expected
 
 

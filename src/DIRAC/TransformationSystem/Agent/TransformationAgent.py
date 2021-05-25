@@ -69,7 +69,6 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     self.unusedTimeStamp = {}
 
     self.debug = False
-    self.transInThread = {}
     self.pluginTimeout = {}
 
   def initialize(self):
@@ -162,7 +161,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
       try:
 	future.result()
       except Exception as exc:
-	self._logERROR('%d generated an exception: %s' % (transID, exc))
+	self._logError('%d generated an exception: %s' % (transID, exc))
       else:
 	self._logInfo('Processed %d' % transID)
 

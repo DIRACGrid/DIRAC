@@ -34,7 +34,7 @@ class PluginUtilities(object):
   """
 
   def __init__(self, plugin='Standard', transClient=None, dataManager=None, fc=None,
-               debug=False, transInThread=None, transID=None):
+	       debug=False, transID=None):
     """
     c'tor
 
@@ -57,28 +57,22 @@ class PluginUtilities(object):
     self.dmsHelper = DMSHelpers()
 
     self.plugin = plugin
-    self.transID = transID
+    self.transID = str(transID) if transID else 'None'
     self.params = {}
     self.groupSize = 0
     self.maxFiles = 0
     self.cachedLFNSize = {}
     self.transString = ''
     self.debug = debug
-    if transInThread is None:
-      self.transInThread = {}
-    else:
-      self.transInThread = transInThread
 
-    self.log = gLogger.getSubLogger(self.plugin +
-                                    self.transInThread.get(self.transID, ' [NoThread] [%s] ' % self.transID))
+    self.log = gLogger.getSubLogger(self.plugin + self.transID)
     # FIXME: This doesn't work (yet) but should soon, will allow scripts to get the context
     self.log.showHeaders(True)
 
   def logVerbose(self, message, param=''):
     """ logger helper """
     if self.debug:
-      log = gLogger.getSubLogger(self.plugin + ' (V)' +
-                                 self.transInThread.get(self.transID, ' [NoThread] [%d] ' % self.transID))
+      log = gLogger.getSubLogger(self.plugin + ' (V)' + self.transID)
       log.info(message, param)
     else:
       self.log.verbose(message, param)
@@ -106,9 +100,8 @@ class PluginUtilities(object):
   def setParameters(self, params):
     """ Set the transformation parameters and extract transID """
     self.params = params
-    self.transID = params['TransformationID']
-    self.log = gLogger.getSubLogger(self.plugin +
-                                    self.transInThread.get(self.transID, ' [NoThread] [%d] ' % self.transID))
+    self.transID = str(params['TransformationID'])
+    self.log = gLogger.getSubLogger(self.plugin + self.transID)
 
   # @timeThis
   def groupByReplicas(self, files, status):

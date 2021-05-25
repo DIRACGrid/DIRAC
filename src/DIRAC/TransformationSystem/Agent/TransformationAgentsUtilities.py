@@ -20,7 +20,6 @@ class TransformationAgentsUtilities(object):
   def __init__(self):
     """ c'tor
     """
-    self.transInThread = {}
     self.debug = False
 
   def __prefixForLogging(self, transID, method, reftime):
@@ -28,7 +27,7 @@ class TransformationAgentsUtilities(object):
     if reftime is not None:
       method += " (%.1f seconds)" % (time.time() - reftime)
     try:
-      return self.transInThread.get(transID, ' [None] [%s] ' % transID) + AGENT_NAME + '.' + method
+      return '[%s] ' % transID + AGENT_NAME + '.' + method
     except NameError:
       return ''
 
