@@ -18,7 +18,7 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import six
-from six.moves.queue import Queue
+import concurrent.futures
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.AccountingSystem.Client.Types.Job import Job
@@ -26,7 +26,6 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Time import fromString, toEpoch, dateTime, second
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -52,7 +51,6 @@ class StalledJobAgent(AgentModule):
     self.rescheduledTime = 600
     self.submittingTime = 300
     self.stalledJobsTolerantSites = []
-    self.jobsQueue = Queue()
 
   #############################################################################
   def initialize(self):
@@ -65,12 +63,9 @@ class StalledJobAgent(AgentModule):
       self.log.info('Stalled Job Agent running in disabled mode')
 
     # setting up the threading
-    maxNumberOfThreads = self.am_getOption('MaxNumberOfThreads', 15)
-    threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
-    self.log.verbose("Multithreaded with %d threads" % maxNumberOfThreads)
-
-    for _ in range(maxNumberOfThreads):
-      threadPool.generateJobAndQueueIt(self._execute)
+    maxNumberOfThreads = self.am_getOption('maxThreadsInPool', 15)
+    self.log.info("Multithreaded with %d threads" % maxNumberOfThreads)
+    self.threadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=maxNumberOfThreads)
 
     return S_OK()
 
@@ -110,6 +105,7 @@ class StalledJobAgent(AgentModule):
         'Stalling for more than %d sec' % self.failedTime)
 
     # Now we are getting what's going to be checked
+    futures = []
 
     # 1) Queueing the jobs that might be marked Stalled
     # This is the minimum time we wait for declaring a job Stalled, therefore it is safe
@@ -125,9 +121,11 @@ class StalledJobAgent(AgentModule):
       self.log.info('%s jobs will be checked for being stalled' % ' & '.join(checkedStatuses),
                     '(n=%d, heartbeat before %s)' % (len(jobs), str(checkTime)))
       for job in jobs:
-        self.jobsQueue.put('%s:_markStalledJobs' % job)
+	future = self.threadPoolExecutor.submit(
+	    self._execute, '%s:_markStalledJobs' % job)
+	futures.append(future)
 
-    # 2) Queueing the Stalled jobs that might be marked Failed
+    # 2) fail Stalled Jobs
     result = self.jobDB.selectJobs({'Status': JobStatus.STALLED})
     if not result['OK']:
       self.log.error("Issue selecting Stalled jobs", result['Message'])
@@ -135,7 +133,9 @@ class StalledJobAgent(AgentModule):
       jobs = sorted(result['Value'])
       self.log.info('Jobs Stalled will be checked for failure', '(n=%d)' % len(jobs))
       for job in jobs:
-        self.jobsQueue.put('%s:_failStalledJobs' % job)
+	future = self.threadPoolExecutor.submit(
+	    self._execute, '%s:_failStalledJobs' % job)
+	futures.append(future)
 
     # 3) Send accounting
     for minor in self.minorStalledStatuses:
@@ -146,7 +146,15 @@ class StalledJobAgent(AgentModule):
         jobs = result['Value']
         self.log.info('Stalled jobs will be Accounted', '(n=%d)' % (len(jobs)))
         for job in jobs:
-          self.jobsQueue.put('%s:_sendAccounting' % job)
+	  future = self.threadPoolExecutor.submit(
+	      self._execute, '%s:_sendAccounting' % job)
+	  futures.append(future)
+
+    for future in concurrent.futures.as_completed(futures):
+      try:
+	future.result()
+      except Exception as exc:
+	self.log.error('_execute generated an exception: %s' % exc)
 
     # From here on we don't use the threads
 
@@ -162,18 +170,25 @@ class StalledJobAgent(AgentModule):
 
     return S_OK()
 
-  def _execute(self):
+  def finalize(self):
+    """ graceful finalization
+    """
+
+    self.log.info("Wait for threads to get empty before terminating the agent")
+    self.threadPoolExecutor.shutdown()
+    self.log.info("Threads are empty, terminating the agent...")
+    return S_OK()
+
+  def _execute(self, job_Op):
     """
     Doing the actual job. This is run inside the threads
     """
-    while True:
-      job_Op = self.jobsQueue.get()
-      jobID, jobOp = job_Op.split(':')
-      jobID = int(jobID)
-      res = getattr(self, '%s' % jobOp)(jobID)
-      if not res['OK']:
-        self.log.error("Failure executing %s" % jobOp,
-                       "on %d: %s" % (jobID, res['Message']))
+    jobID, jobOp = job_Op.split(':')
+    jobID = int(jobID)
+    res = getattr(self, '%s' % jobOp)(jobID)
+    if not res['OK']:
+      self.log.error("Failure executing %s" % jobOp,
+		     "on %d: %s" % (jobID, res['Message']))
 
   #############################################################################
   def _markStalledJobs(self, jobID):

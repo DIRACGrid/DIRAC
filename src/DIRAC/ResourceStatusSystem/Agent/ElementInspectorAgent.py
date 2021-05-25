@@ -194,9 +194,7 @@ class ElementInspectorAgent(AgentModule):
     """ graceful finalization
     """
 
-    method = 'finalize'
-    self._logInfo("Wait for threads to get empty before terminating the agent", method=method)
+    self.log.info("Wait for threads to get empty before terminating the agent")
     self.threadPoolExecutor.shutdown()
-    self._logInfo("Threads are empty, terminating the agent...", method=method)
-    self.__writeCache()
+    self.log.info("Threads are empty, terminating the agent...")
     return S_OK()
