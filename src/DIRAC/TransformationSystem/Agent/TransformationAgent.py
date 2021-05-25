@@ -159,11 +159,11 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     for future in concurrent.futures.as_completed(future_to_transID):
       transID = future_to_transID[future]
       try:
-	future.result()
+        future.result()
       except Exception as exc:
-	self._logError('%d generated an exception: %s' % (transID, exc))
+        self._logError('%d generated an exception: %s' % (transID, exc))
       else:
-	self._logInfo('Processed %d' % transID)
+        self._logInfo('Processed %d' % transID)
 
     return S_OK()
 
@@ -219,12 +219,12 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
       startTime = time.time()
       res = self.processTransformation(transDict, clients)
       if not res['OK']:
-	self._logInfo("Failed to process transformation:", res['Message'], transID=transID)
+        self._logInfo("Failed to process transformation:", res['Message'], transID=transID)
     except Exception as x:  # pylint: disable=broad-except
       self._logException('Exception in plugin', lException=x, transID=transID)
     finally:
       if not transID:
-	transID = 'None'
+        transID = 'None'
       self._logInfo("Processed transformation in %.1f seconds" % (time.time() - startTime), transID=transID)
 
     self._logDebug('Exiting _execute')

@@ -125,19 +125,19 @@ class ElementInspectorAgent(AgentModule):
       if elemDict['TokenOwner'] != 'rs_svc':
         self.log.verbose('Skipping %s ( %s ) with token %s' % (elemDict['Name'],
                                                                elemDict['StatusType'],
-							       elemDict['TokenOwner']))
-	continue
+                                                               elemDict['TokenOwner']))
+        continue
 
       # if we are here, we process the current element
       self.log.verbose('%s # "%s" # "%s" # %s # %s' % (elemDict['Name'],
-						       elemDict['ElementType'],
-						       elemDict['StatusType'],
-						       elemDict['Status'],
-						       elemDict['LastCheckTime']))
+                                                       elemDict['ElementType'],
+                                                       elemDict['StatusType'],
+                                                       elemDict['Status'],
+                                                       elemDict['LastCheckTime']))
       lowerElementDict = {'element': self.elementType}
       for key, value in elemDict.items():
-	if len(key) >= 2:  # VO !
-	  lowerElementDict[key[0].lower() + key[1:]] = value
+        if len(key) >= 2:  # VO !
+          lowerElementDict[key[0].lower() + key[1:]] = value
       # We process lowerElementDict
       future = self.threadPoolExecutor.submit(self._execute, lowerElementDict)
       future_to_element[future] = elemDict['Name']
@@ -145,11 +145,11 @@ class ElementInspectorAgent(AgentModule):
     for future in concurrent.futures.as_completed(future_to_element):
       transID = future_to_element[future]
       try:
-	future.result()
+        future.result()
       except Exception as exc:
-	self._logError('%d generated an exception: %s' % (transID, exc))
+        self.log.error('%d generated an exception: %s' % (transID, exc))
       else:
-	self._logInfo('Processed %d' % transID)
+        self.log.info('Processed', transID)
 
     return S_OK()
 
@@ -161,11 +161,11 @@ class ElementInspectorAgent(AgentModule):
     pep = PEP(clients=self.clients)
 
     self.log.verbose(
-	'%s ( VO=%s / status=%s / statusType=%s ) being processed' % (
-	    element['name'],
-	    element['vO'],
-	    element['status'],
-	    element['statusType']))
+        '%s ( VO=%s / status=%s / statusType=%s ) being processed' % (
+            element['name'],
+            element['vO'],
+            element['status'],
+            element['statusType']))
 
     try:
       res = pep.enforce(element)
@@ -185,10 +185,10 @@ class ElementInspectorAgent(AgentModule):
 
     if oldStatus != newStatus:
       self.log.info('%s (%s) is now %s ( %s ), before %s' % (element['name'],
-							     statusType,
-							     newStatus,
-							     reason,
-							     oldStatus))
+                                                             statusType,
+                                                             newStatus,
+                                                             reason,
+                                                             oldStatus))
 
   def finalize(self):
     """ graceful finalization

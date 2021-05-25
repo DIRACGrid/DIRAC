@@ -34,7 +34,7 @@ class PluginUtilities(object):
   """
 
   def __init__(self, plugin='Standard', transClient=None, dataManager=None, fc=None,
-	       debug=False, transID=None):
+               debug=False, transID=None):
     """
     c'tor
 

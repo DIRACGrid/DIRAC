@@ -63,7 +63,7 @@ class StalledJobAgent(AgentModule):
       self.log.info('Stalled Job Agent running in disabled mode')
 
     # setting up the threading
-    maxNumberOfThreads = self.am_getOption('maxThreadsInPool', 15)
+    maxNumberOfThreads = self.am_getOption('MaxNumberOfThreads', 15)
     self.log.info("Multithreaded with %d threads" % maxNumberOfThreads)
     self.threadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=maxNumberOfThreads)
 
@@ -121,9 +121,9 @@ class StalledJobAgent(AgentModule):
       self.log.info('%s jobs will be checked for being stalled' % ' & '.join(checkedStatuses),
                     '(n=%d, heartbeat before %s)' % (len(jobs), str(checkTime)))
       for job in jobs:
-	future = self.threadPoolExecutor.submit(
-	    self._execute, '%s:_markStalledJobs' % job)
-	futures.append(future)
+        future = self.threadPoolExecutor.submit(
+            self._execute, '%s:_markStalledJobs' % job)
+        futures.append(future)
 
     # 2) fail Stalled Jobs
     result = self.jobDB.selectJobs({'Status': JobStatus.STALLED})
@@ -133,9 +133,9 @@ class StalledJobAgent(AgentModule):
       jobs = sorted(result['Value'])
       self.log.info('Jobs Stalled will be checked for failure', '(n=%d)' % len(jobs))
       for job in jobs:
-	future = self.threadPoolExecutor.submit(
-	    self._execute, '%s:_failStalledJobs' % job)
-	futures.append(future)
+        future = self.threadPoolExecutor.submit(
+            self._execute, '%s:_failStalledJobs' % job)
+        futures.append(future)
 
     # 3) Send accounting
     for minor in self.minorStalledStatuses:
@@ -146,15 +146,15 @@ class StalledJobAgent(AgentModule):
         jobs = result['Value']
         self.log.info('Stalled jobs will be Accounted', '(n=%d)' % (len(jobs)))
         for job in jobs:
-	  future = self.threadPoolExecutor.submit(
-	      self._execute, '%s:_sendAccounting' % job)
-	  futures.append(future)
+          future = self.threadPoolExecutor.submit(
+              self._execute, '%s:_sendAccounting' % job)
+          futures.append(future)
 
     for future in concurrent.futures.as_completed(futures):
       try:
-	future.result()
+        future.result()
       except Exception as exc:
-	self.log.error('_execute generated an exception: %s' % exc)
+        self.log.error('_execute generated an exception: %s' % exc)
 
     # From here on we don't use the threads
 
@@ -188,7 +188,7 @@ class StalledJobAgent(AgentModule):
     res = getattr(self, '%s' % jobOp)(jobID)
     if not res['OK']:
       self.log.error("Failure executing %s" % jobOp,
-		     "on %d: %s" % (jobID, res['Message']))
+                     "on %d: %s" % (jobID, res['Message']))
 
   #############################################################################
   def _markStalledJobs(self, jobID):

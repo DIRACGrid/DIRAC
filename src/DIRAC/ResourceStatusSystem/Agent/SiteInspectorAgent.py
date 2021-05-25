@@ -107,22 +107,22 @@ class SiteInspectorAgent(AgentModule):
       # This if-clause skips all the elements that should not be checked yet
       timeToNextCheck = self.__checkingFreqs[siteDict['Status']]
       if utcnow <= siteDict['LastCheckTime'] + datetime.timedelta(minutes=timeToNextCheck):
-	continue
+        continue
 
       # We skip the elements with token different than "rs_svc"
       if siteDict['TokenOwner'] != 'rs_svc':
-	self.log.verbose('Skipping %s ( %s ) with token %s' % (siteDict['Name'],
-							       siteDict['TokenOwner']))
-	continue
+        self.log.verbose('Skipping %s with token %s' % (siteDict['Name'],
+                                                        siteDict['TokenOwner']))
+        continue
 
       # if we are here, we process the current element
-      self.log.verbose('%s # "%s" # "%s" # %s # %s' % (siteDict['Name'],
-						       siteDict['Status'],
-						       siteDict['LastCheckTime']))
+      self.log.verbose('"%s" # %s # %s' % (siteDict['Name'],
+                                           siteDict['Status'],
+                                           siteDict['LastCheckTime']))
       lowerElementDict = {}
       for key, value in siteDict.items():
-	if len(key) >= 2:  # VO !
-	  lowerElementDict[key[0].lower() + key[1:]] = value
+        if len(key) >= 2:  # VO !
+          lowerElementDict[key[0].lower() + key[1:]] = value
       # We process lowerElementDict
       future = self.threadPoolExecutor.submit(self._execute, lowerElementDict)
       future_to_element[future] = siteDict['Name']
@@ -130,11 +130,11 @@ class SiteInspectorAgent(AgentModule):
     for future in concurrent.futures.as_completed(future_to_element):
       transID = future_to_element[future]
       try:
-	future.result()
+        future.result()
       except Exception as exc:
-	self._logError('%d generated an exception: %s' % (transID, exc))
+        self.log.error('%d generated an exception: %s' % (transID, exc))
       else:
-	self._logInfo('Processed %d' % transID)
+        self.log.info('Processed', transID)
 
     return S_OK()
 
@@ -147,10 +147,10 @@ class SiteInspectorAgent(AgentModule):
     pep = PEP(clients=self.clients)
 
     self.log.verbose(
-	'%s ( status=%s / statusType=%s ) being processed' % (
-	    site['name'],
-	    site['status'],
-	    site['statusType']))
+        '%s ( status=%s / statusType=%s ) being processed' % (
+            site['name'],
+            site['status'],
+            site['statusType']))
 
     try:
       res = pep.enforce(site)
@@ -170,10 +170,10 @@ class SiteInspectorAgent(AgentModule):
 
     if oldStatus != newStatus:
       self.log.info('%s (%s) is now %s ( %s ), before %s' % (site['name'],
-							     statusType,
-							     newStatus,
-							     reason,
-							     oldStatus))
+                                                             statusType,
+                                                             newStatus,
+                                                             reason,
+                                                             oldStatus))
 
   def finalize(self):
     """ graceful finalization

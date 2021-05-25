@@ -63,7 +63,7 @@ class MyProxyRenewalAgent(AgentModule):
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
       futures = []
       for record in data:
-	userDN = record[0]
-	userGroup = record[1]
-	futures.append(executor.submit(self.__renewProxyForCredentials, userDN, userGroup))
+        userDN = record[0]
+        userGroup = record[1]
+        futures.append(executor.submit(self.__renewProxyForCredentials, userDN, userGroup))
     return S_OK()

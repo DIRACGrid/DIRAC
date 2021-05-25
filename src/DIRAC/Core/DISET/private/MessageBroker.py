@@ -171,8 +171,8 @@ class MessageBroker(object):
     if not result['OK']:
       self.__log.debug("[trid %s] ERROR RCV DATA %s" % (trid, result['Message']))
       gLogger.warn("Error while receiving message",
-		   "from %s : %s" % (self.__trPool.get(trid).getFormattedCredentials(),
-				     result['Message']))
+                   "from %s : %s" % (self.__trPool.get(trid).getFormattedCredentials(),
+                                     result['Message']))
       return self.removeTransport(trid)
     self.__threadPool.submit(self.__processIncomingData, trid, result)
     return S_OK()

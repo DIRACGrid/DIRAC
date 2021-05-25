@@ -65,12 +65,12 @@ def test_updateTaskStatusSuccess(mocker, tcMockReturnValue, tmMockGetSubmittedTa
 
 @pytest.mark.parametrize(
     "tcMockGetTransformationFilesReturnValue, tmMockGetSubmittedFileStatusReturnValue, expected", [
-	(sError, None, False),  # errors
-	(sOk, None, True),  # no files
-	({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]}, sError, False),  # files, failing to update
-	({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]}, sOk, True),  # files, nothing to update
-	({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]},
-	 {'OK': True, 'Value': {'file1': 'OK', 'file2': 'NOK'}}, True),  # files, something to update
+        (sError, None, False),  # errors
+        (sOk, None, True),  # no files
+        ({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]}, sError, False),  # files, failing to update
+        ({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]}, sOk, True),  # files, nothing to update
+        ({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]},
+         {'OK': True, 'Value': {'file1': 'OK', 'file2': 'NOK'}}, True),  # files, something to update
     ])
 def test_updateFileStatusSuccess(mocker,
                                  tcMockGetTransformationFilesReturnValue,
@@ -115,7 +115,7 @@ def test_checkReservedTasks(mocker,
 
 
 transDict = {'TransformationID': 1, 'Operations': ['op1', 'op2'], 'Body': 'veryBigBody',
-	     'Owner': 'prodMan', 'OwnerDN': '/ca=man/user=prodMan', 'OwnerGroup': 'prodMans'}
+             'Owner': 'prodMan', 'OwnerDN': '/ca=man/user=prodMan', 'OwnerGroup': 'prodMans'}
 sOkJobDict = {'OK': True, 'Value': {'JobDictionary': {123: 'foo', 456: 'bar'}}}
 sOkJobs = {'OK': True, 'Value': {123: 'foo', 456: 'bar'}}
 

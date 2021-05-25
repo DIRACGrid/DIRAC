@@ -1040,12 +1040,12 @@ class AccountingDB(DB):
     if groupFields:
       try:
         groupFields[0] % tuple(groupFields[1])
-	# We can have the case when we have multiple grouping and the fields in the select
-	# does not much the group by conditions
+        # We can have the case when we have multiple grouping and the fields in the select
+        # does not much the group by conditions
         # for example: selectFields = ('%s, %s, %s, SUM(%s)', ['Site', 'startTime', 'bucketLength', 'entriesInBucket'])
         #             groupFields = ('%s, %s', ['startTime', 'Site'])
-	#             in this case the correct query must be: select Site, startTime, bucketlength,
-	#                               sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
+        #             in this case the correct query must be: select Site, startTime, bucketlength,
+        #                               sum(entriesInBucket) from xxxx where yyy Group by Site, startTime, bucketlength
         #
         # When we have multiple grouping then we must have all the fields in Group by. This is from mysql 5.7.
         # We have fields which are not in the groupFields and it is in selectFields
@@ -1245,7 +1245,7 @@ class AccountingDB(DB):
       # Retrieve the data
       retVal = self.__selectForCompactBuckets(typeName, timeLimit, bucketLength, nextBucketLength)
       if not retVal['OK']:
-	# self.__rollbackTransaction( connObj )
+        # self.__rollbackTransaction( connObj )
         return retVal
       bucketsData = retVal['Value']
       self.log.info("[COMPACT] Got %d records to compact" % len(bucketsData))
@@ -1253,7 +1253,7 @@ class AccountingDB(DB):
         continue
       retVal = self.__deleteForCompactBuckets(typeName, timeLimit, bucketLength)
       if not retVal['OK']:
-	# self.__rollbackTransaction( connObj )
+        # self.__rollbackTransaction( connObj )
         return retVal
       self.log.info(
           "[COMPACT] Compacting %s records %s seconds size for %s" %
@@ -1265,7 +1265,7 @@ class AccountingDB(DB):
         valuesList = record[:-2]
         retVal = self.__splitInBuckets(typeName, startTime, endTime, valuesList)
         if not retVal['OK']:
-	  # self.__rollbackTransaction( connObj )
+          # self.__rollbackTransaction( connObj )
           self.log.error("[COMPACT] Error while compacting data for record", "%s: %s" % (typeName, retVal['Value']))
       self.log.info("[COMPACT] Finished compaction %d of %d" % (bPos, len(self.dbBucketsLength[typeName]) - 1))
     # return self.__commitTransaction( connObj )
@@ -1297,7 +1297,7 @@ class AccountingDB(DB):
         result = self.__selectIndividualForCompactBuckets(typeName, timeLimit, bucketLength,
                                                           querySize)
         if not result['OK']:
-	  # self.__rollbackTransaction( connObj )
+          # self.__rollbackTransaction( connObj )
           return result
         bucketsData = result['Value']
         previousRecordsSelected = len(bucketsData)
@@ -1310,7 +1310,7 @@ class AccountingDB(DB):
 
         result = self.__deleteIndividualForCompactBuckets(typeName, bucketsData)
         if not result['OK']:
-	  # self.__rollbackTransaction( connObj )
+          # self.__rollbackTransaction( connObj )
           return result
         bucketsData = result['Value']
         deleteEndTime = time.time()
@@ -1509,7 +1509,7 @@ class AccountingDB(DB):
       retVal = self._query(sqlQuery)
       if not retVal['OK']:
         self.log.error("[REBUCKET] Can't retrieve data for rebucketing", retVal['Message'])
-	# self.__rollbackTransaction( connObj )
+        # self.__rollbackTransaction( connObj )
         return retVal
       rawData = retVal['Value']
       self.log.info("[REBUCKET] Retrieved %s records" % len(rawData))
@@ -1523,7 +1523,7 @@ class AccountingDB(DB):
         values = entry[2:]
         retVal = self.__splitInBuckets(typeName, startT, endT, values)
         if not retVal['OK']:
-	  # self.__rollbackTransaction( connObj )
+          # self.__rollbackTransaction( connObj )
           return retVal
         rebucketedRecords += 1
         if rebucketedRecords % 1000 == 0:
