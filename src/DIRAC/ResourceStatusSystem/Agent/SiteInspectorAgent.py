@@ -16,8 +16,8 @@ from __future__ import print_function
 
 __RCSID__ = '$Id$'
 
-from six.moves import queue as Queue
-from concurrent.futures import ThreadPoolExecutor
+import datetime
+import concurrent.futures
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -51,8 +51,6 @@ class SiteInspectorAgent(AgentModule):
 
     AgentModule.__init__(self, *args, **kwargs)
 
-    # ElementType, to be defined among Site, Resource or Node
-    self.sitesToBeChecked = None
     self.siteClient = None
     self.clients = {}
 
@@ -77,44 +75,22 @@ class SiteInspectorAgent(AgentModule):
     self.clients['ResourceManagementClient'] = rmClass()
 
     maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', 15)
-    with ThreadPoolExecutor(max_workers=maxNumberOfThreads) as executor:
-      executor.map(self._execute, list(range(maxNumberOfThreads)))
+    self.log.info("Multithreaded with %d threads" % maxNumberOfThreads)
+    self.threadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=maxNumberOfThreads)
 
     return S_OK()
 
   def execute(self):
-    """ execute
-
-    This is the main method of the agent. It gets the sites from the Database, calculates how many threads should be
-    started and spawns them. Each thread will get a site from the queue until
-    it is empty. At the end, the method will join the queue such that the agent
-    will not terminate a cycle until all sites have been processed.
-
     """
-
-    # Gets sites to be checked ( returns a Queue )
-    sitesToBeChecked = self.getSitesToBeChecked()
-    if not sitesToBeChecked['OK']:
-      self.log.error("Failure getting sites to be checked", sitesToBeChecked['Message'])
-      return sitesToBeChecked
-    self.sitesToBeChecked = sitesToBeChecked['Value']
-
-    return S_OK()
-
-  def getSitesToBeChecked(self):
-    """ getElementsToBeChecked
-
-    This method gets all the site names from the SiteStatus table,
-    after that it get the details of each
-    site (status, name, etc..) and adds them to a queue.
-
+    It gets the sites from the Database which are eligible to be re-checked.
     """
-
-    toBeChecked = Queue.Queue()
 
     res = self.siteClient.getSites('All')
     if not res['OK']:
       return res
+
+    utcnow = datetime.datetime.utcnow().replace(microsecond=0)
+    future_to_element = {}
 
     # get the current status
     res = self.siteClient.getSiteStatuses(res['Value'])
@@ -123,56 +99,89 @@ class SiteInspectorAgent(AgentModule):
 
     # filter elements
     for site in res['Value']:
-      status = res['Value'].get(site, 'Unknown')
 
-      toBeChecked.put({'status': status,
-                       'name': site,
-                       'site': site,
-                       'element': 'Site',
-                       'statusType': 'all',
-                       'elementType': 'Site'})
+      # Maybe an overkill, but this way I have NEVER again to worry about order
+      # of elements returned by mySQL on tuples
+      siteDict = dict(zip(res['Columns'], site))
 
-    return S_OK(toBeChecked)
+      # This if-clause skips all the elements that should not be checked yet
+      timeToNextCheck = self.__checkingFreqs[siteDict['Status']]
+      if utcnow <= siteDict['LastCheckTime'] + datetime.timedelta(minutes=timeToNextCheck):
+	continue
 
-  def _execute(self):
+      # We skip the elements with token different than "rs_svc"
+      if siteDict['TokenOwner'] != 'rs_svc':
+	self.log.verbose('Skipping %s ( %s ) with token %s' % (siteDict['Name'],
+							       siteDict['TokenOwner']))
+	continue
+
+      # if we are here, we process the current element
+      self.log.verbose('%s # "%s" # "%s" # %s # %s' % (siteDict['Name'],
+						       siteDict['Status'],
+						       siteDict['LastCheckTime']))
+      lowerElementDict = {}
+      for key, value in siteDict.items():
+	if len(key) >= 2:  # VO !
+	  lowerElementDict[key[0].lower() + key[1:]] = value
+      # We process lowerElementDict
+      future = self.threadPoolExecutor.submit(self._execute, lowerElementDict)
+      future_to_element[future] = siteDict['Name']
+
+    for future in concurrent.futures.as_completed(future_to_element):
+      transID = future_to_element[future]
+      try:
+	future.result()
+      except Exception as exc:
+	self._logError('%d generated an exception: %s' % (transID, exc))
+      else:
+	self._logInfo('Processed %d' % transID)
+
+    return S_OK()
+
+  def _execute(self, site):
     """
-      Method run by each of the thread that is in the ThreadPool.
-      It enters a loop until there are no sites on the queue.
-
-      On each iteration, it evaluates the policies for such site
-      and enforces the necessary actions.
+    Method run by each of the thread that is in the ThreadPool.
+    It evaluates the policies for such site and enforces the necessary actions.
     """
 
     pep = PEP(clients=self.clients)
 
-    while True:
-      site = self.sitesToBeChecked.get()
-      self.log.verbose(
-	  '%s ( VO=%s / status=%s / statusType=%s ) being processed' % (
-	      site['name'],
-	      site['vO'],
-	      site['status'],
-	      site['statusType']))
+    self.log.verbose(
+	'%s ( status=%s / statusType=%s ) being processed' % (
+	    site['name'],
+	    site['status'],
+	    site['statusType']))
 
-      try:
-        resEnforce = pep.enforce(site)
-      except Exception:
-        self.log.exception('Exception during enforcement')
-	resEnforce = S_ERROR('Exception during enforcement')
-      if not resEnforce['OK']:
-	self.log.error('Failed policy enforcement', resEnforce['Message'])
-	continue
+    try:
+      res = pep.enforce(site)
+    except Exception:
+      self.log.exception('Exception during enforcement')
+      res = S_ERROR('Exception during enforcement')
+    if not res['OK']:
+      self.log.error('Failed policy enforcement', res['Message'])
+      return res
 
-      resEnforce = resEnforce['Value']
+    resEnforce = res['Value']
 
-      oldStatus = resEnforce['decisionParams']['status']
-      statusType = resEnforce['decisionParams']['statusType']
-      newStatus = resEnforce['policyCombinedResult']['Status']
-      reason = resEnforce['policyCombinedResult']['Reason']
+    oldStatus = resEnforce['decisionParams']['status']
+    statusType = resEnforce['decisionParams']['statusType']
+    newStatus = resEnforce['policyCombinedResult']['Status']
+    reason = resEnforce['policyCombinedResult']['Reason']
 
-      if oldStatus != newStatus:
-	self.log.info('%s (%s) is now %s ( %s ), before %s' % (site['name'],
-							       statusType,
-							       newStatus,
-							       reason,
-							       oldStatus))
+    if oldStatus != newStatus:
+      self.log.info('%s (%s) is now %s ( %s ), before %s' % (site['name'],
+							     statusType,
+							     newStatus,
+							     reason,
+							     oldStatus))
+
+  def finalize(self):
+    """ graceful finalization
+    """
+
+    method = 'finalize'
+    self._logInfo("Wait for threads to get empty before terminating the agent", method=method)
+    self.threadPoolExecutor.shutdown()
+    self._logInfo("Threads are empty, terminating the agent...", method=method)
+    self.__writeCache()
+    return S_OK()
