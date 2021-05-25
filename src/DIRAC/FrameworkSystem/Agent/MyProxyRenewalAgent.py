@@ -7,11 +7,12 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import concurrent.futures
+
 from DIRAC import gLogger, S_OK
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
 class MyProxyRenewalAgent(AgentModule):
 
@@ -26,7 +27,6 @@ class MyProxyRenewalAgent(AgentModule):
     gLogger.info("MyProxy server         : %s" % self.proxyDB.getMyProxyServer())
     gLogger.info("MyProxy max proxy time : %s" % self.proxyDB.getMyProxyMaxLifeTime())
 
-    self.__threadPool = ThreadPool(1, 10)
     return S_OK()
 
   def __renewProxyForCredentials(self, userDN, userGroup):
@@ -60,11 +60,10 @@ class MyProxyRenewalAgent(AgentModule):
       return retVal
     data = retVal['Value']
     gLogger.info("Renewing %s proxies..." % len(data))
-    for record in data:
-      userDN = record[0]
-      userGroup = record[1]
-      self.__threadPool.generateJobAndQueueIt(self.__renewProxyForCredentials,
-                                              args=(userDN, userGroup),
-                                              oExceptionCallback=self.__treatRenewalCallback)
-    self.__threadPool.processAllResults()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+      futures = []
+      for record in data:
+	userDN = record[0]
+	userGroup = record[1]
+	futures.append(executor.submit(self.__renewProxyForCredentials, userDN, userGroup))
     return S_OK()
