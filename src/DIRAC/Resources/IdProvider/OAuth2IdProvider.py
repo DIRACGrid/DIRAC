@@ -147,6 +147,17 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       data = self.get(self.server_metadata_url, withhold_token=True).json()
       self.metadata.update(data)
       self.metadata_fetch_last = time.time()
+  
+  def updateJWKs(self):
+    """ Update JWKs
+    """
+    try:
+      response = requests.get(get_metadata('jwks_uri'), verify=self.verify)
+      response.raise_for_status()
+      self.jwks = response.json()
+      return S_OK(self.jwks)
+    except requests.exceptions.RequestException as e:
+      return S_ERROR("Error %s" % e)
 
   def researchGroup(self, payload, token):
     """ Research group

@@ -47,9 +47,9 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURLs, getGatew
 
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.TokenFile import readTokenFromFile
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import readTokenFromFile
 
 
 # TODO CHRIS: refactor all the messy `discover` methods

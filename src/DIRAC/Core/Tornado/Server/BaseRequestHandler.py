@@ -10,8 +10,7 @@ __RCSID__ = "$Id$"
 from io import open
 
 import os
-import jwt as _jwt
-from authlib.jose import JsonWebKey, jwt
+import jwt
 import time
 import requests
 import threading
@@ -35,7 +34,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProvidersForInstance
+from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 
 sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
@@ -657,7 +656,7 @@ class BaseRequestHandler(RequestHandler):
         return S_ERROR('Found a not bearer access token.')
 
     # Read token without verification to get issuer
-    issuer = _jwt.decode(accessToken, options=dict(verify_signature=False))['iss'].strip('/')
+    issuer = jwt.decode(accessToken, options=dict(verify_signature=False))['iss'].strip('/')
 
     # Verify token
     payload = self._idp[issuer].verifyToken(accessToken, self._jwks[issuer])

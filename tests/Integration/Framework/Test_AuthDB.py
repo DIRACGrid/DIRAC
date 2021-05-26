@@ -9,6 +9,9 @@ import time
 from authlib.jose import JsonWebKey, JsonWebSignature, jwt
 from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
 
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
+
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 
 db = AuthDB()

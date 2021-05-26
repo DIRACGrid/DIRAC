@@ -15,7 +15,7 @@ import jwt
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader, ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getProviderInfo, getSettingsNamesForIdPIssuer
+from DIRAC.Resources.IdProvider.Utilities import getProviderInfo, getSettingsNamesForIdPIssuer
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import DEFAULT_CLIENTS
 

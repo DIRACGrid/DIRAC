@@ -8,15 +8,18 @@ from time import time
 from pprint import pprint
 from authlib.jose import JsonWebSignature
 from authlib.oauth2.base import OAuth2Error
-from authlib.oauth2.rfc6749.grants import AuthorizationCodeGrant as _AuthorizationCodeGrant
 from authlib.oauth2.rfc7636 import CodeChallenge
+from authlib.oauth2.rfc6749.grants import AuthorizationCodeGrant as _AuthorizationCodeGrant
 from authlib.common.encoding import to_unicode, json_dumps, json_b64encode, urlsafe_b64decode, json_loads
 
 from DIRAC import gLogger, S_OK, S_ERROR
 
 
 class OAuth2Code(dict):
+  """ This class describe Authorization Code object """
+
   def __init__(self, params):
+    """ C'or """
     params['auth_time'] = params.get('auth_time', int(time()))
     super(OAuth2Code, self).__init__(params)
 

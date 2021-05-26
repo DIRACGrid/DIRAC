@@ -22,11 +22,11 @@ import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Security.TokenFile import writeTokenDictToTokenFile
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Security.TokenInfo import getTokenInfo, formatTokenInfoAsString
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (writeTokenDictToTokenFile,
+                                                                      getTokenInfo, formatTokenInfoAsString)
 
 __RCSID__ = "$Id$"
 
