@@ -5,6 +5,7 @@ M2Crypto==0.32
 Sphinx>=1.8.0
 boto3
 elasticsearch_dsl
+cachetools
 future
 futures
 matplotlib

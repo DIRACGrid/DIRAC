@@ -5,6 +5,7 @@ M2Crypto>=0.36
 Sphinx>=1.8.0
 docutils>=0.15
 boto3
+cachetools<4
 elasticsearch_dsl
 future
 futures
