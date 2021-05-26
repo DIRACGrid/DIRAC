@@ -130,3 +130,7 @@ class UserProfileClient(object):
     it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
     """
     return self.__getRPCClient().getUserProfileNames(permission)
+
+  def listStatesForWeb(self, permission={}):
+    rpcClient = self.__getRPCClient()
+    return rpcClient.listStatesForWeb(permission)
