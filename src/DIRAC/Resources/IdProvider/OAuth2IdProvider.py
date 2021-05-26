@@ -147,7 +147,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       data = self.get(self.server_metadata_url, withhold_token=True).json()
       self.metadata.update(data)
       self.metadata_fetch_last = time.time()
-  
+
   def updateJWKs(self):
     """ Update JWKs
     """
