@@ -132,5 +132,4 @@ class UserProfileClient(object):
     return self.__getRPCClient().getUserProfileNames(permission)
 
   def listStatesForWeb(self, permission={}):
-    rpcClient = self.__getRPCClient()
-    return rpcClient.listStatesForWeb(permission)
+    return self.__getRPCClient().listStatesForWeb(permission)
