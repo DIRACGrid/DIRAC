@@ -1116,9 +1116,15 @@ class FileManagerBase(object):
       return S_OK(files)
     fileIDNames = {}
     for fileName, fileDict in res['Value'].iteritems():
-      files[fileName] = {}
-      files[fileName]['MetaData'] = fileDict
-      fileIDNames[fileDict['FileID']] = fileName
+      try:
+        files[fileName] = {}
+        files[fileName]['MetaData'] = fileDict
+        fileIDNames[fileDict['FileID']] = fileName
+      except KeyError:
+        # If we return S_ERROR here, it gets treated as an empty directory in most cases
+        # and the user isn't actually warned
+        raise Exception("File entry for '%s' is corrupt (DirID %s), please contact the catalog administrator"
+                        % (fileName, dirID))
 
     if verbose:
       result = self._getFileReplicas(fileIDNames.keys(), connection=connection)
