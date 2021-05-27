@@ -152,7 +152,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     """ Update JWKs
     """
     try:
-      response = requests.get(get_metadata('jwks_uri'), verify=self.verify)
+      response = requests.get(self.get_metadata('jwks_uri'), verify=self.verify)
       response.raise_for_status()
       self.jwks = response.json()
       return S_OK(self.jwks)

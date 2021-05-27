@@ -119,6 +119,6 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
     gLogger.debug('Authorization code generated:', dict(code))
     result = self.server.db.getPrivateKey()
     if not result['OK']:
-      raise OAuth2Error('Cannot check authorization code: %s' % result['Message'])
+      raise OAuth2Error('Cannot generate authorization code: %s' % result['Message'])
     key = result['Value']['key']
     return jws.serialize_compact(protected, json_b64encode(dict(code)), key)

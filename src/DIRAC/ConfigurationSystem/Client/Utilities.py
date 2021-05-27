@@ -589,7 +589,7 @@ def getAuthorizationServerMetadata(issuer=None):
     return {'issuer': issuer} if issuer else result
   data = result['Value']
 
-  # Research DIRAC Authorization Server issuer
+  # Search DIRAC Authorization Server issuer
   data['issuer'] = data.get('issuer', issuer)
   if not data['issuer']:
     try:
@@ -606,4 +606,4 @@ def isDownloadablePersonalProxy():
       :return: S_OK(bool)/S_ERROR()
   """
   cs_path = '/Systems/Framework/%s/APIs/Auth' % getSystemInstance("Framework")
-  return gConfig.getOption(cs_path + '/downloadablePersonalProxy')
+  return gConfig.getValue(cs_path + '/downloadablePersonalProxy', "false").lower() in ("y", "yes", "true")

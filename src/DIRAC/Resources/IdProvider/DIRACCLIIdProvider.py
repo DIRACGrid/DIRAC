@@ -10,7 +10,7 @@ from DIRAC.FrameworkSystem.private.authorization.AuthServer import collectMetada
 __RCSID__ = "$Id$"
 
 
-class DIRACIdProvider(OAuth2IdProvider):
+class DIRACCLIIdProvider(OAuth2IdProvider):
 
   def fetch_metadata(self, url=None):
     """ Fetch metada
