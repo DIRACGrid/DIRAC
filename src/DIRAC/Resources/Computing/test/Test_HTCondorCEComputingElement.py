@@ -49,7 +49,7 @@ def test_parseCondorStatus():
                      "104098.3": "HELD",
                      "104098.4": "Unknown"}
 
-  for jobID, expected in expectedResults.iteritems():
+  for jobID, expected in expectedResults.items():
     assert HTCE.parseCondorStatus(statusLines, jobID) == expected
 
 

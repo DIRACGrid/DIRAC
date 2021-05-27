@@ -1,6 +1,8 @@
 """ Test ParallelLibraries
 """
-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import pytest
 import os
 from six.moves import reload_module
@@ -28,23 +30,34 @@ srunOutput = """
 3: line3
 """
 
-srunExpected = """
+srunExpected1 = """
 # On node 1
 
  line1
  line2
  line3
+"""
+
+
+srunExpected2 = """
 # On node 3
 
  line1
  line2
  line3
+"""
+
+
+srunExpected3 = """
 # On node 2
 
  line1
  line2
  line3
 """
+
+
+srunExpected = [srunExpected1, srunExpected2, srunExpected3]
 
 
 @pytest.fixture
@@ -98,12 +111,13 @@ def test_processOutput(generateParallelLibrary, parallelLibrary, parameters, out
   # We remove the '\n' at the beginning/end of the file because there are not present in reality
   outputContent = outputContent.strip()
   # We only remove the '\n' at the beginning because processOutput adds a '\n' at the end
-  expectedContent = expectedContent.lstrip()
+  expectedContent = [i.lstrip() for i in expectedContent]
 
   # In this case, we pass output content as a string to processOutput()
   # It returns a string
   output, error = parallelLibraryInstance.processOutput(outputContent, outputContent, isFile=False)
-  assert output == expectedContent
+  for srunLines in expectedContent:
+    assert srunLines in output
 
   outputFile = 'output.txt'
   with open(outputFile, 'w') as f:
@@ -120,7 +134,8 @@ def test_processOutput(generateParallelLibrary, parallelLibrary, parameters, out
 
   with open(outputFile, 'r') as f:
     wrapperContent = f.read()
-  assert wrapperContent == expectedContent
+  for srunLines in expectedContent:
+    assert srunLines in wrapperContent
 
   os.remove(outputFile)
   os.remove(errorFile)

@@ -21,6 +21,9 @@ WorkingDirectory:
    Indicates where the parallel library wrapper script has to be defined and retrieved.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from DIRAC import gLogger
 
 

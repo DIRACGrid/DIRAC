@@ -3,6 +3,9 @@
 Allow to wrap a job/pilot into a srun call that will execute n similar tasks in parallel.
 To work, srun needs to be used in conjonction with Slurm.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import os
 import stat
 from six.moves import shlex_quote
