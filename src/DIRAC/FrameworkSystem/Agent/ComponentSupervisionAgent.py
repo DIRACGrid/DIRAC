@@ -100,6 +100,7 @@ class ComponentSupervisionAgent(AgentModule):
     self.agents = dict()
     self.executors = dict()
     self.services = dict()
+    self._tornadoPort = '8443'
     self.errors = list()
     self.accounting = defaultdict(dict)
 
@@ -201,9 +202,12 @@ class ComponentSupervisionAgent(AgentModule):
           if runitStatus != 'All' and componentInfo['RunitStatus'] != runitStatus:
             continue
           confPath = cfgPath('/Systems/' + system + '/' + self.setup + '/%s/' % instanceType + componentName)
-          for option, default in (('PollingTime', HOUR), ('Port', None)):
+          for option, default in (('PollingTime', HOUR), ('Port', None), ('Protocol', None)):
             optPath = os.path.join(confPath, option)
             runningComponents[componentName][option] = gConfig.getValue(optPath, default)
+            # remove empty values so we can use defaults in _getURL
+            if not runningComponents[componentName][option]:
+              runningComponents[componentName].pop(option)
           runningComponents[componentName]['LogFileLocation'] = \
               os.path.join(self.diracLocation, 'runit', system, componentName, 'log', 'current')
           runningComponents[componentName]['PID'] = componentInfo['PID']
@@ -495,6 +499,12 @@ class ComponentSupervisionAgent(AgentModule):
     self.log.info('Checking URLs')
     # get services again, in case they were started/stop in controlComponents
     gConfig.forceRefresh(fromMaster=True)
+
+    # get port used for https based services
+    tornadoPortConfigPath = os.path.join('/Systems/Tornado', self.setup, 'Port')
+    self._tornadoPort = gConfig.getValue(tornadoPortConfigPath, self._tornadoPort)
+    self.log.debug('Using Tornado Port:', self._tornadoPort)
+
     res = self.getRunningInstances(instanceType='Services', runitStatus='All')
     if not res['OK']:
       return S_ERROR('Failure to get running services')
@@ -539,11 +549,11 @@ class ComponentSupervisionAgent(AgentModule):
       self.accounting[serviceName + '/URL']['Treatment'] = message
       self.csAPI.modifyValue(urlsConfigPath, ','.join(urls))
 
-  @staticmethod
-  def _getURL(serviceName, options):
+  def _getURL(self, serviceName, options):
     """Return URL for the service."""
     system = options['System']
-    port = options['Port']
+    port = options.get('Port', self._tornadoPort)
     host = socket.gethostname()
-    url = 'dips://%s:%s/%s/%s' % (host, port, system, serviceName)
+    protocol = options.get('Protocol', 'dips')
+    url = '%s://%s:%s/%s/%s' % (protocol, host, port, system, serviceName)
     return url

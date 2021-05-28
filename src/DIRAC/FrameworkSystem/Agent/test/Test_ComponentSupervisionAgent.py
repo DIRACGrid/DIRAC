@@ -557,32 +557,41 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
   def test_checkURLs_1(self):
     """Success."""
+    theTornadoPort = '000043000'
     self.restartAgent.errors = []
     self.restartAgent.accounting.clear()
-    host = "foo.server"
+    host = 'foo.server'
+    prot = ['', 'dips', 'dips', 'https']
+    port = ['', '1001', '1002', theTornadoPort]
     urls, tempurls, newurls = [], [], []
     for i in [1, 2]:
-      urls.append('dips://%(host)s:100%(i)s/Sys/Serv%(i)s' % dict(i=i, host=host))
+      urls.append('%(prot)s://%(host)s:%(port)s/Sys/Serv%(i)s' % dict(i=i, host=host, port=port[i], prot=prot[i]))
     for i in [1]:
-      tempurls.append('dips://%(host)s:100%(i)s/Sys/Serv%(i)s' % dict(i=i, host=host))
+      tempurls.append('%(prot)s://%(host)s:%(port)s/Sys/Serv%(i)s' % dict(i=i, host=host, port=port[i], prot=prot[i]))
     for i in [1, 3]:
-      newurls.append('dips://%(host)s:100%(i)s/Sys/Serv%(i)s' % dict(i=i, host=host))
+      newurls.append('%(prot)s://%(host)s:%(port)s/Sys/Serv%(i)s' % dict(i=i, host=host, port=port[i], prot=prot[i]))
 
     def gVal(*args, **_kwargs):
       """Mock getValue."""
+      if 'Tornado' in args[0]:
+        return theTornadoPort
       if 'PollingTime' in args[0]:
         return 365
       if 'Port' in args[0]:
-        return '100' + args[0].rsplit('/Serv', 1)[1].split('/')[0]
+        return args[1] if 'Serv3' in args[0] else '100' + args[0].rsplit('/Serv', 1)[1].split('/')[0]
       if 'URLs' in args[0]:
         return urls
+      if 'Protocol' in args[0]:
+        return 'https' if 'Serv3' in args[0] else args[1]
+      else:
+        assert False, 'Unknown config option requested'
     gConfigMock = MagicMock()
     gConfigMock.getValue.side_effect = gVal
     services = {'Services': {'Sys': {'Serv1': {'Setup': True, 'PID': '18128', 'Port': '1001', 'RunitStatus': 'Run',
                                                'Module': 'Serv', 'Installed': True},
                                      'Serv2': {'Setup': True, 'PID': '18128', 'Port': '1002', 'RunitStatus': 'Down',
                                                'Module': 'Serv', 'Installed': True},
-                                     'Serv3': {'Setup': True, 'PID': '18128', 'Port': '1003', 'RunitStatus': 'Run',
+                                     'Serv3': {'Setup': True, 'PID': '18128', 'RunitStatus': 'Run', 'Protocol': 'https',
                                                'Module': 'Serv', 'Installed': True},
                                      'SystemAdministrator': {'Setup': True, 'PID': '18128', 'Port': '1003',
                                                              'RunitStatus': 'Run', 'Module': 'Serv', 'Installed': True},
@@ -596,6 +605,7 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     self.restartAgent.csAPI.modifyValue.assert_has_calls([call('/Systems/Sys/Production/URLs/Serv', ','.join(tempurls)),
                                                           call('/Systems/Sys/Production/URLs/Serv', ','.join(newurls))],
                                                          any_order=False)
+    assert self.restartAgent._tornadoPort == theTornadoPort
 
   def test_checkURLs_2(self):
     """Test commit to CS."""
