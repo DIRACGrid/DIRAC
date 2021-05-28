@@ -182,7 +182,7 @@ class ComponentSupervisionAgent(AgentModule):
   def getRunningInstances(self, instanceType='Agents', runitStatus='Run'):
     """Return a dict of running agents, executors or services.
 
-    Key is agent's name, value contains dict with PollingTime, PID, Port, Module, RunitStatus, LogFileLocation
+    Key is component's name, value contains dict with PollingTime, PID, Port, Module, RunitStatus, LogFileLocation
 
     :param str instanceType: 'Agents', 'Executors', 'Services'
     :param str runitStatus: Return only those instances with given RunitStatus or 'All'
@@ -194,28 +194,28 @@ class ComponentSupervisionAgent(AgentModule):
       return res
 
     val = res['Value'][instanceType]
-    runningAgents = defaultdict(dict)
-    for system, agents in val.items():
-      for agentName, agentInfo in agents.items():
-        if agentInfo['Setup'] and agentInfo['Installed']:
-          if runitStatus != 'All' and agentInfo['RunitStatus'] != runitStatus:
+    runningComponents = defaultdict(dict)
+    for system, components in val.items():
+      for componentName, componentInfo in components.items():
+        if componentInfo['Setup'] and componentInfo['Installed']:
+          if runitStatus != 'All' and componentInfo['RunitStatus'] != runitStatus:
             continue
-          confPath = cfgPath('/Systems/' + system + '/' + self.setup + '/%s/' % instanceType + agentName)
+          confPath = cfgPath('/Systems/' + system + '/' + self.setup + '/%s/' % instanceType + componentName)
           for option, default in (('PollingTime', HOUR), ('Port', None)):
             optPath = os.path.join(confPath, option)
-            runningAgents[agentName][option] = gConfig.getValue(optPath, default)
-          runningAgents[agentName]['LogFileLocation'] = \
-              os.path.join(self.diracLocation, 'runit', system, agentName, 'log', 'current')
-          runningAgents[agentName]['PID'] = agentInfo['PID']
-          runningAgents[agentName]['Module'] = agentInfo['Module']
-          runningAgents[agentName]['RunitStatus'] = agentInfo['RunitStatus']
-          runningAgents[agentName]['System'] = system
+            runningComponents[componentName][option] = gConfig.getValue(optPath, default)
+          runningComponents[componentName]['LogFileLocation'] = \
+              os.path.join(self.diracLocation, 'runit', system, componentName, 'log', 'current')
+          runningComponents[componentName]['PID'] = componentInfo['PID']
+          runningComponents[componentName]['Module'] = componentInfo['Module']
+          runningComponents[componentName]['RunitStatus'] = componentInfo['RunitStatus']
+          runningComponents[componentName]['System'] = system
 
-    return S_OK(runningAgents)
+    return S_OK(runningComponents)
 
-  def on_terminate(self, agentName, process):
+  def on_terminate(self, componentName, process):
     """Execute callback when a process terminates gracefully."""
-    self.log.info("%s's process with ID: %s has been terminated successfully" % (agentName, process.pid))
+    self.log.info("%s's process with ID: %s has been terminated successfully" % (componentName, process.pid))
 
   def execute(self):
     """Execute checks for agents, executors, services."""
@@ -273,9 +273,9 @@ class ComponentSupervisionAgent(AgentModule):
       return S_OK(NO_RESTART)
 
     try:
-      agentProc = psutil.Process(int(pid))
-      processesToTerminate = agentProc.children(recursive=True)
-      processesToTerminate.append(agentProc)
+      componentProc = psutil.Process(int(pid))
+      processesToTerminate = componentProc.children(recursive=True)
+      processesToTerminate.append(componentProc)
 
       for proc in processesToTerminate:
         proc.terminate()
@@ -304,7 +304,7 @@ class ComponentSupervisionAgent(AgentModule):
         return res
       if res['Value'] != NO_RESTART:
         self.accounting[serviceName]['Treatment'] = 'Successfully Restarted'
-        self.log.info('Agent %s has been successfully restarted' % serviceName)
+        self.log.info('Service %s has been successfully restarted' % serviceName)
     self.log.info('Service responded OK')
     return S_OK()
 
