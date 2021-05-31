@@ -455,18 +455,30 @@ class JobMonitoringHandler(RequestHandler):
 
       # Evaluate last sign of life time
       for jobID, jobDict in summaryDict.items():
-        if 'HeartBeatTime' not in jobDict or \
-           not jobDict['HeartBeatTime'] or \
-           jobDict['HeartBeatTime'] == 'None':
+        if (
+            'HeartBeatTime' not in jobDict
+            or not jobDict['HeartBeatTime']
+            or jobDict['HeartBeatTime'] == "None"
+        ):
           jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
         else:
-          lastTime = Time.fromString(jobDict['LastUpdateTime'])
-          hbTime = Time.fromString(jobDict['HeartBeatTime'])
+          lastTime = (
+              Time.fromString(jobDict['LastUpdateTime'])
+              if isinstance(jobDict['LastUpdateTime'], str)
+              else jobDict['LastUpdateTime']
+          )
+          hbTime = (
+              Time.fromString(jobDict['HeartBeatTime'])
+              if isinstance(jobDict['HeartBeatTime'], str)
+              else jobDict['HeartBeatTime']
+          )
           # Not only Stalled jobs but also Failed jobs because Stalled
-          if (hbTime - lastTime) > timedelta(0) or \
-             jobDict['Status'] == JobStatus.STALLED or \
-             jobDict['MinorStatus'].startswith('Job stalled') or \
-             jobDict['MinorStatus'].startswith('Stalling'):
+          if (
+              (hbTime - lastTime) > timedelta(0)
+              or jobDict["Status"] == JobStatus.STALLED
+              or jobDict["MinorStatus"].startswith("Job stalled")
+              or jobDict["MinorStatus"].startswith("Stalling")
+          ):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']

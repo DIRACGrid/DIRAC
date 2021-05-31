@@ -195,22 +195,20 @@ def fromString(myDate=None):
   On Error, return None
   """
   if isinstance(myDate, six.string_types):
-    if myDate.find(' ') > 0:
-      dateTimeTuple = myDate.split(' ')
-      dateTuple = dateTimeTuple[0].split('-')
+    if myDate.find(" ") > 0:
+      dateTimeTuple = myDate.split(" ")
+      dateTuple = dateTimeTuple[0].split("-")
       try:
-        return (datetime.datetime(year=dateTuple[0],
-                                  month=dateTuple[1],
-                                  day=dateTuple[2]) +
-                fromString(dateTimeTuple[1]))
+        return datetime.datetime(
+            year=dateTuple[0], month=dateTuple[1], day=dateTuple[2]
+        ) + fromString(dateTimeTuple[1])
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
       except Exception:
         try:
-          return (datetime.datetime(year=int(dateTuple[0]),
-                                    month=int(dateTuple[1]),
-                                    day=int(dateTuple[2])) +
-                  fromString(dateTimeTuple[1]))
+          return datetime.datetime(
+              year=int(dateTuple[0]), month=int(dateTuple[1]), day=int(dateTuple[2])
+          ) + fromString(dateTimeTuple[1])
         except ValueError:
           return None
         # return dt.combine( fromString( dateTimeTuple[0] ),

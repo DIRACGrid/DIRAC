@@ -44,7 +44,7 @@ def cleanTaskQueues():
 
 class OptimizationMindHandler(ExecutorMindHandler):
 
-  __optimizationStates = ['Received', 'Checking']
+  __optimizationStates = [JobStatus.RECEIVED, JobStatus.CHECKING]
   __loadTaskId = False
 
   MSG_DEFINITIONS = {'OptimizeJobs': {'jids': (list, tuple)}}
@@ -137,7 +137,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
 
   @classmethod
   def exec_taskProcessed(cls, jid, jobState, eType):
-    cls.log.info("Saving changes for job %s after %s" % (jid, eType))
+    cls.log.info("Saving changes for job", " %s after %s" % (jid, eType))
     result = jobState.commitChanges()
     if not result['OK']:
       cls.log.error("Could not save changes for job", "%s: %s" % (jid, result['Message']))
@@ -145,7 +145,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
 
   @classmethod
   def exec_taskFreeze(cls, jid, jobState, eType):
-    cls.log.info("Saving changes for job %s before freezing from %s" % (jid, eType))
+    cls.log.info("Saving changes for job", " %s before freezing from %s" % (jid, eType))
     result = jobState.commitChanges()
     if not result['OK']:
       cls.log.error("Could not save changes for job", "%s: %s" % (jid, result['Message']))
@@ -164,7 +164,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
       return S_OK()
     # If received send to JobPath
     if status == JobStatus.RECEIVED:
-      cls.log.info("Dispatching job %s to JobPath" % jid)
+      cls.log.info("Dispatching job", " %s to JobPath" % jid)
       return S_OK("WorkloadManagement/JobPath")
     result = jobState.getOptParameter('OptimizerChain')
     if not result['OK']:
@@ -178,7 +178,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
     if minorStatus not in optChain:
       cls.log.error("Next optimizer is not in the chain for job", "%s: %s not in %s" % (jid, minorStatus, optChain))
       return S_ERROR("Next optimizer %s not in chain %s" % (minorStatus, optChain))
-    cls.log.info("Dispatching job %s to %s" % (jid, minorStatus))
+    cls.log.info("Dispatching job", " %s to %s" % (jid, minorStatus))
     return S_OK("WorkloadManagement/%s" % minorStatus)
 
   @classmethod

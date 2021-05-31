@@ -923,7 +923,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
         return S_ERROR("Can't get TQ for job: %s" % retVal['Message'])
       connObj = retVal['Value']
 
-    retVal = self._query('SELECT TQId FROM `tq_Jobs` WHERE JobId = %s ' % jobId, conn=connObj)
+    retVal = self._query('SELECT TQId FROM `tq_Jobs` WHERE JobId = %s' % jobId, conn=connObj)
 
     if not retVal['OK']:
       return retVal

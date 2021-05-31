@@ -82,8 +82,7 @@ This module provides a rich set of tools for constructing and running tests, sup
 - *suites*: collection of test cases for aggregation of test that should be executed together
 - *runners*: classes for executing tests, checking all the spotted asserts and providing output results to the user.
 
-The developers are encouraged to make themselves familiar with pytest_ module documentation, which could be found
-`here <https://docs.pytest.org/en/latest/>`__.
+The developers are encouraged to make themselves familiar with pytest_ module.
 
 One of the requirements for writing a suitable test is an isolation from depended-on code and the same time from production environment.
 This could be obtained by objects mocking technique, where all fragile components used in a particular test suite are replaced by their false and dummy
@@ -243,7 +242,7 @@ it is a good idea to run the test, and verify its result.
 Within section :ref:`adding_new_components` we will develop one of these tests as an exercise.
 
 Integration tests are a good example of the type of tests that can be run by a machinery.
-Continuous integration tools like Jenkins are indeed used for running these type of tests.
+Continuous integration tools like Jenkins_ are indeed used for running these type of tests.
 
 
 Continuous Integration software
@@ -377,8 +376,7 @@ Footnotes
 .. _Python: http://www.python.org/
 .. _unittest: http://docs.python.org/library/unittest.html
 .. _TestCase: http://docs.python.org/library/unittest.html#unittest.TestCase
-.. _TestSuite: http://docs.python.org/library/unittest.html#unittest.TestSuite
-.. _TestLoader: http://docs.python.org/library/unittest.html#unittest.TestLoader
+.. _pytest: https://docs.pytest.org/
 .. _mock: http://www.voidspace.org.uk/python/mock/
 .. _CI: https://en.wikipedia.org/wiki/Continuous_integration
 .. _Jenkins: https://jenkins-ci.org/

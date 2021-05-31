@@ -40,9 +40,9 @@ class ComponentMonitoringHandler(RequestHandler):
                               componentFields,
                               hostFields):
     matchFields = installationFields
-    for key in componentFields.keys():
+    for key in componentFields:
       matchFields['Component.' + key] = componentFields[key]
-    for key in hostFields.keys():
+    for key in hostFields:
       matchFields['Host.' + key] = hostFields[key]
 
     return S_OK(matchFields)

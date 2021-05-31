@@ -140,9 +140,9 @@ class JobState(object):
       if not result['OK']:
         return result
 
-    gLogger.verbose("Adding logging records for %s" % self.__jid)
+    gLogger.verbose("Adding logging records", " for %s" % self.__jid)
     for record, updateTime, source in jobLog:
-      gLogger.verbose("Logging records for %s: %s %s %s" % (self.__jid, record, updateTime, source))
+      gLogger.verbose('', "Logging records for %s: %s %s %s" % (self.__jid, record, updateTime, source))
       record['date'] = updateTime
       record['source'] = source
       result = self.__retryFunction(5, JobState.__db.logDB.addLoggingRecord, (self.__jid,), record)

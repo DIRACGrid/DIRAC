@@ -117,7 +117,7 @@ class JobsStateMachine(StateMachine):
                                    [STAGING, WAITING, RESCHEDULED, DELETED],
                                    defState=CHECKING),
                    RECEIVED: State(1,
-                                   [CHECKING, DELETED],
+                                   [CHECKING, WAITING, DELETED],
                                    defState=RECEIVED),
                    SUBMITTING: State(0,  # initial state
                                      [RECEIVED, CHECKING, DELETED],

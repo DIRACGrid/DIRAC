@@ -1,5 +1,4 @@
-""" ProfileManager manages web user profiles
-    in the DISET framework
+""" ProfileManager manages web user profiles interfacin to UserProfileDB
 """
 
 from __future__ import print_function
