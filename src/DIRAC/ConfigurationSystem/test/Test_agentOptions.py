@@ -21,8 +21,6 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['Mess
           ('DIRAC.FrameworkSystem.Agent.MyProxyRenewalAgent', {'IgnoreOptions': ['MinValidity', 'ValidityPeriod',
                                                                                  'MinimumLifeTime',
                                                                                  'RenewedLifeTime']}),
-          ('DIRAC.FrameworkSystem.Agent.ErrorMessageMonitor', {}),
-          ('DIRAC.FrameworkSystem.Agent.SystemLoggingDBCleaner', {'IgnoreOptions': ['RemoveDate']}),
           ('DIRAC.RequestManagementSystem.Agent.CleanReqDBAgent', {}),
           ('DIRAC.RequestManagementSystem.Agent.RequestExecutingAgent', {'IgnoreOptions': ['FTSMode',
                                                                                            'OperationHandlers'],
