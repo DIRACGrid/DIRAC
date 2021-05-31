@@ -7,14 +7,10 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import six
-import os
-import sys
-import hashlib
 
 import cachetools
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.Utilities import Time
+from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 
@@ -561,106 +557,6 @@ class UserProfileDB(DB):
 
     query = "SELECT distinct Profile from `up_ProfilesData` where %s" % condition
     retVal = self._query(query)
-    if retVal['OK']:
-      result = S_OK([i[0] for i in retVal['Value']])
-    else:
-      result = retVal
-    return result
-
-
-def testUserProfileDB():
-  """ Some test cases
-  """
-
-  # building up some fake CS values
-  gConfig.setOptionValue('DIRAC/Setup', 'Test')
-  gConfig.setOptionValue('/DIRAC/Setups/Test/Framework', 'Test')
-
-  host = '127.0.0.1'
-  user = 'Dirac'
-  pwd = 'Dirac'
-  db = 'AccountingDB'
-
-  gConfig.setOptionValue('/Systems/Framework/Test/Databases/UserProfileDB/Host', host)
-  gConfig.setOptionValue('/Systems/Framework/Test/Databases/UserProfileDB/DBName', db)
-  gConfig.setOptionValue('/Systems/Framework/Test/Databases/UserProfileDB/User', user)
-  gConfig.setOptionValue('/Systems/Framework/Test/Databases/UserProfileDB/Password', pwd)
-
-  db = UserProfileDB()
-  assert db._connect()['OK']
-
-  userName = 'testUser'
-  userGroup = 'testGroup'
-  profileName = 'testProfile'
-  varName = 'testVar'
-  tagName = 'testTag'
-  hashTag = '237cadc4af90277e9524e6386e264630'
-  data = 'testData'
-  perms = 'USER'
-
-  try:
-    if False:
-      for tableName in db.tableDict.keys():
-        result = db._update('DROP TABLE `%s`' % tableName)
-        assert result['OK']
-
-    gLogger.info('\n Creating Table\n')
-    # Make sure it is there and it has been created for this test
-    result = db._checkTable()
-    assert result == {'OK': True, 'Value': None}
-
-    result = db._checkTable()
-    assert result == {'OK': True, 'Value': 0}
-
-    gLogger.info('\n Adding some data\n')
-    result = db.storeVar(userName, userGroup, profileName, varName, data, perms)
-    assert result['OK']
-    assert result['Value'] == 1
-
-    gLogger.info('\n Some queries\n')
-    result = db.getUserGroupIds(userName, userGroup)
-    assert result['OK']
-    assert result['Value'] == (1, 1, 1)
-
-    result = db.listVars(userName, userGroup, profileName)
-    assert result['OK']
-    assert result['Value'][0][3] == varName
-
-    result = db.retrieveUserProfiles(userName, userGroup)
-    assert result['OK']
-    assert result['Value'] == {profileName: {varName: data}}
-
-    result = db.storeHashTag(userName, userGroup, tagName, hashTag)
-    assert result['OK']
-    assert result['Value'] == hashTag
-
-    result = db.retrieveAllHashTags(userName, userGroup)
-    assert result['OK']
-    assert result['Value'] == {hashTag: tagName}
-
-    result = db.retrieveHashTag(userName, userGroup, hashTag)
-    assert result['OK']
-    assert result['Value'] == tagName
-
-    gLogger.info('\n OK\n')
-
-  except AssertionError:
-    print('ERROR ', end=' ')
-    if not result['OK']:
-      print(result['Message'])
-    else:
-      print(result)
-
-    sys.exit(1)
-
-
-if __name__ == '__main__':
-  from DIRAC.Core.Base import Script
-  Script.parseCommandLine()
-  gLogger.setLevel('VERBOSE')
-
-  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
-    gLogger.info('Unset pyhthon optimization "PYTHONOPTIMIZE"')
-    sys.exit(0)
-
-  testUserProfileDB()
+    if not retVal['OK']:
+      return retVal
+    return S_OK([i[0] for i in retVal['Value']])
