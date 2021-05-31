@@ -235,7 +235,7 @@ class DatasetManager(object):
     successful = {}
     dsIDs = {}
     req = "SELECT COUNT(DatasetName),DatasetName,DatasetID FROM FC_MetaDatasets WHERE DatasetName in "
-    req += "( %s ) GROUP BY DatasetName" % stringListToString(nodirDatasets)
+    req += "( %s ) GROUP BY DatasetName,DatasetID" % stringListToString(nodirDatasets)
     result = self.db._query(req, connection)
     if not result['OK']:
       return result

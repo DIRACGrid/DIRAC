@@ -1456,7 +1456,7 @@ class SiteDirector(AgentModule):
 
     pA.setValueByKey('Site', siteName)
     pA.setValueByKey('CE', ceName)
-    pA.setValueByKey('Queue', queueName)
+    pA.setValueByKey('Queue', ceName + ':' + queueName)
     pA.setValueByKey('Status', status)
     pA.setValueByKey('NumTotal', numTotal)
     pA.setValueByKey('NumSucceeded', numSucceeded)

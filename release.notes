@@ -204,6 +204,23 @@ NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
+[v7r1p41]
+
+*Accounting
+FIX: (#5152) Bug in PilotSubmission efficiency plot
+
+*Framework
+NEW: (#5159) Add UserProfileClient.listStatesForWeb endpoint to make the Public State Manager faster
+CHANGE: (#5153) change SQLITE connection option for speed improvement
+
+*DataManagement
+FIX: (#5163) DatasetManager - Fix the syntax of the query to get dataset files
+FIX: (#5162) Improve listing error if file info is missing from DB
+
+*WorkloadManagement
+CHANGE: (#5161) SiteDirector - Combine CE and Queue name in PilotSubmissionAccounting
+        to avoid duplicated queue name
+
 [v7r1p40]
 
 *Core

@@ -11,6 +11,8 @@ import os
 import sys
 import hashlib
 
+import cachetools
+
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import Time
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -78,6 +80,7 @@ class UserProfileDB(DB):
     """
     self.__permValues = ['USER', 'GROUP', 'VO', 'ALL']
     self.__permAttrs = ['ReadAccess', 'PublishAccess']
+    self.__cache = cachetools.TTLCache(1024, 15)
     DB.__init__(self, 'UserProfileDB', 'Framework/UserProfileDB')
     retVal = self.__initializeDB()
     if not retVal['OK']:
@@ -125,14 +128,32 @@ class UserProfileDB(DB):
   def __getVOId(self, voName, insertIfMissing=True):
     return self.__getObjId(voName, 'VO', 'up_VOs', insertIfMissing)
 
+  def __getFieldsCached(self, tableName, outFields, condDict):
+    """Call getFields with a TTL cache
+
+    The UserProfileDB is written in such a way that repeatedly makes the same
+    DB queries thousands of times. To workaround this, use a simple short-lived
+    TTL cache to dramatically improve performance.
+    """
+    key = (tableName, tuple(outFields), tuple(sorted(condDict.items())))
+    if key not in self.__cache:
+      result = self.getFields(tableName, outFields, condDict)
+      if not result['OK']:
+        return result
+      data = result['Value']
+      if len(data) > 0:
+        objId = data[0][0]
+        self.updateFields(tableName, ['LastAccess'], ['UTC_TIMESTAMP()'], {'Id': objId})
+      self.__cache[key] = result
+    return self.__cache[key]
+
   def __getObjId(self, objValue, varName, tableName, insertIfMissing=True):
-    result = self.getFields(tableName, ['Id'], {varName: objValue})
+    result = self.__getFieldsCached(tableName, ['Id'], {varName: objValue})
     if not result['OK']:
       return result
     data = result['Value']
     if len(data) > 0:
       objId = data[0][0]
-      self.updateFields(tableName, ['LastAccess'], ['UTC_TIMESTAMP()'], {'Id': objId})
       return S_OK(objId)
     if not insertIfMissing:
       return S_ERROR("No entry %s for %s defined in the DB" % (objValue, varName))
