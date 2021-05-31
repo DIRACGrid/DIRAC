@@ -28,7 +28,7 @@ class UserProfileClient(object):
 
   def __decodeVar(self, data):
     try:
-      dataObj, lenData = DEncode.decode(data)
+      dataObj, lenData = DEncode.decode(data.encode())
     except Exception as e:
       return S_ERROR("Cannot decode data: %s" % str(e))
     return S_OK(dataObj)
@@ -54,10 +54,10 @@ class UserProfileClient(object):
       return result
     try:
       encodedData = result['Value']
-      dataObj = {}
-      for k in encodedData:
-        v, lenData = DEncode.decode(encodedData[k])
-        dataObj[k] = v
+      dataObj = {
+          key: DEncode.decode(value.encode())[0]
+          for key, value in encodedData.items()
+      }
     except Exception as e:
       return S_ERROR("Cannot decode data: %s" % str(e))
     return S_OK(dataObj)
