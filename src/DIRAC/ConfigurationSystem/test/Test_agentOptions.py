@@ -23,7 +23,6 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['Mess
                                                                                  'RenewedLifeTime']}),
           ('DIRAC.FrameworkSystem.Agent.ErrorMessageMonitor', {}),
           ('DIRAC.FrameworkSystem.Agent.SystemLoggingDBCleaner', {'IgnoreOptions': ['RemoveDate']}),
-          ('DIRAC.FrameworkSystem.Agent.TopErrorMessagesReporter', {}),
           ('DIRAC.RequestManagementSystem.Agent.CleanReqDBAgent', {}),
           ('DIRAC.RequestManagementSystem.Agent.RequestExecutingAgent', {'IgnoreOptions': ['FTSMode',
                                                                                            'OperationHandlers'],
