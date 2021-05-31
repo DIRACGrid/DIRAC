@@ -62,17 +62,6 @@ class UserProfileDB(DB):
                                                },
                                    'Engine': 'InnoDB',
                                    },
-               'up_HashTags': {'Fields': {'UserId': 'INTEGER',
-                                          'GroupId': 'INTEGER',
-                                          'VOId': 'INTEGER',
-                                          'HashTag': 'VARCHAR(32) NOT NULL',
-                                          'TagName': 'VARCHAR(255) NOT NULL',
-                                          'LastAccess': 'DATETIME',
-                                          },
-                               'PrimaryKey': ['UserId', 'GroupId', 'TagName'],
-                               'Indexes': {'HashKey': ['UserId', 'HashTag']},
-                               'Engine': 'InnoDB',
-                               },
                }
 
   def __init__(self):
@@ -113,9 +102,6 @@ class UserProfileDB(DB):
 
     if 'up_ProfilesData' not in tablesInDB:
       tablesD['up_ProfilesData'] = self.tableDict['up_ProfilesData']
-
-    if 'up_HashTags' not in tablesInDB:
-      tablesD['up_HashTags'] = self.tableDict['up_HashTags']
 
     return self._createTables(tablesD)
 
@@ -560,96 +546,6 @@ class UserProfileDB(DB):
       return result
     userIds = result['Value']
     return self.listVarsById(userIds, profileName, filterDict)
-
-  def storeHashTagById(self, userIds, tagName, hashTag=False):
-    """
-    Set a data entry for a profile
-    """
-    if not hashTag:
-      hashTag = hashlib.md5()
-      hashTag.update(("%s;%s;%s" % (Time.dateTime(), userIds, tagName)).encode())
-      hashTag = hashTag.hexdigest()
-
-    result = self.insertFields('up_HashTags', ['UserId', 'GroupId', 'VOId', 'TagName', 'HashTag'],
-                               [userIds[0], userIds[1], userIds[2], tagName, hashTag])
-    if result['OK']:
-      return S_OK(hashTag)
-    # If error and not duplicate -> real error
-    if result['Message'].find("Duplicate entry") == -1:
-      return result
-    result = self.updateFields('up_HashTags', ['HashTag'], [hashTag], {'UserId': userIds[0],
-                                                                       'GroupId': userIds[1],
-                                                                       'VOId': userIds[2],
-                                                                       'TagName': tagName})
-    if not result['OK']:
-      return result
-    return S_OK(hashTag)
-
-  def retrieveHashTagById(self, userIds, hashTag):
-    """
-    Get a data entry for a profile
-    """
-    result = self.getFields('up_HashTags', ['TagName'], {'UserId': userIds[0],
-                                                         'GroupId': userIds[1],
-                                                         'VOId': userIds[2],
-                                                         'HashTag': hashTag})
-    if not result['OK']:
-      return result
-    data = result['Value']
-    if len(data) > 0:
-      return S_OK(data[0][0])
-    return S_ERROR("No data for combo userId %s hashTag %s" % (userIds, hashTag))
-
-  def retrieveAllHashTagsById(self, userIds):
-    """
-    Get a data entry for a profile
-    """
-    result = self.getFields('up_HashTags', ['HashTag', 'TagName'], {'UserId': userIds[0],
-                                                                    'GroupId': userIds[1],
-                                                                    'VOId': userIds[2]})
-    if not result['OK']:
-      return result
-    data = result['Value']
-    return S_OK(dict(data))
-
-  def storeHashTag(self, userName, userGroup, tagName, hashTag=False):
-    """
-    Helper for storing HASH
-    """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.storeHashTagById(userIds, tagName, hashTag)
-    finally:
-      pass
-
-  def retrieveHashTag(self, userName, userGroup, hashTag):
-    """
-    Helper for retrieving HASH
-    """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.retrieveHashTagById(userIds, hashTag)
-    finally:
-      pass
-
-  def retrieveAllHashTags(self, userName, userGroup):
-    """
-    Helper for retrieving HASH
-    """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.retrieveAllHashTagsById(userIds)
-    finally:
-      pass
 
   def getUserProfileNames(self, permission):
     """

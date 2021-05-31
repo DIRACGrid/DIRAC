@@ -84,15 +84,6 @@ class UserProfileClient(object):
   def deleteProfiles(self, userList):
     return self.__getRPCClient().deleteProfiles(userList)
 
-  def storeHashTag(self, tagName):
-    return self.__getRPCClient().storeHashTag(tagName)
-
-  def retrieveHashTag(self, hashTag):
-    return self.__getRPCClient().retrieveHashTag(hashTag)
-
-  def retrieveAllHashTags(self):
-    return self.__getRPCClient().retrieveAllHashTags()
-
   def getUserProfileNames(self, permission=dict()):
     """
     it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
