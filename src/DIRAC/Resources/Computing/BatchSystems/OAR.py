@@ -12,12 +12,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-# TODO: This should be modernised to use subprocess(32)
-try:
-  import commands
-except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
+
+import subprocess
+import shlex
 import os
 import json
 
@@ -65,7 +62,9 @@ class OAR(object):
                                                                        queue,
                                                                        submitOptions,
                                                                        executable)
-      status, output = commands.getstatusoutput(cmd)
+      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
 
       if status != 0 or not output:
         break
@@ -86,7 +85,7 @@ class OAR(object):
       resultDict['Jobs'] = jobIDs
     else:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       resultDict['Jobs'] = jobIDs
     return resultDict
 
@@ -111,17 +110,21 @@ class OAR(object):
 
     successful = []
     failed = []
+    errors = ''
     for job in jobIDList:
-      status, output = commands.getstatusoutput('oardel %s' % job)
+      sp = subprocess.Popen(shlex.split('oardel %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status != 0:
         failed.append(job)
+        errors += error
       else:
         successful.append(job)
 
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
-      resultDict['Message'] = output
+      resultDict['Message'] = errors
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
@@ -153,10 +156,13 @@ class OAR(object):
       resultDict['Message'] = 'No user name'
       return resultDict
 
-    status, output = commands.getstatusoutput("oarstat --sql \"project = '%s'\" -J" % user)
+    cmd = "oarstat --sql \"project = '%s'\" -J" % user
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     try:
@@ -225,7 +231,9 @@ class OAR(object):
     waitingJobs = 0
     runningJobs = 0
 
-    status, output = commands.getstatusoutput('oarstat -u %s -J' % user)
+    sp = subprocess.Popen(shlex.split('oarstat -u %s -J' % user), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
     if status != 0:
       if "arrayref expected" in output:
         resultDict['Status'] = 0
@@ -233,7 +241,7 @@ class OAR(object):
         resultDict["Running"] = 0
         return resultDict
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     try:

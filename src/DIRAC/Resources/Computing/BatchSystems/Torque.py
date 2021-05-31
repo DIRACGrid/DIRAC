@@ -12,12 +12,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-# TODO: This should be modernised to use subprocess(32)
-try:
-  import commands
-except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
+
+import subprocess
+import shlex
 import os
 
 __RCSID__ = "$Id$"
@@ -55,7 +52,9 @@ class Torque(object):
              "-q %(Queue)s " \
              "-N DIRACPilot " \
              "%(SubmitOptions)s %(Executable)s 2>/dev/null" % kwargs
-      status, output = commands.getstatusoutput(cmd)
+      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status == 0:
         jobIDs.append(output.split('.')[0])
       else:
@@ -66,7 +65,7 @@ class Torque(object):
       resultDict['Jobs'] = jobIDs
     else:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
     return resultDict
 
   def getJobStatus(self, **kwargs):
@@ -96,11 +95,13 @@ class Torque(object):
       jobDict[jobNumber] = job
 
     cmd = 'qstat ' + ' '.join(jobIDList)
-    status, output = commands.getstatusoutput(cmd)
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     statusDict = {}
@@ -142,11 +143,13 @@ class Torque(object):
       return resultDict
 
     cmd = 'qselect -u %s -s WQ | wc -l; qselect -u %s -s R | wc -l' % (user, user)
-    status, output = commands.getstatusoutput(cmd)
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     waitingJobs, runningJobs = output.split()[:2]
@@ -184,17 +187,21 @@ class Torque(object):
 
     successful = []
     failed = []
+    errors = ''
     for job in jobIDList:
-      status, output = commands.getstatusoutput('qdel %s' % job)
+      sp = subprocess.Popen(shlex.split('qdel %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status != 0:
         failed.append(job)
+        errors += error
       else:
         successful.append(job)
 
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
-      resultDict['Message'] = output
+      resultDict['Message'] = errors
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
