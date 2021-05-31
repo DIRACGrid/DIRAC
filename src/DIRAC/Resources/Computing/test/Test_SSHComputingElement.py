@@ -31,7 +31,7 @@ def test_generateControlScript(batchSystem):
 
   ce = SSHComputingElement('Test_SSHCE')
   # Change the batch system file used during the control script generation
-  ce.batchSystem = batchSystem
+  ce.loadBatchSystem(batchSystem)
   # Get the local control script
   result = ce._generateControlScript()
   assert result['OK'] is True

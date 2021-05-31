@@ -13,12 +13,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 import re
-# TODO: This should be modernised to use subprocess(32)
-try:
-  import commands
-except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
+import subprocess
+import shlex
 import os
 
 __RCSID__ = "$Id$"
@@ -59,7 +55,9 @@ class LSF(object):
                                                              queue,
                                                              submitOptions,
                                                              executable)
-      status, output = commands.getstatusoutput(cmd)
+      sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status == 0:
         outputs.append(output)
       else:
@@ -74,7 +72,7 @@ class LSF(object):
           resultDict['Jobs'].append(match.groups()[0])
     else:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
 
     return resultDict
 
@@ -99,17 +97,21 @@ class LSF(object):
 
     successful = []
     failed = []
+    errors = ''
     for job in jobIDList:
-      status, output = commands.getstatusoutput('bkill %s' % job)
+      sp = subprocess.Popen(shlex.split('bkill %s' % job), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status != 0:
         failed.append(job)
+        errors += error
       else:
         successful.append(job)
 
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
-      resultDict['Message'] = output
+      resultDict['Message'] = error
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
@@ -130,11 +132,13 @@ class LSF(object):
     queue = kwargs['Queue']
 
     cmd = "bjobs -q %s -a" % queue
-    status, output = commands.getstatusoutput(cmd)
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     waitingJobs = 0
@@ -172,11 +176,13 @@ class LSF(object):
       return resultDict
 
     cmd = 'bjobs ' + ' '.join(jobIDList)
-    status, output = commands.getstatusoutput(cmd)
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
 
     if status != 0:
       resultDict['Status'] = status
-      resultDict['Message'] = output
+      resultDict['Message'] = error
       return resultDict
 
     output = output.replace('\r', '')

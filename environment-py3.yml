@@ -12,6 +12,7 @@ dependencies:
   - python =3.9
   - pip
   - boto3
+  - cachetools
   - certifi
   - cmreshandler >1.0.0b4
   - docutils

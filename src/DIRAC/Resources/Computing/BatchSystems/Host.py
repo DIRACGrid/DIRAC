@@ -11,15 +11,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-# TODO: This should be modernised to use subprocess(32)
-try:
-  import commands
-except ImportError:
-  # Python 3's subprocess module contains a compatibility layer
-  import subprocess as commands
+
 import os
 import glob
 import shutil
+import shlex
 import signal
 try:
   import subprocess32 as subprocess
@@ -39,7 +35,6 @@ CLEAN_DELAY = timedelta(7)
 class Host(object):
 
   def __init__(self):
-
     self.nCores = 1
     try:
       self.nCores = multiprocessing.cpu_count()
@@ -198,7 +193,9 @@ exit 0
       jobInfo = json.loads(jobInfo)
       pid = jobInfo['PID']
       cmd = 'ps -f -p %s --no-headers | wc -l' % pid
-      status, output = commands.getstatusoutput(cmd)
+      sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      output, error = sp.communicate()
+      status = sp.returncode
       if status == 0:
         if output.strip() == '1':
           running += 1
@@ -222,7 +219,10 @@ exit 0
 
     if pid == 0:
       return "Unknown"
-    status, output = commands.getstatusoutput('ps  -f -p %s | grep %s | wc -l' % (pid, user))
+    cmd = 'ps  -f -p %s | grep %s | wc -l' % (pid, user)
+    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = sp.communicate()
+    status = sp.returncode
     if status == 0 and output.strip() == "1":
       return "Running"
     return "Done"

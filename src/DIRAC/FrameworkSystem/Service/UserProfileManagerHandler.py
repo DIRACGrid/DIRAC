@@ -78,6 +78,32 @@ class UserProfileManagerHandler(RequestHandler):
     userGroup = credDict['group']
     return self.upDB.deleteVar(userName, userGroup, profileName, varName)
 
+  types_listStatesForWeb = [dict]
+
+  def export_listStatesForWeb(self, permission):
+    retVal = self.export_getUserProfileNames(permission)
+    if not retVal["OK"]:
+      return retVal
+    data = retVal['Value']
+
+    records = []
+    for i in data:
+      application = i.replace('Web/application/', '')
+      retVal = self.export_listAvailableProfileVars(i)
+      if not retVal['OK']:
+        return retVal
+      states = retVal['Value']
+      for state in states:
+        record = dict(zip(['user', 'group', 'vo', 'name'], state))
+        record['app'] = application
+        retVal = self.export_getProfileVarPermissions(i, record['name'])
+        if not retVal['OK']:
+          return retVal
+        record['permissions'] = retVal['Value']
+        records += [record]
+
+    return S_OK(records)
+
   types_listAvailableProfileVars = [six.string_types]
 
   def export_listAvailableProfileVars(self, profileName, filterDict={}):

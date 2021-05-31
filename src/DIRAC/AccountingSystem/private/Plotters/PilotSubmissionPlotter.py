@@ -71,7 +71,7 @@ class PilotSubmissionPlotter(BaseReporter):
 
     selectFields = (self._getSelectStringForGrouping(reportRequest['groupingFields']) + ", %s, %s, SUM(%s), SUM(%s)",
                     reportRequest['groupingFields'][1] + ['startTime', 'bucketLength',
-                                                          'NumTotal', 'NumSucceeded'])
+                                                          'NumSucceeded', 'NumTotal'])
 
     retVal = self._getTimedData(reportRequest['startTime'],
                                 reportRequest['endTime'],

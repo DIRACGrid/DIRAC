@@ -39,6 +39,17 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p8]
+
+*Core
+FIX: (#5158) Workaround for OSError when copying vomses directory with too many extended attributes
+
+*Framework
+NEW: (#5155) ComponentSupervisionAgent to Monitor running components. See Agent Documentation for details.
+
+*WorkloadManagement
+NEW: (#5122) multi-node allocation support via the ParallelLibraries and srun
+
 [v7r2p7]
 
 *Core
@@ -233,6 +244,23 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p41]
+
+*Accounting
+FIX: (#5152) Bug in PilotSubmission efficiency plot
+
+*Framework
+NEW: (#5159) Add UserProfileClient.listStatesForWeb endpoint to make the Public State Manager faster
+CHANGE: (#5153) change SQLITE connection option for speed improvement
+
+*DataManagement
+FIX: (#5163) DatasetManager - Fix the syntax of the query to get dataset files
+FIX: (#5162) Improve listing error if file info is missing from DB
+
+*WorkloadManagement
+CHANGE: (#5161) SiteDirector - Combine CE and Queue name in PilotSubmissionAccounting
+        to avoid duplicated queue name
 
 [v7r1p40]
 
