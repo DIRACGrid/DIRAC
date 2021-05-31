@@ -1,3 +1,14 @@
+[v7r2p8]
+
+*Core
+FIX: (#5158) Workaround for OSError when copying vomses directory with too many extended attributes
+
+*Framework
+NEW: (#5155) ComponentSupervisionAgent to Monitor running components. See Agent Documentation for details.
+
+*WorkloadManagement
+NEW: (#5122) multi-node allocation support via the ParallelLibraries and srun
+
 [v7r2p7]
 
 *Core
