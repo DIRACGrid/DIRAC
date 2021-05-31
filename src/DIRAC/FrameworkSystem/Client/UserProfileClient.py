@@ -8,12 +8,8 @@ from DIRAC.Core.Utilities import DEncode
 
 
 class UserProfileClient(object):
-
-  def __init__(self, profile, rpcClientFunctor=False):
-    if rpcClientFunctor:
-      self.rpcClientFunctor = rpcClientFunctor
-    else:
-      self.rpcClientFunctor = RPCClient
+  def __init__(self, profile, rpcClientFunctor=RPCClient):
+    self.rpcClientFunctor = rpcClientFunctor
     self.profile = profile
 
   def __getRPCClient(self):

@@ -221,14 +221,13 @@ class UserProfileDB(DB):
         if addMissing:
           normPerms[pName] = self.__permValues[0]
         continue
-      else:
-        permVal = perms[pName].upper()
-        for nV in self.__permValues:
-          if nV == permVal:
-            normPerms[pName] = nV
-            break
-        if pName not in normPerms and addMissing:
-          normPerms[pName] = self.__permValues[0]
+      permVal = perms[pName].upper()
+      for nV in self.__permValues:
+        if nV == permVal:
+          normPerms[pName] = nV
+          break
+      if pName not in normPerms and addMissing:
+        normPerms[pName] = self.__permValues[0]
 
     return normPerms
 
@@ -312,9 +311,10 @@ class UserProfileDB(DB):
       return result
     data = result['Value']
     if len(data) > 0:
-      permDict = {}
-      for i in range(len(self.__permAttrs)):
-        permDict[self.__permAttrs[i]] = data[0][i]
+      permDict = {
+          self.__permAttrs[i]: data[0][i]
+          for i in range(len(self.__permAttrs))
+      }
       return S_OK(permDict)
     return S_ERROR("No data for userIds %s profileName %s varName %s" % (userIds, profileName, varName))
 
@@ -375,7 +375,7 @@ class UserProfileDB(DB):
     if result['OK']:
       return result
     # If error and not duplicate -> real error
-    if result['Message'].find("Duplicate entry") == -1:
+    if "Duplicate entry" not in result['Message']:
       return result
     updateSQL = "UPDATE `up_ProfilesData` SET %s WHERE %s" % (", ".join(["%s=%s" % f for f in sqlInsertValues]),
                                                               self.__webProfileUserDataCond(userIds,
@@ -398,7 +398,7 @@ class UserProfileDB(DB):
     nPerms = self.__parsePerms(perms, False)
     if not nPerms:
       return S_OK()
-    sqlPerms = ",".join(["%s='%s'" % (k, nPerms[k]) for k in nPerms])
+    sqlPerms = ",".join("%s='%s'" % (k, nPerms[k]) for k in nPerms)
 
     updateSql = "UPDATE `up_ProfilesData` SET %s WHERE %s" % (sqlPerms,
                                                               self.__webProfileUserDataCond(userIds,
@@ -466,27 +466,21 @@ class UserProfileDB(DB):
     """
     Helper for setting data
     """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.storeVarByUserId(userIds, profileName, varName, data, perms=perms)
-    finally:
-      pass
+    result = self.getUserGroupIds(userName, userGroup)
+    if not result['OK']:
+      return result
+    userIds = result['Value']
+    return self.storeVarByUserId(userIds, profileName, varName, data, perms=perms)
 
   def deleteVar(self, userName, userGroup, profileName, varName):
     """
     Helper for deleting data
     """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.deleteVarByUserId(userIds, profileName, varName)
-    finally:
-      pass
+    result = self.getUserGroupIds(userName, userGroup)
+    if not result['OK']:
+      return result
+    userIds = result['Value']
+    return self.deleteVarByUserId(userIds, profileName, varName)
 
   def __profilesCondGenerator(self, value, varType, initialValue=False):
     if isinstance(value, six.string_types):
@@ -510,7 +504,7 @@ class UserProfileDB(DB):
       fieldName = 'GroupId'
     else:
       fieldName = 'VOId'
-    return "`up_ProfilesData`.%s in ( %s )" % (fieldName, ", ".join([str(iD) for iD in ids]))
+    return "`up_ProfilesData`.%s in ( %s )" % (fieldName, ", ".join(str(iD) for iD in ids))
 
   def listVarsById(self, userIds, profileName, filterDict=None):
     result = self._escapeString(profileName)
@@ -522,10 +516,7 @@ class UserProfileDB(DB):
                "`up_VOs`.Id = `up_ProfilesData`.VOId",
                self.__webProfileReadAccessDataCond(userIds, userIds, sqlProfileName)]
     if filterDict:
-      fD = {}
-      for k in filterDict:
-        fD[k.lower()] = filterDict[k]
-      filterDict = fD
+      filterDict = {k.lower(): filterDict[k] for k in filterDict}
       for k in ('user', 'group', 'vo'):
         if k in filterDict:
           sqlCond.append(self.__profilesCondGenerator(filterDict[k], k))
@@ -547,13 +538,11 @@ class UserProfileDB(DB):
     """
     it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
     """
-    result = None
-
     permissions = self.__parsePerms(permission, False)
     if not permissions:
       return S_OK([])
 
-    condition = ",".join(["%s='%s'" % (k, permissions[k]) for k in permissions])
+    condition = ",".join("%s='%s'" % (k, permissions[k]) for k in permissions)
 
     query = "SELECT distinct Profile from `up_ProfilesData` where %s" % condition
     retVal = self._query(query)
