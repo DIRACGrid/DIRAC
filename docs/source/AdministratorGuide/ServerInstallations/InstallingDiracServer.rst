@@ -146,32 +146,6 @@ As *dirac* user, create ``/opt/dirac/sbin directory`` and create the file ``/opt
   exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
 
 
-SLC6
-^^^^
-
-This section must be executed as *root*
-
-Install the `RPM  <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm>`__.
-
-Edit `/etc/init/runsvdir.conf` to the following::
-
-  # for runit - manage /usr/sbin/runsvdir-start
-  start on runlevel [2345]
-  stop on runlevel [^2345]
-  normal exit 0 111
-  respawn
-  exec /opt/dirac/sbin/runsvdir-start
-
-
-Restart runsvdir::
-
-  restart runsvdir
-
-
-
-CC7
-^^^
-
 This section must be executed as *root*
 
 Install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el7.cern.x86_64.rpm>`__.
@@ -231,7 +205,7 @@ MySQL database preparation
 --------------------------
 
 Before proceeding with the primary server installation, a MYSQL server must be available.
-DIRAC supports MySQL versions 5.6, 5.7, 8.0.
+DIRAC supports MySQL versions 5.7, 8.0.
 In addition to the root/admin user(s) the following users must be created, with the same PASSWORD::
 
    CREATE USER 'Dirac'@'%' IDENTIFIED BY '[PASSWORD]';
@@ -249,7 +223,10 @@ required DIRAC functionality. The SystemAdministrator interface can be used late
 the installation by setting up additional components. The following steps should
 be taken:
 
-- Editing the installation configuration file. This file contains all
+For python2
+^^^^^^^^^^^
+
+- Edit the installation configuration file. This file contains all
   the necessary information describing the installation. By editing the configuration
   file one can describe the complete DIRAC server or
   just a subset for the initial setup. Below is an example of a commented configuration file.
@@ -266,14 +243,9 @@ be taken:
       #
       #  DIRAC release version (this is an example, you should find out the current
       #  production release)
-      Release = v6r20p16
-      #  Python version of the installation
-      PythonVersion = 27
+      Release = v7r2p8
       #  To install the Server version of DIRAC (the default is client)
       InstallType = server
-      #  LCG python bindings for SEs and LFC. Specify this option only if your installation
-      #  uses those services
-      # LcgVer = v14r2
       #  If this flag is set to yes, each DIRAC update will be installed
       #  in a separate directory, not overriding the previous ones
       UseVersionsDir = yes
@@ -365,9 +337,6 @@ be taken:
       WebApp = yes
       #
       #  The following options defined the MySQL DB connectivity
-      #
-      # The following option define if you want or not install the mysql that comes with DIRAC on the machine
-      # InstallMySQL = True
       Database
       {
         #  User name used to connect the DB server
@@ -379,11 +348,6 @@ be taken:
         #  location of DB server. Must be set for SystemAdministrator Service to work
         Host = localhost # default, otherwise a FQDN
         Port = 3306 # default, otherwise the port
-        #  There are 2 flags for small and large installations Set either of them to True/yes when appropriated
-        # MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes
-        #                       innodb_buffer_pool_size=200MB
-        # MySQLLargeMem:        Configure a MySQL with high memory requirements for production purposes
-        #                       innodb_buffer_pool_size=10000MB
       }
     }
 
@@ -395,7 +359,7 @@ or You can download the full server installation from::
   .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
   (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
 
-    ./install_site.sh -v v6r20p14 install.cfg
+    ./install_site.sh -v v7r2p8 install.cfg
 
 - If the installation is successful, in the end of the script execution you will see the report
   of the status of running DIRAC services, e.g.::
@@ -405,8 +369,6 @@ or You can download the full server installation from::
        Framework_SystemAdministrator : Run          21    30339
        Framework_ComponentMonitoring : Run          11    30340
        ResourceStatus_ResourceStatus : Run           9    30341
-                           Web_httpd : Run           5    30828
-                          Web_paster : Run           5    30829
 
 Now the basic services - Configuration, SystemAdministrator, ComponentMonitoring and ResourceStatus - are installed,
 or at least their DBs should be installed, and their services up and running.
@@ -435,9 +397,6 @@ It is also possible to include any number of additional systems, services, agent
       chpst -u dirac $RUNSVCTRL d /opt/dirac/startup/*
       killall runsv svlogd
       killall runsvdir
-      # If you did also installed a MySQL server uncomment the next line
-      dirac-stop-mysql
-
 
 .. _install_additional_server:
 
@@ -460,12 +419,9 @@ operation is the registration of the new host in the already functional Configur
       #
       #  DIRAC release version (this is an example, you should find out the current
       #  production release)
-      Release = v6r20p16
+      Release = v7r2p8
       #  To install the Server version of DIRAC (the default is client)
       InstallType = server
-      #  LCG python bindings for SEs and LFC. Specify this option only if your installation
-      #  uses those services
-      # LcgVer = v14r2
       #  If this flag is set to yes, each DIRAC update will be installed
       #  in a separate directory, not overriding the previous ones
       UseVersionsDir = yes
@@ -516,7 +472,7 @@ operation is the registration of the new host in the already functional Configur
 
 - Now run install_site.sh giving the edited CFG file as the argument:::
 
-      ./install_site.sh -v v6r20p16 install.cfg
+      ./install_site.sh -v v7r2p8 install.cfg
 
 If the installation is successful, the SystemAdministrator service will be up and running on the
 server. You can now set up the required components as described in :ref:`setting_with_CLI`
@@ -532,7 +488,7 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 
 - Start admin command line interface using administrator DIRAC group::
 
-    dirac-proxy-init -g dirac_admin --rfc
+    dirac-proxy-init -g dirac_admin
     dirac-admin-sysadmin-cli --host <HOST_NAME>
 
     where the HOST_NAME is the name of the DIRAC service host
@@ -553,13 +509,6 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 - Add instances of DIRAC systems which service or agents will be running on the server, for example::
 
     add instance WorkloadManagement Production
-
-- Install MySQL database. You have to enter two passwords one is the root password for MySQL itself (if not already done in the server installation)
-  and another one is the password for user who will own the DIRAC databases, in our case the user name is Dirac::
-
-    install mysql
-    MySQL root password:
-    MySQL Dirac password:
 
 - Install databases, for example::
 
