@@ -12,8 +12,8 @@ have to be able to create their own releases of their modules and install them s
 Preparing DIRAC distribution
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
 
-Releases schema
----------------
+Releases schema (python2 only)
+------------------------------
 
 DIRAC *modules* are released and distributed in *projects*. Each project has a *releases.cfg* 
 configuration file where the releases, modules and dependencies are defined. A single *releases.cfg* 
@@ -43,60 +43,7 @@ shown below::
        depends = DIRAC:v5r12p1
      }
    }
-   RequiredExternals
-   {
-     Server = tornado>=4.4.2, apache-libcloud==2.2.1
-     Client = apache-libcloud==2.2.1
-   }
 
-The *DefaultModules* option (outside any section) defines what modules will be installed by default 
-if there's nothing explicitly specified at installation time. Because there is only one module defined 
-in *DefaultModules* each release will try to install the *MyExt* module with the same version as the 
-release name. Each release can require a certain version of any other project (DIRAC is also an project).
-
-The *RequiredExternals* section contains lists of extra python modules that can be installed with
-a *pip* installer for different installation types. Each module in the lists is specified in a format
-suitable to pass to the *pip* command.
-
-An example with more than one module follows::
-
-   DefaultModules = MyExt
-   RequiredExtraModules = WebApp
-   
-   Sources
-   {
-     MyExt = git://somerepohosting/MyExt.git
-     MyExtExtra = svn | http://someotherrepohosting/repos/randomname/MyExtExtra/tags
-   }
-   
-   Releases
-   {
-     v1r2p3
-     {
-       Modules = MyExt:v1r2p1, MyExtExtra:v1r1p1
-       Depends = DIRAC:v5r12p1
-     }
-   
-     v1r2p2
-     {
-       Modules = MyExt:v1r2p1, MyExtExtra:v1r1
-       Depends = DIRAC:v5r12
-     }
-   }
- 
-If a project requires a module that is not installed by default from another project to be installed, 
-it can be defined in the *RequiredExtraModules* option. For instance, DIRAC project contains *DIRAC* 
-and *Web*. But by default DIRAC project only installs DIRAC module. If another project requires the 
-DIRAC Web module to be installed it can be defined in this option. That way, when installing this 
-other project, Web module will also be installed.
-
-The *Modules* option can define explicitly which modules (and their version) to install. This is useful 
-if a given VO is managing more than one module. In that scenario a release can be a combination of modules 
-that can evolve independently. By defining releases as groups of modules with their versions the VO can 
-ensure that a release is consistent for its modules. DIRAC uses this mechanism to ensure that the DIRAC 
-Web will always be installed with a DIRAC version that it works with.
-
-The *Sources* section defines where to extract the source code from for each module. 
 
 The releases are created using the *dirac-distribution* docker image, which can be found in GitHub package registry or in docker hub::
 
@@ -181,8 +128,8 @@ be executed by the user.
 The defaults file is defined per project and can live in any web server.
 
 
-Installation
-@@@@@@@@@@@@
+Installation (python2 only)
+@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 When installing, *dirac-install* requires a release version and optionally a project name. If the project 
 name is given *dirac-install* will try to load the project's versioned ``release-<projectName>-<version>.cfg`` 
@@ -201,9 +148,6 @@ files for each project are. *dirac-install* will try the following steps:
 
 The ``release-<projectName>-<version>.cfg`` file will specify which module and version to install. All modules 
 that are defined inside a ``release-<projectName>-<version>.cfg`` will be downloaded from the same parent URL. 
-For instance, if the ``release-<projectName>-<version>.cfg``  is in ``http://diracgrid.org/releases/releases.cfg`` 
-and DIRAC v5r14 has to be installed, *dirac-install* will try to download it from 
-``http://diracgrid.org/releases/DIRAC-v5r14.tar.gz``.
 
 If nothing else is defined, *dirac-install* will only install the modules defined in *DefaultModules* option. 
 To install other modules that are defined in the ``release-<projectName>-<version>.cfg`` the *-e* flag has to 
@@ -284,14 +228,8 @@ Reference of an installation's defaults file
    ModulesToInstall = MyExt
    #Type of externals to install (client, client-full, server)
    ExternalsType = client
-   #Version of lcg bundle to install
-   LcgVer = v14r2
    #Install following DIRAC's pro/versions schema
    UseVersionDir = False
-   #Force building externals
-   BuildExternals = False
-   #Build externals if the required externals is not available
-   BuildIfNotAvailable = False
    #Enable debug logging
    Debug = False
  }

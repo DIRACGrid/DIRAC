@@ -1,7 +1,7 @@
 .. _release_procedure:
 
 =============================
-Making DIRAC releases
+Making python2 DIRAC releases
 =============================
 
 This section is describing the procedure to follow by release managers
