@@ -21,8 +21,9 @@ DEFAULT_CLIENTS = {
     'DIRACCLI': dict(
         verify=False,
         client_id='DIRAC_CLI',
+        client_secret='secret',
         response_types=['device'],
-        grant_types=['urn:ietf:params:oauth:grant-type:device_code'],
+        grant_types=['urn:ietf:params:oauth:grant-type:device_code', 'refresh_token'],
         ProviderType='DIRACCLI'
     ),
     'DIRACWeb': dict(
@@ -70,7 +71,10 @@ class Client(OAuth2ClientMixin):
   def __init__(self, params):
     super(Client, self).__init__()
     client_metadata = params.get('client_metadata', params)
-    client_metadata['scope'] = ' '.join(list(set([client_metadata.get('scope', ''), DEFAULT_SCOPE])))
+    if client_metadata.get('scope') and DEFAULT_SCOPE not in client_metadata['scope']:
+      client_metadata['scope'] += ' %s' % DEFAULT_SCOPE
+    else:
+      client_metadata['scope'] = DEFAULT_SCOPE
     if params.get('redirect_uri') and not client_metadata.get('redirect_uris'):
       client_metadata['redirect_uris'] = [params['redirect_uri']]
     self.client_id = params['client_id']

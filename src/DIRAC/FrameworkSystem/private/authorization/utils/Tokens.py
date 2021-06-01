@@ -3,6 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import re
+import jwt
 import six
 import stat
 import time
@@ -20,15 +22,31 @@ from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
 
 def getTokenLocation():
-  """ Get the path of the currently active access token file
+  """ Research token file location. Use the bearer token discovery protocol
+      defined by the WLCG (https://zenodo.org/record/3937438) to find one.
+
+      :return: str
   """
-  envVar = 'DIRAC_TOKEN_FILE'
-  if envVar in os.environ:
-    tokenPath = os.path.realpath(os.environ[envVar])
-    if os.path.isfile(tokenPath):
-      return tokenPath
-  # /tmp/JWTup_u<uid>
-  return "/tmp/JWTup_u%s" % os.getuid()
+  if os.environ.get('BEARER_TOKEN_FILE'):
+    return os.environ['BEARER_TOKEN_FILE']
+  elif os.environ.get('XDG_RUNTIME_DIR'):
+    return "%s/bt_u%s" % (os.environ['XDG_RUNTIME_DIR'], os.getuid())
+  else:
+    return "/tmp/bt_u%s" % os.getuid()
+
+
+def getLocalTokenDict(location=None):
+  """ Search local token. Use the bearer token discovery protocol
+      defined by the WLCG (https://zenodo.org/record/3937438) to find one.
+
+      :param str location: environ variable name or file path
+
+      :return: S_OK(dict)/S_ERROR()
+  """
+  env = (location if location and location.startswith('/') else None) or 'BEARER_TOKEN'
+  if os.environ.get(env):
+    return S_OK(OAuth2Token(os.environ[env]))
+  return readTokenFromFile(location if location and location.startswith('/') else None)
 
 
 def readTokenFromFile(fileName=None):
@@ -38,13 +56,13 @@ def readTokenFromFile(fileName=None):
 
       :return: S_OK(dict)/S_ERROR()
   """
-  fileName = fileName or getTokenLocation()
+  location = fileName or getTokenLocation()
   try:
-    with open(fileName, 'rt') as f:
-      tokenDict = f.read()
-    return S_OK(json.loads(tokenDict))
-  except Exception as e:
-    return S_ERROR('Cannot read token. %s' % repr(e))
+    with open(location, 'rt') as f:
+      token = f.read()
+  except IOError as e:
+    return S_ERROR(DErrno.EOF, "Can't open %s token file.\n%s" % (location, repr(e)))
+  return S_OK(OAuth2Token(token))
 
 
 def writeToTokenFile(tokenContents, fileName):
@@ -55,16 +73,17 @@ def writeToTokenFile(tokenContents, fileName):
 
       :return: S_OK(str)/S_ERROR()
   """
+  location = fileName or getTokenLocation()
   try:
-    with open(fileName, 'wt') as fd:
+    with open(location, 'wt') as fd:
       fd.write(tokenContents)
   except Exception as e:
-    return S_ERROR(DErrno.EWF, " %s: %s" % (fileName, repr(e)))
+    return S_ERROR(DErrno.EWF, " %s: %s" % (location, repr(e)))
   try:
-    os.chmod(fileName, stat.S_IRUSR | stat.S_IWUSR)
+    os.chmod(location, stat.S_IRUSR | stat.S_IWUSR)
   except Exception as e:
-    return S_ERROR(DErrno.ESPF, "%s: %s" % (fileName, repr(e)))
-  return S_OK(fileName)
+    return S_ERROR(DErrno.ESPF, "%s: %s" % (location, repr(e)))
+  return S_OK(location)
 
 
 def writeTokenDictToTokenFile(tokenDict, fileName=None):
@@ -76,128 +95,41 @@ def writeTokenDictToTokenFile(tokenDict, fileName=None):
       :return: S_OK(str)/S_ERROR()
   """
   fileName = fileName or getTokenLocation()
-  try:
-    retVal = json.dumps(tokenDict)
-  except Exception as e:
-    return S_ERROR('Cannot dump token to string. %s' % repr(e))
-  return writeToTokenFile(retVal, fileName)
+  if not isinstance(tokenDict, dict):
+    return S_ERROR('Token is not a dictionary')
+  return writeToTokenFile(json.dumps(tokenDict), fileName)
 
 
-def writeTokenDictToTemporaryFile(tokenDict):
-  """ Write a token dict to a temporary file
-
-      :param dict tokenDict: dict object to dump to file
-
-      :return: S_OK(str)/S_ERROR() -- contain file name
-  """
-  try:
-    fd, tokenLocation = tempfile.mkstemp()
-    os.close(fd)
-  except IOError:
-    return S_ERROR(DErrno.ECTMPF)
-  retVal = writeTokenDictToTokenFile(tokenDict, tokenLocation)
-  if not retVal['OK']:
-    try:
-      os.unlink(tokenLocation)
-    except Exception:
-      pass
-    return retVal
-  return S_OK(tokenLocation)
-
-
-def getTokenInfo(token=False):
-  """ Return token info
-
-      :param token: token location or token as dict
-
-      :return: S_OK(dict)/S_ERROR()
-  """
-  # Discover token location
-  if isinstance(token, dict):
-    token = OAuth2Token(token)
-  else:
-    tokenLocation = token if isinstance(token, six.string_types) else getTokenLocation()
-    if not tokenLocation:
-      return S_ERROR("Cannot find token location.")
-    result = readTokenFromFile(tokenLocation)
-    if not result['OK']:
-      return result
-    token = OAuth2Token(result['Value'])['access_token']
-
-  result = IdProviderFactory().getIdProviderForToken(token)
-  if not result['OK']:
-    return S_ERROR("Cannot load provider: %s" % result['Message'])
-  cli = result['Value']
-  cli.updateJWKs()
-  payload = cli.verifyToken(token)
-
-  result = Registry.getUsernameForDN('/O=DIRAC/CN=%s' % payload['sub'])
-  if not result['OK']:
-    return result
-  payload['username'] = result['Value']
-  if payload.get('group'):
-    payload['properties'] = Registry.getPropertiesForGroup(payload['group'])
-  return S_OK(payload)
-
-
-def formatTokenInfoAsString(infoDict):
-  """ Convert a token infoDict into a string
-
-      :param dict infoDict: info
-
-      :return: str
-  """
-  secsLeft = int(infoDict['exp']) - time.time()
-  strTimeleft = datetime.datetime.fromtimestamp(secsLeft).strftime("%I:%M:%S")
-
-  leftAlign = 13
-  contentList = []
-  contentList.append('%s: %s' % ('subject'.ljust(leftAlign), infoDict['sub']))
-  contentList.append('%s: %s' % ('issuer'.ljust(leftAlign), infoDict['iss']))
-  contentList.append('%s: %s' % ('timeleft'.ljust(leftAlign), strTimeleft))
-  contentList.append('%s: %s' % ('username'.ljust(leftAlign), infoDict['username']))
-  if infoDict.get('group'):
-    contentList.append('%s: %s' % ('DIRAC group'.ljust(leftAlign), infoDict['group']))
-  if infoDict.get('properties'):
-    contentList.append('%s: %s' % ('properties'.ljust(leftAlign), ', '.join(infoDict['properties'])))
-  return "\n".join(contentList)
-
-
-class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):
+class OAuth2Token(_OAuth2Token):
   """ Implementation a Token object """
 
   def __init__(self, params=None, **kwargs):
+    """ Constructor
+    """
+    if isinstance(params, six.string_types):
+      # Is params a JWT?
+      if re.match(r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$", params):
+        params = dict(access_token=params)
+      else:
+        params = json.loads(params)
+
     kwargs.update(params or {})
-    kwargs['revoked'] = False if kwargs.get('revoked', 'False') == 'False' else True
-    self.sub = kwargs.get('sub')
-    self.issuer = kwargs.get('iss')
-    self.client_id = kwargs.get('client_id', kwargs.get('aud'))
-    self.token_type = kwargs.get('token_type')
-    self.access_token = kwargs.get('access_token')
-    self.refresh_token = kwargs.get('refresh_token')
-    self.scope = kwargs.get('scope')
-    self.revoked = kwargs.get('revoked')
-    self.issued_at = int(kwargs.get('issued_at', kwargs.get('iat', time.time())))
-    self.expires_in = int(kwargs.get('expires_in', 0))
-    self.expires_at = int(kwargs.get('expires_at', kwargs.get('exp', 0)))
-    if not self.issued_at:
-      raise Exception('Missing "iat" in token.')
-    if not self.expires_at:
-      if not self.expires_in:
-        raise Exception('Cannot calculate token "expires_at".')
-      self.expires_at = self.issued_at + self.expires_in
-    if not self.expires_in:
-      self.expires_in = self.expires_at - self.issued_at
-    kwargs.update({'client_id': self.client_id,
-                   'token_type': self.token_type,
-                   'access_token': self.access_token,
-                   'refresh_token': self.refresh_token,
-                   'scope': self.scope,
-                   'revoked': self.revoked,
-                   'issued_at': self.issued_at,
-                   'expires_in': self.expires_in,
-                   'expires_at': self.expires_at})
+    if not kwargs.get('expires_at') and kwargs.get('access_token'):
+      # Get access token expires_at claim
+      kwargs['expires_at'] = int(self.get_token_attr('exp'))
     super(OAuth2Token, self).__init__(kwargs)
+  
+  def get_client_id(self):
+    return self.get('client_id')
+
+  def get_scope(self):
+    return self.get('scope')
+
+  def get_expires_in(self):
+    return self.get('expires_in')
+
+  def get_expires_at(self):
+    return self.get('issued_at') + self.get('expires_in')
 
   @property
   def scopes(self):
@@ -214,3 +146,66 @@ class OAuth2Token(_OAuth2Token, OAuth2TokenMixin):
         :return: list
     """
     return [s.split(':')[1] for s in self.scopes if s.startswith('g:')]
+  
+  def get_token_attr(self, attr, token_type='access_token'):
+    """ Get token attribute without verification
+    
+        :param str attr: attribute
+        :param str token_type: token type
+
+        :return: str
+    """
+    if not self.get(token_type):
+      return None
+    return jwt.decode(self.get(token_type), options=dict(verify_signature=False,
+                                                         verify_exp=False,
+                                                         verify_aud=False,
+                                                         verify_nbf=False)).get(attr)
+
+  def getInfoAsString(self):
+    """ Return information about token as string
+
+        :return: str
+    """
+    result = IdProviderFactory().getIdProviderForToken(self.get('access_token'))
+    if not result['OK']:
+      return "Cannot load provider: %s" % result['Message']
+    cli = result['Value']
+    cli.token = self.copy()
+    result = cli.verifyToken()
+    if not result['OK']:
+      return result['Message']
+    payload = result['Value']
+    result = cli.researchGroup(payload)
+    if not result['OK']:
+      return result['Message']
+    credDict = result['Value']
+    result = Registry.getUsernameForDN(credDict['DN'])
+    if not result['OK']:
+      return result['Message']
+    credDict['username'] = result['Value']
+    if credDict.get('group'):
+      credDict['properties'] = Registry.getPropertiesForGroup(credDict['group'])
+    payload.update(credDict)
+    return self.__formatTokenInfoAsString(payload)
+
+  def __formatTokenInfoAsString(self, infoDict):
+    """ Convert a token infoDict into a string
+
+        :param dict infoDict: info
+
+        :return: str
+    """
+    secsLeft = int(infoDict['exp']) - time.time()
+    strTimeleft = datetime.datetime.fromtimestamp(secsLeft).strftime("%I:%M:%S")
+    leftAlign = 13
+    contentList = []
+    contentList.append('%s: %s' % ('subject'.ljust(leftAlign), infoDict['sub']))
+    contentList.append('%s: %s' % ('issuer'.ljust(leftAlign), infoDict['iss']))
+    contentList.append('%s: %s' % ('timeleft'.ljust(leftAlign), strTimeleft))
+    contentList.append('%s: %s' % ('username'.ljust(leftAlign), infoDict['username']))
+    if infoDict.get('group'):
+      contentList.append('%s: %s' % ('DIRAC group'.ljust(leftAlign), infoDict['group']))
+    if infoDict.get('properties'):
+      contentList.append('%s: %s' % ('properties'.ljust(leftAlign), ', '.join(infoDict['properties'])))
+    return "\n".join(contentList)
