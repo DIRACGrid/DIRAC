@@ -12,7 +12,6 @@ from io import open
 import os
 import jwt
 import time
-import requests
 import threading
 from datetime import datetime
 from six import string_types
@@ -40,24 +39,81 @@ sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
 
 class BaseRequestHandler(RequestHandler):
-  """
-    Base class for all the Handlers.
-    It directly inherits from :py:class:`tornado.web.RequestHandler`
+  """ Base class for all the Handlers.
+      It directly inherits from :py:class:`tornado.web.RequestHandler`
 
-    Each HTTP request is served by a new instance of this class.
+      Each HTTP request is served by a new instance of this class.
 
-    For the sequence of method called, please refer to
-    the `tornado documentation <https://www.tornadoweb.org/en/stable/guide/structure.html>`_.
+      For the sequence of method called, please refer to
+      the `tornado documentation <https://www.tornadoweb.org/en/stable/guide/structure.html>`_.
 
-    For compatibility with the existing :py:class:`DIRAC.Core.DISET.TransferClient.TransferClient`,
-    the handler can define a method ``export_streamToClient``. This is the method that will be called
-    whenever ``TransferClient.receiveFile`` is called. It is the equivalent of the DISET
-    ``transfer_toClient``.
-    Note that this is here only for compatibility, and we discourage using it for new purposes, as it is
-    bound to disappear.
+      This class is basic for :py:class:`DIRAC.Core.Tornado.Server.TornadoService.TornadoService`
+      and :py:class:`DIRAC.Core.Tornado.Server.TornadoREST.TornadoREST`.
+      
+      In order to create a class that inherits from `BaseRequestHandler`, it has to
+      follow a certain skeleton::
 
-    The handler only define the ``post`` verb. Please refer to :py:meth:`.post` for the details.
+        class TornadoInstance(BaseRequestHandler):
+          
+          # Prefix of methods names
+          METHOD_PREFIX = "export_"
 
+          @classmethod
+          def _getServiceName(cls, request):
+            ''' Search service name in request
+            '''
+            return request.path[1:]
+
+          @classmethod
+          def _getServiceInfo(cls, serviceName, request):
+            ''' Fill service information.
+            '''
+            return {'serviceName': serviceName,
+                    'serviceSectionPath': PathFinder.getServiceSection(serviceName),
+                    'csPaths': [PathFinder.getServiceSection(serviceName)],
+                    'URL': request.full_url()}
+          
+          @classmethod
+          def _getServiceAuthSection(cls, serviceName):
+            ''' Search service auth section.
+            '''
+            return "%s/Authorization" % PathFinder.getServiceSection(serviceName)
+
+          def _getMethodName(self):
+            ''' Parse method name.
+            '''
+            return self.get_argument("method")
+
+          def _getMethodArgs(self, args):
+            ''' Decode args.
+            '''
+            args_encoded = self.get_body_argument('args', default=encode([]))
+            return decode(args_encoded)[0]
+
+          # Make post a coroutine.
+          # See https://www.tornadoweb.org/en/branch5.1/guide/coroutines.html#coroutines
+          # for details
+          @gen.coroutine
+          def post(self, *args, **kwargs):  # pylint: disable=arguments-differ
+            ''' Describe HTTP method to use
+            '''
+            # Execute the method in an executor (basically a separate thread)
+            # Because of that, we cannot calls certain methods like `self.write`
+            # in _executeMethod. This is because these methods are not threadsafe
+            # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
+            # However, we can still rely on instance attributes to store what should
+            # be sent back (reminder: there is an instance
+            # of this class created for each request)
+            retVal = yield IOLoop.current().run_in_executor(None, self._executeMethod, args)
+            # retVal is :py:class:`tornado.concurrent.Future`
+            self._finishFuture(retVal)
+
+      For compatibility with the existing :py:class:`DIRAC.Core.DISET.TransferClient.TransferClient`,
+      the handler can define a method ``export_streamToClient``. This is the method that will be called
+      whenever ``TransferClient.receiveFile`` is called. It is the equivalent of the DISET
+      ``transfer_toClient``.
+      Note that this is here only for compatibility, and we discourage using it for new purposes, as it is
+      bound to disappear.        
   """
   # Because we initialize at first request, we use a flag to know if it's already done
   __init_done = False
@@ -83,13 +139,9 @@ class BaseRequestHandler(RequestHandler):
   # Which grant type to use
   USE_AUTHZ_GRANTS = ['SSL', 'JWT']
 
-  # Key updates are started at initialization, ie at the first request,
-  # this parameter shows that the first request of keys is made and
-  # it is possible to use them for check of tokens
-  __init_jwk_done = False
+  # Definition of identity providers
   _idps = IdProviderFactory()
   _idp = {}
-  _jwks = {}
 
   @classmethod
   def _initMonitoring(cls, serviceName, fullUrl):
@@ -144,7 +196,7 @@ class BaseRequestHandler(RequestHandler):
 
         :return: str
     """
-    return "%s/Authorization" % PathFinder.getServiceSection(serviceName)
+    raise NotImplementedError('Please, create the _getServiceAuthSection class method')
 
   @classmethod
   def _getServiceInfo(cls, serviceName, request):
@@ -158,45 +210,18 @@ class BaseRequestHandler(RequestHandler):
     return {}
 
   @classmethod
-  @gen.coroutine
-  def __refreshJWKsLoop(cls):
-    """ Auto refresh JWKs
+  def __loadIdPs(cls):
+    """ Load identity providers that will be used to verify tokens
     """
-    while True:
-
-      # Research Identity Providers
-      result = getProvidersForInstance('Id')
-      if result['OK']:
-        for providerName in list(set(result['Value'] + ['DIRACCLI'])):
-          result = cls._idps.getIdProvider(providerName)
-          if result['OK']:
-            issuer = result['Value'].issuer.strip('/')
-            jwks_uri = result['Value'].get_metadata('jwks_uri')
-            cls._idp[issuer] = result['Value']
-
-            gLogger.debug('Updating public keys..')
-            retVal = yield IOLoop.current().run_in_executor(None, cls.__refreshJWKs, jwks_uri)
-            result = retVal.result()
-            if not result['OK']:
-              gLogger.error('%s keys not updated' % issuer, result['Message'])
-            else:
-              gLogger.debug('%s keys updated' % issuer, result['Value'])
-              cls._jwks[issuer] = result['Value']
-
-      cls.__init_jwk_done = True
-      yield gen.sleep(24 * 3600)
-
-  @classmethod
-  @gen.coroutine
-  def __refreshJWKs(cls, jwks_uri):
-    """ Updating public keys
-    """
-    try:
-      response = requests.get(jwks_uri, verify=False)
-      response.raise_for_status()
-      return S_OK(response.json())
-    except requests.exceptions.RequestException as e:
-      return S_ERROR("Error %s" % e)
+    gLogger.info('Load identit providers..')
+    # Research Identity Providers
+    result = getProvidersForInstance('Id')
+    if result['OK']:
+      for providerName in result['Value']:
+        result = cls._idps.getIdProvider(providerName)
+        if not result['OK']:
+          gLogger.exception(result['Message'])
+        cls._idp[result['Value'].issuer.strip('/')] = result['Value']
 
   @classmethod
   def __initializeService(cls, request):
@@ -221,8 +246,8 @@ class BaseRequestHandler(RequestHandler):
       if cls.__init_done:
         return S_OK()
 
-      # Run automatic public key updates
-      IOLoop.current().spawn_callback(cls.__refreshJWKsLoop)
+      # Load all registred identity providers
+      cls.__loadIdPs()
 
       # absoluteUrl: full URL e.g. ``https://<host>:<port>/<System>/<Component>``
       absoluteUrl = request.path
@@ -365,6 +390,8 @@ class BaseRequestHandler(RequestHandler):
 
     self._monitorRequest()
 
+    self._prepare()
+
   def _prepare(self):
     """
       Prepare the request. It reads certificates and check authorizations.
@@ -390,76 +417,15 @@ class BaseRequestHandler(RequestHandler):
                                              self._getMethodAuthProps())
     if not authorized:
       extraInfo = ''
-      if self.credDict.get('DN'):
-        extraInfo += 'DN: %s' % self.credDict['DN']
       if self.credDict.get('ID'):
         extraInfo += 'ID: %s' % self.credDict['ID']
+      elif self.credDict.get('DN'):
+        extraInfo += 'DN: %s' % self.credDict['DN']
       sLog.error(
           "Unauthorized access", "Identity %s; path %s; %s" %
           (self.srv_getFormattedRemoteCredentials(),
            self.request.path, extraInfo))
       raise HTTPError(status_code=http_client.UNAUTHORIZED)
-
-  # Make post a coroutine.
-  # See https://www.tornadoweb.org/en/branch5.1/guide/coroutines.html#coroutines
-  # for details
-  @gen.coroutine
-  def post(self, *args, **kwargs):  # pylint: disable=arguments-differ
-    """
-      Method to handle incoming ``POST`` requests.
-      Note that all the arguments are already prepared in the :py:meth:`.prepare`
-      method.
-
-      The ``POST`` arguments expected are:
-
-      * ``method``: name of the method to call
-      * ``args``: JSON encoded arguments for the method
-      * ``extraCredentials``: (optional) Extra informations to authenticate client
-      * ``rawContent``: (optionnal, default False) If set to True, return the raw output
-        of the method called.
-
-      If ``rawContent`` was requested by the client, the ``Content-Type``
-      is ``application/octet-stream``, otherwise we set it to ``application/json``
-      and JEncode retVal.
-
-      If ``retVal`` is a dictionary that contains a ``Callstack`` item,
-      it is removed, not to leak internal information.
-
-
-      Example of call using ``requests``::
-
-        In [20]: url = 'https://server:8443/DataManagement/TornadoFileCatalog'
-          ...: cert = '/tmp/x509up_u1000'
-          ...: kwargs = {'method':'whoami'}
-          ...: caPath = '/home/dirac/ClientInstallDIR/etc/grid-security/certificates/'
-          ...: with requests.post(url, data=kwargs, cert=cert, verify=caPath) as r:
-          ...:     print r.json()
-          ...:
-        {u'OK': True,
-            u'Value': {u'DN': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
-            u'group': u'dirac_user',
-            u'identity': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
-            u'isLimitedProxy': False,
-            u'isProxy': True,
-            u'issuer': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
-            u'properties': [u'NormalUser'],
-            u'secondsLeft': 85441,
-            u'subject': u'/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch/CN=2409820262',
-            u'username': u'adminusername',
-            u'validDN': False,
-            u'validGroup': False}}
-    """
-    # Execute the method in an executor (basically a separate thread)
-    # Because of that, we cannot calls certain methods like `self.write`
-    # in _executeMethod. This is because these methods are not threadsafe
-    # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
-    # However, we can still rely on instance attributes to store what should
-    # be sent back (reminder: there is an instance
-    # of this class created for each request)
-    retVal = yield IOLoop.current().run_in_executor(None, self._executeMethod, args)
-
-    # retVal is :py:class:`tornado.concurrent.Future`
-    self._finishFuture(retVal)
 
   @gen.coroutine
   def _executeMethod(self, args):
@@ -474,9 +440,6 @@ class BaseRequestHandler(RequestHandler):
         This method is called in an executor, and so cannot use methods like self.write
         See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
     """
-    # Because the keys are updated during the first initialization, the
-    # first authorization process must start after initialization
-    self._prepare()
 
     sLog.notice(
         "Incoming request %s /%s: %s" %
@@ -503,15 +466,16 @@ class BaseRequestHandler(RequestHandler):
 
         :param object retVal: tornado.concurrent.Future
     """
-
     # Wait result only if it's a Future object
     self.result = retVal.result() if isinstance(retVal, Future) else retVal
 
     # Here it is safe to write back to the client, because we are not
     # in a thread anymore
 
-    # Is it S_OK or S_ERROR
-    if self.isDIRACResult(self.result):
+    # Is it S_OK or S_ERROR?
+    if (isinstance(self.result, dict) and
+        isinstance(self.result.get('OK'), bool) and
+        ('Value' if self.result['OK'] else 'Message') in self.result):
       self._parseDIRACResult(self.result)
 
     # If set to true, do not JEncode the return of the RPC call
@@ -532,13 +496,6 @@ class BaseRequestHandler(RequestHandler):
       self.write(encode(self.result))
 
     self.finish()
-
-  def isDIRACResult(self, result):
-    """ Check if it DIRAC result
-    """
-    if isinstance(result, dict):
-      if isinstance(result.get('OK'), bool) and ('Value' if result['OK'] else 'Message') in result:
-        return True
 
   def _parseDIRACResult(self, result):
     """ Processing of a standard DIRAC result,
@@ -643,9 +600,6 @@ class BaseRequestHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    if not self.__init_jwk_done:
-      time.sleep(5)
-
     if not accessToken:
       # Export token from headers
       token = self.request.headers.get('Authorization')
@@ -656,13 +610,14 @@ class BaseRequestHandler(RequestHandler):
         return S_ERROR('Found a not bearer access token.')
 
     # Read token without verification to get issuer
-    issuer = jwt.decode(accessToken, options=dict(verify_signature=False))['iss'].strip('/')
-
+    self.log.debug('Read issuer from access token', accessToken)
+    issuer = jwt.decode(accessToken, leeway=300, options=dict(verify_signature=False,
+                                                              verify_aud=False))['iss'].strip('/')
     # Verify token
-    payload = self._idp[issuer].verifyToken(accessToken, self._jwks[issuer])
-    credDict = self._idp[issuer].researchGroup(payload, accessToken)
-
-    return S_OK(credDict)
+    self.log.debug('Verify access token')
+    result = self._idp[issuer].verifyToken(accessToken)
+    self.log.debug('Search user group')
+    return self._idp[issuer].researchGroup(result['Value'], accessToken) if result['OK'] else result
 
   def _authzVISITOR(self):
     """ Visitor access
@@ -689,67 +644,6 @@ class BaseRequestHandler(RequestHandler):
 
   def isRegisteredUser(self):
     return self.credDict.get('username', 'anonymous') != 'anonymous' and self.credDict.get('group')
-
-  auth_ping = ['all']
-
-  def export_ping(self):
-    """
-      Default ping method, returns some info about server.
-
-      It returns the exact same information as DISET, for transparency purpose.
-    """
-    # COPY FROM DIRAC.Core.DISET.RequestHandler
-    dInfo = {}
-    dInfo['version'] = DIRAC.version
-    dInfo['time'] = datetime.utcnow()
-    # Uptime
-    try:
-      with open("/proc/uptime", 'rt') as oFD:
-        iUptime = int(float(oFD.readline().split()[0].strip()))
-      dInfo['host uptime'] = iUptime
-    except Exception:  # pylint: disable=broad-except
-      pass
-    startTime = self._startTime
-    dInfo['service start time'] = self._startTime
-    serviceUptime = datetime.utcnow() - startTime
-    dInfo['service uptime'] = serviceUptime.days * 3600 + serviceUptime.seconds
-    # Load average
-    try:
-      with open("/proc/loadavg", 'rt') as oFD:
-        dInfo['load'] = " ".join(oFD.read().split()[:3])
-    except Exception:  # pylint: disable=broad-except
-      pass
-    dInfo['name'] = self._serviceInfoDict['serviceName']
-    stTimes = os.times()
-    dInfo['cpu times'] = {'user time': stTimes[0],
-                          'system time': stTimes[1],
-                          'children user time': stTimes[2],
-                          'children system time': stTimes[3],
-                          'elapsed real time': stTimes[4]
-                          }
-
-    return S_OK(dInfo)
-
-  auth_echo = ['all']
-
-  @staticmethod
-  def export_echo(data):
-    """
-    This method used for testing the performance of a service
-    """
-    return S_OK(data)
-
-  auth_whoami = ['authenticated']
-
-  def export_whoami(self):
-    """
-      A simple whoami, returns all credential dictionary, except certificate chain object.
-    """
-    credDict = self.srv_getRemoteCredentials()
-    if 'x509Chain' in credDict:
-      # Not serializable
-      del credDict['x509Chain']
-    return S_OK(credDict)
 
   @classmethod
   def srv_getCSOption(cls, optionName, defaultValue=False):
