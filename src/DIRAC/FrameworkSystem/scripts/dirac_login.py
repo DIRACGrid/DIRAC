@@ -15,8 +15,6 @@ from __future__ import print_function
 
 import os
 import sys
-import requests
-import threading
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -25,8 +23,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (writeTokenDictToTokenFile,
-                                                                      getTokenInfo, formatTokenInfoAsString)
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeTokenDictToTokenFile, readTokenFromFile
 
 __RCSID__ = "$Id$"
 
@@ -40,10 +37,10 @@ class Params(object):
     self.provider = 'DIRACCLI'
     self.issuer = None
     self.proxyLoc = '/tmp/x509up_u%s' % os.getuid()
-    self.tokenLoc = '/tmp/JWTup_u%s' % os.getuid()
+    self.tokenLoc = None
 
   def returnProxy(self, _arg):
-    """ Set email
+    """ To return proxy
 
         :return: S_OK()
     """
@@ -51,7 +48,7 @@ class Params(object):
     return S_OK()
 
   def setGroup(self, arg):
-    """ Set email
+    """ Set group
 
         :param str arg: group
 
@@ -61,7 +58,7 @@ class Params(object):
     return S_OK()
 
   def setProvider(self, arg):
-    """ Set email
+    """ Set provider name
 
         :param str arg: provider
 
@@ -71,13 +68,23 @@ class Params(object):
     return S_OK()
 
   def setIssuer(self, arg):
-    """ Set email
+    """ Set issuer
 
         :param str arg: issuer
 
         :return: S_OK()
     """
     self.issuer = arg
+    return S_OK()
+
+  def setTokenFile(self, arg):
+    """ Set token file
+
+        :param str arg: token file
+
+        :return: S_OK()
+    """
+    self.tokenLoc = arg
     return S_OK()
 
   def setLivetime(self, arg):
@@ -117,6 +124,11 @@ class Params(object):
         "lifetime=",
         "set proxy lifetime in a hours",
         self.setLivetime)
+    Script.registerSwitch(
+        "F:",
+        "file=",
+        "set token file location",
+        self.setTokenFile)
 
   def doOAuthMagic(self):
     """ Magic method with tokens
@@ -138,10 +150,7 @@ class Params(object):
       idpObj.scope += '+lifetime:%s' % (int(self.lifetime) * 3600)
 
     # Submit Device authorisation flow
-    try:
-      result = idpObj.authorization()
-    except KeyboardInterrupt:
-      return S_ERROR('User canceled the operation..')
+    result = idpObj.deviceAuthorization()
     if not result['OK']:
       return result
 
@@ -154,6 +163,7 @@ class Params(object):
       result = writeTokenDictToTokenFile(idpObj.token, self.tokenLoc)
       if not result['OK']:
         return result
+      self.tokenLoc = result['Value']
       gLogger.notice('Token is saved in %s.' % self.tokenLoc)
 
     result = Script.enableCS()
@@ -167,10 +177,10 @@ class Params(object):
         return result['Message']
       gLogger.notice(formatProxyInfoAsString(result['Value']))
     else:
-      result = getTokenInfo(self.tokenLoc)
+      result = readTokenFromFile(self.tokenLoc)
       if not result['OK']:
-        return result['Message']
-      gLogger.notice(formatTokenInfoAsString(result['Value']))
+        return result
+      gLogger.notice(result['Value'].getInfoAsString())
 
     return S_OK()
 
