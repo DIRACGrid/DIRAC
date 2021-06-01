@@ -49,7 +49,8 @@ from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import readTokenFromFile
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import getLocalTokenDict, writeTokenDictToTokenFile
 
 
 # TODO CHRIS: refactor all the messy `discover` methods
@@ -106,6 +107,7 @@ class TornadoBaseClient(object):
     self.__ca_location = False
 
     self.kwargs = kwargs
+    self.__idp = None
     self.__useAccessToken = None
     self.__useCertificates = None
     # The CS useServerCertificate option can be overridden by explicit argument
@@ -236,6 +238,12 @@ class TornadoBaseClient(object):
       self.kwargs[self.KW_USE_ACCESS_TOKEN] = self.__useAccessToken
       if 'DIRAC_USE_ACCESS_TOKEN' in os.environ:
         self.__useAccessToken = os.environ['DIRAC_USE_ACCESS_TOKEN']
+
+    if self.__useAccessToken:
+      result = IdProviderFactory().getIdProvider('DIRACCLI')
+      if not result['OK']:
+        return result
+      self.__idp = result['Value']
 
     # Rewrite a little bit from here: don't need the proxy string, we use the file
     if self.KW_PROXY_CHAIN in self.kwargs:
@@ -512,10 +520,26 @@ class TornadoBaseClient(object):
 
     # Use access token?
     elif self.__useAccessToken:
-      result = readTokenFromFile()
+      result = getLocalTokenDict()
       if not result['OK']:
         return result
-      auth = {'headers': {"Authorization": "Bearer %s" % result['Value']['access_token']}}
+      token = result['Value']
+
+      # Check if access token expired
+      if token.is_expired():
+        if not token.get('refresh_token'):
+          return S_ERROR('Access token expired.')
+
+        # Try to refresh token
+        result = self.__idp.refreshToken(token['refresh_token'])
+        if result['OK']:
+          token = result['Value']
+          result = writeTokenDictToTokenFile(token)
+        if not result['OK']:
+          return result
+        gLogger.notice('Token is saved in %s.' % result['Value'])
+
+      auth = {'headers': {"Authorization": "Bearer %s" % token['access_token']}}
 
     # CHRIS 04.02.21
     # TODO: add proxyLocation check ?
