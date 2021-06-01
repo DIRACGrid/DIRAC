@@ -7,6 +7,7 @@ import re
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import DEncode, Time
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 class UserProfileClient(object):
@@ -40,6 +41,7 @@ class UserProfileClient(object):
                                          self.__generateTypeDest(dataObj[k])) for k in dataObj])
     return ""
 
+  @deprecated("Unused, will be removed in v7r3")
   def checkTypeRe(self, dataObj, typeRE):
     if typeRE[0] != "^":
       typeRE = "^%s" % typeRE
@@ -119,12 +121,15 @@ class UserProfileClient(object):
   def deleteProfiles(self, userList):
     return self.__getRPCClient().deleteProfiles(userList)
 
+  @deprecated("Unused, will be removed in v7r3")
   def storeHashTag(self, tagName):
     return self.__getRPCClient().storeHashTag(tagName)
 
+  @deprecated("Unused, will be removed in v7r3")
   def retrieveHashTag(self, hashTag):
     return self.__getRPCClient().retrieveHashTag(hashTag)
 
+  @deprecated("Unused, will be removed in v7r3")
   def retrieveAllHashTags(self):
     return self.__getRPCClient().retrieveAllHashTags()
 
