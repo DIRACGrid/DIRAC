@@ -37,9 +37,7 @@ Installation configuration::
     #
     #  DIRAC release version (this is an example, you should find out the current
     #  production release)
-    Release = v6r20p14
-    #  Python version of the installation
-    PythonVersion = 27
+    Release = v7r2p8
     #  To install the Server version of DIRAC (the default is client)
     InstallType = server
     #  If this flag is set to yes, each DIRAC update will be installed
