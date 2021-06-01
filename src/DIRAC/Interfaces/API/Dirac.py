@@ -614,7 +614,7 @@ class Dirac(API):
         self.log.warn('Input data resolution failed')
         return result
 
-    softwarePolicy = self.__getVOPolicyModule('SoftwareDistModule')
+    softwarePolicy = Operations().getValue('SoftwareDistModule')
     if softwarePolicy:
       moduleFactory = ModuleFactory()
       moduleInstance = moduleFactory.getModule(softwarePolicy, {'Job': parameters})
@@ -628,7 +628,7 @@ class Dirac(API):
         self.log.warn('Software installation failed with result:\n%s' % (result))
         return result
     else:
-      self.log.verbose('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
+      self.log.verbose('Could not retrieve SoftwareDistModule for VO')
 
     self.log.debug("Looking for resolving the input sandbox, if it is present")
     sandbox = parameters.get('InputSandbox')
