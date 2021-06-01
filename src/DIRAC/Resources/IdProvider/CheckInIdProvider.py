@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from DIRAC import S_OK
 from DIRAC.Resources.IdProvider.OAuth2IdProvider import OAuth2IdProvider
 
 __RCSID__ = "$Id$"
@@ -11,20 +12,24 @@ __RCSID__ = "$Id$"
 
 class CheckInIdProvider(OAuth2IdProvider):
 
-  # urn:mace:egi.eu:group:registry:training.egi.eu:role=member#aai.egi.eu'
-  NAMESPACE = 'urn:mace:egi.eu:group:registry'
-  SIGN = '#aai.egi.eu'
-  PARAM_SCOPE = 'eduperson_entitlement?value='
-
-  def researchGroup(self, payload, token=None):
+  def researchGroup(self, payload=None, token=None):
     """ Research group
+
+        :param str payload: token payload
+        :param str token: access token
+
+        :return: S_OK(dict)/S_ERROR()
     """
     if token:
-      self.token = token
-    claims = self.getUserProfile()
-    credDict = self.parseBasic(claims)
-    credDict.update(self.parseEduperson(claims))
-    cerdDict = self.userDiscover(credDict)
-    credDict['provider'] = self.name
+      self.token = {'access_token': token}
 
-    return credDict
+    result = self.getUserProfile()
+    if not result['OK']:
+      return result
+    payload = result['Value']
+
+    credDict = self.parseBasic(payload)
+    if not credDict.get('DIRACGroups'):
+      credDict.update(self.parseEduperson(payload))
+    credDict['group'] = credDict.get('DIRACGroups', [None])[0]
+    return S_OK(credDict)

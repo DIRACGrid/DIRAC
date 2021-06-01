@@ -20,11 +20,11 @@ from authlib.oidc.discovery.well_known import get_well_known_url
 from authlib.oauth2.rfc7636 import create_s256_code_challenge
 
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSRoleGroupMapping, getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSRoleGroupMapping, getGroupOption, getAllGroups
 
 __RCSID__ = "$Id$"
 
@@ -33,13 +33,16 @@ DEFAULT_HEADERS = {
     'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
 }
 
+gJWKs = ThreadSafe.Synchronizer()
+gMetadata = ThreadSafe.Synchronizer()
+gRefreshToken = ThreadSafe.Synchronizer()
+
 
 def claimParser(claimDict, attributes):
-  """ Parse claims to write it as DIRAC profile
+  """ Parse claims to dictionary with certain keys
 
       :param dict claimDict: claims
       :param dict attributes: contain claim and regex to parse it
-      :param dict profile: to fill parsed data
 
       :return: dict
   """
@@ -77,6 +80,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
   """ Base class to describe the configuration of the OAuth2 client of the corresponding provider.
   """
 
+  JWKS_REFRESH_RATE = 24 * 3600
   METADATA_REFRESH_RATE = 24 * 3600
 
   def __init__(self, **kwargs):
@@ -90,44 +94,14 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     self.verify = kwargs.get('verify', False)
     self.token_placement = kwargs.get('token_placement', 'header')
     self.code_challenge_method = 'S256'
-    self.token_endpoint_auth_method = kwargs.get('token_endpoint_auth_method', 'client_secret_post')
+    # self.token_endpoint_auth_method = kwargs.get('token_endpoint_auth_method') #, 'client_secret_post')
     self.server_metadata_url = kwargs.get('server_metadata_url', get_well_known_url(self.metadata['issuer'], True))
+    self.jwks_fetch_last = time.time() - self.JWKS_REFRESH_RATE
     self.metadata_fetch_last = time.time() - self.METADATA_REFRESH_RATE
     self.log.debug('"%s" OAuth2 IdP initialization done:' % self.name,
-                   '\nclient_id: %s\nclient_secret: %s\nmetadata:\n%s' % (self.client_id,
-                                                                          self.client_secret,
+                   '\nclient_id: %s\nclient_secret: %s\nmetadata:\n%s' % (self.client_id, self.client_secret,
                                                                           pprint.pformat(self.metadata)))
 
-  def verifyToken(self, accessToken, jwks=None):
-    """ Verify access token
-
-        :param str accessToken: access token
-
-        :return: dict
-    """
-    jwks = jwks or self.jwks
-    self.log.debug("Try to decode token %s with JWKs:\n" % accessToken, pprint.pformat(jwks))
-    if not jwks:
-      raise Exception("JWKs not found.")
-    # Try to decode and verify token
-    return jwt.decode(accessToken, JsonWebKey.import_key_set(jwks))
-
-  def refreshToken(self, refresh_token):
-    """ Refresh token
-
-        :param str token: refresh_token
-
-        :return: dict
-    """
-    return self.refresh_token(self.get_metadata('token_endpoint'), refresh_token=refresh_token)
-
-  def revokeToken(self, token=None, token_type_hint='refresh_token'):
-    """ Revoke token
-
-        :param str token: token
-        :param str token_type_hint: token type
-    """
-    self.revoke_token(self.get_metadata('revocation_endpoint'), token=token, token_type_hint=token_type_hint)
 
   def get_metadata(self, option=None):
     """ Get metadata
@@ -140,6 +114,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.fetch_metadata()
     return self.metadata.get(option)
 
+  @gMetadata
   def fetch_metadata(self):
     """ Fetch metada
     """
@@ -148,27 +123,189 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.metadata.update(data)
       self.metadata_fetch_last = time.time()
 
+  @gJWKs
   def updateJWKs(self):
     """ Update JWKs
     """
-    try:
-      response = requests.get(self.get_metadata('jwks_uri'), verify=self.verify)
-      response.raise_for_status()
-      self.jwks = response.json()
-      return S_OK(self.jwks)
-    except requests.exceptions.RequestException as e:
-      return S_ERROR("Error %s" % e)
+    if self.jwks_fetch_last < (time.time() - self.JWKS_REFRESH_RATE):
+      try:
+        self.jwks = self.get(self.get_metadata('jwks_uri'), withhold_token=True).json()
+        self.jwks_fetch_last = time.time()
+        return S_OK(self.jwks)
+      except Exception as e:
+        self.log.exception(e)
+        return S_ERROR("Error %s" % repr(e))
+    return S_OK()
 
-  def researchGroup(self, payload, token):
+  def verifyToken(self, accessToken=None, jwks=None):
+    """ Verify access token
+
+        :param str accessToken: access token
+        :param dict jwks: JWKs
+
+        :return: dict
+    """
+    # Define an access token
+    if not accessToken:
+      accessToken = self.token['access_token']
+    # Renew a JWKs of an identity provider if needed
+    if not jwks:
+      result = self.updateJWKs()
+      if not result['OK']:
+        return result
+      jwks = self.jwks
+    if not jwks:
+      return S_ERROR("JWKs not found.")
+    # Try to decode and verify an access token
+    self.log.debug("Try to decode token %s with JWKs:\n" % accessToken, pprint.pformat(jwks))
+    try:
+      return S_OK(jwt.decode(accessToken, JsonWebKey.import_key_set(jwks)))
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR(repr(e))
+
+  @gRefreshToken
+  def refreshToken(self, refresh_token=None):
+    """ Refresh token
+
+        :param str token: refresh_token
+
+        :return: dict
+    """
+    if not refresh_token:
+      refresh_token = self.token.get('refresh_token')
+    try:
+      return S_OK(self.refresh_token(self.get_metadata('token_endpoint'), refresh_token=refresh_token))
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR(repr(e))
+
+  @gRefreshToken
+  def fetchToken(self, **kwargs):
+    """ Fetch token
+
+        :return: dict
+    """
+    try:
+      self.fetch_access_token(self.get_metadata('token_endpoint'), **kwargs)
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR(repr(e))
+    self.token['client_id'] = self.client_id
+    self.token['provider'] = self.name
+    return S_OK(self.token)
+
+  def revokeToken(self, token=None, token_type_hint='refresh_token'):
+    """ Revoke token
+
+        :param str token: token
+        :param str token_type_hint: token type
+
+        :return: S_OK()/S_ERROR()
+    """
+    if not token:
+      tokn = self.token.get(token_type_hint)
+    try:
+      self.revoke_token(self.get_metadata('revocation_endpoint'), token=token, token_type_hint=token_type_hint)
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR(repr(e))
+    return S_OK()
+
+  def exchangeGroup(self, group):
+    """ Get new tokens for group scope
+
+        :param str group: requested group
+
+        :return: dict -- token
+    """
+    result = self.getGroupScopes(group)
+    if not result['OK']:
+      return result
+    groupScopes = result['Value']
+    try:
+      token = self.exchange_token(self.get_metadata('token_endpoint'), subject_token=self.token['access_token'],
+                                  subject_token_type='urn:ietf:params:oauth:token-type:access_token',
+                                  scope=list_to_scope(scope_to_list(self.scope) + groupScopes))
+      if not token:
+        return S_ERROR('Cannot exchange token with %s group.' % group)
+      self.token = token
+      return S_OK(token)
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR('Cannot exchange token with %s group: %s' % (group, repr(e)))
+
+  def researchGroup(self, payload=None, token=None):
     """ Research group
+
+        :param str payload: token payload
+        :param str token: access token
+
+        :return: S_OK(dict)/S_ERROR()
     """
     credDict = self.parseBasic(payload)
-    if not credDict.get('group'):
-      cerdDict = self.userDiscover(credDict)
-    credDict['provider'] = self.name
+    if not credDict.get('DIRACGroups'):
+      credDict.update(self.parseEduperson(payload))
+    if credDict.get('DIRACGroups'):
+      self.log.debug('Found next groups:', ', '.join(credDict['DIRACGroups']))
+      credDict['group'] = credDict['DIRACGroups'][0]
+    return S_OK(credDict)
+
+  def parseBasic(self, claimDict):
+    """ Parse basic claims
+
+        :param dict claimDict: claims
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    self.log.debug('Token payload:', pprint.pformat(claimDict))
+    credDict = {}
+    credDict['ID'] = claimDict['sub']
+    credDict['DN'] = '/O=DIRAC/CN=%s' % credDict['ID']
+    if claimDict.get('scope'):
+      self.log.debug('Search groups for %s scope.' % claimDict['scope'])
+      credDict['DIRACGroups'] = self.getScopeGroups(claimDict['scope'])
     return credDict
 
-  def authorization(self, group=None):
+  def parseEduperson(self, claimDict):
+    """ Parse eduperson claims
+
+        :return: dict
+    """
+    vos = {}
+    credDict = {}
+    attributes = {
+        'eduperson_unique_id': '^(?P<ID>.*)',
+        'eduperson_entitlement': '%s:%s' % ('^(?P<NAMESPACE>[A-z,.,_,-,:]+):(group:registry|group)',
+                                            '(?P<VO>[A-z,.,_,-]+):role=(?P<VORole>[A-z,.,_,-]+)[:#].*')
+    }
+    self.log.debug('Try to parse eduperson claims..')
+    # Parse eduperson claims
+    resDict = claimParser(claimDict, attributes)
+    if resDict.get('eduperson_unique_id'):
+      self.log.debug('Found eduperson_unique_id claim:', pprint.pformat(resDict['eduperson_unique_id']))
+      credDict['ID'] = resDict['eduperson_unique_id']['ID']
+    if resDict.get('eduperson_entitlement'):
+      self.log.debug('Found eduperson_entitlement claim:', pprint.pformat(resDict['eduperson_entitlement']))
+      for voDict in resDict['eduperson_entitlement']:
+        if voDict['VO'] not in vos:
+          vos[voDict['VO']] = {'VORoles': []}
+        if voDict['VORole'] not in vos[voDict['VO']]['VORoles']:
+          vos[voDict['VO']]['VORoles'].append(voDict['VORole'])
+      # Search DIRAC groups
+      for vo in vos:
+        result = getVOMSRoleGroupMapping(vo)
+        if not result['OK']:
+          # Skip VO if it absent in Registry
+          self.log.debug(result['Message'])
+          continue
+        for role in vos[vo]['VORoles']:
+          groups = result['Value']['VOMSDIRAC'].get('/%s/%s' % (vo, role))
+          if groups:
+            credDict['DIRACGroups'] = list(set(credDict.get('DIRACGroups', []) + groups))
+    return credDict
+
+  def deviceAuthorization(self, group=None):
     """ Authorizaion through DeviceCode flow
     """
     result = self.submitDeviceCodeAuthorizationFlow(group)
@@ -180,8 +317,10 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     showURL = 'Use next link to continue, your user code is "%s"\n%s' % (response['user_code'],
                                                                          response['verification_uri'])
     self.log.notice(showURL)
-
-    return self.waitFinalStatusOfDeviceCodeAuthorizationFlow(response['device_code'])
+    try:
+      return self.waitFinalStatusOfDeviceCodeAuthorizationFlow(response['device_code'])
+    except KeyboardInterrupt:
+      return S_ERROR('User canceled the operation..')
 
   def submitNewSession(self, pkce=True):
     """ Submit new authorization session
@@ -218,80 +357,19 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     self.log.debug('Current session is:\n', pprint.pformat(session))
 
     self.fetchToken(authorization_response=response.uri, code_verifier=session.get('code_verifier'))
-    # Get user info
-    claims = self.getUserProfile()
-    credDict = self.parseBasic(claims)
-    credDict.update(self.parseEduperson(claims))
-    cerdDict = self.userDiscover(credDict)
 
-    self.log.debug('Got response dictionary:\n', pprint.pformat(cerdDict))
+    result = self.verifyToken(self.token['access_token'])
+    if result['OK']:
+      result = self.researchGroup(result['Value'])
+    if not result['OK']:
+      return result
+    credDict = result['Value']
+    self.log.debug('Got response dictionary:\n', pprint.pformat(credDict))
 
     # Store token
     self.token['user_id'] = credDict['ID']
-    self.log.debug('Store token to the database:\n', pprint.pformat(dict(self.token)))
 
     return S_OK(credDict)
-
-  def fetchToken(self, **kwargs):
-    """ Fetch token
-
-        :return: dict
-    """
-    self.fetch_access_token(self.get_metadata('token_endpoint'), **kwargs)
-    self.token['client_id'] = self.client_id
-    self.token['provider'] = self.name
-    return OAuth2Token(self.token)
-
-  def parseBasic(self, claimDict):
-    """ Parse basic claims
-
-        :param dict claimDict: claims
-
-        :return: S_OK(dict)/S_ERROR()
-    """
-    credDict = {}
-    credDict['ID'] = claimDict['sub']
-    credDict['DN'] = '/O=DIRAC/CN=%s' % credDict['ID']
-    credDict['group'] = claimDict.get('group')
-    return credDict
-
-  def parseEduperson(self, claimDict):
-    """ Parse eduperson claims
-
-        :return: dict
-    """
-    credDict = {}
-    attributes = {
-        'eduperson_unique_id': '^(?P<ID>.*)',
-        'eduperson_entitlement': '%s:%s' % ('^(?P<NAMESPACE>[A-z,.,_,-,:]+):(group:registry|group)',
-                                            '(?P<VO>[A-z,.,_,-]+):role=(?P<VORole>[A-z,.,_,-]+)[:#].*')
-    }
-    if 'eduperson_entitlement' not in claimDict:
-      claimDict = self.getUserProfile()
-    resDict = claimParser(claimDict, attributes)
-    if not resDict:
-      return credDict
-    credDict['ID'] = resDict['eduperson_unique_id']['ID']
-    credDict['VOs'] = {}
-    for voDict in resDict['eduperson_entitlement']:
-      if voDict['VO'] not in credDict['VOs']:
-        credDict['VOs'][voDict['VO']] = {'VORoles': []}
-      if voDict['VORole'] not in credDict['VOs'][voDict['VO']]['VORoles']:
-        credDict['VOs'][voDict['VO']]['VORoles'].append(voDict['VORole'])
-    return credDict
-
-  def userDiscover(self, credDict):
-    credDict['DIRACGroups'] = []
-    for vo, voData in credDict.get('VOs', {}).items():
-      result = getVOMSRoleGroupMapping(vo)
-      if result['OK']:
-        for role in voData['VORoles']:
-          groups = result['Value']['VOMSDIRAC'].get('/%s' % role)
-          if groups:
-            credDict['DIRACGroups'] = list(set(credDict['DIRACGroups'] + groups))
-    if credDict['DIRACGroups']:
-      credDict['group'] = credDict['DIRACGroups'][0]
-    return credDict
 
   def submitDeviceCodeAuthorizationFlow(self, group=None):
     """ Submit authorization flow
@@ -361,35 +439,39 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
         :return: list
     """
-    idPScope = getGroupOption(group, 'IdPScope')
+    idPScope = getGroupOption(group, 'IdPRole')
     if not idPScope:
       return S_ERROR('Cannot find role for %s' % group)
     return S_OK(scope_to_list(idPScope))
+  
+  def getScopeGroups(self, scope):
+    """ Get scope groups
 
-  def exchangeGroup(self, group):
-    """ Get new tokens for group scope
+        :param str scope: scope
 
-        :param str group: requested group
-
-        :return: dict -- token
+        :return: list
     """
-    result = self.getGroupScopes(group)
-    if not result['OK']:
-      return result
-    groupScopes = result['Value']
-    try:
-      token = self.exchange_token(self.get_metadata('token_endpoint'), subject_token=self.token['access_token'],
-                                  subject_token_type='urn:ietf:params:oauth:token-type:access_token',
-                                  scope=list_to_scope(scope_to_list(self.scope) + groupScopes))
-      if not token:
-        return S_ERROR('Cannot exchange token with %s group.' % group)
-      self.token = token
-      return S_OK(token)
-    except Exception as e:
-      return S_ERROR('Cannot exchange token with %s group: %s' % (group, repr(e)))
+    groups = []
+    for group in getAllGroups():
+      result = self.getGroupScopes(group)
+      if not result['OK']:
+        # Skip DIRAAC group without scope parameter
+        self.log.debug(result['Message'])
+        continue
+      if set(result['Value']).issubset(scope_to_list(scope)):
+        groups.append(group)
+    return groups
 
   def getUserProfile(self):
-    return self.get(self.get_metadata('userinfo_endpoint')).json()
+    """ Get user profile
+
+        :return: S_OK()/S_ERROR()
+    """
+    try:
+      return S_OK(self.get(self.get_metadata('userinfo_endpoint')).json())
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR('Cannot get user profile: %s' % repr(e))
 
   def exchange_token(self, url, subject_token=None, subject_token_type=None, body='',
                      refresh_token=None, access_token=None, auth=None, headers=None, **kwargs):
@@ -442,6 +524,3 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       self.update_token(self.token, refresh_token=refresh_token)
 
     return self.token
-
-  def generateState(self, session=None):
-    return session or generate_token(10)

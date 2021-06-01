@@ -45,14 +45,18 @@ class IdProviderFactory(object):
     """ This method returns a IdProvider instance corresponding to the supplied
         issuer in a token.
 
-        :param str token: token
+        :param token: access token or dict with access_token key
 
         :return: S_OK(IdProvider)/S_ERROR()
     """
+    if isinstance(token, dict):
+      token = token['access_token']
+
     data = {}
 
     # Read token without verification to get issuer
-    issuer = jwt.decode(token, options=dict(verify_signature=False))['iss'].strip('/')
+    issuer = jwt.decode(token, leeway=300,
+                        options=dict(verify_signature=False, verify_aud=False))['iss'].strip('/')
 
     result = getSettingsNamesForIdPIssuer(issuer)
     if result['OK']:

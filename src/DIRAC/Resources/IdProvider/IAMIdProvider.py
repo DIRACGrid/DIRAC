@@ -11,7 +11,4 @@ __RCSID__ = "$Id$"
 
 class IAMIdProvider(OAuth2IdProvider):
 
-  def researchGroup(self, payload, token):
-    """ Research group
-    """
-    pass
+  pass

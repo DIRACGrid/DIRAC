@@ -6,7 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-from authlib.jose import JsonWebKey, JsonWebSignature, jwt
+from authlib.jose import JsonWebKey, JsonWebSignature, jwt, RSAKey
 from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
 
 from DIRAC.Core.Base.Script import parseCommandLine
@@ -24,13 +24,37 @@ payload = {'sub': 'user',
            'setup': 'setup',
            'group': 'my_group'}
 
-exp_payload = {'sub': 'user',
-               'iss': 'issuer',
-               'iat': int(time.time()) - 10,
-               'exp': int(time.time()) - 10,
-               'scope': 'scope',
-               'setup': 'setup',
-               'group': 'my_group'}
+exp_payload = payload.copy()
+exp_payload['iat'] = int(time.time()) - 10
+exp_payload['exp'] = int(time.time()) - 10
+
+DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
+              refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
+              expires_at=int(time.time()) + 3600)
+
+New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
+                  refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
+                  issued_at=int(time.time()),
+                  expires_in=int(time.time()) + 3600)
+
+Exp_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret"),
+                  refresh_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret"),
+                  expires_at=int(time.time()) - 10)
+
+
+def test_cryptToken():
+  """ Try to encrypt/decrypt refresh token
+  """
+  data = dict(client_id='clientID', provider='provider', expires_at=DToken['expires_at'])
+  result = db.encryptRefreshToken(DToken.copy(), data.copy())
+  assert result['OK'], result['Message']
+  assert result['Value']['refresh_token'] != DToken['refresh_token']
+
+  result = db.decryptRefreshToken({'refresh_token': result['Value']['refresh_token']})
+  assert result['OK'], result['Message']
+  assert result['Value']['refresh_token'] == DToken['refresh_token']
+  for k in data:
+    assert result['Value'][k] == data[k]
 
 
 def test_Token():
@@ -40,51 +64,34 @@ def test_Token():
   result = db.removeTokens()
   assert result['OK'], result['Message']
 
-  # Get key
-  result = db.getPrivateKey()
-  assert result['OK'], result['Message']
-  privat_key = result['Value']['key']
-
-  # Sign token
-  token = dict(access_token=jwt.encode({'alg': 'RS256'}, payload, privat_key),
-               expires_in=864000,
-               token_type='Bearer',
-               client_id='1hlUgttap3P9oTSXUwpIT50TVHxCflN3O98uHP217Y',
-               scope='g:checkin-integration_user',
-               refresh_token=jwt.encode({'alg': 'RS256'}, payload, privat_key))
-  # Expired token
-  exp_token = dict(access_token=jwt.encode({'alg': 'RS256'}, exp_payload, privat_key),
-                   expires_in=864000,
-                   token_type='Bearer',
-                   client_id='1hlUgttap3P9oTSXUwpIT50TVHxCflN3O98uHP217Y',
-                   scope='g:checkin-integration_user',
-                   refresh_token=jwt.encode({'alg': 'RS256'}, exp_payload, privat_key))
-
   # Store tokens
-  result = db.storeToken(token)
+  result = db.updateToken(DToken.copy(), userID=123, provider='DIRAC')
   assert result['OK'], result['Message']
-  result = db.storeToken(token)
-  assert result['OK'], result['Message']
+  assert result['Value'] == []
+
+  # Expired token
+  # result = db.updateToken(Exp_DToken.copy(), userID=123, provider='DIRAC')
+  # assert not result['OK']
 
   # Check token
-  result = db.getToken(token['refresh_token'])
+  result = db.getTokenForUserProvider(userID=123, provider='DIRAC')
   assert result['OK'], result['Message']
-  assert result['Value']['access_token'] == token['access_token']
-  assert result['Value']['refresh_token'] == token['refresh_token']
-  assert not result['Value']['revoked']
+  assert result['Value']['access_token'] == DToken['access_token']
+  assert result['Value']['refresh_token'] == DToken['refresh_token']
 
-  # Check expired token
-  result = db.getToken(exp_token['refresh_token'])
-  assert not result['OK']
-
-  # Revoke token
-  result = db.revokeToken(token)
+  # Store new tokens
+  result = db.updateToken(New_DToken.copy(), userID=123, provider='DIRAC')
   assert result['OK'], result['Message']
+  # Must return old tokens
+  assert len(result['Value']) == 1
+  assert result['Value'][0]['access_token'] == DToken['access_token']
+  assert result['Value'][0]['refresh_token'] == DToken['refresh_token']
 
-  # Check if token revoked
-  result = db.getToken(token['refresh_token'])
+  # Check token
+  result = db.getTokenForUserProvider(userID=123, provider='DIRAC')
   assert result['OK'], result['Message']
-  assert result['Value']['revoked']
+  assert result['Value']['access_token'] == New_DToken['access_token']
+  assert result['Value']['refresh_token'] == New_DToken['refresh_token']
 
 
 def test_keys():
@@ -118,10 +125,18 @@ def test_keys():
   # Create new one
   result = db.getPrivateKey()
   assert result['OK'], result['Message']
+  assert type(result['Value']['rsakey']) is RSAKey
+  assert type(result['Value']['strkey']) is str
 
   # Sign token
   header['kid'] = result['Value']['kid']
-  private_key = result['Value']['key']
+  private_key = result['Value']['rsakey']
+
+  # Find key by KID
+  result = db.getPrivateKey(header['kid'])
+  assert result['OK'], result['Message']
+  assert result['Value']['rsakey'] == private_key
+
   token = jwt.encode(header, payload, private_key)
   # Sign auth code
   code = jws.serialize_compact(header, json_b64encode(code_payload), private_key)

@@ -27,6 +27,24 @@ def getSettingsNamesForIdPIssuer(issuer):
   return S_OK(names) if names else S_ERROR('Not found provider with %s issuer.' % issuer)
 
 
+def getSettingsNamesForClientID(clientID):
+  """ Get identity providers for clientID
+
+      :param str clientID: clientID
+
+      :return: S_OK(list)/S_ERROR()
+  """
+  names = []
+  result = getProvidersForInstance('Id')
+  if not result['OK']:
+    return result
+  for name in result['Value']:
+    res = gConfig.getValue('/Resources/IdProviders/%s/client_id' % name)
+    if res and clientID == res:
+      names.append(name)
+  return S_OK(names) if names else S_ERROR('Not found provider with %s clientID.' % clientID)
+
+
 def getProvidersForInstance(instance, providerType=None):
   """ Get providers for instance
 
