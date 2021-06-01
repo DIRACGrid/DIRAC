@@ -28,105 +28,43 @@ But if you are going to change databases and DIRAC components, and if you want t
 you better keep reading.
 
 
-
-Notes before continuing, on top of what is in section :ref:`editing_code`
-=========================================================================
-
-*OS*: a DIRAC server can be installed, as of today, only on SLC6 (Scientific Linux Cern 6) or CC7 (Cern CentOS 7).
-
-The reason is that some binaries are proved to work only there (and TBH, support for CC7 is still partial),
-and this includes several WMS (Workload Management) and DMS (Data Management), like *arc* or *gfal2*.
-If you have to do many DMS (and partly WMS) developments, you should consider using SLC6 or CC7.
-Or, using a Virtual Machine, or a docker instance. We'll go through this.
-
-
-Stuff you need to have installed, on top of what is in section :ref:`editing_code`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If your development machine is a SLC6 or a CC7, probably nothing of what follows.
-
-If your development machine is a Scientific Linux 6 or a CentOS 7, probably nothing of what follows, but I wouldn't be too sure about it.
-
-If your development machine is a CentOS 6 or a RedHat "equivalent", maybe nothing of what follows, but I am even less sure about it.
-
-If you are not in any of the above cases, you still have a chance:
-that, while developing for services or agents, none of them will need any "externals" library.
-If this is your case, then you can still run locally on your development machine, which can be for example Ubuntu, or Debian, or also macOS.
-
-Do you need to develop using external, compiled libraries like *arc*, *cream*, *gfal2*, *fts3*?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Then you probably need a SLC6 or CC7 image. If your development box is not one of them,
-then you are presented with the alternatives of either using Virtual Machines, or Containers,
-and so in this case you'll need to install something:
-
-*docker*: `docker <https://docs.docker.com/>`_ is as of today a "standard" for applications' containerization.
-The following examples use a DIRAC's base docker image for running DIRAC components.
-
-*a hypervisor*, like *virtualbox*: if you don't want (or can't) use *docker*, you can use a virtual machine.
-
-Whatever you need/decide, we will keep referring to your desktop as ''the host'', opposed to ''running image''
-(which, as just explained, may coincide with the host).
-
-
-General principles while using a virtual machine or a container
-===============================================================
-
-* You keep editing the code on your host
-* $DEVROOT should be mounted from the host to the running image
-* The host and the running image should share the same configuration (dirac.cfg file)
-* The DIRAC components are going to run on the running image
-* The clients that contact the running components can be started on the host
-* The running image should have a ''host certificate'' for TLS verification and for running the components
-* The host should have a ''user certificate''
-* The user proxy should be created on the host for identifying the client
-
-You can implement all the principles above in more than one way.
-
-
-Using a Docker container [to expand]
-====================================
-
-The following steps will try to guide
-you on setting up a development environment for DIRAC (or its extensions)
-that combines what you have learned in :ref:`editing_code`
-with a docker image with which you will run code that you develop.
-
-Please see the Dockerfile that DIRAC provides at https://github.com/DIRACGrid/DIRAC/tree/integration/container
-and Docker hub []
-
-
-[to expand]
-
-
-What's in this image?
-~~~~~~~~~~~~~~~~~~~~~~
-
-An dirac-install installed version of DIRAC (server).
-
-[to expand]
-
-
-
-
-
-
-Using a virtual machine [to expand]
+A docker-based isolated environment
 ===================================
 
-Alternatively to docker...
+position yourself in the DIRAC root directory and then run:
+
+.. code-block:: bash
+
+    ./integration_tests.py --help
+
+This is a tool for running integration tests, that can be used also for developing purposes.
+If you are interested in running one single integration test, let's say for the sake of example a server integration test, you can:
+
+.. code-block:: bash
+
+    ./integration_tests.py prepare-environment [FLAGS]
+    ./integration_tests.py install-server
+
+which (in some minutes) will give you a fully dockerized server setup (`docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`). Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`.
+The first thing to do is that you should first login in the docker container, by doing:
+
+.. code-block:: bash
+
+    ./integration_tests.py exec-server
+
+Now you can run the test with:
+
+.. code-block:: bash
+
+    pytest LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py (py3)
+
+For py3 installations, You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
 
 
+The Configuration Server (the CS)
+=================================
 
-
-
-
-
-Configuring DIRAC for running in an isolated environment
-============================================================
-
-We'll configure DIRAC to work in isolation. At this point, the key
-becomes understanding how the DIRAC
+At some point you'll need to understand how the DIRAC
 `Configuration Service (CS) :ref:`dirac-cs-structure` works. I'll explain here briefly.
 
 The CS is a layered structure: whenever
@@ -215,21 +153,10 @@ Within the code we also provide a pre-filled example of dirac.cfg. You can get i
   cp $DEVROOT/DIRAC/docs/source/DeveloperGuide/AddingNewComponents/dirac.cfg.basic.example $DEVROOT/etc/dirac.cfg
 
 
-
-Scripts (DIRAC commands)
-=========================
-
-DIRAC scripts can be found in (almost) every DIRAC package. For example in DIRAC.WorkloadManagementSystem.scripts.
-You can invoke them directly, or you can run the command::
-
-  dirac-deploy-scripts
-
-which will inspect all these directories (including possible DIRAC extensions) and deploy the found scripts in $DEVROOT/scripts.
-Developers can then persist this directory in the $PATH.
-
-
 Certificates
 ============
+
+The docker-based setup will take care of the security layer, and the certificates. What's below is here for education.
 
 By default, all connections to/from DIRAC services are secured, by with TLS/SSL security, so X.509 certificates need to be used.
 This sub-section explains how to create (with few openSSL commands) a Certification Authority (CA), and with that sign user and host certificates.
@@ -273,9 +200,8 @@ Same process to register yourself, replace "/your/dn/goes/here"
 Is my installation correctly done?
 ==================================
 
-We will now do few, very simple checks. The first can be done by using the python interactive shell.
-For these examples I will actually use `iPython <http://ipython.org/>`_, which is a highly recommended python shell
-(iPython is included in the requirements.txt file).
+A few, very simple checks. The first can be done by using the python interactive shell.
+For these examples we use `iPython <http://ipython.org/>`_.
 
 From the host:
 
