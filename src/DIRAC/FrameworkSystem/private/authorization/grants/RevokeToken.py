@@ -2,9 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc7009 import RevocationEndpoint as _RevocationEndpoint
-
-from DIRAC import gLogger
 
 
 class RevocationEndpoint(_RevocationEndpoint):
@@ -19,21 +18,23 @@ class RevocationEndpoint(_RevocationEndpoint):
 
         :return: str
     """
-    result = self.server.db.getToken(token, token_type_hint)
-    if not result['OK']:
-      gLogger.error(result['Message'])
-      return None
-    rv = result['Value']
-    client_id = client.get_client_id()
-    if rv and rv.client_id == client_id:
-      return rv
-    return None
+    if token_type_hint == 'refresh_token':
+      result = self.server.db.decryptRefreshToken({'refresh_token': token})
+      if not result['OK']:
+        raise OAuth2Error(result['Message'])
+      return result['Value']
+    return token
 
   def revoke_token(self, token):
     """ Mark the give token as revoked.
 
         :param dict token: token dict
     """
-    result = self.server.db.revokeToken(token)
+    if isinstance(token, dict):
+      result = self.server.idps.getIdProvider(token['provider'])
+    else:
+      result = self.server.idps.getIdProviderForToken(token)
+    if result['OK']:
+      result = result['Value'].revokeToken(token)
     if not result['OK']:
-      gLogger.error(result['Message'])
+      raise OAuth2Error(result['Message'])
