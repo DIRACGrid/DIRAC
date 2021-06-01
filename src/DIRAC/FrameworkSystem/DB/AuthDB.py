@@ -6,17 +6,20 @@ from __future__ import print_function
 
 import jwt
 import json
+import time
+import pprint
+import M2Crypto
 
-from time import time
 from sqlalchemy import Column, Integer, Text, String
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
 from authlib.jose import KeySet, RSAKey
+from authlib.common.encoding import urlsafe_b64decode, urlsafe_b64encode, to_bytes, to_unicode, json_b64encode
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
@@ -24,6 +27,22 @@ __RCSID__ = "$Id$"
 
 
 Model = declarative_base()
+
+
+def encrypt(data, key):
+  """ Encryption with key """
+  cipher = M2Crypto.EVP.Cipher(alg='aes_256_cbc', key=key[16:], iv=key[:16], op=1)
+  ciphertext = cipher.update(data.encode('utf-8')) + cipher.final()
+  ciphertext = urlsafe_b64encode(ciphertext)
+  return ciphertext
+
+
+def decrypt(ciphertext, key):
+  """ Decryption with key """
+  cipher = M2Crypto.EVP.Cipher(alg='aes_256_cbc', key=key[16:], iv=key[:16], op=0)
+  data = cipher.update(urlsafe_b64decode(to_bytes(ciphertext))) + cipher.final()
+  data = to_unicode(data.decode('utf-8'))
+  return data
 
 
 class Token(Model, OAuth2TokenMixin):
@@ -34,9 +53,14 @@ class Token(Model, OAuth2TokenMixin):
   # 767 bytes is the stated prefix limitation for InnoDB tables in MySQL version 5.6
   # https://stackoverflow.com/questions/1827063/mysql-error-key-specification-without-a-key-length
   id = Column(Integer, autoincrement=True, primary_key=True)
+  kid = Column(String(255))
+  user_id = Column(String(255))
+  provider = Column(String(255))
+  client_id = Column(String(255))
+  expires_at = Column(Integer, nullable=False, default=0)
   access_token = Column(Text, nullable=False)
   refresh_token = Column(Text, nullable=False)
-  expires_at = Column(Integer, nullable=False, default=0)
+  rt_expires_at = Column(Integer, nullable=False, default=0)
 
 
 class JWK(Model):
@@ -53,19 +77,19 @@ class AuthSession(Model):
   __table_args__ = {'mysql_engine': 'InnoDB',
                     'mysql_charset': 'utf8'}
   id = Column(String(255), unique=True, primary_key=True, nullable=False)
-  state = Column(String(255))
   uri = Column(String(255))
-  client_id = Column(String(255))
+  state = Column(String(255))
+  scope = Column(String(255))
   user_id = Column(String(255))
   username = Column(String(255))
-  expires_at = Column(Integer, nullable=False, default=0)
-  expires_in = Column(Integer, nullable=False, default=0)
-  interval = Column(Integer, nullable=False, default=5)
-  verification_uri = Column(String(255))
-  verification_uri_complete = Column(String(255))
+  client_id = Column(String(255))
   user_code = Column(String(255))
   device_code = Column(String(255))
-  scope = Column(String(255))
+  interval = Column(Integer, nullable=False, default=5)
+  expires_at = Column(Integer, nullable=False, default=0)
+  expires_in = Column(Integer, nullable=False, default=0)
+  verification_uri = Column(String(255))
+  verification_uri_complete = Column(String(255))
 
 
 class AuthDB(SQLAlchemyDB):
@@ -109,63 +133,109 @@ class AuthDB(SQLAlchemyDB):
 
     return S_OK()
 
-  def getToken(self, token, token_type_hint='refresh_token'):
-    """ Find Token for refresh token
+  def encryptRefreshToken(self, token, metadata):
+    """ Encrypt refresh token
 
-        :param str token: token
-        :param str token_type_hint: token type
+        :param dict token: token dict
+        :param str client_id: client ID
+        :param str provider: provider name
 
-        :return: S_OK()/S_ERROR()
+        :return: S_OK(dict)/S_ERROR()
+    """
+    for field in ['expires_at', 'client_id', 'provider']:
+      if not metadata.get(field):
+        return S_ERROR('%s field is absent in metadata.' % field)
+    # Get secret key
+    key = self.getPrivateKey()
+    if not key['OK']:
+      return key
+    # Encrypt refresh token
+    try:
+      metadata['kid'] = key['Value']['kid']
+      metadata['refresh_token'] = encrypt(token['refresh_token'], key['Value']['strkey'])
+      token['refresh_token'] = json_b64encode(metadata)
+      return S_OK(token)
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR('Cannot encode refresh token: %s' % repr(e))
+
+  def decryptRefreshToken(self, token):
+    """ Decrypt refresh token
+
+        :param dict token: token dict
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    try:
+      decoded = json.loads(urlsafe_b64decode(token['refresh_token']))
+    except Exception as e:
+      return S_ERROR('Cannot find secret key: %s' % repr(e))
+    # Get secret key by key ID
+    key = self.getPrivateKey(decoded['kid'])
+    if not key['OK']:
+      return key
+    # Decript refresh token
+    try:
+      token['refresh_token'] = decrypt(decoded['refresh_token'], key['Value']['strkey'])
+      token['expires_at'] = decoded['expires_at']
+      token['client_id'] = decoded['client_id']
+      token['provider'] = decoded['provider']
+      return S_OK(OAuth2Token(token))
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR('Cannot decode refresh token: %s' % repr(e))
+
+  def getTokenForUserProvider(self, userID, provider):
+    """ Get token for user ID and provider name
+
+        :param str userID: user ID
+        :param str provider: provider
+
+        :return: S_OK(dict)/S_ERROR()
     """
     session = self.session()
     try:
-      session.query(Token).filter(Token.expires_at < time()).delete()
-      if token_type_hint == 'access_token':
-        token = session.query(Token).filter(Token.access_token == token).first()
-      else:
-        token = session.query(Token).filter(Token.refresh_token == token).first()
-      if not token:
-        return self.__result(session, S_ERROR("Token not found."))
-    except NoResultFound:
-      return self.__result(session, S_ERROR("Token not found."))
+      token = session.query(Token).filter(Token.rt_expires_at > time.time()).filter(Token.user_id == userID)\
+                                  .filter(Token.provider == provider).first()
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
-    return self.__result(session, S_OK(OAuth2Token(self.__rowToDict(token))))
+    return self.__result(session, S_OK(OAuth2Token(self.__rowToDict(token)) if token else None))
 
-  def revokeToken(self, token):
-    """ Revoke token
-
-        :param dict token: token to revoke
-
-        :return: S_OK()/S_ERROR()
-    """
-    session = self.session()
-    try:
-      token = session.query(Token).filter(Token.access_token == token['access_token']).first()
-      token.revoked = True
-    except NoResultFound:
-      return self.__result(session, S_OK())
-    except Exception as e:
-      return self.__result(session, S_ERROR('Could not revoke token: %s' % e))
-    return self.__result(session, S_OK())
-
-  def storeToken(self, token):
-    """ Save token
+  def updateToken(self, token, userID, provider):
+    """ Update tokens
 
         :param dict token: token info
+        :param str userID: user ID
+        :param str provider: provider
 
-        :return: S_OK(str)/S_ERROR()
+        :return: S_OK(list)/S_ERROR()
     """
-    token['expires_at'] = int(jwt.decode(token['refresh_token'], options=dict(verify_signature=False))['exp'])
-    gLogger.debug('Store token:', dict(token))
+    token['user_id'] = userID
+    token['provider'] = provider
+    try:
+      token['rt_expires_at'] = int(jwt.decode(token['refresh_token'], options=dict(verify_signature=False, verify_aud=False))['exp'])
+    except Exception as e:
+      self.log.debug('Cannot get refresh token expires time: %s' % repr(e))
+
+    token['rt_expires_at'] = int(token.get('rt_expires_at', 24 * 3600 + time.time()))
+    if token['rt_expires_at'] < time.time():
+      return S_ERROR('Cannot store expired refresh token.')
+
+
     attrts = dict((k, v) for k, v in dict(token).items() if k in list(Token.__dict__.keys()))
+    self.log.debug('Store token:', pprint.pformat(attrts))
     session = self.session()
     try:
-      session.query(Token).filter(Token.access_token == token['access_token']).delete()
+      session.query(Token).filter(Token.expires_at < time.time()).delete()
+      oldTokens = session.query(Token).filter(Token.user_id == userID)\
+                                      .filter(Token.provider == provider).all()
       session.add(Token(**attrts))
+      session.query(Token).filter(Token.user_id == userID).filter(Token.provider == provider)\
+                          .filter(Token.access_token != token['access_token']).delete()
     except Exception as e:
-      return self.__result(session, S_ERROR('Could not add Token: %s' % e))
-    return self.__result(session, S_OK('Token successfully added'))
+      return self.__result(session, S_ERROR('Could not add Token: %s' % repr(e)))
+    self.log.info('Token successfully added for %s user, %s provider' % (token['user_id'], token['provider']))
+    return self.__result(session, S_OK([self.__rowToDict(t) for t in oldTokens] if oldTokens else []))
 
   def removeTokens(self):
     """ Get active keys
@@ -186,7 +256,7 @@ class AuthDB(SQLAlchemyDB):
     """
     key = RSAKey.generate_key(key_size=1024, is_private=True)
     dictKey = dict(key=json.dumps(key.as_dict()),
-                   expires_at=time() + (30 * 24 * 3600),
+                   expires_at=time.time() + (30 * 24 * 3600),
                    kid=KeySet([key]).as_dict()['keys'][0]['kid'])
 
     session = self.session()
@@ -227,35 +297,45 @@ class AuthDB(SQLAlchemyDB):
       keys.append({'n': k['n'], "kty": k['kty'], "e": k['e'], "kid": k['kid']})
     return S_OK({'keys': keys})
 
-  def getPrivateKey(self):
+  def getPrivateKey(self, kid=None):
     """ Get private key
+
+        :param str kid: key ID
 
         :return: S_OK(obj)/S_ERROR()
     """
-    result = self.getActiveKeys()
+    result = self.getActiveKeys(kid)
     if not result['OK']:
       return result
+    jwks = result['Value']
+    if kid:
+      strkey=jwks[0]['key']
+      return S_OK(dict(rsakey=RSAKey.import_key(json.loads(strkey)), kid=kid, strkey=strkey))
     newer = {}
-    for d in result['Value']:
-      if d['expires_at'] > newer.get('expires_at', time() + (24 * 3600)):
-        newer = d
+    for jwk in jwks:
+      if jwk['expires_at'] > newer.get('expires_at', time.time() + (24 * 3600)):
+        newer = jwk
     if not newer.get('key'):
       result = self.generateRSAKeys()
       if not result['OK']:
         return result
       newer = result['Value']
-    return S_OK({'key': RSAKey.import_key(json.loads(newer['key'])), 'kid': newer['kid']})
+    return S_OK(dict(rsakey=RSAKey.import_key(json.loads(newer['key'])), kid=newer['kid'], strkey=newer['key']))
 
-  def getActiveKeys(self):
+  def getActiveKeys(self, kid=None):
     """ Get active keys
+
+        :param str kid: key ID
 
         :return: S_OK(list)/S_ERROR()
     """
     session = self.session()
     try:
       # Remove all expired jwks
-      session.query(JWK).filter(JWK.expires_at < time()).delete()
-      jwks = session.query(JWK).filter(JWK.expires_at > time()).all()
+      session.query(JWK).filter(JWK.expires_at < time.time()).delete()
+      jwks = session.query(JWK).filter(JWK.expires_at > time.time()).all()
+      if kid:
+        jwks = [jwk for jwk in jwks if jwk.kid == kid]
     except NoResultFound:
       return self.__result(session, S_OK([]))
     except Exception as e:
@@ -283,8 +363,8 @@ class AuthDB(SQLAlchemyDB):
     """
     attrts = {}
     if not data.get('expires_at'):
-      data['expires_at'] = data['expires_in'] + time()
-    gLogger.debug('Add authorization session:', data)
+      data['expires_at'] = data['expires_in'] + time.time()
+    self.log.debug('Add authorization session:', data)
     for k, v in data.items():
       if k not in AuthSession.__dict__.keys():
         self.log.warn('%s is not expected as authentication session attribute.' % k)
@@ -318,7 +398,7 @@ class AuthDB(SQLAlchemyDB):
     session = self.session()
     try:
       # Remove all expired sessions
-      session.query(AuthSession).filter(AuthSession.expires_at < time()).delete()
+      session.query(AuthSession).filter(AuthSession.expires_at < time.time()).delete()
       session.query(AuthSession).filter(AuthSession.id == sessionID).delete()
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
