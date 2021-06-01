@@ -3,16 +3,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import json
-from time import time
+import sys
+import time
 import pprint
+import logging
 from dominate import document, tags as dom
 from tornado.template import Template
 
-from authlib.jose import jwt
 from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.base import OAuth2Error
-from authlib.oauth2.rfc6750 import BearerToken
 from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 from authlib.oauth2.rfc6749.util import scope_to_list
@@ -31,11 +30,8 @@ from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata, isDownloadablePersonalProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getEmailsForGroup, getDNForUsername
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 
-import logging
-import sys
 log = logging.getLogger('authlib')
 log.addHandler(logging.StreamHandler(sys.stdout))
 log.setLevel(logging.DEBUG)
@@ -77,9 +73,8 @@ class AuthServer(_AuthorizationServer):
     self.proxyCli = ProxyManagerClient()
     self.idps = IdProviderFactory()
     # Privide two authlib methods query_client and save_token
-    _AuthorizationServer.__init__(self, query_client=getDIACClientByID, save_token=self.saveToken)
+    _AuthorizationServer.__init__(self, query_client=getDIACClientByID, save_token=lambda x, y: None)
     self.generate_token = self.generateProxyOrToken
-    self.bearerToken = BearerToken(self.access_token_generator, self.refresh_token_generator)
     self.config = {}
     self.metadata = collectMetadata()
     self.metadata.validate()
@@ -95,18 +90,6 @@ class AuthServer(_AuthorizationServer):
 
   def getSession(self, session):
     self.db.getSession(session)
-
-  def saveToken(self, token, request):
-    """ Store tokens
-
-        :param dict token: tokens
-        :param object request: Request object
-    """
-    if token.get('refresh_token'):
-      token['client_id'] = request.client.client_id
-      result = self.db.storeToken(token)
-      if not result['OK']:
-        gLogger.error(result['Message'])
 
   def __getScope(self, scope, param):
     """ Get parameter scope
@@ -125,13 +108,14 @@ class AuthServer(_AuthorizationServer):
                            expires_in=None, include_refresh_token=True):
     """ Generate proxy or tokens after authorization
     """
+    group = self.__getScope(scope, 'g')
+    lifetime = self.__getScope(scope, 'lifetime')
+    provider = getIdPForGroup(group)
+
     if 'proxy' in scope_to_list(scope):
       # Try to return user proxy if proxy scope present in the authorization request
       if not isDownloadablePersonalProxy():
         raise Exception("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
-
-      group = self.__getScope(scope, 'g')
-      lifetime = self.__getScope(scope, 'lifetime')
       gLogger.debug('Try to query %s@%s proxy%s' % (user, group, ('with lifetime:%s' % lifetime) if lifetime else ''))
       result = getUsernameForDN('/O=DIRAC/CN=%s' % user)
       if result['OK']:
@@ -156,8 +140,33 @@ class AuthServer(_AuthorizationServer):
           return {'proxy': result['Value']}
       raise Exception('; '.join(err))
 
-    return self.bearerToken(client, grant_type, user=user, scope=scope, expires_in=expires_in,
-                            include_refresh_token=include_refresh_token)
+    else:
+      # Get identity provider
+      result = self.idps.getIdProvider(provider)
+      if result['OK']:
+        idpObj = result['Value']
+        # Get actual token from storage
+        result = self.db.getTokenForUserProvider(user, provider)
+        if result['OK']:
+          idpObj.token = result['Value']
+          # Try to refresh it if expired
+          if idpObj.token.is_expired():
+            result = idpObj.refreshToken()
+            if result['OK']:
+              result = self.db.updateToken(idpObj.token, user, provider)
+            if not result['OK']:
+              raise OAuth2Error(result['Message'])
+          # Ask identity provider tokens with needed group scopes
+          result = idpObj.exchangeGroup(group)
+          if result['OK']:
+            token = result['Value']
+            # Encrypt refresh token
+            result = self.db.encryptRefreshToken(token, dict(provider=idpObj.name,
+                                                             client_id=client.get_client_id(),
+                                                             expires_at=12 * 3600 + time.time()))
+      if not result['OK']:
+        raise OAuth2Error(result['Message'])
+      return result['Value']
 
   def getIdPAuthorization(self, providerName, request):
     """ Submit subsession and return dict with authorization url and session number
@@ -195,16 +204,14 @@ class AuthServer(_AuthorizationServer):
     result = self.idps.getIdProvider(providerName)
     if not result['OK']:
       return result
-    provObj = result['Value']
-    result = provObj.parseAuthResponse(response, session)
+    idpObj = result['Value']
+    result = idpObj.parseAuthResponse(response, session)
     if not result['OK']:
       return result
 
-    # FINISHING with IdP auth result
+    # FINISHING with IdP
+    # As a result of authentication we will receive user credential dictionary
     credDict = result['Value']
-
-    # ########### TODO: This line will store the original tokens ############ #
-    # updateToken(provObj.token, user_id=provObj.token['user_id'])
 
     gLogger.debug("Read profile:", pprint.pformat(credDict))
     # Is ID registred?
@@ -218,60 +225,19 @@ class AuthServer(_AuthorizationServer):
         comment += ' Please, contact the DIRAC administrators.'
       return S_ERROR(comment)
     credDict['username'] = result['Value']
-    return S_OK(credDict)
 
-  def access_token_generator(self, client, grant_type, user, scope):
-    """ A function to generate ``access_token``
-
-        :param object client: Client object
-        :param str grant_type: grant type
-        :param str user: user unique id
-        :param str scope: scope
-
-        :return: str
-    """
-    gLogger.debug('GENERATE DIRAC ACCESS TOKEN for "%s" with "%s" scopes.' % (user, scope))
-    return self.signToken({'sub': user,
-                           'iss': self.metadata['issuer'],
-                           'iat': int(time()),
-                           'exp': int(time()) + (self.__getScope(scope, 'lifetime') or (12 * 3600)),
-                           'scope': scope,
-                           'setup': getSetup(),
-                           'group': self.__getScope(scope, 'g')})
-
-  def refresh_token_generator(self, client, grant_type, user, scope):
-    """ A function to generate ``refresh_token``
-
-        :param object client: Client object
-        :param str grant_type: grant type
-        :param str user: user unique id
-        :param str scope: scope
-
-        :return: str
-    """
-    gLogger.debug('GENERATE DIRAC REFRESH TOKEN for "%s" with "%s" scopes.' % (user, scope))
-    return self.signToken({'sub': user,
-                           'iss': self.metadata['issuer'],
-                          #  'iat': int(time()),
-                           'exp': int(time()) + (24 * 3600)})
-
-  def signToken(self, payload):
-    """ Sign token
-
-        :param dict payload: token payload
-
-        ;return: str
-    """
-    result = self.db.getPrivateKey()
+    # Update token for user. This token will be stored separately in the database and
+    # updated from time to time. This token will never be transmitted,
+    # it will be used to make exchange token requests.
+    result = self.db.updateToken(idpObj.token, credDict['ID'], idpObj.name)
     if not result['OK']:
-      raise Exception(result['Message'])
+      return result
 
-    # Sign token
-    key = result['Value']['key']
-    kid = result['Value']['kid']
-    header = {'alg': 'RS256', 'kid': kid}
-    # Need to use enum==0.3.1 for python 2.7
-    return jwt.encode(header, payload, key)
+    # Revoke old tokens
+    for oldToken in result['Value']:
+      idpObj.revokeToken(oldToken.get('refresh_token'))
+
+    return S_OK(credDict)
 
   def get_error_uris(self, request):
     error_uris = self.config.get('error_uris')
@@ -392,16 +358,16 @@ class AuthServer(_AuthorizationServer):
     """
     from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
-    username = userProfile['DN']
+    username = userProfile['ID']
 
     mail = {}
     mail['subject'] = "[SessionManager] User %s to be added." % username
-    mail['body'] = 'User %s was authenticated by ' % userProfile['FullName']
+    mail['body'] = 'User %s was authenticated by ' % username
     mail['body'] += provider
     mail['body'] += "\n\nAuto updating of the user database is not allowed."
     mail['body'] += " New user %s to be added," % username
     mail['body'] += "with the following information:\n"
-    mail['body'] += "\nUser name: %s\n" % username
+    mail['body'] += "\nUser ID: %s\n" % username
     mail['body'] += "\nUser profile:\n%s" % pprint.pformat(userProfile)
     mail['body'] += "\n\n------"
     mail['body'] += "\n This is a notification from the DIRAC AuthManager service, please do not reply.\n"
