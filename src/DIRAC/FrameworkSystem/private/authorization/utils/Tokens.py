@@ -137,7 +137,7 @@ class OAuth2Token(_OAuth2Token):
 
         :return: list
     """
-    return scope_to_list(self.get(scope, ''))
+    return scope_to_list(self.get('scope', ''))
 
   @property
   def groups(self):
