@@ -639,7 +639,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     Aborted pilots only from the last day. The selection is done entirely in SQL.
 
     :param dict selectDict: A dictionary to pass additional conditions to select statements, i.e.
-                            it allows to define start time for Done and Aborted Pilots.
+                            it allows to define start time for Done and Aborted Pilots. Unused.
     :param list columnList: A list of column to consider when grouping to calculate efficiencies.
                        e.g. ['GridSite', 'DestinationSite'] is used to calculate efficiencies
                        for sites and  CEs. If we want to add an OwnerGroup it would be:
@@ -647,6 +647,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     :return: S_OK/S_ERROR with a dict containing the ParameterNames and Records lists.
     """
 
+    # TODO:
+    #  add startItem and maxItems to the argument list
+    #  limit output to  finalDict['Records'] = records[startItem:startItem + maxItems]
     table = PivotedPilotSummaryTable(columnList)
     sqlQuery = table.buildSQL()
 
@@ -657,7 +660,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       return res
 
     self.logger.info(res)
-    # TODO add site or CE status, while looping
+    #
     rows = []
     columns = table.getColumnList()
     try:
@@ -696,7 +699,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       columns.append('CE')  # 'DestinationSite' re-mapped to 'CE' already
     columns.append('Status')
     result['Records'] = rows
-
+    result['TotalRecords'] = len(rows)
     return S_OK(result)
 
   def _getElementStatus(self, total, eff):
@@ -1179,16 +1182,18 @@ class PivotedPilotSummaryTable:
     """
 
     lastUpdate = Time.dateTime() - Time.day
+    lastHour = Time.dateTime() - Time.hour
 
     pvtable = 'pivoted'
     innerGroupBy = "(SELECT %s, Status,\n " \
                    "count(CASE WHEN CurrentJobID=0  THEN 1 END) AS Empties," \
+                   "count(CASE WHEN LastUpdateTime > '%s' THEN 1 END) AS Last_Hour," \
                    " count(*) AS qty FROM PilotAgents\n " \
                    "WHERE Status NOT IN ('Done', 'Aborted') OR (Status in ('Done', 'Aborted') \n" \
                    " AND \n" \
                    " LastUpdateTime > '%s')" \
                    " GROUP by %s, Status)\n AS %s" % (
-                       _quotedList(self.columnList), lastUpdate,
+                       _quotedList(self.columnList), lastHour, lastUpdate,
                        _quotedList(self.columnList), pvtable)
 
     # pivoted table: combine records with the same group of self.columnList into a single row.
@@ -1196,6 +1201,7 @@ class PivotedPilotSummaryTable:
     pivotedQuery = "SELECT %s,\n" % ', '.join([pvtable + '.' + item for item in self.columnList])
     lineTemplate = " SUM(if (pivoted.Status={state!r}, pivoted.qty, 0)) AS {state}"
     pivotedQuery += ',\n'.join(lineTemplate.format(state=state) for state in self.pstates)
+    pivotedQuery += ",\n  SUM(if (pivoted.Status='Aborted', pivoted.Last_Hour, 0)) AS Aborted_Hour"
     pivotedQuery += ",\n  SUM(if (%s.Status='Done', %s.Empties,0)) AS Done_Empty,\n" \
                     "  SUM(%s.qty) AS Total " \
                     "FROM\n" % (pvtable, pvtable, pvtable)
@@ -1212,10 +1218,10 @@ class PivotedPilotSummaryTable:
     effSelectTemplate = " CAST(pivotedEff.{state} AS UNSIGNED) AS {state} "
     # now select the columns + states:
     pivotedEff = "SELECT %s,\n" % ', '.join(['pivotedEff' + '.' + item for item in self.columnList]) + \
-        ', '.join(effSelectTemplate.format(state=state) for state in self.pstates + ['Total']) + ", \n"
+        ', '.join(effSelectTemplate.format(state=state) for state in self.pstates + ['Aborted_Hour', 'Total']) + ", \n"
 
     finalQuery = pivotedEff + effCase + pivotedQuery + innerGroupBy + outerGroupBy
-    self._columns += ['Total', 'PilotsPerJob', 'PilotJobEff']
+    self._columns += ['Aborted_Hour', 'Total', 'PilotsPerJob', 'PilotJobEff']
     return finalQuery
 
   def getColumnList(self):

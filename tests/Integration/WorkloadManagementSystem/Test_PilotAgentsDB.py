@@ -103,7 +103,7 @@ def test_getGroupedPilotSummary(mocked_fcn):
   cleanUpPilots(pilotRef)
   expectedParameterList = ['Site', 'CE', 'OwnerGroup', 'Submitted', 'Done', 'Failed',
                            'Aborted', 'Running', 'Waiting', 'Scheduled', 'Ready',
-                           'Total', 'PilotsPerJob', 'PilotJobEff', 'Status']
+                           'Aborted_Hour', 'Total', 'PilotsPerJob', 'PilotJobEff', 'Status']
 
   assert res['OK'] is True, res['Message']
   values = res['Value']
@@ -120,8 +120,10 @@ def test_getGroupedPilotSummary(mocked_fcn):
   assert record[2] == testGroupVO
 
   # pilot state counts:
-  for i, entry in enumerate(record[3:10]):
+  for i, entry in enumerate(record[3:11]):
     assert entry == stateCount[i], " found entry: %s, expected stateCount: %d " % (str(entry), stateCount[i])
+  # all pilots have the same timestamp, so Aborted_Hour count is the same as Aborted:
+  assert record[expectedParameterList.index('Aborted')] == record[expectedParameterList.index('Aborted_Hour')]
   # Total
   total = record[expectedParameterList.index('Total')]
   assert total == sum(stateCount)
