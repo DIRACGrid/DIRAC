@@ -136,16 +136,17 @@ class UserProfileDB(DB):
     TTL cache to dramatically improve performance.
     """
     key = (tableName, tuple(outFields), tuple(sorted(condDict.items())))
-    if key not in self.__cache:
-      result = self.getFields(tableName, outFields, condDict)
-      if not result['OK']:
-        return result
-      data = result['Value']
-      if len(data) > 0:
-        objId = data[0][0]
-        self.updateFields(tableName, ['LastAccess'], ['UTC_TIMESTAMP()'], {'Id': objId})
+    if key in self.__cache:
+      return self.__cache[key]
+    result = self.getFields(tableName, outFields, condDict)
+    if not result['OK']:
+      return result
+    data = result['Value']
+    if len(data) > 0:
+      objId = data[0][0]
+      self.updateFields(tableName, ['LastAccess'], ['UTC_TIMESTAMP()'], {'Id': objId})
       self.__cache[key] = result
-    return self.__cache[key]
+    return result
 
   def __getObjId(self, objValue, varName, tableName, insertIfMissing=True):
     result = self.__getFieldsCached(tableName, ['Id'], {varName: objValue})
