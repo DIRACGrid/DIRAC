@@ -102,7 +102,6 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                    '\nclient_id: %s\nclient_secret: %s\nmetadata:\n%s' % (self.client_id, self.client_secret,
                                                                           pprint.pformat(self.metadata)))
 
-
   def get_metadata(self, option=None):
     """ Get metadata
 
@@ -443,7 +442,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     if not idPScope:
       return S_ERROR('Cannot find role for %s' % group)
     return S_OK(scope_to_list(idPScope))
-  
+
   def getScopeGroups(self, scope):
     """ Get scope groups
 

@@ -49,12 +49,12 @@ class BaseRequestHandler(RequestHandler):
 
       This class is basic for :py:class:`DIRAC.Core.Tornado.Server.TornadoService.TornadoService`
       and :py:class:`DIRAC.Core.Tornado.Server.TornadoREST.TornadoREST`.
-      
+
       In order to create a class that inherits from `BaseRequestHandler`, it has to
       follow a certain skeleton::
 
         class TornadoInstance(BaseRequestHandler):
-          
+
           # Prefix of methods names
           METHOD_PREFIX = "export_"
 
@@ -72,7 +72,7 @@ class BaseRequestHandler(RequestHandler):
                     'serviceSectionPath': PathFinder.getServiceSection(serviceName),
                     'csPaths': [PathFinder.getServiceSection(serviceName)],
                     'URL': request.full_url()}
-          
+
           @classmethod
           def _getServiceAuthSection(cls, serviceName):
             ''' Search service auth section.
@@ -113,7 +113,7 @@ class BaseRequestHandler(RequestHandler):
       whenever ``TransferClient.receiveFile`` is called. It is the equivalent of the DISET
       ``transfer_toClient``.
       Note that this is here only for compatibility, and we discourage using it for new purposes, as it is
-      bound to disappear.        
+      bound to disappear.
   """
   # Because we initialize at first request, we use a flag to know if it's already done
   __init_done = False
@@ -473,9 +473,8 @@ class BaseRequestHandler(RequestHandler):
     # in a thread anymore
 
     # Is it S_OK or S_ERROR?
-    if (isinstance(self.result, dict) and
-        isinstance(self.result.get('OK'), bool) and
-        ('Value' if self.result['OK'] else 'Message') in self.result):
+    r = self.result
+    if isinstance(r, dict) and isinstance(r.get('OK'), bool) and ('Value' if r['OK'] else 'Message') in r:
       self._parseDIRACResult(self.result)
 
     # If set to true, do not JEncode the return of the RPC call

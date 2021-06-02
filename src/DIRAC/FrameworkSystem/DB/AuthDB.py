@@ -213,14 +213,14 @@ class AuthDB(SQLAlchemyDB):
     token['user_id'] = userID
     token['provider'] = provider
     try:
-      token['rt_expires_at'] = int(jwt.decode(token['refresh_token'], options=dict(verify_signature=False, verify_aud=False))['exp'])
+      token['rt_expires_at'] = int(jwt.decode(token['refresh_token'], options=dict(verify_signature=False,
+                                                                                   verify_aud=False))['exp'])
     except Exception as e:
       self.log.debug('Cannot get refresh token expires time: %s' % repr(e))
 
     token['rt_expires_at'] = int(token.get('rt_expires_at', 24 * 3600 + time.time()))
     if token['rt_expires_at'] < time.time():
       return S_ERROR('Cannot store expired refresh token.')
-
 
     attrts = dict((k, v) for k, v in dict(token).items() if k in list(Token.__dict__.keys()))
     self.log.debug('Store token:', pprint.pformat(attrts))
@@ -309,7 +309,7 @@ class AuthDB(SQLAlchemyDB):
       return result
     jwks = result['Value']
     if kid:
-      strkey=jwks[0]['key']
+      strkey = jwks[0]['key']
       return S_OK(dict(rsakey=RSAKey.import_key(json.loads(strkey)), kid=kid, strkey=strkey))
     newer = {}
     for jwk in jwks:

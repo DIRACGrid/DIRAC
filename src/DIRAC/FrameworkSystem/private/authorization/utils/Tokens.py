@@ -118,7 +118,7 @@ class OAuth2Token(_OAuth2Token):
       # Get access token expires_at claim
       kwargs['expires_at'] = int(self.get_token_attr('exp'))
     super(OAuth2Token, self).__init__(kwargs)
-  
+
   def get_client_id(self):
     return self.get('client_id')
 
@@ -137,7 +137,7 @@ class OAuth2Token(_OAuth2Token):
 
         :return: list
     """
-    return scope_to_list(self.scope) or []
+    return scope_to_list(self.get(scope, '') or []
 
   @property
   def groups(self):
@@ -146,10 +146,10 @@ class OAuth2Token(_OAuth2Token):
         :return: list
     """
     return [s.split(':')[1] for s in self.scopes if s.startswith('g:')]
-  
+
   def get_token_attr(self, attr, token_type='access_token'):
     """ Get token attribute without verification
-    
+
         :param str attr: attribute
         :param str token_type: token type
 

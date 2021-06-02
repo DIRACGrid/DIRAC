@@ -22,7 +22,7 @@ class RefreshTokenGrant(_RefreshTokenGrant):
     if not result['OK']:
       raise OAuth2Error(result['Message'])
     return result['Value']
-  
+
   def _validate_token_scope(self, token):
     """ Skip scope validadtion """
     pass
@@ -33,7 +33,7 @@ class RefreshTokenGrant(_RefreshTokenGrant):
 
   def issue_token(self, user, credential):
     """ Refresh tokens
-    
+
         :param user: unuse
         :param dict credential: token credential
 

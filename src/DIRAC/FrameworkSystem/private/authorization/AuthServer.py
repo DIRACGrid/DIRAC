@@ -29,7 +29,8 @@ from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata, isDownloadablePersonalProxy
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getEmailsForGroup, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getUsernameForDN, getEmailsForGroup,
+                                                               getDNForUsername, getIdPForGroup)
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 
 log = logging.getLogger('authlib')

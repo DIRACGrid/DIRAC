@@ -17,7 +17,7 @@ from six.moves import http_client
 
 import DIRAC
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Tornado.Server.BaseRequestHandler import BaseRequestHandler
 

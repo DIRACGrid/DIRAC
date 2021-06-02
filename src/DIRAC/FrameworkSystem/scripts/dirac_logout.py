@@ -52,7 +52,7 @@ class Params(object):
     """
     self.issuer = arg
     return S_OK()
-  
+
   def setTokenFile(self, arg):
     """ Set token file
 
