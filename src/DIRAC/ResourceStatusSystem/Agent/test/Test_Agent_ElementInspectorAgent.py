@@ -3,10 +3,8 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from six.moves import queue as Queue
 
 # imports
-import pytest
 from mock import MagicMock
 
 # DIRAC Components
@@ -21,26 +19,22 @@ mockNone = MagicMock()
 mockNone.return_value = None
 mockSM = MagicMock()
 
-queueFilled = Queue.Queue()
-queueFilled.put({'status': 'status',
-                 'name': 'site',
-                 'site': 'site',
-                 'vO': 'all',
-                 'element': 'Site',
-                 'statusType': 'all',
-                 'elementType': 'Site'})
+elemDict = {
+    'status': 'status',
+    'name': 'site',
+    'site': 'site',
+    'vO': 'all',
+    'element': 'Site',
+    'statusType': 'all',
+    'elementType': 'Site'}
 
 
-@pytest.mark.parametrize(
-    "elementsToBeCheckedValue", [
-        (Queue.Queue()),
-        (queueFilled)
-    ])
-def test__execute(mocker, elementsToBeCheckedValue):
+def test__execute(mocker):
   """ Testing JobCleaningAgent()._getAllowedJobTypes()
   """
 
   mocker.patch("DIRAC.ResourceStatusSystem.Agent.ElementInspectorAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.ResourceStatusSystem.Agent.ElementInspectorAgent.PEP")
   mocker.patch(
       "DIRAC.ResourceStatusSystem.Agent.ElementInspectorAgent.AgentModule._AgentModule__moduleProperties",
       side_effect=lambda x, y=None: y, create=True
@@ -51,8 +45,7 @@ def test__execute(mocker, elementsToBeCheckedValue):
   elementInspectorAgent.log.setLevel('DEBUG')
   elementInspectorAgent._AgentModule__configDefaults = mockAM
   elementInspectorAgent.initialize()
-  elementInspectorAgent.elementsToBeChecked = elementsToBeCheckedValue
 
-  result = elementInspectorAgent._execute()
+  result = elementInspectorAgent._execute(elemDict)
 
-  assert result == {'OK': True, 'Value': None}
+  assert result is None

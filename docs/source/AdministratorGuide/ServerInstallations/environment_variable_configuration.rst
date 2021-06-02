@@ -47,12 +47,6 @@ DIRAC_M2CRYPTO_SSL_METHODS
 DIRAC_NO_CFG
   If set to anything, cfg files on the command line must be passed to the command using the --cfg option.
 
-DIRAC_USE_NEWTHREADPOOL
-  If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used (default=Yes)
-
-DIRAC_USE_M2CRYPTO
-  If anything else than ``true`` or ``yes`` (default) DIRAC will revert back to using pyGSI instead of m2crypto for handling certificates, proxies, etc.
-
 DIRACSYSCONFIG
   If set, its value should be (the full locations on the file system of) one of more DIRAC cfg file(s) (comma separated), whose content will be used for the DIRAC configuration
   (see :ref:`dirac-cs-structure`)
