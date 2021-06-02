@@ -379,32 +379,26 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
 
     # Create a sample log
     result = self.client.updateLog('TestHost', {'DIRACVersion': 'v6r15'})
-
     self.assertTrue(result['OK'])
 
     # Check that the log exists
     result = self.client.getLog('TestHost')
-
     self.assertTrue(result['OK'] and result['Value'][0]['DIRACVersion'] == 'v6r15')
 
     # Update the fields of the created log
     result = self.client.updateLog('TestHost', {'hostName': 'StillATestHost'})
-
     self.assertTrue(result['OK'])
 
     # Check if the log with the modified fields exists
     result = self.client.getLog('StillATestHost')
-
     self.assertTrue(result['OK'] and result['Value'][0]['DIRACVersion'] == 'v6r15')
 
     # Remove the log
     result = self.client.removeLogs({'hostName': 'StillATestHost'})
-
     self.assertTrue(result['OK'])
 
     # Check that the log was actually removed
     result = self.client.getLog('StillATestHost')
-
     self.assertFalse(result['OK'])
 
     # Multiple removal
@@ -415,15 +409,15 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
     self.client.removeLogs({'DIRACVersion': 'v7r0'})
 
     result = self.client.getLog('TestHostC')
-
     self.assertTrue(result['OK'] and len(result['Value']) >= 1)
 
     result = self.client.getLog('TestHostB')
-
     self.assertFalse(result['OK'])
 
-    result = self.client.removeLogs({'DIRACVersion': 'v7r1'})
+    result = self.client.getLogs()
+    self.assertTrue(result['OK'])
 
+    result = self.client.removeLogs({'DIRACVersion': 'v7r1'})
     self.assertTrue(result['OK'])
 
 

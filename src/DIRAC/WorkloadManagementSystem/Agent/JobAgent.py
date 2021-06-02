@@ -19,7 +19,7 @@ import six
 
 from diraccfg import CFG
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath, siteName
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -117,7 +117,7 @@ class JobAgent(AgentModule):
 
     self.initTimes = os.times()
     # Localsite options
-    self.siteName = gConfig.getValue('/LocalSite/Site', self.siteName)
+    self.siteName = siteName()
     self.pilotReference = gConfig.getValue('/LocalSite/PilotReference', self.pilotReference)
     self.defaultProxyLength = gConfig.getValue('/Registry/DefaultProxyLifeTime', self.defaultProxyLength)
     # Agent options

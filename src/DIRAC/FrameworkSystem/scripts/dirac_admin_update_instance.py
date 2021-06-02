@@ -25,24 +25,30 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main():
   Script.registerSwitch("", "hosts=", "Comma separated list of hosts or file containing row wise list of hosts"
                                       " targeted for update (leave empty for all)")
+  Script.registerSwitch("", "excludeHosts=", "Comma separated list of hosts or file containing row wise list of hosts"
+                                             " excluded from update")
   Script.registerSwitch("", "retry=", "Number of retry attempts on hosts that have failed to update")
 
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()
-  if len(args) < 1 or len(args) > 2:
+  if len(args) < 1 or len(args) > 3:
     Script.showHelp()
 
   version = args[0]
   retry = 0
   hosts = []
+  excludeHosts = []
 
   for switch in Script.getUnprocessedSwitches():
     if switch[0] == "hosts":
       hosts = switch[1]
+    if switch[0] == "excludeHosts":
+      excludeHosts = switch[1]
     if switch[0] == "retry":
       retry = int(switch[1])
 
+  # Parse targeted hosts
   try:
     with open(hosts, 'r') as f:
       hosts = f.read().splitlines()
@@ -52,6 +58,18 @@ def main():
 
   if not isinstance(hosts, list):
     hosts = hosts.split(',')
+
+  # Parse excluded hosts
+  try:
+    with open(excludeHosts, 'r') as f:
+      excludeHosts = f.read().splitlines()
+      excludeHosts = [str(host) for host in excludeHosts]
+  except Exception:
+    pass
+
+  if not isinstance(excludeHosts, list):
+    excludeHosts = hosts.split(',')
+
 
   from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -106,18 +124,22 @@ def main():
       return result
     return S_OK()
 
-  def updateHosts(version, hosts=[]):
+  def updateHosts(version, hosts=[], excludeHosts=[]):
     """
     Apply update to all hosts
 
     :param str version: version vArBpC you want to update to
     :param list[str] hosts: list of hosts to be updated, defaults to []
+    :param list[str] excludeHosts: list of hosts to be excluded from updated, defaults to []
     """
     if not hosts:
       result = getListOfHosts()
       if not result['OK']:
         return result
       hosts = result['Value']
+
+    # Subtract the excluded hosts
+    hosts = [host for host in hosts if host not in excludeHosts]
 
     updateSuccess = []
     updateFail = []
@@ -180,15 +202,16 @@ def main():
     gLogger.error("Received unxpected message: %s" % result['Message'])
     return result
 
-  def updateInstance(version, hosts, retry):
+  def updateInstance(version, hosts, excludeHosts, retry):
     """
     Update each server of an instance and restart them
 
     :param str version: version vArBpC you want to update to
     :param list[str] hosts: list of hosts to be updated
+    :param list[str] excludeHosts: list of hosts to be excluded from update
     :param int retry: number of retry attempts on hosts that have failed to update
     """
-    result = updateHosts(version, hosts)
+    result = updateHosts(version, hosts, excludeHosts)
     if not result['OK']:
       return result
 
@@ -228,11 +251,11 @@ def main():
       for host in retryHosts:
         gLogger.notice(" - %s" % host)
       gLogger.notice("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-      return updateInstance(version, retryHosts, retry - 1)
+      return updateInstance(version, retryHosts, excludeHosts, retry - 1)
 
     return S_ERROR("Update failed!")
 
-  result = updateInstance(version, hosts, retry)
+  result = updateInstance(version, hosts, excludeHosts, retry)
   if not result['OK']:
     gLogger.fatal(result['Message'])
     DIRAC.exit(1)

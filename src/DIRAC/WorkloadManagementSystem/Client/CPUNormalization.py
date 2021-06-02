@@ -13,6 +13,7 @@ from __future__ import print_function
 import os
 from six.moves.urllib.request import urlopen
 
+import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
@@ -218,7 +219,7 @@ def getCPUTime(cpuNormalizationFactor):
       # we have to look for a ceQueue in the CS
       # A bit hacky. We should better profit from something generic
       gLogger.warn("No CEQueue in local configuration, looking to find one in CS")
-      siteName = gConfig.getValue('/LocalSite/Site')
+      siteName = DIRAC.siteName()
       queueSection = '/Resources/Sites/%s/%s/CEs/%s/Queues' % (siteName.split('.')[0], siteName, gridCE)
       res = gConfig.getSections(queueSection)
       if not res['OK']:

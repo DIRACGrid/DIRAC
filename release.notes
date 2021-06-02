@@ -43,6 +43,13 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p9]
+
+*FrameworkSystem
+NEW: (#5173) Add option to exclude list of hosts from dirac-admin-instace-update
+CHANGE: (#5169) Deprecate checkTypeRe and HashTags in UserProfileClient
+FIX: (#5169) Python 3 compatibility in UserProfileClient
+
 [v7r2p8]
 
 *Core
@@ -248,6 +255,12 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p42]
+
+*Framework
+FIX: (#5168) Avoid minor caching bug which causes constraints to be violated when rapidly
+     writing to UserProfileDB
 
 [v7r1p41]
 
