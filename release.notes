@@ -1,7 +1,8 @@
-[v7r3-pre9]
+[v7r3-pre10]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
 NEW: (#5000) Initial support for Python 3 server installations
+CHANGE: (#4715) removing env variable DIRAC_USE_NEWTHREADPOOL
 
 *Core
 FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
@@ -26,11 +27,14 @@ CHANGE: (#5110) removed dirac-admin-bdii-info command
 
 *Framework:
 CHANGE: (#4303) Removed completely the SystemLogging
+CHANGE: (#5164) Remove HashTag table from Framework/UserProfile
+CHANGE: (#5164) Remove dataTypeRE argument when retrieving values from Framework/UserProfileClient
 
 *WMS
 CHANGE: (#4884) JobDB: compress JDLs by default (no need for flag anymore)
 CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent instead)
 NEW: (#4903) Added WMS (Jobs) State Machine
+CHANGE: (#5141) add an Aborted_HOUR column to the pilot efficiency table needed by the WebApp
 
 *RSS
 NEW: (#5042) Multi-VO mode of operation support
