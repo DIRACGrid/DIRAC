@@ -251,7 +251,7 @@ def main():
       for host in retryHosts:
         gLogger.notice(" - %s" % host)
       gLogger.notice("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-      return updateInstance(version, retryHosts, retry - 1)
+      return updateInstance(version, retryHosts, excludeHosts, retry - 1)
 
     return S_ERROR("Update failed!")
 
