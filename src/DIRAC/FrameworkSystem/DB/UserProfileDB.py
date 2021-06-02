@@ -7,14 +7,10 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import six
-import os
-import sys
-import hashlib
 
 import cachetools
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.Utilities import Time
+from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 
@@ -62,17 +58,6 @@ class UserProfileDB(DB):
                                                },
                                    'Engine': 'InnoDB',
                                    },
-               'up_HashTags': {'Fields': {'UserId': 'INTEGER',
-                                          'GroupId': 'INTEGER',
-                                          'VOId': 'INTEGER',
-                                          'HashTag': 'VARCHAR(32) NOT NULL',
-                                          'TagName': 'VARCHAR(255) NOT NULL',
-                                          'LastAccess': 'DATETIME',
-                                          },
-                               'PrimaryKey': ['UserId', 'GroupId', 'TagName'],
-                               'Indexes': {'HashKey': ['UserId', 'HashTag']},
-                               'Engine': 'InnoDB',
-                               },
                }
 
   def __init__(self):
@@ -114,9 +99,6 @@ class UserProfileDB(DB):
     if 'up_ProfilesData' not in tablesInDB:
       tablesD['up_ProfilesData'] = self.tableDict['up_ProfilesData']
 
-    if 'up_HashTags' not in tablesInDB:
-      tablesD['up_HashTags'] = self.tableDict['up_HashTags']
-
     return self._createTables(tablesD)
 
   def __getUserId(self, userName, insertIfMissing=True):
@@ -136,16 +118,17 @@ class UserProfileDB(DB):
     TTL cache to dramatically improve performance.
     """
     key = (tableName, tuple(outFields), tuple(sorted(condDict.items())))
-    if key not in self.__cache:
-      result = self.getFields(tableName, outFields, condDict)
-      if not result['OK']:
-        return result
-      data = result['Value']
-      if len(data) > 0:
-        objId = data[0][0]
-        self.updateFields(tableName, ['LastAccess'], ['UTC_TIMESTAMP()'], {'Id': objId})
+    if key in self.__cache:
+      return self.__cache[key]
+    result = self.getFields(tableName, outFields, condDict)
+    if not result['OK']:
+      return result
+    data = result['Value']
+    if len(data) > 0:
+      objId = data[0][0]
+      self.updateFields(tableName, ['LastAccess'], ['UTC_TIMESTAMP()'], {'Id': objId})
       self.__cache[key] = result
-    return self.__cache[key]
+    return result
 
   def __getObjId(self, objValue, varName, tableName, insertIfMissing=True):
     result = self.__getFieldsCached(tableName, ['Id'], {varName: objValue})
@@ -239,14 +222,13 @@ class UserProfileDB(DB):
         if addMissing:
           normPerms[pName] = self.__permValues[0]
         continue
-      else:
-        permVal = perms[pName].upper()
-        for nV in self.__permValues:
-          if nV == permVal:
-            normPerms[pName] = nV
-            break
-        if pName not in normPerms and addMissing:
-          normPerms[pName] = self.__permValues[0]
+      permVal = perms[pName].upper()
+      for nV in self.__permValues:
+        if nV == permVal:
+          normPerms[pName] = nV
+          break
+      if pName not in normPerms and addMissing:
+        normPerms[pName] = self.__permValues[0]
 
     return normPerms
 
@@ -330,9 +312,10 @@ class UserProfileDB(DB):
       return result
     data = result['Value']
     if len(data) > 0:
-      permDict = {}
-      for i in range(len(self.__permAttrs)):
-        permDict[self.__permAttrs[i]] = data[0][i]
+      permDict = {
+          self.__permAttrs[i]: data[0][i]
+          for i in range(len(self.__permAttrs))
+      }
       return S_OK(permDict)
     return S_ERROR("No data for userIds %s profileName %s varName %s" % (userIds, profileName, varName))
 
@@ -393,7 +376,7 @@ class UserProfileDB(DB):
     if result['OK']:
       return result
     # If error and not duplicate -> real error
-    if result['Message'].find("Duplicate entry") == -1:
+    if "Duplicate entry" not in result['Message']:
       return result
     updateSQL = "UPDATE `up_ProfilesData` SET %s WHERE %s" % (", ".join(["%s=%s" % f for f in sqlInsertValues]),
                                                               self.__webProfileUserDataCond(userIds,
@@ -416,7 +399,7 @@ class UserProfileDB(DB):
     nPerms = self.__parsePerms(perms, False)
     if not nPerms:
       return S_OK()
-    sqlPerms = ",".join(["%s='%s'" % (k, nPerms[k]) for k in nPerms])
+    sqlPerms = ",".join("%s='%s'" % (k, nPerms[k]) for k in nPerms)
 
     updateSql = "UPDATE `up_ProfilesData` SET %s WHERE %s" % (sqlPerms,
                                                               self.__webProfileUserDataCond(userIds,
@@ -484,27 +467,21 @@ class UserProfileDB(DB):
     """
     Helper for setting data
     """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.storeVarByUserId(userIds, profileName, varName, data, perms=perms)
-    finally:
-      pass
+    result = self.getUserGroupIds(userName, userGroup)
+    if not result['OK']:
+      return result
+    userIds = result['Value']
+    return self.storeVarByUserId(userIds, profileName, varName, data, perms=perms)
 
   def deleteVar(self, userName, userGroup, profileName, varName):
     """
     Helper for deleting data
     """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.deleteVarByUserId(userIds, profileName, varName)
-    finally:
-      pass
+    result = self.getUserGroupIds(userName, userGroup)
+    if not result['OK']:
+      return result
+    userIds = result['Value']
+    return self.deleteVarByUserId(userIds, profileName, varName)
 
   def __profilesCondGenerator(self, value, varType, initialValue=False):
     if isinstance(value, six.string_types):
@@ -528,7 +505,7 @@ class UserProfileDB(DB):
       fieldName = 'GroupId'
     else:
       fieldName = 'VOId'
-    return "`up_ProfilesData`.%s in ( %s )" % (fieldName, ", ".join([str(iD) for iD in ids]))
+    return "`up_ProfilesData`.%s in ( %s )" % (fieldName, ", ".join(str(iD) for iD in ids))
 
   def listVarsById(self, userIds, profileName, filterDict=None):
     result = self._escapeString(profileName)
@@ -540,10 +517,7 @@ class UserProfileDB(DB):
                "`up_VOs`.Id = `up_ProfilesData`.VOId",
                self.__webProfileReadAccessDataCond(userIds, userIds, sqlProfileName)]
     if filterDict:
-      fD = {}
-      for k in filterDict:
-        fD[k.lower()] = filterDict[k]
-      filterDict = fD
+      filterDict = {k.lower(): filterDict[k] for k in filterDict}
       for k in ('user', 'group', 'vo'):
         if k in filterDict:
           sqlCond.append(self.__profilesCondGenerator(filterDict[k], k))
@@ -561,210 +535,18 @@ class UserProfileDB(DB):
     userIds = result['Value']
     return self.listVarsById(userIds, profileName, filterDict)
 
-  def storeHashTagById(self, userIds, tagName, hashTag=False):
-    """
-    Set a data entry for a profile
-    """
-    if not hashTag:
-      hashTag = hashlib.md5()
-      hashTag.update(("%s;%s;%s" % (Time.dateTime(), userIds, tagName)).encode())
-      hashTag = hashTag.hexdigest()
-
-    result = self.insertFields('up_HashTags', ['UserId', 'GroupId', 'VOId', 'TagName', 'HashTag'],
-                               [userIds[0], userIds[1], userIds[2], tagName, hashTag])
-    if result['OK']:
-      return S_OK(hashTag)
-    # If error and not duplicate -> real error
-    if result['Message'].find("Duplicate entry") == -1:
-      return result
-    result = self.updateFields('up_HashTags', ['HashTag'], [hashTag], {'UserId': userIds[0],
-                                                                       'GroupId': userIds[1],
-                                                                       'VOId': userIds[2],
-                                                                       'TagName': tagName})
-    if not result['OK']:
-      return result
-    return S_OK(hashTag)
-
-  def retrieveHashTagById(self, userIds, hashTag):
-    """
-    Get a data entry for a profile
-    """
-    result = self.getFields('up_HashTags', ['TagName'], {'UserId': userIds[0],
-                                                         'GroupId': userIds[1],
-                                                         'VOId': userIds[2],
-                                                         'HashTag': hashTag})
-    if not result['OK']:
-      return result
-    data = result['Value']
-    if len(data) > 0:
-      return S_OK(data[0][0])
-    return S_ERROR("No data for combo userId %s hashTag %s" % (userIds, hashTag))
-
-  def retrieveAllHashTagsById(self, userIds):
-    """
-    Get a data entry for a profile
-    """
-    result = self.getFields('up_HashTags', ['HashTag', 'TagName'], {'UserId': userIds[0],
-                                                                    'GroupId': userIds[1],
-                                                                    'VOId': userIds[2]})
-    if not result['OK']:
-      return result
-    data = result['Value']
-    return S_OK(dict(data))
-
-  def storeHashTag(self, userName, userGroup, tagName, hashTag=False):
-    """
-    Helper for storing HASH
-    """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.storeHashTagById(userIds, tagName, hashTag)
-    finally:
-      pass
-
-  def retrieveHashTag(self, userName, userGroup, hashTag):
-    """
-    Helper for retrieving HASH
-    """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.retrieveHashTagById(userIds, hashTag)
-    finally:
-      pass
-
-  def retrieveAllHashTags(self, userName, userGroup):
-    """
-    Helper for retrieving HASH
-    """
-    try:
-      result = self.getUserGroupIds(userName, userGroup)
-      if not result['OK']:
-        return result
-      userIds = result['Value']
-      return self.retrieveAllHashTagsById(userIds)
-    finally:
-      pass
-
   def getUserProfileNames(self, permission):
     """
     it returns the available profile names by not taking account the permission: ReadAccess and PublishAccess
     """
-    result = None
-
     permissions = self.__parsePerms(permission, False)
     if not permissions:
-      return S_OK()
+      return S_OK([])
 
-    condition = ",".join(["%s='%s'" % (k, permissions[k]) for k in permissions])
+    condition = ",".join("%s='%s'" % (k, permissions[k]) for k in permissions)
 
     query = "SELECT distinct Profile from `up_ProfilesData` where %s" % condition
     retVal = self._query(query)
-    if retVal['OK']:
-      result = S_OK([i[0] for i in retVal['Value']])
-    else:
-      result = retVal
-    return result
-
-
-def testUserProfileDB():
-  """ Some test cases
-  """
-
-  # building up some fake CS values
-  gConfig.setOptionValue('DIRAC/Setup', 'Test')
-  gConfig.setOptionValue('/DIRAC/Setups/Test/Framework', 'Test')
-
-  host = '127.0.0.1'
-  user = 'Dirac'
-  pwd = 'Dirac'
-  db = 'AccountingDB'
-
-  gConfig.setOptionValue('/Systems/Framework/Test/Databases/UserProfileDB/Host', host)
-  gConfig.setOptionValue('/Systems/Framework/Test/Databases/UserProfileDB/DBName', db)
-  gConfig.setOptionValue('/Systems/Framework/Test/Databases/UserProfileDB/User', user)
-  gConfig.setOptionValue('/Systems/Framework/Test/Databases/UserProfileDB/Password', pwd)
-
-  db = UserProfileDB()
-  assert db._connect()['OK']
-
-  userName = 'testUser'
-  userGroup = 'testGroup'
-  profileName = 'testProfile'
-  varName = 'testVar'
-  tagName = 'testTag'
-  hashTag = '237cadc4af90277e9524e6386e264630'
-  data = 'testData'
-  perms = 'USER'
-
-  try:
-    if False:
-      for tableName in db.tableDict.keys():
-        result = db._update('DROP TABLE `%s`' % tableName)
-        assert result['OK']
-
-    gLogger.info('\n Creating Table\n')
-    # Make sure it is there and it has been created for this test
-    result = db._checkTable()
-    assert result == {'OK': True, 'Value': None}
-
-    result = db._checkTable()
-    assert result == {'OK': True, 'Value': 0}
-
-    gLogger.info('\n Adding some data\n')
-    result = db.storeVar(userName, userGroup, profileName, varName, data, perms)
-    assert result['OK']
-    assert result['Value'] == 1
-
-    gLogger.info('\n Some queries\n')
-    result = db.getUserGroupIds(userName, userGroup)
-    assert result['OK']
-    assert result['Value'] == (1, 1, 1)
-
-    result = db.listVars(userName, userGroup, profileName)
-    assert result['OK']
-    assert result['Value'][0][3] == varName
-
-    result = db.retrieveUserProfiles(userName, userGroup)
-    assert result['OK']
-    assert result['Value'] == {profileName: {varName: data}}
-
-    result = db.storeHashTag(userName, userGroup, tagName, hashTag)
-    assert result['OK']
-    assert result['Value'] == hashTag
-
-    result = db.retrieveAllHashTags(userName, userGroup)
-    assert result['OK']
-    assert result['Value'] == {hashTag: tagName}
-
-    result = db.retrieveHashTag(userName, userGroup, hashTag)
-    assert result['OK']
-    assert result['Value'] == tagName
-
-    gLogger.info('\n OK\n')
-
-  except AssertionError:
-    print('ERROR ', end=' ')
-    if not result['OK']:
-      print(result['Message'])
-    else:
-      print(result)
-
-    sys.exit(1)
-
-
-if __name__ == '__main__':
-  from DIRAC.Core.Base import Script
-  Script.parseCommandLine()
-  gLogger.setLevel('VERBOSE')
-
-  if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
-    gLogger.info('Unset pyhthon optimization "PYTHONOPTIMIZE"')
-    sys.exit(0)
-
-  testUserProfileDB()
+    if not retVal['OK']:
+      return retVal
+    return S_OK([i[0] for i in retVal['Value']])

@@ -36,6 +36,11 @@ pytest "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a client
 
 
 #-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** Framework TESTS ****\n"
+pytest "${THIS_DIR}/Framework/Test_UserProfileClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+
+
+#-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RSS TESTS ****\n"
 pytest "${THIS_DIR}/ResourceStatusSystem/Test_ResourceManagement.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 pytest "${THIS_DIR}/ResourceStatusSystem/Test_ResourceStatus.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))

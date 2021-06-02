@@ -146,36 +146,6 @@ class UserProfileManagerHandler(RequestHandler):
                                       userName, userGroup,
                                       profileName, varName)
 
-  types_storeHashTag = [six.string_types]
-
-  def export_storeHashTag(self, tagName):
-    """ Set hash tag
-    """
-    credDict = self.getRemoteCredentials()
-    userName = credDict['username']
-    userGroup = credDict['group']
-    return self.upDB.storeHashTag(userName, userGroup, tagName)
-
-  types_retrieveHashTag = [six.string_types]
-
-  def export_retrieveHashTag(self, hashTag):
-    """ Get hash tag
-    """
-    credDict = self.getRemoteCredentials()
-    userName = credDict['username']
-    userGroup = credDict['group']
-    return self.upDB.retrieveHashTag(userName, userGroup, hashTag)
-
-  types_retrieveAllHashTags = []
-
-  def export_retrieveAllHashTags(self):
-    """ Get all hash tags
-    """
-    credDict = self.getRemoteCredentials()
-    userName = credDict['username']
-    userGroup = credDict['group']
-    return self.upDB.retrieveAllHashTags(userName, userGroup)
-
   types_deleteProfiles = [list]
 
   def export_deleteProfiles(self, userList):
