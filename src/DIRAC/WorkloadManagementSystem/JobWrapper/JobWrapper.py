@@ -92,7 +92,7 @@ class JobWrapper(object):
       self.jobID = 0
     else:
       self.jobID = jobID
-    self.siteName = gConfig.getValue('/LocalSite/Site', 'Unknown')
+    self.siteName = DIRAC.siteName()
     if jobReport:
       self.jobReport = jobReport
     else:
