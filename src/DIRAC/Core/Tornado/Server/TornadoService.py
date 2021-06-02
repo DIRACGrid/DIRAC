@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 from io import open
 
 import os
-import datetime
+from datetime import datetime
 
 import tornado.ioloop
 from tornado import gen
