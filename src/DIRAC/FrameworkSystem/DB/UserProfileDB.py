@@ -659,7 +659,7 @@ class UserProfileDB(DB):
 
     permissions = self.__parsePerms(permission, False)
     if not permissions:
-      return S_OK()
+      return S_OK([])
 
     condition = ",".join(["%s='%s'" % (k, permissions[k]) for k in permissions])
 
