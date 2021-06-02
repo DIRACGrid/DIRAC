@@ -66,17 +66,11 @@ if not sMod:
     setup = gConfig.getValue('/DIRAC/Setup')
     if not setup:
       setup = 'dirac-JenkinsSetup'
-  if not vo:
-    vo = gConfig.getValue('/DIRAC/VirtualOrganization')
-    if not vo:
-      vo = 'dirac'
 
-  if not localCfg.isSection('/DIRAC/VOPolicy'):
-    localCfg.createNewSection('/DIRAC/VOPolicy')
-  if not localCfg.isSection('/DIRAC/VOPolicy/%s' % vo):
-    localCfg.createNewSection('/DIRAC/VOPolicy/%s' % vo)
-  if not localCfg.isSection('/DIRAC/VOPolicy/%s/%s' % (vo, setup)):
-    localCfg.createNewSection('/DIRAC/VOPolicy/%s/%s' % (vo, setup))
-  localCfg.setOption('/DIRAC/VOPolicy/%s/%s/SoftwareDistModule' % (vo, setup), '')
+  if not localCfg.isSection('/Operations'):
+    localCfg.createNewSection('/Operations')
+  if not localCfg.isSection('/Operations/%s' % setup):
+    localCfg.createNewSection('/Operations/%s' % setup)
+  localCfg.setOption('/Operations/%s/SoftwareDistModule' % setup, '')
 
 localCfg.writeToFile(localConfigFile)

@@ -5,6 +5,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 import sys
 import pprint
 import os
@@ -504,18 +505,31 @@ class SystemAdministratorClientCLI(CLI):
       installations = result['Value']
 
     if installations:
-      if display == 'table':
-        gLogger.notice('')
-        gLogger.notice(' ' + 'Num'.center(5) + ' ' +
-                       'Host'.center(20) + ' ' +
-                       'Name'.center(20) + ' ' +
-                       'Module'.center(20) + ' ' +
-                       'System'.center(16) + ' ' +
-                       'Type'.center(12) + ' ' +
-                       'Installed on'.center(18) + ' ' +
-                       'Install by'.center(12) + ' ' +
-                       'Uninstalled on'.center(18) + ' ' +
-                       'Uninstall by'.center(12))
+      if display == "table":
+        gLogger.notice("")
+        gLogger.notice(
+            " "
+            + "Num".center(5)
+            + " "
+            + "Host".center(20)
+            + " "
+            + "Name".center(20)
+            + " "
+            + "Module".center(20)
+            + " "
+            + "System".center(16)
+            + " "
+            + "Type".center(12)
+            + " "
+            + "Installed on".center(18)
+            + " "
+            + "Install by".center(12)
+            + " "
+            + "Uninstalled on".center(18)
+            + " "
+            + "Uninstall by".center(12)
+        )
+        gLogger.notice(("-") * 164)
         gLogger.notice(('-') * 164)
       for i, installation in enumerate(installations):
         if not installation['InstalledBy']:
@@ -535,26 +549,39 @@ class SystemAdministratorClientCLI(CLI):
           uninstalledOn = ''
           isInstalled = 'Yes'
 
-        if display == 'table':
-          gLogger.notice('|' + str(i + 1).center(5) + '|' +
-                         installation['Host']['HostName'].center(20) + '|' +
-                         installation['Instance'].center(20) + '|' +
-                         installation['Component']['Module'].center(20) + '|' +
-                         installation['Component']['System'].center(16) + '|' +
-                         installation['Component']['Type'].center(12) + '|' +
-                         installation['InstallationTime'].strftime("%d-%m-%Y %H:%M").center(18) + '|' +
-                         installedBy.center(12) + '|' +
-                         uninstalledOn.center(18) + '|' +
-                         uninstalledBy.center(12) + '|')
-          gLogger.notice(('-') * 164)
+        if display == "table":
+          gLogger.notice(
+              "|"
+              + str(i + 1).center(5)
+              + "|"
+              + installation["Host"]["HostName"].center(20)
+              + "|"
+              + installation["Instance"].center(20)
+              + "|"
+              + installation["Component"]["Module"].center(20)
+              + "|"
+              + installation["Component"]["System"].center(16)
+              + "|"
+              + installation["Component"]["Type"].center(12)
+              + "|"
+              + installation["InstallationTime"].strftime("%d-%m-%Y %H:%M").center(18)
+              + "|"
+              + installedBy.center(12)
+              + "|"
+              + uninstalledOn.center(18)
+              + "|"
+              + uninstalledBy.center(12)
+              + "|"
+          )
+          gLogger.notice(("-") * 164)
         elif display == 'list':
           gLogger.notice('')
           gLogger.notice('Installation: '.rjust(20) + str(i + 1))
           gLogger.notice('Installed: '.rjust(20) + isInstalled)
           gLogger.notice('Host: '.rjust(20) + installation['Host']['HostName'])
           gLogger.notice('Name: '.rjust(20) + installation['Instance'])
-          gLogger.notice('Module: '.rjust(20) + installation['Component']['Module'])
-          gLogger.notice('System: '.rjust(20) + installation['Component']['System'])
+          gLogger.notice('Module: '.rjust(20) + installation['Component']['DIRACModule'])
+          gLogger.notice('System: '.rjust(20) + installation['Component']['DIRACSystem'])
           gLogger.notice('Type: '.rjust(20) + installation['Component']['Type'])
           gLogger.notice('Installed on: '.rjust(20) + installation['InstallationTime'].strftime("%d-%m-%Y %H:%M"))
           if installedBy != '':
@@ -794,7 +821,6 @@ class SystemAdministratorClientCLI(CLI):
     result = getProxyInfo()
     if not result['OK']:
       self._errMsg(result['Message'])
-    user = result['Value']['username']
 
     option = argss[0]
     if option == 'db':
