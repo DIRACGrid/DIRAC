@@ -1,3 +1,10 @@
+[v7r2p9]
+
+*FrameworkSystem
+NEW: (#5173) Add option to exclude list of hosts from dirac-admin-instace-update
+CHANGE: (#5169) Deprecate checkTypeRe and HashTags in UserProfileClient
+FIX: (#5169) Python 3 compatibility in UserProfileClient
+
 [v7r2p8]
 
 *Core

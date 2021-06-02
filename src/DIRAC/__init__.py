@@ -105,7 +105,7 @@ if six.PY3:
 else:
   majorVersion = 7
   minorVersion = 2
-  patchLevel = 8
+  patchLevel = 9
   preVersion = 0
 
   version = "v%sr%s" % (majorVersion, minorVersion)
