@@ -427,6 +427,7 @@ class SandboxStoreHandler(RequestHandler):
         if time.time() - SandboxStoreHandler.__purgeWorking < 86400:
           gLogger.info("Sandbox purge still working")
           return S_OK()
+        gLogger.error("Sandbox purge took over 24 hours, it either died or needs optimising")
       SandboxStoreHandler.__purgeWorking = time.time()
     finally:
       SandboxStoreHandler.__purgeLock.release()
@@ -439,7 +440,9 @@ class SandboxStoreHandler(RequestHandler):
       return result
     sbList = result['Value']
     gLogger.info("Got sandboxes to purge", "(%d)" % len(sbList))
-    for sbId, SEName, SEPFN in sbList:  # pylint: disable=invalid-name
+    for i, (sbId, SEName, SEPFN) in enumerate(sbList):
+      if i % 10000 == 0:
+        gLogger.info("Purging", "%d out of %d" % (i, len(sbList)))
       self.__purgeSandbox(sbId, SEName, SEPFN)
 
     SandboxStoreHandler.__purgeWorking = False
@@ -455,35 +458,34 @@ class SandboxStoreHandler(RequestHandler):
       gLogger.error("Cannot delete sandbox from DB", result['Message'])
 
   def __deleteSandboxFromBackend(self, SEName, SEPFN):
-    gLogger.info("Purging sandbox" "SB:%s|%s" % (SEName, SEPFN))
+    gLogger.info("Purging sandbox", "SB:%s|%s" % (SEName, SEPFN))
     if SEName != self.__localSEName:
       return self.__deleteSandboxFromExternalBackend(SEName, SEPFN)
-    else:
-      hdPath = self.__sbToHDPath(SEPFN)
+    hdPath = self.__sbToHDPath(SEPFN)
+    try:
+      if not os.path.isfile(hdPath):
+        return S_OK()
+    except Exception as e:
+      gLogger.error("Cannot perform isfile", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
+      return S_ERROR("Error checking %s" % hdPath)
+    try:
+      os.unlink(hdPath)
+    except Exception as e:
+      gLogger.error("Cannot delete local sandbox", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
+    while hdPath:
+      hdPath = os.path.dirname(hdPath)
+      gLogger.info("Checking if dir is empty", hdPath)
       try:
-        if not os.path.isfile(hdPath):
-          return S_OK()
-      except Exception as e:
-        gLogger.error("Cannot perform isfile", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
-        return S_ERROR("Error checking %s" % hdPath)
-      try:
-        os.unlink(hdPath)
-      except Exception as e:
-        gLogger.error("Cannot delete local sandbox", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
-      while hdPath:
-        hdPath = os.path.dirname(hdPath)
-        gLogger.info("Checking if dir is empty", hdPath)
-        try:
-          if not os.path.isdir(hdPath):
-            break
-          if os.listdir(hdPath):
-            break
-          gLogger.info("Trying to clean dir", hdPath)
-          # Empty dir!
-          os.rmdir(hdPath)
-        except Exception as e:
-          gLogger.error("Cannot clean directory", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
+        if not os.path.isdir(hdPath):
           break
+        if os.listdir(hdPath):
+          break
+        gLogger.info("Trying to clean dir", hdPath)
+        # Empty dir!
+        os.rmdir(hdPath)
+      except Exception as e:
+        gLogger.error("Cannot clean directory", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
+        break
     return S_OK()
 
   def __deleteSandboxFromExternalBackend(self, SEName, SEPFN):
