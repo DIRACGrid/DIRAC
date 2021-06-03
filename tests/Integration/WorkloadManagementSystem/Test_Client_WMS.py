@@ -374,7 +374,7 @@ class JobMonitoringMore(TestWMSTestCase):
     res = jobMonitor.getJobsSummary(jobIDs)
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobPageSummaryWeb({}, [], 0, 100)
-    self.assertFalse(res['OK'], res.get('Value'))
+    self.assertTrue(res['OK'], res.get('Message'))
 
     res = jobStateUpdate.setJobStatusBulk(
         jobID,
