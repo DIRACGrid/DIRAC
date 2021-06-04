@@ -25,6 +25,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSRoleGroupMapping, getGroupOption, getAllGroups
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
 __RCSID__ = "$Id$"
 
@@ -174,7 +175,8 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     if not refresh_token:
       refresh_token = self.token.get('refresh_token')
     try:
-      return S_OK(self.refresh_token(self.get_metadata('token_endpoint'), refresh_token=refresh_token))
+      token = self.refresh_token(self.get_metadata('token_endpoint'), refresh_token=refresh_token)
+      return S_OK(OAuth2Token(dict(token)))
     except Exception as e:
       self.log.exception(e)
       return S_ERROR(repr(e))
@@ -192,7 +194,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       return S_ERROR(repr(e))
     self.token['client_id'] = self.client_id
     self.token['provider'] = self.name
-    return S_OK(self.token)
+    return S_OK(OAuth2Token(dict(self.token)))
 
   def revokeToken(self, token=None, token_type_hint='refresh_token'):
     """ Revoke token
@@ -228,8 +230,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
                                   scope=list_to_scope(scope_to_list(self.scope) + groupScopes))
       if not token:
         return S_ERROR('Cannot exchange token with %s group.' % group)
-      self.token = token
-      return S_OK(token)
+      return S_OK(OAuth2Token(dict(token)))
     except Exception as e:
       self.log.exception(e)
       return S_ERROR('Cannot exchange token with %s group: %s' % (group, repr(e)))
@@ -242,6 +243,12 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
         :return: S_OK(dict)/S_ERROR()
     """
+    if not token:
+      token = self.token
+
+    if not payload and token:
+      payload = OAuth2Token(dict(token)).get_payload()
+
     credDict = self.parseBasic(payload)
     if not credDict.get('DIRACGroups'):
       credDict.update(self.parseEduperson(payload))

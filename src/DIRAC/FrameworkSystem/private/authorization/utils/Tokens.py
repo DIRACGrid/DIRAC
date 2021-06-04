@@ -116,7 +116,7 @@ class OAuth2Token(_OAuth2Token):
     kwargs.update(params or {})
     if not kwargs.get('expires_at') and kwargs.get('access_token'):
       # Get access token expires_at claim
-      kwargs['expires_at'] = int(self.get_token_attr('exp'))
+      kwargs['expires_at'] = int(self.get_claim('exp'))
     super(OAuth2Token, self).__init__(kwargs)
 
   def get_client_id(self):
@@ -147,20 +147,36 @@ class OAuth2Token(_OAuth2Token):
     """
     return [s.split(':')[1] for s in self.scopes if s.startswith('g:')]
 
-  def get_token_attr(self, attr, token_type='access_token'):
-    """ Get token attribute without verification
+  def get_payload(self, token_type='access_token'):
+    """ Decode token
+
+        :param str token_type: token type
+
+        :return: dict
+    """
+    if not self.get(token_type):
+      return {}
+    return jwt.decode(self.get(token_type), options=dict(verify_signature=False,
+                                                         verify_exp=False,
+                                                         verify_aud=False,
+                                                         verify_nbf=False))
+
+  def get_claim(self, claim, token_type='access_token'):
+    """ Get token claim without verification
 
         :param str attr: attribute
         :param str token_type: token type
 
         :return: str
     """
-    if not self.get(token_type):
-      return None
-    return jwt.decode(self.get(token_type), options=dict(verify_signature=False,
-                                                         verify_exp=False,
-                                                         verify_aud=False,
-                                                         verify_nbf=False)).get(attr)
+    return get_payload(token_type).get(claim)
+  
+  def dump_to_string(self):
+    """ Dump token dictionary to sting
+
+        :return: str
+    """
+    return json.dumps(dict(self))
 
   def getInfoAsString(self):
     """ Return information about token as string
