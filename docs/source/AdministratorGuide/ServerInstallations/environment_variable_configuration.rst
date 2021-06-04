@@ -65,3 +65,9 @@ DIRAC_X509_HOST_KEY
 
 X509_VOMSES
   Must be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
+
+BEARER_TOKEN
+  If the environment variable is set, then the value is taken to be the token contents
+
+BEARER_TOKEN_FILE
+  If the environment variable is set, then its value is interpreted as a filename. The contents of thespecified file are taken to be the token contents.
