@@ -143,7 +143,10 @@ class ConfigurationClient(object):
     optionValue = gConfigurationData.extractOptionFromCFG(optionPath)
 
     if optionValue is None:
-      return S_ERROR("Path %s does not exist or it's not an option" % optionPath)
+      return S_ERROR(
+          "Path %s does not exist or it's not an option" % optionPath,
+          withStack=False,
+      )
 
     # Value has been returned from the configuration
     if typeValue is None:
