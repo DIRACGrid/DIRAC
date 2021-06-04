@@ -162,7 +162,9 @@ class ConfigurationData(object):
       for section in levelList[:-1]:
         cfg = cfg[section]
       if levelList[-1] in cfg.listOptions():
-        return self.dangerZoneEnd(cfg[levelList[-1]])
+        if not disableDangerZones:
+          self.dangerZoneEnd()
+        return cfg[levelList[-1]]
     except Exception:
       pass
     if not disableDangerZones:
