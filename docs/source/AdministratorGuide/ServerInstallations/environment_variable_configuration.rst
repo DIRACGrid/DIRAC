@@ -50,8 +50,8 @@ DIRAC_NO_CFG
 DIRAC_USE_NEWTHREADPOOL
   If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used (default=Yes)
 
-DIRAC_USE_M2CRYPTO
-  If anything else than ``true`` or ``yes`` (default) DIRAC will revert back to using pyGSI instead of m2crypto for handling certificates, proxies, etc.
+DIRAC_FEWER_CFG_LOCKS
+  If anything else than ``true`` or ``yes`` DIRAC will reduce the number of of locks used when accessing the CS for better performance (default, ``false``).
 
 DIRACSYSCONFIG
   If set, its value should be (the full locations on the file system of) one of more DIRAC cfg file(s) (comma separated), whose content will be used for the DIRAC configuration
