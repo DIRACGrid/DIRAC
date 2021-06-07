@@ -145,7 +145,7 @@ class ConfigurationClient(object):
     if optionValue is None:
       return S_ERROR(
           "Path %s does not exist or it's not an option" % optionPath,
-          withStack=False,
+          callStack=["ConfigurationClient.getOption"],
       )
 
     # Value has been returned from the configuration

@@ -21,9 +21,9 @@ def S_ERROR(*args, **kwargs):
 
   :param int errno: Error number
   :param string message: Error message
-  :param bool withStack: Set the CallStack attribute to an empty list for better performance
+  :param list callStack: Manually override the CallStack attribute better performance
   """
-  withStack = kwargs.pop("withStack", True)
+  callStack = kwargs.pop("callStack", None)
 
   result = {"OK": False, "Errno": 0, "Message": ""}
 
@@ -40,13 +40,12 @@ def S_ERROR(*args, **kwargs):
     message = "%s ( %s : %s)" % (strerror(result['Errno']), result['Errno'], message)
   result["Message"] = message
 
-  callStack = []
-  if withStack:
+  if callStack is None:
     try:
       callStack = traceback.format_stack()
       callStack.pop()
     except BaseException:
-      pass
+      callStack = []
 
   result["CallStack"] = callStack
 
