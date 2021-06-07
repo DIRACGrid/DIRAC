@@ -935,7 +935,7 @@ class WorkflowTasks(TaskBase):
       for task in taskDict.values():
         task['Success'] = False
       return S_ERROR(ETSUKN, 'Submitted less number of jobs than requested tasks')
-    # Get back correspondance with tasks sorted by ID
+    # Get back correspondence with tasks sorted by ID
     for jobID, taskID in zip(jobIDList, sorted(taskDict)):
       taskDict[taskID]['ExternalID'] = jobID
       taskDict[taskID]['Success'] = True
