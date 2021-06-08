@@ -1,7 +1,3 @@
-########################################################################
-# File :    JobCleaningAgent.py
-# Author :  A.T.
-########################################################################
 """ The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 
     This agent will take care of removing user jobs, while production jobs should be removed through the

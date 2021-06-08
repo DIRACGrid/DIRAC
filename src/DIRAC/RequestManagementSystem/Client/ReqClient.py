@@ -380,8 +380,7 @@ class ReqClient(Client):
     """ get the request ids for the supplied jobIDs.
 
     :param self: self reference
-    :param jobIDs: list of job IDs (integers)
-    :type jobIDs: python:list
+    :param list jobIDs: list of job IDs (integers)
     :return: S_ERROR or S_OK( "Successful": { jobID1: reqID1, jobID2: requID2, ... },
                               "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
