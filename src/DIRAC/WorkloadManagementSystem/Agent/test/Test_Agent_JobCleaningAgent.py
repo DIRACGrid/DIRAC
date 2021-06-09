@@ -55,15 +55,12 @@ def test__getAllowedJobTypes(mocker, mockReplyInput, expected):
 
 
 @pytest.mark.parametrize(
-    "conditions, mockReplyInput, expected", [
-        ({'JobType': '', 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
-        ({'JobType': '', 'Status': 'Deleted'}, {'OK': False, 'Message': ''}, {'OK': False, 'Message': ''}),
-        ({'JobType': [], 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
-        ({'JobType': ['some', 'status'],
-          'Status': ['Deleted', 'Cancelled']}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None})
+    "mockReplyInput, expected", [
+        ({'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+        ({'OK': False, 'Message': ''}, {'OK': False, 'Message': ''})
     ])
-def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
-  """ Testing JobCleaningAgent().removeJobsByStatus()
+def test_removeJobsByStatus(mocker, mockReplyInput, expected):
+  """ Testing JobCleaningAgent().removeDeletedJobs()
   """
 
   mockReply.return_value = mockReplyInput
@@ -82,7 +79,7 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
   jobCleaningAgent._AgentModule__configDefaults = mockAM
   jobCleaningAgent.initialize()
 
-  result = jobCleaningAgent.removeJobsByStatus(conditions)
+  result = jobCleaningAgent.removeDeletedJobs()
 
   assert result == expected
 
