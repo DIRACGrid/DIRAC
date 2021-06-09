@@ -31,6 +31,16 @@ The configuration for Running and Stopped components are two sub-sections in Reg
 By moving from one to the other section we can make the ComponentSupervisionAgent Stop/Start the given
 component. Values for the entries in the list are ignored, Syntax is ``<System>__<ComponentName>``.
 
+For full functioning of the Agent a few additional permissions have to be granted for the ``Operator`` role.
+In the ``SystemAdministrator/Authorization`` section of the relevant setup::
+
+  getOverallStatus = Operator
+  stopComponent = Operator
+  startComponent = Operator
+
+``getOverallStatus`` is needed for basic functioning of the Agent. ``stopComponent`` or ``startComponent`` are only
+needed if ``ControlComponents`` is enabled.
+
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN ComponentSupervisionAgent
   :end-before: ##END
