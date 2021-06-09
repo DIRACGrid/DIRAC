@@ -1250,7 +1250,7 @@ class JobDB(DB):
     if vo:
       classAdReq.insertAttributeString('VirtualOrganization', vo)
 
-    inputDataPolicy = Operations().getValue('InputDataPolicy/InputDataModule')
+    inputDataPolicy = Operations(vo=vo).getValue('InputDataPolicy/InputDataModule')
     if inputDataPolicy and not classAdJob.lookupAttribute('InputDataModule'):
       classAdJob.insertAttributeString('InputDataModule', inputDataPolicy)
 
