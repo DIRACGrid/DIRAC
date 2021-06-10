@@ -36,7 +36,7 @@ def executeJob(executableFile, proxy, taskID, **kwargs):
   :param str proxy: proxy file location to be used for job submission
   :param int taskID: local task ID of the PoolCE
 
-  :return: the result of the job submission
+  :return: the result of the job submission (S_OK/S_ERROR)
   """
 
   innerCESubmissionType = kwargs.pop('InnerCESubmissionType')
@@ -88,7 +88,7 @@ class PoolComputingElement(ComputingElement):
   def getProcessorsInUse(self):
     """ Get the number of currently allocated processor cores
 
-    :return: number of processor cores
+    :return: number of processors in use
     """
     processorsInUse = 0
     for future in self.processorsPerTask:
@@ -98,6 +98,7 @@ class PoolComputingElement(ComputingElement):
   #############################################################################
   def submitJob(self, executableFile, proxy=None, **kwargs):
     """ Method to submit job.
+    This method will submit to a ProcessPoolExecutor, which returns Future objects.
 
     :param str executableFile: location of the executable file
     :param str proxy: payload proxy
@@ -141,14 +142,13 @@ class PoolComputingElement(ComputingElement):
     self.taskID += 1
     future.add_done_callback(self.finalizeJob)
 
-    return S_OK()
+    return S_OK()  # returning S_OK as callback will do the rest
 
   def _getProcessorsForJobs(self, kwargs):
     """ helper function
     """
     processorsInUse = self.getProcessorsInUse()
     availableProcessors = self.processors - processorsInUse
-    # print(processorsInUse, availableProcessors)
 
     self.log.verbose("Processors (total, in use, available)",
                      "(%d, %d, %d)" % (self.processors, processorsInUse, availableProcessors))
@@ -189,13 +189,13 @@ class PoolComputingElement(ComputingElement):
     """
     nProc = self.processorsPerTask.pop(future)
 
-    result = future.result()
+    result = future.result()  # This would be the result of the e.g. InProcess.submitJob()
     if result['OK']:
       self.log.info('Task %s finished successfully, %d processor(s) freed' % (future, nProc))
     else:
       self.log.error("Task failed submission", "%d, message: %s" % (future, result['Message']))
+    self.taskResults[future] = result
 
-  #############################################################################
   def getCEStatus(self):
     """ Method to return information on running and waiting jobs,
         as well as the number of processors (used, and available).
@@ -251,3 +251,7 @@ class PoolComputingElement(ComputingElement):
     ceDictList.append(dict(ceDict))
 
     return S_OK(ceDictList)
+
+  def shutdown(self):
+    self.pPool.shutdown()
+    return S_OK(self.taskResults)

@@ -616,7 +616,7 @@ class JobAgent(AgentModule):
         self._rescheduleFailedJob(jobID, submission['Message'], self.stopOnApplicationFailure)
         return S_OK()  # Without this, the job is marked as failed
       else:
-        if 'Value' in submission:
+        if 'Value' in submission:  # yes, it's "correct", S_ERROR with 'Value' key
           self.log.error('Error in DIRAC JobWrapper or inner CE execution:',
                          'exit code = %s' % (str(submission['Value'])))
       self.log.error("CE Error", "%s : %s" % (self.ceName, submission['Message']))
@@ -728,6 +728,12 @@ class JobAgent(AgentModule):
   def finalize(self):
     """ Job Agent finalization method
     """
+
+    res = self.computingElement.shutdown()
+    if not res['OK']:
+      self.log.error("CE could not be properly shut down", res['Message'])
+    elif res['Value']:
+      self.log.info("Job submission(s) result", res['Value'])
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')

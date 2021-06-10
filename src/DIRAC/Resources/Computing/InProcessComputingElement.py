@@ -99,7 +99,7 @@ class InProcessComputingElement(ComputingElement):
       else:
         error = 'InProcess Job Execution Failed'
       res = S_ERROR(error)
-      res['Value'] = result['Value'][0] - 256
+      res['Value'] = result['Value'][0] - 256  # yes, it's "correct"
       return res
     elif result['Value'][0] > 0:
       self.log.warn('Fail in payload execution')

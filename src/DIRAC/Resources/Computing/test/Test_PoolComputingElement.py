@@ -40,7 +40,7 @@ print("End job", jobNumber, time.time())
 def _stopJob(nJob):
   with open('stop_job_%s' % nJob, 'w') as stopFile:
     stopFile.write('Stop')
-  time.sleep(0.2)
+  time.sleep(0.3)
   if os.path.isfile('stop_job_%s' % nJob):
     os.remove('stop_job_%s' % nJob)
 
@@ -55,6 +55,15 @@ def createAndDelete():
   yield createAndDelete
 
   # from here on is teardown
+
+  time.sleep(0.5)
+
+  # stopping the jobs
+  for i in range(6):
+    _stopJob(i)
+
+  # removing testPoolCEJob files
+  # this will also stop the futures unless they are already stopped!
   for i in range(6):
     try:
       os.remove('testPoolCEJob_%s.py' % i)
@@ -62,7 +71,28 @@ def createAndDelete():
       pass
 
 
+@pytest.mark.slow
+def test_submit_and_shutdown(createAndDelete):
+
+  time.sleep(0.5)
+
+  ceParameters = {'WholeNode': True,
+                  'NumberOfProcessors': 4}
+  ce = PoolComputingElement('TestPoolCE')
+  ce.setParameters(ceParameters)
+
+  result = ce.submitJob('testPoolCEJob_0.py', None)
+  assert result['OK'] is True
+
+  result = ce.shutdown()
+  assert result['OK'] is True
+  assert isinstance(result['Value'], dict)
+  assert list(result['Value'].values())[0]['OK'] is True
+
+
 def test_executeJob_wholeNode4(createAndDelete):
+
+  time.sleep(0.5)
 
   ceParameters = {'WholeNode': True,
                   'NumberOfProcessors': 4}
@@ -91,7 +121,10 @@ def test_executeJob_wholeNode4(createAndDelete):
   assert result['OK'] is False
 
 
+@pytest.mark.slow
 def test_executeJob_wholeNode8(createAndDelete):
+
+  time.sleep(0.5)
 
   ceParameters = {'WholeNode': True,
                   'NumberOfProcessors': 8}
@@ -116,13 +149,28 @@ def test_executeJob_wholeNode8(createAndDelete):
   result = ce.getCEStatus()
   assert result['UsedProcessors'] == 6
 
+  # now trying again would fail
   jobParams = {'mpTag': True, 'numberOfProcessors': 3}
   result = ce.submitJob('testPoolCEJob_5.py', None, **jobParams)
   assert result['OK'] is False
   assert "Not enough processors" in result['Message']
 
+  # waiting 40 seconds and then submit again
+  time.sleep(40)
+  jobParams = {'mpTag': True, 'numberOfProcessors': 3}
+  result = ce.submitJob('testPoolCEJob_5.py', None, **jobParams)
+  assert result['OK'] is True
+  time.sleep(10)
+
+  result = ce.shutdown()
+  assert result['OK'] is True
+  assert isinstance(result['Value'], dict)
+  assert len(result['Value']) == 4
+
 
 def test_executeJob_submitAndStop(createAndDelete):
+
+  time.sleep(0.5)
 
   ceParameters = {'WholeNode': True,
                   'NumberOfProcessors': 4}
@@ -149,7 +197,9 @@ def test_executeJob_submitAndStop(createAndDelete):
 
 
 @pytest.mark.slow
-def test_executeJob_NoWholeNode4(createAndDelete):
+def test_executeJob_WholeNodeJobs(createAndDelete):
+
+  time.sleep(0.5)
 
   ce = PoolComputingElement('TestPoolCE')
   ceParameters = {'WholeNode': False,
@@ -168,7 +218,7 @@ def test_executeJob_NoWholeNode4(createAndDelete):
   assert result['AvailableProcessors'] == 0
   assert result['RunningJobs'] == 2
 
-  # Allow jobs to start
+  # Allow jobs to start, then stopping them
   time.sleep(5)
   for i in range(8):
     _stopJob(i)
@@ -178,8 +228,8 @@ def test_executeJob_NoWholeNode4(createAndDelete):
   result = ce.getCEStatus()
   assert result['UsedProcessors'] == 0
 
-  # Whole node jobs
-  result = ce.submitJob('testPoolCEJob_0.py', None)
+  # Trying with whole node jobs
+  result = ce.submitJob('testPoolCEJob_0.py', None)  # first 1 SP job
   assert result['OK'] is True
   result = ce.getCEStatus()
   assert result['UsedProcessors'] == 1
@@ -189,7 +239,7 @@ def test_executeJob_NoWholeNode4(createAndDelete):
   assert result['OK'] is False
   assert "Not enough processors for the job" in result['Message']
   # Allow job to start
-  time.sleep(10)
+  time.sleep(5)
 
   _stopJob(0)
   # Allow job to stop
@@ -200,13 +250,6 @@ def test_executeJob_NoWholeNode4(createAndDelete):
   assert result['OK'] is True
   result = ce.getCEStatus()
   assert result['UsedProcessors'] == 4
-
-  # Stop all the jobs if any, cleanup tmp files
-  for i in range(8):
-    _stopJob(i)
-    for ff in ['testPoolCEJob_%s.py' % i, 'stop_job_%s' % i]:
-      if os.path.isfile(ff):
-        os.remove(ff)
 
 
 @pytest.mark.parametrize("processorsPerTask, kwargs, expected", [
