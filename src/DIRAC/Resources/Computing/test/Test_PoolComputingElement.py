@@ -45,43 +45,64 @@ def _stopJob(nJob):
     os.remove('stop_job_%s' % nJob)
 
 
-@pytest.mark.slow
-def test_executeJob():
+@pytest.fixture
+def createAndDelete():
+  for i in range(6):
+    with open('testPoolCEJob_%s.py' % i, 'w') as execFile:
+      execFile.write(jobScript % i)
+    os.chmod('testPoolCEJob_%s.py' % i, 0o755)
+
+  yield createAndDelete
+
+  # from here on is teardown
+  for i in range(6):
+    try:
+      os.remove('testPoolCEJob_%s.py' % i)
+    except OSError:
+      pass
+
+
+def test_executeJob_wholeNode4(createAndDelete):
 
   ceParameters = {'WholeNode': True,
                   'NumberOfProcessors': 4}
   ce = PoolComputingElement('TestPoolCE')
   ce.setParameters(ceParameters)
 
-  for i in range(6):
-    with open('testPoolCEJob_%s.py' % i, 'w') as execFile:
-      execFile.write(jobScript % i)
-    os.chmod('testPoolCEJob_%s.py' % i, 0o755)
-
   # Test that max 4 processors can be used at a time
   result = ce.submitJob('testPoolCEJob_0.py', None)
   assert result['OK'] is True
   result = ce.getCEStatus()
   assert result['UsedProcessors'] == 1
+  assert result['AvailableProcessors'] == 3
+  assert result['RunningJobs'] == 1
 
   jobParams = {'mpTag': True, 'numberOfProcessors': 2}
   result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
   assert result['OK'] is True
+  result = ce.getCEStatus()
+  assert result['UsedProcessors'] == 3
+  assert result['AvailableProcessors'] == 1
+  assert result['RunningJobs'] == 2
 
+  # now trying again would fail
   jobParams = {'mpTag': True, 'numberOfProcessors': 2}
   result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
   assert result['OK'] is False
+
+
+def test_executeJob_wholeNode8(createAndDelete):
 
   ceParameters = {'WholeNode': True,
                   'NumberOfProcessors': 8}
   ce = PoolComputingElement('TestPoolCE')
   ce.setParameters(ceParameters)
 
-  jobParams = {'mpTag': True, 'numberOfProcessors': 2, 'maxNumberOfProcessors': 2}
-  result = ce.submitJob('testPoolCEJob_2.py', None, **jobParams)
-  assert result['OK'] is True
+  jobParams = {"mpTag": True, "numberOfProcessors": 2, "maxNumberOfProcessors": 2}
+  result = ce.submitJob("testPoolCEJob_2.py", None, **jobParams)
+  assert result["OK"] is True
   result = ce.getCEStatus()
-  assert result['UsedProcessors'] == 2
+  assert result["UsedProcessors"] == 2
 
   jobParams = {'mpTag': True, 'numberOfProcessors': 1, 'maxNumberOfProcessors': 3}
   result = ce.submitJob('testPoolCEJob_3.py', None, **jobParams)
@@ -100,24 +121,60 @@ def test_executeJob():
   assert result['OK'] is False
   assert "Not enough processors" in result['Message']
 
+
+def test_executeJob_submitAndStop(createAndDelete):
+
+  ceParameters = {'WholeNode': True,
+                  'NumberOfProcessors': 4}
+  ce = PoolComputingElement('TestPoolCE')
+  ce.setParameters(ceParameters)
+
+  jobParams = {"mpTag": True, "numberOfProcessors": 2, "maxNumberOfProcessors": 2}
+  result = ce.submitJob('testPoolCEJob_0.py', None, **jobParams)
+  assert result['OK'] is True
+  result = ce.getCEStatus()
+  assert result['UsedProcessors'] == 2
+  assert result['AvailableProcessors'] == 2
+  assert result['RunningJobs'] == 1
+
+  time.sleep(5)
+  _stopJob(0)
+  # Allow job to stop
+  time.sleep(2)
+
+  result = ce.getCEStatus()
+  assert result['RunningJobs'] == 0
+  assert result['UsedProcessors'] == 0
+  assert result['AvailableProcessors'] == 4
+
+
+@pytest.mark.slow
+def test_executeJob_NoWholeNode4(createAndDelete):
+
   ce = PoolComputingElement('TestPoolCE')
   ceParameters = {'WholeNode': False,
                   'NumberOfProcessors': 4}
   ce.setParameters(ceParameters)
 
+  jobParams = {"mpTag": True, "numberOfProcessors": 2, "maxNumberOfProcessors": 2}
+  result = ce.submitJob('testPoolCEJob_0.py', None, **jobParams)
+  assert result['OK'] is True
+
   jobParams = {'mpTag': True, 'numberOfProcessors': 2}
   result = ce.submitJob('testPoolCEJob_5.py', None, **jobParams)
   assert result['OK'] is True
   result = ce.getCEStatus()
-  assert result['UsedProcessors'] == 2
-  # Allow job to start
-  time.sleep(30)
+  assert result['UsedProcessors'] == 4
+  assert result['AvailableProcessors'] == 0
+  assert result['RunningJobs'] == 2
 
+  # Allow jobs to start
+  time.sleep(5)
   for i in range(8):
     _stopJob(i)
-
-  # Allow job to stop
+  # Allow jobs to stop
   time.sleep(2)
+
   result = ce.getCEStatus()
   assert result['UsedProcessors'] == 0
 

@@ -14,9 +14,9 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
+import concurrent.futures
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -91,8 +91,8 @@ class PoolComputingElement(ComputingElement):
     :return: number of processor cores
     """
     processorsInUse = 0
-    for task in self.processorsPerTask:
-      processorsInUse += self.processorsPerTask[task]
+    for future in self.processorsPerTask:
+      processorsInUse += self.processorsPerTask[future]
     return processorsInUse
 
   #############################################################################
@@ -106,11 +106,7 @@ class PoolComputingElement(ComputingElement):
     """
 
     if self.pPool is None:
-      self.pPool = ProcessPool(minSize=self.processors,
-                               maxSize=self.processors,
-                               poolCallback=self.finalizeJob)
-
-    self.pPool.processResults()
+      self.pPool = concurrent.futures.ProcessPoolExecutor(max_workers=self.processors)
 
     processorsForJob = self._getProcessorsForJobs(kwargs)
     if not processorsForJob:
@@ -138,23 +134,21 @@ class PoolComputingElement(ComputingElement):
       if 'USER' in os.environ:
         taskKwargs['PayloadUser'] = os.environ['USER'] + 'p%s' % str(nUser).zfill(2)
 
-    result = self.pPool.createAndQueueTask(executeJob,
-                                           args=(executableFile, proxy, self.taskID),
-                                           kwargs=taskKwargs,
-                                           taskID=self.taskID,
-                                           usePoolCallbacks=True)
-    self.processorsPerTask[self.taskID] = processorsForJob
+    future = self.pPool.submit(
+        executeJob, executableFile, proxy, self.taskID, **taskKwargs
+    )
+    self.processorsPerTask[future] = processorsForJob
     self.taskID += 1
+    future.add_done_callback(self.finalizeJob)
 
-    self.pPool.processResults()
-
-    return result
+    return S_OK()
 
   def _getProcessorsForJobs(self, kwargs):
     """ helper function
     """
     processorsInUse = self.getProcessorsInUse()
     availableProcessors = self.processors - processorsInUse
+    # print(processorsInUse, availableProcessors)
 
     self.log.verbose("Processors (total, in use, available)",
                      "(%d, %d, %d)" % (self.processors, processorsInUse, availableProcessors))
@@ -188,18 +182,18 @@ class PoolComputingElement(ComputingElement):
 
     return requestedProcessors
 
-  def finalizeJob(self, taskID, result):
+  def finalizeJob(self, future):
     """ Finalize the job by updating the process utilisation counters
 
-    :param int taskID: local PoolCE task ID
-    :param dict result: result of the job execution
-
+        :param future: evaluating the future result
     """
-    nProc = self.processorsPerTask.pop(taskID)
+    nProc = self.processorsPerTask.pop(future)
+
+    result = future.result()
     if result['OK']:
-      self.log.info('Task %d finished successfully, %d processor(s) freed' % (taskID, nProc))
+      self.log.info('Task %s finished successfully, %d processor(s) freed' % (future, nProc))
     else:
-      self.log.error("Task failed submission", "%d, message: %s" % (taskID, result['Message']))
+      self.log.error("Task failed submission", "%d, message: %s" % (future, result['Message']))
 
   #############################################################################
   def getCEStatus(self):
@@ -209,12 +203,6 @@ class PoolComputingElement(ComputingElement):
     :return: dictionary of numbers of jobs per status and processors (used, and available)
     """
 
-    if self.pPool is None:
-      self.pPool = ProcessPool(minSize=self.processors,
-                               maxSize=self.processors,
-                               poolCallback=self.finalizeJob)
-
-    self.pPool.processResults()
     result = S_OK()
     nJobs = 0
     for _j, value in self.processorsPerTask.items():
