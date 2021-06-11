@@ -29,7 +29,8 @@ __RCSID__ = "Id$"
 def getStorageElements():
   """
   Get configuration of storage elements
-  :return: S_OK/S_ERROR, Value dictionnary with key SE and value protocol list
+
+  :return: S_OK/S_ERROR, Value dictionary with key SE and value protocol list
   """
   seProtocols = {}
   dms = DMSHelpers()
