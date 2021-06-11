@@ -22,7 +22,7 @@ DIRAC_DEPRECATED_FAIL
   integration tests against future versions of DIRAC
 
 DIRAC_FEWER_CFG_LOCKS
-  If ``true`` or ``yes`` or ``on`` or ``1`` or ``y`` or ``t``, DIRAC will reduce the number of of locks used when accessing the CS for better performance (default, ``no``).
+  If ``true`` or ``yes`` or ``on`` or ``1`` or ``y`` or ``t``, DIRAC will reduce the number of locks used when accessing the CS for better performance (default, ``no``).
 
 DIRAC_GFAL_GRIDFTP_SESSION_REUSE
   If set to ``true`` or ``yes`` the GRIDFT SESSION RESUSE option will be set to True, should be set on server
