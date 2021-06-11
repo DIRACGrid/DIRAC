@@ -19,3 +19,4 @@ recommonmark
 sqlalchemy
 subprocess32
 suds-community  # replacing suds-jurko
+rucio-clients
