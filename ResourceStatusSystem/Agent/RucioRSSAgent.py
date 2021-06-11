@@ -13,6 +13,7 @@ from rucio.client import Client
 
 __RCSID__ = "Id$"
 
+
 class RucioRSSAgent(AgentModule):
   """
   .. class:: RucioRSSAgent
@@ -25,7 +26,7 @@ class RucioRSSAgent(AgentModule):
 
     :param self: self reference
     """
-    self.log =  gLogger.getSubLogger('RucioSynchronizer')
+    self.log = gLogger.getSubLogger('RucioSynchronizer')
     self.log.info("Starting RucioRSSAgent")
     return S_OK()
 
@@ -40,7 +41,7 @@ class RucioRSSAgent(AgentModule):
       for rse in client.list_rses():
         thisSe = rse['rse']
         self.log.info("Running on %s", thisSe)
-        resStatus =  rSS.getElementStatus(thisSe, "StorageElement")
+        resStatus = rSS.getElementStatus(thisSe, "StorageElement")
         dictSe = client.get_rse(thisSe)
         if resStatus['OK']:
           seAccessValue = resStatus['Value'][thisSe]

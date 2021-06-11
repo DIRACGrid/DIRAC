@@ -14,7 +14,7 @@ from traceback import format_exc
 from rucio.client import Client
 from rucio.common.exception import RSEProtocolNotSupported, Duplicate, RSEAttributeNotFound
 
-from DIRAC import S_OK, S_ERROR,  gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getUserOption, getAllUsers, getHosts,
                                                                getHostOption, getAllGroups, getDNsInGroup)
@@ -45,7 +45,7 @@ def getStorageElements():
     idx = 1
     for prot in protocols:
       read_protocols[prot] = idx
-      idx +=1
+      idx += 1
       if prot not in all_protocols:
         all_protocols.append(prot)
     write_protocols = {}
@@ -55,10 +55,9 @@ def getStorageElements():
     idx = 1
     for prot in protocols:
       write_protocols[prot] = idx
-      idx +=1
+      idx += 1
       if prot not in all_protocols:
         all_protocols.append(prot)
-
 
     mapping = {'Protocol': 'scheme', 'Host': 'hostname', 'Port': 'port', 'Path': 'prefix'}
     for protocol in all_protocols:
@@ -111,7 +110,7 @@ class RucioSynchronizerAgent(AgentModule):
 
     :param self: self reference
     """
-    self.log =  gLogger.getSubLogger('RucioSynchronizer')
+    self.log = gLogger.getSubLogger('RucioSynchronizer')
     self.log.info("Starting RucioSynchronizer")
     return S_OK()
 
@@ -174,11 +173,11 @@ class RucioSynchronizerAgent(AgentModule):
             protocols_to_create.append(prot)
             if prot not in existing_protocols and prot[0] in valid_protocols:
               # The protocol defined in Dirac does not exist in Rucio. Will be created
-              self.log.info('Will create new protocol %s://%s:%s%s on %s', params['scheme'], \
-                                                                           params['hostname'], \
-                                                                           params['port'], \
-                                                                           params['prefix'], \
-                                                                           se)
+              self.log.info('Will create new protocol %s://%s:%s%s on %s', params['scheme'],
+                            params['hostname'],
+                            params['port'],
+                            params['prefix'],
+                            se)
               try:
                 client.add_protocol(rse=se, params=params)
               except Duplicate as err:
@@ -210,11 +209,11 @@ class RucioSynchronizerAgent(AgentModule):
                             'delete_lan': params['domains']['lan']['delete'],
                             'delete_wan': params['domains']['wan']['delete'],
                             'third_party_copy': params['domains']['wan']['write']}
-                    self.log.info('Will update protocol %s://%s:%s%s on %s', params['scheme'], \
-                                                                             params['hostname'], \
-                                                                             params['port'], \
-                                                                             params['prefix'], \
-                                                                             se)
+                    self.log.info('Will update protocol %s://%s:%s%s on %s', params['scheme'],
+                                  params['hostname'],
+                                  params['port'],
+                                  params['prefix'],
+                                  se)
                     client.update_protocols(rse=se,
                                             scheme=params['scheme'],
                                             data=data,
@@ -296,7 +295,6 @@ class RucioSynchronizerAgent(AgentModule):
             except Exception as err:
               self.log.error('Cannot remove RSE attribute PrimaryDataSE for %s : %s', rse, str(err))
 
-
       # Collect the user accounts from Dirac Configuration and create user accounts in Rucio
       self.log.info("Synchronizing accounts")
       listAccounts = [str(acc['account']) for acc in client.list_accounts()]
@@ -350,7 +348,7 @@ class RucioSynchronizerAgent(AgentModule):
 
         for dn in getDNsInGroup(group):
           try:
-            client.add_identity(account=group, identity=dn, authtype='X509', email=dnMapping.get(dn, default_email) )
+            client.add_identity(account=group, identity=dn, authtype='X509', email=dnMapping.get(dn, default_email))
           except Duplicate:
             pass
           except Exception as err:
