@@ -1,3 +1,35 @@
+[v7r2p10]
+
+*Python 3
+FIX: (#5175) Improve "git describe" command used by setuptools-scm to ignore v6e7p27
+
+*Core
+NEW: (#5180) Add callStack keyword argument to S_ERROR to allow object to be created much faster
+FIX: (#5182) Optimise ClassAd.asJDL to remove quadratic runtime dependence on the length of the output
+
+*Framework
+FIX: (#5187) ComponentSupervisionAgent: add necessary SystemAdministrator Authorization
+     Settings in the docstring
+
+*Configuration
+CHANGE: (#5180) No longer include a full CallStack in the S_ERROR object returned by
+        ConfigurationClient.getOption
+NEW: (#5185) Add DIRAC_FEWER_CFG_LOCKS environment variable to significantly improve multithreading
+     performance in CS heavy workloads
+
+*WMS
+FIX: (#5184) JobDB: Getting InputDataModule from Operations section
+FIX: (#5184) JobCleaningAgent: get jobIDs old and recent, and combine
+
+*Resources
+FIX: (#5179) Handle the case where inputs is None in SSHComputingElement.submitJobToHost()
+CHANGE: (#5189) PoolComputingElement use concurrent.futures.ProcessPoolExecutor
+CHANGE: (#5189) PoolComputingElement: added a shutdown (called by JobAgent)
+
+*tests
+CHANGE: (#5186) AgentOptionTests: re-work ConfigTemplate discovery, should be
+        transparent for the users, but work better for extensions
+
 [v7r2p9]
 
 *FrameworkSystem
