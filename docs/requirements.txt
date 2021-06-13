@@ -24,3 +24,4 @@ recommonmark
 sqlalchemy==1.3.*
 subprocess32
 suds
+rucio-clients

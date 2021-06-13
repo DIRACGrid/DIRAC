@@ -679,6 +679,11 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p57]
+
+*Resources
+NEW: (#5067) RucioFileCatalog plugin based on Belle II implementation
+
 [v7r0p56]
 
 *Resources
