@@ -66,7 +66,7 @@ class TestWMSTestCase(unittest.TestCase):
     jca = JobCleaningAgent('WorkloadManagement/JobCleaningAgent',
                            'WorkloadManagement/JobCleaningAgent')
     jca.initialize()
-    res = jca.removeJobsByStatus({'Status': ['Killed', 'Deleted']})
+    res = jca.removeDeletedJobs()
     self.assertTrue(res['OK'], res.get('Message'))
 
 
@@ -332,7 +332,7 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertEqual(sorted(res['Value']), sorted(types), msg="Got %s" % str(sorted(res['Value'])))
     res = jobMonitor.getApplicationStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value'], ['Unknown'], msg="Got %s" % str(res['Value']))
+    self.assertEqual(res['Value'], ['app status', 'Unknown'], msg="Got %s" % str(res['Value']))
 
     res = jobMonitor.getOwners()
     self.assertTrue(res['OK'], res.get('Message'))
@@ -355,13 +355,15 @@ class JobMonitoringMore(TestWMSTestCase):
     res = jobMonitor.getStates()
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertTrue(sorted(res['Value']) in [['Received'],
-                                             sorted(['Received', 'Waiting'])],
+                                             sorted(['Received', 'Waiting']),
+                                             sorted(['Received', 'Killed'])],
                     res['Value'])
     res = jobMonitor.getMinorStates()
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertTrue(sorted(res['Value']) in [
         ['Job accepted'],
-        sorted(['Job accepted', 'Job Rescheduled'])],
+        sorted(['Job accepted', 'Job Rescheduled']),
+        sorted(['Job accepted', 'Marked for termination'])],
         res['Value'])
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobs()
@@ -374,8 +376,9 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
     try:
       self.assertTrue(
-          res['Value'].get('Received') +
-          res['Value'].get('Waiting') >= int(len(lfnss) * len(types)))
+          res["Value"].get("Received") + res["Value"].get("Waiting")
+          >= int(len(lfnss) * len(types))
+      )
     except TypeError:
       pass
     res = jobMonitor.getJobsSummary(jobIDs)

@@ -373,6 +373,7 @@ def getDIRACSesForHostName(hostName):
 
   return S_OK(resultDIRACSEs)
 
+
 def getDBParameters(fullname):
   """ Retrieve Database parameters from CS
 
