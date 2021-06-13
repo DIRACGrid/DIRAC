@@ -243,6 +243,14 @@ NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
+[v7r1p43]
+
+CHANGE: new features and fixes from v7r0p57
+
+*WorkloadManagement
+FIX: (#5177) Look for dirac-jobexec instead of $DIRACROOT to decide when to copy the pilot.cfg
+     to improve compatibility with v7r2
+
 [v7r1p42]
 
 *Framework
@@ -915,6 +923,11 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p57]
+
+*Resources
+NEW: (#5067) RucioFileCatalog plugin based on Belle II implementation
 
 [v7r0p56]
 
