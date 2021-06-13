@@ -50,6 +50,9 @@ class Refresher(RefresherBase, threading.Thread):
     """
     if not self._refreshEnabled or self._automaticUpdate or not gConfigurationData.getServers():
       return
+    # To improve performance, skip acquiring the lock if possible
+    if not self._lastRefreshExpired():
+      return
     self._triggeredRefreshLock.acquire()
     try:
       if not self._lastRefreshExpired():
@@ -60,7 +63,7 @@ class Refresher(RefresherBase, threading.Thread):
         self._triggeredRefreshLock.release()
       except thread.error:
         pass
-    # Launch the refreshf
+    # Launch the refresh
     thd = threading.Thread(target=self._refreshInThread)
     thd.setDaemon(1)
     thd.start()

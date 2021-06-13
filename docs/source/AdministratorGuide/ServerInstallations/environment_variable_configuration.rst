@@ -21,6 +21,9 @@ DIRAC_DEPRECATED_FAIL
   If set, the use of functions or objects that are marked ``@deprecated`` will fail. Useful for example in continuous
   integration tests against future versions of DIRAC
 
+DIRAC_FEWER_CFG_LOCKS
+  If ``true`` or ``yes`` or ``on`` or ``1`` or ``y`` or ``t``, DIRAC will reduce the number of locks used when accessing the CS for better performance (default, ``no``).
+
 DIRAC_GFAL_GRIDFTP_SESSION_REUSE
   If set to ``true`` or ``yes`` the GRIDFT SESSION RESUSE option will be set to True, should be set on server
   installations. See the information in the :ref:`resourcesStorageElement` page.
@@ -49,9 +52,6 @@ DIRAC_NO_CFG
 
 DIRAC_USE_NEWTHREADPOOL
   If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used (default=Yes)
-
-DIRAC_USE_M2CRYPTO
-  If anything else than ``true`` or ``yes`` (default) DIRAC will revert back to using pyGSI instead of m2crypto for handling certificates, proxies, etc.
 
 DIRACSYSCONFIG
   If set, its value should be (the full locations on the file system of) one of more DIRAC cfg file(s) (comma separated), whose content will be used for the DIRAC configuration
