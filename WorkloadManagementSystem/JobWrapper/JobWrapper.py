@@ -225,7 +225,7 @@ class JobWrapper(object):
       os.mkdir(str(self.jobID))
       os.chdir(str(self.jobID))
       extraOpts = self.jobArgs.get('ExtraOptions', '')
-      if extraOpts and '$DIRACROOT' in self.jobArgs.get('Executable', '').strip():
+      if extraOpts and 'dirac-jobexec' in self.jobArgs.get('Executable', '').strip():
         if os.path.exists('%s/%s' % (self.root, extraOpts)):
           shutil.copyfile('%s/%s' % (self.root, extraOpts), extraOpts)
         self.__loadLocalCFGFiles(self.localSiteRoot)
@@ -330,6 +330,14 @@ class JobWrapper(object):
     # In case the executable is dirac-jobexec,
     # the argument should include the jobDescription.xml file
     jobArguments = self.jobArgs.get('Arguments', '')
+
+    # This is a workaround for Python 2 style installations
+    if six.PY3 and executable == "$DIRACROOT/scripts/dirac-jobexec":
+      self.log.warn(
+          'Replaced job executable "$DIRACROOT/scripts/dirac-jobexec" with '
+          '"dirac-jobexec". Please fix your submission script!'
+      )
+      executable = "dirac-jobexec"
 
     executable = os.path.expandvars(executable)
     exeThread = None
