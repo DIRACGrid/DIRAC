@@ -6,4 +6,4 @@ build-backend = "setuptools.build_meta"
 # https://github.com/pypa/setuptools_scm/#pyprojecttoml-usage
 [tool.setuptools_scm]
 # Avoid letting setuptools_scm use old style tags (i.e. vXrYpZ)
-git_describe_command = "git describe --dirty --tags --long --match *[0-9]* --exclude v[0-9]r* --exclude v[0-9][0-9]r*"
+git_describe_command = "git describe --dirty --tags --long --match *[0-9].[0-9]* --exclude v[0-9]r* --exclude v[0-9][0-9]r*"
