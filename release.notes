@@ -1,3 +1,11 @@
+[v7r1p43]
+
+CHANGE: new features and fixes from v7r0p57
+
+*WorkloadManagement
+FIX: (#5177) Look for dirac-jobexec instead of $DIRACROOT to decide when to copy the pilot.cfg
+     to improve compatibility with v7r2
+
 [v7r1p42]
 
 *Framework
