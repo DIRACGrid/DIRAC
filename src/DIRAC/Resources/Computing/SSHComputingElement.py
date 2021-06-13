@@ -587,18 +587,16 @@ class SSHComputingElement(ComputingElement):
     else:  # no proxy
       submitFile = executableFile
 
-    inputs = None
+    inputs = []
     if self.parallelLibrary:
       # In this case, the executable becomes a dependency of a parallel library script.
       # It needs to be submitted along with the submitFile, which is a parallel library wrapper.
-      inputs = [submitFile]
+      inputs.append(submitFile)
       submitFile = self.parallelLibrary.generateWrapper(submitFile)
 
     result = self._submitJobToHost(submitFile, numberOfJobs, inputs=inputs)
     if proxy or self.parallelLibrary:
       os.remove(submitFile)
-      for inputFile in inputs:
-        os.remove(inputFile)
 
     return result
 
@@ -613,11 +611,12 @@ class SSHComputingElement(ComputingElement):
       return result
 
     # Copy the executable dependencies if any
-    for localInput in inputs:
-      remoteInput = os.path.join(self.executableArea, os.path.basename(localInput))
-      result = ssh.scpCall(30, localInput, remoteInput, postUploadCommand='chmod +x %s' % remoteInput)
-      if not result['OK']:
-        return result
+    if inputs:
+      for localInput in inputs:
+        remoteInput = os.path.join(self.executableArea, os.path.basename(localInput))
+        result = ssh.scpCall(30, localInput, remoteInput, postUploadCommand='chmod +x %s' % remoteInput)
+        if not result['OK']:
+          return result
 
     jobStamps = []
     for _i in range(numberOfJobs):
