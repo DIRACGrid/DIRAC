@@ -729,6 +729,7 @@ class JobAgent(AgentModule):
     """ Job Agent finalization method
     """
 
+    # wait for all jobs to be completed
     res = self.computingElement.shutdown()
     if not res['OK']:
       self.log.error("CE could not be properly shut down", res['Message'])

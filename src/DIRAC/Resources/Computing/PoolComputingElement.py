@@ -253,5 +253,7 @@ class PoolComputingElement(ComputingElement):
     return S_OK(ceDictList)
 
   def shutdown(self):
-    self.pPool.shutdown()
+    """ Wait for all futures (jobs) to complete
+    """
+    self.pPool.shutdown()  # blocking
     return S_OK(self.taskResults)

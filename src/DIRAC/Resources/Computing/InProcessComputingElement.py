@@ -89,17 +89,18 @@ class InProcessComputingElement(ComputingElement):
     if not result['OK']:
       self.log.error('Fail to run InProcess', result['Message'])
     elif result['Value'][0] > 128:
+      res = S_ERROR()
       # negative exit values are returned as 256 - exit
+      res['Value'] = result['Value'][0] - 256  # yes, it's "correct"
       self.log.warn('InProcess Job Execution Failed')
-      self.log.info('Exit status:', result['Value'][0] - 256)
-      if result['Value'][0] - 256 == -2:
+      self.log.info('Exit status:', result['Value'])
+      if result['Value'] == -2:
         error = 'JobWrapper initialization error'
-      elif result['Value'][0] - 256 == -1:
+      elif result['Value'] == -1:
         error = 'JobWrapper execution error'
       else:
         error = 'InProcess Job Execution Failed'
-      res = S_ERROR(error)
-      res['Value'] = result['Value'][0] - 256  # yes, it's "correct"
+      res['Message'] = error
       return res
     elif result['Value'][0] > 0:
       self.log.warn('Fail in payload execution')
