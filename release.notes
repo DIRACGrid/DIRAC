@@ -1,4 +1,4 @@
-[v7r3-pre10]
+[v7r3-pre11]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
 NEW: (#5000) Initial support for Python 3 server installations
@@ -35,6 +35,7 @@ CHANGE: (#4884) JobDB: compress JDLs by default (no need for flag anymore)
 CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent instead)
 NEW: (#4903) Added WMS (Jobs) State Machine
 CHANGE: (#5141) add an Aborted_HOUR column to the pilot efficiency table needed by the WebApp
+CHANGE: (#5178) JobMonitoring does not need to look into TaskQueue
 
 *RSS
 NEW: (#5042) Multi-VO mode of operation support
