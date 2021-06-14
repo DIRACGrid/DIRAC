@@ -6,9 +6,6 @@ __RCSID__ = "$Id$"
 
 
 class ColorGenerator:
-
-  sHexDigits = "0123456789ABCDEF"
-
   def __init__(self):
     self.lUsedColors = []
 
@@ -19,9 +16,7 @@ class ColorGenerator:
     return any(self.__equalColors(c1, c2) for c2 in cl2)
 
   def __toHex(self, n):
-    d1 = int(n / 16)
-    d2 = int(n - d1 * 16)
-    return "%s%s" % (self.sHexDigits[d1], self.sHexDigits[d2])
+    return hex(int(n))[2:].upper().rjust(2, "0")
 
   def reset(self):
     self.lUsedColors = []
