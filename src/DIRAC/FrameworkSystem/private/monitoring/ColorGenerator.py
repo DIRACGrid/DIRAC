@@ -23,7 +23,7 @@ class ColorGenerator:
 
   def __toHex(self, n):
     d1 = int(n / 16)
-    d2 = (n - d1 * 16)
+    d2 = int(n - d1 * 16)
     return "%s%s" % (self.sHexDigits[d1], self.sHexDigits[d2])
 
   def reset(self):
