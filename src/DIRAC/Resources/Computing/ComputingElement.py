@@ -80,6 +80,7 @@ class ComputingElement(object):
     self.mandatoryParameters = []
     self.batchSystem = None
     self.parallelLibrary = None
+    self.taskResults = {}
     self.minProxyTime = gConfig.getValue('/Registry/MinProxyLifeTime', 10800)  # secs
     self.defaultProxyTime = gConfig.getValue('/Registry/DefaultProxyLifeTime', 43200)  # secs
     self.proxyCheckPeriod = gConfig.getValue('/Registry/ProxyCheckingPeriod', 3600)  # secs
@@ -295,8 +296,7 @@ class ComputingElement(object):
        instance polls for waiting and running jobs and compares to the limits
        in the CE parameters.
 
-       :param jobIDList: list of already existing job IDs to be checked against
-       :type jobIDList: python:list
+       :param list jobIDList: list of already existing job IDs to be checked against
     """
 
     # If there are no already registered jobs
@@ -539,6 +539,12 @@ class ComputingElement(object):
     name = 'getCEStatus()'
     self.log.error('ComputingElement should be implemented in a subclass', name)
     return S_ERROR('ComputingElement: %s should be implemented in a subclass' % (name))
+
+  #############################################################################
+  def shutdown(self):
+    """ Optional method to shutdown the (Inner) Computing Element
+    """
+    return S_OK(self.taskResults)
 
 
 def getCEConfigDict(ceName):

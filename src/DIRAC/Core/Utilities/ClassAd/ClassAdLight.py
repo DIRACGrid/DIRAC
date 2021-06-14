@@ -253,27 +253,29 @@ class ClassAd(object):
     """Convert the JDL description into a string
     """
 
-    result = ''
+    result = []
     for name, value in sorted(self.contents.items()):
       if value[0:1] == "{":
-        result = result + 4 * ' ' + name + " = \n"
-        result = result + 8 * ' ' + '{\n'
+        result += [4 * ' ' + name + " = \n"]
+        result += [8 * ' ' + '{\n']
         strings = value[1:-1].split(',')
         for st in strings:
-          result = result + 12 * ' ' + st.strip() + ',\n'
-        result = result[:-2] + '\n' + 8 * ' ' + '};\n'
+          result += [12 * ' ' + st.strip() + ',\n']
+        result[-1] = result[-1][:-2]
+        result += ['\n' + 8 * ' ' + '};\n']
       elif value[0:1] == "[":
         tempad = ClassAd(value)
         tempjdl = tempad.asJDL() + ';'
         lines = tempjdl.split('\n')
-        result = result + 4 * ' ' + name + " = \n"
+        result += [4 * ' ' + name + " = \n"]
         for line in lines:
-          result = result + 8 * ' ' + line + '\n'
+          result += [8 * ' ' + line + '\n']
 
       else:
-        result = result + 4 * ' ' + name + ' = ' + str(value) + ';\n'
-
-    return "[ \n" + result[:-1] + "\n]"
+        result += [4 * ' ' + name + ' = ' + str(value) + ';\n']
+    if result:
+      result[-1] = result[-1][:-1]
+    return "[ \n" + "".join(result) + "\n]"
 
   def getAttributeString(self, name):
     """ Get String type attribute value

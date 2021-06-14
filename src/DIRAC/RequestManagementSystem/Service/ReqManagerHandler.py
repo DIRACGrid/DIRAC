@@ -318,7 +318,7 @@ class ReqManagerHandler(RequestHandler):
   def export_getRequestIDsForJobs(cls, jobIDs):
     """ Select the request IDs for supplied jobIDs
 
-        :warning: the dictionnary may contain string keys instead of int (json serialization)
+        :warning: the dictionary may contain string keys instead of int (json serialization)
           Do not forget to cast it back
 
     """

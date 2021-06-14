@@ -67,7 +67,7 @@ class TestWMSTestCase(unittest.TestCase):
     jca = JobCleaningAgent('WorkloadManagement/JobCleaningAgent',
                            'WorkloadManagement/JobCleaningAgent')
     jca.initialize()
-    res = jca.removeJobsByStatus({'Status': [JobStatus.KILLED, JobStatus.DELETED]})
+    res = jca.removeDeletedJobs()
     self.assertTrue(res['OK'], res.get('Message'))
 
 
@@ -334,7 +334,7 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertEqual(sorted(res['Value']), sorted(types), msg="Got %s" % str(sorted(res['Value'])))
     res = jobMonitor.getApplicationStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value'], ['Unknown'], msg="Got %s" % str(res['Value']))
+    self.assertEqual(res['Value'], ['app status', 'Unknown'], msg="Got %s" % str(res['Value']))
 
     res = jobMonitor.getOwners()
     self.assertTrue(res['OK'], res.get('Message'))
@@ -362,7 +362,8 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertTrue(sorted(res['Value']) in [
         ['Job accepted'],
-        sorted(['Job accepted', 'Job Rescheduled'])],
+        sorted(['Job accepted', 'Job Rescheduled']),
+        sorted(['Job accepted', 'Marked for termination'])],
         res['Value'])
     self.assertTrue(res['OK'], res.get('Message'))
     res = jobMonitor.getJobs()

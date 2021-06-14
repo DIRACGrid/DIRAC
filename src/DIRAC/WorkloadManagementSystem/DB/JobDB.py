@@ -1215,6 +1215,12 @@ class JobDB(DB):
     if vo:
       classAdReq.insertAttributeString('VirtualOrganization', vo)
 
+    inputDataPolicy = Operations(vo=vo).getValue('InputDataPolicy/InputDataModule')
+    if inputDataPolicy and not classAdJob.lookupAttribute('InputDataModule'):
+      classAdJob.insertAttributeString('InputDataModule', inputDataPolicy)
+
+    # ################## adding DIRAC/VOPolicy as classAds
+    # FIXME: to remove
     setup = gConfig.getValue('/DIRAC/Setup', '')
     voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy/%s/%s' % (vo, setup))
     # voPolicyDict = gConfig.getOptionsDict('/DIRAC/VOPolicy')
@@ -1223,6 +1229,7 @@ class JobDB(DB):
       for param, val in voPolicy.items():
         if not classAdJob.lookupAttribute(param):
           classAdJob.insertAttributeString(param, val)
+    # ##################
 
     # priority
     priority = classAdJob.getAttributeInt('Priority')

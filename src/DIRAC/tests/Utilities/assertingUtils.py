@@ -62,13 +62,13 @@ def AgentOptionsTest(agentPath, options, mocker):
   :param mocker: the mocker fixture from pytest-mock
   """
   agentPathSplit = agentPath.split('.')
-  extension = agentPathSplit[0]  # DIRAC or VODIRAC, etc.
   systemName = agentPathSplit[1]
   agentName = agentPathSplit[-1]
 
   agentModule = importlib.import_module(agentPath)
   LOG.info("Agents: %s %s", agentPath, agentModule)
   agentClass = None
+  agentLocation = os.path.dirname(agentModule.__file__)
 
   options = options if options is not None else {}
   ignoreOptions = options.get('IgnoreOptions', [])
@@ -127,18 +127,17 @@ def AgentOptionsTest(agentPath, options, mocker):
   for func in ['initialize', 'beginExecution']:
     if hasattr(agentInstance, func):
       getattr(agentInstance, func)()
-  checkAgentOptions(getOptionMock, systemName, agentName, ignoreOptions=ignoreOptions, extension=extension)
+  checkAgentOptions(getOptionMock, systemName, agentName, agentLocation, ignoreOptions=ignoreOptions)
 
 
-def checkAgentOptions(getOptionMock, systemName, agentName,
-                      ignoreOptions=None, extension='DIRAC'):
+def checkAgentOptions(getOptionMock, systemName, agentName, agentLocation,
+                      ignoreOptions=None):
   """Ensure that all the agent options are properly documented.
 
   :param getOptionMock: Mock object for agentmodule.get_amOption function
   :param str systemName: name of the **System**
   :param str agentName: name of the **Agent**
   :param list ignoreOptions: list of options to ignore
-  :param str extension: name of the DIRAC **Extension** where the Agent comes from
   """
   if ignoreOptions is None:
     ignoreOptions = []
@@ -152,9 +151,8 @@ def checkAgentOptions(getOptionMock, systemName, agentName,
 
   LOG.info("Testing %s/%s, ignoring options %s", systemName, agentName, ignoreOptions)
 
-  # get the location where DIRAC is in from basefolder/DIRAC/__ini__.py
-  configFilePath = os.path.join(os.path.dirname(os.path.dirname(DIRAC.__file__)),
-                                extension, systemName, 'ConfigTemplate.cfg')
+  # expect the ConfigTemplate one level above the agent module
+  configFilePath = os.path.join(agentLocation, '..', 'ConfigTemplate.cfg')
   config.loadFromFile(configFilePath)
   optionsDict = config.getAsDict('Agents/%s' % agentName)
   outDict = {}

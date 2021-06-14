@@ -86,7 +86,7 @@ class MatcherHandler(RequestHandler):
                         pilotRef=pilotRef)
       result = matcher.selectJob(resourceDescription, credDict)
     except RuntimeError as rte:
-      self.log.error("[%s] Error requesting job: " % pilotRef, rte)
+      self.log.error("Error requesting job for pilot", "[%s] %s" % (pilotRef, rte))
       return S_ERROR("Error requesting job")
 
     # result can be empty, meaning that no job matched

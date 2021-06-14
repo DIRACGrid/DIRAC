@@ -497,11 +497,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     result = self._query(req)
     if not result['OK']:
       return result
-    else:
-      if result['Value']:
-        pilotList = [x[0] for x in result['Value']]
-        return S_OK(pilotList)
-      return S_ERROR('PilotJobReferences for TaskQueueID %s not found' % taskQueueID)
+    if result['Value']:
+      pilotList = [x[0] for x in result['Value']]
+      return S_OK(pilotList)
+    return S_ERROR('PilotJobReferences for TaskQueueID %s not found' % taskQueueID)
 
 ##########################################################################################
   def getPilotsForJobID(self, jobID):
@@ -517,7 +516,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     if result['Value']:
       pilotList = [x[0] for x in result['Value']]
       return S_OK(pilotList)
-    self.log.warn('PilotID for job %d not found: not matched yet?' % jobID)
+    self.log.warn('PilotID for job not found: not matched yet?', "id=%s" % jobID)
     return S_OK([])
 
 ##########################################################################################

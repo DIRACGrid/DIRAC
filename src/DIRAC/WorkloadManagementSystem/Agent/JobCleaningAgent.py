@@ -1,7 +1,3 @@
-########################################################################
-# File :    JobCleaningAgent.py
-# Author :  A.T.
-########################################################################
 """ The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 
     This agent will take care of removing user jobs, while production jobs should be removed through the
@@ -62,7 +58,7 @@ class JobCleaningAgent(AgentModule):
     # clients
     self.jobDB = None
 
-    self.maxJobsAtOnce = 100
+    self.maxJobsAtOnce = 500
     self.prodTypes = []
     self.removeStatusDelay = {}
     self.removeStatusDelayHB = {}
@@ -82,7 +78,7 @@ class JobCleaningAgent(AgentModule):
           'Transformations/DataProcessing', ['MCSimulation', 'Merge'])
     self.log.info("Will exclude the following Production types from cleaning %s" % (
         ', '.join(self.prodTypes)))
-    self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce', 500)
+    self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce', self.maxJobsAtOnce)
 
     self.removeStatusDelay[JobStatus.DONE] = self.am_getOption('RemoveStatusDelay/Done', 7)
     self.removeStatusDelay[JobStatus.KILLED] = self.am_getOption('RemoveStatusDelay/Killed', 7)
@@ -116,7 +112,7 @@ class JobCleaningAgent(AgentModule):
     # TODO: check the WMS SM before calling the functions below (v7r3)
 
     # First, fully remove jobs in JobStatus.DELETED state
-    result = self.removeJobsByStatus({'Status': JobStatus.DELETED})
+    result = self.removeDeletedJobs()
     if not result['OK']:
       self.log.error('Failed to remove jobs with status %s' % JobStatus.DELETED)
 
@@ -153,22 +149,22 @@ class JobCleaningAgent(AgentModule):
 
     return S_OK()
 
-  def removeJobsByStatus(self, condDict, delay=False):
+  def removeDeletedJobs(self, delay=False):
     """ Fully remove jobs that are already in status "DELETED", unless there are still requests.
 
-    :param dict condDict: a dict like {'JobType': 'User', 'Status': 'Killed'}
     :param int delay: days of delay
     :returns: S_OK/S_ERROR
     """
 
-    res = self._getJobsList(condDict, delay)
+    res = self._getJobsList({'Status': JobStatus.DELETED}, delay)
     if not res['OK']:
       return res
     jobList = res['Value']
     if not jobList:
+      self.log.info("No jobs to remove")
       return S_OK()
 
-    self.log.notice("Attempting to remove jobs", "(%d for %s)" % (len(jobList), condDict))
+    self.log.notice("Attempting to remove deleted jobs", "(%d)" % len(jobList))
 
     # remove from jobList those that have still Operations to do in RMS
     res = ReqClient().getRequestIDsForJobs(jobList)
@@ -266,20 +262,20 @@ class JobCleaningAgent(AgentModule):
     :param int delay: days of delay
     :returns: S_OK with jobsList
     """
-    if delay:
-      self.log.verbose("Get jobs with %s and older than %s day(s)" % (condDict, delay))
-      result = self.jobDB.selectJobs(condDict, older=delay, limit=self.maxJobsAtOnce)
-    else:
-      self.log.info("Get jobs with %s " % condDict)
-      result = self.jobDB.selectJobs(condDict, limit=self.maxJobsAtOnce)
+    jobIDsS = set()
+    for order in ['JobID:ASC', 'JobID:DESC']:
+      if delay:
+        self.log.verbose("Get jobs with %s and older than %s day(s)" % (condDict, delay))
+        result = self.jobDB.selectJobs(condDict, older=delay, orderAttribute=order, limit=self.maxJobsAtOnce)
+      else:
+        self.log.info("Get jobs with %s " % condDict)
+        result = self.jobDB.selectJobs(condDict, orderAttribute=order, limit=self.maxJobsAtOnce)
 
-    if not result['OK']:
-      return result
+      if not result['OK']:
+        return result
+      jobIDsS = jobIDsS.union({int(jID) for jID in result['Value']})
 
-    jobList = [int(jID) for jID in result['Value']]
-    if len(jobList) > self.maxJobsAtOnce:
-      jobList = jobList[:self.maxJobsAtOnce]
-    return S_OK(jobList)
+    return S_OK(list(jobIDsS))
 
   def _getOwnerJobsDict(self, jobList):
     """

@@ -27,6 +27,7 @@ FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
     "DIRACOS_TARBALL_PATH": None,
     "TEST_HTTPS": "No",
+    "DIRAC_FEWER_CFG_LOCKS": None,
     "DIRAC_USE_NEWTHREADPOOL": None,
     "USE_PYTHON3": None,
 }

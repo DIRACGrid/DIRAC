@@ -1,6 +1,5 @@
 ########################################################################
 # File: RequestDB.py
-# Date: 2012/12/04 08:06:30
 # pylint: disable=no-member
 ########################################################################
 
@@ -19,6 +18,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import six
 import errno
 import random
@@ -242,7 +242,7 @@ class RequestDB(object):
             self.log.info("Request %s(%s) was canceled, don't put it back" % (request.RequestID, request.RequestName))
             return S_OK(request.RequestID)
 
-      except NoResultFound as e:
+      except NoResultFound:
         pass
 
       # Since the object request is not attached to the session, we merge it to have an update
@@ -313,7 +313,7 @@ class RequestDB(object):
           status = session.query(Request._Status)\
                           .filter(Request.RequestID == reqID)\
                           .one()
-        except NoResultFound as e:
+        except NoResultFound:
           return S_ERROR("getRequest: request '%s' not exists" % reqID)
 
         if status and status == "Assigned" and assigned:
@@ -341,7 +341,7 @@ class RequestDB(object):
 
           reqIDs |= set([reqID[0] for reqID in reqDescIDs])
         # No Waiting requests
-        except NoResultFound as e:
+        except NoResultFound:
           return S_OK()
 
         if not reqIDs:
@@ -423,7 +423,7 @@ class RequestDB(object):
         log.debug("Got %s Request objects " % len(requests))
         requestDict = dict((req.RequestID, req) for req in requests)
       # No Waiting requests
-      except NoResultFound as e:
+      except NoResultFound:
         pass
 
       if assigned and requestDict:
@@ -594,7 +594,7 @@ class RequestDB(object):
 
       try:
         requestLists = summaryQuery.all()
-      except NoResultFound as e:
+      except NoResultFound:
         resultDict['ParameterNames'] = parameterList
         resultDict['Records'] = []
 
@@ -677,7 +677,7 @@ class RequestDB(object):
       try:
         requestLists = summaryQuery.all()
         resultDict = dict(requestLists)
-      except NoResultFound as e:
+      except NoResultFound:
         pass
       except Exception as e:
         return S_ERROR('Error getting the webCounters %s' % e)
@@ -701,7 +701,7 @@ class RequestDB(object):
     try:
       result = session.query(distinct(eval("%s.%s" % (tableName, columnName)))).all()
       distinctValues = [dist[0] for dist in result]
-    except NoResultFound as e:
+    except NoResultFound:
       pass
     except Exception as e:
       self.log.exception("getDistinctValues: unexpected exception", lException=e)
@@ -713,10 +713,11 @@ class RequestDB(object):
     return S_OK(distinctValues)
 
   def getRequestIDsForJobs(self, jobIDs):
-    """ read request ids for jobs given jobIDs
+    """ returns request ids for jobs given jobIDs
 
-    :param jobIDs: list of jobIDs
-    :type jobIDs: python:list
+    :param list jobIDs: list of jobIDs
+    :return: S_OK( "Successful" : { jobID1 : Request, jobID2: Request, ... }
+                   "Failed" : { jobID3: "error message", ... } )
     """
     self.log.debug("getRequestIDsForJobs: got %s jobIDs to check" % str(jobIDs))
     if not jobIDs:
@@ -747,8 +748,7 @@ class RequestDB(object):
   def readRequestsForJobs(self, jobIDs=None):
     """ read request for jobs
 
-    :param jobIDs: list of JobIDs
-    :type jobIDs: python:list
+    :param list jobIDs: list of JobIDs
     :return: S_OK( "Successful" : { jobID1 : Request, jobID2: Request, ... }
                    "Failed" : { jobID3: "error message", ... } )
     """
@@ -884,7 +884,7 @@ class RequestDB(object):
 
       reqID = ret[0][0]
 
-    except NoResultFound as e:
+    except NoResultFound:
       return S_ERROR('No such request')
     except Exception as e:
       self.log.exception("getRequestIDsForName: unexpected exception", lException=e)

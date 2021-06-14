@@ -43,6 +43,7 @@ class RefresherBase(object):
   def __init__(self):
     self._automaticUpdate = False
     self._lastUpdateTime = 0
+    self._refreshTime = gConfigurationData.getRefreshTime()
     self._url = False
     self._refreshEnabled = True
     self._timeout = 60
@@ -79,7 +80,7 @@ class RefresherBase(object):
     """
       Just returns if last refresh must be considered as expired or not
     """
-    return time.time() - self._lastUpdateTime >= gConfigurationData.getRefreshTime()
+    return time.time() - self._lastUpdateTime >= self._refreshTime
 
   def forceRefresh(self, fromMaster=False):
     """
@@ -149,6 +150,7 @@ class RefresherBase(object):
                                     skipCACheck=gConfigurationData.skipCACheck())
       dRetVal = _updateFromRemoteLocation(oClient)
       if dRetVal['OK']:
+        self._refreshTime = gConfigurationData.getRefreshTime()
         return dRetVal
       else:
         updatingErrorsList.append(dRetVal['Message'])

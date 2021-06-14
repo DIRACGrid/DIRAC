@@ -98,8 +98,10 @@ class SudoComputingElement(ComputingElement):
     self.submittedJobs += 1
 
     try:
-      os.chmod(os.path.abspath(executableFile), stat.S_IRWXU |
-               stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+      os.chmod(
+          os.path.abspath(executableFile),
+          stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH,
+      )
     except OSError as x:
       self.log.error('Failed to change permissions of executable to 0755 with exception',
                      '\n%s' % (x))
@@ -149,6 +151,7 @@ class SudoComputingElement(ComputingElement):
     self.log.info('CE submission command is: %s' % cmd)
     self.runningJobs += 1
     result = shellCall(0, cmd, callbackFunction=self.sendOutput)
+    self.runningJobs -= 1
     if not result['OK']:
       result['Value'] = (0, '', '')
       return result

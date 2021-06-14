@@ -25,6 +25,9 @@ jobs:
           ###### Thread pool
           - TEST_NAME: "New thread pool"
             ARGS: DIRAC_USE_NEWTHREADPOOL=No
+          ###### Thread pool
+          - TEST_NAME: "Fewer cfg locks"
+            ARGS: DIRAC_FEWER_CFG_LOCKS=Yes
           ###### HTTPS tests
           - TEST_NAME: "HTTPS"
             ARGS: TEST_HTTPS=Yes

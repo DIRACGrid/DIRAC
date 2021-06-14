@@ -20,4 +20,6 @@ DIRAC_DOC_MOCK_LIST = ['_arc',
                        'pylab',
                        'pythonjsonlogger',
                        'stomp',
+                       # Doesn't support Python 3.9
+                       'rucio',
                        ]

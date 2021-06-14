@@ -76,3 +76,5 @@ dependencies:
     - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
     # This is an extension of Tornado to use M2Crypto
     - git+https://github.com/DIRACGrid/tornado_m2crypto
+    - rucio-clients >= 1.25.6
+

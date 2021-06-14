@@ -25,11 +25,15 @@ __RCSID__ = "$Id$"
 class ConfigurationData(object):
 
   def __init__(self, loadDefaultCFG=True):
-    lr = LockRing()
-    self.threadingEvent = lr.getEvent()
-    self.threadingEvent.set()
-    self.threadingLock = lr.getLock()
-    self.runningThreadsNumber = 0
+    envVar = os.environ.get("DIRAC_FEWER_CFG_LOCKS", "no").lower()
+    self.__locksEnabled = envVar not in ("y", "yes", "t", "true", "on", "1")
+    if self.__locksEnabled:
+      lr = LockRing()
+      self.threadingEvent = lr.getEvent()
+      self.threadingEvent.set()
+      self.threadingLock = lr.getLock()
+      self.runningThreadsNumber = 0
+
     self.__compressedConfigurationData = None
     self.configurationPath = "/DIRAC/Configuration"
     self.backupsDir = os.path.join(DIRAC.rootPath, "etc", "csbackup")
@@ -378,6 +382,8 @@ class ConfigurationData(object):
     Stops current thread until no other thread is accessing.
     PRIVATE USE
     """
+    if not self.__locksEnabled:
+      return
     self.threadingEvent.clear()
     while self.runningThreadsNumber > 0:
       time.sleep(0.1)
@@ -387,6 +393,8 @@ class ConfigurationData(object):
     Unlocks Event.
     PRIVATE USE
     """
+    if not self.__locksEnabled:
+      return
     self.threadingEvent.set()
 
   def dangerZoneStart(self):
@@ -395,6 +403,8 @@ class ConfigurationData(object):
     Counter is maintained to know how many threads are inside and be able to enable and disable mutual exclusion.
     PRIVATE USE
     """
+    if not self.__locksEnabled:
+      return
     self.threadingEvent.wait()
     self.threadingLock.acquire()
     self.runningThreadsNumber += 1
@@ -408,6 +418,8 @@ class ConfigurationData(object):
     End of danger zone.
     PRIVATE USE
     """
+    if not self.__locksEnabled:
+      return returnValue
     self.threadingLock.acquire()
     self.runningThreadsNumber -= 1
     try:

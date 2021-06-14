@@ -378,7 +378,15 @@ class MySQL(object):
 
   __connectionPools = {}
 
-  def __init__(self, hostName='localhost', userName='dirac', passwd='dirac', dbName='', port=3306, debug=False):
+  def __init__(
+      self,
+      hostName="localhost",
+      userName="dirac",
+      passwd="dirac",
+      dbName="",
+      port=3306,
+      debug=False
+  ):
     """
     set MySQL connection parameters and try to connect
 
@@ -1257,7 +1265,7 @@ class MySQL(object):
     """
       Select "outFields" from "tableName" with condDict
       N records can match the condition
-      return S_OK( tuple(Field,Value) )
+      return S_OK(tuple(Field, Value))
       if outFields is None all fields in "tableName" are returned
       if limit is not False, the given limit is set
       inValues are properly escaped using the _escape_string method, they can be single values or lists of values.
