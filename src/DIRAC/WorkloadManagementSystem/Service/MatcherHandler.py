@@ -12,8 +12,9 @@ __RCSID__ = "$Id$"
 import six
 from DIRAC import gLogger, S_OK, S_ERROR
 
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
@@ -21,10 +22,9 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher, PilotVersionError
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
-class MatcherHandler(RequestHandler):
+class MatcherHandlerMixin(object):
 
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
@@ -64,9 +64,6 @@ class MatcherHandler(RequestHandler):
                               'Matching', "matches", gMonitor.OP_RATE, 300)
     gMonitor.registerActivity('numTQs', "Number of Task Queues",
                               'Matching', "tqsk queues", gMonitor.OP_MEAN, 300)
-
-    gThreadScheduler.addPeriodicTask(120, cls.taskQueueDB.recalculateTQSharesForAll)
-    gThreadScheduler.addPeriodicTask(60, cls.sendNumTaskQueues)
 
     cls.sendNumTaskQueues()
     return S_OK()
@@ -147,3 +144,11 @@ class MatcherHandler(RequestHandler):
     resourceDescriptionDict = matcher._processResourceDescription(resourceDict)
     return cls.taskQueueDB.getMatchingTaskQueues(resourceDescriptionDict,
                                                  negativeCond=negativeCond)
+
+
+class MatcherHandler(MatcherHandlerMixin, RequestHandler):
+  pass
+
+
+class TornadoMatcherHandler(MatcherHandlerMixin, TornadoService):
+  pass
