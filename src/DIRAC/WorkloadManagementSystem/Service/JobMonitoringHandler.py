@@ -25,7 +25,6 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
@@ -40,7 +39,6 @@ class JobMonitoringHandler(RequestHandler):
     """
     cls.jobDB = JobDB()
     cls.jobLoggingDB = JobLoggingDB()
-    cls.taskQueueDB = TaskQueueDB()
 
     cls.elasticJobParametersDB = None
     useESForJobParametersFlag = Operations().getValue(
@@ -483,12 +481,6 @@ class JobMonitoringHandler(RequestHandler):
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
 
-      tqDict = {}
-      result = self.taskQueueDB.getTaskQueueForJobs(summaryJobList)
-      if not result['OK']:
-        return result
-      tqDict = result['Value']
-
       # prepare the standard structure now
       key = list(summaryDict)[0]
       paramNames = list(summaryDict[key])
@@ -498,10 +490,9 @@ class JobMonitoringHandler(RequestHandler):
         jParList = []
         for pname in paramNames:
           jParList.append(jobDict[pname])
-        jParList.append(tqDict.get(jobID, 0))
         records.append(jParList)
 
-      resultDict['ParameterNames'] = paramNames + ['TaskQueueID']
+      resultDict['ParameterNames'] = paramNames
       resultDict['Records'] = records
 
     return S_OK(resultDict)
