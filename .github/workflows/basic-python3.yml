@@ -20,7 +20,7 @@ jobs:
           #   * `test_BaseType_Unicode` and `test_nestedStructure` fail due to
           #     DISET's string and unicode types being poorly defined
           - pytest --runslow -k 'not test_BaseType_Unicode and not test_nestedStructure'
-          - pylint -E src/ --rcfile=.pylintrc
+          - pylint -E src/
 
     steps:
     - uses: actions/checkout@v2
