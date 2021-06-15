@@ -25,8 +25,3 @@ python:
       path: docs/
       extra_requirements:
         - diracdoctools
-    # Install DIRAC itself
-    - method: pip
-      path: .
-      extra_requirements:
-        - server

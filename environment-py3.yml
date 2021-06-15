@@ -94,3 +94,4 @@ dependencies:
     # Doesn't support Python 3.9
     # - rucio-clients >=1.25.6
     - git+https://github.com/rucio/rucio.git@master
+    - -e .
