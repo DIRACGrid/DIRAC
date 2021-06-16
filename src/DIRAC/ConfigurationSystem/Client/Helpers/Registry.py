@@ -707,3 +707,33 @@ def getEmailsForGroup(groupName):
     email = getUserOption(username, 'Email', [])
     emails.append(email)
   return emails
+
+
+def wrapIDAsDN(userID):
+  """ Wrap user ID as user DN
+
+      :param str userID: user ID
+      
+      :return: str
+  """
+  return '/O=DIRAC/CN=%s' % userID
+
+
+def getIDFromDN(userDN):
+  """ Parse user ID from user DN
+
+      :param str userDN: user DN
+      
+      :return: str
+  """
+  return userDN.strip('/O=DIRAC/CN=')
+
+
+def isDNWrappedID(user):
+  """ Is it wrapped user ID?
+
+      :param str user: user ID
+
+      :return: bool
+  """
+  return user.startswith('/O=DIRAC/CN=')
