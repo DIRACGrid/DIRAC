@@ -1,6 +1,14 @@
 """ :mod: RucioSynchronizer
 
   Agent that synchronizes Rucio and Dirac
+
+The following options can be set for the RucioSynchronizerAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN RucioSynchronizerAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: RucioSynchronizerAgent options
 """
 
 # # imports
@@ -14,7 +22,7 @@ from traceback import format_exc
 from rucio.client import Client
 from rucio.common.exception import RSEProtocolNotSupported, Duplicate, RSEAttributeNotFound
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getUserOption, getAllUsers, getHosts,
                                                                getHostOption, getAllGroups, getDNsInGroup)
@@ -106,15 +114,6 @@ class RucioSynchronizerAgent(AgentModule):
   Agent that synchronizes Rucio and Dirac
   """
 
-  def initialize(self):
-    """ agent's initialisation
-
-    :param self: self reference
-    """
-    self.log = gLogger.getSubLogger('RucioSynchronizer')
-    self.log.info("Starting RucioSynchronizer")
-    return S_OK()
-
   def execute(self):
     """ execution in one agent's cycle
 
@@ -181,7 +180,7 @@ class RucioSynchronizerAgent(AgentModule):
                             se)
               try:
                 client.add_protocol(rse=se, params=params)
-              except Duplicate as err:
+              except Duplicate:
                 self.log.info('Protocol %s already exists on %s', params['scheme'], se)
               except Exception as err:
                 self.log.error('Cannot create protocol on RSE %s : %s', se, str(err))
@@ -246,7 +245,7 @@ class RucioSynchronizerAgent(AgentModule):
           try:
             self.log.info('Setting productionSEshare for %s : %s', rse, rseDict.get(rse, 0))
             client.add_rse_attribute(rse, 'productionSEshare', rseDict.get(rse, 0))
-          except Exception as err:
+          except Exception:
             self.log.error('Cannot create productionSEshare for %s', rse)
       else:
         self.log.error('Cannot get SEs : %s', result['Value'])
@@ -263,7 +262,7 @@ class RucioSynchronizerAgent(AgentModule):
             try:
               self.log.info('Setting %sShare for %s : %s', dataLevel, rse, rseDict.get(rse, 0))
               client.add_rse_attribute(rse, '%sShare' % dataLevel, rseDict.get(rse, 0))
-            except Exception as err:
+            except Exception:
               self.log.error('Cannot create %sShare for %s', dataLevel, rse)
       else:
         self.log.error('Cannot get shares : %s', result['Value'])
@@ -277,7 +276,6 @@ class RucioSynchronizerAgent(AgentModule):
         self.log.info('Will set primarySEs flag to %s', str(primarySEs))
         for rse in rses:
           if rse in allSEs:
-            storage = StorageElement(rse)
             occupancyLFN = StorageElement(rse).options.get('OccupancyLFN')
             try:
               client.add_rse_attribute(rse, 'OccupancyLFN', occupancyLFN)
