@@ -78,10 +78,6 @@ def test_decodingCommandOutput():
   assert retVal["Value"] == (0, u"\ufffd\n", "")
 
   sp = Subprocess()
-  retVal = sp.systemCall(r"echo -e -n '\xdf' >&2", shell=True)
+  retVal = sp.systemCall(r"""python -c 'import os; os.fdopen(2, "wb").write(b"\xdf")'""", shell=True)
   assert retVal["OK"]
   assert retVal["Value"] == (0, "", u"\ufffd")
-
-  retVal = sp.systemCall(r"echo -e '\xdf' >&2", shell=True)
-  assert retVal["OK"]
-  assert retVal["Value"] == (0, "", u"\ufffd\n")
