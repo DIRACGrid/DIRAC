@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities import ObjectLoader, ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.IdProvider.Utilities import getProviderInfo, getSettingsNamesForIdPIssuer
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
-from DIRAC.FrameworkSystem.private.authorization.utils.Clients import DEFAULT_CLIENTS
+from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients
 
 __RCSID__ = "$Id$"
 
@@ -74,33 +74,32 @@ class IdProviderFactory(object):
     """ This method returns a IdProvider instance corresponding to the supplied
         name.
 
-        :param str name: the name of the Identity Provider
+        :param str name: the name of the Identity Provider client
 
         :return: S_OK(IdProvider)/S_ERROR()
     """
-    self.log.debug('Search %s configuration..' % name)
-    pDict = DEFAULT_CLIENTS.get(name, {})
-    if pDict:
+    self.log.debug('Search %s identity provider client configuration..' % name)
+    clients = getDIRACClients()
+    if name in clients:
+      # If it is a DIRAC default pre-registred client
+      pDict = clients[name]
       result = getAuthorizationServerMetadata()
       if not result['OK']:
         return result
       pDict.update(result['Value'])
-    pDict.update(kwargs)
-
-    result = getProviderInfo(name)
-    if not result['OK']:
-      if not pDict:
+    else:
+      # if it is external identity provider client
+      result = getProviderInfo(name)
+      if not result['OK']:
         self.log.error('Failed to read configuration', '%s: %s' % (name, result['Message']))
         return result
-      gLogger.debug(result['Message'])
-    else:
-      pDict.update(result['Value'])
+      pDict = result['Value']
+
+    pDict.update(kwargs)
     pDict['ProviderName'] = name
 
-    pType = pDict['ProviderType']
-
-    self.log.verbose('Creating IdProvider of %s type with the name %s' % (pType, name))
-    subClassName = "%sIdProvider" % (pType)
+    self.log.verbose('Creating IdProvider of %s type with the name %s' % (pDict['ProviderType'], name))
+    subClassName = "%sIdProvider" % pDict['ProviderType']
 
     objectLoader = ObjectLoader.ObjectLoader()
     result = objectLoader.loadObject('Resources.IdProvider.%s' % subClassName, subClassName)
