@@ -6,9 +6,6 @@ __RCSID__ = "$Id$"
 
 
 class ColorGenerator:
-
-  sHexDigits = "0123456789ABCDEF"
-
   def __init__(self):
     self.lUsedColors = []
 
@@ -16,15 +13,10 @@ class ColorGenerator:
     return c1[0] == c2[0] and c1[1] == c2[1] and c1[2] == c2[2]
 
   def __equalColorInList(self, c1, cl2):
-    for c2 in cl2:
-      if self.__equalColors(c1, c2):
-        return True
-    return False
+    return any(self.__equalColors(c1, c2) for c2 in cl2)
 
   def __toHex(self, n):
-    d1 = int(n / 16)
-    d2 = (n - d1 * 16)
-    return "%s%s" % (self.sHexDigits[d1], self.sHexDigits[d2])
+    return hex(int(n))[2:].upper().rjust(2, "0")
 
   def reset(self):
     self.lUsedColors = []
@@ -43,7 +35,9 @@ class ColorGenerator:
       self.lUsedColors.append((255, 0, 255))
     elif iNumColorsUsed == 5:
       self.lUsedColors.append((255, 255, 0))
-    else:
+    elif len(self.lUsedColors) < 128:
+      # This has terrible performance is the number of used colours gets too high
+      # At that point the color stops making much sense so allow it to loop
       im = 0
       iM = 1
       rC = self.lUsedColors[0]
@@ -57,8 +51,7 @@ class ColorGenerator:
             iM += 1
             im = 0
       self.lUsedColors.append(rC)
-    fC = self.lUsedColors[iNumColorsUsed]
-    return fC
+    return self.lUsedColors[iNumColorsUsed % 128]
 
   def getFloatColor(self):
     fC = self.__generateColor()
