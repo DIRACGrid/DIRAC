@@ -438,7 +438,7 @@ class TestJI(unittest.TestCase):
   #   self.jbi.inputFiles = []
   #   tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
   #   lfnTaskDict = {}
-  #   with self.assertRaisesRegexp(KeyError, ""):
+  #   with self.assertRaisesRegex(KeyError, ""):
   #     self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   def test_getTaskInfo_5(self):

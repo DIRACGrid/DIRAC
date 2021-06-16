@@ -69,7 +69,7 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     self.assertIsInstance(self.restartAgent.nClient, MagicMock)
     self.assertIsInstance(self.restartAgent.sysAdminClient, MagicMock)
     self.assertTrue(self.restartAgent.enabled)
-    self.assertEquals(self.restartAgent.addressFrom, '')
+    self.assertEqual(self.restartAgent.addressFrom, '')
 
   def test_begin_execution(self):
     """Test for the beginExecution function."""
@@ -88,7 +88,7 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     self.restartAgent.getRunningInstances.assert_called()
 
     # accounting dictionary should be cleared
-    self.assertEquals(self.restartAgent.accounting, {})
+    self.assertEqual(self.restartAgent.accounting, {})
 
   def test_send_notification(self):
     """Test for the sendNotification function."""
@@ -118,12 +118,12 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     self.restartAgent.addressTo = ['name1@cern.ch', 'name2@cern.ch']
     self.restartAgent.nClient.sendMail.return_value = S_ERROR()
     self.restartAgent.sendNotification()
-    self.assertEquals(len(self.restartAgent.nClient.sendMail.mock_calls),
-                      len(self.restartAgent.addressTo))
+    self.assertEqual(len(self.restartAgent.nClient.sendMail.mock_calls),
+                     len(self.restartAgent.addressTo))
 
     # accounting dict and errors list should be cleared after notification is sent
-    self.assertEquals(self.restartAgent.accounting, {})
-    self.assertEquals(self.restartAgent.errors, [])
+    self.assertEqual(self.restartAgent.accounting, {})
+    self.assertEqual(self.restartAgent.errors, [])
 
   def test_get_running_instances(self):
     """Test for the getRunningInstances function."""
@@ -380,7 +380,7 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     res = self.restartAgent.getLastAccessTime('/fake/file')
     self.assertTrue(res['OK'])
     self.assertIsInstance(res['Value'], timedelta)
-    self.assertEquals(res['Value'].seconds, 3600)
+    self.assertEqual(res['Value'].seconds, 3600)
 
   def test_restartInstance(self):
     """Test restartInstance function."""
