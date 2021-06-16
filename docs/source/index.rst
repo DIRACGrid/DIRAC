@@ -13,7 +13,7 @@
 DIRAC Documentation
 ===================
 
-The DIRAC project is a complete Grid solution for one,
+The DIRAC interware is a complete Grid solution for one,
 or more than one community of users that need to exploit distributed, heterogeneous resources.
 
 DIRAC forms a layer between a community and various compute resources to allow optimized, transparent and reliable usage.
@@ -27,7 +27,7 @@ Many communities use DIRAC, the oldest and most experienced being the `LHCb <htt
 Other communities include, but are not limited to, `Belle2 <https://www.belle2.org/>`_, `ILC <http://www.linearcollider.org/ILC>`_,
 and `CTA <https://www.cta-observatory.org/>`_
 
-DIRAC source code is open source (GPLv3), written largely in `python 2.7 <https://docs.python.org/2/>`_,
+DIRAC source code is open source (GPLv3), written in `python <https://docs.python.org/>`_,
 and hosted on `github <https://github.com/DIRACGrid>`_.
 
 DIRAC provides code for:
