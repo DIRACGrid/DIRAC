@@ -23,7 +23,7 @@ from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
 def getTokenLocation():
   """ Research token file location. Use the bearer token discovery protocol
-      defined by the WLCG (https://zenodo.org/record/3937438) to find one.
+      defined by the WLCG (https://doi.org/10.5281/zenodo.3937438) to find one.
 
       :return: str
   """
@@ -37,15 +37,16 @@ def getTokenLocation():
 
 def getLocalTokenDict(location=None):
   """ Search local token. Use the bearer token discovery protocol
-      defined by the WLCG (https://zenodo.org/record/3937438) to find one.
+      defined by the WLCG (https://doi.org/10.5281/zenodo.3937438) to find one.
 
       :param str location: environ variable name or file path
 
       :return: S_OK(dict)/S_ERROR()
   """
   env = (location if location and location.startswith('/') else None) or 'BEARER_TOKEN'
-  if os.environ.get(env):
-    return S_OK(OAuth2Token(os.environ[env]))
+  token = os.environ.get(env, "").strip()
+  if token:
+    return S_OK(OAuth2Token(token))
   return readTokenFromFile(location if location and location.startswith('/') else None)
 
 
@@ -59,7 +60,7 @@ def readTokenFromFile(fileName=None):
   location = fileName or getTokenLocation()
   try:
     with open(location, 'rt') as f:
-      token = f.read()
+      token = f.read().strip()
   except IOError as e:
     return S_ERROR(DErrno.EOF, "Can't open %s token file.\n%s" % (location, repr(e)))
   return S_OK(OAuth2Token(token))
@@ -108,19 +109,22 @@ class OAuth2Token(_OAuth2Token):
     """
     if isinstance(params, six.string_types):
       # Is params a JWT?
+      params = params.strip()
       if re.match(r"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$", params):
         params = dict(access_token=params)
       else:
         params = json.loads(params)
 
     kwargs.update(params or {})
+    kwargs['issued_at'] = kwargs.get('issued_at', kwargs.get('iat'))
+    kwargs['expires_at'] = kwargs.get('expires_at', kwargs.get('exp'))
     if not kwargs.get('expires_at') and kwargs.get('access_token'):
       # Get access token expires_at claim
-      kwargs['expires_at'] = int(self.get_claim('exp'))
+      kwargs['expires_at'] = self.get_claim('exp')
     super(OAuth2Token, self).__init__(kwargs)
 
   def get_client_id(self):
-    return self.get('client_id')
+    return self.get('client_id', self.get('azp'))
 
   def get_scope(self):
     return self.get('scope')
@@ -129,7 +133,7 @@ class OAuth2Token(_OAuth2Token):
     return self.get('expires_in')
 
   def get_expires_at(self):
-    return self.get('issued_at') + self.get('expires_in')
+    return int(self.get('expires_at', self.get('issued_at') + self.get('expires_in')))
 
   @property
   def scopes(self):
@@ -169,7 +173,7 @@ class OAuth2Token(_OAuth2Token):
 
         :return: str
     """
-    return get_payload(token_type).get(claim)
+    return self.get_payload(token_type).get(claim)
   
   def dump_to_string(self):
     """ Dump token dictionary to sting
