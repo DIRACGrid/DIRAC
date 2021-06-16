@@ -255,5 +255,6 @@ class PoolComputingElement(ComputingElement):
   def shutdown(self):
     """ Wait for all futures (jobs) to complete
     """
-    self.pPool.shutdown()  # blocking
+    if self.pPool:
+      self.pPool.shutdown()  # blocking
     return S_OK(self.taskResults)
