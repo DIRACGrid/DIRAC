@@ -10,11 +10,6 @@ from authlib.oauth2.rfc8628 import (DeviceAuthorizationEndpoint as _DeviceAuthor
                                     DeviceCodeGrant as _DeviceCodeGrant,
                                     DeviceCredentialDict)
 
-from DIRAC import gLogger
-from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
-
-log = gLogger.getSubLogger(__name__)
-
 
 class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
   """ See :class:`authlib.oauth2.rfc8628.DeviceAuthorizationEndpoint` """
@@ -30,10 +25,7 @@ class DeviceAuthorizationEndpoint(_DeviceAuthorizationEndpoint):
 
         :return: str
     """
-    result = getAuthorizationServerMetadata()
-    if not result['OK']:
-      raise OAuth2Error('Cannot prepare authorization server metadata. %s' % result['Message'])
-    return result['Value']['issuer'] + '/device'
+    return self.server.metadata['device_authorization_endpoint']
 
   def save_device_credential(self, client_id, scope, data):
     """ Save device credentials
@@ -61,7 +53,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     """
     # Validate client for this request
     client_id = self.request.client_id
-    log.debug('Validate authorization request of', client_id)
+    self.server.log.debug('Validate authorization request of', client_id)
     if client_id is None:
       raise InvalidClientError(state=self.request.state)
     client = self.server.query_client(client_id)
@@ -116,10 +108,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     data = result['Value']
     if not data:
       return None
-    result = getAuthorizationServerMetadata()
-    if not result['OK']:
-      raise OAuth2Error('Cannot prepare authorization server metadata. %s' % result['Message'])
-    data['verification_uri'] = result['Value']['issuer'] + '/device'
+    data['verification_uri'] = self.server.metadata['device_authorization_endpoint']
     data['expires_at'] = int(data['expires_in']) + int(time.time())
     data['interval'] = DeviceAuthorizationEndpoint.INTERVAL
     return DeviceCredentialDict(data)
@@ -134,8 +123,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     result = self.server.db.getSessionByUserCode(user_code)
     if not result['OK']:
       raise OAuth2Error('Cannot found authorization session', result['Message'])
-    data = result['Value']
-    return (data['user_id'], True) if data.get('username') != "None" else None
+    return (result['Value']['user_id'], True) if result['Value'].get('username') != "None" else None
 
   def should_slow_down(self, credential, now):
     """ The authorization request is still pending and polling should continue,
