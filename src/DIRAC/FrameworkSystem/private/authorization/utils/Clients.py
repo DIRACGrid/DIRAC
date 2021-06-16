@@ -54,7 +54,7 @@ def getDIACClientByID(clientID):
     if clientID == clients[cli]['client_id']:
       gLogger.debug('Found %s client:\n' % cli, pprint.pformat(clients[cli]))
       return Client(clients[cli])
-     return Client(data)
+    return Client(data)
   return None
 
 
