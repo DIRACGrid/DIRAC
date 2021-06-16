@@ -584,7 +584,7 @@ def getAuthorizationServerMetadata(issuer=None):
 
       :return: S_OK(dict)/S_ERROR()
   """
-  result = gConfig.getOptionsDictRecursively('/DIRAC/Authorization')
+  result = gConfig.getOptionsDictRecursively('/DIRAC/Security/Authorization')
   if not result['OK']:
     return {'issuer': issuer} if issuer else result
   data = result['Value']
