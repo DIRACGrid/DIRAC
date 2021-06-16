@@ -15,6 +15,7 @@ from __future__ import print_function
 
 import os
 import sys
+from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -34,7 +35,6 @@ class Params(object):
     self.proxy = False
     self.group = None
     self.lifetime = None
-    self.provider = 'DIRACCLI'
     self.issuer = None
     self.proxyLoc = '/tmp/x509up_u%s' % os.getuid()
     self.tokenLoc = None
@@ -55,16 +55,6 @@ class Params(object):
         :return: S_OK()
     """
     self.group = arg
-    return S_OK()
-
-  def setProvider(self, arg):
-    """ Set provider name
-
-        :param str arg: provider
-
-        :return: S_OK()
-    """
-    self.provider = arg
     return S_OK()
 
   def setIssuer(self, arg):
@@ -110,11 +100,6 @@ class Params(object):
         "set DIRAC group",
         self.setGroup)
     Script.registerSwitch(
-        "O:",
-        "provider=",
-        "set identity provider",
-        self.setProvider)
-    Script.registerSwitch(
         "I:",
         "issuer=",
         "set issuer",
@@ -138,16 +123,18 @@ class Params(object):
     params = {}
     if self.issuer:
       params['issuer'] = self.issuer
-    result = IdProviderFactory().getIdProvider(self.provider, **params)
+    result = IdProviderFactory().getIdProvider('DIRACCLI', **params)
     if not result['OK']:
       return result
     idpObj = result['Value']
+    scope = []
     if self.group:
-      idpObj.scope += '+g:%s' % self.group
+      scope.append('g:%s' % self.group)
     if self.proxy:
-      idpObj.scope += '+proxy'
+      scope.append('proxy')
     if self.lifetime:
-      idpObj.scope += '+lifetime:%s' % (int(self.lifetime) * 3600)
+      scope.append('lifetime:%s' % (int(self.lifetime) * 3600))
+    idpObj.scope = '+'.join(scope) if scope else None
 
     # Submit Device authorisation flow
     result = idpObj.deviceAuthorization()
