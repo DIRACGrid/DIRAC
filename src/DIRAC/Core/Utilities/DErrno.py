@@ -105,6 +105,10 @@ EMQNOM = 1141
 EMQCONN = 1142
 # Elasticsearch
 EELNOFOUND = 1146
+# Tokens
+EATOKENFIND = 1150
+EATOKENREAD = 1151
+ETOKENTYPE = 1152
 
 # config
 ESECTION = 1400
@@ -185,6 +189,12 @@ dErrorCode = {
     1142: 'EMQCONN',
     # Elasticsearch
     1146: 'EELNOFOUND',
+
+    # 115X: Tokens
+    1150: 'EATOKENFIND',
+    1151: 'EATOKENREAD',
+    1152: 'ETOKENTYPE',
+
     # Config
     1400: "ESECTION",
     # Processes
@@ -260,6 +270,12 @@ dStrError = {  # Generic (10XX)
     EMQCONN: "MQ connection failure",
     # 114X Elasticsearch
     EELNOFOUND: "Index not found",
+
+    # 115X: Tokens
+    EATOKENFIND: "Can't find a bearer access token.",
+    EATOKENREAD: "Can't read a bearer access token.",
+    ETOKENTYPE: "Unsupported access token type.",
+
     # Config
     ESECTION: "Section is not found",
     # processes
