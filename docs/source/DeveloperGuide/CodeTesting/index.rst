@@ -201,7 +201,6 @@ To run this test, you'll have to add few lines to your local dirac.cfg::
    LocalSite
    {
      Site = DIRAC.mySite.local
-     CPUScalingFactor = 0.0
      #SharedArea = /cvmfs/lhcb.cern.ch/lib
      #LocalArea =/home/some/local/LocalArea
      GridCE = my.CE.local

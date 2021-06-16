@@ -44,6 +44,21 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p11]
+
+*Core
+FIX: (#5197) Fix handling Subprocess calls which produce invalid output
+
+*Framework
+FIX: (#5195) Avoid TypeError in ColorGenerator
+FIX: (#5198) ComponentSupervisionAgent: Pick up PollingTime from a base agent config
+
+*Resources
+FIX: (#5199) remove CPUScalingFactor calls
+*WorkloadManagementSystem
+FIX: (#5199) remove CPUScalingFactor calls
+FIX: (#5200) Matcher: use custom exception for Pilot Version Error
+
 [v7r2p10]
 
 *Python 3

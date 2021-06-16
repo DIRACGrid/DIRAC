@@ -516,7 +516,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     if result['Value']:
       pilotList = [x[0] for x in result['Value']]
       return S_OK(pilotList)
-    self.log.warn('PilotID for job not found: not matched yet?', "id=%s" % jobID)
+    self.log.verbose(
+        "PilotID for job not found: either not matched yet, or already deleted",
+        "id=%s" % jobID
+    )
     return S_OK([])
 
 ##########################################################################################

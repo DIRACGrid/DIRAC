@@ -16,7 +16,6 @@ Example:
   $ dirac-wms-job-parameters 1
   {'CPU(MHz)': '1596.479',
    'CPUNormalizationFactor': '6.8',
-   'CPUScalingFactor': '6.8',
    'CacheSize(kB)': '4096KB',
    'GridCEQueue': 'ce.labmc.inf.utfsm.cl:2119/jobmanager-lcgpbs-prod',
    'HostName': 'wn05.labmc',

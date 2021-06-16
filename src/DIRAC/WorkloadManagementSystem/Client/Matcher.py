@@ -26,6 +26,10 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 
+class PilotVersionError(Exception):
+  pass
+
+
 class Matcher(object):
   """ Logic for matching
   """
@@ -362,7 +366,7 @@ class Matcher(object):
     if self.opsHelper.getValue("Pilot/CheckVersion", True):
       if 'ReleaseVersion' not in resourceDict:
         if 'DIRACVersion' not in resourceDict:
-          raise RuntimeError('Version check requested and not provided by Pilot')
+          raise PilotVersionError('Version check requested and not provided by Pilot')
         else:
           pilotVersion = resourceDict['DIRACVersion']
       else:
@@ -370,14 +374,19 @@ class Matcher(object):
 
       validVersions = self.opsHelper.getValue("Pilot/Version", [])
       if validVersions and pilotVersion not in validVersions:
-        raise RuntimeError('Pilot version does not match the production version %s not in ( %s )' %
-                           (pilotVersion, ",".join(validVersions)))
+        raise PilotVersionError(
+            'Pilot version does not match the production version %s not in ( %s )' %
+            (pilotVersion, ",".join(validVersions))
+        )
       # Check project if requested
       validProject = self.opsHelper.getValue("Pilot/Project", "")
       if validProject:
         if 'ReleaseProject' not in resourceDict:
-          raise RuntimeError("Version check requested but expected project %s not received" % validProject)
-        if resourceDict['ReleaseProject'] != validProject:
-          raise RuntimeError("Version check requested \
-          but expected project %s != received %s" % (validProject,
-                                                     resourceDict['ReleaseProject']))
+          raise PilotVersionError(
+              "Version check requested but expected project %s not received" % validProject
+          )
+        if resourceDict["ReleaseProject"] != validProject:
+            raise PilotVersionError(
+                "Version check requested but expected project %s != received %s"
+                % (validProject, resourceDict["ReleaseProject"])
+            )

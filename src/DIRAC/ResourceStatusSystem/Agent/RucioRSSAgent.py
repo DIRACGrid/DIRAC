@@ -1,11 +1,19 @@
 """ :mod: RucioRSSAgent
 
     Agent that synchronizes Rucio and Dirac
+
+
+The following options can be set for the RucioRSSAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN RucioRSSAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: RucioRSSAgent options
 """
 
 # # imports
 from DIRAC import S_OK, S_ERROR
-from DIRAC import gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
@@ -20,15 +28,6 @@ class RucioRSSAgent(AgentModule):
 
   Agent that synchronizes Rucio and Dirac
   """
-
-  def initialize(self):
-    """ agent's initalisation
-
-    :param self: self reference
-    """
-    self.log = gLogger.getSubLogger('RucioSynchronizer')
-    self.log.info("Starting RucioRSSAgent")
-    return S_OK()
 
   def execute(self):
     """ execution in one agent's cycle

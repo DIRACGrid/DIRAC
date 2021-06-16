@@ -104,7 +104,7 @@ class Watchdog(object):
     self.timeLeftUtil = TimeLeft()
     self.timeLeft = 0
     self.littleTimeLeft = False
-    self.scaleFactor = 1.0
+    self.cpuPower = 1.0
     self.processors = processors
 
   #############################################################################
@@ -157,7 +157,7 @@ class Watchdog(object):
     # the self.checkingTime and self.pollingTime are in seconds,
     # thus they need to be multiplied by a large enough factor
     self.fineTimeLeftLimit = gConfig.getValue(self.section + '/TimeLeftLimit', 150 * self.pollingTime)
-    self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor', 1.0)
+    self.cpuPower = gConfig.getValue('/LocalSite/CPUNormalizationFactor', 1.0)
 
     return S_OK()
 
@@ -866,7 +866,7 @@ class Watchdog(object):
     else:
       wallClock = result['Value']
       summary['WallClockTime(s)'] = wallClock * self.processors
-      summary['ScaledCPUTime(s)'] = wallClock * self.scaleFactor * self.processors
+      summary['ScaledCPUTime(s)'] = wallClock * self.cpuPower * self.processors
 
     self.__reportParameters(summary, 'UsageSummary', True)
     self.currentStats = summary

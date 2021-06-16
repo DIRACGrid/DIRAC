@@ -23,7 +23,7 @@ from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
-from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher
+from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher, PilotVersionError
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -87,6 +87,9 @@ class MatcherHandler(RequestHandler):
       result = matcher.selectJob(resourceDescription, credDict)
     except RuntimeError as rte:
       self.log.error("Error requesting job for pilot", "[%s] %s" % (pilotRef, rte))
+      return S_ERROR("Error requesting job")
+    except PilotVersionError as pve:
+      self.log.warn("Pilot version error for pilot", "[%s] %s" % (pilotRef, pve))
       return S_ERROR("Error requesting job")
 
     # result can be empty, meaning that no job matched
