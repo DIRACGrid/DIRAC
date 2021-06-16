@@ -24,74 +24,70 @@ payload = {'sub': 'user',
            'setup': 'setup',
            'group': 'my_group'}
 
-exp_payload = payload.copy()
-exp_payload['iat'] = int(time.time()) - 10
-exp_payload['exp'] = int(time.time()) - 10
-
 DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
               refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
               expires_at=int(time.time()) + 3600)
 
 New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
                   refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
-                  issued_at=int(time.time()),
                   expires_in=int(time.time()) + 3600)
 
-Exp_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret"),
-                  refresh_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret"),
-                  expires_at=int(time.time()) - 10)
 
-
-def test_cryptToken():
-  """ Try to encrypt/decrypt refresh token
+def test_RefreshToken():
+  """ Try to revoke/save/get refresh tokens
   """
-  data = dict(client_id='clientID', provider='provider', expires_at=DToken['expires_at'])
-  result = db.encryptRefreshToken(DToken.copy(), data.copy())
-  assert result['OK'], result['Message']
-  assert result['Value']['refresh_token'] != DToken['refresh_token']
+  preset_jti = '123'
 
-  result = db.decryptRefreshToken({'refresh_token': result['Value']['refresh_token']})
-  assert result['OK'], result['Message']
-  assert result['Value']['refresh_token'] == DToken['refresh_token']
-  for k in data:
-    assert result['Value'][k] == data[k]
-
-
-def test_Token():
-  """ Try to revoke/save/get tokens
-  """
-  # Remove all tokens
-  result = db.removeTokens()
+  # Remove refresh token
+  result = db.revokeRefreshToken(preset_jti)
   assert result['OK'], result['Message']
 
   # Store tokens
-  result = db.updateToken(DToken.copy(), userID=123, provider='DIRAC')
+  result = db.storeRefreshToken(DToken.copy(), preset_jti)
   assert result['OK'], result['Message']
-  assert result['Value'] == []
+  assert result['Value']['jti'] == preset_jti
+  assert result['Value']['iat'] <= int(time.time())
+  
+  result = db.storeRefreshToken(New_DToken.copy())
+  assert result['OK'], result['Message']
+  assert result['Value']['jti']
+  assert result['Value']['iat'] <= int(time.time())
 
-  # Expired token
-  # result = db.updateToken(Exp_DToken.copy(), userID=123, provider='DIRAC')
-  # assert not result['OK']
+  token_id = result['Value']['jti']
+  issued_at = result['Value']['iat']
 
   # Check token
-  result = db.getTokenForUserProvider(userID=123, provider='DIRAC')
+  result = db.getCredentialByRefreshToken(preset_jti)
   assert result['OK'], result['Message']
+  assert result['Value']['jti'] == preset_jti
   assert result['Value']['access_token'] == DToken['access_token']
   assert result['Value']['refresh_token'] == DToken['refresh_token']
 
-  # Store new tokens
-  result = db.updateToken(New_DToken.copy(), userID=123, provider='DIRAC')
+  result = db.getCredentialByRefreshToken(token_id)
   assert result['OK'], result['Message']
-  # Must return old tokens
-  assert len(result['Value']) == 1
-  assert result['Value'][0]['access_token'] == DToken['access_token']
-  assert result['Value'][0]['refresh_token'] == DToken['refresh_token']
-
-  # Check token
-  result = db.getTokenForUserProvider(userID=123, provider='DIRAC')
-  assert result['OK'], result['Message']
+  assert result['Value']['jti'] == token_id
+  assert int(result['Value']['issued_at']) == issued_at
   assert result['Value']['access_token'] == New_DToken['access_token']
   assert result['Value']['refresh_token'] == New_DToken['refresh_token']
+
+  # Check token after request
+  for jti in [token_id, preset_jti]:
+    result = db.getCredentialByRefreshToken(jti)
+    assert result['OK'], result['Message']
+    assert not result['Value']
+
+  # Renew tokens
+  result = db.storeRefreshToken(New_DToken.copy(), token_id)
+  assert result['OK'], result['Message']
+
+  # Revoke token
+  result = db.revokeRefreshToken(token_id)
+  assert result['OK'], result['Message']
+
+  # Check token
+  result = db.getCredentialByRefreshToken(token_id)
+  assert result['OK'], result['Message']
+  assert not result['Value']
 
 
 def test_keys():

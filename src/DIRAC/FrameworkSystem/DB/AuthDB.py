@@ -16,6 +16,7 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
 from authlib.jose import KeySet, RSAKey
+from authlib.common.security import generate_token
 from authlib.common.encoding import urlsafe_b64decode, urlsafe_b64encode, to_bytes, to_unicode, json_b64encode
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
@@ -29,38 +30,14 @@ __RCSID__ = "$Id$"
 Model = declarative_base()
 
 
-def encrypt(data, key):
-  """ Encryption with key """
-  cipher = M2Crypto.EVP.Cipher(alg='aes_256_cbc', key=key[16:], iv=key[:16], op=1)
-  ciphertext = cipher.update(data.encode('utf-8')) + cipher.final()
-  ciphertext = urlsafe_b64encode(ciphertext)
-  return ciphertext
-
-
-def decrypt(ciphertext, key):
-  """ Decryption with key """
-  cipher = M2Crypto.EVP.Cipher(alg='aes_256_cbc', key=key[16:], iv=key[:16], op=0)
-  data = cipher.update(urlsafe_b64decode(to_bytes(ciphertext))) + cipher.final()
-  data = to_unicode(data.decode('utf-8'))
-  return data
-
-
-class Token(Model, OAuth2TokenMixin):
-  __tablename__ = 'Token'
+class RefreshToken(Model):
+  __tablename__ = 'RefreshToken'
   __table_args__ = {'mysql_engine': 'InnoDB',
                     'mysql_charset': 'utf8'}
-  # access_token too large for varchar(255)
-  # 767 bytes is the stated prefix limitation for InnoDB tables in MySQL version 5.6
-  # https://stackoverflow.com/questions/1827063/mysql-error-key-specification-without-a-key-length
-  id = Column(Integer, autoincrement=True, primary_key=True)
-  kid = Column(String(255))
-  user_id = Column(String(255))
-  provider = Column(String(255))
-  client_id = Column(String(255))
-  expires_at = Column(Integer, nullable=False, default=0)
+  jti = Column(String(255), nullable=False, primary_key=True)
+  issued_at = Column(Integer, nullable=False, default=0)
   access_token = Column(Text, nullable=False)
-  refresh_token = Column(Text, nullable=False)
-  rt_expires_at = Column(Integer, nullable=False, default=0)
+  refresh_token = Column(Text)
 
 
 class JWK(Model):
@@ -110,10 +87,10 @@ class AuthDB(SQLAlchemyDB):
     """
     tablesInDB = self.inspector.get_table_names()
 
-    # Token
-    if 'Token' not in tablesInDB:
+    # RefreshToken
+    if 'RefreshToken' not in tablesInDB:
       try:
-        Token.__table__.create(self.engine)  # pylint: disable=no-member
+        RefreshToken.__table__.create(self.engine)  # pylint: disable=no-member
       except Exception as e:
         return S_ERROR(e)
 
@@ -133,121 +110,58 @@ class AuthDB(SQLAlchemyDB):
 
     return S_OK()
 
-  def encryptRefreshToken(self, token, metadata):
-    """ Encrypt refresh token
+  def storeRefreshToken(self, token, tokenID=None):
+    """ Store refresh token
 
-        :param dict token: token dict
-        :param str client_id: client ID
-        :param str provider: provider name
-
-        :return: S_OK(dict)/S_ERROR()
-    """
-    for field in ['expires_at', 'client_id', 'provider']:
-      if not metadata.get(field):
-        return S_ERROR('%s field is absent in metadata.' % field)
-    # Get secret key
-    key = self.getPrivateKey()
-    if not key['OK']:
-      return key
-    # Encrypt refresh token
-    try:
-      metadata['kid'] = key['Value']['kid']
-      metadata['refresh_token'] = encrypt(token['refresh_token'], key['Value']['strkey'])
-      token['refresh_token'] = json_b64encode(metadata)
-      return S_OK(token)
-    except Exception as e:
-      self.log.exception(e)
-      return S_ERROR('Cannot encode refresh token: %s' % repr(e))
-
-  def decryptRefreshToken(self, token):
-    """ Decrypt refresh token
-
-        :param dict token: token dict
+        :param dict token: tokens as dict
+        :param str tokenID: token ID
 
         :return: S_OK(dict)/S_ERROR()
     """
-    try:
-      decoded = json.loads(urlsafe_b64decode(token['refresh_token']))
-    except Exception as e:
-      return S_ERROR('Cannot find secret key: %s' % repr(e))
-    # Get secret key by key ID
-    key = self.getPrivateKey(decoded['kid'])
-    if not key['OK']:
-      return key
-    # Decript refresh token
-    try:
-      token['refresh_token'] = decrypt(decoded['refresh_token'], key['Value']['strkey'])
-      token['expires_at'] = decoded['expires_at']
-      token['client_id'] = decoded['client_id']
-      token['provider'] = decoded['provider']
-      return S_OK(OAuth2Token(token))
-    except Exception as e:
-      self.log.exception(e)
-      return S_ERROR('Cannot decode refresh token: %s' % repr(e))
+    iat = int(time.time())
+    jti = tokenID or generate_token(10)
+    self.log.debug('Store %s token:\n' % jti, pprint.pformat(token))
 
-  def getTokenForUserProvider(self, userID, provider):
-    """ Get token for user ID and provider name
+    session = self.session()
+    try:
+      session.add(RefreshToken(jti=jti,
+                               issued_at=iat,
+                               access_token=token['access_token'],
+                               refresh_token=token.get('refresh_token')))
+    except Exception as e:
+      return self.__result(session, S_ERROR('Could not add refresh token: %s' % repr(e)))
 
-        :param str userID: user ID
-        :param str provider: provider
+    self.log.info('Token with %s ID successfully added:\n' % jti, pprint.pformat(token))
+    return S_OK(dict(jti=jti, iat=iat))
+
+  def revokeRefreshToken(self, tokenID):
+    """ Revoke refresh token
+
+        :param str tokenID: refresh token ID
+
+        :return: S_OK()/S_ERROR()
+    """
+    session = self.session()
+    try:
+      session.query(RefreshToken).filter(RefreshToken.jti == tokenID).delete()
+    except Exception as e:
+      return self.__result(session, S_ERROR(str(e)))
+    return S_OK()
+
+  def getCredentialByRefreshToken(self, tokenID):
+    """ Get refresh token credential
+
+        :param str tokenID: refresh token ID
 
         :return: S_OK(dict)/S_ERROR()
     """
     session = self.session()
     try:
-      token = session.query(Token).filter(Token.rt_expires_at > time.time()).filter(Token.user_id == userID)\
-                                  .filter(Token.provider == provider).first()
+      token = session.query(RefreshToken).filter(RefreshToken.jti == tokenID).first()
+      session.query(RefreshToken).filter(RefreshToken.jti == tokenID).delete()
     except Exception as e:
       return self.__result(session, S_ERROR(str(e)))
     return self.__result(session, S_OK(OAuth2Token(self.__rowToDict(token)) if token else None))
-
-  def updateToken(self, token, userID, provider):
-    """ Update tokens
-
-        :param dict token: token info
-        :param str userID: user ID
-        :param str provider: provider
-
-        :return: S_OK(list)/S_ERROR()
-    """
-    token['user_id'] = userID
-    token['provider'] = provider
-    try:
-      token['rt_expires_at'] = int(jwt.decode(token['refresh_token'], options=dict(verify_signature=False,
-                                                                                   verify_aud=False))['exp'])
-    except Exception as e:
-      self.log.debug('Cannot get refresh token expires time: %s' % repr(e))
-
-    token['rt_expires_at'] = int(token.get('rt_expires_at', 24 * 3600 + time.time()))
-    if token['rt_expires_at'] < time.time():
-      return S_ERROR('Cannot store expired refresh token.')
-
-    attrts = dict((k, v) for k, v in dict(token).items() if k in list(Token.__dict__.keys()))
-    self.log.debug('Store token:', pprint.pformat(attrts))
-    session = self.session()
-    try:
-      session.query(Token).filter(Token.expires_at < time.time()).delete()
-      oldTokens = session.query(Token).filter(Token.user_id == userID)\
-                                      .filter(Token.provider == provider).all()
-      session.add(Token(**attrts))
-      session.query(Token).filter(Token.user_id == userID).filter(Token.provider == provider)\
-                          .filter(Token.access_token != token['access_token']).delete()
-    except Exception as e:
-      return self.__result(session, S_ERROR('Could not add Token: %s' % repr(e)))
-    self.log.info('Token successfully added for %s user, %s provider' % (token['user_id'], token['provider']))
-    return self.__result(session, S_OK([self.__rowToDict(t) for t in oldTokens] if oldTokens else []))
-
-  def removeTokens(self):
-    """ Get active keys
-
-        :return: S_OK(list)/S_ERROR()
-    """
-    session = self.session()
-    try:
-      session.query(Token).delete()
-    except Exception as e:
-      return self.__result(session, S_ERROR(str(e)))
-    return self.__result(session, S_OK())
 
   def generateRSAKeys(self):
     """ Generate an RSA keypair with an exponent of 65537 in PEM format

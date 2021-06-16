@@ -24,7 +24,8 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAu
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Resources.IdProvider.IdProvider import IdProvider
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSRoleGroupMapping, getGroupOption, getAllGroups
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getVOMSRoleGroupMapping, getGroupOption,
+                                                               getAllGroups, wrapIDAsDN)
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 
 __RCSID__ = "$Id$"
@@ -165,17 +166,25 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       return S_ERROR(repr(e))
 
   @gRefreshToken
-  def refreshToken(self, refresh_token=None):
+  def refreshToken(self, refresh_token=None, group=None, **kwargs):
     """ Refresh token
 
         :param str token: refresh_token
+        :param str group: DIRAC group
 
         :return: dict
     """
+    if group:
+      # If group set add group scopes to request
+      result = self.getGroupScopes(group)
+      if not result['OK']:
+        return result
+      kwargs.update(dict(scope=list_to_scope(result['Value'])))
+
     if not refresh_token:
       refresh_token = self.token.get('refresh_token')
     try:
-      token = self.refresh_token(self.get_metadata('token_endpoint'), refresh_token=refresh_token)
+      token = self.refresh_token(self.get_metadata('token_endpoint'), refresh_token=refresh_token, **kwargs)
       return S_OK(OAuth2Token(dict(token)))
     except Exception as e:
       self.log.exception(e)
@@ -267,7 +276,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     self.log.debug('Token payload:', pprint.pformat(claimDict))
     credDict = {}
     credDict['ID'] = claimDict['sub']
-    credDict['DN'] = '/O=DIRAC/CN=%s' % credDict['ID']
+    credDict['DN'] = wrapIDAsDN(credDict['ID'])
     if claimDict.get('scope'):
       self.log.debug('Search groups for %s scope.' % claimDict['scope'])
       credDict['DIRACGroups'] = self.getScopeGroups(claimDict['scope'])
@@ -320,8 +329,11 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     response = result['Value']
 
     # Notify user to go to authorization endpoint
-    showURL = 'Use next link to continue, your user code is "%s"\n%s' % (response['user_code'],
-                                                                         response['verification_uri'])
+    if response.get('verification_uri_complete'):
+      showURL = 'Use next link to continue"\n%s' % response['verification_uri_complete']
+    else:
+      showURL = 'Use next link to continue, your user code is "%s"\n%s' % (response['user_code'],
+                                                                           response['verification_uri'])
     self.log.notice(showURL)
     try:
       return self.waitFinalStatusOfDeviceCodeAuthorizationFlow(response['device_code'])

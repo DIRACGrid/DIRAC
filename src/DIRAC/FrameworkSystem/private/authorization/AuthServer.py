@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import re
 import sys
 import time
 import pprint
@@ -10,11 +11,13 @@ import logging
 from dominate import document, tags as dom
 from tornado.template import Template
 
+from authlib.jose import jwt
 from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.base import OAuth2Error
+from authlib.common.security import generate_token
 from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
-from authlib.oauth2.rfc6749.util import scope_to_list
+from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
 from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
@@ -29,9 +32,10 @@ from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata, isDownloadablePersonalProxy
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getUsernameForDN, getEmailsForGroup,
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getUsernameForDN, getEmailsForGroup, wrapIDAsDN,
                                                                getDNForUsername, getIdPForGroup)
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import TokenManagerClient
 
 log = logging.getLogger('authlib')
 log.addHandler(logging.StreamHandler(sys.stdout))
@@ -40,7 +44,13 @@ log = gLogger.getSubLogger(__name__)
 
 
 def collectMetadata(issuer=None):
-  """ Collect metadata """
+  """ Collect metadata for DIRAC Authorization Server(DAS), a metadata format defines by IETF specification:
+      https://datatracker.ietf.org/doc/html/rfc8414#section-2
+  
+      :param str issuer: issuer to set
+  
+      :return: dict -- dictionary is the AuthorizationServerMetadata object in the same time
+  """
   result = getAuthorizationServerMetadata(issuer)
   if not result['OK']:
     raise Exception('Cannot prepare authorization server metadata. %s' % result['Message'])
@@ -55,11 +65,12 @@ def collectMetadata(issuer=None):
                                        'urn:ietf:params:oauth:grant-type:device_code']
   metadata['response_types_supported'] = ['code', 'device', 'token']
   metadata['code_challenge_methods_supported'] = ['S256']
+  metadata['scopes_supported'] = ['g:', 'proxy', 'lifetime:']
   return AuthorizationServerMetadata(metadata)
 
 
 class AuthServer(_AuthorizationServer):
-  """ Implementation of :class:`authlib.oauth2.rfc6749.AuthorizationServer`.
+  """ Implementation of the :class:`authlib.oauth2.rfc6749.AuthorizationServer`.
 
       Initialize::
 
@@ -67,11 +78,13 @@ class AuthServer(_AuthorizationServer):
   """
   css = {}
   LOCATION = None
+  REFRESH_TOKEN_EXPIRES_IN = 24 * 3600
 
   def __init__(self):
     self.db = AuthDB()
-    # self.__tokenDB = TokenDB()
+    self.log = log
     self.proxyCli = ProxyManagerClient()
+    self.tokenCli = TokenManagerClient()
     self.idps = IdProviderFactory()
     # Privide two authlib methods query_client and save_token
     _AuthorizationServer.__init__(self, query_client=getDIACClientByID, save_token=lambda x, y: None)
@@ -92,7 +105,7 @@ class AuthServer(_AuthorizationServer):
   def getSession(self, session):
     self.db.getSession(session)
 
-  def __getScope(self, scope, param):
+  def _getScope(self, scope, param):
     """ Get parameter scope
 
         :param str scope: scope
@@ -109,24 +122,28 @@ class AuthServer(_AuthorizationServer):
                            expires_in=None, include_refresh_token=True):
     """ Generate proxy or tokens after authorization
     """
-    group = self.__getScope(scope, 'g')
-    lifetime = self.__getScope(scope, 'lifetime')
+    group = self._getScope(scope, 'g')
+    lifetime = self._getScope(scope, 'lifetime')
     provider = getIdPForGroup(group)
+
+    # Search DIRAC username
+    result = getUsernameForDN(wrapIDAsDN(user))
+    if not result['OK']:
+      raise Exception(result['Message'])
+    userName = result['Value']
 
     if 'proxy' in scope_to_list(scope):
       # Try to return user proxy if proxy scope present in the authorization request
       if not isDownloadablePersonalProxy():
         raise Exception("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
-      gLogger.debug('Try to query %s@%s proxy%s' % (user, group, ('with lifetime:%s' % lifetime) if lifetime else ''))
-      result = getUsernameForDN('/O=DIRAC/CN=%s' % user)
-      if result['OK']:
-        result = getDNForUsername(result['Value'])
+      self.log.debug('Try to query %s@%s proxy%s' % (user, group, ('with lifetime:%s' % lifetime) if lifetime else ''))
+      result = getDNForUsername(userName)
       if not result['OK']:
         raise Exception(result['Message'])
       userDNs = result['Value']
       err = []
       for dn in userDNs:
-        gLogger.debug('Try to get proxy for %s' % dn)
+        self.log.debug('Try to get proxy for %s' % dn)
         if lifetime:
           result = self.proxyCli.downloadProxy(dn, group, requiredTimeLeft=int(lifetime))
         else:
@@ -134,7 +151,7 @@ class AuthServer(_AuthorizationServer):
         if not result['OK']:
           err.append(result['Message'])
         else:
-          gLogger.info('Proxy was created.')
+          self.log.info('Proxy was created.')
           result = result['Value'].dumpAllToString()
           if not result['OK']:
             raise Exception(result['Message'])
@@ -142,32 +159,58 @@ class AuthServer(_AuthorizationServer):
       raise Exception('; '.join(err))
 
     else:
-      # Get identity provider
-      result = self.idps.getIdProvider(provider)
-      if result['OK']:
-        idpObj = result['Value']
-        # Get actual token from storage
-        result = self.db.getTokenForUserProvider(user, provider)
-        if result['OK']:
-          idpObj.token = result['Value']
-          # Try to refresh it if expired
-          if idpObj.token.is_expired():
-            result = idpObj.refreshToken()
-            if result['OK']:
-              result = self.db.updateToken(idpObj.token, user, provider)
-            if not result['OK']:
-              raise OAuth2Error(result['Message'])
-          # Ask identity provider tokens with needed group scopes
-          result = idpObj.exchangeGroup(group)
-          if result['OK']:
-            token = result['Value']
-            # Encrypt refresh token
-            result = self.db.encryptRefreshToken(token, dict(provider=idpObj.name,
-                                                             client_id=client.get_client_id(),
-                                                             expires_at=12 * 3600 + time.time()))
+      # Ask TokenManager to generate new tokens for user
+      result = self.tokenCli.getToken(userName, group)
+      if not result['OK']:
+        raise OAuth2Error(result['Message'])
+      token = result['Value']
+
+      # Wrap the refresh token and register it to protect against reuse
+      result = self.registerRefreshToken(dict(sub=user, scope=scope, provider=provider,
+                                              azp=client.get_client_id()), token)
       if not result['OK']:
         raise OAuth2Error(result['Message'])
       return result['Value']
+
+  def __signToken(self, payload):
+    """ Sign token
+
+        :param dict payload: payload
+
+        :return: S_OK(str)/S_ERROR()
+    """
+    result = self.db.getPrivateKey()
+    if not result['OK']:
+      return result
+    key = result['Value']['rsakey']
+    kid = result['Value']['kid']
+    try:
+      return S_OK(jwt.encode(dict(alg='RS256', kid=kid), payload, key))
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR(repr(e))
+    
+  def registerRefreshToken(self, payload, token):
+    """ Register refresh token to protect it from reuse
+
+        :param dict payload: payload
+        :param dict token: token as a dictionary
+
+        :return: S_OK(dict)S_ERROR()
+    """
+    result = self.db.storeRefreshToken(token, payload.get('jti'))
+    if result['OK']:
+      payload.update(result['Value'])
+      result = self.__signToken(payload)
+    if not result['OK']:
+      if token.get('refresh_token'):
+        prov = self.idps.getIdProvider(payload['provider'])
+        if prov['OK']:
+          prov['Value'].revokeToken(token['refresh_token'])
+          prov['Value'].revokeToken(token['access_token'], 'access_token')
+      return result
+    token['refresh_token'] = result['Value']
+    return S_OK(token)
 
   def getIdPAuthorization(self, providerName, request):
     """ Submit subsession and return dict with authorization url and session number
@@ -186,7 +229,7 @@ class AuthServer(_AuthorizationServer):
     session['Provider'] = providerName
     session['mainSession'] = request if isinstance(request, dict) else request.toDict()
 
-    gLogger.verbose('Redirect to', authURL)
+    self.log.verbose('Redirect to', authURL)
     return self.handle_response(302, {}, [("Location", authURL)], session)
 
   def parseIdPAuthorizationResponse(self, response, session):
@@ -200,7 +243,7 @@ class AuthServer(_AuthorizationServer):
         :return: S_OK(dict)/S_ERROR()
     """
     providerName = session.pop('Provider')
-    gLogger.debug('Try to parse authentification response from %s:\n' % providerName, pprint.pformat(response))
+    self.log.debug('Try to parse authentification response from %s:\n' % providerName, pprint.pformat(response))
     # Parse response
     result = self.idps.getIdProvider(providerName)
     if not result['OK']:
@@ -214,7 +257,7 @@ class AuthServer(_AuthorizationServer):
     # As a result of authentication we will receive user credential dictionary
     credDict = result['Value']
 
-    gLogger.debug("Read profile:", pprint.pformat(credDict))
+    self.log.debug("Read profile:", pprint.pformat(credDict))
     # Is ID registred?
     result = getUsernameForDN(credDict['DN'])
     if not result['OK']:
@@ -230,15 +273,8 @@ class AuthServer(_AuthorizationServer):
     # Update token for user. This token will be stored separately in the database and
     # updated from time to time. This token will never be transmitted,
     # it will be used to make exchange token requests.
-    result = self.db.updateToken(idpObj.token, credDict['ID'], idpObj.name)
-    if not result['OK']:
-      return result
-
-    # Revoke old tokens
-    for oldToken in result['Value']:
-      idpObj.revokeToken(oldToken.get('refresh_token'))
-
-    return S_OK(credDict)
+    result = self.tokenCli.updateToken(idpObj.token, credDict['ID'], idpObj.name)
+    return S_OK(credDict) if result['OK'] else result
 
   def get_error_uris(self, request):
     error_uris = self.config.get('error_uris')
@@ -246,21 +282,27 @@ class AuthServer(_AuthorizationServer):
       return dict(error_uris)
 
   def create_oauth2_request(self, request, method_cls=OAuth2Request, use_json=False):
-    gLogger.debug('Create OAuth2 request', 'with json' if use_json else '')
+    self.log.debug('Create OAuth2 request', 'with json' if use_json else '')
     return createOAuth2Request(request, method_cls, use_json)
 
   def create_json_request(self, request):
     return self.create_oauth2_request(request, HttpRequest, True)
+
+  def validate_requested_scope(self, scope, state=None):
+    """ See :func:`authlib.oauth2.rfc6749.authorization_server.validate_requested_scope` """
+    # We also consider parametric scope containing ":" charter
+    extended_scope = list_to_scope([re.sub(r':.*$', ':', s) for s in scope_to_list(scope or '')])
+    super(AuthServer, self).validate_requested_scope(extended_scope, state)
 
   def handle_error_response(self, request, error):
     return self.handle_response(*error(translations=self.get_translations(request),
                                        error_uris=self.get_error_uris(request)), error=True)
 
   def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, error=None, **actions):
-    gLogger.debug('Handle authorization response with %s status code:' % status_code, payload)
-    gLogger.debug('Headers:', headers)
+    self.log.debug('Handle authorization response with %s status code:' % status_code, payload)
+    self.log.debug('Headers:', headers)
     if newSession:
-      gLogger.debug('newSession:', newSession)
+      self.log.debug('newSession:', newSession)
     return S_OK([[status_code, headers, payload, newSession, error], actions])
 
   def create_authorization_response(self, response, username):
@@ -283,9 +325,9 @@ class AuthServer(_AuthorizationServer):
       return 'Use GET method to access this endpoint.'
     try:
       req = self.create_oauth2_request(request)
-      gLogger.info('Validate consent request for', req.state)
+      self.log.info('Validate consent request for', req.state)
       grant = self.get_authorization_grant(req)
-      gLogger.debug('Use grant:', grant)
+      self.log.debug('Use grant:', grant)
       grant.validate_consent_request()
       if not hasattr(grant, 'prompt'):
         grant.prompt = None
@@ -376,7 +418,7 @@ class AuthServer(_AuthorizationServer):
     for addresses in getEmailsForGroup('dirac_admin'):
       result = NotificationClient().sendMail(addresses, mail['subject'], mail['body'], localAttempt=False)
       if not result['OK']:
-        gLogger.error(result['Message'])
+        self.log.error(result['Message'])
     if result['OK']:
-      gLogger.info(result['Value'], "administrators have been notified about a new user.")
+      self.log.info(result['Value'], "administrators have been notified about a new user.")
     return result

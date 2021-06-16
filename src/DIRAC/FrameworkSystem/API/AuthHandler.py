@@ -1,4 +1,10 @@
 """ This handler basically provides a REST interface to interact with the OAuth 2 authentication server
+
+    .. literalinclude:: ../ConfigTemplate.cfg
+      :start-after: ##BEGIN Auth:
+      :end-before: ##END
+      :dedent: 2
+      :caption: Auth options
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -19,10 +25,9 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
+from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
-from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
-from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 __RCSID__ = "$Id$"
 
@@ -96,57 +101,41 @@ class AuthHandler(TornadoREST):
                href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
       dom.style(self.CSS)
 
-  def _parseDIRACResult(self, result):
-    """ Here the result which returns handle_response is processed
+  def _finishFuture(self, retVal):
+    """ Handler Future result
+
+        :param object retVal: tornado.concurrent.Future
     """
-    if not result['OK']:
-      # If response error is DIRAC server error, not OAuth2 flow error
-      self.removeSession()
-      self.set_status(400)
-      self.write({'error': 'server_error',
-                  'description': '%s:\n%s' % (result['Message'], '\n'.join(result['CallStack']))})
+    self.result = retVal.result()
+
+    # Is it S_OK or S_ERROR?
+    r = self.result
+    if isinstance(r, dict) and isinstance(r.get('OK'), bool) and ('Value' if r['OK'] else 'Message') in r:
+      if not self.result['OK']:
+        # S_ERROR is interpreted in the OAuth2 error format.
+        self.set_status(400)
+        self.write({'error': 'server_error', 'description': self.result['Message']})
+        self.clear_cookie('auth_session')
+        self.log.error('%s\n' % self.result['Message'], ''.join(self.result['CallStack']))
+      else:
+        # Successful responses and OAuth2 errors are processed here
+        status_code, headers, payload, new_session, error = self.result['Value'][0]
+        if status_code:
+          self.set_status(status_code)
+        if headers:
+          for key, value in headers:
+            self.set_header(key, value)
+        if payload:
+          self.write(payload)
+        if new_session:
+          self.set_secure_cookie('auth_session', json.dumps(new_session), secure=True, httponly=True)
+        if error:
+          self.clear_cookie('auth_session')
+        for method, args_kwargs in self.result['Value'][1].items():
+          eval('self.%s' % method)(*args_kwargs[0], **args_kwargs[1])
+      self.finish()
     else:
-      # Successful responses and OAuth2 errors are processed here
-      status_code, headers, payload, new_session, error = result['Value'][0]
-      if status_code:
-        self.set_status(status_code)
-      if headers:
-        for key, value in headers:
-          self.set_header(key, value)
-      if payload:
-        self.write(payload)
-      if new_session:
-        self.saveSession(new_session)
-      if error:
-        self.removeSession()
-      for method, args_kwargs in result['Value'][1].items():
-        eval('self.%s' % method)(*args_kwargs[0], **args_kwargs[1])
-
-  def saveSession(self, session):
-    """ Save session to cookie
-
-        :param dict session: session
-    """
-    self.set_secure_cookie('auth_session', json.dumps(session), secure=True, httponly=True)
-
-  def removeSession(self):
-    """ Remove session from cookie """
-    self.clear_cookie('auth_session')
-
-  def getSession(self, state=None, **kw):
-    """ Get session from cookie
-
-        :param str state: state
-
-        :return: dict
-    """
-    try:
-      session = json.loads(self.get_secure_cookie('auth_session'))
-      checkState = (session['state'] == state) if state else None
-      checkOption = (session[kw.items()[0][0]] == kw.items()[0][0]) if kw else None
-    except Exception as e:
-      return None
-    return session if (checkState or checkOption) else None
+      super(AuthHandler, self)._finishFuture(retVal)
 
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
 
@@ -191,7 +180,7 @@ class AuthHandler(TornadoREST):
           }
     """
     if self.request.method == "GET":
-      return dict(self.server.metadata)
+      return self.server.metadata
 
   def web_jwk(self):
     """ JWKs endpoint
@@ -267,11 +256,7 @@ class AuthHandler(TornadoREST):
             ]
           }
     """
-    # Token verification
-    # token = ResourceProtector().acquire_token(self.request, '')
-    # return {'sub': token.sub, 'issuer': token.issuer, 'group': token.groups[0]}
-    userinfo = self.getRemoteCredentials()
-    return userinfo
+    return self.getRemoteCredentials()
 
   path_device = ['([A-z0-9-_]*)']
 
@@ -426,7 +411,12 @@ class AuthHandler(TornadoREST):
       return self.server.handle_error_response(state, error)
 
     # Check current auth session that was initiated for the selected external identity provider
-    sessionWithExtIdP = self.getSession(state)
+    try:
+      session = json.loads(self.get_secure_cookie('auth_session'))
+    except Exception:
+      session = {}
+
+    sessionWithExtIdP = session if state and (session.get('state') == state) else None
     if not sessionWithExtIdP:
       return S_ERROR("%s session is expired." % state)
 
