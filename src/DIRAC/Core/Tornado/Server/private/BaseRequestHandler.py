@@ -17,6 +17,7 @@ from datetime import datetime
 from six import string_types
 from six.moves import http_client
 from six.moves.urllib.parse import unquote
+from functools import partial
 
 import tornado
 from tornado import gen
@@ -27,6 +28,7 @@ from tornado.concurrent import Future
 import DIRAC
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -99,12 +101,12 @@ class BaseRequestHandler(RequestHandler):
             '''
             # Execute the method in an executor (basically a separate thread)
             # Because of that, we cannot calls certain methods like `self.write`
-            # in _executeMethod. This is because these methods are not threadsafe
+            # in __executeMethod. This is because these methods are not threadsafe
             # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
             # However, we can still rely on instance attributes to store what should
             # be sent back (reminder: there is an instance
             # of this class created for each request)
-            retVal = yield IOLoop.current().run_in_executor(None, self._executeMethod, args)
+            retVal = yield IOLoop.current().run_in_executor(self._prepareExecutor(args))
             # retVal is :py:class:`tornado.concurrent.Future`
             self._finishFuture(retVal)
 
@@ -207,13 +209,14 @@ class BaseRequestHandler(RequestHandler):
 
         :return: dict
     """
+    gLogger.warn('Service information will not be collected because the _getServiceInfo method is not defined.')
     return {}
 
   @classmethod
   def __loadIdPs(cls):
     """ Load identity providers that will be used to verify tokens
     """
-    gLogger.info('Load identit providers..')
+    gLogger.info('Load identity providers..')
     # Research Identity Providers
     result = getProvidersForInstance('Id')
     if result['OK']:
@@ -227,7 +230,7 @@ class BaseRequestHandler(RequestHandler):
   def __initializeService(cls, request):
     """
       Initialize a service.
-      The work is only perform once at the first request.
+      The work is only performed once at the first request.
 
       :param object request: tornado Request
 
@@ -356,7 +359,7 @@ class BaseRequestHandler(RequestHandler):
   def _getMethodAuthProps(self):
     """ Resolves the hard coded authorization requirements for method.
 
-        :return: object
+        :return: list
     """
     try:
       return getattr(self, 'auth_' + self.method)
@@ -366,15 +369,19 @@ class BaseRequestHandler(RequestHandler):
       return self.AUTH_PROPS
 
   def _getMethod(self):
-    """ Get method object.
+    """ Get method function to call.
 
-        :return: object
+        :return: function
     """
     try:
-      return getattr(self, '%s%s' % (self.METHOD_PREFIX, self.method))
+      method = getattr(self, '%s%s' % (self.METHOD_PREFIX, self.method))
     except AttributeError as e:
       sLog.error("Invalid method", self.method)
       raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
+    if not callable(method):
+      sLog.error("Invalid method", self.method)
+      raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
+    return method
 
   def prepare(self):
     """
@@ -428,7 +435,7 @@ class BaseRequestHandler(RequestHandler):
       raise HTTPError(status_code=http_client.UNAUTHORIZED)
 
   @gen.coroutine
-  def _executeMethod(self, args):
+  def __executeMethod(self, targetMethod, args):
     """
       Execute the method called, this method is ran in an executor
       We have several try except to catch the different problem which can occur
@@ -439,6 +446,11 @@ class BaseRequestHandler(RequestHandler):
       .. warning::
         This method is called in an executor, and so cannot use methods like self.write
         See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
+
+      :param str targetMethod: name of the method to call
+      :param list args: target method arguments
+
+      :return: Future
     """
 
     sLog.notice(
@@ -447,35 +459,49 @@ class BaseRequestHandler(RequestHandler):
          self._serviceName,
          self.method))
 
-    # getting method
-    method = self._getMethod()
-    methodArgs = self._getMethodArgs(args)
-
     # Execute
     try:
       self.initializeRequest()
-      retVal = method(*methodArgs)
+      retVal = targetMethod(*args)
     except Exception as e:  # pylint: disable=broad-except
       sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
       raise HTTPError(http_client.INTERNAL_SERVER_ERROR)
 
     return retVal
 
+  def _prepareExecutor(self, args):
+    """ Preparation of necessary arguments for the `__executeMethod` method
+
+        :param list args: arguments passed to the `post`, `get`, etc. tornado methods
+
+        :return: executor, target method with arguments
+    """
+    return None, partial(self.__executeMethod, self._getMethod(), self._getMethodArgs(args))
+
   def _finishFuture(self, retVal):
     """ Handler Future result
 
         :param object retVal: tornado.concurrent.Future
     """
-    # Wait result only if it's a Future object
-    self.result = retVal.result() if isinstance(retVal, Future) else retVal
+    # Wait result of a Future object
+    self.result = retVal.result()
 
-    # Here it is safe to write back to the client, because we are not
-    # in a thread anymore
+    # Here it is safe to write back to the client, because we are not in a thread anymore
 
-    # Is it S_OK or S_ERROR?
-    r = self.result
-    if isinstance(r, dict) and isinstance(r.get('OK'), bool) and ('Value' if r['OK'] else 'Message') in r:
-      self._parseDIRACResult(self.result)
+    # If you need to end the method using tornado methods, outside the thread,
+    # you need to define the finish_<methodName> method. 
+    # This method will be started after __executeMethod is completed.
+    try:
+      finishFunc = eval('self.finish_%s' % self.method)
+    except (NameError, AttributeError):
+      finishFunc = None
+
+    if callable(finishFunc):
+      finishFunc()
+
+    # In case nothing is returned
+    elif self.result is None:
+      self.finish()
 
     # If set to true, do not JEncode the return of the RPC call
     # This is basically only used for file download through
@@ -483,25 +509,16 @@ class BaseRequestHandler(RequestHandler):
     elif self.get_argument('rawContent', default=False):
       # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
       self.set_header("Content-Type", "application/octet-stream")
-      self.write(self.result)
+      self.finish(self.result)
 
     # Return simple text or html
     elif isinstance(self.result, string_types):
-      self.write(self.result)
+      self.finish(self.result)
 
     # JSON
-    elif isinstance(self.result, dict):
+    else:
       self.set_header("Content-Type", "application/json")
-      self.write(encode(self.result))
-
-    self.finish()
-
-  def _parseDIRACResult(self, result):
-    """ Processing of a standard DIRAC result,
-        but in a separate method so that it can be modified for another class if necessary
-    """
-    self.set_header("Content-Type", "application/json")
-    self.write(encode(result))
+      self.finish(encode(self.result))
 
   def on_finish(self):
     """
@@ -541,7 +558,7 @@ class BaseRequestHandler(RequestHandler):
 
     for a in grants:
       grant = a.upper()
-      grantFunc = eval('self._authz%s' % grant)
+      grantFunc = getattr(self, '_authz%s' % grant)
       if not callable(grantFunc):
         raise Exception('%s authentication type is not supported.' % grant)
       result = grantFunc()
@@ -574,7 +591,7 @@ class BaseRequestHandler(RequestHandler):
       chainAsTextEncoded = self.request.headers.get('X-SSL-CERT')
       chainAsText = unquote(chainAsTextEncoded)
     else:
-      return S_ERROR('Not found a valide client certificate.')
+      return S_ERROR(DErrno.ECERTFIND, 'Valid certificate not found.')
 
     peerChain.loadChainFromString(chainAsText)
 
@@ -603,10 +620,10 @@ class BaseRequestHandler(RequestHandler):
       # Export token from headers
       token = self.request.headers.get('Authorization')
       if not token or len(token.split()) != 2:
-        return S_ERROR('Not found a bearer access token.')
+        return S_ERROR(DErrno.EATOKENFIND, 'Not found a bearer access token.')
       tokenType, accessToken = token.split()
       if tokenType.lower() != 'bearer':
-        return S_ERROR('Found a not bearer access token.')
+        return S_ERROR(DErrno.ETOKENTYPE, 'Found a not bearer access token.')
 
     # Read token without verification to get issuer
     self.log.debug('Read issuer from access token', accessToken)

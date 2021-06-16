@@ -25,7 +25,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.JEncode import decode, encode
-from DIRAC.Core.Tornado.Server.BaseRequestHandler import BaseRequestHandler
+from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import BaseRequestHandler
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 sLog = gLogger.getSubLogger(__name__)
@@ -390,7 +390,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
     # However, we can still rely on instance attributes to store what should
     # be sent back (reminder: there is an instance
     # of this class created for each request)
-    retVal = yield IOLoop.current().run_in_executor(None, self._executeMethod, args)
+    retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
 
     # retVal is :py:class:`tornado.concurrent.Future`
     self._finishFuture(retVal)

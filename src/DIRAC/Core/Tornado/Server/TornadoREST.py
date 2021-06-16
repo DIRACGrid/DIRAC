@@ -19,7 +19,7 @@ import DIRAC
 
 from DIRAC import gLogger, S_OK
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Tornado.Server.BaseRequestHandler import BaseRequestHandler
+from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import BaseRequestHandler
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -96,7 +96,9 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     return "%s/Authorization" % PathFinder.getAPISection(endpointName)
 
   def _getMethodName(self):
-    """ Parse method name.
+    """ Parse method name. By default we read the first section in the path
+        following the coincidence with the value of `LOCATION`.
+        If such a method is not defined, then try to use the `index` method.
 
         :return: str
     """
@@ -107,15 +109,14 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
       gLogger.warn('%s method not implemented. Use the index method to handle this.' % method)
       return 'index'
     else:
-      raise NotImplementedError('%s method not implemented. \
-                                You can use the index method to handle this.' % method)
+      raise NotImplementedError('%s method not implemented. You can use the index method to handle this.' % method)
 
   @gen.coroutine
   def get(self, *args, **kwargs):  # pylint: disable=arguments-differ
     """ Method to handle incoming ``GET`` requests.
         Note that all the arguments are already prepared in the :py:meth:`.prepare` method.
     """
-    retVal = yield IOLoop.current().run_in_executor(None, self._executeMethod, args)
+    retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
     self._finishFuture(retVal)
 
   @gen.coroutine
@@ -123,7 +124,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     """ Method to handle incoming ``POST`` requests.
         Note that all the arguments are already prepared in the :py:meth:`.prepare` method.
     """
-    retVal = yield IOLoop.current().run_in_executor(None, self._executeMethod, args)
+    retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
     self._finishFuture(retVal)
 
   auth_echo = ['all']
@@ -138,8 +139,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
   auth_whoami = ['authenticated']
 
   def web_whoami(self):
-    """
-      A simple whoami, returns all credential dictionary, except certificate chain object.
+    """ A simple whoami, returns all credential dictionary, except certificate chain object.
     """
     credDict = self.srv_getRemoteCredentials()
     if 'x509Chain' in credDict:
