@@ -1,5 +1,5 @@
 =============================
-Production Monitor
+Transformation Monitor
 =============================
 
   This is part of DIRAC Web Portal project. For the description of the DIRAC Web Portal basic functionality look here.
@@ -16,7 +16,9 @@ Production Monitor
 Description
 ===========
 
-  Production Monitoring, provide information about Productions managed by the DIRAC ***Workload Management System***. It shows details of the selected production and allows users to refine certain selections.
+Transformation Monitoring provides information about Productions managed by the DIRAC **Workload Management System**
+and data replication/removals managed by the DIRAC **Data Management System**.
+It shows details of the selected production and allows users to refine certain selections.
 
 
 Selectors
