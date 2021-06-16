@@ -10,7 +10,6 @@ import os
 import six
 import time
 import psutil
-import six
 
 import DIRAC
 
