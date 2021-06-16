@@ -54,7 +54,6 @@ class MatcherTestCase(ClientsTestCase):
     resourceDescription = {'Architecture': 'x86_64-slc6',
                            'CEQueue': 'jenkins-queue_not_important',
                            'CPUNormalizationFactor': '9.5',
-                           'CPUScalingFactor': '9.5',
                            'CPUTime': 1080000,
                            'CPUTimeLeft': 5000,
                            'DIRACVersion': 'v8r0p1',

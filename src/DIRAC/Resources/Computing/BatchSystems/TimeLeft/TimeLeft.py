@@ -32,13 +32,9 @@ class TimeLeft(object):
     """ Standard constructor
     """
     self.log = gLogger.getSubLogger('TimeLeft')
-    # This is the ratio SpecInt published by the site over 250 (the reference used for Matching)
-    self.scaleFactor = gConfig.getValue('/LocalSite/CPUScalingFactor', 0.0)
-    if not self.scaleFactor:
-      self.log.warn('/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName())
 
-    self.normFactor = gConfig.getValue('/LocalSite/CPUNormalizationFactor', 0.0)
-    if not self.normFactor:
+    self.cpuPower = gConfig.getValue('/LocalSite/CPUNormalizationFactor', 0.0)
+    if not self.cpuPower:
       self.log.warn('/LocalSite/CPUNormalizationFactor not defined for site %s' % DIRAC.siteName())
 
     result = self.__getBatchSystemPlugin()
@@ -50,10 +46,10 @@ class TimeLeft(object):
 
   def getScaledCPU(self, processors=1):
     """ Returns the current CPU Time spend (according to batch system) scaled according
-        to /LocalSite/CPUScalingFactor
+        to /LocalSite/CPUNormalizationFactor
     """
     # Quit if no scale factor available
-    if not self.scaleFactor:
+    if not self.cpuPower:
       return 0
 
     # Quit if Plugin is not available
@@ -64,10 +60,10 @@ class TimeLeft(object):
 
     if 'Value' in resourceDict:
       if resourceDict['Value'].get('CPU'):
-        return resourceDict['Value']['CPU'] * self.scaleFactor
+        return resourceDict['Value']['CPU'] * self.cpuPower
       elif resourceDict['Value'].get('WallClock'):
         # When CPU value missing, guess from WallClock and number of processors
-        return resourceDict['Value']['WallClock'] * self.scaleFactor * processors
+        return resourceDict['Value']['WallClock'] * self.cpuPower * processors
 
     return 0
 
@@ -75,9 +71,9 @@ class TimeLeft(object):
     """ Returns the CPU Time Left for supported batch systems.
         The CPUConsumed is the current raw total CPU.
     """
-    # Quit if no scale factor available
-    if not self.scaleFactor:
-      return S_ERROR('/LocalSite/CPUScalingFactor not defined for site %s' % DIRAC.siteName())
+    # Quit if no norm factor available
+    if not self.cpuPower:
+      return S_ERROR('/LocalSite/CPUNormalizationFactor not defined for site %s' % DIRAC.siteName())
 
     if not self.batchPlugin:
       return S_ERROR(self.batchError)
@@ -120,7 +116,7 @@ class TimeLeft(object):
       time = cpu
       timeLimit = cpuLimit
 
-    if time and cpuConsumed > 3600. and self.normFactor:
+    if time and cpuConsumed > 3600. and self.cpuPower:
       # If there has been more than 1 hour of consumed CPU and
       # there is a Normalization set for the current CPU
       # use that value to renormalize the values returned by the batch system
@@ -128,16 +124,13 @@ class TimeLeft(object):
       # cpuLimit and cpu may be in the units of the batch system, not real seconds...
       # (in this case the other case won't work)
       # therefore renormalise it using cpuConsumed (which is in real seconds)
-      cpuWorkLeft = (timeLimit - time) * self.normFactor * cpuConsumed / time
-    elif self.normFactor:
+      cpuWorkLeft = (timeLimit - time) * self.cpuPower * cpuConsumed / time
+    else:
       # FIXME: this is always used by the watchdog... Also used by the JobAgent
       #        if consumed less than 1 hour of CPU
       # It was using self.scaleFactor but this is inconsistent: use the same as above
       # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
-      cpuWorkLeft = (timeLimit - time) * self.normFactor
-    else:
-      # Last resort recovery...
-      cpuWorkLeft = (timeLimit - time) * self.scaleFactor
+      cpuWorkLeft = (timeLimit - time) * self.cpuPower
 
     self.log.verbose('Remaining CPU in normalized units is: %.02f' % timeLeft)
     return S_OK(cpuWorkLeft)

@@ -88,8 +88,7 @@ def test_getScaledCPU(mocker, batch, requiredVariables, returnValue, expected):
   res = tl.getScaledCPU()
   assert res == 0
 
-  tl.scaleFactor = 5.0
-  tl.normFactor = 5.0
+  tl.cpuPower = 5.0
 
   batchSystemName = '%sResourceUsage' % batch
   batchSystemPath = 'DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s' % batchSystemName
@@ -133,8 +132,7 @@ def test_getTimeLeft(mocker, batch, requiredVariables, returnValue, expected_1, 
 
   batchStr = 'batchPlugin.%s()' % (batchSystemName)
   tl.batchPlugin = eval(batchStr)
-  tl.scaleFactor = 10.0
-  tl.normFactor = 10.0
+  tl.cpuPower = 10.0
 
   # Update attributes of the batch systems to get scaled CPU
   tl.batchPlugin.__dict__.update(requiredVariables)
