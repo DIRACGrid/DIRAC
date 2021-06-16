@@ -125,6 +125,8 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     self.assertEquals(self.restartAgent.accounting, {})
     self.assertEquals(self.restartAgent.errors, [])
 
+  @patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock())
+  @patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection', new=MagicMock())
   def test_get_running_instances(self):
     """Test for the getRunningInstances function."""
     self.restartAgent.sysAdminClient.getOverallStatus = MagicMock()
@@ -571,6 +573,11 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     for i in [1, 3]:
       newurls.append('%(prot)s://%(host)s:%(port)s/Sys/Serv%(i)s' % dict(i=i, host=host, port=port[i], prot=prot[i]))
 
+    def mockComponentSection(*args, **_kwargs):
+      """Mock the PathFinder.getComponentSection to return individual componentSections."""
+      fullComponentName = args[0]
+      return "/Systems/Sys/Production/Services/" + fullComponentName
+
     def gVal(*args, **_kwargs):
       """Mock getValue."""
       if 'Tornado' in args[0]:
@@ -599,7 +606,9 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     self.restartAgent.sysAdminClient.getOverallStatus.return_value = S_OK(services)
 
     with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=gConfigMock), \
-            patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.socket.gethostname', return_value=host):
+            patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.socket.gethostname', return_value=host), \
+            patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
+                  side_effect=mockComponentSection):
       res = self.restartAgent.checkURLs()
     self.assertTrue(res['OK'])
     self.restartAgent.csAPI.modifyValue.assert_has_calls([call('/Systems/Sys/Production/URLs/Serv', ','.join(tempurls)),

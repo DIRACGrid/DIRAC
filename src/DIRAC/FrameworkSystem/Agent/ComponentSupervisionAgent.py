@@ -212,12 +212,8 @@ class ComponentSupervisionAgent(AgentModule):
           if runitStatus != 'All' and componentInfo['RunitStatus'] != runitStatus:
             continue
           for option, default in (('PollingTime', HOUR), ('Port', None), ('Protocol', None)):
-            registeredComponentOption = self._getComponentOption(
-                instanceType, system, componentName, option
-            )
-            runningComponents[componentName][option] = (
-                registeredComponentOption if registeredComponentOption else default
-            )
+            runningComponents[componentName][option] = self._getComponentOption(instanceType, system, componentName,
+                                                                                option, default)
             # remove empty values so we can use defaults in _getURL
             if not runningComponents[componentName][option]:
               runningComponents[componentName].pop(option)
@@ -230,19 +226,16 @@ class ComponentSupervisionAgent(AgentModule):
 
     return S_OK(runningComponents)
 
-  def _getComponentOption(self, instanceType, system, componentName, option):
+  def _getComponentOption(self, instanceType, system, componentName, option, default):
     """Get component option from DIRAC CS, using components' base classes methods."""
     fullComponentName = os.path.join(system, componentName)
-    componentPath = getattr(PathFinder, 'get' + instanceType.rstrip('s') + 'Section')(fullComponentName)
-    if instanceType == 'Agents':
-      componentLoadModule = gConfig.getValue(
-          os.path.join(componentPath, 'Module'), componentName
-      )
-      fullComponentLoadName = os.path.join(system, componentLoadModule)
-      am = AgentModule(fullComponentName, fullComponentLoadName)
-      return am.am_getOption(option)
-    else:
-      return gConfig.getValue(os.path.join(componentPath, option))
+    componentPath = PathFinder.getComponentSection(fullComponentName, False, self.setup, instanceType)
+    if instanceType != 'Agents':
+      return gConfig.getValue(os.path.join(componentPath, option), default)
+    # deal with agent configuration
+    componentLoadModule = gConfig.getValue(os.path.join(componentPath, 'Module'), componentName)
+    fullComponentLoadName = os.path.join(system, componentLoadModule)
+    return AgentModule(fullComponentName, fullComponentLoadName).am_getOption(option, default)
 
   def on_terminate(self, componentName, process):
     """Execute callback when a process terminates gracefully."""
