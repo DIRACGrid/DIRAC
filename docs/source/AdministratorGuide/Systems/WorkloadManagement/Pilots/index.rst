@@ -41,7 +41,7 @@ A pilot has, at a minimum, to:
 A pilot has to run on each and every computing resource type, provided that:
 
 - Python 2.6+ on the WN
-- It is an OS onto which we can install a DIRAC client (basically: SLC6 or CentOS7)
+- It is an OS onto which we can install a DIRAC client.
   - if that's not possible, we plan to add support for singularity
 
 The same pilot script can be used everywhere.

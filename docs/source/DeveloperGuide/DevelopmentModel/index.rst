@@ -14,6 +14,7 @@ The DIRACGrid project includes several repositories, all hosted in `Github <http
   - `WebAppDIRAC <https://github.com/DIRACGrid/WebAppDIRAC>`_ is the repository for the web portal
   - `Pilot <https://github.com/DIRACGrid/Pilot>`_ is *not* a DIRAC extension, but a new version of the DIRAC pilots (dubbed Pilots 3.0)
   - `DIRACOS <https://github.com/DIRACGrid/DIRACOS>`_ is the repository for the DIRAC dependencies
+  - `DIRACOS2 <https://github.com/DIRACGrid/DIRACOS2>`_ is the repository for the DIRAC python3 dependencies
   - `VMDIRAC <https://github.com/DIRACGrid/VMDIRAC>`_ is a DIRAC extension for using cloud sites
   - `COMDIRAC <https://github.com/DIRACGrid/COMDIRAC>`_ is a DIRAC extension of its CLI
   - `DB12 <https://github.com/DIRACGrid/DB12>`_ is *not* a DIRAC extension, but a self-contained quick benchmark
@@ -30,12 +31,6 @@ It is inherently distributed and is well suited for the project. It is outlined 
 
 The DIRAC Development Model relies on the excellent Git capability for managing
 code branches which is mandatory for a distributed team of developers.
-
-The DIRAC code management is done using the `Github service <https://github.com/DIRACGrid>`_
-as the main code repository. The service provides also facilities for bug and task tracking,
-Wiki engine and other tools to support the group code development. Setting up the
-Git based development environment and instructions to contribute new code is described
-in :ref:`contributing_code` subsection.
 
 The DIRAC python2 releases are described using a special configuration file and tools are provided
 to prepare code distribution tar archives. The tools and procedures to release the DIRAC software
@@ -112,21 +107,3 @@ The following branches are used in managing DIRAC releases:
 These branches are the only ones maintained in the central Git repository
 by the release managers. They are used to build DIRAC releases. They also serve
 as reference code used by developers as a starting point for their work.
-
-Feature branches
-----------------------
-
-These are the branches where all the actual developments are happening.
-They can be started from *release/integration* and will be merged back to them
-eventually if the contribution are accepted. Their name should reflect the
-feature being developed and should not be "integration" or "master" to avoid
-confusions.
-
-Feature branches are used to develop new features for a future release or
-making patches to the already created releases. A feature branch will exist as long as
-the feature is in development but will eventually be merged into *release/integration*
-or discarded in case the feature is no longer relevant. Feature branches exist only in
-the developer repositories and never in the *release* repository.
-
-Working on and contributing code to the DIRAC Project is described in :ref:`contributing_code` .
-
