@@ -222,7 +222,7 @@ the installation by setting up additional components. The following steps should
 be taken:
 
 For python2
-^^^^^^^^^^^
+-----------
 
 - Edit the installation configuration file. This file contains all
   the necessary information describing the installation. By editing the configuration
