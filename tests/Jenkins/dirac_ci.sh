@@ -191,9 +191,6 @@ installSite() {
 
   echo "==> Completed installation"
 
-  # Hotfix to pass tests
-  pip install authlib==0.15.3 pyjwt==1.7.1 dominate
-
 }
 
 

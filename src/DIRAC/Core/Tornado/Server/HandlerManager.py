@@ -11,7 +11,6 @@ __RCSID__ = "$Id$"
 
 import inspect
 from six import string_types
-from six.moves.urllib.parse import urlparse
 from tornado.web import url as TornadoURL, RequestHandler
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
