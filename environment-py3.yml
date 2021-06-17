@@ -19,7 +19,7 @@ dependencies:
   - elasticsearch-dsl
   - future
   - gitpython >=2.1.0
-  - m2crypto >=0.36
+  - m2crypto >=0.36,!=0.38.0
   - matplotlib
   - numpy
   - pexpect >=4.0.1
