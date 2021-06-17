@@ -22,6 +22,7 @@ mockSM = MagicMock()
 site = {
     'status': 'status',
     'name': 'site',
+    'vO': 'some_vo',
     'site': 'site',
     'element': 'Site',
     'statusType': 'all',
