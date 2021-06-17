@@ -93,5 +93,5 @@ dependencies:
     - git+https://gitlab.cern.ch/cburr/fts-rest.git@python3
     # Doesn't support Python 3.9
     # - rucio-clients >=1.25.6
-    - git+https://github.com/rucio/rucio.git@master
+    - git+https://github.com/rucio/rucio.git@eafde85bfbfe51fb22c7774e2af8deda3fb05e81
     - -e .
