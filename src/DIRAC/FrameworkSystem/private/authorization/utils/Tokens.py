@@ -52,7 +52,7 @@ def getLocalTokenDict(location=None):
   """
   result = readTokenFromEnv()
   return result if result['OK'] and result['Value'] else readTokenFromFile(location)
-    
+
 
 def readTokenFromEnv():
   """ Read token from an environ variable
