@@ -147,7 +147,7 @@ class ElementInspectorAgent(AgentModule):
       try:
         future.result()
       except Exception as exc:
-        self.log.error('%d generated an exception: %s' % (transID, exc))
+        self.log.exception('%s generated an exception: %s' % (transID, exc))
       else:
         self.log.info('Processed', transID)
 
