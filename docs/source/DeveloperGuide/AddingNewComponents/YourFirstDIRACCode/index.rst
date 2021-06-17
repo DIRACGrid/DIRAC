@@ -5,24 +5,16 @@ Your first DIRAC code
 =====================
 
 We will now code some very simple exercises, based on what we have seen in the previous section.
-Before going through the exercise, you should verify in which GIT branch you are, so go to the directory where you cloned DIRAC and issue::
 
-  > git branch
-
-this will show all your local branches. Now,
-remember that you have to base your development on a *remote* branch.
-This is clearly explained in :ref:`contributing_code`,
-so be careful on what you choose: checkout a new branch from a remote one before proceeding.
-
-
-Exercise 1:
------------
+Exercise 1
+----------
 
 Code a python module in DIRAC.Core.Utilities.checkCAOfUser where there is only the following function:
 
+
 .. code-block:: python
 
-   def checkCAOfUser( user, CA ):
+   def checkCAOfUser(user, CA):
      """ user, and CA are string
      """
 
@@ -53,7 +45,7 @@ We will put the unit test in DIRAC.Core.Utilities.test. The unit test has been f
      def setUp(self):
        self.gConfigMock = mock.Mock()
        self.checkCAOfUser = importlib.import_module(
-	   "DIRAC.Core.Utilities.checkCAOfUser"
+           "DIRAC.Core.Utilities.checkCAOfUser"
        )
        self.checkCAOfUser.gConfig = self.gConfigMock
 
@@ -76,7 +68,7 @@ We will put the unit test in DIRAC.Core.Utilities.test. The unit test has been f
    if __name__ == "__main__":
      suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestcheckCAOfUser)
      suite.addTest(
-	 unittest.defaultTestLoader.loadTestsFromTestCase(TestcheckCAOfUserSuccess)
+         unittest.defaultTestLoader.loadTestsFromTestCase(TestcheckCAOfUserSuccess)
      )
      testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
@@ -86,8 +78,8 @@ Now, try to run it. In case you are using Eclipse, it's time to try to run this 
 Then, code ``checkCAOfUser`` and run the test again.
 
 
-Exercise 2:
------------
+Exercise 2
+----------
 
 As a continuation of the previous exercise, code a python script that will:
 
@@ -95,6 +87,7 @@ As a continuation of the previous exercise, code a python script that will:
 * log wih info or error mode depending on the result
 
 Remember to start the script with:
+
 
 .. code-block:: python
 
