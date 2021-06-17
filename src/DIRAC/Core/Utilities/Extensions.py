@@ -158,10 +158,13 @@ def _extensionsByPriorityPy3():
   from importlib import metadata  # pylint: disable=no-name-in-module
 
   priorties = defaultdict(list)
-  for entrypoint in set(metadata.entry_points()['dirac']):
-    extensionName = entrypointToExtension(entrypoint)
-    extension_metadata = entrypoint.load()()
-    priorties[extension_metadata["priority"]].append(extensionName)
+  try:
+    for entrypoint in set(metadata.entry_points()['dirac']):
+      extensionName = entrypointToExtension(entrypoint)
+      extension_metadata = entrypoint.load()()
+      priorties[extension_metadata["priority"]].append(extensionName)
+  except KeyError:
+    return ['DIRAC']
 
   extensions = []
   for priority, extensionNames in sorted(priorties.items()):
