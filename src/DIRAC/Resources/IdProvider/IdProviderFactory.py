@@ -59,16 +59,9 @@ class IdProviderFactory(object):
                         options=dict(verify_signature=False, verify_aud=False))['iss'].strip('/')
 
     result = getSettingsNamesForIdPIssuer(issuer)
-    if result['OK']:
-      return self.getIdProvider(result['Value'][0])
-
-    _result = getAuthorizationServerMetadata()
-    if not _result['OK']:
-      return _result
-    if issuer == _result['Value'].get('issuer', '').strip('/'):
-      return self.getIdProvider(DEFAULT_CLIENTS.keys()[0])
-
-    return result
+    if not result['OK']:
+      return result
+    return self.getIdProvider(result['Value'])
 
   def getIdProvider(self, name, **kwargs):
     """ This method returns a IdProvider instance corresponding to the supplied

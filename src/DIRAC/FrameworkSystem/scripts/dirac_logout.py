@@ -21,7 +21,8 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import readTokenFromFile, getTokenLocation
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (readTokenFromFile, readTokenFromEnv,
+                                                                      getTokenFileLocation, BEARER_TOKEN_ENV)
 
 __RCSID__ = "$Id$"
 
@@ -31,17 +32,7 @@ class Params(object):
   def __init__(self):
     self.provider = 'DIRACCLI'
     self.issuer = None
-    self.tokenLoc = None
-
-  def setProvider(self, arg):
-    """ Set provider name
-
-        :param str arg: provider
-
-        :return: S_OK()
-    """
-    self.provider = arg
-    return S_OK()
+    self.tokenFileLoc = None
 
   def setIssuer(self, arg):
     """ Set issuer
@@ -60,16 +51,11 @@ class Params(object):
 
         :return: S_OK()
     """
-    self.tokenLoc = arg
+    self.tokenFileLoc = arg
     return S_OK()
 
   def registerCLISwitches(self):
     """ Register CLI switches """
-    Script.registerSwitch(
-        "O:",
-        "provider=",
-        "set identity provider",
-        self.setProvider)
     Script.registerSwitch(
         "I:",
         "issuer=",
@@ -86,6 +72,7 @@ class Params(object):
 
         :return: S_OK()/S_ERROR()
     """
+    tokens = []
     params = {}
     if self.issuer:
       params['issuer'] = self.issuer
@@ -93,19 +80,26 @@ class Params(object):
     if not result['OK']:
       return result
     idpObj = result['Value']
-    self.tokenLoc = self.tokenLoc or getTokenLocation()
-    result = readTokenFromFile(self.tokenLoc)
-    if not result['OK']:
-      return result
-    token = result['Value']
-    # Revoke token
-    for tokenType in ['access_token', 'refresh_token']:
-      if token.get(tokenType):
-        result = idpObj.revokeToken(token[tokenType], tokenType)
-        if not result['OK']:
-          gLogger.error(result['Message'])
-    os.unlink(self.tokenLoc)
-    gLogger.notice('Token is removed from %s.' % self.tokenLoc)
+    tokenFile = getTokenFileLocation(self.tokenFileLoc)
+
+    # Try to find token in environ and in a token file and revoke it
+    for result, location in [(readTokenFromEnv(), BEARER_TOKEN_ENV),
+                             (readTokenFromFile(tokenFile), tokenFile)]:
+      if not result['OK']:
+        gLogger.error(result['Message'])
+      elif result['Value']:
+        token = result['Value']
+        for tokenType in ['access_token', 'refresh_token']:
+          result = idpObj.revokeToken(token[tokenType], tokenType)
+          if result['OK']:
+            gLogger.notice('%s is revoked from' % tokenType, location)
+          else:
+            gLogger.error(result['Message'])
+
+    # After remove token file
+    if os.path.isfile(tokenFile):
+      os.unlink(tokenFile)
+      gLogger.notice('%s token file is removed.' % tokenFile)
 
     return S_OK()
 

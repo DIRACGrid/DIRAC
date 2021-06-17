@@ -1,4 +1,4 @@
-""" TokenManagement service
+""" TokenManager service
 
     .. literalinclude:: ../ConfigTemplate.cfg
       :start-after: ##BEGIN TokenManager:
@@ -115,7 +115,7 @@ class TokenManagerHandler(TornadoService):
       return S_OK(True)
     if Properties.PRIVATE_LIMITED_DELEGATION in credDict['properties']:
       if credDict['DN'] != requestedUserDN:
-        return S_ERROR("You are not allowed to download any proxy")
+        return S_ERROR("You are not allowed to download any token")
       if Properties.PRIVATE_LIMITED_DELEGATION not in Registry.getPropertiesForGroup(requestedUserGroup):
         return S_ERROR("You can't download tokens for that group")
       return S_OK(True)
@@ -170,8 +170,7 @@ class TokenManagerHandler(TornadoService):
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       if userDN != credDict['DN']:
         return S_ERROR("You aren't allowed!")
-    retVal = self.__tokenDB.removeToken(user_id=Registry.getIDFromDN(dn))
+    retVal = self.__tokenDB.removeToken(user_id=Registry.getIDFromDN(userDN))
     if not retVal['OK']:
       return retVal
-    self.__tokenDB.logAction("delete proxy", credDict['DN'], credDict['group'], userDN, userGroup)
     return S_OK()

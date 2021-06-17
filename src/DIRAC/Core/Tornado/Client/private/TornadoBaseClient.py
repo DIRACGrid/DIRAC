@@ -520,6 +520,7 @@ class TornadoBaseClient(object):
 
     # Use access token?
     elif self.__useAccessToken:
+      # Read token from token environ variable or from token file
       result = getLocalTokenDict()
       if not result['OK']:
         return result

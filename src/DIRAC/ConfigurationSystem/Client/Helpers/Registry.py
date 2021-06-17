@@ -713,7 +713,7 @@ def wrapIDAsDN(userID):
   """ Wrap user ID as user DN
 
       :param str userID: user ID
-      
+
       :return: str
   """
   return '/O=DIRAC/CN=%s' % userID
@@ -723,7 +723,7 @@ def getIDFromDN(userDN):
   """ Parse user ID from user DN
 
       :param str userDN: user DN
-      
+
       :return: str
   """
   return userDN.strip('/O=DIRAC/CN=')

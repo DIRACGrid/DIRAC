@@ -39,7 +39,7 @@ def getDIRACClients():
     else:
       clients[cli].update(confClients[cli])
   return clients
-  
+
 
 def getDIACClientByID(clientID):
   """ Search authorization client.
@@ -54,7 +54,6 @@ def getDIACClientByID(clientID):
     if clientID == clients[cli]['client_id']:
       gLogger.debug('Found %s client:\n' % cli, pprint.pformat(clients[cli]))
       return Client(clients[cli])
-    return Client(data)
   return None
 
 

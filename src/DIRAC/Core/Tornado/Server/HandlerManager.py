@@ -11,6 +11,7 @@ __RCSID__ = "$Id$"
 
 import inspect
 from six import string_types
+from six.moves.urllib.parse import urlparse
 from tornado.web import url as TornadoURL, RequestHandler
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
@@ -200,16 +201,16 @@ class HandlerManager(object):
         self.__addHandler(module['loadName'], module['classObj'], url, ports.get(module['modName']))
     return S_OK()
 
-  def __extractPorts(self, urls):
-    """ Extract ports from urls
+  def __extractPorts(self, serviceURIs):
+    """ Extract ports from serviceURIs
 
-        :param list urls: urls that can contain port, .e.g:: System/Service:port
+        :param list serviceURIs: list of uri that can contain port, .e.g:: System/Service:port
 
         :return: (dict, list)
     """
     portMapping = {}
     newURLs = []
-    for _url in urls:
+    for _url in serviceURIs:
       if ':' in _url:
         urlTuple = _url.split(':')
         if urlTuple[0] not in portMapping:

@@ -46,9 +46,9 @@ log = gLogger.getSubLogger(__name__)
 def collectMetadata(issuer=None):
   """ Collect metadata for DIRAC Authorization Server(DAS), a metadata format defines by IETF specification:
       https://datatracker.ietf.org/doc/html/rfc8414#section-2
-  
+
       :param str issuer: issuer to set
-  
+
       :return: dict -- dictionary is the AuthorizationServerMetadata object in the same time
   """
   result = getAuthorizationServerMetadata(issuer)
@@ -189,7 +189,7 @@ class AuthServer(_AuthorizationServer):
     except Exception as e:
       self.log.exception(e)
       return S_ERROR(repr(e))
-    
+
   def registerRefreshToken(self, payload, token):
     """ Register refresh token to protect it from reuse
 

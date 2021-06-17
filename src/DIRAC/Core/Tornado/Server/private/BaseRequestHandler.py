@@ -489,7 +489,7 @@ class BaseRequestHandler(RequestHandler):
     # Here it is safe to write back to the client, because we are not in a thread anymore
 
     # If you need to end the method using tornado methods, outside the thread,
-    # you need to define the finish_<methodName> method. 
+    # you need to define the finish_<methodName> method.
     # This method will be started after __executeMethod is completed.
     try:
       finishFunc = eval('self.finish_%s' % self.method)

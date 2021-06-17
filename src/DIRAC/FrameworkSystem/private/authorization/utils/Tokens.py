@@ -20,15 +20,22 @@ from authlib.oauth2.rfc6749.util import scope_to_list
 from authlib.oauth2.rfc6749.wrappers import OAuth2Token as _OAuth2Token
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
+BEARER_TOKEN_ENV = 'BEARER_TOKEN'
+BEARER_TOKEN_FILE_ENV = 'BEARER_TOKEN_FILE'
 
-def getTokenLocation():
+
+def getTokenFileLocation(fileName=None):
   """ Research token file location. Use the bearer token discovery protocol
       defined by the WLCG (https://doi.org/10.5281/zenodo.3937438) to find one.
 
+      :param str fileName: file name to dump to
+
       :return: str
   """
-  if os.environ.get('BEARER_TOKEN_FILE'):
-    return os.environ['BEARER_TOKEN_FILE']
+  if fileName:
+    return fileName
+  if os.environ.get(BEARER_TOKEN_FILE_ENV):
+    return os.environ[BEARER_TOKEN_FILE_ENV]
   elif os.environ.get('XDG_RUNTIME_DIR'):
     return "%s/bt_u%s" % (os.environ['XDG_RUNTIME_DIR'], os.getuid())
   else:
@@ -39,15 +46,21 @@ def getLocalTokenDict(location=None):
   """ Search local token. Use the bearer token discovery protocol
       defined by the WLCG (https://doi.org/10.5281/zenodo.3937438) to find one.
 
-      :param str location: environ variable name or file path
+      :param str location: token file path
 
       :return: S_OK(dict)/S_ERROR()
   """
-  env = (location if location and location.startswith('/') else None) or 'BEARER_TOKEN'
-  token = os.environ.get(env, "").strip()
-  if token:
-    return S_OK(OAuth2Token(token))
-  return readTokenFromFile(location if location and location.startswith('/') else None)
+  result = readTokenFromEnv()
+  return result if result['OK'] and result['Value'] else readTokenFromFile(location)
+    
+
+def readTokenFromEnv():
+  """ Read token from an environ variable
+
+      :return: S_OK(dict or None)
+  """
+  token = os.environ.get(BEARER_TOKEN_ENV, "").strip()
+  return S_OK(OAuth2Token(token) if token else None)
 
 
 def readTokenFromFile(fileName=None):
@@ -55,15 +68,15 @@ def readTokenFromFile(fileName=None):
 
       :param str fileName: filename to read
 
-      :return: S_OK(dict)/S_ERROR()
+      :return: S_OK(dict or None)/S_ERROR()
   """
-  location = fileName or getTokenLocation()
+  location = getTokenFileLocation(fileName)
   try:
     with open(location, 'rt') as f:
       token = f.read().strip()
   except IOError as e:
     return S_ERROR(DErrno.EOF, "Can't open %s token file.\n%s" % (location, repr(e)))
-  return S_OK(OAuth2Token(token))
+  return S_OK(OAuth2Token(token) if token else None)
 
 
 def writeToTokenFile(tokenContents, fileName):
@@ -74,7 +87,7 @@ def writeToTokenFile(tokenContents, fileName):
 
       :return: S_OK(str)/S_ERROR()
   """
-  location = fileName or getTokenLocation()
+  location = getTokenFileLocation(fileName)
   try:
     with open(location, 'wt') as fd:
       fd.write(tokenContents)
@@ -95,7 +108,7 @@ def writeTokenDictToTokenFile(tokenDict, fileName=None):
 
       :return: S_OK(str)/S_ERROR()
   """
-  fileName = fileName or getTokenLocation()
+  fileName = getTokenFileLocation(fileName)
   if not isinstance(tokenDict, dict):
     return S_ERROR('Token is not a dictionary')
   return writeToTokenFile(json.dumps(tokenDict), fileName)
@@ -174,7 +187,7 @@ class OAuth2Token(_OAuth2Token):
         :return: str
     """
     return self.get_payload(token_type).get(claim)
-  
+
   def dump_to_string(self):
     """ Dump token dictionary to sting
 

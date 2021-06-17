@@ -10,21 +10,20 @@ from DIRAC import S_OK, S_ERROR, gConfig
 
 
 def getSettingsNamesForIdPIssuer(issuer):
-  """ Get identity providers for issuer
+  """ Get identity provider for issuer
 
       :param str issuer: issuer
 
-      :return: S_OK(list)/S_ERROR()
+      :return: S_OK(str)/S_ERROR()
   """
-  names = []
   result = getProvidersForInstance('Id')
   if not result['OK']:
     return result
   for name in result['Value']:
     nameIssuer = gConfig.getValue('/Resources/IdProviders/%s/issuer' % name)
     if nameIssuer and issuer.strip('/') == nameIssuer.strip('/'):
-      names.append(name)
-  return S_OK(names) if names else S_ERROR('Not found provider with %s issuer.' % issuer)
+      return S_OK(name)
+  return S_ERROR('Not found provider with %s issuer.' % issuer)
 
 
 def getSettingsNamesForClientID(clientID):

@@ -16,25 +16,32 @@ class RevocationEndpoint(_RevocationEndpoint):
         :param str token_type_hint: token type
         :param client: client
 
-        :return: str
+        :return: dict
     """
     if token_type_hint == 'refresh_token':
-      result = self.server.db.decryptRefreshToken({'refresh_token': token})
+      result = self.server.db.getJWKs()
+      if not result['OK']:
+        raise OAuth2Error(result['Message'])
+      jwks = result['Value']
+      rtDict = jwt.decode(refresh_token, JsonWebKey.import_key_set(jwks))
+      result = self.server.db.getCredentialByRefreshToken(rtDict['jti'])
       if not result['OK']:
         raise OAuth2Error(result['Message'])
       return result['Value']
-    return token
+    return {token_type_hint: token}
 
   def revoke_token(self, token):
     """ Mark the give token as revoked.
 
         :param dict token: token dict
     """
-    if isinstance(token, dict):
-      result = self.server.idps.getIdProvider(token['provider'])
-    else:
-      result = self.server.idps.getIdProviderForToken(token)
+    result = self.server.idps.getIdProviderForToken(token['access_token'])
+    if not result['OK']:
+      raise OAuth2Error(result['Message'])
     if result['OK']:
-      result = result['Value'].revokeToken(token)
+      for tokenType in token:
+        result = result['Value'].revokeToken(token[tokenType], tokenType)
+        if not result['OK']:
+          self.server.log.error(result['Message'])
     if not result['OK']:
       raise OAuth2Error(result['Message'])

@@ -47,7 +47,7 @@ def test_RefreshToken():
   assert result['OK'], result['Message']
   assert result['Value']['jti'] == preset_jti
   assert result['Value']['iat'] <= int(time.time())
-  
+
   result = db.storeRefreshToken(New_DToken.copy())
   assert result['OK'], result['Message']
   assert result['Value']['jti']
