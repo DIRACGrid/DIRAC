@@ -51,18 +51,12 @@ class SiteInspectorAgent(AgentModule):
 
     AgentModule.__init__(self, *args, **kwargs)
 
-    self.siteClient = None
+    self.rsClient = None
     self.clients = {}
 
   def initialize(self):
     """ Standard initialize.
     """
-
-    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus')
-    if not res['OK']:
-      self.log.error('Failed to load SiteStatus class: %s' % res['Message'])
-      return res
-    siteStatusClass = res['Value']
 
     res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient')
     if not res['OK']:
@@ -70,8 +64,14 @@ class SiteInspectorAgent(AgentModule):
       return res
     rmClass = res['Value']
 
-    self.siteClient = siteStatusClass()
-    self.clients['SiteStatus'] = siteStatusClass()
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient')
+    if not res['OK']:
+      self.log.error('Failed to load ResourceStatusClient class: %s' % res['Message'])
+      return res
+    rsClass = res['Value']
+
+    self.rsClient = rsClass()
+    self.clients['ResourceStatusClient'] = rsClass()
     self.clients['ResourceManagementClient'] = rmClass()
 
     maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', 15)
@@ -85,15 +85,11 @@ class SiteInspectorAgent(AgentModule):
     It gets the sites from the Database which are eligible to be re-checked.
     """
 
-    res = self.siteClient.getSites('All')
-    if not res['OK']:
-      return res
-
     utcnow = datetime.datetime.utcnow().replace(microsecond=0)
     future_to_element = {}
 
     # get the current status
-    res = self.siteClient.getSiteStatuses(res['Value'])
+    res = self.rsClient.selectStatusElement('Site', 'Status')
     if not res['OK']:
       return res
 
@@ -119,7 +115,8 @@ class SiteInspectorAgent(AgentModule):
       self.log.verbose('"%s" # %s # %s' % (siteDict['Name'],
                                            siteDict['Status'],
                                            siteDict['LastCheckTime']))
-      lowerElementDict = {}
+
+      lowerElementDict = {'element': 'Site'}
       for key, value in siteDict.items():
         if len(key) >= 2:  # VO !
           lowerElementDict[key[0].lower() + key[1:]] = value
@@ -132,7 +129,7 @@ class SiteInspectorAgent(AgentModule):
       try:
         future.result()
       except Exception as exc:
-        self.log.error('%d generated an exception: %s' % (transID, exc))
+        self.log.exception('%s generated an exception: %s' % (transID, exc))
       else:
         self.log.info('Processed', transID)
 
@@ -147,8 +144,9 @@ class SiteInspectorAgent(AgentModule):
     pep = PEP(clients=self.clients)
 
     self.log.verbose(
-        '%s ( status=%s / statusType=%s ) being processed' % (
+        '%s ( VO=%s / status=%s / statusType=%s ) being processed' % (
             site['name'],
+            site['vO'],
             site['status'],
             site['statusType']))
 

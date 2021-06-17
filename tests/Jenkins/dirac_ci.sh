@@ -366,7 +366,7 @@ fullInstallDIRAC() {
   dirac-admin-allow-se SE-1 SE-2 S3-DIRECT S3-INDIRECT --All
 
   #agents
-  findAgents
+  findAgents 'exclude' 'Rucio'
   if ! diracAgents; then
     echo "ERROR: diracAgents failed"
     exit 1

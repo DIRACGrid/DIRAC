@@ -367,6 +367,18 @@ class JobAgent(AgentModule):
         return self._rescheduleFailedJob(
             jobID, errorMsg, self.stopOnApplicationFailure)
 
+      gridCE = gConfig.getValue('/LocalSite/GridCE', '')
+      if gridCE:
+        jobReport.setJobParameter(par_name='GridCE',
+                                  par_value=gridCE,
+                                  sendFlag=False)
+
+      queue = gConfig.getValue('/LocalSite/CEQueue', '')
+      if queue:
+        jobReport.setJobParameter(par_name='CEQueue',
+                                  par_value=queue,
+                                  sendFlag=False)
+
       self.log.debug('Before self._submitJob() (%sCE)' % (self.ceName))
       result_submitJob = self._submitJob(
           jobID=jobID,
@@ -572,15 +584,6 @@ class JobAgent(AgentModule):
     wrapperFile = result['Value']
     jobReport.setJobStatus(status=JobStatus.MATCHED,
                            minorStatus='Submitting To CE')
-
-    gridCE = gConfig.getValue('/LocalSite/GridCE', '')
-    queue = gConfig.getValue('/LocalSite/CEQueue', '')
-    jobReport.setJobParameter(par_name='GridCE',
-                              par_value=gridCE,
-                              sendFlag=False)
-    jobReport.setJobParameter(par_name='CEQueue',
-                              par_value=queue,
-                              sendFlag=False)
 
     self.log.info('Submitting JobWrapper',
                   '%s to %sCE' % (os.path.basename(wrapperFile), self.ceName))

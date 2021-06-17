@@ -356,7 +356,7 @@ class JobMonitoringMore(TestWMSTestCase):
                     resJG_olderThanOneYear)
     res = jobMonitor.getStates()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertTrue(sorted(res['Value']) in [[JobStatus.RECEIVED], sorted([JobStatus.RECEIVED, JobStatus.WAITING])],
+    self.assertTrue(sorted(res['Value']) in [[JobStatus.RECEIVED], sorted([JobStatus.RECEIVED, JobStatus.KILLED])],
                     res['Value'])
     res = jobMonitor.getMinorStates()
     self.assertTrue(res['OK'], res.get('Message'))

@@ -41,6 +41,7 @@ class SiteStatus(object):
   * getUsableSites
   * getSites
   """
+
   def __init__(self):
     """
     Constructor, initializes the rssClient.

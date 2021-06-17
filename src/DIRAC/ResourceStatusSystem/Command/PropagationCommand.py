@@ -28,10 +28,10 @@ class PropagationCommand(Command):
 
   def doCache(self):
 
-    if not self.args['site']:
+    if not self.args['name']:
       return S_ERROR('site was not found in args')
 
-    site = self.args['site']
+    site = self.args['name']
 
     elements = CSHelpers.getSiteElements(site)
 
