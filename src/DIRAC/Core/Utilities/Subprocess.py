@@ -379,7 +379,11 @@ class Subprocess(object):
           nB = fd.read(1)
         if not nB:
           break
-        dataString += nB.decode()
+        try:
+          dataString += nB.decode()
+        except UnicodeDecodeError as e:
+          self.log.warn("Unicode decode error in readFromFile", "(%r): %r" % (e, dataString))
+          dataString += nB.decode("utf-8", "replace")
         # break out of potential infinite loop, indicated by dataString growing beyond reason
         if len(dataString) + baseLength > self.bufferLimit:
           self.log.error("DataString is getting too long (%s): %s " % (len(dataString), dataString[-10000:]))
@@ -426,10 +430,7 @@ class Subprocess(object):
 
     self.cmdSeq = cmdSeq
     self.callback = callbackFunction
-    if sys.platform.find("win") == 0:
-      closefd = False
-    else:
-      closefd = True
+    closefd = sys.platform.find("win") != 0
     try:
       self.child = subprocess.Popen(self.cmdSeq,
                                     shell=shell,

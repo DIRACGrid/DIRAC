@@ -27,7 +27,7 @@ import pytest
 from subprocess import Popen
 
 # SUT
-from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall, getChildrenPIDs
+from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall, getChildrenPIDs, Subprocess
 
 # Mark this entire module as slow
 pytestmark = pytest.mark.slow
@@ -66,3 +66,18 @@ def test_getChildrenPIDs():
     assert isinstance(p, int)
 
   mainProcess.wait()
+
+
+def test_decodingCommandOutput():
+  retVal = systemCall(10, ["echo", "-e", "-n", r"\xdf"])
+  assert retVal["OK"]
+  assert retVal["Value"] == (0, u"\ufffd", "")
+
+  retVal = systemCall(10, ["echo", "-e", r"\xdf"])
+  assert retVal["OK"]
+  assert retVal["Value"] == (0, u"\ufffd\n", "")
+
+  sp = Subprocess()
+  retVal = sp.systemCall(r"""python -c 'import os; os.fdopen(2, "wb").write(b"\xdf")'""", shell=True)
+  assert retVal["OK"]
+  assert retVal["Value"] == (0, "", u"\ufffd")
