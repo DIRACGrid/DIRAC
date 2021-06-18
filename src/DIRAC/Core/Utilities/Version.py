@@ -31,6 +31,6 @@ def getVersion():
     except (ImportError, AttributeError):
       pass
     if ext.endswith("DIRAC") and ext != "DIRAC":
-      ext = ext[:len("DIRAC")]
+      ext = ext[:-len("DIRAC")]
     vDict['Extensions'][ext] = version
   return S_OK(vDict)
