@@ -565,23 +565,31 @@ class FileCatalogClientCLI(CLI):
     return result
 
   def registerFile(self, args):
-    """ Add a file to the catatlog
+    """ Add a file to the catalog
 
-        usage: add <lfn> <pfn> <size> <SE> [<guid>]
+        usage: add <lfn> <pfn> <size> <SE> <guid> <Checksum>
+
+        If pfn value is None, it will be assigned en empty string
+        If guid value is None, it will be generated
+        If Checksum value is None, it will be assigned en empty string
     """
+
+    if len(args) != 6:
+      print("Command takes 6 arguments, %d given" % len(args))
+      return
 
     path = args[0]
     infoDict = {}
     lfn = self.getPath(path)
-    infoDict['PFN'] = args[1]
+    infoDict['PFN'] = args[1] if args[1] != "None" else ""
     infoDict['Size'] = int(args[2])
     infoDict['SE'] = args[3]
-    if len(args) == 5:
-      guid = args[4]
-    else:
+    if args[4] == "None":
       _status, guid = commands.getstatusoutput('uuidgen')
+    else:
+      guid = args[4]
     infoDict['GUID'] = guid
-    infoDict['Checksum'] = ''
+    infoDict['Checksum'] = args[4] if args[4] != "None" else ""
 
     fileDict = {}
     fileDict[lfn] = infoDict
