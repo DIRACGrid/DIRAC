@@ -1926,9 +1926,22 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     Install runit directories for the Web Portal
     """
     # Check that the software for the Web Portal is installed
-    webDir = os.path.join(self.linkedRootPath, 'WebAppDIRAC')
-    if not os.path.exists(webDir):
-      error = 'WebApp extension not installed at %s' % webDir
+    if six.PY2:
+      webDir = os.path.join(self.linkedRootPath, 'WebAppDIRAC')
+      webappInstalled = os.path.exists(webDir)
+    else:
+      from importlib import metadata  # pylint: disable=no-name-in-module
+
+      try:
+        metadata.version("WebAppDIRAC")
+      except metadata.PackageNotFoundError:
+        webappInstalled = False
+      else:
+        webappInstalled = True
+
+    if not webappInstalled:
+      error = 'WebApp extension not installed'
+      gLogger.error(error)
       if self.exitOnError:
         gLogger.error(error)
         DIRAC.exit(-1)
