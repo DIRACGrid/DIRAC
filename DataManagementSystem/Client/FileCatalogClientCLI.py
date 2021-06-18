@@ -569,9 +569,9 @@ class FileCatalogClientCLI(CLI):
 
         usage: add <lfn> <pfn> <size> <SE> <guid> <Checksum>
 
-        * If pfn value is None, it will be assigned en empty string
+        * If pfn value is None, it will be assigned an empty string
         * If guid value is None, it will be generated
-        * If Checksum value is None, it will be assigned en empty string
+        * If Checksum value is None, it will be assigned an empty string
     """
 
     if len(args) != 6:
