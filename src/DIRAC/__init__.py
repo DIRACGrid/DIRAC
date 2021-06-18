@@ -121,9 +121,40 @@ else:
 errorMail = "dirac.alarms@gmail.com"
 alarmMail = "dirac.alarms@gmail.com"
 
+
+def _computeRootPath(rootPath):
+  """Compute the root of the DIRAC installation
+
+  Detects if the installation is a server-style versioned installation by
+  recognising a folder structure like: ``versions/vX.Y.Z-$(uname -m)-TIMESTAMP/``
+
+  :param str rootPath: The result of ``sys.base_prefix``
+  :return: bool
+  """
+  import re
+  from pathlib import Path  # pylint: disable=import-error
+
+  rootPath = Path(rootPath).resolve()
+  if rootPath.parent.name != "versions":
+    return str(rootPath)
+  pattern = re.compile(
+    # Version
+    r"v(\d+\.\d+\.\d+[^\-]*)\-"
+    # Installation time
+    r"(\d+)\-"
+    # Architecture
+    r"([^\-]+)"
+  )
+  if bool(pattern.fullmatch(rootPath.name)):
+    # This is a versioned install
+    return str(rootPath.parent.parent)
+  else:
+    return str(rootPath)
+
+
 # Set rootPath of DIRAC installation
 if six.PY3:
-  rootPath = sys.base_prefix  # pylint: disable=no-member
+  rootPath = _computeRootPath(sys.base_prefix)  # pylint: disable=no-member
 else:
   pythonPath = os.path.realpath(__path__[0])
   rootPath = os.path.dirname(pythonPath)
