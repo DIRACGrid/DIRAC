@@ -576,6 +576,7 @@ class FileCatalogClientCLI(CLI):
 
     if len(args) != 6:
       print("Command takes 6 arguments, %d given" % len(args))
+      print(self.do_register.__doc__)
       return
 
     path = args[0]
