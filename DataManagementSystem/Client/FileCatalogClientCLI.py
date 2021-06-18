@@ -569,9 +569,9 @@ class FileCatalogClientCLI(CLI):
 
         usage: add <lfn> <pfn> <size> <SE> <guid> <Checksum>
 
-        If pfn value is None, it will be assigned en empty string
-        If guid value is None, it will be generated
-        If Checksum value is None, it will be assigned en empty string
+        * If pfn value is None, it will be assigned en empty string
+        * If guid value is None, it will be generated
+        * If Checksum value is None, it will be assigned en empty string
     """
 
     if len(args) != 6:
@@ -590,7 +590,7 @@ class FileCatalogClientCLI(CLI):
     else:
       guid = args[4]
     infoDict['GUID'] = guid
-    infoDict['Checksum'] = args[4] if args[4] != "None" else ""
+    infoDict['Checksum'] = args[5] if args[5] != "None" else ""
 
     fileDict = {}
     fileDict[lfn] = infoDict
