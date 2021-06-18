@@ -122,11 +122,14 @@ the steps below. This procedure must be followed for the primary server and for 
 
   (this is only mandatory in one of the servers. Others can be synchronized from this one using DIRAC tools.)
 
-- As *dirac* user download the install_site.sh script::
+- As *dirac* user download the install_site.sh script. (note the download location varies depending on the Python version you wish to use!)::
 
      mkdir /home/dirac/DIRAC
      cd /home/dirac/DIRAC
+     # For Python 2 based installations
      curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/install_site.sh
+     # For Python 3 based installations
+     curl -O https://raw.githubusercontent.com/DIRACGrid/management/master/install_site.sh
 
 
 ----------------
@@ -219,10 +222,10 @@ Primary server installation
 The installation consists of setting up a set of services, agents and databases for the
 required DIRAC functionality. The SystemAdministrator interface can be used later to complete
 the installation by setting up additional components. The following steps should
-be taken:
+be taken based on the Python version you wish to install.
 
-For python2
------------
+For Python 2
+------------
 
 - Edit the installation configuration file. This file contains all
   the necessary information describing the installation. By editing the configuration
@@ -356,7 +359,7 @@ For python2
 
 or You can download the full server installation from::
 
-   curl https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_full.cfg -o install.cfg
+   curl https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/src/DIRAC/Core/scripts/install_full_py2.cfg -o install.cfg
 
 - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
   .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
@@ -379,25 +382,6 @@ For Python 3
     #
     LocalInstallation
     {
-      #
-      #   These are options for the installation of the DIRAC software
-      #
-      #  DIRAC release version (this is an example, you should find out the current
-      #  production release)
-      Release = v7r2p8
-      #  To install the Server version of DIRAC (the default is client)
-      InstallType = server
-      #  If this flag is set to yes, each DIRAC update will be installed
-      #  in a separate directory, not overriding the previous ones
-      UseVersionsDir = yes
-      #  The directory of the DIRAC software installation
-      TargetPath = /opt/dirac
-      #  DIRAC extra modules to be installed (Web is required if you are installing the Portal on
-      #  this server).
-      #  Only modules not defined as default to install in their projects need to be defined here:
-      #   i.e. LHCb, LHCbWeb for LHCb
-      Extensions = WebApp
-
       #
       #   These are options for the configuration of the installed DIRAC software
       #   i.e., to produce the initial dirac.cfg for the server
@@ -475,7 +459,6 @@ For Python 3
       Services += ResourceStatus/ResourceStatus
       #  Flag determining whether the Web Portal will be installed
       WebPortal = yes
-      WebApp = yes
       #
       #  The following options defined the MySQL DB connectivity
       Database
@@ -494,13 +477,13 @@ For Python 3
 
 or You can download the full server installation from::
 
-   curl https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_full.cfg -o install.cfg
+   curl https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full_py3.cfg -o install.cfg
 
 - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
   .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
   (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
 
-    ./install_site.sh -v v7r2p8 install.cfg
+    ./install_site.sh install.cfg
 
 Primary server installation (continued)
 ---------------------------------------
@@ -618,25 +601,6 @@ For Python 3
       LocalInstallation
       {
         #
-        #   These are options for the installation of the DIRAC software
-        #
-        #  DIRAC release version (this is an example, you should find out the current
-        #  production release)
-        Release = v7r2p8
-        #  To install the Server version of DIRAC (the default is client)
-        InstallType = server
-        #  If this flag is set to yes, each DIRAC update will be installed
-        #  in a separate directory, not overriding the previous ones
-        UseVersionsDir = yes
-        #  The directory of the DIRAC software installation
-        TargetPath = /opt/dirac
-        #  DIRAC extra packages to be installed (Web is required if you are installing the Portal on
-        #  this server).
-        #  For each User Community their extra package might be necessary here:
-        #   i.e. LHCb, LHCbWeb for LHCb
-        # Externals =
-
-        #
         #   These are options for the configuration of the previously installed DIRAC software
         #   i.e., to produce the initial dirac.cfg for the server
         #
@@ -676,7 +640,7 @@ For Python 3
 
 - Now run install_site.sh giving the edited CFG file as the argument:::
 
-      ./install_site.sh -v v7r2p8 install.cfg
+      ./install_site.sh install.cfg
 
 If the installation is successful, the SystemAdministrator service will be up and running on the
 server. You can now set up the required components as described in :ref:`setting_with_CLI`
