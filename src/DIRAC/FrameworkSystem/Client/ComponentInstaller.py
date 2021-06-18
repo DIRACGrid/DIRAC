@@ -9,10 +9,10 @@ The Following Options are used::
   /DIRAC/Setup:             Setup to be used for any operation
   /LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
   /LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
-  /LocalInstallation/RootPath:        Used instead of rootPath in "run" script
+  /LocalInstallation/RootPath:        Python 2 only! Used instead of rootPath in "run" script
                                       if defined (if links are used to named versions)
-  /LocalInstallation/InstancePath:    Location where runit and startup directories are created (default rootPath)
-  /LocalInstallation/UseVersionsDir:  DIRAC is installed under versions/<Versioned Directory> with a link from pro
+  /LocalInstallation/InstancePath:    Python 2 only! Location where runit and startup directories are created (default rootPath)
+  /LocalInstallation/UseVersionsDir:  Python 2 only! DIRAC is installed under versions/<Versioned Directory> with a link from pro
                                       (This option overwrites RootPath and InstancePath)
   /LocalInstallation/Host:            Used when build the URL to be published for the installed
                                       service (default: socket.getfqdn())
@@ -212,18 +212,24 @@ class ComponentInstaller(object):
     self.setup = self.localCfg.getOption(cfgPath('DIRAC', 'Setup'), '')
     self.instance = self.localCfg.getOption(cfgInstallPath('InstanceName'), self.setup)
     self.logLevel = self.localCfg.getOption(cfgInstallPath('LogLevel'), 'INFO')
-    self.linkedRootPath = self.localCfg.getOption(cfgInstallPath('RootPath'), rootPath)
-    useVersionsDir = self.localCfg.getOption(cfgInstallPath('UseVersionsDir'), False)
+    if six.PY2:
+      self.linkedRootPath = self.localCfg.getOption(cfgInstallPath('RootPath'), rootPath)
+    else:
+      self.linkedRootPath = rootPath
 
     self.host = self.localCfg.getOption(cfgInstallPath('Host'), getFQDN())
 
     self.basePath = os.path.dirname(rootPath)
-    self.instancePath = self.localCfg.getOption(cfgInstallPath('InstancePath'), rootPath)
-    if six.PY2 and useVersionsDir:
-      # This option takes precedence and has no effect for Python 3 installations
-      self.instancePath = os.path.dirname(os.path.dirname(rootPath))
-      self.linkedRootPath = os.path.join(self.instancePath, 'pro')
-    gLogger.verbose('Using Instance Base Dir at', self.instancePath)
+    if six.PY2:
+      self.instancePath = self.localCfg.getOption(cfgInstallPath('InstancePath'), rootPath)
+      useVersionsDir = self.localCfg.getOption(cfgInstallPath('UseVersionsDir'), False)
+      if useVersionsDir:
+        # This option takes precedence and has no effect for Python 3 installations
+        self.instancePath = os.path.dirname(os.path.dirname(rootPath))
+        self.linkedRootPath = os.path.join(self.instancePath, 'pro')
+      gLogger.verbose('Using Instance Base Dir at', self.instancePath)
+    else:
+      self.instancePath = rootPath
 
     self.runitDir = os.path.join(self.instancePath, 'runit')
     self.runitDir = self.localCfg.getOption(cfgInstallPath('RunitDir'), self.runitDir)
@@ -2371,14 +2377,14 @@ exec dirac-webapp-run -p < /dev/null
       with io.open(runFile, 'wt') as fd:
         fd.write(
             u"""#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  #
-  exec tornado-start-all
-  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
+rcfile=%(bashrc)s
+[ -e $rcfile ] && source $rcfile
+#
+exec 2>&1
+#
+#
+exec tornado-start-all
+""" % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
 
       os.chmod(runFile, self.gDefaultPerms)
 
