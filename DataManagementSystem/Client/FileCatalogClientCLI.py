@@ -71,7 +71,7 @@ class FileCatalogClientCLI(CLI):
     """ Register a record to the File Catalog
 
         usage:
-          register file <lfn> <pfn> <size> <SE> [<guid>]  - register new file record in the catalog
+          register file <lfn> <pfn> <size> <SE> <guid> <Checksum>  - register new file record in the catalog
           register replica <lfn> <pfn> <SE>   - register new replica in the catalog
     """
 
