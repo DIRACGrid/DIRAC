@@ -74,6 +74,7 @@ import time
 from collections import defaultdict
 
 import importlib_resources
+import six
 import subprocess32 as subprocess
 from diraccfg import CFG
 
@@ -218,8 +219,8 @@ class ComponentInstaller(object):
 
     self.basePath = os.path.dirname(rootPath)
     self.instancePath = self.localCfg.getOption(cfgInstallPath('InstancePath'), rootPath)
-    if useVersionsDir:
-      # This option takes precedence
+    if six.PY2 and useVersionsDir:
+      # This option takes precedence and has no effect for Python 3 installations
       self.instancePath = os.path.dirname(os.path.dirname(rootPath))
       self.linkedRootPath = os.path.join(self.instancePath, 'pro')
     gLogger.verbose('Using Instance Base Dir at', self.instancePath)
