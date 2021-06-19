@@ -13,9 +13,16 @@ import time
 import getpass
 import importlib
 import shutil
+import platform
 import psutil
+import tempfile
 
 import six
+from packaging.version import Version, InvalidVersion
+try:
+  import subprocess32 as subprocess
+except ImportError:
+  import subprocess
 
 # TODO: This should be modernised to use subprocess(32)
 try:
@@ -28,12 +35,12 @@ from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 from diraccfg import CFG
+import requests
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Os
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
-from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -284,11 +291,101 @@ class SystemAdministratorHandler(RequestHandler):
 # General purpose methods
 #
   types_updateSoftware = [six.string_types]
+  def export_updateSoftware(self, version, rootPath="", diracOSVersion=""):
+    if "." in version:
+      return self._updateSoftwarePy3(version, rootPath, diracOSVersion)
+    else:
+      return self._updateSoftwarePy2(version, rootPath, diracOSVersion)
 
-  def export_updateSoftware(self, version, rootPath="", gridVersion=""):
+
+  def _updateSoftwarePy3(self, version, rootPath_, diracOSVersion):
+    if rootPath_:
+      return S_ERROR("rootPath argument is not supported for Python 3 installations")
+    # Validate and normalise the requested version
+    try:
+      version = Version(version)
+    except InvalidVersion:
+      self.log.exception("Invalid version passed", version)
+      return S_ERROR("Invalid version passed %r" % version)
+    version = "v%s" % version
+    self.log.info("Installing Python 3 based DIRAC", "%s with DIRACOS %s" % (version, diracOSVersion))
+
+    # Install DIRACOS
+    installer_url = "https://github.com/DIRACGrid/DIRACOS2/releases/"
+    if diracOSVersion:
+      installer_url += "download/%s/latest/download/DIRACOS-Linux-%s.sh" % (version, platform.machine())
+    else:
+      installer_url += "latest/download/DIRACOS-Linux-%s.sh" % platform.machine()
+    self.log.info("Downloading DIRACOS2 installer from", installer_url)
+    with tempfile.NamedTemporaryFile(suffix=".sh", mode ="wb") as installer:
+      with requests.get(installer_url, stream=True) as r:
+        if not r.ok:
+          return S_ERROR("Failed to download TODO")
+        for chunk in r.iter_content(chunk_size=1024**2):
+          installer.write(chunk)
+      installer.flush()
+      self.log.info("Downloaded DIRACOS installer to", installer.name)
+
+      installVersionTime = "%s-%s" % (version, datetime.utcnow().strftime("%s"))
+      installPrefix = os.path.join(
+          rootPath,
+          "versions",
+          "%s-%s" % (installVersionTime, platform.machine()),
+      )
+      self.log.info("Running DIRACOS installer for prefix", installPrefix)
+      r = subprocess.run(
+          ["bash", installer.name, "-p", installPrefix],
+          stderr=subprocess.PIPE,
+          text=True,
+          check=False,
+          timeout=300,
+      )
+      if r.returncode != 0:
+        stderr = [x for x in r.stderr.split("\n") if not x.startswith("Extracting : ")]
+        self.log.error(
+            "Installing DIRACOS2 failed with returncode",
+            "%s and stdout: %s" % (r.returncode, stderr)
+        )
+        return S_ERROR("Failed to install DIRACOS2 %s" % stderr)
+
+    # Install DIRAC
+    r = subprocess.run(
+        [
+            "%s/bin/pip" % installPrefix,
+            "install",
+            "--no-color",
+            # "--quiet",
+            # "DIRAC==%s" % version,
+            # "WebAppDIRAC,
+            "git+https://github.com/chrisburr/DIRAC.git@webapp-py3",
+            "git+https://github.com/chrisburr/WebAppDIRAC.git@python3-fixes-2",
+        ],
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+        timeout=300,
+    )
+    if r.returncode != 0:
+      self.log.error(
+          "Installing DIRACOS2 failed with returncode",
+          "%s and stdout: %s" % (r.returncode, r.stderr)
+      )
+      return S_ERROR("Failed to install DIRACOS2 with message %s" % r.stderr)
+
+    # Update the pro link
+    oldPath = os.path.join(rootPath, 'old')
+    proPath = os.path.join(rootPath, 'pro')
+    if os.path.exists(oldPath):
+      os.remove(oldPath)
+    os.rename(proPath, oldPath)
+    with open(proPath, "wt") as fp:
+      fp.write(installVersionTime)
+
+    return S_OK()
+
+  def _updateSoftwarePy2(self, version, rootPath, diracOSVersion):
     """ Update the local DIRAC software installation to version
     """
-
     # Check that we have a sane local configuration
     result = gConfig.getOptionsDict('/LocalInstallation')
     if not result['OK']:
@@ -305,25 +402,19 @@ class SystemAdministratorHandler(RequestHandler):
 
     # Check if there are extensions
     extensionList = getCSExtensions()
-    if extensionList:
-      # by default we do not install WebApp
-      if "WebApp" in extensionList:
-        extensionList.remove("WebApp")
+    # By default we do not install WebApp
+    if "WebApp" in extensionList or []:
+      extensionList.remove("WebApp")
 
     webPortal = gConfig.getValue('/LocalInstallation/WebApp', False)
-    if webPortal:
-      if "WebAppDIRAC" not in extensionList:
-        extensionList.append("WebAppDIRAC")
+    if webPortal and "WebAppDIRAC" not in extensionList:
+      extensionList.append("WebAppDIRAC")
 
     cmdList += ['-e', ','.join(extensionList)]
 
     project = gConfig.getValue('/LocalInstallation/Project')
     if project:
       cmdList += ['-l', project]
-
-    # Are grid middleware bindings required ?
-    if gridVersion:
-      cmdList.extend(['-g', gridVersion])
 
     targetPath = gConfig.getValue('/LocalInstallation/TargetPath',
                                   gConfig.getValue('/LocalInstallation/RootPath', ''))
@@ -336,21 +427,15 @@ class SystemAdministratorHandler(RequestHandler):
     if not result['OK']:
       return result
     status = result['Value'][0]
-    if status != 0:
-      # Get error messages
-      error = []
-      output = result['Value'][1].split('\n')
-      for line in output:
-        line = line.strip()
-        if 'error' in line.lower():
-          error.append(line)
-      if error:
-        message = '\n'.join(error)
-      else:
-        message = "Failed to update software to %s" % version
-      return S_ERROR(message)
+    if status == 0:
+      return S_OK()
+    # Get error messages
+    error = [
+        line.strip() for line in result['Value'][1].split('\n')
+        if 'error' in line.lower()
+    ]
+    return S_ERROR('\n'.join(error or "Failed to update software to %s" % version))
 
-    return S_OK()
 
   types_revertSoftware = []
 
@@ -358,10 +443,15 @@ class SystemAdministratorHandler(RequestHandler):
     """ Revert the last installed version of software to the previous one
     """
     oldLink = os.path.join(gComponentInstaller.instancePath, 'old')
-    oldPath = os.readlink(oldLink)
     proLink = os.path.join(gComponentInstaller.instancePath, 'pro')
     os.remove(proLink)
-    mkLink(oldPath, proLink)
+    if os.path.islink(oldLink):
+      oldPath = os.readlink(oldLink)
+      os.symlink(oldPath, proLink)
+    else:
+      with open(oldLink, "rt") as fp:
+        oldPath = fp.read()
+      shutil.copy(oldLink, proLink)
 
     return S_OK(oldPath)
 

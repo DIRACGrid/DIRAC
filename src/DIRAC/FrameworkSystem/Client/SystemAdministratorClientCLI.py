@@ -1057,25 +1057,19 @@ class SystemAdministratorClientCLI(CLI):
 
         usage:
 
-          update <version> [ -r <rootPath> ] [ -g <lcgVersion> ]
+          update <version> [ -g <diracOSVersion> ]
 
-              where rootPath - path to the DIRAC installation
-                    lcgVersion - version of the LCG bindings to install
+              where lcgVersion - version of DIRACOS to install
     """
     try:
       argss = args.split()
       version = argss[0]
-      rootPath = ''
-      lcgVersion = ''
+      diracOSVersion = ''
       del argss[0]
 
       while len(argss) > 0:
-        if argss[0] == '-r':
-          rootPath = argss[1]
-          del argss[0]
-          del argss[0]
-        elif argss[0] == '-g':
-          lcgVersion = argss[1]
+        if argss[0] == '-g':
+          diracOSVersion = argss[1]
           del argss[0]
           del argss[0]
     except Exception as x:
@@ -1085,7 +1079,7 @@ class SystemAdministratorClientCLI(CLI):
 
     client = SystemAdministratorClient(self.host, self.port)
     gLogger.notice("Software update can take a while, please wait ...")
-    result = client.updateSoftware(version, rootPath, lcgVersion, timeout=300)
+    result = client.updateSoftware(version, "", diracOSVersion, timeout=300)
     if not result['OK']:
       self._errMsg("Failed to update the software")
       gLogger.notice(result['Message'])
