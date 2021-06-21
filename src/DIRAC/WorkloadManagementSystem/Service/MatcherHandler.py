@@ -10,7 +10,8 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import six
-from DIRAC import gLogger, S_OK, S_ERROR
+
+from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -54,8 +55,6 @@ class MatcherHandlerMixin(object):
 
     cls.limiter = Limiter(jobDB=cls.jobDB)
 
-    cls.taskQueueDB.recalculateTQSharesForAll()
-
     gMonitor.registerActivity('matchTime', "Job matching time",
                               'Matching', "secs", gMonitor.OP_MEAN, 300)
     gMonitor.registerActivity('matchesDone', "Job Match Request",
@@ -64,18 +63,6 @@ class MatcherHandlerMixin(object):
                               'Matching', "matches", gMonitor.OP_RATE, 300)
     gMonitor.registerActivity('numTQs', "Number of Task Queues",
                               'Matching', "tqsk queues", gMonitor.OP_MEAN, 300)
-
-    cls.sendNumTaskQueues()
-    return S_OK()
-
-  @classmethod
-  def sendNumTaskQueues(cls):
-    result = cls.taskQueueDB.getNumTaskQueues()
-    if result['OK']:
-      gMonitor.addMark('numTQs', result['Value'])
-    else:
-      gLogger.error("Cannot get the number of task queues", result['Message'])
-
 
 ##############################################################################
   types_requestJob = [six.string_types + (dict,)]
@@ -125,7 +112,6 @@ class MatcherHandlerMixin(object):
 
 ##############################################################################
   types_getMatchingTaskQueues = [dict]
-  # int keys are cast into str
 
   @classmethod
   @ignoreEncodeWarning
