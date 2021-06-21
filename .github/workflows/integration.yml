@@ -23,9 +23,6 @@ jobs:
           - TEST_NAME: "Elasticsearch 6.6.0"
             ARGS: ES_VER=6.6.0
           ###### Thread pool
-          - TEST_NAME: "New thread pool"
-            ARGS: DIRAC_USE_NEWTHREADPOOL=No
-          ###### Thread pool
           - TEST_NAME: "Fewer cfg locks"
             ARGS: DIRAC_FEWER_CFG_LOCKS=Yes
           ###### HTTPS tests
