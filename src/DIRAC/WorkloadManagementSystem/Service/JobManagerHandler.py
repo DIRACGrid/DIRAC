@@ -24,7 +24,6 @@ from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -81,16 +80,10 @@ class JobManagerHandler(RequestHandler):
         return S_ERROR("Can't connect to DB: %s" % excp)
 
     cls.msgClient = MessageClient("WorkloadManagement/OptimizationMind")
-    cls.__connectToOptMind()
-    gThreadScheduler.addPeriodicTask(60, cls.__connectToOptMind)
+    result = cls.msgClient.connect(JobManager=True)
+    if not result['OK']:
+      cls.log.warn("Cannot connect to OptimizationMind!", result['Message'])
     return S_OK()
-
-  @classmethod
-  def __connectToOptMind(cls):
-    if not cls.msgClient.connected:
-      result = cls.msgClient.connect(JobManager=True)
-      if not result['OK']:
-        cls.log.warn("Cannot connect to OptimizationMind!", result['Message'])
 
   def initialize(self):
     credDict = self.getRemoteCredentials()
@@ -107,7 +100,11 @@ class JobManagerHandler(RequestHandler):
 
   def __sendJobsToOptimizationMind(self, jids):
     if not self.msgClient.connected:
-      return
+      result = self.msgClient.connect(JobManager=True)
+      if not result['OK']:
+	self.log.warn("Cannot connect to OptimizationMind!", result['Message'])
+	return
+
     result = self.msgClient.createMessage("OptimizeJobs")
     if not result['OK']:
       self.log.error("Cannot create Optimize message", result['Message'])
