@@ -14,6 +14,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
@@ -34,8 +35,13 @@ class TaskQueuesAgent(AgentModule):
     """ just initialize TQDB
     """
     self.tqDB = TaskQueueDB()
+    return S_OK()
 
   def execute(self):
     """ calls TQDB.recalculateTQSharesForAll
     """
-    self.tqDB.recalculateTQSharesForAll()
+    res = self.tqDB.recalculateTQSharesForAll()
+    if not res['OK']:
+      self.log.error("Error recalculating TQ shares", res['Message'])
+
+    return S_OK()
