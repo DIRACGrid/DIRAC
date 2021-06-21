@@ -15,7 +15,6 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
@@ -63,6 +62,8 @@ class MatcherHandlerMixin(object):
                               'Matching', "matches", gMonitor.OP_RATE, 300)
     gMonitor.registerActivity('numTQs', "Number of Task Queues",
                               'Matching', "tqsk queues", gMonitor.OP_MEAN, 300)
+
+    return S_OK()
 
 ##############################################################################
   types_requestJob = [six.string_types + (dict,)]
@@ -133,8 +134,4 @@ class MatcherHandlerMixin(object):
 
 
 class MatcherHandler(MatcherHandlerMixin, RequestHandler):
-  pass
-
-
-class TornadoMatcherHandler(MatcherHandlerMixin, TornadoService):
   pass
