@@ -58,7 +58,7 @@ def filterReplicas(opFile, logger=None, dataManager=None):
   log = logger.getSubLogger("filterReplicas")
   result = defaultdict(list)
 
-  replicas = dataManager.getActiveReplicas(opFile.LFN, getUrl=False)
+  replicas = dataManager.getActiveReplicas(opFile.LFN, getUrl=False, preferDisk=True)
   if not replicas["OK"]:
     log.error('Failed to get active replicas', replicas["Message"])
     return replicas
