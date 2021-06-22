@@ -89,7 +89,7 @@ dependencies:
   - typing >=3.6.6
   - pyyaml
   # OAuth2
-  - Authlib
+  - Authlib==1.0.0.a2
   - pyjwt >=2.1.0
   - dominate
   - pip:

@@ -189,7 +189,6 @@ installSite() {
     exit 1
   fi
 
-  pip install -I Authlib==1.0.0.a2
   echo "==> Completed installation"
 
 }
