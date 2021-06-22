@@ -9,7 +9,7 @@ import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
-from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 transTypes = list(six.string_types) + list(six.integer_types)
@@ -42,7 +42,16 @@ class TransformationManagerHandler(RequestHandler):
   def initializeHandler(cls, serviceInfoDict):
     """ Initialization of DB object
     """
-    cls.transformationDB = TransformationDB()
+
+    try:
+      result = ObjectLoader().loadObject('TransformationSystem.DB.TransformationDB', 'TransformationDB')
+      if not result['OK']:
+        return result
+      cls.transformationDB = result['Value']()
+
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to TransformationDB: %s" % excp)
+
     return S_OK()
 
   types_getCounters = [six.string_types, list, dict]
