@@ -11,8 +11,10 @@ The Following Options are used::
   /LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
   /LocalInstallation/RootPath:        Python 2 only! Used instead of rootPath in "run" script
                                       if defined (if links are used to named versions)
-  /LocalInstallation/InstancePath:    Python 2 only! Location where runit and startup directories are created (default rootPath)
-  /LocalInstallation/UseVersionsDir:  Python 2 only! DIRAC is installed under versions/<Versioned Directory> with a link from pro
+  /LocalInstallation/InstancePath:    Python 2 only! Location where runit and
+                                      startup directories are created (default rootPath)
+  /LocalInstallation/UseVersionsDir:  Python 2 only! DIRAC is installed under
+                                      versions/<Versioned Directory> with a link from pro
                                       (This option overwrites RootPath and InstancePath)
   /LocalInstallation/Host:            Used when build the URL to be published for the installed
                                       service (default: socket.getfqdn())

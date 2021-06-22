@@ -138,12 +138,12 @@ def _computeRootPath(rootPath):
   if rootPath.parent.name != "versions":
     return str(rootPath)
   pattern = re.compile(
-    # Version
-    r"v(\d+\.\d+\.\d+[^\-]*)\-"
-    # Installation time
-    r"(\d+)\-"
-    # Architecture
-    r"([^\-]+)"
+      # Version
+      r"v(\d+\.\d+\.\d+[^\-]*)\-"
+      # Installation time
+      r"(\d+)\-"
+      # Architecture
+      r"([^\-]+)"
   )
   if bool(pattern.fullmatch(rootPath.name)):
     # This is a versioned install
