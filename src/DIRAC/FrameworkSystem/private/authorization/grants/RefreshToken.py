@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from authlib.jose import JsonWebKey, jwt
 from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc6749.grants import RefreshTokenGrant as _RefreshTokenGrant
 
