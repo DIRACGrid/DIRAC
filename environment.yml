@@ -73,7 +73,7 @@ dependencies:
   - openssl <1.1
   - selectors2
   # OAuth2
-  - authlib >=1.0.0
+  - authlib >=1.0.0.a2
   - pyjwt >=2.1.0
   - dominate
   - pip:
