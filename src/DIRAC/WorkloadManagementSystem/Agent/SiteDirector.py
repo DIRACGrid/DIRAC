@@ -536,7 +536,7 @@ class SiteDirector(AgentModule):
 
       # Get the number of available slots on the target site/queue
       totalSlots = self.getQueueSlots(queueName, manyWaitingPilotsFlag)
-      if totalSlots == 0:
+      if totalSlots <= 0:
         self.log.debug('%s: No slots available' % queueName)
         continue
 
