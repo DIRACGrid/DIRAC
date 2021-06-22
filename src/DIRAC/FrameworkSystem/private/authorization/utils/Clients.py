@@ -41,22 +41,6 @@ def getDIRACClients():
   return clients
 
 
-def getDIACClientByID(clientID):
-  """ Search authorization client.
-
-      :param str clientID: client ID
-
-      :return: object or None
-  """
-  gLogger.debug('Try to query %s client' % clientID)
-  clients = getDIRACClients()
-  for cli in clients:
-    if clientID == clients[cli]['client_id']:
-      gLogger.debug('Found %s client:\n' % cli, pprint.pformat(clients[cli]))
-      return Client(clients[cli])
-  return None
-
-
 class Client(OAuth2ClientMixin):
 
   def __init__(self, params):

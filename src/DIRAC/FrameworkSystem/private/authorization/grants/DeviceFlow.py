@@ -125,7 +125,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
       raise OAuth2Error('Cannot found authorization session', result['Message'])
     return (result['Value']['user_id'], True) if result['Value'].get('username') != "None" else None
 
-  def should_slow_down(self, credential, now):
+  def should_slow_down(self, credential):
     """ The authorization request is still pending and polling should continue,
         but the interval MUST be increased by 5 seconds for this and all subsequent requests.
     """

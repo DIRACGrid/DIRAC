@@ -89,8 +89,8 @@ dependencies:
   - typing >=3.6.6
   - pyyaml
   # OAuth2
-  - authlib <=0.15.3
-  - pyjwt <=1.7.1
+  - authlib >=1.0.0
+  - pyjwt >=2.1.0
   - dominate
   - pip:
     # This is a fork of tornado with a patch to allow for configurable iostream

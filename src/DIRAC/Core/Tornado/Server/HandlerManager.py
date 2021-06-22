@@ -257,7 +257,7 @@ class HandlerManager(object):
         urls = []
         # Look for methods that are exported
         for mName, mObj in inspect.getmembers(handler):
-          if inspect.ismethod(mObj) and mName.find(handler.METHOD_PREFIX) == 0:
+          if inspect.isroutine(mObj) and mName.find(handler.METHOD_PREFIX) == 0:
             methodName = mName[len(handler.METHOD_PREFIX):]
             args = getattr(handler, 'path_%s' % methodName, [])
             gLogger.debug(" - Route %s/%s ->  %s %s" % (handler.LOCATION, methodName, module['loadName'], mName))

@@ -77,7 +77,7 @@ class BaseRequestHandler(RequestHandler):
 
           @classmethod
           def _getServiceAuthSection(cls, serviceName):
-            ''' Search service auth section.
+            ''' Search service "Authorization" configuration section.
             '''
             return "%s/Authorization" % PathFinder.getServiceSection(serviceName)
 
@@ -104,9 +104,8 @@ class BaseRequestHandler(RequestHandler):
             # in __executeMethod. This is because these methods are not threadsafe
             # https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
             # However, we can still rely on instance attributes to store what should
-            # be sent back (reminder: there is an instance
-            # of this class created for each request)
-            retVal = yield IOLoop.current().run_in_executor(self._prepareExecutor(args))
+            # be sent back (reminder: there is an instance of this class created for each request)
+            retVal = yield IOLoop.current().run_in_executor(*self._prepareExecutor(args))
             # retVal is :py:class:`tornado.concurrent.Future`
             self._finishFuture(retVal)
 
@@ -222,9 +221,10 @@ class BaseRequestHandler(RequestHandler):
     if result['OK']:
       for providerName in result['Value']:
         result = cls._idps.getIdProvider(providerName)
-        if not result['OK']:
-          gLogger.exception(result['Message'])
-        cls._idp[result['Value'].issuer.strip('/')] = result['Value']
+        if result['OK']:
+          cls._idp[result['Value'].issuer.strip('/')] = result['Value']
+        else:
+          gLogger.error(result['Message'])
 
   @classmethod
   def __initializeService(cls, request):
@@ -361,23 +361,16 @@ class BaseRequestHandler(RequestHandler):
 
         :return: list
     """
-    try:
-      return getattr(self, 'auth_' + self.method)
-    except AttributeError:
-      if self.AUTH_PROPS and not isinstance(self.AUTH_PROPS, (list, tuple)):
-        self.AUTH_PROPS = [p.strip() for p in self.AUTH_PROPS.split(",") if p.strip()]
-      return self.AUTH_PROPS
+    if self.AUTH_PROPS and not isinstance(self.AUTH_PROPS, (list, tuple)):
+      self.AUTH_PROPS = [p.strip() for p in self.AUTH_PROPS.split(",") if p.strip()]
+    return getattr(self, 'auth_' + self.method, self.AUTH_PROPS)
 
   def _getMethod(self):
     """ Get method function to call.
 
         :return: function
     """
-    try:
-      method = getattr(self, '%s%s' % (self.METHOD_PREFIX, self.method))
-    except AttributeError as e:
-      sLog.error("Invalid method", self.method)
-      raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
+    method = getattr(self, '%s%s' % (self.METHOD_PREFIX, self.method), None)
     if not callable(method):
       sLog.error("Invalid method", self.method)
       raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
@@ -416,7 +409,7 @@ class BaseRequestHandler(RequestHandler):
       sLog.error(
           "Error gathering credentials ", "%s; path %s" %
           (self.getRemoteAddress(), self.request.path))
-      raise HTTPError(status_code=http_client.UNAUTHORIZED)
+      raise HTTPError(http_client.UNAUTHORIZED, str(e))
 
     # Check whether we are authorized to perform the query
     # Note that performing the authQuery modifies the credDict...
@@ -432,9 +425,8 @@ class BaseRequestHandler(RequestHandler):
           "Unauthorized access", "Identity %s; path %s; %s" %
           (self.srv_getFormattedRemoteCredentials(),
            self.request.path, extraInfo))
-      raise HTTPError(status_code=http_client.UNAUTHORIZED)
+      raise HTTPError(http_client.UNAUTHORIZED)
 
-  @gen.coroutine
   def __executeMethod(self, targetMethod, args):
     """
       Execute the method called, this method is ran in an executor
@@ -462,12 +454,10 @@ class BaseRequestHandler(RequestHandler):
     # Execute
     try:
       self.initializeRequest()
-      retVal = targetMethod(*args)
+      return targetMethod(*args)
     except Exception as e:  # pylint: disable=broad-except
       sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
-      raise HTTPError(http_client.INTERNAL_SERVER_ERROR)
-
-    return retVal
+      raise e if isinstance(e, HTTPError) else HTTPError(http_client.INTERNAL_SERVER_ERROR, str(e))
 
   def _prepareExecutor(self, args):
     """ Preparation of necessary arguments for the `__executeMethod` method
@@ -483,24 +473,19 @@ class BaseRequestHandler(RequestHandler):
 
         :param object retVal: tornado.concurrent.Future
     """
-    # Wait result of a Future object
-    self.result = retVal.result()
+    self.result = retVal
 
     # Here it is safe to write back to the client, because we are not in a thread anymore
 
     # If you need to end the method using tornado methods, outside the thread,
     # you need to define the finish_<methodName> method.
     # This method will be started after __executeMethod is completed.
-    try:
-      finishFunc = eval('self.finish_%s' % self.method)
-    except (NameError, AttributeError):
-      finishFunc = None
-
+    finishFunc = getattr(self, 'finish_%s' % self.method, None)
     if callable(finishFunc):
       finishFunc()
 
     # In case nothing is returned
-    elif self.result is None:
+    elif retVal is None:
       self.finish()
 
     # If set to true, do not JEncode the return of the RPC call
@@ -509,16 +494,16 @@ class BaseRequestHandler(RequestHandler):
     elif self.get_argument('rawContent', default=False):
       # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
       self.set_header("Content-Type", "application/octet-stream")
-      self.finish(self.result)
+      self.finish(retVal)
 
     # Return simple text or html
-    elif isinstance(self.result, string_types):
-      self.finish(self.result)
+    elif isinstance(retVal, string_types):
+      self.finish(retVal)
 
     # JSON
     else:
       self.set_header("Content-Type", "application/json")
-      self.finish(encode(self.result))
+      self.finish(encode(retVal))
 
   def on_finish(self):
     """
@@ -549,16 +534,13 @@ class BaseRequestHandler(RequestHandler):
                   (not a DIRAC structure !)
     """
     err = []
-    result = None
 
-    grants = grants or self.USE_AUTHZ_GRANTS
-
-    if not grants:
-      raise Exception('USE_AUTHZ_GRANTS is not defined.')
-
-    for a in grants:
-      grant = a.upper()
-      grantFunc = getattr(self, '_authz%s' % grant)
+    # At least some authorization method must be defined, if nothing is defined,
+    # the authorization will go through the `_authzVISITOR` method and
+    # everyone will have access as anonymous@visitor
+    for grant in (grants or self.USE_AUTHZ_GRANTS or 'VISITOR'):
+      grant = grant.upper()
+      grantFunc = getattr(self, '_authz%s' % grant, None)
       if not callable(grantFunc):
         raise Exception('%s authentication type is not supported.' % grant)
       result = grantFunc()

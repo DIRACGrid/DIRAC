@@ -36,7 +36,6 @@ class Token(Model, OAuth2TokenMixin):
   kid = Column(String(255))
   user_id = Column(String(255))
   provider = Column(String(255))
-  client_id = Column(String(255))
   expires_at = Column(Integer, nullable=False, default=0)
   access_token = Column(Text, nullable=False)
   refresh_token = Column(Text, nullable=False)
@@ -120,6 +119,7 @@ class TokenDB(SQLAlchemyDB):
       session.query(Token).filter(Token.user_id == userID).filter(Token.provider == provider)\
                           .filter(Token.access_token != token['access_token']).delete()
     except Exception as e:
+      self.log.exception(e)
       return self.__result(session, S_ERROR('Could not add Token: %s' % repr(e)))
     self.log.info('Token successfully added for %s user, %s provider' % (token['user_id'], token['provider']))
     return self.__result(session, S_OK([self.__rowToDict(t) for t in oldTokens] if oldTokens else []))

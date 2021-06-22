@@ -68,6 +68,6 @@ ldap3
 # setuptools_scm comes via tornado. newer versions of setuptools_scm do not support py2
 setuptools_scm<6.0
 # OAuth2
-authlib <=0.15.3
-pyjwt <=1.7.1
+authlib >=1.0.0
+pyjwt >=2.1.0
 dominate

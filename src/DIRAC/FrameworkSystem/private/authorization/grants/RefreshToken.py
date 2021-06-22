@@ -22,11 +22,10 @@ class RefreshTokenGrant(_RefreshTokenGrant):
 
         :return: dict or None
     """
-    result = self.server.db.getJWKs()
+    result = self.server.readToken(refresh_token)
     if not result['OK']:
       raise OAuth2Error(result['Message'])
-    jwks = result['Value']
-    rtDict = jwt.decode(refresh_token, JsonWebKey.import_key_set(jwks))
+    rtDict = result['Value']
     result = self.server.db.getCredentialByRefreshToken(rtDict['jti'])
     if not result['OK']:
       raise OAuth2Error(result['Message'])

@@ -106,20 +106,20 @@ class AuthHandler(TornadoREST):
 
         :param object retVal: tornado.concurrent.Future
     """
-    self.result = retVal.result()
+    self.result = retVal
 
     # Is it S_OK or S_ERROR?
-    r = self.result
+    r = retVal
     if isinstance(r, dict) and isinstance(r.get('OK'), bool) and ('Value' if r['OK'] else 'Message') in r:
-      if not self.result['OK']:
+      if not retVal['OK']:
         # S_ERROR is interpreted in the OAuth2 error format.
         self.set_status(400)
-        self.write({'error': 'server_error', 'description': self.result['Message']})
+        self.write({'error': 'server_error', 'description': retVal['Message']})
         self.clear_cookie('auth_session')
-        self.log.error('%s\n' % self.result['Message'], ''.join(self.result['CallStack']))
+        self.log.error('%s\n' % retVal['Message'], ''.join(retVal['CallStack']))
       else:
         # Successful responses and OAuth2 errors are processed here
-        status_code, headers, payload, new_session, error = self.result['Value'][0]
+        status_code, headers, payload, new_session, error = retVal['Value'][0]
         if status_code:
           self.set_status(status_code)
         if headers:
@@ -131,7 +131,7 @@ class AuthHandler(TornadoREST):
           self.set_secure_cookie('auth_session', json.dumps(new_session), secure=True, httponly=True)
         if error:
           self.clear_cookie('auth_session')
-        for method, args_kwargs in self.result['Value'][1].items():
+        for method, args_kwargs in retVal['Value'][1].items():
           eval('self.%s' % method)(*args_kwargs[0], **args_kwargs[1])
       self.finish()
     else:
@@ -204,7 +204,8 @@ class AuthHandler(TornadoREST):
             ]
           }
     """
-    return self.server.db.getJWKs().get('Value', {})
+    result = self.server.db.getKeySet()
+    return result['Value'].as_dict() if result['OK'] else {}
 
   def web_revoke(self):
     """ Revocation endpoint
@@ -406,9 +407,10 @@ class AuthHandler(TornadoREST):
     state = self.get_argument('state')
 
     # Try to catch errors
-    if self.get_argument('error', None):
-      error = OAuth2Error(error=self.get_argument('error'), description=self.get_argument('error_description', ''))
-      return self.server.handle_error_response(state, error)
+    error = self.get_argument('error', None)
+    if error:
+      return self.server.handle_error_response(
+          state, OAuth2Error(error=error, description=self.get_argument('error_description', '')))
 
     # Check current auth session that was initiated for the selected external identity provider
     try:
@@ -422,8 +424,7 @@ class AuthHandler(TornadoREST):
 
     if not sessionWithExtIdP.get('authed'):
       # Parse result of the second authentication flow
-      self.log.info('%s session, parsing authorization response:\n' % state,
-                    '\n'.join([self.request.uri, self.request.query, self.request.body, str(self.request.headers)]))
+      self.log.info('%s session, parsing authorization response:\n' % state, self.request.uri)
 
       result = self.server.parseIdPAuthorizationResponse(self.request, sessionWithExtIdP)
       if not result['OK']:

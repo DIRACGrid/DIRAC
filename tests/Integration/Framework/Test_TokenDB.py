@@ -27,17 +27,17 @@ exp_payload = payload.copy()
 exp_payload['iat'] = int(time.time()) - 10
 exp_payload['exp'] = int(time.time()) - 10
 
-DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
-              refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
+DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+              refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
               expires_at=int(time.time()) + 3600)
 
-New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
-                  refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
+New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                  refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
                   issued_at=int(time.time()),
                   expires_in=int(time.time()) + 3600)
 
-Exp_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret"),
-                  refresh_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret"),
+Exp_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret").decode('utf-8'),
+                  refresh_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret").decode('utf-8'),
                   expires_at=int(time.time()) - 10,
                   rt_expires_at=int(time.time()) - 10)
 

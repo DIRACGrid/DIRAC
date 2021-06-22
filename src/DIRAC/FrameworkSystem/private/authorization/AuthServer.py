@@ -11,7 +11,7 @@ import logging
 from dominate import document, tags as dom
 from tornado.template import Template
 
-from authlib.jose import jwt
+from authlib.jose import JsonWebKey, jwt
 from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.base import OAuth2Error
 from authlib.common.security import generate_token
@@ -24,7 +24,7 @@ from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import Refr
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (DeviceAuthorizationEndpoint,
                                                                            DeviceCodeGrant)
 from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import AuthorizationCodeGrant
-from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIACClientByID
+from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients, Client
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import OAuth2Request, createOAuth2Request
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -83,21 +83,39 @@ class AuthServer(_AuthorizationServer):
   def __init__(self):
     self.db = AuthDB()
     self.log = log
+    self.idps = IdProviderFactory()
     self.proxyCli = ProxyManagerClient()
     self.tokenCli = TokenManagerClient()
-    self.idps = IdProviderFactory()
-    # Privide two authlib methods query_client and save_token
-    _AuthorizationServer.__init__(self, query_client=getDIACClientByID, save_token=lambda x, y: None)
-    self.generate_token = self.generateProxyOrToken
-    self.config = {}
     self.metadata = collectMetadata()
     self.metadata.validate()
+    _AuthorizationServer.__init__(self, scopes_supported=self.metadata['scopes_supported'])
+    # Skip authlib method save_token
+    self.save_token = lambda x, y: None
+    self.send_signal = lambda *x, **y: None
+    self.generate_token = self.generateProxyOrToken
     # Register configured grants
     self.register_grant(RefreshTokenGrant)
     self.register_grant(DeviceCodeGrant)
     self.register_endpoint(DeviceAuthorizationEndpoint)
     self.register_endpoint(RevocationEndpoint)
     self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True)])
+
+  def query_client(self, client_id):
+    """ Search authorization client.
+
+        :param str clientID: client ID
+
+        :return: object or None
+    """
+    gLogger.debug('Try to query %s client' % client_id)
+    clients = getDIRACClients()
+    for cli in clients:
+      print(clients[cli]['client_id'])
+      print(client_id)
+      if client_id == clients[cli]['client_id']:
+        gLogger.debug('Found %s client:\n' % cli, pprint.pformat(clients[cli]))
+        return Client(clients[cli])
+    return None
 
   def addSession(self, session):
     self.db.addSession(session)
@@ -182,10 +200,25 @@ class AuthServer(_AuthorizationServer):
     result = self.db.getPrivateKey()
     if not result['OK']:
       return result
-    key = result['Value']['rsakey']
-    kid = result['Value']['kid']
+    key = result['Value']
     try:
-      return S_OK(jwt.encode(dict(alg='RS256', kid=kid), payload, key))
+      return S_OK(jwt.encode(dict(alg='RS256', kid=key.thumbprint()), payload, key).decode('utf-8'))
+    except Exception as e:
+      self.log.exception(e)
+      return S_ERROR(repr(e))
+  
+  def readToken(self, token):
+    """ Decode self token
+
+        :param str token: token to decode
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    result = self.db.getKeySet()
+    if not result['OK']:
+      return result
+    try:
+      return S_OK(jwt.decode(token, JsonWebKey.import_key_set(result['Value'].as_dict())))
     except Exception as e:
       self.log.exception(e)
       return S_ERROR(repr(e))
@@ -276,11 +309,6 @@ class AuthServer(_AuthorizationServer):
     result = self.tokenCli.updateToken(idpObj.token, credDict['ID'], idpObj.name)
     return S_OK(credDict) if result['OK'] else result
 
-  def get_error_uris(self, request):
-    error_uris = self.config.get('error_uris')
-    if error_uris:
-      return dict(error_uris)
-
   def create_oauth2_request(self, request, method_cls=OAuth2Request, use_json=False):
     self.log.debug('Create OAuth2 request', 'with json' if use_json else '')
     return createOAuth2Request(request, method_cls, use_json)
@@ -295,8 +323,7 @@ class AuthServer(_AuthorizationServer):
     super(AuthServer, self).validate_requested_scope(extended_scope, state)
 
   def handle_error_response(self, request, error):
-    return self.handle_response(*error(translations=self.get_translations(request),
-                                       error_uris=self.get_error_uris(request)), error=True)
+    return self.handle_response(*error(self.get_error_uri(request, error)), error=True)
 
   def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, error=None, **actions):
     self.log.debug('Handle authorization response with %s status code:' % status_code, payload)

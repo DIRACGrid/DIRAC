@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from authlib.jose import JsonWebKey, jwt
 from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc7009 import RevocationEndpoint as _RevocationEndpoint
 
@@ -20,11 +19,10 @@ class RevocationEndpoint(_RevocationEndpoint):
         :return: dict
     """
     if token_type_hint == 'refresh_token':
-      result = self.server.db.getJWKs()
+      result = self.server.readToken(token)
       if not result['OK']:
         raise OAuth2Error(result['Message'])
-      jwks = result['Value']
-      rtDict = jwt.decode(token, JsonWebKey.import_key_set(jwks))
+      rtDict = result['Value']
       result = self.server.db.getCredentialByRefreshToken(rtDict['jti'])
       if not result['OK']:
         raise OAuth2Error(result['Message'])

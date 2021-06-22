@@ -18,7 +18,6 @@ from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 from authlib.oauth2.rfc6749.util import scope_to_list
 from authlib.oauth2.rfc6749.wrappers import OAuth2Token as _OAuth2Token
-from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
 BEARER_TOKEN_ENV = 'BEARER_TOKEN'
 BEARER_TOKEN_FILE_ENV = 'BEARER_TOKEN_FILE'
@@ -136,17 +135,35 @@ class OAuth2Token(_OAuth2Token):
       kwargs['expires_at'] = self.get_claim('exp')
     super(OAuth2Token, self).__init__(kwargs)
 
-  def get_client_id(self):
-    return self.get('client_id', self.get('azp'))
+  def check_client(self, client):
+    """ A method to check if this token is issued to the given client.
+
+        :param client: client object
+
+        :return: bool
+    """
+    return self.get('client_id', self.get('azp')) == client.client_id
 
   def get_scope(self):
+    """ A method to get scope of the authorization code.
+
+        :return: str
+    """
     return self.get('scope')
 
   def get_expires_in(self):
-    return self.get('expires_in')
+    """ A method to get the ``expires_in`` value of the token.
 
-  def get_expires_at(self):
-    return int(self.get('expires_at', self.get('issued_at') + self.get('expires_in')))
+        :return: int
+    """
+    return int(self.get('expires_in'))
+
+  def is_expired(self):
+    """ A method to define if this token is expired.
+
+        :return: bool
+    """
+    return int(self.get('expires_at', self.get('issued_at') + self.get('expires_in'))) < time.time()
 
   @property
   def scopes(self):

@@ -24,12 +24,12 @@ payload = {'sub': 'user',
            'setup': 'setup',
            'group': 'my_group'}
 
-DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
-              refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
+DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+              refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
               expires_at=int(time.time()) + 3600)
 
-New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
-                  refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret"),
+New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                  refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
                   expires_in=int(time.time()) + 3600)
 
 
@@ -121,36 +121,36 @@ def test_keys():
   # Create new one
   result = db.getPrivateKey()
   assert result['OK'], result['Message']
-  assert type(result['Value']['rsakey']) is RSAKey
-  assert type(result['Value']['strkey']) is str
+
+  private_key = result['Value']['rsakey']
+  assert private_key is RSAKey
 
   # Sign token
-  header['kid'] = result['Value']['kid']
-  private_key = result['Value']['rsakey']
+  header['kid'] = private_key.thumbprint()
 
   # Find key by KID
   result = db.getPrivateKey(header['kid'])
   assert result['OK'], result['Message']
-  assert result['Value']['rsakey'] == private_key
+  assert result['Value'].as_dict(True) == private_key.as_dict(True)
 
+  # Sign token
   token = jwt.encode(header, payload, private_key)
   # Sign auth code
   code = jws.serialize_compact(header, json_b64encode(code_payload), private_key)
 
   # Get public key set
   result = db.getKeySet()
+  keyset = result['Value']
   assert result['OK'], result['Message']
-  _payload = jwt.decode(token, JsonWebKey.import_key_set(result['Value'].as_dict()))
+  assert bool([key for key in keyset.as_dict(True)['keys'] if key["kid"] == header['kid']])
+
+  # Read token
+  _payload = jwt.decode(token, JsonWebKey.import_key_set(keyset.as_dict()))
   assert _payload == payload
-  data = jws.deserialize_compact(code, result['Value'].keys[0])
+  # Read auth code
+  data = jws.deserialize_compact(code, keyset.keys[0])
   _code_payload = json_loads(urlsafe_b64decode(data['payload']))
   assert _code_payload == code_payload
-
-  # Get JWK
-  result = db.getJWKs()
-  assert result['OK'], result['Message']
-  _payload = jwt.decode(token, JsonWebKey.import_key_set(result['Value']))
-  assert _payload == payload, result['Value']
 
 
 def test_Sessions():

@@ -9,11 +9,12 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from functools import partial
+
 import tornado.ioloop
 from tornado import gen
 from tornado.web import HTTPError
 from tornado.ioloop import IOLoop
-from six.moves import http_client
 
 import DIRAC
 

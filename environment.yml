@@ -73,8 +73,8 @@ dependencies:
   - openssl <1.1
   - selectors2
   # OAuth2
-  - authlib <=0.15.3
-  - pyjwt <=1.7.1
+  - authlib >=1.0.0
+  - pyjwt >=2.1.0
   - dominate
   - pip:
     - diraccfg

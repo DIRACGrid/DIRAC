@@ -17,8 +17,6 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from authlib.jose import KeySet, RSAKey
 from authlib.common.security import generate_token
-from authlib.common.encoding import urlsafe_b64decode, urlsafe_b64encode, to_bytes, to_unicode, json_b64encode
-from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
@@ -169,47 +167,27 @@ class AuthDB(SQLAlchemyDB):
         :return: S_OK/S_ERROR
     """
     key = RSAKey.generate_key(key_size=1024, is_private=True)
-    dictKey = dict(key=json.dumps(key.as_dict()),
-                   expires_at=time.time() + (30 * 24 * 3600),
-                   kid=KeySet([key]).as_dict()['keys'][0]['kid'])
-
+    keyDict = dict(key=json.dumps(key.as_dict(True)), kid=key.thumbprint(), expires_at=time.time() + (30 * 24 * 3600))
     session = self.session()
     try:
-      session.add(JWK(**dictKey))
+      session.add(JWK(**keyDict))
     except Exception as e:
       return self.__result(session, S_ERROR('Could not generate keys: %s' % e))
-    return self.__result(session, S_OK(dictKey))
+    return self.__result(session, S_OK(keyDict))
 
   def getKeySet(self):
     """ Get key set
 
         :return: S_OK(obj)/S_ERROR()
     """
-    keys = []
     result = self.getActiveKeys()
     if result['OK'] and not result['Value']:
       result = self.generateRSAKeys()
       if result['OK']:
-        result = self.getActiveKeys()
+        result['Value'] = [result['Value']]
     if not result['OK']:
       return result
-    for keyDict in result['Value']:
-      key = RSAKey.import_key(json.loads(keyDict['key']))
-      keys.append(key)
-    return S_OK(KeySet(keys))
-
-  def getJWKs(self):
-    """ Get JWKs list
-
-        :return: S_OK(dict)/S_ERROR()
-    """
-    keys = []
-    result = self.getKeySet()
-    if not result['OK']:
-      return result
-    for k in result['Value'].as_dict()['keys']:
-      keys.append({'n': k['n'], "kty": k['kty'], "e": k['e'], "kid": k['kid']})
-    return S_OK({'keys': keys})
+    return S_OK(KeySet([RSAKey.import_key(json.loads(key['key'])) for key in result['Value']]))
 
   def getPrivateKey(self, kid=None):
     """ Get private key
@@ -224,17 +202,17 @@ class AuthDB(SQLAlchemyDB):
     jwks = result['Value']
     if kid:
       strkey = jwks[0]['key']
-      return S_OK(dict(rsakey=RSAKey.import_key(json.loads(strkey)), kid=kid, strkey=strkey))
+      return S_OK(RSAKey.import_key(json.loads(jwks[0]['key'])))
     newer = {}
     for jwk in jwks:
-      if jwk['expires_at'] > newer.get('expires_at', time.time() + (24 * 3600)):
+      if int(jwk['expires_at']) > int(newer.get('expires_at', time.time() + (24 * 3600))):
         newer = jwk
     if not newer.get('key'):
       result = self.generateRSAKeys()
       if not result['OK']:
         return result
       newer = result['Value']
-    return S_OK(dict(rsakey=RSAKey.import_key(json.loads(newer['key'])), kid=newer['kid'], strkey=newer['key']))
+    return S_OK(RSAKey.import_key(json.loads(newer['key'])))
 
   def getActiveKeys(self, kid=None):
     """ Get active keys
