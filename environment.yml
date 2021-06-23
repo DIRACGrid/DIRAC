@@ -74,7 +74,7 @@ dependencies:
   - selectors2
   # OAuth2
   - authlib
-  - pyjwt >=2.1.0
+  - pyjwt
   - dominate
   - pip:
     - diraccfg
