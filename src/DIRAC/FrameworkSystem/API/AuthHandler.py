@@ -162,8 +162,6 @@ class AuthHandler(TornadoREST):
             "grant_types_supported": [
               "authorization_code",
               "code",
-              "urn:ietf:params:oauth:grant-type:device_code",
-              "implicit",
               "refresh_token"
             ],
             "token_endpoint": "https://domain.com/DIRAC/auth/token",
@@ -446,15 +444,15 @@ class AuthHandler(TornadoREST):
         POST LOCATION/token
 
         Parameters:
-        +----------------+--------+-------------------------------------+---------------------------------------------+
-        | **name**       | **in** | **description**                     | **example**                                 |
-        +----------------+--------+-------------------------------------+---------------------------------------------+
-        | grant_type     | query  | grant type to use                   | urn:ietf:params:oauth:grant-type:device_code|
-        +----------------+--------+-------------------------------------+---------------------------------------------+
-        | client_id      | query  | The public client ID                | 3f1DAj8z6eNw0E6JGq1VuzRkpWUL9XTxhL86efZw    |
-        +----------------+--------+-------------------------------------+---------------------------------------------+
-        | device_code    | query  | device code                         | uW5xL4hr2tqwBPKL5d0JO9Fcc67gLqhJsNqYTSp     |
-        +----------------+--------+-------------------------------------+---------------------------------------------+
+        +----------------+--------+-------------------------------+---------------------------------------------------+
+        | **name**       | **in** | **description**               | **example**                                       |
+        +----------------+--------+-------------------------------+---------------------------------------------------+
+        | grant_type     | query  | grant type to use             | urn:ietf:params:oauth:grant-type:device_code      |
+        +----------------+--------+-------------------------------+---------------------------------------------------+
+        | client_id      | query  | The public client ID          | 3f1DAj8z6eNw0E6JGq1VuzRkpWUL9XTxhL86efZw          |
+        +----------------+--------+-------------------------------+---------------------------------------------------+
+        | device_code    | query  | device code                   | uW5xL4hr2tqwBPKL5d0JO9Fcc67gLqhJsNqYTSp           |
+        +----------------+--------+-------------------------------+---------------------------------------------------+
 
         :mod:`Supported grant types <DIRAC.FrameworkSystem.private.authorization.grants>`
 
