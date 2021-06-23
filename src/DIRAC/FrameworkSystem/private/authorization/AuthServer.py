@@ -206,7 +206,7 @@ class AuthServer(_AuthorizationServer):
     except Exception as e:
       self.log.exception(e)
       return S_ERROR(repr(e))
-  
+
   def readToken(self, token):
     """ Decode self token
 

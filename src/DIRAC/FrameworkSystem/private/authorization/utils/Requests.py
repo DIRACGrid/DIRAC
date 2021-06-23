@@ -59,5 +59,6 @@ def createOAuth2Request(request, method_cls=OAuth2Request, use_json=False):
     return method_cls(request['method'], request['uri'], request.get('body'), request.get('headers'))
   if use_json:
     return method_cls(request.method, request.full_url(), json_decode(request.body), request.headers)
-  body = {k:request.body_arguments[k][-1].decode("utf-8") for k in request.body_arguments if request.body_arguments[k]}
+  body = {k: request.body_arguments[k][-1].decode("utf-8")
+          for k in request.body_arguments if request.body_arguments[k]}
   return method_cls(request.method, request.full_url(), body, request.headers)
