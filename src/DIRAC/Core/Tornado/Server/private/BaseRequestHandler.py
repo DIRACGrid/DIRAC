@@ -530,8 +530,7 @@ class BaseRequestHandler(RequestHandler):
 
         :param list grants: grants to use
 
-        :returns: a dict containing the return of :py:meth:`DIRAC.Core.Security.X509Chain.X509Chain.getCredentials`
-                  (not a DIRAC structure !)
+        :returns: a dict containing user credentials
     """
     err = []
 
@@ -541,9 +540,7 @@ class BaseRequestHandler(RequestHandler):
     for grant in (grants or self.USE_AUTHZ_GRANTS or 'VISITOR'):
       grant = grant.upper()
       grantFunc = getattr(self, '_authz%s' % grant, None)
-      if not callable(grantFunc):
-        raise Exception('%s authentication type is not supported.' % grant)
-      result = grantFunc()
+      result = grantFunc() if callable(grantFunc) else S_ERROR('%s authentication type is not supported.' % grant)
       if result['OK']:
         for e in err:
           sLog.debug(e)
