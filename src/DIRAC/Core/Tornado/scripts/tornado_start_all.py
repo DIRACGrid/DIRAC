@@ -36,6 +36,8 @@ def main():
   from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
+  Script.parseCommandLine()
+
   # We check if there is no configuration server started as master
   # If you want to start a master CS you should use Configuration_Server.cfg and
   # use tornado-start-CS.py
@@ -44,7 +46,6 @@ def main():
     gLogger.fatal("You can't run the CS and services in the same server!")
     sys.exit(0)
 
-  Script.parseCommandLine()
   localCfg = Script.localCfg
   localCfg.setConfigurationForServer('Tornado/Tornado')
   localCfg.addMandatoryEntry("/DIRAC/Setup")
