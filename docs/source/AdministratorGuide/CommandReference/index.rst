@@ -155,6 +155,9 @@ Other commands:
 .. toctree::
     :maxdepth: 2
 
+    dirac-login
+    dirac-logout
+
     dirac-admin-accounting-cli
     
     dirac-admin-sysadmin-cli
