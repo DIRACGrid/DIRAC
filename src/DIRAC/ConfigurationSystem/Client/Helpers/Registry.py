@@ -724,16 +724,9 @@ def getIDFromDN(userDN):
 
       :param str userDN: user DN
 
-      :return: str
+      :return: S_OK(str)/S_ERROR()
   """
-  return userDN.strip('/O=DIRAC/CN=')
-
-
-def isDNWrappedID(user):
-  """ Is it wrapped user ID?
-
-      :param str user: user ID
-
-      :return: bool
-  """
-  return user.startswith('/O=DIRAC/CN=')
+  prefix = '/O=DIRAC/CN='
+  if not userDN.startswith(prefix):
+    return S_ERROR("%s DN does not contain user ID." % userDN)
+  return S_OK(userDN[len(prefix):])

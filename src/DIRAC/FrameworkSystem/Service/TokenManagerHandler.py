@@ -50,8 +50,9 @@ class TokenManagerHandler(TornadoService):
     if not result['OK']:
       return result
     for dn in result['Value']:
-      if Registry.isDNWrappedID(dn):
-        result = self.__tokenDB.getTokensByUserID(Registry.getIDFromDN(dn))
+      result = Registry.getIDFromDN(dn)
+      if result['OK']:
+        result = self.__tokenDB.getTokensByUserID(result['Value'])
         if not result['OK']:
           gLogger.error(result['Message'])
         tokensInfo += result['Value']
@@ -144,8 +145,9 @@ class TokenManagerHandler(TornadoService):
 
     err = []
     for dn in result['Value']:
-      if Registry.isDNWrappedID(dn):
-        result = self.__tokenDB.getTokenForUserProvider(Registry.getIDFromDN(dn), provider)
+      result = Registry.getIDFromDN(dn)
+      if result['OK']:
+        result = self.__tokenDB.getTokenForUserProvider(result['Value'], provider)
         if not result['OK']:
           err.append(result['Message'])
         elif result['Value']:
@@ -170,7 +172,5 @@ class TokenManagerHandler(TornadoService):
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       if userDN != credDict['DN']:
         return S_ERROR("You aren't allowed!")
-    retVal = self.__tokenDB.removeToken(user_id=Registry.getIDFromDN(userDN))
-    if not retVal['OK']:
-      return retVal
-    return S_OK()
+    result = Registry.getIDFromDN(dn)
+    return self.__tokenDB.removeToken(user_id=result['Value']) if result['OK'] else result
