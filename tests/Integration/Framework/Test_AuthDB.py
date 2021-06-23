@@ -122,7 +122,7 @@ def test_keys():
   result = db.getPrivateKey()
   assert result['OK'], result['Message']
 
-  private_key = result['Value']['rsakey']
+  private_key = result['Value']
   assert private_key is RSAKey
 
   # Sign token
