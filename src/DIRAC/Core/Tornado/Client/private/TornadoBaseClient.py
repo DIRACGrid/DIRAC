@@ -235,9 +235,9 @@ class TornadoBaseClient(object):
       self.__useAccessToken = self.kwargs[self.KW_USE_ACCESS_TOKEN]
     else:
       self.__useAccessToken = gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true")
-      self.kwargs[self.KW_USE_ACCESS_TOKEN] = self.__useAccessToken
       if 'DIRAC_USE_ACCESS_TOKEN' in os.environ:
         self.__useAccessToken = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ['yes', 'true']
+      self.kwargs[self.KW_USE_ACCESS_TOKEN] = self.__useAccessToken
 
     if self.__useAccessToken:
       result = IdProviderFactory().getIdProvider('DIRACCLI')
