@@ -716,7 +716,7 @@ def wrapIDAsDN(userID):
 
       :return: str
   """
-  return '/O=DIRAC/CN=%s' % userID
+  return '/O=DIRAC/CN=' + userID
 
 
 def getIDFromDN(userDN):
