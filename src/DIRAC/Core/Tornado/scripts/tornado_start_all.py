@@ -20,11 +20,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 @Script()
 def main():
 
-  if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() not in ('yes', 'true'):
+  if os.environ.get("DIRAC_USE_TORNADO_IOLOOP", "false").lower() not in ("yes", "true"):
     raise RuntimeError(
-        "DIRAC_USE_TORNADO_IOLOOP is not defined in the environment." + "\n" +
-        "It is necessary to run with Tornado." + "\n" +
-        "https://dirac.readthedocs.io/en/latest/DeveloperGuide/TornadoServices/index.html"
+        "DIRAC_USE_TORNADO_IOLOOP is not defined in the environment."
+        + "\n"
+        + "It is necessary to run with Tornado."
+        + "\n"
+        + "https://dirac.readthedocs.io/en/latest/DeveloperGuide/TornadoServices/index.html"
     )
 
   from DIRAC import gConfig
@@ -42,6 +44,7 @@ def main():
     gLogger.fatal("You can't run the CS and services in the same server!")
     sys.exit(0)
 
+  Script.parseCommandLine()
   localCfg = Script.localCfg
   localCfg.setConfigurationForServer('Tornado/Tornado')
   localCfg.addMandatoryEntry("/DIRAC/Setup")
