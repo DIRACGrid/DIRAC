@@ -103,7 +103,6 @@ then
     dirac-restart-component Tornado Tornado -ddd
   done< <(python -m DIRAC.Core.Utilities.Extensions findServices | grep Tornado | grep -v Configuration | sed -e 's/Handler//g' -e 's/System//g')
 
-
   # Restart the CS to take all that into account
   dirac-restart-component Configuration Server "$DEBUG"
 
