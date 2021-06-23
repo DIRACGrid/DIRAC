@@ -69,5 +69,5 @@ ldap3
 setuptools_scm<6.0
 # OAuth2
 Authlib>=1.0.0.a2
-pyjwt >=2.1.0
+pyjwt
 dominate
