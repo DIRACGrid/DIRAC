@@ -48,7 +48,11 @@ class TornadoConfigurationHandler(TornadoService):
       Returns the configuration
     """
     sData = self.ServiceInterface.getCompressedConfigurationData()
+<<<<<<< HEAD
     return S_OK(b64encode(sData).decode())
+=======
+    return S_OK(b64encode(sData))
+>>>>>>> c2f34f040 (move TornadoConfigurationHandler fixes to separate PR)
 
   def export_getCompressedDataIfNewer(self, sClientVersion):
     """
@@ -59,7 +63,11 @@ class TornadoConfigurationHandler(TornadoService):
     sVersion = self.ServiceInterface.getVersion()
     retDict = {'newestVersion': sVersion}
     if sClientVersion < sVersion:
+<<<<<<< HEAD
       retDict['data'] = b64encode(self.ServiceInterface.getCompressedConfigurationData()).decode()
+=======
+      retDict['data'] = b64encode(self.ServiceInterface.getCompressedConfigurationData())
+>>>>>>> c2f34f040 (move TornadoConfigurationHandler fixes to separate PR)
     return S_OK(retDict)
 
   def export_publishSlaveServer(self, sURL):
