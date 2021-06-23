@@ -55,17 +55,18 @@ def collectMetadata(issuer=None):
   if not result['OK']:
     raise Exception('Cannot prepare authorization server metadata. %s' % result['Message'])
   metadata = result['Value']
-  metadata['jwks_uri'] = metadata['issuer'] + '/jwk'
-  metadata['token_endpoint'] = metadata['issuer'] + '/token'
-  metadata['userinfo_endpoint'] = metadata['issuer'] + '/userinfo'
-  metadata['revocation_endpoint'] = metadata['issuer'] + '/revoke'
-  metadata['authorization_endpoint'] = metadata['issuer'] + '/authorization'
-  metadata['device_authorization_endpoint'] = metadata['issuer'] + '/device'
+  for name, endpoint in [('jwks_uri', 'jwk'),
+                         ('token_endpoint', 'token'),
+                         ('userinfo_endpoint', 'userinfo'),
+                         ('revocation_endpoint', 'revoke'),
+                         ('authorization_endpoint', 'authorization'),
+                         ('device_authorization_endpoint', 'device')]:
+    metadata[name] = metadata['issuer'].strip('/') + '/' + endpoint
+  metadata['scopes_supported'] = ['g:', 'proxy', 'lifetime:']
   metadata['grant_types_supported'] = ['code', 'authorization_code', 'refresh_token',
                                        'urn:ietf:params:oauth:grant-type:device_code']
   metadata['response_types_supported'] = ['code', 'device', 'token']
   metadata['code_challenge_methods_supported'] = ['S256']
-  metadata['scopes_supported'] = ['g:', 'proxy', 'lifetime:']
   return AuthorizationServerMetadata(metadata)
 
 
@@ -89,7 +90,7 @@ class AuthServer(_AuthorizationServer):
     self.metadata = collectMetadata()
     self.metadata.validate()
     _AuthorizationServer.__init__(self, scopes_supported=self.metadata['scopes_supported'])
-    # Skip authlib method save_token
+    # Skip authlib method save_token and send_signal
     self.save_token = lambda x, y: None
     self.send_signal = lambda *x, **y: None
     self.generate_token = self.generateProxyOrToken
@@ -105,13 +106,11 @@ class AuthServer(_AuthorizationServer):
 
         :param str clientID: client ID
 
-        :return: object or None
+        :return: client as object or None
     """
     gLogger.debug('Try to query %s client' % client_id)
     clients = getDIRACClients()
     for cli in clients:
-      print(clients[cli]['client_id'])
-      print(client_id)
       if client_id == clients[cli]['client_id']:
         gLogger.debug('Found %s client:\n' % cli, pprint.pformat(clients[cli]))
         return Client(clients[cli])

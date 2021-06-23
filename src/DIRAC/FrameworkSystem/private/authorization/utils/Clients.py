@@ -29,7 +29,7 @@ def getDIRACClients():
       :return: S_OK(dict)/S_ERROR()
   """
   clients = DEFAULT_CLIENTS.copy()
-  result = gConfig.getOptionsDictRecursively('/DIRAC/Security/Authorization/Client')
+  result = gConfig.getOptionsDictRecursively('/DIRAC/Security/Authorization/Clients')
   if not result['OK']:
     gLogger.error(result['Message'])
   confClients = result.get('Value', {})
