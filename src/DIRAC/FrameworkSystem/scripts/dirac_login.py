@@ -15,7 +15,6 @@ from __future__ import print_function
 
 import os
 import sys
-from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR

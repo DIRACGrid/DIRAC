@@ -5,14 +5,10 @@ from __future__ import division
 from __future__ import print_function
 
 from time import time
-from pprint import pprint
 from authlib.jose import JsonWebSignature
 from authlib.oauth2.base import OAuth2Error
-from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.oauth2.rfc6749.grants import AuthorizationCodeGrant as _AuthorizationCodeGrant
-from authlib.common.encoding import to_unicode, json_dumps, json_b64encode, urlsafe_b64decode, json_loads
-
-from DIRAC import gLogger, S_OK, S_ERROR
+from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
 
 
 class OAuth2Code(dict):
@@ -69,7 +65,7 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
 
         :return: OAuth2Code or None
     """
-    gLogger.debug('Query authorization code:', code)
+    self.server.log.debug('Query authorization code:', code)
     jws = JsonWebSignature(algorithms=['RS256'])
     result = self.server.db.getKeySet()
     if not result['OK']:
@@ -82,13 +78,13 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
       except Exception as e:
         err = e
     if err:
-      gLogger.error('Cannot get authorization code:', repr(err))
+      self.server.log.error('Cannot get authorization code:', repr(err))
       return None
     try:
       item = OAuth2Code(json_loads(urlsafe_b64decode(data['payload'])))
-      gLogger.debug('Authorization code scope:', item.get_scope())
+      self.server.log.debug('Authorization code scope:', item.get_scope())
     except Exception as e:
-      gLogger.error('Cannot read authorization code:', repr(e))
+      self.server.log.error('Cannot read authorization code:', repr(e))
       return None
     if not item.is_expired():
       return item
@@ -105,8 +101,7 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
 
         :return: str
     """
-    gLogger.debug('Generate authorization code for credentials:', self.request.user)
-    pprint(self.request.data)
+    self.server.log.debug('Generate authorization code for credentials:', self.request.user)
     jws = JsonWebSignature(algorithms=['RS256'])
     protected = {'alg': 'RS256'}
     code = OAuth2Code({'user_id': self.request.user['ID'],
@@ -116,7 +111,7 @@ class AuthorizationCodeGrant(_AuthorizationCodeGrant):
                        'client_id': self.request.args['client_id'],
                        'code_challenge': self.request.args.get('code_challenge'),
                        'code_challenge_method': self.request.args.get('code_challenge_method')})
-    gLogger.debug('Authorization code generated:', dict(code))
+    self.server.log.debug('Authorization code generated:', dict(code))
     result = self.server.db.getPrivateKey()
     if not result['OK']:
       raise OAuth2Error('Cannot generate authorization code: %s' % result['Message'])

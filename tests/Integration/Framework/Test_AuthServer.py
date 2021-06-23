@@ -8,6 +8,7 @@ from __future__ import print_function
 import time
 import pytest
 from mock import MagicMock
+from authlib.oauth2.base import OAuth2Error
 
 from diraccfg import CFG
 
@@ -16,7 +17,6 @@ parseCommandLine()
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
-from authlib.oauth2.base import OAuth2Error
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
 
 cfg = CFG()

@@ -17,11 +17,10 @@ from io import open
 from dominate import document, tags as dom
 from tornado.template import Template
 
-from authlib.jose import jwk
 from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc6749.util import scope_to_list
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
@@ -156,7 +155,7 @@ class AuthHandler(TornadoREST):
           {
             "registration_endpoint": "https://domain.com/DIRAC/auth/register",
             "userinfo_endpoint": "https://domain.com/DIRAC/auth/userinfo",
-            "jwks_uri": "https://domain.com/DIRAC/auth/jwk",
+            "s_uri": "https://domain.com/DIRAC/auth/",
             "code_challenge_methods_supported": [
               "S256"
             ],
@@ -182,12 +181,12 @@ class AuthHandler(TornadoREST):
     if self.request.method == "GET":
       return self.server.metadata
 
-  def web_jwk(self):
+  def web_(self):
     """ JWKs endpoint
 
         Request example::
 
-          GET LOCATION/jwk
+          GET LOCATION/
 
         Response::
 
