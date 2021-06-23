@@ -373,6 +373,7 @@ class AuthHandler(TornadoREST):
         | provider       | path   | identity provider to autorize (optional)  | CheckIn                               |
         |                |        | It's possible to add it interactively.    |                                       |
         +----------------+--------+-------------------------------------------+---------------------------------------+
+
         General options:
           provider -- identity provider to autorize
 
@@ -449,15 +450,14 @@ class AuthHandler(TornadoREST):
         +----------------+--------+-------------------------------------+---------------------------------------------+
         | **name**       | **in** | **description**                     | **example**                                 |
         +----------------+--------+-------------------------------------+---------------------------------------------+
-        | grant_type     | query  | what grant type to use, more        | urn:ietf:params:oauth:grant-type:device_code|
-        |                |        | supported grant types in *grants    |                                             |
+        | grant_type     | query  | grant type to use                   | urn:ietf:params:oauth:grant-type:device_code|
         +----------------+--------+-------------------------------------+---------------------------------------------+
         | client_id      | query  | The public client ID                | 3f1DAj8z6eNw0E6JGq1VuzRkpWUL9XTxhL86efZw    |
         +----------------+--------+-------------------------------------+---------------------------------------------+
         | device_code    | query  | device code                         | uW5xL4hr2tqwBPKL5d0JO9Fcc67gLqhJsNqYTSp     |
         +----------------+--------+-------------------------------------+---------------------------------------------+
 
-        *:mod:`grants <DIRAC.FrameworkSystem.private.authorization.grants>`
+        :mod:`Supported grant types <DIRAC.FrameworkSystem.private.authorization.grants>`
 
         Request example::
 
