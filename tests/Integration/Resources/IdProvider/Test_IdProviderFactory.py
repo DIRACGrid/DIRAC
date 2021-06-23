@@ -60,7 +60,7 @@ idps = IdProviderFactory()
 
 
 def test_getDIRACClients():
-  """ Try to load default DIRAC authorization client 
+  """ Try to load default DIRAC authorization client
   """
   params = collectMetadata()
 

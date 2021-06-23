@@ -86,13 +86,6 @@ def test_queryClient(server):
   assert server.query_client('DIRAC_CLI').client_id == 'DIRAC_CLI'
 
 
-def test_queryClient(server):
-  """ Try to search some default client
-  """
-  assert not server.query_client('not_exist_client')
-  assert server.query_client('DIRAC_CLI').client_id == 'DIRAC_CLI'
-
-
 @pytest.mark.parametrize("client, grant, user, scope, expires_in, refresh_token, instance, result", [
     ('DIRAC_CLI', None, 'id', 'g:my_group proxy', None, None, 'proxy', 'proxy'),
     ('DIRAC_CLI', None, 'id', 'g:my_group', None, None, 'access_token', 'token'),
@@ -105,6 +98,7 @@ def test_generateToken(server, client, grant, user, scope, expires_in, refresh_t
     assert server.generate_token(cli, grant, user, scope, expires_in, refresh_token).get(instance) == result
   except OAuth2Error as e:
     assert False, str(e)
+
 
 def test_writeReadRefreshToken(server):
   """ Try to search some default client

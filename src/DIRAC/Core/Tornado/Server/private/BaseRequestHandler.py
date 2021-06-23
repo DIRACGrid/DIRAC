@@ -540,6 +540,7 @@ class BaseRequestHandler(RequestHandler):
     for grant in (grants or self.USE_AUTHZ_GRANTS or 'VISITOR'):
       grant = grant.upper()
       grantFunc = getattr(self, '_authz%s' % grant, None)
+      # pylint: disable=not-callable
       result = grantFunc() if callable(grantFunc) else S_ERROR('%s authentication type is not supported.' % grant)
       if result['OK']:
         for e in err:
