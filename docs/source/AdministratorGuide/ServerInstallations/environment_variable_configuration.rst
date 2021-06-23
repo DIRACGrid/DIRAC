@@ -70,7 +70,7 @@ BEARER_TOKEN
   If the environment variable is set, then the value is taken to be the token contents(https://doi.org/10.5281/zenodo.3937438).
 
 BEARER_TOKEN_FILE
-  If the environment variable is set, then its value is interpreted as a filename. The content of the specified file is used as token string(https://doi.org/10.5281/zenodo.3937438).
+  If the environment variable is set, then its value is interpreted as a filename. The content of the specified file is used as token string (https://doi.org/10.5281/zenodo.3937438).
 
 DIRAC_USE_ACCESS_TOKEN
   If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used (default=false)
