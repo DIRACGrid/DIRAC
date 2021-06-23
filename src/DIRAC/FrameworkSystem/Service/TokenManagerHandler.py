@@ -172,5 +172,5 @@ class TokenManagerHandler(TornadoService):
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       if userDN != credDict['DN']:
         return S_ERROR("You aren't allowed!")
-    result = Registry.getIDFromDN(dn)
+    result = Registry.getIDFromDN(userDN)
     return self.__tokenDB.removeToken(user_id=result['Value']) if result['OK'] else result
