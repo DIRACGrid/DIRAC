@@ -44,3 +44,16 @@ def getPilotAgentsDB():
 
 
 pilotAgentsDB = getPilotAgentsDB()
+
+
+def getVirtualMachineDB():
+  serverName = 'WorkloadManagement/VirtualMachineManager'
+  VirtualMachineDB = None
+  try:
+    from DIRAC.WorkloadManagementSystem.DB.VirtualMachineDB import VirtualMachineDB
+  except BaseException:
+    pass
+  return getDBOrClient(VirtualMachineDB, serverName)
+
+
+virtualMachineDB = getVirtualMachineDB()

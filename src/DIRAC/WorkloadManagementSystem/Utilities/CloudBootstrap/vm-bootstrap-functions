@@ -1,0 +1,184 @@
+####################################################################################
+#
+#  Utility functions for the VM bootstrap process
+#
+####################################################################################
+
+
+vm_mount_scratch_disk() {
+
+  date --utc +"%Y-%m-%d %H:%M:%S %Z mounting ephemeral disk as /scratch area"
+
+  if [ -b /dev/vdb1 -a -b /dev/vdb2 ] ; then
+    # Openstack at CERN with cvm* flavor?
+    # vda1 is boot image, vdb1 is root partition, vdb2 is unformatted
+    mkfs -q -t ext4 /dev/vdb2
+    mount /dev/vdb2 /scratch
+  elif [ -b /dev/vda1 -a -b /dev/vdb1 ] ; then
+    # Openstack at CERN with hep* flavor?
+    # vda1 is boot image, vdb1 is root partition, and no vdb2
+    # Since boot image is small, can use rest of vda for /scratch
+    echo -e 'n\np\n2\n\n\nw\n'| fdisk /dev/vda
+    mkfs -q -t ext4 /dev/vda2
+    mount /dev/vda2 /scratch
+  elif [ -b /dev/vdb ] ; then
+    # Efficient virtio device
+    mkfs -q -t ext4 /dev/vdb
+    mount /dev/vdb /scratch
+  elif [ -b /dev/vda1 -a -b /dev/vda2 ] ; then
+    # We just have a big vda with unused space in vda2
+    mkfs -q -t ext4 /dev/vda2
+    mount /dev/vda2 /scratch
+  elif [ -b /dev/vda1 ] ; then
+    # We just have a big vda but vda2 is not created
+    #echo -e 'n\np\n2\n\n\nw\n'| fdisk /dev/vda
+    # Have to reboot now, otherwise the new partition is not synced
+    #echo "Rebooting in order the vda partitioning is effective"
+    #/sbin/shutdown -r now
+    echo "No extra disk to mount, making /scratch right in the root partition"
+  elif [ -b /dev/sdb ] ; then
+    # Virtual SCSI
+    mkfs -q -t ext4 /dev/sdb
+    mount /dev/sdb /scratch
+  elif [ -b /dev/hdb ] ; then
+    # Virtual IDE
+    mkfs -q -t ext4 /dev/hdb
+    mount /dev/hdb /scratch
+  elif [ -b /dev/xvdb ] ; then
+    # Xen virtual disk device
+    mkfs -q -t ext4 /dev/xvdb
+    mount /dev/xvdb /scratch
+  elif [ -b /dev/sda1 ] ; then
+    # No ephemeral disk, only a root partition without virtio dirver
+    # Nothing else to do, /scratch will just live in root dir
+    echo "No extra disk to mount, making /scratch right in the root partition"
+  elif [ -b /dev/sda ] ; then
+    # OpenNebula - format and mount second disk on a VM
+    mkfs -q -t ext4 -F /dev/sda
+    mount /dev/sda /scratch
+  else
+    date --utc +'%Y-%m-%d %H:%M:%S %Z vm-bootstrap Missing vda/vdb/hdb/sdb/xvdb block device for /scratch'
+    echo "500 Missing vdb/hdb/sdb block device for /scratch" > /etc/joboutputs/shutdown_message
+    /sbin/shutdown -h now
+    sleep 1234567890
+  fi
+
+  # We rely on the hypervisor's disk I/O scheduling
+  for DSK in vda vdb; do
+    if [ -b /dev/${DSK} ] ; then
+      echo 'none' > /sys/block/${DSK}/queue/scheduler
+    fi
+  done
+}
+
+vm_disable_mail() {
+  date --utc +"%Y-%m-%d %H:%M:%S %Z disabling e-mail sending functionality"
+  # Suppress annoying mails if 'mail' exists in local DNS
+  if [ -f /etc/ssmtp/ssmtp.conf ]; then
+    sed -i 's/^mailhub=mail/mailhub=127.0.0.1/' /etc/ssmtp/ssmtp.conf
+  fi
+
+  # We never let VMs send emails (likely to be annoying errors from root)
+  /sbin/iptables -A OUTPUT -p tcp --dport 25 -j DROP
+}
+
+vm_cvmfs_install() {
+
+  date --utc +'%Y-%m-%d %H:%M:%S %Z Installing CVMFS'
+  yum -y install wget
+  cd /etc/yum.repos.d/
+  wget http://cvmrepo.web.cern.ch/cvmrepo/yum/cernvm.repo
+  cd /etc/pki/rpm-gpg/
+  wget http://cvmrepo.web.cern.ch/cvmrepo/yum/RPM-GPG-KEY-CernVM
+  yum -y install cvmfs cvmfs-config-default cvmfs-keys cvmfs-init-scripts
+}
+
+vm_docker_install() {
+  yum install -y yum-utils device-mapper-persistent-data lvm2
+  yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  yum install -y docker-ce docker-ce-cli containerd.io
+  systemctl start docker
+  usermod -aG docker plt00
+}
+
+vm_cvmfs_bootstrap() {
+
+  if [ ! -d /etc/cvmfs ]; then
+    vm_cvmfs_install
+  fi
+
+  # Configure CVMFS
+  echo -e "\n#Enable cvmfs mount\n/cvmfs /etc/auto.cvmfs" >> /etc/auto.master
+  sed -i "s/# user_allow_other/user_allow_other/g" /etc/fuse.conf
+
+  # Bigger cvmfs cache, on the logical partition
+  if [ -d /etc/cvmfs ]; then
+    mkdir -p /scratch/cvmfs-cache
+    echo -e "CVMFS_REPOSITORIES=dirac.egi.eu,grid.cern.ch" >>/etc/cvmfs/default.local
+    echo -e "CVMFS_QUOTA_LIMIT=11000" >>/etc/cvmfs/default.local
+    echo -e "CVMFS_CACHE_BASE=/scratch/cvmfs-cache" >>/etc/cvmfs/default.local
+    if [ ! -z "$cvmfs_proxy" ]
+    then
+      echo -e "CVMFS_HTTP_PROXY=\"$cvmfs_proxy\"" >>/etc/cvmfs/default.local
+    else
+      echo -e "CVMFS_HTTP_PROXY=DIRECT" >>/etc/cvmfs/default.local
+    fi
+    # In case of SELinux enforced
+    enforce=`getenforce`
+    if [ "$enforce" = "Enforcing" ]
+    then
+      chcon -Rv --type=cvmfs_cache_t /scratch/cvmfs-cache
+    fi
+    cvmfs_config setup
+    # These steps are slow and unnecessary
+    #cvmfs_config chksetup
+    #cvmfs_config probe
+    export CVMFS=1
+  else
+    echo CVMFS is not available on this VM
+    export CVMFS=0
+  fi
+}
+
+vm_dirac_install() {
+
+  cwd=$PWD
+  release_project=$1
+  release_version=$2
+  setup=$3
+  site=$4
+  ce=$5
+  config_server=$6
+  vo=$7
+
+  mkdir -p /opt/dirac
+  chmod ugo+rx /opt/dirac
+  cd /opt/dirac
+
+  if [ -f $CONTEXTDIR/dirac-install.py ]; then
+    echo cp $CONTEXTDIR/dirac-install.py dirac-install
+    cp $CONTEXTDIR/dirac-install.py dirac-install
+  else
+    echo curl --insecure -s -L https://github.com/DIRACGrid/DIRAC/raw/master/Core/scripts/dirac-install.py -o dirac-install
+    curl --insecure -s -L https://github.com/DIRACGrid/DIRAC/raw/master/Core/scripts/dirac-install.py -o dirac-install
+  fi
+
+  chmod +x dirac-install
+  ./dirac-install -l $release_project -r $release_version -ddd
+  . ./bashrc
+
+  mkdir -p /opt/dirac/etc/grid-security
+  cp -f /root/hostkey.pem /opt/dirac/etc/grid-security/hostkey.pem
+  cp -f /root/hostkey.pem /opt/dirac/etc/grid-security/hostcert.pem
+
+  dirac-configure -ddd -S $setup -C $config_server \
+                  -o /DIRAC/VirtualOrganization=$vo \
+                  -o /LocalSite/ReleaseProject=$release_project \
+                  -o /LocalSite/ReleaseVersion=$release_version \
+                  -o /LocalSite/VMID=$VM_UUID \
+                  -o /LocalSite/RunningPod=$RUNNING_POD \
+                  --UseServerCertificate \
+                  -o /DIRAC/Security/CertFile=/opt/dirac/etc/grid-security/hostcert.pem \
+                  -o /DIRAC/Security/KeyFile=/opt/dirac/etc/grid-security/hostkey.pem
+  cd $cwd
+}

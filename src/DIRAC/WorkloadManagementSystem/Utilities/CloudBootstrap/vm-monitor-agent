@@ -1,0 +1,41 @@
+#!/bin/bash
+
+mkdir -p /opt/dirac/runit/VirtualMachineMonitorAgent/log
+
+cat > /opt/dirac/runit/VirtualMachineMonitorAgent/run << "EOF"
+#!/bin/bash
+rcfile=/opt/dirac/bashrc
+[ -e $rcfile ] && source $rcfile
+#
+exec 2>&1
+#
+[ "agent" = "agent" ] && renice 20 -p $$
+#
+exec python $DIRAC/DIRAC/Core/scripts/dirac-agent.py WorkloadManagement/VirtualMachineMonitorAgent < /dev/null
+EOF
+
+cat > /opt/dirac/runit/VirtualMachineMonitorAgent/log/run << "EOF"
+#!/bin/bash
+#
+rcfile=/vo/dirac/bashrc
+[ -e $rcfile ] && source $rcfile
+#
+exec svlogd .
+EOF
+
+cat > /opt/dirac/runit/VirtualMachineMonitorAgent/log/config << "EOF"
+s10000000
+n20
+EOF
+
+chmod +x /opt/dirac/runit/VirtualMachineMonitorAgent/run
+chmod +x /opt/dirac/runit/VirtualMachineMonitorAgent/log/run
+
+# Run the agent with runsv if it exists
+if type runsv >/dev/null 2>&1; then
+  date --utc +"%Y-%m-%d %H:%M:%S %Z Starting VirtualMachineMonitorAgent with runsv"
+  runsv /opt/dirac/runit/VirtualMachineMonitorAgent &
+else
+  date --utc +"%Y-%m-%d %H:%M:%S %Z Starting VirtualMachineMonitorAgent"
+  /opt/dirac/runit/VirtualMachineMonitorAgent/run > /opt/dirac/runit/VirtualMachineMonitorAgent/log/current 2>&1 &
+fi

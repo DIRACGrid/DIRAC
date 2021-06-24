@@ -1,0 +1,127 @@
+#!/bin/sh
+#
+# Runs as pltNN user. Sets up to run dirac-pilot.py
+#
+
+date --utc +"%Y-%m-%d %H:%M:%S %Z vm-pilot Start vm-pilot"
+
+for i in "$@"
+do
+case $i in
+    --dirac-site=*)
+    DIRAC_SITE="${i#*=}"
+    ;;
+    --submit-pool=*)
+    SUBMIT_POOL="${i#*=}"
+    ;;
+    --ce-name=*)
+    CE_NAME="${i#*=}"
+    ;;
+    --image-name=*)
+    IMAGE_NAME="${i#*=}"
+    ;;
+    --vm-uuid=*)
+    VM_UUID="${i#*=}"
+    ;;
+    --vmtype=*)
+    VMTYPE="${i#*=}"
+    ;;
+    --pilot-number=*)
+    PILOT_NUMBER="${i#*=}"
+    ;;
+    --vo=*)
+    VO="${i#*=}"
+    ;;
+    --running-pod=*)
+    RUNNING_POD="${i#*=}"
+    ;;
+    --release-version=*)
+    VERSION="${i#*=}"
+    ;;
+    --lcgbundle-version=*)
+    LCG_VER="${i#*=}"
+    ;;
+    --release-project=*)
+    PROJECT="${i#*=}"
+    ;;
+    --setup=*)
+    SETUP="${i#*=}"
+    ;;
+    --cs-servers=*)
+    CS_SERVERS="${i#*=}"
+    ;;
+    --number-of-processors=*)
+    NUMBER_OF_PROCESSORS="${i#*=}"
+    ;;
+    --whole-node=*)
+    WHOLE_NODE="${i#*=}"
+    ;;
+    --required-tag=*)
+    REQUIRED_TAG="${i#*=}"
+    ;;
+    *)
+    # unknown option
+    ;;
+esac
+done
+
+# Default if not given explicitly
+SUBMIT_POOL=${SUBMIT_POOL:-diracPool}
+
+# JOB_ID is used by when reporting LocalJobID by DIRAC watchdog
+export JOB_ID="$VM_UUID:$PILOT_NUMBER"
+
+# We might be running from cvmfs or from /var/spool/checkout
+export CONTEXTDIR=`readlink -f \`dirname $0\``
+
+export TMPDIR=/scratch/
+export EDG_WL_SCRATCH=$TMPDIR
+
+# Still needed in Pilot 2.0
+#export X509_USER_PROXY=/scratch/$USER/etc/grid-security/hostkey.pem
+
+# So these NFS mounted directories can be found
+if [ -f /etc/profile.d/mjf.sh ]; then
+  . /etc/profile.d/mjf.sh
+fi
+
+# Top BDII address
+export LCG_GFAL_INFOSYS=cclcgtopbdii01.in2p3.fr:2170,topbdii.grif.fr:2170
+
+# Clear it to avoid problems ( be careful if there is more than one agent ! )
+#rm -rf /tmp/area/*
+
+cp $CONTEXTDIR/*.py .
+
+
+REQUIRED_TAG_ARGS=''
+if [ $REQUIRED_TAG ]; then
+  REQUIRED_TAG_ARGS="-o /AgentJobRequirements/RequiredTag=$REQUIRED_TAG"
+fi
+
+LCG_VER_ARG=''
+if [ "x${LCG_VER}" != "x" ]; then
+  LCG_VER_ARG="-g ${LCG_VER}"
+fi
+
+# Run the Pilot 2.0 script
+python dirac-pilot.py \
+ --debug \
+ --setup $SETUP \
+ -r $VERSION \
+ -l $PROJECT \
+ ${LCG_VER_ARG} \
+ --MaxCycles 10 \
+ --configurationServer $CS_SERVERS \
+ --Name "$CE_NAME" \
+ --name "$DIRAC_SITE" \
+ -Q $IMAGE_NAME \
+ --cert \
+ --certLocation=/scratch/$USER/etc/grid-security \
+ -o /Resources/Computing/CEDefaults/SubmitPool=$SUBMIT_POOL \
+ -o /Resources/Computing/CEDefaults/VirtualOrganization=$VO \
+ -o /Resources/Computing/CEDefaults/NumberOfProcessors=$NUMBER_OF_PROCESSORS \
+ -o /Resources/Computing/CEDefaults/WholeNode=$WHOLE_NODE \
+ $REQUIRED_TAG_ARGS \
+ -o '/Systems/WorkloadManagement/Production/Agents/JobAgent/StopAfterFailedMatches=0' \
+ -o '/Systems/WorkloadManagement/Production/Agents/JobAgent/CEType=Pool'
