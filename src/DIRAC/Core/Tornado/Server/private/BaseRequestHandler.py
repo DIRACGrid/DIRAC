@@ -10,7 +10,9 @@ __RCSID__ = "$Id$"
 from io import open
 
 import os
-import jwt
+import six
+if six.PY3:
+  import jwt
 import time
 import threading
 from datetime import datetime
@@ -459,6 +461,39 @@ class BaseRequestHandler(RequestHandler):
       sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
       raise e if isinstance(e, HTTPError) else HTTPError(http_client.INTERNAL_SERVER_ERROR, str(e))
 
+  @gen.coroutine
+  def __executeMethodPy2(self, targetMethod, args):
+    """
+      Execute the method called, this method is ran in an executor
+      We have several try except to catch the different problem which can occur
+
+      - First, the method does not exist => Attribute error, return an error to client
+      - second, anything happend during execution => General Exception, send error to client
+
+      .. warning::
+        This method is called in an executor, and so cannot use methods like self.write
+        See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
+
+      :param str targetMethod: name of the method to call
+      :param list args: target method arguments
+
+      :return: Future
+    """
+
+    sLog.notice(
+        "Incoming request %s /%s: %s" %
+        (self.srv_getFormattedRemoteCredentials(),
+         self._serviceName,
+         self.method))
+
+    # Execute
+    try:
+      self.initializeRequest()
+      return targetMethod(*args)
+    except Exception as e:  # pylint: disable=broad-except
+      sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
+      raise e if isinstance(e, HTTPError) else HTTPError(http_client.INTERNAL_SERVER_ERROR, str(e))
+
   def _prepareExecutor(self, args):
     """ Preparation of necessary arguments for the `__executeMethod` method
 
@@ -466,14 +501,17 @@ class BaseRequestHandler(RequestHandler):
 
         :return: executor, target method with arguments
     """
-    return None, partial(self.__executeMethod, self._getMethod(), self._getMethodArgs(args))
+    if six.PY3:
+      return None, partial(self.__executeMethod, self._getMethod(), self._getMethodArgs(args))
+    return None, partial(self.__executeMethodPy2, self._getMethod(), self._getMethodArgs(args))
 
   def _finishFuture(self, retVal):
     """ Handler Future result
 
         :param object retVal: tornado.concurrent.Future
     """
-    self.result = retVal
+    # Wait result only if it's a Future object
+    self.result = retVal.result() if isinstance(retVal, Future) else retVal
 
     # Here it is safe to write back to the client, because we are not in a thread anymore
 
@@ -485,7 +523,7 @@ class BaseRequestHandler(RequestHandler):
       finishFunc()
 
     # In case nothing is returned
-    elif retVal is None:
+    elif self.result is None:
       self.finish()
 
     # If set to true, do not JEncode the return of the RPC call
@@ -494,16 +532,16 @@ class BaseRequestHandler(RequestHandler):
     elif self.get_argument('rawContent', default=False):
       # See 4.5.1 http://www.rfc-editor.org/rfc/rfc2046.txt
       self.set_header("Content-Type", "application/octet-stream")
-      self.finish(retVal)
+      self.finish(self.result)
 
     # Return simple text or html
-    elif isinstance(retVal, string_types):
-      self.finish(retVal)
+    elif isinstance(self.result, string_types):
+      self.finish(self.result)
 
     # JSON
     else:
       self.set_header("Content-Type", "application/json")
-      self.finish(encode(retVal))
+      self.finish(encode(self.result))
 
   def on_finish(self):
     """
@@ -607,13 +645,15 @@ class BaseRequestHandler(RequestHandler):
 
     # Read token without verification to get issuer
     self.log.debug('Read issuer from access token', accessToken)
-    issuer = jwt.decode(accessToken, leeway=300, options=dict(verify_signature=False,
-                                                              verify_aud=False))['iss'].strip('/')
-    # Verify token
-    self.log.debug('Verify access token')
-    result = self._idp[issuer].verifyToken(accessToken)
-    self.log.debug('Search user group')
-    return self._idp[issuer].researchGroup(result['Value'], accessToken) if result['OK'] else result
+    if six.PY3:
+      issuer = jwt.decode(accessToken, leeway=300, options=dict(verify_signature=False,
+                                                                verify_aud=False))['iss'].strip('/')
+      # Verify token
+      self.log.debug('Verify access token')
+      result = self._idp[issuer].verifyToken(accessToken)
+      self.log.debug('Search user group')
+      return self._idp[issuer].researchGroup(result['Value'], accessToken) if result['OK'] else result
+    return S_OK({})
 
   def _authzVISITOR(self):
     """ Visitor access
