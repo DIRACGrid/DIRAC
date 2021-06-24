@@ -4,7 +4,7 @@
 # Author :  Andrii Lytovchenko
 ########################################################################
 """
-Login to DIRAC.
+Login to DIRAC. For python 3 only.
 
 Example:
   $ dirac-login -g dirac_user

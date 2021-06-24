@@ -155,7 +155,7 @@ class AuthHandler(TornadoREST):
           {
             "registration_endpoint": "https://domain.com/DIRAC/auth/register",
             "userinfo_endpoint": "https://domain.com/DIRAC/auth/userinfo",
-            "s_uri": "https://domain.com/DIRAC/auth/",
+            "jwks_uri": "https://domain.com/DIRAC/auth/jwk",
             "code_challenge_methods_supported": [
               "S256"
             ],
@@ -179,12 +179,12 @@ class AuthHandler(TornadoREST):
     if self.request.method == "GET":
       return self.server.metadata
 
-  def web_(self):
+  def web_jwk(self):
     """ JWKs endpoint
 
         Request example::
 
-          GET LOCATION/
+          GET LOCATION/jwk
 
         Response::
 

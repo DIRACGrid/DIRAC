@@ -447,12 +447,8 @@ class BaseRequestHandler(RequestHandler):
       :return: Future
     """
 
-    sLog.notice(
-        "Incoming request %s /%s: %s" %
-        (self.srv_getFormattedRemoteCredentials(),
-         self._serviceName,
-         self.method))
-
+    sLog.notice("Incoming request %s /%s: %s" % (self.srv_getFormattedRemoteCredentials(),
+                                                 self._serviceName, self.method))
     # Execute
     try:
       self.initializeRequest()
@@ -463,29 +459,13 @@ class BaseRequestHandler(RequestHandler):
 
   @gen.coroutine
   def __executeMethodPy2(self, targetMethod, args):
-    """
-      Execute the method called, this method is ran in an executor
-      We have several try except to catch the different problem which can occur
+    """ The only difference from __executeMethod is the presence of a coroutine decorator
 
-      - First, the method does not exist => Attribute error, return an error to client
-      - second, anything happend during execution => General Exception, send error to client
-
-      .. warning::
-        This method is called in an executor, and so cannot use methods like self.write
-        See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
-
-      :param str targetMethod: name of the method to call
-      :param list args: target method arguments
-
-      :return: Future
+        :return: Future
     """
 
-    sLog.notice(
-        "Incoming request %s /%s: %s" %
-        (self.srv_getFormattedRemoteCredentials(),
-         self._serviceName,
-         self.method))
-
+    sLog.notice("Incoming request %s /%s: %s" % (self.srv_getFormattedRemoteCredentials(),
+                                                 self._serviceName, self.method))
     # Execute
     try:
       self.initializeRequest()
@@ -501,9 +481,9 @@ class BaseRequestHandler(RequestHandler):
 
         :return: executor, target method with arguments
     """
-    if six.PY3:
-      return None, partial(self.__executeMethod, self._getMethod(), self._getMethodArgs(args))
-    return None, partial(self.__executeMethodPy2, self._getMethod(), self._getMethodArgs(args))
+    if six.PY2:
+      return None, partial(self.__executeMethodPy2, self._getMethod(), self._getMethodArgs(args))
+    return None, partial(self.__executeMethod, self._getMethod(), self._getMethodArgs(args))
 
   def _finishFuture(self, retVal):
     """ Handler Future result
@@ -645,15 +625,15 @@ class BaseRequestHandler(RequestHandler):
 
     # Read token without verification to get issuer
     self.log.debug('Read issuer from access token', accessToken)
-    if six.PY3:
-      issuer = jwt.decode(accessToken, leeway=300, options=dict(verify_signature=False,
-                                                                verify_aud=False))['iss'].strip('/')
-      # Verify token
-      self.log.debug('Verify access token')
-      result = self._idp[issuer].verifyToken(accessToken)
-      self.log.debug('Search user group')
-      return self._idp[issuer].researchGroup(result['Value'], accessToken) if result['OK'] else result
-    return S_OK({})
+    if six.PY2:
+      return S_OK({})
+    issuer = jwt.decode(accessToken, leeway=300, options=dict(verify_signature=False,
+                                                              verify_aud=False))['iss'].strip('/')
+    # Verify token
+    self.log.debug('Verify access token')
+    result = self._idp[issuer].verifyToken(accessToken)
+    self.log.debug('Search user group')
+    return self._idp[issuer].researchGroup(result['Value'], accessToken) if result['OK'] else result
 
   def _authzVISITOR(self):
     """ Visitor access

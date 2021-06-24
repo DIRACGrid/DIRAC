@@ -6,11 +6,11 @@ from __future__ import division
 from __future__ import print_function
 
 import six
+import time
+import pytest
+from mock import MagicMock
 
 if six.PY3:
-  import time
-  import pytest
-  from mock import MagicMock
   from authlib.oauth2.base import OAuth2Error
 
   from diraccfg import CFG

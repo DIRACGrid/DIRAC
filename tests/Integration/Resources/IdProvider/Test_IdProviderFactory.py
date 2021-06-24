@@ -61,7 +61,6 @@ if six.PY3:
 
   idps = IdProviderFactory()
 
-
   def test_getDIRACClients():
     """ Try to load default DIRAC authorization client
     """
@@ -81,7 +80,6 @@ if six.PY3:
     assert result['Value'].client_id == 'client_identificator'
     assert result['Value'].client_secret == 'client_secret_key'
     assert result['Value'].get_metadata('jwks_uri') == 'https://issuer.url/jwk'
-
 
   def test_getIdPClients():
     """ Try to load external identity provider settings

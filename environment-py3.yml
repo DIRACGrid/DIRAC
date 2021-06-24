@@ -62,6 +62,7 @@ dependencies:
   - pyparsing >=2.0.6
   - pytest >=3.6
   - pytest-cov >=2.2.0
+  - pytest-mock
   - setuptools-scm
   - shellcheck
   - typer
@@ -91,7 +92,6 @@ dependencies:
   - pyjwt >=2.1.0
   - dominate
   - pip:
-    - pytest-mock
     # Prerelease of the required package for integration of OAuth2
     - Authlib>=1.0.0.a2
     # This is a fork of tornado with a patch to allow for configurable iostream
