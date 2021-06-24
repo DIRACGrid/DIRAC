@@ -66,8 +66,4 @@ if __name__ == "__main__":
     if not args.version.startswith("v"):
         raise ValueError('For consistency versions must start with "v"')
 
-    v = Version(args.version)
-    if (v.major, v.minor) < (7, 2):
-        raise NotImplementedError("Only supported for DIRAC 7.2 or later")
-
     make_release(args.version, args.rev, release_notes="")
