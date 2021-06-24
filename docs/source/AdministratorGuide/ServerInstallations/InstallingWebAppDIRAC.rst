@@ -341,10 +341,14 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
     root /opt/dirac/pro;
 
     location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+\.(jpg|jpeg|gif|png|bmp|ico|pdf))$ {
-      alias /opt/dirac/pro/;
+      alias /opt/dirac/webRoot/resources/;
       # Add one more for every static path. For instance for LHCbWebDIRAC:
-      # try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
-      try_files WebAppDIRAC/WebApp/static/$2 /;
+      # try_files LHCbWebDIRAC/$2 WebAppDIRAC/$2 /;
+      try_files WebAppDIRAC/$2 DIRACWebAppResources/$2 /;
+      # Prior to v7r3 this should be slightly different:
+      #   alias /opt/dirac/pro/;
+      #   try_files WebAppDIRAC/WebApp/static/$2 /;
+      # The new-style is mandatory for Python 3 based installations/
       expires 10d;
       gzip_static on;
       gzip_disable "MSIE [1-6]\.";
@@ -353,10 +357,14 @@ Make sure there is a line 'include /etc/nginx/conf.d/\*.conf;', then create a si
     }
 
     location ~ ^/[a-zA-Z]+/(s:.*/g:.*/)?static/(.+)$ {
-      alias /opt/dirac/pro/;
+      alias /opt/dirac/webRoot/resources/;
       # Add one more for every static path. For instance for LHCbWebDIRAC:
-      # try_files LHCbWebDIRAC/WebApp/static/$2 WebAppDIRAC/WebApp/static/$2 /;
-      try_files WebAppDIRAC/WebApp/static/$2 /;
+      # try_files LHCbWebDIRAC/$2 WebAppDIRAC/$2 /;
+      try_files WebAppDIRAC/$2 DIRACWebAppResources/$2 /;
+      # Prior to v7r3 this should be slightly different:
+      #   alias /opt/dirac/pro/;
+      #   try_files WebAppDIRAC/WebApp/static/$2 /;
+      # The new-style is mandatory for Python 3 based installations/
       expires 1d;
       gzip_static on;
       gzip_disable "MSIE [1-6]\.";
@@ -406,6 +414,7 @@ Start, Stop and restart nginx::
 You have to add to the /WebApp section the following lines in order to use NGINX::
 
   DevelopMode = False
+  StaticResourceLinkDir = /opt/dirac/webRoot/resources
   Balancer = nginx
   NumProcesses = 1
 
