@@ -385,7 +385,7 @@ class JobAgent(AgentModule):
         resFD = jobReport.generateForwardDISET()
         if not resFD['OK']:
           self.log.error("Error generating ForwardDISET operation", resFD['Message'])
-        else:
+        elif resFD['Value']:
           # Here we create the Request.
           op = resFD['Value']
           request = Request()
