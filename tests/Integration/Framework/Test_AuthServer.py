@@ -37,27 +37,22 @@ if six.PY3:
   """)
   gConfig.loadCFG(cfg)
 
-
   class Proxy(object):
     def dumpAllToString(self):
       return S_OK('proxy')
-
 
   class ProxyManagerClient(object):
     def downloadProxy(self, *args, **kwargs):
       return S_OK(Proxy())
 
-
   class TokenManagerClient(object):
     def getToken(self, *args, **kwargs):
       return S_OK({'access_token': 'token', 'refresh_token': 'token'})
-
 
   mockgetIdPForGroup = MagicMock(return_value=S_OK('IdP'))
   mockgetDNForUsername = MagicMock(return_value=S_OK('DN'))
   mockgetUsernameForDN = MagicMock(return_value=S_OK('user'))
   mockisDownloadablePersonalProxy = MagicMock(return_value=True)
-
 
   @pytest.fixture
   def server(mocker):
@@ -75,19 +70,16 @@ if six.PY3:
                 side_effect=mockisDownloadablePersonalProxy)
     return DIRAC.FrameworkSystem.private.authorization.AuthServer.AuthServer()
 
-
   def test_metadata(server):
     """ Check metadata
     """
     assert server.metadata.get('issuer')
-
 
   def test_queryClient(server):
     """ Try to search some default client
     """
     assert not server.query_client('not_exist_client')
     assert server.query_client('DIRAC_CLI').client_id == 'DIRAC_CLI'
-
 
   @pytest.mark.parametrize("client, grant, user, scope, expires_in, refresh_token, instance, result", [
       ('DIRAC_CLI', None, 'id', 'g:my_group proxy', None, None, 'proxy', 'proxy'),
@@ -101,7 +93,6 @@ if six.PY3:
       assert server.generate_token(cli, grant, user, scope, expires_in, refresh_token).get(instance) == result
     except OAuth2Error as e:
       assert False, str(e)
-
 
   def test_writeReadRefreshToken(server):
     """ Try to search some default client

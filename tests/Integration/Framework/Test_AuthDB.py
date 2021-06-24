@@ -20,12 +20,12 @@ if six.PY3:
   db = AuthDB()
 
   payload = {'sub': 'user',
-            'iss': 'issuer',
-            'iat': int(time.time()),
-            'exp': int(time.time()) + (12 * 3600),
-            'scope': 'scope',
-            'setup': 'setup',
-            'group': 'my_group'}
+             'iss': 'issuer',
+             'iat': int(time.time()),
+             'exp': int(time.time()) + (12 * 3600),
+             'scope': 'scope',
+             'setup': 'setup',
+             'group': 'my_group'}
 
   DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
                 refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
@@ -34,7 +34,6 @@ if six.PY3:
   New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
                     refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
                     expires_in=int(time.time()) + 3600)
-
 
   def test_RefreshToken():
     """ Try to revoke/save/get refresh tokens
@@ -92,7 +91,6 @@ if six.PY3:
     assert result['OK'], result['Message']
     assert not result['Value']
 
-
   def test_keys():
     """ Try to store/get/remove keys
     """
@@ -100,17 +98,17 @@ if six.PY3:
     jws = JsonWebSignature(algorithms=['RS256'])
     code_payload = {'user_id': 'user',
                     'scope': 'scope',
-                    'redirect_uri': 'redirect_uri',
                     'client_id': 'client',
+                    'redirect_uri': 'redirect_uri',
                     'code_challenge': 'code_challenge'}
 
     # Token metadata
     header = {'alg': 'RS256'}
     payload = {'sub': 'user',
-              'iss': 'issuer',
-              'scope': 'scope',
-              'setup': 'setup',
-              'group': 'my_group'}
+               'iss': 'issuer',
+               'scope': 'scope',
+               'setup': 'setup',
+               'group': 'my_group'}
 
     # Remove all keys
     result = db.removeKeys()
@@ -126,7 +124,7 @@ if six.PY3:
     assert result['OK'], result['Message']
 
     private_key = result['Value']
-    assert private_key is RSAKey
+    assert isinstance(private_key, RSAKey)
 
     # Sign token
     header['kid'] = private_key.thumbprint()
@@ -154,7 +152,6 @@ if six.PY3:
     data = jws.deserialize_compact(code, keyset.keys[0])
     _code_payload = json_loads(urlsafe_b64decode(data['payload']))
     assert _code_payload == code_payload
-
 
   def test_Sessions():
     """ Try to store/get/remove Sessions
