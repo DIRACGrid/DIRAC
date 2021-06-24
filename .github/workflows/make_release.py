@@ -3,7 +3,6 @@ import argparse
 
 from packaging.version import Version
 import requests
-from uritemplate import expand as uri_expand
 
 
 def make_release(version, commit_hash, release_notes=""):
