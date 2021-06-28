@@ -44,7 +44,7 @@ class TransformationManagerHandler(RequestHandler):
     """
 
     try:
-      result = ObjectLoader().loadObject('TransformationSystem.DB.TransformationDB', 'TransformationDB')
+      result = ObjectLoader().loadObject("TransformationSystem.DB.TransformationDB", "TransformationDB")
       if not result['OK']:
         return result
       cls.transformationDB = result['Value']()
