@@ -15,13 +15,9 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
 from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher, PilotVersionError
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
@@ -32,10 +28,30 @@ class MatcherHandler(RequestHandler):
 
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
-    cls.jobDB = JobDB()
-    cls.jobLoggingDB = JobLoggingDB()
-    cls.taskQueueDB = TaskQueueDB()
-    cls.pilotAgentsDB = PilotAgentsDB()
+    try:
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+      if not result['OK']:
+        return result
+      cls.jobDB = result['Value']()
+
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
+      if not result['OK']:
+        return result
+      cls.jobLoggingDB = result['Value']()
+
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
+      if not result['OK']:
+        return result
+      cls.taskQueueDB = result['Value']()
+
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
+      if not result['OK']:
+        return result
+      cls.pilotAgentsDB = result['Value']()
+
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
+
     cls.limiter = Limiter(jobDB=cls.jobDB)
 
     cls.taskQueueDB.recalculateTQSharesForAll()
