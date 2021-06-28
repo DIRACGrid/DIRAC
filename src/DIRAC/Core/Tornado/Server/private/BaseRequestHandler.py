@@ -10,6 +10,7 @@ __RCSID__ = "$Id$"
 from io import open
 
 import os
+import six
 import jwt
 import time
 import threading

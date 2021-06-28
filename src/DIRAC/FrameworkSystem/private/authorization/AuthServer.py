@@ -104,6 +104,7 @@ class AuthServer(_AuthorizationServer):
     self.register_endpoint(RevocationEndpoint)
     self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True)])
 
+  # pylint: disable=method-hidden
   def query_client(self, client_id):
     """ Search authorization client.
 

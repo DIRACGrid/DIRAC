@@ -42,7 +42,7 @@ mockisDownloadablePersonalProxy = MagicMock(return_value=True)
 
 
 @pytest.fixture
-def server(mocker):
+def auth_server(mocker):
   cfg = CFG()
   cfg.loadFromBuffer("""
   DIRAC
@@ -58,62 +58,58 @@ def server(mocker):
   """)
   gConfig.loadCFG(cfg)
   mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getIdPForGroup",
-              side_effect=mockgetIdPForGroup)
+               side_effect=mockgetIdPForGroup)
   mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getDNForUsername",
-              side_effect=mockgetDNForUsername)
+               side_effect=mockgetDNForUsername)
   mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getUsernameForDN",
-              side_effect=mockgetUsernameForDN)
+               side_effect=mockgetUsernameForDN)
   mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.ProxyManagerClient",
-              side_effect=ProxyManagerClient)
+               side_effect=ProxyManagerClient)
   mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.TokenManagerClient",
-              side_effect=TokenManagerClient)
+               side_effect=TokenManagerClient)
   mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.isDownloadablePersonalProxy",
-              side_effect=mockisDownloadablePersonalProxy)
+               side_effect=mockisDownloadablePersonalProxy)
   return DIRAC.FrameworkSystem.private.authorization.AuthServer.AuthServer()
 
 
-@pytest.mark.skipif(six.PY2, reason="requires python3")
-def test_metadata(server):
+def test_metadata(auth_server):
   """ Check metadata
   """
-  assert server.metadata.get('issuer')
+  assert auth_server.metadata.get('issuer')
 
 
-@pytest.mark.skipif(six.PY2, reason="requires python3")
-def test_queryClient(server):
+def test_queryClient(auth_server):
   """ Try to search some default client
   """
-  assert not server.query_client('not_exist_client')
-  assert server.query_client('DIRAC_CLI').client_id == 'DIRAC_CLI'
+  assert not auth_server.query_client('not_exist_client')
+  assert auth_server.query_client('DIRAC_CLI').client_id == 'DIRAC_CLI'
 
 
-@pytest.mark.skipif(six.PY2, reason="requires python3")
 @pytest.mark.parametrize("client, grant, user, scope, expires_in, refresh_token, instance, result", [
     ('DIRAC_CLI', None, 'id', 'g:my_group proxy', None, None, 'proxy', 'proxy'),
     ('DIRAC_CLI', None, 'id', 'g:my_group', None, None, 'access_token', 'token'),
 ])
-def test_generateToken(server, client, grant, user, scope, expires_in, refresh_token, instance, result):
+def test_generateToken(auth_server, client, grant, user, scope, expires_in, refresh_token, instance, result):
   """ Generate tokens
   """
   from authlib.oauth2.base import OAuth2Error
-  cli = server.query_client(client)
+  cli = auth_server.query_client(client)
   try:
-    assert server.generate_token(cli, grant, user, scope, expires_in, refresh_token).get(instance) == result
+    assert auth_server.generate_token(cli, grant, user, scope, expires_in, refresh_token).get(instance) == result
   except OAuth2Error as e:
     assert False, str(e)
 
 
-@pytest.mark.skipif(six.PY2, reason="requires python3")
-def test_writeReadRefreshToken(server):
+def test_writeReadRefreshToken(auth_server):
   """ Try to search some default client
   """
-  result = server.registerRefreshToken({}, {'access_token': 'token', 'refresh_token': 'token'})
+  result = auth_server.registerRefreshToken({}, {'access_token': 'token', 'refresh_token': 'token'})
   assert result['OK'], result['Message']
   token = result['Value']
   assert token.get('access_token') == 'token'
   assert token.get('refresh_token') != 'token'
 
-  result = server.readToken(token['refresh_token'])
+  result = auth_server.readToken(token['refresh_token'])
   assert result['OK'], result['Message']
   assert result['Value'].get('jti')
   assert result['Value'].get('iat')
