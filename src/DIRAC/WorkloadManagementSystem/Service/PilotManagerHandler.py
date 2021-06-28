@@ -12,11 +12,9 @@ from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo,\
     getGridJobOutput, killPilotsInQueues
 
@@ -31,13 +29,26 @@ class PilotManagerHandler(RequestHandler):
     """ Initialization of DB objects
     """
 
-    cls.pilotAgentsDB = PilotAgentsDB()
+    try:
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
+      if not result['OK']:
+        return result
+      cls.pilotAgentsDB = result['Value']()
 
-    cls.gPilotsLoggingDB = None
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
+
+    cls.pilotsLoggingDB = None
     enablePilotsLogging = Operations().getValue(
         '/Services/JobMonitoring/usePilotsLoggingFlag', False)
     if enablePilotsLogging:
-      cls.gPilotsLoggingDB = PilotsLoggingDB()
+      try:
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
+        if not result['OK']:
+          return result
+        cls.pilotsLoggingDB = result['Value']()
+      except RuntimeError as excp:
+        return S_ERROR("Can't connect to DB: %s" % excp)
 
     return S_OK()
 
@@ -209,7 +220,16 @@ class PilotManagerHandler(RequestHandler):
     if not pilots:
       # Pilots were not found try to look in the Task Queue
       taskQueueID = 0
-      result = TaskQueueDB().getTaskQueueForJob(int(jobID))
+      try:
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB"
+        )
+        if not result['OK']:
+          return result
+        tqDB = result['Value']()
+      except RuntimeError as excp:
+        return S_ERROR("Can't connect to DB: %s" % excp)
+      result = tqDB.getTaskQueueForJob(int(jobID))
       if result['OK'] and result['Value']:
         taskQueueID = result['Value']
       if taskQueueID:
@@ -379,7 +399,7 @@ class PilotManagerHandler(RequestHandler):
     result = cls.pilotAgentsDB.deletePilots(pilotIDs)
     if not result['OK']:
       return result
-    if cls.gPilotsLoggingDB:
+    if cls.pilotsLoggingDB:
       pilotIDs = result['Value']
       pilots = cls.pilotAgentsDB.getPilotInfo(pilotID=pilotIDs)
       if not pilots['OK']:
@@ -387,7 +407,7 @@ class PilotManagerHandler(RequestHandler):
       pilotRefs = []
       for pilot in pilots:
         pilotRefs.append(pilot['PilotJobReference'])
-      result = cls.gPilotsLoggingDB.deletePilotsLogging(pilotRefs)
+      result = cls.pilotsLoggingDB.deletePilotsLogging(pilotRefs)
       if not result['OK']:
         return result
 
@@ -402,7 +422,7 @@ class PilotManagerHandler(RequestHandler):
     result = cls.pilotAgentsDB.clearPilots(interval, aborted_interval)
     if not result['OK']:
       return result
-    if cls.gPilotsLoggingDB:
+    if cls.pilotsLoggingDB:
       pilotIDs = result['Value']
       pilots = cls.pilotAgentsDB.getPilotInfo(pilotID=pilotIDs)
       if not pilots['OK']:
@@ -410,7 +430,7 @@ class PilotManagerHandler(RequestHandler):
       pilotRefs = []
       for pilot in pilots:
         pilotRefs.append(pilot['PilotJobReference'])
-      result = cls.gPilotsLoggingDB.deletePilotsLogging(pilotRefs)
+      result = cls.pilotsLoggingDB.deletePilotsLogging(pilotRefs)
       if not result['OK']:
         return result
 
