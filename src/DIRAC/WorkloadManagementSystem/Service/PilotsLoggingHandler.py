@@ -14,10 +14,10 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import six
-from DIRAC import S_OK, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
-from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
 
@@ -29,7 +29,15 @@ class PilotsLoggingHandler(RequestHandler):
     """Initialization of Pilots Logging service
     """
     cls.consumersSet = set()
-    cls.pilotsLoggingDB = PilotsLoggingDB()
+    try:
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
+      if not result['OK']:
+        return result
+      cls.pilotsLoggingDB = result['Value']()
+
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
+
     queue = cls.srv_getCSOption("PilotsLoggingQueue")
     # This is pretty awful hack. Somehow, for uknown reason, I cannot access CS with srv_getCSOption.
     # The only way is using full CS path, so I'm using it as a backup solution.
