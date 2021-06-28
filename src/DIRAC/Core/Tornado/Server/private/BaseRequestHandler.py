@@ -10,9 +10,7 @@ __RCSID__ = "$Id$"
 from io import open
 
 import os
-import six
-if six.PY3:
-  import jwt
+import jwt
 import time
 import threading
 from datetime import datetime
@@ -36,8 +34,8 @@ from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
@@ -625,8 +623,6 @@ class BaseRequestHandler(RequestHandler):
 
     # Read token without verification to get issuer
     self.log.debug('Read issuer from access token', accessToken)
-    if six.PY2:
-      return S_OK({})
     issuer = jwt.decode(accessToken, leeway=300, options=dict(verify_signature=False,
                                                               verify_aud=False))['iss'].strip('/')
     # Verify token

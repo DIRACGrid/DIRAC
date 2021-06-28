@@ -11,6 +11,7 @@ import logging
 from dominate import document, tags as dom
 from tornado.template import Template
 
+import authlib
 from authlib.jose import JsonWebKey, jwt
 from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.base import OAuth2Error
@@ -88,7 +89,10 @@ class AuthServer(_AuthorizationServer):
     self.tokenCli = TokenManagerClient()
     self.metadata = collectMetadata()
     self.metadata.validate()
-    _AuthorizationServer.__init__(self, scopes_supported=self.metadata['scopes_supported'])
+    _AuthorizationServer.__init__(self, **(dict(scopes_supported=self.metadata['scopes_supported'])
+                                           if authlib.version >= '1.0.0' else
+                                           dict(query_client=self.query_client,
+                                                save_token=None, metadata=self.metadata)))
     # Skip authlib method save_token and send_signal
     self.save_token = lambda x, y: None
     self.send_signal = lambda *x, **y: None
@@ -320,15 +324,12 @@ class AuthServer(_AuthorizationServer):
     extended_scope = list_to_scope([re.sub(r':.*$', ':', s) for s in scope_to_list(scope or '')])
     super(AuthServer, self).validate_requested_scope(extended_scope, state)
 
-  def handle_error_response(self, request, error):
-    return self.handle_response(*error(self.get_error_uri(request, error)), error=True)
-
-  def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, error=None, **actions):
+  def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, **actions):
     self.log.debug('Handle authorization response with %s status code:' % status_code, payload)
     self.log.debug('Headers:', headers)
     if newSession:
       self.log.debug('newSession:', newSession)
-    return S_OK([[status_code, headers, payload, newSession, error], actions])
+    return S_OK([[status_code, headers, payload, newSession, 'error' in payload], actions])
 
   def create_authorization_response(self, response, username):
     result = super(AuthServer, self).create_authorization_response(response, username)

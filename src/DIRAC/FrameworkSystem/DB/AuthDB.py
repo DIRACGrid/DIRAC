@@ -4,18 +4,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import jwt
 import json
 import time
 import pprint
-import M2Crypto
 
 from sqlalchemy import Column, Integer, Text, String
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
-from authlib.jose import KeySet, RSAKey
+import authlib
+from authlib.jose import KeySet, JsonWebKey
 from authlib.common.security import generate_token
 
 from DIRAC import S_OK, S_ERROR
@@ -166,8 +165,9 @@ class AuthDB(SQLAlchemyDB):
 
         :return: S_OK/S_ERROR
     """
-    key = RSAKey.generate_key(key_size=1024, is_private=True)
-    keyDict = dict(key=json.dumps(key.as_dict(True)), kid=key.thumbprint(), expires_at=time.time() + (30 * 24 * 3600))
+    key = JsonWebKey.generate_key('RSA', 1024, is_private=True)
+    keyDict = dict(key=json.dumps(key.as_dict(*([True] if authlib.version >= '1.0.0' else []))),
+                   kid=key.thumbprint(), expires_at=time.time() + (30 * 24 * 3600))
     session = self.session()
     try:
       session.add(JWK(**keyDict))
@@ -187,7 +187,7 @@ class AuthDB(SQLAlchemyDB):
         result['Value'] = [result['Value']]
     if not result['OK']:
       return result
-    return S_OK(KeySet([RSAKey.import_key(json.loads(key['key'])) for key in result['Value']]))
+    return S_OK(KeySet([JsonWebKey.import_key(json.loads(key['key'])) for key in result['Value']]))
 
   def getPrivateKey(self, kid=None):
     """ Get private key
@@ -202,7 +202,7 @@ class AuthDB(SQLAlchemyDB):
     jwks = result['Value']
     if kid:
       strkey = jwks[0]['key']
-      return S_OK(RSAKey.import_key(json.loads(jwks[0]['key'])))
+      return S_OK(JsonWebKey.import_key(json.loads(jwks[0]['key'])))
     newer = {}
     for jwk in jwks:
       if int(jwk['expires_at']) > int(newer.get('expires_at', time.time() + (24 * 3600))):
@@ -212,7 +212,7 @@ class AuthDB(SQLAlchemyDB):
       if not result['OK']:
         return result
       newer = result['Value']
-    return S_OK(RSAKey.import_key(json.loads(newer['key'])))
+    return S_OK(JsonWebKey.import_key(json.loads(newer['key'])))
 
   def getActiveKeys(self, kid=None):
     """ Get active keys
