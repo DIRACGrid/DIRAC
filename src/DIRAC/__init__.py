@@ -135,19 +135,16 @@ def _computeRootPath(rootPath):
   from pathlib import Path  # pylint: disable=import-error
 
   rootPath = Path(rootPath).resolve()
-  if rootPath.parent.name != "versions":
+  versionsPath = rootPath.parent
+  if versionsPath.parent.name != "versions":
     return str(rootPath)
-  pattern = re.compile(
-      # Version
-      r"v(\d+\.\d+\.\d+[^\-]*)\-"
-      # Installation time
-      r"(\d+)\-"
-      # Architecture
-      r"([^\-]+)"
-  )
-  if bool(pattern.fullmatch(rootPath.name)):
+  # VERSION-INSTALL_TIME
+  pattern1 = re.compile(r"v(\d+\.\d+\.\d+[^\-]*)\-(\d+)")
+  # $(uname -s)-$(uname -m)
+  pattern2 = re.compile(r"([^\-]+)-([^\-]+)")
+  if pattern1.fullmatch(versionsPath.name) and pattern2.fullmatch(rootPath.name):
     # This is a versioned install
-    return str(rootPath.parent.parent)
+    return str(versionsPath.parent.parent)
   else:
     return str(rootPath)
 
