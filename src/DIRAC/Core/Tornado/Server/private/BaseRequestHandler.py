@@ -576,20 +576,18 @@ class BaseRequestHandler(RequestHandler):
     """
     peerChain = X509Chain()
     derCert = self.request.get_ssl_certificate()
-
     # Get client certificate pem
     if derCert:
       chainAsText = derCert.as_pem()
       # Here we read all certificate chain
-      cert_chain = self.request.get_ssl_certificate_chain()
-      for cert in cert_chain:
-        chainAsText = cert.as_pem()
+      chainAsText += '\n'.join([cert.as_pem() for cert in self.request.get_ssl_certificate_chain()])
     elif self.request.headers.get('X-Ssl_client_verify') == 'SUCCESS':
       chainAsTextEncoded = self.request.headers.get('X-SSL-CERT')
       chainAsText = unquote(chainAsTextEncoded)
     else:
       return S_ERROR(DErrno.ECERTFIND, 'Valid certificate not found.')
 
+    # Load full certificate chain
     peerChain.loadChainFromString(chainAsText)
 
     # Retrieve the credentials
