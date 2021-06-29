@@ -25,7 +25,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
-class JobStateUpdateHandler(RequestHandler):
+class JobStateUpdateHandlerMixin(object):
 
   @classmethod
   def initializeHandler(cls, svcInfoDict):
@@ -469,3 +469,7 @@ class JobStateUpdateHandler(RequestHandler):
         result = cls.jobDB.setJobCommandStatus(int(jobID), key, 'Sent')
 
     return S_OK(jobMessageDict)
+
+
+class JobStateUpdateHandler(RequestHandler):
+  pass
