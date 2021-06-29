@@ -36,7 +36,6 @@ WorkloadManagement services are:
 
    JobManager/index
    JobMonitoring/index
-   JobStateUpdate/index
    Matcher/index
    SandboxStore/index
    WMSAdministrator/index

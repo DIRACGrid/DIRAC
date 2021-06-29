@@ -21,22 +21,21 @@ from concurrent.futures import ThreadPoolExecutor
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DErrno import ENOAUTH
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.Core.Utilities import Time, MemStat, Network
+from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.private.LockManager import LockManager
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, MessageSender
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.DISET.AuthManager import AuthManager
-from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.DISET.RequestHandler import getServiceOption
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import Time, MemStat, Network
+from DIRAC.Core.Utilities.DErrno import ENOAUTH
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
+from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 __RCSID__ = "$Id$"
 
@@ -114,10 +113,9 @@ class Service(object):
                              }
     # Initialize Monitoring
     # This is a flag used to check whether "EnableActivityMonitoring" is enabled or not from the config file.
-    self.activityMonitoring = (
-        Operations().getValue("EnableActivityMonitoring", False) or
-        getServiceOption(self._serviceInfoDict, "EnableActivityMonitoring", False)
-    )
+    self.activityMonitoring = Operations().getValue(
+	"EnableActivityMonitoring", False
+    ) or getServiceOption(self._serviceInfoDict, "EnableActivityMonitoring", False)
     if self.activityMonitoring:
       # The import needs to be here because of the CS must be initialized before importing
       # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
@@ -664,7 +662,6 @@ class Service(object):
     if now - self.__monitorLastStatsUpdate < 0:
       return (now, cpuTime)
     # Send CPU consumption mark
-    wallClock = now - self.__monitorLastStatsUpdate
     self.__monitorLastStatsUpdate = now
     # Send Memory consumption mark
     membytes = MemStat.VmB('VmRSS:')
