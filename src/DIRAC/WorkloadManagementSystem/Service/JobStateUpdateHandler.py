@@ -471,5 +471,5 @@ class JobStateUpdateHandlerMixin(object):
     return S_OK(jobMessageDict)
 
 
-class JobStateUpdateHandler(RequestHandler):
+class JobStateUpdateHandler(JobStateUpdateHandlerMixin, RequestHandler):
   pass
