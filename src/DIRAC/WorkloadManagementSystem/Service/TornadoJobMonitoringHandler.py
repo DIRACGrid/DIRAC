@@ -10,7 +10,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gLogger
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
-from DIRAC.WorkloadManagementSystem.Service.JobMonitoringandler import JobMonitoringHandlerMixin
+from DIRAC.WorkloadManagementSystem.Service.JobMonitoringHandler import JobMonitoringHandlerMixin
 
 
 sLog = gLogger.getSubLogger(__name__)
