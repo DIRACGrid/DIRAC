@@ -40,7 +40,8 @@ import requests
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Os
-from DIRAC.Core.Utilities.Extensions import extensionsByPriority
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
+from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Time import dateTime, fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -308,7 +309,21 @@ class SystemAdministratorHandler(RequestHandler):
       self.log.exception("Invalid version passed", version)
       return S_ERROR("Invalid version passed %r" % version)
     version = "v%s" % version
-    self.log.info("Installing Python 3 based DIRAC", "%s with DIRACOS %s" % (version, diracOSVersion))
+
+    # Find what to install
+    primaryExtension = None
+    otherExtensions = []
+    for extension in extensionsByPriority():
+      extensionMetadata = getExtensionMetadata(extension)
+      if primaryExtension is None and extensionMetadata.get("primary_extension", False):
+        primaryExtension = extension
+      else:
+        otherExtensions.append(extension)
+    self.log.info(
+        "Installing Python 3 based",
+        "%s %s with DIRACOS %s" % (primaryExtension, version, diracOSVersion or "2")
+    )
+    self.log.info("Will also install", repr(otherExtensions))
 
     # Install DIRACOS
     installer_url = "https://github.com/DIRACGrid/DIRACOS2/releases/"
@@ -326,12 +341,12 @@ class SystemAdministratorHandler(RequestHandler):
       installer.flush()
       self.log.info("Downloaded DIRACOS installer to", installer.name)
 
-      installVersionTime = "%s-%s" % (version, datetime.utcnow().strftime("%s"))
-      installPrefix = os.path.join(
+      newProPrefix = os.path.join(
           rootPath,
           "versions",
-          "%s-%s" % (installVersionTime, platform.machine()),
+          "%s-%s" % (version, datetime.utcnow().strftime("%s")),
       )
+      installPrefix = os.path.join(newProPrefix, "%s-%s" % (platform.system(), platform.machine()))
       self.log.info("Running DIRACOS installer for prefix", installPrefix)
       r = subprocess.run(
           ["bash", installer.name, "-p", installPrefix],
@@ -354,12 +369,10 @@ class SystemAdministratorHandler(RequestHandler):
             "%s/bin/pip" % installPrefix,
             "install",
             "--no-color",
-            # "--quiet",
-            # "DIRAC==%s" % version,
-            # "WebAppDIRAC,
+            "-v",
+            # "%s[server]==%s" % (primaryExtension, version),
             "git+https://github.com/chrisburr/DIRAC.git@webapp-py3",
-            "git+https://github.com/chrisburr/WebAppDIRAC.git@python3-fixes-2",
-        ],
+        ] + ["%s[server]" % e for e in otherExtensions],
         stderr=subprocess.PIPE,
         text=True,
         check=False,
@@ -373,13 +386,12 @@ class SystemAdministratorHandler(RequestHandler):
       return S_ERROR("Failed to install DIRACOS2 with message %s" % r.stderr)
 
     # Update the pro link
-    oldPath = os.path.join(rootPath, 'old')
-    proPath = os.path.join(rootPath, 'pro')
-    if os.path.exists(oldPath):
-      os.remove(oldPath)
-    os.rename(proPath, oldPath)
-    with open(proPath, "wt") as fp:
-      fp.write(installVersionTime)
+    oldLink = os.path.join(gComponentInstaller.instancePath, 'old')
+    proLink = os.path.join(gComponentInstaller.instancePath, 'pro')
+    if os.path.exists(oldLink):
+      os.remove(oldLink)
+    os.rename(proLink, oldLink)
+    mkLink(newProPrefix, proLink)
 
     return S_OK()
 
@@ -443,15 +455,10 @@ class SystemAdministratorHandler(RequestHandler):
     """ Revert the last installed version of software to the previous one
     """
     oldLink = os.path.join(gComponentInstaller.instancePath, 'old')
+    oldPath = os.readlink(oldLink)
     proLink = os.path.join(gComponentInstaller.instancePath, 'pro')
     os.remove(proLink)
-    if os.path.islink(oldLink):
-      oldPath = os.readlink(oldLink)
-      os.symlink(oldPath, proLink)
-    else:
-      with open(oldLink, "rt") as fp:
-        oldPath = fp.read()
-      shutil.copy(oldLink, proLink)
+    mkLink(oldPath, proLink)
 
     return S_OK(oldPath)
 
