@@ -12,8 +12,6 @@ from diraccfg import CFG
 
 import DIRAC
 from DIRAC import gConfig
-from DIRAC.FrameworkSystem.private.authorization.AuthServer import collectMetadata
-from DIRAC.FrameworkSystem.private.authorization.utils.Clients import DEFAULT_CLIENTS
 
 cfg = CFG()
 cfg.loadFromBuffer("""
@@ -59,6 +57,8 @@ if six.PY3:
   # DIRACOS not contain required packages
   from authlib.jose import jwt
   from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+  from DIRAC.FrameworkSystem.private.authorization.AuthServer import collectMetadata
+  from DIRAC.FrameworkSystem.private.authorization.utils.Clients import DEFAULT_CLIENTS
   idps = IdProviderFactory()
 
 
