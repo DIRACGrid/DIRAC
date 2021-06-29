@@ -164,7 +164,7 @@ def _extensionsByPriorityPy3():
     priorties[extension_metadata["priority"]].append(extensionName)
 
   extensions = []
-  for priority, extensionNames in sorted(priorties.items()):
+  for priority, extensionNames in sorted(priorties.items(), reverse=True):
     if len(extensionNames) != 1:
       print(
           "WARNING: Found multiple extensions with priority",

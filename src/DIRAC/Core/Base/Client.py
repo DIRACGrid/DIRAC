@@ -163,7 +163,7 @@ def createClient(serviceName):
   def addFunctions(clientCls):
     """Add the functions to the decorated class."""
     attrDict = dict(clientCls.__dict__)
-    for extension in extensionsByPriority()[::-1]:
+    for extension in extensionsByPriority():
       try:
         path = importlib_resources.path(
             "%s.%sSystem.Service" % (extension, systemName),

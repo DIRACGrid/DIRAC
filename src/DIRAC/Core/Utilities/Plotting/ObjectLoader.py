@@ -15,7 +15,7 @@ from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 def loadObjects(path, reFilter=None, parentClass=None):
   """
-  :param str path: the path to the syetem for example: DIRAC/AccountingSystem
+  :param str path: the path to the system for example: DIRAC/AccountingSystem
   :param object reFilter: regular expression used to found the class
   :param object parentClass: class instance
   :return: dictionary containing the name of the class and its instance

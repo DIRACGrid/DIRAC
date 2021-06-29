@@ -247,9 +247,10 @@ def runConfigurationWizard(params):
   from prompt_toolkit import prompt, print_formatted_text, HTML
   from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 
-  extensions = extensionsByPriority()
-
-  extensionMetadata = getExtensionMetadata(extensions[-1])
+  for extension in extensionsByPriority():
+    extensionMetadata = getExtensionMetadata(extension)
+    if extensionMetadata.get("primary_extension", False):
+      break
   defaultSetup = extensionMetadata.get("default_setup", "")
   setups = extensionMetadata.get("setups", {})
 
