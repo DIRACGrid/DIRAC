@@ -49,8 +49,16 @@ from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
-from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import getLocalTokenDict, writeTokenDictToTokenFile
+
+try:
+  # DIRACOS not contain required packages
+  from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+  from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import getLocalTokenDict, writeTokenDictToTokenFile
+except ImportError as e:
+  IdProviderFactory = None
+  if six.PY3:
+    # But DIRACOS2 must contain required packages
+    raise e
 
 
 # TODO CHRIS: refactor all the messy `discover` methods
@@ -240,7 +248,7 @@ class TornadoBaseClient(object):
       self.__useAccessToken = gConfig.getValue("/DIRAC/Security/UseTokens", "false").lower() in ("y", "yes", "true")
     self.kwargs[self.KW_USE_ACCESS_TOKEN] = self.__useAccessToken
 
-    if self.__useAccessToken:
+    if self.__useAccessToken and IdProviderFactory:
       result = IdProviderFactory().getIdProvider('DIRACCLI')
       if not result['OK']:
         return result
@@ -520,7 +528,7 @@ class TornadoBaseClient(object):
       auth = {'cert': Locations.getHostCertificateAndKeyLocation()}
 
     # Use access token?
-    elif self.__useAccessToken:
+    elif self.__useAccessToken and IdProviderFactory:
       # Read token from token environ variable or from token file
       result = getLocalTokenDict()
       if not result['OK']:

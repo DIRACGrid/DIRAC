@@ -1,4 +1,4 @@
-""" This is a test of the AuthDB
+""" This is a test of the AuthDB. Requires authlib, pyjwt
     It supposes that the DB is present and installed in DIRAC
 """
 from __future__ import absolute_import
@@ -7,14 +7,9 @@ from __future__ import print_function
 
 import six
 import time
-from authlib.jose import jwt
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
-
-from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
-
-db = TokenDB()
 
 payload = {'sub': 'user',
            'iss': 'issuer',
@@ -28,24 +23,30 @@ exp_payload = payload.copy()
 exp_payload['iat'] = int(time.time()) - 10
 exp_payload['exp'] = int(time.time()) - 10
 
-DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
-              refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
-              expires_at=int(time.time()) + 3600)
 
-New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
-                  refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
-                  issued_at=int(time.time()),
-                  expires_in=int(time.time()) + 3600)
-
-Exp_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret").decode('utf-8'),
-                  refresh_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret").decode('utf-8'),
-                  expires_at=int(time.time()) - 10,
-                  rt_expires_at=int(time.time()) - 10)
-
-
+# DIRACOS not contain required packages
+@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2 tests")
 def test_Token():
   """ Try to revoke/save/get tokens
   """
+  from authlib.jose import jwt
+  from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
+  db = TokenDB()
+
+  DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                expires_at=int(time.time()) + 3600)
+
+  New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                    refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                    issued_at=int(time.time()),
+                    expires_in=int(time.time()) + 3600)
+
+  Exp_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret").decode('utf-8'),
+                    refresh_token=jwt.encode({'alg': 'HS256'}, exp_payload, "secret").decode('utf-8'),
+                    expires_at=int(time.time()) - 10,
+                    rt_expires_at=int(time.time()) - 10)
+
   # Remove all tokens
   result = db.removeToken(user_id=123)
   assert result['OK'], result['Message']

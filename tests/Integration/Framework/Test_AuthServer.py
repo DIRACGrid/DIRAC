@@ -1,4 +1,4 @@
-""" This is a test of the AuthServer
+""" This is a test of the AuthServer. Requires authlib, pyjwt, dominate
     It supposes that the AuthDB is present and installed in DIRAC
 """
 from __future__ import absolute_import
@@ -17,7 +17,15 @@ parseCommandLine()
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
+
+try:
+  # DIRACOS not contain required packages
+  from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
+except ImportError as e:
+  AuthServer = None
+  if six.PY3:
+    # But DIRACOS2 must contain required packages
+    raise e
 
 
 class Proxy(object):
@@ -57,27 +65,31 @@ def auth_server(mocker):
   }
   """)
   gConfig.loadCFG(cfg)
-  mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getIdPForGroup",
-               side_effect=mockgetIdPForGroup)
-  mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getDNForUsername",
-               side_effect=mockgetDNForUsername)
-  mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getUsernameForDN",
-               side_effect=mockgetUsernameForDN)
-  mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.ProxyManagerClient",
-               side_effect=ProxyManagerClient)
-  mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.TokenManagerClient",
-               side_effect=TokenManagerClient)
-  mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.isDownloadablePersonalProxy",
-               side_effect=mockisDownloadablePersonalProxy)
-  return DIRAC.FrameworkSystem.private.authorization.AuthServer.AuthServer()
+  if AuthServer:
+    mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getIdPForGroup",
+                side_effect=mockgetIdPForGroup)
+    mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getDNForUsername",
+                side_effect=mockgetDNForUsername)
+    mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getUsernameForDN",
+                side_effect=mockgetUsernameForDN)
+    mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.ProxyManagerClient",
+                side_effect=ProxyManagerClient)
+    mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.TokenManagerClient",
+                side_effect=TokenManagerClient)
+    mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.isDownloadablePersonalProxy",
+                side_effect=mockisDownloadablePersonalProxy)
+    return DIRAC.FrameworkSystem.private.authorization.AuthServer.AuthServer()
+  return None
 
 
+@pytest.mark.skipif(six.PY2 and not AuthServer, reason="Skiped for Python 2 tests")
 def test_metadata(auth_server):
   """ Check metadata
   """
   assert auth_server.metadata.get('issuer')
 
 
+@pytest.mark.skipif(six.PY2 and not AuthServer, reason="Skiped for Python 2 tests")
 def test_queryClient(auth_server):
   """ Try to search some default client
   """
@@ -85,6 +97,7 @@ def test_queryClient(auth_server):
   assert auth_server.query_client('DIRAC_CLI').client_id == 'DIRAC_CLI'
 
 
+@pytest.mark.skipif(six.PY2 and not AuthServer, reason="Skiped for Python 2 tests")
 @pytest.mark.parametrize("client, grant, user, scope, expires_in, refresh_token, instance, result", [
     ('DIRAC_CLI', None, 'id', 'g:my_group proxy', None, None, 'proxy', 'proxy'),
     ('DIRAC_CLI', None, 'id', 'g:my_group', None, None, 'access_token', 'token'),
@@ -100,6 +113,7 @@ def test_generateToken(auth_server, client, grant, user, scope, expires_in, refr
     assert False, str(e)
 
 
+@pytest.mark.skipif(six.PY2 and not AuthServer, reason="Skiped for Python 2 tests")
 def test_writeReadRefreshToken(auth_server):
   """ Try to search some default client
   """

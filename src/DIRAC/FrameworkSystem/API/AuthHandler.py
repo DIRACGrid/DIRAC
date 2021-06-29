@@ -14,19 +14,23 @@ import json
 import pprint
 from io import open
 
-from dominate import document, tags as dom
 from tornado.template import Template
-
-from authlib.oauth2.base import OAuth2Error
-from authlib.oauth2.rfc6749.util import scope_to_list
 
 from DIRAC import S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
-from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
-from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
-from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
+
+try:
+  from dominate import document, tags as dom
+  from authlib.oauth2.base import OAuth2Error
+  from authlib.oauth2.rfc6749.util import scope_to_list
+  from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
+  from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
+  from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
+  from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
+except ImportError as e:
+  msg = 'This endpoint requires authlib, pyjwt, dominate and dominate that enabled only for python 3 server installation.'
+  raise ImportError(msg) if six.PY2 else e
 
 __RCSID__ = "$Id$"
 

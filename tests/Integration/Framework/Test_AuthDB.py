@@ -1,4 +1,4 @@
-""" This is a test of the AuthDB
+""" This is a test of the AuthDB. Requires authlib
     It supposes that the DB is present and installed in DIRAC
 """
 from __future__ import absolute_import
@@ -7,16 +7,21 @@ from __future__ import print_function
 
 import six
 import time
-import authlib
-from authlib.jose import JsonWebKey, JsonWebSignature, jwt, RSAKey
-from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
-
-db = AuthDB()
+try:
+  # DIRACOS not contain required packages
+  from authlib.jose import JsonWebKey, JsonWebSignature, jwt, RSAKey
+  from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
+  from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
+  db = AuthDB()
+except ImportError as e:
+  db = None
+  if six.PY3:
+    # But DIRACOS2 must contain required packages
+    raise e
 
 payload = {'sub': 'user',
            'iss': 'issuer',
@@ -26,18 +31,19 @@ payload = {'sub': 'user',
            'setup': 'setup',
            'group': 'my_group'}
 
-DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
-              refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
-              expires_at=int(time.time()) + 3600)
 
-New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
-                  refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
-                  expires_in=int(time.time()) + 3600)
-
-
+@pytest.mark.skipif(six.PY2 and not db, reason="Skiped for Python 2 tests")
 def test_RefreshToken():
   """ Try to revoke/save/get refresh tokens
   """
+  DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                expires_at=int(time.time()) + 3600)
+
+  New_DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                    refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
+                    expires_in=int(time.time()) + 3600)
+
   preset_jti = '123'
 
   # Remove refresh token
@@ -92,6 +98,7 @@ def test_RefreshToken():
   assert not result['Value']
 
 
+@pytest.mark.skipif(six.PY2 and not db, reason="Skiped for Python 2 tests")
 def test_keys():
   """ Try to store/get/remove keys
   """
@@ -161,6 +168,8 @@ def test_keys():
   assert _code_payload == code_payload
 
 
+# DIRACOS not contain required packages
+@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2 tests")
 def test_Sessions():
   """ Try to store/get/remove Sessions
   """
