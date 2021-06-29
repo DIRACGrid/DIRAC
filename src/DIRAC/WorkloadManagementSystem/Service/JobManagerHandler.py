@@ -35,7 +35,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
 MAX_PARAMETRIC_JOBS = 20
 
 
-class JobManagerHandler(RequestHandler):
+class JobManagerHandlerMixin(object):
   """ RequestHandler implementation of the JobManager
   """
 
@@ -658,3 +658,7 @@ class JobManagerHandler(RequestHandler):
     result = S_OK()
     result['requireProxyUpload'] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()
     return result
+
+
+class JobManagerHandler(JobManagerHandlerMixin, RequestHandler):
+  pass
