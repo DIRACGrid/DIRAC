@@ -89,10 +89,9 @@ class AuthServer(_AuthorizationServer):
     self.tokenCli = TokenManagerClient()
     self.metadata = collectMetadata()
     self.metadata.validate()
-    _AuthorizationServer.__init__(self, **(dict(scopes_supported=self.metadata['scopes_supported'])
-                                           if authlib.version >= '1.0.0' else
-                                           dict(query_client=self.query_client,
-                                                save_token=None, metadata=self.metadata)))
+    # args for authlib < 1.0.0: (query_client=self.query_client, save_token=None, metadata=self.metadata)
+    # for authlib >= 1.0.0:
+    _AuthorizationServer.__init__(self, scopes_supported=self.metadata['scopes_supported'])
     # Skip authlib method save_token and send_signal
     self.save_token = lambda x, y: None
     self.send_signal = lambda *x, **y: None

@@ -166,7 +166,9 @@ class AuthDB(SQLAlchemyDB):
         :return: S_OK/S_ERROR
     """
     key = JsonWebKey.generate_key('RSA', 1024, is_private=True)
-    keyDict = dict(key=json.dumps(key.as_dict(*([True] if authlib.version >= '1.0.0' else []))),
+    # as_dict has no arguments for authlib < 1.0.0
+    # for authlib >= 1.0.0
+    keyDict = dict(key=json.dumps(key.as_dict(True)),
                    kid=key.thumbprint(), expires_at=time.time() + (30 * 24 * 3600))
     session = self.session()
     try:

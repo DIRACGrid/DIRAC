@@ -24,15 +24,18 @@ exp_payload['iat'] = int(time.time()) - 10
 exp_payload['exp'] = int(time.time()) - 10
 
 
-# DIRACOS not contain required packages
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2 tests")
-def test_Token():
-  """ Try to revoke/save/get tokens
-  """
+if six.PY3:
+  # DIRACOS not contain required packages
   from authlib.jose import jwt
   from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
   db = TokenDB()
 
+
+# DIRACOS not contain required packages
+@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
+def test_Token():
+  """ Try to revoke/save/get tokens
+  """
   DToken = dict(access_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
                 refresh_token=jwt.encode({'alg': 'HS256'}, payload, "secret").decode('utf-8'),
                 expires_at=int(time.time()) + 3600)

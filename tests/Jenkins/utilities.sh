@@ -383,9 +383,6 @@ installDIRAC() {
   echo "$DIRAC"
   echo "$PATH"
 
-  echo "==> Install OAuth2 requirements"
-  pip install dominate pyjwt authlib pytest-mock
-
   # now configuring
   cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
   if ! bash -c "${cmd}"; then

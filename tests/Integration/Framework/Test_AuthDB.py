@@ -7,21 +7,17 @@ from __future__ import print_function
 
 import six
 import time
+import pytest
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-try:
+if six.PY3:
   # DIRACOS not contain required packages
   from authlib.jose import JsonWebKey, JsonWebSignature, jwt, RSAKey
   from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
   from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
   db = AuthDB()
-except ImportError as e:
-  db = None
-  if six.PY3:
-    # But DIRACOS2 must contain required packages
-    raise e
 
 payload = {'sub': 'user',
            'iss': 'issuer',
@@ -32,7 +28,7 @@ payload = {'sub': 'user',
            'group': 'my_group'}
 
 
-@pytest.mark.skipif(six.PY2 and not db, reason="Skiped for Python 2 tests")
+@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_RefreshToken():
   """ Try to revoke/save/get refresh tokens
   """
@@ -98,7 +94,7 @@ def test_RefreshToken():
   assert not result['Value']
 
 
-@pytest.mark.skipif(six.PY2 and not db, reason="Skiped for Python 2 tests")
+@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_keys():
   """ Try to store/get/remove keys
   """
@@ -140,10 +136,9 @@ def test_keys():
   # Find key by KID
   result = db.getPrivateKey(header['kid'])
   assert result['OK'], result['Message']
-  if authlib.version >= '1.0.0':
-    assert result['Value'].as_dict(True) == private_key.as_dict(True)
-  else:
-    assert result['Value'].as_dict() == private_key.as_dict()
+  # as_dict has no arguments for authlib < 1.0.0
+  # for authlib >= 1.0.0:
+  assert result['Value'].as_dict(True) == private_key.as_dict(True)
 
   # Sign token
   token = jwt.encode(header, payload, private_key)
@@ -154,10 +149,9 @@ def test_keys():
   result = db.getKeySet()
   keyset = result['Value']
   assert result['OK'], result['Message']
-  if authlib.version >= '1.0.0':
-    assert bool([key for key in keyset.as_dict(True)['keys'] if key["kid"] == header['kid']])
-  else:
-    assert bool([key for key in keyset.as_dict()['keys'] if key["kid"] == header['kid']])
+  # as_dict has no arguments for authlib < 1.0.0
+  # for authlib >= 1.0.0:
+  assert bool([key for key in keyset.as_dict(True)['keys'] if key["kid"] == header['kid']])
 
   # Read token
   _payload = jwt.decode(token, JsonWebKey.import_key_set(keyset.as_dict()))
@@ -169,7 +163,7 @@ def test_keys():
 
 
 # DIRACOS not contain required packages
-@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2 tests")
+@pytest.mark.skipif(six.PY2, reason="Skiped for Python 2")
 def test_Sessions():
   """ Try to store/get/remove Sessions
   """

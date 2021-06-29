@@ -177,12 +177,8 @@ installSite() {
     fi
   fi
 
-  source "${SERVERINSTALLDIR}/bashrc"
-
-  echo "==> Install OAuth2 requirements"
-  pip install dominate pyjwt authlib pytest-mock
-
   echo "==> Done installing, now configuring"
+  source "${SERVERINSTALLDIR}/bashrc"
   if ! dirac-configure --cfg "${SERVERINSTALLDIR}/install.cfg" "${DEBUG}"; then
     echo "ERROR: dirac-configure failed" >&2
     exit 1

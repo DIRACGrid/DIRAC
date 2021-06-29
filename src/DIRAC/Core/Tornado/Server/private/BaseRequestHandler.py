@@ -36,15 +36,10 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 
-try:
+if six.PY3:
   # DIRACOS not contain required packages
   import jwt
   from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-except ImportError as e:
-  IdProviderFactory = None
-  if six.PY3:
-    # But DIRACOS2 must contain required packages
-    raise e
 
 sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
@@ -147,7 +142,7 @@ class BaseRequestHandler(RequestHandler):
   METHOD_PREFIX = "export_"
 
   # Definition of identity providers
-  _idps = IdProviderFactory() if IdProviderFactory else None
+  _idps = IdProviderFactory() if six.PY3 else None
   _idp = {}
 
   # Which grant type to use
@@ -259,7 +254,7 @@ class BaseRequestHandler(RequestHandler):
         return S_OK()
 
       # Load all registred identity providers
-      if cls._idps:
+      if six.PY3:
         cls.__loadIdPs()
 
       # absoluteUrl: full URL e.g. ``https://<host>:<port>/<System>/<Component>``
@@ -564,8 +559,8 @@ class BaseRequestHandler(RequestHandler):
     # the authorization will go through the `_authzVISITOR` method and
     # everyone will have access as anonymous@visitor
     for grant in (grants or self.USE_AUTHZ_GRANTS or 'VISITOR'):
-      if not self._idps and grant == 'JWT':
-        # Skip token authorization if authlib and pyjwt packages not installed
+      if six.PY3 and grant == 'JWT':
+        # Skip token authorization for python 2
         continue
       grant = grant.upper()
       grantFunc = getattr(self, '_authz%s' % grant, None)
