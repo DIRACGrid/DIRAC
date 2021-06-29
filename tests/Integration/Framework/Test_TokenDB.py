@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import six
 import time
+import pytest
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()

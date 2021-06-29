@@ -62,17 +62,17 @@ def auth_server(mocker):
   gConfig.loadCFG(cfg)
   if AuthServer:
     mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getIdPForGroup",
-                side_effect=mockgetIdPForGroup)
+                 side_effect=mockgetIdPForGroup)
     mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getDNForUsername",
-                side_effect=mockgetDNForUsername)
+                 side_effect=mockgetDNForUsername)
     mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.getUsernameForDN",
-                side_effect=mockgetUsernameForDN)
+                 side_effect=mockgetUsernameForDN)
     mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.ProxyManagerClient",
-                side_effect=ProxyManagerClient)
+                 side_effect=ProxyManagerClient)
     mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.TokenManagerClient",
-                side_effect=TokenManagerClient)
+                 side_effect=TokenManagerClient)
     mocker.patch("DIRAC.FrameworkSystem.private.authorization.AuthServer.isDownloadablePersonalProxy",
-                side_effect=mockisDownloadablePersonalProxy)
+                 side_effect=mockisDownloadablePersonalProxy)
     return DIRAC.FrameworkSystem.private.authorization.AuthServer.AuthServer()
   return None
 
