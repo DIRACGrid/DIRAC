@@ -292,12 +292,12 @@ class SystemAdministratorHandler(RequestHandler):
 # General purpose methods
 #
   types_updateSoftware = [six.string_types]
+
   def export_updateSoftware(self, version, rootPath="", diracOSVersion=""):
     if "." in version:
       return self._updateSoftwarePy3(version, rootPath, diracOSVersion)
     else:
       return self._updateSoftwarePy2(version, rootPath, diracOSVersion)
-
 
   def _updateSoftwarePy3(self, version, rootPath_, diracOSVersion):
     if rootPath_:
@@ -332,7 +332,7 @@ class SystemAdministratorHandler(RequestHandler):
     else:
       installer_url += "latest/download/DIRACOS-Linux-%s.sh" % platform.machine()
     self.log.info("Downloading DIRACOS2 installer from", installer_url)
-    with tempfile.NamedTemporaryFile(suffix=".sh", mode ="wb") as installer:
+    with tempfile.NamedTemporaryFile(suffix=".sh", mode="wb") as installer:
       with requests.get(installer_url, stream=True) as r:
         if not r.ok:
           return S_ERROR("Failed to download TODO")
@@ -348,7 +348,7 @@ class SystemAdministratorHandler(RequestHandler):
       )
       installPrefix = os.path.join(newProPrefix, "%s-%s" % (platform.system(), platform.machine()))
       self.log.info("Running DIRACOS installer for prefix", installPrefix)
-      r = subprocess.run(
+      r = subprocess.run(  # pylint: disable=no-member
           ["bash", installer.name, "-p", installPrefix],
           stderr=subprocess.PIPE,
           text=True,
@@ -364,7 +364,7 @@ class SystemAdministratorHandler(RequestHandler):
         return S_ERROR("Failed to install DIRACOS2 %s" % stderr)
 
     # Install DIRAC
-    r = subprocess.run(
+    r = subprocess.run(  # pylint: disable=no-member
         [
             "%s/bin/pip" % installPrefix,
             "install",
