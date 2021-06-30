@@ -274,7 +274,11 @@ class SandboxStoreClient(object):
       return result
     sbDict = result['Value']
     if sbType not in sbDict:
-      return S_ERROR("No %s sandbox registered for job %s" % (sbType, jobId))
+      return S_ERROR(
+          "No %s sandbox found for job %s. " % (sbType, jobId) +
+          "Possible causes are: the job does not exist, no sandbox was "
+          "registered or you do not have permission to access it."
+      )
 
     # If inMemory, ensure we return the newest sandbox only
     if inMemory:
