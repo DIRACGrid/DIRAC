@@ -245,8 +245,8 @@ class DowntimeCommand(Command):
       if dt['gOCDBServiceType'] and gOCDBServiceType:
         if gOCDBServiceType.lower() != downDic['SERVICE_TYPE'].lower():
           self.log.warn("SERVICE_TYPE mismatch",
-                        "between GOCDB (%s) and CS (%s) for %s" % (gOCDBServiceType,
-                                                                   downDic['SERVICE_TYPE'],
+                        "between GOCDB (%s) and CS (%s) for %s" % (downDic['SERVICE_TYPE'],
+                                                                   gOCDBServiceType,
                                                                    dt['Name']))
 
       dt['DowntimeID'] = downtime

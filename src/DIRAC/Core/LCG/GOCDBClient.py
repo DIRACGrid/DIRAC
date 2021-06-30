@@ -380,7 +380,8 @@ class GOCDBClient(object):
         if entities is not None:
           if not isinstance(entities, list):
             entities = [entities]
-          if dtDict[dtID]['HOSTNAME'] not in entities:
+          hostname = dtDict[dtID].get('URL', dtDict[dtID]['HOSTNAME'])
+          if hostname not in entities:
             dtDict.pop(dtID)
 
     if startDateMax is not None:
