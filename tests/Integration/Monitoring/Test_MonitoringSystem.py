@@ -66,14 +66,14 @@ def putAndDelete():
 def test_listReports(putAndDelete):
 
   result = client.listReports('WMSHistory')
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == ['AverageNumberOfJobs', 'NumberOfJobs', 'NumberOfReschedules']
 
 
 def test_listUniqueKeyValues(putAndDelete):
 
   result = client.listUniqueKeyValues('WMSHistory')
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert 'Status' in result['Value']
   assert 'JobSplitType' in result['Value']
   assert 'MinorStatus' in result['Value']
@@ -100,7 +100,7 @@ def test_generateDelayedPlot(putAndDelete):
           2016, 3, 17, 19, 29, 0, 0), {
           'grouping': ['Site']}, 'Site', {})
   result = client.generateDelayedPlot(*params)
-  assert result['OK']
+  assert result['OK'], result['Message']
   # self.assertEqual(
   #     result['Value'],
   #     {
@@ -114,7 +114,7 @@ def test_generateDelayedPlot(putAndDelete):
   # transferClient = TransferClient('Monitoring/Monitoring')
 
   # result = transferClient.receiveFile(tempFile, result['Value']['plot'])
-  # assert result['OK']
+  # assert result['OK'], result['Message']
 
 
 def test_getReport(putAndDelete):
@@ -128,7 +128,7 @@ def test_getReport(putAndDelete):
       'Site',
       {})
   result = client.getReport(*params)
-  assert result['OK']
+  assert result['OK'], result['Message']
   result['Value']['data'] = {site: strToIntDict(value) for site, value in result['Value']['data'].items()}
   assert result['Value'] == {'data': {u'Multiple': {1458198000: 227.0},
                                       u'LCG.RRCKI.ru': {1458225000: 3.0},
@@ -246,7 +246,7 @@ def test_getReport(putAndDelete):
 def test_getLastDayData(putAndDelete):
   params = {'Status': 'Running', 'Site': 'LCG.NIKHEF.nl'}
   result = client.getLastDayData('WMSHistory', params)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert len(result['Value']) == 2
   assert sorted(result['Value'][0]) == sorted([u'Status',
                                                u'Jobs',

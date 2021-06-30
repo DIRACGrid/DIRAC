@@ -70,7 +70,7 @@ def test__getJDLParameters(mocker):
 
   result = jobAgent._getJDLParameters(jdl)
 
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value']['NumberOfProcessors'] == '16'
   assert result['Value']['Tags'] == ['16Processors', 'MultiProcessor']
 
@@ -220,7 +220,7 @@ def test__checkInstallSoftware(mocker):
 
   result = jobAgent._checkInstallSoftware(101, {}, {}, MagicMock())
 
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == 'Job has no software installation requirement'
 
 

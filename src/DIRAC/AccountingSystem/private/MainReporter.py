@@ -8,7 +8,7 @@ import hashlib
 import re
 
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
+from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter as myBaseReporter

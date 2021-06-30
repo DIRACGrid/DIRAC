@@ -8,13 +8,10 @@ usage() {
   echo "           all the instructions for the DIRAC installation. See DIRAC Administrator "
   echo "           Guide for the details"
   echo "Options:"
-  echo "    -v, --version  for a specific version"
   echo "    -d, --debug    debug mode"
   echo "    -h, --help     print this"
   exit 1
 }
-
-DIRACVERSION='integration'
 
 while [ "${1}" ]
 do
@@ -27,17 +24,6 @@ do
 
   -d | --debug )
     DEBUG='-o LogLevel=DEBUG'
-  ;;
-
-  -o | --dirac-os )
-    USE_DIRACOS='--dirac-os'
-  ;;
-
-  -v | --version )
-    switch=${1}
-    shift
-    [ "${1}" ] || error_exit "Switch ${switch} requires a argument"
-    DIRACVERSION=${1}
   ;;
 
   * )
@@ -64,7 +50,7 @@ installDir=$(grep TargetPath "${installCfg}" | grep -v '#' | cut -d '=' -f 2 | s
 mkdir -p "${installDir}" || exit
 #
 
-python dirac-install -t server "$USE_DIRACOS" "${installCfg}"
+python dirac-install -t server "${installCfg}"
 source "${installDir}"/bashrc
-dirac-configure "${installCfg}" "$DEBUG"
+dirac-configure --cfg "${installCfg}" "$DEBUG"
 dirac-setup-site "${DEBUG}"

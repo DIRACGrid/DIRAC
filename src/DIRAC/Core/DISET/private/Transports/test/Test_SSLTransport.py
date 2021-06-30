@@ -140,7 +140,7 @@ def create_serverAndClient(request):
 
   # Reinitialize the configuration.
   # We do it here rather than at the start of the module
-  # to accomodate for pytest when going through all the DIRAC tests
+  # to accommodate for pytest when going through all the DIRAC tests
 
   gConfigurationData.localCFG = CFG()
   gConfigurationData.remoteCFG = CFG()
