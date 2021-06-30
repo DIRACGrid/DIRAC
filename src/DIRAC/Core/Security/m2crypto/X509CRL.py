@@ -14,6 +14,7 @@ import re
 import datetime
 
 import M2Crypto
+import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 
@@ -59,10 +60,17 @@ class X509CRL(object):
     self.__pemData = pemData
     return S_OK()
 
-  def __str__(self):
+  def __bytes__(self):
     if not self.__loadedCert:
-      return "No certificate loaded"
+      return b"No certificate loaded"
     return self.__pemData
+
+  if six.PY2:
+    def __str__(self):
+      return self.__bytes__()
+  else:
+    def __str__(self):
+      return bytes(self).decode()
 
   def dumpAllToString(self):
     """
@@ -80,13 +88,13 @@ class X509CRL(object):
     if not self.__loadedCert:
       return S_ERROR("No certificate loaded")
     try:
-      if not filename:
-        fd, filename = tempfile.mkstemp()
-        os.write(fd, str(self))
-        os.close(fd)
+      if filename:
+        with open(filename, "wb") as fp:
+          fp.write(bytes(self))
       else:
-        with open(filename, "wb") as fd:
-          fd.write(str(self))
+        with tempfile.NamedTemporaryFile("wb", delete=False) as fp:
+          filename = fp.name
+          fp.write(bytes(self))
     except Exception as e:
       return S_ERROR(DErrno.EWF, "%s: %s" % (filename, repr(e).replace(',)', ')')))
     try:
@@ -98,7 +106,7 @@ class X509CRL(object):
   def hasExpired(self):
     if not self.__loadedCert:
       return S_ERROR("No certificate loaded")
-    # XXX It sould be done better, for now M2Crypto doesn't offer access to fields like Next Update
+    # XXX It should be done better, for now M2Crypto doesn't offer access to fields like Next Update
     txt = self.__revokedCert.as_text()
     pattern = r"Next Update: (?P<nextUpdate>.*)\n"
     dateStr = re.search(pattern.encode("utf-8"), txt).group('nextUpdate')

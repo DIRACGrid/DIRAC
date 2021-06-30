@@ -873,13 +873,13 @@ class X509Chain(object):
       return retVal
     pemData = retVal['Value']
     try:
-      if not filename:
-        fd, filename = tempfile.mkstemp()
+      if filename:
+        with open(filename, "wb") as fp:
+          fp.write(pemData)
       else:
-        fd = open(filename, "wb", os.O_RDWR | os.O_CREAT)
-
-      os.write(fd, pemData)
-      os.close(fd)
+        with tempfile.NamedTemporaryFile("wb", delete=False) as fp:
+          filename = fp.name
+          fp.write(pemData)
     except Exception as e:
       return S_ERROR(DErrno.EWF, "%s :%s" % (filename, repr(e).replace(',)', ')')))
     try:
