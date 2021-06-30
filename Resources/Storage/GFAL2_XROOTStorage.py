@@ -63,6 +63,11 @@ class GFAL2_XROOTStorage(GFAL2_StorageBase):
     if 'XrdSecPROTOCOL' not in os.environ:
       os.environ['XrdSecPROTOCOL'] = 'gsi,unix'
 
+    # needed for third party copy
+    # emulates the gfal2 behaviour: https://its.cern.ch/jira/browse/DMC-1150
+    if 'XrdSecGSIDELEGPROXY' not in os.environ:
+      os.environ['XrdSecGSIDELEGPROXY'] = "1"
+
   def __addDoubleSlash(self, res):
     """ Utilities to add the double slash between the host(:port) and the path
 
