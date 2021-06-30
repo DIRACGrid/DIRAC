@@ -1,4 +1,4 @@
-[v7r3-pre12]
+[v7r3-pre13]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
 NEW: (#5000) Initial support for Python 3 server installations
@@ -12,6 +12,8 @@ CHANGE: (#5110) Removed Core.Utilities.Grid.getBdiiCEInfo function use Utilities
         Also dropped ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView, ldapService functions
 NEW: (#5062) provide some docs and add registerArgument method to register arguments in Script
 CHANGE: (#4903) Using former RSS State Machine as general State Machine
+FIX: (#5210) show extremely small values in pie plots
+CHANGE: (#5237) Use generic ObjectLoader.loadObjects() function in the specific Plotting.ObjectLoader class
 
 *Configuration
 CHANGE: (#5110) Dropped Glue2Only and Glue2URLS options from Bdii2CSAgent, Glue2 is now the only way
@@ -36,6 +38,9 @@ CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent i
 NEW: (#4903) Added WMS (Jobs) State Machine
 CHANGE: (#5141) add an Aborted_HOUR column to the pilot efficiency table needed by the WebApp
 CHANGE: (#5178) JobMonitoring does not need to look into TaskQueue
+
+*DMS
+CHANGE: (#5206) prints why dirac-dms-add-files failed
 
 *RSS
 NEW: (#5042) Multi-VO mode of operation support
