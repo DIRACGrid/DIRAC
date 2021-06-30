@@ -200,17 +200,31 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
       return S_OK({'Match': False, 'Reason': noMatchReasons[0]})
 
   # 3. RunningLimit
-  site = queueDict['Site']
+  site = queueDict["Site"]
+  ce = queueDict.get("GridCE")
   opsHelper = Operations()
-  result = opsHelper.getSections('JobScheduling/RunningLimit')
-  if result['OK'] and site in result['Value']:
-    result = opsHelper.getSections('JobScheduling/RunningLimit/%s' % site)
-    if result['OK']:
-      for parameter in result['Value']:
+  result = opsHelper.getSections("JobScheduling/RunningLimit")
+  if result["OK"] and site in result["Value"]:
+    result = opsHelper.getSections("JobScheduling/RunningLimit/%s" % site)
+    if result["OK"]:
+      for parameter in result["Value"]:
         value = job.getAttributeString(parameter)
-        if value and opsHelper.getValue('JobScheduling/RunningLimit/%s/%s/%s' % (site, parameter, value), 1) == 0:
-          noMatchReasons.append('Resource operational %s requirement not satisfied' % parameter)
+	if (
+	    value
+	    and (
+		opsHelper.getValue(
+		    "JobScheduling/RunningLimit/%s/%s/%s" % (site, parameter, value), 1
+		)
+		or opsHelper.getValue(
+		    "JobScheduling/RunningLimit/%s/CEs/%s/%s/%s" % (site, ce, parameter, value), 1
+		)
+	    )
+	    == 0
+	):
+	  noMatchReasons.append(
+	      "Resource operational %s requirement not satisfied" % parameter
+	  )
           if not fullMatch:
-            return S_OK({'Match': False, 'Reason': noMatchReasons[0]})
+	    return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 
   return S_OK({'Match': not bool(noMatchReasons), 'Reason': noMatchReasons})

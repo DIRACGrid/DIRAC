@@ -136,7 +136,8 @@ class MatcherHandler(RequestHandler):
     """ Return all task queues that match the resourceDict
     """
     if 'Site' in resourceDict and isinstance(resourceDict['Site'], six.string_types):
-      negativeCond = cls.limiter.getNegativeCondForSite(resourceDict['Site'])
+      gridCE = resourceDict.get('GridCE')
+      negativeCond = cls.limiter.getNegativeCondForSite(resourceDict['Site'], gridCE)
     else:
       negativeCond = cls.limiter.getNegativeCond()
     matcher = Matcher(pilotAgentsDB=cls.pilotAgentsDB,
