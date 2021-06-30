@@ -52,7 +52,7 @@ class PieGraph(PlotBase):
     self.legendData = labels
 
     sx = float(numpy.sum(x))
-    if sx > 1:
+    if sx > 0:
       x = numpy.divide(x, sx)
 
     labels = [l[0] for l in labels]
