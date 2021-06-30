@@ -156,8 +156,7 @@ class ModuleLoader(object):
       else:
         # Check to see if the module exists in any of the root modules
         gLogger.info("Trying to autodiscover %s" % loadName)
-        rootModulesToLook = extensionsByPriority()
-        for rootModule in rootModulesToLook:
+        for rootModule in extensionsByPriority():
           importString = '%s.%sSystem.%s.%s' % (rootModule, system, self.__importLocation, module)
           if self.__modSuffix:
             importString = "%s%s" % (importString, self.__modSuffix)
@@ -178,7 +177,6 @@ class ModuleLoader(object):
         # Try to get the class from the module
         modClass = getattr(modObj, className)
       except AttributeError:
-        location = ""
         if '__file__' in dir(modObj):
           location = modObj.__file__
         else:

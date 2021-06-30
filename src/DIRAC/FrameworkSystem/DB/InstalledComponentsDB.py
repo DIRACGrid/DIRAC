@@ -246,7 +246,7 @@ class HostLogging(componentsBase):
   hostName = Column('HostName', String(32), nullable=False, primary_key=True)
   # status
   DIRAC = Column('DIRACVersion', String(64))
-  Extension = Column('Extension', String(64))
+  Extension = Column('Extension', String(512))
   Load1 = Column('Load1', String(32))  # float
   Load5 = Column('Load5', String(32))  # float
   Load15 = Column('Load15', String(32))  # float
