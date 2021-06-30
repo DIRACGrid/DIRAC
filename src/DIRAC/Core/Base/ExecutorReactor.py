@@ -80,9 +80,9 @@ class ExecutorReactor(object):
 
     def addModule(self, name, exeClass):
       self.__modules[name] = exeClass
-      self.__maxTasks = max(self.__maxTasks, exeClass.ex_getOption("MaxTasks"))
-      self.__reconnectSleep = max(self.__reconnectSleep, exeClass.ex_getOption("ReconnectSleep"))
-      self.__reconnectRetries = max(self.__reconnectRetries, exeClass.ex_getOption("ReconnectRetries"))
+      self.__maxTasks = max(self.__maxTasks, exeClass.ex_getOption("MaxTasks", 0))
+      self.__reconnectSleep = max(self.__reconnectSleep, exeClass.ex_getOption("ReconnectSleep", 0))
+      self.__reconnectRetries = max(self.__reconnectRetries, exeClass.ex_getOption("ReconnectRetries", 0))
       self.__extraArgs[name] = exeClass.ex_getExtraArguments()
 
     def connect(self):
