@@ -239,7 +239,8 @@ environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 transfer_output_files = ""
-+xcount = %(processors)s
+machine_count = 1
+request_cpus = %(processors)s
 %(localScheddOptions)s
 
 kill_sig=SIGTERM
