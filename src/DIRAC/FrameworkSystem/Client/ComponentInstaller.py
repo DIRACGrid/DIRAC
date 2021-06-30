@@ -79,6 +79,7 @@ import importlib_resources
 import six
 import subprocess32 as subprocess
 from diraccfg import CFG
+from prompt_toolkit import prompt
 
 import DIRAC
 from DIRAC import rootPath
@@ -1999,13 +2000,13 @@ exec dirac-webapp-run -p < /dev/null
     Get MySQL passwords from local configuration or prompt
     """
     if not self.mysqlRootPwd:
-      self.mysqlRootPwd = getpass.getpass('MySQL root password: ')
+      self.mysqlRootPwd = prompt(u"MySQL root password: ", is_password=True)
 
     if not self.mysqlPassword:
       # Take it if it is already defined
       self.mysqlPassword = self.localCfg.getOption('/Systems/Databases/Password', '')
     if not self.mysqlPassword:
-      self.mysqlPassword = getpass.getpass('MySQL Dirac password: ')
+      self.mysqlPassword = prompt(u"MySQL Dirac password: ", is_password=True)
 
     return S_OK()
 
