@@ -2383,6 +2383,7 @@ exec dirac-webapp-run -p < /dev/null
 rcfile=%(bashrc)s
 [ -e $rcfile ] && source $rcfile
 #
+export DIRAC_USE_TORNADO_IOLOOP=Yes
 exec 2>&1
 #
 #

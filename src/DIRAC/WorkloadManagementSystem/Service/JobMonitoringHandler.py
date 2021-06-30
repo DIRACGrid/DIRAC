@@ -19,13 +19,10 @@ import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
 SUMMARY = []
@@ -37,14 +34,40 @@ class JobMonitoringHandler(RequestHandler):
   def initializeHandler(cls, svcInfoDict):
     """ initialize DBs
     """
-    cls.jobDB = JobDB()
-    cls.jobLoggingDB = JobLoggingDB()
+    try:
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+      if not result['OK']:
+        return result
+      cls.jobDB = result['Value']()
+
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
+      if not result['OK']:
+        return result
+      cls.jobLoggingDB = result['Value']()
+
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
+      if not result['OK']:
+        return result
+      cls.taskQueueDB = result['Value']()
+
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
 
     cls.elasticJobParametersDB = None
     useESForJobParametersFlag = Operations().getValue(
-        '/Services/JobMonitoring/useESForJobParametersFlag', False)
+        "/Services/JobMonitoring/useESForJobParametersFlag", False)
     if useESForJobParametersFlag:
-      cls.elasticJobParametersDB = ElasticJobParametersDB()
+
+      try:
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+        )
+        if not result['OK']:
+          return result
+        cls.elasticJobParametersDB = result['Value']()
+      except RuntimeError as excp:
+        return S_ERROR("Can't connect to DB: %s" % excp)
+
     return S_OK()
 
   def initialize(self):

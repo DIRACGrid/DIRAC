@@ -1,6 +1,5 @@
 """
-  The Job Sanity Agent accepts all jobs from the Job
-  receiver and screens them for the following problems:
+  The Job Sanity executor screens jobs for the following problems:
 
      - Output data already exists
      - Problematic JDL

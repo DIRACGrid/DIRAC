@@ -49,6 +49,24 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p12]
+
+CHANGE: (#5219) Service Handlers discover DBs in Extensions
+
+*Core
+FIX: (#5226) DIRAC_USE_TORNADO_IOLOOP is set in the runsv file rather than the python starting script (#5223 )
+FIX: (#5234) GOC: taking hostname from URL, if present
+
+*WMS
+NEW: (#5212) SiteDirector: added flag for pilots to install python3 DIRAC clients
+FIX: (#5220) JobPath executor: fix bug for per-job list of optimizers
+FIX: (#5229) JobAgent - protect against trying to send a None operation in a request
+CHANGE: (#5229) CHANGE: JobCleaningAgent - fixed some printouts
+FIX: (#5229) dirac-admin-ban-se - make it work with option --Site
+
+*Resources
+FIX: (#5231) fix path of the executable file when using a parallel library within SSHCE
+
 [v7r2p11]
 
 *Core
@@ -308,6 +326,22 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p44]
+
+*WorkloadManagement
+CHANGE: (#5205) Make error message from SandboxStoreClient clearer when the sandbox is not found
+
+*DataManagement
+CHANGE: (#5211) FileCatalogClientCLI register File now takes a fixed number of arguments (6)
+        including Checksum
+
+*Resources
+NEW: GFAL2_XROOTStorage - set XrdSecGSIDELEGPROXY=1 to enable third party copy
+
+*Interfaces
+NEW: (#5201) Implemented a function that allows programmatic listing of directories in the DFC.
+Meant to replace the never fully deployed listCatalog function.
 
 [v7r1p43]
 

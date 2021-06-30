@@ -8,10 +8,10 @@ __RCSID__ = "$Id$"
 
 import six
 
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
-from DIRAC.ProductionSystem.DB.ProductionDB import ProductionDB
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 prodTypes = [six.string_types, int]
 transTypes = [six.string_types, int, list]
@@ -24,7 +24,14 @@ class ProductionManagerHandler(RequestHandler):
     """ Initialization of DB object
     """
 
-    cls.productionDB = ProductionDB()
+    try:
+      result = ObjectLoader().loadObject("ProductionSystem.DB.ProductionDB", "ProductionDB")
+      if not result['OK']:
+        return result
+      cls.productionDB = result['Value']()
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
+
     return S_OK()
 
   ####################################################################

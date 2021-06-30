@@ -11,10 +11,9 @@ import six
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
 
 
@@ -24,13 +23,27 @@ class WMSAdministratorHandler(RequestHandler):
   def initializeHandler(cls, svcInfoDict):
     """ WMS AdministratorService initialization
     """
-    cls.jobDB = JobDB()
+    try:
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+      if not result['OK']:
+        return result
+      cls.jobDB = result['Value']()
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
 
     cls.elasticJobParametersDB = None
     useESForJobParametersFlag = Operations().getValue(
         '/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
-      cls.elasticJobParametersDB = ElasticJobParametersDB()
+      try:
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+        )
+        if not result['OK']:
+          return result
+        cls.elasticJobParametersDB = result['Value']()
+      except RuntimeError as excp:
+        return S_ERROR("Can't connect to DB: %s" % excp)
 
     return S_OK()
 

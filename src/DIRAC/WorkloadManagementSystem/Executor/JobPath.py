@@ -1,18 +1,19 @@
 """
-  The Job Path Agent determines the chain of Optimizing Agents that must
+  The Job Path executor determines the chain of Optimizing Agents that must
   work on the job prior to the scheduling decision.
 
   Initially this takes jobs in the received state and starts the jobs on the
-  optimizer chain.  The next development will be to explicitly specify the
-  path through the optimizers.
+  optimizer chain.
 
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 import six
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
@@ -76,7 +77,11 @@ class JobPath(OptimizerExecutor):
     opChain = jobManifest.getOption("JobPath", [])
     if opChain:
       self.jobLog.info('Job defines its own optimizer chain', opChain)
-      return self.__setOptimizerChain(jobState, opChain)
+      result = self.__setOptimizerChain(jobState, opChain)
+      if not result['OK']:
+        self.jobLog.error("Failed to set optimizer chain", result['Message'])
+        return result
+      return self.setNextOptimizer(jobState)
     # Construct path
     opPath = self.ex_getOption('BasePath', ['JobPath', 'JobSanity'])
     voPlugin = self.ex_getOption('VOPlugin', '')

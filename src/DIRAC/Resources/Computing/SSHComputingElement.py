@@ -590,10 +590,11 @@ class SSHComputingElement(ComputingElement):
 
     inputs = []
     if self.parallelLibrary:
-      # In this case, the executable becomes a dependency of a parallel library script.
+      # In this case, the executable becomes an input of a parallel library script.
       # It needs to be submitted along with the submitFile, which is a parallel library wrapper.
-      inputs.append(submitFile)
-      submitFile = self.parallelLibrary.generateWrapper(submitFile)
+      inputFile = os.path.join(self.executableArea, os.path.basename(submitFile))
+      inputs.append(inputFile)
+      submitFile = self.parallelLibrary.generateWrapper(inputFile)
 
     result = self._submitJobToHost(submitFile, numberOfJobs, inputs=inputs)
     if proxy or self.parallelLibrary:

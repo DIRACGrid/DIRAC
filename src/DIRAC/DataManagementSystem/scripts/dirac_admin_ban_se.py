@@ -25,7 +25,7 @@ def main():
   write = True
   check = True
   remove = True
-  site = ''
+  sites = []
   mute = False
 
   Script.registerSwitch("r", "BanRead", "     Ban only reading from the storage element")
@@ -63,20 +63,18 @@ def main():
     if switch[0].lower() in ("m", "mute"):
       mute = True
     if switch[0].lower() in ("s", "site"):
-      site = switch[1]
+      sites = switch[1].split(',')
 
   # from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
   from DIRAC import gConfig, gLogger
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
   from DIRAC.Core.Security.ProxyInfo import getProxyInfo
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-  from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+  from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup, DMSHelpers
 
   ses = resolveSEGroup(ses)
   diracAdmin = DiracAdmin()
-  errorList = []
   setup = gConfig.getValue('/DIRAC/Setup', '')
   if not setup:
     print('ERROR: Could not contact Configuration Service')
@@ -92,15 +90,12 @@ def main():
     gLogger.error('Failed to get username for proxy')
     DIRAC.exit(2)
 
-  if site:
-    res = getSites()
+  for site in sites:
+    res = DMSHelpers().getSEsForSite(site)
     if not res['OK']:
-      gLogger.error(res['Message'])
+      gLogger.error(res['Message'], site)
       DIRAC.exit(-1)
-    if site not in res['Value']:
-      gLogger.error('The provided site (%s) is not known.' % site)
-      DIRAC.exit(-1)
-    ses.extend(res['Value']['SE'].replace(' ', '').split(','))
+    ses.extend(res['Value'])
 
   if not ses:
     gLogger.error('There were no SEs provided')
@@ -127,7 +122,10 @@ def main():
     # Eventually, we will get rid of the notion of InActive, as we always write Banned.
     if read and 'ReadAccess' in seOptions:
 
-      if not seOptions['ReadAccess'] in ['Active', 'Degraded', 'Probing']:
+      if seOptions['ReadAccess'] == 'Banned':
+        gLogger.notice('Read access already banned', se)
+        resR['OK'] = True
+      elif not seOptions['ReadAccess'] in ['Active', 'Degraded', 'Probing']:
         gLogger.notice('Read option for %s is %s, instead of %s' %
                        (se, seOptions['ReadAccess'], ['Active', 'Degraded', 'Probing']))
         gLogger.notice('Try specifying the command switches')
@@ -144,7 +142,10 @@ def main():
     # Eventually, we will get rid of the notion of InActive, as we always write Banned.
     if write and 'WriteAccess' in seOptions:
 
-      if not seOptions['WriteAccess'] in ['Active', 'Degraded', 'Probing']:
+      if seOptions['WriteAccess'] == 'Banned':
+        gLogger.notice('Write access already banned', se)
+        resW['OK'] = True
+      elif not seOptions['WriteAccess'] in ['Active', 'Degraded', 'Probing']:
         gLogger.notice('Write option for %s is %s, instead of %s' %
                        (se, seOptions['WriteAccess'], ['Active', 'Degraded', 'Probing']))
         gLogger.notice('Try specifying the command switches')
@@ -161,7 +162,10 @@ def main():
     # Eventually, we will get rid of the notion of InActive, as we always write Banned.
     if check and 'CheckAccess' in seOptions:
 
-      if not seOptions['CheckAccess'] in ['Active', 'Degraded', 'Probing']:
+      if seOptions['CheckAccess'] == 'Banned':
+        gLogger.notice('Check access already banned', se)
+        resC['OK'] = True
+      elif not seOptions['CheckAccess'] in ['Active', 'Degraded', 'Probing']:
         gLogger.notice('Check option for %s is %s, instead of %s' %
                        (se, seOptions['CheckAccess'], ['Active', 'Degraded', 'Probing']))
         gLogger.notice('Try specifying the command switches')
@@ -178,7 +182,10 @@ def main():
     # Eventually, we will get rid of the notion of InActive, as we always write Banned.
     if remove and 'RemoveAccess' in seOptions:
 
-      if not seOptions['RemoveAccess'] in ['Active', 'Degraded', 'Probing']:
+      if seOptions['RemoveAccess'] == 'Banned':
+        gLogger.notice('Remove access already banned', se)
+        resC['OK'] = True
+      elif not seOptions['RemoveAccess'] in ['Active', 'Degraded', 'Probing']:
         gLogger.notice('Remove option for %s is %s, instead of %s' %
                        (se, seOptions['RemoveAccess'], ['Active', 'Degraded', 'Probing']))
         gLogger.notice('Try specifying the command switches')

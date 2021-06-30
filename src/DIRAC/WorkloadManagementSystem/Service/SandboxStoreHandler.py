@@ -14,10 +14,10 @@ import tempfile
 
 import six
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Locations, Properties, X509Certificate
-from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -37,7 +37,16 @@ class SandboxStoreHandler(RequestHandler):
   def initializeHandler(cls, serviceInfoDict):
     """ Initialization of DB object
     """
-    cls.sandboxDB = SandboxMetadataDB()
+    try:
+      result = ObjectLoader().loadObject(
+          "WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB"
+      )
+      if not result['OK']:
+        return result
+      cls.sandboxDB = result['Value']()
+
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
     return S_OK()
 
   def initialize(self):
@@ -525,6 +534,6 @@ class SandboxStoreHandler(RequestHandler):
       gLogger.info("Deleting external Sandbox")
       try:
         return StorageElement(SEName).removeFile(SEPFN)
-      except Exception as e:
+      except Exception:
         gLogger.exception("RM raised an exception while trying to delete a remote sandbox")
         return S_ERROR("RM raised an exception while trying to delete a remote sandbox")

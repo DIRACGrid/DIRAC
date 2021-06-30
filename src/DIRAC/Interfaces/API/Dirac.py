@@ -808,6 +808,74 @@ class Dirac(API):
       print(message)
 
   #############################################################################
+  def listCatalogDirectory(self, directoryLFN, printOutput=False):
+    """lists the contents of a directory in the DFC
+
+       Example usage:
+
+       >>> res = dirac.listCatalogDir("/lz/data/test", printOutput=True)
+       Listing content of: /lz/data/test
+       Subdirectories:
+       /lz/data/test/reconstructed
+       /lz/data/test/BACCARAT_release-2.1.1_geant4.9.5.p02
+       /lz/data/test/BACCARAT_release-2.1.0_geant4.9.5.p02
+       Files:
+       /lz/data/test/sites.log
+       /lz/data/test/sites2.log
+
+       >>> print(res)
+       {'OK': True, 'Value': {'Successful': {'/lz/data/test': {'Files': {'/lz/data/test/sites.log':
+       {'MetaData': {'Status': 'AprioriGood', 'GUID': 'AD81AD07-3BC0-A9FE-1D82-786C4DC9D380',
+        'ChecksumType': 'Adler32', 'Checksum': '8b994dd5', 'Size': 1100L, 'UID': 2,
+        'OwnerGroup': 'lz_production', 'Owner': 'daniela.bauer', 'GID': 24, 'Mode': 509,
+        'ModificationDate': datetime.datetime(2021, 6, 11, 14, 23, 51),
+        'CreationDate': datetime.datetime(2021, 6, 11, 14, 23, 51), 'Type': 'File', 'FileID': 27519475L}},
+        '/lz/data/test/sites2.log': {'MetaData': {'Status': 'AprioriGood',
+        'GUID': 'AD81AD07-3BC0-A9FE-1D82-786C4DC9D380', 'ChecksumType': 'Adler32', 'Checksum': '8b994dd5',
+        'Size': 1100L, 'UID': 2, 'OwnerGroup': 'lz_production', 'Owner': 'daniela.bauer', 'GID': 24,
+        'Mode': 509, 'ModificationDate': datetime.datetime(2021, 6, 16, 15, 26, 21),
+        'CreationDate': datetime.datetime(2021, 6, 16, 15, 26, 21), 'Type': 'File', 'FileID': 27601076L}}},
+        'Datasets': {}, 'SubDirs': {'/lz/data/test/reconstructed': True,
+        '/lz/data/test/BACCARAT_release-2.1.1_geant4.9.5.p02': True,
+        '/lz/data/test/BACCARAT_release-2.1.0_geant4.9.5.p02': True}, 'Links': {}}}, 'Failed': {}}}
+
+       :param directoryLFN: LFN of the directory to be listed
+       :type directoryLFN: string or list in LFN format
+       :param printOutput: prints output in a more human readable form
+       :type printOutput: bool
+       :returns: S_OK,S_ERROR. S_OK returns a dictionary. Please see the example for its structure.
+    """
+    ret = self._checkFileArgument(directoryLFN, 'LFN')
+    if not ret['OK']:
+      return ret
+    res = FileCatalog().listDirectory(directoryLFN)
+    if not res['OK']:
+      self.log.warn(res['Message'])
+      return res
+    if not res['Value']['Successful']:
+      self.log.warn("listCatalogDir failed for all LFNs (%s)." % directoryLFN)
+      return res
+    # now deal with the case where *some* of the LFNs are OK
+    if res['Value']['Failed']:
+      self.log.warn("listCatalogDir failed for: %s" % (res['Value']['Failed']))
+      # do not return, we still want to process the good ones
+    if printOutput:
+      # treat a string as array with a single entry
+      if isinstance(directoryLFN, str):
+        directoryLFN = [directoryLFN]
+      for directory in directoryLFN:
+        if directory in res['Value']['Successful']:
+          print("Listing content of: %s" % directory)
+          subdirs = res['Value']['Successful'][directory]['SubDirs']
+          files = res['Value']['Successful'][directory]['Files']
+          print("Subdirectories:")
+          print('\n'.join(subdirs))
+          print("Files:")
+          print('\n'.join(files))
+
+    return res
+
+  #############################################################################
   # def listCatalog( self, directory, printOutput = False ):
   #   """ Under development.
   #       Obtain listing of the specified directory.
@@ -825,6 +893,7 @@ class Dirac(API):
   #       print self.pPrint.pformat( metaDict )
 
   #############################################################################
+
   def getReplicas(self, lfns, active=True, preferDisk=False, diskOnly=False, printOutput=False):
     """Obtain replica information from file catalogue client. Input LFN(s) can be string or list.
 
