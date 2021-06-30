@@ -56,12 +56,12 @@ def setupDBCreateTableInsertFields(table, requiredFields, values):
   mysqlDB = setupDB()
 
   result = mysqlDB._createTables(table, force=True)
-  assert result['OK']
+  assert result['OK'], result['Message']
 
   for j in range(len(values)):
     value = values[j]
     result = mysqlDB.insertFields(name, requiredFields, value)
-    assert result['OK']
+    assert result['OK'], result['Message']
     assert result['Value'] == 1
     assert result['lastRowId'] == j + 1
 
@@ -132,15 +132,15 @@ def test_createEmptyTable(name, fields, table, cond, expected):
   assert result['OK'] is expected
 
   result = mysqlDB.getCounters(name, fields, cond0)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == []
 
   result = mysqlDB.getDistinctAttributeValues(name, fields[0], cond0)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == []
 
   result = mysqlDB.getFields(name, fields)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == ()
 
 
@@ -153,18 +153,18 @@ def test_insertElements(name, fields, values, table, expected):
   mysqlDB = setupDB()
 
   result = mysqlDB._createTables(table, force=True)
-  assert result['OK']
+  assert result['OK'], result['Message']
 
   allDict = dict(zip(fields, values))
 
   result = mysqlDB.insertFields(name, inFields=fields, inValues=values)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == 1
 
   time.sleep(1)
 
   result = mysqlDB.insertFields(name, inDict=allDict)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == 1
 
 
@@ -178,7 +178,7 @@ def test_getCounters(name, fields, requiredFields, values, table, cond, expected
   mysqlDB = setupDBCreateTableInsertFields(table, requiredFields, values)
 
   result = mysqlDB.getCounters(name, fields, cond)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == expected
 
 
@@ -191,7 +191,7 @@ def test_getDistinctAttributeValues(name, fields, requiredFields, values, table,
   mysqlDB = setupDBCreateTableInsertFields(table, requiredFields, values)
 
   result = mysqlDB.getDistinctAttributeValues(name, fields[0], cond)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == expected
 
 
@@ -234,7 +234,7 @@ def test_getFields(table, reqFields, values, name, args, expected, isExpectedCou
       args[timeCmp] = timeCmpArg()
 
   result = mysqlDB.getFields(name, **args)
-  assert result['OK']
+  assert result['OK'], result['Message']
 
   if isExpectedCount:
     assert len(result['Value']) == expected
@@ -251,11 +251,11 @@ def test_updateFields(name, fields, requiredFields, values, newValues, table, co
   mysqlDB = setupDBCreateTableInsertFields(table, requiredFields, values)
 
   result = mysqlDB.updateFields(name, fields, newValues, cond)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == expected1
 
   result = mysqlDB.updateFields(name, fields, newValues, cond)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == expected2
 
 
@@ -268,13 +268,13 @@ def test_deleteEntries(name, fields, requiredFields, values, table, cond, expect
   mysqlDB = setupDBCreateTableInsertFields(table, requiredFields, values)
 
   result = mysqlDB.deleteEntries(name, cond)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == expected1
 
   result = mysqlDB.deleteEntries(name)
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == expected2
 
   result = mysqlDB.getCounters(name, fields, {})
-  assert result['OK']
+  assert result['OK'], result['Message']
   assert result['Value'] == []

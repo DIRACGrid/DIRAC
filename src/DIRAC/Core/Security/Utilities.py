@@ -68,7 +68,7 @@ def generateCAFile(location=None):
   # Now we create it in tmpdir
   fn = tempfile.mkstemp(prefix="cas.", suffix=".pem")[1]
   try:
-    with open(fn, "w") as fd:
+    with open(fn, "wb") as fd:
       for caFile in os.listdir(caDir):
         caFile = os.path.join(caDir, caFile)
         chain = X509Chain.X509Chain()
@@ -117,7 +117,7 @@ def generateRevokedCertsFile(location=None):
   # Now we create it in tmpdir
   fn = tempfile.mkstemp(prefix="crls", suffix=".pem")[1]
   try:
-    with open(fn, "w") as fd:
+    with open(fn, "wb") as fd:
       for caFile in os.listdir(caDir):
         caFile = os.path.join(caDir, caFile)
         result = X509CRL.X509CRL.instanceFromFile(caFile)

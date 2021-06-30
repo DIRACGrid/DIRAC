@@ -139,7 +139,7 @@ def putAndDelete():
 
 def test_deleteWMSIndex():
   result = monitoringDB.getIndexName('WMSHistory')
-  assert result['OK']
+  assert result['OK'], result['Message']
 
   today = time.strftime("%Y-%m-%d")
   indexName = "%s-%s" % (result['Value'], today)

@@ -113,7 +113,7 @@ def main():
     res = dm.putAndRegister(lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite=overwrite)
     if not res['OK']:
       exitCode = 3
-      gLogger.error('Error: failed to upload %s to %s' % (lfn['lfn'], lfn['SE']))
+      gLogger.error('Error: failed to upload %s to %s: %s' % (lfn['lfn'], lfn['SE'], res))
       continue
     else:
       gLogger.notice('Successfully uploaded file to %s' % lfn['SE'])

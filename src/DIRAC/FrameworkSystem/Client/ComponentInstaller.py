@@ -9,10 +9,12 @@ The Following Options are used::
   /DIRAC/Setup:             Setup to be used for any operation
   /LocalInstallation/InstanceName:    Name of the Instance for the current Setup (default /DIRAC/Setup)
   /LocalInstallation/LogLevel:        LogLevel set in "run" script for all components installed
-  /LocalInstallation/RootPath:        Used instead of rootPath in "run" script
+  /LocalInstallation/RootPath:        Python 2 only! Used instead of rootPath in "run" script
                                       if defined (if links are used to named versions)
-  /LocalInstallation/InstancePath:    Location where runit and startup directories are created (default rootPath)
-  /LocalInstallation/UseVersionsDir:  DIRAC is installed under versions/<Versioned Directory> with a link from pro
+  /LocalInstallation/InstancePath:    Python 2 only! Location where runit and
+                                      startup directories are created (default rootPath)
+  /LocalInstallation/UseVersionsDir:  Python 2 only! DIRAC is installed under
+                                      versions/<Versioned Directory> with a link from pro
                                       (This option overwrites RootPath and InstancePath)
   /LocalInstallation/Host:            Used when build the URL to be published for the installed
                                       service (default: socket.getfqdn())
@@ -74,8 +76,10 @@ import time
 from collections import defaultdict
 
 import importlib_resources
+import six
 import subprocess32 as subprocess
 from diraccfg import CFG
+from prompt_toolkit import prompt
 
 import DIRAC
 from DIRAC import rootPath
@@ -211,18 +215,24 @@ class ComponentInstaller(object):
     self.setup = self.localCfg.getOption(cfgPath('DIRAC', 'Setup'), '')
     self.instance = self.localCfg.getOption(cfgInstallPath('InstanceName'), self.setup)
     self.logLevel = self.localCfg.getOption(cfgInstallPath('LogLevel'), 'INFO')
-    self.linkedRootPath = self.localCfg.getOption(cfgInstallPath('RootPath'), rootPath)
-    useVersionsDir = self.localCfg.getOption(cfgInstallPath('UseVersionsDir'), False)
+    if six.PY2:
+      self.linkedRootPath = self.localCfg.getOption(cfgInstallPath('RootPath'), rootPath)
+    else:
+      self.linkedRootPath = rootPath
 
     self.host = self.localCfg.getOption(cfgInstallPath('Host'), getFQDN())
 
     self.basePath = os.path.dirname(rootPath)
-    self.instancePath = self.localCfg.getOption(cfgInstallPath('InstancePath'), rootPath)
-    if useVersionsDir:
-      # This option takes precedence
-      self.instancePath = os.path.dirname(os.path.dirname(rootPath))
-      self.linkedRootPath = os.path.join(self.instancePath, 'pro')
-    gLogger.verbose('Using Instance Base Dir at', self.instancePath)
+    if six.PY2:
+      self.instancePath = self.localCfg.getOption(cfgInstallPath('InstancePath'), rootPath)
+      useVersionsDir = self.localCfg.getOption(cfgInstallPath('UseVersionsDir'), False)
+      if useVersionsDir:
+        # This option takes precedence and has no effect for Python 3 installations
+        self.instancePath = os.path.dirname(os.path.dirname(rootPath))
+        self.linkedRootPath = os.path.join(self.instancePath, 'pro')
+      gLogger.verbose('Using Instance Base Dir at', self.instancePath)
+    else:
+      self.instancePath = rootPath
 
     self.runitDir = os.path.join(self.instancePath, 'runit')
     self.runitDir = self.localCfg.getOption(cfgInstallPath('RunitDir'), self.runitDir)
@@ -1925,9 +1935,22 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     Install runit directories for the Web Portal
     """
     # Check that the software for the Web Portal is installed
-    webDir = os.path.join(self.linkedRootPath, 'WebAppDIRAC')
-    if not os.path.exists(webDir):
-      error = 'WebApp extension not installed at %s' % webDir
+    if six.PY2:
+      webDir = os.path.join(self.linkedRootPath, 'WebAppDIRAC')
+      webappInstalled = os.path.exists(webDir)
+    else:
+      from importlib import metadata  # pylint: disable=no-name-in-module
+
+      try:
+        metadata.version("WebAppDIRAC")
+      except metadata.PackageNotFoundError:
+        webappInstalled = False
+      else:
+        webappInstalled = True
+
+    if not webappInstalled:
+      error = 'WebApp extension not installed'
+      gLogger.error(error)
       if self.exitOnError:
         gLogger.error(error)
         DIRAC.exit(-1)
@@ -1977,13 +2000,13 @@ exec dirac-webapp-run -p < /dev/null
     Get MySQL passwords from local configuration or prompt
     """
     if not self.mysqlRootPwd:
-      self.mysqlRootPwd = getpass.getpass('MySQL root password: ')
+      self.mysqlRootPwd = prompt(u"MySQL root password: ", is_password=True)
 
     if not self.mysqlPassword:
       # Take it if it is already defined
       self.mysqlPassword = self.localCfg.getOption('/Systems/Databases/Password', '')
     if not self.mysqlPassword:
-      self.mysqlPassword = getpass.getpass('MySQL Dirac password: ')
+      self.mysqlPassword = prompt(u"MySQL Dirac password: ", is_password=True)
 
     return S_OK()
 
@@ -2357,14 +2380,14 @@ exec dirac-webapp-run -p < /dev/null
       with io.open(runFile, 'wt') as fd:
         fd.write(
             u"""#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  #
-  exec tornado-start-all
-  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
+rcfile=%(bashrc)s
+[ -e $rcfile ] && source $rcfile
+#
+exec 2>&1
+#
+#
+exec tornado-start-all
+""" % {'bashrc': os.path.join(self.instancePath, 'bashrc')})
 
       os.chmod(runFile, self.gDefaultPerms)
 
