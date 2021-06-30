@@ -19,8 +19,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-  # Must be defined BEFORE any dirac import
-  os.environ['DIRAC_USE_TORNADO_IOLOOP'] = "True"
+
+  if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() not in ('yes', 'true'):
+    raise RuntimeError(
+        "DIRAC_USE_TORNADO_IOLOOP is not defined in the environment." + "\n" +
+        "It is necessary to run with Tornado." + "\n" +
+        "https://dirac.readthedocs.io/en/latest/DeveloperGuide/TornadoServices/index.html"
+    )
 
   from DIRAC import gConfig
   from DIRAC.ConfigurationSystem.Client import PathFinder
