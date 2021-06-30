@@ -102,6 +102,7 @@ class SiteDirector(AgentModule):
     self.sites = []
     self.totalSubmittedPilots = 0
 
+    self.python3Pilots = False
     self.addPilotsToEmptySites = False
     self.checkPlatform = False
     self.updateStatus = True
@@ -205,6 +206,7 @@ class SiteDirector(AgentModule):
     self.maxRetryGetPilotOutput = self.am_getOption('MaxRetryGetPilotOutput', self.maxRetryGetPilotOutput)
 
     # Flags
+    self.python3Pilots = self.am_getOption('Python3Pilots', self.python3Pilots)
     self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', self.addPilotsToEmptySites)
     self.checkPlatform = self.am_getOption('CheckPlatform', self.checkPlatform)
     self.updateStatus = self.am_getOption('UpdatePilotStatus', self.updateStatus)
@@ -534,7 +536,7 @@ class SiteDirector(AgentModule):
 
       # Get the number of available slots on the target site/queue
       totalSlots = self.getQueueSlots(queueName, manyWaitingPilotsFlag)
-      if totalSlots == 0:
+      if totalSlots <= 0:
         self.log.debug('%s: No slots available' % queueName)
         continue
 
@@ -834,8 +836,10 @@ class SiteDirector(AgentModule):
     # FIXME: The condor thing only transfers the file with some
     # delay, so when we unlink here the script is gone
     # FIXME 2: but at some time we need to clean up the pilot wrapper scripts...
-    if not (self.queueDict[queue]['CEType'] == 'HTCondorCE' or
-            (self.queueDict[queue]['CEType'] == 'Local' and ce.batchSystem == 'Condor')):
+    if not (
+        self.queueDict[queue]["CEType"] == "HTCondorCE"
+        or (self.queueDict[queue]["CEType"] == "Local" and ce.batchSystem == "Condor")
+    ):
       os.unlink(executable)
     if not submitResult['OK']:
       self.log.error("Failed submission to queue",
@@ -1081,6 +1085,10 @@ class SiteDirector(AgentModule):
         "/Services/JobMonitoring/usePilotsLoggingFlag", False)
     if pilotLogging:
       pilotOptions.append('-z ')
+
+    # python 3 pilots?
+    if self.python3Pilots:
+      pilotOptions.append('--pythonVersion=3')
 
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
