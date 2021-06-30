@@ -8,6 +8,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
+from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 
 
 class MessageFactory(object):
@@ -245,52 +246,3 @@ class DummyMessage:
 
   def getWaitForAck(self):
     return self.msg['attrs'][0]
-
-
-#
-# Object loader
-#
-
-def loadObjects(path, reFilter=None, parentClass=None):
-  if not reFilter:
-    reFilter = re.compile(r".*[a-z1-9]\.py$")
-  pathList = List.fromChar(path, "/")
-
-  objectsToLoad = {}
-  # Find which object files match
-  for parentModule in extensionsByPriority():
-    objDir = os.path.join(DIRAC.rootPath, parentModule, *pathList)
-    if not os.path.isdir(objDir):
-      continue
-    for objFile in os.listdir(objDir):
-      if reFilter.match(objFile):
-        pythonClassName = objFile[:-3]
-        if pythonClassName not in objectsToLoad:
-          gLogger.info("Adding to message load queue %s/%s/%s" % (parentModule, path, pythonClassName))
-          objectsToLoad[pythonClassName] = parentModule
-
-  # Load them!
-  loadedObjects = {}
-
-  for pythonClassName in objectsToLoad:
-    parentModule = objectsToLoad[pythonClassName]
-    try:
-      # Where parentModule can be DIRAC, pathList is something like [ "AccountingSystem", "Client", "Types" ]
-      # And the python class name is.. well, the python class name
-      objPythonPath = "%s.%s.%s" % (parentModule, ".".join(pathList), pythonClassName)
-      objModule = __import__(objPythonPath,
-                             globals(),
-                             locals(), pythonClassName)
-      objClass = getattr(objModule, pythonClassName)
-    except Exception as e:
-      gLogger.exception("Can't load type %s/%s: %s" % (parentModule, pythonClassName, str(e)))
-      continue
-    if parentClass == objClass:
-      continue
-    if parentClass and not issubclass(objClass, parentClass):
-      gLogger.warn("%s is not a subclass of %s. Skipping" % (objClass, parentClass))
-      continue
-    gLogger.info("Loaded %s" % objPythonPath)
-    loadedObjects[pythonClassName] = objClass
-
-  return loadedObjects
