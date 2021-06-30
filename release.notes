@@ -1,3 +1,19 @@
+[v7r1p44]
+
+*WorkloadManagement
+CHANGE: (#5205) Make error message from SandboxStoreClient clearer when the sandbox is not found
+
+*DataManagement
+CHANGE: (#5211) FileCatalogClientCLI register File now takes a fixed number of arguments (6)
+        including Checksum
+
+*Resources
+NEW: GFAL2_XROOTStorage - set XrdSecGSIDELEGPROXY=1 to enable third party copy
+
+*Interfaces
+NEW: (#5201) Implemented a function that allows programmatic listing of directories in the DFC.
+Meant to replace the never fully deployed listCatalog function.
+
 [v7r1p43]
 
 CHANGE: new features and fixes from v7r0p57
