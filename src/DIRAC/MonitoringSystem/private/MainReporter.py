@@ -11,7 +11,7 @@ import re
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter as myBasePlotter
-from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
+from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 
 __RCSID__ = "$Id$"
 

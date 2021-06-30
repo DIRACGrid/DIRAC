@@ -7,7 +7,7 @@ from __future__ import print_function
 
 import re
 
-from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
+from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType

@@ -8,7 +8,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
-from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
+from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 
 
 class MessageFactory(object):
