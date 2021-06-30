@@ -23,15 +23,11 @@ from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, \
     RIGHT_SUBMIT, RIGHT_RESCHEDULE, \
@@ -48,16 +44,41 @@ class JobManagerHandler(RequestHandler):
   def initializeHandler(cls, serviceInfoDict):
     """ Initialization of DB objects and OptimizationMind
     """
-    cls.jobDB = JobDB()
-    cls.jobLoggingDB = JobLoggingDB()
-    cls.taskQueueDB = TaskQueueDB()
-    cls.pilotAgentsDB = PilotAgentsDB()
+    try:
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+      if not result['OK']:
+        return result
+      cls.jobDB = result['Value']()
+
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
+      if not result['OK']:
+        return result
+      cls.jobLoggingDB = result['Value']()
+
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
+      if not result['OK']:
+        return result
+      cls.taskQueueDB = result['Value']()
+
+      result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
+      if not result['OK']:
+        return result
+      cls.pilotAgentsDB = result['Value']()
+
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
 
     cls.pilotsLoggingDB = None
     enablePilotsLogging = Operations().getValue(
         '/Services/JobMonitoring/usePilotsLoggingFlag', False)
     if enablePilotsLogging:
-      cls.pilotsLoggingDB = PilotsLoggingDB()
+      try:
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotsLoggingDB", "PilotsLoggingDB")
+        if not result['OK']:
+          return result
+        cls.pilotsLoggingDB = result['Value']()
+      except RuntimeError as excp:
+        return S_ERROR("Can't connect to DB: %s" % excp)
 
     cls.msgClient = MessageClient("WorkloadManagement/OptimizationMind")
     cls.__connectToOptMind()

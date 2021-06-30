@@ -22,12 +22,12 @@ import six
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
 from DIRAC.Core.Utilities.File import mkDir
 
-from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
 from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
 __RCSID__ = "$Id$"
@@ -55,7 +55,14 @@ class MonitoringHandler(RequestHandler):
 
   @classmethod
   def initializeHandler(cls, serviceInfo):
-    cls.__db = MonitoringDB()
+    try:
+      result = ObjectLoader().loadObject("MonitoringSystem.DB.MonitoringDB", "MonitoringDB")
+      if not result['OK']:
+        return result
+      cls.__db = result['Value']()
+    except RuntimeError as excp:
+      return S_ERROR("Can't connect to DB: %s" % excp)
+
     reportSection = serviceInfo['serviceSectionPath']
     dataPath = gConfig.getValue("%s/DataLocation" % reportSection, "data/monitoringPlots")
     gLogger.info("Data will be written into %s" % dataPath)
