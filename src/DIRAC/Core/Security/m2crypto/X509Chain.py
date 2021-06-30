@@ -876,7 +876,7 @@ class X509Chain(object):
       if not filename:
         fd, filename = tempfile.mkstemp()
       else:
-        fd = os.open(filename, os.O_RDWR | os.O_CREAT)
+        fd = open(filename, "wb", os.O_RDWR | os.O_CREAT)
 
       os.write(fd, pemData)
       os.close(fd)
