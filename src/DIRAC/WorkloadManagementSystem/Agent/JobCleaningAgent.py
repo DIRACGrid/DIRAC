@@ -164,14 +164,14 @@ class JobCleaningAgent(AgentModule):
       self.log.info("No jobs to remove")
       return S_OK()
 
-    self.log.notice("Attempting to remove deleted jobs", "(%d)" % len(jobList))
+    self.log.info("Attempting to remove deleted jobs", "(%d)" % len(jobList))
 
     # remove from jobList those that have still Operations to do in RMS
     res = ReqClient().getRequestIDsForJobs(jobList)
     if not res['OK']:
       return res
     if res['Value']['Successful']:
-      self.log.info("Some jobs won't be removed, as still having Requests to complete",
+      self.log.info("Some jobs won't be removed, as still having attached Requests",
                     "(n=%d)" % len(res['Value']['Successful']))
       jobList = list(set(jobList).difference(set(res['Value']['Successful'])))
     if not jobList:
@@ -255,7 +255,7 @@ class JobCleaningAgent(AgentModule):
 
     return S_OK()
 
-  def _getJobsList(self, condDict, delay=False):
+  def _getJobsList(self, condDict, delay=None):
     """ Get jobs list according to conditions
 
     :param dict condDict: a dict like {'JobType': 'User', 'Status': 'Killed'}
@@ -263,14 +263,10 @@ class JobCleaningAgent(AgentModule):
     :returns: S_OK with jobsList
     """
     jobIDsS = set()
+    delayStr = "and older than %s day(s)" % delay if delay else ""
+    self.log.info("Get jobs with %s %s" % (str(condDict), delayStr))
     for order in ['JobID:ASC', 'JobID:DESC']:
-      if delay:
-        self.log.verbose("Get jobs with %s and older than %s day(s)" % (condDict, delay))
-        result = self.jobDB.selectJobs(condDict, older=delay, orderAttribute=order, limit=self.maxJobsAtOnce)
-      else:
-        self.log.info("Get jobs with %s " % condDict)
-        result = self.jobDB.selectJobs(condDict, orderAttribute=order, limit=self.maxJobsAtOnce)
-
+      result = self.jobDB.selectJobs(condDict, older=delay, orderAttribute=order, limit=self.maxJobsAtOnce)
       if not result['OK']:
         return result
       jobIDsS = jobIDsS.union({int(jID) for jID in result['Value']})
