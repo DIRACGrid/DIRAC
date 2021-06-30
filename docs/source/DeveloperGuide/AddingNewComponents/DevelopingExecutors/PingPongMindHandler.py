@@ -69,12 +69,12 @@ class PingPongMindHandler(ExecutorMindHandler):
   @classmethod
   def exec_serializeTask(cls, taskData):
     gLogger.info("SERIALIZE %s" % taskData)
-    return S_OK(DEncode.encode(taskData))
+    return S_OK(DEncode.encode(taskData).decode())
 
   @classmethod
   def exec_deserializeTask(cls, taskStub):
     gLogger.info("DESERIALIZE %s" % taskStub)
-    return S_OK(DEncode.decode(taskStub)[0])
+    return S_OK(DEncode.decode(taskStub.encode())[0])
 
   @classmethod
   def exec_taskProcessed(cls, taskid, taskData, eType):
