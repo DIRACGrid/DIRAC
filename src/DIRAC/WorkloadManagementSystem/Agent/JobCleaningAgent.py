@@ -181,8 +181,8 @@ class JobCleaningAgent(AgentModule):
           notFinal.add(job)
         else:
           # Remove the request, if failed, keep the job
-          res = reqClient.deleteRequest(reqID)
-          if not res['OK']:
+          res1 = reqClient.deleteRequest(reqID)
+          if not res1['OK']:
             notFinal.add(job)
       if notFinal:
         self.log.info("Some jobs won't be removed, as still having Requests not in final status",
