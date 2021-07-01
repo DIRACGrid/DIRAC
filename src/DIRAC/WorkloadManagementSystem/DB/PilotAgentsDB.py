@@ -277,21 +277,20 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
 
     cmd = "SELECT %s FROM PilotAgents" % ", ".join(parameters)
     condSQL = []
-    if pilotRef:
-      if isinstance(pilotRef, list):
-        condSQL.append("PilotJobReference IN (%s)" % ",".join(['"%s"' % x for x in pilotRef]))
+    for key, value in [('PilotJobReference', pilotRef), ('PilotID', pilotID), ('ParentID', parentId)]:
+      if isinstance(value, list):
+        resList = []
+        for v in value:
+          result = self._escapeString(v)
+          if not result['OK']:
+            return result
+          resList.append(result['Value'])
+        condSQL.append("%s IN (%s)" % (key, ",".join(resList)))
       else:
-        condSQL.append("PilotJobReference = '%s'" % pilotRef)
-    if pilotID:
-      if isinstance(pilotID, list):
-        condSQL.append("PilotID IN (%s)" % ",".join(['%s' % x for x in pilotID]))
-      else:
-        condSQL.append("PilotID = '%s'" % pilotID)
-    if parentId:
-      if isinstance(parentId, list):
-        condSQL.append("ParentID IN (%s)" % ",".join(['%s' % x for x in parentId]))
-      else:
-        condSQL.append("ParentID = %s" % parentId)
+        result = self._escapeString(value)
+        if not result['OK']:
+          return result
+        condSQL.append("%s = %s" % (key, result['Value']))
     if condSQL:
       cmd = "%s WHERE %s" % (cmd, " AND ".join(condSQL))
 

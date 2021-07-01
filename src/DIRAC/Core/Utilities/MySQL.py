@@ -942,10 +942,14 @@ class MySQL(object):
     """
     return str(param[0])
 
-  def _to_string(self, param):
+  def _to_string(self, value):
     """
+      Convert value to string
     """
-    return param[0].tostring()
+    try:
+      return value.decode()
+    except (UnicodeDecodeError, AttributeError):
+      return str(value)
 
   def _getConnection(self, retries=MAXCONNECTRETRY):
     """ Return  a new connection to the DB,
