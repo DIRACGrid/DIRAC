@@ -209,7 +209,7 @@ class SandboxStoreClient(object):
 
     if inMemory:
       try:
-        with open(tarFileName, 'r') as tfile:
+        with open(tarFileName, 'rb') as tfile:
           data = tfile.read()
       except IOError as e:
         return S_ERROR('Failed to read the sandbox archive: %s' % repr(e))
@@ -231,7 +231,7 @@ class SandboxStoreClient(object):
 
     try:
       sandboxSize = 0
-      with tarfile.open(name=tarFileName, mode="r") as tf:
+      with tarfile.open(name=tarFileName, mode="rb") as tf:
         for tarinfo in tf:
           tf.extract(tarinfo, path=destinationDir)
           sandboxSize += tarinfo.size
