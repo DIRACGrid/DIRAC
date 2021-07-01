@@ -217,7 +217,7 @@ class WMSAdministratorHandler(RequestHandler):
             c = cycle
 
     if pilotReference:
-      return getGridJobOutput(pilotReference)
+      return getGridJobOutput(pilotReference.decode())
     return S_ERROR('No pilot job reference found')
 
   ##############################################################################
