@@ -174,10 +174,16 @@ class JobCleaningAgent(AgentModule):
     if res['Value']['Successful']:
       notFinal = set()
       # Check whether these requests are in a final status
-      for job, request in res['Value']['Successful'].items():
+      for job, reqID in res['Value']['Successful'].items():
         # If not, remove job from list to remove
-        if reqClient.getRequestStatus(request).get('Value') not in Request.FINAL_STATES:
+        if reqClient.getRequestStatus(reqID).get('Value') not in Request.FINAL_STATES:
+          # Keep that job
           notFinal.add(job)
+        else:
+          # Remove the request, if failed, keep the job
+          res = reqClient.deleteRequest(reqID)
+          if not res['OK']:
+            notFinal.add(job)
       if notFinal:
         self.log.info("Some jobs won't be removed, as still having Requests not in final status",
                       "(n=%d)" % len(notFinal))
