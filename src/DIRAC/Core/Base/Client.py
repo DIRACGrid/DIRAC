@@ -36,6 +36,7 @@ from DIRAC.Core.DISET import DEFAULT_RPC_TIMEOUT
 
 class partialmethodWithDoc(partialmethod):
   """Extension of meth:`functools.partialmethod` that preserves docstrings"""
+
   def __get__(self, instance, owner):
     func = super(partialmethodWithDoc, self).__get__(instance, owner)
     func.__doc__ = self.__doc__
@@ -169,11 +170,11 @@ def createClient(serviceName):
             "%s.%sSystem.Service" % (extension, systemName),
             "%s.py" % handlerModuleName,
         )
+        fullHandlerClassPath = '%s.%s' % (extension, handlerClassPath)
+        with path as fp:
+          handlerAst = ast.parse(fp.read_text(), str(path))
       except (ImportError, OSError):
         continue
-      fullHandlerClassPath = '%s.%s' % (extension, handlerClassPath)
-      with path as fp:
-        handlerAst = ast.parse(fp.read_text(), str(path))
 
       # loop over all the nodes (classes, functions, imports) in the handlerModule
       for node in ast.iter_child_nodes(handlerAst):

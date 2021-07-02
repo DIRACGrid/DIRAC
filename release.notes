@@ -49,6 +49,17 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p13]
+
+*Core
+CHANGE: (#5233) protect client doc generation against new importlib_resources
+
+*WorkloadManagement
+FIX: (#5245) Bytes confusion when using SandboxStoreClient with Python 3
+
+*Resources
+FIX: (#5245) Bytes confusion when using SingularityComputingElement with Python 3
+
 [v7r2p12]
 
 CHANGE: (#5219) Service Handlers discover DBs in Extensions
