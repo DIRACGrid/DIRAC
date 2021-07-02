@@ -1,9 +1,9 @@
-=====================
-Web Portal User guide
-=====================
+==================
+Web App User Guide
+==================
 
   
-The DIRAC Web portal is a user friendly interface allowing users to interact with the DIRAC services. 
+The DIRAC WebApp is a user friendly interface allowing users to interact with the DIRAC services. 
 It can be easily extended by particular VO or it can be integrated into some other portal. 
 
 
@@ -31,26 +31,26 @@ Two protocols are allowed: **http** and **https**.
 The state of applications or desktops can not be saved.
 **https** protocol allows to access all functionalities of DIRAC depending on your role (DIRAC group). 
 The state of the application is not saved in the **URL**. The URL only contains the name of application or desktop. 
-For example: `https://lhcb-portal-dirac.cern.ch/DIRAC/s:LHCb-Production/g:lhcb_prmgr/?view=tabs&theme=Grey&url_state=1|AllPlots`   
+For example: ``https://lhcb-portal-dirac.cern.ch/DIRAC/s:LHCb-Production/g:lhcb_prmgr/?view=tabs&theme=Grey&url_state=1|AllPlots``
 
 **Format of the URL**
 
-   Format of the URL:
-      #. https://: protocol
-      #. lhcb-portal-dirac.cern.ch/DIRAC/: host.
-      #. s:LHCb-Production: DIRAC setup.
-      #. g:lhcb_prmgr : role
-      #. view=tabs : it is the theme.
-      #. theme=Grey: it is the look and feel.
-      #. &url_state=1: it is desktop or application.
-      #. AllPlots : it is the desktop name. the default desktop is **Default**. 
-      #. The state is a desktop: AllPlots 
-      #. The state is an application: *LHCbDIRAC.LHCbJobMonitor.classes.LHCbJobMonitor:AllUserJobs,*
-   
+Format of the URL:
+
+#. https://: protocol
+#. lhcb-portal-dirac.cern.ch/DIRAC/: host.
+#. s:LHCb-Production: DIRAC setup.
+#. g:lhcb_prmgr : role
+#. view=tabs : it is the theme.
+#. theme=Grey: it is the look and feel.
+#. &url_state=1: it is desktop or application.
+#. AllPlots : it is the desktop name. the default desktop is **Default**. 
+#. The state is a desktop: AllPlots 
+#. The state is an application: *LHCbDIRAC.LHCbJobMonitor.classes.LHCbJobMonitor:AllUserJobs,*
    For example: desktop and application: AllPlots,*LHCbDIRAC.LHCbJobMonitor.classes.LHCbJobMonitor:AllUserJobs,* 
 
 
-A video tutorial is available at `https://www.youtube.com/watch?v=vKBpED0IyLc` link.
+A video tutorial is available at `<https://www.youtube.com/watch?v=vKBpED0IyLc>`_.
 
 
 
@@ -58,9 +58,10 @@ Main panel
 ----------
 
 
- The main panel consists of two widget:
-   1. Menu
-   2. Desktop
+The main panel consists of two widgets:
+
+1. Menu
+2. Desktop
 
 .. image:: images/maintab.png
    :scale: 30 %
@@ -70,31 +71,32 @@ Main panel
 
 **Menu**
 
- It contains three main menu:
+The menu contains three main sub-menus:
 
 .. image:: images/menus.png
    :scale: 50 %
    :alt: main menus
    :align: center
 
-#. It is the Intro panel
-#. It is the Main panel
-#. You can found more information about DIRAC.
+#. is the Intro panel
+#. is the Main panel
+#. is where you can find more information about DIRAC.
 
-The default is 2. You can change by clicking on the icons.
+The default is 2. You can change it by clicking on the icons.
 
 **Desktop**
 
- It is a container which contains various applications on different desktops.
+The Desktop is a container which contains various applications on different desktops.
 
 
 
 Menu structure
 --------------
 
- Menu consists of two widgets:
-   #. Desktops&Applications
-   #. Settings
+The menu consists of two widgets:
+
+#. Desktops&Applications
+#. Settings
    
 .. image:: images/menustructure.png
    :scale: 50 %
@@ -103,15 +105,16 @@ Menu structure
    
 **Desktop&Applications**
 
- You can manage your applications and desktops. The menu structure:
-   * Web : it contains external links
-   * Tools : You can found DIRAC specific applications.
-   * Applications: You can found DIRAC and VO specific applications.
-   * OldPortal: It is link to the old portal.
-   * DIRAC it is an external link to DIRAC portal
-   * My Desktops it is contains all saved desktops. You can see a **Default** desktop which contains all applications which belongs to the **Default** desktop.
-   * Shared: It contains all Shared desktops and applications.
-   
+You can manage your applications and desktops. The menu structure:
+
+* Web: contains external links
+* Tools: Here You can find DIRAC specific applications.
+* Applications: Here You can find DIRAC and VO specific applications.
+* DIRAC: is an external link to DIRAC portal
+* My Desktops: contains all saved desktops. You can see a **Default** desktop which contains
+  all applications which belongs to the **Default** desktop.
+* Shared: It contains all Shared desktops and applications.
+
 
 Manage application and desktop
 ------------------------------
@@ -127,10 +130,10 @@ You can manage the state of applications and desktops by by clicking to the foll
 
 The Desktop menu item contains:
 
-   * New Desktop: You can create an empty desktop.
-   * Save: You can save the desktop
-   * Save As you can duplicate your desktop.
-   * Delete You can delete different desktops.
+* New Desktop: You can create an empty desktop.
+* Save: You can save the desktop
+* Save As you can duplicate your desktop.
+* Delete You can delete different desktops.
 
 If you click on the delete menu item, a pop up window will appear:
 
@@ -144,11 +147,12 @@ You can select the desktops to be deleted.
 **Application**
 
 The Application menu item contains:
-   * Save
-   * Save As
-   * Delete
 
- These menu items have the same functionalities as the Desktop menu items.
+* Save
+* Save As
+* Delete
+
+These menu items have the same functionalities as the Desktop menu items.
 
 **Context menu**
 
@@ -161,12 +165,13 @@ what you want to modify.
    :align: center
 
 You have few additional menu items:
-   * Make public: Used to make public an application/desktop to everyone.
-   * Share desktop: Used to share the desktop within a specific user.
-   * Share application: Used to share the application within a specific user.
-   * Make private: revoke the access to the desktop/application.
-   * Switch to presenter view: The applications will be open in a single desktop.
-   * Switch to tab view: The applications opened in different tabs.
+
+* Make public: Used to make public an application/desktop to everyone.
+* Share desktop: Used to share the desktop within a specific user.
+* Share application: Used to share the application within a specific user.
+* Make private: revoke the access to the desktop/application.
+* Switch to presenter view: The applications will be open in a single desktop.
+* Switch to tab view: The applications opened in different tabs.
 
 **Presenter view**
 
@@ -212,10 +217,11 @@ you want to share (more information above in the `Manage application and desktop
 **Share an application/desktop**
 
 You have to do the following steps to share an application/desktop:
-   #. right click on the desktop/application what you want to share.
-   #. choose the menu item: Share desktop or Share Application.
-   #. copy the text (for example: desktop|zmathe|lhcb_prmgr|JobMonitorAll) and click OK on the pop up window:
-   #. send the text (desktop|zmathe|lhcb_prmgr|JobMonitorAll) to the person
+
+#. right click on the desktop/application what you want to share.
+#. choose the menu item: Share desktop or Share Application.
+#. copy the text (for example: desktop|zmathe|lhcb_prmgr|JobMonitorAll) and click OK on the pop up window:
+#. send the text (desktop|zmathe|lhcb_prmgr|JobMonitorAll) to the person
 
 .. image:: images/share.png
    :scale: 50 %
@@ -239,11 +245,11 @@ The State Loader widget is the following:
    :align: center
 
 You have to provide the Shared State (for example: desktop|zmathe|lhcb_prmgr|JobMonitorAll) and a name (for example: newName).
-You have tree different way to load a shared state:
+You have three different way to load a shared state:
 
-   #. Load
-   #. Create Link
-   #. Load & Create Link
+#. Load
+#. Create Link
+#. Load & Create Link
 
 **Load**
 
@@ -302,14 +308,16 @@ You have to click on the **Settings** widget:
    :align: center
 
 You can define the following:
-      * Group you can change the role
-      * Setup: you can switch between different setups.
-      * Theme you can change the look and feel and also you can switch between Tab and Desktop themes.
+
+* Group you can change the role
+* Setup: you can switch between different setups.
+* Theme you can change the look and feel and also you can switch between Tab and Desktop themes.
 
 We have 3 look and feels:
-   #. Grey it is the default
-   #. Neptune
-   #. Classic
+
+#. Grey it is the default
+#. Neptune
+#. Classic
 
 You can automatically change the applications using *Automatic tab change* Note: After you set it you have to save the desktop.
 Consequently, you can not have automatic tab change in the *Default* desktop.
