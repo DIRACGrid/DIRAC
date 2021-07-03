@@ -213,10 +213,12 @@ class PilotAgentsDB(DB):
 
     failed = []
 
+    result = self._escapeValues(pilotIDs)
+    if not result['OK']:
+      return S_ERROR('Failed to remove pilot: %s' % result['Value'])
+    stringIDs = ','.join(result['Value'])
     for table in ['PilotOutput', 'JobToPilotMapping', 'PilotAgents']:
-      idString = ','.join([str(pid) for pid in pilotIDs])
-      req = "DELETE FROM %s WHERE PilotID in ( %s )" % (table, idString)
-      result = self._update(req, conn=conn)
+      result = self._update("DELETE FROM %s WHERE PilotID in (%s)" % (table, stringIDs), conn=conn)
       if not result['OK']:
         failed.append(table)
 
@@ -278,19 +280,20 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     cmd = "SELECT %s FROM PilotAgents" % ", ".join(parameters)
     condSQL = []
     for key, value in [('PilotJobReference', pilotRef), ('PilotID', pilotID), ('ParentID', parentId)]:
-      if isinstance(value, list):
-        resList = []
-        for v in value:
-          result = self._escapeString(v)
+      if value:
+        if isinstance(value, list):
+          resList = []
+          for v in value:
+            result = self._escapeString(v)
+            if not result['OK']:
+              return result
+            resList.append(result['Value'])
+          condSQL.append("%s IN (%s)" % (key, ",".join(resList)))
+        else:
+          result = self._escapeString(value)
           if not result['OK']:
             return result
-          resList.append(result['Value'])
-        condSQL.append("%s IN (%s)" % (key, ",".join(resList)))
-      else:
-        result = self._escapeString(value)
-        if not result['OK']:
-          return result
-        condSQL.append("%s = %s" % (key, result['Value']))
+          condSQL.append("%s = %s" % (key, result['Value']))
     if condSQL:
       cmd = "%s WHERE %s" % (cmd, " AND ".join(condSQL))
 
