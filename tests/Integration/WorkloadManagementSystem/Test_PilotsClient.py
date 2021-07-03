@@ -31,7 +31,7 @@ def test_PilotsDB():
   # This will allow you to run the test again if necessary
   for jobID in ['aPilot', 'anotherPilot']:
     pilots.deletePilots(jobID)
-  
+
   res = pilots.addPilotTQReference(['aPilot'], 1, '/a/ownerDN', 'a/owner/Group')
   assert res['OK'], res['Message']
   res = pilots.getCurrentPilotCounters({})
