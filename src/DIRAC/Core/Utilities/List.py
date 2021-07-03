@@ -112,7 +112,7 @@ def getChunk(aList, chunkSize):
 
   """
   for i in range(0, len(aList), int(chunkSize)):
-    yield aList[i:i + chunkSize]
+    yield aList[i:i + int(chunkSize)]
 
 
 def breakListIntoChunks(aList, chunkSize):
