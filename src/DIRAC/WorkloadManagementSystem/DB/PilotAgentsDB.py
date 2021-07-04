@@ -273,27 +273,19 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     parameters = ['PilotJobReference', 'OwnerDN', 'OwnerGroup', 'GridType', 'Broker',
                   'Status', 'DestinationSite', 'BenchMark', 'ParentID', 'OutputReady', 'AccountingSent',
                   'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite', 'PilotStamp',
-                  'Queue']
-    if paramNames:
-      parameters = paramNames
+                  'Queue'] if not paramNames else paramNames
 
     cmd = "SELECT %s FROM PilotAgents" % ", ".join(parameters)
     condSQL = []
     for key, value in [('PilotJobReference', pilotRef), ('PilotID', pilotID), ('ParentID', parentId)]:
-      if value:
-        if isinstance(value, list):
-          resList = []
-          for v in value:
-            result = self._escapeString(v)
-            if not result['OK']:
-              return result
-            resList.append(result['Value'])
-          condSQL.append("%s IN (%s)" % (key, ",".join(resList)))
-        else:
-          result = self._escapeString(value)
-          if not result['OK']:
-            return result
-          condSQL.append("%s = %s" % (key, result['Value']))
+      resList = []
+      for v in value if isinstance(value, list) else [value] if value else []:
+        result = self._escapeString(v)
+        if not result['OK']:
+          return result
+        resList.append(result['Value'])
+      if resList:
+        condSQL.append("%s IN (%s)" % (key, ",".join(resList)))
     if condSQL:
       cmd = "%s WHERE %s" % (cmd, " AND ".join(condSQL))
 
