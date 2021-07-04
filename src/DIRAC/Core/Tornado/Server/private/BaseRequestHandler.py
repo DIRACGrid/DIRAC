@@ -44,6 +44,27 @@ if six.PY3:
 sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
 
+class TornadoResponse(object):
+  """ This class describe result object """
+
+  def __init__(self, data=None):
+    """ C'or """
+    self.data = data
+    self.actions = []
+    for mName, mObj in inspect.getmembers(RequestHandler):
+      if inspect.isroutine(mObj) not mName.startswith('_') and mName not 'finish':
+        setattr(self, mName, lambda *x, **y: self.actions.append((mName, (x, y))))
+
+  def finish(self, reqObj):
+    for mName, targs in self.actions:
+      getattr(reqObj, mName)(*targs[0], **targs[1])
+    if not self._finished:
+      if self.data is None:
+        getattr(reqObj, 'finish')()
+      else:
+        getattr(reqObj, 'finish')(self.data)
+
+
 class BaseRequestHandler(RequestHandler):
   """ Base class for all the Handlers.
       It directly inherits from :py:class:`tornado.web.RequestHandler`
@@ -502,7 +523,11 @@ class BaseRequestHandler(RequestHandler):
     # you need to define the finish_<methodName> method.
     # This method will be started after __executeMethod is completed.
     finishFunc = getattr(self, 'finish_%s' % self.method, None)
-    if callable(finishFunc):
+
+    if isinstance(self.result, TornadoResponse):
+      self.result.finish(self)
+
+    elif callable(finishFunc):
       finishFunc()
 
     # In case nothing is returned

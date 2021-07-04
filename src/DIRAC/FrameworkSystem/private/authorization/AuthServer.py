@@ -36,6 +36,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getUsernameForDN,
                                                                getDNForUsername, getIdPForGroup)
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import TokenManagerClient
+from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import TornadoResponse
 
 log = logging.getLogger('authlib')
 log.addHandler(logging.StreamHandler(sys.stdout))
@@ -324,12 +325,22 @@ class AuthServer(_AuthorizationServer):
     extended_scope = list_to_scope([re.sub(r':.*$', ':', s) for s in scope_to_list(scope or '')])
     super(AuthServer, self).validate_requested_scope(extended_scope, state)
 
-  def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, **actions):
+  def handle_response(self, status_code=None, payload=None, headers=None, newSession=None):  #, **actions):
     self.log.debug('Handle authorization response with %s status code:' % status_code, payload)
-    self.log.debug('Headers:', headers)
+    resp = TornadoResponse(payload)
+    if status_code:
+      resp.set_status(status_code)
+    if headers:
+      self.log.debug('Headers:', headers)
+      for key, value in headers:
+        resp.set_header(key, value)
     if newSession:
       self.log.debug('newSession:', newSession)
-    return S_OK([[status_code, headers, payload, newSession, 'error' in payload], actions])
+      resp.set_secure_cookie('auth_session', json.dumps(newSession), secure=True, httponly=True)
+    if 'error' in payload:
+      resp.clear_cookie('auth_session')
+    return resp
+    # return S_OK([[status_code, headers, payload, newSession, 'error' in payload], actions])
 
   def create_authorization_response(self, response, username):
     result = super(AuthServer, self).create_authorization_response(response, username)
