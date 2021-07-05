@@ -761,6 +761,7 @@ class TestSameSE(unittest.TestCase):
             Path = /base/otherPath
           }
         }
+      }
     }
     Operations{
       Defaults
