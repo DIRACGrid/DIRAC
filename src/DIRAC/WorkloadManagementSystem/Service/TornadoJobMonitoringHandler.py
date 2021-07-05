@@ -16,5 +16,5 @@ from DIRAC.WorkloadManagementSystem.Service.JobMonitoringHandler import JobMonit
 sLog = gLogger.getSubLogger(__name__)
 
 
-class TornadoJobStateUpdateHandler(JobMonitoringHandlerMixin, TornadoService):
+class TornadoJobMonitoringHandler(JobMonitoringHandlerMixin, TornadoService):
   log = sLog

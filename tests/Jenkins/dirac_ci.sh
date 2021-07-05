@@ -93,8 +93,6 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 installSite() {
   echo "==> [installSite]"
 
-  prepareForServer
-
   findRelease
 
   generateCA
@@ -144,6 +142,8 @@ installSite() {
     done
     cd -
   else
+    prepareForServer
+
     if [[ -n "${DEBUG+x}" ]]; then
       INSTALLOPTIONS+=("${DEBUG}")
     fi
