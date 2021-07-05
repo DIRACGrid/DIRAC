@@ -472,8 +472,8 @@ class BaseRequestHandler(RequestHandler):
       :return: Future
     """
 
-    sLog.notice("Incoming request %s /%s: %s(%s)" % (self.srv_getFormattedRemoteCredentials(),
-                                                     self._serviceName, self.method, ', '.join(list(args))))
+    sLog.notice("Incoming request %s /%s: %s" % (self.srv_getFormattedRemoteCredentials(),
+                                                 self._serviceName, self.method))
     # Execute
     try:
       self.initializeRequest()
