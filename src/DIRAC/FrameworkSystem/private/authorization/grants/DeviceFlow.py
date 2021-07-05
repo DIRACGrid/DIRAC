@@ -118,12 +118,12 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
 
         :param str user_code: user code
 
-        :return: str, bool -- user dict and user auth status
+        :return: (str, bool) or None -- user dict and user auth status
     """
     result = self.server.db.getSessionByUserCode(user_code)
     if not result['OK']:
       raise OAuth2Error('Cannot found authorization session', result['Message'])
-    return (result['Value']['user_id'], True) if result['Value'].get('username', "None") != "None" else ('', False)
+    return (result['Value']['user_id'], True) if result['Value'].get('username', "None") != "None" else None
 
   def should_slow_down(self, *args):
     """ The authorization request is still pending and polling should continue,

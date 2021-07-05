@@ -14,15 +14,16 @@ import json
 import pprint
 from io import open
 
+from dominate import document, tags as dom
 from tornado.template import Template
+from tornado.concurrent import Future
+
+from authlib.oauth2.base import OAuth2Error
+from authlib.oauth2.rfc6749.util import scope_to_list
 
 from DIRAC import S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
-from dominate import document, tags as dom
-from authlib.oauth2.base import OAuth2Error
-from authlib.oauth2.rfc6749.util import scope_to_list
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
@@ -109,7 +110,7 @@ class AuthHandler(TornadoREST):
     self.result = retVal.result() if isinstance(retVal, Future) else retVal
 
     # Is it S_ERROR?
-    if self.result.get('OK') is False and 'Message' in self.result:
+    if isinstance(self.result, dict) and self.result.get('OK') is False and 'Message' in self.result:
       # S_ERROR is interpreted in the OAuth2 error format.
       self.set_status(400)
       self.write({'error': 'server_error', 'description': retVal['Message']})
@@ -118,35 +119,6 @@ class AuthHandler(TornadoREST):
       self.finish()
     else:
       super(AuthHandler, self)._finishFuture(retVal)
-
-    # # Is it S_OK or S_ERROR?
-    # r = retVal
-    # if isinstance(r, dict) and isinstance(r.get('OK'), bool) and ('Value' if r['OK'] else 'Message') in r:
-    #   if not retVal['OK']:
-    #     # S_ERROR is interpreted in the OAuth2 error format.
-    #     self.set_status(400)
-    #     self.write({'error': 'server_error', 'description': retVal['Message']})
-    #     self.clear_cookie('auth_session')
-    #     self.log.error('%s\n' % retVal['Message'], ''.join(retVal['CallStack']))
-    #   else:
-    #     # Successful responses and OAuth2 errors are processed here
-    #     status_code, headers, payload, new_session, error = retVal['Value'][0]
-    #     if status_code:
-    #       self.set_status(status_code)
-    #     if headers:
-    #       for key, value in headers:
-    #         self.set_header(key, value)
-    #     if payload:
-    #       self.write(payload)
-    #     if new_session:
-    #       self.set_secure_cookie('auth_session', json.dumps(new_session), secure=True, httponly=True)
-    #     if error:
-    #       self.clear_cookie('auth_session')
-    #     for method, args_kwargs in retVal['Value'][1].items():
-    #       eval('self.%s' % method)(*args_kwargs[0], **args_kwargs[1])
-    #   self.finish()
-    # else:
-    #   super(AuthHandler, self)._finishFuture(retVal)
 
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
 

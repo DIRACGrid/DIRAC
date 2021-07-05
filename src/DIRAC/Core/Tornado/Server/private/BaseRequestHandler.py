@@ -12,6 +12,7 @@ from io import open
 import os
 import six
 import time
+import inspect
 import threading
 from datetime import datetime
 from six import string_types
@@ -52,17 +53,17 @@ class TornadoResponse(object):
     self.data = data
     self.actions = []
     for mName, mObj in inspect.getmembers(RequestHandler):
-      if inspect.isroutine(mObj) not mName.startswith('_') and mName not 'finish':
-        setattr(self, mName, lambda *x, **y: self.actions.append((mName, (x, y))))
+      if inspect.isroutine(mObj) and not mName.startswith('_') and mName is not 'finish':
+        setattr(self, mName, partial(self.__setAction, mName))
+
+  def __setAction(self, mName, *args, **kwargs):
+    self.actions.append((mName, args, kwargs))
 
   def finish(self, reqObj):
-    for mName, targs in self.actions:
-      getattr(reqObj, mName)(*targs[0], **targs[1])
-    if not self._finished:
-      if self.data is None:
-        getattr(reqObj, 'finish')()
-      else:
-        getattr(reqObj, 'finish')(self.data)
+    for mName, args, kwargs in self.actions:
+      getattr(reqObj, mName)(*args, **kwargs)
+    if not reqObj._finished:
+      reqObj.finish() if self.data is None else reqObj.finish(self.data)
 
 
 class BaseRequestHandler(RequestHandler):
@@ -471,8 +472,8 @@ class BaseRequestHandler(RequestHandler):
       :return: Future
     """
 
-    sLog.notice("Incoming request %s /%s: %s" % (self.srv_getFormattedRemoteCredentials(),
-                                                 self._serviceName, self.method))
+    sLog.notice("Incoming request %s /%s: %s(%s)" % (self.srv_getFormattedRemoteCredentials(),
+                                                     self._serviceName, self.method, ', '.join(list(args))))
     # Execute
     try:
       self.initializeRequest()
@@ -505,9 +506,8 @@ class BaseRequestHandler(RequestHandler):
 
         :return: executor, target method with arguments
     """
-    if six.PY2:
-      return None, partial(self.__executeMethodPy2, self._getMethod(), self._getMethodArgs(args))
-    return None, partial(self.__executeMethod, self._getMethod(), self._getMethodArgs(args))
+    return None, partial(self.__executeMethodPy2 if six.PY2 else self.__executeMethod,
+                         self._getMethod(), self._getMethodArgs(args))
 
   def _finishFuture(self, retVal):
     """ Handler Future result
@@ -584,7 +584,7 @@ class BaseRequestHandler(RequestHandler):
     # the authorization will go through the `_authzVISITOR` method and
     # everyone will have access as anonymous@visitor
     for grant in (grants or self.USE_AUTHZ_GRANTS or 'VISITOR'):
-      if six.PY3 and grant == 'JWT':
+      if six.PY2 and grant == 'JWT':
         # Skip token authorization for python 2
         continue
       grant = grant.upper()

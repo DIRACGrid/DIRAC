@@ -6,6 +6,7 @@ from __future__ import print_function
 import re
 import sys
 import time
+import json
 import pprint
 import logging
 from dominate import document, tags as dom
@@ -325,7 +326,16 @@ class AuthServer(_AuthorizationServer):
     extended_scope = list_to_scope([re.sub(r':.*$', ':', s) for s in scope_to_list(scope or '')])
     super(AuthServer, self).validate_requested_scope(extended_scope, state)
 
-  def handle_response(self, status_code=None, payload=None, headers=None, newSession=None):  #, **actions):
+  def handle_response(self, status_code=None, payload=None, headers=None, newSession=None):
+    """ Handle response
+
+        :param int status_code: http status code
+        :param payload: response payload
+        :param list headers: headers
+        :param dict newSession: session data to store
+
+        :return: TornadoResponse()
+    """
     self.log.debug('Handle authorization response with %s status code:' % status_code, payload)
     resp = TornadoResponse(payload)
     if status_code:
@@ -340,14 +350,11 @@ class AuthServer(_AuthorizationServer):
     if 'error' in payload:
       resp.clear_cookie('auth_session')
     return resp
-    # return S_OK([[status_code, headers, payload, newSession, 'error' in payload], actions])
 
   def create_authorization_response(self, response, username):
-    result = super(AuthServer, self).create_authorization_response(response, username)
-    if result['OK']:
-      # Remove auth session
-      result['Value'][0][4] = True
-    return result
+    response = super(AuthServer, self).create_authorization_response(response, username)
+    response.clear_cookie('auth_session')
+    return response
 
   def validate_consent_request(self, request, provider=None):
     """ Validate current HTTP request for authorization page. This page
