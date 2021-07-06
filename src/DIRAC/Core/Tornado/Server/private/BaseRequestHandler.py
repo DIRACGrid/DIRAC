@@ -606,20 +606,24 @@ class BaseRequestHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    peerChain = X509Chain()
-    derCert = self.request.get_ssl_certificate()
-    # Get client certificate pem
+    try:
+      derCert = self.request.get_ssl_certificate()
+    except Exception:
+      # If 'IOStream' object has no attribute 'get_ssl_certificate'
+      derCert = None
+
+    # Get client certificate as pem
     if derCert:
       chainAsText = derCert.as_pem()
-      # Here we read all certificate chain
-      chainAsText += '\n'.join([cert.as_pem() for cert in self.request.get_ssl_certificate_chain()])
-    elif self.request.headers.get('X-Ssl_client_verify') == 'SUCCESS':
-      chainAsTextEncoded = self.request.headers.get('X-SSL-CERT')
-      chainAsText = unquote(chainAsTextEncoded)
+      # Read all certificate chain
+      chainAsText += ''.join([cert.as_pem() for cert in self.request.get_ssl_certificate_chain()])
+    elif self.request.headers.get('X-Ssl_client_verify') == 'SUCCESS' and self.request.headers.get('X-SSL-CERT'):
+      chainAsText = unquote(self.request.headers.get('X-SSL-CERT'))
     else:
       return S_ERROR(DErrno.ECERTFIND, 'Valid certificate not found.')
 
     # Load full certificate chain
+    peerChain = X509Chain()
     peerChain.loadChainFromString(chainAsText)
 
     # Retrieve the credentials
