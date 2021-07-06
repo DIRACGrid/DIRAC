@@ -267,7 +267,6 @@ class ComputingElement(object):
     # interpret it as needing local evaluation
     if self.ceParameters.get("NumberOfProcessors", -1) == 0:
       self.ceParameters["NumberOfProcessors"] = getNumberOfProcessors()
-
     self.ceParameters["GPUs"] = getGPUs()
 
     for key in ceOptions:

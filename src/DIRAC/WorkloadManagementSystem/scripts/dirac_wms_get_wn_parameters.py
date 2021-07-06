@@ -56,7 +56,7 @@ def main():
   gpus = JobParameters.getGPUs(Site, ceName, Queue)
 
   # just communicating it back
-  gLogger.notice(numberOfProcessor, maxRAM, gpus)
+  gLogger.notice(" ".join(str(wnPar) for wnPar in [numberOfProcessor, maxRAM, gpus]))
 
 
 if __name__ == "__main__":

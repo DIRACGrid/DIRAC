@@ -204,6 +204,16 @@ def getGPUs(siteName=None, gridCE=None, queue=None):
   if gpus:
     return gpus
 
+  if not siteName:
+    siteName = gConfig.getValue('/LocalSite/Site', '')
+  if not gridCE:
+    gridCE = gConfig.getValue('/LocalSite/GridCE', '')
+  if not queue:
+    queue = gConfig.getValue('/LocalSite/CEQueue', '')
+  if not (siteName and gridCE and queue):
+    gLogger.error("Could not find NumberOfProcessors: missing siteName or gridCE or queue. Returning '0'")
+    return 0
+
   # 2) looks in CS for tags
   gLogger.info("Getting number of GPUs" "from tags for %s: %s: %s" % (siteName, gridCE, queue))
   # Tags of the CE
@@ -215,10 +225,10 @@ def getGPUs(siteName=None, gridCE=None, queue=None):
 										     gridCE, queue),
 				    ''))
   for tag in tags:
-    gpusTag = re.search('[0-9]GPUs', tag)
+    gpusTag = re.search("[0-9]GPUs", tag)
     if gpusTag:
       gLogger.info("Number of processors from tags", gpusTag.string)
-      return int(gpusTag.string.replace('GPUs', ''))
+      return int(gpusTag.string.replace("GPUs", ""))
 
   gLogger.info("GPUs could not be found in CS")
   return 0
