@@ -239,7 +239,6 @@ environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 transfer_output_files = ""
-machine_count = 1
 request_cpus = %(processors)s
 %(localScheddOptions)s
 
@@ -299,6 +298,7 @@ Queue %(nJobs)s
 
     # We randomize the location of the pilot output and log, because there are just too many of them
     location = logDir(self.ceName, commonJobStampPart)
+    processors = processors if processors > 1 else self.ceParameters.get('NumberOfProcessors', processors)
     subName = self.__writeSub(executableFile, numberOfJobs, location, processors)
 
     cmd = ['condor_submit', '-terse', subName]
