@@ -12,6 +12,14 @@ set -x
 
 source CONFIG
 
+if [ ! -z "$DEBUG" ]
+then
+  echo '==> Running in DEBUG mode'
+  DEBUG='-ddd'
+else
+  echo '==> Running in non-DEBUG mode'
+fi
+
 echo -e "*** $(date -u) **** Getting the tests ****\n"
 
 mkdir -p "$PWD/TestCode"
@@ -59,7 +67,7 @@ Resources
     {
       S3
       {
-        Aws_access_key_id = fakeId 
+        Aws_access_key_id = fakeId
         Aws_secret_access_key = fakeKey
       }
     }
@@ -92,7 +100,9 @@ then
     orig_component=$(echo "${system_component}" | sed 's/Tornado//g' | awk '{print $2}');
     # Replace the dips url with the https url in the cs, assuming port 8443
     sed -E "s|( +${orig_component} = )dips://([a-z]+)(:[0-9]+)(/.*/)(.*)|\1https://\2:8443\4Tornado\5|g" -i  "${SERVERINSTALLDIR}"/etc/Production.cfg
-  done< <(find "${SERVERINSTALLDIR}"/DIRAC/ -name 'Tornado*Handler.py' | grep -v Configuration | sed -e 's/Handler.py//g' -e 's/System//g'| awk -F '/' '{print $(NF-2), $NF}')
+    dirac-restart-component Tornado Tornado -ddd
+  done< <(python -m DIRAC.Core.Utilities.Extensions findServices | grep Tornado | grep -v Configuration | sed -e 's/Handler//g' -e 's/System//g')
+
 
   # Restart the CS to take all that into account
   dirac-restart-component Configuration Server "$DEBUG"
