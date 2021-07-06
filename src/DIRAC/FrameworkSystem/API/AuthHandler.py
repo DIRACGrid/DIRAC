@@ -37,7 +37,7 @@ class AuthHandler(TornadoREST):
   USE_AUTHZ_GRANTS = ['JWT', 'VISITOR']
   SYSTEM = 'Framework'
   AUTH_PROPS = 'all'
-  LOCATION = "/DIRAC/auth"
+  LOCATION = "/auth"
   css_align_center = 'display:block;justify-content:center;align-items:center;'
   css_center_div = 'height:700px;width:100%;position:absolute;top:50%;left:0;margin-top:-350px;'
   css_big_text = 'font-size:28px;'
@@ -137,9 +137,9 @@ class AuthHandler(TornadoREST):
           Content-Type: application/json
 
           {
-            "registration_endpoint": "https://domain.com/DIRAC/auth/register",
-            "userinfo_endpoint": "https://domain.com/DIRAC/auth/userinfo",
-            "jwks_uri": "https://domain.com/DIRAC/auth/jwk",
+            "registration_endpoint": "https://domain.com/auth/register",
+            "userinfo_endpoint": "https://domain.com/auth/userinfo",
+            "jwks_uri": "https://domain.com/auth/jwk",
             "code_challenge_methods_supported": [
               "S256"
             ],
@@ -148,7 +148,7 @@ class AuthHandler(TornadoREST):
               "code",
               "refresh_token"
             ],
-            "token_endpoint": "https://domain.com/DIRAC/auth/token",
+            "token_endpoint": "https://domain.com/auth/token",
             "response_types_supported": [
               "code",
               "device",
@@ -156,8 +156,8 @@ class AuthHandler(TornadoREST):
               "id_token",
               "token"
             ],
-            "authorization_endpoint": "https://domain.com/DIRAC/auth/authorization",
-            "issuer": "https://domain.com/DIRAC/auth"
+            "authorization_endpoint": "https://domain.com/auth/authorization",
+            "issuer": "https://domain.com/auth"
           }
     """
     if self.request.method == "GET":
@@ -282,10 +282,10 @@ class AuthHandler(TornadoREST):
 
           {
             "device_code": "TglwLiow0HUwowjB9aHH5HqH3bZKP9d420LkNhCEuR",
-            "verification_uri": "https://marosvn32.in2p3.fr/DIRAC/auth/device",
+            "verification_uri": "https://marosvn32.in2p3.fr/auth/device",
             "interval": 5,
             "expires_in": 1800,
-            "verification_uri_complete": "https://marosvn32.in2p3.fr/DIRAC/auth/device/WSRL-HJMR",
+            "verification_uri_complete": "https://marosvn32.in2p3.fr/auth/device/WSRL-HJMR",
             "user_code": "WSRL-HJMR"
           }
 

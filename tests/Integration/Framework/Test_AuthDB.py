@@ -174,10 +174,10 @@ def test_Sessions():
             'id': 'SsoGTDglu6LThpx0CigM9i9J72B5atZ24ULr6R1awm',
             'interval': 5,
             'scope': 'g:my_group',
-            'uri': 'https://domain.com/DIRAC/auth/device?&response_type=device&client_id=DIRAC_CLI&scope=g:my_group',
+            'uri': 'https://domain.com/auth/device?&response_type=device&client_id=DIRAC_CLI&scope=g:my_group',
             'user_code': 'MDKP-MXMF',
-            'verification_uri': 'https://domain.com/DIRAC/auth/device',
-            'verification_uri_complete': u'https://domain.com/DIRAC/auth/device?user_code=MDKP-MXMF'}
+            'verification_uri': 'https://domain.com/auth/device',
+            'verification_uri_complete': u'https://domain.com/auth/device?user_code=MDKP-MXMF'}
 
   # Example of the updated session
   sData2 = {'client_id': 'DIRAC_CLI',
@@ -186,10 +186,10 @@ def test_Sessions():
             'id': 'SsoGTDglu6LThpx0CigM9i9J72B5atZ24ULr6R1awm',
             'interval': 5,
             'scope': 'g:my_group',
-            'uri': 'https://domain.com/DIRAC/auth/device?&response_type=device&client_id=DIRAC_CLI&scope=g:my_group',
+            'uri': 'https://domain.com/auth/device?&response_type=device&client_id=DIRAC_CLI&scope=g:my_group',
             'user_code': 'MDKP-MXMF',
-            'verification_uri': 'https://domain.com/DIRAC/auth/device',
-            'verification_uri_complete': u'https://domain.com/DIRAC/auth/device?user_code=MDKP-MXMF',
+            'verification_uri': 'https://domain.com/auth/device',
+            'verification_uri_complete': u'https://domain.com/auth/device?user_code=MDKP-MXMF',
             'user_id': 'username'}
 
   # Remove old session

@@ -17,59 +17,31 @@ from authlib.jose import JsonWebKey, jwt
 from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc7636 import CodeChallenge
-from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
-
-from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
-from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
-from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (DeviceAuthorizationEndpoint,
-                                                                           DeviceCodeGrant)
-from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import AuthorizationCodeGrant
-from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients, Client
-from DIRAC.FrameworkSystem.private.authorization.utils.Requests import OAuth2Request, createOAuth2Request
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata, isDownloadablePersonalProxy
+from DIRAC.ConfigurationSystem.Client.Utilities import isDownloadablePersonalProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getUsernameForDN, getEmailsForGroup, wrapIDAsDN,
                                                                getDNForUsername, getIdPForGroup)
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import TokenManagerClient
 from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import TornadoResponse
+from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients, Client
+from DIRAC.FrameworkSystem.private.authorization.utils.Requests import OAuth2Request, createOAuth2Request
+from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectMetadata
+from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
+from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
+from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (DeviceAuthorizationEndpoint,
+                                                                           DeviceCodeGrant)
+from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import AuthorizationCodeGrant
 
 log = logging.getLogger('authlib')
 log.addHandler(logging.StreamHandler(sys.stdout))
 log.setLevel(logging.DEBUG)
 log = gLogger.getSubLogger(__name__)
-
-
-def collectMetadata(issuer=None):
-  """ Collect metadata for DIRAC Authorization Server(DAS), a metadata format defines by IETF specification:
-      https://datatracker.ietf.org/doc/html/rfc8414#section-2
-
-      :param str issuer: issuer to set
-
-      :return: dict -- dictionary is the AuthorizationServerMetadata object in the same time
-  """
-  result = getAuthorizationServerMetadata(issuer)
-  if not result['OK']:
-    raise Exception('Cannot prepare authorization server metadata. %s' % result['Message'])
-  metadata = result['Value']
-  for name, endpoint in [('jwks_uri', 'jwk'),
-                         ('token_endpoint', 'token'),
-                         ('userinfo_endpoint', 'userinfo'),
-                         ('revocation_endpoint', 'revoke'),
-                         ('authorization_endpoint', 'authorization'),
-                         ('device_authorization_endpoint', 'device')]:
-    metadata[name] = metadata['issuer'].strip('/') + '/' + endpoint
-  metadata['scopes_supported'] = ['g:', 'proxy', 'lifetime:']
-  metadata['grant_types_supported'] = ['code', 'authorization_code', 'refresh_token',
-                                       'urn:ietf:params:oauth:grant-type:device_code']
-  metadata['response_types_supported'] = ['code', 'device', 'token']
-  metadata['code_challenge_methods_supported'] = ['S256']
-  return AuthorizationServerMetadata(metadata)
 
 
 class AuthServer(_AuthorizationServer):

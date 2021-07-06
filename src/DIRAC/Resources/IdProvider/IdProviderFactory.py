@@ -16,8 +16,8 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader, ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.IdProvider.Utilities import getProviderInfo, getSettingsNamesForIdPIssuer
-from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients
+from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectMetadata
 
 __RCSID__ = "$Id$"
 
@@ -71,15 +71,14 @@ class IdProviderFactory(object):
 
         :return: S_OK(IdProvider)/S_ERROR()
     """
+    # Get Authorization Server metadata
+    asMetaDict = collectMetadata()
     self.log.debug('Search %s identity provider client configuration..' % name)
     clients = getDIRACClients()
     if name in clients:
       # If it is a DIRAC default pre-registred client
       pDict = clients[name]
-      result = getAuthorizationServerMetadata()
-      if not result['OK']:
-        return result
-      pDict.update(result['Value'])
+      pDict.update(asMetaDict)
     else:
       # if it is external identity provider client
       result = getProviderInfo(name)
@@ -87,6 +86,8 @@ class IdProviderFactory(object):
         self.log.error('Failed to read configuration', '%s: %s' % (name, result['Message']))
         return result
       pDict = result['Value']
+      # Set default redirect_uri
+      pDict['redirect_uri'] = pDict.get('redirect_uri', asMetaDict['redirect_uri'])
 
     pDict.update(kwargs)
     pDict['ProviderName'] = name

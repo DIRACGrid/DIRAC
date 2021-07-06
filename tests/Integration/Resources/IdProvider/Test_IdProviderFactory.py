@@ -58,7 +58,6 @@ if six.PY3:
   # DIRACOS not contain required packages
   from authlib.jose import jwt
   from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-  from DIRAC.FrameworkSystem.private.authorization.AuthServer import collectMetadata
   from DIRAC.FrameworkSystem.private.authorization.utils.Clients import DEFAULT_CLIENTS
   idps = IdProviderFactory()
 
@@ -67,17 +66,15 @@ if six.PY3:
 def test_getDIRACClients():
   """ Try to load default DIRAC authorization client
   """
-  params = collectMetadata()
-
   # Try to get DIRAC client authorization settings
-  result = idps.getIdProvider('DIRACCLI', **params)
+  result = idps.getIdProvider('DIRACCLI')
   assert result['OK'], result['Message']
   assert result['Value'].issuer == 'https://issuer.url/'
   assert result['Value'].client_id == DEFAULT_CLIENTS['DIRACCLI']['client_id']
   assert result['Value'].get_metadata('jwks_uri') == 'https://issuer.url/jwk'
 
   # Try to get DIRAC client authorization settings for Web portal
-  result = idps.getIdProvider('DIRACWeb', **params)
+  result = idps.getIdProvider('DIRACWeb')
   assert result['OK'], result['Message']
   assert result['Value'].issuer == 'https://issuer.url/'
   assert result['Value'].client_id == 'client_identificator'
