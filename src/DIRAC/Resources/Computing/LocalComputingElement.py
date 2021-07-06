@@ -132,6 +132,7 @@ class LocalComputingElement(ComputingElement):
     # numberOfNodes is treated as a string as it can contain values such as "2-4"
     # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
     self.numberOfNodes = self.ceParameters.get('NumberOfNodes', '1')
+    self.gpus = self.ceParameters.get("GPUs")
 
     return S_OK()
 
@@ -221,17 +222,20 @@ class LocalComputingElement(ComputingElement):
     for _i in range(numberOfJobs):
       jobStamps.append(makeGuid()[:8])
 
-    batchDict = {'Executable': submitFile,
-                 'NJobs': numberOfJobs,
-                 'OutputDir': self.batchOutput,
-                 'ErrorDir': self.batchError,
-                 'SubmitOptions': self.submitOptions,
-                 'ExecutionContext': self.execution,
-                 'JobStamps': jobStamps,
-                 'Queue': self.queue,
-                 'WholeNode': self.wholeNode,
-                 'NumberOfProcessors': self.numberOfProcessors,
-                 'NumberOfNodes': self.numberOfNodes}
+    batchDict = {
+	"Executable": submitFile,
+	"NJobs": numberOfJobs,
+	"OutputDir": self.batchOutput,
+	"ErrorDir": self.batchError,
+	"SubmitOptions": self.submitOptions,
+	"ExecutionContext": self.execution,
+	"JobStamps": jobStamps,
+	"Queue": self.queue,
+	"WholeNode": self.wholeNode,
+	"NumberOfProcessors": self.numberOfProcessors,
+	"NumberOfNodes": self.numberOfNodes,
+	"GPUs": self.gpus,
+    }
     resultSubmit = self.batchSystem.submitJob(**batchDict)
     if proxy or self.parallelLibrary:
       os.remove(submitFile)

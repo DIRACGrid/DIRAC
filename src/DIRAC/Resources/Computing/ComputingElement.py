@@ -29,10 +29,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-import six
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 
 from DIRAC import S_OK, S_ERROR, gLogger, version
@@ -48,7 +48,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getNumberOfProcessors
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getNumberOfProcessors, getGPUs
 
 
 INTEGER_PARAMETERS = ['CPUTime',
@@ -267,6 +267,8 @@ class ComputingElement(object):
     # interpret it as needing local evaluation
     if self.ceParameters.get("NumberOfProcessors", -1) == 0:
       self.ceParameters["NumberOfProcessors"] = getNumberOfProcessors()
+
+    self.ceParameters["GPUs"] = getGPUs()
 
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:
