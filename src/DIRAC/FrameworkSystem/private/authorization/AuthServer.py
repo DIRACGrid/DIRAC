@@ -311,16 +311,17 @@ class AuthServer(_AuthorizationServer):
     self.log.debug('Handle authorization response with %s status code:' % status_code, payload)
     resp = TornadoResponse(payload)
     if status_code:
-      resp.set_status(status_code)
+      resp.set_status(status_code)  # pylint: disable=no-member
     if headers:
       self.log.debug('Headers:', headers)
       for key, value in headers:
-        resp.set_header(key, value)
+        resp.set_header(key, value)  # pylint: disable=no-member
     if newSession:
       self.log.debug('newSession:', newSession)
+      # pylint: disable=no-member
       resp.set_secure_cookie('auth_session', json.dumps(newSession), secure=True, httponly=True)
     if 'error' in payload:
-      resp.clear_cookie('auth_session')
+      resp.clear_cookie('auth_session')  # pylint: disable=no-member
     return resp
 
   def create_authorization_response(self, response, username):

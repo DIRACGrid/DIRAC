@@ -96,7 +96,7 @@ class TornadoRefresher(RefresherBase):
 
   @gen.coroutine
   def __AutoRefreshPy2(self):
-    """ 
+    """
       Auto refresh the configuration
       We disable pylint error because this class must be instanciated
       by a mixin to define the methods. for python 2
