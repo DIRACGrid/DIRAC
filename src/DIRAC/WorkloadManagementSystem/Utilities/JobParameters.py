@@ -185,3 +185,40 @@ def getNumberOfJobProcessors(jobID):
     return numberOfProcessors
 
   return getNumberOfProcessors()
+
+
+def getGPUs(siteName=None, gridCE=None, queue=None):
+  """ Gets GPUs on a certain CE/queue/node (what the pilot administers)
+
+      The siteName/gridCE/queue parameters are normally not necessary.
+
+      Tries to find it in this order:
+      1) from the /Resources/Computing/CEDefaults/GPUs (which is what the pilot might fill up)
+      2) if not present looks in CS for "%dGPUs" Queue or CE Tag
+      3) return 0
+  """
+
+  # 1) from /Resources/Computing/CEDefaults/GPUs
+  gLogger.info("Getting GPUs from /Resources/Computing/CEDefaults/GPUs")
+  gpus = gConfig.getValue('/Resources/Computing/CEDefaults/GPUs', 0)
+  if gpus:
+    return gpus
+
+  # 2) looks in CS for tags
+  gLogger.info("Getting number of GPUs" "from tags for %s: %s: %s" % (siteName, gridCE, queue))
+  # Tags of the CE
+  tags = fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Tag' % (siteName.split('.')[0], siteName, gridCE),
+				   ''))
+  # Tags of the Queue
+  tags += fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag' % (siteName.split('.')[0],
+										     siteName,
+										     gridCE, queue),
+				    ''))
+  for tag in tags:
+    gpusTag = re.search('[0-9]GPUs', tag)
+    if gpusTag:
+      gLogger.info("Number of processors from tags", gpusTag.string)
+      return int(gpusTag.string.replace('GPUs', ''))
+
+  gLogger.info("GPUs could not be found in CS")
+  return 0
