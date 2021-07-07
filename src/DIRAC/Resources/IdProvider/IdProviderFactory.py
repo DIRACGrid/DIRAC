@@ -73,12 +73,12 @@ class IdProviderFactory(object):
     """
     # Get Authorization Server metadata
     asMetaDict = collectMetadata()
-    self.log.debug('Search %s identity provider client configuration..' % name)
+    self.log.debug('Search configuration for', name)
     clients = getDIRACClients()
     if name in clients:
       # If it is a DIRAC default pre-registred client
-      pDict = clients[name]
-      pDict.update(asMetaDict)
+      pDict = asMetaDict
+      pDict.update(clients[name])
     else:
       # if it is external identity provider client
       result = getProviderInfo(name)
