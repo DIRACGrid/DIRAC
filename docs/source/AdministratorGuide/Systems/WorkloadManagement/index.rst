@@ -13,8 +13,9 @@ Organizations such as LHC experiments. In more details the DIRAC WMS with Pilot 
 The WMS provides high user jobs efficiency, hiding the heterogeneity of the the underlying computing resources.
 
 Within :ref:`DIRAC jobs <jobs>` users specify at least an executable, and maybe some argument, that DIRAC will start on the Worker Node.
-Jobs are not sent directly to the Computing Elements, or to any Computing resource.
-Instead, their description and requirements are stored in the DIRAC WMS DB (using JDL, Job Description Language) and added to a Task Queue
+Jobs are not sent directly to the Computing Elements, nor to any Computing resource.
+Instead, their description and requirements are stored in the DIRAC WMS DataBase
+(using the JDL grammar - Job Description Language) and added to a Task Queue
 of jobs with same or similar requirements. Jobs will start running when their JDL is picked up by a pilot job.
 
 Pilot jobs are submitted to computing resources by specialized Pilot Directors.
@@ -52,21 +53,21 @@ In case more than one type of resource is available, specifically VM-based resou
 the pilots scheduling should happen with other means then SiteDirectors, as exemplified in the following picture:
 
 
-
 .. image:: WMS-Pilots2.png
    :alt: WMS-Pilots.
    :align: center
 
 DIRAC alone does not administer directly clouds or any VM-based systems.
 A different mechanism should be used for starting pilots and jobs on worker nodes that can't be reached via Computing Elements.
-One mechanism for starting pilots on Clouds is in the :ref:`VMDIRAC` extension of DIRAC.
+One mechanism for starting pilots on Clouds is in the VMDIRAC extension of DIRAC.
 
 (Over-)simplified workflow
 ==========================
 DIRAC WMS basically works as follows:
 
-1. Users define and submit jobs. Jobs have requirements. Job descriptions are stored in DIRAC's Job DB.
-2. DIRAC agents submit pilot jobs to sites. Alternatively, pilots are started on worker nodes in a different way.
+1. Users define and submit jobs. Jobs have requirements. Job descriptions are stored in DIRAC's :py:mod:`~DIRAC.WorkloadManagementSystem.DB.JobDB`.
+2. DIRAC agent :py:mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector` submit pilot jobs to Computing Elements (:ref:`CE`).
+   - Pilots are "just scripts" and can also be started on worker nodes in a different way, without SiteDirectors.
 3. Pilots will try to match the worker nodes' capabilities to Jobs requirements.
 4. Jobs are started on WNs. DIRAC monitors its progress.
 

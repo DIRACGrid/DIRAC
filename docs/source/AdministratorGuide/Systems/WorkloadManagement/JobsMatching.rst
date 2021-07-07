@@ -18,16 +18,16 @@ The JobAgent running on the Worker Node and started by the pilot presents capabi
    {
      CPUTime:               1200000
      GridCE:                ce-01.somewhere.org
-     GridMiddleware:        CREAM
+     GridMiddleware:        ARC
      MaxRAM:                2048
      NumberOfProcessors:    1
      OwnerGroup:            diracAdmin,test,user
      PilotBenchmark:        19.5
      PilotInfoReportedFlag: False
      PilotReference:        https://ce-01.somewhere.org:8443/CREAM155256908
-     Platform:              x86_64_glibc-2.12
+     Platform:              x86_64_glibc-2.21
      ReleaseProject:        VO
-     ReleaseVersion:        v6r20p25
+     ReleaseVersion:        7.2.13
      Setup:                 VO-Certification
      Site:                  DIRAC.somewhere.org
      Tag:                   GPU

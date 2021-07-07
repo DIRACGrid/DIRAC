@@ -146,7 +146,7 @@ class CREAMComputingElement(ComputingElement):
         self.log.error('Failed to delegate proxy', result['Message'])
         return result
       for _i in range(numberOfJobs):
-	jdlName, diracStamp = self.__writeJDL(executableFile, processors=nProcessors)
+        jdlName, diracStamp = self.__writeJDL(executableFile, processors=nProcessors)
         cmd = ['glite-ce-job-submit', '-n', '-N', '-r',
                '%s/%s' % (self.ceName, self.queue),
                '-D', '%s' % delegationID, '%s' % jdlName]

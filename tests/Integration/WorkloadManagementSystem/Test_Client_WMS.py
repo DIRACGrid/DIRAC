@@ -486,7 +486,7 @@ class Matcher (TestWMSTestCase):
         'OwnerGroup': 'prod',
         'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch',
         'DIRACVersion': 'pippo',
-	'GridCE': 'some.grid.ce.org',
+        'GridCE': 'some.grid.ce.org',
         'ReleaseVersion': 'blabla',
         'VirtualOrganization': 'LHCb',
         'PilotInfoReportedFlag': 'True',

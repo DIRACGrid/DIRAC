@@ -96,7 +96,7 @@ class Matcher(object):
     self.log.info('Resource description for matching', printDict(toPrintDict))
 
     negativeCond = self.limiter.getNegativeCondForSite(
-	resourceDict['Site'], resourceDict.get('GridCE')
+        resourceDict['Site'], resourceDict.get('GridCE')
     )
     result = self.tqDB.matchAndGetJob(resourceDict, negativeCond=negativeCond)
 

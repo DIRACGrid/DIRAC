@@ -95,19 +95,19 @@ class Limiter(object):
     if self.__opsHelper.getValue("JobScheduling/CheckJobLimits", True):
       result = self.__getRunningCondition(siteName)
       if not result['OK']:
-	self.log.error("Issue getting running conditions", result['Message'])
+        self.log.error("Issue getting running conditions", result['Message'])
       else:
         negativeCond = result['Value']
       self.log.verbose('Negative conditions for site',
                        '%s after checking limits are: %s' % (siteName, str(negativeCond)))
 
       if gridCE:
-	result = self.__getRunningCondition(siteName, gridCE)
-	if not result['OK']:
-	  self.log.error("Issue getting running conditions", result['Message'])
-	else:
-	  negativeCondCE = result['Value']
-	  negativeCond = self.__mergeCond(negativeCond, negativeCondCE)
+        result = self.__getRunningCondition(siteName, gridCE)
+        if not result['OK']:
+          self.log.error("Issue getting running conditions", result['Message'])
+        else:
+          negativeCondCE = result['Value']
+          negativeCond = self.__mergeCond(negativeCond, negativeCondCE)
 
     if self.__opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
       result = self.__getDelayCondition(siteName)
