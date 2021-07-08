@@ -1,7 +1,3 @@
-###########################################################
-# File: OcciEndpoint.py
-# Author: A.T.
-###########################################################
 """
    OcciEndpoint is Endpoint base class implementation for the Occi cloud service.
 """
@@ -32,8 +28,6 @@ class OcciEndpoint(Endpoint):
   """
 
   def __init__(self, parameters=None):
-    """
-    """
     super(OcciEndpoint, self).__init__(parameters=parameters)
     # logger
     self.log = gLogger.getSubLogger('OcciEndpoint')
@@ -63,7 +57,7 @@ class OcciEndpoint(Endpoint):
         self.valid = False
         return
       self.authArgs['cert'] = self.userProxy
-      self.caPath = self.parameters.get('CAPath', '/Users/atsareg/work/client/etc/grid-security/certificates/cas.pem')
+      self.caPath = self.parameters.get('CAPath', '/etc/grid-security/certificates')
       self.parameters['CAPath'] = self.caPath
       self.authArgs['verify'] = self.caPath
       if self.parameters.get("Auth") == "voms":

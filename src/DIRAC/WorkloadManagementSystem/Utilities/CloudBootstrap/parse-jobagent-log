@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Parse DIRAC JobAgent log file and output codes and messages
 # to use with HEPiX VM shutdown_command.
@@ -92,5 +92,5 @@ while oneline:
 
 f.close()
 
-print shutdownMessage
+print(shutdownMessage)
 sys.exit(0)

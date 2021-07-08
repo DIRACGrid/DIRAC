@@ -25,12 +25,6 @@ case $i in
     --vm-uuid=*)
     VM_UUID=`echo "${i#*=}" | sed 's/#.*$//'`
     ;;
-    --cvmfs-proxy=*)
-    cvmfs_proxy=`echo "${i#*=}" | sed 's/#.*$//'`
-    ;;
-    --submit-pool=*)
-    submit_pool=`echo "${i#*=}" | sed 's/#.*$//'`
-    ;;
     --ce-name=*)
     CE_NAME="${i#*=}"
     ;;

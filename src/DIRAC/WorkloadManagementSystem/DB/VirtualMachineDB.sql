@@ -1,9 +1,2 @@
--- $Id$
--- ------------------------------------------------------------------------------
---
---  Schema definition for the SandboxDB database - containing the job status
---  history ( logging ) information
---
--- ------------------------------------------------------------------------------
-
-USE VirtualMachineDB;
+-- VirtualMachineDB Placeholder
+-- Tables are created automatically at runtime.

@@ -1,7 +1,3 @@
-########################################################################
-# File :   EndpointFactory.py
-# Author : Andrei Tsaregorodtsev
-########################################################################
 """  The Cloud Endpoint Factory has one method that instantiates a given Cloud Endpoint
 """
 from __future__ import print_function
@@ -10,14 +6,13 @@ from __future__ import absolute_import
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader
-from DIRAC.Resources.Cloud.ConfigHelper import getVMTypeConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getVMTypeConfig
 
 __RCSID__ = "$Id$"
 
 
 class EndpointFactory(object):
 
-  #############################################################################
   def __init__(self):
     """ Standard constructor
     """
@@ -29,11 +24,8 @@ class EndpointFactory(object):
     if not result['OK']:
       return result
 
-    ceParams = result['Value']
-    result = self.getCEObject(parameters=ceParams)
-    return result
+    return self.getCEObject(parameters=result['Value'])
 
-  #############################################################################
   def getCEObject(self, parameters=None):
     """This method returns the CloudEndpoint instance corresponding to the supplied
        CEUniqueID.  If no corresponding CE is available, this is indicated.

@@ -14,7 +14,7 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Resources.Cloud.ConfigHelper import findGenericCloudCredentials
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import findGenericCloudCredentials
 
 
 def createJobWrapper(jobID, jobParams, resourceParams, optimizerParams,

@@ -26,225 +26,200 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.VirtualMachineDB import VirtualMachineDB
-from DIRAC.Core.Security.Properties import VM_WEB_OPERATION, VM_RPC_OPERATION
+from DIRAC.Core.Security.Properties import OPERATOR, VM_RPC_OPERATION
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getVMTypeConfig, getVMTypes
 from DIRAC.Resources.Cloud.Utilities import STATE_MAP
-from DIRAC.Resources.Cloud.ConfigHelper import getVMTypeConfig, getVMTypes
 from DIRAC.Resources.Cloud.EndpointFactory import EndpointFactory
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import getProxyFileForCloud
-
-__RCSID__ = '$Id$'
-
-# This is a global instance of the VirtualMachineDB class
-gVirtualMachineDB = False
-
-
-def initializeVirtualMachineManagerHandler(_serviceInfo):
-
-  global gVirtualMachineDB
-
-  gVirtualMachineDB = VirtualMachineDB()
-  haltStalledInstances()
-  checkStalledInstances()
-
-  if gVirtualMachineDB._connected:
-    gThreadScheduler.addPeriodicTask(60 * 15, checkStalledInstances)
-    return S_OK()
-
-  return S_ERROR()
-
-
-def haltStalledInstances():
-
-  result = gVirtualMachineDB.getInstancesByStatus('Stalled')
-  if not result['OK']:
-    return result
-
-  uList = []
-  for image in result['Value']:
-    uList += result['Value'][image]
-
-  stallingList = []
-  for uID in uList:
-    result = gVirtualMachineDB.getInstanceID(uID)
-    if not result['OK']:
-      continue
-    stallingList.append(result['Value'])
-  return haltInstances(stallingList)
-
-
-def getCEInstances(siteList=None, ceList=None, vo=None):
-
-  result = getVMTypes(siteList=siteList, ceList=ceList, vo=vo)
-  if not result['OK']:
-    return S_ERROR('Failed to get images from the CS')
-  imageDict = result['Value']
-  ceList = []
-  for site in imageDict:
-    for ce in imageDict[site]:
-      result = EndpointFactory().getCE(site, ce)
-      if not result['OK']:
-        continue
-      ceList.append((site, ce, result['Value']))
-
-  nodeDict = {}
-  for site, ceName, ce in ceList:
-    result = ce.getVMNodes()
-    if not result['OK']:
-      continue
-    for node in result['Value']:
-      if not node.name.startswith('DIRAC'):
-        continue
-      ip = (node.public_ips[0] if node.public_ips else 'None')
-      nodeState = node.state.upper() if not isinstance(node.state, six.integer_types) else STATE_MAP[node.state]
-      nodeDict[node.id] = {"Site": site,
-                           "CEName": ceName,
-                           "NodeName": node.name,
-                           "PublicIP": ip,
-                           "State": nodeState}
-  return S_OK(nodeDict)
-
-
-def checkStalledInstances():
-  """
-   To avoid stalling instances consuming resources at cloud endpoint,
-   attempts to halt the stalled list in the cloud endpoint
-  """
-
-  result = gVirtualMachineDB.declareStalledInstances()
-  if not result['OK']:
-    return result
-
-  stallingList = result['Value']
-
-  return haltInstances(stallingList)
-
-
-def stopInstance(site, endpoint, nodeID):
-
-  result = getVMTypeConfig(site, endpoint)
-  if not result['OK']:
-    return result
-  ceParams = result['Value']
-  ceFactory = EndpointFactory()
-  result = ceFactory.getCEObject(parameters=ceParams)
-  if not result['OK']:
-    return result
-
-  ce = result['Value']
-  result = ce.stopVM(nodeID)
-  return result
-
-
-def createEndpoint(uniqueID):
-
-  result = gVirtualMachineDB.getEndpointFromInstance(uniqueID)
-  if not result['OK']:
-    return result
-  site, endpoint = result['Value'].split('::')
-
-  result = getVMTypeConfig(site, endpoint)
-  if not result['OK']:
-    return result
-  ceParams = result['Value']
-  ceFactory = EndpointFactory()
-  result = ceFactory.getCEObject(parameters=ceParams)
-  return result
-
-
-def haltInstances(vmList):
-  """
-   Common haltInstances for Running(from class VirtualMachineManagerHandler) and
-   Stalled(from checkStalledInstances periodic task) to Halt
-  """
-
-  failed = {}
-  successful = {}
-
-  for instanceID in vmList:
-    instanceID = int(instanceID)
-    result = gVirtualMachineDB.getUniqueID(instanceID)
-    if not result['OK']:
-      gLogger.error('haltInstances: on getUniqueID call: %s' % result['Message'])
-      continue
-    uniqueID = result['Value']
-
-    result = createEndpoint(uniqueID)
-    if not result['OK']:
-      gLogger.error('haltInstances: on createEndpoint call: %s' % result['Message'])
-      continue
-
-    endpoint = result['Value']
-
-    # Get proxy to be used to connect to the cloud endpoint
-    authType = endpoint.parameters.get('Auth')
-    if authType and authType.lower() in ['x509', 'voms']:
-      siteName = endpoint.parameters['Site']
-      ceName = endpoint.parameters['CEName']
-      gLogger.verbose("Getting cloud proxy for %s/%s" % (siteName, ceName))
-      result = getProxyFileForCloud(endpoint)
-      if not result['OK']:
-        continue
-      endpoint.setProxy(result['Value'])
-
-    result = endpoint.stopVM(uniqueID)
-    if result['OK']:
-      gVirtualMachineDB.recordDBHalt(instanceID, 0)
-      successful[instanceID] = True
-    else:
-      failed[instanceID] = result['Message']
-
-  return S_OK({"Successful": successful, "Failed": failed})
-
-
-def getPilotOutput(pilotRef):
-
-  if not pilotRef.startswith('vm://'):
-    return S_ERROR('Invalid pilot reference %s' % pilotRef)
-
-  # Get the VM public IP
-  diracID, nPilot = os.path.basename(pilotRef).split(':')
-  result = gVirtualMachineDB.getUniqueIDByName(diracID)
-  if not result['OK']:
-    return result
-  uniqueID = result['Value']
-  result = gVirtualMachineDB.getInstanceID(uniqueID)
-  if not result['OK']:
-    return result
-  instanceID = result['Value']
-  result = gVirtualMachineDB.getInstanceParameter("PublicIP", instanceID)
-  if not result['OK']:
-    return result
-  publicIP = result['Value']
-
-  op = Operations()
-  privateKeyFile = op.getValue('/Cloud/PrivateKey', '')
-  diracUser = op.getValue('/Cloud/VMUser', '')
-
-  ssh_str = '%s@%s' % (diracUser, publicIP)
-  cmd = ['ssh', '-i', privateKeyFile, ssh_str,
-         "cat /etc/joboutputs/vm-pilot.%s.log" % nPilot]
-  inst = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-  output, stderr = inst.communicate()
-  if inst.returncode:
-    return S_ERROR('Failed to get pilot output: %s' % stderr)
-  else:
-    return S_OK(output)
 
 
 class VirtualMachineManagerHandler(RequestHandler):
 
-  def initialize(self):
+  @classmethod
+  def initializeHandler(cls, serviceInfo):
+    cls.virtualMachineDB = VirtualMachineDB()
+    cls.haltStalledInstances()
+    cls.checkStalledInstances()
 
+    if cls.virtualMachineDB._connected:
+      gThreadScheduler.addPeriodicTask(60 * 15, cls.checkStalledInstances)
+      return S_OK()
+    return S_ERROR()
+
+  @classmethod
+  def haltStalledInstances(cls):
+    result = cls.virtualMachineDB.getInstancesByStatus('Stalled')
+    if not result['OK']:
+      return result
+
+    uList = []
+    for image in result['Value']:
+      uList += result['Value'][image]
+
+    stallingList = []
+    for uID in uList:
+      result = cls.virtualMachineDB.getInstanceID(uID)
+      if not result['OK']:
+        continue
+      stallingList.append(result['Value'])
+    return cls.haltInstances(stallingList)
+
+  @classmethod
+  def getCEInstances(cls, siteList=None, ceList=None, vo=None):
+
+    result = getVMTypes(siteList=siteList, ceList=ceList, vo=vo)
+    if not result['OK']:
+      return result
+    imageDict = result['Value']
+    ceList = []
+    for site in imageDict:
+      for ce in imageDict[site]:
+        result = EndpointFactory().getCE(site, ce)
+        if not result['OK']:
+          continue
+        ceList.append((site, ce, result['Value']))
+
+    nodeDict = {}
+    for site, ceName, ce in ceList:
+      result = ce.getVMNodes()
+      if not result['OK']:
+        continue
+      for node in result['Value']:
+        if not node.name.startswith('DIRAC'):
+          continue
+        ip = (node.public_ips[0] if node.public_ips else 'None')
+        nodeState = node.state.upper() if not isinstance(node.state, six.integer_types) else STATE_MAP[node.state]
+        nodeDict[node.id] = {"Site": site,
+                             "CEName": ceName,
+                             "NodeName": node.name,
+                             "PublicIP": ip,
+                             "State": nodeState}
+    return S_OK(nodeDict)
+
+  @classmethod
+  def checkStalledInstances(cls):
+    """
+     To avoid stalling instances consuming resources at cloud endpoint,
+     attempts to halt the stalled list in the cloud endpoint
+    """
+    result = cls.virtualMachineDB.declareStalledInstances()
+    if not result['OK']:
+      return result
+
+    stallingList = result['Value']
+    return cls.haltInstances(stallingList)
+
+  @classmethod
+  def stopInstance(cls, site, endpoint, nodeID):
+
+    result = getVMTypeConfig(site, endpoint)
+    if not result['OK']:
+      return result
+    ceParams = result['Value']
+    ceFactory = EndpointFactory()
+    result = ceFactory.getCEObject(parameters=ceParams)
+    if not result['OK']:
+      return result
+
+    ce = result['Value']
+    return ce.stopVM(nodeID)
+
+  @classmethod
+  def createEndpoint(cls, uniqueID):
+
+    result = cls.virtualMachineDB.getEndpointFromInstance(uniqueID)
+    if not result['OK']:
+      return result
+    site, endpoint = result['Value'].split('::')
+
+    result = getVMTypeConfig(site, endpoint)
+    if not result['OK']:
+      return result
+    ceParams = result['Value']
+    ceFactory = EndpointFactory()
+    return ceFactory.getCEObject(parameters=ceParams)
+
+  @classmethod
+  def haltInstances(cls, vmList):
+    """
+     Common haltInstances for Running(from class VirtualMachineManagerHandler) and
+     Stalled(from checkStalledInstances periodic task) to Halt
+    """
+    failed = {}
+    successful = {}
+
+    for instanceID in vmList:
+      instanceID = int(instanceID)
+      result = cls.virtualMachineDB.getUniqueID(instanceID)
+      if not result['OK']:
+        gLogger.error('haltInstances: on getUniqueID call: %s' % result['Message'])
+        continue
+      uniqueID = result['Value']
+
+      result = cls.createEndpoint(uniqueID)
+      if not result['OK']:
+        gLogger.error('haltInstances: on createEndpoint call: %s' % result['Message'])
+        continue
+
+      endpoint = result['Value']
+
+      # Get proxy to be used to connect to the cloud endpoint
+      authType = endpoint.parameters.get('Auth')
+      if authType and authType.lower() in ['x509', 'voms']:
+        siteName = endpoint.parameters['Site']
+        ceName = endpoint.parameters['CEName']
+        gLogger.verbose("Getting cloud proxy for %s/%s" % (siteName, ceName))
+        result = getProxyFileForCloud(endpoint)
+        if not result['OK']:
+          continue
+        endpoint.setProxy(result['Value'])
+
+      result = endpoint.stopVM(uniqueID)
+      if result['OK']:
+        cls.virtualMachineDB.recordDBHalt(instanceID, 0)
+        successful[instanceID] = True
+      else:
+        failed[instanceID] = result['Message']
+
+    return S_OK({"Successful": successful, "Failed": failed})
+
+  @classmethod
+  def getPilotOutput(cls, pilotRef):
+    if not pilotRef.startswith('vm://'):
+      return S_ERROR('Invalid pilot reference %s' % pilotRef)
+
+    # Get the VM public IP
+    diracID, nPilot = os.path.basename(pilotRef).split(':')
+    result = cls.virtualMachineDB.getUniqueIDByName(diracID)
+    if not result['OK']:
+      return result
+    uniqueID = result['Value']
+    result = cls.virtualMachineDB.getInstanceID(uniqueID)
+    if not result['OK']:
+      return result
+    instanceID = result['Value']
+    result = cls.virtualMachineDB.getInstanceParameter("PublicIP", instanceID)
+    if not result['OK']:
+      return result
+    publicIP = result['Value']
+
+    op = Operations()
+    privateKeyFile = op.getValue('/Cloud/PrivateKey', '')
+    diracUser = op.getValue('/Cloud/VMUser', '')
+
+    ssh_str = '%s@%s' % (diracUser, publicIP)
+    cmd = ['ssh', '-i', privateKeyFile, ssh_str,
+           "cat /etc/joboutputs/vm-pilot.%s.log" % nPilot]
+    inst = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+    output, stderr = inst.communicate()
+    if inst.returncode:
+      return S_ERROR('Failed to get pilot output: %s' % stderr)
+    else:
+      return S_OK(output)
+
+  def initialize(self):
     credDict = self.getRemoteCredentials()
     self.rpcProperties = credDict['properties']
-
-  @staticmethod
-  def __logResult(methodName, result):
-    '''
-    Method that writes to log error messages
-    '''
-    if not result['OK']:
-      gLogger.error('%s: %s' % (methodName, result['Message']))
 
   types_getCEInstances = [(list, type(None)), (list, type(None)), six.string_types]
 
@@ -252,27 +227,27 @@ class VirtualMachineManagerHandler(RequestHandler):
 
     if not siteList:
       siteList = None
-    return getCEInstances(siteList=siteList, ceList=ceList, vo=vo)
+    return self.getCEInstances(siteList=siteList, ceList=ceList, vo=vo)
 
   types_stopInstance = [six.string_types, six.string_types, six.string_types]
 
   def export_stopInstance(self, site, endpoint, nodeID):
 
-    return stopInstance(site, endpoint, nodeID)
+    return self.stopInstance(site, endpoint, nodeID)
 
   types_getPilotOutput = [six.string_types]
 
   def export_getPilotOutput(self, pilotReference):
 
-    return getPilotOutput(pilotReference)
+    return self.getPilotOutput(pilotReference)
 
   types_checkVmWebOperation = [six.string_types]
 
   def export_checkVmWebOperation(self, operation):
     """
-    return true if rpc has VM_WEB_OPERATION
+    return true if rpc has OPERATOR
     """
-    if VM_WEB_OPERATION in self.rpcProperties:
+    if OPERATOR in self.rpcProperties:
       return S_OK('Auth')
     return S_OK('Unauth')
 
@@ -283,10 +258,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     Check Status of a given image
     Will insert a new Instance in the DB
     """
-    res = gVirtualMachineDB.insertInstance(uniqueID, imageName, instanceName, endpoint, runningPodName)
-    self.__logResult('insertInstance', res)
-
-    return res
+    return self.virtualMachineDB.insertInstance(uniqueID, imageName, instanceName, endpoint, runningPodName)
 
   types_getUniqueID = [six.string_types]
 
@@ -294,10 +266,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     return cloud manager uniqueID from VMDIRAC instanceID
     """
-    res = gVirtualMachineDB.getUniqueID(instanceID)
-    self.__logResult('getUniqueID', res)
-
-    return res
+    return self.virtualMachineDB.getUniqueID(instanceID)
 
   types_getUniqueIDByName = [six.string_types]
 
@@ -305,10 +274,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     return cloud manager uniqueID from VMDIRAC name
     """
-    result = gVirtualMachineDB.getUniqueIDByName(instanceName)
-    self.__logResult('getUniqueIDByName', result)
-
-    return result
+    return self.virtualMachineDB.getUniqueIDByName(instanceName)
 
   types_setInstanceUniqueID = [six.integer_types, six.string_types]
 
@@ -317,10 +283,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     Check Status of a given image
     Will insert a new Instance in the DB
     """
-    res = gVirtualMachineDB.setInstanceUniqueID(instanceID, uniqueID)
-    self.__logResult('setInstanceUniqueID', res)
-
-    return res
+    return self.virtualMachineDB.setInstanceUniqueID(instanceID, uniqueID)
 
   types_declareInstanceSubmitted = [six.string_types]
 
@@ -328,10 +291,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     After submission of the instance the Director should declare the new Status
     """
-    res = gVirtualMachineDB.declareInstanceSubmitted(uniqueID)
-    self.__logResult('declareInstanceSubmitted', res)
-
-    return res
+    return self.virtualMachineDB.declareInstanceSubmitted(uniqueID)
 
   types_declareInstanceRunning = [six.string_types, six.string_types]
 
@@ -343,16 +303,10 @@ class VirtualMachineManagerHandler(RequestHandler):
     - uniqueID is not unique
     """
     gLogger.info('Declare instance Running uniqueID: %s' % (uniqueID))
-    if VM_RPC_OPERATION not in self.rpcProperties:
-      return S_ERROR("Unauthorized declareInstanceRunning RPC")
-
     publicIP = self.getRemoteAddress()[0]
     gLogger.info('Declare instance Running publicIP: %s' % (publicIP))
 
-    res = gVirtualMachineDB.declareInstanceRunning(uniqueID, publicIP, privateIP)
-    self.__logResult('declareInstanceRunning', res)
-
-    return res
+    return self.virtualMachineDB.declareInstanceRunning(uniqueID, publicIP, privateIP)
 
   types_instanceIDHeartBeat = [six.string_types, float, six.integer_types,
                                six.integer_types, six.integer_types]
@@ -365,19 +319,13 @@ class VirtualMachineManagerHandler(RequestHandler):
     Declares "Running" the instance and the image
     It returns S_ERROR if the status is not OK
     """
-    if VM_RPC_OPERATION not in self.rpcProperties:
-      return S_ERROR("Unauthorized declareInstanceIDHeartBeat RPC")
-
     try:
       uptime = int(uptime)
     except ValueError:
       uptime = 0
 
-    res = gVirtualMachineDB.instanceIDHeartBeat(uniqueID, load, jobs,
-                                                transferredFiles, transferredBytes, uptime)
-    self.__logResult('instanceIDHeartBeat', res)
-
-    return res
+    return self.virtualMachineDB.instanceIDHeartBeat(uniqueID, load, jobs,
+                                                     transferredFiles, transferredBytes, uptime)
 
   types_declareInstancesStopping = [list]
 
@@ -388,40 +336,31 @@ class VirtualMachineManagerHandler(RequestHandler):
     When next instanceID heat beat with stopping status on the DB the VM will stop the job agent and terminates properly
     It returns S_ERROR if the status is not OK
     """
-    if VM_WEB_OPERATION not in self.rpcProperties:
-      return S_ERROR("Unauthorized VM Stopping")
-
     for instanceID in instanceIdList:
       gLogger.info('Stopping DIRAC instanceID: %s' % (instanceID))
-      result = gVirtualMachineDB.getInstanceStatus(instanceID)
+      result = self.virtualMachineDB.getInstanceStatus(instanceID)
       if not result['OK']:
-        self.__logResult('declareInstancesStopping on getInstanceStatus call: ', result)
         return result
       state = result['Value']
       gLogger.info('Stopping DIRAC instanceID: %s, current state %s' % (instanceID, state))
 
       if state == 'Stalled':
-        result = gVirtualMachineDB.getUniqueID(instanceID)
+        result = self.virtualMachineDB.getUniqueID(instanceID)
         if not result['OK']:
-          self.__logResult('declareInstancesStopping on getUniqueID call: ', result)
           return result
         uniqueID = result['Value']
-        result = gVirtualMachineDB.getEndpointFromInstance(uniqueID)
-        if not result['OK']:
-          self.__logResult('declareInstancesStopping on getEndpointFromInstance call: ', result)
-          return result
-        endpoint = result['Value']
-
         result = self.export_declareInstanceHalting(uniqueID, 0)
+        if not result['OK']:
+          return result
       elif state == 'New':
-        result = gVirtualMachineDB.recordDBHalt(instanceID, 0)
-        self.__logResult('declareInstanceHalted', result)
+        result = self.virtualMachineDB.recordDBHalt(instanceID, 0)
+        if not result['OK']:
+          return result
       else:
-        # this is only aplied to allowed trasitions
-        result = gVirtualMachineDB.declareInstanceStopping(instanceID)
-        self.__logResult('declareInstancesStopping: on declareInstanceStopping call: ', result)
-
-    return result
+        # this is only applied to allowed transitions
+        result = self.virtualMachineDB.declareInstanceStopping(instanceID)
+        if not result['OK']:
+          return result
 
   types_declareInstanceHalting = [six.string_types, float]
 
@@ -432,32 +371,21 @@ class VirtualMachineManagerHandler(RequestHandler):
     Declares "Halted" the instance and the image
     It returns S_ERROR if the status is not OK
     """
-    if VM_RPC_OPERATION not in self.rpcProperties:
-      return S_ERROR("Unauthorized declareInstanceHalting RPC")
-
-    endpoint = gVirtualMachineDB.getEndpointFromInstance(uniqueID)
-    if not endpoint['OK']:
-      self.__logResult('declareInstanceHalting', endpoint)
-      return endpoint
-    endpoint = endpoint['Value']
-
-    result = gVirtualMachineDB.declareInstanceHalting(uniqueID, load)
+    result = self.virtualMachineDB.declareInstanceHalting(uniqueID, load)
     if not result['OK']:
       if "Halted ->" not in result["Message"]:
-        self.__logResult('declareInstanceHalting on change status: ', result)
         return result
       else:
         gLogger.info("Bad transition from Halted to something, will assume Halted")
 
     haltingList = []
-    instanceID = gVirtualMachineDB.getInstanceID(uniqueID)
+    instanceID = self.virtualMachineDB.getInstanceID(uniqueID)
     if not instanceID['OK']:
-      self.__logResult('declareInstanceHalting', instanceID)
       return instanceID
     instanceID = instanceID['Value']
     haltingList.append(instanceID)
 
-    return haltInstances(haltingList)
+    return self.haltInstances(haltingList)
 
   types_getInstancesByStatus = [six.string_types]
 
@@ -465,10 +393,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Get dictionary of Image Names with InstanceIDs in given status
     """
-
-    res = gVirtualMachineDB.getInstancesByStatus(status)
-    self.__logResult('getInstancesByStatus', res)
-    return res
+    return self.virtualMachineDB.getInstancesByStatus(status)
 
   types_getAllInfoForUniqueID = [six.string_types]
 
@@ -476,10 +401,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Get all the info for a UniqueID
     """
-    res = gVirtualMachineDB.getAllInfoForUniqueID(uniqueID)
-    self.__logResult('getAllInfoForUniqueID', res)
-
-    return res
+    return self.virtualMachineDB.getAllInfoForUniqueID(uniqueID)
 
   types_getInstancesContent = [dict, (list, tuple),
                                six.integer_types, six.integer_types]
@@ -488,10 +410,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Retrieve the contents of the DB
     """
-    res = gVirtualMachineDB.getInstancesContent(selDict, sortDict, start, limit)
-    self.__logResult('getInstancesContent', res)
-
-    return res
+    return self.virtualMachineDB.getInstancesContent(selDict, sortDict, start, limit)
 
   types_getHistoryForInstanceID = [six.integer_types]
 
@@ -499,10 +418,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Retrieve the contents of the DB
     """
-    res = gVirtualMachineDB.getHistoryForInstanceID(instanceId)
-    self.__logResult('getHistoryForInstanceID', res)
-
-    return res
+    return self.virtualMachineDB.getHistoryForInstanceID(instanceId)
 
   types_getInstanceCounters = [six.string_types, dict]
 
@@ -510,10 +426,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Retrieve the contents of the DB
     """
-    res = gVirtualMachineDB.getInstanceCounters(groupField, selDict)
-    self.__logResult('getInstanceCounters', res)
-
-    return res
+    return self.virtualMachineDB.getInstanceCounters(groupField, selDict)
 
   types_getHistoryValues = [int, dict]
 
@@ -523,10 +436,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     if not fields2Get:
       fields2Get = []
-    res = gVirtualMachineDB.getHistoryValues(averageBucket, selDict, fields2Get, timespan)
-    self.__logResult('getHistoryValues', res)
-
-    return res
+    return self.virtualMachineDB.getHistoryValues(averageBucket, selDict, fields2Get, timespan)
 
   types_getRunningInstancesHistory = [int, int]
 
@@ -534,10 +444,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Retrieve number of running instances in each bucket
     """
-    res = gVirtualMachineDB.getRunningInstancesHistory(timespan, bucketSize)
-    self.__logResult('getRunningInstancesHistory', res)
-
-    return res
+    return self.virtualMachineDB.getRunningInstancesHistory(timespan, bucketSize)
 
   types_getRunningInstancesBEPHistory = [int, int]
 
@@ -545,10 +452,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Retrieve number of running instances in each bucket by End-Point History
     """
-    res = gVirtualMachineDB.getRunningInstancesBEPHistory(timespan, bucketSize)
-    self.__logResult('getRunningInstancesBEPHistory', res)
-
-    return res
+    return self.virtualMachineDB.getRunningInstancesBEPHistory(timespan, bucketSize)
 
   types_getRunningInstancesByRunningPodHistory = [int, int]
 
@@ -556,10 +460,7 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Retrieve number of running instances in each bucket by Running Pod History
     """
-    res = gVirtualMachineDB.getRunningInstancesByRunningPodHistory(timespan, bucketSize)
-    self.__logResult('getRunningInstancesByRunningPodHistory', res)
-
-    return res
+    return self.virtualMachineDB.getRunningInstancesByRunningPodHistory(timespan, bucketSize)
 
   types_getRunningInstancesByImageHistory = [int, int]
 
@@ -567,7 +468,4 @@ class VirtualMachineManagerHandler(RequestHandler):
     """
     Retrieve number of running instances in each bucket by Running Pod History
     """
-    res = gVirtualMachineDB.getRunningInstancesByImageHistory(timespan, bucketSize)
-    self.__logResult('getRunningInstancesByImageHistory', res)
-
-    return res
+    return self.virtualMachineDB.getRunningInstancesByImageHistory(timespan, bucketSize)

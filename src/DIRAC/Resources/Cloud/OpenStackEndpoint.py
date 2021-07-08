@@ -1,8 +1,3 @@
-###########################################################
-# File: OpenStackEndpoint.py
-# Author: A.T.
-###########################################################
-
 """
    OpenStackEndpoint is Endpoint base class implementation for the OpenStack cloud service.
 """
@@ -31,8 +26,6 @@ class OpenStackEndpoint(Endpoint):
   """
 
   def __init__(self, parameters=None, bootstrapParameters=None):
-    """
-    """
     super(OpenStackEndpoint, self).__init__(parameters=parameters,
                                             bootstrapParameters=bootstrapParameters)
     # logger

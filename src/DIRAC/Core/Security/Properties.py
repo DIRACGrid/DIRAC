@@ -76,5 +76,4 @@ FC_MANAGEMENT = "FileCatalogManagement"
 STAGE_ALLOWED = "StageAllowed"
 
 #: Allow VMDIRAC Operations via various handlers
-VM_WEB_OPERATION = "VmWebOperation"
 VM_RPC_OPERATION = "VmRpcOperation"

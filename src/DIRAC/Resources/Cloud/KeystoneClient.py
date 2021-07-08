@@ -13,9 +13,7 @@ from DIRAC.Core.Utilities.Time import fromString, dateTime
 __RCSID__ = '$Id$'
 
 
-class KeystoneClient():
-  """
-  """
+class KeystoneClient(object):
 
   def __init__(self, url, parameters):
     self.log = gLogger.getSubLogger("Keystone")

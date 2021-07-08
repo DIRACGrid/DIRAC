@@ -1,7 +1,3 @@
-########################################################################
-# File :    CloudDirector.py
-# Author :  A.Tsaregorodtsev
-########################################################################
 """  The Cloud Director is a simple agent performing VM instantiations
 """
 from __future__ import print_function
@@ -23,7 +19,7 @@ from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.Resources.Cloud.EndpointFactory import EndpointFactory
-from DIRAC.Resources.Cloud.ConfigHelper import findGenericCloudCredentials, \
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import findGenericCloudCredentials, \
     getVMTypes, \
     getPilotBootstrapParameters
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import virtualMachineDB
@@ -33,20 +29,13 @@ __RCSID__ = "$Id$"
 
 
 class CloudDirector(AgentModule):
-  """
-      The specific agents must provide the following methods:
-       - initialize() for initial settings
-       - beginExecution()
-       - execute() - the main method called in the agent cycle
-       - endExecution()
-       - finalize() - the graceful exit of the method, this one is usually used
-         for the agent restart
+  """ The CloudDirector works like a SiteDirector for cloud sites:
+      It looks at the queued jobs in the task queues and attempts to
+      start VM instances to meet the current demand.
   """
 
   def __init__(self, *args, **kwargs):
-    """ c'tor
-    """
-    AgentModule.__init__(self, *args, **kwargs)
+    super(CloudDirector, self).__init__(*args, **kwargs)
     self.vmTypeDict = {}
     self.vmTypeCECache = {}
     self.vmTypeSlots = {}
@@ -70,8 +59,6 @@ class CloudDirector(AgentModule):
     self.sendAccounting = True
 
   def initialize(self):
-    """ Standard constructor
-    """
     self.siteClient = SiteStatus()
     return S_OK()
 
@@ -293,7 +280,7 @@ class CloudDirector(AgentModule):
     """ Go through defined computing elements and submit jobs if necessary
     """
 
-    vmTypeList = self.vmTypeDict.keys()
+    vmTypeList = list(self.vmTypeDict.keys())
 
     # Check that there is some work at all
     setup = CSGlobals.getSetup()
@@ -314,7 +301,6 @@ class CloudDirector(AgentModule):
       if 'Tag' in self.vmTypeDict[vmType]['ParametersDict']:
         tags += self.vmTypeDict[vmType]['ParametersDict']['Tag']
     tqDict['Tag'] = list(set(tags))
-    tqDict['SubmitPool'] = "wenmrPool"
 
     self.log.verbose('Checking overall TQ availability with requirements')
     self.log.verbose(tqDict)
@@ -347,7 +333,7 @@ class CloudDirector(AgentModule):
               testSites.add(site)
       totalWaitingJobs += result['Value'][tqID]['Jobs']
 
-    tqIDList = result['Value'].keys()
+    tqIDList = list(result['Value'].keys())
 
     result = virtualMachineDB.getInstanceCounters('Status', {})
     totalVMs = 0
@@ -363,7 +349,7 @@ class CloudDirector(AgentModule):
       return S_ERROR('Can not get the site mask')
     siteMaskList = result.get('Value', [])
 
-    vmTypeList = self.vmTypeDict.keys()
+    vmTypeList = list(self.vmTypeDict.keys())
     random.shuffle(vmTypeList)
     totalSubmittedPilots = 0
     matchedQueues = 0
@@ -425,7 +411,7 @@ class CloudDirector(AgentModule):
 
       matchedQueues += 1
       totalTQJobs = 0
-      tqIDList = taskQueueDict.keys()
+      tqIDList = list(taskQueueDict.keys())
       for tq in taskQueueDict:
         totalTQJobs += taskQueueDict[tq]['Jobs']
 

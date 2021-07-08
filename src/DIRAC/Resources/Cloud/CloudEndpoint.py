@@ -1,9 +1,3 @@
-###########################################################
-# File: CloudEndpoint.py
-# Original author: Victor Mendez
-# Modified: A.T.
-###########################################################
-
 """
    CloudEndpoint is a base class for the clients used to connect to different
    cloud providers
@@ -22,14 +16,14 @@ import time
 from libcloud import security
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
+from libcloud.common.exceptions import BaseHTTPError
 
 # DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import makeGuid
 
 from DIRAC.Resources.Cloud.Endpoint import Endpoint
-
-DEBUG = False
+from DIRAC.Resources.Cloud.Utilities import STATE_MAP
 
 
 class CloudEndpoint(Endpoint):
@@ -37,8 +31,6 @@ class CloudEndpoint(Endpoint):
   """
 
   def __init__(self, parameters=None):
-    """
-    """
     super(CloudEndpoint, self).__init__(parameters=parameters)
     # logger
     self.log = gLogger.getSubLogger('CloudEndpoint')
@@ -64,9 +56,6 @@ class CloudEndpoint(Endpoint):
     username = self.parameters.get('User')
     password = self.parameters.get('Password')
 
-    # log info:
-    if DEBUG:
-      os.system("export LIBCLOUD_DEBUG=/tmp/libcloud.log")
     for key in connDict:
       self.log.info("%s: %s" % (key, connDict[key]))
 
@@ -77,8 +66,7 @@ class CloudEndpoint(Endpoint):
 
     self.__driver = self.driverClass(username, password, **connDict)
 
-    result = self.__checkConnection()
-    return result
+    return self.__checkConnection()
 
   def __checkConnection(self):
     """
@@ -88,7 +76,6 @@ class CloudEndpoint(Endpoint):
     """
     try:
       _result = self.__driver.list_images()
-      # the libcloud library, throws Exception. Nothing to do.
     except Exception as errmsg:
       return S_ERROR(errmsg)
 
@@ -106,7 +93,6 @@ class CloudEndpoint(Endpoint):
     """
     try:
       images = self.__driver.list_images()
-      # the libcloud library, throws Exception. Nothing to do.
     except Exception as errmsg:
       return S_ERROR(errmsg)
 
@@ -133,7 +119,6 @@ class CloudEndpoint(Endpoint):
     """
     try:
       flavors = self.__driver.list_sizes()
-      # the libcloud library, throws Exception. Nothing to do.
     except Exception as errmsg:
       return S_ERROR(errmsg)
 
@@ -168,7 +153,6 @@ class CloudEndpoint(Endpoint):
 
     try:
       secGroups = self.__driver.ex_list_security_groups()
-      # the libcloud library, throws Exception. Nothing to do.
     except Exception as errmsg:
       return S_ERROR(errmsg)
 
@@ -195,8 +179,8 @@ class CloudEndpoint(Endpoint):
       else:
         break
 
-    # We failed submission utterly
     if not outputDict:
+      # Submission failed
       return result
 
     return S_OK(outputDict)
@@ -229,19 +213,20 @@ class CloudEndpoint(Endpoint):
     createNodeDict = {}
 
     # Get the image object
-    if "ImageID" in self.parameters and 'ImageName' not in self.parameters:
+    if "ImageID" in self.parameters:
+      try:
+        image = self.__driver.get_image(self.parameters['ImageID'])
+      except BaseHTTPError as err:
+        if err.code == 404:
+          # Image not found
+          return S_ERROR("Image with ID %s not found" % self.parameters['ImageID'])
+        return S_ERROR("Failed to get image for ID %s (%s)" %
+                       (self.parameters['ImageID'], str(err)))
+    elif "ImageName" in self.parameters:
       result = self.__getImageByName(self.parameters['ImageName'])
       if not result['OK']:
         return result
       image = result['Value']
-    elif "ImageID" in self.parameters:
-      try:
-        image = self.__driver.get_image(self.parameters['ImageID'])
-      except Exception as e:
-        if "Image not found" in str(e):
-          return S_ERROR("Image with ID %s not found" % self.parameters['ImageID'])
-        else:
-          return S_ERROR("Failed to get image for ID %s" % self.parameters['ImageID'])
     else:
       return S_ERROR('No image specified')
     createNodeDict['image'] = image
@@ -328,7 +313,7 @@ class CloudEndpoint(Endpoint):
   def getVMNodes(self):
     """ Get all the nodes on the endpoint
 
-    :return:
+    :return: S_OK(list of Node) / S_ERROR
     """
 
     try:
@@ -391,18 +376,10 @@ class CloudEndpoint(Endpoint):
       return result
 
     state = result['Value'].state
-
-    # reversed from libcloud
-    stateMapDict = {0: 'RUNNING',
-                    1: 'REBOOTING',
-                    2: 'TERMINATED',
-                    3: 'PENDING',
-                    4: 'UNKNOWN'}
-
-    if state not in stateMapDict:
+    if state not in STATE_MAP:
       return S_ERROR('State %s not in STATEMAP' % state)
 
-    return S_OK(stateMapDict[state])
+    return S_OK(STATE_MAP[state])
 
   def getVMNetwork(self, networkNames=None):
     """ Get a network object corresponding to the networkName

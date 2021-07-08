@@ -18,7 +18,7 @@ from DIRAC.Core.Security.Locations import getProxyLocation
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 from DIRAC.Resources.Cloud.EndpointFactory import EndpointFactory
-from DIRAC.Resources.Cloud.ConfigHelper import getPilotBootstrapParameters, \
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getPilotBootstrapParameters, \
     getVMTypeConfig, getVMTypes
 from DIRAC.Core.Utilities.File import makeGuid
 

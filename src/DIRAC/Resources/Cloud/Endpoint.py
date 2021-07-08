@@ -21,8 +21,6 @@ class Endpoint(object):
   """
 
   def __init__(self, parameters=None, bootstrapParameters=None):
-    """
-    """
     # logger
     if not parameters:
       parameters = {}
@@ -44,9 +42,6 @@ class Endpoint(object):
 
   def getParameterDict(self):
     return self.parameters
-
-  def initialize(self):
-    pass
 
   def setProxy(self, proxy):
     self.proxy = proxy

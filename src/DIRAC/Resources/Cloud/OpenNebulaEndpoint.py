@@ -31,8 +31,6 @@ class OpenNebulaEndpoint(Endpoint):
   """
 
   def __init__(self, parameters=None):
-    """
-    """
     super(OpenNebulaEndpoint, self).__init__(
         parameters=parameters, bootstrapParameters=parameters)
 
@@ -180,9 +178,7 @@ USERDATA_ENCODING = "base64"
     )
 
     # XXX: Sometimes it returns 4 values although documemntation says otherwise
-    ok = ret[0]
-    payload = ret[1]
-    error = ret[2]
+    ok, payload, error = ret[:3]
 
     if ok:
       return S_OK((payload, None))

@@ -28,7 +28,7 @@ def main():
 
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
-  from DIRAC.Resources.Cloud.ConfigHelper import getVMTypes
+  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getVMTypes
 
   def setCEName(args):
     global ceName

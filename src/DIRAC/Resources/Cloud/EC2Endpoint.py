@@ -20,9 +20,7 @@ __RCSID__ = '$Id$'
 class EC2Endpoint(Endpoint):
 
   def __init__(self, parameters=None):
-    """
-    """
-    Endpoint.__init__(self, parameters=parameters)
+    super(EC2Endpoint, self).__init__(parameters=parameters)
     # logger
     self.log = gLogger.getSubLogger('EC2Endpoint')
     self.valid = False
@@ -39,7 +37,7 @@ class EC2Endpoint(Endpoint):
         'RegionName': 'region_name',
         'AccessKey': 'aws_access_key_id',
         'SecretKey': 'aws_secret_access_key',
-        'EndpointUrl': 'endpoint_url',          # EndpointUrl is optional
+        'EndpointUrl': 'endpoint_url',  # EndpointUrl is optional
     }
 
     connDict = {}
@@ -50,6 +48,7 @@ class EC2Endpoint(Endpoint):
     try:
       self.__ec2 = boto3.resource('ec2', **connDict)
     except Exception as e:
+      self.log.exception("Failed to connect to EC2")
       errorStatus = "Can't connect to EC2: " + str(e)
       return S_ERROR(errorStatus)
 
@@ -67,6 +66,7 @@ class EC2Endpoint(Endpoint):
       with open(instanceTypeFile, 'r') as f:
         self.__instanceTypeInfo = json.load(f)
     except Exception as e:
+      self.log.exception("Failed to fetch EC2 instance details")
       errmsg = "Exception loading EC2 instance type info: %s" % e
       self.log.error(errmsg)
       return S_ERROR(errmsg)
@@ -82,6 +82,7 @@ class EC2Endpoint(Endpoint):
     try:
       self.__ec2.images.filter(Owners=['self'])
     except Exception as e:
+      self.log.exception("Failed to list EC2 images")
       return S_ERROR(e)
 
     return S_OK()
@@ -120,7 +121,7 @@ class EC2Endpoint(Endpoint):
           imageId = image.id
           break
       except Exception as e:
-        self.log.error("Exception when get ID from image name %s:" % self.parameters['ImageName'], e)
+        self.log.exception("Exception when get ID from image name %s:" % self.parameters['ImageName'])
         return S_ERROR("Failed to get image for Name %s" % self.parameters['ImageName'])
       if imageId is None:
         return S_ERROR("Image name %s not found" % self.parameters['ImageName'])
@@ -128,6 +129,7 @@ class EC2Endpoint(Endpoint):
       try:
         self.__ec2.images.filter(ImageIds=[self.parameters['ImageID']])
       except Exception as e:
+        self.log.exception("Failed to get EC2 image list")
         return S_ERROR("Failed to get image for ID %s" % self.parameters['ImageID'])
       imageId = self.parameters['ImageID']
     else:
@@ -159,9 +161,8 @@ class EC2Endpoint(Endpoint):
     try:
       instances = self.__ec2.create_instances(MinCount=1, MaxCount=1, **createNodeDict)
     except Exception as e:
-      errmsg = 'Exception in ec2 create_instances: %s' % e
-      self.log.error(errmsg)
-      return S_ERROR(errmsg)
+      self.log.exception("Failed to create EC2 instance")
+      return S_ERROR('Exception in ec2 create_instances: %s' % e)
 
     if len(instances) < 1:
       errmsg = 'ec2 create_instances failed to create any VM'
@@ -174,9 +175,8 @@ class EC2Endpoint(Endpoint):
     try:
       self.__ec2.create_tags(Resources=[ec2Id], Tags=tags)
     except Exception as e:
-      errmsg = 'Exception setup name for %s: %s' % (ec2Id, e)
-      self.log.error(errmsg)
-      return S_ERROR(errmsg)
+      self.log.exception("Failed to tag EC2 instance")
+      return S_ERROR('Exception setup name for %s: %s' % (ec2Id, e))
 
     # Properties of the instance
     nodeDict = {}
@@ -207,8 +207,7 @@ class EC2Endpoint(Endpoint):
     try:
       self.__ec2.Instance(nodeID).terminate()
     except Exception as e:
-      errmsg = 'Exception terminate instance %s: %s' % (nodeID, e)
-      self.log.error(errmsg)
-      return S_ERROR(errmsg)
+      self.log.exception("Failed to terminate EC2 instance")
+      return S_ERROR('Exception terminate instance %s: %s' % (nodeID, e))
 
     return S_OK()

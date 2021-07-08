@@ -1,8 +1,3 @@
-########################################################################
-# File :   VirtualMachineDB.py
-# Author : Ricardo Graciani
-# occi and multi endpoint author : Victor Mendez
-########################################################################
 """ VirtualMachineDB class is a front-end to the virtual machines DB
 
   Life cycle of VMs Images in DB
@@ -32,7 +27,7 @@
 
   Life cycle of VMs RunningPods in DB
     * New:       Inserted by VM Scheduler (RunningPod - Status = New ) if not existing when launching a new instance
-    * Unactive:  Declared by VMScheduler Server when out of campaign dates
+    * InActive:  Declared by VMScheduler Server when out of campaign dates
     * Active:    Declared by VMScheduler Server when withing of campaign dates
     * Error:     For compatibility with common private functions
 
@@ -71,8 +66,8 @@ class VirtualMachineDB(DB):
                                      'Halted': ['New', 'Running', 'Stopping', 'Stalled', 'Halted'],
                                      'Stalled': ['New', 'Submitted', 'Running'],
                                      },
-                        'RunningPod': {'Active': ['New', 'Active', 'Unactive'],
-                                       'Unactive': ['New', 'Active', 'Unactive'],
+                        'RunningPod': {'Active': ['New', 'Active', 'InActive'],
+                                       'InActive': ['New', 'Active', 'InActive'],
                                        }
                         }
 
@@ -136,9 +131,7 @@ class VirtualMachineDB(DB):
   #######################
 
   def __init__(self, maxQueueSize=10):
-
-    DB.__init__(self, 'VirtualMachineDB', 'WorkloadManagement/VirtualMachineDB')
-
+    super(VirtualMachineDB, self).__init__('VirtualMachineDB', 'WorkloadManagement/VirtualMachineDB')
     result = self.__initializeDB()
     if not result['OK']:
       raise Exception('Can\'t create tables: %s' % result['Message'])
@@ -175,9 +168,9 @@ class VirtualMachineDB(DB):
     enddate = Time.fromString(runningPodDict['CampaignEndDate'])
     currentdate = Time.date()
     if currentdate < startdate:
-      runningPodState = 'Unactive'
+      runningPodState = 'InActive'
     elif currentdate > enddate:
-      runningPodState = 'Unactive'
+      runningPodState = 'InActive'
     else:
       runningPodState = 'Active'
 
@@ -295,8 +288,8 @@ class VirtualMachineDB(DB):
     Check Status of a given image
     Will insert a new Instance in the DB
     returns:
-      S_OK( InstanceID ) if new Instance is properly inserted
-      S_ERROR(ErrorMessage) otherwise
+    S_OK( InstanceID ) if new Instance is properly inserted
+    S_ERROR(ErrorMessage) otherwise
     """
     imageStatus = self.checkImageStatus(imageName)
     if not imageStatus['OK']:
@@ -308,7 +301,7 @@ class VirtualMachineDB(DB):
     """
     Assign a uniqueID to an instance
     """
-    result = self.__getInstanceID(uniqueID)
+    result = self.getInstanceID(uniqueID)
     if result['OK']:
       return S_ERROR('UniqueID is not unique: %s' % uniqueID)
 
@@ -320,9 +313,6 @@ class VirtualMachineDB(DB):
     try:
       instanceID = int(instanceID)
     except ValueError:
-      # except Exception, e:
-      # FIXME: do we really want to raise an Exception ?
-      # raise e
       return S_ERROR("instanceID has to be a number")
 
     tableName, _validStates, idName = self.__getTypeTuple('Instance')
@@ -332,8 +322,9 @@ class VirtualMachineDB(DB):
 
   def getInstanceParameter(self, pName, instanceID):
     """ Get the instance parameter pName for the given instanceID
-    :param pName: parameter name
-    :param instance ID: instance ID
+
+    :param str pName: parameter name
+    :param str instanceID: instance unique identifier
     :return: S_OK/S_ERROR, parameter value
     """
 
@@ -359,7 +350,8 @@ class VirtualMachineDB(DB):
 
   def getUniqueIDByName(self, instanceName):
     """ Get the cloud provider unique ID corresponding to the DIRAC unique name
-    :param name: VM name
+
+    :param str instanceName: VM name
     :return: S_OK/S_ERROR, cloud unique ID as value
     """
     tableName, _validStates, idName = self.__getTypeTuple('Instance')
@@ -376,15 +368,22 @@ class VirtualMachineDB(DB):
 
   def getInstanceID(self, uniqueID):
     """
-    Public interface for  __getInstanceID
+    For a given uniqueID of an instance return associated internal InstanceID
     """
-    return self.__getInstanceID(uniqueID)
+    tableName, _validStates, idName = self.__getTypeTuple('Instance')
+
+    result = self.getFields(tableName, [idName], {'UniqueID': uniqueID})
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      return S_ERROR('Unknown %s = %s' % ('UniqueID', uniqueID))
+    return S_OK(result['Value'][0][0])
 
   def declareInstanceSubmitted(self, uniqueID):
     """
     After submission of the instance the Director should declare the submitted Status
     """
-    instanceID = self.__getInstanceID(uniqueID)
+    instanceID = self.getInstanceID(uniqueID)
     if not instanceID['OK']:
       return instanceID
     instanceID = instanceID['Value']
@@ -422,7 +421,7 @@ class VirtualMachineDB(DB):
     - instanceName does not have a "Submitted" or "Contextualizing" entry
     - uniqueID is not unique
     """
-    instanceID = self.__getInstanceID(uniqueID)
+    instanceID = self.getInstanceID(uniqueID)
     if not instanceID['OK']:
       return instanceID
     instanceID = instanceID['Value']
@@ -440,14 +439,18 @@ class VirtualMachineDB(DB):
 
   def declareInstanceStopping(self, instanceID):
     """
-    From "Stop" buttom of Browse Instance
-    Declares "Stopping" the instance, next heat-beat from VM will recibe a stop response to do an ordenate termination
-    It returns S_ERROR if the status is not OK
+    Mark a VM instance to be stopped.
+
+    Next time the instance's VirtualMachineMonitor checks in for an update
+    it will be told to halt.
+
+    :return: S_OK if instance updated, S_ERROR otherwise.
     """
     status = self.__setState('Instance', instanceID, 'Stopping')
     if status['OK']:
-      self.__addInstanceHistory(instanceID, 'Stopping')
-
+      res = self.__addInstanceHistory(instanceID, 'Stopping')
+      if not res['OK']:
+        self.log.warn('Failed to update instance history for %s: %s' % (instanceID, res['Message']))
     return status
 
   def getInstanceStatus(self, instanceID):
@@ -489,7 +492,7 @@ class VirtualMachineDB(DB):
     Declares "Halted" the instance and the image
     It returns S_ERROR if the status is not OK
     """
-    instanceID = self.__getInstanceID(uniqueID)
+    instanceID = self.getInstanceID(uniqueID)
     if not instanceID['OK']:
       return instanceID
     instanceID = instanceID['Value']
@@ -532,7 +535,7 @@ class VirtualMachineDB(DB):
     Declares "Running" the instance and the image
     It returns S_ERROR if the status is not OK
     """
-    instanceID = self.__getInstanceID(uniqueID)
+    instanceID = self.getInstanceID(uniqueID)
     if not instanceID['OK']:
       return instanceID
     instanceID = instanceID['Value']
@@ -695,7 +698,7 @@ class VirtualMachineDB(DB):
     """
     Get all fields for a uniqueID
     """
-    instanceID = self.__getInstanceID(uniqueID)
+    instanceID = self.getInstanceID(uniqueID)
     if not instanceID['OK']:
       return instanceID
     instanceID = instanceID['Value']
@@ -905,8 +908,7 @@ class VirtualMachineDB(DB):
           if rDate not in vmData[vmID]:
             if prevValues:
               instValues = [rDate]
-              for i in range(len(prevValues)):
-                instValues.append(prevValues[i])
+              instValues.extend(prevValues)
               dbData.append(instValues)
           else:
             row = vmData[vmID][rDate]
@@ -919,7 +921,7 @@ class VirtualMachineDB(DB):
 
             instValues = [rDate]
             for i in range(len(row)):
-              instValues.append(row[i])
+              instValues.extend(row)
             dbData.append(instValues)
     else:
       # If we don't require extension just strip vmName
@@ -1272,19 +1274,6 @@ class VirtualMachineDB(DB):
 
     return self._update(sqlUpdate)
 
-  def __getInstanceID(self, uniqueID):
-    """
-    For a given uniqueID of an instance return associated internal InstanceID
-    """
-    tableName, _validStates, idName = self.__getTypeTuple('Instance')
-
-    result = self.getFields(tableName, [idName], {'UniqueID': uniqueID})
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      return S_ERROR('Unknown %s = %s' % ('UniqueID', uniqueID))
-    return S_OK(result['Value'][0][0])
-
   def __getImageID(self, imageName):
     """
     For a given imageName return corresponding ID
@@ -1401,9 +1390,7 @@ class VirtualMachineDB(DB):
   def __getStatus(self, element, iD):
     """
     Check and return status of Images and Instances by ID
-    returns:
-      S_OK(Status) if Status is valid and not Error
-      S_ERROR(ErrorMessage) otherwise
+    :return: S_OK(tuple(status(int), message(str))) or S_ERROR(error(str))
     """
     tableName, validStates, idName = self.__getTypeTuple(element)
     if not tableName:

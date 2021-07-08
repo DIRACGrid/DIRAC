@@ -46,12 +46,12 @@ to the usual DIRAC webinterface for summarising the contents of the database.
 Install VMDIRAC
 ---------------
 
-On a DIRAC server (generally collocated with the other WorkdloadManagement
+On a DIRAC server (generally collocated with the other WorkloadManagement
 system components), configure and install the extra components:
 
-* Server local configuration
+* Resource configuration
 
-  In the server local configuration add the User/Password information to connect to the Cloud endpoint. Also you should put a valid path for the host certificate, *e.g.*:
+  In the configuration add the User/Password information to connect to the Cloud endpoint. Also you should put a valid path for the host certificate, *e.g.*:
 
   ::
 
@@ -65,7 +65,7 @@ system components), configure and install the extra components:
             {
               Cloud
               {
-                194.214.86.244
+                example.cloud.hostname
                 {
                   User = xxxx
                   Password = xxxx
@@ -92,6 +92,7 @@ Setup for using cloudinit and Pilot3
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Using OpenStack with an application credential
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 * The user must have access to the OpenStack cloud and be allowed to start up instances.
 * Login to the cloud webinterface with your account.
 * Go to the identity -> Application credentials panel
@@ -117,10 +118,10 @@ On the OpenStack Resource you will need the following:
 
   ::
  
-     CLOUD.ExampleName.uk
+      CLOUD.ExampleName.uk
       {
-	     Name = [ExampleName]
-	     # must be unique, use e.g. hostname of the OpenStack webinterface
+        Name = [ExampleName]
+        # must be unique, use e.g. hostname of the OpenStack webinterface
         CE = [hostname.example.ac.uk]
         Cloud
         {

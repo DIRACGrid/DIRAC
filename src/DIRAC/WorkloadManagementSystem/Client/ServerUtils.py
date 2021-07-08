@@ -1,7 +1,3 @@
-########################################################################
-# File :   ServerUtils.py
-# Author : Ricardo Graciani
-########################################################################
 """
   Provide uniform interface to backend for local and remote clients.return
 
@@ -51,7 +47,7 @@ def getVirtualMachineDB():
   VirtualMachineDB = None
   try:
     from DIRAC.WorkloadManagementSystem.DB.VirtualMachineDB import VirtualMachineDB
-  except BaseException:
+  except Exception:
     pass
   return getDBOrClient(VirtualMachineDB, serverName)
 

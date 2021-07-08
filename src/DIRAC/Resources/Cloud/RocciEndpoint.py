@@ -21,9 +21,7 @@ __RCSID__ = '$Id$'
 class RocciEndpoint(Endpoint):
 
   def __init__(self, parameters=None):
-    """
-    """
-    Endpoint.__init__(self, parameters=parameters)
+    super(RocciEndpoint, self).__init__(parameters=parameters)
     # logger
     self.log = gLogger.getSubLogger('RocciEndpoint')
     self.valid = False

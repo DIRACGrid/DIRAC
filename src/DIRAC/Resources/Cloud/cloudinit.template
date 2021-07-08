@@ -82,7 +82,7 @@ write_files:
      if [ -f /cvmfs/dirac.egi.eu/pilot/pilot.tar ]; then
        tar xf /cvmfs/dirac.egi.eu/pilot/pilot.tar
      else
-       curl -o dirac-install.py https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py
+       curl -o dirac-install.py https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
        chmod +x dirac-install.py 
        for SRC in dirac-pilot.py pilotCommands.py pilotTools.py PilotLogger.py PilotLoggerTools.py MessageSender.py; do
          curl -o ${SRC} https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/${SRC}
@@ -119,7 +119,7 @@ write_files:
      if [ -f /cvmfs/dirac.egi.eu/pilot/pilot.tar ]; then
        tar xf /cvmfs/dirac.egi.eu/pilot/pilot.tar dirac-install.py
      else
-       curl -o dirac-install.py https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py
+       curl -o dirac-install.py https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py
        chmod +x dirac-install.py
      fi
 
