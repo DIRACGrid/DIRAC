@@ -314,12 +314,16 @@ installDIRAC() {
   fi
 
   if [[ "${USE_PYTHON3:-}" == "Yes" ]]; then
-    if [[ -n "${DIRACOSVER:-}" ]] && [[ "${DIRACOSVER}" != "master" ]]; then
-      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+    if [[ -n "${DIRACOS_TARBALL_PATH:-}" ]]; then
+      cp "${DIRACOS_TARBALL_PATH}" "installer.sh"
     else
-      DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
+      if [[ -n "${DIRACOSVER:-}" ]] && [[ "${DIRACOSVER}" != "master" ]]; then
+        DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOSVER}/DIRACOS-Linux-x86_64.sh"
+      else
+        DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
+      fi
+      curl -L "${DIRACOS2_URL}" > "installer.sh"
     fi
-    curl -L "${DIRACOS2_URL}" > "installer.sh"
     bash "installer.sh"
     rm "installer.sh"
     # TODO: Remove
