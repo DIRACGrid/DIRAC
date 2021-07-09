@@ -127,16 +127,25 @@ class Operations(object):
     self._setup = setup or getSetup()
     self._group = group
 
-    # Define the configuration sections that will be merged, e.g.:
-    # /Operations, /Operations/<vo>, /Operations/<setup>, /Operations/<vo>/<setup>, etc.
-    self.__paths = [self._basePath] if self._useBasePathAsDefault else []
+    self.__paths = []
+    # Define the configuration sections that will be merged in the following order:
+    # -> /<base path>/                          (need to set _useBasePathAsDefault)
+    # -> /<base path>/Defaults/
+    # -> /<base path>/<setup>/
+    # -> /<base path>/<vo>/                     (need to set _useBasePathAsDefault)
+    # -> /<base path>/<vo>/Defaults/
+    # -> /<base path>/<vo>/<setup>/
+    if self._useBasePathAsDefault:
+      self.__paths.append(self._basePath)
     self.__paths.append(os.path.join(self._basePath, 'Defaults'))
-    if self._vo:
-      self.__paths.append(os.path.join(self._basePath, self._vo))
-      self.__paths.append(os.path.join(self._basePath, self._vo, 'Defaults'))
     if self._setup:
       self.__paths.append(os.path.join(self._basePath, self._setup))
-      self.__paths.append(os.path.join(self._basePath, self._vo, self._setup))
+    if self._vo:
+      if self._useBasePathAsDefault:
+        self.__paths.append(os.path.join(self._basePath, self._vo))
+      self.__paths.append(os.path.join(self._basePath, self._vo, 'Defaults'))
+      if self._setup:
+        self.__paths.append(os.path.join(self._basePath, self._vo, self._setup))
 
   def _cacheExpired(self):
     """ Cache expired or not
