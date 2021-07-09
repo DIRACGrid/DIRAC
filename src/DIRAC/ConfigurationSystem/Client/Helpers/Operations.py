@@ -80,7 +80,8 @@ import os
 from diraccfg import CFG
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities import LockRing
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
@@ -89,93 +90,111 @@ class Operations(object):
   """ Operations class
 
       The /Operations CFG section is maintained in a cache by an Operations object
+
+      You can also inherit this class to handle another section of the configuration
+      by specifying the path to it in the _basePath variable, e.g.::
+      
+        class SessionData(Operations):
+
+          _basePath = '/WebApp'
+          _useBasePathAsDefault = True
+
+          def __init__(self, credDict, setup):
+            self.__credDict = credDict
+            super(SessionData, self).__init__(group=credDict.get("group", ""), setup=setup)
+          
+          def getTitle(self):
+            return self.getValue('title', 'Hello world!')
   """
 
   __cache = {}
   __cacheVersion = 0
   __cacheLock = LockRing.LockRing().getLock()
 
-  def __init__(self, vo=False, group=False, setup=False):
-    """ c'tor
+  # the base directory where the "Defaults", VO and setup sections will be located
+  _basePath = '/Operations'
+  # Should the configuration in the base directory also be considered?
+  _useBasePathAsDefault = False
 
-        Setting some defaults
+  def __init__(self, vo=None, group=None, setup=None):
+    """ Determination of VO/setup and generation a list of relevant directories
+
+        :param str vo: VO name
+        :param str group: group name
+        :param str setup: setup name
     """
-    self.__uVO = vo
-    self.__uGroup = group
-    self.__uSetup = setup
-    self.__vo = False
-    self.__setup = False
-    self.__discoverSettings()
+    self._vo = getVOForGroup(group or '') or vo or getVOfromProxyGroup().get('Value', '')
+    self._setup = setup or getSetup()
+    self._group = group
 
-  def __discoverSettings(self):
-    """ Discovers the vo and the setup
+    # Define the configuration sections that will be merged, e.g.:
+    # /Operations, /Operations/<vo>, /Operations/<setup>, /Operations/<vo>/<setup>, etc.
+    self.__paths = [self._basePath] if self._useBasePathAsDefault else []
+    self.__paths.append([os.path.join(self._basePath, 'Defaults')])
+    if self._vo:
+      self.__paths.append(os.path.join(self._basePath, self._vo))
+      self.__paths.append([os.path.join(self._basePath, self._vo, 'Defaults')])
+    if self._setup:
+      self.__paths.append(os.path.join(self._basePath, self._setup))
+      self.__paths.append(os.path.join(self._basePath, self._vo, self._setup))
+
+  def _cacheExpired(self):
+    """ Cache expired or not
+
+        :return: bool
     """
-    # Set the VO
-    globalVO = CSGlobals.getVO()
-    if globalVO:
-      self.__vo = globalVO
-    elif self.__uVO:
-      self.__vo = self.__uVO
-    elif self.__uGroup:
-      self.__vo = Registry.getVOForGroup(self.__uGroup)
-      if not self.__vo:
-        self.__vo = False
-    else:
-      result = getVOfromProxyGroup()
-      if result['OK']:
-        self.__vo = result['Value']
-    # Set the setup
-    self.__setup = False
-    if self.__uSetup:
-      self.__setup = self.__uSetup
-    else:
-      self.__setup = CSGlobals.getSetup()
+    return self.__cacheVersion != gConfigurationData.getVersion()
 
-  def __getCache(self):
-    Operations.__cacheLock.acquire()
+  def __getCFGCache(self):
+    """ Get cached CFG
+
+        :return: CFG
+    """
+    self.__cacheLock.acquire()
     try:
       currentVersion = gConfigurationData.getVersion()
-      if currentVersion != Operations.__cacheVersion:
-        Operations.__cache = {}
-        Operations.__cacheVersion = currentVersion
+      if currentVersion != self.__cacheVersion:
+        self.__cache = {}
+        self.__cacheVersion = currentVersion
 
-      cacheKey = (self.__vo, self.__setup)
-      if cacheKey in Operations.__cache:
-        return Operations.__cache[cacheKey]
+      cacheKey = (self._vo, self._setup)
+      if cacheKey in self.__cache:
+        return self.__cache[cacheKey]
 
       mergedCFG = CFG()
 
-      for path in self.__getSearchPaths():
+      for path in self.__paths:
         pathCFG = gConfigurationData.mergedCFG[path]
         if pathCFG:
           mergedCFG = mergedCFG.mergeWith(pathCFG)
 
-      Operations.__cache[cacheKey] = mergedCFG
+      self.__cache[cacheKey] = mergedCFG
 
-      return Operations.__cache[cacheKey]
+      return self.__cache[cacheKey]
     finally:
       try:
-        Operations.__cacheLock.release()
+        self.__cacheLock.release()
       except thread.error:
         pass
 
-  def __getSearchPaths(self):
-    paths = ["/Operations/Defaults", "/Operations/%s" % self.__setup]
-    if not self.__vo:
-      globalVO = CSGlobals.getVO()
-      if not globalVO:
-        return paths
-      self.__vo = CSGlobals.getVO()
-    paths.append("/Operations/%s/Defaults" % self.__vo)
-    paths.append("/Operations/%s/%s" % (self.__vo, self.__setup))
-    return paths
-
   def getValue(self, optionPath, defaultValue=None):
-    return self.__getCache().getOption(optionPath, defaultValue)
+    """ Get option value
 
-  def __getCFG(self, sectionPath):
-    cacheCFG = self.__getCache()
-    section = cacheCFG.getRecursive(sectionPath)
+        :param str optionPath: option path
+        :param defaultValue: default value
+
+        :return: value
+    """
+    return self.__getCFGCache().getOption(optionPath, defaultValue)
+
+  def _getCFG(self, sectionPath='/'):
+    """ Get merged CFG object for section
+
+        :param str sectionPath: section path
+
+        :return: S_OK(CFG)/S_ERROR()
+    """
+    section = self.__getCFGCache().getRecursive(sectionPath)
     if not section:
       return S_ERROR("%s in Operations does not exist" % sectionPath)
     sectionCFG = section['value']
@@ -184,45 +203,69 @@ class Operations(object):
     return S_OK(sectionCFG)
 
   def getSections(self, sectionPath, listOrdered=False):
-    result = self.__getCFG(sectionPath)
-    if not result['OK']:
-      return result
-    sectionCFG = result['Value']
-    return S_OK(sectionCFG.listSections(listOrdered))
+    """ Get sections
+
+        :param str sectionPath: section path
+        :param bool listOrdered: to get ordered list
+
+        :return: S_OK(list)/S_ERROR()
+    """
+    result = self._getCFG(sectionPath)
+    return S_OK(result['Value'].listSections(listOrdered)) if result['OK'] else result
 
   def getOptions(self, sectionPath, listOrdered=False):
-    result = self.__getCFG(sectionPath)
-    if not result['OK']:
-      return result
-    sectionCFG = result['Value']
-    return S_OK(sectionCFG.listOptions(listOrdered))
+    """ Get options
+
+        :param str sectionPath: section path
+        :param bool listOrdered: to get ordered list
+
+        :return: S_OK(list)/S_ERROR()
+    """
+    result = self._getCFG(sectionPath)
+    return S_OK(result['Value'].listOptions(listOrdered)) if result['OK'] else result
 
   def getOptionsDict(self, sectionPath):
-    result = self.__getCFG(sectionPath)
-    if not result['OK']:
-      return result
-    sectionCFG = result['Value']
-    data = {}
-    for opName in sectionCFG.listOptions():
-      data[opName] = sectionCFG[opName]
-    return S_OK(data)
+    """ Get options dictionary
 
-  def getPath(self, option, vo=False, setup=False):
+        :param str sectionPath: section path
+
+        :return: S_OK(dict)/S_ERROR()
     """
-    Generate the CS path for an option:
+    result = self._getCFG(sectionPath)
+    return S_OK({o: result['Value'][o] for o in result['Value'].listOptions()}) if result['OK'] else result
 
-      - if vo is not defined, the helper's vo will be used for multi VO installations
-      - if setup evaluates False (except None) -> The helpers setup will  be used
-      - if setup is defined -> whatever is defined will be used as setup
-      - if setup is None -> Defaults will be used
+  def getPath(self, instance):
+    """ Find the CS path for an option or section
 
-    :param option: path with respect to the Operations standard path
-    :type option: string
+        :param str instance: path with respect to the Operations standard path
+
+        :return: str
     """
+    return getOptionPath(instance) or getSectionPath(instance)
 
-    for path in self.__getSearchPaths():
+  def getOptionPath(self, option):
+    """ Find the CS path for an option
+    
+        :param str option: path with respect to the WebApp standard path
+
+        :return: str
+    """
+    for path in self.__paths:
       optionPath = os.path.join(path, option)
-      value = gConfig.getValue(optionPath, 'NoValue')
-      if value != "NoValue":
+      if gConfig.getValue(optionPath, 'NoValue') != "NoValue":
         return optionPath
+    return ''
+
+  def getSectionPath(self, section):
+    """ Find the CS path for an section
+    
+        :param str section: path with respect to the WebApp standard path
+
+        :return: str
+    """
+    for path in self.__paths:
+      sectionPath = os.path.join(path, section.strip('/'))
+      result = gConfig.getSections(os.path.dirname(sectionPath))
+      if result['OK'] and os.path.basename(sectionPath) in result['Value']:
+        return sectionPath
     return ''
