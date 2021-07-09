@@ -17,13 +17,11 @@ __RCSID__ = '$Id$'
 
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-# from DIRAC.Core.Base import Script
 
 
 # Define a simple class to hold the script parameters
 class Params(object):
-  """
-    Class holding the parameters raw and pingsToDo, and callbacks for their respective switches.
+  """ Class holding the parameters raw and pingsToDo, and callbacks for their respective switches.
   """
 
   def __init__(self):
