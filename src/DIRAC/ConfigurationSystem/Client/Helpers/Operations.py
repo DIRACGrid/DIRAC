@@ -93,7 +93,7 @@ class Operations(object):
 
       You can also inherit this class to handle another section of the configuration
       by specifying the path to it in the _basePath variable, e.g.::
-      
+
         class SessionData(Operations):
 
           _basePath = '/WebApp'
@@ -102,7 +102,7 @@ class Operations(object):
           def __init__(self, credDict, setup):
             self.__credDict = credDict
             super(SessionData, self).__init__(group=credDict.get("group", ""), setup=setup)
-          
+
           def getTitle(self):
             return self.getValue('title', 'Hello world!')
   """
@@ -130,10 +130,10 @@ class Operations(object):
     # Define the configuration sections that will be merged, e.g.:
     # /Operations, /Operations/<vo>, /Operations/<setup>, /Operations/<vo>/<setup>, etc.
     self.__paths = [self._basePath] if self._useBasePathAsDefault else []
-    self.__paths.append([os.path.join(self._basePath, 'Defaults')])
+    self.__paths.append(os.path.join(self._basePath, 'Defaults'))
     if self._vo:
       self.__paths.append(os.path.join(self._basePath, self._vo))
-      self.__paths.append([os.path.join(self._basePath, self._vo, 'Defaults')])
+      self.__paths.append(os.path.join(self._basePath, self._vo, 'Defaults'))
     if self._setup:
       self.__paths.append(os.path.join(self._basePath, self._setup))
       self.__paths.append(os.path.join(self._basePath, self._vo, self._setup))
@@ -241,11 +241,11 @@ class Operations(object):
 
         :return: str
     """
-    return getOptionPath(instance) or getSectionPath(instance)
+    return self.getOptionPath(instance) or self.getSectionPath(instance)
 
   def getOptionPath(self, option):
     """ Find the CS path for an option
-    
+
         :param str option: path with respect to the WebApp standard path
 
         :return: str
@@ -258,7 +258,7 @@ class Operations(object):
 
   def getSectionPath(self, section):
     """ Find the CS path for an section
-    
+
         :param str section: path with respect to the WebApp standard path
 
         :return: str
