@@ -24,8 +24,8 @@ from pprint import pformat
 
 from diraccfg import CFG
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.List import fromChar
 
 
 class CheckConfig(DIRACScript):
@@ -37,15 +37,6 @@ class CheckConfig(DIRACScript):
     self.showAdded = False
     self.showMissingSections = False
     self.showMissingOptions = False
-    self.switches = [
-        ("S:", "system=", "Systems to check, by default all of them are checked", self._setSystems),
-        ("M", "modified", "Show entries which differ from the default", self._setShowModified),
-        ("A", "added", "Show entries which do not exist in ConfigTemplate", self._setShowAdded),
-        ("U", "missingSection", "Show sections which do not exist in the current configuration",
-         self._setShowMissingSections),
-        ("O", "missingOption", "Show options which do not exist in the current configuration",
-         self._setShowMissingOptions)
-    ]
 
   def _setSystems(self, val):
     self.systems = fromChar(val)
@@ -72,9 +63,9 @@ class CheckConfig(DIRACScript):
     self.registerSwitch("M", "modified", "Show entries which differ from the default", self._setShowModified)
     self.registerSwitch("A", "added", "Show entries which do not exist in ConfigTemplate", self._setShowAdded)
     self.registerSwitch("U", "missingSection", "Show sections which do not exist in the current configuration",
-                          self._setShowMissingSections)
+                        self._setShowMissingSections)
     self.registerSwitch("O", "missingOption", "Show options which do not exist in the current configuration",
-                          self._setShowMissingOptions)
+                        self._setShowMissingOptions)
 
     self.parseCommandLine(ignoreErrors=True)
     if not any([self.showModified, self.showAdded, self.showMissingSections, self.showMissingOptions]):

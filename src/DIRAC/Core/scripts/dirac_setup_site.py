@@ -28,9 +28,11 @@ class SetupSite(DIRACScript):
 @SetupSite()
 def main(self):
   self.disableCS()
-  self.registerSwitch("e", "exitOnError",
-                      "flag to exit on error of any component installation",
-                      self.setExitOnError)
+  self.registerSwitch(
+      "e",
+      "exitOnError",
+      "flag to exit on error of any component installation",
+      self.setExitOnError)
 
   self.addDefaultOptionValue('/DIRAC/Security/UseServerCertificate', 'yes')
   self.addDefaultOptionValue('LogLevel', 'INFO')

@@ -28,6 +28,13 @@ class Params(object):
     """ C'or """
     self.raw = False
     self.pingsToDo = 1
+    # Defined all switches that can be used while calling the script from the command line interface.
+    self.switches = [
+        ('', 'text=', 'Text to be printed'),
+        ('u', 'upper', 'Print text on upper case'),
+        ('r', 'showRaw', 'Show raw result from the query', self.setRawResult),
+        ('p:', 'numPings=', 'Number of pings to do (by default 1)', self.setNumOfPingsToDo)
+    ]
 
   def setRawResult(self, _):
     """ ShowRaw option callback function, no option argument.
@@ -51,80 +58,41 @@ class Params(object):
     return S_OK()
 
 
-def registerSwitches():
+# IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
+@DIRACScript()
+def main(self):
   """
-    Registers all switches that can be used while calling the script from the command line interface.
+    This is the script main method, which will hold all the logic.
   """
+  params = Params()
 
-  # Some of the switches have associated a callback, defined on Params class.
-  cliParams = Params()
-
-  switches = [
-      ('', 'text=', 'Text to be printed'),
-      ('u', 'upper', 'Print text on upper case'),
-      ('r', 'showRaw', 'Show raw result from the query', cliParams.setRawResult),
-      ('p:', 'numPings=', 'Number of pings to do (by default 1)', cliParams.setNumOfPingsToDo)
-  ]
-
-  # Register switches
-  for switch in switches:
-    Script.registerSwitch(*switch)
-
-
-def registerArguments():
-  """
-    Registers a positional arguments that can be used while calling the script from the command line interface.
-  """
+  # Script initialization
+  self.registerSwitches(params.switches)
 
   # it is important to add a colon after the name of the argument in the description
-  Script.registerArgument(' ReportType: report type', values=['short', 'detail'])
-  Script.registerArgument(('Name:  user name', 'DN: user DN'))
-  Script.registerArgument(['Service: list of services'], default='no elements', mandatory=False)
-
-
-def parseSwitchesAndPositionalArguments():
-  """
-    Parse switches and positional arguments given to the script
-  """
+  self.registerArgument(' ReportType: report type', values=['short', 'detail'])
+  self.registerArgument(('Name:  user name', 'DN: user DN'))
+  self.registerArgument(['Service: list of services'], default='no elements', mandatory=False)
 
   # Parse the command line and initialize DIRAC
-  Script.parseCommandLine(ignoreErrors=False)
+  self.parseCommandLine(ignoreErrors=False)
 
   # Get arguments
-  allArgs = Script.getPositionalArgs()
+  allArgs = self.getPositionalArgs()
   gLogger.debug('All arguments: %s' % ', '.join(allArgs))
 
   # Get unprocessed switches
-  switches = dict(Script.getUnprocessedSwitches())
+  switches = dict(self.getUnprocessedSwitches())
 
-  gLogger.info('This is the servicesList %s:' % servicesList)  
   gLogger.debug("The switches used are:")
   map(gLogger.debug, switches.iteritems())
 
   # Get grouped positional arguments
-  repType, user, services = Script.getPositionalArgs(group=True)
+  repType, user, services = self.getPositionalArgs(group=True)
   gLogger.debug("The positional arguments are:")
   gLogger.debug("Report type:", repType)
   gLogger.debug("Name or DN:", user)
   gLogger.debug("Services:", services)
-
-  return switches, repType, user, services
-
-
-# IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
-@DIRACScript()
-def main():
-  """
-    This is the script main method, which will hold all the logic.
-  """
-
-  # Script initialization
-  registerSwitches()
-  registerArguments()
-  switchDict, repType, user, services = parseSwitchesAndPositionalArguments()
-
-  # Import the required DIRAC modules
-  from DIRAC.Interfaces.API.Dirac import Dirac
 
   # let's do something
   if services == 'no elements':

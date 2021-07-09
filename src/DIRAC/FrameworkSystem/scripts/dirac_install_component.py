@@ -60,7 +60,7 @@ def main(self):
 
   system = args[0]
   component = args[1]
-  compOrMod = module or component
+  compOrMod = self.module or component
 
   result = gComponentInstaller.getSoftwareComponents(extensionsByPriority())
   if not result['OK']:
@@ -76,30 +76,30 @@ def main(self):
     gLogger.error('Component %s/%s is not available for installation' % (system, component))
     DIRACexit(1)
 
-  if module:
-    result = gComponentInstaller.addDefaultOptionsToCS(gConfig, cType, system, module,
+  if self.module:
+    result = gComponentInstaller.addDefaultOptionsToCS(gConfig, cType, system, self.module,
                                                        extensionsByPriority(),
-                                                       overwrite=overwrite)
+                                                       overwrite=self.overwrite)
     result = gComponentInstaller.addDefaultOptionsToCS(gConfig, cType, system, component,
                                                        extensionsByPriority(),
-                                                       specialOptions=specialOptions,
-                                                       overwrite=overwrite,
+                                                       specialOptions=self.specialOptions,
+                                                       overwrite=self.overwrite,
                                                        addDefaultOptions=False)
   else:
     result = gComponentInstaller.addDefaultOptionsToCS(gConfig, cType, system, component,
                                                        extensionsByPriority(),
-                                                       specialOptions=specialOptions,
-                                                       overwrite=overwrite)
+                                                       specialOptions=self.specialOptions,
+                                                       overwrite=self.overwrite)
 
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)
-  result = gComponentInstaller.installComponent(cType, system, component, extensionsByPriority(), module)
+  result = gComponentInstaller.installComponent(cType, system, component, extensionsByPriority(), self.module)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)
   gLogger.notice('Successfully installed component %s in %s system, now setting it up' % (component, system))
-  result = gComponentInstaller.setupComponent(cType, system, component, extensionsByPriority(), module)
+  result = gComponentInstaller.setupComponent(cType, system, component, extensionsByPriority(), self.module)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)
@@ -108,7 +108,7 @@ def main(self):
     if not result['OK']:
       gLogger.error(result['Message'])
       DIRACexit(1)
-  result = MonitoringUtilities.monitorInstallation(cType, system, component, module)
+  result = MonitoringUtilities.monitorInstallation(cType, system, component, self.module)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)

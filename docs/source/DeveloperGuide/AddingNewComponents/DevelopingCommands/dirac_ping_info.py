@@ -40,12 +40,12 @@ class MyPing(DIRACScript):
 @MyPing()
 def main(self):
   # Register accepted switches and their callbacks
-  Script.registerSwitch("r", "showRaw", "show raw result from the query", cliParams.setRawResult)
-  Script.registerSwitch("p:", "numPings=", "Number of pings to do (by default 1)", cliParams.setNumOfPingsToDo)
-  Script.registerArgument(['System: system names'])
+  self.registerSwitch("r", "showRaw", "show raw result from the query", self.setRawResult)
+  self.registerSwitch("p:", "numPings=", "Number of pings to do (by default 1)", self.setNumOfPingsToDo)
+  self.registerArgument(['System: system names'])
 
   # Parse the command line and initialize DIRAC
-  self.parseCommandLine(ignoreErrors=False)
+  swithes, servicesList = self.parseCommandLine(ignoreErrors=False)
 
   # Get the list of services
   servicesList = self.getPositionalArgs()

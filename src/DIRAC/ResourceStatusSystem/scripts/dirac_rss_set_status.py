@@ -2,7 +2,7 @@
 """
 Script that facilitates the modification of a element through the command line.
 However, the usage of this script will set the element token to the command
-issuer with a duration of 1 day
+issuer with a duration of 1 day.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -25,27 +25,11 @@ class RSSSetStatus(DIRACScript):
   def initParameters(self):
     self.subLogger = gLogger.getSubLogger(__file__)
 
-<<<<<<< HEAD
-
-<<<<<<< HEAD
-  switches = (
-      ('element=', 'Element family to be Synchronized ( Site, Resource or Node )'),
-      ('name=', 'Name (or comma-separeted list of names) of the element where the change applies'),
-      ('statusType=', 'StatusType (or comma-separeted list of names), if none applies to all possible statusTypes'),
-      ('status=', 'Status to be changed'),
-      ('reason=', 'Reason to set the Status'),
-      ('VO=', 'VO to change a status for. Default: "all" '
-              'VO=all sets the status for all VOs not explicitly listed in the RSS'),
-  )
-=======
-=======
->>>>>>> 75b47b9c9 (fix pylint)
   def registerSwitches(self):
     '''
       Registers all switches that can be used while calling the script from the
       command line interface.
     '''
->>>>>>> 2411a4e56 (merge #5024)
 
     switches = (
         ('element=', 'Element family to be Synchronized ( Site, Resource or Node )'),
@@ -72,22 +56,10 @@ class RSSSetStatus(DIRACScript):
       Parses the arguments passed by the user
     '''
 
-<<<<<<< HEAD
-  switches = dict(self.getUnprocessedSwitches())
-  switches.setdefault('statusType', None)
-  switches.setdefault('VO', 'all')
-
-  for key in ('element', 'name', 'status', 'reason'):
-
-    if key not in switches:
-      subLogger.error("%s Switch missing" % key)
-      subLogger.error("Please, check documentation below")
-=======
     switches, args = self.parseCommandLine(ignoreErrors=True)
     if args:
       self.subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
       self.subLogger.error("Please, check documentation below")
->>>>>>> 2411a4e56 (merge #5024)
       self.showHelp(exitCode=1)
 
     switches = dict(switches)
@@ -117,18 +89,6 @@ class RSSSetStatus(DIRACScript):
 
     return switches
 
-<<<<<<< HEAD
-
-<<<<<<< HEAD
-  if switchDict['name'] is not None:
-    names = list(filter(None, switchDict['name'].split(',')))
-
-  if switchDict['statusType'] is not None:
-    statusTypes = list(filter(None, switchDict['statusType'].split(',')))
-    statusTypes = checkStatusTypes(statusTypes)
-=======
-=======
->>>>>>> 75b47b9c9 (fix pylint)
   def checkStatusTypes(self, statusTypes):
     '''
       To check if values for 'statusType' are valid
@@ -136,7 +96,6 @@ class RSSSetStatus(DIRACScript):
 
     opsH = Operations().getValue('ResourceStatus/Config/StatusTypes/StorageElement')
     acceptableStatusTypes = opsH.replace(',', '').split()
->>>>>>> 2411a4e56 (merge #5024)
 
     for statusType in statusTypes:
       if statusType not in acceptableStatusTypes and statusType != 'all':
@@ -210,43 +169,20 @@ class RSSSetStatus(DIRACScript):
 
     rssClient = ResourceStatusClient.ResourceStatusClient()
 
-<<<<<<< HEAD
-  elements = rssClient.selectStatusElement(switchDict['element'], 'Status',
-                                           name=switchDict['name'],
-                                           statusType=switchDict['statusType'],
-                                           vO=switchDict['VO'],
-                                           meta={'columns': ['Status', 'StatusType']})
-=======
     elements = rssClient.selectStatusElement(switchDict['element'], 'Status',
-<<<<<<< HEAD
-                                            name=switchDict['name'],
-                                            statusType=switchDict['statusType'],
-                                            meta={'columns': ['Status', 'StatusType']})
->>>>>>> 2411a4e56 (merge #5024)
-=======
                                              name=switchDict['name'],
                                              statusType=switchDict['statusType'],
                                              meta={'columns': ['Status', 'StatusType']})
->>>>>>> 75b47b9c9 (fix pylint)
 
     if not elements['OK']:
       return elements
     elements = elements['Value']
 
-<<<<<<< HEAD
-  if not elements:
-    subLogger.warn('Nothing found for %s, %s, %s %s' % (switchDict['element'],
-                                                        switchDict['name'],
-                                                        switchDict['VO'],
-                                                        switchDict['statusType']))
-    return S_OK()
-=======
     if not elements:
       self.subLogger.warn('Nothing found for %s, %s, %s' % (switchDict['element'],
                                                             switchDict['name'],
                                                             switchDict['statusType']))
       return S_OK()
->>>>>>> 2411a4e56 (merge #5024)
 
     tomorrow = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
 
@@ -259,21 +195,6 @@ class RSSSetStatus(DIRACScript):
                                                                                 statusType, status))
         continue
 
-<<<<<<< HEAD
-    subLogger.debug('About to set status %s -> %s for %s, statusType: %s, VO: %s, reason: %s'
-                    % (status, switchDict['status'], switchDict['name'],
-                       statusType, switchDict['VO'], switchDict['reason']))
-    result = rssClient.modifyStatusElement(switchDict['element'], 'Status',
-                                           name=switchDict['name'],
-                                           statusType=statusType,
-                                           status=switchDict['status'],
-                                           reason=switchDict['reason'],
-                                           vO=switchDict['VO'],
-                                           tokenOwner=tokenOwner,
-                                           tokenExpiration=tomorrow)
-    if not result['OK']:
-      return result
-=======
       result = rssClient.modifyStatusElement(switchDict['element'], 'Status',
                                              name=switchDict['name'],
                                              statusType=statusType,
@@ -283,7 +204,6 @@ class RSSSetStatus(DIRACScript):
                                              tokenExpiration=tomorrow)
       if not result['OK']:
         return result
->>>>>>> 2411a4e56 (merge #5024)
 
     return S_OK()
 

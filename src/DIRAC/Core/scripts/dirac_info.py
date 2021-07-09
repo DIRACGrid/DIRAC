@@ -30,17 +30,17 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-import os
-
-import DIRAC
-from DIRAC import gConfig
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 class DIRACInfo(DIRACScript):
+  import os
+
+  import DIRAC
+  from DIRAC import gConfig
+  from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+  from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+  from DIRAC.Core.Utilities.PrettyPrint import printTable
 
   def version(self, arg):
     self.disableCS()

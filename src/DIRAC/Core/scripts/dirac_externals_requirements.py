@@ -23,8 +23,9 @@ except ImportError:
   import subprocess as commands
 
 from diraccfg import CFG
-from DIRAC import gLogger, rootPath, S_OK
+
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC import gLogger, rootPath, S_OK
 
 __RCSID__ = "$Id$"
 

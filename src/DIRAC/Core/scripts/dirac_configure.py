@@ -43,20 +43,20 @@ Example:
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = "$Id$"
-
 import sys
 import os
+
+import six
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
+from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
+__RCSID__ = "$Id$"
 
 class ConfigureInit(DIRACScript):
 
@@ -167,6 +167,28 @@ class ConfigureInit(DIRACScript):
     self.architecture = optionValue
     self.localCfg.addDefaultEntry('/LocalSite/Architecture', self.architecture)
     DIRAC.gConfig.setOptionValue(cfgInstallPath('Architecture'), self.architecture)
+    return DIRAC.S_OK()
+
+  def setLocalSE(self, optionValue):
+    self.localSE = optionValue
+    self.localCfg.addDefaultEntry('/LocalSite/LocalSE', self.localSE)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('LocalSE'), self.localSE)
+    return DIRAC.S_OK()
+
+  def setVO(self, optionValue):
+    self.vo = optionValue
+    self.localCfg.addDefaultEntry('/DIRAC/VirtualOrganization', self.vo)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('VirtualOrganization'), self.vo)
+    return DIRAC.S_OK()
+
+  def forceUpdate(self, optionValue):
+    self.update = True
+    return DIRAC.S_OK()
+
+  def setExtensions(self, optionValue):
+    self.extensions = optionValue
+    DIRAC.gConfig.setOptionValue('/DIRAC/Extensions', self.extensions)
+    DIRAC.gConfig.setOptionValue(cfgInstallPath('Extensions'), self.extensions)
     return DIRAC.S_OK()
 
 

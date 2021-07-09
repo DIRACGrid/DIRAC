@@ -12,11 +12,14 @@ import sys
 import six
 import getopt
 
-from DIRAC import gLogger, S_OK, S_ERROR, rootPath, exit as DIRACExit
-from DIRAC.Core.Utilities.Devloader import Devloader
+import DIRAC
+from DIRAC import gLogger
+from DIRAC import S_OK, S_ERROR
+
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection, getAgentSection, getExecutorSection
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.Utilities.Devloader import Devloader
 
 
 class LocalConfiguration(object):
@@ -294,6 +297,31 @@ class LocalConfiguration(object):
     except Exception as e:
       gLogger.exception()
       return S_ERROR(str(e))
+
+  # TODO: Initialize if not previously initialized
+  def initialize(self, componentName):
+    """
+    Make sure DIRAC is properly initialized
+    """
+    if self.initialized:
+      return S_OK()
+    self.initialized = True
+    # Set that the command line has already been parsed
+    self.isParsed = True
+    if not self.componentType:
+      self.setConfigurationForScript(componentName)
+    try:
+      retVal = self.__addUserDataToConfiguration()
+      self.__initLogger(self.componentName, self.loggingSection)
+      if not retVal['OK']:
+        return retVal
+      retVal = self.__checkMandatoryOptions()
+      if not retVal['OK']:
+        return retVal
+    except Exception as e:
+      gLogger.exception()
+      return S_ERROR(str(e))
+    return S_OK()
 
   def __initLogger(self, componentName, logSection, forceInit=False):
     gLogger.initialize(componentName, logSection, forceInit=forceInit)
@@ -633,7 +661,7 @@ class LocalConfiguration(object):
     """
     Print license
     """
-    lpath = os.path.join(rootPath, "DIRAC", "LICENSE")
+    lpath = os.path.join(DIRAC.rootPath, "DIRAC", "LICENSE")
     sys.stdout.write(" - DIRAC is GPLv3 licensed\n\n")
     try:
       with open(lpath) as fd:
@@ -641,7 +669,7 @@ class LocalConfiguration(object):
     except IOError:
       sys.stdout.write("Can't find GPLv3 license at %s. Somebody stole it!\n" % lpath)
       sys.stdout.write("Please check out http://www.gnu.org/licenses/gpl-3.0.html for more info\n")
-    DIRACExit(0)
+    DIRAC.exit(0)
 
   def showHelp(self, dummy=False, exitCode=0):
     """ Printout help message including a Usage message if defined via setUsageMessage method
@@ -720,7 +748,7 @@ class LocalConfiguration(object):
       gLogger.notice(self.__helpExampleDoc)
 
     gLogger.notice("")
-    DIRACExit(exitCode)
+    DIRAC.exit(exitCode)
 
   def deleteOption(self, optionPath):
     """

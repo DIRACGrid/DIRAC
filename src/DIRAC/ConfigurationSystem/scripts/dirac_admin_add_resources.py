@@ -234,10 +234,11 @@ def checkUnusedCEs():
 
   def updateSites(self):
     """ Update sites """
-    result = getSiteUpdates(self.vo, bdiiInfo=self.ceBdiiDict, glue2=self.glue2)
+    result = getSiteUpdates(self.vo, bdiiInfo=self.ceBdiiDict)
     if not result['OK']:
       gLogger.error('Failed to get site updates', result['Message'])
       DIRACExit(-1)
+    changeSet = result['Value']
     for section, option, value, new_value in changeSet:
       if value == 'Unknown' or not value:
         csAPI.setOption(cfgPath(section, option), new_value)

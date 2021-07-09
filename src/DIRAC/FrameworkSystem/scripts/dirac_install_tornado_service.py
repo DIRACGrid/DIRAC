@@ -64,8 +64,8 @@ def main(self):
 
   result = gComponentInstaller.addDefaultOptionsToCS(gConfig, 'service', system, component,
                                                      extensionsByPriority(),
-                                                     specialOptions=specialOptions,
-                                                     overwrite=overwrite)
+                                                     specialOptions=self.specialOptions,
+                                                     overwrite=self.overwrite)
 
   if not result['OK']:
     gLogger.error(result['Message'])
@@ -82,7 +82,7 @@ def main(self):
     DIRACexit(1)
 
   gLogger.notice('Successfully installed component %s in %s system, now setting it up' % (component, system))
-  result = gComponentInstaller.setupTornadoService(system, component, extensionsByPriority(), module)
+  result = gComponentInstaller.setupTornadoService(system, component, extensionsByPriority(), self.module)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRACexit(1)

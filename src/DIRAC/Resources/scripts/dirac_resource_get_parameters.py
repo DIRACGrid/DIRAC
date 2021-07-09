@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Get parameters assigned to the CE
-
-Usage:
-  dirac-resource-get-parameters [option]... [cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -42,7 +39,7 @@ def main(self):
   self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", self.setSite)
   self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", self.setQueue)
 
-  Script.parseCommandLine(ignoreErrors=True)
+  self.parseCommandLine(ignoreErrors=True)
 
   result = Resources.getQueue(self.Site, self.ceName, self.Queue)
 

@@ -19,17 +19,17 @@ __RCSID__ = "$Id$"
 
 import six
 
-from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 
 @DIRACScript()
 def main(self):
-  self.registerArgument(" DIRACSiteName: DIRAC Site name in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
-  self.registerArgument(" GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
-  self.registerArgument(["CE:            Name of the CE to be included in the site (ie: ce111.cern.ch)"])
+  self.registerArgument("DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
+  self.registerArgument("GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
+  self.registerArgument(["CE:           Name of the CE to be included in the site (ie: ce111.cern.ch)"])
   self.parseCommandLine(ignoreErrors=True)
 
   diracSiteName, gridSiteName, ces = self.getPositionalArgs(group=True)

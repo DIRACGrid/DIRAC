@@ -47,7 +47,7 @@ which will set the interpreter directive to the python on the environment.
    from DIRAC import gLogger
 
    @DIRACScript()
-   def main():
+   def main(self):
      # Do stuff
 
    if __name__ == "__main__":

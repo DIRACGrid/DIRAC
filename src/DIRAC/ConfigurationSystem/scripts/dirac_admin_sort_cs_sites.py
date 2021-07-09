@@ -18,11 +18,11 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.Time import dateTime, toString
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.Core.Utilities.Time import dateTime, toString
 
 
 class SortCSSites(DIRACScript):
