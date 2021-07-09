@@ -67,7 +67,38 @@
          Operations(group=thisIsAGroupOfVO_X).getValue('someSectionName/someOptionX')
 
     3. if no VO nor group is provided, the VO will be guessed from the proxy,
-    but this works iff the object is instantiated by a proxy (and not, e.g., using a server certificate)
+    but this works if the object is instantiated by a proxy (and not, e.g., using a server certificate)
+
+    You can also specify the main section::
+    
+      Operations(vo=VOName, mainSection='/mainSectionName').getValue('someSection/someOption')
+    
+    in this case, the configuration will be searched in the following sections with the name 'mainSectionName'::
+
+      mainSectionName/
+          someOption = someValue
+          someSection/
+              aSecondOption = aSecondValue
+      Operations/
+          Production/
+              mainSectionName/
+                  someOption = someValueInProduction
+                  someSection/
+                      aSecondOption = aSecondValueInProduction
+          aVOName/
+              Defaults/
+                  mainSectionName/
+                      someOption = someValueForVO
+                      someSection/
+                          aSecondOption = aSecondValueForVO
+              Production/
+                  mainSectionName/
+                      someOption = someValueInProduction
+                      someSection/
+                          aSecondOption = aSecondValueInProduction
+              Certification/
+                  mainSectionName/
+                      someOption = someValueInCertification
 
 """
 from __future__ import absolute_import
@@ -92,16 +123,20 @@ class Operations(object):
       The /Operations CFG section is maintained in a cache by an Operations object
 
       You can also inherit this class to handle another section of the configuration
-      by specifying the path to it in the _basePath variable, e.g.::
+      by specifying the path to it in the mainSection argument, e.g.::
 
         class SessionData(Operations):
-
-          _basePath = '/WebApp'
-          _useBasePathAsDefault = True
+          ''' This class will have access to the configuration combined from the following sections
+              in the following order:
+                - /WebApp/
+                - /Operations/<setup>/WebApp/
+                - /Operations/<vo>/Defaults/WebApp/
+                - /Operations/<vo>/<setup>/WebApp/
+          '''
 
           def __init__(self, credDict, setup):
             self.__credDict = credDict
-            super(SessionData, self).__init__(group=credDict.get("group", ""), setup=setup)
+            super(SessionData, self).__init__(group=credDict.get("group"), setup=setup, mainSection='WebApp')
 
           def getTitle(self):
             return self.getValue('title', 'Hello world!')
@@ -111,41 +146,38 @@ class Operations(object):
   __cacheVersion = 0
   __cacheLock = LockRing.LockRing().getLock()
 
-  # the base directory where the "Defaults", VO and setup sections will be located
-  _basePath = '/Operations'
-  # Should the configuration in the base directory also be considered?
-  _useBasePathAsDefault = False
-
-  def __init__(self, vo=None, group=None, setup=None):
+  def __init__(self, vo=None, group=None, setup=None, mainSection=''):
     """ Determination of VO/setup and generation a list of relevant directories
 
         :param str vo: VO name
         :param str group: group name
         :param str setup: setup name
+        :param str mainSection: main section name
     """
+    basePath = '/Operations'
     self._vo = getVOForGroup(group or '') or vo or getVOfromProxyGroup().get('Value', '')
     self._setup = setup or getSetup()
     self._group = group
 
-    self.__paths = []
     # Define the configuration sections that will be merged in the following order:
-    # -> /<base path>/                          (need to set _useBasePathAsDefault)
-    # -> /<base path>/Defaults/
-    # -> /<base path>/<setup>/
-    # -> /<base path>/<vo>/                     (need to set _useBasePathAsDefault)
-    # -> /<base path>/<vo>/Defaults/
-    # -> /<base path>/<vo>/<setup>/
-    if self._useBasePathAsDefault:
-      self.__paths.append(self._basePath)
-    self.__paths.append(os.path.join(self._basePath, 'Defaults'))
+    # -> /Operations/Defaults/
+    # -> /Operations/<setup>/
+    # -> /Operations/<vo>/Defaults/
+    # -> /Operations/<vo>/<setup>/
+
+    # If mainSection defined:
+    # -> /<mainSection>/
+    # -> /Operations/<setup>/<mainSection>/
+    # -> /Operations/<vo>/Defaults/<mainSection>/
+    # -> /Operations/<vo>/<setup>/<mainSection>/
+
+    self.__paths = [os.path.join('/', mainSection)] if mainSection else [os.path.join(basePath, 'Defaults')]
     if self._setup:
-      self.__paths.append(os.path.join(self._basePath, self._setup))
+      self.__paths.append(os.path.join(basePath, self._setup, mainSection))
     if self._vo:
-      if self._useBasePathAsDefault:
-        self.__paths.append(os.path.join(self._basePath, self._vo))
-      self.__paths.append(os.path.join(self._basePath, self._vo, 'Defaults'))
+      self.__paths.append(os.path.join(basePath, self._vo, 'Defaults', mainSection))
       if self._setup:
-        self.__paths.append(os.path.join(self._basePath, self._vo, self._setup))
+        self.__paths.append(os.path.join(basePath, self._vo, self._setup, mainSection))
 
   def _cacheExpired(self):
     """ Cache expired or not
