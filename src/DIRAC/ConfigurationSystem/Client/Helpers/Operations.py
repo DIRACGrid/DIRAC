@@ -70,9 +70,9 @@
     but this works if the object is instantiated by a proxy (and not, e.g., using a server certificate)
 
     You can also specify the main section::
-    
+
       Operations(vo=VOName, mainSection='/mainSectionName').getValue('someSection/someOption')
-    
+
     in this case, the configuration will be searched in the following sections with the name 'mainSectionName'::
 
       mainSectionName/
