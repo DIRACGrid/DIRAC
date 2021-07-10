@@ -11,13 +11,13 @@ __RCSID__ = '$Id$'
 import datetime
 
 from DIRAC import gLogger, exit as DIRACExit, version
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
-class RSSQueryDtcache(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     self.subLogger = gLogger.getSubLogger(__file__)
@@ -47,6 +47,7 @@ class RSSQueryDtcache(DIRACScript):
     for switch in switches:
       self.registerSwitch('', switch[0], switch[1])
 
+    # Registering arguments will automatically add their description to the help menu
     self.registerArgument("Query:     queries", values=['select', 'add', 'delete'])
 
   def registerUsageMessage(self):
@@ -64,6 +65,7 @@ class RSSQueryDtcache(DIRACScript):
       Parses the arguments passed by the user
     """
 
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
     switches, args = self.parseCommandLine(ignoreErrors=True)
     query = args[0].lower()
 
@@ -102,14 +104,14 @@ class RSSQueryDtcache(DIRACScript):
     if start is not None:
       try:
         start = Time.fromString(start)
-      except BaseException:
+      except Exception:
         self.error("datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]")
       start = Time.toEpoch(start)
 
     if end is not None:
       try:
         end = Time.fromString(end)
-      except BaseException:
+      except Exception:
         self.error("datetime formt is incorrect, pls try [%Y-%m-%d[ %H:%M:%S]]")
       end = Time.toEpoch(end)
 
@@ -285,7 +287,8 @@ class RSSQueryDtcache(DIRACScript):
                                            endDate=switchDict['endDate'],
                                            severity=switchDict['severity'],
                                            description=switchDict['description'],
-                                           link=switchDict['link'])
+                                           link=switchDict['link']
+                                           )
     if not output['OK']:
       return output
 
@@ -315,7 +318,7 @@ class RSSQueryDtcache(DIRACScript):
       self.error(result['Message'])
 
 
-@RSSQueryDtcache()
+@DIRACScript()
 def main(self):
   # Script initialization
   self.registerSwitches()

@@ -13,15 +13,15 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import sys
-
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 
-class ConfDumpLocalCaChe(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     """ init """
+    # Wrap globally described parameters in a class
     self.fileName = ""
     self.raw = False
 
@@ -34,7 +34,7 @@ class ConfDumpLocalCaChe(DIRACScript):
     return DIRAC.S_OK()
 
 
-@ConfDumpLocalCaChe()
+@DIRACScript()
 def main(self):
   self.localCfg.addDefaultEntry("LogLevel", "fatal")
 

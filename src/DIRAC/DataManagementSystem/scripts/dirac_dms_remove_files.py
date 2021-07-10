@@ -17,6 +17,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("LocalFile: Path to local file containing LFNs",
                          "LFN:       Logical File Names"))
   self.registerArgument(["LFN:       Logical File Names"], mandatory=False)

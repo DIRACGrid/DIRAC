@@ -13,10 +13,10 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 
-class AddHost(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     self.hostName = None
@@ -25,8 +25,7 @@ class AddHost(DIRACScript):
     self.switches = [
         ('H:', 'HostName:', 'Name of the Host (Mandatory)', self.setHostName),
         ('D:', 'HostDN:', 'DN of the Host Certificate (Mandatory)', self.setHostDN),
-        ('P:', 'Property:',
-         'Property to be added to the Host (Allow Multiple instances or None)',
+        ('P:', 'Property:', 'Property to be added to the Host (Allow Multiple instances or None)',
          self.addProperty)
     ]
 
@@ -47,9 +46,10 @@ class AddHost(DIRACScript):
       self.hostProperties.append(arg)
 
 
-@AddHost()
+@DIRACScript()
 def main(self):
   self.registerSwitches(self.switches)
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)"],
                         mandatory=False)
   _, args = self.parseCommandLine(ignoreErrors=True)

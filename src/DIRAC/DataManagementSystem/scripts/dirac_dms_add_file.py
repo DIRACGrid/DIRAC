@@ -39,14 +39,13 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
-
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 
-class DMSAddFile(DIRACScript):
+class DIRACScript(_DIRACScript):
 
-  def initializationScript(self):
+  def initParameters(self):
     """ init """
     self.overwrite = False
 
@@ -54,26 +53,27 @@ class DMSAddFile(DIRACScript):
     self.overwrite = True
     return S_OK()
 
-  def getDict(self, item_list):
-    """
-      From the input list, populate the dictionary
-    """
-    lfn_dict = {}
-    lfn_dict['lfn'] = item_list[0].replace('LFN:', '').replace('lfn:', '')
-    lfn_dict['localfile'] = item_list[1]
-    lfn_dict['SE'] = item_list[2]
-    guid = None
-    if len(item_list) > 3:
-      guid = item_list[3]
-    lfn_dict['guid'] = guid
-    return lfn_dict
+
+def getDict(item_list):
+  """
+    From the input list, populate the dictionary
+  """
+  lfn_dict = {}
+  lfn_dict['lfn'] = item_list[0].replace('LFN:', '').replace('lfn:', '')
+  lfn_dict['localfile'] = item_list[1]
+  lfn_dict['SE'] = item_list[2]
+  guid = None
+  if len(item_list) > 3:
+    guid = item_list[3]
+  lfn_dict['guid'] = guid
+  return lfn_dict
 
 
-@DMSAddFile()
+@DIRACScript()
 def main(self):
   self.registerSwitch("f", "force", "Force overwrite of existing file", self.setOverwrite)
-  _, args = self.parseCommandLine(ignoreErrors=True)
-
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
   if len(args) < 1 or len(args) > 4:
     self.showHelp(exitCode=1)
 
@@ -91,13 +91,13 @@ def main(self):
         line = line.rstrip()
         items = line.split()
         items[0] = items[0].replace('LFN:', '').replace('lfn:', '')
-        lfns.append(self.getDict(items))
+        lfns.append(getDict(items))
       inputFile.close()
     else:
       gLogger.error("Error: LFN list '%s' missing." % inputFileName)
       exitCode = 4
   else:
-    lfns.append(self.getDict(args))
+    lfns.append(getDict(args))
 
   dm = DataManager()
   for lfn in lfns:

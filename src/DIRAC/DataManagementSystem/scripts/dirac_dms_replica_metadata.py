@@ -16,6 +16,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("LocalFile: Path to local file containing LFNs",
                          "LFN:       Logical File Names"))
   self.registerArgument(" SE:        Storage element")
@@ -25,6 +26,7 @@ def main(self):
   from DIRAC import gLogger
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   inputFileName, storageElement = self.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):

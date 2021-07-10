@@ -12,12 +12,10 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class ResourceGetParameters(DIRACScript):
-
-  def initParameters(self):
-    self.ceFlag = False
-    self.seFlag = False
-    self.voName = None
+class Params(object):
+  ceFlag = False
+  seFlag = False
+  voName = None
 
   def setCEFlag(self, args_):
     self.ceFlag = True
@@ -29,16 +27,17 @@ class ResourceGetParameters(DIRACScript):
     self.voName = args
 
 
-@ResourceGetParameters()
+@DIRACScript()
 def main(self):
-  from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
+  params = Params()
 
-  self.registerSwitch("C", "ce", "Get CE info", self.setCEFlag)
-  self.registerSwitch("S", "se", "Get SE info", self.setSEFlag)
-  self.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", self.setVOName)
+  self.registerSwitch("C", "ce", "Get CE info", params.setCEFlag)
+  self.registerSwitch("S", "se", "Get SE info", params.setSEFlag)
+  self.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", params.setVOName)
 
   self.parseCommandLine(ignoreErrors=True)
 
+  from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
   from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
   from DIRAC.Core.Utilities.PrettyPrint import printTable
@@ -47,9 +46,9 @@ def main(self):
   from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
   from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
-  def printCEInfo(self):
+  def printCEInfo(voName):
 
-    resultQueues = Resources.getQueues(community=self.voName)
+    resultQueues = Resources.getQueues(community=voName)
     if not resultQueues['OK']:
       gLogger.error('Failed to get CE information')
       DIRACExit(-1)
@@ -91,15 +90,14 @@ def main(self):
     gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
     return S_OK()
 
-  def printSEInfo(self):
+  def printSEInfo(voName):
 
     fields = ('SE', 'Status', 'Protocols', 'Aliases')
     records = []
 
-    # this will get the full list of SEs, not only the vo's ones.
-    for se in DMSHelpers(self.voName).getStorageElements():
+    for se in DMSHelpers(voName).getStorageElements():  # this will get the full list of SEs, not only the vo's ones.
       seObject = StorageElement(se)
-      if not (seObject.vo and self.voName in seObject.vo.strip().split(',') or not seObject.self.voName):
+      if not (seObject.vo and voName in seObject.vo.strip().split(',') or not seObject.voName):
         continue
 
       result = seObject.status()
@@ -119,33 +117,33 @@ def main(self):
     gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
     return S_OK()
 
-  if not self.voName:
+  if not params.voName:
     # Get the current VO
     result = getVOfromProxyGroup()
     if not result['OK']:
       gLogger.error('No proxy found, please login')
       DIRACExit(-1)
-    self.voName = result['Value']
+    params.voName = result['Value']
   else:
     result = gConfig.getSections('/Registry/VO')
     if not result['OK']:
       gLogger.error('Failed to contact the CS')
       DIRACExit(-1)
-    if self.voName not in result['Value']:
+    if params.voName not in result['Value']:
       gLogger.error('Invalid VO name')
       DIRACExit(-1)
 
-  if not (self.ceFlag or self.seFlag):
+  if not (params.ceFlag or params.seFlag):
     gLogger.error('Resource type is not specified')
     DIRACExit(-1)
 
-  if self.ceFlag:
-    result = printCEInfo(self.voName)
+  if params.ceFlag:
+    result = printCEInfo(params.voName)
     if not result['OK']:
       gLogger.error(result['Message'])
       DIRACExit(-1)
-  if self.seFlag:
-    result = printSEInfo(self.voName)
+  if params.seFlag:
+    result = printSEInfo(params.voName)
     if not result['OK']:
       gLogger.error(result['Message'])
       DIRACExit(-1)

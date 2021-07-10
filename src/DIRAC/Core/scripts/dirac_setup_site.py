@@ -15,9 +15,9 @@ from DIRAC import S_OK
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class SetupSite(DIRACScript):
+class Params(object):
 
-  def initParameters(self):
+  def __init__(self):
     self.exitOnError = False
 
   def setExitOnError(self, value):
@@ -25,14 +25,16 @@ class SetupSite(DIRACScript):
     return S_OK()
 
 
-@SetupSite()
+@DIRACScript()
 def main(self):
+  cliParams = Params()
+
   self.disableCS()
   self.registerSwitch(
       "e",
       "exitOnError",
       "flag to exit on error of any component installation",
-      self.setExitOnError)
+      cliParams.setExitOnError)
 
   self.addDefaultOptionValue('/DIRAC/Security/UseServerCertificate', 'yes')
   self.addDefaultOptionValue('LogLevel', 'INFO')
@@ -47,7 +49,7 @@ def main(self):
     cfg = args[0]
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
-  gComponentInstaller.exitOnError = self.exitOnError
+  gComponentInstaller.exitOnError = cliParams.exitOnError
 
   result = gComponentInstaller.setupSite(self.localCfg, cfg)
   if not result['OK']:

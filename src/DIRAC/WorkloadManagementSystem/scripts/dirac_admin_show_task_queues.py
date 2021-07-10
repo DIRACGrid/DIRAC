@@ -27,16 +27,15 @@ import sys
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class ShowTaskQueues(DIRACScript):
-
-  def initParameters(self):
-    self.verbose = False
-    self.taskQueueID = 0
+class Params(object):
+  verbose = False
+  taskQueueID = 0
 
   def setVerbose(self, optVal):
     self.verbose = True
@@ -47,10 +46,11 @@ class ShowTaskQueues(DIRACScript):
     return S_OK()
 
 
-@ShowTaskQueues()
+@DIRACScript()
 def main(self):
-  self.registerSwitch("v", "verbose", "give max details about task queues", self.setVerbose)
-  self.registerSwitch("t:", "taskQueue=", "show this task queue only", self.setTaskQueueID)
+  params = Params()
+  self.registerSwitch("v", "verbose", "give max details about task queues", params.setVerbose)
+  self.registerSwitch("t:", "taskQueue=", "show this task queue only", params.setTaskQueueID)
   self.parseCommandLine(initializeMonitor=False)
 
   result = MatcherClient().getActiveTaskQueues()
@@ -60,13 +60,13 @@ def main(self):
 
   tqDict = result['Value']
 
-  if not self.verbose:
+  if not params.verbose:
     fields = ['TaskQueue', 'Jobs', 'CPUTime', 'Owner', 'OwnerGroup', 'Sites',
               'Platforms', 'SubmitPools', 'Setup', 'Priority']
     records = []
 
     for tqId in sorted(tqDict):
-      if self.taskQueueID and tqId != self.taskQueueID:
+      if params.taskQueueID and tqId != params.taskQueueID:
         continue
       record = [str(tqId)]
       tqData = tqDict[tqId]
@@ -94,7 +94,7 @@ def main(self):
   else:
     fields = ['Key', 'Value']
     for tqId in sorted(tqDict):
-      if self.taskQueueID and tqId != self.taskQueueID:
+      if params.taskQueueID and tqId != params.taskQueueID:
         continue
       gLogger.notice("\n==> TQ %s" % tqId)
       records = []

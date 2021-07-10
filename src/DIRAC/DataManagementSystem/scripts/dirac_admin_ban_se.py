@@ -34,6 +34,7 @@ def main(self):
       "S:",
       "Site=",
       "     Ban all SEs associate to site (note that if writing is allowed, check is always allowed)")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["seGroupList: list of SEs or comma-separated SEs"])
 
   switches, ses = self.parseCommandLine(ignoreErrors=True)

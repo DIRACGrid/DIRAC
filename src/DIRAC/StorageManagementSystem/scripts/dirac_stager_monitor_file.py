@@ -42,6 +42,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("LFN: LFN of the staging file")
   self.registerArgument("SE: Storage Element for the staging file")
   self.parseCommandLine(ignoreErrors=True)

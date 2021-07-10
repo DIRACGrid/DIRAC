@@ -25,6 +25,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerSwitch("D:", "Dir=", "Store the output in this directory")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["JobID:    DIRAC Job ID"])
   sws, args = self.parseCommandLine(ignoreErrors=True)
 

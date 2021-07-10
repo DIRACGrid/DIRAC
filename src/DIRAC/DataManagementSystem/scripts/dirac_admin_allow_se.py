@@ -31,6 +31,7 @@ def main(self):
   self.registerSwitch("a", "All", "    Allow all access to the storage element")
   self.registerSwitch("m", "Mute", "     Do not send email")
   self.registerSwitch("S:", "Site=", "     Allow all SEs associated to site")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["seGroupList: list of SEs or comma-separated SEs"])
 
   switches, ses = self.parseCommandLine(ignoreErrors=True)

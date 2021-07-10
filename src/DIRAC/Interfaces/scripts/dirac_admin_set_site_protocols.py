@@ -22,6 +22,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["Protocol: SE access protocol"], mandatory=False)
   switches, args = self.parseCommandLine(ignoreErrors=True)
 

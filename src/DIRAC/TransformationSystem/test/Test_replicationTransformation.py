@@ -170,8 +170,9 @@ class TestParams(unittest.TestCase):
 
   def setUp(self):
     self.arguments = []
+    self.sMock = Mock()
+    self.sMock.getPositionalArgs.return_value = self.arguments
     self.params = Params()
-    self.params.showHelp = lambda d='', c=0: c
 
   def tearDown(self):
     pass
@@ -180,8 +181,8 @@ class TestParams(unittest.TestCase):
   @patch(GET_VOMS, new=Mock(return_value='clic'))
   def test_checkSettings(self):
     self.arguments = ['12345', "TargetSE"]
-    self.params.getPositionalArgs = lambda: self.arguments
-    ret = self.params.checkSettings()
+    self.sMock.getPositionalArgs.return_value = self.arguments
+    ret = self.params.checkSettings(self.sMock)
     self.assertTrue(ret['OK'], ret.get("Message", ''))
     self.assertEqual(self.params.metaValues, ['12345'])
     self.assertEqual(self.params.sourceSE, '')
@@ -199,8 +200,8 @@ class TestParams(unittest.TestCase):
   @patch(GET_VOMS, new=Mock(return_value='clic'))
   def test_checkSettings_FailArgumentSize(self):
     self.arguments = ['12345', "TargetSE", 'Foo']
-    self.params.getPositionalArgs = lambda: self.arguments
-    ret = self.params.checkSettings()
+    self.sMock.getPositionalArgs.return_value = self.arguments
+    ret = self.params.checkSettings(self.sMock)
     self.assertFalse(ret['OK'], str(ret))
     self.assertTrue(any("ERROR: Wrong number of arguments" in msg for msg in self.params.errorMessages))
 
@@ -208,8 +209,8 @@ class TestParams(unittest.TestCase):
   @patch(GET_VOMS, new=Mock(return_value='clic'))
   def test_FailProxy(self):
     self.arguments = ['12345', "TargetSE"]
-    self.params.getPositionalArgs = lambda: self.arguments
-    ret = self.params.checkSettings()
+    self.sMock.getPositionalArgs.return_value = self.arguments
+    ret = self.params.checkSettings(self.sMock)
     self.assertFalse(ret['OK'], str(ret))
     self.assertTrue(any("ERROR: No Proxy" in msg for msg in self.params.errorMessages), str(self.params.errorMessages))
 
@@ -217,8 +218,8 @@ class TestParams(unittest.TestCase):
   @patch(GET_VOMS, new=Mock(return_value=''))
   def test_FailProxy2(self):
     self.arguments = ['12345', "TargetSE"]
-    self.params.getPositionalArgs = lambda: self.arguments
-    ret = self.params.checkSettings()
+    self.sMock.getPositionalArgs.return_value = self.arguments
+    ret = self.params.checkSettings(self.sMock)
     self.assertFalse(ret['OK'], str(ret))
     self.assertTrue(any("ERROR: ProxyGroup" in msg for msg in self.params.errorMessages),
                     str(self.params.errorMessages))

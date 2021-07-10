@@ -6,33 +6,35 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
 import socket
 
-from DIRAC import gLogger, S_OK, exit as DIRACexit
+from DIRAC import exit as DIRACexit
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
+__RCSID__ = "$Id$"
 
-class UninstallComponent(DIRACScript):
 
-  def initParameters(self):
-    self.force = False
+class Params(object):
+  force = False
 
   def setForce(self, opVal):
     self.force = True
     return S_OK()
 
 
-@UninstallComponent()
+@DIRACScript()
 def main(self):
+  params = Params()
+
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   gComponentInstaller.exitOnError = True
 
-  self.registerSwitch("f", "force", "Forces the removal of the logs", self.setForce)
+  self.registerSwitch("f", "force", "Forces the removal of the logs", params.setForce)
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
                          "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
   self.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
@@ -62,7 +64,7 @@ def main(self):
     DIRACexit(1)
 
   removeLogs = False
-  if self.force:
+  if params.force:
     removeLogs = True
   else:
     if result['Value'][0]['Component']['Type'] in gComponentInstaller.componentTypes:

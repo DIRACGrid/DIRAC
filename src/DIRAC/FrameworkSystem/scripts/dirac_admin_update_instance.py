@@ -15,19 +15,19 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main():
+def main(self):
   self.registerSwitch("", "hosts=", "Comma separated list of hosts or file containing row wise list of hosts"
                                     " targeted for update (leave empty for all)")
   self.registerSwitch("", "excludeHosts=", "Comma separated list of hosts or file containing row wise list of hosts"
                                            " excluded from update")
   self.registerSwitch("", "retry=", "Number of retry attempts on hosts that have failed to update")
+  # Registering arguments will automatically add their description to the help menu
+  self.registerArgument("version: version of DIRAC you want to update to")
 
   self.parseCommandLine(ignoreErrors=False)
 
-  args = self.getPositionalArgs()
-  if len(args) < 1 or len(args) > 3:
-    self.showHelp()
-
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+  version = self.getPositionalArgs(group=True)
   retry = 0
   hosts = []
   excludeHosts = []

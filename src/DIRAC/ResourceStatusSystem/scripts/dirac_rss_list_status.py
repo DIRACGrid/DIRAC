@@ -7,15 +7,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from DIRAC import gLogger, exit as DIRACExit, version
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
+from DIRAC.Core.Utilities.PrettyPrint import printTable
+
 __RCSID__ = '$Id$'
 
-from DIRAC import gLogger, exit as DIRACExit, version
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 
-
-class ResourceGetParameters(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     self.subLogger = gLogger.getSubLogger(__file__)
@@ -34,6 +34,7 @@ class ResourceGetParameters(DIRACScript):
         ('tokenOwner=', 'Owner of the token; None if default'),
         ('statusType=', 'StatusType; None if default'),
         ('status=', 'Status; None if default'),
+        ('VO=', 'Virtual organisation; None if default')
     )
 
     for switch in switches:
@@ -66,6 +67,7 @@ class ResourceGetParameters(DIRACScript):
     switches.setdefault('tokenOwner', None)
     switches.setdefault('statusType', None)
     switches.setdefault('status', None)
+    switches.setdefault('VO', None)
 
     if 'element' not in switches:
       self.subLogger.error("element Switch missing")
@@ -79,6 +81,8 @@ class ResourceGetParameters(DIRACScript):
 
     self.subLogger.debug("The switches used are:")
     map(self.subLogger.debug, switches.items())
+
+    return switches
 
   def getElements(self):
     """
@@ -142,7 +146,7 @@ class ResourceGetParameters(DIRACScript):
     self.tabularPrint(elements)
 
 
-@ResourceGetParameters()
+@DIRACScript()
 def main(self):
   # Script initialization
   self.registerSwitches()

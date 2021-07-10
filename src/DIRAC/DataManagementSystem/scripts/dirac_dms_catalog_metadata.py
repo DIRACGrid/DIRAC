@@ -22,13 +22,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("LocalFile: Path to local file containing LFNs",
                          "LFN:       Logical File Names"))
   self.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
-
   self.parseCommandLine()
+
+  from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   inputFileName, catalogs = self.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):

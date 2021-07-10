@@ -8,13 +8,12 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import os
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("LFN:      LFN",
                          "File:     File name containing a list of affected LFNs"))
   self.registerArgument(" SE:       Name of Storage Element")
@@ -24,7 +23,9 @@ def main(self):
   import DIRAC
   from DIRAC import gLogger
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+  import os
 
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   inputFileName, storageElement, status = self.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):

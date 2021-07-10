@@ -16,7 +16,7 @@ import signal
 import shlex
 import six
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -26,43 +26,49 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getDIR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 
-def processScriptSwitches(self):
+class DIRACScript(_DIRACScript):
 
-  global vo, dry, doCEs, hostURL
+  def initParameters(self):
+    """ Script initialization """
+    # Wrap globally described parameters in a class
+    self.vo = ''
+    self.dry = False
+    self.doCEs = False
+    self.hostURL = None
+    self.ceBdiiDict = None
 
-  Script.registerSwitch("V:", "vo=", "Virtual Organization")
-  Script.registerSwitch("D", "dry", "Dry run")
-  Script.registerSwitch("C", "ce", "Process Computing Elements")
-  Script.registerSwitch("H:", "host=", "use this url for information querying")
-  Script.parseCommandLine(ignoreErrors=True)
+  def processScriptSwitches(self):
 
-  vo = ''
-  dry = False
-  doCEs = False
-  hostURL = None
-  for sw in Script.getUnprocessedSwitches():
-    if sw[0] in ("V", "vo"):
-      vo = sw[1]
-    if sw[0] in ("D", "dry"):
-      dry = True
-    if sw[0] in ("C", "ce"):
-      doCEs = True
-    if sw[0] in ("H", "host"):
-      hostURL = sw[1]
+    self.registerSwitch("V:", "vo=", "Virtual Organization")
+    self.registerSwitch("D", "dry", "Dry run")
+    self.registerSwitch("C", "ce", "Process Computing Elements")
+    self.registerSwitch("H:", "host=", "use this url for information querying")
+    self.parseCommandLine(ignoreErrors=True)
 
+    for sw in self.getUnprocessedSwitches():
+      if sw[0] in ("V", "vo"):
+        self.vo = sw[1]
+      if sw[0] in ("D", "dry"):
+        self.dry = True
+      if sw[0] in ("C", "ce"):
+        self.doCEs = True
+      if sw[0] in ("H", "host"):
+        self.hostURL = sw[1]
 
-ceBdiiDict = None
+  def checkUnusedCEs(self):
 
+    gLogger.notice('looking for new computing resources in the BDII database...')
 
-def checkUnusedCEs():
-
-  global vo, dry, ceBdiiDict, hostURL
+    res = getQueues(community=self.vo)
+    if not res['OK']:
+      gLogger.error('ERROR: failed to get CEs from CS', res['Message'])
+      DIRACExit(-1)
 
     knownCEs = set()
     for _site, ces in res['Value'].items():
       knownCEs.update(ces)
 
-    result = getGridCEs(self.vo, ceBlackList=knownCEs, hostURL=self.hostURL, glue2=self.glue2)
+    result = getGridCEs(self.vo, ceBlackList=knownCEs, hostURL=self.hostURL)
     if not result['OK']:
       gLogger.error('ERROR: failed to get CEs from BDII', result['Message'])
       DIRACExit(-1)
@@ -95,11 +101,7 @@ def checkUnusedCEs():
     if not inp and inp.lower().startswith('n'):
       return
 
-  result = getGridCEs(vo, ceBlackList=knownCEs, hostURL=hostURL)
-  if not result['OK']:
-    gLogger.error('ERROR: failed to get CEs from BDII', result['Message'])
-    DIRACExit(-1)
-  ceBdiiDict = result['BdiiInfo']
+    gLogger.notice('\nAdding new sites/CEs interactively\n')
 
     sitesAdded = []
 
@@ -123,7 +125,7 @@ def checkUnusedCEs():
           continue
         if diracSite.lower() == "help":
           gLogger.notice('%s site details:' % site)
-          for k, v in self.ceBdiiDict[site].items():
+          for k, v in ceBdiiDict[site].items():
             if k != "CEs":
               gLogger.notice('%s\t%s' % (k, v))
           gLogger.notice('\nEnter DIRAC site name in the form <domain>.<name>.%s\n' % country)
@@ -199,10 +201,6 @@ def checkUnusedCEs():
       gLogger.notice('No new CEs were added this time')
 
   def updateCS(self, changeSet):
-    """ Update CS
-
-        :param str changeSet: changes to CS
-    """
     changeList = sorted(changeSet)
     if self.dry:
       gLogger.notice('The following needed changes are detected:\n')
@@ -233,48 +231,21 @@ def checkUnusedCEs():
           gLogger.notice("Successfully committed %d changes to CS" % len(changeSet))
 
   def updateSites(self):
-    """ Update sites """
     result = getSiteUpdates(self.vo, bdiiInfo=self.ceBdiiDict)
     if not result['OK']:
       gLogger.error('Failed to get site updates', result['Message'])
       DIRACExit(-1)
     changeSet = result['Value']
-    for section, option, value, new_value in changeSet:
-      if value == 'Unknown' or not value:
-        csAPI.setOption(cfgPath(section, option), new_value)
-      else:
-        csAPI.modifyValue(cfgPath(section, option), new_value)
 
-    yn = six.moves.input('Do you want to commit changes to CS ? [default yes] [yes|no]: ')
-    if yn == '' or yn.lower().startswith('y'):
-      result = csAPI.commit()
-      if not result['OK']:
-        gLogger.error("Error while commit to CS", result['Message'])
-      else:
-        gLogger.notice("Successfully committed %d changes to CS" % len(changeSet))
+  self.updateCS(changeSet)
 
-
-def updateSites():
-
-  global vo, dry, ceBdiiDict
-
-  result = getSiteUpdates(vo, bdiiInfo=ceBdiiDict)
-  if not result['OK']:
-    gLogger.error('Failed to get site updates', result['Message'])
-    DIRACExit(-1)
-  changeSet = result['Value']
-
-  updateCS(changeSet)
-
-    self.updateCS(changeSet)
 
 def handler(signum, frame):
-  """ Handler """
   gLogger.notice('\nExit is forced, bye...')
   DIRACExit(-1)
 
 
-@AddResources()
+@DIRACScript()
 def main(self):
   signal.signal(signal.SIGTERM, handler)
   signal.signal(signal.SIGINT, handler)

@@ -36,18 +36,17 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class GetPilotInfo(DIRACScript):
-
-  def initParameters(self):
-    self.extendedPrint = False
+class Params(object):
+  extendedPrint = False
 
   def setExtendedPrint(self, _arg):
     self.extendedPrint = True
 
 
-@GetPilotInfo()
+@DIRACScript()
 def main(self):
-  self.registerSwitch('e', 'extended', 'Get extended printout', self.setExtendedPrint)
+  params = Params()
+  self.registerSwitch('e', 'extended', 'Get extended printout', params.setExtendedPrint)
   _, args = self.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
@@ -66,7 +65,7 @@ def main(self):
       exitCode = 2
     else:
       res = result['Value'][gridID]
-      if self.extendedPrint:
+      if params.extendedPrint:
         tab = ''
         for key in [
             'PilotJobReference',

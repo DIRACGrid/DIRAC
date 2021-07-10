@@ -28,6 +28,7 @@ def main(self):
   self.registerSwitch("D:", "Dir=", "Store the output in this directory")
   self.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
   self.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["JobID: DIRAC Job ID or a name of the file with JobID per line"], mandatory=False)
   sws, args = self.parseCommandLine(ignoreErrors=True)
 

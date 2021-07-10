@@ -26,6 +26,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   unit = 'GB'
   self.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("LocalFile: Path to local file containing LFNs",
                          "LFN:       Logical File Name"))
   self.registerArgument(["LFN:       Logical File Name"], mandatory=False)

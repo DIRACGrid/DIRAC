@@ -37,7 +37,7 @@ from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 @DIRACScript()
 def main(self):
   subLogger = gLogger.getSubLogger(__file__)
-
+  # Registers all switches that can be used while calling the script from the command line interface.
   switches = (('status=', 'Filter per file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).'
               '\n                                 If not used, all status values will be taken into account'),
               ('se=', 'Filter per Storage Element. If not used, all storage elements will be taken into account.'),
@@ -48,6 +48,7 @@ def main(self):
   for switch in switches:
     self.registerSwitch('', switch[0], switch[1])
 
+  # Parses the arguments passed by the user
   self.parseCommandLine(ignoreErrors=True)
   args = self.getPositionalArgs()
   if args:

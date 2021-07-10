@@ -19,6 +19,7 @@ from DIRAC import exit as DIRACExit, gLogger
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("ShifterRole:  Name of the shifter role, e.g. DataManager")
   self.registerArgument("UserName:     A user name, as registered in Registry section")
   self.registerArgument("DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)")

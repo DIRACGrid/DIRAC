@@ -21,8 +21,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("CE:  Name of the CE")
   self.parseCommandLine(ignoreErrors=True)
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   ce = self.getPositionalArgs(group=True)
 
   from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath

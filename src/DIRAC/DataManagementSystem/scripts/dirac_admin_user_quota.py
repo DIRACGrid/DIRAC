@@ -24,6 +24,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["User: list of SEs or comma-separated SEs"], mandatory=False)
 
   _, users = self.parseCommandLine(ignoreErrors=True)

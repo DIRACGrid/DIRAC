@@ -24,6 +24,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   self.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
   self.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["JobID:    DIRAC Job ID"], mandatory=False)
   sws, args = self.parseCommandLine(ignoreErrors=True)
 

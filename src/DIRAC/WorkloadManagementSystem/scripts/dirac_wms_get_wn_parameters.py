@@ -8,17 +8,15 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
 
-class WMSGetWNParameters(DIRACScript):
-
-  def initParameters(self):
-    self.ceName = ''
-    self.Site = ''
-    self.Queue = ''
+class Params(object):
+  ceName = ''
+  Site = ''
+  Queue = ''
 
   def setCEName(self, args):
     self.ceName = args
@@ -30,15 +28,16 @@ class WMSGetWNParameters(DIRACScript):
     self.Queue = args
 
 
-@WMSGetWNParameters()
+@DIRACScript()
 def main(self):
-  self.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", self.setCEName)
-  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", self.setSite)
-  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", self.setQueue)
+  params = Params()
+  self.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", params.setCEName)
+  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", params.setSite)
+  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", params.setQueue)
   self.parseCommandLine(ignoreErrors=True)
 
   gLogger.info("Getting number of processors")
-  numberOfProcessor = JobParameters.getNumberOfProcessors(self.Site, self.ceName, self.Queue)
+  numberOfProcessor = JobParameters.getNumberOfProcessors(params.Site, params.ceName, params.Queue)
 
   gLogger.info("Getting memory (RAM) from MJF")
   maxRAM = JobParameters.getMemoryFromMJF()

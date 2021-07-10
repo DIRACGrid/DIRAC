@@ -3,14 +3,13 @@
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
+
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-
 __RCSID__ = "$Id$"
 
 import sys
-
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 

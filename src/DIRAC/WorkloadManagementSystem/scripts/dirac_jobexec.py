@@ -13,6 +13,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+
 import os
 import os.path
 import sys
@@ -25,6 +26,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   # Register workflow parameter switch
   self.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument('jobXMLfile: specify path to the Job XML file description')
   self.parseCommandLine()
 

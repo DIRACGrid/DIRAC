@@ -15,16 +15,17 @@ __RCSID__ = "$Id$"
 import six
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 
-class SortCSSites(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     """ init """
+    # Wrap globally described parameters in a class
     self.dryRun = False
     self.voName = None
 
@@ -37,7 +38,7 @@ class SortCSSites(DIRACScript):
     return S_OK()
 
 
-@SortCSSites()
+@DIRACScript()
 def main(self):
   self.registerSwitch("V:", "vo=", "VO name", self.setVO)
   self.registerSwitch("D", "dryRun", "Dry run", self.setDryRun)

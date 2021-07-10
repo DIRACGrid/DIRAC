@@ -46,6 +46,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   original = False
   self.registerSwitch('O', 'Original', 'Gets the original JDL')
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["JobID:    DIRAC Job ID"])
   sws, args = self.parseCommandLine(ignoreErrors=True)
 

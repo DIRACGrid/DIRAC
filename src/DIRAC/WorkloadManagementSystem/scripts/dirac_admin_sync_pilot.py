@@ -13,23 +13,23 @@ import os
 import json
 import hashlib
 
+
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class SyncPilot(DIRACScript):
-
-  def initParameters(self):
-    self.includeMasterCS = True
+class Params(object):
+  includeMasterCS = True
 
   def setNoMasterCS(self, optVal):
     self.includeMasterCS = False
     return S_OK()
 
 
-@SyncPilot()
+@DIRACScript()
 def main(self):
-  self.registerSwitch("n", "noMasterCS", "do not include master CS", self.setNoMasterCS)
+  params = Params()
+  self.registerSwitch("n", "noMasterCS", "do not include master CS", params.setNoMasterCS)
   self.parseCommandLine()
 
   from DIRAC import gLogger, exit as DIRACExit
@@ -47,7 +47,7 @@ def main(self):
   gLogger.verbose("pilotVORepoBranch=" + ps.pilotVORepoBranch)
 
   # pilot.json
-  res = ps.getCSDict(includeMasterCS=self.includeMasterCS)
+  res = ps.getCSDict(includeMasterCS=params.includeMasterCS)
   if not res['OK']:
     DIRACExit(1)
   pilotDict = res['Value']

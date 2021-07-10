@@ -5,40 +5,43 @@ Create a production to replicate files from some storage elements to others
 :since:  May 31, 2018
 :author: A. Sailer
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-@Params()
+@DIRACScript()
 def main(self):
   """reads command line parameters, makes check and creates replication transformation"""
   from DIRAC import gLogger, exit as dexit
+  from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
 
-  self.registerSwitches()
+  clip = Params()
+  clip.registerSwitches(self)
   self.parseCommandLine()
 
   from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
 
-  if not self.checkSettings()['OK']:
+  if not clip.checkSettings(self)['OK']:
     gLogger.error("ERROR: Missing settings")
     dexit(1)
-  for metaValue in self.metaValues:
-    resCreate = createDataTransformation(flavour=self.flavour,
-                                         targetSE=self.targetSE,
-                                         sourceSE=self.sourceSE,
-                                         metaKey=self.metaKey,
+  for metaValue in clip.metaValues:
+    resCreate = createDataTransformation(flavour=clip.flavour,
+                                         targetSE=clip.targetSE,
+                                         sourceSE=clip.sourceSE,
+                                         metaKey=clip.metaKey,
                                          metaValue=metaValue,
-                                         extraData=self.extraData,
-                                         extraname=self.extraname,
-                                         groupSize=self.groupSize,
-                                         tGroup=self.groupName,
-                                         plugin=self.plugin,
-                                         enable=self.enable,
+                                         extraData=clip.extraData,
+                                         extraname=clip.extraname,
+                                         groupSize=clip.groupSize,
+                                         tGroup=clip.groupName,
+                                         plugin=clip.plugin,
+                                         enable=clip.enable,
                                          )
     if not resCreate['OK']:
       gLogger.error("Failed to create Transformation", resCreate['Message'])

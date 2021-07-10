@@ -13,10 +13,10 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 
-class AddUser(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     self.userName = None
@@ -49,7 +49,7 @@ class AddUser(DIRACScript):
       self.userGroups.append(arg)
 
 
-@AddUser()
+@DIRACScript()
 def main(self):
   self.registerSwitch('N:', 'UserName:', 'Short Name of the User (Mandatory)', self.setUserName)
   self.registerSwitch('D:', 'UserDN:', 'DN of the User Certificate (Mandatory)', self.setUserDN)
@@ -59,6 +59,7 @@ def main(self):
       'UserGroup:',
       'Name of the Group for the User (Allow Multiple instances or None)',
       self.addUserGroup)
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["Property=<Value>: Properties to be added to the User like (Phone=XXXX)"],
                         mandatory=False)
   self.parseCommandLine(ignoreErrors=True)

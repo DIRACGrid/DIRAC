@@ -23,6 +23,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
   self.parseCommandLine(ignoreErrors=True)
   lfns = self.getPositionalArgs()

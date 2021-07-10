@@ -9,13 +9,13 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
-
 import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("TransID: transformation ID")
   self.registerArgument(("LFN: LFN", "FileName: file containing LFNs"))
   self.parseCommandLine()

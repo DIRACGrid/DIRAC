@@ -9,7 +9,6 @@ Kill the specified pilot
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -18,6 +17,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("PilotRef: pilot reference")
   _, args = self.parseCommandLine(ignoreErrors=True)
 

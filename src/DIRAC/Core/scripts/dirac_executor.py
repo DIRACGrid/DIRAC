@@ -23,6 +23,8 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
+
   self.localCfg.registerCmdArg(["executor: specify which executor to run"])
   positionalArgs = self.localCfg.getPositionalArguments()
 

@@ -15,10 +15,10 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 
-class AddGroup(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     self.groupName = None
@@ -43,7 +43,7 @@ class AddGroup(DIRACScript):
       self.groupProperties.append(arg)
 
 
-@AddGroup()
+@DIRACScript()
 def main(self):
   self.registerSwitch('G:', 'GroupName:', 'Name of the Group (Mandatory)', self.setGroupName)
   self.registerSwitch(
@@ -56,6 +56,7 @@ def main(self):
       'Property:',
       'Property to be added to the Group (Allow Multiple instances or None)',
       self.addProperty)
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["Property=<Value>: Other properties to be added to the Group like (VOMSRole=XXXX)"],
                         mandatory=False)
   _, args = self.parseCommandLine(ignoreErrors=True)

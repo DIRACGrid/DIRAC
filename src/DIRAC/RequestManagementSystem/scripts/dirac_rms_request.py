@@ -10,7 +10,6 @@ __RCSID__ = "$Id$"
 
 import datetime
 import os
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
@@ -49,6 +48,7 @@ def main(self):
   self.registerSwitch('', 'Cancel', '   Cancel the request')
   self.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
   self.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("file:     a file containing a list of requests (Comma-separated on each line)",
                          "request:  a request ID or a unique request name"), mandatory=False)
   self.registerArgument(["request:  a request ID or a unique request name"], mandatory=False)

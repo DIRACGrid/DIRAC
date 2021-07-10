@@ -18,8 +18,9 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
-import ssl
 import shutil
+import ssl
+
 from six.moves.urllib.request import urlopen
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript

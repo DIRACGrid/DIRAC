@@ -12,12 +12,10 @@ import json
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class ResourceGetParameters(DIRACScript):
-
-  def initParameters(self):
-    self.ceName = ''
-    self.Queue = ''
-    self.Site = ''
+class Params(object):
+  ceName = ''
+  Queue = ''
+  Site = ''
 
   def setCEName(self, args):
     self.ceName = args
@@ -29,19 +27,21 @@ class ResourceGetParameters(DIRACScript):
     self.Queue = args
 
 
-@ResourceGetParameters()
+@DIRACScript()
 def main(self):
+  params = Params()
+
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 
   self.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)",
-                      self.setCEName)
-  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", self.setSite)
-  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", self.setQueue)
+                      params.setCEName)
+  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", params.setSite)
+  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", params.setQueue)
 
   self.parseCommandLine(ignoreErrors=True)
 
-  result = Resources.getQueue(self.Site, self.ceName, self.Queue)
+  result = Resources.getQueue(params.Site, params.ceName, params.Queue)
 
   if not result['OK']:
     gLogger.error("Could not retrieve resource parameters", ": " + result['Message'])

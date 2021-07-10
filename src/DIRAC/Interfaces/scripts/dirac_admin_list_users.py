@@ -25,6 +25,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerSwitch("e", "extended", "Show extended info")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["Group:    Only users from this group (default: all)"],
                         default=['all'], mandatory=False)
   self.parseCommandLine(ignoreErrors=True)

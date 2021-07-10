@@ -29,6 +29,7 @@ def main(self):
   self.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
   self.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
   self.registerSwitch("", "File=", "File name,if not specified default is std.out ")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("String: string to search for")
   _, args = self.parseCommandLine(ignoreErrors=True)
 

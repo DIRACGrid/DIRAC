@@ -5,14 +5,12 @@ Create and put 'ReplicateAndRegister' request.
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
 __RCSID__ = "$Id$"
-
 import os
 
-import DIRAC
-from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC import gLogger
+import DIRAC
 
 
 def getLFNList(arg):
@@ -29,6 +27,7 @@ def getLFNList(arg):
 def main(self):
   catalog = None
   self.registerSwitch("C:", "Catalog=", "Catalog to use")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(" requestName:  a request name")
   self.registerArgument(" LFNs:         single LFN or file with LFNs")
   self.registerArgument(["targetSE:     target SE"])

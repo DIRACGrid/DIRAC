@@ -20,15 +20,16 @@ from __future__ import absolute_import
 from __future__ import division
 
 from DIRAC import S_OK, exit as DIRACexit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 __RCSID__ = "$Id$"
 
 
-class ShowSEStatus(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     """ init """
+    # Wrap globally described parameters in a class
     self.vo = None
     self.allVOsFlag = False
     self.noVOFlag = False
@@ -47,7 +48,7 @@ class ShowSEStatus(DIRACScript):
     return S_OK()
 
 
-@ShowSEStatus()
+@DIRACScript()
 def main(self):
   self.registerSwitch("V:", "vo=", "Virtual Organization", self.setVO)
   self.registerSwitch("a", "all", "All Virtual Organizations flag", self.setAllVO)

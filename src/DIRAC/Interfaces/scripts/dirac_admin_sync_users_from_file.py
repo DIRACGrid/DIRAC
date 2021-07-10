@@ -23,8 +23,9 @@ __RCSID__ = "$Id$"
 @DIRACScript()
 def main(self):
   self.registerSwitch("t", "test", "Only test. Don't commit changes")
-  self.registerArgument("UserCfg:  Cfg FileName with Users as sections containing \
-                         DN, Groups, and other properties as options")
+  # Registering arguments will automatically add their description to the help menu
+  self.registerArgument("UserCfg:  Cfg FileName with Users as sections containing"
+                        "DN, Groups, and other properties as options")
   self.parseCommandLine(ignoreErrors=True)
 
   args = self.getExtraCLICFGFiles()

@@ -23,13 +23,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("Site:     Name of the Site")
   self.registerArgument("Comment:  Reason of the action")
   self.parseCommandLine(ignoreErrors=True)
 
-  from DIRAC import exit as DIRACExit, gConfig, gLogger
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+  from DIRAC import exit as DIRACExit, gConfig, gLogger
 
   def getBoolean(value):
     if value.lower() == 'true':
@@ -61,6 +62,7 @@ def main(self):
   #  print 'Script stopped'
   #  DIRACExit( 0 )
 
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   site, comment = self.getPositionalArgs(group=True)
   result = diracAdmin.allowSite(site, comment, printOutput=True)
   if not result['OK']:

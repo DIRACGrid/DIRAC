@@ -17,12 +17,12 @@ from datetime import datetime, timedelta
 
 # DIRAC
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 
-class RSSSetToken(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     self.subLogger = gLogger.getSubLogger(__file__)
@@ -41,6 +41,7 @@ class RSSSetToken(DIRACScript):
         ('reason=', 'Reason to set the Status'),
         ('days=', 'Number of days the token is acquired'),
         ('releaseToken', 'Release the token and let the RSS take control'),
+        ('VO=', 'VO to set a token for (obligatory)')
     )
 
     for switch in switches:
@@ -75,7 +76,7 @@ class RSSSetToken(DIRACScript):
     else:
       switches['releaseToken'] = False
 
-    for key in ('element', 'name', 'reason'):
+    for key in ('element', 'name', 'reason', 'VO'):
 
       if key not in switches:
         self.subLogger.error("%s Switch missing" % key)
@@ -119,6 +120,7 @@ class RSSSetToken(DIRACScript):
     elements = rssClient.selectStatusElement(self.switchDict['element'], 'Status',
                                              name=self.switchDict['name'],
                                              statusType=self.switchDict['statusType'],
+                                             vO=switchDict['VO'],
                                              meta={'columns': ['StatusType', 'TokenOwner']})
 
     if not elements['OK']:
@@ -127,9 +129,9 @@ class RSSSetToken(DIRACScript):
 
     # If there list is empty they do not exist on the DB !
     if not elements:
-      self.subLogger.warn('Nothing found for %s, %s, %s' % (self.switchDict['element'],
-                                                            self.switchDict['name'],
-                                                            self.switchDict['statusType']))
+      self.subLogger.warn('Nothing found for %s, %s, %s %s' % (self.switchDict['element'],
+                                                               self.switchDict['name'], switchDict['VO'],
+                                                               self.switchDict['statusType']))
       return S_OK()
 
     # If we want to release the token
@@ -154,6 +156,7 @@ class RSSSetToken(DIRACScript):
                                              statusType=statusType,
                                              reason=self.switchDict['reason'],
                                              tokenOwner=newTokenOwner,
+                                             vO=switchDict['VO'],
                                              tokenExpiration=tokenExpiration)
       if not result['OK']:
         return result
@@ -165,11 +168,12 @@ class RSSSetToken(DIRACScript):
       else:
         msg = '(aquired from %s)' % tokenOwner
 
-      self.subLogger.info('%s:%s %s' % (self.switchDict['name'], statusType, msg))
+      self.subLogger.info('name:%s, VO:%s statusType:%s %s' % (self.switchDict['name'],
+                                                               self.switchDict['VO'], statusType, msg))
     return S_OK()
 
 
-@RSSSetToken()
+@DIRACScript()
 def main(self):
   """
   Main function of the script. Gets the username from the proxy loaded and sets

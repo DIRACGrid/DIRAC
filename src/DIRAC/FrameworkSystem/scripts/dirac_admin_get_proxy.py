@@ -27,21 +27,20 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 __RCSID__ = "$Id$"
 
 
-class GetProxy(DIRACScript):
+class Params(object):
 
-  def initParameters(self):
-    self.limited = False
-    self.proxyPath = False
-    self.proxyLifeTime = 86400
-    self.enableVOMS = False
-    self.vomsAttr = None
-    self.switches = [
-        ("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime),
-        ("l", "limited", "Get a limited proxy", self.setLimited),
-        ("u:", "out=", "File to write as proxy", self.setProxyLocation),
-        ("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS),
-        ("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
-    ]
+  limited = False
+  proxyPath = False
+  proxyLifeTime = 86400
+  enableVOMS = False
+  vomsAttr = None
+  switches = [
+      ("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
+      ("l", "limited", "Get a limited proxy", self.setLimited)
+      ("u:", "out=", "File to write as proxy", self.setProxyLocation)
+      ("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
+      ("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
+  ]
 
   def setLimited(self, args):
     """ Set limited
@@ -98,14 +97,17 @@ class GetProxy(DIRACScript):
     return S_OK()
 
 
-@GetProxy()
+@DIRACScript()
 def main(self):
-  self.registerSwitches(self.switches)
+  params = Params()
+  self.registerSwitches(params.switches)
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("DN:       DN of the user",
                          "user:     DIRAC user name (will fail if there is more than 1 DN registered)"))
   self.registerArgument(" group:    DIRAC group name")
 
   self.parseCommandLine(ignoreErrors=True)
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   userDN, userGroup = self.getPositionalArgs(group=True)
 
   userName = False
@@ -131,31 +133,31 @@ def main(self):
     else:
       userDN = DNList[0]
 
-  if not self.proxyPath:
+  if not params.proxyPath:
     if not userName:
       result = Registry.getUsernameForDN(userDN)
       if not result['OK']:
         gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
         DIRAC.exit(2)
       userName = result['Value']
-    self.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
+    params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
 
-  if self.enableVOMS:
-    result = gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=self.limited,
-                                             requiredTimeLeft=self.proxyLifeTime,
-                                             requiredVOMSAttribute=self.vomsAttr)
+  if params.enableVOMS:
+    result = gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=params.limited,
+                                             requiredTimeLeft=params.proxyLifeTime,
+                                             requiredVOMSAttribute=params.vomsAttr)
   else:
-    result = gProxyManager.downloadProxy(userDN, userGroup, limited=self.limited,
-                                         requiredTimeLeft=self.proxyLifeTime)
+    result = gProxyManager.downloadProxy(userDN, userGroup, limited=params.limited,
+                                         requiredTimeLeft=params.proxyLifeTime)
   if not result['OK']:
     gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
     DIRAC.exit(2)
   chain = result['Value']
-  result = chain.dumpAllToFile(self.proxyPath)
+  result = chain.dumpAllToFile(params.proxyPath)
   if not result['OK']:
-    gLogger.notice('Proxy file cannot be written to %s: %s' % (self.proxyPath, result['Message']))
+    gLogger.notice('Proxy file cannot be written to %s: %s' % (params.proxyPath, result['Message']))
     DIRAC.exit(2)
-  gLogger.notice("Proxy downloaded to %s" % self.proxyPath)
+  gLogger.notice("Proxy downloaded to %s" % params.proxyPath)
   DIRAC.exit(0)
 
 

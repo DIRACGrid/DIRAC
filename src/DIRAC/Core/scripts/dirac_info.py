@@ -30,10 +30,10 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 
-class DIRACInfo(DIRACScript):
+class DIRACScript(_DIRACScript):
   import os
 
   import DIRAC
@@ -102,7 +102,7 @@ class DIRACInfo(DIRACScript):
     print()
 
 
-@DIRACInfo()
+@DIRACScript()
 def main(self):
   self.run()
 

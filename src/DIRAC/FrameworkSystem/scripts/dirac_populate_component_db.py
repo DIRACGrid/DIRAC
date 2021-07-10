@@ -9,12 +9,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
 
 from datetime import datetime
-
-from DIRAC import S_OK, gLogger, gConfig, exit as DIRACexit
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC import exit as DIRACexit
+from DIRAC import S_OK, gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
@@ -22,27 +21,27 @@ from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient \
     import ComponentMonitoringClient
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
+__RCSID__ = "$Id$"
 
-class PopulateComponentDB(DIRACScript):
-
-  def initParameters(self):
-    self.excludedHosts = []
+class Params(object):
+  excludedHosts = []
 
   def setExcludedHosts(self, value):
     self.excludedHosts = value.split(',')
     return S_OK()
 
 
-@PopulateComponentDB()
+@DIRACScript()
 def main(self):
+  params = Params()
   self.registerSwitch(
       "e:",
       "exclude=",
       "Comma separated list of hosts to be excluded from the scanning process",
-      self.setExcludedHosts)
+      params.setExcludedHosts)
   self.parseCommandLine(ignoreErrors=False)
 
   componentType = ''
@@ -51,7 +50,7 @@ def main(self):
   mySetup = gConfig.getValue('DIRAC/Setup')
 
   # Retrieve information from all the hosts
-  client = SystemAdministratorIntegrator(exclude=self.excludedHosts)
+  client = SystemAdministratorIntegrator(exclude=params.excludedHosts)
   resultAll = client.getOverallStatus()
   if not resultAll['OK']:
     gLogger.error(resultAll['Message'])
@@ -69,7 +68,7 @@ def main(self):
   for host in resultAll['Value']:
     if not resultAll['Value'][host]['OK']:
       # If the host cannot be contacted, exclude it and send message
-      self.excludedHosts.append(host)
+      params.excludedHosts.append(host)
 
       result = NotificationClient().sendMail(
           Operations().getValue(
@@ -103,7 +102,7 @@ def main(self):
     DIRACexit(-1)
 
   records = []
-  finalSet = list(set(resultAll['Value']) - set(self.excludedHosts))
+  finalSet = list(set(resultAll['Value']) - set(params.excludedHosts))
   for host in finalSet:
     hasMySQL = True
     result = resultAll['Value'][host]

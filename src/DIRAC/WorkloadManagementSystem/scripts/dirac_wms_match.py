@@ -10,17 +10,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK, gLogger, exit as DIRACExit
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
+__RCSID__ = "$Id$"
 
-class WMSMatch(DIRACScript):
-
-  def initParameters(self):
-    self.fullMatch = False
-    self.sites = None
+class Params(object):
+  fullMatch = False
+  sites = None
 
   def setFullMatch(self, optVal_):
     self.fullMatch = True
@@ -31,10 +28,11 @@ class WMSMatch(DIRACScript):
     return S_OK()
 
 
-@WMSMatch()
+@DIRACScript()
 def main(self):
-  self.registerSwitch("F", "full-match", "Check all the matching criteria", self.setFullMatch)
-  self.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", self.setSites)
+  params = Params()
+  self.registerSwitch("F", "full-match", "Check all the matching criteria", params.setFullMatch)
+  self.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", params.setSites)
   self.registerArgument("job_JDL: file with job JDL description")
   _, args = self.parseCommandLine(ignoreErrors=True)
 
@@ -55,7 +53,7 @@ def main(self):
     DIRACExit(-1)
   voName = result['Value']
 
-  resultQueues = Resources.getQueues(siteList=self.sites, community=voName)
+  resultQueues = Resources.getQueues(siteList=params.sites, community=voName)
   if not resultQueues['OK']:
     gLogger.error('Failed to get CE information')
     DIRACExit(-1)
@@ -88,7 +86,7 @@ def main(self):
       if result['OK']:
         ceStatus = result['Value'][ce]['all']
 
-    result = matchQueue(jdl, queueInfo, fullMatch=self.fullMatch)
+    result = matchQueue(jdl, queueInfo, fullMatch=params.fullMatch)
     if not result['OK']:
       gLogger.error('Failed in getting match data', result['Message'])
       DIRACExit(-1)

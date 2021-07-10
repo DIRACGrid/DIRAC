@@ -2,9 +2,12 @@
 """
 Runs checkTransformationIntegrity from ValidateOutputDataAgent on selected Tranformation
 """
+
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
+__RCSID__ = "$Id$"
 
 import sys
 
@@ -13,6 +16,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["transID: transformation ID"])
   _, args = self.parseCommandLine()
 

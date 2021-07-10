@@ -33,6 +33,7 @@ __RCSID__ = "$Id$"
 def main(self):
   self.registerSwitch("D", "sync", "Make target directory identical to source")
   self.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("LFN:           Logical File Name (Path to directory)",
                          "Path:          Local path to the file (Path to directory)"))
   self.registerArgument(("Path:          Local path to the file (Path to directory)",

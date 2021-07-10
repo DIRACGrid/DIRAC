@@ -18,6 +18,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("PFN:      Physical File Name or file containing PFNs")
   self.registerArgument("SE:       Valid DIRAC SE")
   _, args = self.parseCommandLine(ignoreErrors=True)
@@ -29,7 +30,8 @@ def main(self):
   dirac = Dirac()
   exitCode = 0
 
-  pfn, seName = args
+  pfn = args[0]
+  seName = args[1]
   try:
     f = open(pfn, 'r')
     pfns = f.read().splitlines()

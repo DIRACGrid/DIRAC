@@ -18,17 +18,18 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.Core.Utilities.Time import dateTime, toString
 
 
-class SortCSSites(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     """ init """
+    # Wrap globally described parameters in a class
     self.SORTBYNAME = True
     self.REVERSE = False
 
@@ -46,7 +47,7 @@ class SortCSSites(DIRACScript):
     return cb[2]
 
 
-@SortCSSites()
+@DIRACScript()
 def main(self):
   self.registerSwitch(
       "C",
@@ -54,9 +55,12 @@ def main(self):
       "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)",
       self.sortBy)
   self.registerSwitch("R", "reverse", "Reverse the sort order", self.isReverse)
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)"],
                         mandatory=False)
-  _, args = self.parseCommandLine(ignoreErrors=True)
+
+  self.parseCommandLine(ignoreErrors=True)
+  args = self.getPositionalArgs()
 
   result = getProxyInfo()
   if not result["OK"]:

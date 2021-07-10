@@ -15,7 +15,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-def __stringInList(subStr, sList):
+def _stringInList(subStr, sList):
   resList = []
   for s in sList:
     if subStr.lower() in s.lower():
@@ -27,6 +27,7 @@ def __stringInList(subStr, sList):
 def main(self):
   parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
   self.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["PilotID:  Grid ID of the pilot"])
   switches, args = self.parseCommandLine(ignoreErrors=True)
   for switch in switches:
@@ -65,8 +66,8 @@ def main(self):
               params['CPUEfficiency'] = '%s %%' % (
                   100. * float(params['TotalCPUTime(s)']) / float(params['WallClockTime(s)']))
             for i, par in parameters:
-              for param in [p for p in __stringInList(str(par), str(params))
-                            if not __stringInList(str(p), str(result[jobID]))]:
+              for param in [p for p in _stringInList(str(par), str(params))
+                            if not _stringInList(str(p), str(result[jobID]))]:
                 if param == 'CPUEfficiency':
                   effRequested = True
                 result[jobID]['%d.%s' % (i, param)] = params[param]

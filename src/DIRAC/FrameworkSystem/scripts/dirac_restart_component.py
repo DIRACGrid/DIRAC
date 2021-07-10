@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 @DIRACScript()
 def main(self):
   self.disableCS()
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(" System:  Name of the system for the component (default *: all)",
                         mandatory=False, default='*')
   self.registerArgument(("Service: Name of the particular component (default *: all)",

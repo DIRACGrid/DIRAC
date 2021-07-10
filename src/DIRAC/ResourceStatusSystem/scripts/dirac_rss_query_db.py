@@ -10,17 +10,16 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 import datetime
-
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 
-class RSSQueryDB(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     self.subLogger = gLogger.getSubLogger(__file__)
@@ -42,11 +41,13 @@ class RSSQueryDB(DIRACScript):
         ('reason=', 'Decision that triggered the assigned status'),
         ('lastCheckTime=', 'Time-stamp setting last time the status & status were checked'),
         ('tokenOwner=', 'Owner of the token ( to specify only with select/delete queries'),
+        ('VO=', 'Virtual organisation; None if default')
     )
 
     for switch in switches:
       self.registerSwitch('', switch[0], switch[1])
 
+    # Registering arguments will automatically add their description to the help menu
     self.registerArgument("Query:     queries", values=['select', 'add', 'modify', 'delete'])
     self.registerArgument("Element:   elements", values=['site', 'resource', 'component', 'node'])
     self.registerArgument("TableType: table types", values=['status', 'log', 'history'])
@@ -66,6 +67,7 @@ class RSSQueryDB(DIRACScript):
       Parses the arguments passed by the user
     """
 
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
     switches, args = self.parseCommandLine(ignoreErrors=True)
     query = args[0].lower()
 
@@ -79,6 +81,7 @@ class RSSQueryDB(DIRACScript):
     switches.setdefault('reason', None)
     switches.setdefault('lastCheckTime', None)
     switches.setdefault('tokenOwner', None)
+    switches.setdefault('VO', None)
 
     if 'status' in switches and switches['status'] is not None:
       switches['status'] = switches['status'].title()
@@ -157,10 +160,10 @@ class RSSQueryDB(DIRACScript):
     statusTypes = []
 
     if switchDict['name'] is not None:
-      names = filter(None, switchDict['name'].split(','))
+      names = list(filter(None, switchDict['name'].split(',')))
 
     if switchDict['statusType'] is not None:
-      statusTypes = filter(None, switchDict['statusType'].split(','))
+      statusTypes = list(filter(None, switchDict['statusType'].split(',')))
       statusTypes = self.checkStatusTypes(statusTypes)
 
     if names and statusTypes:
@@ -253,7 +256,7 @@ class RSSQueryDB(DIRACScript):
     rssClient = ResourceStatusClient.ResourceStatusClient()
 
     meta = {'columns': ['name', 'statusType', 'status', 'elementType', 'reason',
-                        'dateEffective', 'lastCheckTime', 'tokenOwner', 'tokenExpiration']}
+                        'dateEffective', 'lastCheckTime', 'tokenOwner', 'tokenExpiration', 'vO']}
 
     result = {'output': None, 'successful': None, 'message': None, 'match': None}
     output = rssClient.selectStatusElement(element=args[1].title(),
@@ -264,6 +267,7 @@ class RSSQueryDB(DIRACScript):
                                            elementType=switchDict['elementType'],
                                            lastCheckTime=switchDict['lastCheckTime'],
                                            tokenOwner=switchDict['tokenOwner'],
+                                           vO=switchDict['VO'],
                                            meta=meta)
     result['output'] = [dict(zip(output['Columns'], e)) for e in output['Value']]
     result['output'] = self.filterReason(result['output'], switchDict['reason'])
@@ -291,7 +295,8 @@ class RSSQueryDB(DIRACScript):
                                                 elementType=switchDict['elementType'],
                                                 reason=switchDict['reason'],
                                                 tokenOwner=self.getToken('owner'),
-                                                tokenExpiration=self.getToken('expiration'))
+                                                tokenExpiration=self.getToken('expiration'),
+                                                vO=switchDict['VO'])
 
     if output.get('Value'):
       result['match'] = int(output['Value'] if output['Value'] else 0)
@@ -317,7 +322,9 @@ class RSSQueryDB(DIRACScript):
                                            elementType=switchDict['elementType'],
                                            reason=switchDict['reason'],
                                            tokenOwner=self.getToken('owner'),
-                                           tokenExpiration=self.getToken('expiration'))
+                                           tokenExpiration=self.getToken('expiration'),
+                                           vO=switchDict['VO']
+                                         )
 
     if output.get('Value'):
       result['match'] = int(output['Value'] if output['Value'] else 0)
@@ -342,7 +349,8 @@ class RSSQueryDB(DIRACScript):
                                            status=switchDict['status'],
                                            elementType=switchDict['elementType'],
                                            reason=switchDict['reason'],
-                                           tokenOwner=switchDict['tokenOwner'])
+                                           tokenOwner=switchDict['tokenOwner'],
+                                           vO=switchDict['VO'])
 
     if 'Value' in output:
       result['match'] = int(output['Value'] if output['Value'] else 0)
@@ -363,7 +371,7 @@ class RSSQueryDB(DIRACScript):
     for switchDict in switchDictSet:
       # exectue the query request: e.g. if it's a 'select' it executes 'select()'
       # the same if it is insert, update, add, modify, delete
-      result = eval('self.' + query + '( args, switchDict )')
+      result = getattr(self, query)(args, switchDict)
 
       if result['successful']:
         if query == 'select' and result['match'] > 0:
@@ -377,7 +385,7 @@ class RSSQueryDB(DIRACScript):
     self.confirm(query, matches)
 
 
-@RSSQueryDB()
+@DIRACScript()
 def main(self):
   # Script initialization
   self.registerSwitches()

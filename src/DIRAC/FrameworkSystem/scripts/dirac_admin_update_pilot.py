@@ -14,12 +14,18 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
-  self.registerSwitch("v:", "vo=",
-                      "Location of pilot version in CS /Operations/<vo>/Pilot/Version"
-                      " (default value specified in CS under /DIRAC/DefaultSetup)")
+  self.registerSwitch(
+      "v:",
+      "vo=",
+      "Location of pilot version in CS /Operations/<vo>/Pilot/Version"
+      " (default value specified in CS under /DIRAC/DefaultSetup)"
+  )
+
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("version: pilot version you want to update to")
   self.parseCommandLine(ignoreErrors=False)
 
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   version = self.getPositionalArgs(group=True)
 
   vo = None

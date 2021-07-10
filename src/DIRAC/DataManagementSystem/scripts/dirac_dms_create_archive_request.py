@@ -34,9 +34,6 @@ Default values for any of the command line options can also be set in the CS
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-__RCSID__ = '$Id$'
-
 import os
 
 import DIRAC
@@ -51,6 +48,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 sLog = gLogger.getSubLogger('AddArchive')
+__RCSID__ = '$Id$'
 
 
 class CreateArchiveRequest(DIRACScript):

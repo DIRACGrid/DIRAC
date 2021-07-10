@@ -24,13 +24,13 @@ except ImportError:
 
 from diraccfg import CFG
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 from DIRAC import gLogger, rootPath, S_OK
 
 __RCSID__ = "$Id$"
 
 
-class ExternalsRequirements(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     # Default installation type
@@ -48,7 +48,7 @@ def pipInstall(package, switches=""):
   return commands.getstatusoutput(cmd)
 
 
-@ExternalsRequirements()
+@DIRACScript()
 def main(self):
   self.disableCS()
 

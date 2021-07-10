@@ -15,6 +15,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("prodID: Production ID")
   _, args = self.parseCommandLine()
 

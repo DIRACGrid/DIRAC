@@ -26,6 +26,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   self.registerSwitch("f:", "File=", "Writes job ids to file <value>")
   self.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(["JDL:    Path to JDL file"])
   sws, args = self.parseCommandLine(ignoreErrors=True)
 

@@ -23,6 +23,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 def main(self):
   self.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
   self.registerSwitch("f", "force", "create the user if it doesn't exist")
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(" user:     User name")
   self.registerArgument(" DN:       DN of the User")
   self.registerArgument(["group:    Add the user to the group"])

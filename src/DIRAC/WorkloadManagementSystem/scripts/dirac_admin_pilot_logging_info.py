@@ -15,11 +15,9 @@ from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
-class PilotLoggingInfo(DIRACScript):
-
-  def initParameters(self):
-    self.uuid = None
-    self.jobid = None
+class Params(object):
+  uuid = None
+  jobid = None
 
   def setUUID(self, optVal):
     """
@@ -36,23 +34,24 @@ class PilotLoggingInfo(DIRACScript):
     return S_OK()
 
 
-@PilotLoggingInfo()
+@DIRACScript()
 def main(self):
-  self.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', self.setUUID)
-  self.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', self.setJobID)
+  params = Params()
+  self.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', params.setUUID)
+  self.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', params.setJobID)
   self.parseCommandLine()
 
   from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
-  if self.jobid:
-    result = PilotManagerClient().getPilots(self.jobid)
+  if params.jobid:
+    result = PilotManagerClient().getPilots(params.jobid)
     if not result['OK']:
       gLogger.error(result['Message'])
       DIRAC.exit(1)
     gLogger.debug(result['Value'])
-    self.uuid = list(result['Value'])[0]
+    params.uuid = list(result['Value'])[0]
 
-  result = PilotManagerClient().getPilotLoggingInfo(self.uuid)
+  result = PilotManagerClient().getPilotLoggingInfo(params.uuid)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRAC.exit(1)

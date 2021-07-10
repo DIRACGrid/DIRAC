@@ -13,10 +13,10 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 from DIRAC import version, gLogger, exit as DIRACExit, S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 
-class RSSSync(DIRACScript):
+class DIRACScript(_DIRACScript):
 
   def initParameters(self):
     self.subLogger = gLogger.getSubLogger(__file__)
@@ -237,7 +237,7 @@ class RSSSync(DIRACScript):
           DIRACExit(1)
 
 
-@RSSSync()
+@DIRACScript()
 def main(self):
   self.registerSwitches()
   self.registerUsageMessage()

@@ -27,6 +27,7 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument("DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
   self.registerArgument("GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
   self.registerArgument(["CE:           Name of the CE to be included in the site (ie: ce111.cern.ch)"])

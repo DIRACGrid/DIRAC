@@ -22,6 +22,7 @@ from DIRAC import gLogger
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("LocalFile: Path to local file containing LFNs",
                          "LFN:       Logical File Names"))
   self.parseCommandLine()
@@ -45,6 +46,7 @@ def main(self):
   fc = FileCatalog()
   import os
 
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   args = self.getPositionalArgs()
 
   inputFileName = args[0]

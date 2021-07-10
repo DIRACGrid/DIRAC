@@ -17,10 +17,12 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 @DIRACScript()
 def main(self):
+  # Registering arguments will automatically add their description to the help menu
   self.registerArgument(" SE:   StorageElement|All")
   self.registerArgument(["LFN:  LFN or file containing a List of LFNs"])
   self.parseCommandLine(ignoreErrors=False)
 
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   args = self.getPositionalArgs()
 
   targetSE = args.pop(0)
