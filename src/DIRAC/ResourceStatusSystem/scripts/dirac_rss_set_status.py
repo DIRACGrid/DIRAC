@@ -235,7 +235,7 @@ class DIRACScript(_DIRACScript):
       DIRACExit(1)
 
 
-@RSSSetStatus()
+@DIRACScript()
 def main(self):
   # Script initialization
   self.registerSwitches()

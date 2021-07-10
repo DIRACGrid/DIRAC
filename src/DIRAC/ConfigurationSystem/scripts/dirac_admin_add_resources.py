@@ -125,7 +125,7 @@ class DIRACScript(_DIRACScript):
           continue
         if diracSite.lower() == "help":
           gLogger.notice('%s site details:' % site)
-          for k, v in ceBdiiDict[site].items():
+          for k, v in self.ceBdiiDict[site].items():
             if k != "CEs":
               gLogger.notice('%s\t%s' % (k, v))
           gLogger.notice('\nEnter DIRAC site name in the form <domain>.<name>.%s\n' % country)
@@ -237,7 +237,7 @@ class DIRACScript(_DIRACScript):
       DIRACExit(-1)
     changeSet = result['Value']
 
-  self.updateCS(changeSet)
+    self.updateCS(changeSet)
 
 
 def handler(signum, frame):

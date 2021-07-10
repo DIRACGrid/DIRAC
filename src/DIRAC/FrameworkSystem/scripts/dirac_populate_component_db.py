@@ -26,6 +26,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 __RCSID__ = "$Id$"
 
+
 class Params(object):
   excludedHosts = []
 

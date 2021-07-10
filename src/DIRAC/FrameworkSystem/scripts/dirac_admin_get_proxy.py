@@ -34,13 +34,6 @@ class Params(object):
   proxyLifeTime = 86400
   enableVOMS = False
   vomsAttr = None
-  switches = [
-      ("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
-      ("l", "limited", "Get a limited proxy", self.setLimited)
-      ("u:", "out=", "File to write as proxy", self.setProxyLocation)
-      ("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
-      ("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
-  ]
 
   def setLimited(self, args):
     """ Set limited
@@ -100,7 +93,11 @@ class Params(object):
 @DIRACScript()
 def main(self):
   params = Params()
-  self.registerSwitches(params.switches)
+  self.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
+  self.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
+  self.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
+  self.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
+  self.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
   # Registering arguments will automatically add their description to the help menu
   self.registerArgument(("DN:       DN of the user",
                          "user:     DIRAC user name (will fail if there is more than 1 DN registered)"))

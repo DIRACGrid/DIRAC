@@ -120,7 +120,7 @@ class DIRACScript(_DIRACScript):
     elements = rssClient.selectStatusElement(self.switchDict['element'], 'Status',
                                              name=self.switchDict['name'],
                                              statusType=self.switchDict['statusType'],
-                                             vO=switchDict['VO'],
+                                             vO=self.switchDict['VO'],
                                              meta={'columns': ['StatusType', 'TokenOwner']})
 
     if not elements['OK']:
@@ -130,7 +130,8 @@ class DIRACScript(_DIRACScript):
     # If there list is empty they do not exist on the DB !
     if not elements:
       self.subLogger.warn('Nothing found for %s, %s, %s %s' % (self.switchDict['element'],
-                                                               self.switchDict['name'], switchDict['VO'],
+                                                               self.switchDict['name'],
+                                                               self.switchDict['VO'],
                                                                self.switchDict['statusType']))
       return S_OK()
 
@@ -156,7 +157,7 @@ class DIRACScript(_DIRACScript):
                                              statusType=statusType,
                                              reason=self.switchDict['reason'],
                                              tokenOwner=newTokenOwner,
-                                             vO=switchDict['VO'],
+                                             vO=self.switchDict['VO'],
                                              tokenExpiration=tokenExpiration)
       if not result['OK']:
         return result

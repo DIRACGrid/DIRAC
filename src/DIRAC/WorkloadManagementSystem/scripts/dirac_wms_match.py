@@ -15,6 +15,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 __RCSID__ = "$Id$"
 
+
 class Params(object):
   fullMatch = False
   sites = None

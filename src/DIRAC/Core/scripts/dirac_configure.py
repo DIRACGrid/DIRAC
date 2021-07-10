@@ -59,6 +59,7 @@ from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClie
 
 __RCSID__ = "$Id$"
 
+
 class Params(DIRACScript):
 
   def initParameters(self):
