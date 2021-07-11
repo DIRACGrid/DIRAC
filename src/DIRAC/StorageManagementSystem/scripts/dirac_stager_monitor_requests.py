@@ -35,6 +35,7 @@ from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 subLogger = None
 
+
 @Script()
 def main():
   def registerSwitches():

@@ -25,7 +25,7 @@ def main():
   catalog = FileCatalog()
   import os
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName, se, newStatus = self.getPositionalArgs(group=True)
+  inputFileName, se, newStatus = DIRACScript.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

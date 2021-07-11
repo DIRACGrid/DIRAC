@@ -13,6 +13,7 @@ from __future__ import division
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
+
 @Script()
 def main():
   Script.registerSwitch('', 'Path=', '    Path to search for')

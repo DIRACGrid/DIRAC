@@ -31,6 +31,7 @@ class Params(object):
     Script.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
     Script.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
 
+
 @Script()
 def main():
   PARAMS = Params()

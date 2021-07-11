@@ -50,6 +50,7 @@ class Params(object):
   def registerCLISwitches(self):
     Script.registerSwitch("v:", "valid=", "Required HH:MM for the users", self.setProxyLifeTime)
 
+
 @Script()
 def main():
   params = Params()

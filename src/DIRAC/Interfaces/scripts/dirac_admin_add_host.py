@@ -12,6 +12,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 hostName = None
@@ -41,7 +42,7 @@ def addProperty(arg):
     hostProperties.append(arg)
 
 
-@DIRACScript()
+@Script()
 def main():
   global hostName
   global hostDN
@@ -79,7 +80,7 @@ def main():
     else:
       pName = pl[0]
       pValue = "=".join(pl[1:])
-      Script.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      gLogger.info("Setting property %s to %s" % (pName, pValue))
       hostProps[pName] = pValue
 
   if not diracAdmin.csModifyHost(hostName, hostProps, createIfNonExistant=True)['OK']:
@@ -96,16 +97,16 @@ def main():
     cmc = ComponentMonitoringClient()
     ret = cmc.hostExists(dict(HostName=hostName))
     if not ret['OK']:
-      Script.gLogger.error('Cannot check if host is registered in ComponentMonitoring', ret['Message'])
+      gLogger.error('Cannot check if host is registered in ComponentMonitoring', ret['Message'])
     elif ret['Value']:
-      Script.gLogger.info('Host already registered in ComponentMonitoring')
+      gLogger.info('Host already registered in ComponentMonitoring')
     else:
       ret = cmc.addHost(dict(HostName=hostName, CPU='TO_COME'))
       if not ret['OK']:
-        Script.gLogger.error('Failed to add Host to ComponentMonitoring', ret['Message'])
+        gLogger.error('Failed to add Host to ComponentMonitoring', ret['Message'])
 
   for error in errorList:
-    Script.gLogger.error("%s: %s" % error)
+    gLogger.error("%s: %s" % error)
 
   DIRAC.exit(exitCode)
 

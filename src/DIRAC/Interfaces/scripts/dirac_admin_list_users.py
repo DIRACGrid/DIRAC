@@ -27,7 +27,7 @@ def main():
   Script.registerSwitch("e", "extended", "Show extended info")
   # Registering arguments will automatically add their description to the help menu
   Script.registerArgument(["Group:    Only users from this group (default: all)"],
-                        default=['all'], mandatory=False)
+                          default=['all'], mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs(group=True)
 

@@ -25,7 +25,7 @@ def main():
   Script.registerSwitch("t", "test", "Only test. Don't commit changes")
   # Registering arguments will automatically add their description to the help menu
   Script.registerArgument("UserCfg:  Cfg FileName with Users as sections containing"
-                        "DN, Groups, and other properties as options")
+                          "DN, Groups, and other properties as options")
   Script.parseCommandLine(ignoreErrors=True)
 
   args = Script.getExtraCLICFGFiles()

@@ -24,7 +24,7 @@ def main():
   DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
                                 "LFN:       Logical File Names"))
   DIRACScript.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
-  Script.parseCommandLine()
+  DIRACScript.parseCommandLine()
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 

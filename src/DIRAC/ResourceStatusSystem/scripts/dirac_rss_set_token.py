@@ -175,7 +175,7 @@ def setToken(user):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   """
   Main function of the script. Gets the username from the proxy loaded and sets

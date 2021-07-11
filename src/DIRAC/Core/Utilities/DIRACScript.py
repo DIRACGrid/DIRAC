@@ -5,12 +5,10 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
-import sys
-import os.path
-import inspect
 import functools
-from collections import defaultdict
+import os.path
+import sys
+import six
 
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -73,7 +71,7 @@ class DIRACScript(object):
           "All dirac- console_scripts should be wrapped in the DiracScript " +
           "decorator to ensure extension overlays are applied correctly."
       )
-    return entrypointFunc._func(self)
+    return entrypointFunc._func()
 
   @classmethod
   def parseCommandLine(cls, script=False, ignoreErrors=False, initializeMonitor=False):
@@ -132,9 +130,9 @@ class DIRACScript(object):
     return True
 
   @classmethod
-  def showHelp(cls):
+  def showHelp(cls, dummy=False, exitCode=0):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.showHelp`. """
-    return cls.localCfg.showHelp()
+    return cls.localCfg.showHelp(dummy=dummy, exitCode=exitCode)
 
   @classmethod
   def registerSwitches(cls, switches):

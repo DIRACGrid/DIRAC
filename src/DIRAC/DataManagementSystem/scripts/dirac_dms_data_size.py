@@ -28,7 +28,7 @@ def main():
   DIRACScript.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
   # Registering arguments will automatically add their description to the help menu
   DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
-                         "LFN:       Logical File Name"))
+                                "LFN:       Logical File Name"))
   DIRACScript.registerArgument(["LFN:       Logical File Name"], mandatory=False)
   unprSwitches, args = DIRACScript.parseCommandLine(ignoreErrors=False)
 

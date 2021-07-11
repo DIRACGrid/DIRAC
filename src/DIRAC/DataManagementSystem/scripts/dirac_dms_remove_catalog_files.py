@@ -24,7 +24,7 @@ from DIRAC import gLogger
 def main():
   # Registering arguments will automatically add their description to the help menu
   DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
-                         "LFN:       Logical File Names"))
+                                "LFN:       Logical File Names"))
   DIRACScript.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

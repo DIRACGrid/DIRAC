@@ -47,6 +47,7 @@ from collections import defaultdict
 
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
+
 @Script()
 def main():
   Script.registerSwitch('', 'FromSE=', 'SE1[,SE2,...]')
