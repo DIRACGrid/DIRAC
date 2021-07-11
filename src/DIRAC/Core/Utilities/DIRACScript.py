@@ -27,19 +27,21 @@ class DIRACScript(object):
   All console-scripts entrypoints in DIRAC and downstream extensions should be
   wrapped in this decorator to allow extensions to override any entry_point.
   """
+  scriptDoc = None
+  scriptName = None
+  alreadyInitialized = False
+  localCfg = LocalConfiguration()
+
   def __init__(self):
     """ c'tor """
-    self.scriptDoc = None
-    self.scriptName = None
-    self.alreadyInitialized = False
-    self.localCfg = LocalConfiguration()
-    self.showHelp = self.localCfg.showHelp
+    print('__init__')
+    # self.localCfg = LocalConfiguration()
     self.initParameters()
 
-  def __scriptInitialize(self):
-    """ Script c'tor
-    """
-    self.localCfg.setUsageMessage(self.scriptDoc)
+  # def __scriptInitialize(self):
+  #   """ Script c'tor
+  #   """
+  #   self.localCfg.setUsageMessage(self.scriptDoc)
 
   def initParameters(self):
     """ Script initialization """
@@ -55,16 +57,21 @@ class DIRACScript(object):
     """
     # If func is provided then the decorator is being applied to a function
     if func is not None:
+      print('func is not None')
       self._func = func
       # Find the name of the command and its documentation
-      self.scriptDoc = func.__globals__['__doc__']
+      # self.scriptDoc = func.__globals__['__doc__']
+      self.localCfg.setUsageMessage(func.__globals__['__doc__'])
       self.scriptName = os.path.basename(func.__globals__['__file__'])[:-3].replace('_', '-')
+      print(self.scriptName)
       return functools.wraps(func)(self)
 
-    self.__scriptInitialize()
+    # self.__scriptInitialize()
 
     # Setuptools based installations aren't supported with Python 2
     if six.PY2:
+      print('func run')
+      print(self.scriptName)
       return self._func(self)  # pylint: disable=not-callable
 
     # This is only available in Python 3.8+ so it has to be here for now
@@ -92,20 +99,24 @@ class DIRACScript(object):
       )
     return entrypointFunc._func(self)
 
-  def parseCommandLine(self, script=False, ignoreErrors=False, initializeMonitor=False):
+  @classmethod
+  def parseCommandLine(cls, script=False, ignoreErrors=False, initializeMonitor=False):
     """ Parse command line
 
         :param str script: script name
         :param bool ignoreErrors: ignore errors when loading configuration
         :param bool initializeMonitor: to use monitoring
     """
-    if not self.alreadyInitialized:
+    print('parseCommandLine')
+    print(cls.scriptName)
+    if not cls.alreadyInitialized:
       gLogger.showHeaders(False)
-      self.initialize(script, ignoreErrors, initializeMonitor, True)
+      cls.initialize(script, ignoreErrors, initializeMonitor, True)
 
-    return (self.localCfg.getUnprocessedSwitches(), self.localCfg.getPositionalArguments())
+    return (cls.localCfg.getUnprocessedSwitches(), cls.localCfg.getPositionalArguments())
 
-  def initialize(self, script=False, ignoreErrors=False, initializeMonitor=False, enableCommandLine=False):
+  @classmethod
+  def initialize(cls, script=False, ignoreErrors=False, initializeMonitor=False, enableCommandLine=False):
     """ initialization
 
         :param str script: script name
@@ -114,31 +125,31 @@ class DIRACScript(object):
         :param bool enableCommandLine: enable parse command line
     """
     # Please do not call initialize in every file
-    if self.alreadyInitialized:
+    if cls.alreadyInitialized:
       return False
-    userDisabled = not self.localCfg.isCSEnabled()
-    self.alreadyInitialized = True
+    userDisabled = not cls.localCfg.isCSEnabled()
+    cls.alreadyInitialized = True
     if not userDisabled:
-      self.localCfg.disableCS()
+      cls.localCfg.disableCS()
 
     if not enableCommandLine:
-      self.localCfg.disableParsingCommandLine()
+      cls.localCfg.disableParsingCommandLine()
 
     if script:
-      self.scriptName = script
-    self.localCfg.setConfigurationForScript(self.scriptName)
+      cls.scriptName = script
+    cls.localCfg.setConfigurationForScript(cls.scriptName)
 
     if not ignoreErrors:
-      self.localCfg.addMandatoryEntry("/DIRAC/Setup")
-    resultDict = self.localCfg.loadUserData()
+      cls.localCfg.addMandatoryEntry("/DIRAC/Setup")
+    resultDict = cls.localCfg.loadUserData()
     if not ignoreErrors and not resultDict['OK']:
       gLogger.error("There were errors when loading configuration", resultDict['Message'])
       sys.exit(1)
     if not userDisabled:
-      self.localCfg.enableCS()
+      cls.localCfg.enableCS()
     if initializeMonitor:
       gMonitor.setComponentType(gMonitor.COMPONENT_SCRIPT)
-      gMonitor.setComponentName(self.scriptName)
+      gMonitor.setComponentName(cls.scriptName)
       gMonitor.setComponentLocation("script")
       gMonitor.initialize()
     else:
@@ -146,46 +157,59 @@ class DIRACScript(object):
     includeExtensionErrors()
     return True
 
-  def registerSwitches(self, switches):
+  @classmethod
+  def showHelp(cls):
+    """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.showHelp`. """
+    return cls.localCfg.showHelp()
+
+  @classmethod
+  def registerSwitches(cls, switches):
     """ Register switches
 
         :param list switches: switches
     """
     for switch in switches:
-      self.registerSwitch(*switch)
+      cls.registerSwitch(*switch)
 
-  def registerSwitch(self, showKey, longKey, helpString, callback=False):
+  @classmethod
+  def registerSwitch(cls, showKey, longKey, helpString, callback=False):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.registerCmdOpt`. """
-    self.localCfg.registerCmdOpt(showKey, longKey, helpString, callback)
+    cls.localCfg.registerCmdOpt(showKey, longKey, helpString, callback)
 
-  def registerArgument(self, description, mandatory=True, values=None, default=None):
+  @classmethod
+  def registerArgument(cls, description, mandatory=True, values=None, default=None):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.registerCmdArg`. """
-    self.localCfg.registerCmdArg(description, mandatory, values, default)
+    cls.localCfg.registerCmdArg(description, mandatory, values, default)
 
-  def getPositionalArgs(self, group=False):
+  @classmethod
+  def getPositionalArgs(cls, group=False):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getPositionalArguments`. """
-    return self.localCfg.getPositionalArguments(group)
+    return cls.localCfg.getPositionalArguments(group)
 
-  def getExtraCLICFGFiles(self):
+  @classmethod
+  def getExtraCLICFGFiles(cls):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getExtraCLICFGFiles`. """
-    return self.localCfg.getExtraCLICFGFiles()
+    return cls.localCfg.getExtraCLICFGFiles()
 
-  def getUnprocessedSwitches(self):
+  @classmethod
+  def getUnprocessedSwitches(cls):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.getUnprocessedSwitches`. """
-    return self.localCfg.getUnprocessedSwitches()
+    return cls.localCfg.getUnprocessedSwitches()
 
-  def addDefaultOptionValue(self, option, value):
+  @classmethod
+  def addDefaultOptionValue(cls, option, value):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.addDefaultEntry`. """
-    self.localCfg.addDefaultEntry(option, value)
+    cls.localCfg.addDefaultEntry(option, value)
 
-  def setUsageMessage(self, usageMessage):
+  @classmethod
+  def setUsageMessage(cls, usageMessage):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.setUsageMessage`. """
-    self.localCfg.setUsageMessage(usageMessage)
+    cls.localCfg.setUsageMessage(usageMessage)
 
-  def disableCS(self):
+  def disableCS(cls):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.disableCS`. """
-    self.localCfg.disableCS()
+    cls.localCfg.disableCS()
 
-  def enableCS(self):
+  def enableCS(cls):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.enableCS`. """
-    return self.localCfg.enableCS()
+    return cls.localCfg.enableCS()

@@ -30,6 +30,9 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
+import os
+
+import DIRAC
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
 
 
@@ -48,9 +51,6 @@ class DIRACScript(_DIRACScript):
 
 @DIRACScript()
 def main(self):
-  import os
-
-  import DIRAC
   from DIRAC import gConfig
   from DIRAC.Core.Security.ProxyInfo import getProxyInfo
   from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
