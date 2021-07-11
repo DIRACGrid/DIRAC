@@ -7,7 +7,7 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = '$Id$'
 
@@ -18,8 +18,6 @@ class Params(object):
   def __init__(self):
     self.enabled = False
     self.transID = 0
-    self.switches = [('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID),
-                     ('X', 'Enabled', 'Enable the changes', self.setEnabled)]
 
   def setEnabled(self, _):
     self.enabled = True
@@ -29,12 +27,15 @@ class Params(object):
     self.transID = int(transID)
     return S_OK()
 
+  def registerSwitches(self):
+    Script.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
+    Script.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   PARAMS = Params()
-  self.registerSwitches(PARAMS.switches)
-  self.parseCommandLine(ignoreErrors=False)
+  PARAMS.registerSwitches()
+  Script.parseCommandLine(ignoreErrors=False)
 
   # Create Data Recovery Agent and run over single transformation.
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -57,4 +58,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

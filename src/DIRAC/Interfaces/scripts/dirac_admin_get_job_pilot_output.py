@@ -19,11 +19,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["JobID:    DIRAC ID of the Job"])
+  DIRACScript.registerArgument(["JobID:    DIRAC ID of the Job"])
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  _, args = self.parseCommandLine(ignoreErrors=True)
+  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -52,4 +52,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

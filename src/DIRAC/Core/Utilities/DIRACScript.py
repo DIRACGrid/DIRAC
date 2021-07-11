@@ -27,25 +27,9 @@ class DIRACScript(object):
   All console-scripts entrypoints in DIRAC and downstream extensions should be
   wrapped in this decorator to allow extensions to override any entry_point.
   """
-  scriptDoc = None
   scriptName = None
   alreadyInitialized = False
   localCfg = LocalConfiguration()
-
-  def __init__(self):
-    """ c'tor """
-    print('__init__')
-    # self.localCfg = LocalConfiguration()
-    self.initParameters()
-
-  # def __scriptInitialize(self):
-  #   """ Script c'tor
-  #   """
-  #   self.localCfg.setUsageMessage(self.scriptDoc)
-
-  def initParameters(self):
-    """ Script initialization """
-    pass
 
   def __call__(self, func=None):
     """Set the wrapped function or call the script
@@ -57,29 +41,21 @@ class DIRACScript(object):
     """
     # If func is provided then the decorator is being applied to a function
     if func is not None:
-      print('func is not None')
       self._func = func
       # Find the name of the command and its documentation
-      # self.scriptDoc = func.__globals__['__doc__']
-      self.localCfg.setUsageMessage(func.__globals__['__doc__'])
-      self.scriptName = os.path.basename(func.__globals__['__file__'])[:-3].replace('_', '-')
-      print(self.scriptName)
+      DIRACScript.localCfg.setUsageMessage(func.__globals__['__doc__'])
+      DIRACScript.scriptName = os.path.basename(func.__globals__['__file__'])[:-3].replace('_', '-')
       return functools.wraps(func)(self)
-
-    # self.__scriptInitialize()
 
     # Setuptools based installations aren't supported with Python 2
     if six.PY2:
-      print('func run')
-      print(self.scriptName)
-      return self._func(self)  # pylint: disable=not-callable
+      return self._func()  # pylint: disable=not-callable
 
     # This is only available in Python 3.8+ so it has to be here for now
     from importlib import metadata  # pylint: disable=no-name-in-module
 
     # Iterate through all known entry_points looking for self.scriptName
     matches = [ep for ep in metadata.entry_points()['console_scripts'] if ep.name == self.scriptName]
-
     if not matches:
       # TODO: This should an error once the integration tests modified to use pip install
       return self._func(self)  # pylint: disable=not-callable
@@ -107,8 +83,6 @@ class DIRACScript(object):
         :param bool ignoreErrors: ignore errors when loading configuration
         :param bool initializeMonitor: to use monitoring
     """
-    print('parseCommandLine')
-    print(cls.scriptName)
     if not cls.alreadyInitialized:
       gLogger.showHeaders(False)
       cls.initialize(script, ignoreErrors, initializeMonitor, True)
@@ -206,10 +180,12 @@ class DIRACScript(object):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.setUsageMessage`. """
     cls.localCfg.setUsageMessage(usageMessage)
 
+  @classmethod
   def disableCS(cls):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.disableCS`. """
     cls.localCfg.disableCS()
 
+  @classmethod
   def enableCS(cls):
     """ See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.enableCS`. """
     return cls.localCfg.enableCS()

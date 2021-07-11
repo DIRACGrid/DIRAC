@@ -10,8 +10,8 @@ __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main(self):
-  self.parseCommandLine(ignoreErrors=True)
+def main():
+  DIRACScript.parseCommandLine(ignoreErrors=True)
 
   fieldsToShow = ('ComponentName', 'Type', 'Host', 'Port', 'Status', 'Message')
 
@@ -52,4 +52,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

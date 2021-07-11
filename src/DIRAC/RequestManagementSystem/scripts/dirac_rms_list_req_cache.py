@@ -13,14 +13,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.registerSwitch('', 'Full', '   Print full list of requests')
-  self.parseCommandLine()
+def main():
+  DIRACScript.registerSwitch('', 'Full', '   Print full list of requests')
+  DIRACScript.parseCommandLine()
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
   fullPrint = False
 
-  for switch in self.getUnprocessedSwitches():
+  for switch in DIRACScript.getUnprocessedSwitches():
     if switch[0] == 'Full':
       fullPrint = True
 
@@ -43,4 +43,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

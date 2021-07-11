@@ -14,8 +14,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.parseCommandLine()
+def main():
+  DIRACScript.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
@@ -57,4 +57,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

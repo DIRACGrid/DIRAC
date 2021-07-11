@@ -12,16 +12,16 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("GUIDs: GUIDs separated by a comma")
-  self.parseCommandLine()
+  DIRACScript.registerArgument("GUIDs: GUIDs separated by a comma")
+  DIRACScript.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = self.getPositionalArgs()
+  args = DIRACScript.getPositionalArgs()
   guids = args[0]
 
   try:
@@ -51,4 +51,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

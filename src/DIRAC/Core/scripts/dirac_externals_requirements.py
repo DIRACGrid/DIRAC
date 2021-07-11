@@ -24,21 +24,19 @@ except ImportError:
 
 from diraccfg import CFG
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gLogger, rootPath, S_OK
 
 __RCSID__ = "$Id$"
 
+# Default installation type
+instType = "server"
 
-class DIRACScript(_DIRACScript):
 
-  def initParameters(self):
-    # Default installation type
-    self.instType = "server"
-
-  def setInstallType(self, val):
-    self.instType = val
-    return S_OK()
+def setInstallType(val):
+  global instType
+  instType = val
+  return S_OK()
 
 
 def pipInstall(package, switches=""):
@@ -48,12 +46,12 @@ def pipInstall(package, switches=""):
   return commands.getstatusoutput(cmd)
 
 
-@DIRACScript()
-def main(self):
-  self.disableCS()
+@Script()
+def main():
+  Script.disableCS()
 
-  self.registerSwitch("t:", "type=", "Installation type. 'server' by default.", self.setInstallType)
-  self.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)
+  Script.parseCommandLine(ignoreErrors=True)
 
   # Collect all the requested python modules to install
   reqDict = {}
@@ -67,9 +65,9 @@ def main(self):
     except Exception:
       gLogger.verbose("%s not found" % reqFile)
       continue
-    reqList = reqCFG.getOption("/RequiredExternals/%s" % self.instType.capitalize(), [])
+    reqList = reqCFG.getOption("/RequiredExternals/%s" % instType.capitalize(), [])
     if not reqList:
-      gLogger.verbose("%s does not have requirements for %s installation" % (entry, self.instType))
+      gLogger.verbose("%s does not have requirements for %s installation" % (entry, instType))
       continue
     for req in reqList:
       reqName = False
@@ -102,4 +100,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -13,243 +13,253 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
-class DIRACScript(_DIRACScript):
+subLogger = None
 
-  def initParameters(self):
-    self.subLogger = gLogger.getSubLogger(__file__)
 
-  def registerSwitches(self):
-    '''
-      Registers all switches that can be used while calling the script from the
-      command line interface.
-    '''
+def registerSwitches():
+  '''
+    Registers all switches that can be used while calling the script from the
+    command line interface.
+  '''
 
-    switches = (
-        ('element=', 'Element family to be Synchronized ( Site, Resource or Node )'),
-        ('name=', 'Name (or comma-separeted list of names) of the element where the change applies'),
-        ('statusType=', 'StatusType (or comma-separeted list of names), if none applies to all possible statusTypes'),
-        ('status=', 'Status to be changed'),
-        ('reason=', 'Reason to set the Status'),
-        ('VO=', 'VO to change a status for. Default: "all" '
-                'VO=all sets the status for all VOs not explicitly listed in the RSS'),
-    )
+  switches = (
+      ('element=', 'Element family to be Synchronized ( Site, Resource or Node )'),
+      ('name=', 'Name (or comma-separeted list of names) of the element where the change applies'),
+      ('statusType=', 'StatusType (or comma-separeted list of names), if none applies to all possible statusTypes'),
+      ('status=', 'Status to be changed'),
+      ('reason=', 'Reason to set the Status'),
+      ('VO=', 'VO to change a status for. Default: "all" '
+              'VO=all sets the status for all VOs not explicitly listed in the RSS'),
+  )
 
-    for switch in switches:
-      self.registerSwitch('', switch[0], switch[1])
+  for switch in switches:
+    Script.registerSwitch('', switch[0], switch[1])
 
-  def registerUsageMessage(self):
-    '''
-      Takes the script __doc__ and adds the DIRAC version to it
-    '''
-    usageMessage = '  DIRAC %s\n' % version
-    usageMessage += __doc__
 
-    self.setUsageMessage(usageMessage)
+def registerUsageMessage():
+  '''
+    Takes the script __doc__ and adds the DIRAC version to it
+  '''
+  usageMessage = '  DIRAC %s\n' % version
+  usageMessage += __doc__
 
-  def parseSwitches(self):
-    '''
-      Parses the arguments passed by the user
-    '''
+  Script.setUsageMessage(usageMessage)
 
-    switches, args = self.parseCommandLine(ignoreErrors=True)
-    if args:
-      self.subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
-      self.subLogger.error("Please, check documentation below")
-      self.showHelp(exitCode=1)
 
-    switches = dict(switches)
-    switches.setdefault('statusType', None)
-    switches.setdefault('VO', 'all')
+def parseSwitches():
+  '''
+    Parses the arguments passed by the user
+  '''
 
-    for key in ('element', 'name', 'status', 'reason'):
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
+  if args:
+    subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+    subLogger.error("Please, check documentation below")
+    Script.showHelp(exitCode=1)
 
-      if key not in switches:
-        self.subLogger.error("%s Switch missing" % key)
-        self.subLogger.error("Please, check documentation below")
-        self.showHelp(exitCode=1)
+  switches = dict(Script.getUnprocessedSwitches())
+  switches.setdefault('statusType', None)
+  switches.setdefault('VO', 'all')
 
-    if not switches['element'] in ('Site', 'Resource', 'Node'):
-      self.subLogger.error("Found %s as element switch" % switches['element'])
-      self.subLogger.error("Please, check documentation below")
-      self.showHelp(exitCode=1)
+  for key in ('element', 'name', 'status', 'reason'):
 
-    statuses = StateMachine.RSSMachine(None).getStates()
+    if key not in switches:
+      subLogger.error("%s Switch missing" % key)
+      subLogger.error("Please, check documentation below")
+      Script.showHelp(exitCode=1)
 
-    if not switches['status'] in statuses:
-      self.subLogger.error("Found %s as element switch" % switches['element'])
-      self.subLogger.error("Please, check documentation below")
-      self.showHelp(exitCode=1)
+  if not switches['element'] in ('Site', 'Resource', 'Node'):
+    subLogger.error("Found %s as element switch" % switches['element'])
+    subLogger.error("Please, check documentation below")
+    Script.showHelp(exitCode=1)
 
-    self.subLogger.debug("The switches used are:")
-    map(self.subLogger.debug, switches.items())
+  statuses = StateMachine.RSSMachine(None).getStates()
 
-    return switches
+  if not switches['status'] in statuses:
+    subLogger.error("Found %s as element switch" % switches['element'])
+    subLogger.error("Please, check documentation below")
+    Script.showHelp(exitCode=1)
 
-  def checkStatusTypes(self, statusTypes):
-    '''
-      To check if values for 'statusType' are valid
-    '''
+  subLogger.debug("The switches used are:")
+  map(subLogger.debug, switches.items())
 
-    opsH = Operations().getValue('ResourceStatus/Config/StatusTypes/StorageElement')
-    acceptableStatusTypes = opsH.replace(',', '').split()
+  return switches
 
-    for statusType in statusTypes:
-      if statusType not in acceptableStatusTypes and statusType != 'all':
-        acceptableStatusTypes.append('all')
-        self.subLogger.error("'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
-                             % (statusType, str(acceptableStatusTypes)))
 
-    if 'all' in statusType:
-      return acceptableStatusTypes
-    return statusTypes
+def checkStatusTypes(statusTypes):
+  '''
+    To check if values for 'statusType' are valid
+  '''
 
-  def unpack(self, switchDict):
-    '''
-      To split and process comma-separated list of values for 'name' and 'statusType'
-    '''
+  opsH = Operations().getValue('ResourceStatus/Config/StatusTypes/StorageElement')
+  acceptableStatusTypes = opsH.replace(',', '').split()
 
-    switchDictSet = []
-    names = []
-    statusTypes = []
+  for statusType in statusTypes:
+    if statusType not in acceptableStatusTypes and statusType != 'all':
+      acceptableStatusTypes.append('all')
+      subLogger.error("'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
+                      % (statusType, str(acceptableStatusTypes)))
 
-    if switchDict['name'] is not None:
-      names = list(filter(None, switchDict['name'].split(',')))
+  if 'all' in statusType:
+    return acceptableStatusTypes
+  return statusTypes
 
-    if switchDict['statusType'] is not None:
-      statusTypes = list(filter(None, switchDict['statusType'].split(',')))
-      statusTypes = self.checkStatusTypes(statusTypes)
 
-    if len(names) > 0 and len(statusTypes) > 0:
-      combinations = [(a, b) for a in names for b in statusTypes]
-      for combination in combinations:
-        n, s = combination
-        switchDictClone = switchDict.copy()
-        switchDictClone['name'] = n
-        switchDictClone['statusType'] = s
-        switchDictSet.append(switchDictClone)
-    elif len(names) > 0 and len(statusTypes) == 0:
-      for name in names:
-        switchDictClone = switchDict.copy()
-        switchDictClone['name'] = name
-        switchDictSet.append(switchDictClone)
-    elif len(names) == 0 and len(statusTypes) > 0:
-      for statusType in statusTypes:
-        switchDictClone = switchDict.copy()
-        switchDictClone['statusType'] = statusType
-        switchDictSet.append(switchDictClone)
-    elif len(names) == 0 and len(statusTypes) == 0:
+def unpack(switchDict):
+  '''
+    To split and process comma-separated list of values for 'name' and 'statusType'
+  '''
+
+  switchDictSet = []
+  names = []
+  statusTypes = []
+
+  if switchDict['name'] is not None:
+    names = list(filter(None, switchDict['name'].split(',')))
+
+  if switchDict['statusType'] is not None:
+    statusTypes = list(filter(None, switchDict['statusType'].split(',')))
+    statusTypes = checkStatusTypes(statusTypes)
+
+  if len(names) > 0 and len(statusTypes) > 0:
+    combinations = [(a, b) for a in names for b in statusTypes]
+    for combination in combinations:
+      n, s = combination
       switchDictClone = switchDict.copy()
-      switchDictClone['name'] = None
-      switchDictClone['statusType'] = None
+      switchDictClone['name'] = n
+      switchDictClone['statusType'] = s
       switchDictSet.append(switchDictClone)
+  elif len(names) > 0 and len(statusTypes) == 0:
+    for name in names:
+      switchDictClone = switchDict.copy()
+      switchDictClone['name'] = name
+      switchDictSet.append(switchDictClone)
+  elif len(names) == 0 and len(statusTypes) > 0:
+    for statusType in statusTypes:
+      switchDictClone = switchDict.copy()
+      switchDictClone['statusType'] = statusType
+      switchDictSet.append(switchDictClone)
+  elif len(names) == 0 and len(statusTypes) == 0:
+    switchDictClone = switchDict.copy()
+    switchDictClone['name'] = None
+    switchDictClone['statusType'] = None
+    switchDictSet.append(switchDictClone)
 
-    return switchDictSet
+  return switchDictSet
 
-  def getTokenOwner(self):
-    '''
-      Function that gets the userName from the proxy
-    '''
-    proxyInfo = getProxyInfo()
-    if not proxyInfo['OK']:
-      return proxyInfo
 
-    userName = proxyInfo['Value']['username']
-    return S_OK(userName)
+def getTokenOwner():
+  '''
+    Function that gets the userName from the proxy
+  '''
+  proxyInfo = getProxyInfo()
+  if not proxyInfo['OK']:
+    return proxyInfo
 
-  def setStatus(self, switchDict, tokenOwner):
-    '''
-      Function that gets the user token, sets the validity for it. Gets the elements
-      in the database for a given name and statusType(s). Then updates the status
-      of all them adding a reason and the token.
-    '''
+  userName = proxyInfo['Value']['username']
+  return S_OK(userName)
 
-    rssClient = ResourceStatusClient.ResourceStatusClient()
 
-    elements = rssClient.selectStatusElement(switchDict['element'], 'Status',
-                                             name=switchDict['name'],
-                                             statusType=switchDict['statusType'],
-                                             vO=switchDict['VO'],
-                                             meta={'columns': ['Status', 'StatusType']})
+def setStatus(switchDict, tokenOwner):
+  '''
+    Function that gets the user token, sets the validity for it. Gets the elements
+    in the database for a given name and statusType(s). Then updates the status
+    of all them adding a reason and the token.
+  '''
 
-    if not elements['OK']:
-      return elements
-    elements = elements['Value']
+  rssClient = ResourceStatusClient.ResourceStatusClient()
 
-    if not elements:
-      self.subLogger.warn('Nothing found for %s, %s, %s %s' % (switchDict['element'],
-                                                               switchDict['name'],
-                                                               switchDict['VO'],
-                                                               switchDict['statusType']))
-      return S_OK()
+  elements = rssClient.selectStatusElement(switchDict['element'], 'Status',
+                                           name=switchDict['name'],
+                                           statusType=switchDict['statusType'],
+                                           vO=switchDict['VO'],
+                                           meta={'columns': ['Status', 'StatusType']})
 
-    tomorrow = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
+  if not elements['OK']:
+    return elements
+  elements = elements['Value']
 
-    for status, statusType in elements:
-
-      self.subLogger.debug('%s %s' % (status, statusType))
-
-      if switchDict['status'] == status:
-        self.subLogger.notice('Status for %s (%s) is already %s. Ignoring..' % (switchDict['name'],
-                                                                                statusType, status))
-        continue
-
-      self.subLogger.debug('About to set status %s -> %s for %s, statusType: %s, VO: %s, reason: %s'
-                           % (status, switchDict['status'], switchDict['name'],
-                              statusType, switchDict['VO'], switchDict['reason']))
-      result = rssClient.modifyStatusElement(switchDict['element'], 'Status',
-                                             name=switchDict['name'],
-                                             statusType=statusType,
-                                             status=switchDict['status'],
-                                             reason=switchDict['reason'],
-                                             vO=switchDict['VO'],
-                                             tokenOwner=tokenOwner,
-                                             tokenExpiration=tomorrow)
-      if not result['OK']:
-        return result
-
+  if not elements:
+    subLogger.warn('Nothing found for %s, %s, %s %s' % (switchDict['element'],
+                                                        switchDict['name'],
+                                                        switchDict['VO'],
+                                                        switchDict['statusType']))
     return S_OK()
 
-  def run(self, switchDict):
-    '''
-      Main function of the script
-    '''
+  tomorrow = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
 
-    tokenOwner = self.getTokenOwner()
-    if not tokenOwner['OK']:
-      self.subLogger.error(tokenOwner['Message'])
-      DIRACExit(1)
-    tokenOwner = tokenOwner['Value']
+  for status, statusType in elements:
 
-    self.subLogger.notice('TokenOwner is %s' % tokenOwner)
+    subLogger.debug('%s %s' % (status, statusType))
 
-    result = self.setStatus(switchDict, tokenOwner)
+    if switchDict['status'] == status:
+      subLogger.notice('Status for %s (%s) is already %s. Ignoring..' % (switchDict['name'], statusType, status))
+      continue
+
+    subLogger.debug('About to set status %s -> %s for %s, statusType: %s, VO: %s, reason: %s'
+                    % (status, switchDict['status'], switchDict['name'],
+                       statusType, switchDict['VO'], switchDict['reason']))
+    result = rssClient.modifyStatusElement(switchDict['element'], 'Status',
+                                           name=switchDict['name'],
+                                           statusType=statusType,
+                                           status=switchDict['status'],
+                                           reason=switchDict['reason'],
+                                           vO=switchDict['VO'],
+                                           tokenOwner=tokenOwner,
+                                           tokenExpiration=tomorrow)
     if not result['OK']:
-      self.subLogger.error(result['Message'])
-      DIRACExit(1)
+      return result
+
+  return S_OK()
 
 
-@DIRACScript()
-def main(self):
+def run(switchDict):
+  '''
+    Main function of the script
+  '''
+
+  tokenOwner = getTokenOwner()
+  if not tokenOwner['OK']:
+    subLogger.error(tokenOwner['Message'])
+    DIRACExit(1)
+  tokenOwner = tokenOwner['Value']
+
+  subLogger.notice('TokenOwner is %s' % tokenOwner)
+
+  result = setStatus(switchDict, tokenOwner)
+  if not result['OK']:
+    subLogger.error(result['Message'])
+    DIRACExit(1)
+
+
+@Script()
+def main():
+  global subLogger
+  global registerUsageMessage
+
+  subLogger = gLogger.getSubLogger(__file__)
+
   # Script initialization
-  self.registerSwitches()
-  self.registerUsageMessage()
-  switchDict = self.parseSwitches()
-  switchDictSets = self.unpack(switchDict)
+  registerSwitches()
+  registerUsageMessage()
+  switchDict = parseSwitches()
+  switchDictSets = unpack(switchDict)
 
   # Run script
   for switchDict in switchDictSets:
-    self.run(switchDict)
+    run(switchDict)
 
   # Bye
   DIRACExit(0)
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

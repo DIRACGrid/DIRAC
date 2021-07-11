@@ -14,15 +14,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("TransID: transformation ID")
-  self.registerArgument(("LFN: LFN", "FileName: file containing LFNs"))
-  self.parseCommandLine()
+  DIRACScript.registerArgument("TransID: transformation ID")
+  DIRACScript.registerArgument(("LFN: LFN", "FileName: file containing LFNs"))
+  DIRACScript.parseCommandLine()
 
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  tID, inputFileName = self.getPositionalArgs(group=True)
+  tID, inputFileName = DIRACScript.getPositionalArgs(group=True)
 
   # get arguments
   lfns = []
@@ -57,4 +57,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

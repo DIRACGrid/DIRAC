@@ -14,18 +14,17 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC import exit as DIRACExit
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("LocalFile: Path to local file containing LFNs",
-                         "LFN:       Logical File Names"))
-  self.registerArgument(["SE:        Storage element"])
+  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
+                                "LFN:       Logical File Names"))
+  DIRACScript.registerArgument(["SE:        Storage element"])
 
-  self.parseCommandLine()
+  DIRACScript.parseCommandLine()
 
   from DIRAC.Core.Utilities.List import breakListIntoChunks
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -33,7 +32,7 @@ def main(self):
   import os
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  first, storageElementNames = self.getPositionalArgs(group=True)
+  first, storageElementNames = DIRACScript.getPositionalArgs(group=True)
 
   if os.path.exists(first):
     inputFile = open(first, 'r')
@@ -57,4 +56,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

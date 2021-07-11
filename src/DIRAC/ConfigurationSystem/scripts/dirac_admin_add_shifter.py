@@ -18,16 +18,16 @@ from DIRAC import exit as DIRACExit, gLogger
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("ShifterRole:  Name of the shifter role, e.g. DataManager")
-  self.registerArgument("UserName:     A user name, as registered in Registry section")
-  self.registerArgument("DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)")
-  self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument("ShifterRole:  Name of the shifter role, e.g. DataManager")
+  DIRACScript.registerArgument("UserName:     A user name, as registered in Registry section")
+  DIRACScript.registerArgument("DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)")
+  DIRACScript.parseCommandLine(ignoreErrors=True)
 
   csAPI = CSAPI()
 
-  shifterRole, userName, diracGroup = self.getPositionalArgs(group=True)
+  shifterRole, userName, diracGroup = DIRACScript.getPositionalArgs(group=True)
   res = csAPI.addShifter({shifterRole: {'User': userName, 'Group': diracGroup}})
   if not res['OK']:
     gLogger.error("Could not add shifter", ": " + res['Message'])
@@ -40,4 +40,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

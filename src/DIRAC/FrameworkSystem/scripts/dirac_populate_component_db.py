@@ -14,7 +14,7 @@ from datetime import datetime
 from DIRAC import exit as DIRACexit
 from DIRAC import S_OK, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
     import SystemAdministratorIntegrator
@@ -26,24 +26,26 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 __RCSID__ = "$Id$"
 
-
-class Params(object):
-  excludedHosts = []
-
-  def setExcludedHosts(self, value):
-    self.excludedHosts = value.split(',')
-    return S_OK()
+global excludedHosts
+excludedHosts = []
 
 
-@DIRACScript()
-def main(self):
-  params = Params()
-  self.registerSwitch(
+def setExcludedHosts(value):
+  global excludedHosts
+
+  excludedHosts = value.split(',')
+  return S_OK()
+
+
+@Script()
+def main():
+  global excludedHosts
+  Script.registerSwitch(
       "e:",
       "exclude=",
       "Comma separated list of hosts to be excluded from the scanning process",
-      params.setExcludedHosts)
-  self.parseCommandLine(ignoreErrors=False)
+      setExcludedHosts)
+  Script.parseCommandLine(ignoreErrors=False)
 
   componentType = ''
 
@@ -51,7 +53,7 @@ def main(self):
   mySetup = gConfig.getValue('DIRAC/Setup')
 
   # Retrieve information from all the hosts
-  client = SystemAdministratorIntegrator(exclude=params.excludedHosts)
+  client = SystemAdministratorIntegrator(exclude=excludedHosts)
   resultAll = client.getOverallStatus()
   if not resultAll['OK']:
     gLogger.error(resultAll['Message'])
@@ -69,7 +71,7 @@ def main(self):
   for host in resultAll['Value']:
     if not resultAll['Value'][host]['OK']:
       # If the host cannot be contacted, exclude it and send message
-      params.excludedHosts.append(host)
+      excludedHosts.append(host)
 
       result = NotificationClient().sendMail(
           Operations().getValue(
@@ -103,7 +105,7 @@ def main(self):
     DIRACexit(-1)
 
   records = []
-  finalSet = list(set(resultAll['Value']) - set(params.excludedHosts))
+  finalSet = list(set(resultAll['Value']) - set(excludedHosts))
   for host in finalSet:
     hasMySQL = True
     result = resultAll['Value'][host]
@@ -205,4 +207,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

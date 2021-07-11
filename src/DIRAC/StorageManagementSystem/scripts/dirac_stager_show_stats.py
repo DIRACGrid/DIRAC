@@ -33,8 +33,8 @@ from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 
 @DIRACScript()
-def main(self):
-  self.parseCommandLine(ignoreErrors=False)
+def main():
+  DIRACScript.parseCommandLine(ignoreErrors=False)
   from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
   client = StorageManagerClient()
 
@@ -77,4 +77,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

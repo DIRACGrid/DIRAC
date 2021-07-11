@@ -13,10 +13,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["DB: Name of the Database"])
-  _, args = self.parseCommandLine()
+  DIRACScript.registerArgument(["DB: Name of the Database"])
+  _, args = DIRACScript.parseCommandLine()
 
   # Script imports
   from DIRAC import gConfig
@@ -40,4 +40,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

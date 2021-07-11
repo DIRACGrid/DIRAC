@@ -12,46 +12,49 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+
+uuid = None
+jobid = None
 
 
-class Params(object):
-  uuid = None
-  jobid = None
-
-  def setUUID(self, optVal):
-    """
-    Set UUID from arguments
-    """
-    self.uuid = optVal
-    return S_OK()
-
-  def setJobID(self, optVal):
-    """
-    Set JobID from arguments
-    """
-    self.jobid = optVal
-    return S_OK()
+def setUUID(optVal):
+  """
+  Set UUID from arguments
+  """
+  global uuid
+  uuid = optVal
+  return S_OK()
 
 
-@DIRACScript()
-def main(self):
-  params = Params()
-  self.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', params.setUUID)
-  self.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', params.setJobID)
-  self.parseCommandLine()
+def setJobID(optVal):
+  """
+  Set JobID from arguments
+  """
+  global jobid
+  jobid = optVal
+  return S_OK()
+
+
+@Script()
+def main():
+  global uuid
+  global jobid
+  Script.registerSwitch('u:', 'uuid=', 'get PilotsLogging for given Pilot UUID', setUUID)
+  Script.registerSwitch('j:', 'jobid=', 'get PilotsLogging for given Job ID', setJobID)
+  Script.parseCommandLine()
 
   from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
-  if params.jobid:
-    result = PilotManagerClient().getPilots(params.jobid)
+  if jobid:
+    result = PilotManagerClient().getPilots(jobid)
     if not result['OK']:
       gLogger.error(result['Message'])
       DIRAC.exit(1)
     gLogger.debug(result['Value'])
-    params.uuid = list(result['Value'])[0]
+    uuid = list(result['Value'])[0]
 
-  result = PilotManagerClient().getPilotLoggingInfo(params.uuid)
+  result = PilotManagerClient().getPilotLoggingInfo(uuid)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRAC.exit(1)
@@ -61,4 +64,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

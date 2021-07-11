@@ -9,7 +9,7 @@ from __future__ import print_function
 import os
 import json
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 Script.parseCommandLine()
 

@@ -21,27 +21,27 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   days = 0
   months = 0
   years = 0
   wildcard = None
   baseDir = ''
   emptyDirsFlag = False
-  self.registerSwitch("D:", "Days=", "Match files older than number of days [%s]" % days)
-  self.registerSwitch("M:", "Months=", "Match files older than number of months [%s]" % months)
-  self.registerSwitch("Y:", "Years=", "Match files older than number of years [%s]" % years)
-  self.registerSwitch("w:", "Wildcard=", "Wildcard for matching filenames [All]")
-  self.registerSwitch("b:", "BaseDir=", "Base directory to begin search (default /[vo]/user/[initial]/[username])")
-  self.registerSwitch("e", "EmptyDirs", "Create a list of empty directories")
+  Script.registerSwitch("D:", "Days=", "Match files older than number of days [%s]" % days)
+  Script.registerSwitch("M:", "Months=", "Match files older than number of months [%s]" % months)
+  Script.registerSwitch("Y:", "Years=", "Match files older than number of years [%s]" % years)
+  Script.registerSwitch("w:", "Wildcard=", "Wildcard for matching filenames [All]")
+  Script.registerSwitch("b:", "BaseDir=", "Base directory to begin search (default /[vo]/user/[initial]/[username])")
+  Script.registerSwitch("e", "EmptyDirs", "Create a list of empty directories")
 
-  self.parseCommandLine(ignoreErrors=False)
+  Script.parseCommandLine(ignoreErrors=False)
 
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0] == "D" or switch[0].lower() == "days":
       days = int(switch[1])
     if switch[0] == "M" or switch[0].lower() == "months":
@@ -100,7 +100,7 @@ def main(self):
   if not baseDir:
     if not vo:
       gLogger.error('Could not determine VO')
-      self.showHelp()
+      Script.showHelp()
     baseDir = '/%s/user/%s/%s' % (vo, username[0], username)
 
   baseDir = baseDir.rstrip('/')
@@ -161,4 +161,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

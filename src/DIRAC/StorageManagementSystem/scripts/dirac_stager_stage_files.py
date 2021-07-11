@@ -35,17 +35,17 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.parseCommandLine(ignoreErrors=True)
+@Script()
+def main():
+  Script.parseCommandLine(ignoreErrors=True)
 
-  args = self.getPositionalArgs()
+  args = Script.getPositionalArgs()
 
   if len(args) < 2:
-    self.showHelp()
+    Script.showHelp()
 
   seName = args[1]
   fileName = args[0]
@@ -86,4 +86,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

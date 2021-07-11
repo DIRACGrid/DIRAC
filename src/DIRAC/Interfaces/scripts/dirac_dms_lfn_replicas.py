@@ -23,11 +23,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.registerSwitch('a', "All", "  Also show inactive replicas")
+def main():
+  DIRACScript.registerSwitch('a', "All", "  Also show inactive replicas")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
-  switches, lfns = self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
+  switches, lfns = DIRACScript.parseCommandLine(ignoreErrors=True)
 
   active = True
   for switch in switches:
@@ -55,4 +55,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

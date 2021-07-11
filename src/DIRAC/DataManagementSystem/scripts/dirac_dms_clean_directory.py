@@ -21,15 +21,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("LocalFile: Path to local file containing LFNs",
-                         "LFN:       Logical File Name"))
+  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
+                                "LFN:       Logical File Name"))
 
-  self.parseCommandLine()
+  DIRACScript.parseCommandLine()
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName = self.getPositionalArgs(group=True)
+  inputFileName = DIRACScript.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName, 'r').read().splitlines())]
@@ -57,4 +57,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

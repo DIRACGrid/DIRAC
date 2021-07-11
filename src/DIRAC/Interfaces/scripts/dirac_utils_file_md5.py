@@ -20,10 +20,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["File:     File Name"])
-  _, files = self.parseCommandLine(ignoreErrors=False)
+  DIRACScript.registerArgument(["File:     File Name"])
+  _, files = DIRACScript.parseCommandLine(ignoreErrors=False)
 
   exitCode = 0
 
@@ -46,4 +46,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

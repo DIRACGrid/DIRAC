@@ -13,7 +13,7 @@ import time
 
 from DIRAC import gLogger
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.parseCommandLine()
 
 from DIRAC.DataManagementSystem.DB.DataIntegrityDB import DataIntegrityDB

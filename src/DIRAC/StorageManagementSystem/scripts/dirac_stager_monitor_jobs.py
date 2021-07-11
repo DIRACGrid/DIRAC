@@ -82,19 +82,19 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["JobID:    DIRAC Job ID"])
-  self.parseCommandLine(ignoreErrors=False)
+  Script.registerArgument(["JobID:    DIRAC Job ID"])
+  Script.parseCommandLine(ignoreErrors=False)
 
-  args = self.getPositionalArgs()
+  args = Script.getPositionalArgs()
 
   if len(args) < 1:
-    self.showHelp()
+    Script.showHelp()
 
   from DIRAC import exit as DIRACExit, gLogger
 
@@ -141,4 +141,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

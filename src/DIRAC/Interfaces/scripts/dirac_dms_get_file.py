@@ -18,18 +18,18 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
-  self.parseCommandLine(ignoreErrors=True)
-  lfns = self.getPositionalArgs()
+  Script.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
+  Script.parseCommandLine(ignoreErrors=True)
+  lfns = Script.getPositionalArgs()
 
   if len(lfns) < 1:
-    self.showHelp()
+    Script.showHelp()
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()
@@ -51,4 +51,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

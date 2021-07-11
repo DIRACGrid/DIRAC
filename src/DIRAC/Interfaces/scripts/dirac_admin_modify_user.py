@@ -16,18 +16,18 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
-  self.registerSwitch("f", "force", "create the user if it doesn't exist")
+@Script()
+def main():
+  Script.registerSwitch("p:", "property=", "Add property to the user <name>=<value>")
+  Script.registerSwitch("f", "force", "create the user if it doesn't exist")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(" user:     User name")
-  self.registerArgument(" DN:       DN of the User")
-  self.registerArgument(["group:    Add the user to the group"])
-  self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(" user:     User name")
+  Script.registerArgument(" DN:       DN of the User")
+  Script.registerArgument(["group:    Add the user to the group"])
+  Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -36,7 +36,7 @@ def main(self):
   errorList = []
 
   userProps = {}
-  for unprocSw in self.getUnprocessedSwitches():
+  for unprocSw in Script.getUnprocessedSwitches():
     if unprocSw[0] in ("f", "force"):
       forceCreation = True
     elif unprocSw[0] in ("p", "property"):
@@ -51,7 +51,7 @@ def main(self):
         print("Setting property %s to %s" % (pName, pValue))
         userProps[pName] = pValue
 
-  userName, userProps['DN'], userProps['Groups'] = self.getPositionalArgs(group=True)
+  userName, userProps['DN'], userProps['Groups'] = Script.getPositionalArgs(group=True)
 
   if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=forceCreation):
     errorList.append(("modify user", "Cannot modify user %s" % userName))
@@ -69,4 +69,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

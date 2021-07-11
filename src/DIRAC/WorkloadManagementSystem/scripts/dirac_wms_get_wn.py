@@ -15,11 +15,11 @@ __RCSID__ = "$Id$"
 import datetime
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   site = 'BOINC.World.org'
   status = ["Running"]
   minorStatus = None
@@ -29,21 +29,21 @@ def main(self):
   full = False
   until = None
   batchIDs = None
-  self.registerSwitch('', 'Site=', '   Select site (default: %s)' % site)
-  self.registerSwitch('', 'Status=', '   Select status (default: %s)' % status)
-  self.registerSwitch('', 'MinorStatus=', '   Select minor status')
-  self.registerSwitch('', 'WorkerNode=', '  Select WN')
-  self.registerSwitch('', 'BatchID=', '  Select batch jobID')
-  self.registerSwitch('', 'Since=', '   Date since when to select jobs, or number of days (default: today)')
-  self.registerSwitch('', 'Date=', '   Specify the date (check for a full day)')
-  self.registerSwitch('', 'Full', '   Printout full list of job (default: False except if --WorkerNode)')
+  Script.registerSwitch('', 'Site=', '   Select site (default: %s)' % site)
+  Script.registerSwitch('', 'Status=', '   Select status (default: %s)' % status)
+  Script.registerSwitch('', 'MinorStatus=', '   Select minor status')
+  Script.registerSwitch('', 'WorkerNode=', '  Select WN')
+  Script.registerSwitch('', 'BatchID=', '  Select batch jobID')
+  Script.registerSwitch('', 'Since=', '   Date since when to select jobs, or number of days (default: today)')
+  Script.registerSwitch('', 'Date=', '   Specify the date (check for a full day)')
+  Script.registerSwitch('', 'Full', '   Printout full list of job (default: False except if --WorkerNode)')
 
-  self.parseCommandLine()
+  Script.parseCommandLine()
   from DIRAC import gLogger
   from DIRAC.Interfaces.API.Dirac import Dirac
   from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
-  switches = self.getUnprocessedSwitches()
+  switches = Script.getUnprocessedSwitches()
   for switch in switches:
     if switch[0] == 'Site':
       site = switch[1]
@@ -191,4 +191,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

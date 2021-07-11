@@ -12,8 +12,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.parseCommandLine()
+def main():
+  DIRACScript.parseCommandLine()
 
   import DIRAC
 
@@ -50,4 +50,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

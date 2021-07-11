@@ -13,10 +13,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("RepoDir:  Location of Job Repository")
-  _, args = self.parseCommandLine(ignoreErrors=False)
+  DIRACScript.registerArgument("RepoDir:  Location of Job Repository")
+  _, args = DIRACScript.parseCommandLine(ignoreErrors=False)
 
   repoLocation = args[0]
   from DIRAC.Interfaces.API.Dirac import Dirac
@@ -32,4 +32,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

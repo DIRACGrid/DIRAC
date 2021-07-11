@@ -24,9 +24,9 @@ __RCSID__ = "$Id$"
 
 
 @DIRACScript()
-def main(self):
-  self.addDefaultOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
-  self.parseCommandLine(ignoreErrors=True)
+def main():
+  DIRACScript.addDefaultOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
+  DIRACScript.parseCommandLine(ignoreErrors=True)
 
   bdc = BundleDeliveryClient()
 
@@ -52,4 +52,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

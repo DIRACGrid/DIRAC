@@ -14,21 +14,21 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   maxJobs = 100
-  self.registerSwitch("", "Status=", "Primary status")
-  self.registerSwitch("", "MinorStatus=", "Secondary status")
-  self.registerSwitch("", "ApplicationStatus=", "Application status")
-  self.registerSwitch("", "Site=", "Execution site")
-  self.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
-  self.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
-  self.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
-  self.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
-  switches, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch("", "Status=", "Primary status")
+  Script.registerSwitch("", "MinorStatus=", "Secondary status")
+  Script.registerSwitch("", "ApplicationStatus=", "Application status")
+  Script.registerSwitch("", "Site=", "Execution site")
+  Script.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
+  Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
+  Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
+  Script.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
+  switches, args = Script.parseCommandLine(ignoreErrors=True)
 
   # Default values
   status = None
@@ -40,7 +40,7 @@ def main(self):
   date = None
 
   if args:
-    self.showHelp()
+    Script.showHelp()
 
   exitCode = 0
 
@@ -131,4 +131,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

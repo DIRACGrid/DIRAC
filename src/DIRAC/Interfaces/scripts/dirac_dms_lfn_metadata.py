@@ -34,10 +34,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
-  _, lfns = self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
+  _, lfns = DIRACScript.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()
@@ -60,4 +60,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

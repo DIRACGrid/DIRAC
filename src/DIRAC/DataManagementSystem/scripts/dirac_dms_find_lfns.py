@@ -11,17 +11,17 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch('', 'Path=', '    Path to search for')
-  self.registerSwitch('', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched')
+@Script()
+def main():
+  Script.registerSwitch('', 'Path=', '    Path to search for')
+  Script.registerSwitch('', 'SE=', '    (comma-separated list of) SEs/SE-groups to be searched')
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(['metaspec: metadata index specification (of the form: \
-                            "meta=value" or "meta<value", "meta!=value", etc.)'], mandatory=False)
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  Script.registerArgument(['metaspec: metadata index specification (of the form: '
+                           '"meta=value" or "meta<value", "meta!=value", etc.)'], mandatory=False)
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
   import DIRAC
   from DIRAC import gLogger
@@ -31,7 +31,7 @@ def main(self):
 
   path = '/'
   seList = None
-  for opt, val in self.getUnprocessedSwitches():
+  for opt, val in Script.getUnprocessedSwitches():
     if opt == 'Path':
       path = val
     elif opt == 'SE':
@@ -50,9 +50,9 @@ def main(self):
   typeDict.update(FILE_STANDARD_METAKEYS)
 
   if len(args) < 1:
-    print("Error: No argument provided\n%s:" % self.scriptName)
+    print("Error: No argument provided\n%s:" % Script.scriptName)
     gLogger.notice("MetaDataDictionary: \n%s" % str(typeDict))
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   mq = MetaQuery(typeDict=typeDict)
   result = mq.setMetaQuery(args)
@@ -72,4 +72,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

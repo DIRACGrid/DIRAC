@@ -34,8 +34,8 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
 @DIRACScript()
-def main(self):
-  _, args = self.parseCommandLine(ignoreErrors=True)
+def main():
+  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
 
   arg = "".join(args)
 
@@ -88,4 +88,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

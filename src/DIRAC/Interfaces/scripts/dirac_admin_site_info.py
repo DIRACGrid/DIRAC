@@ -26,17 +26,17 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["Site:     Name of the Site"])
-  _, sites = self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument(["Site:     Name of the Site"])
+  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
   exitCode = 0
   errorList = []
 
-  for site in sites:
+  for site in args:
 
     result = diracAdmin.getSiteSection(site, printOutput=True)
     if not result['OK']:
@@ -50,4 +50,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

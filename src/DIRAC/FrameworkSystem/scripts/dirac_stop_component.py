@@ -10,23 +10,23 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.disableCS()
+def main():
+  DIRACScript.disableCS()
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(" System:  Name of the system for the component (default *: all)",
-                        mandatory=False, default='*')
-  self.registerArgument(("Service: Name of the particular component (default *: all)",
-                         "Agent:   Name of the particular component (default *: all)"),
-                        mandatory=False, default='*')
-  _, args = self.parseCommandLine()
-  system, component = self.getPositionalArgs(group=True)
+  DIRACScript.registerArgument(" System:  Name of the system for the component (default *: all)",
+                               mandatory=False, default='*')
+  DIRACScript.registerArgument(("Service: Name of the particular component (default *: all)",
+                                "Agent:   Name of the particular component (default *: all)"),
+                               mandatory=False, default='*')
+  _, args = DIRACScript.parseCommandLine()
+  system, component = DIRACScript.getPositionalArgs(group=True)
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
   __RCSID__ = "$Id$"
 
   if len(args) > 2:
-    self.showHelp(exitCode=1)
+    DIRACScript.showHelp(exitCode=1)
 
   if system != '*':
     if len(args) > 1:
@@ -43,4 +43,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -12,7 +12,7 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 class Params(object):
@@ -25,24 +25,24 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   cliParams = Params()
 
-  self.disableCS()
-  self.registerSwitch(
+  Script.disableCS()
+  Script.registerSwitch(
       "e",
       "exitOnError",
       "flag to exit on error of any component installation",
       cliParams.setExitOnError)
 
-  self.addDefaultOptionValue('/DIRAC/Security/UseServerCertificate', 'yes')
-  self.addDefaultOptionValue('LogLevel', 'INFO')
-  self.parseCommandLine()
-  args = self.getExtraCLICFGFiles()
+  Script.addDefaultOptionValue('/DIRAC/Security/UseServerCertificate', 'yes')
+  Script.addDefaultOptionValue('LogLevel', 'INFO')
+  Script.parseCommandLine()
+  args = Script.getExtraCLICFGFiles()
 
   if len(args) > 1:
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   cfg = None
   if len(args):
@@ -51,7 +51,7 @@ def main(self):
 
   gComponentInstaller.exitOnError = cliParams.exitOnError
 
-  result = gComponentInstaller.setupSite(self.localCfg, cfg)
+  result = gComponentInstaller.setupSite(Script.localCfg, cfg)
   if not result['OK']:
     print("ERROR:", result['Message'])
     exit(-1)
@@ -69,4 +69,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -26,7 +26,7 @@ __RCSID__ = "$Id$"
 
 import sys
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 
@@ -75,20 +75,21 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   params = Params()
-  self.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
-  self.registerSwitch("i", "version", "Print version", params.showVersion)
-  self.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)
-  self.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck)
-  self.registerSwitch("x", "nocs", "Disable CS", params.disableCS)
-  self.registerSwitch("e", "steps", "Show steps info", params.showSteps)
-  self.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck)
-  self.registerSwitch("m", "uploadedinfo", "Show uploaded proxies info", params.setManagerInfo)
 
-  self.disableCS()
-  self.parseCommandLine()
+  Script.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
+  Script.registerSwitch("i", "version", "Print version", params.showVersion)
+  Script.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)
+  Script.registerSwitch("v", "checkvalid", "Return error if the proxy is invalid", params.validityCheck)
+  Script.registerSwitch("x", "nocs", "Disable CS", params.disableCS)
+  Script.registerSwitch("e", "steps", "Show steps info", params.showSteps)
+  Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", params.disableClockCheck)
+  Script.registerSwitch("m", "uploadedinfo", "Show uploaded proxies info", params.setManagerInfo)
+
+  Script.disableCS()
+  Script.parseCommandLine()
 
   from DIRAC.Core.Utilities.NTP import getClockDeviation
   from DIRAC import gLogger
@@ -99,7 +100,7 @@ def main(self):
   from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
   if params.csEnabled:
-    retVal = self.enableCS()
+    retVal = Script.enableCS()
     if not retVal['OK']:
       print("Cannot contact CS to get user list")
 
@@ -181,4 +182,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

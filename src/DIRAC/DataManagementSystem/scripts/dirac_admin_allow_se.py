@@ -12,11 +12,11 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   read = False
   write = False
   check = False
@@ -24,17 +24,17 @@ def main(self):
   site = ''
   mute = False
 
-  self.registerSwitch("r", "AllowRead", "     Allow only reading from the storage element")
-  self.registerSwitch("w", "AllowWrite", "     Allow only writing to the storage element")
-  self.registerSwitch("k", "AllowCheck", "     Allow only check access to the storage element")
-  self.registerSwitch("v", "AllowRemove", "    Allow only remove access to the storage element")
-  self.registerSwitch("a", "All", "    Allow all access to the storage element")
-  self.registerSwitch("m", "Mute", "     Do not send email")
-  self.registerSwitch("S:", "Site=", "     Allow all SEs associated to site")
+  Script.registerSwitch("r", "AllowRead", "     Allow only reading from the storage element")
+  Script.registerSwitch("w", "AllowWrite", "     Allow only writing to the storage element")
+  Script.registerSwitch("k", "AllowCheck", "     Allow only check access to the storage element")
+  Script.registerSwitch("v", "AllowRemove", "    Allow only remove access to the storage element")
+  Script.registerSwitch("a", "All", "    Allow all access to the storage element")
+  Script.registerSwitch("m", "Mute", "     Do not send email")
+  Script.registerSwitch("S:", "Site=", "     Allow all SEs associated to site")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["seGroupList: list of SEs or comma-separated SEs"])
+  Script.registerArgument(["seGroupList: list of SEs or comma-separated SEs"])
 
-  switches, ses = self.parseCommandLine(ignoreErrors=True)
+  switches, ses = Script.parseCommandLine(ignoreErrors=True)
 
   for switch in switches:
     if switch[0].lower() in ("r", "allowread"):
@@ -198,4 +198,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

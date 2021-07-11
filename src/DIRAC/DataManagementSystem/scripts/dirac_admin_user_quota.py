@@ -23,11 +23,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["User: list of SEs or comma-separated SEs"], mandatory=False)
+  DIRACScript.registerArgument(["User: list of SEs or comma-separated SEs"], mandatory=False)
 
-  _, users = self.parseCommandLine(ignoreErrors=True)
+  _, users = DIRACScript.parseCommandLine()
 
   from DIRAC import gLogger, gConfig
 
@@ -51,4 +51,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

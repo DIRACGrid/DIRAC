@@ -20,12 +20,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("CE:  Name of the CE")
-  self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument("CE:  Name of the CE")
+  DIRACScript.parseCommandLine(ignoreErrors=True)
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  ce = self.getPositionalArgs(group=True)
+  ce = DIRACScript.getPositionalArgs(group=True)
 
   from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
   from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
@@ -44,4 +44,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

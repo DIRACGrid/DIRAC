@@ -11,7 +11,7 @@ from prompt_toolkit import prompt
 import DIRAC
 
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
@@ -85,15 +85,15 @@ class CLIParams(object):
     sys.exit(0)
     return DIRAC.S_OK()
 
-  def registerCLISwitches(self, script):
-    script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime)
-    script.registerSwitch("C:", "Cert=", "File to use as user certificate", self.setCertLocation)
-    script.registerSwitch("K:", "Key=", "File to use as user key", self.setKeyLocation)
-    script.registerSwitch("P:", "Proxy=", "File to use as proxy", self.setProxyLocation)
-    script.registerSwitch("f", "onthefly", "Generate a proxy on the fly", self.setOnTheFly)
-    script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
-    script.registerSwitch("i", "version", "Print version", self.showVersion)
-    script.addDefaultOptionValue("LogLevel", "always")
+  def registerCLISwitches(self):
+    Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime)
+    Script.registerSwitch("C:", "Cert=", "File to use as user certificate", self.setCertLocation)
+    Script.registerSwitch("K:", "Key=", "File to use as user key", self.setKeyLocation)
+    Script.registerSwitch("P:", "Proxy=", "File to use as proxy", self.setProxyLocation)
+    Script.registerSwitch("f", "onthefly", "Generate a proxy on the fly", self.setOnTheFly)
+    Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
+    Script.registerSwitch("i", "version", "Print version", self.showVersion)
+    Script.addDefaultOptionValue("LogLevel", "always")
 
 
 from DIRAC import S_ERROR

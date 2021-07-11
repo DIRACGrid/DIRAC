@@ -20,8 +20,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.parseCommandLine(ignoreErrors=True)
+def main():
+  DIRACScript.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -45,4 +45,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

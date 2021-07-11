@@ -10,7 +10,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 import os
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 def convertDate(date):
@@ -28,31 +28,31 @@ def convertDate(date):
   return value
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
-  self.registerSwitch('', 'Transformation=', '   transformation ID')
-  self.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
-  self.registerSwitch('', 'Verbose', '   Print more information')
-  self.registerSwitch('', 'Terse', '   Only print request status')
-  self.registerSwitch('', 'Full', '   Print full request content')
-  self.registerSwitch('', 'Status=', '   Select all requests in a given status')
-  self.registerSwitch('', 'Since=',
+@Script()
+def main():
+  Script.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
+  Script.registerSwitch('', 'Transformation=', '   transformation ID')
+  Script.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
+  Script.registerSwitch('', 'Verbose', '   Print more information')
+  Script.registerSwitch('', 'Terse', '   Only print request status')
+  Script.registerSwitch('', 'Full', '   Print full request content')
+  Script.registerSwitch('', 'Status=', '   Select all requests in a given status')
+  Script.registerSwitch('', 'Since=',
                         '      Associated to --Status, start date yyyy-mm-dd or nb of days (default= -one day')
-  self.registerSwitch('', 'Until=', '      Associated to --Status, end date (default= now')
-  self.registerSwitch('', 'Maximum=', '      Associated to --Status, max number of requests ')
-  self.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
-  self.registerSwitch('', 'Force', '   Force reset even if not Failed')
-  self.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
-  self.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
-  self.registerSwitch('', 'Cancel', '   Cancel the request')
-  self.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
-  self.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
+  Script.registerSwitch('', 'Until=', '      Associated to --Status, end date (default= now')
+  Script.registerSwitch('', 'Maximum=', '      Associated to --Status, max number of requests ')
+  Script.registerSwitch('', 'Reset', '   Reset Failed files to Waiting if any')
+  Script.registerSwitch('', 'Force', '   Force reset even if not Failed')
+  Script.registerSwitch('', 'All', '      (if --Status Failed) all requests, otherwise exclude irrecoverable failures')
+  Script.registerSwitch('', 'FixJob', '   Set job Done if the request is Done')
+  Script.registerSwitch('', 'Cancel', '   Cancel the request')
+  Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
+  Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("file:     a file containing a list of requests (Comma-separated on each line)",
-                         "request:  a request ID or a unique request name"), mandatory=False)
-  self.registerArgument(["request:  a request ID or a unique request name"], mandatory=False)
-  self.parseCommandLine()
+  Script.registerArgument(("file:     a file containing a list of requests (Comma-separated on each line)",
+                           "request:  a request ID or a unique request name"), mandatory=False)
+  Script.registerArgument(["request:  a request ID or a unique request name"], mandatory=False)
+  Script.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
@@ -77,7 +77,7 @@ def main(self):
   listJobs = False
   force = False
   targetSE = set()
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Job':
       jobs = []
       job = "Unknown"
@@ -153,7 +153,7 @@ def main(self):
   if transID:
     if not taskIDs:
       gLogger.fatal("If Transformation is set, a list of Tasks should also be set")
-      self.showHelp(exitCode=2)
+      Script.showHelp(exitCode=2)
     # In principle, the task name is unique, so the request name should be unique as well
     # If ever this would not work anymore, we would need to use the transformationClient
     # to fetch the ExternalID
@@ -163,7 +163,7 @@ def main(self):
   elif not jobs:
     requests = []
     # Get full list of arguments, with and without comma
-    for arg in [x.strip() for arg in self.getPositionalArgs() for x in arg.split(',')]:
+    for arg in [x.strip() for arg in Script.getPositionalArgs() for x in arg.split(',')]:
       if os.path.exists(arg):
         lines = open(arg, 'r').readlines()
         requests += [reqID.strip() for line in lines for reqID in line.split(',')]
@@ -195,7 +195,7 @@ def main(self):
     gLogger.notice('Obtained %d requests %s between %s and %s' % (len(requests), status, since, until))
   if not requests:
     gLogger.notice('No request selected....')
-    self.showHelp(exitCode=2)
+    Script.showHelp(exitCode=2)
   okRequests = []
   warningPrinted = False
   jobIDList = []
@@ -281,4 +281,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

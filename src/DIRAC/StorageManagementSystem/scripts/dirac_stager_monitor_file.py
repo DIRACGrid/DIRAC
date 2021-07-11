@@ -41,15 +41,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("LFN: LFN of the staging file")
-  self.registerArgument("SE: Storage Element for the staging file")
-  self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument("LFN: LFN of the staging file")
+  DIRACScript.registerArgument("SE: Storage Element for the staging file")
+  DIRACScript.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit, gLogger
 
-  lfn, se = self.getPositionalArgs(group=True)
+  lfn, se = DIRACScript.getPositionalArgs(group=True)
 
   from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
   client = StorageManagerClient()
@@ -96,11 +96,11 @@ def main(self):
       outStr += '\nThere are no staging requests submitted to the site yet.'.ljust(8)
   else:
     outStr = "\nThere is no such file requested for staging. Check for typo's!"
-    # self.showHelp()
+    # DIRACScript.showHelp()
   gLogger.notice(outStr)
 
   DIRACExit(0)
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

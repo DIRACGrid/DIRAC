@@ -40,6 +40,7 @@
                       -C 'dips://lhcbprod.pic.es:9135/Configuration/Server'
                       -W 'dips://lhcbprod.pic.es:9135'
                       --SkipCAChecks
+
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -51,7 +52,7 @@ import six
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -60,48 +61,26 @@ from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClie
 __RCSID__ = "$Id$"
 
 
-class Params(DIRACScript):
-
-  def initParameters(self):
-    self.vo = None
-    self.setup = None
-    self.update = False
-    self.ceName = None
-    self.localSE = None
+class Params(object):
+  def __init__(self):
     self.logLevel = None
-    self.siteName = None
-    self.outputFile = ''
-    self.extensions = ''
-    self.architecture = None
-    self.skipCAChecks = False
-    self.useServerCert = False
-    self.gatewayServer = None
-    self.useVersionsDir = False
-    self.skipCADownload = False
-    self.skipVOMSDownload = False
-    self.includeAllServers = False
+    self.setup = None
     self.configurationServer = None
-    self.switches = [
-        ("S:", "Setup=", "Set <setup> as DIRAC setup", self.setSetup),
-        ("e:", "Extensions=", "Set <extensions> as DIRAC extensions", self.setExtensions),
-        ("C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", self.setServer),
-        ("I", "IncludeAllServers", "include all Configuration Servers", self.setAllServers),
-        ("n:", "SiteName=", "Set <sitename> as DIRAC Site Name", self.setSiteName),
-        ("N:", "CEName=", "Determiner <sitename> from <cename>", self.setCEName),
-        ("V:", "VO=", "Set the VO name", self.setVO),
-        ("W:", "gateway=", "Configure <gateway> as DIRAC Gateway for the site", self.setGateway),
-        ("U", "UseServerCertificate", "Configure to use Server Certificate", self.setServerCert),
-        ("H", "SkipCAChecks", "Configure to skip check of CAs", self.setSkipCAChecks),
-        ("D", "SkipCADownload", "Configure to skip download of CAs", self.setSkipCADownload),
-        ("M", "SkipVOMSDownload", "Configure to skip download of VOMS info", self.setSkipVOMSDownload),
-        ("v", "UseVersionsDir", "Use versions directory", self.setUseVersionsDir),
-        ("A:", "Architecture=", "Configure /Architecture=<architecture>", self.setArchitecture),
-        ("L:", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", self.setLocalSE),
-        ("F", "ForceUpdate",
-         "Force Update of cfg file (i.e. dirac.cfg) (otherwise nothing happens if dirac.cfg already exists)",
-         self.forceUpdate),
-        ("O:", "output=", "output configuration file", self.setOutput)
-    ]
+    self.includeAllServers = False
+    self.gatewayServer = None
+    self.siteName = None
+    self.useServerCert = False
+    self.skipCAChecks = False
+    self.skipCADownload = False
+    self.useVersionsDir = False
+    self.architecture = None
+    self.localSE = None
+    self.ceName = None
+    self.vo = None
+    self.update = False
+    self.outputFile = ''
+    self.skipVOMSDownload = False
+    self.extensions = ''
 
   def setGateway(self, optionValue):
     self.gatewayServer = optionValue
@@ -130,7 +109,7 @@ class Params(DIRACScript):
 
   def setSiteName(self, optionValue):
     self.siteName = optionValue
-    self.localCfg.addDefaultEntry('/LocalSite/Site', self.siteName)
+    Script.localCfg.addDefaultEntry('/LocalSite/Site', self.siteName)
     DIRAC.__siteName = False
     DIRAC.gConfig.setOptionValue(cfgInstallPath('SiteName'), self.siteName)
     return DIRAC.S_OK()
@@ -167,19 +146,19 @@ class Params(DIRACScript):
 
   def setArchitecture(self, optionValue):
     self.architecture = optionValue
-    self.localCfg.addDefaultEntry('/LocalSite/Architecture', self.architecture)
+    Script.localCfg.addDefaultEntry('/LocalSite/Architecture', self.architecture)
     DIRAC.gConfig.setOptionValue(cfgInstallPath('Architecture'), self.architecture)
     return DIRAC.S_OK()
 
   def setLocalSE(self, optionValue):
     self.localSE = optionValue
-    self.localCfg.addDefaultEntry('/LocalSite/LocalSE', self.localSE)
+    Script.localCfg.addDefaultEntry('/LocalSite/LocalSE', self.localSE)
     DIRAC.gConfig.setOptionValue(cfgInstallPath('LocalSE'), self.localSE)
     return DIRAC.S_OK()
 
   def setVO(self, optionValue):
     self.vo = optionValue
-    self.localCfg.addDefaultEntry('/DIRAC/VirtualOrganization', self.vo)
+    Script.localCfg.addDefaultEntry('/DIRAC/VirtualOrganization', self.vo)
     DIRAC.gConfig.setOptionValue(cfgInstallPath('VirtualOrganization'), self.vo)
     return DIRAC.S_OK()
 
@@ -300,18 +279,46 @@ def runConfigurationWizard(params):
   sys.exit(result.returncode)
 
 
-@Params()
-def main(self):
-  self.disableCS()
+@Script()
+def main():
+  Script.disableCS()
+  params = Params()
   if six.PY3 and len(sys.argv) < 2:
-    runConfigurationWizard(self)
+    runConfigurationWizard(params)
   else:
-    runDiracConfigure(self)
+    runDiracConfigure(params)
 
 
 def runDiracConfigure(params):
-  params.registerSwitches(params.switches)
-  params.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch("S:", "Setup=", "Set <setup> as DIRAC setup", params.setSetup)
+  Script.registerSwitch("e:", "Extensions=", "Set <extensions> as DIRAC extensions", params.setExtensions)
+  Script.registerSwitch("C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", params.setServer)
+  Script.registerSwitch("I", "IncludeAllServers", "include all Configuration Servers", params.setAllServers)
+  Script.registerSwitch("n:", "SiteName=", "Set <sitename> as DIRAC Site Name", params.setSiteName)
+  Script.registerSwitch("N:", "CEName=", "Determiner <sitename> from <cename>", params.setCEName)
+  Script.registerSwitch("V:", "VO=", "Set the VO name", params.setVO)
+
+  Script.registerSwitch("W:", "gateway=", "Configure <gateway> as DIRAC Gateway for the site", params.setGateway)
+
+  Script.registerSwitch("U", "UseServerCertificate", "Configure to use Server Certificate", params.setServerCert)
+  Script.registerSwitch("H", "SkipCAChecks", "Configure to skip check of CAs", params.setSkipCAChecks)
+  Script.registerSwitch("D", "SkipCADownload", "Configure to skip download of CAs", params.setSkipCADownload)
+  Script.registerSwitch("M", "SkipVOMSDownload", "Configure to skip download of VOMS info", params.setSkipVOMSDownload)
+
+  Script.registerSwitch("v", "UseVersionsDir", "Use versions directory", params.setUseVersionsDir)
+
+  Script.registerSwitch("A:", "Architecture=", "Configure /Architecture=<architecture>", params.setArchitecture)
+  Script.registerSwitch("L:", "LocalSE=", "Configure LocalSite/LocalSE=<localse>", params.setLocalSE)
+
+  Script.registerSwitch(
+      "F",
+      "ForceUpdate",
+      "Force Update of cfg file (i.e. dirac.cfg) (otherwise nothing happens if dirac.cfg already exists)",
+      params.forceUpdate)
+
+  Script.registerSwitch("O:", "output=", "output configuration file", params.setOutput)
+
+  Script.parseCommandLine(ignoreErrors=True)
 
   if not params.logLevel:
     params.logLevel = DIRAC.gConfig.getValue(cfgInstallPath('LogLevel'), '')
@@ -416,13 +423,13 @@ def runDiracConfigure(params):
   if not params.useServerCert:
     DIRAC.gLogger.verbose('/DIRAC/Security/UseServerCertificate =', 'no')
     # Being sure it was not there before
-    params.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-    params.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'no')
+    Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+    Script.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'no')
   else:
     DIRAC.gLogger.verbose('/DIRAC/Security/UseServerCertificate =', 'yes')
     # Being sure it was not there before
-    params.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-    params.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
+    Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+    Script.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
 
   host = DIRAC.gConfig.getValue(cfgInstallPath("Host"), "")
   if host:
@@ -431,14 +438,14 @@ def runDiracConfigure(params):
   if params.skipCAChecks:
     DIRAC.gLogger.verbose('/DIRAC/Security/SkipCAChecks =', 'yes')
     # Being sure it was not there before
-    params.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
-    params.localCfg.addDefaultEntry('/DIRAC/Security/SkipCAChecks', 'yes')
+    Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+    Script.localCfg.addDefaultEntry('/DIRAC/Security/SkipCAChecks', 'yes')
   else:
     # Necessary to allow initial download of CA's
     if not params.skipCADownload:
       DIRAC.gConfig.setOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
   if not params.skipCADownload:
-    params.enableCS()
+    Script.enableCS()
     try:
       dirName = os.path.join(DIRAC.rootPath, 'etc', 'grid-security', 'certificates')
       mkDir(dirName)
@@ -455,15 +462,15 @@ def runDiracConfigure(params):
       DIRAC.gLogger.error('Failed to sync CAs and CRLs: %s' % str(e))
 
     if not params.skipCAChecks:
-      params.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+      Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
 
   if params.ceName or params.siteName:
     # This is used in the pilot context, we should have a proxy, or a certificate, and access to CS
     if params.useServerCert:
       # Being sure it was not there before
-      params.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-      params.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
-    params.enableCS()
+      Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+      Script.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
+    Script.enableCS()
     # Get the site resource section
     gridSections = DIRAC.gConfig.getSections('/Resources/Sites/')
     if not gridSections['OK']:
@@ -491,23 +498,23 @@ def runDiracConfigure(params):
               break
       if params.siteName:
         DIRAC.gLogger.notice('Setting /LocalSite/Site = %s' % params.siteName)
-        params.localCfg.addDefaultEntry('/LocalSite/Site', params.siteName)
+        Script.localCfg.addDefaultEntry('/LocalSite/Site', params.siteName)
         DIRAC.__siteName = False
         if params.ceName:
           DIRAC.gLogger.notice('Setting /LocalSite/GridCE = %s' % params.ceName)
-          params.localCfg.addDefaultEntry('/LocalSite/GridCE', params.ceName)
+          Script.localCfg.addDefaultEntry('/LocalSite/GridCE', params.ceName)
 
         if not params.localSE and params.siteName in sites:
           params.localSE = getSEsForSite(params.siteName)
           if params.localSE['OK'] and params.localSE['Value']:
             params.localSE = ','.join(params.localSE['Value'])
             DIRAC.gLogger.notice('Setting /LocalSite/LocalSE =', params.localSE)
-            params.localCfg.addDefaultEntry('/LocalSite/LocalSE', params.localSE)
+            Script.localCfg.addDefaultEntry('/LocalSite/LocalSE', params.localSE)
           break
 
   if params.gatewayServer:
     DIRAC.gLogger.verbose('/DIRAC/Gateways/%s =' % DIRAC.siteName(), params.gatewayServer)
-    params.localCfg.addDefaultEntry('/DIRAC/Gateways/%s' % DIRAC.siteName(), params.gatewayServer)
+    Script.localCfg.addDefaultEntry('/DIRAC/Gateways/%s' % DIRAC.siteName(), params.gatewayServer)
 
   # Create the local cfg if it is not yet there
   if not params.outputFile:
@@ -522,27 +529,27 @@ def runDiracConfigure(params):
   if params.includeAllServers:
     # We need user proxy or server certificate to continue in order to get all the CS URLs
     if not params.useServerCert:
-      params.enableCS()
+      Script.enableCS()
       result = getProxyInfo()
       if not result['OK']:
         DIRAC.gLogger.notice('Configuration is not completed because no user proxy is available')
         DIRAC.gLogger.notice('Create one using dirac-proxy-init and execute again with -F option')
         sys.exit(1)
     else:
-      params.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+      Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
       # When using Server Certs CA's will be checked, the flag only disables initial download
       # this will be replaced by the use of SkipCADownload
-      params.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
-      params.enableCS()
+      Script.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
+      Script.enableCS()
 
     DIRAC.gConfig.setOptionValue('/DIRAC/Configuration/Servers', ','.join(DIRAC.gConfig.getServersList()))
     DIRAC.gLogger.verbose('/DIRAC/Configuration/Servers =', ','.join(DIRAC.gConfig.getServersList()))
 
   if params.useServerCert:
     # always removing before dumping
-    params.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-    params.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
-    params.localCfg.deleteOption('/DIRAC/Security/SkipVOMSDownload')
+    Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+    Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+    Script.localCfg.deleteOption('/DIRAC/Security/SkipVOMSDownload')
 
   if params.update:
     DIRAC.gConfig.dumpLocalCFGToFile(params.outputFile)
@@ -596,14 +603,14 @@ def runDiracConfigure(params):
       error = "Could not generate vomses file for VO %s" % voName
 
   if params.useServerCert:
-    params.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+    Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
     # When using Server Certs CA's will be checked, the flag only disables initial download
     # this will be replaced by the use of SkipCADownload
-    params.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+    Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
 
   if error:
     sys.exit(1)
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

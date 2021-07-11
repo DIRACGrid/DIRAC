@@ -17,19 +17,19 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("requestName:  a request name")
-  self.registerArgument("LFN:          logical file name")
-  self.registerArgument("localFile:    local file you want to put")
-  self.registerArgument("targetSE:     target SE")
-  self.parseCommandLine()
+  DIRACScript.registerArgument("requestName:  a request name")
+  DIRACScript.registerArgument("LFN:          logical file name")
+  DIRACScript.registerArgument("localFile:    local file you want to put")
+  DIRACScript.registerArgument("targetSE:     target SE")
+  DIRACScript.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  requestName, LFN, PFN, targetSE = self.getPositionalArgs(group=True)
+  requestName, LFN, PFN, targetSE = DIRACScript.getPositionalArgs(group=True)
 
   if not os.path.isabs(LFN):
     gLogger.error("LFN should be absolute path!!!")
@@ -81,4 +81,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

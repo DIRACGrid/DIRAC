@@ -15,20 +15,20 @@ from __future__ import division
 from diraccfg import CFG
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("t", "test", "Only test. Don't commit changes")
+@Script()
+def main():
+  Script.registerSwitch("t", "test", "Only test. Don't commit changes")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("UserCfg:  Cfg FileName with Users as sections containing"
+  Script.registerArgument("UserCfg:  Cfg FileName with Users as sections containing"
                         "DN, Groups, and other properties as options")
-  self.parseCommandLine(ignoreErrors=True)
+  Script.parseCommandLine(ignoreErrors=True)
 
-  args = self.getExtraCLICFGFiles()
+  args = Script.getExtraCLICFGFiles()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -36,7 +36,7 @@ def main(self):
   testOnly = False
   errorList = []
 
-  for unprocSw in self.getUnprocessedSwitches():
+  for unprocSw in Script.getUnprocessedSwitches():
     if unprocSw[0] in ("t", "test"):
       testOnly = True
 
@@ -63,4 +63,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

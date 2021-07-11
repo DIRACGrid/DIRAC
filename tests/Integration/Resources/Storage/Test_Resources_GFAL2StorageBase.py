@@ -28,7 +28,7 @@ import tempfile
 import shutil
 
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 Script.setUsageMessage("""

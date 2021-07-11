@@ -17,11 +17,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("PFN:      Physical File Name or file containing PFNs")
-  self.registerArgument("SE:       Valid DIRAC SE")
-  _, args = self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument("PFN:      Physical File Name or file containing PFNs")
+  DIRACScript.registerArgument("SE:       Valid DIRAC SE")
+  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
 
   if len(args) > 2:
     print('Only one PFN SE pair will be considered')
@@ -49,4 +49,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

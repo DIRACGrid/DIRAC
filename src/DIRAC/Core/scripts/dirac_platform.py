@@ -156,9 +156,9 @@ else:
   from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
   @DIRACScript()
-  def main(self):
+  def main():
     print(getPlatformString())
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

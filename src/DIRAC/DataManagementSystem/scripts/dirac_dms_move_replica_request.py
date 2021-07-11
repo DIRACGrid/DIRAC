@@ -26,18 +26,18 @@ def getLFNList(arg):
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(" sourceSE:   source SE")
-  self.registerArgument(" LFN:        LFN or file containing a List of LFNs")
-  self.registerArgument(["targetSE:   target SE"])
-  self.parseCommandLine()
+  DIRACScript.registerArgument(" sourceSE:   source SE")
+  DIRACScript.registerArgument(" LFN:        LFN or file containing a List of LFNs")
+  DIRACScript.registerArgument(["targetSE:   target SE"])
+  DIRACScript.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = self.getPositionalArgs()
+  args = DIRACScript.getPositionalArgs()
 
   sourceSE = args[0]
   lfnList = getLFNList(args[1])
@@ -123,4 +123,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -23,7 +23,7 @@ import datetime
 import DIRAC
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.Core.Security.Locations import getCAsLocation
@@ -48,25 +48,23 @@ class Params(ProxyGeneration.CLIParams):
     self.uploadProxy = False
     return S_OK()
 
-  def registerCLISwitches(self, script):
-    ProxyGeneration.CLIParams.registerCLISwitches(self, script)
-    script.registerSwitch(
+  def registerCLISwitches(self):
+    ProxyGeneration.CLIParams.registerCLISwitches(self)
+    Script.registerSwitch(
         "U",
         "upload",
         "Upload a long lived proxy to the ProxyManager (deprecated, see --no-upload)")
-    script.registerSwitch(
+    Script.registerSwitch(
         "N",
         "no-upload",
         "Do not upload a long lived proxy to the ProxyManager",
         self.disableProxyUpload)
-    script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
+    Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
 
 
-class ProxyInit(DIRACScript):
+class ProxyInit(object):
 
-  def initParameters(self):
-    piParams = Params()
-    piParams.registerCLISwitches(self)
+  def __init__(self, piParams):
     self.__piParams = piParams
     self.__issuerCert = False
     self.__proxyGenerated = False
@@ -129,14 +127,14 @@ class ProxyInit(DIRACScript):
     """ Creates the proxy on disk
     """
     gLogger.notice("Generating proxy...")
-    resultProxyGenerated = ProxyGeneration.generateProxy(self.__piParams, self)
+    resultProxyGenerated = ProxyGeneration.generateProxy(piParams)
     if not resultProxyGenerated['OK']:
       gLogger.error(resultProxyGenerated['Message'])
       sys.exit(1)
     self.__proxyGenerated = resultProxyGenerated['Value']
     return resultProxyGenerated
 
-  def _uploadProxy(self):
+  def uploadProxy(self):
     """ Upload the proxy to the proxyManager service
     """
     issuerCert = self.getIssuerCert()
@@ -229,8 +227,8 @@ class ProxyInit(DIRACScript):
       return proxy
 
     self.checkCAs()
-    self.certLifeTimeCheck()
-    resultProxyWithVOMS = self.addVOMSExtIfNeeded()
+    pI.certLifeTimeCheck()
+    resultProxyWithVOMS = pI.addVOMSExtIfNeeded()
     if not resultProxyWithVOMS['OK']:
       if "returning a valid AC for the user" in resultProxyWithVOMS['Message']:
         gLogger.error(resultProxyWithVOMS['Message'])
@@ -243,7 +241,7 @@ class ProxyInit(DIRACScript):
         return resultProxyWithVOMS
 
     if self.__piParams.uploadProxy:
-      resultProxyUpload = self._uploadProxy()
+      resultProxyUpload = pI.uploadProxy()
       if not resultProxyUpload['OK']:
         if self.__piParams.strict:
           return resultProxyUpload
@@ -251,21 +249,26 @@ class ProxyInit(DIRACScript):
     return S_OK()
 
 
-@ProxyInit()
-def main(self):
-  self.disableCS()
-  self.parseCommandLine(ignoreErrors=True)
+@Script()
+def main():
+  global piParams, pI
+  piParams = Params()
+  piParams.registerCLISwitches()
+
+  Script.disableCS()
+  Script.parseCommandLine(ignoreErrors=True)
   DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
 
-  resultDoTheMagic = self.doTheMagic()
+  pI = ProxyInit(piParams)
+  resultDoTheMagic = pI.doTheMagic()
   if not resultDoTheMagic['OK']:
     gLogger.fatal(resultDoTheMagic['Message'])
     sys.exit(1)
 
-  self.printInfo()
+  pI.printInfo()
 
   sys.exit(0)
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

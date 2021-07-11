@@ -153,7 +153,7 @@ Create a Python script to generate and submit a simple job. Copy paste the follo
   #!/bin/env python
   # Magic lines necessary to activate the DIRAC Configuration System
   # to discover all the required services
-  from DIRAC.Core.Base import Script
+  from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
   Script.parseCommandLine(ignoreErrors=True)
   from DIRAC.Interfaces.API.Job import Job
   from DIRAC.Interfaces.API.Dirac import Dirac

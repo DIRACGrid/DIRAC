@@ -18,29 +18,29 @@ from DIRAC import gLogger
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 
 
 @DIRACScript()
-def main(self):
-  self.localCfg.registerCmdArg(["Agent: specify which agent to run"])
-  agents = self.localCfg.getPositionalArguments(group=True)
+def main():
+  DIRACScript.registerArgument(["Agent: specify which agent to run"])
+  positionalArgs = DIRACScript.getPositionalArgs(group=True)
+  localCfg = DIRACScript.localCfg
 
-  agentName = agents[0]
-  self.localCfg.setConfigurationForAgent(agentName)
-  self.localCfg.addMandatoryEntry("/DIRAC/Setup")
-  self.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
-  self.localCfg.addDefaultEntry("LogLevel", "INFO")
-  self.localCfg.addDefaultEntry("LogColor", True)
-  resultDict = self.localCfg.loadUserData()
+  agentName = positionalArgs[0]
+  localCfg.setConfigurationForAgent(agentName)
+  localCfg.addMandatoryEntry("/DIRAC/Setup")
+  localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
+  localCfg.addDefaultEntry("LogLevel", "INFO")
+  localCfg.addDefaultEntry("LogColor", True)
+  resultDict = localCfg.loadUserData()
   if not resultDict['OK']:
     gLogger.error("There were errors when loading configuration", resultDict['Message'])
     sys.exit(1)
 
   includeExtensionErrors()
 
-  agentReactor = AgentReactor(agentName)
-  result = agentReactor.loadAgentModules(agents)
+  agentReactor = AgentReactor(positionalArgs[0])
+  result = agentReactor.loadAgentModules(positionalArgs)
   if result['OK']:
     agentReactor.go()
   else:
@@ -49,4 +49,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

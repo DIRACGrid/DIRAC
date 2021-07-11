@@ -11,40 +11,40 @@ import socket
 from DIRAC import exit as DIRACexit
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Utilities.PromptUser import promptUser
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
 __RCSID__ = "$Id$"
 
-
-class Params(object):
-  force = False
-
-  def setForce(self, opVal):
-    self.force = True
-    return S_OK()
+force = False
 
 
-@DIRACScript()
-def main(self):
-  params = Params()
+def setForce(opVal):
+  global force
+  force = True
+  return S_OK()
+
+
+@Script()
+def main():
+  global force
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
   gComponentInstaller.exitOnError = True
 
-  self.registerSwitch("f", "force", "Forces the removal of the logs", params.setForce)
+  Script.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
-                         "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
-  self.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
-  _, args = self.parseCommandLine()
+  Script.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
+                           "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
+  Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
+  _, args = Script.parseCommandLine()
 
   if len(args) == 1:
     args = args[0].split('/')
 
   if len(args) < 2:
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   system = args[0]
   component = args[1]
@@ -64,7 +64,7 @@ def main(self):
     DIRACexit(1)
 
   removeLogs = False
-  if params.force:
+  if force:
     removeLogs = True
   else:
     if result['Value'][0]['Component']['Type'] in gComponentInstaller.componentTypes:
@@ -89,4 +89,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

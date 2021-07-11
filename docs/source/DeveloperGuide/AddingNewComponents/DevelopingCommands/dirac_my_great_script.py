@@ -16,12 +16,12 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-# Define a simple class to hold the script parameters
 class Params(object):
-  """ Class holding the parameters raw and pingsToDo, and callbacks for their respective switches.
+  """
+    Class holding the parameters raw and pingsToDo, and callbacks for their respective switches.
   """
 
   def __init__(self):
@@ -58,41 +58,60 @@ class Params(object):
     return S_OK()
 
 
+def registerArguments():
+  """
+    Registers a positional arguments that can be used while calling the script from the command line interface.
+  """
+
+  # it is important to add a colon after the name of the argument in the description
+  Script.registerArgument(' ReportType: report type', values=['short', 'detail'])
+  Script.registerArgument(('Name:  user name', 'DN: user DN'))
+  Script.registerArgument(['Service: list of services'], default='no elements', mandatory=False)
+
+
+def parseSwitchesAndPositionalArguments():
+  """
+    Parse switches and positional arguments given to the script
+  """
+
+  # Parse the command line and initialize DIRAC
+  Script.parseCommandLine(ignoreErrors=False)
+
+  # Get arguments
+  allArgs = Script.getPositionalArgs()
+  gLogger.debug('All arguments: %s' % ', '.join(allArgs))
+
+  # Get unprocessed switches
+  switches = dict(Script.getUnprocessedSwitches())
+
+  gLogger.debug("The switches used are:")
+  map(gLogger.debug, switches.iteritems())
+
+  # Get grouped positional arguments
+  repType, user, services = Script.getPositionalArgs(group=True)
+  gLogger.debug("The positional arguments are:")
+  gLogger.debug("Report type:", repType)
+  gLogger.debug("Name or DN:", user)
+  gLogger.debug("Services:", services)
+
+  return switches, repType, user, services
+
+
 # IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   """
     This is the script main method, which will hold all the logic.
   """
   params = Params()
 
   # Script initialization
-  self.registerSwitches(params.switches)
+  Script.registerSwitches(params.switches)
+  registerArguments()
+  switchDict, repType, user, services = parseSwitchesAndPositionalArguments()
 
-  # it is important to add a colon after the name of the argument in the description
-  self.registerArgument(' ReportType: report type', values=['short', 'detail'])
-  self.registerArgument(('Name:  user name', 'DN: user DN'))
-  self.registerArgument(['Service: list of services'], default='no elements', mandatory=False)
-
-  # Parse the command line and initialize DIRAC
-  self.parseCommandLine(ignoreErrors=False)
-
-  # Get arguments
-  allArgs = self.getPositionalArgs()
-  gLogger.debug('All arguments: %s' % ', '.join(allArgs))
-
-  # Get unprocessed switches
-  switches = dict(self.getUnprocessedSwitches())
-
-  gLogger.debug("The switches used are:")
-  map(gLogger.debug, switches.iteritems())
-
-  # Get grouped positional arguments
-  repType, user, services = self.getPositionalArgs(group=True)
-  gLogger.debug("The positional arguments are:")
-  gLogger.debug("Report type:", repType)
-  gLogger.debug("Name or DN:", user)
-  gLogger.debug("Services:", services)
+  # Import the required DIRAC modules
+  from DIRAC.Interfaces.API.Dirac import Dirac
 
   # let's do something
   if services == 'no elements':
@@ -106,4 +125,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

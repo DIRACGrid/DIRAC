@@ -18,7 +18,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
 
   if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() not in ('yes', 'true'):
     raise RuntimeError(
@@ -37,11 +37,12 @@ def main(self):
   if gConfigurationData.isMaster():
     gRefresher.disable()
 
-  self.localCfg.addMandatoryEntry("/DIRAC/Setup")
-  self.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
-  self.localCfg.addDefaultEntry("LogLevel", "INFO")
-  self.localCfg.addDefaultEntry("LogColor", True)
-  resultDict = self.localCfg.loadUserData()
+  localCfg = DIRACScript.localCfg
+  localCfg.addMandatoryEntry("/DIRAC/Setup")
+  localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
+  localCfg.addDefaultEntry("LogLevel", "INFO")
+  localCfg.addDefaultEntry("LogColor", True)
+  resultDict = localCfg.loadUserData()
   if not resultDict['OK']:
     gLogger.initialize("Tornado-CS", "/")
     gLogger.error("There were errors when loading configuration", resultDict['Message'])
@@ -62,4 +63,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

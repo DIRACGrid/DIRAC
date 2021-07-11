@@ -41,7 +41,7 @@ from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -49,15 +49,15 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 sLog = gLogger.getSubLogger('AddArchive')
 __RCSID__ = '$Id$'
+MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
+MAX_FILES = 2000
 
 
-class CreateArchiveRequest(DIRACScript):
+class CreateArchiveRequest(object):
   """Create the request to archive files."""
 
-  def initParameters(self):
+  def __init__(self):
     """Constructor."""
-    self.MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
-    self.MAX_FILES = 2000
     self._fcClient = None
     self._reqClient = None
     self.switches = {}
@@ -70,8 +70,8 @@ class CreateArchiveRequest(DIRACScript):
                     ('N', 'Name', 'Name of the Tarball, if not given: Path_Tars/Path_N.tar'
                      ' will be used to store tarballs'),
                     ('L', 'List', 'File containing list of LFNs to archive, requires Name to be given'),
-                    ('', 'MaxFiles', 'Maximum number to put in one tarball: Default %d' % self.MAX_FILES),
-                    ('', 'MaxSize', 'Maximum number of Bytes to put in one tarball: Default %d' % self.MAX_SIZE),
+                    ('', 'MaxFiles', 'Maximum number to put in one tarball: Default %d' % MAX_FILES),
+                    ('', 'MaxSize', 'Maximum number of Bytes to put in one tarball: Default %d' % MAX_SIZE),
                     ('S', 'SourceSE', 'Where to remove the LFNs from'),
                     ('T', 'TargetSE', 'Where to move the Tarball to'),
                     ]
@@ -87,8 +87,8 @@ class CreateArchiveRequest(DIRACScript):
                   ]
     self.registerSwitchesAndParseCommandLine()
 
-    self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', self.MAX_SIZE))
-    self.switches['MaxFiles'] = int(self.switches.setdefault('MaxFiles', self.MAX_FILES))
+    self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', MAX_SIZE))
+    self.switches['MaxFiles'] = int(self.switches.setdefault('MaxFiles', MAX_FILES))
 
     self.getLFNList()
     self.getLFNMetadata()
@@ -144,13 +144,13 @@ class CreateArchiveRequest(DIRACScript):
     :param str opName
     """
     for short, longOption, doc in self.options:
-      self.registerSwitch(short + ':' if short else '', longOption + '=', doc)
+      Script.registerSwitch(short + ':' if short else '', longOption + '=', doc)
     for short, longOption, doc in self.flags:
-      self.registerSwitch(short, longOption, doc)
+      Script.registerSwitch(short, longOption, doc)
       self.switches[longOption] = False
-    self.parseCommandLine()
-    if self.getPositionalArgs():
-      self.showHelp(exitCode=1)
+    Script.parseCommandLine()
+    if Script.getPositionalArgs():
+      Script.showHelp(exitCode=1)
 
     ops = Operations()
     if not ops.getValue('DataManagement/ArchiveFiles/Enabled', False):
@@ -167,7 +167,7 @@ class CreateArchiveRequest(DIRACScript):
         sLog.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
         self.switches[longOption] = defaultValue
 
-    for switch in self.getUnprocessedSwitches():
+    for switch in Script.getUnprocessedSwitches():
       for short, longOption, doc in self.options:
         if switch[0] == short or switch[0].lower() == longOption.lower():
           sLog.verbose('Found switch %r with value %r' % (longOption, switch[1]))
@@ -511,10 +511,11 @@ class CreateArchiveRequest(DIRACScript):
     request.addOperation(registerSource)
 
 
-@CreateArchiveRequest()
-def main(self):
+@Script()
+def main():
   try:
-    self.run()
+    CAR = CreateArchiveRequest()
+    CAR.run()
   except Exception as e:
     if LogLevels.getLevelValue(sLog.getLevel()) <= LogLevels.VERBOSE:
       sLog.exception('Failed to create Archive Request')
@@ -525,4 +526,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

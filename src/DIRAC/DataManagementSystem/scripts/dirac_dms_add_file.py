@@ -40,18 +40,15 @@ __RCSID__ = "$Id$"
 
 import os
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+
+overwrite = False
 
 
-class DIRACScript(_DIRACScript):
-
-  def initParameters(self):
-    """ init """
-    self.overwrite = False
-
-  def setOverwrite(self, arg):
-    self.overwrite = True
-    return S_OK()
+def setOverwrite(arg):
+  global overwrite
+  overwrite = True
+  return S_OK()
 
 
 def getDict(item_list):
@@ -69,13 +66,14 @@ def getDict(item_list):
   return lfn_dict
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("f", "force", "Force overwrite of existing file", self.setOverwrite)
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+@Script()
+def main():
+  global overwrite
+  Script.registerSwitch("f", "force", "Force overwrite of existing file", setOverwrite)
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
   if len(args) < 1 or len(args) > 4:
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   from DIRAC import gLogger
@@ -111,7 +109,7 @@ def main(self):
       continue
 
     gLogger.notice("\nUploading %s" % lfn['lfn'])
-    res = dm.putAndRegister(lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite=self.overwrite)
+    res = dm.putAndRegister(lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite=overwrite)
     if not res['OK']:
       exitCode = 3
       gLogger.error('Error: failed to upload %s to %s: %s' % (lfn['lfn'], lfn['SE'], res))
@@ -123,4 +121,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

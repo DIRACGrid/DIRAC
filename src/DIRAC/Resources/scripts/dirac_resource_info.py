@@ -9,35 +9,36 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-class Params(object):
+@Script()
+def main():
+
+  from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
+
   ceFlag = False
   seFlag = False
   voName = None
 
-  def setCEFlag(self, args_):
-    self.ceFlag = True
+  def setCEFlag(args_):
+    global ceFlag
+    ceFlag = True
 
-  def setSEFlag(self, args_):
-    self.seFlag = True
+  def setSEFlag(args_):
+    global seFlag
+    seFlag = True
 
-  def setVOName(self, args):
-    self.voName = args
+  def setVOName(args):
+    global voName
+    voName = args
 
+  Script.registerSwitch("C", "ce", "Get CE info", setCEFlag)
+  Script.registerSwitch("S", "se", "Get SE info", setSEFlag)
+  Script.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", setVOName)
 
-@DIRACScript()
-def main(self):
-  params = Params()
+  Script.parseCommandLine(ignoreErrors=True)
 
-  self.registerSwitch("C", "ce", "Get CE info", params.setCEFlag)
-  self.registerSwitch("S", "se", "Get SE info", params.setSEFlag)
-  self.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", params.setVOName)
-
-  self.parseCommandLine(ignoreErrors=True)
-
-  from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
   from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
   from DIRAC.Core.Utilities.PrettyPrint import printTable
@@ -117,33 +118,33 @@ def main(self):
     gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
     return S_OK()
 
-  if not params.voName:
+  if not voName:
     # Get the current VO
     result = getVOfromProxyGroup()
     if not result['OK']:
       gLogger.error('No proxy found, please login')
       DIRACExit(-1)
-    params.voName = result['Value']
+    voName = result['Value']
   else:
     result = gConfig.getSections('/Registry/VO')
     if not result['OK']:
       gLogger.error('Failed to contact the CS')
       DIRACExit(-1)
-    if params.voName not in result['Value']:
+    if voName not in result['Value']:
       gLogger.error('Invalid VO name')
       DIRACExit(-1)
 
-  if not (params.ceFlag or params.seFlag):
+  if not (ceFlag or seFlag):
     gLogger.error('Resource type is not specified')
     DIRACExit(-1)
 
-  if params.ceFlag:
-    result = printCEInfo(params.voName)
+  if ceFlag:
+    result = printCEInfo(voName)
     if not result['OK']:
       gLogger.error(result['Message'])
       DIRACExit(-1)
-  if params.seFlag:
-    result = printSEInfo(params.voName)
+  if seFlag:
+    result = printSEInfo(voName)
     if not result['OK']:
       gLogger.error(result['Message'])
       DIRACExit(-1)
@@ -152,4 +153,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

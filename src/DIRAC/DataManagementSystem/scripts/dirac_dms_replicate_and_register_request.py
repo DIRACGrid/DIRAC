@@ -7,8 +7,7 @@ from __future__ import division
 from __future__ import print_function
 __RCSID__ = "$Id$"
 import os
-
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gLogger
 import DIRAC
 
@@ -23,26 +22,25 @@ def getLFNList(arg):
   return list(set(lfnList))
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   catalog = None
-  self.registerSwitch("C:", "Catalog=", "Catalog to use")
+  Script.registerSwitch("C:", "Catalog=", "Catalog to use")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(" requestName:  a request name")
-  self.registerArgument(" LFNs:         single LFN or file with LFNs")
-  self.registerArgument(["targetSE:     target SE"])
-  self.parseCommandLine()
-
-  for switch in self.getUnprocessedSwitches():
+  Script.registerArgument(" requestName:  a request name")
+  Script.registerArgument(" LFNs:         single LFN or file with LFNs")
+  Script.registerArgument(["targetSE:     target SE"])
+  Script.parseCommandLine()
+  for switch in Script.getUnprocessedSwitches():
     if switch[0] == "C" or switch[0].lower() == "catalog":
       catalog = switch[1]
 
-  args = self.getPositionalArgs()
+  args = Script.getPositionalArgs()
 
   requestName = None
   targetSEs = None
   if len(args) < 3:
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   requestName = args[0]
   lfnList = getLFNList(args[1])
@@ -129,4 +127,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

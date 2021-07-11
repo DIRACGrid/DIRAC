@@ -13,16 +13,16 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known")
-  self.parseCommandLine(ignoreErrors=True)
+@Script()
+def main():
+  Script.registerSwitch("C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known")
+  Script.parseCommandLine(ignoreErrors=True)
 
   CPUNormalizationFactor = 0.0
-  for unprocSw in self.getUnprocessedSwitches():
+  for unprocSw in Script.getUnprocessedSwitches():
     if unprocSw[0] in ("C", "CPUNormalizationFactor"):
       CPUNormalizationFactor = float(unprocSw[1])
 
@@ -34,4 +34,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

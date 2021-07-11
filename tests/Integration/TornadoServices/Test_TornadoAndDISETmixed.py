@@ -113,7 +113,7 @@
     - DIRAC/Configuration/SlavesGraceTime
 """
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.parseCommandLine()
 
 import time

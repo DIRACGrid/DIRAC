@@ -12,22 +12,22 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   """reads command line parameters, makes check and creates replication transformation"""
   from DIRAC import gLogger, exit as dexit
   from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
 
   clip = Params()
-  clip.registerSwitches(self)
-  self.parseCommandLine()
+  clip.registerSwitches(Script)
+  Script.parseCommandLine()
 
   from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
 
-  if not clip.checkSettings(self)['OK']:
+  if not clip.checkSettings(Script)['OK']:
     gLogger.error("ERROR: Missing settings")
     dexit(1)
   for metaValue in clip.metaValues:
@@ -51,4 +51,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

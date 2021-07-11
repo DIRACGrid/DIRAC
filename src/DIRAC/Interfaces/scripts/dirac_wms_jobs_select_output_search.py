@@ -16,22 +16,22 @@ import os
 from shutil import rmtree
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("", "Status=", "Primary status")
-  self.registerSwitch("", "MinorStatus=", "Secondary status")
-  self.registerSwitch("", "ApplicationStatus=", "Application status")
-  self.registerSwitch("", "Site=", "Execution site")
-  self.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
-  self.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
-  self.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
-  self.registerSwitch("", "File=", "File name,if not specified default is std.out ")
+@Script()
+def main():
+  Script.registerSwitch("", "Status=", "Primary status")
+  Script.registerSwitch("", "MinorStatus=", "Secondary status")
+  Script.registerSwitch("", "ApplicationStatus=", "Application status")
+  Script.registerSwitch("", "Site=", "Execution site")
+  Script.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
+  Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
+  Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
+  Script.registerSwitch("", "File=", "File name,if not specified default is std.out ")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("String: string to search for")
-  _, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument("String: string to search for")
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   # Default values
   status = None
@@ -44,11 +44,11 @@ def main(self):
   filename = 'std.out'
 
   if len(args) != 1:
-    self.showHelp()
+    Script.showHelp()
 
   searchstring = str(args[0])
 
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0].lower() == "status":
       status = switch[1]
     elif switch[0].lower() == "minorstatus":
@@ -111,4 +111,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -12,13 +12,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("LFN:      LFN",
-                         "File:     File name containing a list of affected LFNs"))
-  self.registerArgument(" SE:       Name of Storage Element")
-  self.registerArgument(" Status:   New Status for the replica")
-  self.parseCommandLine(ignoreErrors=False)
+  DIRACScript.registerArgument(("LFN:      LFN",
+                                "File:     File name containing a list of affected LFNs"))
+  DIRACScript.registerArgument(" SE:       Name of Storage Element")
+  DIRACScript.registerArgument(" Status:   New Status for the replica")
+  DIRACScript.parseCommandLine(ignoreErrors=False)
 
   import DIRAC
   from DIRAC import gLogger
@@ -26,7 +26,7 @@ def main(self):
   import os
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName, storageElement, status = self.getPositionalArgs(group=True)
+  inputFileName, storageElement, status = DIRACScript.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')
@@ -66,4 +66,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

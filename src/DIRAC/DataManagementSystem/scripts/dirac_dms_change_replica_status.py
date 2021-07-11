@@ -13,13 +13,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("LocalFile: Path to local file containing LFNs",
-                         "LFN:       Logical File Names"))
-  self.registerArgument(" SE:        Storage Element")
-  self.registerArgument(" status:    status")
-  self.parseCommandLine()
+  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
+                                "LFN:       Logical File Names"))
+  DIRACScript.registerArgument(" SE:        Storage Element")
+  DIRACScript.registerArgument(" status:    status")
+  DIRACScript.parseCommandLine()
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
   catalog = FileCatalog()
@@ -58,4 +58,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

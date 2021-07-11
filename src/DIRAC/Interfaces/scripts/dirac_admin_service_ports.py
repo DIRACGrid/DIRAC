@@ -28,11 +28,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("Setup:    Name of the setup", default='', mandatory=False)
-  self.parseCommandLine(ignoreErrors=True)
-  setup = self.getPositionalArgs(group=True)
+  DIRACScript.registerArgument("Setup:    Name of the setup", default='', mandatory=False)
+  DIRACScript.parseCommandLine(ignoreErrors=True)
+  setup = DIRACScript.getPositionalArgs(group=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -45,4 +45,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

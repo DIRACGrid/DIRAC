@@ -27,7 +27,7 @@ sitePython = "@SITEPYTHON@"
 if sitePython:
   sys.path.insert(0, "@SITEPYTHON@")
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.parseCommandLine()
 
 from DIRAC import gLogger

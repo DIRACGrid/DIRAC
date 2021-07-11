@@ -26,7 +26,7 @@ from __future__ import division
 
 import DIRAC
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 __RCSID__ = "$Id$"
@@ -47,12 +47,14 @@ class Params(object):
       return DIRAC.S_ERROR("Can't parse time argument")
     return DIRAC.S_OK()
 
+  def registerCLISwitches(self):
+    Script.registerSwitch("v:", "valid=", "Required HH:MM for the users", self.setProxyLifeTime)
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   params = Params()
-  self.registerSwitch("v:", "valid=", "Required HH:MM for the users", params.setProxyLifeTime)
-  self.parseCommandLine(ignoreErrors=True)
+  params.registerCLISwitches()
+  Script.parseCommandLine(ignoreErrors=True)
   result = gProxyManager.getDBContents()
   if not result['OK']:
     print("Can't retrieve list of users: %s" % result['Message'])
@@ -87,4 +89,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

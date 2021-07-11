@@ -30,28 +30,33 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
+
+verbose = False
 
 
-class Params(object):
-  verbose = False
-  taskQueueID = 0
-
-  def setVerbose(self, optVal):
-    self.verbose = True
-    return S_OK()
-
-  def setTaskQueueID(self, optVal):
-    self.taskQueueID = int(optVal)
-    return S_OK()
+def setVerbose(optVal):
+  global verbose
+  verbose = True
+  return S_OK()
 
 
-@DIRACScript()
-def main(self):
-  params = Params()
-  self.registerSwitch("v", "verbose", "give max details about task queues", params.setVerbose)
-  self.registerSwitch("t:", "taskQueue=", "show this task queue only", params.setTaskQueueID)
-  self.parseCommandLine(initializeMonitor=False)
+taskQueueID = 0
+
+
+def setTaskQueueID(optVal):
+  global taskQueueID
+  taskQueueID = int(optVal)
+  return S_OK()
+
+
+@Script()
+def main():
+  global verbose
+  global taskQueueID
+  Script.registerSwitch("v", "verbose", "give max details about task queues", setVerbose)
+  Script.registerSwitch("t:", "taskQueue=", "show this task queue only", setTaskQueueID)
+  Script.parseCommandLine(initializeMonitor=False)
 
   result = MatcherClient().getActiveTaskQueues()
   if not result['OK']:
@@ -60,13 +65,13 @@ def main(self):
 
   tqDict = result['Value']
 
-  if not params.verbose:
+  if not verbose:
     fields = ['TaskQueue', 'Jobs', 'CPUTime', 'Owner', 'OwnerGroup', 'Sites',
               'Platforms', 'SubmitPools', 'Setup', 'Priority']
     records = []
 
     for tqId in sorted(tqDict):
-      if params.taskQueueID and tqId != params.taskQueueID:
+      if taskQueueID and tqId != taskQueueID:
         continue
       record = [str(tqId)]
       tqData = tqDict[tqId]
@@ -94,7 +99,7 @@ def main(self):
   else:
     fields = ['Key', 'Value']
     for tqId in sorted(tqDict):
-      if params.taskQueueID and tqId != params.taskQueueID:
+      if taskQueueID and tqId != taskQueueID:
         continue
       gLogger.notice("\n==> TQ %s" % tqId)
       records = []
@@ -111,4 +116,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

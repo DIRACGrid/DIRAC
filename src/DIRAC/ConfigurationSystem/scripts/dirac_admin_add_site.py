@@ -26,14 +26,14 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
-  self.registerArgument("GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
-  self.registerArgument(["CE:           Name of the CE to be included in the site (ie: ce111.cern.ch)"])
-  self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument("DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
+  DIRACScript.registerArgument("GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
+  DIRACScript.registerArgument(["CE:           Name of the CE to be included in the site (ie: ce111.cern.ch)"])
+  DIRACScript.parseCommandLine(ignoreErrors=True)
 
-  diracSiteName, gridSiteName, ces = self.getPositionalArgs(group=True)
+  diracSiteName, gridSiteName, ces = DIRACScript.getPositionalArgs(group=True)
 
   try:
     diracGridType, place, country = diracSiteName.split('.')
@@ -96,4 +96,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

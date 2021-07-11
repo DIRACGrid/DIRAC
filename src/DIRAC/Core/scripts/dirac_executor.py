@@ -18,27 +18,26 @@ from DIRAC import gLogger
 from DIRAC.Core.Base.ExecutorReactor import ExecutorReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-
-  self.localCfg.registerCmdArg(["executor: specify which executor to run"])
-  positionalArgs = self.localCfg.getPositionalArguments()
+  DIRACScript.registerArgument(["executor: specify which executor to run"])
+  positionalArgs = DIRACScript.getPositionalArgs()
+  localCfg = DIRACScript.localCfg
 
   if len(positionalArgs) == 1 and positionalArgs[0].find("/") > -1:
     mainName = positionalArgs[0]
   else:
     mainName = "Framework/MultiExecutor"
 
-  self.localCfg.setConfigurationForExecutor(mainName)
-  self.localCfg.addMandatoryEntry("/DIRAC/Setup")
-  self.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
-  self.localCfg.addDefaultEntry("LogLevel", "INFO")
-  self.localCfg.addDefaultEntry("LogColor", True)
-  resultDict = self.localCfg.loadUserData()
+  localCfg.setConfigurationForExecutor(mainName)
+  localCfg.addMandatoryEntry("/DIRAC/Setup")
+  localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
+  localCfg.addDefaultEntry("LogLevel", "INFO")
+  localCfg.addDefaultEntry("LogColor", True)
+  resultDict = localCfg.loadUserData()
   if not resultDict['OK']:
     gLogger.fatal("There were errors when loading configuration", resultDict['Message'])
     sys.exit(1)
@@ -61,4 +60,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

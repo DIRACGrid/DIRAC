@@ -17,16 +17,16 @@ __RCSID__ = "$Id$"
 
 import time
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
+@Script()
+def main():
+  Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("Site:     Name of the Site")
-  self.registerArgument("Comment:  Reason of the action")
-  self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument("Site:     Name of the Site")
+  Script.registerArgument("Comment:  Reason of the action")
+  Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit, gConfig, gLogger
   from DIRAC.Core.Utilities.PromptUser import promptUser
@@ -39,10 +39,10 @@ def main(self):
     elif value.lower() == 'false':
       return False
     else:
-      self.showHelp()
+      Script.showHelp()
 
   email = True
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0] == "email":
       email = getBoolean(switch[1])
 
@@ -64,7 +64,7 @@ def main(self):
   #  DIRACExit( 0 )
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  site, comment = self.getPositionalArgs(group=True)
+  site, comment = Script.getPositionalArgs(group=True)
   result = diracAdmin.banSite(site, comment, printOutput=True)
   if not result['OK']:
     errorList.append((site, result['Message']))
@@ -97,4 +97,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

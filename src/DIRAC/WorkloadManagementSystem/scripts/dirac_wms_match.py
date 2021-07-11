@@ -11,31 +11,34 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import S_OK, gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
-
-class Params(object):
-  fullMatch = False
-  sites = None
-
-  def setFullMatch(self, optVal_):
-    self.fullMatch = True
-    return S_OK()
-
-  def setSites(self, optVal_):
-    self.sites = optVal_.split(',')
-    return S_OK()
+fullMatch = False
+sites = None
 
 
-@DIRACScript()
-def main(self):
-  params = Params()
-  self.registerSwitch("F", "full-match", "Check all the matching criteria", params.setFullMatch)
-  self.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", params.setSites)
-  self.registerArgument("job_JDL: file with job JDL description")
-  _, args = self.parseCommandLine(ignoreErrors=True)
+def setFullMatch(optVal_):
+  global fullMatch
+  fullMatch = True
+  return S_OK()
+
+
+def setSites(optVal_):
+  global sites
+  sites = optVal_.split(',')
+  return S_OK()
+
+
+@Script()
+def main():
+  global fullMatch
+  global sites
+  Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
+  Script.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
+  Script.registerArgument("job_JDL: file with job JDL description")
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources
@@ -54,7 +57,7 @@ def main(self):
     DIRACExit(-1)
   voName = result['Value']
 
-  resultQueues = Resources.getQueues(siteList=params.sites, community=voName)
+  resultQueues = Resources.getQueues(siteList=sites, community=voName)
   if not resultQueues['OK']:
     gLogger.error('Failed to get CE information')
     DIRACExit(-1)
@@ -87,7 +90,7 @@ def main(self):
       if result['OK']:
         ceStatus = result['Value'][ce]['all']
 
-    result = matchQueue(jdl, queueInfo, fullMatch=params.fullMatch)
+    result = matchQueue(jdl, queueInfo, fullMatch=fullMatch)
     if not result['OK']:
       gLogger.error('Failed in getting match data', result['Message'])
       DIRACExit(-1)
@@ -101,4 +104,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

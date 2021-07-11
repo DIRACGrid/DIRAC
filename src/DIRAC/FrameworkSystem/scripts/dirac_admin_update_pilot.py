@@ -9,27 +9,26 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch(
+@Script()
+def main():
+  Script.registerSwitch(
       "v:",
       "vo=",
       "Location of pilot version in CS /Operations/<vo>/Pilot/Version"
       " (default value specified in CS under /DIRAC/DefaultSetup)"
   )
-
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("version: pilot version you want to update to")
-  self.parseCommandLine(ignoreErrors=False)
+  Script.registerArgument("version: pilot version you want to update to")
+  Script.parseCommandLine(ignoreErrors=False)
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  version = self.getPositionalArgs(group=True)
+  version = Script.getPositionalArgs(group=True)
 
   vo = None
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0] == "v" or switch[0] == "vo":
       vo = switch[1]
 
@@ -77,4 +76,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

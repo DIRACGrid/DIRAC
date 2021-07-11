@@ -16,14 +16,14 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(" SE:   StorageElement|All")
-  self.registerArgument(["LFN:  LFN or file containing a List of LFNs"])
-  self.parseCommandLine(ignoreErrors=False)
+  DIRACScript.registerArgument(" SE:   StorageElement|All")
+  DIRACScript.registerArgument(["LFN:  LFN or file containing a List of LFNs"])
+  DIRACScript.parseCommandLine(ignoreErrors=False)
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = self.getPositionalArgs()
+  args = DIRACScript.getPositionalArgs()
 
   targetSE = args.pop(0)
 
@@ -45,7 +45,7 @@ def main(self):
     if not se.valid:
       print(se.errorReason)
       print()
-      self.showHelp()
+      DIRACScript.showHelp()
 
   from DIRAC.RequestManagementSystem.Client.Request import Request
   from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -109,4 +109,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

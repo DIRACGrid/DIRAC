@@ -17,12 +17,12 @@ from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
 
 
 @DIRACScript()
-def main(self):
-  self.localCfg.addDefaultEntry("LogLevel", "fatal")
-  self.parseCommandLine()
+def main():
+  DIRACScript.localCfg.addDefaultEntry("LogLevel", "fatal")
+  DIRACScript.parseCommandLine()
 
   CSCLI().start()
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

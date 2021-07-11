@@ -19,16 +19,16 @@ import os
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("f:", "File=", "Writes job ids to file <value>")
-  self.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
+@Script()
+def main():
+  Script.registerSwitch("f:", "File=", "Writes job ids to file <value>")
+  Script.registerSwitch("r:", "UseJobRepo=", "Use the job repository")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["JDL:    Path to JDL file"])
-  sws, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["JDL:    Path to JDL file"])
+  sws, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   unprocessed_switches = sws
@@ -78,4 +78,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

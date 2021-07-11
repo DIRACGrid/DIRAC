@@ -15,7 +15,7 @@ import os
 
 import DIRAC
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 from DIRAC.Core.Security import Locations, ProxyInfo
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -54,6 +54,18 @@ class Params(object):
     returns true if any remote operations are required
     """
     return self.vos or self.delete_all
+
+  # note the magic : and =
+  def registerCLISwitches(self):
+    """
+    add options to dirac option parser
+    """
+    Script.registerSwitch(
+        "a",
+        "all",
+        "Delete the local and all uploaded proxies (the nuclear option)",
+        self.setDeleteAll)
+    Script.registerSwitch("v:", "vo=", "Delete uploaded proxy for vo name given", self.addVO)
 
 
 def getProxyGroups():
@@ -114,17 +126,14 @@ def deleteLocalProxy(proxyLoc):
   gLogger.notice('Local proxy deleted.')
 
 
-def run(self):
+def run():
   """
   main program entry point
   """
   options = Params()
-  # add options to dirac option parser
-  self.registerSwitch("a", "all", "Delete the local and all uploaded proxies (the nuclear option)",
-                      options.setDeleteAll)
-  self.registerSwitch("v:", "vo=", "Delete uploaded proxy for vo name given", options.addVO)
+  options.registerCLISwitches()
 
-  self.parseCommandLine(ignoreErrors=True)
+  Script.parseCommandLine(ignoreErrors=True)
 
   if options.delete_all and options.vos:
     gLogger.error("-a and -v options are mutually exclusive. Please pick one or the other.")
@@ -171,10 +180,10 @@ def run(self):
   return 0
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   try:
-    retval = run(self)
+    retval = run()
     DIRAC.exit(retval)
   except RuntimeError as rtError:
     gLogger.error('Operation failed: %s' % str(rtError))
@@ -182,4 +191,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

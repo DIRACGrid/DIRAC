@@ -11,31 +11,29 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("LocalFile: Path to local file containing LFNs",
-                         "LFN:       Logical File Names"))
-  self.registerArgument(["LFN:       Logical File Names"], mandatory=False)
-  self.parseCommandLine()
+  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
+                                "LFN:       Logical File Names"))
+  DIRACScript.registerArgument(["LFN:       Logical File Names"], mandatory=False)
+  DIRACScript.parseCommandLine()
 
   import os
   import DIRAC
   from DIRAC import gLogger
 
-  first, lfns = self.getPositionalArgs(group=True)
-
+  first, lfns = DIRACScript.getPositionalArgs(group=True)
   if os.path.exists(first):
     inputFile = open(first, 'r')
     string = inputFile.read()
     inputFile.close()
     lfns.extend([lfn.strip() for lfn in string.splitlines()])
   else:
-    lfns.append(first)
+    lfns.insert(0, first)
 
   from DIRAC.Core.Utilities.List import breakListIntoChunks
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -63,4 +61,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

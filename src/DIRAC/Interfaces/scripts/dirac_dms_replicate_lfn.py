@@ -19,22 +19,22 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("LFN:      Logical File Name or file containing LFNs")
-  self.registerArgument("Dest:     Valid DIRAC SE")
-  self.registerArgument("Source:   Valid DIRAC SE", default='', mandatory=False)
-  self.registerArgument("Cache:    Local directory to be used as cache", default='', mandatory=False)
-  _, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument("LFN:      Logical File Name or file containing LFNs")
+  Script.registerArgument("Dest:     Valid DIRAC SE")
+  Script.registerArgument("Source:   Valid DIRAC SE", default='', mandatory=False)
+  Script.registerArgument("Cache:    Local directory to be used as cache", default='', mandatory=False)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   if len(args) > 4:
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
-  lfn, seName, sourceSE, localCache = self.getPositionalArgs(group=True)
+  lfn, seName, sourceSE, localCache = Script.getPositionalArgs(group=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()
@@ -64,4 +64,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

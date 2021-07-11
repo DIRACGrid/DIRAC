@@ -17,14 +17,14 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("e", "extended", "Show extended info")
+@Script()
+def main():
+  Script.registerSwitch("e", "extended", "Show extended info")
 
-  self.parseCommandLine(ignoreErrors=True)
+  Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -33,7 +33,7 @@ def main(self):
   errorList = []
   extendedInfo = False
 
-  for unprocSw in self.getUnprocessedSwitches():
+  for unprocSw in Script.getUnprocessedSwitches():
     if unprocSw[0] in ('e', 'extended'):
       extendedInfo = True
 
@@ -52,4 +52,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

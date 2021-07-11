@@ -22,11 +22,11 @@ from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
 
 @DIRACScript()
-def main(self):
+def main():
   cliParams = CLIParams()
-  cliParams.registerCLISwitches(self)
+  cliParams.registerCLISwitches()
 
-  self.parseCommandLine()
+  DIRACScript.parseCommandLine()
 
   retVal = uploadProxy(cliParams)
   if not retVal['OK']:
@@ -36,4 +36,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

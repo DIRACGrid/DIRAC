@@ -14,12 +14,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("prodID:         Production ID")
-  self.registerArgument("transID:        Transformation ID")
-  self.registerArgument("parentTransID:  Parent Transformation ID", default='', mandatory=False)
-  _, args = self.parseCommandLine()
+  DIRACScript.registerArgument("prodID:         Production ID")
+  DIRACScript.registerArgument("transID:        Transformation ID")
+  DIRACScript.registerArgument("parentTransID:  Parent Transformation ID", default='', mandatory=False)
+  _, args = DIRACScript.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -28,9 +28,9 @@ def main(self):
   transClient = TransformationClient()
 
   # get arguments
-  prodID, transID, parentTransID = self.getPositionalArgs(group=True)
+  prodID, transID, parentTransID = DIRACScript.getPositionalArgs(group=True)
   if len(args) > 3:
-    self.showHelp(exitCode=1)
+    DIRACScript.showHelp(exitCode=1)
 
   res = transClient.getTransformation(transID)
   if not res['OK']:
@@ -70,4 +70,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

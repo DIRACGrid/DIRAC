@@ -14,45 +14,42 @@ __RCSID__ = "$Id$"
 
 import sys
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-class DIRACScript(_DIRACScript):
+@Script()
+def main():
+  Script.localCfg.addDefaultEntry("LogLevel", "fatal")
 
-  def initParameters(self):
-    """ init """
-    # Wrap globally described parameters in a class
-    self.fileName = ""
-    self.raw = False
+  fileName = ""
 
-  def setFilename(self, args):
-    self.fileName = args
+  def setFilename(args):
+    global fileName
+    fileName = args
     return DIRAC.S_OK()
 
-  def setRaw(self, args):
-    self.raw = True
+  raw = False
+
+  def setRaw(args):
+    global raw
+    raw = True
     return DIRAC.S_OK()
 
-
-@DIRACScript()
-def main(self):
-  self.localCfg.addDefaultEntry("LogLevel", "fatal")
-
-  self.registerSwitch("f:", "file=", "Dump Configuration data into <file>", self.setFilename)
-  self.registerSwitch("r", "raw", "Do not make any modification to the data", self.setRaw)
-  self.parseCommandLine()
+  Script.registerSwitch("f:", "file=", "Dump Configuration data into <file>", setFilename)
+  Script.registerSwitch("r", "raw", "Do not make any modification to the data", setRaw)
+  Script.parseCommandLine()
 
   from DIRAC import gConfig, gLogger
-  result = gConfig.dumpCFGAsLocalCache(self.fileName, self.raw)
+  result = gConfig.dumpCFGAsLocalCache(fileName, raw)
   if not result['OK']:
     print("Error: %s" % result['Message'])
     sys.exit(1)
 
-  if not self.fileName:
+  if not fileName:
     print(result['Value'])
 
   sys.exit(0)
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

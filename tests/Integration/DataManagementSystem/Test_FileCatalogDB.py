@@ -14,7 +14,7 @@ import os
 import sys
 from collections import defaultdict
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.parseCommandLine()
 
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB

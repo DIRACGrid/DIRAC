@@ -24,12 +24,12 @@ def _stringInList(subStr, sList):
 
 
 @DIRACScript()
-def main(self):
+def main():
   parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
-  self.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
+  DIRACScript.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["PilotID:  Grid ID of the pilot"])
-  switches, args = self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument(["PilotID:  Grid ID of the pilot"])
+  switches, args = DIRACScript.parseCommandLine(ignoreErrors=True)
   for switch in switches:
     if switch[0] == 'Parameters':
       parameters += [par for par in switch[1].split(',')]
@@ -80,4 +80,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

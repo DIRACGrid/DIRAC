@@ -37,17 +37,17 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("URL:            URL of the service to ping (instead of System and Service)",
-                         "System/Service: Full component name (ie: WorkloadManagement/Matcher)",
-                         "System:         Name of the DIRAC system (ie: WorkloadManagement)"))
-  self.registerArgument(" Service:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
-  _, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(("URL:            URL of the service to ping (instead of System and Service)",
+                           "System/Service: Full component name (ie: WorkloadManagement/Matcher)",
+                           "System:         Name of the DIRAC system (ie: WorkloadManagement)"))
+  Script.registerArgument(" Service:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
   system = None
   service = None
   url = None
@@ -59,14 +59,14 @@ def main(self):
     else:
       sys_serv = args[0].split('/')
       if len(sys_serv) != 2:
-        self.showHelp(exitCode=1)
+        Script.showHelp(exitCode=1)
       else:
         system, service = sys_serv
 
   elif len(args) == 2:
     system, service = args[0], args[1]
   else:
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()
@@ -85,4 +85,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

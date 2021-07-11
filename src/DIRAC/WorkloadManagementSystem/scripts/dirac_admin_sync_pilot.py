@@ -15,22 +15,23 @@ import hashlib
 
 
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-class Params(object):
-  includeMasterCS = True
-
-  def setNoMasterCS(self, optVal):
-    self.includeMasterCS = False
-    return S_OK()
+includeMasterCS = True
 
 
-@DIRACScript()
-def main(self):
-  params = Params()
-  self.registerSwitch("n", "noMasterCS", "do not include master CS", params.setNoMasterCS)
-  self.parseCommandLine()
+def setNoMasterCS(optVal):
+  global includeMasterCS
+  includeMasterCS = False
+  return S_OK()
+
+
+@Script()
+def main():
+  global includeMasterCS
+  Script.registerSwitch("n", "noMasterCS", "do not include master CS", setNoMasterCS)
+  Script.parseCommandLine()
 
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
@@ -47,7 +48,7 @@ def main(self):
   gLogger.verbose("pilotVORepoBranch=" + ps.pilotVORepoBranch)
 
   # pilot.json
-  res = ps.getCSDict(includeMasterCS=params.includeMasterCS)
+  res = ps.getCSDict(includeMasterCS=includeMasterCS)
   if not res['OK']:
     DIRACExit(1)
   pilotDict = res['Value']
@@ -82,4 +83,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

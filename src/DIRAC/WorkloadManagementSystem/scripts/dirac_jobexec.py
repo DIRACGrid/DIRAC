@@ -19,16 +19,16 @@ import os.path
 import sys
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   # Register workflow parameter switch
-  self.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
+  Script.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument('jobXMLfile: specify path to the Job XML file description')
-  self.parseCommandLine()
+  Script.registerArgument('jobXMLfile: specify path to the Job XML file description')
+  Script.parseCommandLine()
 
   # from DIRAC.Core.Workflow.Parameter import *
   from DIRAC import gLogger
@@ -72,7 +72,7 @@ def main(self):
 
     return workflow.execute()
 
-  positionalArgs = self.getPositionalArgs()
+  positionalArgs = Script.getPositionalArgs()
   if len(positionalArgs) != 1:
     gLogger.debug('Positional arguments were %s' % (positionalArgs))
     DIRAC.abort(1, "Must specify the Job XML file description")
@@ -81,7 +81,7 @@ def main(self):
     gLogger.info('JobID: %s' % (os.environ['JOBID']))
 
   jobXMLfile = positionalArgs[0]
-  parList = self.getUnprocessedSwitches()
+  parList = Script.getUnprocessedSwitches()
   parDict = {}
   for switch, parameter in parList:
     if switch == "p":
@@ -109,4 +109,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

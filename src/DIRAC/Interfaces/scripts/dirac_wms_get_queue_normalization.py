@@ -20,10 +20,10 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["Queue:  GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
-  _, args = self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument(["Queue:  GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
+  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
 
   exitCode = 0
 
@@ -44,4 +44,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

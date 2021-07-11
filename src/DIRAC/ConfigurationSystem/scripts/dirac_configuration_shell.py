@@ -19,12 +19,12 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.parseCommandLine()
+def main():
+  DIRACScript.parseCommandLine()
   from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
   shell = CSShellCLI()
   shell.cmdloop()
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

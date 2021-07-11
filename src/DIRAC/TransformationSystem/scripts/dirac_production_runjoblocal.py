@@ -23,7 +23,7 @@ import ssl
 
 from six.moves.urllib.request import urlopen
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 def __runSystemDefaults(jobID, vo):
@@ -134,16 +134,16 @@ def __runJobLocally(jobID, basepath, vo):
   localJob.runLocal()
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
-  self.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
-  self.parseCommandLine(ignoreErrors=False)
+@Script()
+def main():
+  Script.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
+  Script.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
+  Script.parseCommandLine(ignoreErrors=False)
 
   _downloadinputdata = False
   _jobID = None
 
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0] in ('D', 'Download'):
       _downloadinputdata = True
       _jobID = switch[1]
@@ -175,4 +175,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -20,17 +20,17 @@ import os
 import shutil
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("D:", "Dir=", "Store the output in this directory")
-  self.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
-  self.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
+@Script()
+def main():
+  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
+  Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
+  Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["JobID: DIRAC Job ID or a name of the file with JobID per line"], mandatory=False)
-  sws, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["JobID: DIRAC Job ID or a name of the file with JobID per line"], mandatory=False)
+  sws, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   from DIRAC.Core.Utilities.Time import toString, date, day
@@ -119,4 +119,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

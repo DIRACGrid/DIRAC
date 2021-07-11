@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-info
+# File :    dirac_info.py
 # Author :  Andrei Tsaregorodtsev
 ########################################################################
 """
@@ -30,35 +30,32 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-import os
-
-import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-class DIRACScript(_DIRACScript):
+@Script()
+def main():
+  import os
 
-  def version(self, arg):
-    self.disableCS()
-    print(DIRAC.version)
-    DIRAC.exit(0)
-
-  def platform(self, arg):
-    self.disableCS()
-    print(DIRAC.getPlatform())
-    DIRAC.exit(0)
-
-
-@DIRACScript()
-def main(self):
+  import DIRAC
   from DIRAC import gConfig
   from DIRAC.Core.Security.ProxyInfo import getProxyInfo
   from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
   from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-  self.registerSwitch("v", "version", "print version of current DIRAC installation", self.version)
-  self.registerSwitch("p", "platform", "print platform of current DIRAC installation", self.platform)
-  self.parseCommandLine(ignoreErrors=True)
+  def version(arg):
+    Script.disableCS()
+    print(DIRAC.version)
+    DIRAC.exit(0)
+
+  def platform(arg):
+    Script.disableCS()
+    print(DIRAC.getPlatform())
+    DIRAC.exit(0)
+
+  Script.registerSwitch("v", "version", "print version of current DIRAC installation", version)
+  Script.registerSwitch("p", "platform", "print platform of current DIRAC installation", platform)
+  Script.parseCommandLine(ignoreErrors=True)
 
   records = []
 
@@ -106,4 +103,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

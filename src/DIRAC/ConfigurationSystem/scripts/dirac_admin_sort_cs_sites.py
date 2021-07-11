@@ -18,49 +18,49 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.Core.Utilities.Time import dateTime, toString
 
-
-class DIRACScript(_DIRACScript):
-
-  def initParameters(self):
-    """ init """
-    # Wrap globally described parameters in a class
-    self.SORTBYNAME = True
-    self.REVERSE = False
-
-  def sortBy(self, arg):
-    self.SORTBYNAME = False
-
-  def isReverse(self, arg):
-    self.REVERSE = True
-
-  def country(self, arg):
-    cb = arg.split(".")
-    if not len(cb) == 3:
-      gLogger.error("%s is not in GRID.NAME.COUNTRY format ")
-      return False
-    return cb[2]
+global SORTBYNAME, REVERSE
+SORTBYNAME = True
+REVERSE = False
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch(
+def sortBy(arg):
+  global SORTBYNAME
+  SORTBYNAME = False
+
+
+def isReverse(arg):
+  global REVERSE
+  REVERSE = True
+
+
+def country(arg):
+  cb = arg.split(".")
+  if not len(cb) == 3:
+    gLogger.error("%s is not in GRID.NAME.COUNTRY format ")
+    return False
+  return cb[2]
+
+
+@Script()
+def main():
+  Script.registerSwitch(
       "C",
       "country",
       "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)",
-      self.sortBy)
-  self.registerSwitch("R", "reverse", "Reverse the sort order", self.isReverse)
+      sortBy)
+  Script.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)"],
-                        mandatory=False)
+  Script.registerArgument(["Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)"],
+                          mandatory=False)
 
-  self.parseCommandLine(ignoreErrors=True)
-  args = self.getPositionalArgs()
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
   result = getProxyInfo()
   if not result["OK"]:
@@ -103,10 +103,10 @@ def main(self):
       gLogger.error("Subsection /Resources/Sites/%s does not exists" % i)
       continue
     hasRun = True
-    if self.SORTBYNAME:
-      dirty = cfg["Resources"]["Sites"][i].sortAlphabetically(ascending=not self.REVERSE)
+    if SORTBYNAME:
+      dirty = cfg["Resources"]["Sites"][i].sortAlphabetically(ascending=not REVERSE)
     else:
-      dirty = cfg["Resources"]["Sites"][i].sortByKey(key=self.country, reverse=self.REVERSE)
+      dirty = cfg["Resources"]["Sites"][i].sortByKey(key=country, reverse=REVERSE)
     if dirty:
       isDirty = True
 
@@ -119,7 +119,7 @@ def main(self):
     DIRACExit(0)
 
   timestamp = toString(dateTime())
-  stamp = "Site names are sorted by %s script at %s" % (self.scriptName, timestamp)
+  stamp = "Site names are sorted by %s script at %s" % (Script.scriptName, timestamp)
   cs.setOptionComment("/Resources/Sites", stamp)
 
   result = cs.commit()
@@ -131,4 +131,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -24,30 +24,30 @@ from __future__ import print_function
 
 import os
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("D", "sync", "Make target directory identical to source")
-  self.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
+@Script()
+def main():
+  Script.registerSwitch("D", "sync", "Make target directory identical to source")
+  Script.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("LFN:           Logical File Name (Path to directory)",
-                         "Path:          Local path to the file (Path to directory)"))
-  self.registerArgument(("Path:          Local path to the file (Path to directory)",
-                         "LFN:           Logical File Name (Path to directory)"))
-  self.registerArgument(" SE:            DIRAC Storage Element", mandatory=False)
-  self.parseCommandLine(ignoreErrors=False)
+  Script.registerArgument(("LFN:           Logical File Name (Path to directory)",
+                           "Path:          Local path to the file (Path to directory)"))
+  Script.registerArgument(("Path:          Local path to the file (Path to directory)",
+                           "LFN:           Logical File Name (Path to directory)"))
+  Script.registerArgument(" SE:            DIRAC Storage Element", mandatory=False)
+  Script.parseCommandLine(ignoreErrors=False)
 
-  args = self.getPositionalArgs()
+  args = Script.getPositionalArgs()
   if len(args) > 3:
-    self.showHelp()
+    Script.showHelp()
 
   sync = False
   parallel = 1
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0].lower() == "s" or switch[0].lower() == "sync":
       sync = True
     if switch[0].lower() == "j" or switch[0].lower() == "parallel":
@@ -559,4 +559,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

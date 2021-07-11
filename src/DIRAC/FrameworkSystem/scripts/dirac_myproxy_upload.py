@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 
 import sys
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 class Params:
@@ -33,16 +33,16 @@ class Params:
     return DIRAC.S_OK()
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   params = Params()
 
-  self.registerSwitch("f:", "file=", "File to use as proxy", params.setProxyLocation)
-  self.registerSwitch("D", "DN", "Use DN as myproxy username", params.setDNAsUsername)
-  self.registerSwitch("i", "version", "Print version", params.showVersion)
+  Script.registerSwitch("f:", "file=", "File to use as proxy", params.setProxyLocation)
+  Script.registerSwitch("D", "DN", "Use DN as myproxy username", params.setDNAsUsername)
+  Script.registerSwitch("i", "version", "Print version", params.showVersion)
 
-  self.addDefaultOptionValue("LogLevel", "always")
-  self.parseCommandLine()
+  Script.addDefaultOptionValue("LogLevel", "always")
+  Script.parseCommandLine()
 
   from DIRAC.Core.Security.MyProxy import MyProxy
   from DIRAC.Core.Security import Locations
@@ -66,4 +66,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

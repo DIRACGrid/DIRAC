@@ -23,14 +23,14 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   unit = 'GB'
-  self.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
+  DIRACScript.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("LocalFile: Path to local file containing LFNs",
+  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
                          "LFN:       Logical File Name"))
-  self.registerArgument(["LFN:       Logical File Name"], mandatory=False)
-  unprSwitches, args = self.parseCommandLine(ignoreErrors=False)
+  DIRACScript.registerArgument(["LFN:       Logical File Name"], mandatory=False)
+  unprSwitches, args = DIRACScript.parseCommandLine(ignoreErrors=False)
 
   for switch in unprSwitches:
     if switch[0].lower() == "u" or switch[0].lower() == "unit":
@@ -75,4 +75,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

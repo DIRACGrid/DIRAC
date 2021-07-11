@@ -21,23 +21,23 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 from DIRAC import gLogger, gConfig
 from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
-  self.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
-  self.parseCommandLine(ignoreErrors=True)
+@Script()
+def main():
+  Script.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
+  Script.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")
+  Script.parseCommandLine(ignoreErrors=True)
 
   update = False
   configFile = None
 
-  for unprocSw in self.getUnprocessedSwitches():
+  for unprocSw in Script.getUnprocessedSwitches():
     if unprocSw[0] in ("U", "Update"):
       update = True
     elif unprocSw[0] in ("R", "Reconfig"):
@@ -68,4 +68,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

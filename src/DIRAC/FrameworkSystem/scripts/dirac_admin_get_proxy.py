@@ -20,7 +20,7 @@ import six
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
@@ -89,23 +89,28 @@ class Params(object):
     self.vomsAttr = arg
     return S_OK()
 
+  def registerCLISwitches(self):
+    """ Register CLI switches
+    """
+    Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
+    Script.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
+    Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
+    Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
+    Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
 
-@DIRACScript()
-def main(self):
+
+@Script()
+def main():
   params = Params()
-  self.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
-  self.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
-  self.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
-  self.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
-  self.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
+  params.registerCLISwitches()
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("DN:       DN of the user",
-                         "user:     DIRAC user name (will fail if there is more than 1 DN registered)"))
-  self.registerArgument(" group:    DIRAC group name")
+  Script.registerArgument(("DN:       DN of the user",
+                           "user:     DIRAC user name (will fail if there is more than 1 DN registered)"))
+  Script.registerArgument(" group:    DIRAC group name")
 
-  self.parseCommandLine(ignoreErrors=True)
+  Script.parseCommandLine(ignoreErrors=True)
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  userDN, userGroup = self.getPositionalArgs(group=True)
+  userDN, userGroup = Script.getPositionalArgs(group=True)
 
   userName = False
   if userDN.find("/") != 0:
@@ -159,4 +164,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

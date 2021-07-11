@@ -11,28 +11,28 @@ __RCSID__ = "$Id$"
 from io import open
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("", "hosts=", "Comma separated list of hosts or file containing row wise list of hosts"
-                                    " targeted for update (leave empty for all)")
-  self.registerSwitch("", "excludeHosts=", "Comma separated list of hosts or file containing row wise list of hosts"
-                                           " excluded from update")
-  self.registerSwitch("", "retry=", "Number of retry attempts on hosts that have failed to update")
+@Script()
+def main():
+  Script.registerSwitch("", "hosts=", "Comma separated list of hosts or file containing row wise list of hosts"
+                                      " targeted for update (leave empty for all)")
+  Script.registerSwitch("", "excludeHosts=", "Comma separated list of hosts or file containing row wise list of hosts"
+                                             " excluded from update")
+  Script.registerSwitch("", "retry=", "Number of retry attempts on hosts that have failed to update")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("version: version of DIRAC you want to update to")
+  Script.registerArgument("version: version of DIRAC you want to update to")
 
-  self.parseCommandLine(ignoreErrors=False)
+  Script.parseCommandLine(ignoreErrors=False)
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  version = self.getPositionalArgs(group=True)
+  version = Script.getPositionalArgs(group=True)
   retry = 0
   hosts = []
   excludeHosts = []
 
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0] == "hosts":
       hosts = switch[1]
     if switch[0] == "excludeHosts":
@@ -256,4 +256,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -17,16 +17,16 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import os
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
-  self.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
+@Script()
+def main():
+  Script.registerSwitch("f:", "File=", "Get status for jobs with IDs from the file")
+  Script.registerSwitch("g:", "JobGroup=", "Get status for jobs in the given group")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["JobID:    DIRAC Job ID"], mandatory=False)
-  sws, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["JobID:    DIRAC Job ID"], mandatory=False)
+  sws, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Core.Utilities.Time import toString, date, day
@@ -52,7 +52,7 @@ def main(self):
       jobs += result['Value']
 
   if len(args) < 1 and not jobs:
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   if len(args) > 0:
     jobs += parseArguments(args)
@@ -72,4 +72,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

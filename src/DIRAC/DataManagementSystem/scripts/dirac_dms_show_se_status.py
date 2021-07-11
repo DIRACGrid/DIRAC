@@ -20,40 +20,49 @@ from __future__ import absolute_import
 from __future__ import division
 
 from DIRAC import S_OK, exit as DIRACexit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
-
-class DIRACScript(_DIRACScript):
-
-  def initParameters(self):
-    """ init """
-    # Wrap globally described parameters in a class
-    self.vo = None
-    self.allVOsFlag = False
-    self.noVOFlag = False
-
-  def setVO(self, arg):
-    self.vo = arg
-    return S_OK()
-
-  def setAllVO(self, arg):
-    self.allVOsFlag = True
-    return S_OK()
-
-  def setNoVO(self, arg):
-    self.noVOFlag = True
-    self.allVOsFlag = False
-    return S_OK()
+vo = None
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("V:", "vo=", "Virtual Organization", self.setVO)
-  self.registerSwitch("a", "all", "All Virtual Organizations flag", self.setAllVO)
-  self.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", self.setNoVO)
-  self.parseCommandLine()
+def setVO(arg):
+  global vo
+  vo = arg
+  return S_OK()
+
+
+allVOsFlag = False
+
+
+def setAllVO(arg):
+  global allVOsFlag
+  allVOsFlag = True
+  return S_OK()
+
+
+noVOFlag = False
+
+
+def setNoVO(arg):
+  global noVOFlag, allVOsFlag
+  noVOFlag = True
+  allVOsFlag = False
+  return S_OK()
+
+
+@Script()
+def main():
+  global vo
+  global noVOFlag
+  global allVOsFlag
+
+  Script.registerSwitch("V:", "vo=", "Virtual Organization", setVO)
+  Script.registerSwitch("a", "all", "All Virtual Organizations flag", setAllVO)
+  Script.registerSwitch("n", "noVO", "No Virtual Organizations assigned flag", setNoVO)
+
+  Script.parseCommandLine()
 
   from DIRAC import gConfig, gLogger
   from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
@@ -82,21 +91,21 @@ def main(self):
   fields = ['SE', 'ReadAccess', 'WriteAccess', 'RemoveAccess', 'CheckAccess']
   records = []
 
-  if self.vo is None and not self.allVOsFlag:
+  if vo is None and not allVOsFlag:
     result = getVOfromProxyGroup()
     if not result['OK']:
       gLogger.error('Failed to determine the user VO')
       DIRACexit(1)
-    self.vo = result['Value']
+    vo = result['Value']
 
   for se, statusDict in res['Value'].items():
 
     # Check if the SE is allowed for the user VO
-    if not self.allVOsFlag:
+    if not allVOsFlag:
       voList = gConfig.getValue('/Resources/StorageElements/%s/VO' % se, [])
-      if self.noVOFlag and voList:
+      if noVOFlag and voList:
         continue
-      if voList and self.vo not in voList:
+      if voList and vo not in voList:
         continue
 
     record = [se]
@@ -111,4 +120,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -19,8 +19,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.parseCommandLine(ignoreErrors=False)
+def main():
+  DIRACScript.parseCommandLine(ignoreErrors=False)
 
   import DIRAC
   from DIRAC import gLogger, gConfig
@@ -44,4 +44,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

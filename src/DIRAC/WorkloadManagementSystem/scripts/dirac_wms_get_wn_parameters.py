@@ -8,36 +8,42 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
-
-class Params(object):
-  ceName = ''
-  Site = ''
-  Queue = ''
-
-  def setCEName(self, args):
-    self.ceName = args
-
-  def setSite(self, args):
-    self.Site = args
-
-  def setQueue(self, args):
-    self.Queue = args
+ceName = ''
+ceType = ''
+Queue = ''
 
 
-@DIRACScript()
-def main(self):
-  params = Params()
-  self.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", params.setCEName)
-  self.registerSwitch("S:", "Site=", "Site Name (Mandatory)", params.setSite)
-  self.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", params.setQueue)
-  self.parseCommandLine(ignoreErrors=True)
+def setCEName(args):
+  global ceName
+  ceName = args
+
+
+def setSite(args):
+  global Site
+  Site = args
+
+
+def setQueue(args):
+  global Queue
+  Queue = args
+
+
+@Script()
+def main():
+  global ceName
+  global Site
+  global Queue
+  Script.registerSwitch("N:", "Name=", "Computing Element Name (Mandatory)", setCEName)
+  Script.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
+  Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
+  Script.parseCommandLine(ignoreErrors=True)
 
   gLogger.info("Getting number of processors")
-  numberOfProcessor = JobParameters.getNumberOfProcessors(params.Site, params.ceName, params.Queue)
+  numberOfProcessor = JobParameters.getNumberOfProcessors(Site, ceName, Queue)
 
   gLogger.info("Getting memory (RAM) from MJF")
   maxRAM = JobParameters.getMemoryFromMJF()
@@ -53,4 +59,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

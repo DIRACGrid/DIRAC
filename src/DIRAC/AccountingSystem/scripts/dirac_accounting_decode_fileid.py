@@ -22,10 +22,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
-  self.registerArgument(["URL: encoded URL of a DIRAC Accounting plot"])
-  _, fileIds = self.parseCommandLine()
+  DIRACScript.registerArgument(["URL: encoded URL of a DIRAC Accounting plot"])
+
+  _, fileIds = DIRACScript.parseCommandLine()
 
   for fileId in fileIds:
     # Try to find if it's a url
@@ -45,4 +46,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

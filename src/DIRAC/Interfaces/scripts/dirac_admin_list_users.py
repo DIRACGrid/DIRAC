@@ -19,17 +19,17 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("e", "extended", "Show extended info")
+@Script()
+def main():
+  Script.registerSwitch("e", "extended", "Show extended info")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["Group:    Only users from this group (default: all)"],
+  Script.registerArgument(["Group:    Only users from this group (default: all)"],
                         default=['all'], mandatory=False)
-  self.parseCommandLine(ignoreErrors=True)
-  groups = self.getPositionalArgs(group=True)
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs(group=True)
 
   import DIRAC
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -38,7 +38,7 @@ def main(self):
   errorList = []
   extendedInfo = False
 
-  for unprocSw in self.getUnprocessedSwitches():
+  for unprocSw in Script.getUnprocessedSwitches():
     if unprocSw[0] in ('e', 'extended'):
       extendedInfo = True
 
@@ -62,8 +62,8 @@ def main(self):
       result = diracAdmin.csDescribeUsers(result['Value'])
       print(diracAdmin.pPrint.pformat(result['Value']))
 
-  for group in groups:
-    if 'all' in groups:
+  for group in args:
+    if 'all' in args:
       group = False
     if not extendedInfo:
       printUsersInGroup(group)
@@ -77,4 +77,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

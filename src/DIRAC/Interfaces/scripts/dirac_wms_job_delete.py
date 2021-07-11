@@ -18,16 +18,16 @@ __RCSID__ = "$Id$"
 
 import os.path
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
-  self.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
+@Script()
+def main():
+  Script.registerSwitch("f:", "File=", "Get output for jobs with IDs from the file")
+  Script.registerSwitch("g:", "JobGroup=", "Get output for jobs in the given group")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["JobID:    DIRAC Job ID"], mandatory=False)
-  sws, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["JobID:    DIRAC Job ID"], mandatory=False)
+  sws, args = Script.parseCommandLine(ignoreErrors=True)
 
   import DIRAC
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
@@ -57,7 +57,7 @@ def main(self):
 
   if not jobs:
     print("Warning: no jobs selected")
-    self.showHelp()
+    Script.showHelp()
     DIRAC.exit(0)
 
   result = dirac.deleteJob(jobs)
@@ -72,4 +72,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

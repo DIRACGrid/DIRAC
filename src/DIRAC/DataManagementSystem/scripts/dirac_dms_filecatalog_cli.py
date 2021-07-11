@@ -26,14 +26,14 @@ from __future__ import division
 
 import sys
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
+@Script()
+def main():
   fcType = 'FileCatalog'
-  self.registerSwitch("f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType)
-  self.parseCommandLine(ignoreErrors=False)
+  Script.registerSwitch("f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType)
+  Script.parseCommandLine(ignoreErrors=False)
 
   from DIRAC import gConfig, exit as dexit
   from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
@@ -50,7 +50,7 @@ def main(self):
     if res['OK']:
       fcType = res['Value'][0]
 
-  for switch in self.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0].lower() == "f" or switch[0].lower() == "file-catalog":
       fcType = switch[1]
 
@@ -75,4 +75,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -16,15 +16,15 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")
+@Script()
+def main():
+  Script.registerSwitch("", "Site=", "Site for which protocols are to be set (mandatory)")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["Protocol: SE access protocol"], mandatory=False)
-  switches, args = self.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["Protocol: SE access protocol"], mandatory=False)
+  switches, args = Script.parseCommandLine(ignoreErrors=True)
 
   site = None
   for switch in switches:
@@ -32,7 +32,7 @@ def main(self):
       site = switch[1]
 
   if not site or not args:
-    self.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -46,4 +46,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -17,11 +17,11 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.registerSwitch("D:", "Dir=", "Store the output in this directory")
+def main():
+  DIRACScript.registerSwitch("D:", "Dir=", "Store the output in this directory")
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(["JobID:    DIRAC Job ID"])
-  sws, args = self.parseCommandLine(ignoreErrors=True)
+  DIRACScript.registerArgument(["JobID:    DIRAC Job ID"])
+  sws, args = DIRACScript.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()
@@ -49,4 +49,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -14,15 +14,15 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument("transID: transformation ID")
-  _, args = self.parseCommandLine()
+  DIRACScript.registerArgument("transID: transformation ID")
+  _, args = DIRACScript.parseCommandLine()
 
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
   if len(args) != 1:
-    self.showHelp(exitCode=1)
+    DIRACScript.showHelp(exitCode=1)
 
   tc = TransformationClient()
   res = tc.getTransformationFiles({'TransformationID': args[0]})
@@ -36,4 +36,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

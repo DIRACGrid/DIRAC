@@ -19,7 +19,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
+def main():
   with open(os.devnull, 'w') as redirectStdout, open(os.devnull, 'w') as redirectStderr:
     from DIRAC import gLogger
     from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -34,4 +34,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

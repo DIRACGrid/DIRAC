@@ -24,14 +24,16 @@ from pprint import pformat
 
 from diraccfg import CFG
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.List import fromChar
 
+LOG = gLogger
 
-class CheckConfig(DIRACScript):
+
+class CheckConfig(object):
   """Compare the ConfigTemplate with current configuration."""
 
-  def initParameters(self):
+  def __init__(self):
     self.systems = None
     self.showModified = False
     self.showAdded = False
@@ -59,18 +61,18 @@ class CheckConfig(DIRACScript):
     return S_OK()
 
   def _setSwitches(self):
-    self.registerSwitch("S:", "system=", "Systems to check, by default all of them are checked", self._setSystems)
-    self.registerSwitch("M", "modified", "Show entries which differ from the default", self._setShowModified)
-    self.registerSwitch("A", "added", "Show entries which do not exist in ConfigTemplate", self._setShowAdded)
-    self.registerSwitch("U", "missingSection", "Show sections which do not exist in the current configuration",
-                        self._setShowMissingSections)
-    self.registerSwitch("O", "missingOption", "Show options which do not exist in the current configuration",
-                        self._setShowMissingOptions)
+    Script.registerSwitch("S:", "system=", "Systems to check, by default all of them are checked", self._setSystems)
+    Script.registerSwitch("M", "modified", "Show entries which differ from the default", self._setShowModified)
+    Script.registerSwitch("A", "added", "Show entries which do not exist in ConfigTemplate", self._setShowAdded)
+    Script.registerSwitch("U", "missingSection", "Show sections which do not exist in the current configuration",
+                          self._setShowMissingSections)
+    Script.registerSwitch("O", "missingOption", "Show options which do not exist in the current configuration",
+                          self._setShowMissingOptions)
 
-    self.parseCommandLine(ignoreErrors=True)
+    Script.parseCommandLine(ignoreErrors=True)
     if not any([self.showModified, self.showAdded, self.showMissingSections, self.showMissingOptions]):
-      gLogger.error("\nERROR: Set at least one of the flags M A U O")
-      self.showHelp()
+      LOG.error("\nERROR: Set at least one of the flags M A U O")
+      Script.showHelp()
 
   def _check(self):
     """Obtain default configuration and current configuration and print the diff."""
@@ -87,10 +89,10 @@ class CheckConfig(DIRACScript):
     currentCfg = currentCfg['Value']
     diff = currentCfg.getModifications(cfg, ignoreOrder=True, ignoreComments=True)
 
-    gLogger.debug("*" * 80)
-    gLogger.debug("Default Configuration: %s" % str(cfg))
-    gLogger.debug("*" * 80)
-    gLogger.debug("Current Configuration: %s " % str(currentCfg))
+    LOG.debug("*" * 80)
+    LOG.debug("Default Configuration: %s" % str(cfg))
+    LOG.debug("*" * 80)
+    LOG.debug("Current Configuration: %s " % str(currentCfg))
     for entry in diff:
       self._printDiff(entry)
 
@@ -177,21 +179,21 @@ class CheckConfig(DIRACScript):
         self._printDiff(change, fullPath)
     elif diffType == 'modOpt':
       if self.showModified:
-        gLogger.notice("Changed option %r from %r" % (fullPath, changes))
+        LOG.notice("Changed option %r from %r" % (fullPath, changes))
     elif diffType == 'delOpt':
       if self.showAdded:
-        gLogger.notice("Option %r does not exist in template" % fullPath)
+        LOG.notice("Option %r does not exist in template" % fullPath)
     elif diffType == 'delSec':
       if self.showAdded:
-        gLogger.notice("Section %r does not exist in template" % fullPath)
+        LOG.notice("Section %r does not exist in template" % fullPath)
     elif diffType == 'addSec':
       if self.showMissingSections:
-        gLogger.notice("Section %r not found in current configuration: %s" % (fullPath, pformat(changes)))
+        LOG.notice("Section %r not found in current configuration: %s" % (fullPath, pformat(changes)))
     elif diffType == 'addOpt':
       if self.showMissingOptions:
-        gLogger.notice("Option %r not found in current configuration. Default value is %r" % (fullPath, changes))
+        LOG.notice("Option %r not found in current configuration. Default value is %r" % (fullPath, changes))
     else:
-      gLogger.error("Unknown DiffType", "%s, %s, %s" % (diffType, fullPath, changes))
+      LOG.error("Unknown DiffType", "%s, %s, %s" % (diffType, fullPath, changes))
 
   def run(self):
     """ Run configuration comparison."""
@@ -200,10 +202,10 @@ class CheckConfig(DIRACScript):
     return S_OK()
 
 
-@CheckConfig()
-def main(self):
-  self.run()
+@Script()
+def main():
+  CheckConfig().run()
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -21,11 +21,11 @@ from DIRAC import gLogger
 
 
 @DIRACScript()
-def main(self):
+def main():
   # Registering arguments will automatically add their description to the help menu
-  self.registerArgument(("LocalFile: Path to local file containing LFNs",
+  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
                          "LFN:       Logical File Names"))
-  self.parseCommandLine()
+  DIRACScript.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
   allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)
@@ -47,7 +47,7 @@ def main(self):
   import os
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = self.getPositionalArgs()
+  args = DIRACScript.getPositionalArgs()
 
   inputFileName = args[0]
 
@@ -70,4 +70,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

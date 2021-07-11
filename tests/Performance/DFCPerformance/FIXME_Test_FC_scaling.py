@@ -10,7 +10,7 @@ from __future__ import absolute_import
 from __future__ import division
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import S_OK
 import sys
 import pprint

@@ -12,14 +12,13 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-
 from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.localCfg.addDefaultEntry("LogLevel", "info")
-  self.parseCommandLine()
+def main():
+  DIRACScript.localCfg.addDefaultEntry("LogLevel", "info")
+  DIRACScript.parseCommandLine()
 
   from DIRAC.AccountingSystem.Client.AccountingCLI import AccountingCLI
 
@@ -28,4 +27,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

@@ -16,9 +16,9 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 
 @DIRACScript()
-def main(self):
-  self.disableCS()
-  self.parseCommandLine()
+def main():
+  DIRACScript.disableCS()
+  DIRACScript.parseCommandLine()
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
@@ -27,4 +27,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()

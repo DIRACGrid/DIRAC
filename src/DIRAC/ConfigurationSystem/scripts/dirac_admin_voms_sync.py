@@ -15,43 +15,42 @@ __RCSID__ = "$Id$"
 import six
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript as _DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 
 
-class DIRACScript(_DIRACScript):
-
-  def initParameters(self):
-    """ init """
-    # Wrap globally described parameters in a class
-    self.dryRun = False
-    self.voName = None
-
-  def setDryRun(self, value):
-    self.dryRun = True
-    return S_OK()
-
-  def setVO(self, value):
-    self.voName = value
-    return S_OK()
+dryRun = False
+voName = None
 
 
-@DIRACScript()
-def main(self):
-  self.registerSwitch("V:", "vo=", "VO name", self.setVO)
-  self.registerSwitch("D", "dryRun", "Dry run", self.setDryRun)
-  self.parseCommandLine(ignoreErrors=True)
+def setDryRun(value):
+  global dryRun
+  dryRun = True
+  return S_OK()
+
+
+def setVO(value):
+  global voName
+  voName = value
+  return S_OK()
+
+
+@Script()
+def main():
+  Script.registerSwitch("V:", "vo=", "VO name", setVO)
+  Script.registerSwitch("D", "dryRun", "Dry run", setDryRun)
+  Script.parseCommandLine(ignoreErrors=True)
 
   @executeWithUserProxy
   def syncCSWithVOMS(vomsSync):
     return vomsSync.syncCSWithVOMS()
 
-  voAdminUser = getVOOption(self.voName, "VOAdmin")
-  voAdminGroup = getVOOption(self.voName, "VOAdminGroup", getVOOption(self.voName, "DefaultGroup"))
+  voAdminUser = getVOOption(voName, "VOAdmin")
+  voAdminGroup = getVOOption(voName, "VOAdminGroup", getVOOption(voName, "DefaultGroup"))
 
-  vomsSync = VOMS2CSSynchronizer(self.voName)
+  vomsSync = VOMS2CSSynchronizer(voName)
   result = syncCSWithVOMS(vomsSync,  # pylint: disable=unexpected-keyword-arg
                           proxyUserName=voAdminUser,
                           proxyUserGroup=voAdminGroup)
@@ -72,7 +71,7 @@ def main(self):
 
   csapi = resultDict.get("CSAPI")
   if csapi and csapi.csModified:
-    if self.dryRun:
+    if dryRun:
       gLogger.notice("There are changes to Registry ready to commit, skipped because of dry run")
     else:
       yn = six.moves.input("There are changes to Registry ready to commit, do you want to proceed ? [Y|n]:")
@@ -81,11 +80,11 @@ def main(self):
         if not result['OK']:
           gLogger.error("Could not commit configuration changes", result['Message'])
         else:
-          gLogger.notice("Registry changes committed for VO %s" % self.voName)
+          gLogger.notice("Registry changes committed for VO %s" % voName)
       else:
         gLogger.notice("Registry changes are not committed")
   else:
-    gLogger.notice("No changes to Registry for VO %s" % self.voName)
+    gLogger.notice("No changes to Registry for VO %s" % voName)
 
   result = vomsSync.getVOUserReport()
   if not result['OK']:
@@ -96,4 +95,4 @@ def main(self):
 
 
 if __name__ == "__main__":
-  main()  # pylint: disable=no-value-for-parameter
+  main()
