@@ -184,23 +184,23 @@ class Operations(object):
 
         :return: bool
     """
-    return self.__cacheVersion != gConfigurationData.getVersion()
+    return Operations.__cacheVersion != gConfigurationData.getVersion()
 
   def __getCFGCache(self):
     """ Get cached CFG
 
         :return: CFG
     """
-    self.__cacheLock.acquire()
+    Operations.__cacheLock.acquire()
     try:
       currentVersion = gConfigurationData.getVersion()
-      if currentVersion != self.__cacheVersion:
-        self.__cache = {}
-        self.__cacheVersion = currentVersion
+      if currentVersion != Operations.__cacheVersion:
+        Operations.__cache = {}
+        Operations.__cacheVersion = currentVersion
 
       cacheKey = (self._vo, self._setup)
-      if cacheKey in self.__cache:
-        return self.__cache[cacheKey]
+      if cacheKey in Operations.__cache:
+        return Operations.__cache[cacheKey]
 
       mergedCFG = CFG()
 
@@ -209,12 +209,12 @@ class Operations(object):
         if pathCFG:
           mergedCFG = mergedCFG.mergeWith(pathCFG)
 
-      self.__cache[cacheKey] = mergedCFG
+      Operations.__cache[cacheKey] = mergedCFG
 
-      return self.__cache[cacheKey]
+      return Operations.__cache[cacheKey]
     finally:
       try:
-        self.__cacheLock.release()
+        Operations.__cacheLock.release()
       except thread.error:
         pass
 
