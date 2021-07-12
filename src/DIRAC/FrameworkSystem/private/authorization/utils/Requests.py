@@ -33,7 +33,7 @@ class OAuth2Request(_OAuth2Request):
 
         :return: list
     """
-    return [s.split(':')[1] for s in scope_to_list(self.scope) if s.startswith('g:')]
+    return [s.split(':')[1] for s in scope_to_list(self.scope) if s.startswith('g:') and s.split(':')[1]]
 
   def toDict(self):
     """ Convert class to dictionary

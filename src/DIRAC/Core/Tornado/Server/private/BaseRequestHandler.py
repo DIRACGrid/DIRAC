@@ -46,20 +46,36 @@ sLog = gLogger.getSubLogger(__name__.split('.')[-1])
 
 
 class TornadoResponse(object):
-  """ This class describe result object """
+  """ This class registers tornadoes with arguments in the order they are called
+      from TornadoResponse to call them later.
 
+      Use::
+
+        def web_myEndpotin(self):
+          resp = TornadoResponse('data')
+          resp.set_status(400)
+          return resp
+  """
   def __init__(self, data=None):
-    """ C'or """
+    """ C'or
+    
+        :param data: response body
+    """
     self.data = data
     self.actions = []
     for mName, mObj in inspect.getmembers(RequestHandler):
-      if inspect.isroutine(mObj) and not mName.startswith('_') and mName is not 'finish':
+      if inspect.isroutine(mObj) and not mName.startswith('_') and not mName.startwith('get'):
         setattr(self, mName, partial(self.__setAction, mName))
 
   def __setAction(self, mName, *args, **kwargs):
+    """ Register new action """
     self.actions.append((mName, args, kwargs))
 
-  def finish(self, reqObj):
+  def _runActions(self, reqObj):
+    """ Calling methods in the order of their registration
+
+        :param reqObj: RequestHandler instance
+    """
     for mName, args, kwargs in self.actions:
       getattr(reqObj, mName)(*args, **kwargs)
     if not reqObj._finished:
@@ -525,7 +541,7 @@ class BaseRequestHandler(RequestHandler):
     finishFunc = getattr(self, 'finish_%s' % self.method, None)
 
     if isinstance(self.result, TornadoResponse):
-      self.result.finish(self)
+      self.result._runActions(self)
 
     elif callable(finishFunc):
       finishFunc()

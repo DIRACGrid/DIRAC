@@ -87,7 +87,7 @@ class TokenManagerHandler(TornadoService):
 
         :return: S_OK(dict)/S_ERROR() -- dict contain uploaded tokens info
     """
-    self.log.verbose('Update %s user token:\n', pprint.pformat(token))
+    self.log.verbose('Update %s user token for %s:\n' % (userID, provider), pprint.pformat(token))
     result = self.idps.getIdProvider(provider)
     if not result['OK']:
       return result

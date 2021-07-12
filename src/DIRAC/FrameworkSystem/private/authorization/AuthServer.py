@@ -320,7 +320,7 @@ class AuthServer(_AuthorizationServer):
       self.log.debug('newSession:', newSession)
       # pylint: disable=no-member
       resp.set_secure_cookie('auth_session', json.dumps(newSession), secure=True, httponly=True)
-    if 'error' in payload:
+    if isinstance(payload, dict) and 'error' in payload:
       resp.clear_cookie('auth_session')  # pylint: disable=no-member
     return resp
 
@@ -367,6 +367,7 @@ class AuthServer(_AuthorizationServer):
 
         :return: str, S_OK()/S_ERROR() -- provider name and html page to choose it
     """
+    self.log.debug("Check if %s identity provider registred in DIRAC.." % provider)
     # Research supported IdPs
     result = getProvidersForInstance('Id')
     if not result['OK']:
