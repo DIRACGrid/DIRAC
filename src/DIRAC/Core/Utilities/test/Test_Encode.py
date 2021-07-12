@@ -21,7 +21,7 @@ from DIRAC.Core.Utilities.MixedEncode import encode as mixEncode, decode as mixD
 
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import builds, integers, lists, recursive, floats, text,\
-    booleans, none, dictionaries, tuples, datetimes
+    booleans, none, dictionaries, tuples, dates, datetimes
 import six
 from pytest import mark, approx, raises, fixture, skip
 parametrize = mark.parametrize
@@ -55,6 +55,17 @@ enc_dec_ids_without_json = (
     'mixTuple (DIRAC_USE_JSON_DECODE=Yes)')
 
 
+def myDates():
+  """We define a custom date strategy in order
+     to pull date after 1900 (limitation of strftime)
+     and without microseconds
+  """
+  return dates(
+      min_value=datetime.datetime(1900, 1, 1, 0, 0).date(),
+      max_value=datetime.datetime.max.date(),
+  )
+
+
 def myDatetimes():
   """We define a custom datetime strategy in order
      to pull date after 1900 (limitation of strftime)
@@ -73,8 +84,8 @@ def myDatetimes():
 # are not stable, the result is approximative, and it becomes extremely difficult
 # to compare
 # Datetime also starts only at 1900 because earlier date can't be dumped with strftime
-initialStrategies = none() | booleans() | text() | integers() | myDatetimes()
-initialJsonStrategies = none() | booleans() | text() | myDatetimes()
+initialStrategies = none() | booleans() | text() | integers() | myDatetimes() | myDates()
+initialJsonStrategies = none() | booleans() | text() | myDatetimes() | myDates()
 
 
 # From a strategy (x), make a new strategy
@@ -161,10 +172,16 @@ def test_BaseType_Bool(enc_dec, data):
 
 
 @settings(suppress_health_check=function_scoped)
+@given(data=myDates())
+def test_BaseType_Dates(enc_dec, data):
+  """ Test for date"""
+  agnosticTestFunction(enc_dec, data)
+
+
+@settings(suppress_health_check=function_scoped)
 @given(data=myDatetimes())
 def test_BaseType_DateTime(enc_dec, data):
-  """ Test for data time"""
-
+  """ Test for datetime"""
   agnosticTestFunction(enc_dec, data)
 
 
