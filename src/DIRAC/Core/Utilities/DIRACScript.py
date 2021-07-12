@@ -56,7 +56,7 @@ class DIRACScript(object):
     matches = [ep for ep in metadata.entry_points()['console_scripts'] if ep.name == self.scriptName]
     if not matches:
       # TODO: This should an error once the integration tests modified to use pip install
-      return self._func(self)  # pylint: disable=not-callable
+      return self._func()  # pylint: disable=not-callable
       # raise NotImplementedError("Something is very wrong")
 
     # Call the entry_point from the extension with the highest priority
