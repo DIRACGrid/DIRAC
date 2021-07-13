@@ -48,7 +48,7 @@ def main():
   Script.registerArgument(['System: system names'])
 
   # Parse the command line and initialize DIRAC
-  swithes, servicesList = Script.parseCommandLine(ignoreErrors=False)
+  switches, servicesList = Script.parseCommandLine(ignoreErrors=False)
 
   # Get the list of services
   servicesList = Script.getPositionalArgs()
