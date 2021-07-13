@@ -942,11 +942,6 @@ class MySQL(object):
     """
     return str(param[0])
 
-  def _to_string(self, param):
-    """
-    """
-    return param[0].tostring()
-
   def _getConnection(self, retries=MAXCONNECTRETRY):
     """ Return  a new connection to the DB,
 

@@ -37,9 +37,6 @@ Resources
     }
   }
 }
-""" % (os.path.join(certsPath, 'ca/ca.cert.pem'), os.path.join(certsPath, 'ca/ca.key.pem'))
-
-userCFG = """
 Registry
 {
   Users
@@ -61,7 +58,7 @@ Registry
     }
   }
 }
-"""
+""" % (os.path.join(certsPath, 'ca/ca.cert.pem'), os.path.join(certsPath, 'ca/ca.key.pem'))
 
 
 class DIRACCAPPTest(unittest.TestCase):
@@ -70,20 +67,15 @@ class DIRACCAPPTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    pass
+    cfg = CFG()
+    cfg.loadFromBuffer(diracTestCACFG)
+    gConfig.loadCFG(cfg)
 
   @classmethod
   def tearDownClass(cls):
     pass
 
   def setUp(self):
-
-    cfg = CFG()
-    cfg.loadFromBuffer(diracTestCACFG)
-    gConfig.loadCFG(cfg)
-    cfg.loadFromBuffer(userCFG)
-    gConfig.loadCFG(cfg)
-
     result = ProxyProviderFactory().getProxyProvider('DIRAC_TEST_CA')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.pp = result['Value']

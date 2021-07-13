@@ -213,10 +213,12 @@ class PilotAgentsDB(DB):
 
     failed = []
 
+    result = self._escapeValues(pilotIDs)
+    if not result['OK']:
+      return S_ERROR('Failed to remove pilot: %s' % result['Value'])
+    stringIDs = ','.join(result['Value'])
     for table in ['PilotOutput', 'JobToPilotMapping', 'PilotAgents']:
-      idString = ','.join([str(pid) for pid in pilotIDs])
-      req = "DELETE FROM %s WHERE PilotID in ( %s )" % (table, idString)
-      result = self._update(req, conn=conn)
+      result = self._update("DELETE FROM %s WHERE PilotID in (%s)" % (table, stringIDs), conn=conn)
       if not result['OK']:
         failed.append(table)
 
@@ -271,27 +273,19 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     parameters = ['PilotJobReference', 'OwnerDN', 'OwnerGroup', 'GridType', 'Broker',
                   'Status', 'DestinationSite', 'BenchMark', 'ParentID', 'OutputReady', 'AccountingSent',
                   'SubmissionTime', 'PilotID', 'LastUpdateTime', 'TaskQueueID', 'GridSite', 'PilotStamp',
-                  'Queue']
-    if paramNames:
-      parameters = paramNames
+                  'Queue'] if not paramNames else paramNames
 
     cmd = "SELECT %s FROM PilotAgents" % ", ".join(parameters)
     condSQL = []
-    if pilotRef:
-      if isinstance(pilotRef, list):
-        condSQL.append("PilotJobReference IN (%s)" % ",".join(['"%s"' % x for x in pilotRef]))
-      else:
-        condSQL.append("PilotJobReference = '%s'" % pilotRef)
-    if pilotID:
-      if isinstance(pilotID, list):
-        condSQL.append("PilotID IN (%s)" % ",".join(['%s' % x for x in pilotID]))
-      else:
-        condSQL.append("PilotID = '%s'" % pilotID)
-    if parentId:
-      if isinstance(parentId, list):
-        condSQL.append("ParentID IN (%s)" % ",".join(['%s' % x for x in parentId]))
-      else:
-        condSQL.append("ParentID = %s" % parentId)
+    for key, value in [('PilotJobReference', pilotRef), ('PilotID', pilotID), ('ParentID', parentId)]:
+      resList = []
+      for v in value if isinstance(value, list) else [value] if value else []:
+        result = self._escapeString(v)
+        if not result['OK']:
+          return result
+        resList.append(result['Value'])
+      if resList:
+        condSQL.append("%s IN (%s)" % (key, ",".join(resList)))
     if condSQL:
       cmd = "%s WHERE %s" % (cmd, " AND ".join(condSQL))
 

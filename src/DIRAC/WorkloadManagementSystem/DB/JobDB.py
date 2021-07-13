@@ -149,13 +149,7 @@ class JobDB(DB):
         jobID = retValues[0]
         jobDict = {'JobID': jobID}
         # Make a dict from the list of attributes names and values
-        for name, value in zip(attr_tmp_list, retValues[1:]):
-          try:
-            value = value.tostring()
-          except Exception:
-            value = str(value)
-          jobDict[name] = value
-        retDict[int(jobID)] = jobDict
+        retDict[int(jobID)] = {k: v.decode() for k, v in zip(attr_tmp_list, retValues[1:])}
       return S_OK(retDict)
     except Exception as e:
       return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(e))
@@ -203,11 +197,7 @@ class JobDB(DB):
       if result['OK']:
         if result['Value']:
           for res_jobID, res_name, res_value in result['Value']:
-            try:
-              res_value = res_value.tostring()
-            except Exception:
-              pass
-            resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
+            resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode()
 
         return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
       else:
@@ -219,11 +209,7 @@ class JobDB(DB):
         return result
 
       for res_jobID, res_name, res_value in result['Value']:
-        try:
-          res_value = res_value.tostring()
-        except Exception:
-          pass
-        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
+        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value.decode()
 
       return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
@@ -262,11 +248,7 @@ class JobDB(DB):
     if result['OK']:
       if result['Value']:
         for name, value, counter in result['Value']:
-          try:
-            value = value.tostring()
-          except Exception:
-            pass
-          resultDict.setdefault(counter, {})[name] = value
+          resultDict.setdefault(counter, {})[name] = value.decode()
 
       return S_OK(resultDict)
     else:
@@ -406,8 +388,6 @@ class JobDB(DB):
       return ret
     jobID = ret['Value']
 
-    resultDict = {}
-
     if paramList:
       paramNameList = []
       for x in paramList:
@@ -421,18 +401,9 @@ class JobDB(DB):
       cmd = "SELECT Name, Value from OptimizerParameters WHERE JobID=%s" % jobID
 
     result = self._query(cmd)
-    if result['OK']:
-      if result['Value']:
-        for name, value in result['Value']:
-          try:
-            value = value.tostring()
-          except Exception:
-            pass
-          resultDict[name] = value
-
-      return S_OK(resultDict)
-    else:
+    if not result['OK']:
       return S_ERROR('JobDB.getJobOptParameters: failed to retrieve parameters')
+    return S_OK({name: value.decode() for name, value in result.get('Value', {})})
 
 #############################################################################
 

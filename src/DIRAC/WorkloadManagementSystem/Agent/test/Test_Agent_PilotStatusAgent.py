@@ -10,7 +10,7 @@ from mock import MagicMock
 
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent import PilotStatusAgent
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 
 # Mock objects
 mockReply = MagicMock()
@@ -37,6 +37,8 @@ def test_clearWaitingPilots(mocker):
   module_str = "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.buildCondition"
   mocker.patch(module_str, side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._query", side_effect=mockOK)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._escapeString",
+               lambda s, c: S_OK('"%s"' % s))  # To bypass "connection.escape_string"
 
   pilotStatusAgent = PilotStatusAgent()
   pilotStatusAgent._AgentModule__configDefaults = mockAM
@@ -79,6 +81,8 @@ def test_handleOldPilots(mocker, mockReplyInput, expected):
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.JobDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._query", side_effect=mockOK)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._escapeString",
+               lambda s, c: S_OK('"%s"' % s))  # To bypass "connection.escape_string"
 
   pilotStatusAgent = PilotStatusAgent()
   pilotStatusAgent._AgentModule__configDefaults = mockAM
