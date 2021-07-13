@@ -239,7 +239,7 @@ environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 transfer_output_files = ""
-+xcount = %(processors)s
+request_cpus = %(processors)s
 %(localScheddOptions)s
 
 kill_sig=SIGTERM
@@ -280,7 +280,7 @@ Queue %(nJobs)s
     return S_OK()
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):
+  def submitJob(self, executableFile, proxy, numberOfJobs=1):
     """ Method to submit job
     """
 
@@ -298,7 +298,8 @@ Queue %(nJobs)s
 
     # We randomize the location of the pilot output and log, because there are just too many of them
     location = logDir(self.ceName, commonJobStampPart)
-    subName = self.__writeSub(executableFile, numberOfJobs, location, processors)
+    nProcessors = self.ceParameters.get('NumberOfProcessors', 1)
+    subName = self.__writeSub(executableFile, numberOfJobs, location, nProcessors)
 
     cmd = ['condor_submit', '-terse', subName]
     # the options for submit to remote are different than the other remoteScheddOptions
