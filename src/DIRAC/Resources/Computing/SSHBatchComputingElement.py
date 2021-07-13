@@ -5,7 +5,6 @@
 
 """ SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
     directly through ssh
-    It's still under development & debugging,
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -75,9 +74,7 @@ class SSHBatchComputingElement(SSHComputingElement):
         self.log.error('Failed to initialize host', host)
         return result
 
-    self.submitOptions = ''
-    if 'SubmitOptions' in self.ceParameters:
-      self.submitOptions = self.ceParameters['SubmitOptions']
+    self.submitOptions = self.ceParameters.get('SubmitOptions', '')
     self.removeOutput = True
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
