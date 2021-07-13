@@ -260,7 +260,7 @@ def runConfigurationWizard(params):
     while True:
       userPasswd = prompt(u"Enter Certificate password: ", is_password=True)
       result = subprocess.run(  # pylint: disable=no-member
-          ["dirac-proxy-init", "--nocs", "--pwstdin"],
+          ["dirac-proxy-init", "--nocs", "--no-upload", "--pwstdin"],
           input=userPasswd,
           encoding="utf-8",
           check=False,
