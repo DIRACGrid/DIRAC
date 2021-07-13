@@ -1,9 +1,3 @@
-#########################################################################################
-# SLURM.py
-# 10.11.2014
-# Author: A.T.
-#########################################################################################
-
 """ SLURM.py is a DIRAC independent class representing SLURM batch system.
     SLURM objects are used as backend batch system representation for
     LocalComputingElement and SSHComputingElement classes
@@ -51,7 +45,7 @@ class SLURM(object):
     # numberOfNodes is treated as a string as it can contain values such as "2-4"
     # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
     numberOfNodes = kwargs.get('NumberOfNodes', '1')
-    gpus = kwargs.get('GPUs')
+    numberOfGpus = kwargs.get('NumberOfGPUs')
     preamble = kwargs.get('Preamble')
 
     outFile = os.path.join(outputDir, "%jobid%")
@@ -75,8 +69,8 @@ class SLURM(object):
       cmd += "--ntasks-per-node=1 "
       cmd += "--nodes=%s " % numberOfNodes
       cmd += "--cpus-per-task=%d " % numberOfProcessors
-      if gpus:
-	cmd += "--gpus-per-task=%d " % int(gpus)
+      if numberOfGpus:
+        cmd += "--gpus-per-task=%d " % int(numberOfGpus)
       # Additional options
       cmd += "%s %s" % (submitOptions, executable)
       sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

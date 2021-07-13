@@ -198,9 +198,9 @@ def getGPUs(siteName=None, gridCE=None, queue=None):
       3) return 0
   """
 
-  # 1) from /Resources/Computing/CEDefaults/GPUs
-  gLogger.info("Getting GPUs from /Resources/Computing/CEDefaults/GPUs")
-  gpus = gConfig.getValue('/Resources/Computing/CEDefaults/GPUs', 0)
+  # 1) from /Resources/Computing/CEDefaults/NumberOfGPUs
+  gLogger.info("Getting GPUs from /Resources/Computing/CEDefaults/NumberOfGPUs")
+  gpus = gConfig.getValue('/Resources/Computing/CEDefaults/NumberOfGPUs', 0)
   if gpus:
     return gpus
 
@@ -218,12 +218,12 @@ def getGPUs(siteName=None, gridCE=None, queue=None):
   gLogger.info("Getting number of GPUs" "from tags for %s: %s: %s" % (siteName, gridCE, queue))
   # Tags of the CE
   tags = fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Tag' % (siteName.split('.')[0], siteName, gridCE),
-				   ''))
+                                   ''))
   # Tags of the Queue
   tags += fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag' % (siteName.split('.')[0],
-										     siteName,
-										     gridCE, queue),
-				    ''))
+                                                                                     siteName,
+                                                                                     gridCE, queue),
+                                    ''))
   for tag in tags:
     gpusTag = re.search("[0-9]GPUs", tag)
     if gpusTag:
