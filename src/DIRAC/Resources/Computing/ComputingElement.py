@@ -48,8 +48,10 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getNumberOfProcessors, getGPUs
-
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import (
+    getNumberOfProcessors,
+    getNumberOfGPUs,
+)
 
 INTEGER_PARAMETERS = ['CPUTime',
                       'NumberOfProcessors', 'NumberOfPayloadProcessors',
@@ -267,7 +269,7 @@ class ComputingElement(object):
     # interpret it as needing local evaluation
     if self.ceParameters.get("NumberOfProcessors", -1) == 0:
       self.ceParameters["NumberOfProcessors"] = getNumberOfProcessors()
-    self.ceParameters["NumberOfGPUs"] = getGPUs()
+    self.ceParameters["NumberOfGPUs"] = getNumberOfGPUs()
 
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:

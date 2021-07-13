@@ -45,7 +45,7 @@ class SLURM(object):
     # numberOfNodes is treated as a string as it can contain values such as "2-4"
     # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
     numberOfNodes = kwargs.get('NumberOfNodes', '1')
-    numberOfGpus = kwargs.get('NumberOfGPUs')
+    numberOfGPUs = kwargs.get('NumberOfGPUs')
     preamble = kwargs.get('Preamble')
 
     outFile = os.path.join(outputDir, "%jobid%")
@@ -69,8 +69,8 @@ class SLURM(object):
       cmd += "--ntasks-per-node=1 "
       cmd += "--nodes=%s " % numberOfNodes
       cmd += "--cpus-per-task=%d " % numberOfProcessors
-      if numberOfGpus:
-        cmd += "--gpus-per-task=%d " % int(numberOfGpus)
+      if numberOfGPUs:
+        cmd += "--gpus-per-task=%d " % int(numberOfGPUs)
       # Additional options
       cmd += "%s %s" % (submitOptions, executable)
       sp = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

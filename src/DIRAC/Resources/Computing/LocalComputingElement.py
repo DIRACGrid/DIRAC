@@ -132,7 +132,7 @@ class LocalComputingElement(ComputingElement):
     # numberOfNodes is treated as a string as it can contain values such as "2-4"
     # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
     self.numberOfNodes = self.ceParameters.get('NumberOfNodes', '1')
-    self.numberOfGpus = self.ceParameters.get("NumberOfGPUs")
+    self.numberOfGPUs = self.ceParameters.get("NumberOfGPUs")
 
     return S_OK()
 
@@ -234,7 +234,7 @@ class LocalComputingElement(ComputingElement):
         "WholeNode": self.wholeNode,
         "NumberOfProcessors": self.numberOfProcessors,
         "NumberOfNodes": self.numberOfNodes,
-        "NumberOfGPUs": self.numberOfGpus,
+        "NumberOfGPUs": self.numberOfGPUs,
     }
     resultSubmit = self.batchSystem.submitJob(**batchDict)
     if proxy or self.parallelLibrary:

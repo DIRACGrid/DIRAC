@@ -69,9 +69,8 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
       1) from the /Resources/Computing/CEDefaults/NumberOfProcessors (which is what the pilot fills up)
       2) if not present from JobFeatures
       3) if not present looks in CS for "NumberOfProcessors" Queue or CE option
-      4) if not present looks in CS for "%dProcessors" Queue or CE Tag
-      5) if not present but there's WholeNode tag, look what the WN provides using multiprocessing.cpu_count()
-      6) return 1
+      4) if not present but there's WholeNode tag, look what the WN provides using multiprocessing.cpu_count()
+      5) return 1
   """
 
   # 1) from /Resources/Computing/CEDefaults/NumberOfProcessors
@@ -110,8 +109,8 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
     if numberOfProcessors:
       return numberOfProcessors
 
-  # 3) looks in CS for tags
-  gLogger.info("Getting number of processors" "from tags for %s: %s: %s" % (siteName, gridCE, queue))
+  # 4) looks in CS for tags
+  gLogger.info("Getting tags" "for %s: %s: %s" % (siteName, gridCE, queue))
   # Tags of the CE
   tags = fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Tag' % (siteName.split('.')[0], siteName, gridCE),
                                    ''))
@@ -120,17 +119,12 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
                                                                                      siteName,
                                                                                      gridCE, queue),
                                     ''))
-  for tag in tags:
-    numberOfProcessorsTag = re.search('[0-9]Processors', tag)
-    if numberOfProcessorsTag:
-      gLogger.info("Number of processors from tags", numberOfProcessorsTag.string)
-      return int(numberOfProcessorsTag.string.replace('Processors', ''))
-
   gLogger.info("NumberOfProcessors could not be found in CS")
   if 'WholeNode' in tags:
     gLogger.info("Found WholeNode tag, using multiprocessing.cpu_count()")
     return multiprocessing.cpu_count()
 
+  # 5) return the default
   return 1
 
 
@@ -153,7 +147,7 @@ def getNumberOfPayloadProcessors(siteName=None, gridCE=None, queue=None):
   if NumberOfPayloadProcessors:
     return NumberOfPayloadProcessors
 
-  # 2) Checks if 'Whole' is one of the used tags
+  # 2) Checks if 'WholeNode' is one of the used tags
   # Tags of the CE
   tags = fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Tag' % (siteName.split('.')[0], siteName, gridCE),
                                    ''))
@@ -187,14 +181,14 @@ def getNumberOfJobProcessors(jobID):
   return getNumberOfProcessors()
 
 
-def getGPUs(siteName=None, gridCE=None, queue=None):
+def getNumberOfGPUs(siteName=None, gridCE=None, queue=None):
   """ Gets GPUs on a certain CE/queue/node (what the pilot administers)
 
       The siteName/gridCE/queue parameters are normally not necessary.
 
       Tries to find it in this order:
       1) from the /Resources/Computing/CEDefaults/GPUs (which is what the pilot might fill up)
-      2) if not present looks in CS for "%dGPUs" Queue or CE Tag
+      2) if not present looks in CS for "NumberOfGPUs" Queue or CE option
       3) return 0
   """
 
@@ -204,6 +198,7 @@ def getGPUs(siteName=None, gridCE=None, queue=None):
   if gpus:
     return gpus
 
+  # 2) looks in CS for "NumberOfGPUs" Queue or CE or site option
   if not siteName:
     siteName = gConfig.getValue('/LocalSite/Site', '')
   if not gridCE:
@@ -211,24 +206,21 @@ def getGPUs(siteName=None, gridCE=None, queue=None):
   if not queue:
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
   if not (siteName and gridCE and queue):
-    gLogger.error("Could not find NumberOfProcessors: missing siteName or gridCE or queue. Returning '0'")
+    gLogger.error("Could not find NumberOfGPUs: missing siteName or gridCE or queue. Returning '0'")
     return 0
 
-  # 2) looks in CS for tags
-  gLogger.info("Getting number of GPUs" "from tags for %s: %s: %s" % (siteName, gridCE, queue))
-  # Tags of the CE
-  tags = fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Tag' % (siteName.split('.')[0], siteName, gridCE),
-                                   ''))
-  # Tags of the Queue
-  tags += fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag' % (siteName.split('.')[0],
-                                                                                     siteName,
-                                                                                     gridCE, queue),
-                                    ''))
-  for tag in tags:
-    gpusTag = re.search("[0-9]GPUs", tag)
-    if gpusTag:
-      gLogger.info("Number of processors from tags", gpusTag.string)
-      return int(gpusTag.string.replace("GPUs", ""))
+  grid = siteName.split('.')[0]
+  csPaths = [
+      "/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfGPUs" % (grid, siteName, gridCE, queue),
+      "/Resources/Sites/%s/%s/CEs/%s/NumberOfGPUs" % (grid, siteName, gridCE),
+      "/Resources/Sites/%s/%s/NumberOfGPUs" % (grid, siteName),
+  ]
+  for csPath in csPaths:
+    gLogger.info("Looking in", csPath)
+    numberOfGPUs = gConfig.getValue(csPath, 0)
+    if numberOfGPUs:
+      return numberOfGPUs
 
-  gLogger.info("GPUs could not be found in CS")
+  # 3) return 0
+  gLogger.info("NumberOfGPUs could not be found in CS")
   return 0

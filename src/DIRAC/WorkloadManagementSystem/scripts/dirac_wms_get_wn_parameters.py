@@ -53,10 +53,10 @@ def main():
     maxRAM = JobParameters.getMemoryFromProc()
 
   gLogger.info("Getting number of GPUs")
-  numberOfGpus = JobParameters.getGPUs(Site, ceName, Queue)
+  numberOfGPUs = JobParameters.getNumberOfGPUs(Site, ceName, Queue)
 
   # just communicating it back
-  gLogger.notice(" ".join(str(wnPar) for wnPar in [numberOfProcessor, maxRAM, numberOfGpus]))
+  gLogger.notice(" ".join(str(wnPar) for wnPar in [numberOfProcessor, maxRAM, numberOfGPUs]))
 
 
 if __name__ == "__main__":
