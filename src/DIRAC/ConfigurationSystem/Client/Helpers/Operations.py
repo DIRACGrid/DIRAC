@@ -71,34 +71,47 @@
 
     You can also specify the main section::
 
-      Operations(vo=VOName, mainSection='/mainSectionName').getValue('someSection/someOption')
+      Operations(vo=myVO, mainSection='/mainSection').getValue('mySection/myOption')
 
-    in this case, the configuration will be searched in the following sections with the name 'mainSectionName'::
+    in this case, the configuration will be searched in the following sections with the name 'mainSection'::
 
-      mainSectionName/
-          someOption = someValue
-          someSection/
-              aSecondOption = aSecondValue
+      DIRAC/
+          Setup = Production
+      mainSection/
+          anotherOption = anotherValue
+          mySection/
+              myOption = myValue
       Operations/
+          Defaults/                       -- this section will not be taken into account
+              ...
           Production/
-              mainSectionName/
-                  someOption = someValueInProduction
-                  someSection/
-                      aSecondOption = aSecondValueInProduction
-          aVOName/
+              mainSection/
+                  anotherOption = anotherValueInProduction
+                  mySection/
+                      myOption = myValueInProduction
+          myVO/
               Defaults/
-                  mainSectionName/
-                      someOption = someValueForVO
-                      someSection/
-                          aSecondOption = aSecondValueForVO
+                  mainSection/
+                      anotherOption = anotherValueForVO
+                      mySection/
+                          notMyOption = someValueForVO
               Production/
-                  mainSectionName/
-                      someOption = someValueInProduction
-                      someSection/
-                          aSecondOption = aSecondValueInProduction
-              Certification/
-                  mainSectionName/
-                      someOption = someValueInCertification
+                  mainSection/
+                      anotherOption = anotherValueInProductionForVO
+                      mySection/
+                          myOption = myValueInProductionForVO
+              Certification/              -- this section will not be considered because Production setup is specified
+                  mainSection/
+                      anotherOption = anotherValueInCertificationForVO
+
+    section option will be merged in the following order::
+
+      /mainSection/mySection/myOption -- set a "myValue" for a myOption
+      /Operations/Production/mainSection/mySection/myOption -- set a "myValueInProduction" for a myOption
+      /Operations/myVO/Defaults/mainSection/mySection/myOption -- myOption is missing here, let's move on
+      /Operations/myVO/Production/mainSection/mySection/myOption -- set a "myValueInProductionForVO" for a myOption
+
+    So the method will return "myValueInProductionForVO".
 
 """
 from __future__ import absolute_import
