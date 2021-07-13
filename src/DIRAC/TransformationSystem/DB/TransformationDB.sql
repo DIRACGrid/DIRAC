@@ -43,7 +43,8 @@ CREATE TABLE Transformations(
     MaxNumberOfTasks INT NOT NULL DEFAULT 0,
     EventsPerTask INT NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
-    INDEX(TransformationName)
+    INDEX(TransformationName),
+    INDEX(TransformationFamily)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 -- -------------------------------------------------------------------------------
@@ -94,6 +95,7 @@ CREATE TABLE TransformationTasks(
     LastUpdateTime DATETIME NOT NULL,
     PRIMARY KEY(TransformationID, TaskID),
     INDEX(ExternalStatus),
+    INDEX(TransformationID,ExternalStatus),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
@@ -117,6 +119,7 @@ CREATE TABLE TransformationFiles(
     INDEX(TransformationID),
     INDEX(Status),
     INDEX(FileID),
+    INDEX(TransformationID,Status),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID),
     FOREIGN KEY(FileID) REFERENCES DataFiles(FileID)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;

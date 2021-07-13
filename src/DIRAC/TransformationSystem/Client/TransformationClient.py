@@ -96,7 +96,7 @@ class TransformationClient(Client):
                                        body, maxTasks, eventsPerTask, addFiles, inputMetaQuery, outputMetaQuery)
 
   def getTransformations(self, condDict=None, older=None, newer=None, timeStamp=None,
-                         orderAttribute=None, limit=100, extraParams=False):
+                         orderAttribute=None, limit=100, extraParams=False, columns=None):
     """ gets all the transformations in the system, incrementally. "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC()
@@ -110,7 +110,7 @@ class TransformationClient(Client):
     offsetToApply = 0
     while True:
       res = rpcClient.getTransformations(condDict, older, newer, timeStamp, orderAttribute, limit,
-                                         extraParams, offsetToApply)
+                                         extraParams, offsetToApply, columns)
       if not res['OK']:
         return res
       else:

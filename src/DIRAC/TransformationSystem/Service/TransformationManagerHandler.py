@@ -141,7 +141,8 @@ class TransformationManagerHandler(RequestHandler):
 
   @classmethod
   def export_getTransformations(cls, condDict=None, older=None, newer=None, timeStamp='CreationDate',
-                                orderAttribute=None, limit=None, extraParams=False, offset=None):
+                                orderAttribute=None, limit=None, extraParams=False, offset=None,
+                                columns=None):
     if not condDict:
       condDict = {}
     return cls.transformationDB.getTransformations(
@@ -152,7 +153,9 @@ class TransformationManagerHandler(RequestHandler):
         orderAttribute=orderAttribute,
         limit=limit,
         extraParams=extraParams,
-        offset=offset)
+        offset=offset,
+        columns=columns,
+    )
 
   types_getTransformation = [transTypes]
 

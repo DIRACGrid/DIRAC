@@ -258,10 +258,15 @@ class TransformationDB(DB):
     return S_OK(transID)
 
   def getTransformations(self, condDict=None, older=None, newer=None, timeStamp='LastUpdate',
-                         orderAttribute=None, limit=None, extraParams=False, offset=None, connection=False):
+                         orderAttribute=None, limit=None, extraParams=False, offset=None, connection=False,
+                         columns=None):
     """ Get parameters of all the Transformations with support for the web standard structure """
     connection = self.__getConnection(connection)
-    req = "SELECT %s FROM Transformations %s" % (intListToString(self.TRANSPARAMS),
+    if columns is None:
+      columns = self.TRANSPARAMS
+    else:
+      columns = [c for c in columns if c in self.TRANSPARAMS]
+    req = "SELECT %s FROM Transformations %s" % (intListToString(columns),
                                                  self.buildCondition(condDict, older, newer, timeStamp,
                                                                      orderAttribute, limit, offset=offset))
     res = self._query(req, connection)
@@ -274,7 +279,7 @@ class TransformationDB(DB):
     for row in res['Value']:
       # Prepare the structure for the web
       rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
-      transDict = dict(zip(self.TRANSPARAMS, row))
+      transDict = dict(zip(columns, row))
       webList.append(rList)
       if extraParams:
         res = self.__getAdditionalParameters(transDict['TransformationID'], connection=connection)
@@ -284,7 +289,7 @@ class TransformationDB(DB):
       resultList.append(transDict)
     result = S_OK(resultList)
     result['Records'] = webList
-    result['ParameterNames'] = self.TRANSPARAMS
+    result['ParameterNames'] = columns
     return result
 
   def getTransformation(self, transName, extraParams=False, connection=False):
