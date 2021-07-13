@@ -103,7 +103,7 @@ class ComponentSupervisionAgent(AgentModule):
     self.doNotRestartInstancePattern = ['RequestExecutingAgent']
     self.diracLocation = "/opt/dirac/pro"
 
-    self.sysAdminClient = SystemAdministratorClient(socket.gethostname())
+    self.sysAdminClient = SystemAdministratorClient(socket.getfqdn())
     self.jobMonClient = JobMonitoringClient()
     self.nClient = NotificationClient()
     self.csAPI = None
@@ -116,7 +116,7 @@ class ComponentSupervisionAgent(AgentModule):
 
     self.addressTo = []
     self.addressFrom = ''
-    self.emailSubject = 'ComponentSupervisionAgent on %s' % socket.gethostname()
+    self.emailSubject = 'ComponentSupervisionAgent on %s' % socket.getfqdn()
 
   def logError(self, errStr, varMsg=''):
     """Append errors to a list, which is sent in email notification."""
@@ -468,7 +468,7 @@ class ComponentSupervisionAgent(AgentModule):
 
   def _getDefaultComponentStatus(self):
     """Get the configured status of the components."""
-    host = socket.gethostname()
+    host = socket.getfqdn()
     defaultStatus = {'Down': set(), 'Run': set(), 'All': set()}
     resRunning = gConfig.getOptionsDict(os.path.join('/Registry/Hosts/', host, 'Running'))
     resStopped = gConfig.getOptionsDict(os.path.join('/Registry/Hosts/', host, 'Stopped'))
@@ -573,7 +573,7 @@ class ComponentSupervisionAgent(AgentModule):
     """Return URL for the service."""
     system = options['System']
     port = options.get('Port', self._tornadoPort)
-    host = socket.gethostname()
+    host = socket.getfqdn()
     protocol = options.get('Protocol', 'dips')
     url = '%s://%s:%s/%s/%s' % (protocol, host, port, system, serviceName)
     return url
