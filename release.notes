@@ -1,4 +1,4 @@
-[v7r3-pre14]
+[v7r3-pre15]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
 NEW: (#5000) Initial support for Python 3 server installations
@@ -14,6 +14,8 @@ NEW: (#5062) provide some docs and add registerArgument method to register argum
 CHANGE: (#4903) Using former RSS State Machine as general State Machine
 FIX: (#5210) show extremely small values in pie plots
 CHANGE: (#5237) Use generic ObjectLoader.loadObjects() function in the specific Plotting.ObjectLoader class
+CHANGE: (#5244) dirac-configure: no upload attempt upon initial proxy generation
+CHANGE: (#5246) Drop MySQL._to_string() method
 
 *Configuration
 CHANGE: (#5110) Dropped Glue2Only and Glue2URLS options from Bdii2CSAgent, Glue2 is now the only way
@@ -38,6 +40,10 @@ CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent i
 NEW: (#4903) Added WMS (Jobs) State Machine
 CHANGE: (#5141) add an Aborted_HOUR column to the pilot efficiency table needed by the WebApp
 CHANGE: (#5178) JobMonitoring does not need to look into TaskQueue
+FIX: (#5246) mock _escapeString in Test_Agent_PilotStatusAgent to pass test
+FIX: (#5246) escape values in PilotAgentsDB
+CHANGE: (#5246) remove pilots before start Test_PilotsClient test
+FIX: (#5246) decode values using decode() method in JobDB
 
 *DMS
 CHANGE: (#5206) prints why dirac-dms-add-files failed
