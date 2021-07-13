@@ -156,12 +156,12 @@ class ARCComputingElement(ComputingElement):
     ComputingElement._addCEConfigDefaults(self)
 
   #############################################################################
-  def __writeXRSL(self, executableFile, processors=1):
+  def __writeXRSL(self, executableFile):
     """ Create the JDL for submission
     """
     diracStamp = makeGuid()[:8]
     # Evaluate the number of processors to allocate
-    nProcessors = processors if processors > 1 else self.ceParameters.get('NumberOfProcessors', processors)
+    nProcessors = self.ceParameters.get('NumberOfProcessors', 1)
 
     xrslMPAdditions = ''
     if nProcessors and nProcessors > 1:
@@ -203,7 +203,7 @@ class ARCComputingElement(ComputingElement):
     return S_OK()
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):
+  def submitJob(self, executableFile, proxy, numberOfJobs=1):
     """ Method to submit job
     """
 
@@ -231,7 +231,7 @@ class ARCComputingElement(ComputingElement):
       # The basic job description
       jobdescs = arc.JobDescriptionList()
       # Get the job into the ARC way
-      xrslString, diracStamp = self.__writeXRSL(executableFile, processors)
+      xrslString, diracStamp = self.__writeXRSL(executableFile)
       self.log.debug("XRSL string submitted : %s" % xrslString)
       self.log.debug("DIRAC stamp for job : %s" % diracStamp)
       # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast

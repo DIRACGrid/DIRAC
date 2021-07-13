@@ -55,6 +55,31 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p14]
+
+*Core
+FIX: (#5265) Avoid pinging the database every time MySQL.__escapeString is called
+NEW: (#5263) Support datetime.date objects in JEncode
+
+*Framework
+FIX: (#5254) ComponentSupervisionAgent - use socket.getfqdn() instead of gethostname()
+
+*WorkloadManagement
+FIX: (#5264) TypeError when running dirac-wms-pilot-job-info
+CHANGE: (#5248) When removing Deleted jobs, they could not be removed if they had still an attached
+        request. With this change, if the request is in final state, it will be removed and the job as well.
+
+*Transformation
+NEW: (#5265) Add columns keyword argument to TransformationClient.getTransformations
+NEW: (#5265) Add index on (TransformationID,Status) in TransformationFiles table
+NEW: (#5265) Add index on (TransformationID,ExternalStatus) in TransformationTasks table
+NEW: (#5265) Add index on (TransformationFamily) in Transformations table
+
+*Resources
+NEW: (#5256) SLURM can set gpus-per-task job requirement
+NEW: (#5256) added getNumberOfGPUs method to JobParameters utility
+FIX: (#5242) HTCondorCE: corrected ClassAd for requesting MP slots
+
 [v7r2p13]
 
 *Core

@@ -497,6 +497,7 @@ class Matcher (TestWMSTestCase):
         'OwnerGroup': 'prod',
         'OwnerDN': '/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser',
         'DIRACVersion': 'pippo',
+        'GridCE': 'some.grid.ce.org',
         'ReleaseVersion': 'blabla',
         'VirtualOrganization': 'LHCb',
         'PilotInfoReportedFlag': 'True',

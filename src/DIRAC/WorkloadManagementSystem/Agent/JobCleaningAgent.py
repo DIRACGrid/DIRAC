@@ -167,13 +167,27 @@ class JobCleaningAgent(AgentModule):
     self.log.info("Attempting to remove deleted jobs", "(%d)" % len(jobList))
 
     # remove from jobList those that have still Operations to do in RMS
-    res = ReqClient().getRequestIDsForJobs(jobList)
+    reqClient = ReqClient()
+    res = reqClient.getRequestIDsForJobs(jobList)
     if not res['OK']:
       return res
     if res['Value']['Successful']:
-      self.log.info("Some jobs won't be removed, as still having attached Requests",
-                    "(n=%d)" % len(res['Value']['Successful']))
-      jobList = list(set(jobList).difference(set(res['Value']['Successful'])))
+      notFinal = set()
+      # Check whether these requests are in a final status
+      for job, reqID in res['Value']['Successful'].items():
+        # If not, remove job from list to remove
+        if reqClient.getRequestStatus(reqID).get('Value') not in Request.FINAL_STATES:
+          # Keep that job
+          notFinal.add(job)
+        else:
+          # Remove the request, if failed, keep the job
+          res1 = reqClient.deleteRequest(reqID)
+          if not res1['OK']:
+            notFinal.add(job)
+      if notFinal:
+        self.log.info("Some jobs won't be removed, as still having Requests not in final status",
+                      "(n=%d)" % len(notFinal))
+        jobList = list(set(jobList) - notFinal)
     if not jobList:
       return S_OK()
 

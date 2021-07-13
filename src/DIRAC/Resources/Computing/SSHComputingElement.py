@@ -153,7 +153,7 @@ class SSH(object):
     try:
       import pexpect
       expectFlag = True
-    except Exception:
+    except BaseException:
       from DIRAC.Core.Utilities.Subprocess import shellCall
       expectFlag = False
 
@@ -406,9 +406,7 @@ class SSHComputingElement(ComputingElement):
         self.log.error('Failed to load the parallel library plugin %s', parallelLibraryName)
         return result
 
-    self.submitOptions = ''
-    if 'SubmitOptions' in self.ceParameters:
-      self.submitOptions = self.ceParameters['SubmitOptions']
+    self.submitOptions = self.ceParameters.get('SubmitOptions', '')
     self.removeOutput = True
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
@@ -629,17 +627,20 @@ class SSHComputingElement(ComputingElement):
     # numberOfNodes is treated as a string as it can contain values such as "2-4"
     # where 2 would represent the minimum number of nodes to allocate, and 4 the maximum
     numberOfNodes = self.ceParameters.get('NumberOfNodes', '1')
+    self.numberOfGPUs = self.ceParameters.get("NumberOfGPUs")
 
     # Collect command options
-    commandOptions = {'Executable': submitFile,
-                      'NJobs': numberOfJobs,
-                      'SubmitOptions': self.submitOptions,
-                      'JobStamps': jobStamps,
-                      'WholeNode': wholeNode,
-                      'NumberOfProcessors': numberOfProcessors,
-                      'NumberOfNodes': numberOfNodes,
-                      'Preamble': self.preamble}
-
+    commandOptions = {
+        "Executable": submitFile,
+        "NJobs": numberOfJobs,
+        "SubmitOptions": self.submitOptions,
+        "JobStamps": jobStamps,
+        "WholeNode": wholeNode,
+        "NumberOfProcessors": numberOfProcessors,
+        "NumberOfNodes": numberOfNodes,
+        "Preamble": self.preamble,
+        "NumberOfGPUs": self.numberOfGPUs,
+    }
     resultCommand = self.__executeHostCommand('submitJob', commandOptions, ssh=ssh, host=host)
     if not resultCommand['OK']:
       return resultCommand

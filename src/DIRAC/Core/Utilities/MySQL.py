@@ -456,17 +456,17 @@ class MySQL(object):
     except Exception:
       return False
 
-  def __escapeString(self, myString):
+  def __escapeString(self, myString, connection=None):
     """
     To be used for escaping any MySQL string before passing it to the DB
     this should prevent passing non-MySQL accepted characters to the DB
     It also includes quotation marks " around the given string
     """
-
-    retDict = self._getConnection()
-    if not retDict['OK']:
-      return retDict
-    connection = retDict['Value']
+    if connection is None:
+      retDict = self._getConnection()
+      if not retDict['OK']:
+        return retDict
+      connection = retDict['Value']
 
     if six.PY3 and isinstance(myString, bytes):
       myString = myString.decode()
@@ -543,6 +543,10 @@ class MySQL(object):
     Escapes all strings in the list of values provided
     """
     # self.log.debug('_escapeValues:', inValues)
+    retDict = self._getConnection()
+    if not retDict['OK']:
+      return retDict
+    connection = retDict['Value']
 
     inEscapeValues = []
 
@@ -551,14 +555,14 @@ class MySQL(object):
 
     for value in inValues:
       if isinstance(value, six.string_types):
-        retDict = self.__escapeString(value)
+        retDict = self.__escapeString(value, connection=connection)
         if not retDict['OK']:
           return retDict
         inEscapeValues.append(retDict['Value'])
       elif isinstance(value, (tuple, list)):
         tupleValues = []
         for val in value:
-          retDict = self.__escapeString(val)
+          retDict = self.__escapeString(val, connection=connection)
           if not retDict['OK']:
             return retDict
           tupleValues.append(retDict['Value'])
@@ -568,7 +572,7 @@ class MySQL(object):
       else:
         if six.PY3 and isinstance(value, bytes):
           value = value.decode()
-        retDict = self.__escapeString(str(value))
+        retDict = self.__escapeString(str(value), connection=connection)
         if not retDict['OK']:
           return retDict
         inEscapeValues.append(retDict['Value'])
