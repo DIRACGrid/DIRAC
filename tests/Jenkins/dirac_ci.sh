@@ -221,10 +221,20 @@ fullInstallDIRAC() {
   fi
 
   echo 'Content of etc/dirac.cfg:'
-  cat "${SERVERINSTALLDIR}/etc/dirac.cfg"
+  if [[ -e "${SERVERINSTALLDIR}/etc/dirac.cfg" ]]; then
+    cat "${SERVERINSTALLDIR}/etc/dirac.cfg"
+  fi
+  if [[ -e "${SERVERINSTALLDIR}/diracos/etc/dirac.cfg" ]]; then
+    cat "${SERVERINSTALLDIR}/diracos/etc/dirac.cfg"
+  fi
 
   echo 'Content of etc/Production.cfg (just after installSite):'
-  cat "${SERVERINSTALLDIR}/etc/Production.cfg"
+  if [[ -e "${SERVERINSTALLDIR}/etc/Production.cfg" ]]; then
+    cat "${SERVERINSTALLDIR}/etc/Production.cfg"
+  fi
+  if [[ -e "${SERVERINSTALLDIR}/diracos/etc/Production.cfg" ]]; then
+    cat "${SERVERINSTALLDIR}/diracos/etc/Production.cfg"
+  fi
 
   # Dealing with security stuff
   # generateCertificates
