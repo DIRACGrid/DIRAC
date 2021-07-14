@@ -159,7 +159,7 @@ class Operations(object):
   __cacheVersion = 0
   __cacheLock = LockRing.LockRing().getLock()
 
-  def __init__(self, vo=None, group=None, setup=None, mainSection=''):
+  def __init__(self, vo=None, group=None, setup=None, mainSection=None):
     """ Determination of VO/setup and generation a list of relevant directories
 
         :param str vo: VO name
@@ -171,6 +171,7 @@ class Operations(object):
     self._vo = getVOForGroup(group or '') or vo or getVOfromProxyGroup().get('Value', '')
     self._setup = setup or getSetup()
     self._group = group
+    self._mainPath = mainSection or ''
 
     # Define the configuration sections that will be merged in the following order:
     # -> /Operations/Defaults/
@@ -184,13 +185,13 @@ class Operations(object):
     # -> /Operations/<vo>/Defaults/<mainSection>/
     # -> /Operations/<vo>/<setup>/<mainSection>/
 
-    self.__paths = [os.path.join('/', mainSection)] if mainSection else [os.path.join(basePath, 'Defaults')]
+    self.__paths = [os.path.join('/', self._mainPath)] if self._mainPath else [os.path.join(basePath, 'Defaults')]
     if self._setup:
-      self.__paths.append(os.path.join(basePath, self._setup, mainSection))
+      self.__paths.append(os.path.join(basePath, self._setup, self._mainPath))
     if self._vo:
-      self.__paths.append(os.path.join(basePath, self._vo, 'Defaults', mainSection))
+      self.__paths.append(os.path.join(basePath, self._vo, 'Defaults', self._mainPath))
       if self._setup:
-        self.__paths.append(os.path.join(basePath, self._vo, self._setup, mainSection))
+        self.__paths.append(os.path.join(basePath, self._vo, self._setup, self._mainPath))
 
   def _cacheExpired(self):
     """ Cache expired or not
@@ -211,7 +212,7 @@ class Operations(object):
         Operations.__cache = {}
         Operations.__cacheVersion = currentVersion
 
-      cacheKey = (self._vo, self._setup)
+      cacheKey = (self._vo, self._setup, self._mainPath)
       if cacheKey in Operations.__cache:
         return Operations.__cache[cacheKey]
 
@@ -256,7 +257,7 @@ class Operations(object):
       return S_ERROR("%s in Operations is not a section" % sectionPath)
     return S_OK(sectionCFG)
 
-  def getSections(self, sectionPath, listOrdered=False):
+  def getSections(self, sectionPath='/', listOrdered=False):
     """ Get sections
 
         :param str sectionPath: section path
@@ -267,7 +268,7 @@ class Operations(object):
     result = self._getCFG(sectionPath)
     return S_OK(result['Value'].listSections(listOrdered)) if result['OK'] else result
 
-  def getOptions(self, sectionPath, listOrdered=False):
+  def getOptions(self, sectionPath='/', listOrdered=False):
     """ Get options
 
         :param str sectionPath: section path
