@@ -192,7 +192,7 @@ Operations
         btestOpt = btestOptVal
       }
       specSection
-      { 
+      {
         option = btestVal
         section
         {
@@ -236,7 +236,7 @@ Operations
                                                           'defOpt': 'defOptVal',
                                                           'secOptA': 'defSecOptA',
                                                           'secOptB': 'bproSecOptB'},
-                                              'specSection': {'option': 'bproVal', 
+                                              'specSection': {'option': 'bproVal',
                                                               'section': {'bproOpt': 'bproOptVal',
                                                                           'bdefOpt': 'bdefOptVal',
                                                                           'proOpt': 'proOptVal',
@@ -415,14 +415,11 @@ def test_Operations(mocker, vo, setup, mainSection, cfg, optionPath, sectionPath
 
   mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.gConfigurationData.sync', mockSync)
   mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.gConfigurationData.mergedCFG', mergedCFG)
-  mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.getVOfromProxyGroup', side_effect=mockGetVOfromProxyGroup)
+  mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.getVOfromProxyGroup',
+               side_effect=mockGetVOfromProxyGroup)
   mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.getSetup', side_effect=mockGetSetup)
 
   oper = Operations(vo=vo, setup=setup, mainSection=mainSection)
-
-  # Print origin result
-  print("(%s, %s, %s, %s," % (("'%s'" % vo) if vo else None, ("'%s'" % setup) if setup else None, ("'%s'" % mainSection) if mainSection else None, oper._getCFG()['Value'].getAsDict()))
-  print("     '%s', '%s')," % (oper.getOptionPath('option'), oper.getSectionPath('section')))
 
   def checkValue(data, path=''):
     # Test getSections
