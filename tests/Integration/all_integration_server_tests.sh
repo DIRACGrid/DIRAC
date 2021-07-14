@@ -16,6 +16,7 @@ pytest "${THIS_DIR}/AccountingSystem/Test_Plots.py" |& tee -a "${SERVER_TEST_OUT
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Configuration TESTS ****\n"
 pytest "${THIS_DIR}/ConfigurationSystem/Test_Helpers.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${THIS_DIR}/ConfigurationSystem/Test_Operations.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Core TESTS ****\n"
