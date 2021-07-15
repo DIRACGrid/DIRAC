@@ -99,7 +99,7 @@ class JobsStateMachine(StateMachine):
                                   [RUNNING, FAILED, KILLED],
                                   defState=STALLED),
                    RUNNING: State(7,
-                                  [STALLED, DONE, FAILED, COMPLETING, KILLED],
+                                  [STALLED, DONE, FAILED, COMPLETING, KILLED, RECEIVED],
                                   defState=RUNNING),
                    RESCHEDULED: State(6,
                                       [WAITING, RECEIVED, DELETED],
