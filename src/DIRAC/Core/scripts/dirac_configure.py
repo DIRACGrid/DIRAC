@@ -63,6 +63,7 @@ __RCSID__ = "$Id$"
 
 class Params(object):
   def __init__(self):
+    self.issuer = None
     self.logLevel = None
     self.setup = None
     self.configurationServer = None
@@ -172,6 +173,11 @@ class Params(object):
     DIRAC.gConfig.setOptionValue(cfgInstallPath('Extensions'), self.extensions)
     return DIRAC.S_OK()
 
+  def setIssuer(self, optionValue):
+    os.environ['DIRAC_USE_ACCESS_TOKEN'] = 'True'
+    self.issuer = optionValue
+    DIRAC.gConfig.setOptionValue('/DIRAC/Security/Authorization/issuer', self.issuer)
+    return DIRAC.S_OK()
 
 def _runConfigurationWizard(setups, defaultSetup):
   """The implementation of the configuration wizard"""
@@ -289,7 +295,75 @@ def main():
     runDiracConfigure(params)
 
 
+def login(params):
+  from prompt_toolkit import prompt, print_formatted_text, HTML
+  from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+  from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (writeTokenDictToTokenFile,
+                                                                        getTokenFileLocation,
+                                                                        readTokenFromFile)
+  # Init authorization client
+  result = IdProviderFactory().getIdProvider('DIRACCLI', issuer=params.issuer, scope=' ')
+  if not result['OK']:
+    return result
+  idpObj = result['Value']
+
+  # Get token file path
+  tokenFile = getTokenFileLocation()
+
+  # Submit Device authorisation flow
+  result = idpObj.deviceAuthorization()
+  if not result['OK']:
+    return result
+
+  # Revoke old tokens from token file
+  if os.path.isfile(tokenFile):
+    result = readTokenFromFile(tokenFile)
+    if not result['OK']:
+      DIRAC.gLogger.warn(result['Message'])
+    elif result['Value']:
+      oldToken = result['Value']
+      for tokenType in ['access_token', 'refresh_token']:
+        result = idpObj.revokeToken(oldToken[tokenType], tokenType)
+        if result['OK']:
+          DIRAC.gLogger.debug('%s is revoked from' % tokenType, tokenFile)
+        else:
+          DIRAC.gLogger.warn(result['Message'])
+
+  # Save new tokens to token file
+  result = writeTokenDictToTokenFile(idpObj.token, tokenFile)
+  if not result['OK']:
+    return result
+  DIRAC.gLogger.debug('New token is saved to %s.' % result['Value'])
+
+  # Get server setups and master CS server URL
+  csURL = idpObj.get_metadata("configuration_server")
+  setups = idpObj.get_metadata("setups")
+
+  if len(setups) == 1 and csURL:
+    # If setup only one dont ask user
+    params.setSetup(setups[0])
+    params.setServer(csURL)
+  elif setups and csURL:
+    # Ask the user for the appropriate configuration settings
+    while True:
+      result = _runConfigurationWizard({setup: csURL for setup in setups}, setups[0])
+      if result:
+        break
+      print_formatted_text(HTML(
+          "<red>Wizard failed, retrying...</red> (press Control + C to exit)\n"
+      ))
+    # Apply the arguments to the params object
+    setup, csURL = result
+    params.setSetup(setup)
+    params.setServer(csURL)
+
+  confirm = prompt(HTML("<b>Do you want to use tokens instead of certificates by default?</b> "), default="no")
+  return DIRAC.S_OK('yes') if confirm.lower() in ["y", "yes"] else DIRAC.S_OK(None)
+
+
 def runDiracConfigure(params):
+  if six.PY3:
+    Script.registerSwitch("", "login=", "Set DIRAC authorization endpoint", params.setIssuer)
   Script.registerSwitch("S:", "Setup=", "Set <setup> as DIRAC setup", params.setSetup)
   Script.registerSwitch("e:", "Extensions=", "Set <extensions> as DIRAC extensions", params.setExtensions)
   Script.registerSwitch("C:", "ConfigurationServer=", "Set <server> as DIRAC configuration server", params.setServer)
@@ -319,6 +393,18 @@ def runDiracConfigure(params):
   Script.registerSwitch("O:", "output=", "output configuration file", params.setOutput)
 
   Script.parseCommandLine(ignoreErrors=True)
+
+  # Use token auth
+  if params.issuer:
+    result = login(params)
+    if not result['OK']:
+      DIRAC.gLogger.error('Authorization failed: %s' % result['Message'])
+      DIRAC.exit(1)
+    useTokens = result['Value']
+    if useTokens:
+      DIRAC.gConfig.setOptionValue('/DIRAC/Security/UseTokens', useTokens)
+    else:
+      DIRAC.gLogger.notice('To use tokens, please, set "/DIRAC/Security/UseTokens=yes".')
 
   if not params.logLevel:
     params.logLevel = DIRAC.gConfig.getValue(cfgInstallPath('LogLevel'), '')
