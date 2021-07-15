@@ -19,18 +19,18 @@ __RCSID__ = "$Id$"
 import os
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   unit = 'GB'
-  DIRACScript.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
+  Script.registerSwitch("u:", "Unit=", "   Unit to use [default %s] (MB,GB,TB,PB)" % unit)
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
-                                "LFN:       Logical File Name"))
-  DIRACScript.registerArgument(["LFN:       Logical File Name"], mandatory=False)
-  unprSwitches, args = DIRACScript.parseCommandLine(ignoreErrors=False)
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Name"))
+  Script.registerArgument(["LFN:       Logical File Name"], mandatory=False)
+  unprSwitches, args = Script.parseCommandLine(ignoreErrors=False)
 
   for switch in unprSwitches:
     if switch[0].lower() == "u" or switch[0].lower() == "unit":

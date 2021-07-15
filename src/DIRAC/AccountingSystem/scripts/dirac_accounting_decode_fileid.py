@@ -18,15 +18,15 @@ from six.moves.urllib_parse import parse_qs
 from six.moves.urllib import parse as urlparse
 
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
-  DIRACScript.registerArgument(["URL: encoded URL of a DIRAC Accounting plot"])
+  Script.registerArgument(["URL: encoded URL of a DIRAC Accounting plot"])
 
-  _, fileIds = DIRACScript.parseCommandLine()
+  _, fileIds = Script.parseCommandLine()
 
   for fileId in fileIds:
     # Try to find if it's a url

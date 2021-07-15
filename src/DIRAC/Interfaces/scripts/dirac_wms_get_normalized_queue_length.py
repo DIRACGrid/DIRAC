@@ -20,15 +20,15 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import queueNormalizedCPU
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["Queue: GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["Queue: GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   exitCode = 0
 

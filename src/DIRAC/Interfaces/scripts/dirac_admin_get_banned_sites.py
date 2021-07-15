@@ -16,12 +16,12 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import gLogger, exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

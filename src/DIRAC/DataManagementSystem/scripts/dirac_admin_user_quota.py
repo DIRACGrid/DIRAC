@@ -19,15 +19,15 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["User: list of SEs or comma-separated SEs"], mandatory=False)
+  Script.registerArgument(["User: list of SEs or comma-separated SEs"], mandatory=False)
 
-  _, users = DIRACScript.parseCommandLine()
+  _, users = Script.parseCommandLine()
 
   from DIRAC import gLogger, gConfig
 

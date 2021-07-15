@@ -9,18 +9,18 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.registerSwitch('', 'Full', '   Print full list of requests')
-  DIRACScript.parseCommandLine()
+  Script.registerSwitch('', 'Full', '   Print full list of requests')
+  Script.parseCommandLine()
   from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
   fullPrint = False
 
-  for switch in DIRACScript.getUnprocessedSwitches():
+  for switch in Script.getUnprocessedSwitches():
     if switch[0] == 'Full':
       fullPrint = True
 

@@ -13,15 +13,15 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("PFN:      Physical File Name or file containing PFNs")
-  DIRACScript.registerArgument("SE:       Valid DIRAC SE")
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument("PFN:      Physical File Name or file containing PFNs")
+  Script.registerArgument("SE:       Valid DIRAC SE")
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   if len(args) > 2:
     print('Only one PFN SE pair will be considered')

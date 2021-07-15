@@ -17,14 +17,14 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["JobID:    DIRAC ID of the Job"])
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["JobID:    DIRAC ID of the Job"])
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

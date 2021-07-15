@@ -22,10 +22,10 @@ __RCSID__ = "$Id$"
 import argparse
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   parser = argparse.ArgumentParser(
       description=__doc__,

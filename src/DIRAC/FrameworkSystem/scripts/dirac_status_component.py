@@ -13,27 +13,27 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.disableCS()
+  Script.disableCS()
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(" System:  Name of the system for the component (default *: all)",
-                               mandatory=False, default='*')
-  DIRACScript.registerArgument(("Service: Name of the particular component (default *: all)",
-                                "Agent:   Name of the particular component (default *: all)"),
-                               mandatory=False, default='*')
-  _, args = DIRACScript.parseCommandLine()
-  system, component = DIRACScript.getPositionalArgs(group=True)
+  Script.registerArgument(" System:  Name of the system for the component (default *: all)",
+                          mandatory=False, default='*')
+  Script.registerArgument(("Service: Name of the particular component (default *: all)",
+                           "Agent:   Name of the particular component (default *: all)"),
+                          mandatory=False, default='*')
+  _, args = Script.parseCommandLine()
+  system, component = Script.getPositionalArgs(group=True)
 
   from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 
   __RCSID__ = "$Id$"
 
   if len(args) > 2:
-    DIRACScript.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   if len(args) > 0:
     system = args[0]

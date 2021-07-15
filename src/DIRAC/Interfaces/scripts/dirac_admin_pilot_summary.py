@@ -32,12 +32,12 @@ __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

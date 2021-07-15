@@ -13,23 +13,23 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("requestName:  a request name")
-  DIRACScript.registerArgument("LFN:          logical file name")
-  DIRACScript.registerArgument("localFile:    local file you want to put")
-  DIRACScript.registerArgument("targetSE:     target SE")
-  DIRACScript.parseCommandLine()
+  Script.registerArgument("requestName:  a request name")
+  Script.registerArgument("LFN:          logical file name")
+  Script.registerArgument("localFile:    local file you want to put")
+  Script.registerArgument("targetSE:     target SE")
+  Script.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  requestName, LFN, PFN, targetSE = DIRACScript.getPositionalArgs(group=True)
+  requestName, LFN, PFN, targetSE = Script.getPositionalArgs(group=True)
 
   if not os.path.isabs(LFN):
     gLogger.error("LFN should be absolute path!!!")

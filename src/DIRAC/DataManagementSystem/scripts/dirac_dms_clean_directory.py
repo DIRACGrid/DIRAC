@@ -17,19 +17,19 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as DIRACExit, gLogger
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
-                                "LFN:       Logical File Name"))
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Name"))
 
-  DIRACScript.parseCommandLine()
+  Script.parseCommandLine()
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName = DIRACScript.getPositionalArgs(group=True)
+  inputFileName = Script.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName, 'r').read().splitlines())]

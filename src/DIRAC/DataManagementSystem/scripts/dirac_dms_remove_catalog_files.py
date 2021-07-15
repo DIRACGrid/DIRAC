@@ -15,17 +15,17 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import exit as dexit
 from DIRAC import gLogger
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
-                                "LFN:       Logical File Names"))
-  DIRACScript.parseCommandLine()
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Names"))
+  Script.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
   allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)
@@ -47,7 +47,7 @@ def main():
   import os
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = DIRACScript.getPositionalArgs()
+  args = Script.getPositionalArgs()
 
   inputFileName = args[0]
 

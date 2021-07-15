@@ -11,16 +11,16 @@ __RCSID__ = "$Id$"
 
 import sys
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 # Invariants:
 # * root does not end with "/" or root is "/"
 # * root starts with "/"
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.parseCommandLine()
+  Script.parseCommandLine()
   from DIRAC.ConfigurationSystem.Client.CSShellCLI import CSShellCLI
   shell = CSShellCLI()
   shell.cmdloop()

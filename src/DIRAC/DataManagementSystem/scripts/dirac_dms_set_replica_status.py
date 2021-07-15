@@ -8,17 +8,17 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(("LFN:      LFN",
-                                "File:     File name containing a list of affected LFNs"))
-  DIRACScript.registerArgument(" SE:       Name of Storage Element")
-  DIRACScript.registerArgument(" Status:   New Status for the replica")
-  DIRACScript.parseCommandLine(ignoreErrors=False)
+  Script.registerArgument(("LFN:      LFN",
+                           "File:     File name containing a list of affected LFNs"))
+  Script.registerArgument(" SE:       Name of Storage Element")
+  Script.registerArgument(" Status:   New Status for the replica")
+  Script.parseCommandLine(ignoreErrors=False)
 
   import DIRAC
   from DIRAC import gLogger
@@ -26,7 +26,7 @@ def main():
   import os
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName, storageElement, status = DIRACScript.getPositionalArgs(group=True)
+  inputFileName, storageElement, status = Script.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

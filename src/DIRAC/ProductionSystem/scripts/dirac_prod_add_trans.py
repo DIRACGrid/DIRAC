@@ -10,16 +10,16 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("prodID:         Production ID")
-  DIRACScript.registerArgument("transID:        Transformation ID")
-  DIRACScript.registerArgument("parentTransID:  Parent Transformation ID", default='', mandatory=False)
-  _, args = DIRACScript.parseCommandLine()
+  Script.registerArgument("prodID:         Production ID")
+  Script.registerArgument("transID:        Transformation ID")
+  Script.registerArgument("parentTransID:  Parent Transformation ID", default='', mandatory=False)
+  _, args = Script.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -28,9 +28,9 @@ def main():
   transClient = TransformationClient()
 
   # get arguments
-  prodID, transID, parentTransID = DIRACScript.getPositionalArgs(group=True)
+  prodID, transID, parentTransID = Script.getPositionalArgs(group=True)
   if len(args) > 3:
-    DIRACScript.showHelp(exitCode=1)
+    Script.showHelp(exitCode=1)
 
   res = transClient.getTransformation(transID)
   if not res['OK']:

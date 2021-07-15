@@ -15,14 +15,14 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["File:     File Name"])
-  _, files = DIRACScript.parseCommandLine(ignoreErrors=False)
+  Script.registerArgument(["File:     File Name"])
+  _, files = Script.parseCommandLine(ignoreErrors=False)
 
   exitCode = 0
 

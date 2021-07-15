@@ -33,7 +33,7 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 extendedPrint = False
 
@@ -43,10 +43,10 @@ def setExtendedPrint(_arg):
   extendedPrint = True
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.Dirac import Dirac

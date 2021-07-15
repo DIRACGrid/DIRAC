@@ -12,7 +12,7 @@ import os
 import time
 from hashlib import md5
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 def getLFNList(arg):
@@ -25,19 +25,19 @@ def getLFNList(arg):
   return list(set(lfnList))
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(" sourceSE:   source SE")
-  DIRACScript.registerArgument(" LFN:        LFN or file containing a List of LFNs")
-  DIRACScript.registerArgument(["targetSE:   target SE"])
-  DIRACScript.parseCommandLine()
+  Script.registerArgument(" sourceSE:   source SE")
+  Script.registerArgument(" LFN:        LFN or file containing a List of LFNs")
+  Script.registerArgument(["targetSE:   target SE"])
+  Script.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = DIRACScript.getPositionalArgs()
+  args = Script.getPositionalArgs()
 
   sourceSE = args[0]
   lfnList = getLFNList(args[1])

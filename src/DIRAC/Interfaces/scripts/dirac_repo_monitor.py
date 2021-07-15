@@ -9,14 +9,14 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("RepoDir:  Location of Job Repository")
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=False)
+  Script.registerArgument("RepoDir:  Location of Job Repository")
+  _, args = Script.parseCommandLine(ignoreErrors=False)
 
   repoLocation = args[0]
   from DIRAC.Interfaces.API.Dirac import Dirac

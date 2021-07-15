@@ -19,15 +19,15 @@ __RCSID__ = "$Id$"
 import os
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.registerSwitch("D:", "Dir=", "Store the output in this directory")
+  Script.registerSwitch("D:", "Dir=", "Store the output in this directory")
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["JobID:    DIRAC Job ID"])
-  sws, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["JobID:    DIRAC Job ID"])
+  sws, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()

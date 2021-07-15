@@ -8,20 +8,20 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("GUIDs: GUIDs separated by a comma")
-  DIRACScript.parseCommandLine()
+  Script.registerArgument("GUIDs: GUIDs separated by a comma")
+  Script.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = DIRACScript.getPositionalArgs()
+  args = Script.getPositionalArgs()
   guids = args[0]
 
   try:

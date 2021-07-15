@@ -19,14 +19,14 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.ServiceReactor import ServiceReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
 
-@DIRACScript()
+@Script()
 def main():
-  localCfg = DIRACScript.localCfg
+  localCfg = Script.localCfg
   positionalArgs = localCfg.getPositionalArguments()
   if len(positionalArgs) == 0:
     gLogger.fatal("You must specify which server to run!")

@@ -9,14 +9,14 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["DB: Name of the Database"])
-  _, args = DIRACScript.parseCommandLine()
+  Script.registerArgument(["DB: Name of the Database"])
+  _, args = Script.parseCommandLine()
 
   # Script imports
   from DIRAC import gConfig

@@ -15,22 +15,22 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC import exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
                                 "LFN:       Logical File Names"))
-  DIRACScript.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
-  DIRACScript.parseCommandLine()
+  Script.registerArgument(["Catalog:   file catalog plug-ins"], mandatory=False)
+  Script.parseCommandLine()
 
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
   import os
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName, catalogs = DIRACScript.getPositionalArgs(group=True)
+  inputFileName, catalogs = Script.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

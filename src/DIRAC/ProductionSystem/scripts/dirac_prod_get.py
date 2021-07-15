@@ -12,14 +12,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("prodID: Production ID")
-  _, args = DIRACScript.parseCommandLine()
+  Script.registerArgument("prodID: Production ID")
+  _, args = Script.parseCommandLine()
 
   from DIRAC.Core.Utilities.PrettyPrint import printTable
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient

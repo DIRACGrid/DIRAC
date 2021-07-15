@@ -11,28 +11,27 @@ __RCSID__ = "ea64b42 (2012-07-29 16:45:05 +0200) ricardo <Ricardo.Graciani@gmail
 import os
 from hashlib import md5
 import time
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(" SE:   StorageElement|All")
-  DIRACScript.registerArgument(["LFN:  LFN or file containing a List of LFNs"])
-  DIRACScript.parseCommandLine(ignoreErrors=False)
+  Script.registerArgument(" SE:   StorageElement|All")
+  Script.registerArgument(["LFN:  LFN or file containing a List of LFNs"])
+  Script.parseCommandLine(ignoreErrors=False)
 
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  args = DIRACScript.getPositionalArgs()
+  args = Script.getPositionalArgs()
 
   targetSE = args.pop(0)
 
   lfns = []
   for inputFileName in args:
     if os.path.exists(inputFileName):
-      inputFile = open(inputFileName, 'r')
-      string = inputFile.read()
-      inputFile.close()
+      with open(inputFileName, 'r') as inputFile:
+        string = inputFile.read()
       lfns.extend([lfn.strip() for lfn in string.splitlines()])
     else:
       lfns.append(inputFileName)
@@ -45,7 +44,7 @@ def main():
     if not se.valid:
       print(se.errorReason)
       print()
-      DIRACScript.showHelp()
+      Script.showHelp()
 
   from DIRAC.RequestManagementSystem.Client.Request import Request
   from DIRAC.RequestManagementSystem.Client.Operation import Operation

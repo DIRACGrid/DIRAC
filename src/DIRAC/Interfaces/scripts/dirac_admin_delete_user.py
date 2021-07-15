@@ -17,15 +17,15 @@ __RCSID__ = "$Id$"
 
 import six
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["User:     User name"])
+  Script.registerArgument(["User:     User name"])
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

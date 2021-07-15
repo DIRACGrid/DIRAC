@@ -10,12 +10,12 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.parseCommandLine()
+  Script.parseCommandLine()
 
   from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 

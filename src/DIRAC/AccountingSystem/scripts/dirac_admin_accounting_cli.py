@@ -12,13 +12,13 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.localCfg.addDefaultEntry("LogLevel", "info")
-  DIRACScript.parseCommandLine()
+  Script.localCfg.addDefaultEntry("LogLevel", "info")
+  Script.parseCommandLine()
 
   from DIRAC.AccountingSystem.Client.AccountingCLI import AccountingCLI
 

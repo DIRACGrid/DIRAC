@@ -9,14 +9,14 @@ from __future__ import division
 
 import sys
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["transID: transformation ID"])
-  _, args = DIRACScript.parseCommandLine()
+  Script.registerArgument(["transID: transformation ID"])
+  _, args = Script.parseCommandLine()
 
   transIDs = [int(arg) for arg in args]
 

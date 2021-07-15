@@ -17,16 +17,16 @@ from __future__ import division
 from __future__ import print_function
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 __RCSID__ = "$Id$"
 
 
-@DIRACScript()
+@Script()
 def main():
-  DIRACScript.addDefaultOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
-  DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.addDefaultOptionValue('/DIRAC/Security/SkipCAChecks', 'yes')
+  Script.parseCommandLine(ignoreErrors=True)
 
   bdc = BundleDeliveryClient()
 

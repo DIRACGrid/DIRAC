@@ -12,22 +12,22 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC import exit as DIRACExit, gLogger
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("ShifterRole:  Name of the shifter role, e.g. DataManager")
-  DIRACScript.registerArgument("UserName:     A user name, as registered in Registry section")
-  DIRACScript.registerArgument("DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)")
-  DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument("ShifterRole:  Name of the shifter role, e.g. DataManager")
+  Script.registerArgument("UserName:     A user name, as registered in Registry section")
+  Script.registerArgument("DIRACGroup:   DIRAC Group, e.g. diracAdmin (the user has to have this role)")
+  Script.parseCommandLine(ignoreErrors=True)
 
   csAPI = CSAPI()
 
-  shifterRole, userName, diracGroup = DIRACScript.getPositionalArgs(group=True)
+  shifterRole, userName, diracGroup = Script.getPositionalArgs(group=True)
   res = csAPI.addShifter({shifterRole: {'User': userName, 'Group': diracGroup}})
   if not res['OK']:
     gLogger.error("Could not add shifter", ": " + res['Message'])

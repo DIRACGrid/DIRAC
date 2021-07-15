@@ -13,17 +13,17 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as dexit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gLogger
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(("LocalFile: Path to local file containing LFNs",
-                                "LFN:       Logical File Names"))
-  DIRACScript.registerArgument(" SE:        Storage element")
-  DIRACScript.parseCommandLine()
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Names"))
+  Script.registerArgument(" SE:        Storage element")
+  Script.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
   allowUsers = Operations().getValue("DataManagement/AllowUserReplicaManagement", False)
@@ -43,7 +43,7 @@ def main():
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   dm = DataManager()
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  inputFileName, storageElementName = DIRACScript.getPositionalArgs(group=True)
+  inputFileName, storageElementName = Script.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

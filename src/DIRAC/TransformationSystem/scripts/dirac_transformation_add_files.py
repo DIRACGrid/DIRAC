@@ -10,19 +10,19 @@ __RCSID__ = "$Id$"
 
 import os
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("TransID: transformation ID")
-  DIRACScript.registerArgument(("LFN: LFN", "FileName: file containing LFNs"))
-  DIRACScript.parseCommandLine()
+  Script.registerArgument("TransID: transformation ID")
+  Script.registerArgument(("LFN: LFN", "FileName: file containing LFNs"))
+  Script.parseCommandLine()
 
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  tID, inputFileName = DIRACScript.getPositionalArgs(group=True)
+  tID, inputFileName = Script.getPositionalArgs(group=True)
 
   # get arguments
   lfns = []

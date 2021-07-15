@@ -14,10 +14,10 @@ __RCSID__ = "$Id$"
 
 import os
 import sys
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
 
   if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() not in ('yes', 'true'):
@@ -37,7 +37,7 @@ def main():
   if gConfigurationData.isMaster():
     gRefresher.disable()
 
-  localCfg = DIRACScript.localCfg
+  localCfg = Script.localCfg
   localCfg.addMandatoryEntry("/DIRAC/Setup")
   localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
   localCfg.addDefaultEntry("LogLevel", "INFO")

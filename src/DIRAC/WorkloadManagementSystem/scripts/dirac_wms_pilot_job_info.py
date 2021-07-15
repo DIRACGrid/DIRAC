@@ -12,7 +12,7 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 def _stringInList(subStr, sList):
@@ -23,13 +23,13 @@ def _stringInList(subStr, sList):
   return resList
 
 
-@DIRACScript()
+@Script()
 def main():
   parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
-  DIRACScript.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
+  Script.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["PilotID:  Grid ID of the pilot"])
-  switches, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["PilotID:  Grid ID of the pilot"])
+  switches, args = Script.parseCommandLine(ignoreErrors=True)
   for switch in switches:
     if switch[0] == 'Parameters':
       parameters += [par for par in switch[1].split(',')]

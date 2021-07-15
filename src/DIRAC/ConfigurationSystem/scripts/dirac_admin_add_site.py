@@ -19,22 +19,22 @@ __RCSID__ = "$Id$"
 
 import six
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("DIRACSiteName: "
-                               "Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)")
-  DIRACScript.registerArgument("GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
-  DIRACScript.registerArgument(["CE:           Name of the CE to be included in the site (ie: ce111.cern.ch)"])
-  DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument("DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY "
+                          "(ie: LCG.CERN.ch)")
+  Script.registerArgument("GridSiteName:  Name of the site in the Grid (ie: CERN-PROD)")
+  Script.registerArgument(["CE:           Name of the CE to be included in the site (ie: ce111.cern.ch)"])
+  Script.parseCommandLine(ignoreErrors=True)
 
-  diracSiteName, gridSiteName, ces = DIRACScript.getPositionalArgs(group=True)
+  diracSiteName, gridSiteName, ces = Script.getPositionalArgs(group=True)
 
   try:
     diracGridType, place, country = diracSiteName.split('.')

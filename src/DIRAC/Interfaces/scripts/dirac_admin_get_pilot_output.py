@@ -17,14 +17,14 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["PilotID:  Grid ID of the pilot"])
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  Script.registerArgument(["PilotID:  Grid ID of the pilot"])
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

@@ -19,17 +19,17 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument("LFN:      Logical File Name or file containing LFNs")
-  DIRACScript.registerArgument("SE:       Valid DIRAC SE")
-  DIRACScript.registerArgument("PROTO:    Optional protocol for accessURL", default=False, mandatory=False)
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
-  lfn, seName, proto = DIRACScript.getPositionalArgs(group=True)
+  Script.registerArgument("LFN:      Logical File Name or file containing LFNs")
+  Script.registerArgument("SE:       Valid DIRAC SE")
+  Script.registerArgument("PROTO:    Optional protocol for accessURL", default=False, mandatory=False)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
+  lfn, seName, proto = Script.getPositionalArgs(group=True)
 
   # pylint: disable=wrong-import-position
   from DIRAC.Interfaces.API.Dirac import Dirac

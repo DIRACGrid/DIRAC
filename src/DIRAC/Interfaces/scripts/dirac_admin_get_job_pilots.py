@@ -34,15 +34,15 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  DIRACScript.registerArgument(["JobID:    DIRAC ID of the Job"])
+  Script.registerArgument(["JobID:    DIRAC ID of the Job"])
   # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
-  _, args = DIRACScript.parseCommandLine(ignoreErrors=True)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
