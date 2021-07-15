@@ -55,7 +55,14 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p15]
+
+*WorkloadManagement
+FIX: (#5270) SandboxStoreClient tarfile mode
+
 [v7r2p14]
+
+NEW: Patch release is broken, use v7r2p15 instead
 
 *Core
 FIX: (#5265) Avoid pinging the database every time MySQL.__escapeString is called
