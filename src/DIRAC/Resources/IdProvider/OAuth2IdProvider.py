@@ -256,7 +256,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
       token = self.token
 
     if not payload and token:
-      payload = OAuth2Token(dict(token)).get_payload()
+      payload = OAuth2Token(token).get_payload()
 
     credDict = self.parseBasic(payload)
     if not credDict.get('DIRACGroups'):
@@ -363,7 +363,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         :param dict response: response on request to get user profile
         :param object session: session
 
-        :return: S_OK(dict)/S_ERROR()
+        :return: S_OK((dict, dict))/S_ERROR()
     """
     response = createOAuth2Request(response)
 
@@ -377,8 +377,10 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     self.fetchToken(authorization_response=response.uri, code_verifier=session.get('code_verifier'))
 
     result = self.verifyToken(self.token['access_token'])
-    if result['OK']:
-      result = self.researchGroup(result['Value'])
+    if not result['OK']:
+      return result
+    payload = result['Value']
+    result = self.researchGroup(payload)
     if not result['OK']:
       return result
     credDict = result['Value']
@@ -387,7 +389,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
     # Store token
     self.token['user_id'] = credDict['ID']
 
-    return S_OK(credDict)
+    return S_OK((credDict, payload))
 
   def submitDeviceCodeAuthorizationFlow(self, group=None):
     """ Submit authorization flow
@@ -448,7 +450,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
         self.token = token
         return S_OK(token)
       if token['error'] != 'authorization_pending':
-        return S_ERROR(token['error'] + ' : ' + token.get('description', ''))
+        return S_ERROR((token.get('error') or 'unknown') + ' : ' + (token.get('error_description') or ''))
 
   def getGroupScopes(self, group):
     """ Get group scopes

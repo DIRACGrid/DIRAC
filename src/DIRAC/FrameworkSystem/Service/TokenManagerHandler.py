@@ -133,6 +133,8 @@ class TokenManagerHandler(TornadoService):
     """
     userID = []
     provider = Registry.getIdPForGroup(userGroup)
+    if not provider:
+      return S_ERROR('The %s group belongs to the VO that is not tied to any Identity Provider.')
 
     result = self.idps.getIdProvider(provider)
     if not result['OK']:

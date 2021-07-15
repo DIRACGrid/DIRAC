@@ -71,8 +71,10 @@ class IdProviderFactory(object):
 
         :return: S_OK(IdProvider)/S_ERROR()
     """
+    if not name:
+      return S_ERROR('Identity Provider client name must be not None.')
     # Get Authorization Server metadata
-    asMetaDict = collectMetadata()
+    asMetaDict = collectMetadata(kwargs.get('issuer'), ignoreErrors=True)
     self.log.debug('Search configuration for', name)
     clients = getDIRACClients()
     if name in clients:

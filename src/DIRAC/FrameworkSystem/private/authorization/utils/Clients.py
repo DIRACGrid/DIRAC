@@ -9,6 +9,7 @@ import pprint
 from DIRAC import gConfig, gLogger
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
+from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 
 __RCSID__ = "$Id$"
 
@@ -29,10 +30,8 @@ def getDIRACClients():
       :return: S_OK(dict)/S_ERROR()
   """
   clients = DEFAULT_CLIENTS.copy()
-  result = gConfig.getOptionsDictRecursively('/DIRAC/Security/Authorization/Clients')
-  if not result['OK']:
-    gLogger.error(result['Message'])
-  confClients = result.get('Value', {})
+  result = getAuthorizationServerMetadata(ignoreErrors=True)
+  confClients = result.get('Value', {}).get('Clients', {})
   for cli in confClients:
     if cli not in clients:
       clients[cli] = confClients[cli]

@@ -9,7 +9,7 @@ from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 
 
-def collectMetadata(issuer=None):
+def collectMetadata(issuer=None, ignoreErrors=False):
   """ Collect metadata for DIRAC Authorization Server(DAS), a metadata format defines by IETF specification:
       https://datatracker.ietf.org/doc/html/rfc8414#section-2
 
@@ -17,7 +17,7 @@ def collectMetadata(issuer=None):
 
       :return: dict -- dictionary is the AuthorizationServerMetadata object in the same time
   """
-  result = getAuthorizationServerMetadata(issuer)
+  result = getAuthorizationServerMetadata(issuer, ignoreErrors=ignoreErrors)
   if not result['OK']:
     raise Exception('Cannot prepare authorization server metadata. %s' % result['Message'])
   metadata = result['Value']

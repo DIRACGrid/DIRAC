@@ -108,7 +108,7 @@ class AuthServer(_AuthorizationServer):
         :return: str or None
     """
     try:
-      return [s.split(':')[1] for s in scope_to_list(scope) if s.startswith('%s:' % param)][0]
+      return [s.split(':')[1] for s in scope_to_list(scope) if s.startswith('%s:' % param) and s.split(':')[1]][0]
     except Exception:
       return None
 
@@ -123,17 +123,17 @@ class AuthServer(_AuthorizationServer):
     # Search DIRAC username
     result = getUsernameForDN(wrapIDAsDN(user))
     if not result['OK']:
-      raise Exception(result['Message'])
+      raise OAuth2Error(result['Message'])
     userName = result['Value']
 
     if 'proxy' in scope_to_list(scope):
       # Try to return user proxy if proxy scope present in the authorization request
       if not isDownloadablePersonalProxy():
-        raise Exception("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
+        raise OAuth2Error("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
       self.log.debug('Try to query %s@%s proxy%s' % (user, group, ('with lifetime:%s' % lifetime) if lifetime else ''))
       result = getDNForUsername(userName)
       if not result['OK']:
-        raise Exception(result['Message'])
+        raise OAuth2Error(result['Message'])
       userDNs = result['Value']
       err = []
       for dn in userDNs:
@@ -148,9 +148,9 @@ class AuthServer(_AuthorizationServer):
           self.log.info('Proxy was created.')
           result = result['Value'].dumpAllToString()
           if not result['OK']:
-            raise Exception(result['Message'])
+            raise OAuth2Error(result['Message'])
           return {'proxy': result['Value']}
-      raise Exception('; '.join(err))
+      raise OAuth2Error('; '.join(err))
 
     else:
       # Ask TokenManager to generate new tokens for user
@@ -264,14 +264,14 @@ class AuthServer(_AuthorizationServer):
 
     # FINISHING with IdP
     # As a result of authentication we will receive user credential dictionary
-    credDict = result['Value']
+    credDict, payload = result['Value']
 
     self.log.debug("Read profile:", pprint.pformat(credDict))
     # Is ID registred?
     result = getUsernameForDN(credDict['DN'])
     if not result['OK']:
       comment = '%s ID is not registred in the DIRAC.' % credDict['ID']
-      result = self.__registerNewUser(providerName, credDict)
+      result = self.__registerNewUser(providerName, payload)
       if result['OK']:
         comment += ' Administrators have been notified about you.'
       else:
@@ -409,29 +409,24 @@ class AuthServer(_AuthorizationServer):
 
     return provider, None
 
-  def __registerNewUser(self, provider, userProfile):
+  def __registerNewUser(self, provider, payload):
     """ Register new user
 
         :param str provider: provider
-        :param dict userProfile: user information dictionary
+        :param dict payload: user information dictionary
 
         :return: S_OK()/S_ERROR()
     """
     from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
-    username = userProfile['ID']
+    username = payload['sub']
 
     mail = {}
-    mail['subject'] = "[SessionManager] User %s to be added." % username
-    mail['body'] = 'User %s was authenticated by ' % username
-    mail['body'] += provider
-    mail['body'] += "\n\nAuto updating of the user database is not allowed."
-    mail['body'] += " New user %s to be added," % username
-    mail['body'] += "with the following information:\n"
-    mail['body'] += "\nUser ID: %s\n" % username
-    mail['body'] += "\nUser profile:\n%s" % pprint.pformat(userProfile)
+    mail['subject'] = "[DIRAC AS] User %s to be added." % username
+    mail['body'] = 'User %s was authenticated by %s.' % (username, provider)
+    mail['body'] += "\n\nNew user to be added with the following information:\n%s" % pprint.pformat(payload)
     mail['body'] += "\n\n------"
-    mail['body'] += "\n This is a notification from the DIRAC AuthManager service, please do not reply.\n"
+    mail['body'] += "\n This is a notification from the DIRAC authorization service, please do not reply.\n"
     result = S_OK()
     for addresses in getEmailsForGroup('dirac_admin'):
       result = NotificationClient().sendMail(addresses, mail['subject'], mail['body'], localAttempt=False)

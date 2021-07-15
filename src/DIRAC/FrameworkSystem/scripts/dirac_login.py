@@ -90,31 +90,11 @@ class Params(object):
 
   def registerCLISwitches(self):
     """ Register CLI switches """
-    Script.registerSwitch(
-        "P",
-        "proxy",
-        "return with an access token also a proxy certificate with DIRAC group extension",
-        self.returnProxy)
-    Script.registerSwitch(
-        "g:",
-        "group=",
-        "set DIRAC group",
-        self.setGroup)
-    Script.registerSwitch(
-        "I:",
-        "issuer=",
-        "set issuer",
-        self.setIssuer)
-    Script.registerSwitch(
-        "T:",
-        "lifetime=",
-        "set proxy lifetime in a hours",
-        self.setLivetime)
-    Script.registerSwitch(
-        "F:",
-        "file=",
-        "set token file location",
-        self.setTokenFile)
+    Script.registerSwitch("P", "proxy", "request a proxy certificate with DIRAC group extension", self.returnProxy)
+    Script.registerSwitch("g:", "group=", "set DIRAC group", self.setGroup)
+    Script.registerSwitch("I:", "issuer=", "set issuer", self.setIssuer)
+    Script.registerSwitch("T:", "lifetime=", "set proxy lifetime in a hours", self.setLivetime)
+    Script.registerSwitch("F:", "file=", "set token file location", self.setTokenFile)
 
   def doOAuthMagic(self):
     """ Magic method with tokens
@@ -135,7 +115,7 @@ class Params(object):
       scope.append('proxy')
     if self.lifetime:
       scope.append('lifetime:%s' % (int(self.lifetime) * 3600))
-    idpObj.scope = '+'.join(scope) if scope else None
+    idpObj.scope = '+'.join(scope) if scope else ''
 
     tokenFile = getTokenFileLocation(self.tokenLoc)
 
@@ -151,6 +131,7 @@ class Params(object):
         return result
       gLogger.notice('Proxy is saved to %s.' % self.proxyLoc)
     else:
+      os.environ['DIRAC_USE_ACCESS_TOKEN'] = 'True'
       # Revoke old tokens from token file
       if os.path.isfile(tokenFile):
         result = readTokenFromFile(tokenFile)

@@ -165,7 +165,13 @@ class OAuth2Token(_OAuth2Token):
 
         :return: bool
     """
-    return int(self.get('expires_at', self.get('issued_at') + self.get('expires_in'))) < time.time()
+    if self.get('expires_at'):
+      return int(self.get('expires_at')) < time.time()
+    elif self.get('issued_at') and self.get('expires_in'):
+      return int(self.get('issued_at')) + int(self.get('expires_in')) < time.time()
+    else:
+      exp = self.get_payload().get('exp')
+      return int(exp) < time.time() if exp else True
 
   @property
   def scopes(self):
