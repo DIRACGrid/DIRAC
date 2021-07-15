@@ -211,7 +211,7 @@ class Message(object):
       return
     if k not in self.__order:
       raise AttributeError("%s is not valid for message %s" % (k, self.__name))
-    if self.__fDef[k] is not None and type(v) not in self.__fDef[k]:
+    if self.__fDef[k] is not None and not isinstance(v, self.__fDef[k]):
       raise AttributeError("%s is to be of type %s for attr %s, and is of type %s" % (v,
                                                                                       self.__fDef[k],
                                                                                       k,
