@@ -46,7 +46,7 @@ def extractRequestFromFileId(fileId):
   if compressType == 'Z':
     gLogger.info("Compressed request, uncompressing")
     try:
-      stub = base64.urlsafe_b64decode(stub)
+      stub = base64.urlsafe_b64decode(stub.encode())
     except Exception as e:
       gLogger.error("Oops! Plot request is not properly encoded!", str(e))
       return S_ERROR("Oops! Plot request is not properly encoded!: %s" % str(e))
