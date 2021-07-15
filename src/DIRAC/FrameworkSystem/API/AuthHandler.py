@@ -21,7 +21,7 @@ from tornado.concurrent import Future
 from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc6749.util import scope_to_list
 
-from DIRAC import S_ERROR
+from DIRAC import S_ERROR, gConfig
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
@@ -161,7 +161,10 @@ class AuthHandler(TornadoREST):
           }
     """
     if self.request.method == "GET":
-      return self.server.metadata
+      resDict = dict(setups=gConfig.getSections('DIRAC/Setups').get('Value', []),
+                     configuration_server=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""))
+      resDict.update(self.server.metadata)
+      return resDict
 
   def web_jwk(self):
     """ JWKs endpoint
@@ -465,7 +468,7 @@ class AuthHandler(TornadoREST):
     # Base DIRAC client auth session
     firstRequest = createOAuth2Request(extSession['mainSession'])
     # Read requested groups by DIRAC client or user
-    firstRequest.addScopes(self.get_arguments('chooseScope', []))
+    firstRequest.addScopes(self.get_arguments('chooseScope'))
     # Read already authed user
     username = extSession['authed']['username']
     self.log.debug('Next groups has been found for %s:' % username, ', '.join(firstRequest.groups))
@@ -479,7 +482,6 @@ class AuthHandler(TornadoREST):
       return None, S_ERROR('No groups found for %s.' % username)
 
     self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(validGroups))
-
     if not firstRequest.groups:
       if len(validGroups) == 1:
         firstRequest.addScopes(['g:%s' % validGroups[0]])
