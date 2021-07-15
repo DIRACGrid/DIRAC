@@ -46,7 +46,7 @@ def extractRequestFromFileId(fileId):
   if compressType == 'Z':
     gLogger.info("Compressed request, uncompressing")
     try:
-      # Encoding is only required for Python 2 and can be removed for WebAppDIRAC v5
+      # Encoding is only required for Python 2 and can be removed when Python 2 support is no longer needed
       stub = base64.urlsafe_b64decode(stub.encode())
     except Exception as e:
       gLogger.error("Oops! Plot request is not properly encoded!", str(e))
