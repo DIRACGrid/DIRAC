@@ -105,6 +105,9 @@ class DJSONEncoder(json.JSONEncoder):
     # if the object inherits from JSJerializable, try to serialize it
     elif isinstance(obj, JSerializable):
       return obj._toJSON()  # pylint: disable=protected-access
+    # if the object a bytes, decode it
+    elif isinstance(obj, bytes):
+      return obj.decode()
 
     # otherwise, let the parent do
     return super(DJSONEncoder, self).default(obj)
