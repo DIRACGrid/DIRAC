@@ -79,7 +79,7 @@ class TornadoResponse(object):
     for mName, args, kwargs in self.actions:
       getattr(reqObj, mName)(*args, **kwargs)
     if not reqObj._finished:
-      reqObj.finish(self.data if self.data is None else encode(self.data))
+      reqObj.finish(self.data)
 
 
 class BaseRequestHandler(RequestHandler):
