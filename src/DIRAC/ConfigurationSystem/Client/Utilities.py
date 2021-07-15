@@ -579,15 +579,25 @@ def getAuthAPI():
   return gConfig.getValue("/Systems/Framework/%s/URLs/AuthAPI" % getSystemInstance("Framework"))
 
 
-def getAuthorizationServerMetadata(issuer=None):
+def getAuthorizationServerMetadata(issuer=None, ignoreErrors=False):
   """ Get authorization server metadata
+
+      :param str issuer: issuer
+      :param bool ignoreErrors: igrnore configuration errors
 
       :return: S_OK(dict)/S_ERROR()
   """
-  result = gConfig.getOptionsDictRecursively('/DIRAC/Security/Authorization')
-  if not result['OK']:
-    return {'issuer': issuer} if issuer else result
-  data = result['Value']
+  data = {}
+  try:
+    result = gConfig.getOptionsDictRecursively('/DIRAC/Security/Authorization')
+    if not result['OK']:
+      return S_OK({'issuer': issuer}) if issuer else result
+    data = result['Value']
+  except Exception as e:
+    if ignoreErrors:
+      gLogger.warn(repr(e))
+    else:
+      raise e
 
   # Search DIRAC Authorization Server issuer
   data['issuer'] = data.get('issuer', issuer)
@@ -597,7 +607,7 @@ def getAuthorizationServerMetadata(issuer=None):
     except Exception as e:
       return S_ERROR('No issuer found in DIRAC authorization server: %s' % repr(e))
 
-  return S_OK(data)
+  return S_OK(data) if data['issuer'] else S_ERROR('Cannot find DIRAC Authorization Server issuer.')
 
 
 def isDownloadablePersonalProxy():
