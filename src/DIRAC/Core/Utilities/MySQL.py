@@ -616,7 +616,7 @@ class MySQL(object):
     return S_ERROR upon error
     """
 
-    # self.logger.debug('_query: %s' % self._safeCmd(cmd))
+    # self.log.debug('_query: %s' % self._safeCmd(cmd))
 
     retDict = self._getConnection()
     if not retDict['OK']:
@@ -632,10 +632,10 @@ class MySQL(object):
 
       # Log the result limiting it to just 10 records
       # if len(res) <= 10:
-      #  self.logger.debug('_query: returns', res)
+      #  self.log.debug('_query: returns', res)
       # else:
-      #  self.logger.debug('_query: Total %d records returned' % len(res))
-      #  self.logger.debug('_query: %s ...' % str(res[:10]))
+      #  self.log.debug('_query: Total %d records returned' % len(res))
+      #  self.log.debug('_query: %s ...' % str(res[:10]))
 
       retDict = S_OK(res)
     except Exception as x:
@@ -658,7 +658,7 @@ class MySQL(object):
         return S_ERROR upon error
     """
 
-    # self.logger.debug('_update: %s' % self._safeCmd(cmd))
+    # self.log.debug('_update: %s' % self._safeCmd(cmd))
 
     retDict = self._getConnection()
     if not retDict['OK']:

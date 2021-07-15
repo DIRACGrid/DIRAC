@@ -651,7 +651,9 @@ class JobDB(DB):
     newStatuses = {}
     for jID, jIDStatus in jIDStatusDict.items():
       if force:
-        self.log.warn("Status update forced" "(%s)" % candidateStatus)
+        self.log.info(
+            "Status update forced", "(%s: %s -> %s)" % (str(jID), jIDStatus, candidateStatus)
+        )
         nextState = candidateStatus
       else:
         res = JobStatus.JobsStateMachine(jIDStatus['Status']).getNextState(candidateStatus)
