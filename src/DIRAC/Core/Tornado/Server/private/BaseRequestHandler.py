@@ -64,7 +64,7 @@ class TornadoResponse(object):
     self.data = data
     self.actions = []
     for mName, mObj in inspect.getmembers(RequestHandler):
-      if inspect.isroutine(mObj) and not mName.startswith('_') and not mName.startwith('get'):
+      if inspect.isroutine(mObj) and not mName.startswith('_') and not mName.startswith('get'):
         setattr(self, mName, partial(self.__setAction, mName))
 
   def __setAction(self, mName, *args, **kwargs):
@@ -79,7 +79,7 @@ class TornadoResponse(object):
     for mName, args, kwargs in self.actions:
       getattr(reqObj, mName)(*args, **kwargs)
     if not reqObj._finished:
-      reqObj.finish() if self.data is None else reqObj.finish(self.data)
+      reqObj.finish(self.data if self.data is None else encode(self.data))
 
 
 class BaseRequestHandler(RequestHandler):
@@ -291,10 +291,6 @@ class BaseRequestHandler(RequestHandler):
       if cls.__init_done:
         return S_OK()
 
-      # Load all registred identity providers
-      if six.PY3:
-        cls.__loadIdPs()
-
       # absoluteUrl: full URL e.g. ``https://<host>:<port>/<System>/<Component>``
       absoluteUrl = request.path
       serviceName = cls._getServiceName(request)
@@ -317,6 +313,10 @@ class BaseRequestHandler(RequestHandler):
       cls._initializeHandler()
 
       cls.initializeHandler(serviceInfo)
+
+      # Load all registred identity providers
+      if six.PY3:
+        cls.__loadIdPs()
 
       cls.__init_done = True
 
@@ -630,9 +630,9 @@ class BaseRequestHandler(RequestHandler):
 
     # Get client certificate as pem
     if derCert:
-      chainAsText = derCert.as_pem()
+      chainAsText = derCert.as_pem().decode()
       # Read all certificate chain
-      chainAsText += ''.join([cert.as_pem() for cert in self.request.get_ssl_certificate_chain()])
+      chainAsText += ''.join([cert.as_pem().decode() for cert in self.request.get_ssl_certificate_chain()])
     elif self.request.headers.get('X-Ssl_client_verify') == 'SUCCESS' and self.request.headers.get('X-SSL-CERT'):
       chainAsText = unquote(self.request.headers.get('X-SSL-CERT'))
     else:
