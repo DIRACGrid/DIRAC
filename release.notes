@@ -1,4 +1,11 @@
+[v7r2p15]
+
+*WorkloadManagement
+FIX: (#5270) SandboxStoreClient tarfile mode
+
 [v7r2p14]
+
+NEW: Patch release is broken, use v7r2p15 instead
 
 *Core
 FIX: (#5265) Avoid pinging the database every time MySQL.__escapeString is called
