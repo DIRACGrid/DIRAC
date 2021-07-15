@@ -79,10 +79,11 @@ from six.moves import _thread as thread
 import os
 from diraccfg import CFG
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+from DIRAC.Core.Utilities import LockRing
+from DIRAC.Core.Utilities.DErrno import ESECTION
 
 
 class Operations(object):
@@ -177,7 +178,7 @@ class Operations(object):
     cacheCFG = self.__getCache()
     section = cacheCFG.getRecursive(sectionPath)
     if not section:
-      return S_ERROR("%s in Operations does not exist" % sectionPath)
+      return S_ERROR(ESECTION, "%s in Operations does not exist" % sectionPath)
     sectionCFG = section['value']
     if isinstance(sectionCFG, six.string_types):
       return S_ERROR("%s in Operations is not a section" % sectionPath)
