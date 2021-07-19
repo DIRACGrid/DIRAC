@@ -20,12 +20,27 @@ class OAuth2Request(_OAuth2Request):
 
         :param list scopes: scopes
     """
-    # Remove "scope" argument from uri
-    self.uri = re.sub(r"&scope(=[^&]*)?|^scope(=[^&]*)?&?", "", self.uri)
-    # Add "scope" argument to uri with new scopes
-    self.uri += "&scope=%s" % '+'.join(list(set(scope_to_list(self.scope or '') + scopes))) or ''
-    # Reinit all attributes with new uri
-    self.__init__(self.method, to_unicode(self.uri))
+    self.setQueryArguments(scope=list(set(scope_to_list(self.scope or '') + scopes)))
+
+  def setQueryArguments(self, **kwargs):
+    """ Set query arguments """
+    for k in kwargs:
+      # Remove argument from uri
+      query = re.sub(r"&{argument}(=[^&]*)?|^{argument}(=[^&]*)?&?".format(argument=k), "", self.query)
+      # Add new one
+      if query:
+        query += '&'
+      query += "%s=%s" % (k, '+'.join(kwargs[k]) if isinstance(kwargs[k], list) else kwargs[k])
+    # Re-init class
+    self.__init__(self.method, to_unicode(self.path + '?' + query))
+
+  @property
+  def path(self):
+    """ URL path
+
+        :return: str
+    """
+    return self.uri.replace('?%s' % (self.query or ''), '')
 
   @property
   def groups(self):
@@ -33,7 +48,40 @@ class OAuth2Request(_OAuth2Request):
 
         :return: list
     """
-    return [s.split(':')[1] for s in scope_to_list(self.scope) if s.startswith('g:') and s.split(':')[1]]
+    return [s.split(':')[1] for s in scope_to_list(self.scope or '') if s.startswith('g:') and s.split(':')[1]]
+  
+  @property
+  def group(self):
+    """ Serarch DIRAC group in scopes
+
+        :return: str
+    """
+    groups = [s.split(':')[1] for s in scope_to_list(self.scope or '') if s.startswith('g:') and s.split(':')[1]]
+    return groups[0] if groups else None
+  
+  @property
+  def provider(self):
+    """ Serarch IdP in scopes
+
+        :return: str
+    """
+    return self.data.get('provider')
+
+  @provider.setter
+  def provider(self, provider):
+    self.setQueryArguments(provider=provider)
+
+  @property
+  def sessionID(self):
+    """ Serarch IdP in scopes
+
+        :return: str
+    """
+    return self.data.get('id')
+
+  @provider.setter
+  def sessionID(self, sessionID):
+    self.setQueryArguments(id=sessionID)
 
   def toDict(self):
     """ Convert class to dictionary
