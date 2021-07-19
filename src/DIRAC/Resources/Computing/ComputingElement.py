@@ -265,11 +265,12 @@ class ComputingElement(object):
         generalCEDict.update(self.ceParameters)
         self.ceParameters = generalCEDict
 
-    # If NumberOfProcessors is present in the description but is equal to zero
+    # If NumberOfProcessors/GPUs is present in the description but is equal to zero
     # interpret it as needing local evaluation
     if self.ceParameters.get("NumberOfProcessors", -1) == 0:
       self.ceParameters["NumberOfProcessors"] = getNumberOfProcessors()
-    self.ceParameters["NumberOfGPUs"] = getNumberOfGPUs()
+    if self.ceParameters.get("NumberOfGPUs", -1) == 0:
+      self.ceParameters["NumberOfGPUs"] = getNumberOfGPUs()
 
     for key in ceOptions:
       if key in INTEGER_PARAMETERS:

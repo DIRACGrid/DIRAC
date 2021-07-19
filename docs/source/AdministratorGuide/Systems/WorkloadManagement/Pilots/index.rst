@@ -143,7 +143,6 @@ For keeping installing python2 DIRAC clients, you can:
 - add a per-SiteDirector option "Python3Pilots=False" in the CS
 
 
-
 Pilot extensions
 ================
 

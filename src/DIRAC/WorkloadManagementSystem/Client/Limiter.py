@@ -12,6 +12,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC import gLogger
 
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities.DErrno import cmpError, ESECTION
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -146,6 +147,8 @@ class Limiter(object):
 
     result = self.__opsHelper.getSections(section)
     if not result['OK']:
+      if cmpError(result, ESECTION):
+        return S_OK({})
       return result
     attribs = result['Value']
     stuffDict = {}
