@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 @Script()
 def main():
   # Registering arguments will automatically add their description to the help menu
-  Script.registerArgument(["JobID:    DIRAC ID of the Job"])
+  Script.registerArgument(["JobID:    DIRAC Job IDs"])
   _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
