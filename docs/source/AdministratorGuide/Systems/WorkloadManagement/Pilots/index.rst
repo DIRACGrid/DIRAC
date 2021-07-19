@@ -10,12 +10,7 @@ DIRAC pilots
 This page describes what are DIRAC pilots, and how they work.
 To know how to develop DIRAC pilots, please refer to the Developers documentation
 
-Since version v7r0, the production version of pilots are dubbed as "Pilot3", still "the pilots to fly in all the skies".
-
-Pilot3 development is done in the separate repository from that of DIRAC: https://github.com/DIRACGrid/Pilot
-The definitions that follow in this page are still valid for Pilots3. 
-Some specific information about Pilot3 can be found in the next section (:ref:`pilot3`).
-
+Pilot development is done in https://github.com/DIRACGrid/Pilot
 
 
 What's a DIRAC Pilot
@@ -54,17 +49,18 @@ In more details the DIRAC WMS with Pilot Jobs is described
 `here <http://iopscience.iop.org/article/10.1088/1742-6596/898/9/092024>`_.
 
 
-Definitions that help understanding what's a pilot
+Definitions that help understanding what's a Pilot
 ==================================================
 
 - *TaskQueue*: a queue of JDLs with similar requirements.
 - *JobAgent*: a DIRAC agent that matches a DIRAC local configuration with a TaskQueue, and extracts a JDL from it (or more than one).
 - *pilot wrapper*: a script that wraps the pilot script with conditions for running the pilot script itself (maybe multiple times).
-- *pilot job*: a pilot wrapper sent to a computing element (e.g. CREAM, ARC).
+- *pilot job*: a pilot wrapper sent to a computing element (e.g. HTCondor, ARC).
 
 The *pilot* is a "standardized" piece of code. The *pilot wrapper* might not be standardized.
 
-The "SiteDirector" agent encapsulates creates the *pilot wrapper*, then sends it to a Computing Element as a *pilot job*.
+The :py:mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector` agent creates the *pilot wrapper*,
+then sends it to a Computing Element as a *pilot job*.
 
 But, if you don't have the possibility to send a pilot job (e.g. the case of a Virtual Machine in a cloud),
 you can still find a way to start the pilot script by encapsulating it in a pilot wrapper that will be started at boot time,
@@ -134,6 +130,17 @@ Pilot options
 The pilot can be configured to run in several ways.
 Please, refer to https://github.com/DIRACGrid/Pilot/blob/master/Pilot/pilotTools.py
 for the full list.
+
+
+Python3 and Pilots
+==================
+
+Since DIRAC v7r3, Pilots are installing python3 DIRAC clients.
+
+For keeping installing python2 DIRAC clients, you can:
+
+- add the "--pythonVersion=27" *ExtraPilotOptions* option per Computing Element (see :ref:`resourcesComputing`)
+- add a per-SiteDirector option "Python3Pilots=False" in the CS
 
 
 

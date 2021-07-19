@@ -30,8 +30,9 @@ dirac = Dirac()
 def base():
   job = Job()
   job.setName("helloWorld-TEST-TO-Jenkins")
-  job.setInputSandbox([find_all('exe-script.py', '..', '/DIRAC/tests/Workflow/')[0]])
-  job.setExecutable("exe-script.py", "", "helloWorld.log")
+  executablePath = find_all("exe-script.py", "..", "/DIRAC/tests/Workflow/")[0]
+  job.setInputSandbox([executablePath])
+  job.setExecutable(executablePath, "", "helloWorld.log")
   job.setCPUTime(1780)
   job.setDestination('DIRAC.Jenkins.ch')
   job.setLogLevel('DEBUG')

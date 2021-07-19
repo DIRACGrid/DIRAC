@@ -20,7 +20,7 @@ for unprocSw in Script.getUnprocessedSwitches():
     role = unprocSw[1]
 
 args = Script.getPositionalArgs()
-dn = ' '.join(args)
+dn = args[0]
 
 uid = os.getuid()
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
