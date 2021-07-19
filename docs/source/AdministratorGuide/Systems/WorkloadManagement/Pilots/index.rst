@@ -136,6 +136,16 @@ Please, refer to https://github.com/DIRACGrid/Pilot/blob/master/Pilot/pilotTools
 for the full list.
 
 
+Python3 and Pilots
+==================
+
+For installing python3 DIRAC, you can:
+
+- add the "--pythonVersion=3" *ExtraPilotOptions* option per Computing Element (see :ref:`resourcesComputing`)
+- add a per-SiteDirector option "Python3Pilots=True" in the CS
+
+Note that, from DIRAC v7r3, Python3 pilots will become the default.
+
 
 Pilot extensions
 ================
