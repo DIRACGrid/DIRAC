@@ -281,6 +281,12 @@ class TransformationClientChain(TestClientTransformationTestCase):
     self.assertTrue(res['OK'])
     self.assertAlmostEqual(len(res['Value']), 4)
 
+    # Prevent race condition
+    res = self.transClient.setTransformationParameter(transID, 'Status', 'Idle', currentStatus='NotWhatItShouldBe')
+    self.assertFalse(res['OK'])
+    res = self.transClient.setTransformationParameter(transID, 'Status', 'Idle', currentStatus='Active')
+    self.assertTrue(res['OK'])
+
     # delete it in the end
     self.transClient.cleanTransformation(transID)
     self.transClient.deleteTransformation(transID)

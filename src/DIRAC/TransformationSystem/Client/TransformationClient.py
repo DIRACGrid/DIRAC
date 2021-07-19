@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 
 import six
 
-from DIRAC import S_OK, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -457,8 +457,10 @@ class TransformationClient(Client):
 
     return newStatuses
 
-  def setTransformationParameter(self, transID, paramName, paramValue, force=False):
+  def setTransformationParameter(self, transID, paramName, paramValue, force=False, currentStatus=None):
     """ Sets a transformation parameter. There's a special case when coming to setting the status of a transformation.
+
+        :param currentStatus: if set, make sure the status did not change in the DB before setting it
     """
     rpcClient = self._getRPC()
 
@@ -474,6 +476,9 @@ class TransformationClient(Client):
       if not originalStatus['OK']:
         return originalStatus
       originalStatus = originalStatus['Value']
+
+      if currentStatus and currentStatus != originalStatus:
+        return S_ERROR("Status changed in the DB: %s" % originalStatus)
 
       transIDAsDict = {transID: [originalStatus, transformationType]}
       dictOfProposedstatus = {transID: paramValue}
