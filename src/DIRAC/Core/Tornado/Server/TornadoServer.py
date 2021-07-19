@@ -186,8 +186,7 @@ class TornadoServer(object):
         'keyfile': certs[1],
         'cert_reqs': M2Crypto.SSL.verify_peer,
         'ca_certs': ca,
-        # Failed in tornado '5.1.1', 'sslDebug' not in m2netutil._SSL_CONTEXT_KEYWORDS
-        # 'sslDebug': False,  # Set to true if you want to see the TLS debug messages
+        'sslDebug': False,  # Set to true if you want to see the TLS debug messages
     }
 
     # Init monitoring
