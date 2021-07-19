@@ -187,7 +187,7 @@ class OAuth2Token(_OAuth2Token):
 
         :return: list
     """
-    return [s.split(':')[1] for s in self.scopes if s.startswith('g:')]
+    return [s.split(':')[1] for s in self.scopes if s.startswith('g:') and s.split(':')[1]]
 
   def get_payload(self, token_type='access_token'):
     """ Decode token
