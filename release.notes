@@ -1,3 +1,17 @@
+[v7r2p16]
+
+*Configuration
+FIX: (#5266) fix RefresherBase log
+
+*Resources
+FIX: (#5271) only evaluate number of GPUs if necessary
+
+*WMS
+FIX: (#5271) Limiter: no error if the section does not exist
+
+*TS
+NEW: (#5268) add currentStatus parameter to TransformationClient.setTransformationParameter
+
 [v7r2p15]
 
 *WorkloadManagement
