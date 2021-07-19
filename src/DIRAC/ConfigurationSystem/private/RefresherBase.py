@@ -20,7 +20,7 @@ def _updateFromRemoteLocation(serviceClient):
   """
     Refresh the configuration
   """
-  gLogger.debug("", "Trying to refresh from %s" % serviceClient.serviceURL)
+  gLogger.debug("", "Trying to refresh from %s" % serviceClient.serverURL)
   localVersion = gConfigurationData.getVersion()
   retVal = serviceClient.getCompressedDataIfNewer(localVersion)
   if retVal['OK']:
