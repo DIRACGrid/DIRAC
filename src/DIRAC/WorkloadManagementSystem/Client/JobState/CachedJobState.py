@@ -116,10 +116,10 @@ class CachedJobState(object):
       manifest = [self.__manifest.dumpAsCFG(), self.__manifest.isDirty()]
     else:
       manifest = None
-    data = DEncode.encode((
+    data = DEncode.encode([
         self.__jid, self.__cache, self.__jobLog, manifest, self.__initState,
         self.__insertIntoTQ, list(self.__dirtyKeys)
-    ))
+    ])
     return data.decode()
 
   @staticmethod
