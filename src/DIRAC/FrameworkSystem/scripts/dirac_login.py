@@ -125,6 +125,7 @@ class Params(object):
       return result
 
     if self.proxy:
+      os.environ['DIRAC_USE_ACCESS_TOKEN'] = 'False'
       # Save new proxy certificate
       result = writeToProxyFile(idpObj.token['proxy'].encode("UTF-8"), self.proxyLoc)
       if not result['OK']:
