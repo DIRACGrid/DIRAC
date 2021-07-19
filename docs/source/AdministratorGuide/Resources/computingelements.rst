@@ -7,7 +7,7 @@ Computing Elements
 Direct access to the site computing clusters is done by sending pilot jobs in a similar way as 
 it is done for the grid sites. The pilot jobs are sent by a specialized agent called *SiteDirector*.
 
-The *SiteDirector* is part of the agents of the Workload Management System, and can't work alone.
+The :py:mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector` is part of the agents of the Workload Management System, and can't work alone.
 Please refer to :ref:`documentation of the WMS <WMSArchitecture>` for info about the other WMS components.
 
 The *SiteDirector* is usually serving one or several sites and can run as part of the central service
@@ -110,6 +110,11 @@ The *SiteDirector* is getting the CE descriptions from the configuration and use
 to their specified capabilities and preferences. Configuration options specific for different types
 of CEs are describe in the subsections below
 
+Note that there's no absolute need to define a 1-to-1 relation between CEs and Queues in DIRAC and "in real".
+If for example you want to send, to the same queue, a mix of single processor and multiprocessor Pilots,
+you can define two queues identical but for the NumberOfProcessors parameter.
+
+
 CREAM Computing Element
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -199,6 +204,7 @@ configuration follows ::
    }
 
 
+
 SSHBatch Computing Element
 @@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -244,6 +250,8 @@ For example::
     SSHOptions = -o UserKnownHostsFile=/local/path/to/known_hosts 
 
 allows to have a local copy of the ``known_hosts`` file, independent of the HOME directory.
+
+
 
 InProcessComputingElement
 @@@@@@@@@@@@@@@@@@@@@@@@@

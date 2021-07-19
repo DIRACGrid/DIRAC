@@ -73,7 +73,7 @@ def main():
               totCPU += float(params['TotalCPUTime(s)'])
               totWall += float(params['WallClockTime(s)'])
               params['CPUEfficiency'] = '%s %%' % (
-                  100. * params['TotalCPUTime(s)'] / params['WallClockTime(s)'])
+                  100. * float(params['TotalCPUTime(s)']) / float(params['WallClockTime(s)']))
             for i, par in parameters:
               for param in [p for p in _stringInList(str(par), str(params))
                             if not _stringInList(str(p), str(result[jobID]))]:

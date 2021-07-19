@@ -11,6 +11,7 @@ import json
 # Describes the way date time will be transmetted
 # We do not keep miliseconds
 DATETIME_DEFAULT_FORMAT = '%Y-%m-%d %H:%M:%S'
+DATETIME_DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 
 
 class JSerializable(object):
@@ -99,6 +100,8 @@ class DJSONEncoder(json.JSONEncoder):
     # If we have a datetime object, dumps its string representation
     if isinstance(obj, datetime.datetime):
       return {'__dCls': 'dt', 'obj': obj.strftime(DATETIME_DEFAULT_FORMAT)}
+    elif isinstance(obj, datetime.date):
+      return {'__dCls': 'date', 'obj': obj.strftime(DATETIME_DEFAULT_DATE_FORMAT)}
     # if the object inherits from JSJerializable, try to serialize it
     elif isinstance(obj, JSerializable):
       return obj._toJSON()  # pylint: disable=protected-access
@@ -136,6 +139,8 @@ class DJSONDecoder(json.JSONDecoder):
     # If the class is of type dt (datetime)
     if className == 'dt':
       return datetime.datetime.strptime(dataDict['obj'], DATETIME_DEFAULT_FORMAT)
+    elif className == 'date':
+      return datetime.datetime.strptime(dataDict['obj'], DATETIME_DEFAULT_DATE_FORMAT).date()
     elif className:
       import importlib
 

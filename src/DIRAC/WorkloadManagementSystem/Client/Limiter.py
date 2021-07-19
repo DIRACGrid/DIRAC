@@ -12,6 +12,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC import gLogger
 
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities.DErrno import cmpError, ESECTION
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
@@ -87,17 +88,27 @@ class Limiter(object):
     self.condCache.add("GLOBAL", 10, orCond)
     return orCond
 
-  def getNegativeCondForSite(self, siteName):
+  def getNegativeCondForSite(self, siteName, gridCE=None):
     """ Generate a negative query based on the limits set on the site
     """
     # Check if Limits are imposed onto the site
     negativeCond = {}
     if self.__opsHelper.getValue("JobScheduling/CheckJobLimits", True):
       result = self.__getRunningCondition(siteName)
-      if result['OK']:
+      if not result['OK']:
+        self.log.error("Issue getting running conditions", result['Message'])
+      else:
         negativeCond = result['Value']
       self.log.verbose('Negative conditions for site',
                        '%s after checking limits are: %s' % (siteName, str(negativeCond)))
+
+      if gridCE:
+        result = self.__getRunningCondition(siteName, gridCE)
+        if not result['OK']:
+          self.log.error("Issue getting running conditions", result['Message'])
+        else:
+          negativeCondCE = result['Value']
+          negativeCond = self.__mergeCond(negativeCond, negativeCondCE)
 
     if self.__opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
       result = self.__getDelayCondition(siteName)
@@ -135,6 +146,8 @@ class Limiter(object):
 
     result = self.__opsHelper.getSections(section)
     if not result['OK']:
+      if cmpError(result, ESECTION):
+        return S_OK({})
       return result
     attribs = result['Value']
     stuffDict = {}
@@ -154,11 +167,14 @@ class Limiter(object):
     self.csDictCache.add(section, 300, stuffDict)
     return S_OK(stuffDict)
 
-  def __getRunningCondition(self, siteName):
+  def __getRunningCondition(self, siteName, gridCE=None):
     """ Get extra conditions allowing site throttling
     """
-    siteSection = "%s/%s" % (self.__runningLimitSection, siteName)
-    result = self.__extractCSData(siteSection)
+    if gridCE:
+      csSection = "%s/%s/CEs/%s" % (self.__runningLimitSection, siteName, gridCE)
+    else:
+      csSection = "%s/%s" % (self.__runningLimitSection, siteName)
+    result = self.__extractCSData(csSection)
     if not result['OK']:
       return result
     limitsDict = result['Value']

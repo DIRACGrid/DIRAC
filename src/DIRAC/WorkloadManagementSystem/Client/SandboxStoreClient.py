@@ -231,7 +231,7 @@ class SandboxStoreClient(object):
 
     try:
       sandboxSize = 0
-      with tarfile.open(name=tarFileName, mode="rb") as tf:
+      with tarfile.open(name=tarFileName, mode="r") as tf:
         for tarinfo in tf:
           tf.extract(tarinfo, path=destinationDir)
           sandboxSize += tarinfo.size

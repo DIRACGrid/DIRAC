@@ -52,8 +52,11 @@ def main():
     gLogger.info("maxRAM could not be found in MJF, using JobParameters.getMemoryFromProc()")
     maxRAM = JobParameters.getMemoryFromProc()
 
+  gLogger.info("Getting number of GPUs")
+  numberOfGPUs = JobParameters.getNumberOfGPUs(Site, ceName, Queue)
+
   # just communicating it back
-  gLogger.notice(numberOfProcessor, maxRAM)
+  gLogger.notice(" ".join(str(wnPar) for wnPar in [numberOfProcessor, maxRAM, numberOfGPUs]))
 
 
 if __name__ == "__main__":

@@ -118,16 +118,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import six
 from six.moves import _thread as thread
-import os
+
 from diraccfg import CFG
+
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities import LockRing
+from DIRAC.Core.Utilities.DErrno import ESECTION
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getSetup
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
 
 class Operations(object):
@@ -251,7 +254,7 @@ class Operations(object):
     """
     section = self.__getCFGCache().getRecursive(sectionPath)
     if not section:
-      return S_ERROR("%s in Operations does not exist" % sectionPath)
+      return S_ERROR(ESECTION, "%s in Operations does not exist" % sectionPath)
     sectionCFG = section['value']
     if isinstance(sectionCFG, six.string_types):
       return S_ERROR("%s in Operations is not a section" % sectionPath)

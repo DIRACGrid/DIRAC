@@ -1,3 +1,49 @@
+[v7r2p16]
+
+*Configuration
+FIX: (#5266) fix RefresherBase log
+
+*Resources
+FIX: (#5271) only evaluate number of GPUs if necessary
+
+*WMS
+FIX: (#5271) Limiter: no error if the section does not exist
+
+*TS
+NEW: (#5268) add currentStatus parameter to TransformationClient.setTransformationParameter
+
+[v7r2p15]
+
+*WorkloadManagement
+FIX: (#5270) SandboxStoreClient tarfile mode
+
+[v7r2p14]
+
+NEW: Patch release is broken, use v7r2p15 instead
+
+*Core
+FIX: (#5265) Avoid pinging the database every time MySQL.__escapeString is called
+NEW: (#5263) Support datetime.date objects in JEncode
+
+*Framework
+FIX: (#5254) ComponentSupervisionAgent - use socket.getfqdn() instead of gethostname()
+
+*WorkloadManagement
+FIX: (#5264) TypeError when running dirac-wms-pilot-job-info
+CHANGE: (#5248) When removing Deleted jobs, they could not be removed if they had still an attached
+        request. With this change, if the request is in final state, it will be removed and the job as well.
+
+*Transformation
+NEW: (#5265) Add columns keyword argument to TransformationClient.getTransformations
+NEW: (#5265) Add index on (TransformationID,Status) in TransformationFiles table
+NEW: (#5265) Add index on (TransformationID,ExternalStatus) in TransformationTasks table
+NEW: (#5265) Add index on (TransformationFamily) in Transformations table
+
+*Resources
+NEW: (#5256) SLURM can set gpus-per-task job requirement
+NEW: (#5256) added getNumberOfGPUs method to JobParameters utility
+FIX: (#5242) HTCondorCE: corrected ClassAd for requesting MP slots
+
 [v7r2p13]
 
 *Core
