@@ -39,6 +39,25 @@ class TokenManagerHandler(TornadoService):
     cls.idps = IdProviderFactory()
     return S_OK()
 
+  def __generateUsersTokensInfo(self, users):
+    """ Generate information dict about user tokens
+
+        :return: dict
+    """
+    tokensInfo = []
+    credDict = self.getRemoteCredentials()
+    result = Registry.getDNForUsername(credDict['username'])
+    if not result['OK']:
+      return result
+    for dn in result['Value']:
+      result = Registry.getIDFromDN(dn)
+      if result['OK']:
+        result = self.__tokenDB.getTokensByUserID(result['Value'])
+        if not result['OK']:
+          gLogger.error(result['Message'])
+        tokensInfo += result['Value']
+    return tokensInfo
+
   def __generateUserTokensInfo(self):
     """ Generate information dict about user tokens
 
@@ -74,6 +93,33 @@ class TokenManagerHandler(TornadoService):
         :return: S_OK(dict)
     """
     return S_OK(self.__generateUserTokensInfo())
+  
+  auth_getUsersTokensInfo = [Properties.PROXY_MANAGEMENT]
+
+  def export_getUsersTokensInfo(self, users):
+    """ Get the info about the user tokens in the system
+
+        :param list users: user names
+
+        :return: S_OK(dict)
+    """
+    tokensInfo = []
+    for user in users:
+      result = Registry.getDNForUsername(user)
+      if not result['OK']:
+        return result
+      for dn in result['Value']:
+        uid = Registry.getIDFromDN(dn).get('Value')
+        if uid:
+          result = self.__tokenDB.getTokensByUserID(uid)
+          if not result['OK']:
+            gLogger.error(result['Message'])
+          else:
+            for tokenDict in result['Value']:
+              if tokenDict not in tokensInfo:
+                tokenDict['username'] = user
+                tokensInfo.append(tokenDict)
+    return S_OK(tokensInfo)
 
   auth_uploadToken = ['authenticated']
 
@@ -85,7 +131,7 @@ class TokenManagerHandler(TornadoService):
         :param str provider: provider name
         :param int rt_expired_in: refresh token expires time
 
-        :return: S_OK(dict)/S_ERROR() -- dict contain uploaded tokens info
+        :return: S_OK(list)/S_ERROR() -- list contain uploaded tokens info as dictionaries
     """
     self.log.verbose('Update %s user token for %s:\n' % (userID, provider), pprint.pformat(token))
     result = self.idps.getIdProvider(provider)
@@ -107,7 +153,7 @@ class TokenManagerHandler(TornadoService):
         :param str requestedUserDN: user DN
         :param str requestedUserGroup: DIRAC group
 
-        :return: S_OK(boolean)/S_ERROR()
+        :return: S_OK(bool)/S_ERROR()
     """
     credDict = self.getRemoteCredentials()
     if Properties.FULL_DELEGATION in credDict['properties']:
@@ -134,7 +180,7 @@ class TokenManagerHandler(TornadoService):
     userID = []
     provider = Registry.getIdPForGroup(userGroup)
     if not provider:
-      return S_ERROR('The %s group belongs to the VO that is not tied to any Identity Provider.')
+      return S_ERROR('The %s group belongs to the VO that is not tied to any Identity Provider.' % userGroup)
 
     result = self.idps.getIdProvider(provider)
     if not result['OK']:
@@ -150,18 +196,15 @@ class TokenManagerHandler(TornadoService):
       result = Registry.getIDFromDN(dn)
       if result['OK']:
         result = self.__tokenDB.getTokenForUserProvider(result['Value'], provider)
-        if not result['OK']:
-          err.append(result['Message'])
-        elif result['Value']:
+        if result['OK'] and result['Value']:
           idpObj.token = result['Value']
           result = self.__checkProperties(dn, userGroup)
           if result['OK']:
             result = idpObj.exchangeGroup(userGroup)
             if result['OK']:
               return result
-    if not err:
-      return S_ERROR('No user ID found for %s' % username)
-    return S_ERROR('; '.join(err))
+      err.append(result.get('Message', 'No token found for %s.' % dn))
+    return S_ERROR('; '.join(err or ['No user ID found for %s' % username]))
 
   def export_deleteToken(self, userDN):
     """ Delete a token from the DB
