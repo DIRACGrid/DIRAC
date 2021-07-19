@@ -1,4 +1,4 @@
-[v7r3-pre15]
+[v7r3-pre16]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
 NEW: (#5000) Initial support for Python 3 server installations
@@ -16,6 +16,8 @@ FIX: (#5210) show extremely small values in pie plots
 CHANGE: (#5237) Use generic ObjectLoader.loadObjects() function in the specific Plotting.ObjectLoader class
 CHANGE: (#5244) dirac-configure: no upload attempt upon initial proxy generation
 CHANGE: (#5246) Drop MySQL._to_string() method
+FIX: (#5269) Use isinstance when checking types in MessageFactory
+FIX: (#5272) encode stub before base64
 
 *Configuration
 CHANGE: (#5110) Dropped Glue2Only and Glue2URLS options from Bdii2CSAgent, Glue2 is now the only way
