@@ -12,7 +12,6 @@ from __future__ import print_function
 
 import json
 import pprint
-from io import open
 
 from dominate import document, tags as dom
 from tornado.template import Template
@@ -23,7 +22,7 @@ from authlib.oauth2.rfc6749.util import scope_to_list
 
 from DIRAC import S_ERROR, gConfig
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getIdPForGroup, getGroupsForUser
 from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
@@ -113,10 +112,9 @@ class AuthHandler(TornadoREST):
     if isinstance(self.result, dict) and self.result.get('OK') is False and 'Message' in self.result:
       # S_ERROR is interpreted in the OAuth2 error format.
       self.set_status(400)
-      self.write({'error': 'server_error', 'description': retVal['Message']})
       self.clear_cookie('auth_session')
       self.log.error('%s\n' % retVal['Message'], ''.join(retVal['CallStack']))
-      self.finish()
+      self.finish({'error': 'server_error', 'description': retVal['Message']})
     else:
       super(AuthHandler, self)._finishFuture(retVal)
 
@@ -164,6 +162,7 @@ class AuthHandler(TornadoREST):
       resDict = dict(setups=gConfig.getSections('DIRAC/Setups').get('Value', []),
                      configuration_server=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""))
       resDict.update(self.server.metadata)
+      resDict.pop('Clients', None)
       return resDict
 
   def web_jwk(self):
@@ -315,17 +314,10 @@ class AuthHandler(TornadoREST):
         session = result['Value']
         # Get original request from session
         req = createOAuth2Request(dict(method='GET', uri=session['uri']))
+        req.setQueryArguments(id=session['id'], user_code=userCode)
 
-        groups = [s.split(':')[1] for s in scope_to_list(req.scope) if s.startswith('g:')]  # pylint: disable=no-member
-        group = groups[0] if groups else None
-
-        if group and not provider:
-          provider = Registry.getIdPForGroup(group)
-
-        self.log.debug('Use provider:', provider)
-        # pylint: disable=no-member
-        authURL = '%s/authorization/%s?%s&user_code=%s' % (self.LOCATION, provider, req.query, userCode)
-        # Save session to cookie
+        # Save session to cookie and redirect to authorization endpoint
+        authURL = '%s?%s' % (req.path.replace('device', 'authorization'), req.query)
         return self.server.handle_response(302, {}, [("Location", authURL)], session)
 
       # If received a request without a user code, then send a form to enter the user code
@@ -398,13 +390,12 @@ class AuthHandler(TornadoREST):
           state, OAuth2Error(error=error, description=self.get_argument('error_description', '')))
 
     # Check current auth session that was initiated for the selected external identity provider
-    try:
-      session = json.loads(self.get_secure_cookie('auth_session'))
-    except Exception:
-      session = {}
+    session = self.get_secure_cookie('auth_session')
+    if not session:
+      return S_ERROR("%s session is expired." % state)
 
-    sessionWithExtIdP = session if state and (session.get('state') == state) else None
-    if not sessionWithExtIdP:
+    sessionWithExtIdP = json.loads(session)
+    if state and not sessionWithExtIdP.get('state') == state:
       return S_ERROR("%s session is expired." % state)
 
     if not sessionWithExtIdP.get('authed'):
@@ -466,20 +457,23 @@ class AuthHandler(TornadoREST):
         :return: response
     """
     # Base DIRAC client auth session
-    firstRequest = createOAuth2Request(extSession['mainSession'])
+    firstRequest = createOAuth2Request(extSession['firstRequest'])
     # Read requested groups by DIRAC client or user
     firstRequest.addScopes(self.get_arguments('chooseScope'))
     # Read already authed user
     username = extSession['authed']['username']
+    # Requested arguments in first request
+    provider = firstRequest.provider
     self.log.debug('Next groups has been found for %s:' % username, ', '.join(firstRequest.groups))
 
     # Researche Group
-    result = Registry.getGroupsForUser(username)
+    result = getGroupsForUser(username)
     if not result['OK']:
       return None, result
-    validGroups = result['Value']
+    groups = result['Value']
+    validGroups = [group for group in groups if (getIdPForGroup(group) == provider) or ('proxy' in firstRequest.scope)]
     if not validGroups:
-      return None, S_ERROR('No groups found for %s.' % username)
+      return None, S_ERROR('No groups found for %s and for %s Identity Provider.' % (username, provider))
 
     self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(validGroups))
     if not firstRequest.groups:
