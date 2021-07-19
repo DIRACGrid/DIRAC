@@ -30,7 +30,7 @@ def main():
   # Registering arguments will automatically add their description to the help menu
   Script.registerArgument(" sourceSE:   source SE")
   Script.registerArgument(" LFN:        LFN or file containing a List of LFNs")
-  Script.registerArgument(["targetSE:   target SE"])
+  Script.registerArgument(["targetSE:   target SEs"])
   Script.parseCommandLine()
 
   import DIRAC
