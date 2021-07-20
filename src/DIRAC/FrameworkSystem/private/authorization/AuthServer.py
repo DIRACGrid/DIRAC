@@ -129,7 +129,7 @@ class AuthServer(_AuthorizationServer):
     if 'proxy' in scope_to_list(scope):
       # Try to return user proxy if proxy scope present in the authorization request
       if not isDownloadablePersonalProxy():
-        raise OAuth2Error("You can't get proxy, configuration settings(downloadablePersonalProxy) not allow to do that.")
+        raise OAuth2Error("You can't get proxy, configuration(downloadablePersonalProxy) not allow to do that.")
       self.log.debug('Try to query %s@%s proxy%s' % (user, group, ('with lifetime:%s' % lifetime) if lifetime else ''))
       result = getDNForUsername(userName)
       if not result['OK']:
@@ -379,7 +379,8 @@ class AuthServer(_AuthorizationServer):
       return None, S_ERROR('The %s group belongs to the VO that is not tied to any Identity Provider.' % request.group)
     # if provider and provider != groupProvider:
       self.db.removeSession(request.sessionID)
-      return None, S_ERROR('The %s group Identity Provider is "%s" and not "%s".' % (group, groupProvider, provider))
+      return None, S_ERROR('The %s group Identity Provider is "%s" and not "%s".' % (request.group, groupProvider,
+                                                                                     request.provider))
     # provider = groupProvider
 
     self.log.debug("Check if %s identity provider registred in DIRAC.." % request.provider)
@@ -400,7 +401,7 @@ class AuthServer(_AuthorizationServer):
         return None, S_ERROR('%s identity provider is not registered.' % request.provider)
       elif groupProvider and request.provider != groupProvider:
         self.db.removeSession(request.sessionID)
-        return None, S_ERROR('The %s group Identity Provider is "%s" and not "%s".' % (group, groupProvider,
+        return None, S_ERROR('The %s group Identity Provider is "%s" and not "%s".' % (request.group, groupProvider,
                                                                                        request.provider))
       return request, None
 

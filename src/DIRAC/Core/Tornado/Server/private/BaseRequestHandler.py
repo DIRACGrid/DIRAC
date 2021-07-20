@@ -58,7 +58,7 @@ class TornadoResponse(object):
   """
   def __init__(self, data=None):
     """ C'or
-    
+
         :param data: response body
     """
     self.data = data

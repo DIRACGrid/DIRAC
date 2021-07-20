@@ -93,7 +93,7 @@ class TokenManagerHandler(TornadoService):
         :return: S_OK(dict)
     """
     return S_OK(self.__generateUserTokensInfo())
-  
+
   auth_getUsersTokensInfo = [Properties.PROXY_MANAGEMENT]
 
   def export_getUsersTokensInfo(self, users):
