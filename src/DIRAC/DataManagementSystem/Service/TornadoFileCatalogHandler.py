@@ -17,20 +17,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 # imports
-import six
 import csv
-import os
 
-from io import BytesIO
+from six import StringIO
 # from DIRAC
-from DIRAC.Core.DISET.RequestHandler import getServiceOption
 
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
+from DIRAC import gLogger, S_ERROR
 from DIRAC.DataManagementSystem.Service.FileCatalogHandler import FileCataloghandlerMixin
 
-from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 
 
@@ -60,12 +54,10 @@ class TornadoFileCatalogHandler(FileCataloghandlerMixin, TornadoService):
     retVal = self.getSEDump(seName)
 
     try:
-      csvOutput = BytesIO()
+      csvOutput = StringIO()
       writer = csv.writer(csvOutput, delimiter='|')
-      for lfn in retVal:
-        writer.writerow(lfn)
+      writer.writerows(retVal)
 
-      # csvOutput.seek(0)
       ret = csvOutput.getvalue()
       return ret
 

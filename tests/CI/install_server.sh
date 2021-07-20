@@ -12,7 +12,7 @@ set -x
 
 source CONFIG
 
-if [ ! -z "$DEBUG" ]
+if [ -n "$DEBUG" ]
 then
   echo '==> Running in DEBUG mode'
   DEBUG='-ddd'
