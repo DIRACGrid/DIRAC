@@ -7,7 +7,7 @@
   :start-after: ##BEGIN StalledJobAgent
   :end-before: ##END
   :dedent: 2
-  :caption: PilotsSyncAgent options
+  :caption: StalledJobAgent options
 
 """
 
@@ -52,6 +52,7 @@ class StalledJobAgent(AgentModule):
     self.rescheduledTime = 600
     self.submittingTime = 300
     self.stalledJobsTolerantSites = []
+    self.stalledJobsToRescheduleSites = []
     self.jobsQueue = Queue()
 
   #############################################################################
@@ -90,6 +91,8 @@ class StalledJobAgent(AgentModule):
     failedTime = self.am_getOption('FailedTimeHours', 6)
     self.stalledJobsTolerantSites = self.am_getOption('StalledJobsTolerantSites', [])
     self.stalledJobsToleranceTime = self.am_getOption('StalledJobsToleranceTime', 0)
+
+    self.stalledJobsToRescheduleSites = self.am_getOption('StalledJobsToRescheduleSites', [])
 
     self.submittingTime = self.am_getOption('SubmittingTime', self.submittingTime)
     self.matchedTime = self.am_getOption('MatchedTime', self.matchedTime)
@@ -185,12 +188,13 @@ class StalledJobAgent(AgentModule):
     """
     delayTime = self.stalledTime
     # Add a tolerance time for some sites if required
-    result = self.jobDB.getJobAttribute(jobID, 'site')
-    if not result['OK']:
-      return result
-    site = result['Value']
-    if site in self.stalledJobsTolerantSites:
-      delayTime += self.stalledJobsToleranceTime
+    if self.stalledJobsTolerantSites:
+      result = self.jobDB.getJobAttribute(jobID, 'site')
+      if not result['OK']:
+        return result
+      site = result['Value']
+      if site in self.stalledJobsTolerantSites:
+        delayTime += self.stalledJobsToleranceTime
     # Check if the job is really stalled
     result = self._checkJobStalled(jobID, delayTime)
     if not result['OK']:
@@ -231,6 +235,16 @@ class StalledJobAgent(AgentModule):
     # and send accounting info
     if setFailed:
       self._sendKillCommand(jobID)  # always returns None
+
+      # For some sites we might want to reschedule rather than fail the jobs
+      if self.stalledJobsToRescheduleSites:
+        result = self.jobDB.getJobAttribute(jobID, 'site')
+        if not result['OK']:
+          return result
+        site = result['Value']
+        if site in self.stalledJobsToRescheduleSites:
+          return self._updateJobStatus(jobID, JobStatus.RESCHEDULED, minorStatus=setFailed)
+
       return self._updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed)
 
     return S_OK()
