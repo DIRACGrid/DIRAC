@@ -35,6 +35,7 @@ class SSHBatchComputingElement(SSHComputingElement):
 
     self.ceType = 'SSHBatch'
     self.sshHost = []
+    self.execution = 'SSHBATCH'
 
   def _reset(self):
 
