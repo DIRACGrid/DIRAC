@@ -821,7 +821,7 @@ class SSHComputingElement(ComputingElement):
     # Take into account the SSHBatch possible SSHHost syntax
     host = host.split( '/' )[0]
 
-    ssh = SSH( host = host, parameters = self.ceParameters )
+    ssh = SSH(host = host, parameters = self.ceParameters)
     result = ssh.scpCall(30, localOutputFile, outputFile, upload=False)
     if not result['OK']:
       return result
