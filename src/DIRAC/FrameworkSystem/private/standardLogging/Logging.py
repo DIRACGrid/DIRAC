@@ -381,7 +381,7 @@ class Logging(object):
     """
     return self._createLogRecord(LogLevels.FATAL, sMsg, sVarMsg)
 
-  def _createLogRecord(self, level, sMsg, sVarMsg, exc_info=False):
+  def _createLogRecord(self, level, sMsg, sVarMsg, exc_info=False, local_context=None):
     """
     Create a log record according to the level of the message.
 
@@ -392,6 +392,8 @@ class Logging(object):
     :param str sMsg: message
     :param str sVarMsg: additional message
     :param bool exc_info: indicates whether the stacktrace has to appear in the log record
+    :param dict local_context: Extra information propagated as extra to the formater.
+                               It is meant to be used only by the LocalSubLogger
 
     :return: boolean representing the result of the log record creation
     """
@@ -409,10 +411,15 @@ class Logging(object):
       extra = {'componentname': self._componentName,
                'varmessage': str(sVarMsg),
                'spacer': '' if not sVarMsg else ' ',
-               'customname': self._customName}
+               'customname': self._customName,
+               }
 
       # options such as headers and threadIDs also depend on the logger, we have to add them to extra
       extra.update(self._options)
+
+      # This typically contains local custom names
+      if local_context:
+        extra.update(local_context)
 
       self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
       # check whether the message is displayed
@@ -433,6 +440,10 @@ class Logging(object):
     """
     Create a new Logging object, child of this Logging, if it does not exists.
 
+    .. warning::
+
+       For very short lived sub logger, consider :py:meth:`getLocalSubLogger` instead
+
     :param str subName: name of the child Logging
     """
     _ = child  # make pylint happy
@@ -446,7 +457,138 @@ class Logging(object):
         return result
       # create a new child Logging
       childLogging = Logging(self, self._logger.name, subName, self._customName)
+
       self._children[subName] = childLogging
       return childLogging
     finally:
       self._lockInit.release()
+
+  class LocalSubLogger(object):
+    """
+      This is inspired from the standard LoggingAdapter.
+      The idea is to provide an interface which looks like a Logger,
+      but does not implement all the features.
+      You can basically just create it, and log messages.
+      You cannot create subLogger from it
+
+      This is to be used for very short lived sub logger. It allows to
+      give context information (like a jobID) without creating a new logging
+      object, which ends up eating all the memory
+      (see https://github.com/DIRACGrid/DIRAC/issues/5280)
+      """
+
+    def __init__(self, logger, extra):
+      """
+        :param logger: :py:class:`Logging` object on which to be based
+        :param extra: dictionary of extra information to be passed
+      """
+
+      self.logger = logger
+      self.extra = extra
+
+    def always(self, sMsg, sVarMsg=''):
+      """
+      Always level
+      """
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.ALWAYS,
+          sMsg,
+          sVarMsg,
+          local_context=self.extra)
+
+    def notice(self, sMsg, sVarMsg=''):
+      """
+      Notice level
+      """
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.NOTICE,
+          sMsg,
+          sVarMsg,
+          local_context=self.extra)
+
+    def info(self, sMsg, sVarMsg=''):
+      """
+      Info level
+      """
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.INFO,
+          sMsg,
+          sVarMsg,
+          local_context=self.extra)
+
+    def verbose(self, sMsg, sVarMsg=''):
+      """
+      Verbose level
+      """
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.VERBOSE,
+          sMsg,
+          sVarMsg,
+          local_context=self.extra)
+
+    def debug(self, sMsg, sVarMsg=''):
+      """
+      Debug level
+      """
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.DEBUG,
+          sMsg,
+          sVarMsg,
+          local_context=self.extra)
+
+    def warn(self, sMsg, sVarMsg=''):
+      """
+      Warn
+      """
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.WARN,
+          sMsg,
+          sVarMsg,
+          local_context=self.extra)
+
+    def error(self, sMsg, sVarMsg=''):
+      """
+      Error level
+      """
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.ERROR,
+          sMsg,
+          sVarMsg,
+          local_context=self.extra)
+
+    def exception(self, sMsg="", sVarMsg='', lException=False, lExcInfo=False):
+      """
+      Exception level
+      """
+      _ = lException  # Make pylint happy
+      _ = lExcInfo
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.ERROR,
+          sMsg,
+          sVarMsg,
+          exc_info=True,
+          local_context=self.extra)
+
+    def fatal(self, sMsg, sVarMsg=''):
+      """
+      Fatal level
+      """
+      return self.logger._createLogRecord(  # pylint: disable=protected-access
+          LogLevels.FATAL,
+          sMsg,
+          sVarMsg,
+          local_context=self.extra)
+
+  def getLocalSubLogger(self, subName):
+    """
+        Create a subLogger which is meant to have very short lifetime,
+        (e.g. when you want to add the jobID in the name)
+
+        .. warning::
+          This is a light version of a logger, read the documentation of
+          :py:class:`LocalSubLogger` carefully
+
+        :param str subName: name of the child Logging
+    """
+
+    return Logging.LocalSubLogger(self, dict(local_name=subName))
