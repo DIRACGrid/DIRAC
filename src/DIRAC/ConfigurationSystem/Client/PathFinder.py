@@ -158,12 +158,19 @@ def getServiceFailoverURL(serviceName, serviceTuple=False, setup=False):
 
 
 def getGatewayURLs(serviceName=""):
+  """ Get gateway URLs for service
+
+      :param str serviceName: service name
+
+      :return: list or False
+  """
   siteName = gConfigurationData.extractOptionFromCFG("/LocalSite/Site")
   if not siteName:
     return False
   gatewayList = gConfigurationData.extractOptionFromCFG("/DIRAC/Gateways/%s" % siteName)
   if not gatewayList:
     return False
+  gatewayList = List.fromChar(gatewayList, ",")
   if serviceName:
-    gatewayList = ["%s/%s" % ("/".join(gw.split("/")[:3]), serviceName) for gw in List.fromChar(gatewayList, ",")]
+    gatewayList = ["%s/%s" % ("/".join(gw.split("/")[:3]), serviceName) for gw in gatewayList]
   return List.randomize(gatewayList)
