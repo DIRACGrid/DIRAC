@@ -347,7 +347,7 @@ class TornadoBaseClient(object):
 
     # If nor url is given as constructor, we extract the list of URLs from the CS (System/URLs/Component)
     try:
-      urls = getServiceURL(self._destinationSrv, setup=self.setup)
+      urls = getServiceURLs(self._destinationSrv, setup=self.setup)
     except Exception as e:
       return S_ERROR("Cannot get URL for %s in setup %s: %s" % (self._destinationSrv, self.setup, repr(e)))
     if not urls:
@@ -363,7 +363,7 @@ class TornadoBaseClient(object):
       pass
 
     # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
-    urlsList = List.randomize(List.fromChar(urls, ",")) + failoverUrls
+    urlsList = List.randomize(urls) + failoverUrls
     self.__nbOfUrls = len(urlsList)
     # __nbOfRetry removed in HTTPS (managed by requests)
     if self.__nbOfUrls == len(self.__bannedUrls):
