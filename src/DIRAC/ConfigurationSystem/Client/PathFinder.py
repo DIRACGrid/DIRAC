@@ -13,10 +13,20 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 
 
 def getDIRACSetup():
+  """ Get DIRAC default setup name
+
+      :return: str
+  """
   return gConfigurationData.extractOptionFromCFG("/DIRAC/Setup")
 
 
 def divideFullName(entityName):
+  """ Convert component full name to tuple
+
+      :param str entityName: component full name, e.g.: 'Framework/ProxyManager'
+
+      :return: tuple -- contain system and service name
+  """
   fields = [field.strip() for field in entityName.split("/")]
   if len(fields) < 2:
     raise RuntimeError("Service (%s) name must be with the form system/service" % entityName)
@@ -24,6 +34,13 @@ def divideFullName(entityName):
 
 
 def getSystemInstance(systemName, setup=False):
+  """ Find system instance name
+
+      :param str systemName: system name
+      :param str setup: setup name
+
+      :return: str
+  """
   if not setup:
     setup = gConfigurationData.extractOptionFromCFG("/DIRAC/Setup")
   optionPath = "/DIRAC/Setups/%s/%s" % (setup, systemName)
@@ -188,6 +205,14 @@ def getServiceURL(serviceName, serviceTuple=False, setup=False):
 
 
 def getServiceFailoverURL(serviceName, serviceTuple=False, setup=False):
+  """ Get failover URLs for service
+
+      :param str serviceName: Name of service, like 'Framework/Service'.
+      :param str serviceTuple:(optional) also name of service but look like ('Framework', 'Service').
+      :param str setup: DIRAC setup name, can be defined in dirac.cfg
+
+      :return: str -- complete list of urls
+  """
   system, service = serviceTuple
   if not serviceTuple:
     system, service = divideFullName(serviceName)
