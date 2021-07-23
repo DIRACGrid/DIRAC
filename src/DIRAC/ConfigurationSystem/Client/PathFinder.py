@@ -34,12 +34,22 @@ def getSystemInstance(systemName, setup=False):
     raise RuntimeError("Option %s is not defined" % optionPath)
 
 
-def getSystemSection(serviceName, serviceTuple=False, instance=False, setup=False):
-  if not serviceTuple:
-    serviceTuple = divideFullName(serviceName)
+# TODO: serviceTuple here for backward compatibility and must be deleted in the next release(v7r4)
+def getSystemSection(system, serviceTuple=False, instance=False, setup=False):
+  """ Get system section
+
+      :param str system: system name or full name e.g.: Framework/ProxyManager
+      :param serviceTuple: unuse!
+      :param str instance: instance name
+      :param str setup: setup name
+
+      :return: str -- system section path
+  """
+  if '/' in system:
+    system, _ = divideFullName(system)
   if not instance:
-    instance = getSystemInstance(serviceTuple[0], setup=setup)
-  return "/Systems/%s/%s" % (serviceTuple[0], instance)
+    instance = getSystemInstance(system, setup=setup)
+  return "/Systems/%s/%s" % (system, instance)
 
 
 def getComponentSection(componentName, componentTuple=False, setup=False, componentCategory="Services"):
@@ -61,10 +71,11 @@ def getComponentSection(componentName, componentTuple=False, setup=False, compon
   Example:
     getComponentSection('WorkloadManagement/SandboxStoreHandler', False,False,'Services')
   """
+  system, service = componentTuple
   if not componentTuple:
-    componentTuple = divideFullName(componentName)
-  systemSection = getSystemSection(componentName, componentTuple, setup=setup)
-  return "%s/%s/%s" % (systemSection, componentCategory, componentTuple[1])
+    system, service = divideFullName(componentName)
+  systemSection = getSystemSection(system, setup=setup)
+  return "%s/%s/%s" % (systemSection, componentCategory, service)
 
 
 def getServiceSection(serviceName, serviceTuple=False, setup=False):
@@ -84,7 +95,7 @@ def getDatabaseSection(dbName, dbTuple=False, setup=False):
 
 
 def getSystemURLSection(serviceName, serviceTuple=False, setup=False):
-  systemSection = getSystemSection(serviceName, serviceTuple, setup=setup)
+  systemSection = getSystemSection(serviceName, setup=setup)
   return "%s/URLs" % systemSection
 
 
@@ -98,10 +109,11 @@ def getServiceURL(serviceName, serviceTuple=False, setup=False):
 
     :return: complete url. e.g. dips://some-domain:3424/Framework/Service
   """
+  system, service = serviceTuple
   if not serviceTuple:
-    serviceTuple = divideFullName(serviceName)
-  systemSection = getSystemSection(serviceName, serviceTuple, setup=setup)
-  url = gConfigurationData.extractOptionFromCFG("%s/URLs/%s" % (systemSection, serviceTuple[1]))
+    system, service = divideFullName(serviceName)
+  systemSection = getSystemSection(system, setup=setup)
+  url = gConfigurationData.extractOptionFromCFG("%s/URLs/%s" % (systemSection, service))
   if not url:
     return ""
 
@@ -133,10 +145,11 @@ def getServiceURL(serviceName, serviceTuple=False, setup=False):
 
 
 def getServiceFailoverURL(serviceName, serviceTuple=False, setup=False):
+  system, service = serviceTuple
   if not serviceTuple:
-    serviceTuple = divideFullName(serviceName)
-  systemSection = getSystemSection(serviceName, serviceTuple, setup=setup)
-  url = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, serviceTuple[1]))
+    system, service = divideFullName(serviceName)
+  systemSection = getSystemSection(system, setup=setup)
+  url = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, service))
   if not url:
     return ""
   if len(url.split("/")) < 5:
