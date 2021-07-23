@@ -99,6 +99,80 @@ def getSystemURLSection(serviceName, serviceTuple=False, setup=False):
   return "%s/URLs" % systemSection
 
 
+def checkServiceURL(url, system=None, service=None):
+  """ Check service URL
+
+      :param str url: full URL, e.g.: dips://some-domain:3424/Framework/Service
+      :param str system: system name
+      :param str service: service name
+
+      :return: str
+  """
+  url = urlparse.urlparse(url)
+  # Check port
+  if not url.port:
+    if url.scheme == 'disp':
+      raise RuntimeError('No port found for %s/%s URL!' % (system, service))
+    url._replace(netloc=url.netloc + ':' + (80 if url.scheme == 'http' else 443))
+  # Check path
+  if not url.path.strip('/'):
+    if not system or not service:
+      raise RuntimeError('No path found for %s/%s URL!' % (system, service))
+    url._replace(path='/%s/%s' % (system, service))
+  return url.geturl()
+
+
+def getSystemURLs(system, setup=False):
+  """
+    Generate url.
+
+    :param str system: system name or full name e.g.: Framework/ProxyManager
+    :param str setup: DIRAC setup name, can be defined in dirac.cfg
+
+    :return: dict -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
+  """
+  urlDict = {}
+  systemSection = getSystemSection(system, setup=setup)
+  for service in gConfigurationData.getOptionsFromCFG("%s/URLs" % systemSection, service):
+    urlDict[service] = getServiceURLs(system, service, setup=setup)
+  return urlDict
+
+
+def getServiceURLs(system, service='', setup=False):
+  """
+    Generate url.
+
+    :param str system: system name or full name e.g.: Framework/ProxyManager
+    :param str service: service name, like 'ProxyManager'.
+    :param str setup: DIRAC setup name, can be defined in dirac.cfg
+
+    :return: list -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
+  """
+  if '/' in system:
+    system, service = divideFullName(system)
+  urlList = []
+  mainServers = None
+  systemSection = getSystemSection(system, setup=setup)
+  urls = List.fromChar(gConfigurationData.extractOptionFromCFG("%s/URLs/%s" % (systemSection, service)))
+  for url in urls:
+    # Trying if we are refering to the list of main servers
+    # which would be like dips://$MAINSERVERS$:1234/System/Component
+    if '$MAINSERVERS$' in url:
+      if not mainServers:
+        # Operations cannot be imported at the beginning because of a bootstrap problem
+        from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+        mainServers = Operations().getValue('MainServers', [])
+        if not mainServers:
+          raise Exception("No Main servers defined")
+
+        for srv in mainServers:
+          urlList.append(checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service))
+        continue
+    urlList.append(checkServiceURL(url, system, service))
+
+  return list(set(urlList))
+
+
 def getServiceURL(serviceName, serviceTuple=False, setup=False):
   """
     Generate url.
@@ -107,41 +181,10 @@ def getServiceURL(serviceName, serviceTuple=False, setup=False):
     :param serviceTuple: (optional) also name of service but look like ('Framework', 'Service').
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
 
-    :return: complete url. e.g. dips://some-domain:3424/Framework/Service
+    :return: str -- complete list of urls. e.g. dips://some-domain:3424/Framework/Service, dips://..
   """
-  system, service = serviceTuple
-  if not serviceTuple:
-    system, service = divideFullName(serviceName)
-  systemSection = getSystemSection(system, setup=setup)
-  url = gConfigurationData.extractOptionFromCFG("%s/URLs/%s" % (systemSection, service))
-  if not url:
-    return ""
-
-  # Trying if we are refering to the list of main servers
-  # which would be like dips://$MAINSERVERS$:1234/System/Component
-  # This can only happen if there is only one server defined
-  if ',' not in url:
-
-    urlParse = urlparse.urlparse(url)
-    server, port = urlParse.netloc.split(':')
-    mainUrlsList = []
-
-    if server == '$MAINSERVERS$':
-
-      # Operations cannot be imported at the beginning because of a bootstrap problem
-      from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-      mainServers = Operations().getValue('MainServers', [])
-      if not mainServers:
-        raise Exception("No Main servers defined")
-
-      for srv in mainServers:
-        mainUrlsList.append(urlparse.ParseResult(scheme=urlParse.scheme, netloc=':'.join([srv, port]),
-                                                 path=urlParse.path, params='', query='', fragment='').geturl())
-      return ','.join(mainUrlsList)
-
-  if len(url.split("/")) < 5:
-    url = "%s/%s" % (url, serviceName)
-  return url
+  urls = getServiceURLs(serviceName, setup=setup)
+  return ','.join(urls) if urls else ""
 
 
 def getServiceFailoverURL(serviceName, serviceTuple=False, setup=False):
