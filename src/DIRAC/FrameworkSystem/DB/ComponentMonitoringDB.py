@@ -6,10 +6,12 @@ from __future__ import print_function
 
 import six
 import random
+from six.moves.urllib import parse as urlparse
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import Time, List, Network
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemURLs
 
 __RCSID__ = "$Id$"
 
@@ -380,26 +382,16 @@ class ComponentMonitoringDB(DB):
             if self.__componentMatchesCondition(compDict, requiredComponents, conditionDict):
               statusSet.addUniqueToSet(requiredComponents, compDict)
         # Walk the URLs
-        result = gConfig.getOptionsDict("/Systems/%s/%s/URLs" % (system, instance))
-        if not result['OK']:
-          self.log.warn("There doesn't to be defined the URLs section for %s in %s instance" % (system, instance))
-        else:
-          serviceURLs = result['Value']
-          for service in serviceURLs:
-            for url in List.fromChar(serviceURLs[service]):
-              loc = url[url.find("://") + 3:]
-              iS = loc.find("/")
-              componentName = loc[iS + 1:]
-              loc = loc[:iS]
-              hostname, port = loc.split(":")
-              compDict = {'ComponentName': componentName,
-                          'Type': 'service',
-                          'Setup': setup,
-                          'Host': hostname,
-                          'Port': int(port)
-                          }
-              if self.__componentMatchesCondition(compDict, requiredComponents, conditionDict):
-                statusSet.addUniqueToSet(requiredComponents, compDict)
+        serviceURLs = getSystemURLs(system, setup)  # verify URLs in getSystemURLs method
+        for service in serviceURLs:
+          url = urlparse.urlparse(serviceURLs[service])
+          if self.__componentMatchesCondition(dict(Setup=setup,
+                                                   Port=url.port,
+                                                   Host=url.hostname,
+                                                   Type='service',
+                                                   ComponentName=system + '/' + service),
+                                              requiredComponents, conditionDict):
+            statusSet.addUniqueToSet(requiredComponents, compDict)
     # WALK THE DICT
     statusSet.setComponentsAsRequired(requiredComponents)
     return S_OK((statusSet.getRequiredComponents(),
