@@ -155,52 +155,61 @@ def getSystemURLs(system, setup=False):
   return urlDict
 
 
-def getServiceURLs(system, service='', setup=False):
+def getServiceURLs(system, service='', setup=False, randomize=False, failover=False):
   """
     Generate url.
 
     :param str system: system name or full name e.g.: Framework/ProxyManager
     :param str service: service name, like 'ProxyManager'.
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
+    :param bool randomize: to randomize list
+    :param bool failover: to add failover URLs to end of result list
 
     :return: list -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
   """
   if '/' in system:
     system, service = divideFullName(system)
+  resList = []
   urlList = []
   mainServers = None
   systemSection = getSystemSection(system, setup=setup)
-  urls = List.fromChar(gConfigurationData.extractOptionFromCFG("%s/URLs/%s" % (systemSection, service)))
-  for url in urls:
-    # Trying if we are refering to the list of main servers
-    # which would be like dips://$MAINSERVERS$:1234/System/Component
-    if '$MAINSERVERS$' in url:
-      if not mainServers:
-        # Operations cannot be imported at the beginning because of a bootstrap problem
-        from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-        mainServers = Operations().getValue('MainServers', [])
+  failover = "Failover" if failover else ""
+  for fURLs in ["", "Failover"] if failover else [""]:
+    urls = List.fromChar(gConfigurationData.extractOptionFromCFG("%s/%sURLs/%s" % (systemSection, fURLs, service)))
+    # Be sure that url not just empty string
+    for url in [u for u in urls if u]:
+      # Trying if we are refering to the list of main servers
+      # which would be like dips://$MAINSERVERS$:1234/System/Component
+      if '$MAINSERVERS$' in url:
         if not mainServers:
-          raise Exception("No Main servers defined")
+          # Operations cannot be imported at the beginning because of a bootstrap problem
+          from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+          mainServers = Operations().getValue('MainServers', [])
+          if not mainServers:
+            raise Exception("No Main servers defined")
 
-        for srv in mainServers:
-          urlList.append(checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service))
-        continue
-    urlList.append(checkServiceURL(url, system, service))
+          for srv in mainServers:
+            urlList.append(checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service))
+          continue
+      urlList.append(checkServiceURL(url, system, service))
+    resList.append(List.randomize(list(set(urlList))) if randomize else list(set(urlList)))
 
-  return list(set(urlList))
+  return resList
 
 
-def getServiceURL(serviceName, serviceTuple=False, setup=False):
+def getServiceURL(serviceName, serviceTuple=False, service=None, setup=False, randomize=False):
   """
     Generate url.
 
-    :param serviceName: Name of service, like 'Framework/Service'.
-    :param serviceTuple: (optional) also name of service but look like ('Framework', 'Service').
+    :param str serviceName: system name or full name e.g.: Framework/ProxyManager
+    :param serviceTuple: unuse!
+    :param str service: service name, like 'ProxyManager'.
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
+    :param bool randomize: to randomize list
 
     :return: str -- complete list of urls. e.g. dips://some-domain:3424/Framework/Service, dips://..
   """
-  urls = getServiceURLs(serviceName, setup=setup)
+  urls = getServiceURLs(serviceName, service=service, setup=setup, randomize=randomize)
   return ','.join(urls) if urls else ""
 
 
