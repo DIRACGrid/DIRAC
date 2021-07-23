@@ -7,6 +7,7 @@ docutils>=0.15
 boto3
 cachetools<4
 elasticsearch_dsl
+enum34
 future
 futures
 ldap3
