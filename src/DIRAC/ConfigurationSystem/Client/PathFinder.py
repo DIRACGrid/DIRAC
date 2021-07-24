@@ -186,10 +186,14 @@ def getServiceURLs(system, service='', setup=False, randomize=False, failover=Fa
             raise Exception("No Main servers defined")
 
           for srv in mainServers:
-            urlList.append(checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service))
+            url = checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service)
+            if url not in urlList:
+              urlList.append(url)
           continue
-      urlList.append(checkServiceURL(url, system, service))
-    resList.extend(List.randomize(list(set(urlList))) if randomize else list(set(urlList)))
+      url = checkServiceURL(url, system, service)
+      if url not in urlList:
+        urlList.append(url)
+    resList.extend(List.randomize(urlList) if randomize else urlList)
 
   return resList
 
