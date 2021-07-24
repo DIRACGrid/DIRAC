@@ -173,8 +173,8 @@ def getServiceURLs(system, service='', setup=False, randomize=False, failover=Fa
   failover = "Failover" if failover else ""
   for fURLs in ["", "Failover"] if failover else [""]:
     urls = List.fromChar(gConfigurationData.extractOptionFromCFG("%s/%sURLs/%s" % (systemSection, fURLs, service)))
-    # Be sure that url not just empty string
-    for url in [u for u in urls if u]:
+    # Be sure that url not None
+    for url in urls or []:
       # Trying if we are refering to the list of main servers
       # which would be like dips://$MAINSERVERS$:1234/System/Component
       if '$MAINSERVERS$' in url:
