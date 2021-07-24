@@ -189,7 +189,7 @@ def getServiceURLs(system, service='', setup=False, randomize=False, failover=Fa
             urlList.append(checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service))
           continue
       urlList.append(checkServiceURL(url, system, service))
-    resList.append(List.randomize(list(set(urlList))) if randomize else list(set(urlList)))
+    resList.extend(List.randomize(list(set(urlList))) if randomize else list(set(urlList)))
 
   return resList
 
@@ -214,7 +214,7 @@ def getServiceFailoverURL(serviceName, serviceTuple=False, setup=False):
   """ Get failover URLs for service
 
       :param str serviceName: Name of service, like 'Framework/Service'.
-      :param str serviceTuple:(optional) also name of service but look like ('Framework', 'Service').
+      :param str serviceTuple: (optional) also name of service but look like ('Framework', 'Service').
       :param str setup: DIRAC setup name, can be defined in dirac.cfg
 
       :return: str -- complete list of urls
