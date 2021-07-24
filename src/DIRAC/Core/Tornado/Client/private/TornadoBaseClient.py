@@ -44,7 +44,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import findDefaultGroupForDN
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURLs, getGatewayURLs
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceURLs, getGatewayURLs
 
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security import Locations
