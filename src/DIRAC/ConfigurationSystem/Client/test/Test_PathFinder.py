@@ -7,7 +7,10 @@ from __future__ import print_function
 import os
 import unittest
 from diraccfg import CFG
-from DIRAC.ConfigurationSystem.Client.PathFinder import getComponentSection, getServiceFailoverURL, getServiceURL
+from DIRAC.ConfigurationSystem.Client.PathFinder import (getComponentSection,
+                                                         getServiceFailoverURL,
+                                                         getServiceURL,
+                                                         getServiceURLs)
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -70,6 +73,7 @@ class TestPathFinder(unittest.TestCase):
     gConfigurationData.mergedCFG=CFG()
     gConfigurationData.generateNewVersion()
 
+
 class TestGetComponentSection(TestPathFinder):
 
   def test_success(self):
@@ -84,6 +88,7 @@ class TestGetComponentSection(TestPathFinder):
     result = getComponentSection('WorkloadManagement/SimpleLogConsumer', False, False, 'NonRonsumersNon')
     correctResult = '/Systems/WorkloadManagement/' + self.wm + '/NonRonsumersNon/SimpleLogConsumer'
     self.assertEqual(result, correctResult)
+
 
 class TestURLs(TestPathFinder):
 
@@ -112,7 +117,7 @@ class TestURLs(TestPathFinder):
     result = getServiceFailoverURL('WorkloadManagement/Service2')
     correctResult = 'dips://failover1:5678/WorkloadManagement/Service2'
     self.assertEqual(result, correctResult)
-  
+
   def test_getServiceURLsSimple(self):
     """Fetching a URLs defined normally"""
     self.assertEqual(getServiceURLs('WorkloadManagement/Service1'),
@@ -133,6 +138,7 @@ class TestURLs(TestPathFinder):
     self.assertEqual(getServiceURLs('WorkloadManagement', service='Service2', failover=True),
                      ['dips://gw1:5678/WorkloadManagement/Service2', 'dips://gw2:5678/WorkloadManagement/Service2',
                       'dips://failover1:5678/WorkloadManagement/Service2'])
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestPathFinder)

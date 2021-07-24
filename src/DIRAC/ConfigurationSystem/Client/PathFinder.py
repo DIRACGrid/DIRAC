@@ -88,11 +88,8 @@ def getComponentSection(componentName, componentTuple=False, setup=False, compon
   Example:
     getComponentSection('WorkloadManagement/SandboxStoreHandler', False,False,'Services')
   """
-  system, service = componentTuple
-  if not componentTuple:
-    system, service = divideFullName(componentName)
-  systemSection = getSystemSection(system, setup=setup)
-  return "%s/%s/%s" % (systemSection, componentCategory, service)
+  system, service = componentTuple if componentTuple else divideFullName(componentName)
+  return "%s/%s/%s" % (getSystemSection(system, setup=setup), componentCategory, service)
 
 
 def getServiceSection(serviceName, serviceTuple=False, setup=False):
@@ -222,9 +219,7 @@ def getServiceFailoverURL(serviceName, serviceTuple=False, setup=False):
 
       :return: str -- complete list of urls
   """
-  system, service = serviceTuple
-  if not serviceTuple:
-    system, service = divideFullName(serviceName)
+  system, service = serviceTuple if serviceTuple else divideFullName(serviceName)
   systemSection = getSystemSection(system, setup=setup)
   url = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, service))
   if not url:
