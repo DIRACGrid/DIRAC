@@ -24,7 +24,7 @@ def divideFullName(entityName, second=None):
   """ Convert component full name to tuple
 
       :param str entityName: component full name, e.g.: 'Framework/ProxyManager'
-      :param str second: second component
+      :param str second: component name
 
       :return: tuple -- contain system and component name
   """
@@ -36,15 +36,15 @@ def divideFullName(entityName, second=None):
   raise RuntimeError("Service (%s) name must be with the form system/service" % entityName)
 
 
-def getSystemInstance(systemName, setup=False):
+def getSystemInstance(system, setup=False):
   """ Find system instance name
 
-      :param str systemName: system name
+      :param str system: system name
       :param str setup: setup name
 
       :return: str
   """
-  optionPath = "/DIRAC/Setups/%s/%s" % (setup or getDIRACSetup(), systemName)
+  optionPath = "/DIRAC/Setups/%s/%s" % (setup or getDIRACSetup(), system)
   instance = gConfigurationData.extractOptionFromCFG(optionPath)
   if not instance:
     raise RuntimeError("Option %s is not defined" % optionPath)
@@ -149,7 +149,7 @@ def getSystemURLs(system, setup=False, randomize=False, failover=False):
   return urlDict
 
 
-def getServiceURLs(system, service='', setup=False, randomize=False, failover=False):
+def getServiceURLs(system, service=None, setup=False, randomize=False, failover=False):
   """
     Generate url.
 
@@ -165,12 +165,16 @@ def getServiceURLs(system, service='', setup=False, randomize=False, failover=Fa
   resList = []
   mainServers = None
   systemSection = getSystemSection(system, setup=setup)
+
+  # Add failover URLs at the end of the list
   failover = "Failover" if failover else ""
   for fURLs in ["", "Failover"] if failover else [""]:
     urlList = []
     urls = List.fromChar(gConfigurationData.extractOptionFromCFG("%s/%sURLs/%s" % (systemSection, fURLs, service)))
-    # Be sure that url not None
+
+    # Be sure that urls not None
     for url in urls or []:
+
       # Trying if we are refering to the list of main servers
       # which would be like dips://$MAINSERVERS$:1234/System/Component
       if '$MAINSERVERS$' in url:
@@ -191,6 +195,7 @@ def getServiceURLs(system, service='', setup=False, randomize=False, failover=Fa
       if _url not in urlList:
         urlList.append(_url)
 
+    # Randomize list if needed
     resList.extend(List.randomize(urlList) if randomize else urlList)
 
   return resList
