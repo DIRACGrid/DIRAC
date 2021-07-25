@@ -181,7 +181,7 @@ def getServiceURLs(system, service=None, setup=False, randomize=False, failover=
         if not mainServers:
           # Operations cannot be imported at the beginning because of a bootstrap problem
           from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-          mainServers = Operations().getValue('MainServers', [])
+          mainServers = Operations(setup=setup).getValue('MainServers', [])
         if not mainServers:
           raise Exception("No Main servers defined")
 
