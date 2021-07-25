@@ -4,145 +4,152 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import unittest
+import pytest
 from diraccfg import CFG
-from DIRAC.ConfigurationSystem.Client.PathFinder import (getComponentSection,
-                                                         getServiceFailoverURL,
-                                                         getServiceURL,
-                                                         getServiceURLs)
-from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
+from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers import Operations
+from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 
-class TestPathFinder(unittest.TestCase):
-  def setUp(self):
-    # Creating test configuration file
-    self.testCfgFileName = 'test.cfg'
-    cfgContent='''
-    DIRAC
+localCFGData = ConfigurationData(False)
+mergedCFG = CFG()
+mergedCFG.loadFromBuffer("""
+DIRAC
+{
+  Setup=TestSetup
+  Setups
+  {
+    TestSetup
     {
-      Setup=TestSetup
-      Setups
-      {
-        TestSetup
-        {
-          WorkloadManagement=MyWM
-        }
-      }
+      WorkloadManagement=MyWM
     }
-    Systems
+  }
+}
+Systems
+{
+  WorkloadManagement
+  {
+    MyWM
     {
-      WorkloadManagement
+      URLs
       {
-        MyWM
-        {
-          URLs
-          {
-            Service1 = dips://server1:1234/WorkloadManagement/Service1
-            Service2 = dips://$MAINSERVERS$:5678/WorkloadManagement/Service2
-          }
-          FailoverURLs
-          {
-            Service2 = dips://failover1:5678/WorkloadManagement/Service2
-          }
-        }
+        Service1 = dips://server1:1234/WorkloadManagement/Service1
+        Service2 = dips://$MAINSERVERS$:5678/WorkloadManagement/Service2
+      }
+      FailoverURLs
+      {
+        Service2 = dips://failover1:5678/WorkloadManagement/Service2
       }
     }
-    Operations{
-      Defaults
-      {
-        MainServers = gw1, gw2
-      }
-    }
-    '''
-    with open(self.testCfgFileName, 'w') as f:
-      f.write(cfgContent)
-    gConfig = ConfigurationClient(fileToLoadList=[self.testCfgFileName])  # we replace the configuration by our own one.
-    self.setup = gConfig.getValue('/DIRAC/Setup', '')
-    self.wm = gConfig.getValue('DIRAC/Setups/' + self.setup +'/WorkloadManagement', '')
-  def tearDown( self ):
-    try:
-      os.remove(self.testCfgFileName)
-    except OSError:
-      pass
-    # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
-    # not to conflict with other tests that might be using a local dirac.cfg
-    gConfigurationData.localCFG=CFG()
-    gConfigurationData.remoteCFG=CFG()
-    gConfigurationData.mergedCFG=CFG()
-    gConfigurationData.generateNewVersion()
+  }
+}
+Operations{
+  Defaults
+  {
+    MainServers = gw1, gw2
+  }
+}
+""")
+localCFGData.localCFG=mergedCFG
+localCFGData.remoteCFG=mergedCFG
+localCFGData.mergedCFG=mergedCFG
+localCFGData.generateNewVersion()
 
 
-class TestGetComponentSection(TestPathFinder):
-
-  def test_success(self):
-    result = getComponentSection('WorkloadManagement/SandboxStoreHandler', False, False, 'Services')
-    correctResult = '/Systems/WorkloadManagement/' + self.wm + '/Services/SandboxStoreHandler'
-    self.assertEqual(result, correctResult)
-
-  def test_sucessComponentStringDoesNotExist(self):
-    """ tricky case one could expect that if entity string is wrong
-        than some kind of error will be returned, but it is not the case
-    """
-    result = getComponentSection('WorkloadManagement/SimpleLogConsumer', False, False, 'NonRonsumersNon')
-    correctResult = '/Systems/WorkloadManagement/' + self.wm + '/NonRonsumersNon/SimpleLogConsumer'
-    self.assertEqual(result, correctResult)
+@pytest.fixture
+def pathFinder(monkeypatch):  
+  monkeypatch.setattr(PathFinder, "gConfigurationData", localCFGData)
+  monkeypatch.setattr(Operations, "gConfigurationData", localCFGData)
+  return PathFinder
 
 
-class TestURLs(TestPathFinder):
-
-  def test_getServiceURLSimple(self):
-    """Fetching a URL defined normally"""
-    result = getServiceURL('WorkloadManagement/Service1')
-    correctResult = 'dips://server1:1234/WorkloadManagement/Service1'
-
-    self.assertEqual(result, correctResult)
-
-  def test_getServiceMainURL(self):
-    """Fetching a URL referencing the MainServers"""
-    result = getServiceURL('WorkloadManagement/Service2')
-    correctResult = 'dips://gw1:5678/WorkloadManagement/Service2,dips://gw2:5678/WorkloadManagement/Service2'
-    self.assertEqual(result, correctResult)
-
-  def test_getServiceFailoverURLNonExisting(self):
-    """Fetching a FailoverURL not defined"""
-    result = getServiceFailoverURL('WorkloadManagement/Service1')
-    correctResult = ''
-
-    self.assertEqual(result, correctResult)
-
-  def test_getServiceFailoverURL(self):
-    """Fetching a FailoverURL"""
-    result = getServiceFailoverURL('WorkloadManagement/Service2')
-    correctResult = 'dips://failover1:5678/WorkloadManagement/Service2'
-    self.assertEqual(result, correctResult)
-
-  def test_getServiceURLsSimple(self):
-    """Fetching a URLs defined normally"""
-    self.assertEqual(getServiceURLs('WorkloadManagement/Service1'),
-                     ['dips://server1:1234/WorkloadManagement/Service1'])
-
-  def test_getServiceMainURLs(self):
-    """Fetching a URLs referencing the MainServers"""
-    self.assertEqual(getServiceURLs('WorkloadManagement/Service2'),
-                     ['dips://gw1:5678/WorkloadManagement/Service2', 'dips://gw2:5678/WorkloadManagement/Service2'])
-
-  def test_getServiceWithFailoverURLsNonExisting(self):
-    """Fetching with FailoverURLs not defined"""
-    self.assertEqual(getServiceURLs('WorkloadManagement', 'Service1', failover=True),
-                     ['dips://server1:1234/WorkloadManagement/Service1'])
-
-  def test_getServiceWithFailoverURL(self):
-    """Fetching with FailoverURLs"""
-    self.assertEqual(getServiceURLs('WorkloadManagement', service='Service2', failover=True),
-                     ['dips://gw1:5678/WorkloadManagement/Service2', 'dips://gw2:5678/WorkloadManagement/Service2',
-                      'dips://failover1:5678/WorkloadManagement/Service2'])
+def test_getDIRACSetup(pathFinder):
+  """ Test getDIRACSetup """
+  assert pathFinder.getDIRACSetup() == 'TestSetup'
 
 
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestPathFinder)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestGetComponentSection))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestURLs))
+@pytest.mark.parametrize("componentName, componentTuple, setup, componentType, result", [
+    ('WorkloadManagement/SandboxStoreHandler', False, False, 'Services',
+     '/Systems/WorkloadManagement/MyWM/Services/SandboxStoreHandler'),
+    # tricky case one could expect that if entity string is wrong
+    # than some kind of error will be returned, but it is not the case
+    ('WorkloadManagement/SimpleLogConsumer', False, False, 'NonRonsumersNon',
+     '/Systems/WorkloadManagement/MyWM/NonRonsumersNon/SimpleLogConsumer')])
+def test_getComponentSection(pathFinder, componentName, componentTuple, setup, componentType, result):
+  """ Test getComponentSection """
+  assert pathFinder.getComponentSection(componentName, componentTuple, setup, componentType) == result
 
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+
+@pytest.mark.parametrize("serviceName, service, result", [
+    ('WorkloadManagement/Service1', None,
+     'dips://server1:1234/WorkloadManagement/Service1'),
+    ('WorkloadManagement', 'Service1',
+     'dips://server1:1234/WorkloadManagement/Service1'),
+    ('WorkloadManagement', 'Service2',
+     'dips://gw1:5678/WorkloadManagement/Service2,dips://gw2:5678/WorkloadManagement/Service2')])
+def test_getServiceURL(pathFinder, serviceName, service, result):
+  """ Test getServiceURL """
+  assert pathFinder.getServiceURL(serviceName, service=service) == result
+
+
+@pytest.mark.parametrize("serviceName, service, result", [
+    ('WorkloadManagement/Service1', None, ''),
+    ('WorkloadManagement', 'Service1', ''),
+    ('WorkloadManagement', 'Service2', 'dips://failover1:5678/WorkloadManagement/Service2')])
+def test_getServiceFailoverURL(pathFinder, serviceName, service, result):
+  """ Test getServiceFailoverURL """
+  assert pathFinder.getServiceFailoverURL(serviceName, service=service) == result
+
+
+@pytest.mark.parametrize("serviceName, service, failover, result", [
+    ('WorkloadManagement/Service1', None, False, ['dips://server1:1234/WorkloadManagement/Service1']),
+    ('WorkloadManagement', 'Service1', False, ['dips://server1:1234/WorkloadManagement/Service1']),
+    ('WorkloadManagement', 'Service2', False, ['dips://gw1:5678/WorkloadManagement/Service2',
+                                               'dips://gw2:5678/WorkloadManagement/Service2']),
+    ('WorkloadManagement', 'Service1', True, ['dips://server1:1234/WorkloadManagement/Service1']),
+    ('WorkloadManagement', 'Service2', True, ['dips://gw1:5678/WorkloadManagement/Service2',
+                                              'dips://gw2:5678/WorkloadManagement/Service2',
+                                              'dips://failover1:5678/WorkloadManagement/Service2'])])
+def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
+  """ Test getServiceURLs """
+  assert pathFinder.getServiceURLs(serviceName, service=service, failover=failover) == result
+
+
+@pytest.mark.parametrize("system, setup, failover, result", [
+    ('WorkloadManagement', None, False, {
+        'Service1': ['dips://server1:1234/WorkloadManagement/Service1'],
+        'Service2': ['dips://gw1:5678/WorkloadManagement/Service2',
+                     'dips://gw2:5678/WorkloadManagement/Service2']}),
+    ('WorkloadManagement', None, True, {
+        'Service1': ['dips://server1:1234/WorkloadManagement/Service1'],
+        'Service2': ['dips://gw1:5678/WorkloadManagement/Service2',
+                     'dips://gw2:5678/WorkloadManagement/Service2',
+                     'dips://failover1:5678/WorkloadManagement/Service2']})])
+def test_getSystemURLs(pathFinder, system, setup, failover, result):
+  """ Test getSystemURLs """
+  assert pathFinder.getSystemURLs(system, setup=setup, failover=failover) == result
+
+
+@pytest.mark.parametrize("serviceURL, system, service, result", [
+    ('dips://server.com:1234/WorkloadManagement/Service1', None, None,
+     'dips://server.com:1234/WorkloadManagement/Service1'),
+    ('dips://server.com:1234/', 'WorkloadManagement', 'Service1',
+     'dips://server.com:1234/WorkloadManagement/Service1'),
+    ('dips://server.com:1234', 'WorkloadManagement', 'Service1',
+     'dips://server.com:1234/WorkloadManagement/Service1'),
+    ('dips://server.com:1234/', 'WorkloadManagement', None,
+     'raise:path'),
+    ('dips://server.com/WorkloadManagement/Service1', None, None,
+     'raise:port'),
+    ('https://server.com/WorkloadManagement/Service1', None, None,
+     'https://server.com:443/WorkloadManagement/Service1'),
+    ('http://server.com/WorkloadManagement/Service1', None, None,
+     'http://server.com:80/WorkloadManagement/Service1'),
+    ])
+def test_checkServiceURL(pathFinder, serviceURL, system, service, result):
+  """ Test checkServiceURL """
+  try:
+    pathFinderResult = pathFinder.checkServiceURL(serviceURL, system, service)
+    assert pathFinderResult == result
+  except RuntimeError as e:
+    assert result.split(':')[1] in repr(e)

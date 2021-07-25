@@ -20,17 +20,20 @@ def getDIRACSetup():
   return gConfigurationData.extractOptionFromCFG("/DIRAC/Setup")
 
 
-def divideFullName(entityName):
+def divideFullName(entityName, second=None):
   """ Convert component full name to tuple
 
       :param str entityName: component full name, e.g.: 'Framework/ProxyManager'
+      :param str second: second component
 
-      :return: tuple -- contain system and service name
+      :return: tuple -- contain system and component name
   """
-  fields = [field.strip() for field in entityName.split("/")]
-  if len(fields) < 2:
-    raise RuntimeError("Service (%s) name must be with the form system/service" % entityName)
-  return tuple(fields)
+  if entityName and '/' not in entityName and second:
+    return (entityName, second)
+  fields = [field.strip() for field in entityName.split("/") if field.strip()]
+  if len(fields) == 2:
+    return tuple(fields)
+  raise RuntimeError("Service (%s) name must be with the form system/service" % entityName)
 
 
 def getSystemInstance(systemName, setup=False):
@@ -41,14 +44,11 @@ def getSystemInstance(systemName, setup=False):
 
       :return: str
   """
-  if not setup:
-    setup = gConfigurationData.extractOptionFromCFG("/DIRAC/Setup")
-  optionPath = "/DIRAC/Setups/%s/%s" % (setup, systemName)
+  optionPath = "/DIRAC/Setups/%s/%s" % (setup or getDIRACSetup(), systemName)
   instance = gConfigurationData.extractOptionFromCFG(optionPath)
-  if instance:
-    return instance
-  else:
+  if not instance:
     raise RuntimeError("Option %s is not defined" % optionPath)
+  return instance
 
 
 # TODO: serviceTuple here for backward compatibility and must be deleted in the next release(v7r4)
@@ -62,11 +62,8 @@ def getSystemSection(system, serviceTuple=False, instance=False, setup=False):
 
       :return: str -- system section path
   """
-  if '/' in system:
-    system, _ = divideFullName(system)
-  if not instance:
-    instance = getSystemInstance(system, setup=setup)
-  return "/Systems/%s/%s" % (system, instance)
+  system, _ = divideFullName(system, '_')
+  return "/Systems/%s/%s" % (system, instance or getSystemInstance(system, setup=setup))
 
 
 def getComponentSection(componentName, componentTuple=False, setup=False, componentCategory="Services"):
@@ -109,46 +106,46 @@ def getDatabaseSection(dbName, dbTuple=False, setup=False):
 
 
 def getSystemURLSection(serviceName, serviceTuple=False, setup=False):
-  systemSection = getSystemSection(serviceName, setup=setup)
-  return "%s/URLs" % systemSection
+  return "%s/URLs" % getSystemSection(serviceName, serviceTuple=serviceTuple, setup=setup)
 
 
-def checkServiceURL(url, system=None, service=None):
+def checkServiceURL(serviceURL, system=None, service=None):
   """ Check service URL
 
-      :param str url: full URL, e.g.: dips://some-domain:3424/Framework/Service
+      :param str serviceURL: full URL, e.g.: dips://some-domain:3424/Framework/Service
       :param str system: system name
       :param str service: service name
 
       :return: str
   """
-  url = urlparse.urlparse(url)
+  url = urlparse.urlparse(serviceURL)
   # Check port
   if not url.port:
-    if url.scheme == 'disp':
+    if url.scheme == 'dips':
       raise RuntimeError('No port found for %s/%s URL!' % (system, service))
-    url._replace(netloc=url.netloc + ':' + (80 if url.scheme == 'http' else 443))
+    url = url._replace(netloc=url.netloc + ':' + str(80 if url.scheme == 'http' else 443))
   # Check path
   if not url.path.strip('/'):
     if not system or not service:
       raise RuntimeError('No path found for %s/%s URL!' % (system, service))
-    url._replace(path='/%s/%s' % (system, service))
+    url = url._replace(path='/%s/%s' % (system, service))
   return url.geturl()
 
 
-def getSystemURLs(system, setup=False):
+def getSystemURLs(system, setup=False, randomize=False, failover=False):
   """
     Generate url.
 
     :param str system: system name or full name e.g.: Framework/ProxyManager
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
+    :param bool randomize: to randomize list
+    :param bool failover: to add failover URLs to end of result list
 
     :return: dict -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
   """
   urlDict = {}
-  systemSection = getSystemSection(system, setup=setup)
-  for service in gConfigurationData.getOptionsFromCFG("%s/URLs" % systemSection, service):
-    urlDict[service] = getServiceURLs(system, service, setup=setup)
+  for service in gConfigurationData.getOptionsFromCFG("%s/URLs" % getSystemSection(system, setup=setup)):
+    urlDict[service] = getServiceURLs(system, service, setup=setup, randomize=randomize, failover=failover)
   return urlDict
 
 
@@ -164,14 +161,13 @@ def getServiceURLs(system, service='', setup=False, randomize=False, failover=Fa
 
     :return: list -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
   """
-  if '/' in system:
-    system, service = divideFullName(system)
+  system, service = divideFullName(system, service)
   resList = []
-  urlList = []
   mainServers = None
   systemSection = getSystemSection(system, setup=setup)
   failover = "Failover" if failover else ""
   for fURLs in ["", "Failover"] if failover else [""]:
+    urlList = []
     urls = List.fromChar(gConfigurationData.extractOptionFromCFG("%s/%sURLs/%s" % (systemSection, fURLs, service)))
     # Be sure that url not None
     for url in urls or []:
@@ -182,55 +178,55 @@ def getServiceURLs(system, service='', setup=False, randomize=False, failover=Fa
           # Operations cannot be imported at the beginning because of a bootstrap problem
           from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
           mainServers = Operations().getValue('MainServers', [])
-          if not mainServers:
-            raise Exception("No Main servers defined")
+        if not mainServers:
+          raise Exception("No Main servers defined")
 
-          for srv in mainServers:
-            url = checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service)
-            if url not in urlList:
-              urlList.append(url)
-          continue
-      url = checkServiceURL(url, system, service)
-      if url not in urlList:
-        urlList.append(url)
+        for srv in mainServers:
+          _url = checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service)
+          if _url not in urlList:
+            urlList.append(_url)
+        continue
+
+      _url = checkServiceURL(url, system, service)
+      if _url not in urlList:
+        urlList.append(_url)
+
     resList.extend(List.randomize(urlList) if randomize else urlList)
 
   return resList
 
 
-def getServiceURL(serviceName, serviceTuple=False, service=None, setup=False, randomize=False):
+def getServiceURL(system, serviceTuple=False, setup=False, service=None, randomize=False):
   """
     Generate url.
 
-    :param str serviceName: system name or full name e.g.: Framework/ProxyManager
+    :param str system: system name or full name e.g.: Framework/ProxyManager
     :param serviceTuple: unuse!
-    :param str service: service name, like 'ProxyManager'.
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
+    :param str service: service name, like 'ProxyManager'.
     :param bool randomize: to randomize list
 
     :return: str -- complete list of urls. e.g. dips://some-domain:3424/Framework/Service, dips://..
   """
-  urls = getServiceURLs(serviceName, service=service, setup=setup, randomize=randomize)
+  system, service = serviceTuple if serviceTuple else divideFullName(system, service)
+  urls = getServiceURLs(system, service=service, setup=setup, randomize=randomize)
   return ','.join(urls) if urls else ""
 
 
-def getServiceFailoverURL(serviceName, serviceTuple=False, setup=False):
+def getServiceFailoverURL(system, serviceTuple=False, setup=False, service=None):
   """ Get failover URLs for service
 
-      :param str serviceName: Name of service, like 'Framework/Service'.
-      :param str serviceTuple: (optional) also name of service but look like ('Framework', 'Service').
+      :param str system: system name or full name, like 'Framework/Service'.
+      :param str serviceTuple: unuse!
       :param str setup: DIRAC setup name, can be defined in dirac.cfg
+      :param str service: service name, like 'ProxyManager'.
 
       :return: str -- complete list of urls
   """
-  system, service = serviceTuple if serviceTuple else divideFullName(serviceName)
+  system, service = serviceTuple if serviceTuple else divideFullName(system, service)
   systemSection = getSystemSection(system, setup=setup)
   url = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, service))
-  if not url:
-    return ""
-  if len(url.split("/")) < 5:
-    url = "%s/%s" % (url, serviceName)
-  return url
+  return checkServiceURL(url, system, service) if url else ""
 
 
 def getGatewayURLs(serviceName=""):
