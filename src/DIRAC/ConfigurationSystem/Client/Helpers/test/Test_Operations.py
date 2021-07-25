@@ -4,22 +4,14 @@ from __future__ import print_function
 
 import os
 import pytest
-from mock import MagicMock
 
 from diraccfg import CFG
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers import Operations
+from DIRAC.ConfigurationSystem.private import ConfigurationClient
+from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 
-mockSync = MagicMock()
-mockSync.return_value = 'sync'
-mockGetSetup = MagicMock()
-mockGetSetup.return_value = 'proSetup'
-mockGetVOForGroup = MagicMock()
-mockGetVOForGroup.return_value = 'proSetup'
-mockGetVOfromProxyGroup = MagicMock()
-mockGetVOfromProxyGroup.return_value = {}
-
+localCFGData = ConfigurationData(False)
 mergedCFG = CFG()
 mergedCFG.loadFromBuffer("""
 specSection
@@ -204,6 +196,20 @@ Operations
   }
 }
 """)
+localCFGData.localCFG = mergedCFG
+localCFGData.remoteCFG = mergedCFG
+localCFGData.mergedCFG = mergedCFG
+localCFGData.generateNewVersion()
+
+
+@pytest.fixture
+def ops(monkeypatch):
+  monkeypatch.setattr(ConfigurationClient, 'gConfigurationData', localCFGData)
+  monkeypatch.setattr(Operations, "gConfig", ConfigurationClient.ConfigurationClient())
+  monkeypatch.setattr(Operations, 'getSetup', lambda: 'proSetup')
+  monkeypatch.setattr(Operations, 'getVOfromProxyGroup', lambda: {})
+  monkeypatch.setattr(Operations, "gConfigurationData", localCFGData)
+  return Operations
 
 
 @pytest.mark.parametrize("vo, setup, mainSection, cfg, optionPath, sectionPath", [
@@ -408,20 +414,13 @@ Operations
                                                          'secOptB': 'specSecOptB'},
                                              'option': 'specVal'},
      '/specSection/option', '/specSection/section'),
-    (None, None, 'notExist', {}, '', ''),
-
-])
-def test_Operations(mocker, vo, setup, mainSection, cfg, optionPath, sectionPath):
-
-  mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.gConfigurationData.sync', mockSync)
-  mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.gConfigurationData.mergedCFG', mergedCFG)
-  mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.getVOfromProxyGroup',
-               side_effect=mockGetVOfromProxyGroup)
-  mocker.patch('DIRAC.ConfigurationSystem.Client.Helpers.Operations.getSetup', side_effect=mockGetSetup)
-
-  oper = Operations(vo=vo, setup=setup, mainSection=mainSection)
+    (None, None, 'notExist', {}, '', '')])
+def test_Operations(ops, vo, setup, mainSection, cfg, optionPath, sectionPath):
+  """ Test Operations """
+  oper = ops.Operations(vo=vo, setup=setup, mainSection=mainSection)
 
   def checkValue(data, path=''):
+    """ Helper method """
     # Test getSections
     result = oper.getSections(path)
     assert result['OK'], result['Message']
@@ -460,8 +459,8 @@ def test_Operations(mocker, vo, setup, mainSection, cfg, optionPath, sectionPath
   assert oper.getSectionPath('section') == sectionPath
 
 
-def test_expiresCache():
-
-  oldVertion = gConfigurationData.getVersion()
-  gConfigurationData.generateNewVersion()
-  assert Operations()._cacheExpired(), 'oldVersion(%s), newVersion(%s)' % (oldVertion, gConfigurationData.getVersion())
+def test_expiresCache(ops):
+  """ Test cache version """
+  oldVertion = ops.gConfigurationData.getVersion()
+  ops.gConfigurationData.generateNewVersion()
+  assert ops.Operations()._cacheExpired(), 'oldVersion(%s), newVersion(%s)' % (oldVertion, ops.gConfigurationData.getVersion())
