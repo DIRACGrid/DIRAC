@@ -68,7 +68,7 @@ def main():
     pass
 
   if not isinstance(excludeHosts, list):
-    excludeHosts = hosts.split(',')
+    excludeHosts = excludeHosts.split(',')
 
 
   from concurrent.futures import ThreadPoolExecutor, as_completed
