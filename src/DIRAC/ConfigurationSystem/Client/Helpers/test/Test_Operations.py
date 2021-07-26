@@ -461,6 +461,6 @@ def test_Operations(ops, vo, setup, mainSection, cfg, optionPath, sectionPath):
 
 def test_expiresCache(ops):
   """ Test cache version """
-  oldVertion = ops.gConfigurationData.getVersion()
+  old = ops.gConfigurationData.getVersion()
   ops.gConfigurationData.generateNewVersion()
-  assert ops.Operations()._cacheExpired(), 'oldVersion(%s), newVersion(%s)' % (oldVertion, ops.gConfigurationData.getVersion())
+  assert ops.Operations()._cacheExpired(), 'old(%s), new(%s)' % (old, ops.gConfigurationData.getVersion())
