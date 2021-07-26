@@ -20,16 +20,16 @@ def getDIRACSetup():
   return gConfigurationData.extractOptionFromCFG("/DIRAC/Setup")
 
 
-def divideFullName(entityName, second=None):
+def divideFullName(entityName, componentName=None):
   """ Convert component full name to tuple
 
       :param str entityName: component full name, e.g.: 'Framework/ProxyManager'
-      :param str second: component name
+      :param str componentName: component name
 
       :return: tuple -- contain system and component name
   """
-  if entityName and '/' not in entityName and second:
-    return (entityName, second)
+  if entityName and '/' not in entityName and componentName:
+    return (entityName, componentName)
   fields = [field.strip() for field in entityName.split("/") if field.strip()]
   if len(fields) == 2:
     return tuple(fields)
@@ -132,31 +132,29 @@ def checkServiceURL(serviceURL, system=None, service=None):
   return url.geturl()
 
 
-def getSystemURLs(system, setup=False, randomize=False, failover=False):
+def getSystemURLs(system, setup=False, failover=False):
   """
     Generate url.
 
     :param str system: system name or full name e.g.: Framework/ProxyManager
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
-    :param bool randomize: to randomize list
     :param bool failover: to add failover URLs to end of result list
 
     :return: dict -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
   """
   urlDict = {}
   for service in gConfigurationData.getOptionsFromCFG("%s/URLs" % getSystemSection(system, setup=setup)):
-    urlDict[service] = getServiceURLs(system, service, setup=setup, randomize=randomize, failover=failover)
+    urlDict[service] = getServiceURLs(system, service, setup=setup, failover=failover)
   return urlDict
 
 
-def getServiceURLs(system, service=None, setup=False, randomize=False, failover=False):
+def getServiceURLs(system, service=None, setup=False, failover=False):
   """
     Generate url.
 
     :param str system: system name or full name e.g.: Framework/ProxyManager
     :param str service: service name, like 'ProxyManager'.
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
-    :param bool randomize: to randomize list
     :param bool failover: to add failover URLs to end of result list
 
     :return: list -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
@@ -196,12 +194,12 @@ def getServiceURLs(system, service=None, setup=False, randomize=False, failover=
         urlList.append(_url)
 
     # Randomize list if needed
-    resList.extend(List.randomize(urlList) if randomize else urlList)
+    resList.extend(List.randomize(urlList))
 
   return resList
 
 
-def getServiceURL(system, serviceTuple=False, setup=False, service=None, randomize=False):
+def getServiceURL(system, serviceTuple=False, setup=False, service=None):
   """
     Generate url.
 
@@ -209,12 +207,11 @@ def getServiceURL(system, serviceTuple=False, setup=False, service=None, randomi
     :param serviceTuple: unuse!
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
     :param str service: service name, like 'ProxyManager'.
-    :param bool randomize: to randomize list
 
     :return: str -- complete list of urls. e.g. dips://some-domain:3424/Framework/Service, dips://..
   """
   system, service = serviceTuple if serviceTuple else divideFullName(system, service)
-  urls = getServiceURLs(system, service=service, setup=setup, randomize=randomize)
+  urls = getServiceURLs(system, service=service, setup=setup)
   return ','.join(urls) if urls else ""
 
 
@@ -234,20 +231,20 @@ def getServiceFailoverURL(system, serviceTuple=False, setup=False, service=None)
   return checkServiceURL(url, system, service) if url else ""
 
 
-def getGatewayURLs(serviceName=""):
+def getGatewayURLs(system="", service=None):
   """ Get gateway URLs for service
 
-      :param str serviceName: service name
+      :param str system: system name or full name, like 'Framework/Service'.
+      :param str service: service name, like 'ProxyManager'.
 
       :return: list or False
   """
+  system, service = divideFullName(system, service)
   siteName = gConfigurationData.extractOptionFromCFG("/LocalSite/Site")
   if not siteName:
     return False
-  gatewayList = gConfigurationData.extractOptionFromCFG("/DIRAC/Gateways/%s" % siteName)
-  if not gatewayList:
+  gateways = gConfigurationData.extractOptionFromCFG("/DIRAC/Gateways/%s" % siteName)
+  if not gateways:
     return False
-  gatewayList = List.fromChar(gatewayList, ",")
-  if serviceName:
-    gatewayList = ["%s/%s" % ("/".join(gw.split("/")[:3]), serviceName) for gw in gatewayList]
-  return List.randomize(gatewayList)
+  gateways = List.randomize(List.fromChar(gateways, ","))
+  return [checkServiceURL(u, system, service) for u in gateways if u] if system and service else gateways
