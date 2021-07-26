@@ -13,6 +13,8 @@ from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 
 random.seed()
 
+sLog = gLogger.getSubLogger(__name__)
+
 
 class PingPongMindHandler(ExecutorMindHandler):
 
@@ -31,7 +33,7 @@ class PingPongMindHandler(ExecutorMindHandler):
 
   def export_startPingOfDeath(self, numBounces):
     taskData = {'bouncesLeft': numBounces}
-    gLogger.info("START TASK = %s" % taskData)
+    sLog.info("START TASK", "%s" % taskData)
     return self.executeTask(int(time.time() + random.random()), taskData)
 
   @classmethod
@@ -41,7 +43,7 @@ class PingPongMindHandler(ExecutorMindHandler):
 
     eTypes is a list of executor modules the reactor runs
     """
-    gLogger.info("EXECUTOR CONNECTED OF TYPE %s" % eTypes)
+    sLog.info("EXECUTOR CONNECTED OF TYPE", "%s" % eTypes)
     return S_OK()
 
   @classmethod
@@ -56,9 +58,9 @@ class PingPongMindHandler(ExecutorMindHandler):
     """
     Before a task can be executed, the mind has to know which executor module can process it
     """
-    gLogger.info("IN DISPATCH %s" % taskData)
+    sLog.info("IN DISPATCH", "%s" % taskData)
     if taskData['bouncesLeft'] > 0:
-      gLogger.info("SEND TO PLACE")
+      sLog.info("SEND TO PLACE")
       return S_OK("Test/PingPongExecutor")
     return S_OK()
 
@@ -70,12 +72,12 @@ class PingPongMindHandler(ExecutorMindHandler):
 
   @classmethod
   def exec_serializeTask(cls, taskData):
-    gLogger.info("SERIALIZE %s" % taskData)
+    sLog.info("SERIALIZE", "%s" % taskData)
     return S_OK(DEncode.encode(taskData))
 
   @classmethod
   def exec_deserializeTask(cls, taskStub):
-    gLogger.info("DESERIALIZE %s" % taskStub)
+    sLog.info("DESERIALIZE", "%s" % taskStub)
     return S_OK(DEncode.decode(taskStub)[0])
 
   @classmethod
@@ -83,7 +85,7 @@ class PingPongMindHandler(ExecutorMindHandler):
     """
     This function will be called when a task has been processed and by which executor module
     """
-    gLogger.info("PROCESSED %s" % taskData)
+    sLog.info("PROCESSED", "%s" % taskData)
     taskData['bouncesLeft'] -= 1
     return cls.executeTask(taskid, taskData)
 
