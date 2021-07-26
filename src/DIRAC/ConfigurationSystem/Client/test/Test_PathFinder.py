@@ -68,16 +68,18 @@ def test_getDIRACSetup(pathFinder):
   assert pathFinder.getDIRACSetup() == 'TestSetup'
 
 
-@pytest.mark.parametrize("componentName, componentTuple, setup, componentType, result", [
+@pytest.mark.parametrize("system, componentName, setup, componentType, result", [
     ('WorkloadManagement/SandboxStoreHandler', False, False, 'Services',
+     '/Systems/WorkloadManagement/MyWM/Services/SandboxStoreHandler'),
+    ('WorkloadManagement', 'SandboxStoreHandler', False, 'Services',
      '/Systems/WorkloadManagement/MyWM/Services/SandboxStoreHandler'),
     # tricky case one could expect that if entity string is wrong
     # than some kind of error will be returned, but it is not the case
     ('WorkloadManagement/SimpleLogConsumer', False, False, 'NonRonsumersNon',
      '/Systems/WorkloadManagement/MyWM/NonRonsumersNon/SimpleLogConsumer')])
-def test_getComponentSection(pathFinder, componentName, componentTuple, setup, componentType, result):
+def test_getComponentSection(pathFinder, system, componentName, setup, componentType, result):
   """ Test getComponentSection """
-  assert pathFinder.getComponentSection(componentName, componentTuple, setup, componentType) == result
+  assert pathFinder.getComponentSection(system, componentName, setup, componentType) == result
 
 
 @pytest.mark.parametrize("serviceName, service, result", [

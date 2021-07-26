@@ -229,7 +229,7 @@ class ComponentSupervisionAgent(AgentModule):
   def _getComponentOption(self, instanceType, system, componentName, option, default):
     """Get component option from DIRAC CS, using components' base classes methods."""
     fullComponentName = os.path.join(system, componentName)
-    componentPath = PathFinder.getComponentSection(fullComponentName, False, self.setup, instanceType)
+    componentPath = PathFinder.getComponentSection(fullComponentName, setup=self.setup, componentCategory=instanceType)
     if instanceType != 'Agents':
       return gConfig.getValue(os.path.join(componentPath, option), default)
     # deal with agent configuration

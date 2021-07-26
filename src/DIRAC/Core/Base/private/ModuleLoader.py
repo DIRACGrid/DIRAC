@@ -50,7 +50,7 @@ class ModuleLoader(object):
       # Look in the CS
       system = modName
       # Can this be generated with sectionFinder?
-      csPath = "%s/Executors" % PathFinder.getSystemSection(system, (system, ))
+      csPath = "%s/Executors" % PathFinder.getSystemSection(system)
       gLogger.verbose("Exploring %s to discover modules" % csPath)
       result = gConfig.getSections(csPath)
       if result['OK']:

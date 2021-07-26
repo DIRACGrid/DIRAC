@@ -28,6 +28,7 @@ def divideFullName(entityName, componentName=None):
 
       :return: tuple -- contain system and component name
   """
+  entityName = strip('/')
   if entityName and '/' not in entityName and componentName:
     return (entityName, componentName)
   fields = [field.strip() for field in entityName.split("/") if field.strip()]
@@ -51,62 +52,95 @@ def getSystemInstance(system, setup=False):
   return instance
 
 
-# TODO: serviceTuple here for backward compatibility and must be deleted in the next release(v7r4)
-def getSystemSection(system, serviceTuple=False, instance=False, setup=False):
+def getSystemSection(system, instance=False, setup=False):
   """ Get system section
 
-      :param str system: system name or full name e.g.: Framework/ProxyManager
-      :param serviceTuple: unuse!
+      :param str system: system name
       :param str instance: instance name
       :param str setup: setup name
 
       :return: str -- system section path
   """
-  system, _ = divideFullName(system, '_')
+  system, _ = divideFullName(system, '_')  # for backward compatibility
   return "/Systems/%s/%s" % (system, instance or getSystemInstance(system, setup=setup))
 
 
-def getComponentSection(componentName, componentTuple=False, setup=False, componentCategory="Services"):
+def getComponentSection(system, component=False, setup=False, componentCategory="Services"):
   """Function returns the path to the component.
 
 
-  :param str componentName: Component name prefixed by the system in which it is placed.
-                            e.g. 'WorkloadManagement/SandboxStoreHandler'
-  :param tuple componentTuple: Path of the componenent already divided
-                               e.g. ('WorkloadManagement', 'SandboxStoreHandler')
+  :param str system: system name or component name prefixed by the system in which it is placed.
+                     e.g. 'WorkloadManagement/SandboxStoreHandler'
+  :param str component: component name, e.g. 'SandboxStoreHandler'
   :param str setup: Name of the setup.
-  :param str componentCategory: Category of the component, it can be: 'Agents', 'Services', 'Executors'
-                                or 'Databases'.
+  :param str componentCategory: Category of the component, it can be:
+                                'Agents', 'Services', 'Executors' or 'Databases'.
 
   :return str: Complete path to the component
 
-  :raise RuntimeException: If in the componentName - the system part does not correspond to any known system in DIRAC.
+  :raise RuntimeException: If in the system - the system part does not correspond to any known system in DIRAC.
 
-  Example:
-    getComponentSection('WorkloadManagement/SandboxStoreHandler', False,False,'Services')
+  Examples:
+    getComponentSection('WorkloadManagement/SandboxStoreHandler', setup='Production', componentCategory='Services')
+    getComponentSection('WorkloadManagement', 'SandboxStoreHandler', 'Production')
   """
-  system, service = componentTuple if componentTuple else divideFullName(componentName)
-  return "%s/%s/%s" % (getSystemSection(system, setup=setup), componentCategory, service)
+  system, component = divideFullName(system, component)
+  return "%s/%s/%s" % (getSystemSection(system, setup=setup), componentCategory, component)
 
 
-def getServiceSection(serviceName, serviceTuple=False, setup=False):
-  return getComponentSection(serviceName, serviceTuple, setup, "Services")
+def getServiceSection(system, serviceName=False, setup=False):
+    """ Get service section in a system
+
+      :param str system: system name
+      :param str serviceName: DB name
+
+      :return: str
+  """
+  return getComponentSection(system, component=serviceName, setup=setup)
 
 
-def getAgentSection(agentName, agentTuple=False, setup=False):
-  return getComponentSection(agentName, agentTuple, setup, "Agents")
+def getAgentSection(system, agentName=False, setup=False):
+    """ Get agent section in a system
+
+      :param str system: system name
+      :param str agentName: DB name
+
+      :return: str
+  """
+  return getComponentSection(system, component=agentName, setup=setup, componentCategory="Agents")
 
 
-def getExecutorSection(executorName, executorTuple=False, setup=False):
-  return getComponentSection(executorName, executorTuple, setup, "Executors")
+def getExecutorSection(system, executorName=None, component=False, setup=False):
+  """ Get executor section in a system
+
+      :param str system: system name
+      :param str executorName: DB name
+
+      :return: str
+  """
+  return getComponentSection(system, component=executorName, setup=setup, componentCategory="Executors")
 
 
-def getDatabaseSection(dbName, dbTuple=False, setup=False):
-  return getComponentSection(dbName, dbTuple, setup, "Databases")
+def getDatabaseSection(system, dbName=False, setup=False):
+  """ Get DB section in a system
+
+      :param str system: system name
+      :param str dbName: DB name
+
+      :return: str
+  """
+  return getComponentSection(system, component=dbName, setup=setup, componentCategory="Databases")
 
 
-def getSystemURLSection(serviceName, serviceTuple=False, setup=False):
-  return "%s/URLs" % getSystemSection(serviceName, serviceTuple=serviceTuple, setup=setup)
+def getSystemURLSection(system, setup=False):
+  """ Get URLs section in a system
+
+      :param str system: system name
+      :param str setup: setup name
+
+      :return: str
+  """
+  return "%s/URLs" % getSystemSection(system, setup=setup)
 
 
 def checkServiceURL(serviceURL, system=None, service=None):
@@ -199,12 +233,11 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
   return resList
 
 
-def getServiceURL(system, serviceTuple=False, setup=False, service=None):
+def getServiceURL(system, setup=False, service=None):
   """
     Generate url.
 
     :param str system: system name or full name e.g.: Framework/ProxyManager
-    :param serviceTuple: unuse!
     :param str setup: DIRAC setup name, can be defined in dirac.cfg
     :param str service: service name, like 'ProxyManager'.
 
@@ -215,7 +248,7 @@ def getServiceURL(system, serviceTuple=False, setup=False, service=None):
   return ','.join(urls) if urls else ""
 
 
-def getServiceFailoverURL(system, serviceTuple=False, setup=False, service=None):
+def getServiceFailoverURL(system, setup=False, service=None):
   """ Get failover URLs for service
 
       :param str system: system name or full name, like 'Framework/Service'.
