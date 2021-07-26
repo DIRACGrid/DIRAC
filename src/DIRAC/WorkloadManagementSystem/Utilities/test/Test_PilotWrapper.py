@@ -27,21 +27,17 @@ def test_scriptoptions():
   """
 
   res = pilotWrapperScript(
-      pilotFilesCompressedEncodedDict={'dirac-install.py': 'someContentOfDiracInstall',
+      pilotFilesCompressedEncodedDict={'dirac_boh.py': 'someContentOfDiracInstall',
                                        'someOther.py': 'someOtherContent'},
       pilotOptions="-c 123 --foo bar")
 
-  assert "with open('dirac-install.py', 'wb') as fd:" in res
+  assert "with open('dirac_boh.py', 'wb') as fd:" in res
   assert 'os.environ["someName"]="someValue"' not in res
 
 
 def test_scriptReal():
   """ test script creation
   """
-  diracInstall = os.path.join(os.getcwd(), 'src/DIRAC/Core/scripts/dirac-install.py')
-  with open(diracInstall, "rb") as fd:
-    diracInstall = fd.read()
-  diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
 
   diracPilot = os.path.join(os.getcwd(), 'src/DIRAC/Core/Base/API.py')  # just some random file
   with open(diracPilot, "rb") as fd:
@@ -59,14 +55,12 @@ def test_scriptReal():
   diracPilotCommandsEncoded = base64.b64encode(bz2.compress(diracPilotCommands, 9))
 
   res = pilotWrapperScript(
-      pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded,
-                                       'dirac-pilot.py': diracPilotEncoded,
+      pilotFilesCompressedEncodedDict={'dirac-pilot.py': diracPilotEncoded,
                                        'pilotTools.py': diracPilotToolsEncoded,
                                        'pilotCommands.py': diracPilotCommandsEncoded},
       pilotOptions="-c 123 --foo bar")
 
   assert "with open('dirac-pilot.py', 'wb') as fd:" in res
-  assert "with open('dirac-install.py', 'wb') as fd:" in res
   assert 'os.environ["someName"]="someValue"' not in res
 
 
@@ -74,7 +68,7 @@ def test_scriptWithEnvVars():
   """ test script creation
   """
   res = pilotWrapperScript(
-      pilotFilesCompressedEncodedDict={'dirac-install.py': 'someContentOfDiracInstall',
+      pilotFilesCompressedEncodedDict={'dirac_boh.py': 'someContentOfDiracInstall',
                                        'someOther.py': 'someOtherContent'},
       pilotOptions="-c 123 --foo bar",
       envVariables={'someName': 'someValue',

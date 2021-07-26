@@ -6,10 +6,10 @@
 # - starts it
 #
 # It should be executed for different versions of python, e.g.:
-# - 2.6.x
 # - 2.7.x (x < 9)
 # - 2.7.x (x >= 9)
 # - 3.6.x
+# - 3.9.x
 #
 #
 # Invoke this with:
@@ -80,7 +80,7 @@ diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9)).decode()
 
 res = pilotWrapperScript(
     pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded},
-    pilotOptions="--setup=CI -N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --debug",
+    pilotOptions="--setup=CI -N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --pythonVersion=3 --debug",
     location='diracproject.web.cern.ch/diracproject/tars/Pilot/DIRAC/master/,wrong.cern.ch')
 
 with open('pilot-wrapper.sh', 'wb') as pj:
