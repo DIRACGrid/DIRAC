@@ -68,7 +68,6 @@ def getSystemSection(system, instance=False, setup=False):
 def getComponentSection(system, component=False, setup=False, componentCategory="Services"):
   """Function returns the path to the component.
 
-
   :param str system: system name or component name prefixed by the system in which it is placed.
                      e.g. 'WorkloadManagement/SandboxStoreHandler'
   :param str component: component name, e.g. 'SandboxStoreHandler'
@@ -89,7 +88,7 @@ def getComponentSection(system, component=False, setup=False, componentCategory=
 
 
 def getServiceSection(system, serviceName=False, setup=False):
-    """ Get service section in a system
+  """ Get service section in a system
 
       :param str system: system name
       :param str serviceName: DB name
@@ -100,7 +99,7 @@ def getServiceSection(system, serviceName=False, setup=False):
 
 
 def getAgentSection(system, agentName=False, setup=False):
-    """ Get agent section in a system
+  """ Get agent section in a system
 
       :param str system: system name
       :param str agentName: DB name
