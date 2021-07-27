@@ -154,7 +154,7 @@ def test_getSystemURLs(pathFinder, system, setup, failover, result):
 def test_checkComponentURL(pathFinder, serviceURL, system, service, result):
   """ Test checkComponentURL """
   try:
-    pathFinderResult = pathFinder.checkComponentURL(serviceURL, system, service)
+    pathFinderResult = pathFinder.checkComponentURL(serviceURL, system, service, pathMandatory=True)
     assert pathFinderResult == result
   except RuntimeError as e:
     assert result.split(':')[1] in repr(e)
