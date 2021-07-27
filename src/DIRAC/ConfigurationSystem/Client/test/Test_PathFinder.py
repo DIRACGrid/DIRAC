@@ -7,6 +7,7 @@ from __future__ import print_function
 import pytest
 from diraccfg import CFG
 
+from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
@@ -84,14 +85,15 @@ def test_getComponentSection(pathFinder, system, componentName, setup, component
 
 @pytest.mark.parametrize("serviceName, service, result", [
     ('WorkloadManagement/Service1', None,
-     'dips://server1:1234/WorkloadManagement/Service1'),
+     {'dips://server1:1234/WorkloadManagement/Service1'}),
     ('WorkloadManagement', 'Service1',
-     'dips://server1:1234/WorkloadManagement/Service1'),
+     {'dips://server1:1234/WorkloadManagement/Service1'}),
     ('WorkloadManagement', 'Service2',
-     'dips://gw1:5678/WorkloadManagement/Service2,dips://gw2:5678/WorkloadManagement/Service2')])
+     {'dips://gw1:5678/WorkloadManagement/Service2', 'dips://gw2:5678/WorkloadManagement/Service2'})])
 def test_getServiceURL(pathFinder, serviceName, service, result):
   """ Test getServiceURL """
-  assert pathFinder.getServiceURL(serviceName, service=service) == result
+
+  assert set(List.fromChar(pathFinder.getServiceURL(serviceName, service=service))) == result
 
 
 @pytest.mark.parametrize("serviceName, service, result", [
@@ -104,32 +106,34 @@ def test_getServiceFailoverURL(pathFinder, serviceName, service, result):
 
 
 @pytest.mark.parametrize("serviceName, service, failover, result", [
-    ('WorkloadManagement/Service1', None, False, ['dips://server1:1234/WorkloadManagement/Service1']),
-    ('WorkloadManagement', 'Service1', False, ['dips://server1:1234/WorkloadManagement/Service1']),
-    ('WorkloadManagement', 'Service2', False, ['dips://gw1:5678/WorkloadManagement/Service2',
-                                               'dips://gw2:5678/WorkloadManagement/Service2']),
-    ('WorkloadManagement', 'Service1', True, ['dips://server1:1234/WorkloadManagement/Service1']),
-    ('WorkloadManagement', 'Service2', True, ['dips://gw1:5678/WorkloadManagement/Service2',
+    ('WorkloadManagement/Service1', None, False, {'dips://server1:1234/WorkloadManagement/Service1'}),
+    ('WorkloadManagement', 'Service1', False, {'dips://server1:1234/WorkloadManagement/Service1'}),
+    ('WorkloadManagement', 'Service2', False, {'dips://gw1:5678/WorkloadManagement/Service2',
+                                               'dips://gw2:5678/WorkloadManagement/Service2'}),
+    ('WorkloadManagement', 'Service1', True, {'dips://server1:1234/WorkloadManagement/Service1'}),
+    ('WorkloadManagement', 'Service2', True, {'dips://gw1:5678/WorkloadManagement/Service2',
                                               'dips://gw2:5678/WorkloadManagement/Service2',
-                                              'dips://failover1:5678/WorkloadManagement/Service2'])])
+                                              'dips://failover1:5678/WorkloadManagement/Service2'})])
 def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
   """ Test getServiceURLs """
-  assert pathFinder.getServiceURLs(serviceName, service=service, failover=failover) == result
+  assert set(pathFinder.getServiceURLs(serviceName, service=service, failover=failover)) == result
 
 
 @pytest.mark.parametrize("system, setup, failover, result", [
     ('WorkloadManagement', None, False, {
-        'Service1': ['dips://server1:1234/WorkloadManagement/Service1'],
-        'Service2': ['dips://gw1:5678/WorkloadManagement/Service2',
-                     'dips://gw2:5678/WorkloadManagement/Service2']}),
+        'Service1': {'dips://server1:1234/WorkloadManagement/Service1'},
+        'Service2': {'dips://gw1:5678/WorkloadManagement/Service2',
+                     'dips://gw2:5678/WorkloadManagement/Service2'}}),
     ('WorkloadManagement', None, True, {
-        'Service1': ['dips://server1:1234/WorkloadManagement/Service1'],
-        'Service2': ['dips://gw1:5678/WorkloadManagement/Service2',
+        'Service1': {'dips://server1:1234/WorkloadManagement/Service1'},
+        'Service2': {'dips://gw1:5678/WorkloadManagement/Service2',
                      'dips://gw2:5678/WorkloadManagement/Service2',
-                     'dips://failover1:5678/WorkloadManagement/Service2']})])
+                     'dips://failover1:5678/WorkloadManagement/Service2'}})])
 def test_getSystemURLs(pathFinder, system, setup, failover, result):
   """ Test getSystemURLs """
-  assert pathFinder.getSystemURLs(system, setup=setup, failover=failover) == result
+  sysDict = pathFinder.getSystemURLs(system, setup=setup, failover=failover)
+  for service in sysDict:
+    assert set(sysDict[service]) == result[service]
 
 
 @pytest.mark.parametrize("serviceURL, system, service, result", [

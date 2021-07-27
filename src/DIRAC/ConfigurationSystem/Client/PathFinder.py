@@ -28,7 +28,7 @@ def divideFullName(entityName, componentName=None):
 
       :return: tuple -- contain system and component name
   """
-  entityName = strip('/')
+  entityName = entityName.strip('/')
   if entityName and '/' not in entityName and componentName:
     return (entityName, componentName)
   fields = [field.strip() for field in entityName.split("/") if field.strip()]
@@ -232,32 +232,31 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
   return resList
 
 
-def getServiceURL(system, setup=False, service=None):
+def getServiceURL(system, service=None, setup=False):
   """
     Generate url.
 
     :param str system: system name or full name e.g.: Framework/ProxyManager
-    :param str setup: DIRAC setup name, can be defined in dirac.cfg
     :param str service: service name, like 'ProxyManager'.
+    :param str setup: DIRAC setup name, can be defined in dirac.cfg
 
     :return: str -- complete list of urls. e.g. dips://some-domain:3424/Framework/Service, dips://..
   """
-  system, service = serviceTuple if serviceTuple else divideFullName(system, service)
+  system, service = divideFullName(system, service)
   urls = getServiceURLs(system, service=service, setup=setup)
   return ','.join(urls) if urls else ""
 
 
-def getServiceFailoverURL(system, setup=False, service=None):
+def getServiceFailoverURL(system, service=None, setup=False):
   """ Get failover URLs for service
 
       :param str system: system name or full name, like 'Framework/Service'.
-      :param str serviceTuple: unuse!
-      :param str setup: DIRAC setup name, can be defined in dirac.cfg
       :param str service: service name, like 'ProxyManager'.
+      :param str setup: DIRAC setup name, can be defined in dirac.cfg
 
       :return: str -- complete list of urls
   """
-  system, service = serviceTuple if serviceTuple else divideFullName(system, service)
+  system, service = divideFullName(system, service)
   systemSection = getSystemSection(system, setup=setup)
   url = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, service))
   return checkServiceURL(url, system, service) if url else ""
