@@ -534,7 +534,7 @@ class ComponentSupervisionAgent(AgentModule):
       # ignore SystemAdministrator, does not have URLs
       if 'SystemAdministrator' in service:
         continue
-      self._checkComponentURL(service, options)
+      self._checkServiceURL(service, options)
 
     if self.csAPI.csModified and self.commitURLs:
       self.log.info('Commiting changes to the CS')
@@ -544,7 +544,7 @@ class ComponentSupervisionAgent(AgentModule):
         return S_ERROR('Failed to commit to CS')
     return S_OK()
 
-  def _checkComponentURL(self, serviceName, options):
+  def _checkServiceURL(self, serviceName, options):
     """Ensure service URL is properly configured in the CS."""
     url = self._getURL(serviceName, options)
     system = options['System']
