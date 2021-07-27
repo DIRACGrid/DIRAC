@@ -204,8 +204,7 @@ class RequestDB(object):
       updateRet = session.execute(update(Request)
                                   .where(Request.RequestID == requestID)
                                   .values({Request._Status: 'Canceled',
-                                           Request._LastUpdate: datetime.datetime.utcnow()
-                                           .strftime(Request._datetimeFormat)})
+                                           Request._LastUpdate: datetime.datetime.utcnow()})
                                   .execution_options(synchronize_session=False))  # See FTS3DB for synchronize_session
       session.commit()
 
@@ -369,8 +368,7 @@ class RequestDB(object):
         session.execute(update(Request)
                         .where(Request.RequestID == requestID)
                         .values({Request._Status: 'Assigned',
-                                 Request._LastUpdate: datetime.datetime.utcnow()
-                                 .strftime(Request._datetimeFormat)})
+                                 Request._LastUpdate: datetime.datetime.utcnow()})
                         )
         session.commit()
 
@@ -417,9 +415,9 @@ class RequestDB(object):
         log.debug("Got request ids %s" % requestIDs)
 
         requests = session.query(Request) \
-                          .options(joinedload('__operations__').joinedload('__files__')) \
-                          .filter(Request.RequestID.in_(requestIDs))\
-                          .all()
+            .options(joinedload('__operations__').joinedload('__files__')) \
+            .filter(Request.RequestID.in_(requestIDs))\
+            .all()
         log.debug("Got %s Request objects " % len(requests))
         requestDict = dict((req.RequestID, req) for req in requests)
       # No Waiting requests
@@ -430,8 +428,7 @@ class RequestDB(object):
         session.execute(update(Request)
                         .where(Request.RequestID.in_(requestDict.keys()))
                         .values({Request._Status: 'Assigned',
-                                 Request._LastUpdate: datetime.datetime.utcnow()
-                                 .strftime(Request._datetimeFormat)})
+                                 Request._LastUpdate: datetime.datetime.utcnow()})
                         )
       session.commit()
 
@@ -462,17 +459,17 @@ class RequestDB(object):
     try:
       if getJobID:
         reqQuery = session.query(Request.RequestID, Request._Status, Request._LastUpdate, Request.JobID)\
-                          .filter(Request._Status.in_(statusList))
+            .filter(Request._Status.in_(statusList))
       else:
         reqQuery = session.query(Request.RequestID, Request._Status, Request._LastUpdate)\
-                          .filter(Request._Status.in_(statusList))
+            .filter(Request._Status.in_(statusList))
       if since:
         reqQuery = reqQuery.filter(Request._LastUpdate > since)
       if until:
         reqQuery = reqQuery.filter(Request._LastUpdate < until)
 
       reqQuery = reqQuery.order_by(Request._LastUpdate)\
-                         .limit(limit)
+          .limit(limit)
       requestIDs = [list(reqIDTuple) for reqIDTuple in reqQuery.all()]
 
     except Exception as e:
@@ -514,22 +511,22 @@ class RequestDB(object):
 
     try:
       requestQuery = session.query(Request._Status, func.count(Request.RequestID))\
-                            .group_by(Request._Status)\
-                            .all()
+          .group_by(Request._Status)\
+          .all()
 
       for status, count in requestQuery:
         retDict["Request"][status] = count
 
       operationQuery = session.query(Operation.Type, Operation._Status, func.count(Operation.OperationID))\
-                              .group_by(Operation.Type, Operation._Status)\
-                              .all()
+          .group_by(Operation.Type, Operation._Status)\
+          .all()
 
       for oType, status, count in operationQuery:
         retDict['Operation'].setdefault(oType, {})[status] = count
 
       fileQuery = session.query(File._Status, func.count(File.FileID))\
-                         .group_by(File._Status)\
-                         .all()
+          .group_by(File._Status)\
+          .all()
 
       for status, count in fileQuery:
         retDict["File"][status] = count
@@ -579,7 +576,7 @@ class RequestDB(object):
 
           if key == 'Type':
             summaryQuery = summaryQuery.join(Request.__operations__)\
-                                       .group_by(Request.RequestID, Operation.Type)
+                .group_by(Request.RequestID, Operation.Type)
             tableName = 'Operation'
           elif key == 'Status':
             key = '_Status'
@@ -732,7 +729,7 @@ class RequestDB(object):
 
     try:
       ret = session.query(Request.JobID, Request.RequestID)\
-                   .filter(Request.JobID.in_(jobIDs))\
+          .filter(Request.JobID.in_(jobIDs))\
           .all()
 
       reqDict['Successful'] = dict((jobId, reqID) for jobId, reqID in ret)
@@ -766,8 +763,8 @@ class RequestDB(object):
 
     try:
       ret = session.query(Request.JobID, Request) \
-                   .options(joinedload('__operations__').joinedload('__files__')) \
-                   .filter(Request.JobID.in_(jobIDs)).all()
+          .options(joinedload('__operations__').joinedload('__files__')) \
+          .filter(Request.JobID.in_(jobIDs)).all()
 
       reqDict['Successful'] = dict((jobId, reqObj) for jobId, reqObj in ret)
 
@@ -875,8 +872,8 @@ class RequestDB(object):
     reqID = 0
     try:
       ret = session.query(Request.RequestID)\
-                   .filter(Request.RequestName == requestName)\
-                   .all()
+          .filter(Request.RequestName == requestName)\
+          .all()
       if not ret:
         return S_ERROR('No such request %s' % requestName)
       elif len(ret) > 1:
