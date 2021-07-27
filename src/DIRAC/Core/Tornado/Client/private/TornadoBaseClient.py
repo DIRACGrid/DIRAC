@@ -347,7 +347,7 @@ class TornadoBaseClient(object):
     # If nor url is given as constructor, we extract the list of URLs from the CS (System/URLs/Component)
     try:
       # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
-      urlsList = getServiceURLs(self._destinationSrv, setup=self.setup, randomize=True, failover=True)
+      urlsList = getServiceURLs(self._destinationSrv, setup=self.setup, failover=True)
     except Exception as e:
       return S_ERROR("Cannot get URL for %s in setup %s: %s" % (self._destinationSrv, self.setup, repr(e)))
     if not urlsList:
@@ -428,7 +428,7 @@ class TornadoBaseClient(object):
     """
       Returns the url the service.
     """
-    urls = getServiceURLs(self._serviceName, randomize=True)
+    urls = getServiceURLs(self._serviceName)
     return urls[0] if urls else ""
 
   def _getBaseStub(self):
