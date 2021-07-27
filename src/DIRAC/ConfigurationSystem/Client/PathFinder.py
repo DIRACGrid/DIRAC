@@ -142,26 +142,29 @@ def getSystemURLSection(system, setup=False):
   return "%s/URLs" % getSystemSection(system, setup=setup)
 
 
-def checkServiceURL(serviceURL, system=None, service=None):
-  """ Check service URL
+def checkComponentURL(componentURL, system=None, component=None, pathMandatory=False):
+  """ Check component URL port and path. Set default ports for http scheme and raise if no port can be found.
+      Set path if its mandatory or raise if its empty in this case.
 
-      :param str serviceURL: full URL, e.g.: dips://some-domain:3424/Framework/Service
+      :param str componentURL: full URL, e.g.: dips://some-domain:3424/Framework/Service
       :param str system: system name
-      :param str service: service name
+      :param str component: component name
+      :param bool pathMandatory: raise error if the path could not be generated
 
       :return: str
   """
-  url = urlparse.urlparse(serviceURL)
+  url = urlparse.urlparse(componentURL)
   # Check port
   if not url.port:
     if url.scheme == 'dips':
-      raise RuntimeError('No port found for %s/%s URL!' % (system, service))
+      raise RuntimeError('No port found for %s/%s URL!' % (system, component))
     url = url._replace(netloc=url.netloc + ':' + str(80 if url.scheme == 'http' else 443))
   # Check path
   if not url.path.strip('/'):
-    if not system or not service:
-      raise RuntimeError('No path found for %s/%s URL!' % (system, service))
-    url = url._replace(path='/%s/%s' % (system, service))
+    if system and component:
+      url = url._replace(path='/%s/%s' % (system, component))
+    elif pathMandatory:
+      raise RuntimeError('No path found for %s/%s URL!' % (system, component))
   return url.geturl()
 
 
@@ -217,12 +220,12 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
           raise Exception("No Main servers defined")
 
         for srv in mainServers:
-          _url = checkServiceURL(url.replace('$MAINSERVERS$', srv), system, service)
+          _url = checkComponentURL(url.replace('$MAINSERVERS$', srv), system, service, pathMandatory=True)
           if _url not in urlList:
             urlList.append(_url)
         continue
 
-      _url = checkServiceURL(url, system, service)
+      _url = checkComponentURL(url, system, service, pathMandatory=True)
       if _url not in urlList:
         urlList.append(_url)
 
@@ -259,7 +262,7 @@ def getServiceFailoverURL(system, service=None, setup=False):
   system, service = divideFullName(system, service)
   systemSection = getSystemSection(system, setup=setup)
   url = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, service))
-  return checkServiceURL(url, system, service) if url else ""
+  return checkComponentURL(url, system, service, pathMandatory=True) if url else ""
 
 
 def getGatewayURLs(system="", service=None):
@@ -270,7 +273,8 @@ def getGatewayURLs(system="", service=None):
 
       :return: list or False
   """
-  system, service = divideFullName(system, service)
+  if system:
+    system, service = divideFullName(system, service)
   siteName = gConfigurationData.extractOptionFromCFG("/LocalSite/Site")
   if not siteName:
     return False
