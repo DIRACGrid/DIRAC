@@ -151,10 +151,10 @@ def test_getSystemURLs(pathFinder, system, setup, failover, result):
      'https://server.com:443/WorkloadManagement/Service1'),
     ('http://server.com/WorkloadManagement/Service1', None, None,
      'http://server.com:80/WorkloadManagement/Service1')])
-def test_checkServiceURL(pathFinder, serviceURL, system, service, result):
-  """ Test checkServiceURL """
+def test_checkComponentURL(pathFinder, serviceURL, system, service, result):
+  """ Test checkComponentURL """
   try:
-    pathFinderResult = pathFinder.checkServiceURL(serviceURL, system, service)
+    pathFinderResult = pathFinder.checkComponentURL(serviceURL, system, service)
     assert pathFinderResult == result
   except RuntimeError as e:
     assert result.split(':')[1] in repr(e)

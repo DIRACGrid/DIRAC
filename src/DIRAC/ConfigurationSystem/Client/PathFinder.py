@@ -282,4 +282,4 @@ def getGatewayURLs(system="", service=None):
   if not gateways:
     return False
   gateways = List.randomize(List.fromChar(gateways, ","))
-  return [checkServiceURL(u, system, service) for u in gateways if u] if system and service else gateways
+  return [checkComponentURL(u, system, service) for u in gateways if u] if system and service else gateways
