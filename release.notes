@@ -1,3 +1,8 @@
+[v7r1p45]
+
+Data Management
+FIX: (#5290) Type error when calling FTS3ManagerHandler.getActiveJobs
+
 [v7r1p44]
 
 *WorkloadManagement
