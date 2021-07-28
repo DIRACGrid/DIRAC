@@ -1,8 +1,9 @@
-[v7r3-pre16]
+[v7r3-pre17]
 
 FIX: (#5028) Replaced all the cases of BaseException use by Exception
 NEW: (#5000) Initial support for Python 3 server installations
 CHANGE: (#4715) removing env variable DIRAC_USE_NEWTHREADPOOL
+NEW: VMDIRAC separate project is merged into the core DIRAC project
 
 *Core
 FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
@@ -23,9 +24,17 @@ FIX: (#5272) encode stub before base64
 CHANGE: (#5110) Dropped Glue2Only and Glue2URLS options from Bdii2CSAgent, Glue2 is now the only way
 CHANGE: (#5110) dirac-admin-add-resources: drop -g -G options, Glue2 is now the only way
 CHANGE: (#5110) Configuration.Client.Utilities functions getGridCEs, getSiteUpdates no longer take glue2 parameter
-CHANGE: (#5000) Deprecate CSGlobals.getInstalledExtensions, DIRAC.Core.Utilities.Extensions.extensionsByPriority should be used instead
+CHANGE: (#5000) Deprecate CSGlobals.getInstalledExtensions, DIRAC.Core.Utilities.Extensions.extensionsByPriority
+        should be used instead
 CHANGE: (#5000) Deprecate getCSExtensions, DIRAC.Core.Utilities.Extensions.extensionsByPriority should be used instead
 NEW: (#5062) add registerCmdArg to register arguments and group argument to group returned arguments
+NEW: (#5286) test new PathFinder methods
+NEW: (#5286) PathFinder - add checkServiceURL that check URL port and path
+NEW: (#5286) PathFinder - add getServiceURLs that return list type result
+NEW: (#5286) PathFinder - add getSystemURLs that return all services URLs for system
+FIX: (#5286) PathFinder - getGatewayURLs pass list to randomize when serviceName is empty
+CHANGE: (#5286) PathFinder - getSystemSection do not use serviceTuple, add docs, use system and service instead
+         of componentTuple
 
 *Interfaces
 CHANGE: (#5110) DiracAdmin: dropped getBDII* functions, which were looking for Glue1 information
