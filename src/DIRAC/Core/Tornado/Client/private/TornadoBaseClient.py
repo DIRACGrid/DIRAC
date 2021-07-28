@@ -44,11 +44,11 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import findDefaultGroupForDN
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURLs, getGatewayURLs
 
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import List, Network
+from DIRAC.Core.Utilities import Network
 from DIRAC.Core.Utilities.JEncode import decode, encode
 
 
@@ -323,10 +323,9 @@ class TornadoBaseClient(object):
     # Load the Gateways URLs for the current site Name
     gatewayURL = False
     if not self.kwargs.get(self.KW_IGNORE_GATEWAYS):
-      dRetVal = gConfig.getOption("/DIRAC/Gateways/%s" % DIRAC.siteName())
-      if dRetVal['OK']:
-        rawGatewayURL = List.randomize(List.fromChar(dRetVal['Value'], ","))[0]
-        gatewayURL = "/".join(rawGatewayURL.split("/")[:3])
+      gatewayURLs = getGatewayURLs()
+      if gatewayURLs:
+        gatewayURL = "/".join(gatewayURLs[0].split("/")[:3])
 
     # If what was given as constructor attribute is a properly formed URL,
     # we just return this one.
@@ -347,23 +346,13 @@ class TornadoBaseClient(object):
 
     # If nor url is given as constructor, we extract the list of URLs from the CS (System/URLs/Component)
     try:
-      urls = getServiceURL(self._destinationSrv, setup=self.setup)
+      # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
+      urlsList = getServiceURLs(self._destinationSrv, setup=self.setup, failover=True)
     except Exception as e:
       return S_ERROR("Cannot get URL for %s in setup %s: %s" % (self._destinationSrv, self.setup, repr(e)))
-    if not urls:
+    if not urlsList:
       return S_ERROR("URL for service %s not found" % self._destinationSrv)
 
-    failoverUrls = []
-    # Try if there are some failover URLs to use as last resort
-    try:
-      failoverUrlsStr = getServiceFailoverURL(self._destinationSrv, setup=self.setup)
-      if failoverUrlsStr:
-        failoverUrls = failoverUrlsStr.split(',')
-    except Exception as e:
-      pass
-
-    # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
-    urlsList = List.randomize(List.fromChar(urls, ",")) + failoverUrls
     self.__nbOfUrls = len(urlsList)
     # __nbOfRetry removed in HTTPS (managed by requests)
     if self.__nbOfUrls == len(self.__bannedUrls):
@@ -376,9 +365,6 @@ class TornadoBaseClient(object):
       for i in self.__bannedUrls:
         gLogger.debug("Removing banned URL", "%s" % i)
         urlsList.remove(i)
-
-    # Take the first URL from the list
-    # randUrls = List.randomize( urlsList ) + failoverUrls
 
     sURL = urlsList[0]
 
@@ -442,7 +428,8 @@ class TornadoBaseClient(object):
     """
       Returns the url the service.
     """
-    return getServiceURL(self._serviceName)
+    urls = getServiceURLs(self._serviceName)
+    return urls[0] if urls else ""
 
   def _getBaseStub(self):
     """ Returns a tuple with (self._destinationSrv, newKwargs)
