@@ -52,7 +52,6 @@ class StalledJobAgent(AgentModule):
     self.submittingTime = 300
     self.stalledJobsTolerantSites = []
     self.stalledJobsToRescheduleSites = []
-    self.jobsQueue = Queue()
 
   #############################################################################
   def initialize(self):
