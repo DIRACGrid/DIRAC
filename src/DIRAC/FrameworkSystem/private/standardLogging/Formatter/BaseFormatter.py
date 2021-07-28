@@ -51,7 +51,16 @@ class BaseFormatter(logging.Formatter):
       if record.timeStampIsShown:
         timeStamp = '%(asctime)s UTC '
       if record.contextIsShown:
-        contextComponent = '%(componentname)s%(customname)s '
+        contextComponentList = ['%(componentname)s%(customname)s']
+
+        # The local_name is normally only provided when using a
+        # local sub logger relying on
+        # :py:class:`DIRAC.FrameworkSystem.private.standardLogging.Logging.Logging.LocalSubLogger`
+        if hasattr(record, 'local_name'):
+          contextComponentList += ['/%(local_name)s']
+
+        contextComponentList += [' ']
+        contextComponent = ''.join(contextComponentList)
       if record.threadIDIsShown:
         thread = '[%(thread)d] '
       level = '%(levelname)s'

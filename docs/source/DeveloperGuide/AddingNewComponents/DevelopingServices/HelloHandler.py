@@ -11,6 +11,9 @@ import six
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
+sLog = gLogger.getSubLogger(__name__)
+
+
 class HelloHandler(RequestHandler):
 
   @classmethod
@@ -31,9 +34,20 @@ class HelloHandler(RequestHandler):
   def export_sayHello(self, whom):
     """ Say hello to somebody
     """
-    gLogger.notice("Called sayHello of HelloHandler with whom = %s" % whom)
+
+    sLog.notice("Called sayHello of HelloHandler with whom", whom)
+
     if not whom:
       whom = self.requestDefaultWhom
+
+    # Create a local logger which will always contain
+    # the whom parameter
+    log = sLog.getLocalSubLogger(whom)
+
     if whom.lower() == 'nobody':
+      log.notice("Mummy !!! The weird guy over there offered me candies !")
       return S_ERROR("Not greeting anybody!")
+
+    log.notice("It's okay to say hello")
+
     return S_OK("Hello " + whom)

@@ -205,7 +205,7 @@ class JobStateUpdateHandler(RequestHandler):
     # If real updates, start from the current status
     if dates[0] >= lastTime and not status:
       status = currentStatus
-    log = gLogger.getSubLogger('JobStatusBulk/Job-%s' % jobID)
+    log = gLogger.getLocalSubLogger('JobStatusBulk/Job-%s' % jobID)
     log.debug("*** New call ***", "Last update time %s - Sorted new times %s" % (lastTime, dates))
     # Remove useless items in order to make it simpler later, although there should not be any
     for sDict in statusDict.values():
