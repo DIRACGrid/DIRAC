@@ -6,6 +6,7 @@ git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
 git+https://github.com/DIRACGrid/tornado_m2crypto.git
 
 # From pypi
+apache-libcloud
 boto3
 #asn1
 M2Crypto>=0.36

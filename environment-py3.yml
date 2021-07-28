@@ -11,6 +11,7 @@ dependencies:
   # runtime
   - python =3.9
   - pip
+  - apache-libcloud
   - boto3
   - cachetools
   - certifi

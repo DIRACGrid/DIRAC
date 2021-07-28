@@ -74,3 +74,6 @@ FC_MANAGEMENT = "FileCatalogManagement"
 
 #: Allow staging files
 STAGE_ALLOWED = "StageAllowed"
+
+#: Allow VMDIRAC Operations via various handlers
+VM_RPC_OPERATION = "VmRpcOperation"

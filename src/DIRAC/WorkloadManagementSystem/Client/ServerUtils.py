@@ -1,7 +1,3 @@
-########################################################################
-# File :   ServerUtils.py
-# Author : Ricardo Graciani
-########################################################################
 """
   Provide uniform interface to backend for local and remote clients.return
 
@@ -44,3 +40,16 @@ def getPilotAgentsDB():
 
 
 pilotAgentsDB = getPilotAgentsDB()
+
+
+def getVirtualMachineDB():
+  serverName = 'WorkloadManagement/VirtualMachineManager'
+  VirtualMachineDB = None
+  try:
+    from DIRAC.WorkloadManagementSystem.DB.VirtualMachineDB import VirtualMachineDB
+  except Exception:
+    pass
+  return getDBOrClient(VirtualMachineDB, serverName)
+
+
+virtualMachineDB = getVirtualMachineDB()

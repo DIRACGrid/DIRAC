@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Save a copy of any payload logs we can find, as we go along
+#
+# This is run as root by cron, and at the end of vm-bootstrap
+#
+#  Andrew.McNab@cern.ch - Sept 2015
+#
+
+cd /scratch
+for pilot_user in `ls | grep '^plt[0-9][0-9]'`
+do
+  cd /scratch/$pilot_user
+  for job_dir in `ls | grep '^[0-9]*$'`
+  do
+    cd /scratch/$pilot_user/$job_dir
+    for log_file in `ls *.log *.out`
+    do
+      cp -f $log_file /etc/joboutputs/${pilot_user}pld-$job_dir-$log_file
+    done
+  done
+done

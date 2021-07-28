@@ -1,0 +1,162 @@
+{
+  "t2.nano": {
+    "Memory": 0.5, 
+    "vCPU": 1
+  }, 
+  "t2.micro": {
+    "Memory": 1.0, 
+    "vCPU": 1
+  }, 
+  "t2.small": {
+    "Memory": 2.0, 
+    "vCPU": 1
+  }, 
+  "t2.medium": {
+    "Memory": 4.0, 
+    "vCPU": 2
+  }, 
+  "t2.large": {
+    "Memory": 8.0, 
+    "vCPU": 2
+  }, 
+  "m4.large": {
+    "Memory": 8.0, 
+    "vCPU": 2
+  }, 
+  "m4.xlarge": {
+    "Memory": 16.0, 
+    "vCPU": 4
+  }, 
+  "m4.2xlarge": {
+    "Memory": 32.0, 
+    "vCPU": 8
+  }, 
+  "m4.4xlarge": {
+    "Memory": 64.0, 
+    "vCPU": 16
+  }, 
+  "m4.10xlarge": {
+    "Memory": 160.0, 
+    "vCPU": 40
+  }, 
+  "m3.medium": {
+    "Memory": 3.75, 
+    "vCPU": 1
+  }, 
+  "m3.large": {
+    "Memory": 7.5, 
+    "vCPU": 2
+  }, 
+  "m3.xlarge": {
+    "Memory": 15.0, 
+    "vCPU": 4
+  }, 
+  "m3.2xlarge": {
+    "Memory": 30.0, 
+    "vCPU": 8
+  }, 
+  "c4.large": {
+    "Memory": 3.75, 
+    "vCPU": 2
+  }, 
+  "c4.xlarge": {
+    "Memory": 7.5, 
+    "vCPU": 4
+  }, 
+  "c4.2xlarge": {
+    "Memory": 15.0, 
+    "vCPU": 8
+  }, 
+  "c4.4xlarge": {
+    "Memory": 30.0, 
+    "vCPU": 16
+  }, 
+  "c4.8xlarge": {
+    "Memory": 60.0, 
+    "vCPU": 36
+  }, 
+  "c3.large": {
+    "Memory": 3.75, 
+    "vCPU": 2
+  }, 
+  "c3.xlarge": {
+    "Memory": 7.5, 
+    "vCPU": 4
+  }, 
+  "c3.2xlarge": {
+    "Memory": 15.0, 
+    "vCPU": 8
+  }, 
+  "c3.4xlarge": {
+    "Memory": 30.0, 
+    "vCPU": 16
+  }, 
+  "c3.8xlarge": {
+    "Memory": 60.0, 
+    "vCPU": 32
+  }, 
+  "g2.2xlarge": {
+    "Memory": 15.0, 
+    "vCPU": 8
+  }, 
+  "g2.8xlarge": {
+    "Memory": 60.0, 
+    "vCPU": 32
+  }, 
+  "x1.32xlarge": {
+    "Memory": 1952.0, 
+    "vCPU": 128
+  }, 
+  "r3.large": {
+    "Memory": 15.25, 
+    "vCPU": 2
+  }, 
+  "r3.xlarge": {
+    "Memory": 30.5, 
+    "vCPU": 4
+  }, 
+  "r3.2xlarge": {
+    "Memory": 61.0, 
+    "vCPU": 8
+  }, 
+  "r3.4xlarge": {
+    "Memory": 122.0, 
+    "vCPU": 16
+  }, 
+  "r3.8xlarge": {
+    "Memory": 244.0, 
+    "vCPU": 32
+  }, 
+  "i2.xlarge": {
+    "Memory": 30.5, 
+    "vCPU": 4
+  }, 
+  "i2.2xlarge": {
+    "Memory": 61.0, 
+    "vCPU": 8
+  }, 
+  "i2.4xlarge": {
+    "Memory": 122.0, 
+    "vCPU": 16
+  }, 
+  "i2.8xlarge": {
+    "Memory": 244.0, 
+    "vCPU": 32
+  }, 
+  "d2.xlarge": {
+    "Memory": 30.5, 
+    "vCPU": 4
+  }, 
+  "d2.2xlarge": {
+    "Memory": 61.0, 
+    "vCPU": 8
+  }, 
+  "d2.4xlarge": {
+    "Memory": 122.0, 
+    "vCPU": 16
+  }, 
+  "d2.8xlarge": {
+    "Memory": 244.0, 
+    "vCPU": 36
+  }
+}

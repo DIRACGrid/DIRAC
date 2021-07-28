@@ -1,0 +1,283 @@
+#!/bin/sh
+#
+# This is run as root at the end of /var/lib/hepix/context/epilog.sh
+# or on the late stage of the init process
+#
+#  Andrew.McNab@cern.ch - November 2015
+#  Modified: A.Tsaregorodtsev - April 2016
+#
+
+# Just in case it doesn't exist
+mkdir -p /etc/joboutputs
+
+(
+
+date --utc +"%Y-%m-%d %H:%M:%S %Z vm-bootstrap vm-bootstrap Start bootstrap on `hostname`"
+
+RAWARGS="$@"
+
+for i in "$@"
+do
+case $i in
+    --dirac-site=*)
+    DIRAC_SITE="${i#*=}"
+    ;;
+    --vm-uuid=*)
+    VM_UUID=`echo "${i#*=}" | sed 's/#.*$//'`
+    ;;
+    --ce-name=*)
+    CE_NAME="${i#*=}"
+    ;;
+    --vo=*)
+    VO="${i#*=}"
+    ;;
+    --running-pod=*)
+    RUNNING_POD="${i#*=}"
+    ;;
+    --release-version=*)
+    VERSION="${i#*=}"
+    ;;
+    --release-project=*)
+    PROJECT="${i#*=}"
+    ;;
+    --setup=*)
+    SETUP="${i#*=}"
+    ;;
+    --cs-servers=*)
+    CS_SERVERS="${i#*=}"
+    ;;
+    --number-of-processors=*)
+    NUMBER_OF_PROCESSORS="${i#*=}"
+    ;;
+    --whole-node=*)
+    WHOLE_NODE="${i#*=}"
+    ;;
+    --required-tag=*)
+    REQUIRED_TAG="${i#*=}"
+    ;;
+    *)
+    # unknown option
+    ;;
+esac
+done
+
+# We might be running from cvmfs or from /var/spool/checkout
+export CONTEXTDIR=`readlink -f \`dirname $0\``
+date --utc +"%Y-%m-%d %H:%M:%S %Z vm-bootstrap CONTEXTDIR=$CONTEXTDIR"
+
+# Get the utility function definitions
+. $CONTEXTDIR/vm-bootstrap-functions
+
+# Create a shutdown_message if ACPI shutdown signal received
+cp -f $CONTEXTDIR/power.sh /etc/acpi/actions/power.sh
+
+# Suppress annoying mails
+vm_disable_mail
+
+#########################################################################
+if [ "$VM_UUID" = "" ] ; then
+  # Try getting it from OpenStack metadata instead
+  export VM_UUID=`python -c 'import requests ; print requests.get("http://169.254.169.254/openstack/2013-10-17/meta_data.json").json()["uuid"]'`
+fi
+
+# Once we have finished with the metadata, stop any user process reading it later
+/sbin/iptables -A OUTPUT -d 169.254.169.254 -p tcp --dport 80 -j DROP
+
+##########################################################################
+# Get $MACHINEFEATURES, $JOBFEATURES, and $JOBOUTPUTS if any
+if [ -f /etc/profile.d/mjf.sh ]; then
+  . /etc/profile.d/mjf.sh
+  machine_syslog=`python -c "import urllib ; print urllib.urlopen('$MACHINEFEATURES/syslog').read().strip()"`
+  if [ "$machine_syslog" ] ; then
+    echo "*.* @$machinesyslog" > /etc/rsyslog.d/vm.conf
+    /sbin/service rsyslog restart
+  fi
+fi
+
+###########################################################################
+# Get the big 40GB+ logical partition as /scratch
+mkdir -p /scratch
+
+vm_mount_scratch_disk
+
+# anyone can create directories there
+chmod ugo+rwxt /scratch
+# Scratch tmp for TMPDIR
+mkdir -p /scratch/tmp
+chmod ugo+rwxt /scratch/tmp
+
+# DIRAC externals require boost-python
+yum -y install boost-python
+
+# Bootstrap CVMFS
+vm_cvmfs_bootstrap
+
+mountpoint /dev/shm
+if [ $? != 0 ] ; then
+  # Needed for POSIX semaphores and missing in CernVM 3
+  mount /dev/shm
+  chmod ugo+rwxt /dev/shm
+fi
+
+echo $JOBOUTPUTS | egrep '^http://|^https://' >/dev/null 2>/dev/null
+if [ $? = 0 ] ; then
+  # put vm-heartbeat on MJF server every 5 minutes
+  echo 0.0 0.0 0.0 0.0 0.0 > /etc/joboutputs/vm-heartbeat
+  /usr/bin/curl --capath /etc/grid-security/certificates --cert /root/hostkey.pem --location --upload-file /etc/joboutputs/vm-heartbeat "$JOBOUTPUTS/vm-heartbeat"
+  echo -e "RANDOM_DELAY=9\n*/10 * * * * root echo \`cut -f1-3 -d' ' /proc/loadavg\` \`cat /proc/uptime\` >/etc/joboutputs/vm-heartbeat ; /usr/bin/curl --capath /etc/grid-security/certificates --cert /root/hostkey.pem --location --upload-file /etc/joboutputs/vm-heartbeat $JOBOUTPUTS/vm-heartbeat >/tmp/curl.log 2>&1" >/etc/cron.d/vm-heartbeat
+else
+  # vm-heartbeat is written every 5 minutes
+  echo 0.0 0.0 0.0 0.0 0.0 > /etc/joboutputs/vm-heartbeat
+  echo '*/5 * * * * root echo `cut -f1-3 -d" " /proc/loadavg` `cat /proc/uptime` >/etc/joboutputs/vm-heartbeat' >/etc/cron.d/vm-heartbeat
+fi
+
+# We swap on the logical partition if no CernVM 2 swapfile
+# (cannot on CernVM 3 aufs filesystem)
+if [ ! -f /var/swap ] ; then
+  # Iff /scratch is ext4 can use:
+  fallocate -l 4g /scratch/swapfile
+  chmod 0600 /scratch/swapfile
+  mkswap /scratch/swapfile
+  swapon /scratch/swapfile
+fi
+
+# Swap as little as possible
+sysctl vm.swappiness=1
+
+# Get CA certs from cvmfs
+if [ -d /etc/cvmfs ]; then
+  rm -Rf /etc/grid-security
+  ln -sf /cvmfs/grid.cern.ch/etc/grid-security /etc/grid-security
+fi
+
+# Don't want to be doing this at 4 or 5am every day!
+rm -f /etc/cron.daily/mlocate.cron
+
+# Avoid age-old sudo problem
+echo 'Defaults !requiretty' >>/etc/sudoers
+echo 'Defaults visiblepw'   >>/etc/sudoers
+
+chmod +x $CONTEXTDIR/save-payload-logs
+
+echo "*/5 * * * * root $CONTEXTDIR/save-payload-logs 2>/dev/null" >/etc/cron.d/save-payload-logs
+
+export NUM_JOB_SLOTS=1
+if [ "$MACHINEFEATURES" ]; then
+  export NUM_JOB_SLOTS=`python -c "import urllib ; print urllib.urlopen('$MACHINEFEATURES/log_cores').read().strip()"`
+fi
+if [ "$NUM_JOB_SLOTS" = "" ] ; then
+ NUM_JOB_SLOTS=`grep '^processor' /proc/cpuinfo | wc --lines`
+fi
+
+##############################################################################
+# Make a common DIRAC installation for all the pilots
+date --utc +"%Y-%m-%d %H:%M:%S %Z vm-bootstrap install DIRAC in /opt/dirac"
+vm_dirac_install $PROJECT $VERSION $SETUP $DIRAC_SITE $CE_NAME $CS_SERVERS $VO
+
+##############################################################################
+# Start the VM Monitoring Agent
+if [ -f $CONTEXTDIR/vm-monitor-agent ]; then
+  chmod +x $CONTEXTDIR/vm-monitor-agent
+  $CONTEXTDIR/vm-monitor-agent
+fi
+
+##############################################################################
+# Start the pilots now as many as the number of processors on the host
+chmod +x $CONTEXTDIR/vm-pilot
+chmod +x $CONTEXTDIR/parse-jobagent-log
+
+date --utc +"%Y-%m-%d %H:%M:%S %Z Starting $NUM_JOB_SLOTS pilots"
+
+n=0
+NUM_JOB_SLOTS=1
+while [ $n -lt $NUM_JOB_SLOTS ]
+do
+  nn=`printf '%02d' $n`
+
+  # Create the account to run the Pilot (plt)
+  /usr/sbin/useradd -b /scratch plt$nn
+
+  cd /scratch/plt$nn
+
+  mkdir -p /scratch/plt$nn/etc/grid-security
+  cp /root/hostkey.pem /scratch/plt$nn/etc/grid-security
+  chmod 0600 /scratch/plt$nn/etc/grid-security/hostkey.pem
+
+  cp /root/hostkey.pem /scratch/plt$nn/etc/grid-security/hostcert.pem
+  chmod 0600 /scratch/plt$nn/etc/grid-security/hostcert.pem
+
+  chmod 0755 /scratch/plt$nn
+  chown -R plt$nn.plt$nn /scratch/plt$nn
+
+  # This can be removed when PilotCommands.py is fixed!
+  mkdir -p /home/plt$nn/certs
+  ln -sf /scratch/plt$nn/etc/grid-security/* /home/plt$nn/certs
+
+  # add pltNNp00 account for the Payload (p00) that pltNN can sudo to
+  /usr/sbin/useradd -m -b /scratch plt${nn}p00
+  /usr/sbin/usermod -G plt${nn}p00 plt${nn}
+  echo "Defaults>plt${nn}p00 !requiretty"         >>/etc/sudoers
+  echo "Defaults>plt${nn}p00 visiblepw"           >>/etc/sudoers
+  echo "Defaults>plt${nn}p00 !env_reset"          >>/etc/sudoers
+  echo "plt$nn ALL = (plt${nn}p00) NOPASSWD: ALL" >>/etc/sudoers
+
+  # One subprocess per job slot
+  (
+    # Now run the pilot script, possibly with the IaaS metadata updated VM_UUID
+    /usr/bin/sudo -n -u plt$nn $CONTEXTDIR/vm-pilot $RAWARGS --pilot-number="$nn" >>/etc/joboutputs/vm-pilot.$nn.log 2>&1
+
+    # Last shutdown_message to be written is used as overall result
+    $CONTEXTDIR/parse-jobagent-log /etc/joboutputs/vm-pilot.$nn.log > /etc/joboutputs/shutdown_message_$nn
+    cp -f /etc/joboutputs/shutdown_message_$nn /etc/joboutputs/shutdown_message
+
+    oneHS06=`grep ' *CPUNormalizationFactor = ' /scratch/plt$nn/pilot.cfg | sed 's/ *CPUNormalizationFactor = //'`
+    if [ "$oneHS06" ] ; then
+     # This is a quick hack but not bad as all measurements will have run at roughly the same time.
+     echo $oneHS06 \* $NUM_JOB_SLOTS | bc > /etc/joboutputs/hs06
+    fi
+
+  ) > /etc/joboutputs/vm-bootstrap.$nn.log 2>&1 &
+
+  n=`expr $n + 1`
+done
+
+# Wait for ALL subprocesses to finish
+wait
+
+# Save system logs
+cp -f /var/log/boot.log /var/log/dmesg /var/log/secure /var/log/messages* /etc/cvmfs/site.conf /etc/cvmfs/default.* /etc/joboutputs
+
+# Save payload logs
+$CONTEXTDIR/save-payload-logs
+
+if [ "$JOBOUTPUTS" ]; then
+(
+  cd /etc/joboutputs
+  for i in *
+  do
+   if [ -f $i ] ; then
+    echo $JOBOUTPUTS | egrep '^http://|^https://' >/dev/null 2>/dev/null
+    if [ $? = 0 ] ; then
+     curl --capath /etc/grid-security/certificates --cert /root/hostkey.pem --location --upload-file "$i" "$JOBOUTPUTS/"
+    fi
+    curl --capath /etc/grid-security/certificates --cert /root/hostkey.pem --location --upload-file "$i" \
+      "https://depo.gridpp.ac.uk/`openssl x509 -in /root/hostkey.pem -noout -subject | sed 's/^subject=.*CN=//'`/$CE_NAME/$HOSTNAME/$VM_UUID/"
+   fi
+  done
+)
+fi
+
+exit
+
+# Try conventional shutdown
+date --utc +'%Y-%m-%d %H:%M:%S %Z vm-bootstrap Run /sbin/shutdown -h now'
+/sbin/shutdown -h now
+sleep 60
+
+# Instant reboot
+date --utc +'%Y-%m-%d %H:%M:%S %Z vm-bootstrap Run echo o > /proc/sysrq-trigger'
+echo o > /proc/sysrq-trigger
+
+# Sleep here if neither worked
+sleep 1234567890
+) >>/etc/joboutputs/vm-bootstrap.log 2>&1

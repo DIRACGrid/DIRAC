@@ -1,0 +1,96 @@
+#!/usr/bin/env python
+#
+# Parse DIRAC JobAgent log file and output codes and messages
+# to use with HEPiX VM shutdown_command.
+#
+# See https://www.gridpp.ac.uk/wiki/HEPiX_shutdown_command
+#
+# This script takes the full path of the JobAgent.py log file
+# as its single argument, and outputs the code+message on
+# stdout.
+#
+# The last matching pattern determines the code+message.
+#
+# Andrew.McNab@cern.ch - May 2013
+#
+# (Yes, it would be better if JobAgent.py returned these
+#  codes explicitly, rather than relying on parsing logs!)
+#
+
+import sys
+
+# catch-all in case nothing matches
+shutdownMessage = '700 Failed, probably JobAgent or Application problem'
+
+# log file patterns to look for and corresponding messages
+messageMappings = [
+
+# Variants of: "100 Shutdown as requested by the VM's host/hypervisor"
+######################################################################
+# There are other errors from the TimeLeft handling, but we let those go
+# to the 600 Failed default
+['INFO: JobAgent will stop with message "No time left for slot', '100 No time left for slot'],
+
+# Variants of: "200 Intended work completed ok"
+###############################################
+# Our work is done. More work available in the TQ? Who knows!
+['INFO: JobAgent will stop with message "Filling Mode is Disabled', '200 Fillling Mode is Disabled'],
+['NOTICE:  Cycle was successful', '200 Success'],
+
+#
+# !!! Codes 300-699 trigger Vac's backoff procedure !!!
+#
+
+# Variants of: "300 No more work available from task queue"
+###########################################################
+# We asked, but nothing more from the matcher.
+['INFO: JobAgent will stop with message "Nothing to do for more than', '300 Nothing to do'],
+
+# Variants of: "400 Site/host/VM is currently banned/disabled from receiving more work"
+#######################################################################################
+
+# Variants of: "500 Problem detected with environment/VM/contextualization provided by the site"
+################################################################################################
+# This detects using an RFC proxy to talk to legacy-only DIRAC
+['Error while handshaking [("Remote certificate hasn', '500 Certificate/proxy not acceptable'],
+
+# Variants of: "600 Grid-wide problem with job agent or application within VM"
+##############################################################################
+['ERROR: Pilot version does not match the production version', '600 Cannot match jobs with this pilot version'],
+
+# Variants of: "700 Error related to job agent or application within VM"
+########################################################################
+# Some of the ways the JobAgent/Application can stop with errors.
+# Otherwise we just get the default 700 Failed message.
+['INFO: JobAgent will stop with message "Job Rescheduled', '600 Problem so job rescheduled'],
+['INFO: JobAgent will stop with message "Matcher Failed', '600 Matcher Failed'],
+['INFO: JobAgent will stop with message "JDL Problem', '600 JDL Problem'],
+['INFO: JobAgent will stop with message "Payload Proxy Not Found', '600 Payload Proxy Not Found'],
+['INFO: JobAgent will stop with message "Problem Rescheduling Job', '600 Problem Rescheduling Job'],
+['INFO: JobAgent will stop with message "Payload execution failed with error code', '600 Payload execution failed with error'],
+
+]
+
+if len(sys.argv) <= 1 or not sys.argv[1]:
+    sys.exit(1)
+
+try:
+    f = open(sys.argv[1], 'r')
+except:
+    sys.exit(2)
+
+oneline = f.readline()
+
+while oneline:
+
+    for pair in messageMappings:
+      if pair[0] in oneline:
+         shutdownMessage = pair[1]
+         break
+
+    oneline = f.readline()
+
+f.close()
+
+print(shutdownMessage)
+sys.exit(0)

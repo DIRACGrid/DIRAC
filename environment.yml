@@ -9,6 +9,7 @@ dependencies:
   # runtime
   - python =2.7
   - pip
+  - apache-libcloud
   - boto3
   - certifi
   - cmreshandler >1.0.0b4
