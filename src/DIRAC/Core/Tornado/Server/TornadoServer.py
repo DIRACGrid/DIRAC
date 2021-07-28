@@ -12,6 +12,7 @@ __RCSID__ = "$Id$"
 import time
 import datetime
 import os
+import six
 
 import M2Crypto
 
@@ -143,6 +144,13 @@ class TornadoServer(object):
 
     # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
     tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
+
+    # If we are running with python3, Tornado will use asyncio,
+    # and we have to convince it to let us run in a different thread
+    # Doing this ensures a consistent behavior between py2 and py3
+    if six.PY3:
+      import asyncio  # pylint: disable=import-error
+      asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
     # Start server
     server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)

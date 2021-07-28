@@ -434,7 +434,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
         This method is called in an executor, and so cannot use methods like self.write
         See https://www.tornadoweb.org/en/branch5.1/web.html#thread-safety-notes
     """
-
     # getting method
     try:
       # For compatibility reasons with DISET, the methods are still called ``export_*``
