@@ -1,8 +1,3 @@
-########################################################################
-# File :   SSHComputingElement.py
-# Author : Dumitru Laurentiu, A.T.
-########################################################################
-
 """ SSH (Virtual) Computing Element
 
 For a given IP/host it will send jobs directly through ssh
@@ -311,7 +306,7 @@ class SSHComputingElement(ComputingElement):
     super(SSHComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = 'SSH'
-    self.execution = "SSH"
+    self.execution = "SSHCE"
     self.submittedJobs = 0
     self.outputTemplate = ''
     self.errorTemplate = ''
@@ -640,6 +635,9 @@ class SSHComputingElement(ComputingElement):
         "Preamble": self.preamble,
         "NumberOfGPUs": self.numberOfGPUs,
     }
+    if host:
+      commandOptions['SSHNodeHost'] = host
+
     resultCommand = self.__executeHostCommand('submitJob', commandOptions, ssh=ssh, host=host)
     if not resultCommand['OK']:
       return resultCommand
@@ -650,11 +648,13 @@ class SSHComputingElement(ComputingElement):
     else:
       batchIDs = result['Jobs']
       if batchIDs:
-        ceHost = host
-        if host is None:
-          ceHost = self.ceName
         batchSystemName = self.batchSystem.__class__.__name__.lower()
-        jobIDs = ['%s%s://%s/%s' % (self.ceType.lower(), batchSystemName, ceHost, _id) for _id in batchIDs]
+        if host is None:
+          jobIDs = ['%s%s://%s/%s' % (self.ceType.lower(), batchSystemName, self.ceName, _id)
+                    for _id in batchIDs]
+        else:
+          jobIDs = ['%s%s://%s/%s/%s' % (self.ceType.lower(), batchSystemName, self.ceName, host, _id)
+                    for _id in batchIDs]
       else:
         return S_ERROR('No jobs IDs returned')
 
@@ -809,7 +809,7 @@ class SSHComputingElement(ComputingElement):
     if not result['OK']:
       return result
 
-    jobStamp, _host, outputFile, errorFile = result['Value']
+    jobStamp, host, outputFile, errorFile = result['Value']
 
     if localDir:
       localOutputFile = '%s/%s.out' % (localDir, jobStamp)
@@ -818,7 +818,10 @@ class SSHComputingElement(ComputingElement):
       localOutputFile = 'Memory'
       localErrorFile = 'Memory'
 
-    ssh = SSH(parameters=self.ceParameters)
+    # Take into account the SSHBatch possible SSHHost syntax
+    host = host.split('/')[0]
+
+    ssh = SSH(host=host, parameters=self.ceParameters)
     result = ssh.scpCall(30, localOutputFile, outputFile, upload=False)
     if not result['OK']:
       return result
