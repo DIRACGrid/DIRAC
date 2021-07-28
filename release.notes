@@ -66,6 +66,21 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p17]
+
+*Framework
+FIX: (#5288) fix use of --excludeHosts in dirac-admin-update-instance
+NEW: (#5284) Introduce Local SubLogger
+
+*WMS
+CHANGE: (#5284) attempt to use Local subLogger
+NEW: (#5279) Added option for rescheduling Stalled Jobs, for certain sites
+
+*Resources
+FIX: (#5281) SSHComputingElement - treat properly the case of the pilots submitted to SSHBatch CE
+FIX: (#5281) SSHBatchComputingElement - use special SSHBATCH execution context
+FIX: (#5281) Host.py - put the actual execution host name/IP into the SSH_NODE_HOST environment
+
 [v7r2p16]
 
 *Configuration
@@ -400,6 +415,11 @@ NEW: (#4677) new integration tests for Tornado based services
 NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
+
+[v7r1p45]
+
+Data Management
+FIX: (#5290) Type error when calling FTS3ManagerHandler.getActiveJobs
 
 [v7r1p44]
 

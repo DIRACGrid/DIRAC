@@ -35,6 +35,7 @@ class SSHBatchComputingElement(SSHComputingElement):
 
     self.ceType = 'SSHBatch'
     self.sshHost = []
+    self.execution = 'SSHBATCH'
 
   def _reset(self):
 
@@ -161,7 +162,7 @@ class SSHBatchComputingElement(SSHComputingElement):
     hostDict = {}
     for job in jobIDList:
 
-      host = urlparse(job).hostname
+      host = os.path.dirname(urlparse(job).path).lstrip('/')
       hostDict.setdefault(host, [])
       hostDict[host].append(job)
 
@@ -204,7 +205,7 @@ class SSHBatchComputingElement(SSHComputingElement):
     """
     hostDict = {}
     for job in jobIDList:
-      host = urlparse(job).hostname
+      host = os.path.dirname(urlparse(job).path).lstrip('/')
       hostDict.setdefault(host, [])
       hostDict[host].append(job)
 

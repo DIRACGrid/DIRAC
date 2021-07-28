@@ -41,6 +41,17 @@ method. For instance :
     newLogger = gLogger.getSubLogger("logger")
     # Here, logger and newlogger are a same and unique object
 
+Initialize a local child *Logging*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When needing context information for a short lifetime (like adding the JobID to a logger in a method),
+use a ``Local subLogger`` instead. It can only create log entries (i.e. no children, no other calls),
+but it does not leak memory. For example::
+
+    localLogger = gLogger.getLocalSubLogger("local")
+
+
+
 Get its sub name
 ~~~~~~~~~~~~~~~~
 

@@ -130,7 +130,7 @@ class FTS3ManagerHandler(RequestHandler):
     opJSON = encode(getOperation)
     return S_OK(opJSON)
 
-  types_getActiveJobs = [six.integer_types, [None] + [six.string_types], six.string_types]
+  types_getActiveJobs = [six.integer_types, [type(None)] + [six.string_types], six.string_types]
 
   @classmethod
   def export_getActiveJobs(cls, limit, lastMonitor, jobAssignmentTag):

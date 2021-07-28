@@ -61,6 +61,7 @@ class Host(object):
     context = args.get('ExecutionContext', 'Local')
     jobidName = context.upper() + '_JOBID'
     nCores = args.get('NCores', 1)
+    nodeHost = args.get('SSHNodeHost')
 
     # Prepare the executor command
     runFileName = os.path.join(args['SharedDir'], 'run_detached.sh')
@@ -90,6 +91,8 @@ exit 0
       args['Stamp'] = stamps[_i]
       envDict = os.environ
       envDict[jobidName] = stamps[_i]
+      if nodeHost:
+        envDict['SSH_NODE_HOST'] = nodeHost
       try:
         jobDir = '%(WorkDir)s/%(Stamp)s' % args
         jobDir = os.path.expandvars(jobDir)

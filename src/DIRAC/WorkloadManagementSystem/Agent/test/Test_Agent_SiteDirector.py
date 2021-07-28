@@ -43,8 +43,9 @@ mockPilotAgentsDB.setPilotStatus.return_value = {'OK': True}
 gLogger.setLevel('DEBUG')
 
 
-def test__getPilotOptions(mocker):
-  """ Testing SiteDirector()._getPilotOptions()
+@pytest.fixture
+def sd(mocker):
+  """ mocker for SiteDirector
   """
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
@@ -55,16 +56,27 @@ def test__getPilotOptions(mocker):
   sd.log = gLogger
   sd.am_getOption = mockAM
   sd.log.setLevel('DEBUG')
-  sd.queueDict = {'aQueue': {'CEName': 'aCE',
+  sd.rpcMatcher = MagicMock()
+  sd.rssClient = MagicMock()
+  sd.workingDirectory = ''
+  sd.queueDict = {'aQueue': {'Site': 'LCG.CERN.cern',
+                             'CEName': 'aCE',
+                             'CEType': 'SSH',
                              'QueueName': 'aQueue',
                              'ParametersDict': {'CPUTime': 12345,
                                                 'Community': 'lhcb',
                                                 'OwnerGroup': ['lhcb_user'],
                                                 'Setup': 'LHCb-Production',
                                                 'Site': 'LCG.CERN.cern'}}}
+  return sd
 
+
+def test__getPilotOptions(sd):
+  """ Testing SiteDirector()._getPilotOptions()
+  """
   res = sd._getPilotOptions('aQueue')
   assert set(['-S TestSetup', '-V 123', '-l 123', '-n LCG.CERN.cern']) <= set(res)
+
 
 @pytest.mark.parametrize("mockMatcherReturnValue, expected, anyExpected, sitesExpected", [
     ({'OK': False, 'Message': 'boh'},
@@ -95,17 +107,9 @@ def test__getPilotOptions(mocker):
                             '2': {'Jobs': 20, 'Sites': ['NotAny', 'Site2']}}},
      True, False, {'Site1', 'Site2', 'NotAny'}),
 ])
-def test__ifAndWhereToSubmit(mocker, mockMatcherReturnValue, expected, anyExpected, sitesExpected):
+def test__ifAndWhereToSubmit(sd, mockMatcherReturnValue, expected, anyExpected, sitesExpected):
   """ Testing SiteDirector()._ifAndWhereToSubmit()
   """
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
-  sd = SiteDirector()
-  sd.log = gLogger
-  sd.am_getOption = mockAM
-  sd.log.setLevel('DEBUG')
   sd.matcherClient = MagicMock()
   sd.matcherClient.getMatchingTaskQueues.return_value = mockMatcherReturnValue
   res = sd._ifAndWhereToSubmit()
@@ -114,23 +118,9 @@ def test__ifAndWhereToSubmit(mocker, mockMatcherReturnValue, expected, anyExpect
     assert res == (expected, anyExpected, sitesExpected, set())
 
 
-def test__allowedToSubmit(mocker):
+def test__allowedToSubmit(sd):
   """ Testing SiteDirector()._allowedToSubmit()
   """
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
-  sd = SiteDirector()
-  sd.log = gLogger
-  sd.am_getOption = mockAM
-  sd.log.setLevel('DEBUG')
-  sd.queueDict = {'aQueue': {'Site': 'LCG.CERN.cern',
-                             'CEName': 'aCE',
-                             'QueueName': 'aQueue',
-                             'ParametersDict': {'CPUTime': 12345,
-                                                'Community': 'lhcb',
-                                                'OwnerGroup': ['lhcb_user'],
-                                                'Setup': 'LHCb-Production',
-                                                'Site': 'LCG.CERN.cern'}}}
   submit = sd._allowedToSubmit('aQueue', True, set(['LCG.CERN.cern']), set())
   assert submit is False
 
@@ -147,30 +137,9 @@ def test__allowedToSubmit(mocker):
   assert submit is True
 
 
-def test__submitPilotsToQueue(mocker):
+def test__submitPilotsToQueue(sd):
   """ Testing SiteDirector()._submitPilotsToQueue()
   """
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
-  sd = SiteDirector()
-  sd.log = gLogger
-  sd.am_getOption = mockAM
-  sd.log.setLevel('DEBUG')
-  sd.rpcMatcher = MagicMock()
-  sd.rssClient = MagicMock()
-  sd.workingDirectory = ''
-  sd.queueDict = {'aQueue': {'Site': 'LCG.CERN.cern',
-                             'CEName': 'aCE',
-                             'CEType': 'SSH',
-                             'QueueName': 'aQueue',
-                             'ParametersDict': {'CPUTime': 12345,
-                                                'Community': 'lhcb',
-                                                'OwnerGroup': ['lhcb_user'],
-                                                'Setup': 'LHCb-Production',
-                                                'Site': 'LCG.CERN.cern'}}}
-
   # Create a MagicMock that does not have the workingDirectory
   # attribute (https://cpython-test-docs.readthedocs.io/en/latest/library/unittest.mock.html#deleting-attributes)
   # This is to use the SiteDirector's working directory, not the CE one
@@ -179,8 +148,8 @@ def test__submitPilotsToQueue(mocker):
 
   sd.queueCECache = {'aQueue': {'CE': ceMock}}
   sd.queueSlots = {'aQueue': {'AvailableSlots': 10}}
-  res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')
-  assert res['OK'] is True
+  assert sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')['OK']
+
 
 @pytest.mark.parametrize("pilotRefs, pilotDict, pilotCEDict, expected", [
     ([], {}, {}, (0, [])),
@@ -197,19 +166,8 @@ def test__submitPilotsToQueue(mocker):
         {'aPilotRef': 'Unknown'},
         (0, []))
 ])
-def test__updatePilotStatus(mocker, pilotRefs, pilotDict, pilotCEDict, expected):
+def test__updatePilotStatus(sd, pilotRefs, pilotDict, pilotCEDict, expected):
   """ Testing SiteDirector()._updatePilotStatus()
   """
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.pilotAgentsDB", side_effect=mockPilotAgentsDB)
-  sd = SiteDirector()
-  sd.log = gLogger
-  sd.am_getOption = mockAM
-  sd.log.setLevel('DEBUG')
-  sd.rpcMatcher = MagicMock()
-  sd.rssClient = MagicMock()
   res = sd._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
   assert res == expected
