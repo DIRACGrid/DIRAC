@@ -348,6 +348,11 @@ NEW: (#4910) --runslow option on unit tests to allow faster local tests
 NEW: (#4938) added a helloworld test for the (yet to be implemented) cloud testing in certification
 CHANGE: (#4968) Change the defaults for tests (to MySQL 8 and ES 7)
 
+[v7r1p45]
+
+Data Management
+FIX: (#5290) Type error when calling FTS3ManagerHandler.getActiveJobs
+
 [v7r1p44]
 
 *WorkloadManagement
