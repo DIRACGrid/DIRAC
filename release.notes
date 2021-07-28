@@ -1,3 +1,18 @@
+[v7r2p17]
+
+*Framework
+FIX: (#5288) fix use of --excludeHosts in dirac-admin-update-instance
+NEW: (#5284) Introduce Local SubLogger
+
+*WMS
+CHANGE: (#5284) attempt to use Local subLogger
+NEW: (#5279) Added option for rescheduling Stalled Jobs, for certain sites
+
+*Resources
+FIX: (#5281) SSHComputingElement - treat properly the case of the pilots submitted to SSHBatch CE
+FIX: (#5281) SSHBatchComputingElement - use special SSHBATCH execution context
+FIX: (#5281) Host.py - put the actual execution host name/IP into the SSH_NODE_HOST environment
+
 [v7r2p16]
 
 *Configuration
