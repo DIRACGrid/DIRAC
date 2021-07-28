@@ -97,7 +97,7 @@ class StalledJobAgent(AgentModule):
     # setting up the threading
     maxNumberOfThreads = self.am_getOption('MaxNumberOfThreads', 15)
     self.log.verbose("Multithreaded with %d threads" % maxNumberOfThreads)
-    self.threadPoolExecutor = concurrent.futures.ThreadPoolExecutor( max_workers = maxNumberOfThreads )
+    self.threadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=maxNumberOfThreads)
 
     return S_OK()
 
