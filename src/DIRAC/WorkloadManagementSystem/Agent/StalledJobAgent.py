@@ -7,7 +7,7 @@
   :start-after: ##BEGIN StalledJobAgent
   :end-before: ##END
   :dedent: 2
-  :caption: PilotsSyncAgent options
+  :caption: StalledJobAgent options
 
 """
 
@@ -52,6 +52,7 @@ class StalledJobAgent(AgentModule):
     self.rescheduledTime = 600
     self.submittingTime = 300
     self.stalledJobsTolerantSites = []
+    self.stalledJobsToRescheduleSites = []
     self.jobsQueue = Queue()
 
   #############################################################################
@@ -60,9 +61,40 @@ class StalledJobAgent(AgentModule):
     """
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
-    self.am_setOption('PollingTime', 60 * 60)
+
+    # getting parameters
+
     if not self.am_getOption('Enable', True):
       self.log.info('Stalled Job Agent running in disabled mode')
+
+    wms_instance = getSystemInstance('WorkloadManagement')
+    if not wms_instance:
+      return S_ERROR('Can not get the WorkloadManagement system instance')
+    self.stalledJobsTolerantSites = self.am_getOption('StalledJobsTolerantSites', [])
+    self.stalledJobsToleranceTime = self.am_getOption('StalledJobsToleranceTime', 0)
+
+    self.stalledJobsToRescheduleSites = self.am_getOption('StalledJobsToRescheduleSites', [])
+
+    self.submittingTime = self.am_getOption('SubmittingTime', self.submittingTime)
+    self.matchedTime = self.am_getOption('MatchedTime', self.matchedTime)
+    self.rescheduledTime = self.am_getOption('RescheduledTime', self.rescheduledTime)
+
+    wrapperSection = cfgPath('Systems', 'WorkloadManagement', wms_instance, 'JobWrapper')
+
+    failedTime = self.am_getOption('FailedTimeHours', 6)
+    watchdogCycle = gConfig.getValue(cfgPath(wrapperSection, 'CheckingTime'), 30 * 60)
+    watchdogCycle = max(watchdogCycle, gConfig.getValue(cfgPath(wrapperSection, 'MinCheckingTime'), 20 * 60))
+    stalledTime = self.am_getOption('StalledTimeHours', 2)
+    self.log.verbose('', 'StalledTime = %s cycles' % (stalledTime))
+    self.stalledTime = int(watchdogCycle * (stalledTime + 0.5))
+    self.log.verbose('', 'FailedTime = %s cycles' % (failedTime))
+
+    # Add half cycle to avoid race conditions
+    self.failedTime = int(watchdogCycle * (failedTime + 0.5))
+
+    self.minorStalledStatuses = (
+        JobMinorStatus.STALLED_PILOT_NOT_RUNNING,
+        'Stalling for more than %d sec' % self.failedTime)
 
     # setting up the threading
     maxNumberOfThreads = self.am_getOption('MaxNumberOfThreads', 15)
@@ -78,37 +110,6 @@ class StalledJobAgent(AgentModule):
   def execute(self):
     """ The main agent execution method
     """
-    self.log.debug('Waking up Stalled Job Agent')
-
-    # getting parameters
-    wms_instance = getSystemInstance('WorkloadManagement')
-    if not wms_instance:
-      return S_ERROR('Can not get the WorkloadManagement system instance')
-    wrapperSection = cfgPath('Systems', 'WorkloadManagement', wms_instance, 'JobWrapper')
-
-    stalledTime = self.am_getOption('StalledTimeHours', 2)
-    failedTime = self.am_getOption('FailedTimeHours', 6)
-    self.stalledJobsTolerantSites = self.am_getOption('StalledJobsTolerantSites', [])
-    self.stalledJobsToleranceTime = self.am_getOption('StalledJobsToleranceTime', 0)
-
-    self.submittingTime = self.am_getOption('SubmittingTime', self.submittingTime)
-    self.matchedTime = self.am_getOption('MatchedTime', self.matchedTime)
-    self.rescheduledTime = self.am_getOption('RescheduledTime', self.rescheduledTime)
-
-    self.log.verbose('', 'StalledTime = %s cycles' % (stalledTime))
-    self.log.verbose('', 'FailedTime = %s cycles' % (failedTime))
-
-    watchdogCycle = gConfig.getValue(cfgPath(wrapperSection, 'CheckingTime'), 30 * 60)
-    watchdogCycle = max(watchdogCycle, gConfig.getValue(cfgPath(wrapperSection, 'MinCheckingTime'), 20 * 60))
-
-    # Add half cycle to avoid race conditions
-    self.stalledTime = int(watchdogCycle * (stalledTime + 0.5))
-    self.failedTime = int(watchdogCycle * (failedTime + 0.5))
-
-    self.minorStalledStatuses = (
-        JobMinorStatus.STALLED_PILOT_NOT_RUNNING,
-        'Stalling for more than %d sec' % self.failedTime)
-
     # Now we are getting what's going to be checked
 
     # 1) Queueing the jobs that might be marked Stalled
@@ -185,12 +186,13 @@ class StalledJobAgent(AgentModule):
     """
     delayTime = self.stalledTime
     # Add a tolerance time for some sites if required
-    result = self.jobDB.getJobAttribute(jobID, 'site')
-    if not result['OK']:
-      return result
-    site = result['Value']
-    if site in self.stalledJobsTolerantSites:
-      delayTime += self.stalledJobsToleranceTime
+    if self.stalledJobsTolerantSites:
+      result = self.jobDB.getJobAttribute(jobID, 'site')
+      if not result['OK']:
+        return result
+      site = result['Value']
+      if site in self.stalledJobsTolerantSites:
+        delayTime += self.stalledJobsToleranceTime
     # Check if the job is really stalled
     result = self._checkJobStalled(jobID, delayTime)
     if not result['OK']:
@@ -231,6 +233,16 @@ class StalledJobAgent(AgentModule):
     # and send accounting info
     if setFailed:
       self._sendKillCommand(jobID)  # always returns None
+
+      # For some sites we might want to reschedule rather than fail the jobs
+      if self.stalledJobsToRescheduleSites:
+        result = self.jobDB.getJobAttribute(jobID, 'site')
+        if not result['OK']:
+          return result
+        site = result['Value']
+        if site in self.stalledJobsToRescheduleSites:
+          return self._updateJobStatus(jobID, JobStatus.RESCHEDULED, minorStatus=setFailed)
+
       return self._updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed)
 
     return S_OK()
