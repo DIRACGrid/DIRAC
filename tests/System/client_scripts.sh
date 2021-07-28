@@ -20,27 +20,6 @@ dirac-proxy-info
 if [[ "${?}" -ne 0 ]]; then
    exit 1
 fi
-echo " "
-
-echo " "
-echo " "
-echo " ########################## WMS #############################"
-echo " "
-echo " "
-
-echo "======  dirac-admin-show-task-queues"
-dirac-admin-show-task-queues
-if [[ "${?}" -ne 0 ]]; then
-   exit 1
-fi
-echo " "
-
-echo "======  dirac-wms-get-wn-parameters --Site=LCG.CERN.cern --Name=ce503.cern.ch --Queue=condor"
-dirac-wms-get-wn-parameters --Site=LCG.CERN.cern --Name=ce503.cern.ch --Queue=condor
-if [[ "${?}" -ne 0 ]]; then
-   exit 1
-fi
-echo " "
 
 echo " "
 echo " "
