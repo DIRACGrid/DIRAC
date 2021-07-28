@@ -93,7 +93,7 @@ class ComponentSupervisionAgent(AgentModule):
     """Initialize the agent, clients, default values."""
     AgentModule.__init__(self, *args, **kwargs)
     self.name = 'ComponentSupervisionAgent'
-    self.setup = 'Production'
+    self.setup = 'DIRAC-Production'
     self.enabled = False
     self.restartAgents = False
     self.restartExecutors = False
@@ -229,7 +229,11 @@ class ComponentSupervisionAgent(AgentModule):
   def _getComponentOption(self, instanceType, system, componentName, option, default):
     """Get component option from DIRAC CS, using components' base classes methods."""
     fullComponentName = os.path.join(system, componentName)
-    componentPath = PathFinder.getComponentSection(fullComponentName, setup=self.setup, componentCategory=instanceType)
+    componentPath = PathFinder.getComponentSection(
+        componentName=fullComponentName,
+        setup=self.setup,
+        componentCategory=instanceType,
+    )
     if instanceType != 'Agents':
       return gConfig.getValue(os.path.join(componentPath, option), default)
     # deal with agent configuration
@@ -334,7 +338,11 @@ class ComponentSupervisionAgent(AgentModule):
 
   def checkAgent(self, agentName, options):
     """Check the age of agent's log file, if it is too old then restart the agent."""
-    pollingTime, currentLogLocation, pid = options['PollingTime'], options['LogFileLocation'], options['PID']
+    pollingTime, currentLogLocation, pid = (
+        options['PollingTime'],
+        options['LogFileLocation'],
+        options['PID']
+    )
     self.log.info('Checking Agent: %s' % agentName)
     self.log.info('Polling Time: %s' % pollingTime)
     self.log.info('Current Log File location: %s' % currentLogLocation)
@@ -344,7 +352,9 @@ class ComponentSupervisionAgent(AgentModule):
       return res
 
     age = res['Value']
-    self.log.info('Current log file for %s is %d minutes old' % (agentName, (age.seconds / MINUTES)))
+    self.log.info(
+        'Current log file for %s is %d minutes old' % (agentName, (age.seconds / MINUTES))
+    )
 
     maxLogAge = max(pollingTime + HOUR, 2 * HOUR)
     if age.seconds < maxLogAge:
@@ -521,7 +531,11 @@ class ComponentSupervisionAgent(AgentModule):
     gConfig.forceRefresh(fromMaster=True)
 
     # get port used for https based services
-    tornadoPortConfigPath = os.path.join('/Systems/Tornado', self.setup, 'Port')
+    tornadoPortConfigPath = PathFinder.getComponentSection(
+        componentName=os.path.join('/Systems/Tornado'),
+        setup=self.setup,
+        componentCategory='Port'
+    )
     self._tornadoPort = gConfig.getValue(tornadoPortConfigPath, self._tornadoPort)
     self.log.debug('Using Tornado Port:', self._tornadoPort)
 
@@ -550,7 +564,10 @@ class ComponentSupervisionAgent(AgentModule):
     system = options['System']
     module = options['Module']
     self.log.info('Checking URLs for %s/%s' % (system, module))
-    urlsConfigPath = os.path.join('/Systems', system, self.setup, 'URLs', module)
+    urlsConfigPath = PathFinder.getSystemURLSection(
+        serviceName=os.path.join(system, module),
+        setup=self.setup
+    )
     urls = gConfig.getValue(urlsConfigPath, [])
     self.log.debug('Found configured URLs for %s: %s' % (module, urls))
     self.log.debug('This URL is %s' % url)
