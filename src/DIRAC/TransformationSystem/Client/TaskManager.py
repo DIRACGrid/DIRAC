@@ -1081,7 +1081,7 @@ class WorkflowTasks(TaskBase):
         if oldStatus != 'Unused':
           updateDict[lfn] = 'Unused'
 
-    res = self.jobMonitoringClient.getJobsStatus(taskNameIDs.values())
+    res = self.jobMonitoringClient.getJobsStatus(list(taskNameIDs.values()))
     if not res['OK']:
       self._logWarn("Failed to get job status from the WMS system",
                     transID=transID, method=method)
