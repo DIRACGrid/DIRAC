@@ -384,7 +384,8 @@ class ComponentMonitoringDB(DB):
         # Walk the URLs
         serviceURLs = getSystemURLs(system, setup)  # verify URLs in getSystemURLs method
         for service in serviceURLs:
-          url = urlparse.urlparse(serviceURLs[service])
+          # serviceURLs is a dict that contain a list of URLs for service
+          url = urlparse.urlparse(serviceURLs[service][0])
           if self.__componentMatchesCondition(dict(Setup=setup,
                                                    Port=url.port,
                                                    Host=url.hostname,
