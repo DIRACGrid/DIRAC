@@ -427,7 +427,7 @@ class FileCatalog(object):
         return res
       catalogConfig = res['Value']
       if catalogConfig['Status'] == 'Active':
-        res = self._generateCatalogObject(catalogName)
+        res = self._generateCatalogObject(catalogName, **catalogConfig)
         if not res['OK']:
           return res
         oCatalog = res['Value']
@@ -473,10 +473,10 @@ class FileCatalog(object):
     catalogConfig['Master'] = (catalogConfig.setdefault('Master', False) == 'True')
     return S_OK(catalogConfig)
 
-  def _generateCatalogObject(self, catalogName):
+  def _generateCatalogObject(self, catalogName, **options):
     """ Create a file catalog object from its name and CS description
     """
     useProxy = gConfig.getValue('/LocalSite/Catalogs/%s/UseProxy' % catalogName, False)
     if not useProxy:
       useProxy = self.opHelper.getValue('/Services/Catalogs/%s/UseProxy' % catalogName, False)
-    return FileCatalogFactory().createCatalog(catalogName, useProxy)
+    return FileCatalogFactory().createCatalog(catalogName, useProxy, **options)

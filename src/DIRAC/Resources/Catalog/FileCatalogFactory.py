@@ -21,7 +21,7 @@ class FileCatalogFactory(object):
     self.log = gLogger.getSubLogger('FileCatalogFactory')
     self.catalogPath = ''
 
-  def createCatalog(self, catalogName, useProxy=False):
+  def createCatalog(self, catalogName, useProxy=False, **options):
     """ Create a file catalog object from its name and CS description
     """
     catalogPath = getCatalogPath(catalogName)
@@ -31,6 +31,8 @@ class FileCatalogFactory(object):
     result = gConfig.getOptionsDict(catalogPath)
     if result['OK']:
       optionsDict = result['Value']
+
+    optionsDict.update(options)
 
     if useProxy:
       result = self.__getCatalogClass(catalogType)
