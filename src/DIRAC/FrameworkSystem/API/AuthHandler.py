@@ -18,7 +18,6 @@ from tornado.template import Template
 from tornado.concurrent import Future
 
 from authlib.oauth2.base import OAuth2Error
-from authlib.oauth2.rfc6749.util import scope_to_list
 
 from DIRAC import S_ERROR, gConfig
 from DIRAC.Core.Tornado.Server.TornadoREST import TornadoREST
