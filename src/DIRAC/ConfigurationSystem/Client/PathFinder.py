@@ -66,22 +66,22 @@ def getSystemSection(system, instance=False, setup=False):
 
 
 def getComponentSection(system, component=False, setup=False, componentCategory="Services"):
-  """Function returns the path to the component.
+  """ Function returns the path to the component.
 
-  :param str system: system name or component name prefixed by the system in which it is placed.
-                     e.g. 'WorkloadManagement/SandboxStoreHandler'
-  :param str component: component name, e.g. 'SandboxStoreHandler'
-  :param str setup: Name of the setup.
-  :param str componentCategory: Category of the component, it can be:
-                                'Agents', 'Services', 'Executors' or 'Databases'.
+      :param str system: system name or component name prefixed by the system in which it is placed.
+                         e.g. 'WorkloadManagement/SandboxStoreHandler'
+      :param str component: component name, e.g. 'SandboxStoreHandler'
+      :param str setup: Name of the setup.
+      :param str componentCategory: Category of the component, it can be:
+                                    'Agents', 'Services', 'Executors' or 'Databases'.
 
-  :return str: Complete path to the component
+      :return str: Complete path to the component
 
-  :raise RuntimeException: If in the system - the system part does not correspond to any known system in DIRAC.
+      :raise RuntimeException: If in the system - the system part does not correspond to any known system in DIRAC.
 
-  Examples:
-    getComponentSection('WorkloadManagement/SandboxStoreHandler', setup='Production', componentCategory='Services')
-    getComponentSection('WorkloadManagement', 'SandboxStoreHandler', 'Production')
+      Examples:
+        getComponentSection('WorkloadManagement/SandboxStoreHandler', setup='Production', componentCategory='Services')
+        getComponentSection('WorkloadManagement', 'SandboxStoreHandler', 'Production')
   """
   system, component = divideFullName(system, component)
   return "%s/%s/%s" % (getSystemSection(system, setup=setup), componentCategory, component)
@@ -91,7 +91,8 @@ def getServiceSection(system, serviceName=False, setup=False):
   """ Get service section in a system
 
       :param str system: system name
-      :param str serviceName: DB name
+      :param str serviceName: service name
+      :param str setup: setup name
 
       :return: str
   """
@@ -102,7 +103,8 @@ def getAgentSection(system, agentName=False, setup=False):
   """ Get agent section in a system
 
       :param str system: system name
-      :param str agentName: DB name
+      :param str agentName: agent name
+      :param str setup: setup name
 
       :return: str
   """
@@ -113,7 +115,8 @@ def getExecutorSection(system, executorName=None, component=False, setup=False):
   """ Get executor section in a system
 
       :param str system: system name
-      :param str executorName: DB name
+      :param str executorName: executor name
+      :param str setup: setup name
 
       :return: str
   """
@@ -125,6 +128,7 @@ def getDatabaseSection(system, dbName=False, setup=False):
 
       :param str system: system name
       :param str dbName: DB name
+      :param str setup: setup name
 
       :return: str
   """
@@ -169,14 +173,13 @@ def checkComponentURL(componentURL, system=None, component=None, pathMandatory=F
 
 
 def getSystemURLs(system, setup=False, failover=False):
-  """
-    Generate url.
+  """ Generate url.
 
-    :param str system: system name or full name e.g.: Framework/ProxyManager
-    :param str setup: DIRAC setup name, can be defined in dirac.cfg
-    :param bool failover: to add failover URLs to end of result list
+      :param str system: system name or full name e.g.: Framework/ProxyManager
+      :param str setup: DIRAC setup name, can be defined in dirac.cfg
+      :param bool failover: to add failover URLs to end of result list
 
-    :return: dict -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
+      :return: dict -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
   """
   urlDict = {}
   for service in gConfigurationData.getOptionsFromCFG("%s/URLs" % getSystemSection(system, setup=setup)):
@@ -185,15 +188,14 @@ def getSystemURLs(system, setup=False, failover=False):
 
 
 def getServiceURLs(system, service=None, setup=False, failover=False):
-  """
-    Generate url.
+  """ Generate url.
 
-    :param str system: system name or full name e.g.: Framework/ProxyManager
-    :param str service: service name, like 'ProxyManager'.
-    :param str setup: DIRAC setup name, can be defined in dirac.cfg
-    :param bool failover: to add failover URLs to end of result list
+      :param str system: system name or full name e.g.: Framework/ProxyManager
+      :param str service: service name, like 'ProxyManager'.
+      :param str setup: DIRAC setup name, can be defined in dirac.cfg
+      :param bool failover: to add failover URLs to end of result list
 
-    :return: list -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
+      :return: list -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
   """
   system, service = divideFullName(system, service)
   resList = []
@@ -236,14 +238,13 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
 
 
 def getServiceURL(system, service=None, setup=False):
-  """
-    Generate url.
+  """ Generate url.
 
-    :param str system: system name or full name e.g.: Framework/ProxyManager
-    :param str service: service name, like 'ProxyManager'.
-    :param str setup: DIRAC setup name, can be defined in dirac.cfg
+      :param str system: system name or full name e.g.: Framework/ProxyManager
+      :param str service: service name, like 'ProxyManager'.
+      :param str setup: DIRAC setup name, can be defined in dirac.cfg
 
-    :return: str -- complete list of urls. e.g. dips://some-domain:3424/Framework/Service, dips://..
+      :return: str -- complete list of urls. e.g. dips://some-domain:3424/Framework/Service, dips://..
   """
   system, service = divideFullName(system, service)
   urls = getServiceURLs(system, service=service, setup=setup)
@@ -261,8 +262,10 @@ def getServiceFailoverURL(system, service=None, setup=False):
   """
   system, service = divideFullName(system, service)
   systemSection = getSystemSection(system, setup=setup)
-  url = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, service))
-  return checkComponentURL(url, system, service, pathMandatory=True) if url else ""
+  failovers = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, service))
+  if not failovers:
+    return ""
+  return ",".join([checkComponentURL(u, system, service) for u in List.fromChar(failovers, ",") if u])
 
 
 def getGatewayURLs(system="", service=None):
