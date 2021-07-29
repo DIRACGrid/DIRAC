@@ -12,7 +12,6 @@ This sections constains the documentation for installing new DIRAC Servers or se
 
    InstallingDiracServer
    InstallingWebAppDIRAC
-   vmdirac
    centralizedLogging
    rabbitmq
    scalingAndLimitations

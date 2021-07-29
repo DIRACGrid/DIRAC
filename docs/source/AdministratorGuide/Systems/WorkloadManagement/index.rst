@@ -59,7 +59,7 @@ the pilots scheduling should happen with other means then SiteDirectors, as exem
 
 DIRAC alone does not administer directly clouds or any VM-based systems.
 A different mechanism should be used for starting pilots and jobs on worker nodes that can't be reached via Computing Elements.
-One mechanism for starting pilots on Clouds is in the VMDIRAC extension of DIRAC.
+One mechanism for starting pilots on Clouds is using the :py:mod:`~DIRAC.WorkloadManagementSystem.Agent.CloudDirector` agent.
 
 (Over-)simplified workflow
 ==========================
