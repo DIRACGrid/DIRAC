@@ -142,7 +142,7 @@ def getExecutorSection(system, executorName=None, component=False, setup=False):
   return getComponentSection(system, component=executorName, setup=setup, componentCategory="Executors")
 
 
-def getDatabaseSection(dbName, dbTuple=False, setup=False):
+def getDatabaseSection(system, dbName=False, setup=False):
   """ Get DB section in a system
 
       :param str system: system name
