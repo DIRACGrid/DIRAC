@@ -9,6 +9,7 @@ from __future__ import print_function
 __RCSID__ = "$Id"
 
 import time
+import re
 
 from DIRAC import gLogger
 
@@ -374,10 +375,13 @@ class Matcher(object):
       else:
         pilotVersion = resourceDict['ReleaseVersion']
 
-      validVersions = self.opsHelper.getValue("Pilot/Version", [])
-      if validVersions and pilotVersion not in validVersions:
+      validVersions = [
+          parseVersion(newStyleVersion)
+          for newStyleVersion in self.opsHelper.getValue("Pilot/Version", [])
+      ]
+      if validVersions and parseVersion(pilotVersion) not in validVersions:
         raise PilotVersionError(
-            'Pilot version does not match the production version %s not in ( %s )' %
+            'Pilot version does not match the production version: %s not in ( %s )' %
             (pilotVersion, ",".join(validVersions))
         )
       # Check project if requested
@@ -392,3 +396,22 @@ class Matcher(object):
                 "Version check requested but expected project %s != received %s"
                 % (validProject, resourceDict["ReleaseProject"])
             )
+
+
+def parseVersion(releaseVersion):
+  """Convert the releaseVersion into a PEP-440 style string
+
+  :param str releaseVersion: The software version to use
+  """
+  VERSION_PATTERN = re.compile(r"^(?:v)?(\d+)[r\.](\d+)(?:[p\.](\d+))?(?:(?:-pre|a)?(\d+))?$")
+
+  match = VERSION_PATTERN.match(releaseVersion)
+  # If the regex fails just return the original version
+  if not match:
+    return releaseVersion
+  major, minor, patch, pre = match.groups()
+  version = major + "." + minor
+  version += "." + (patch or "0")
+  if pre:
+    version += "a" + pre
+  return version
