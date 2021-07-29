@@ -9,7 +9,7 @@ declare -a commands=(
 'dirac-admin-sync-pilot'
 'dirac-wms-cpu-normalization'
 'dirac-wms-get-queue-cpu-time 10 -o /LocalSite/GridCE=ce503.cern.ch -o /LocalSite/CEQueue=condor'
-'dirac-wms-get-wn --Site=LCG.CERN.cern'
+'dirac-wms-get-wn --Site=LCG.CERN.cern --Status=all'
 'dirac-wms-get-wn-parameters --Site=LCG.CERN.cern --Name=ce503.cern.ch --Queue=condor'
 'dirac-admin-site-info LCG.CERN.cern'
 'dirac-wms-get-normalized-queue-length ce503.cern.ch/condor'
@@ -20,6 +20,8 @@ declare -a commands=(
 for command in "${commands[@]}"
 do
   echo "************************************************"
+  echo " "
+  echo "executing ${command}"
   echo " "
   if ! bash -c "${command}"; then
     echo "${command}" gives error

@@ -27,6 +27,8 @@ for command in "${commands[@]}"
 do
   echo "************************************************"
   echo " "
+  echo "executing ${command}"
+  echo " "
   if ! bash -c "${command}"; then
     echo "${command}" gives error
     exit 1
