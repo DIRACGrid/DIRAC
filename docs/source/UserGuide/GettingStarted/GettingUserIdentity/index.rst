@@ -1,3 +1,6 @@
+.. set highlighting to console input/output
+.. highlight:: console
+
 ==================================
 Getting User Identity
 ==================================
@@ -10,7 +13,7 @@ the certificate should be exported from the Browser into a file in p12 format. A
 should be converted into the pem format and stored in the user home directory. If the DIRAC client software
 is available, the conversion can be done with the following DIRAC command::
 
-  dirac-cert-convert.sh <cert_file.p12>
+  $ dirac-cert-convert.sh <cert_file.p12>
 
 The user will be prompted for the password used while exporting the certificate and for the pass phrase
 to be used with the user's private key. Do not forget it !
@@ -50,11 +53,11 @@ Everything related to RFC proxies is already in standard *openssl*.
 Before a user can work with DIRAC, the user's certificate proxy should be initialized and
 uploaded to the DIRAC ProxyManager Service. This is achieved with a simple command::
 
-  dirac-proxy-init (or simply "proxy-init")
+  $ dirac-proxy-init
 
 In this case the user proxy with the default DIRAC group will be generated and uploaded.
 If another non-default user group is needed, the command becomes::
 
-  dirac-proxy-init -g <user_group>
+  $ dirac-proxy-init -g <user_group>
 
-where ''user_group'' is the desired DIRAC group name for which the user is entitled.
+where ``user_group`` is the desired DIRAC group name for which the user is entitled.

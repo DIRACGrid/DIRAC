@@ -1,5 +1,8 @@
 .. _user_jobs_api:
 
+.. set highlighting to console input/output
+.. highlight:: console
+
 ==========================
 Jobs with DIRAC Python API
 ==========================
@@ -22,8 +25,10 @@ Jobs with DIRAC Python API
 Creating a DIRAC Job using API
 ==============================
 
-  The API allows creating DIRAC jobs using the Job object, specifying job requirements.::
-    
+The API allows creating DIRAC jobs using the Job object, specifying job requirements
+
+.. code-block:: python
+
     # setup DIRAC
     from DIRAC.Core.Base import Script
     Script.parseCommandLine(ignoreErrors=False) 
@@ -41,27 +46,29 @@ Creating a DIRAC Job using API
     j.setName('API')
     
     jobID = dirac.submitJob(j)
-    print 'Submission Result: ',jobID
+    print('Submission Result: ', jobID)
     
-  In this example, the job has tree steps from different applications: echo, hostname and echo again.
+In this example, the job has tree steps from different applications: echo, hostname and echo again.
 
 Submitting jobs
 ===============
   
-  To submit the job is just send the job using the script::
-  
-    $ python testAPI-Submission.py
-    2010-10-20 12:05:49 UTC testAPI-Submission.py/DiracAPI  INFO: <=====DIRAC v5r10-pre2=====>
-    2010-10-20 12:05:49 UTC testAPI-Submission.py/DiracAPI  INFO: Will submit job to WMS
-    {'OK': True, 'Value': 196}
+To submit the job is just send the job using the script::
 
-  The script output must return the jobID, this is useful for keeping track of your job IDs.
+   $ python testAPI-Submission.py
+   2010-10-20 12:05:49 UTC testAPI-Submission.py/DiracAPI  INFO: <=====DIRAC v5r10-pre2=====>
+   2010-10-20 12:05:49 UTC testAPI-Submission.py/DiracAPI  INFO: Will submit job to WMS
+   {'OK': True, 'Value': 196}
+
+The script output must return the jobID, this is useful for keeping track of your job IDs.
 
 Job Monitoring
 ==============
 
-  Once you have submitted your jobs to the Grid, a little script can be used to monitor the job status::
+Once you have submitted your jobs to the Grid, a little script can be used to monitor the job status
   
+.. code-block:: python
+
     # setup DIRAC
     from DIRAC.Core.Base import Script
     Script.parseCommandLine(ignoreErrors=False) 
@@ -71,9 +78,9 @@ Job Monitoring
     import sys
     dirac = Dirac()
     jobid = sys.argv[1]
-    print dirac.status(jobid)
+    print(dirac.status(jobid))
 
-  Run it like this:
+Run it like this::
 
     python Status-API.py <Job_ID>
 
@@ -85,22 +92,25 @@ Job Monitoring
 Job Output
 ==========
 
-  When the status of the job is done, the outputs can be retrieved using also a simple script::
-  
+When the status of the job is done, the outputs can be retrieved using also a simple script::
+
+.. code-block:: python
+
+    import sys
+
     # setup DIRAC
     from DIRAC.Core.Base import Script
     Script.parseCommandLine(ignoreErrors=False) 
    
     from DIRAC.Interfaces.API.Dirac import Dirac
     from DIRAC.Interfaces.API.Job import Job
-    import sys
+
     dirac = Dirac()
     jobid = sys.argv[1]
-    print dirac.getOutputSandbox(jobid)
+    print(dirac.getOutputSandbox(jobid))
 
-  And, executing the script::
+And, executing the script::
 
-    python Output-API.py <Job_ID>
-    $ python Output-API.py 196
+    % python Output-API.py <Job_ID>
 
-  The job output is going to create a directory with the jobID and the output files will be stored inside this directory.
+The job output is going to create a directory with the jobID and the output files will be stored inside this directory.

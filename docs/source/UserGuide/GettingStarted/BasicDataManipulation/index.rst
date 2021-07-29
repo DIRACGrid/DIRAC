@@ -1,3 +1,6 @@
+.. set highlighting to console input/output
+.. highlight:: console
+
 ==============
 User Data
 ==============
@@ -13,15 +16,15 @@ File upload
 
 The initial data file upload to the Grid Storaget Element is performed by the following example command::
 
-  dirac-dms-add-file <LFN> <FILE PATH> <SE> [<GUID>]
-  
+  $ dirac-dms-add-file <LFN> <FILE PATH> <SE> [<GUID>]
+
 where <LFN> is the Logical File Name which will uniquely identify the file on the Grid.
 <FILE PATH> is the full or relative path to the local file to be uploaded. <SE>
 is the name of the Storage Element where the file will be uploaded. Optionally <GUID> - 
 unique identifier - can be provided. For example::
-  
-  dirac-dms-add-file /dirac/user/u/username/user.file user.file DIRAC-USER 
-  
+
+  $ dirac-dms-add-file /dirac/user/u/username/user.file user.file DIRAC-USER 
+
 will upload local file *user.file* to the *DIRAC-USER* Storage Element. The file will
 be registered in the File Catalog with the *LFN* /dirac/user/u/username/user.file
 
@@ -30,8 +33,8 @@ File download
 
 To download a file from the Grid Storage Element one should do::
 
-   dirac-dms-get-file <LFN>
-   
+  $ dirac-dms-get-file <LFN>
+
 giving the file LFN as the command argument. This will discover the file on the Grid
 and will download the file to the local current directory.
 
@@ -40,23 +43,23 @@ File replication
 
 To make another copy of the file on a new Storage Element, the following command should be executed::
 
-  dirac-dms-replicate-lfn <LFN> <SE>
-    
+  $ dirac-dms-replicate-lfn <LFN> <SE>
+
 This will make a new copy of the file specified by its LFN to the *SE* Storage Element. For example::
 
-  dirac-dms-replicate-lfn  /dirac/user/u/username/user.file DIRAC-USER    
- 
+  $ dirac-dms-replicate-lfn  /dirac/user/u/username/user.file DIRAC-USER
+
 You can see all the replicas of the given file by executing::
 
-  dirac-dms-lfn-replicas <LFN>
-  
+  $ dirac-dms-lfn-replicas <LFN>
+
 Finding Storage Elements
 -------------------------
 
 You can find all the Storage Elements available in the system by::
 
-  dirac-dms-show-se-status
-  
+  $ dirac-dms-show-se-status
+
 This will show the Storage Elements together with their current status which will help you to decide
 which ones you can use.
 

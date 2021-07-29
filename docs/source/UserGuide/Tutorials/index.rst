@@ -9,7 +9,6 @@ Tutorials
 .. toctree::
    :maxdepth: 1
 
-   ClientInstallation/index
    ManagingUserCredentials/index
    JDLsAndJobManagementBasic/index
    FileCatalogBasic/index

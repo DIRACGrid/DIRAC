@@ -1,5 +1,8 @@
 .. _dirac_install:
 
+.. set highlighting to console input/output
+.. highlight:: console
+
 
 =======================
 Installing DIRAC client
