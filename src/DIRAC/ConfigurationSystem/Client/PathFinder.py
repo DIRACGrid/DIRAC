@@ -103,7 +103,7 @@ def getAPISection(system, endpointName=False, setup=False):
 
       :return: str
   """
-  return getComponentSection(system, component=endpointName, setup=setup, "APIs")
+  return getComponentSection(system, component=endpointName, setup=setup, componentCategory="APIs")
 
 
 def getServiceSection(system, serviceName=False, setup=False):
