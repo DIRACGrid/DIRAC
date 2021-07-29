@@ -95,6 +95,17 @@ def getComponentSection(system, component=False, setup=False, componentCategory=
   )
 
 
+def getAPISection(system, endpointName=False, setup=False):
+  """ Get service section in a system
+
+      :param str system: system name
+      :param str endpointName: endpoint name
+
+      :return: str
+  """
+  return getComponentSection(system, component=endpointName, setup=setup, "APIs")
+
+
 def getServiceSection(system, serviceName=False, setup=False):
   """ Get service section in a system
 
@@ -131,12 +142,8 @@ def getExecutorSection(system, executorName=None, component=False, setup=False):
   return getComponentSection(system, component=executorName, setup=setup, componentCategory="Executors")
 
 
-def getAPISection(APIName, APITuple=False, setup=False):
-  return getComponentSection(APIName, APITuple, setup, "APIs")
-
-
-def getServiceSection(serviceName, serviceTuple=False, setup=False):
-  return getComponentSection(serviceName, serviceTuple, setup, "Services")
+def getDatabaseSection(dbName, dbTuple=False, setup=False):
+  """ Get DB section in a system
 
       :param str system: system name
       :param str dbName: DB name
