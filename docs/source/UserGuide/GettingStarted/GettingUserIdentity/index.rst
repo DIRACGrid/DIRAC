@@ -13,7 +13,7 @@ the certificate should be exported from the Browser into a file in p12 format. A
 should be converted into the pem format and stored in the user home directory. If the DIRAC client software
 is available, the conversion can be done with the following DIRAC command::
 
-  $ dirac-cert-convert.sh <cert_file.p12>
+  $ dirac-cert-convert <cert_file.p12>
 
 The user will be prompted for the password used while exporting the certificate and for the pass phrase
 to be used with the user's private key. Do not forget it !

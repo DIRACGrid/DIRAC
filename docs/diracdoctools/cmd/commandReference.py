@@ -30,54 +30,53 @@ PREFIX = "prefix"
 
 
 class CommandReference(object):
-    def __init__(self, configFile="docs.conf", debug=False):
-        self.config = Configuration(configFile, sections=["Commands"])
-        self.exitcode = 0
-        self.debug = debug
 
-        self.sectionDicts = self.config.com_MSS
+  def __init__(self, configFile='docs.conf', debug=False):
+    self.config = Configuration(configFile, sections=['Commands'])
+    self.exitcode = 0
+    self.debug = debug
 
-    def getScripts(self):
-        """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
-        LOG.info("Looking for scripts")
-        if not os.path.exists(self.config.sourcePath):
-            LOG.error("%s does not exist" % self.config.sourcePath)
-            raise RuntimeError("Package not found")
+    self.sectionDicts = self.config.com_MSS
 
-        # Get all scripts
-        scriptsPath = os.path.join(self.config.sourcePath, "*", "scripts", "*.py")
+  def getScripts(self):
+    """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
+    LOG.info('Looking for scripts')
+    if not os.path.exists(self.config.sourcePath):
+      LOG.error('%s does not exist' % self.config.sourcePath)
+      raise RuntimeError('Package not found')
 
-        # Get all scripts on scriptsPath and sorts them, this will make our life easier afterwards
-        scripts = glob.glob(scriptsPath)
-        scripts.sort()
-        for scriptPath in scripts:
-            # Few modules still have __init__.py on the scripts directory
-            if "__init__" in scriptPath:
-                LOG.debug("Ignoring init file %s", scriptPath)
-                continue
+    # Get all scripts
+    scriptsPath = os.path.join(self.config.sourcePath, '*', 'scripts', '*.(sh|py)')
 
-            for mT in self.sectionDicts:
-                if any(pattern in scriptPath.replace("_", "-") for pattern in mT[PATTERN]) and not any(
-                    pattern in scriptPath.replace("_", "-") for pattern in mT[EXCLUDE]
-                ):
-                    mT[SCRIPTS].append(scriptPath)
+    # Get all scripts on scriptsPath and sorts them, this will make our life easier afterwards
+    scripts = glob.glob(scriptsPath)
+    scripts.sort()
+    for scriptPath in scripts:
+      # Few modules still have __init__.py on the scripts directory
+      if '__init__' in scriptPath:
+        LOG.debug('Ignoring init file %s', scriptPath)
+        continue
 
-        return
+      for mT in self.sectionDicts:
+        if any(pattern in scriptPath.replace("_", "-") for pattern in mT[PATTERN]) and \
+           not any(pattern in scriptPath.replace("_", "-") for pattern in mT[EXCLUDE]):
+          mT[SCRIPTS].append(scriptPath)
 
-    def createFilesAndIndex(self, sectionDict):
-        """Create the index file and folder where the RST files will go
+    return
 
-        e.g.:
-        source/UserGuide/CommandReference/DataManagement
-        """
-        sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
-        mkdir(sectionPath)
+  def createFilesAndIndex(self, sectionDict):
+    """Create the index file and folder where the RST files will go
 
-        systemName = sectionDict[TITLE]
-        systemHeader = systemName + " Command Reference"
-        systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
-        sectionIndexRST = systemHeader + textwrap.dedent(
-            """
+    e.g.:
+    source/UserGuide/CommandReference/DataManagement
+    """
+    sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
+    mkdir(sectionPath)
+
+    systemName = sectionDict[TITLE]
+    systemHeader = systemName + " Command Reference"
+    systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
+    sectionIndexRST = systemHeader + textwrap.dedent("""
                                                      In this subsection the %s commands are collected
 
                                                      .. this page automatically is created in %s

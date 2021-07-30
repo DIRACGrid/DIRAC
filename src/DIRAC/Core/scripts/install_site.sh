@@ -10,7 +10,6 @@ usage() {
   echo "Options:"
   echo "    -d, --debug    debug mode"
   echo "    -h, --help     print this"
-  exit 1
 }
 
 while [ "${1}" ]
@@ -19,7 +18,7 @@ do
 
   -h | --help )
     usage
-    exit
+    exit 0
   ;;
 
   -d | --debug )
