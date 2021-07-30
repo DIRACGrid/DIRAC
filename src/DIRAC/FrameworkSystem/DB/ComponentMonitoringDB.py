@@ -386,7 +386,7 @@ class ComponentMonitoringDB(DB):
         for service in systemURLs:
           # systemURLs is a dict that contain a list of URLs for service
           if not systemURLs[service]:
-            return S_ERROR('Not found URL for %s service.' % service)
+            self.log.error('Not found URL for %s service.' % service)
           url = urlparse.urlparse(systemURLs[service][0])
           if self.__componentMatchesCondition(dict(Setup=setup,
                                                    Port=url.port,
