@@ -75,7 +75,8 @@ def getComponentSection(system, component=False, setup=False, componentCategory=
       :param str componentCategory: Category of the component, it can be:
                                     'Agents', 'Services', 'Executors' or 'Databases'.
 
-      :return str: Complete path to the component
+      :return: Complete path to the component
+      :rtype: str
 
       :raise RuntimeException: If in the system - the system part does not correspond to any known system in DIRAC.
 
