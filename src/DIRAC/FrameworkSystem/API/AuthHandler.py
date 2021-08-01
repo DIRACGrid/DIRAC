@@ -119,7 +119,7 @@ class AuthHandler(TornadoREST):
 
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
 
-  def web_index(self, instance):
+  def web_index(self, *instance):
     """ Well known endpoint, specified by
         `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_
 
@@ -243,7 +243,7 @@ class AuthHandler(TornadoREST):
 
   path_device = ['([A-z0-9-_]*)']
 
-  def web_device(self, provider=None):
+  def web_device(self, provider=None, user_code=None):
     """ The device authorization endpoint can be used to request device and user codes.
         This endpoint is used to start the device flow authorization process and user code verification.
 
@@ -303,17 +303,17 @@ class AuthHandler(TornadoREST):
       return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
 
     elif self.request.method == 'GET':
-      userCode = self.get_argument('user_code', None)
-      if userCode:
+      # userCode = self.get_argument('user_code', None)
+      if user_code:
         # If received a request with a user code, then prepare a request to authorization endpoint
         self.log.verbose('User code verification.')
-        result = self.server.db.getSessionByUserCode(userCode)
+        result = self.server.db.getSessionByUserCode(user_code)
         if not result['OK']:
-          return 'Device code flow authorization session %s expired.' % userCode
+          return 'Device code flow authorization session %s expired.' % user_code
         session = result['Value']
         # Get original request from session
         req = createOAuth2Request(dict(method='GET', uri=session['uri']))
-        req.setQueryArguments(id=session['id'], user_code=userCode)
+        req.setQueryArguments(id=session['id'], user_code=user_code)
 
         # Save session to cookie and redirect to authorization endpoint
         authURL = '%s?%s' % (req.path.replace('device', 'authorization'), req.query)
@@ -364,7 +364,7 @@ class AuthHandler(TornadoREST):
     """
     return self.server.validate_consent_request(self.request, provider)
 
-  def web_redirect(self):
+  def web_redirect(self, state, error=None, error_description='', chooseScope=[]):
     """ Redirect endpoint.
         After a user successfully authorizes an application, the authorization server will redirect
         the user back to the application with either an authorization code or access token in the URL.
@@ -379,14 +379,14 @@ class AuthHandler(TornadoREST):
 
           &chooseScope=..  to specify new scope(group in our case) (optional)
     """
-    # Current IdP session state
-    state = self.get_argument('state')
+    # # Current IdP session state
+    # state = self.get_argument('state')
 
-    # Try to catch errors
-    error = self.get_argument('error', None)
+    # # Try to catch errors
+    # error = self.get_argument('error', None)
     if error:
       return self.server.handle_error_response(
-          state, OAuth2Error(error=error, description=self.get_argument('error_description', '')))
+          state, OAuth2Error(error=error, description=error_description))  # self.get_argument('error_description', '')))
 
     # Check current auth session that was initiated for the selected external identity provider
     session = self.get_secure_cookie('auth_session')
@@ -408,7 +408,7 @@ class AuthHandler(TornadoREST):
       sessionWithExtIdP['authed'] = result['Value']
 
     # Research group
-    grant_user, response = self.__researchDIRACGroup(sessionWithExtIdP)
+    grant_user, response = self.__researchDIRACGroup(sessionWithExtIdP, chooseScope, state)
     if not grant_user:
       return response
 
@@ -448,7 +448,7 @@ class AuthHandler(TornadoREST):
     """
     return self.server.create_token_response(self.request)
 
-  def __researchDIRACGroup(self, extSession):
+  def __researchDIRACGroup(self, extSession, chooseScope, state):
     """ Research DIRAC groups for authorized user
 
         :param dict extSession: ended authorized external IdP session
@@ -458,7 +458,7 @@ class AuthHandler(TornadoREST):
     # Base DIRAC client auth session
     firstRequest = createOAuth2Request(extSession['firstRequest'])
     # Read requested groups by DIRAC client or user
-    firstRequest.addScopes(self.get_arguments('chooseScope'))
+    firstRequest.addScopes(chooseScope)  # self.get_arguments('chooseScope'))
     # Read already authed user
     username = extSession['authed']['username']
     # Requested arguments in first request
@@ -484,8 +484,8 @@ class AuthHandler(TornadoREST):
           with dom.div(style=self.css_main):
             with dom.div('Choose group', style=self.css_align_center):
               for group in validGroups:
-                dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath,
-                                                                               self.get_argument('state'), group)),
+                dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, state, group)),
+                                                                              #  self.get_argument('state'), group)),
                            cls='button')
         return None, self.server.handle_response(payload=Template(self.doc.render()).generate(), newSession=extSession)
 

@@ -56,6 +56,8 @@ class TornadoResponse(object):
           resp.set_status(400)
           return resp
   """
+  __attrs = inspect.getmembers(RequestHandler)
+
   def __init__(self, data=None):
     """ C'or
 
@@ -63,13 +65,19 @@ class TornadoResponse(object):
     """
     self.data = data
     self.actions = []
-    for mName, mObj in inspect.getmembers(RequestHandler):
+    for mName, mObj in self.__attrs:
       if inspect.isroutine(mObj) and not mName.startswith('_') and not mName.startswith('get'):
         setattr(self, mName, partial(self.__setAction, mName))
 
   def __setAction(self, mName, *args, **kwargs):
-    """ Register new action """
+    """ Register new action
+
+        :param str mName: RequestHandler method name
+
+        :return: TornadoResponse instance
+    """
     self.actions.append((mName, args, kwargs))
+    return self
 
   def _runActions(self, reqObj):
     """ Calling methods in the order of their registration
@@ -185,6 +193,7 @@ class BaseRequestHandler(RequestHandler):
 
   # Which grant type to use
   USE_AUTHZ_GRANTS = ['SSL', 'JWT']
+
 
   @classmethod
   def _initMonitoring(cls, serviceName, fullUrl):
@@ -395,9 +404,24 @@ class BaseRequestHandler(RequestHandler):
   def _getMethodArgs(self, args):
     """ Decode args.
 
-        :return: list
+        :return: tuple
     """
-    return args
+    # Read information about method
+    spec = inspect.getargspec(self.mehtodObj)
+    # Pass all arguments
+    kwargs = self.request.arguments.copy() if spec.keywords else {}
+    # Get all defaults from method
+    defaults = {a: spec.defaults[args.index(a)] for a in args[-len(spec.defaults):]} if spec.defaults else {}
+    # Calcule kwargs
+    for arg in spec.args[len(args):]:
+      if not defaults.get(arg):
+        kwargs[arg] = self.get_argument(arg)
+      elif isinstance(defaults[arg], six.string_types):
+        kwargs[arg] = self.get_arguments(arg, defaults[arg])
+      else:
+        kwargs[arg] = self.get_argument(arg, defaults[arg])
+
+    return (args, kwargs)
 
   def _getMethodAuthProps(self):
     """ Resolves the hard coded authorization requirements for method.
@@ -406,18 +430,18 @@ class BaseRequestHandler(RequestHandler):
     """
     if self.AUTH_PROPS and not isinstance(self.AUTH_PROPS, (list, tuple)):
       self.AUTH_PROPS = [p.strip() for p in self.AUTH_PROPS.split(",") if p.strip()]
-    return getattr(self, 'auth_' + self.method, self.AUTH_PROPS)
+    return getattr(self, 'auth_' + self.mehtodName, self.AUTH_PROPS)
 
   def _getMethod(self):
     """ Get method function to call.
 
         :return: function
     """
-    method = getattr(self, '%s%s' % (self.METHOD_PREFIX, self.method), None)
-    if not callable(method):
-      sLog.error("Invalid method", self.method)
+    methodObj = getattr(self, '%s%s' % (self.METHOD_PREFIX, self.mehtodName), None)
+    if not callable(methodObj):
+      sLog.error("Invalid method", self.mehtodName)
       raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
-    return method
+    return methodObj
 
   def prepare(self):
     """
@@ -429,7 +453,8 @@ class BaseRequestHandler(RequestHandler):
     # on the handler side
     # If the argument is not available, the method exists
     # and an error 400 ``Bad Request`` is returned to the client
-    self.method = self._getMethodName()
+    self.mehtodName = self._getMethodName()
+    self.methodObj = self._getMethod()
 
     self._monitorRequest()
 
@@ -456,7 +481,7 @@ class BaseRequestHandler(RequestHandler):
 
     # Check whether we are authorized to perform the query
     # Note that performing the authQuery modifies the credDict...
-    authorized = self._authManager.authQuery(self.method, self.credDict,
+    authorized = self._authManager.authQuery(self.mehtodName, self.credDict,
                                              self._getMethodAuthProps())
     if not authorized:
       extraInfo = ''
@@ -470,7 +495,7 @@ class BaseRequestHandler(RequestHandler):
            self.request.path, extraInfo))
       raise HTTPError(http_client.UNAUTHORIZED)
 
-  def __executeMethod(self, targetMethod, args):
+  def __executeMethod(self, targetMethod, args, kwargs):
     """
       Execute the method called, this method is ran in an executor
       We have several try except to catch the different problem which can occur
@@ -484,33 +509,17 @@ class BaseRequestHandler(RequestHandler):
 
       :param str targetMethod: name of the method to call
       :param list args: target method arguments
+      :param dict kwargs: target method arguments
 
       :return: Future
     """
 
     sLog.notice("Incoming request %s /%s: %s" % (self.srv_getFormattedRemoteCredentials(),
-                                                 self._serviceName, self.method))
+                                                 self._serviceName, self.mehtodName))
     # Execute
     try:
       self.initializeRequest()
-      return targetMethod(*args)
-    except Exception as e:  # pylint: disable=broad-except
-      sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
-      raise e if isinstance(e, HTTPError) else HTTPError(http_client.INTERNAL_SERVER_ERROR, str(e))
-
-  @gen.coroutine
-  def __executeMethodPy2(self, targetMethod, args):
-    """ The only difference from __executeMethod is the presence of a coroutine decorator
-
-        :return: Future
-    """
-
-    sLog.notice("Incoming request %s /%s: %s" % (self.srv_getFormattedRemoteCredentials(),
-                                                 self._serviceName, self.method))
-    # Execute
-    try:
-      self.initializeRequest()
-      return targetMethod(*args)
+      return targetMethod(*args, **kwargs)
     except Exception as e:  # pylint: disable=broad-except
       sLog.exception("Exception serving request", "%s:%s" % (str(e), repr(e)))
       raise e if isinstance(e, HTTPError) else HTTPError(http_client.INTERNAL_SERVER_ERROR, str(e))
@@ -522,8 +531,8 @@ class BaseRequestHandler(RequestHandler):
 
         :return: executor, target method with arguments
     """
-    return None, partial(self.__executeMethodPy2 if six.PY2 else self.__executeMethod,
-                         self._getMethod(), self._getMethodArgs(args))
+    return None, partial(gen.coroutine(self.__executeMethod) if six.PY2 else self.__executeMethod,
+                         self.methodObj, *self._getMethodArgs(args))
 
   def _finishFuture(self, retVal):
     """ Handler Future result
@@ -538,7 +547,7 @@ class BaseRequestHandler(RequestHandler):
     # If you need to end the method using tornado methods, outside the thread,
     # you need to define the finish_<methodName> method.
     # This method will be started after __executeMethod is completed.
-    finishFunc = getattr(self, 'finish_%s' % self.method, None)
+    finishFunc = getattr(self, 'finish_%s' % self.mehtodName, None)
 
     if isinstance(self.result, TornadoResponse):
       self.result._runActions(self)
