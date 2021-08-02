@@ -1,14 +1,20 @@
 .. _release_procedure:
 
+=====================
+Making DIRAC releases
+=====================
+
 .. set highlighting to console input/output
 .. highlight:: console
 
-=============================
-Making DIRAC releases
-=============================
-
 This section is describing the procedure to follow by release managers
 when preparing new DIRAC releases (including patches).
+
+The new code and patch contribution are made in the form of *Github* *Pull Request*.
+The *PR*'s should be first reviewed by the release managers as well as by other
+developers to possibly spot evident problems. The PRs are also reviewed by automated tools, like GitHub Actions.
+After the review the *PR* can be merged using the *Github* tools.
+After that the remote release branch is in the state ready to be tagged with the new version.
 
 Prerequisites
 =============
@@ -18,12 +24,20 @@ The release manager needs to:
 - be aware of the DIRAC repository structure and branching.
 - have push access to the "release" repository, so the one on GitHub (being part of the project "owners")
 
-The release manager of LHCbDIRAC should:
+The release manager of DIRAC should:
 
-1. Create the releases
+0. Verify if new version of DIRACOS/2 is needed
+1. Create the release(s)
 2. make basic verifications
-3. deploy the py2 DIRAC tarballs (the py3 pip-installable packages will be done by the CI)
-4. propagate to CVMFS
+3. deploy the py2 DIRAC tarballs
+4. verify that the py3 release is created, and is on pypi
+5. propagate to CVMFS
+
+0. Verify if new version of DIRACOS/2 is needed
+===============================================
+
+Code in open Pull Requests might be dependent from a new version of `DIRACOS <https://github.com/DIRACGrid/DIRACOS>`_
+(and/or `DIRACOS2 <https://github.com/DIRACGrid/DIRACOS2>`_). Do verify for that before proceeding.
 
 
 1. Creating the release(s)
@@ -39,12 +53,6 @@ The procedure consists of several steps:
 - Update DIRAC software project description
 - Build and upload release tar files
 
-The release steps are described in this chapter.
-The new code and patch contribution are made in the form of *Github* *Pull Request*.
-The *PR*'s should be first reviewed by the release managers as well as by other
-developers to possibly spot evident problems. The PRs are also reviewed by automated tools, like GitHub Actions.
-After the review the *PR* can be merged using the *Github* tools.
-After that the remote release branch is in the state ready to be tagged with the new version.
 
 
 Release notes
@@ -111,8 +119,8 @@ and merge the commits from the patches::
 
 We can now start merging PRs, directly from GitHub. At the same time we edit
 the release notes to reflect what has been merged (please see the note below about how to edit this file).
-Once finished, save the file. Then, modify the ``__init__.py`` and the ``setup.py`` files of the root directory and define the version also there.
-Then we commit the changes (those done to ``release.notes``, ``__init__.py``, and ``setup.py``) and update the current repository::
+Once finished, save the file. Then, modify the ``__init__.py`` files of the root directory and define the version also there.
+Then we commit the changes (those done to ``release.notes`` and ``__init__.py``) and update the current repository::
 
   $ git commit -a  # this will commit the changes we made to the release notes in rel-v7r1 local branch
   $ git fetch release  # this will bring in the updated release/rel-v7r1 branch from the github repository
@@ -121,11 +129,15 @@ Then we commit the changes (those done to ``release.notes``, ``__init__.py``, an
 You can now proceed with tagging, pushing, and uploading::
 
   $ git tag -a v7r1p37 -m "v7r1p37"  # this will create an annotated tag, from the current branch, in the local repository
-  $ git push --tags release rel-v7r1  # we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v7r1 branch.
+  $ git push release v7r1p37  # we push to the *release* repository (so to GitHub-hosted one) the tag just created
+  $ git push release rel-v7r1  # we push to the rel-v7r1 branch too.
 
 From the previous command, note that due to the fact that we are pushing a branch named *rel-v7r1*
 to the *release* repository, where it already exists a branch named *rel-v7r1*,
 **the local branch will override the remote one**.
+
+At this point, before performing any further step, you can go to `GitHub Actions <https://github.com/DIRACGrid/DIRAC/actions>`_
+and check the result of the workflows that are running on the pushed tag.
 
 All the patches must now be also propagated to the *upper* branches.
 In this example we are going through, we are supposing that it exists rel-v7r2 branch,
