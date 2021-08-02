@@ -353,6 +353,8 @@ class VOMS2CSSynchronizer(object):
       keepGroups = nonVOGroups + groupsWithRole
       if not quarantineVOGroup or quarantineVOGroup not in existingGroups:
         keepGroups += [defaultVOGroup]
+      if quarantineVOGroup and quarantineVOGroup in existingGroups:
+	keepGroups = quarantineVOGroup
       for group in existingGroups:
         if group in nonVOGroups:
           continue
@@ -383,7 +385,6 @@ class VOMS2CSSynchronizer(object):
           message = "\n  Modified user %s:\n" % diracName
           message += "    Added to group(s) %s\n" % ','.join(addedGroups)
           self.adminMsgs['Info'].append(message)
-
 
       # Check if something changed before asking CSAPI to modify
       if diracName in diracUserDict:
