@@ -5,10 +5,17 @@ from __future__ import print_function
 
 
 import os
+import random
+import time
+from timeit import default_timer
 
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger, S_ERROR, S_OK
+
+# Duration in sec of a removal from which we start throttling
+# The value is empirical
+REMOVAL_DURATION_THROTTLE_LIMIT = 3
 
 
 class EchoStorage(GFAL2_StorageBase):
@@ -143,3 +150,22 @@ class EchoStorage(GFAL2_StorageBase):
         :returns: S_OK()
     """
     return S_OK()
+
+  def _removeSingleFile(self, path):
+    """ Removal on Echo is unbearably slow.
+        A ticket was opened, but the claim is that "it's CEPH, no can do"
+        (https://ggus.eu/index.php?mode=ticket_info&ticket_id=140773)
+
+        This throttles a bit the removal if we see we start taking too long.
+        It is mostly useful in the context of the REA.
+    """
+
+    startTime = default_timer()
+    res = super(EchoStorage, self)._removeSingleFile(path)
+    duration = default_timer() - startTime
+
+    # If it took too long, we sleep for a bit
+    if duration > REMOVAL_DURATION_THROTTLE_LIMIT:
+      time.sleep(random.uniform(0, 3))
+
+    return res
