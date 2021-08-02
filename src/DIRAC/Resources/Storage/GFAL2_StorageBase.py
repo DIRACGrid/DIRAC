@@ -213,7 +213,7 @@ class GFAL2_StorageBase(StorageBase):
     failed = {}
 
     for url in urls:
-      res = self.__isSingleFile(url)
+      res = self._isSingleFile(url)
 
       if res['OK']:
         successful[url] = res['Value']
@@ -222,7 +222,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __isSingleFile(self, path):
+  def _isSingleFile(self, path):
     """ Checking if :path: exists and is a file
 
     :param self: self reference
@@ -232,7 +232,7 @@ class GFAL2_StorageBase(StorageBase):
               S_OK ( boolean) if it is a file or not
     """
 
-    log = self.log.getSubLogger("GFAL2_StorageBase.__isSingleFile")
+    log = self.log.getSubLogger("GFAL2_StorageBase._isSingleFile")
     log.debug("Determining whether %s is a file or not." % path)
 
     try:
@@ -245,7 +245,7 @@ class GFAL2_StorageBase(StorageBase):
         log.debug("Path is not a file")
         return S_OK(False)
     except gfal2.GError as e:
-      log.debug("GFAL2_StorageBase.__isSingleFile: %s" % repr(e))
+      log.debug("GFAL2_StorageBase._isSingleFile: %s" % repr(e))
       return S_ERROR(e.code, e.message)
 
   def putFile(self, path, sourceSize=0):
@@ -274,7 +274,7 @@ class GFAL2_StorageBase(StorageBase):
                                              (or a list of a dictionary) {url : local path}"
         self.log.debug(errStr)
         return S_ERROR(errStr)
-      res = self.__putSingleFile(src_file, dest_url, sourceSize)
+      res = self._putSingleFile(src_file, dest_url, sourceSize)
 
       if res['OK']:
         successful[dest_url] = res['Value']
@@ -283,7 +283,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __putSingleFile(self, src_file, dest_url, sourceSize):
+  def _putSingleFile(self, src_file, dest_url, sourceSize):
     """Put a copy of the local file to the current directory on the
        physical storage
 
@@ -295,7 +295,7 @@ class GFAL2_StorageBase(StorageBase):
        :param int sourceSize: size of the source file
        :returns: S_OK( fileSize ) if everything went fine, S_ERROR otherwise
     """
-    log = self.log.getSubLogger("GFAL2_StorageBase.__putSingleFile")
+    log = self.log.getSubLogger("GFAL2_StorageBase._putSingleFile")
     log.debug("trying to upload %s to %s" % (src_file, dest_url))
 
     # in case src_file is not set (this is also done in putFile but some methods directly access this method,
@@ -359,7 +359,7 @@ class GFAL2_StorageBase(StorageBase):
         return S_OK(sourceSize)
       # no checksum check, compare file sizes for verfication
       else:
-        res = self.__getSingleFileSize(dest_url)
+	res = self._getSingleFileSize(dest_url)
         # In case of failure, we set destSize to None
         # so that the cleaning of the file happens
         if not res['OK']:
@@ -373,7 +373,7 @@ class GFAL2_StorageBase(StorageBase):
         else:
           log.debug("Source and destination file size don't match.\
                                                                         Trying to remove destination file")
-          res = self.__removeSingleFile(dest_url)
+	  res = self._removeSingleFile(dest_url)
           if not res['OK']:
             log.debug("Failed to remove destination file", res['Message'])
             return res
@@ -453,7 +453,7 @@ class GFAL2_StorageBase(StorageBase):
         log.exception(errStr, lException=error)
         return S_ERROR("%s: %s" % (errStr, repr(error)))
 
-    res = self.__getSingleFileSize(src_url)
+    res = self._getSingleFileSize(src_url)
     if not res['OK']:
       log.debug("Error while determining file size", res['Message'])
       return res
@@ -523,7 +523,7 @@ class GFAL2_StorageBase(StorageBase):
     successful = {}
 
     for url in urls:
-      res = self.__removeSingleFile(url)
+      res = self._removeSingleFile(url)
 
       if res['OK']:
         successful[url] = res['Value']
@@ -532,7 +532,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __removeSingleFile(self, path):
+  def _removeSingleFile(self, path):
     """ Physically remove the file specified by path
 
     :param str path: path on storage (srm://...)
@@ -540,7 +540,7 @@ class GFAL2_StorageBase(StorageBase):
               S_ERROR( errStr ) if there was a problem removing the file
     """
 
-    log = self.log.getSubLogger("GFAL2_StorageBase.__removeSingleFile")
+    log = self.log.getSubLogger("GFAL2_StorageBase._removeSingleFile")
     log.debug("Attempting to remove single file %s" % path)
     path = str(path)
     try:
@@ -585,7 +585,7 @@ class GFAL2_StorageBase(StorageBase):
     successful = {}
 
     for url in urls:
-      res = self.__getSingleFileSize(url)
+      res = self._getSingleFileSize(url)
 
       if not res['OK']:
         failed[url] = res['Message']
@@ -594,7 +594,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __getSingleFileSize(self, path):
+  def _getSingleFileSize(self, path):
     """ Get the physical size of the given file
 
     :param self: self reference
@@ -602,7 +602,7 @@ class GFAL2_StorageBase(StorageBase):
     :returns: S_OK( filesize ) when successfully determined filesize
               S_ERROR( errStr ) filesize could not be determined
     """
-    log = self.log.getSubLogger("GFAL2_StorageBase.__getSingleFileSize")
+    log = self.log.getSubLogger("GFAL2_StorageBase._getSingleFileSize")
     log.debug("Determining file size of %s" % path)
     path = str(path)
     try:
@@ -660,7 +660,7 @@ class GFAL2_StorageBase(StorageBase):
     """
     self.log.debug('GFAL2_StorageBase._getSingleFileMetadata: trying to read metadata for %s' % path)
 
-    res = self.__getSingleMetadata(path)
+    res = self._getSingleMetadata(path)
 
     if not res['OK']:
       return res
@@ -685,7 +685,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return
 
-  def __getSingleMetadata(self, path):
+  def _getSingleMetadata(self, path):
     """  Fetches the metadata of a single file or directory via gfal2.stat
          and getExtendedAttributes
 
@@ -695,7 +695,7 @@ class GFAL2_StorageBase(StorageBase):
           S_OK ( MetadataDict ) if we could get the metadata
           S_ERROR ( errorMsg ) if there was a problem getting the metadata
     """
-    log = self.log.getSubLogger('GFAL2_StorageBase.__getSingleMetadata')
+    log = self.log.getSubLogger('GFAL2_StorageBase._getSingleMetadata')
     log.debug('Reading metadata for %s' % path)
 
     try:
@@ -747,7 +747,7 @@ class GFAL2_StorageBase(StorageBase):
     failed = {}
     successful = {}
     for url in urls:
-      res = self.__prestageSingleFile(url, lifetime)
+      res = self._prestageSingleFile(url, lifetime)
 
       if not res['OK']:
         failed[url] = res['Message']
@@ -755,7 +755,7 @@ class GFAL2_StorageBase(StorageBase):
         successful[url] = res['Value']
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __prestageSingleFile(self, path, lifetime):
+  def _prestageSingleFile(self, path, lifetime):
     """ Issue prestage for single file
 
     :param self: self reference
@@ -766,7 +766,7 @@ class GFAL2_StorageBase(StorageBase):
                             S_OK( token ) ) if status >= 0 (0 - staging is pending, 1 - file is pinned)
                             S_ERROR( errMsg ) ) in case of an error: status -1
     """
-    log = self.log.getSubLogger("GFAL2_StorageBase.__prestageSingleFile")
+    log = self.log.getSubLogger("GFAL2_StorageBase._prestageSingleFile")
     log.debug("Attempting to issue stage request for single file: %s" % path)
 
     try:
@@ -801,14 +801,14 @@ class GFAL2_StorageBase(StorageBase):
     successful = {}
     for path, token in urls.items():
 
-      res = self.__prestageSingleFileStatus(path, token)
+      res = self._prestageSingleFileStatus(path, token)
       if not res['OK']:
         failed[path] = res['Message']
       else:
         successful[path] = res['Value']
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __prestageSingleFileStatus(self, path, token):
+  def _prestageSingleFileStatus(self, path, token):
     """ Check prestage status for single file
 
     :param self: self reference
@@ -821,7 +821,7 @@ class GFAL2_StorageBase(StorageBase):
                             S_ERROR( errMsg ) ) in case of an error: status -1
     """
 
-    log = self.log.getSubLogger("GFAL2_StorageBase.__prestageSingleFileStatus")
+    log = self.log.getSubLogger("GFAL2_StorageBase._prestageSingleFileStatus")
     log.debug("Checking prestage file status for %s" % path)
     # also allow int as token - converting them to strings
     if not isinstance(token, six.string_types):
@@ -875,14 +875,14 @@ class GFAL2_StorageBase(StorageBase):
     failed = {}
     successful = {}
     for url in urls:
-      res = self.__pinSingleFile(url, lifetime)
+      res = self._pinSingleFile(url, lifetime)
       if not res['OK']:
         failed[url] = res['Message']
       else:
         successful[url] = res['Value']
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __pinSingleFile(self, path, lifetime):
+  def _pinSingleFile(self, path, lifetime):
     """ Pin a single staged file
 
     :param self: self reference
@@ -893,7 +893,7 @@ class GFAL2_StorageBase(StorageBase):
               S_ERROR( errMsg ) ) in case of an error: status -1
     """
 
-    log = self.log.getSubLogger("GFAL2_StorageBase.__pinSingleFile")
+    log = self.log.getSubLogger("GFAL2_StorageBase._pinSingleFile")
     log.debug("Attempting to issue pinning request for single file: %s" % path)
 
     try:
@@ -905,7 +905,7 @@ class GFAL2_StorageBase(StorageBase):
       else:
         return S_ERROR('An error occured while issuing pinning.')
     except gfal2.GError as e:
-      errStr = "GFAL2_StorageBase.__pinSingleFile: Error occured while pinning file"
+      errStr = "GFAL2_StorageBase._pinSingleFile: Error occured while pinning file"
       log.debug(errStr, "%s %s" % (path, repr(e)))
       return S_ERROR(e.code, "%s %s" % (errStr, repr(e)))
     finally:
@@ -933,7 +933,7 @@ class GFAL2_StorageBase(StorageBase):
     failed = {}
     successful = {}
     for path, token in urls.items():
-      res = self.__releaseSingleFile(path, token)
+      res = self._releaseSingleFile(path, token)
 
       if not res['OK']:
         failed[path] = res['Message']
@@ -941,7 +941,7 @@ class GFAL2_StorageBase(StorageBase):
         successful[path] = res['Value']
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __releaseSingleFile(self, path, token):
+  def _releaseSingleFile(self, path, token):
     """ release a single pinned file
 
     :param self: self reference
@@ -950,7 +950,7 @@ class GFAL2_StorageBase(StorageBase):
 
     :returns: S_OK( token ) when releasing was successful, S_ERROR( errMessage ) in case of an error
     """
-    log = self.log.getSubLogger("GFAL2_StorageBase.__releaseSingleFile")
+    log = self.log.getSubLogger("GFAL2_StorageBase._releaseSingleFile")
     log.debug("Attempting to release single file: %s" % path)
     if not isinstance(token, six.string_types):
       token = str(token)
@@ -986,7 +986,7 @@ class GFAL2_StorageBase(StorageBase):
       log.debug(errStr, path)
       return S_ERROR(errStr)
 
-    res = self.__isSingleFile(path)
+    res = self._isSingleFile(path)
     if not res['OK']:
       return res
 
@@ -1136,7 +1136,7 @@ class GFAL2_StorageBase(StorageBase):
     failed = {}
 
     for url in urls:
-      res = self.__isSingleDirectory(url)
+      res = self._isSingleDirectory(url)
       if res['OK']:
         successful[url] = res['Value']
       else:
@@ -1145,7 +1145,7 @@ class GFAL2_StorageBase(StorageBase):
     resDict = {'Failed': failed, 'Successful': successful}
     return S_OK(resDict)
 
-  def __isSingleDirectory(self, path):
+  def _isSingleDirectory(self, path):
     """ Checking if :path: exists and is a directory
 
     :param self: self reference
@@ -1155,7 +1155,7 @@ class GFAL2_StorageBase(StorageBase):
               S_ERROR ( errStr ) when there was a problem getting the info
     """
 
-    log = self.log.getSubLogger("GFAL2_StorageBase.__isSingleDirectory")
+    log = self.log.getSubLogger("GFAL2_StorageBase._isSingleDirectory")
     log.debug("Determining whether %s is a directory or not." % path)
     try:
       statInfo = self.ctx.stat(str(path))
@@ -1205,7 +1205,7 @@ class GFAL2_StorageBase(StorageBase):
         failed[url] = errStr
 
     for directory in directories:
-      res = self.__listSingleDirectory(directory)
+      res = self._listSingleDirectory(directory)
       if not res['OK']:
         failed[directory] = res['Message']
       else:
@@ -1214,20 +1214,20 @@ class GFAL2_StorageBase(StorageBase):
     resDict = {'Failed': failed, 'Successful': successful}
     return S_OK(resDict)
 
-  def __listSingleDirectory(self, path, internalCall=False):
+  def _listSingleDirectory(self, path, internalCall=False):
     """ List the content of the single directory provided
 
     :param self: self reference
     :param str path: single path on storage (srm://...)
     :param bool internalCall: if we call this method from another internal method we want
-                              to work with the full pfn. Used for __getSingleDirectory and
-                              __removeSingleDirectory
+			      to work with the full pfn. Used for _getSingleDirectory and
+			      _removeSingleDirectory
     :returns: S_ERROR( errStr ) if there is an error
              S_OK( dictionary ): Key: SubDirs and Files
                                  The values of the Files are dictionaries with filename as key and metadata as value
                                  The values of SubDirs are just the dirnames as key and True as value
     """
-    log = self.log.getSubLogger("GFAL2_StorageBase.__listSingleDirectory")
+    log = self.log.getSubLogger("GFAL2_StorageBase._listSingleDirectory")
     log.debug("Attempting to list content of %s" % path)
 
     try:
@@ -1257,7 +1257,7 @@ class GFAL2_StorageBase(StorageBase):
 
       nextUrl = res['Value']
 
-      res = self.__getSingleMetadata(nextUrl)
+      res = self._getSingleMetadata(nextUrl)
       if res['OK']:
         metadataDict = res['Value']
         if internalCall:
@@ -1315,7 +1315,7 @@ class GFAL2_StorageBase(StorageBase):
 
       dest_dir = os.path.join(localPath if localPath else os.getcwd(), dirName)
 
-      res = self.__getSingleDirectory(src_dir, dest_dir)
+      res = self._getSingleDirectory(src_dir, dest_dir)
 
       if res['OK']:
         if res['Value']['AllGot']:
@@ -1330,7 +1330,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __getSingleDirectory(self, src_dir, dest_dir):
+  def _getSingleDirectory(self, src_dir, dest_dir):
     """Download a single directory recursively
       :param self: self reference
       :param src_dir : remote directory to download (srm://...)
@@ -1342,13 +1342,13 @@ class GFAL2_StorageBase(StorageBase):
                             'Size': amount of data received
     """
 
-    log = self.log.getSubLogger("GFAL2_StorageBase.__getSingleDirectory")
+    log = self.log.getSubLogger("GFAL2_StorageBase._getSingleDirectory")
     log.debug("Attempting to download directory %s at %s" % (src_dir, dest_dir))
 
     filesReceived = 0
     sizeReceived = 0
 
-    res = self.__isSingleDirectory(src_dir)
+    res = self._isSingleDirectory(src_dir)
     if not res['OK']:
       log.debug("Failed to find the source directory: %s %s" % (res['Message'], src_dir))
       return res
@@ -1368,7 +1368,7 @@ class GFAL2_StorageBase(StorageBase):
         return S_ERROR(errStr)
 
     # Get the remote directory contents
-    res = self.__listSingleDirectory(src_dir, internalCall=True)
+    res = self._listSingleDirectory(src_dir, internalCall=True)
     if not res['OK']:
       return res
 
@@ -1406,7 +1406,7 @@ class GFAL2_StorageBase(StorageBase):
         continue
       subDirName = res['Value']['FileName']
       localPath = os.path.join(dest_dir, subDirName)
-      res = self.__getSingleDirectory(subDir, localPath)
+      res = self._getSingleDirectory(subDir, localPath)
 
       if not res['OK']:
         receivedAllDirs = False
@@ -1445,7 +1445,7 @@ class GFAL2_StorageBase(StorageBase):
       if not sourceDir:
         errStr = 'No source directory set, make sure the input format is correct { dest. dir : source dir }'
         return S_ERROR(errStr)
-      res = self.__putSingleDirectory(sourceDir, destDir)
+      res = self._putSingleDirectory(sourceDir, destDir)
       if res['OK']:
         if res['Value']['AllPut']:
           log.debug("Successfully put directory to remote storage: %s" % destDir)
@@ -1458,7 +1458,7 @@ class GFAL2_StorageBase(StorageBase):
         failed[destDir] = {"Files": 0, "Size": 0}
     return S_OK({"Failed": failed, "Successful": successful})
 
-  def __putSingleDirectory(self, src_directory, dest_directory):
+  def _putSingleDirectory(self, src_directory, dest_directory):
     """ puts one local directory to the physical storage together with all its files and subdirectories
         :param self: self reference
         :param src_directory : the local directory to copy
@@ -1469,7 +1469,7 @@ class GFAL2_StorageBase(StorageBase):
                                     'Files': amount of files uploaded
                                     'Size': amount of data uploaded
     """
-    log = self.log.getSubLogger("GFAL2_StorageBase.__putSingleDirectory")
+    log = self.log.getSubLogger("GFAL2_StorageBase._putSingleDirectory")
     log.debug('Trying to upload %s to %s' % (src_directory, dest_directory))
     filesPut = 0
     sizePut = 0
@@ -1505,7 +1505,7 @@ class GFAL2_StorageBase(StorageBase):
         directoryFiles[remoteUrl] = localPath
       # localPath is another folder, start recursion
       else:
-        res = self.__putSingleDirectory(localPath, remoteUrl)
+	res = self._putSingleDirectory(localPath, remoteUrl)
         if not res['OK']:
           log.debug('Failed to put directory to storage. Skipping', res['Message'])
           allSuccessful = False
@@ -1550,7 +1550,7 @@ class GFAL2_StorageBase(StorageBase):
     failed = {}
 
     for url in urls:
-      res = self.__removeSingleDirectory(url, recursive)
+      res = self._removeSingleDirectory(url, recursive)
 
       if res['OK']:
         if res['Value']['AllRemoved']:
@@ -1565,7 +1565,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __removeSingleDirectory(self, path, recursive=False):
+  def _removeSingleDirectory(self, path, recursive=False):
     """Remove a directory on the physical storage together with all its files and
        subdirectories.
        :param path: pfn (srm://...) of a directory to remove
@@ -1577,13 +1577,13 @@ class GFAL2_StorageBase(StorageBase):
                                     'SizeRemoved': amount of data deleted
     """
 
-    log = self.log.getSubLogger("GFAL2_StorageBase.__removeSingleDirectory")
+    log = self.log.getSubLogger("GFAL2_StorageBase._removeSingleDirectory")
     filesRemoved = 0
     sizeRemoved = 0
 
     # Check the remote directory exists
 
-    res = self.__isSingleDirectory(path)
+    res = self._isSingleDirectory(path)
 
     if not res['OK']:
       return res
@@ -1595,7 +1595,7 @@ class GFAL2_StorageBase(StorageBase):
       return S_ERROR(errno.ENOTDIR, errStr)
 
     # Get the remote directory contents
-    res = self.__listSingleDirectory(path, internalCall=True)
+    res = self._listSingleDirectory(path, internalCall=True)
     if not res['OK']:
       return res
 
@@ -1610,7 +1610,7 @@ class GFAL2_StorageBase(StorageBase):
       # Recursively remove the sub directories
       log.debug("Trying to recursively remove %s folder." % len(subDirsDict))
       for subDirUrl in subDirsDict:
-        res = self.__removeSingleDirectory(subDirUrl, recursive)
+	res = self._removeSingleDirectory(subDirUrl, recursive)
         if not res['OK']:
           log.debug("Recursive removal failed", res)
           removedAllDirs = False
@@ -1624,7 +1624,7 @@ class GFAL2_StorageBase(StorageBase):
     log.debug("Trying to remove %s files." % len(sFilesDict))
     for sFile in sFilesDict:
       # Returns S__OK(Filesize) if it worked
-      res = self.__removeSingleFile(sFile)
+      res = self._removeSingleFile(sFile)
 
       if res['OK']:
         filesRemoved += 1
@@ -1689,7 +1689,7 @@ class GFAL2_StorageBase(StorageBase):
     successful = {}
 
     for url in urls:
-      res = self.__getSingleDirectorySize(url)
+      res = self._getSingleDirectorySize(url)
 
       if not res['OK']:
         failed[url] = res['Message']
@@ -1698,7 +1698,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __getSingleDirectorySize(self, path):
+  def _getSingleDirectorySize(self, path):
     """ Get the size of the directory on the storage
       CAUTION : the size is not recursive, and does not go into subfolders
       :param self: self reference
@@ -1709,9 +1709,9 @@ class GFAL2_StorageBase(StorageBase):
                                   subDirs : amount of sub directories
     """
 
-    self.log.debug("GFAL2_StorageBase.__getSingleDirectorySize: Attempting to get the size of directory %s" % path)
+    self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Attempting to get the size of directory %s" % path)
 
-    res = self.__listSingleDirectory(path)
+    res = self._listSingleDirectory(path)
     if not res['OK']:
       return res
 
@@ -1722,7 +1722,7 @@ class GFAL2_StorageBase(StorageBase):
       directorySize += fileDict['Size']
       directoryFiles += 1
 
-    self.log.debug("GFAL2_StorageBase.__getSingleDirectorySize: Successfully obtained size of %s." % path)
+    self.log.debug("GFAL2_StorageBase._getSingleDirectorySize: Successfully obtained size of %s." % path)
     subDirectories = len(res['Value']['SubDirs'])
     return S_OK({'Files': directoryFiles, 'Size': directorySize, 'SubDirs': subDirectories})
 
@@ -1746,7 +1746,7 @@ class GFAL2_StorageBase(StorageBase):
     successful = {}
 
     for url in urls:
-      res = self.__getSingleDirectoryMetadata(url)
+      res = self._getSingleDirectoryMetadata(url)
 
       if not res['OK']:
         failed[url] = res['Message']
@@ -1755,7 +1755,7 @@ class GFAL2_StorageBase(StorageBase):
 
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __getSingleDirectoryMetadata(self, path):
+  def _getSingleDirectoryMetadata(self, path):
     """ Fetch the metadata of the provided path
 
     :param self: self reference
@@ -1763,9 +1763,9 @@ class GFAL2_StorageBase(StorageBase):
     :returns: S_OK( metadataDict ) if we could get the metadata
               S_ERROR( errStr )if there was a problem getting the metadata or path isn't a directory
     """
-    self.log.debug("GFAL2_StorageBase.__getSingleDirectoryMetadata: Fetching metadata of directory %s." % path)
+    self.log.debug("GFAL2_StorageBase._getSingleDirectoryMetadata: Fetching metadata of directory %s." % path)
 
-    res = self.__getSingleMetadata(path)
+    res = self._getSingleMetadata(path)
 
     if not res['OK']:
       return res
@@ -1773,7 +1773,7 @@ class GFAL2_StorageBase(StorageBase):
     metadataDict = res['Value']
 
     if not metadataDict['Directory']:
-      errStr = "GFAL2_StorageBase.__getSingleDirectoryMetadata: Provided path is not a directory."
+      errStr = "GFAL2_StorageBase._getSingleDirectoryMetadata: Provided path is not a directory."
       self.log.debug(errStr, path)
       return S_ERROR(errno.ENOTDIR, errStr)
 
