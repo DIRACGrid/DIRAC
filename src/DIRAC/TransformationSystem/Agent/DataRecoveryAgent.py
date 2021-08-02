@@ -383,7 +383,7 @@ class DataRecoveryAgent(AgentModule):
     lfnCache = []
     counter = 0
     jobInfoStart = time.time()
-    for counter, job in enumerate(jobs.values()):
+    for counter, job in enumerate(jobs.values(), start=1):
       if counter % self.printEveryNJobs == 0:
         self.log.notice('Getting JobInfo: %d/%d: %3.1fs' %
                         (counter, len(jobs), float(time.time() - jobInfoStart)))
