@@ -1,3 +1,17 @@
+[v7r2p18]
+
+*Framework
+FIX: ComponentSupervisionAgent: consistently use the actual "Setup", and not the "instance" to look up options. Note: you might need to change your config from "Production" to "DIRAC-Production" depending on you config.
+FIX: fix ProxyManagerClient docs
+
+*Resources
+NEW: removal throttle for Echo
+CHANGE: private methods in GFAL2_StorageBase are now protected
+
+*Transformation
+FIX: Python 3 serialisation error when calling JobMonitoringClient.getJobsStatus in WorkflowTasks.getSubmittedFileStatus
+FIX: DataRecoveryAgent: fix exception when there is exactly 1 done or failed job for a transformation
+
 [v7r2p17]
 
 *Framework
