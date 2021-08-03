@@ -26,6 +26,8 @@ echo -e "*** $(date -u) **** Starting integration tests on ${INSTALLTYPE} ****\n
 if [[ "$INSTALLTYPE" == "server" ]]; then
     # shellcheck source=/dev/null
     source "$WORKSPACE/ServerInstallDIR/bashrc"
+    # If not unset, assert will not trigger
+    unset PYTHONOPTIMIZE
     # shellcheck disable=SC2034
     SERVER_TEST_OUTPUT=serverTestOutputs.txt
     set -o pipefail
@@ -40,6 +42,8 @@ if [[ "$INSTALLTYPE" == "server" ]]; then
 elif [[ "$INSTALLTYPE" == "client" ]]; then
     # shellcheck source=/dev/null
     source "$WORKSPACE/ClientInstallDIR/bashrc"
+    # If not unset, assert will not trigger
+    unset PYTHONOPTIMIZE
     set -o pipefail
     ERR=0
     for repo_path in "${TESTREPO[@]}"; do
