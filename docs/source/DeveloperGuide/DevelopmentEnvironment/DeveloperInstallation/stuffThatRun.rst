@@ -274,8 +274,7 @@ Is my installation correctly done?
 ==================================
 
 We will now do few, very simple checks. The first can be done by using the python interactive shell.
-For these examples I will actually use `iPython <http://ipython.org/>`_, which is a highly recommended python shell
-(iPython is included in the requirements.txt file).
+For these examples I will actually use `iPython <http://ipython.org/>`_.
 
 From the host:
 
