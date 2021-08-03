@@ -1,6 +1,0 @@
-cd /opt/dirac
-RUNSVCTRL='/sbin/runsvctrl'
-chpst -u dirac $RUNSVCTRL d /opt/dirac/startup/*
-killall runsv svlogd
-RUNSVDIR='/sbin/runsvdir'
-exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
