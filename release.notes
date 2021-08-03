@@ -66,6 +66,11 @@ NEW: (#5042) Multi-VO mode of operation support
 CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
 
+[v7r2p19]
+
+*Configuration
+FIX: VOMS2CSSynchronizer: if a user is in QuarantineGroup, remove it from all other VOMS groups
+
 [v7r2p18]
 
 *Framework
