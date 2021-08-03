@@ -148,7 +148,7 @@ class FTS3Agent(AgentModule):
 
     """
 
-    log = gLogger.getSubLogger("getFTS3Context", child=True)
+    log = gLogger.getSubLogger("getFTS3Context")
 
     contextes = self._globalContextCache.setdefault(threadID, DictCache())
 
@@ -208,7 +208,7 @@ class FTS3Agent(AgentModule):
     # General try catch to avoid that the tread dies
     try:
       threadID = current_process().name
-      log = gLogger.getSubLogger("_monitorJob/%s" % ftsJob.jobID, child=True)
+      log = gLogger.getSubLogger("_monitorJob/%s" % ftsJob.jobID)
 
       res = self.getFTS3Context(
           ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID=threadID)
@@ -269,7 +269,7 @@ class FTS3Agent(AgentModule):
     """
 
     ftsJob, res = returnedValue
-    log = gLogger.getSubLogger("_monitorJobCallback/%s" % ftsJob.jobID, child=True)
+    log = gLogger.getSubLogger("_monitorJobCallback/%s" % ftsJob.jobID)
     if not res['OK']:
       log.error("Error updating job status", res)
     else:
@@ -282,7 +282,7 @@ class FTS3Agent(AgentModule):
         :return: S_OK()/S_ERROR()
     """
 
-    log = gLogger.getSubLogger("monitorJobs", child=True)
+    log = gLogger.getSubLogger("monitorJobs")
     log.debug("Size of the context cache %s" % len(self._globalContextCache))
 
     log.debug("Getting active jobs")
@@ -326,7 +326,7 @@ class FTS3Agent(AgentModule):
     """
 
     operation, res = returnedValue
-    log = gLogger.getSubLogger("_treatOperationCallback/%s" % operation.operationID, child=True)
+    log = gLogger.getSubLogger("_treatOperationCallback/%s" % operation.operationID)
     if not res['OK']:
       log.error("Error treating operation", res)
     else:
@@ -343,7 +343,7 @@ class FTS3Agent(AgentModule):
     """
     try:
       threadID = current_process().name
-      log = gLogger.getSubLogger("treatOperation/%s" % operation.operationID, child=True)
+      log = gLogger.getSubLogger("treatOperation/%s" % operation.operationID)
 
       # If the operation is totally processed
       # we perform the callback
@@ -474,7 +474,7 @@ class FTS3Agent(AgentModule):
         :return: S_OK()/S_ERROR()
     """
 
-    log = gLogger.getSubLogger("treatOperations", child=True)
+    log = gLogger.getSubLogger("treatOperations")
 
     log.debug("Size of the context cache %s" % len(self._globalContextCache))
 
@@ -517,7 +517,7 @@ class FTS3Agent(AgentModule):
         :return: S_OK()/S_ERROR()
     """
 
-    log = gLogger.getSubLogger("kickOperations", child=True)
+    log = gLogger.getSubLogger("kickOperations")
 
     res = self.fts3db.kickStuckOperations(limit=self.maxKick, kickDelay=self.kickDelay)
     if not res['OK']:
@@ -534,7 +534,7 @@ class FTS3Agent(AgentModule):
         :return: S_OK()/S_ERROR()
     """
 
-    log = gLogger.getSubLogger("kickJobs", child=True)
+    log = gLogger.getSubLogger("kickJobs")
 
     res = self.fts3db.kickStuckJobs(limit=self.maxKick, kickDelay=self.kickDelay)
     if not res['OK']:
@@ -551,7 +551,7 @@ class FTS3Agent(AgentModule):
         :return: S_OK()/S_ERROR()
     """
 
-    log = gLogger.getSubLogger("deleteOperations", child=True)
+    log = gLogger.getSubLogger("deleteOperations")
 
     res = self.fts3db.deleteFinalOperations(limit=self.maxDelete, deleteDelay=self.deleteDelay)
     if not res['OK']:
@@ -592,7 +592,7 @@ class FTS3Agent(AgentModule):
         :return: S_OK()/S_ERROR()
     """
 
-    log = gLogger.getSubLogger("execute", child=True)
+    log = gLogger.getSubLogger("execute")
 
     log.info("Monitoring job")
     res = self.monitorJobsLoop()

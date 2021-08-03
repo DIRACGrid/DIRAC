@@ -131,7 +131,7 @@ class FTS3Operation(JSerializable):
     loggerName = '%s/' % opID if opID else ''
     loggerName += 'req_%s/op_%s' % (self.rmsReqID, self.rmsOpID)
 
-    self._log = gLogger.getSubLogger(loggerName, True)
+    self._log = gLogger.getSubLogger(loggerName)
 
   @property
   def vo(self):
@@ -276,7 +276,7 @@ class FTS3Operation(JSerializable):
     """
 
     log = self._log.getSubLogger("_updateRmsOperationStatus/%s/%s" %
-                                 (getattr(self, 'operationID'), self.rmsReqID), child=True)
+                                 (getattr(self, 'operationID'), self.rmsReqID))
 
     res = self.reqClient.getRequest(self.rmsReqID)
     if not res['OK']:
@@ -385,7 +385,7 @@ class FTS3TransferOperation(FTS3Operation):
 
   def prepareNewJobs(self, maxFilesPerJob=100, maxAttemptsPerFile=10):
 
-    log = self._log.getSubLogger("_prepareNewJobs", child=True)
+    log = self._log.getSubLogger("_prepareNewJobs")
 
     filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
     log.debug("%s ftsFiles to submit" % len(filesToSubmit))
@@ -488,7 +488,7 @@ class FTS3TransferOperation(FTS3Operation):
         NOTE: we don't use ReqProxy when putting the request back to avoid operational hell
     """
 
-    log = self._log.getSubLogger("callback", child=True)
+    log = self._log.getSubLogger("callback")
 
     # In case there is no Request associated to the Transfer
     # we do not do the callback. Not really advised, but there is a feature
@@ -573,7 +573,7 @@ class FTS3StagingOperation(FTS3Operation):
 
   def prepareNewJobs(self, maxFilesPerJob=100, maxAttemptsPerFile=10):
 
-    log = gLogger.getSubLogger("_prepareNewJobs", child=True)
+    log = gLogger.getSubLogger("_prepareNewJobs")
 
     filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
     log.debug("%s ftsFiles to submit" % len(filesToSubmit))

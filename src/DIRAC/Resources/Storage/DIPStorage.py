@@ -39,7 +39,7 @@ class DIPStorage(StorageBase):
     StorageBase.__init__(self, storageName, parameters)
     self.pluginName = 'DIP'
 
-    self.log = gLogger.getSubLogger("DIPStorage", True)
+    self.log = gLogger.getSubLogger("DIPStorage")
 
     # Several ports can be specified as comma separated list, choose
     # randomly one of those ports
