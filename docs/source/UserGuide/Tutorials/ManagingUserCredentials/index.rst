@@ -1,14 +1,17 @@
+.. set highlighting to console input/output
+.. highlight:: console
+
 ============================
-2. Managing user credentials
+Managing user credentials
 ============================
 
 This section assumes that the DIRAC client is already installed and configured.
 
 
-2.1 Managing Certificates
+Managing Certificates
 -------------------------
 
-2.1.1 Donwloading Certificate from browser
+Donwloading Certificate from browser
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - Get the certificate from the browser:
@@ -20,7 +23,7 @@ This section assumes that the DIRAC client is already installed and configured.
 
   As a result you will get the certificate as a file with .p12 extension.
 
-2.1.2 Converting Certificates from P12 to PEM format
+Converting Certificates from P12 to PEM format
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - Run dirac-cert-convert script to convert your certificate to the appropriate form::
@@ -60,14 +63,14 @@ This section assumes that the DIRAC client is already installed and configured.
       -r--------  1 hamar marseill 1917 Oct 19 13:01 userkey.pem
 
 
-2.2 Managing Proxies
+Managing Proxies
 --------------------
 
 Before running any command in the grid, it is mandatory to have a valid certificate proxy. The commands to create a
 valid proxy using DIRAC commands are shown below.
 
 
-2.2.1 Creating a user proxy
+Creating a user proxy
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - First, in the machine where the DIRAC client is installed setup the DIRAC environment running the following commands::
@@ -131,7 +134,7 @@ valid proxy using DIRAC commands are shown below.
   This is not a serious problem, still most of the operations will be possible.
 
 
-2.2.2 Getting the proxy information
+Getting the proxy information
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - Check that your proxy was correctly created and the DIRAC group and the VOMS extension are set correctly, running the command::

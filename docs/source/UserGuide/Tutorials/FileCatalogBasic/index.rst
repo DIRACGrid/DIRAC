@@ -1,8 +1,8 @@
 =========================
-5. File Catalog Interface
+File Catalog Interface
 =========================
 
-5.1 Starting the File Catalog Interface
+Starting the File Catalog Interface
 ---------------------------------------
 
 - DIRAC File Catalog Command Line Interface (CLI) can be used to perform all the data management operations.
@@ -30,7 +30,7 @@
 
         FC:/>
 
-5.2 Basic File Catalog operations
+Basic File Catalog operations
 ---------------------------------
 
 - Changing directory::
@@ -61,7 +61,7 @@
      -rwxrwxr-x 0 atsareg dirac_user      856 2010-10-24 18:35:18 test.txt
      drwxr-xr-x 0 atsareg dirac_user        0 2010-10-24 11:00:05 newDir
 
-5.3 Managing files and replicas
+Managing files and replicas
 -------------------------------
 
 - Upload a local file to the grid storage and register it in the catalog::
@@ -139,7 +139,7 @@
      path: /vo.formation.idgrilles.fr/user/a/atsareg/newDir
      Directory /vo.formation.idgrilles.fr/user/a/atsareg/newDir removed from the catalog
 
-5.4 Getting extra information
+Getting extra information
 -----------------------------
 
 - Getting file or directory size::

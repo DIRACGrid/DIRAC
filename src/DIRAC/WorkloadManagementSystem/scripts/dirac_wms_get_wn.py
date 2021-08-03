@@ -16,6 +16,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import datetime
+from functools import cmp_to_key
 
 import DIRAC
 import DIRAC.Core.Base.Script as Script
@@ -170,9 +171,17 @@ def main():
         gLogger.always('%d jobs %s' % (statusCounters[stat], stat))
     else:
       gLogger.always('Found %d jobs %s at %s (since %s):' % (len(allJobs), status, site, date))
-    gLogger.always('List of WNs:', ','.join(['%s (%d)' % (node, wnJobs[node])
-                                             for node in sorted(wnJobs,
-                                                                cmp=(lambda n1, n2: (wnJobs[n2] - wnJobs[n1])))]))
+    gLogger.always(
+        "List of WNs:",
+        ",".join(
+            [
+                "%s (%d)" % (node, wnJobs[node])
+                for node in sorted(
+                    wnJobs, key=cmp_to_key(lambda n1, n2: (wnJobs[n2] - wnJobs[n1]))
+                )
+            ]
+        ),
+    )
   if full:
     if workerNodes or batchIDs:
       nodeJobs = {}

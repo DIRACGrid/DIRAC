@@ -1,10 +1,10 @@
 .. _advancedJobManagement:
 
 ==========================
-7. Advanced Job Management
+Advanced Job Management
 ==========================
 
-7.1 Parametric Jobs
+Parametric Jobs
 -------------------
 
 A parametric job allows to submit a set of jobs in one submission command by specifying parameters for each job.
@@ -16,7 +16,7 @@ To define this parameter the attribute "Parameters" must be defined in the JDL, 
     to create the list of job parameters. 
 
 
-7.1.1 Parametric Job - JDL
+Parametric Job - JDL
 @@@@@@@@@@@@@@@@@@@@@@@@@@
 
 A simple example is to define the list of parameters using a list of values, this list can contain integers or strings:::
@@ -60,7 +60,7 @@ These are standard DIRAC jobs. The jobs outputs can be retrieved as usual specif
 
 
 
-7.1.1 Creating and submitting parametric Jobs using DIRAC APIs
+Creating and submitting parametric Jobs using DIRAC APIs
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
@@ -115,7 +115,7 @@ e.g. there should not be a parameter of length 2 and another of length 3.
 
 
 
-7.2 MPI Jobs
+MPI Jobs
 ------------
 
 Message Passing Interface (MPI) is commonly used to handle the communications between tasks in parallel applications. 
@@ -131,7 +131,7 @@ Another important point, is that some applications need all nodes to work with a
 in some cases, sites provide such a shared disk space but not always.
 
 
-7.2.1 MPI Jobs - JDL
+MPI Jobs - JDL
 @@@@@@@@@@@@@@@@@@@@
 
 To define MPI jobs using DIRAC it is necessary:
@@ -221,14 +221,14 @@ To retrieve the job outputs use a usual *dirac-wms-job-get-output* command:::
 
 
 
-7.3 DIRAC API
+DIRAC API
 -------------
 
 The DIRAC API is encapsulated in several Python classes designed to be used easily by users to access
 a large fraction of the DIRAC functionality. Using the API classes it is easy to write small scripts
 or applications to manage user jobs and data. 
 
-7.3.1 Submitting jobs using APIs
+Submitting jobs using APIs
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - First step, create a Python script specifying job requirements.
@@ -257,7 +257,7 @@ or applications to manage user jobs and data.
         $ python testAPI.py 
         {'OK': True, 'Value': 196}
 
-7.3.2 Retrieving Job Status
+Retrieving Job Status
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - Create a script Status-API.py::
@@ -277,7 +277,7 @@ or applications to manage user jobs and data.
         {'OK': True, 'Value': {196: {'Status': 'Done', 'MinorStatus': 'Execution Complete', 'Site': 'LCG.IRES.fr'}}}
   
 
-7.3.3 Retrieving Job Output
+Retrieving Job Output
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - Example Output-API.py::
@@ -297,7 +297,7 @@ or applications to manage user jobs and data.
         $python Output-API.py 196
 
 
-7.3.4 Local submission mode
+Local submission mode
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 The Local submission mode is a very useful tool to check the sanity of your job before submission to the
@@ -345,7 +345,7 @@ Let's perform this exercise in the python shell.
         hello
 
 
-7.3.5 Sending Multiple Jobs
+Sending Multiple Jobs
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - Create a Test-API-Multiple.py script, for example::
@@ -370,7 +370,7 @@ Let's perform this exercise in the python shell.
           Submission Result:  {'OK': True, 'Value': 178}
 
 
-7.3.6 Using APIs to create JDL files.
+Using APIs to create JDL files.
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - Create a Test-API-JDL.py::
@@ -435,7 +435,7 @@ As you can see the parameters added to the job object are represented in the JDL
 It can now be used together with the **dirac-wms-job-submit** command line tool.
 
 
-7.3.7 Submitting MultiProcessor (MP) jobs
+Submitting MultiProcessor (MP) jobs
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 Jobs that can (or should) run using more than 1 processor should be described as such,
@@ -465,7 +465,7 @@ This will be translated internally into 16Processors and WholeNode tags.
 This would allow resources (WN's) to put flexibly requirements on jobs to be taken, for example, avoiding single-core jobs on a multi-core nodes.
 
 
-7.3.8 Submitting jobs with specifc requirements (e.g. GPU)
+Submitting jobs with specifc requirements (e.g. GPU)
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 <to expand, ~same as for MP jobs, i.e. use Tags>

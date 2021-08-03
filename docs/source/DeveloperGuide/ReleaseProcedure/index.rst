@@ -91,7 +91,7 @@ which will create a clean directory with today's date. We then clone the DIRAC r
 Propagating patches
 ---------------------
 
-There are several DIRAC extensions, e.g. VMDIRAC and WebAppDIRAC.
+There are a few DIRAC extensions, e.g. WebAppDIRAC.
 The procedure described below applies to all of them.
 Make sure that you apply the procedure starting with the DIRAC extensions.
 

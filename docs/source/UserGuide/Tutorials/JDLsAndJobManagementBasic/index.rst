@@ -1,5 +1,5 @@
 ================================
-3. JDLs and Job Management Basic
+JDLs and Job Management Basic
 ================================
  
 JDL stands for Job Description Language and it is the standard way of job description in the gLite environment.
@@ -7,7 +7,7 @@ DIRAC does not use the JDL objects internally but allows the job description usi
 difference is that there is no Requirements attribute which is used in the gLite JDL to select specific resources.
 Instead, certain attributes are interpreted as job requirements, e.g. CPUTime, Site, etc.
 
-3.1 Simple Jobs
+Simple Jobs
 ---------------
 
 The following is the description of the job which just lists the working directory - Simple.jdl::
@@ -23,7 +23,7 @@ To submit the job::
 
     dirac-wms-job-submit Simple.jdl
 
-3.2 Jobs with Input Sandbox and Output Sandbox
+Jobs with Input Sandbox and Output Sandbox
 ----------------------------------------------
 
 In most cases the job input data or executable files are available locally and should be transfered to the grid to run the job. 
@@ -52,7 +52,7 @@ In this case the InputSandbox attribute can be used to move the files together w
         dirac-wms-job-submit InputAndOuputSandbox.jdl
 
 
-3.3 Jobs with Input and Output Data
+Jobs with Input and Output Data
 -----------------------------------
 
 In case where the data, programs, etc are stored in a Grid Storage Element, it can be specified as part of InputSandbox or InputData. 
@@ -113,10 +113,10 @@ either downloaded locally or accessed remotely using some remote acces protocol,
 on the policies adopted by your Virtual Organization.  
 
 
-3.4 Managing Jobs
+Managing Jobs
 -----------------
 
-3.4.1 Submitting a Job
+Submitting a Job
 @@@@@@@@@@@@@@@@@@@@@@
 
 - After creating the JDL file the next step is to submit a job using the command::
@@ -134,7 +134,7 @@ on the policies adopted by your Virtual Organization.
   for other job operations. 
 
 
-3.4.2 Getting the job status
+Getting the job status
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - The next step is to monitor the job status using the command::
@@ -144,7 +144,7 @@ on the policies adopted by your Virtual Organization.
         bash-3.2$ dirac-wms-job-status 11
         JobID=11 Status=Waiting; MinorStatus=Pilot Agent Submission; Site=ANY;
 
-3.4.3 Retrieving the job output
+Retrieving the job output
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 - And finally, after the job achieves status **Done**, you can retrieve the job Output Sandbox::
