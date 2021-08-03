@@ -10,7 +10,7 @@ StdOutput = "job.log";
 StdError = "job.log";
 InputSandbox = "multiVOexe.sh";
 OutputSandbox = "job.log";
-Site = "LCG.UKI-LT2-IC-HEP.uk";
+Site = {"LCG.UKI-LT2-IC-HEP.uk", "LCG.UKI-SOUTHGRID-RALPP"};
 JobName = "MultiVOTest";
 ]
 EOF
@@ -24,6 +24,7 @@ echo "\$(hostname) has address " \${IPADDRESS}
 echo "Operating System:" 
 uname -a
 cat /etc/redhat-release
+env | sort
 EOF
 
 MYDATE=$(date +%s)
