@@ -270,7 +270,7 @@ class TransformationClient(Client):
     prod = transDict['TransformationID']
     parentProd = int(transDict.get('InheritedFrom', 0))
     movedFiles = {}
-    log = gLogger.getSubLogger("[None] [%d] .moveFilesToDerivedTransformation:" % prod)
+    log = gLogger.getLocalSubLogger("[None] [%d] .moveFilesToDerivedTransformation:" % prod)
     if not parentProd:
       log.warn("Transformation was not derived...")
       return S_OK((parentProd, movedFiles))
@@ -337,14 +337,14 @@ class TransformationClient(Client):
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(prod, status, lfnChunk)
         if not res['OK']:
-          log.error(" Error setting status in transformation",
-                    "%d: status %s for %d files; resetting them %s" %
-                    (parentProd, status, len(lfnChunk), oldStatus), res['Message'])
+          log.debug(" Error setting status in transformation",
+                    "%d: status %s for %d files; resetting them %s. %s" %
+                    (parentProd, status, len(lfnChunk), oldStatus, res['Message']))
           res = self.setFileStatusForTransformation(parentProd, oldStatus, lfnChunk)
           if not res['OK']:
             log.error(" Error setting status in transformation",
-                      " %d: status %s for %d files" %
-                      (parentProd, oldStatus, len(lfnChunk)), res['Message'])
+                      " %d: status %s for %d files: %s" %
+                      (parentProd, oldStatus, len(lfnChunk), res['Message']))
         else:
           log.info('Successfully moved files', ": %d files from %s to %s" % (len(lfnChunk), oldStatus, status))
 

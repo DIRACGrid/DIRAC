@@ -275,8 +275,8 @@ class FTS3Operation(JSerializable):
                         * ftsFilesByTarget: dict {SE: [ftsFiles that were successful]}
     """
 
-    log = self._log.getSubLogger("_updateRmsOperationStatus/%s/%s" %
-                                 (getattr(self, 'operationID'), self.rmsReqID))
+    log = self._log.getLocalSubLogger("_updateRmsOperationStatus/%s/%s" %
+                                      (getattr(self, 'operationID'), self.rmsReqID))
 
     res = self.reqClient.getRequest(self.rmsReqID)
     if not res['OK']:

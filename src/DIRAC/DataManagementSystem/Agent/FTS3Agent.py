@@ -208,7 +208,7 @@ class FTS3Agent(AgentModule):
     # General try catch to avoid that the tread dies
     try:
       threadID = current_process().name
-      log = gLogger.getSubLogger("_monitorJob/%s" % ftsJob.jobID)
+      log = gLogger.getLocalSubLogger("_monitorJob/%s" % ftsJob.jobID)
 
       res = self.getFTS3Context(
           ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID=threadID)
@@ -269,7 +269,7 @@ class FTS3Agent(AgentModule):
     """
 
     ftsJob, res = returnedValue
-    log = gLogger.getSubLogger("_monitorJobCallback/%s" % ftsJob.jobID)
+    log = gLogger.getLocalSubLogger("_monitorJobCallback/%s" % ftsJob.jobID)
     if not res['OK']:
       log.error("Error updating job status", res)
     else:
@@ -326,7 +326,7 @@ class FTS3Agent(AgentModule):
     """
 
     operation, res = returnedValue
-    log = gLogger.getSubLogger("_treatOperationCallback/%s" % operation.operationID)
+    log = gLogger.getLocalSubLogger("_treatOperationCallback/%s" % operation.operationID)
     if not res['OK']:
       log.error("Error treating operation", res)
     else:
@@ -343,7 +343,7 @@ class FTS3Agent(AgentModule):
     """
     try:
       threadID = current_process().name
-      log = gLogger.getSubLogger("treatOperation/%s" % operation.operationID)
+      log = gLogger.getLocalSubLogger("treatOperation/%s" % operation.operationID)
 
       # If the operation is totally processed
       # we perform the callback
