@@ -382,9 +382,12 @@ class ComponentMonitoringDB(DB):
             if self.__componentMatchesCondition(compDict, requiredComponents, conditionDict):
               statusSet.addUniqueToSet(requiredComponents, compDict)
         # Walk the URLs
-        serviceURLs = getSystemURLs(system, setup)  # verify URLs in getSystemURLs method
-        for service in serviceURLs:
-          url = urlparse.urlparse(serviceURLs[service])
+        systemURLs = getSystemURLs(system, setup)  # verify URLs in getSystemURLs method
+        for service in systemURLs:
+          # systemURLs is a dict that contain a list of URLs for service
+          if not systemURLs[service]:
+            self.log.error('Not found URL for %s service.' % service)
+          url = urlparse.urlparse(systemURLs[service][0])
           if self.__componentMatchesCondition(dict(Setup=setup,
                                                    Port=url.port,
                                                    Host=url.hostname,

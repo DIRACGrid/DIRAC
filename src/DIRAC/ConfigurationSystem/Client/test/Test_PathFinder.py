@@ -40,6 +40,7 @@ Systems
       FailoverURLs
       {
         Service2 = dips://failover1:5678/WorkloadManagement/Service2
+        Service2 += dips://failover2:5678/WorkloadManagement/Service2
       }
     }
   }
@@ -99,7 +100,8 @@ def test_getServiceURL(pathFinder, serviceName, service, result):
 @pytest.mark.parametrize("serviceName, service, result", [
     ('WorkloadManagement/Service1', None, ''),
     ('WorkloadManagement', 'Service1', ''),
-    ('WorkloadManagement', 'Service2', 'dips://failover1:5678/WorkloadManagement/Service2')])
+    ('WorkloadManagement', 'Service2',
+     'dips://failover1:5678/WorkloadManagement/Service2,dips://failover2:5678/WorkloadManagement/Service2')])
 def test_getServiceFailoverURL(pathFinder, serviceName, service, result):
   """ Test getServiceFailoverURL """
   assert pathFinder.getServiceFailoverURL(serviceName, service=service) == result
@@ -113,7 +115,8 @@ def test_getServiceFailoverURL(pathFinder, serviceName, service, result):
     ('WorkloadManagement', 'Service1', True, {'dips://server1:1234/WorkloadManagement/Service1'}),
     ('WorkloadManagement', 'Service2', True, {'dips://gw1:5678/WorkloadManagement/Service2',
                                               'dips://gw2:5678/WorkloadManagement/Service2',
-                                              'dips://failover1:5678/WorkloadManagement/Service2'})])
+                                              'dips://failover1:5678/WorkloadManagement/Service2',
+                                              'dips://failover2:5678/WorkloadManagement/Service2'})])
 def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
   """ Test getServiceURLs """
   assert set(pathFinder.getServiceURLs(serviceName, service=service, failover=failover)) == result
@@ -128,7 +131,8 @@ def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
         'Service1': {'dips://server1:1234/WorkloadManagement/Service1'},
         'Service2': {'dips://gw1:5678/WorkloadManagement/Service2',
                      'dips://gw2:5678/WorkloadManagement/Service2',
-                     'dips://failover1:5678/WorkloadManagement/Service2'}})])
+                     'dips://failover1:5678/WorkloadManagement/Service2',
+                     'dips://failover2:5678/WorkloadManagement/Service2'}})])
 def test_getSystemURLs(pathFinder, system, setup, failover, result):
   """ Test getSystemURLs """
   sysDict = pathFinder.getSystemURLs(system, setup=setup, failover=failover)
