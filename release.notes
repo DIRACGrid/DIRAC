@@ -1,3 +1,8 @@
+[v7r2p19]
+
+*Configuration
+FIX: VOMS2CSSynchronizer: if a user is in QuarantineGroup, remove it from all other VOMS groups
+
 [v7r2p18]
 
 *Framework
