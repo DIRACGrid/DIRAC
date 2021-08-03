@@ -2,7 +2,7 @@ version: '2.4'
 
 services:
   mysql:
-    image: mysql:${MYSQL_VER}
+    image: ${MYSQL_VER}
     container_name: mysql
     environment:
       - MYSQL_ROOT_PASSWORD=password
@@ -14,7 +14,7 @@ services:
       retries: 10
 
   elasticsearch:
-    image: elasticsearch:${ES_VER}
+    image: ${ES_VER}
     container_name: elasticsearch
     hostname: elasticsearch
     ports:
