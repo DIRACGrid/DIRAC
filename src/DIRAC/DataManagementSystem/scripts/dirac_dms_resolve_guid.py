@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Returns the LFN matching given GUIDs
-
-Usage:
-  dirac-dms-resolve-guid <GUIDs>
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -11,20 +8,20 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument("GUIDs: GUIDs separated by a comma")
   Script.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger
 
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   args = Script.getPositionalArgs()
-  if len(args) != 1:
-    Script.showHelp()
   guids = args[0]
 
   try:

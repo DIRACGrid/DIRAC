@@ -5,18 +5,13 @@ Get computing resources capable to execute a job with the given description.
 Note that only statically defined computing resource parameters are considered although sites
 can fail matching due to their dynamic state, e.g. occupancy by other jobs. Also input data
 proximity is not taken into account.
-
-Usage:
-  dirac-wms-match [option]... <job_JDL>
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from DIRAC.Core.Base import Script
 from DIRAC import S_OK, gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
@@ -36,19 +31,14 @@ def setSites(optVal_):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global fullMatch
   global sites
   Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
   Script.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
-
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
-
-  if len(args) == 0:
-    gLogger.error("Error: No job description provided")
-    Script.showHelp(exitCode=1)
+  Script.registerArgument("job_JDL: file with job JDL description")
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
   from DIRAC.ConfigurationSystem.Client.Helpers import Resources

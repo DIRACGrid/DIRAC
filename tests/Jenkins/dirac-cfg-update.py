@@ -10,7 +10,7 @@ import os
 
 from diraccfg import CFG
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
                                   '  %s [options]' % Script.scriptName]))

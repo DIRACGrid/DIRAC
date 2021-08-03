@@ -13,10 +13,9 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import sys
-from DIRAC import exit as DIRACExit
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
+from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 # Define a simple class to hold the script parameters
@@ -38,7 +37,7 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   # Instantiate the params class
   cliParams = Params()
@@ -49,7 +48,7 @@ def main():
   Script.registerArgument(['System: system names'])
 
   # Parse the command line and initialize DIRAC
-  Script.parseCommandLine(ignoreErrors=False)
+  switches, servicesList = Script.parseCommandLine(ignoreErrors=False)
 
   # Get the list of services
   servicesList = Script.getPositionalArgs()

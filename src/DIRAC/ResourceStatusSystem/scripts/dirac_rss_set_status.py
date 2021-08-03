@@ -13,8 +13,7 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
@@ -241,7 +240,7 @@ def run(switchDict):
     DIRACExit(1)
 
 
-@DIRACScript()
+@Script()
 def main():
   global subLogger
   global registerUsageMessage

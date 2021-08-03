@@ -14,9 +14,8 @@ Arguments:
   Other keys will be ommited.
   Message body is an arbitrary string.
 
-Examples::
-
-  dirac-sys-sendmail "From: source@email.com\\nTo: destination@email.com\\nSubject: Test\\n\\nMessage body"
+Examples:
+  $ dirac-sys-sendmail "From: source@email.com\\nTo: destination@email.com\\nSubject: Test\\n\\nMessage body"
   echo "From: source@email.com\\nSubject: Test\\n\\nMessage body" | dirac-sys-sendmail destination@email.com
 """
 
@@ -30,15 +29,13 @@ import sys
 import os
 
 from DIRAC import gLogger, exit as DIRACexit
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   arg = "".join(args)
 

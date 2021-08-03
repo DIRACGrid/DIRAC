@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Get summary informations of all productions
-
-Usage:
-  dirac-prod-get-all
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -12,12 +9,11 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.parseCommandLine()
 

@@ -14,11 +14,10 @@ __RCSID__ = "$Id$"
 
 import sys
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.localCfg.addDefaultEntry("LogLevel", "fatal")
 

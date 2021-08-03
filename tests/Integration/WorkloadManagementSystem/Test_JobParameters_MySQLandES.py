@@ -12,7 +12,7 @@ import time
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.parseCommandLine()
 
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient

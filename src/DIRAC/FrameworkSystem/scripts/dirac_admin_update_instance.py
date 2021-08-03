@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 """
 Script to apply update to all or some dirac servers and restart them
-
-Usage:
-  dirac-admin-update-instance version
-
-Arguments:
-  version: version of DIRAC you want to update to
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -17,25 +11,23 @@ __RCSID__ = "$Id$"
 from io import open
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch("", "hosts=", "Comma separated list of hosts or file containing row wise list of hosts"
                                       " targeted for update (leave empty for all)")
   Script.registerSwitch("", "excludeHosts=", "Comma separated list of hosts or file containing row wise list of hosts"
                                              " excluded from update")
   Script.registerSwitch("", "retry=", "Number of retry attempts on hosts that have failed to update")
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument("version: version of DIRAC you want to update to")
 
   Script.parseCommandLine(ignoreErrors=False)
 
-  args = Script.getPositionalArgs()
-  if len(args) < 1 or len(args) > 3:
-    Script.showHelp()
-
-  version = args[0]
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+  version = Script.getPositionalArgs(group=True)
   retry = 0
   hosts = []
   excludeHosts = []

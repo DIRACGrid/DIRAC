@@ -15,8 +15,7 @@ __RCSID__ = "$Id$"
 import six
 
 from DIRAC import gLogger, exit as DIRACExit, S_OK
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
@@ -38,7 +37,7 @@ def setVO(value):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch("V:", "vo=", "VO name", setVO)
   Script.registerSwitch("D", "dryRun", "Dry run", setDryRun)
@@ -48,12 +47,8 @@ def main():
   def syncCSWithVOMS(vomsSync):
     return vomsSync.syncCSWithVOMS()
 
-  def getVOAdmin(voName):
-    voAdminUser = getVOOption(voName, "VOAdmin")
-    voAdminGroup = getVOOption(voName, "VOAdminGroup", getVOOption(voName, "DefaultGroup"))
-    return voAdminUser, voAdminGroup
-
-  voAdminUser, voAdminGroup = getVOAdmin(voName)
+  voAdminUser = getVOOption(voName, "VOAdmin")
+  voAdminGroup = getVOOption(voName, "VOAdminGroup", getVOOption(voName, "DefaultGroup"))
 
   vomsSync = VOMS2CSSynchronizer(voName)
   result = syncCSWithVOMS(vomsSync,  # pylint: disable=unexpected-keyword-arg

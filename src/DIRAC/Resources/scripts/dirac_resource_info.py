@@ -2,9 +2,6 @@
 """
 Get information on resources available for the given VO: Computing and Storage.
 By default, resources for the VO corresponding to the current user identity are displayed
-
-Usage:
-  dirac-resource-info [option]...
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -12,11 +9,10 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
 
   from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
@@ -122,39 +118,38 @@ def main():
     gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
     return S_OK()
 
-  if __name__ == '__main__':
-    if not voName:
-      # Get the current VO
-      result = getVOfromProxyGroup()
-      if not result['OK']:
-        gLogger.error('No proxy found, please login')
-        DIRACExit(-1)
-      voName = result['Value']
-    else:
-      result = gConfig.getSections('/Registry/VO')
-      if not result['OK']:
-        gLogger.error('Failed to contact the CS')
-        DIRACExit(-1)
-      if voName not in result['Value']:
-        gLogger.error('Invalid VO name')
-        DIRACExit(-1)
-
-    if not (ceFlag or seFlag):
-      gLogger.error('Resource type is not specified')
+  if not voName:
+    # Get the current VO
+    result = getVOfromProxyGroup()
+    if not result['OK']:
+      gLogger.error('No proxy found, please login')
+      DIRACExit(-1)
+    voName = result['Value']
+  else:
+    result = gConfig.getSections('/Registry/VO')
+    if not result['OK']:
+      gLogger.error('Failed to contact the CS')
+      DIRACExit(-1)
+    if voName not in result['Value']:
+      gLogger.error('Invalid VO name')
       DIRACExit(-1)
 
-    if ceFlag:
-      result = printCEInfo(voName)
-      if not result['OK']:
-        gLogger.error(result['Message'])
-        DIRACExit(-1)
-    if seFlag:
-      result = printSEInfo(voName)
-      if not result['OK']:
-        gLogger.error(result['Message'])
-        DIRACExit(-1)
+  if not (ceFlag or seFlag):
+    gLogger.error('Resource type is not specified')
+    DIRACExit(-1)
 
-    DIRACExit(0)
+  if ceFlag:
+    result = printCEInfo(voName)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+      DIRACExit(-1)
+  if seFlag:
+    result = printSEInfo(voName)
+    if not result['OK']:
+      gLogger.error(result['Message'])
+      DIRACExit(-1)
+
+  DIRACExit(0)
 
 
 if __name__ == "__main__":

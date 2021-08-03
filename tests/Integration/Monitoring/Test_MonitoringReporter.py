@@ -60,7 +60,7 @@ from __future__ import print_function
 import unittest
 import sys
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.parseCommandLine()
 
 from DIRAC import gLogger

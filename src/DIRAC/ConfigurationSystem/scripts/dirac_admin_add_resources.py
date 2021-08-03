@@ -17,8 +17,7 @@ import shlex
 
 import six
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -256,7 +255,7 @@ def handler(signum, frame):
   DIRACExit(-1)
 
 
-@DIRACScript()
+@Script()
 def main():
   signal.signal(signal.SIGTERM, handler)
   signal.signal(signal.SIGINT, handler)

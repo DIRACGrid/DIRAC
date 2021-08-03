@@ -9,7 +9,7 @@ from __future__ import print_function
 import sys
 from prompt_toolkit import prompt
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 
 __RCSID__ = "$Id$"

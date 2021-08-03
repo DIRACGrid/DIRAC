@@ -4,8 +4,7 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-Usage:
-  dirac-admin-pilot-summary [options] ...
+Pilot summary
 
 Example:
   $ dirac-admin-pilot-summary
@@ -33,14 +32,12 @@ __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

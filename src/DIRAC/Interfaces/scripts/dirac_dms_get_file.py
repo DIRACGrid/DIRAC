@@ -6,12 +6,6 @@
 """
 Retrieve a single file or list of files from Grid storage to the current directory.
 
-Usage:
-  dirac-dms-get-file [options] ... LFN ...
-
-Arguments:
-  LFN:      Logical File Name or file containing LFNs
-
 Example:
   $ dirac-dms-get-file /formation/user/v/vhamar/Example.txt
   {'Failed': {},
@@ -24,12 +18,13 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["LFN:      Logical File Name or file containing LFNs"])
   Script.parseCommandLine(ignoreErrors=True)
   lfns = Script.getPositionalArgs()
 

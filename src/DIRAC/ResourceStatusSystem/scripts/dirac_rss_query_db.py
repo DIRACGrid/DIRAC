@@ -2,18 +2,6 @@
 """
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
-
-Usage:
-  dirac-rss-query-db [option] <query> <element> <tableType>
-
-Arguments:
-  Queries:    [select|add|modify|delete]
-  Elements:   [site|resource|component|node]
-  TableTypes: [status|log|history]
-
-Verbosity::
-
-  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -23,8 +11,7 @@ __RCSID__ = '$Id$'
 
 import datetime
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -416,7 +403,7 @@ def run(args, switchDictSet):
   confirm(query, matches)
 
 
-@DIRACScript()
+@Script()
 def main():
   global subLogger
 

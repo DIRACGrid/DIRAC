@@ -153,9 +153,9 @@ except Exception:
   def main():
     print(getPlatformString())
 else:
-  from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+  from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
-  @DIRACScript()
+  @Script()
   def main():
     print(getPlatformString())
 

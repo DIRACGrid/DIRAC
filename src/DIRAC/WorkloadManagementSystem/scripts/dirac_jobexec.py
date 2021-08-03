@@ -19,14 +19,15 @@ import os.path
 import sys
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   # Register workflow parameter switch
   Script.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument('jobXMLfile: specify path to the Job XML file description')
   Script.parseCommandLine()
 
   # from DIRAC.Core.Workflow.Parameter import *

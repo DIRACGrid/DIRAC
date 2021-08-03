@@ -1,27 +1,23 @@
 #!/usr/bin/env python
 """
 Clean a tranformation
-
-Usage:
-  dirac-transformation-clean transID [transID] [transID]
 """
-
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
+__RCSID__ = "$Id$"
+
 import sys
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine()
-
-  args = Script.getPositionalArgs()
-  if not args:
-    Script.showHelp()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["transID: transformation ID"])
+  _, args = Script.parseCommandLine()
 
   from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent import TransformationCleaningAgent
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient

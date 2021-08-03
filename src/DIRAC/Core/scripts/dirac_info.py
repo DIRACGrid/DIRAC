@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-info
+# File :    dirac_info.py
 # Author :  Andrei Tsaregorodtsev
 ########################################################################
 """
@@ -30,16 +30,15 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   import os
 
   import DIRAC
   from DIRAC import gConfig
-  from DIRAC.Core.Base import Script
   from DIRAC.Core.Security.ProxyInfo import getProxyInfo
   from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
   from DIRAC.Core.Utilities.PrettyPrint import printTable

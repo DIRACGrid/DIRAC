@@ -121,7 +121,7 @@ with `setEvenOdd`, and then execute this function to test it.
    :linenos:
 
     from DIRAC import gLogger, S_OK, S_ERROR
-    from DIRAC.Core.Base import Script
+    from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
     Script.parseCommandLine()
 
     from DIRAC.TransformationSystem.Client.Transformation import Transformation

@@ -11,18 +11,12 @@ Syncs the source destination folder recursivly into the target destination
 If option --sync is used contend that is not in the source directory but is
 only in the target directory will be deleted.
 
-Usage:
-  dirac-dms-directory-sync Source Destination
+Example:
 
   e.g.: Download
     dirac-dms-directory-sync LFN Path
   or Upload
     dirac-dms-directory-sync Path LFN SE
-
-Arguments:
-  LFN:           Logical File Name (Path to directory)
-  Path:          Local path to the file (Path to directory)
-  SE:            DIRAC Storage Element
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -30,20 +24,25 @@ from __future__ import print_function
 
 import os
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch("D", "sync", "Make target directory identical to source")
   Script.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("LFN:           Logical File Name (Path to directory)",
+                           "Path:          Local path to the file (Path to directory)"))
+  Script.registerArgument(("Path:          Local path to the file (Path to directory)",
+                           "LFN:           Logical File Name (Path to directory)"))
+  Script.registerArgument(" SE:            DIRAC Storage Element", mandatory=False)
   Script.parseCommandLine(ignoreErrors=False)
 
   args = Script.getPositionalArgs()
-  if len(args) < 1 or len(args) > 3:
+  if len(args) > 3:
     Script.showHelp()
 
   sync = False

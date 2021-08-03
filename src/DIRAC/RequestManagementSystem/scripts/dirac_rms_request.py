@@ -1,13 +1,6 @@
 #!/bin/env python
 """
 Show request given its ID, a jobID or a transformation and a task
-
-Usage:
-  dirac-rms-request [options] [request[,request1,...]|<file>
-
-Arguments:
-  request:  a request ID or a unique request name
-  <file>:   a file containing a list of requests (Comma-separated on each line)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -17,7 +10,7 @@ __RCSID__ = "$Id$"
 
 import datetime
 import os
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 def convertDate(date):
@@ -35,9 +28,8 @@ def convertDate(date):
   return value
 
 
-@DIRACScript()
+@Script()
 def main():
-  from DIRAC.Core.Base import Script
   Script.registerSwitch('', 'Job=', '   JobID[,jobID2,...]')
   Script.registerSwitch('', 'Transformation=', '   transformation ID')
   Script.registerSwitch('', 'Tasks=', '      Associated to --Transformation, list of taskIDs')
@@ -56,8 +48,11 @@ def main():
   Script.registerSwitch('', 'Cancel', '   Cancel the request')
   Script.registerSwitch('', 'ListJobs', ' List the corresponding jobs')
   Script.registerSwitch('', 'TargetSE=', ' Select request only if that SE is in the targetSEs')
-  from DIRAC.Core.Base.Script import parseCommandLine
-  parseCommandLine()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("file:     a file containing a list of requests (Comma-separated on each line)",
+                           "request:  a request ID or a unique request name"), mandatory=False)
+  Script.registerArgument(["request:  a request ID or a unique request name"], mandatory=False)
+  Script.parseCommandLine()
 
   import DIRAC
   from DIRAC import gLogger

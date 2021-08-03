@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Remove the outputs produced by a transformation
-
-Usage:
-  dirac-transformation-remove-output transID [transID] [transID]
 """
 
 from __future__ import print_function
@@ -12,17 +9,14 @@ from __future__ import division
 
 import sys
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
-
-  if not args:
-    Script.showHelp()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["transID: transformation ID"])
+  _, args = Script.parseCommandLine()
 
   transIDs = [int(arg) for arg in args]
 

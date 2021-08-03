@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 ########################################################################
-# File :    dirac-setup-site
+# File :    dirac_setup_site.py
 # Author :  Ricardo Graciani
 ########################################################################
 """
 Initial installation and configuration of a new DIRAC server (DBs, Services, Agents, Web Portal,...)
-
-Usage:
-  dirac-setup-site [option] ... [cfgfile]
-
-Arguments:
-  cfgfile: DIRAC Cfg with description of the configuration (optional)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -18,8 +12,7 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 class Params(object):
@@ -32,7 +25,7 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   cliParams = Params()
 

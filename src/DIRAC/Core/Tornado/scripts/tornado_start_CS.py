@@ -14,10 +14,10 @@ __RCSID__ = "$Id$"
 
 import os
 import sys
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
 
   if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() not in ('yes', 'true'):
@@ -29,7 +29,6 @@ def main():
 
   from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
   from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-  from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
   from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
   from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
@@ -38,7 +37,7 @@ def main():
   if gConfigurationData.isMaster():
     gRefresher.disable()
 
-  localCfg = LocalConfiguration()
+  localCfg = Script.localCfg
   localCfg.addMandatoryEntry("/DIRAC/Setup")
   localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
   localCfg.addDefaultEntry("LogLevel", "INFO")

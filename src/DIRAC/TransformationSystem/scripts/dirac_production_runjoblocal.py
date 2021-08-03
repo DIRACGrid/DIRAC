@@ -23,8 +23,7 @@ import ssl
 
 from six.moves.urllib.request import urlopen
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 def __runSystemDefaults(jobID, vo):
@@ -135,11 +134,11 @@ def __runJobLocally(jobID, basepath, vo):
   localJob.runLocal()
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=False)
   Script.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
   Script.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
+  Script.parseCommandLine(ignoreErrors=False)
 
   _downloadinputdata = False
   _jobID = None

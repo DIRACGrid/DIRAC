@@ -2,12 +2,6 @@
 """
 Add or Modify a User info in DIRAC
 
-Usage:
-  dirac-admin-add-user [options] ... Property=<Value> ...
-
-Arguments:
-  Property=<Value>: Properties to be added to the User like (Phone=XXXX)
-
 Example:
   $ dirac-admin-add-user -N vhamar -D /O=GRID/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar -M hamar@cppm.in2p3.fr -G dirac_user
 """
@@ -18,8 +12,8 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC import gLogger
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 userName = None
 userDN = None
@@ -46,7 +40,7 @@ def setUserMail(arg):
   if userMail or not arg:
     Script.showHelp(exitCode=1)
   if not arg.find('@') > 0:
-    Script.gLogger.error('Not a valid mail address', arg)
+    gLogger.error('Not a valid mail address', arg)
     DIRAC.exit(-1)
   userMail = arg
 
@@ -59,7 +53,7 @@ def addUserGroup(arg):
     userGroups.append(arg)
 
 
-@DIRACScript()
+@Script()
 def main():
   global userName
   global userDN
@@ -73,7 +67,9 @@ def main():
       'UserGroup:',
       'Name of the Group for the User (Allow Multiple instances or None)',
       addUserGroup)
-
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["Property=<Value>: Properties to be added to the User like (Phone=XXXX)"],
+                          mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)
 
   if userName is None or userDN is None or userMail is None:
@@ -97,7 +93,7 @@ def main():
     else:
       pName = pl[0]
       pValue = "=".join(pl[1:])
-      Script.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      gLogger.info("Setting property %s to %s" % (pName, pValue))
       userProps[pName] = pValue
 
   if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=True)['OK']:
@@ -110,7 +106,7 @@ def main():
       exitCode = 255
 
   for error in errorList:
-    Script.gLogger.error("%s: %s" % error)
+    gLogger.error("%s: %s" % error)
 
   DIRAC.exit(exitCode)
 

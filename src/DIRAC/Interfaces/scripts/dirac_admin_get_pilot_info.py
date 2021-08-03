@@ -6,12 +6,6 @@
 """
 Retrieve available info about the given pilot
 
-Usage:
-  dirac-admin-get-pilot-info [options] ... PilotID ...
-
-Arguments:
-  PilotID:  Grid ID of the pilot
-
 Example:
   $ dirac-admin-get-pilot-info https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw
   {'https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw': {'AccountingSent': 'False',
@@ -39,8 +33,7 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 extendedPrint = False
 
@@ -50,20 +43,14 @@ def setExtendedPrint(_arg):
   extendedPrint = True
 
 
-@DIRACScript()
+@Script()
 def main():
-  global extendedPrint
   Script.registerSwitch('e', 'extended', 'Get extended printout', setExtendedPrint)
-  Script.parseCommandLine(ignoreErrors=True)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC import exit as DIRACExit
   from DIRAC.Interfaces.API.Dirac import Dirac
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-
-  args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp()
 
   diracAdmin = DiracAdmin()
   dirac = Dirac()

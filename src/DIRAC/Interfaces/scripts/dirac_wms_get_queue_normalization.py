@@ -6,12 +6,6 @@
 """
 Report Normalization Factor applied by Site to the given Queue
 
-Usage:
-  dirac-wms-get-queue-normalization [options] ... Queue ...
-
-Arguments:
-  Queue:     GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)
-
 Example:
   $ dirac-wms-get-queue-normalization cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long
   cclcgceli03.in2p3.fr:2119/jobmanager-bqs-long 2500.0
@@ -22,17 +16,14 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["Queue:  GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   exitCode = 0
 

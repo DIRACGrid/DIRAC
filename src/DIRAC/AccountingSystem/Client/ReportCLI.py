@@ -5,7 +5,7 @@ ReportGenerator Service. It is not complete yet
 Once ready it could be used with a script as simple as:
 
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 Script.localCfg.addDefaultEntry("LogLevel", "info")
 Script.parseCommandLine()

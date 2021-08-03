@@ -2,20 +2,17 @@
 """
 Get Pilots Logging for specific Pilot UUID or Job ID.
 
-Usage:
-  dirac-admin-pilot-loggin-info <option value>
-
-  WARNING: Only one option (either uuid or jobid) should be used.
+WARNING: Only one option (either uuid or jobid) should be used.
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 uuid = None
 jobid = None
@@ -39,7 +36,7 @@ def setJobID(optVal):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global uuid
   global jobid

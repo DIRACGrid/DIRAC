@@ -17,7 +17,7 @@ import pytest
 
 from DIRAC.tests.Utilities.utils import find_all
 
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 Script.parseCommandLine()
 
 

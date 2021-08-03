@@ -2,12 +2,6 @@
 """
 Add or Modify a Host info in DIRAC
 
-Usage:
-  dirac-admin-add-host [options] ... Property=<Value> ...
-
-Arguments:
-  Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)
-
 Example:
   $ dirac-admin-add-host -H dirac.i2np3.fr -D /O=GRID-FR/C=FR/O=CNRS/OU=CC-IN2P3/CN=dirac.in2p3.fr
 """
@@ -18,8 +12,8 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC import gLogger
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 hostName = None
 hostDN = None
@@ -48,7 +42,7 @@ def addProperty(arg):
     hostProperties.append(arg)
 
 
-@DIRACScript()
+@Script()
 def main():
   global hostName
   global hostDN
@@ -60,13 +54,14 @@ def main():
       'Property:',
       'Property to be added to the Host (Allow Multiple instances or None)',
       addProperty)
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["Property=<Value>: Other properties to be added to the Host like (Responsible=XXX)"],
+                          mandatory=False)
 
-  Script.parseCommandLine(ignoreErrors=True)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   if hostName is None or hostDN is None:
     Script.showHelp(exitCode=1)
-
-  args = Script.getPositionalArgs()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
@@ -85,7 +80,7 @@ def main():
     else:
       pName = pl[0]
       pValue = "=".join(pl[1:])
-      Script.gLogger.info("Setting property %s to %s" % (pName, pValue))
+      gLogger.info("Setting property %s to %s" % (pName, pValue))
       hostProps[pName] = pValue
 
   if not diracAdmin.csModifyHost(hostName, hostProps, createIfNonExistant=True)['OK']:
@@ -102,16 +97,16 @@ def main():
     cmc = ComponentMonitoringClient()
     ret = cmc.hostExists(dict(HostName=hostName))
     if not ret['OK']:
-      Script.gLogger.error('Cannot check if host is registered in ComponentMonitoring', ret['Message'])
+      gLogger.error('Cannot check if host is registered in ComponentMonitoring', ret['Message'])
     elif ret['Value']:
-      Script.gLogger.info('Host already registered in ComponentMonitoring')
+      gLogger.info('Host already registered in ComponentMonitoring')
     else:
       ret = cmc.addHost(dict(HostName=hostName, CPU='TO_COME'))
       if not ret['OK']:
-        Script.gLogger.error('Failed to add Host to ComponentMonitoring', ret['Message'])
+        gLogger.error('Failed to add Host to ComponentMonitoring', ret['Message'])
 
   for error in errorList:
-    Script.gLogger.error("%s: %s" % error)
+    gLogger.error("%s: %s" % error)
 
   DIRAC.exit(exitCode)
 

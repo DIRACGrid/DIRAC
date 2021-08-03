@@ -6,12 +6,6 @@
 """
 Print the service ports for the specified setup
 
-Usage:
-  dirac-admin-service-ports [options] ... [Setup]
-
-Arguments:
-  Setup:    Name of the setup
-
 Example:
   $ dirac-admin-service-ports
   {'Framework/ProxyManager': 9152,
@@ -30,18 +24,15 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument("Setup:    Name of the setup", default='', mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
-
-  setup = ''
-  if args:
-    setup = args[0]
+  setup = Script.getPositionalArgs(group=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

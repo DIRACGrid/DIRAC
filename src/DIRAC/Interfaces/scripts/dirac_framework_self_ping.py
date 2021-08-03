@@ -15,10 +15,10 @@ __RCSID__ = "$Id$"
 import sys
 import os
 import time
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   with open(os.devnull, 'w') as redirectStdout, open(os.devnull, 'w') as redirectStderr:
     from DIRAC import gLogger

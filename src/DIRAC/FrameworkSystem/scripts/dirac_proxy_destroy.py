@@ -15,8 +15,7 @@ import os
 
 import DIRAC
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 from DIRAC.Core.Security import Locations, ProxyInfo
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -181,7 +180,7 @@ def run():
   return 0
 
 
-@DIRACScript()
+@Script()
 def main():
   try:
     retval = run()

@@ -23,8 +23,7 @@ import datetime
 import DIRAC
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.Core.Security.Locations import getCAsLocation
@@ -250,7 +249,7 @@ class ProxyInit(object):
     return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global piParams, pI
   piParams = Params()

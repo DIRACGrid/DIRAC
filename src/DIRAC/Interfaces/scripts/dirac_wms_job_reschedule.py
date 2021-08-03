@@ -6,12 +6,6 @@
 """
 Reschedule the given DIRAC job
 
-Usage:
-  dirac-wms-job-reschedule [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
-
 Example:
   $ dirac-wms-job-reschedule 1
   Rescheduled job 1
@@ -23,17 +17,14 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["JobID:    DIRAC Job ID"])
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()

@@ -3,7 +3,6 @@
 This is a simple script that can be used for synchronizing pilot files
 to the current directory.
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -16,8 +15,7 @@ import hashlib
 
 
 from DIRAC import S_OK
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 includeMasterCS = True
@@ -29,7 +27,7 @@ def setNoMasterCS(optVal):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global includeMasterCS
   Script.registerSwitch("n", "noMasterCS", "do not include master CS", setNoMasterCS)

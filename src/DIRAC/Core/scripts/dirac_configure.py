@@ -5,38 +5,11 @@
 ########################################################################
 """
   Main script to write dirac.cfg for a new DIRAC installation and initial download of CAs and CRLs
-    if necessary.
+  if necessary.
 
   To be used by VO specific scripts to configure new DIRAC installations
 
-  There are 2 mandatory arguments:
-
-  -S --Setup=<setup>                               To define the DIRAC setup for the current installation
-  -C --ConfigurationServer=<server>|-W --Gateway   To define the reference Configuration Servers/Gateway
-                                                   for the current installation
-
-  others are optional
-
-  -I --IncludeAllServers                           To include all Configuration Servers
-                                                   (by default only those in -C option are included)
-  -n --SiteName=<sitename>                         To define the DIRAC Site Name for the installation
-  -N --CEName=<cename>                             To determine the DIRAC Site Name from the CE Name
-  -V --VO=<vo>                                     To define the VO for the installation
-  -U  --UseServerCertificate                       To use Server Certificate for all clients
-  -H  --SkipCAChecks                               To skip check of CAs for all clients
-  -D  --SkipCADownload                             To skip download of CAs
-  -M  --SkipVOMSDownload                           To skip download of VOMS info
-  -v --UseVersionsDir                              Use versions directory
-                                                   (This option will properly define RootPath and InstancePath)
-  -A --Architecture=<architecture>                 To define /LocalSite/Architecture=<architecture>
-  -L --LocalSE=<localse>                           To define /LocalSite/LocalSE=<localse>
-  -F --ForceUpdate                                 Forces the update of cfg file (i.e. dirac.cfg),
-                                                   even if it does already exists (use with care)
-  -O --Output                                      define output configuration file
-
-  Other arguments will take proper defaults if not defined.
-
-  Additionally all options can all be passed inside a .cfg file passed as argument.
+  Additionally all options can all be passed inside a .cfg file, see the `--cfg` option.
   The following options are recognized::
 
       Setup
@@ -54,16 +27,19 @@
       LocalSE
       LogLevel
 
+  Setup and ConfigurationServer(Gateway) is mandatory options.
+
   As in any other script command line option take precedence over .cfg files passed as arguments.
   The combination of both is written into the installed dirac.cfg.
 
   Notice: It will not overwrite exiting info in current dirac.cfg if it exists.
 
-  Example: dirac-configure -d
-                           -S LHCb-Development
-                           -C 'dips://lhcbprod.pic.es:9135/Configuration/Server'
-                           -W 'dips://lhcbprod.pic.es:9135'
-                           --SkipCAChecks
+  Example:
+    $ dirac-configure -d
+                      -S LHCb-Development
+                      -C 'dips://lhcbprod.pic.es:9135/Configuration/Server'
+                      -W 'dips://lhcbprod.pic.es:9135'
+                      --SkipCAChecks
 
 """
 from __future__ import absolute_import
@@ -76,8 +52,7 @@ import six
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgInstallPath, cfgPath, Registry
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -304,7 +279,7 @@ def runConfigurationWizard(params):
   sys.exit(result.returncode)
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.disableCS()
   params = Params()
@@ -342,12 +317,6 @@ def runDiracConfigure(params):
       params.forceUpdate)
 
   Script.registerSwitch("O:", "output=", "output configuration file", params.setOutput)
-
-  Script.setUsageMessage('\n'.join([
-      __doc__.split('\n')[1],
-      '\nUsage:',
-      '  %s [options] ...\n' % Script.scriptName
-  ]))
 
   Script.parseCommandLine(ignoreErrors=True)
 

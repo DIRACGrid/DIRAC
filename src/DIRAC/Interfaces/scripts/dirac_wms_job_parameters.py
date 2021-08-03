@@ -6,12 +6,6 @@
 """
 Retrieve parameters associated to the given DIRAC job
 
-Usage:
-  dirac-wms-job-parameters [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
-
 Example:
   $ dirac-wms-job-parameters 1
   {'CPU(MHz)': '1596.479',
@@ -47,17 +41,14 @@ __RCSID__ = "$Id$"
 import DIRAC
 
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["JobID:    DIRAC Job ID"])
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
   dirac = Dirac()

@@ -6,14 +6,6 @@
 """
 Retrieve a delegated proxy for the given user and group
 
-Usage:
-  dirac-admin-get-proxy [options] ... <DN|user> group
-
-Arguments:
-  DN:       DN of the user
-  user:     DIRAC user name (will fail if there is more than 1 DN registered)
-  group:    DIRAC group name
-
 Example:
   $ dirac-admin-get-proxy vhamar dirac_user
   Proxy downloaded to /afs/in2p3.fr/home/h/hamar/proxy.vhamar.dirac_user
@@ -28,8 +20,7 @@ import six
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
@@ -108,19 +99,19 @@ class Params(object):
     Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
 
 
-@DIRACScript()
+@Script()
 def main():
   params = Params()
   params.registerCLISwitches()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("DN:       DN of the user",
+                           "user:     DIRAC user name (will fail if there is more than 1 DN registered)"))
+  Script.registerArgument(" group:    DIRAC group name")
 
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+  userDN, userGroup = Script.getPositionalArgs(group=True)
 
-  if len(args) != 2:
-    Script.showHelp()
-
-  userGroup = str(args[1])
-  userDN = str(args[0])
   userName = False
   if userDN.find("/") != 0:
     userName = userDN

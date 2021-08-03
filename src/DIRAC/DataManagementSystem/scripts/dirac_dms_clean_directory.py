@@ -4,9 +4,6 @@ Clean the given directory or a list of directories by removing it and all the
 contained files and subdirectories from the physical storage and from the
 file catalogs.
 
-Usage:
-   dirac-dms-clean-directory <LFN_Directory | fileContainingLFN_Directories>
-
 Example:
   $ dirac-dms-clean-directory /formation/user/v/vhamar/newDir
   Cleaning directory /formation/user/v/vhamar/newDir ...  OK
@@ -20,19 +17,19 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as DIRACExit, gLogger
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Name"))
+
   Script.parseCommandLine()
 
-  args = Script.getPositionalArgs()
-  if len(args) != 1:
-    Script.showHelp(exitCode=1)
-
-  inputFileName = args[0]
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+  inputFileName = Script.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     lfns = [lfn.strip().split()[0] for lfn in sorted(open(inputFileName, 'r').read().splitlines())]

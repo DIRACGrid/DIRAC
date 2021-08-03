@@ -2,9 +2,6 @@
 """
 Remove the given file or a list of files from the File Catalog and from the storage
 
-Usage:
-  dirac-dms-remove-files <LFN | fileContainingLFNs>
-
 Example:
   $ dirac-dms-remove-files /formation/user/v/vhamar/Test.txt
 """
@@ -14,28 +11,28 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Names"))
+  Script.registerArgument(["LFN:       Logical File Names"], mandatory=False)
   Script.parseCommandLine()
 
   import os
   import DIRAC
   from DIRAC import gLogger
 
-  args = Script.getPositionalArgs()
-  lfns = []
-  for inputFileName in args:
-    if os.path.exists(inputFileName):
-      inputFile = open(inputFileName, 'r')
+  first, lfns = Script.getPositionalArgs(group=True)
+  if os.path.exists(first):
+    with open(first, 'r') as inputFile:
       string = inputFile.read()
-      inputFile.close()
-      lfns.extend([lfn.strip() for lfn in string.splitlines()])
-    else:
-      lfns.append(inputFileName)
+    lfns.extend([lfn.strip() for lfn in string.splitlines()])
+  else:
+    lfns.insert(0, first)
 
   from DIRAC.Core.Utilities.List import breakListIntoChunks
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager

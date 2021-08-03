@@ -5,12 +5,6 @@
 ########################################################################
 """
 Retrieve output sandbox for DIRAC Jobs for the given selection and search for a string in their std.out
-
-Usage:
-  dirac-wms-jobs-select-output-search [options] ... String ...
-
-Arguments:
-  String: string to search for
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -22,11 +16,10 @@ import os
 from shutil import rmtree
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch("", "Status=", "Primary status")
   Script.registerSwitch("", "MinorStatus=", "Secondary status")
@@ -36,8 +29,9 @@ def main():
   Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
   Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
   Script.registerSwitch("", "File=", "File name,if not specified default is std.out ")
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument("String: string to search for")
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   # Default values
   status = None

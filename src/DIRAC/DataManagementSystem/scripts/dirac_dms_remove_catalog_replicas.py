@@ -3,9 +3,6 @@
 Remove the given file replica or a list of file replicas from the File Catalog
 This script should be used with great care as it may leave dark data in the storage!
 Use dirac-dms-remove-replicas instead
-
-Usage:
-  dirac-dms-remove-catalog-replicas <LFN | fileContainingLFNs> <SE>
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -16,13 +13,16 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as dexit
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gLogger
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Names"))
+  Script.registerArgument(" SE:        Storage element")
   Script.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -42,12 +42,8 @@ def main():
 
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
   dm = DataManager()
-  args = Script.getPositionalArgs()
-  if len(args) < 2:
-    Script.showHelp(exitCode=1)
-  else:
-    inputFileName = args[0]
-    storageElementName = args[1]
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+  inputFileName, storageElementName = Script.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

@@ -6,12 +6,6 @@
 """
 Reset a job or list of jobs in the WMS
 
-Usage:
-  dirac-admin-reset-job [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC ID of the Job
-
 Example:
   $ dirac-admin-reset-job 1848
   Reset Job 1848
@@ -23,18 +17,14 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-
-  args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["JobID:    DIRAC Job IDs"])
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

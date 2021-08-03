@@ -5,9 +5,6 @@
 """
 Remove the given file or a list of files from the File Catalog
 
-Usage:
-  dirac-file-remove-catalog-files <LFN | fileContainingLFNs>
-
 Example:
   $ dirac-dms-remove-catalog-files   /formation/user/v/vhamar/1/1134/StdOut
   Successfully removed 1 catalog files.
@@ -18,14 +15,16 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import exit as dexit
 from DIRAC import gLogger
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Names"))
   Script.parseCommandLine()
 
   from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -47,12 +46,10 @@ def main():
   fc = FileCatalog()
   import os
 
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
   args = Script.getPositionalArgs()
 
-  if len(args) < 1:
-    Script.showHelp(exitCode=1)
-  else:
-    inputFileName = args[0]
+  inputFileName = args[0]
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

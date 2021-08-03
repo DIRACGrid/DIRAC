@@ -13,12 +13,23 @@ Give monitoring information regarding a staging file uniquely identified with (L
 - pin expiry time
 - pin length
 
-Usage:
-  dirac-stager-monitor-file LFN SE ...
-
-Arguments:
-  LFN: LFN of the staging file
-  SE: Storage Element for the staging file
+Example:
+  $ dirac-stager-monitor-file.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/0_1.full.dst GRIDKA-RDST
+  --------------------
+  LFN     : /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/0_1.full.dst
+  SE      : GRIDKA-RDST
+  PFN     : srm://gridka-dCache.fzk.de/pnfs/gridka.de/lhcb/LHCb/Collision12/FULL.DST/00020846/0005/0_1.full.dst
+  Status  : StageSubmitted
+  LastUpdate: 2013-06-11 18:13:40
+  Reason  : None
+  Jobs requesting this file to be staged: 48518896
+  ------SRM staging request info--------------
+  SRM RequestID: -1768636375
+  SRM StageStatus: StageSubmitted
+  SRM StageRequestSubmitTime: 2013-06-11 18:13:38
+  SRM StageRequestCompletedTime: None
+  SRM PinExpiryTime: None
+  SRM PinLength: 43200
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -26,21 +37,19 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument("LFN: LFN of the staging file")
+  Script.registerArgument("SE: Storage Element for the staging file")
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
-  if len(args) < 2:
-    Script.showHelp()
 
   from DIRAC import exit as DIRACExit, gLogger
 
-  lfn = args[0]
-  se = args[1]
+  lfn, se = Script.getPositionalArgs(group=True)
 
   from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
   client = StorageManagerClient()
@@ -95,23 +104,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-
-''' Example:
-dirac-stager-monitor-file.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst GRIDKA-RDST
---------------------
-LFN     : /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst
-SE      : GRIDKA-RDST
-PFN     : srm://gridka-dCache.fzk.de/pnfs/gridka.de/lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056603_1.full.dst
-Status  : StageSubmitted
-LastUpdate: 2013-06-11 18:13:40
-Reason  : None
-Jobs requesting this file to be staged: 48518896
-------SRM staging request info--------------
-SRM RequestID: -1768636375
-SRM StageStatus: StageSubmitted
-SRM StageRequestSubmitTime: 2013-06-11 18:13:38
-SRM StageRequestCompletedTime: None
-SRM PinExpiryTime: None
-SRM PinLength: 43200
-'''  # NOQA

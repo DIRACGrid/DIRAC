@@ -6,12 +6,6 @@
 """
 Lists the users in the Configuration. If no group is specified return all users.
 
-Usage:
-  dirac-admin-list-users [options] ... [Group] ...
-
-Arguments:
-  Group:    Only users from this group (default: all)
-
 Example:
   $ dirac-admin-list-users
   All users registered:
@@ -25,18 +19,17 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch("e", "extended", "Show extended info")
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["Group:    Only users from this group (default: all)"],
+                          default=['all'], mandatory=False)
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
-
-  if len(args) == 0:
-    args = ['all']
+  args = Script.getPositionalArgs(group=True)
 
   import DIRAC
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

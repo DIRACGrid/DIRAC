@@ -6,14 +6,6 @@
 """
 Ping the given DIRAC Service
 
-Usage:
-  dirac-framework-ping-service [options] ... System Service|System/Agent
-
-Arguments:
-  System:   Name of the DIRAC system (ie: WorkloadManagement)
-  Service:  Name of the DIRAC service (ie: Matcher)
-  url:      URL of the service to ping (instead of System and Service)
-
 Example:
   $ dirac-framework-ping-service WorkloadManagement PilotManager
   {'OK': True,
@@ -45,14 +37,17 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("URL:            URL of the service to ping (instead of System and Service)",
+                           "System/Service: Full component name (ie: WorkloadManagement/Matcher)",
+                           "System:         Name of the DIRAC system (ie: WorkloadManagement)"))
+  Script.registerArgument(" Service:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
   system = None
   service = None
   url = None

@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Get parameters assigned to the CE
-
-Usage:
-  dirac-resource-get-parameters [option]... [cfgfile]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -12,15 +9,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import json
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 ceName = ''
 Queue = ''
 Site = ''
 
 
-@DIRACScript()
+@Script()
 def main():
   global ceName
   global Queue

@@ -4,7 +4,7 @@ from __future__ import division
 import sys
 import time
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.DISET.MessageClient import MessageClient
 
 Script.parseCommandLine()

@@ -6,9 +6,6 @@ It can acquire or release the token.
 If the releaseToken switch is used, no matter what was the previous token, it will be set to rs_svc (RSS owns it).
 If not set, the token will be set to whatever username is defined on the proxy loaded while issuing
 this command. In the second case, the token lasts one day.
-
-Usage:
-  dirac-rss-token --element=[Site|Resource] --name=[name] --reason=[some reason]
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -20,8 +17,7 @@ from datetime import datetime, timedelta
 
 # DIRAC
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
@@ -179,7 +175,7 @@ def setToken(user):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   """
   Main function of the script. Gets the username from the proxy loaded and sets

@@ -5,9 +5,6 @@
 ########################################################################
 """
 Get WNs for a selection of jobs
-
-Usage:
-  dirac-wms-get-wn [options] ... LFN|File
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -19,11 +16,10 @@ import datetime
 from functools import cmp_to_key
 
 import DIRAC
-import DIRAC.Core.Base.Script as Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   site = 'BOINC.World.org'
   status = ["Running"]

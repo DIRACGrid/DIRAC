@@ -24,8 +24,7 @@ from pprint import pformat
 
 from diraccfg import CFG
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.List import fromChar
 
 LOG = gLogger
@@ -197,13 +196,13 @@ class CheckConfig(object):
       LOG.error("Unknown DiffType", "%s, %s, %s" % (diffType, fullPath, changes))
 
   def run(self):
-    """Run configuration comparison."""
+    """ Run configuration comparison."""
     self._setSwitches()
     self._check()
     return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   CheckConfig().run()
 

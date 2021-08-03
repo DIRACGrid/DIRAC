@@ -1,17 +1,6 @@
 #!/usr/bin/env python
 """
 Select/Add/Delete a new DownTime entry for a given Site or Service.
-
-Usage:
-  dirac-rss-query-dtcache [option] <query>
-
-Queries::
-
-  [select|add|delete]
-
-Verbosity::
-
-  -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -22,8 +11,7 @@ __RCSID__ = '$Id$'
 import datetime
 
 from DIRAC import gLogger, exit as DIRACExit, version
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -340,7 +328,7 @@ def run(args, switchDict):
     error(result['Message'])
 
 
-@DIRACScript()
+@Script()
 def main():
   global subLogger
   global ResourceManagementClient

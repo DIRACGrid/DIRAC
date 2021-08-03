@@ -26,7 +26,7 @@ __RCSID__ = "$Id$"
 
 import sys
 
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 
@@ -75,11 +75,10 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   params = Params()
 
-  from DIRAC.Core.Base import Script
   Script.registerSwitch("f:", "file=", "File to use as user key", params.setProxyLocation)
   Script.registerSwitch("i", "version", "Print version", params.showVersion)
   Script.registerSwitch("n", "novoms", "Disable VOMS", params.disableVOMS)

@@ -8,8 +8,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
@@ -33,7 +32,7 @@ def setQueue(args):
   Queue = args
 
 
-@DIRACScript()
+@Script()
 def main():
   global ceName
   global Site

@@ -14,10 +14,10 @@ __RCSID__ = "$Id$"
 
 import os
 import sys
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
 
   if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() not in ('yes', 'true'):
@@ -30,7 +30,6 @@ def main():
   from DIRAC import gConfig
   from DIRAC.ConfigurationSystem.Client import PathFinder
   from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-  from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
   from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
   from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -43,7 +42,7 @@ def main():
     gLogger.fatal("You can't run the CS and services in the same server!")
     sys.exit(0)
 
-  localCfg = LocalConfiguration()
+  localCfg = Script.localCfg
   localCfg.setConfigurationForServer('Tornado/Tornado')
   localCfg.addMandatoryEntry("/DIRAC/Setup")
   localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")

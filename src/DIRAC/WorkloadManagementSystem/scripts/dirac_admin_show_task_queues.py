@@ -6,12 +6,7 @@
 """
 Show details of currently active Task Queues
 
-Usage:
-
-  dirac-admin-show-task-queues [options]
-
 Example:
-
   $ dirac-admin-show-task-queues
   Getting TQs..
   * TQ 401
@@ -31,12 +26,11 @@ __RCSID__ = "$Id$"
 import sys
 
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 verbose = False
 
@@ -56,7 +50,7 @@ def setTaskQueueID(optVal):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global verbose
   global taskQueueID

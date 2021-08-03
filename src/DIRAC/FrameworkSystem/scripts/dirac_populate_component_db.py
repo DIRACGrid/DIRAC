@@ -14,8 +14,7 @@ from datetime import datetime
 from DIRAC import exit as DIRACexit
 from DIRAC import S_OK, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator \
     import SystemAdministratorIntegrator
@@ -38,7 +37,7 @@ def setExcludedHosts(value):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global excludedHosts
   Script.registerSwitch(

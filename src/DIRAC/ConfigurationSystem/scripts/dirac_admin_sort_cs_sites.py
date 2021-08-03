@@ -7,12 +7,6 @@
 Sort site names at CS in "/Resources" section. Sort can be alphabetic or by country postfix in a site name.
 Alphabetic sort is default (i.e. LCG.IHEP.cn, LCG.IHEP.su, LCG.IN2P3.fr)
 
-Usage:
-  dirac-admin-sort-cs-sites [options] <Section>
-
-Arguments:
-  Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)
-
 Example:
   $ dirac-admin-sort-cs-sites -C CLOUDS DIRAC
   sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection
@@ -24,8 +18,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
@@ -54,7 +47,7 @@ def country(arg):
   return cb[2]
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch(
       "C",
@@ -62,6 +55,9 @@ def main():
       "Sort site names by country postfix (i.e. LCG.IHEP.cn, LCG.IN2P3.fr, LCG.IHEP.su)",
       sortBy)
   Script.registerSwitch("R", "reverse", "Reverse the sort order", isReverse)
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["Section: Name of the subsection in '/Resources/Sites/' for sort (i.e. LCG DIRAC)"],
+                          mandatory=False)
 
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()

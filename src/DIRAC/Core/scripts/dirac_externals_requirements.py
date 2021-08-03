@@ -23,8 +23,8 @@ except ImportError:
   import subprocess as commands
 
 from diraccfg import CFG
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gLogger, rootPath, S_OK
 
 __RCSID__ = "$Id$"
@@ -46,7 +46,7 @@ def pipInstall(package, switches=""):
   return commands.getstatusoutput(cmd)
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.disableCS()
 

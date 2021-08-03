@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Add files to an existing transformation
-
-Usage:
-  dirac-transformation-add-files TransID <LFN | fileContainingLFNs>
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -13,23 +10,21 @@ __RCSID__ = "$Id$"
 
 import os
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument("TransID: transformation ID")
+  Script.registerArgument(("LFN: LFN", "FileName: file containing LFNs"))
   Script.parseCommandLine()
 
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
-  args = Script.getPositionalArgs()
-  if len(args) < 2:
-    Script.showHelp(exitCode=1)
+  tID, inputFileName = Script.getPositionalArgs(group=True)
 
   # get arguments
-  inputFileName = args[1]
-
   lfns = []
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')
@@ -40,7 +35,7 @@ def main():
     lfns.append(inputFileName)
 
   tc = TransformationClient()
-  res = tc.addFilesToTransformation(args[0], lfns)  # Files added here
+  res = tc.addFilesToTransformation(tID, lfns)  # Files added here
 
   if not res['OK']:
     DIRAC.gLogger.error(res['Message'])

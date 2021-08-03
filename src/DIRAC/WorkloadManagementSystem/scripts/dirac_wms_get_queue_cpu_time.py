@@ -13,15 +13,13 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch("C:", "CPUNormalizationFactor=", "CPUNormalizationFactor, in case it is known")
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
 
   CPUNormalizationFactor = 0.0
   for unprocSw in Script.getUnprocessedSwitches():

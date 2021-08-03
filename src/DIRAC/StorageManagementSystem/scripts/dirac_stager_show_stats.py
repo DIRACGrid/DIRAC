@@ -8,7 +8,7 @@ Reports breakdown of file(s) number/size in different staging states across Stor
 Currently used Cache per SE is also reported. (active pins)
 
 Example:
-  dirac-stager-show-stats
+  $ dirac-stager-show-stats
 
    Status               SE                   NumberOfFiles        Size(GB)
   --------------------------------------------------------------------------
@@ -27,12 +27,12 @@ from __future__ import division
 from __future__ import print_function
 
 __RCSID__ = "$Id$"
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.parseCommandLine(ignoreErrors=False)
   from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient

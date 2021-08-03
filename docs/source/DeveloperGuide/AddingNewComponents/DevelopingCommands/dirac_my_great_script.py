@@ -16,8 +16,7 @@ from __future__ import print_function
 __RCSID__ = '$Id$'
 
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.Core.Base import Script
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 class Params(object):
@@ -29,6 +28,13 @@ class Params(object):
     """ C'or """
     self.raw = False
     self.pingsToDo = 1
+    # Defined all switches that can be used while calling the script from the command line interface.
+    self.switches = [
+        ('', 'text=', 'Text to be printed'),
+        ('u', 'upper', 'Print text on upper case'),
+        ('r', 'showRaw', 'Show raw result from the query', self.setRawResult),
+        ('p:', 'numPings=', 'Number of pings to do (by default 1)', self.setNumOfPingsToDo)
+    ]
 
   def setRawResult(self, _):
     """ ShowRaw option callback function, no option argument.
@@ -50,26 +56,6 @@ class Params(object):
     except ValueError:
       return S_ERROR("Number of pings to do has to be a number")
     return S_OK()
-
-
-def registerSwitches():
-  """
-    Registers all switches that can be used while calling the script from the command line interface.
-  """
-
-  # Some of the switches have associated a callback, defined on Params class.
-  cliParams = Params()
-
-  switches = [
-      ('', 'text=', 'Text to be printed'),
-      ('u', 'upper', 'Print text on upper case'),
-      ('r', 'showRaw', 'Show raw result from the query', cliParams.setRawResult),
-      ('p:', 'numPings=', 'Number of pings to do (by default 1)', cliParams.setNumOfPingsToDo)
-  ]
-
-  # Register switches
-  for switch in switches:
-    Script.registerSwitch(*switch)
 
 
 def registerArguments():
@@ -112,14 +98,15 @@ def parseSwitchesAndPositionalArguments():
 
 
 # IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
-@DIRACScript()
+@Script()
 def main():
   """
     This is the script main method, which will hold all the logic.
   """
+  params = Params()
 
   # Script initialization
-  registerSwitches()
+  Script.registerSwitches(params.switches)
   registerArguments()
   switchDict, repType, user, services = parseSwitchesAndPositionalArguments()
 

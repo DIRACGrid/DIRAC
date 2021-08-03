@@ -4,7 +4,7 @@ Developing Commands
 
 .. warning::
     This instructions here demonstrate how to support both the legacy (Python 2) and future (Python3) installations of DIRAC.
-    If only having Python 3 support is acceptable, the requirement for scripts to be in the the *scripts* directory of their parent system will be removed and the only requirement will be for the function to be decorated with the ``@DIRACScript()`` decorator.
+    If only having Python 3 support is acceptable, the requirement for scripts to be in the the *scripts* directory of their parent system will be removed and the only requirement will be for the function to be decorated with the ``@Script()`` decorator.
 
 Commands are one of the main interface tools for the users. Commands are also called *scripts* in DIRAC lingo. 
 
@@ -37,16 +37,16 @@ which will set the interpreter directive to the python on the environment.
 
 **2.** The next is the documentation line which is describing the command. This same documentation line will be used also the command help information available with the *-h* command switch.
 
-**3.** The majority of the code should be contained with a function, often called ``main`` though this is not required. This function should be wrapped with the ``@DIRACScript()`` decorator to allow the DIRAC plugin mechanism to override the script with the function from the highest priority extension.
+**3.** The majority of the code should be contained with a function, often called ``main`` though this is not required. This function should be wrapped with the ``@Script()`` decorator to allow the DIRAC plugin mechanism to override the script with the function from the highest priority extension.
 
 .. code-block:: python
 
    #Import the required DIRAC modules
-   from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+   from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
    from DIRAC.Interfaces.API.DIRAC import DIRAC
    from DIRAC import gLogger
 
-   @DIRACScript()
+   @Script()
    def main():
      # Do stuff
 

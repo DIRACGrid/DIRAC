@@ -17,19 +17,14 @@ import sys
 from DIRAC import gLogger
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  localCfg = LocalConfiguration()
-  localCfg.setUsageMessage(__doc__)
-
-  positionalArgs = localCfg.getPositionalArguments()
-  if len(positionalArgs) == 0:
-    gLogger.fatal("You must specify which agent to run!")
-    sys.exit(1)
+  Script.registerArgument(["Agent: specify which agent to run"])
+  positionalArgs = Script.getPositionalArgs(group=True)
+  localCfg = Script.localCfg
 
   agentName = positionalArgs[0]
   localCfg.setConfigurationForAgent(agentName)

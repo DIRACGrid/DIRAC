@@ -20,8 +20,7 @@ from __future__ import absolute_import
 from __future__ import division
 
 from DIRAC import S_OK, exit as DIRACexit
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 __RCSID__ = "$Id$"
 
@@ -53,7 +52,7 @@ def setNoVO(arg):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global vo
   global noVOFlag

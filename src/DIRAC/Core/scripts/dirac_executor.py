@@ -17,19 +17,15 @@ import sys
 from DIRAC import gLogger
 from DIRAC.Core.Base.ExecutorReactor import ExecutorReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  localCfg = LocalConfiguration()
-  localCfg.setUsageMessage(__doc__)
-
-  positionalArgs = localCfg.getPositionalArguments()
-  if len(positionalArgs) == 0:
-    gLogger.fatal("You must specify which executor to run!")
-    sys.exit(1)
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["executor: specify which executor to run"])
+  positionalArgs = Script.getPositionalArgs()
+  localCfg = Script.localCfg
 
   if len(positionalArgs) == 1 and positionalArgs[0].find("/") > -1:
     mainName = positionalArgs[0]

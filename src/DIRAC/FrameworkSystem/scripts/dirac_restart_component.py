@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 """
 Restart DIRAC component using runsvctrl utility
-
-Usage:
-  dirac-restart-component [options] ... [System [Service|Agent]]
-
-Arguments:
-  System:        Name of the system for the component (default *: all)
-  Service|Agent: Name of the particular component (default *: all)
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -15,22 +8,24 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.disableCS()
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(" System:  Name of the system for the component (default *: all)",
+                          mandatory=False, default='*')
+  Script.registerArgument(("Service: Name of the particular component (default *: all)",
+                           "Agent:   Name of the particular component (default *: all)"),
+                          mandatory=False, default='*')
+  _, args = Script.parseCommandLine()
+  system, component = Script.getPositionalArgs(group=True)
+
   if len(args) > 2:
     Script.showHelp(exitCode=1)
 
-  system = '*'
-  component = '*'
-  if args:
-    system = args[0]
   if system != '*':
     if len(args) > 1:
       component = args[1]

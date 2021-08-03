@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 Get the given file replica metadata from the File Catalog
-
-Usage:
-  dirac-dms-replica-metadata <LFN | fileContainingLFNs> SE
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -14,23 +11,22 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import exit as DIRACExit
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("LocalFile: Path to local file containing LFNs",
+                           "LFN:       Logical File Names"))
+  Script.registerArgument(" SE:        Storage element")
   Script.parseCommandLine()
 
   from DIRAC import gLogger
   from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
-  args = Script.getPositionalArgs()
-  if not len(args) == 2:
-    Script.showHelp(exitCode=1)
-  else:
-    inputFileName = args[0]
-    storageElement = args[1]
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+  inputFileName, storageElement = Script.getPositionalArgs(group=True)
 
   if os.path.exists(inputFileName):
     inputFile = open(inputFileName, 'r')

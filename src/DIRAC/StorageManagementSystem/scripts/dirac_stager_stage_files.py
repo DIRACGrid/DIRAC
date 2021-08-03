@@ -4,8 +4,8 @@
 # Author :  Daniela Remenska
 ########################################################################
 """
-- submit staging requests for a particular Storage Element! Default DIRAC JobID will be =0.
-  (not visible in the Job monitoring list though)
+Submit staging requests for a particular Storage Element! Default DIRAC JobID will be =0.
+(not visible in the Job monitoring list though)
 
 Usage:
   dirac-stager-stage-files <LFN> <SE>
@@ -13,6 +13,21 @@ Usage:
 Arguments:
   <LFN>: LFN to Stage (or local file with list of LFNs)
   <SE>:  Name of Storage Element
+
+Example:
+  $ dirac-stager-stage-files.py filesToStage.txt GRIDKA-RDST
+  Stage request submitted for LFNs:
+  ['/lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00023458_1.full.dst',
+  '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032669_1.full.dst',
+  '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032666_1.full.dst']
+  SE= GRIDKA-RDST
+  You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
+
+  $ dirac-stager-stage-files.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst GRIDKA-RDST
+  Stage request submitted for LFNs:
+  ['/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst']
+  SE= GRIDKA-RDST
+  You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -20,11 +35,10 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.parseCommandLine(ignoreErrors=True)
 
@@ -73,19 +87,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-
-'''Example1:
-dirac-stager-stage-files.py filesToStage.txt GRIDKA-RDST
-Stage request submitted for LFNs:
-['/lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00023458_1.full.dst', '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032669_1.full.dst', '/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032666_1.full.dst']
-SE= GRIDKA-RDST
-You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
-
-Example2:
-dirac-stager-stage-files.py /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst GRIDKA-RDST
-Stage request submitted for LFNs:
-['/lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032641_1.full.dst']
-SE= GRIDKA-RDST
-You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
-'''  # NOQA

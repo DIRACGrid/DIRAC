@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 """
 Uninstallation of a DIRAC component
-
-Usage:
-  dirac-uninstall-component [options] ... System Component|System/Component
-
-Arguments:
-  System:  Name of the DIRAC system (ie: WorkloadManagement)
-  Component: Name of the DIRAC component (ie: Matcher)
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -17,9 +10,8 @@ import socket
 
 from DIRAC import exit as DIRACexit
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PromptUser import promptUser
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
@@ -34,7 +26,7 @@ def setForce(opVal):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global force
 
@@ -42,8 +34,11 @@ def main():
   gComponentInstaller.exitOnError = True
 
   Script.registerSwitch("f", "force", "Forces the removal of the logs", setForce)
-  Script.parseCommandLine()
-  args = Script.getPositionalArgs()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
+                           "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
+  Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
+  _, args = Script.parseCommandLine()
 
   if len(args) == 1:
     args = args[0].split('/')

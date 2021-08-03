@@ -5,12 +5,6 @@
 ########################################################################
 """
 Select DIRAC jobs matching the given conditions
-
-Usage:
-  dirac-wms-job-status [options] ... JobID ...
-
-Arguments:
-  JobID:    DIRAC Job ID
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -20,11 +14,10 @@ __RCSID__ = "$Id$"
 
 import DIRAC
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   maxJobs = 100
   Script.registerSwitch("", "Status=", "Primary status")
@@ -35,9 +28,7 @@ def main():
   Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
   Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
   Script.registerSwitch("", "Maximum=", "Maximum number of jobs shown (default %d, 0 means all)" % maxJobs)
-  Script.parseCommandLine(ignoreErrors=True)
-
-  args = Script.getPositionalArgs()
+  switches, args = Script.parseCommandLine(ignoreErrors=True)
 
   # Default values
   status = None
@@ -53,7 +44,7 @@ def main():
 
   exitCode = 0
 
-  for switch in Script.getUnprocessedSwitches():
+  for switch in switches:
     if switch[0].lower() == "status":
       status = switch[1]
     elif switch[0].lower() == "minorstatus":

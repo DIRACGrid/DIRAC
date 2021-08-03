@@ -6,12 +6,6 @@
 """
 Retrieves site mask logging information.
 
-Usage:
-  dirac-admin-site-mask-logging [options] ... Site ...
-
-Arguments:
-  Site:     Name of the Site
-
 Example:
   $ dirac-admin-site-mask-logging LCG.IN2P3.fr
   Site Mask Logging Info for LCG.IN2P3.fr
@@ -24,17 +18,14 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["Site:     Name of the Site"])
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()

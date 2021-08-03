@@ -6,15 +6,6 @@
 """
 Replicate an existing LFN to another Storage Element
 
-Usage:
-  dirac-dms-replicate-lfn [options] ... LFN Dest [Source [Cache]]
-
-Arguments:
-  LFN:      Logical File Name or file containing LFNs (mandatory)
-  Dest:     Valid DIRAC SE (mandatory)
-  Source:   Valid DIRAC SE
-  Cache:    Local directory to be used as cache
-
 Example:
   $ dirac-dms-replicate-lfn /formation/user/v/vhamar/Test.txt DIRAC-USER
   {'Failed': {},
@@ -28,26 +19,22 @@ from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
-  Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument("LFN:      Logical File Name or file containing LFNs")
+  Script.registerArgument("Dest:     Valid DIRAC SE")
+  Script.registerArgument("Source:   Valid DIRAC SE", default='', mandatory=False)
+  Script.registerArgument("Cache:    Local directory to be used as cache", default='', mandatory=False)
+  _, args = Script.parseCommandLine(ignoreErrors=True)
 
-  if len(args) < 2 or len(args) > 4:
+  if len(args) > 4:
     Script.showHelp(exitCode=1)
 
-  lfn = args[0]
-  seName = args[1]
-  sourceSE = ''
-  localCache = ''
-  if len(args) > 2:
-    sourceSE = args[2]
-  if len(args) == 4:
-    localCache = args[3]
+  lfn, seName, sourceSE, localCache = Script.getPositionalArgs(group=True)
 
   from DIRAC.Interfaces.API.Dirac import Dirac
   dirac = Dirac()

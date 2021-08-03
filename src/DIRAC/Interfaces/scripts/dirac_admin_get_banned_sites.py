@@ -4,8 +4,7 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-Usage:
-  dirac-admin-get-banned-sites [options] ...
+Get banned sites
 
 Example:
   $ dirac-admin-get-banned-sites
@@ -17,11 +16,10 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.parseCommandLine(ignoreErrors=True)
 

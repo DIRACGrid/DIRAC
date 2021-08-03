@@ -11,8 +11,7 @@ __RCSID__ = "$Id$"
 
 import sys
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 class Params:
@@ -34,7 +33,7 @@ class Params:
     return DIRAC.S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   params = Params()
 

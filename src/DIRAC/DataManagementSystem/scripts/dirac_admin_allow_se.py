@@ -2,23 +2,20 @@
 """
 Enable using one or more Storage Elements
 
-Usage:
-  dirac-admin-allow-se SE1 [SE2 ...]
-
 Example:
   $ dirac-admin-allow-se M3PEC-disk
 """
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   read = False
   write = False
@@ -34,11 +31,12 @@ def main():
   Script.registerSwitch("a", "All", "    Allow all access to the storage element")
   Script.registerSwitch("m", "Mute", "     Do not send email")
   Script.registerSwitch("S:", "Site=", "     Allow all SEs associated to site")
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["seGroupList: list of SEs or comma-separated SEs"])
 
-  Script.parseCommandLine(ignoreErrors=True)
+  switches, ses = Script.parseCommandLine(ignoreErrors=True)
 
-  ses = Script.getPositionalArgs()
-  for switch in Script.getUnprocessedSwitches():
+  for switch in switches:
     if switch[0].lower() in ("r", "allowread"):
       read = True
     if switch[0].lower() in ("w", "allowwrite"):

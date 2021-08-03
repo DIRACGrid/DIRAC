@@ -6,13 +6,6 @@
 """
 Add Site to Active mask for current Setup
 
-Usage:
-  dirac-admin-allow-site [options] ... Site Comment
-
-Arguments:
-  Site:     Name of the Site
-  Comment:  Reason of the action
-
 Example:
   $ dirac-admin-allow-site LCG.IN2P3.fr "FRANCE"
 """
@@ -24,13 +17,15 @@ __RCSID__ = "$Id$"
 
 import time
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument("Site:     Name of the Site")
+  Script.registerArgument("Comment:  Reason of the action")
   Script.parseCommandLine(ignoreErrors=True)
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -50,11 +45,6 @@ def main():
     if switch[0] == "email":
       email = getBoolean(switch[1])
 
-  args = Script.getPositionalArgs()
-
-  if len(args) < 2:
-    Script.showHelp()
-
   diracAdmin = DiracAdmin()
   exitCode = 0
   errorList = []
@@ -72,8 +62,8 @@ def main():
   #  print 'Script stopped'
   #  DIRACExit( 0 )
 
-  site = args[0]
-  comment = args[1]
+  # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+  site, comment = Script.getPositionalArgs(group=True)
   result = diracAdmin.allowSite(site, comment, printOutput=True)
   if not result['OK']:
     errorList.append((site, result['Message']))

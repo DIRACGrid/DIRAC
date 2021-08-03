@@ -5,12 +5,6 @@
 ########################################################################
 """
 Retrieve info about jobs run by the given pilot
-
-Usage:
-  dirac-wms-pilot-job-info [options] ... PilotID ...
-
-Arguments:
-  PilotID:  Grid ID of the pilot
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -18,8 +12,7 @@ from __future__ import division
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 
 def _stringInList(subStr, sList):
@@ -30,19 +23,17 @@ def _stringInList(subStr, sList):
   return resList
 
 
-@DIRACScript()
+@Script()
 def main():
   parameters = ['OwnerDN', 'StartExecTime', 'EndExecTime']
   Script.registerSwitch('', 'Parameters=', '   List of strings to be matched by job parameters or attributes')
-  Script.parseCommandLine(ignoreErrors=True)
-  for switch in Script.getUnprocessedSwitches():
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(["PilotID:  Grid ID of the pilot"])
+  switches, args = Script.parseCommandLine(ignoreErrors=True)
+  for switch in switches:
     if switch[0] == 'Parameters':
       parameters += [par for par in switch[1].split(',')]
   parameters = [(i, par.lower()) for i, par in enumerate(parameters) if par]
-  args = Script.getPositionalArgs()
-
-  if len(args) < 1:
-    Script.showHelp()
 
   from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   from DIRAC.Interfaces.API.Dirac import Dirac

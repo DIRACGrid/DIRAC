@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 """
 Do the initial installation and configuration of a DIRAC component
-
-Usage:
-  dirac-install-component [options] ... System Component|System/Component
-
-Arguments:
-  System:  Name of the DIRAC system (ie: WorkloadManagement)
-  Service: Name of the DIRAC component (ie: Matcher)
 """
 
 from __future__ import absolute_import
@@ -16,8 +9,7 @@ from __future__ import print_function
 
 from DIRAC import exit as DIRACexit
 from DIRAC import gConfig, gLogger, S_OK
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 
@@ -48,7 +40,7 @@ def setSpecialOption(optVal):
   return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   global overwrite
   global specialOptions
@@ -61,6 +53,11 @@ def main():
   Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
   Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
   Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
+  # Registering arguments will automatically add their description to the help menu
+  Script.registerArgument(("System/Component: Full component name (ie: WorkloadManagement/Matcher)",
+                           "System:           Name of the DIRAC system (ie: WorkloadManagement)"))
+  Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
+
   Script.parseCommandLine()
   args = Script.getPositionalArgs()
 

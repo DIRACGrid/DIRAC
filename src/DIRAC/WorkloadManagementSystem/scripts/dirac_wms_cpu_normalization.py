@@ -21,15 +21,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 
 from DIRAC import gLogger, gConfig
 from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.registerSwitch("U", "Update", "Update dirac.cfg with the resulting value")
   Script.registerSwitch("R:", "Reconfig=", "Update given configuration file with the resulting value")

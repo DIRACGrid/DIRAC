@@ -6,30 +6,37 @@
 """
 Report the details of file staging requests, based on selection filters
 
-Usage:
-  dirac-stager-monitor-requests [--status=<Status>] [--se=<SE>] [--limit=<integer>] [--showJobs=YES] ...
+WARNING: Query may be heavy, please use --limit switch!
 
-Arguments:
-  status:   file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).
-  se:       storage element
-  showJobs: whether to ALSO list the jobs asking for these files to be staged
+Example:
+  $ dirac-stager-show-requests.py --status=Staged --se=GRIDKA-RDST --limit=10 --showJobs=YES
+  Query limited to 10 entries
 
-  WARNING: Query may be heavy, please use --limit switch!
+  Status          LastUpdate           LFN              SE       Reason     Jobs       PinExpiryTime        PinLength
+  Staged   2013-06-05 20:10:50 /lhcb/LHCb/5.full.dst GRIDKA-RDST None    ['48498752']  2013-06-05 22:10:50  86400
+  Staged   2013-06-06 15:54:29 /lhcb/LHCb/1.full.dst GRIDKA-RDST None    ['48516851']  2013-06-06 16:54:29  43200
+  Staged   2013-06-07 02:35:41 /lhcb/LHCb/3.full.dst GRIDKA-RDST None    ['48520736']  2013-06-07 03:35:41  43200
+  Staged   2013-06-06 04:16:50 /lhcb/LHCb/3.full.dst GRIDKA-RDST None    ['48510852']  2013-06-06 06:16:50  86400
+  Staged   2013-06-07 03:44:04 /lhcb/LHCb/3.full.dst GRIDKA-RDST None    ['48520737']  2013-06-07 04:44:04  43200
+  Staged   2013-06-05 23:37:46 /lhcb/LHCb/3.full.dst GRIDKA-RDST None    ['48508687']  2013-06-06 01:37:46  86400
+  Staged   2013-06-10 08:50:09 /lhcb/LHCb/5.full.dst GRIDKA-RDST None    ['48518896']  2013-06-10 09:50:09  43200
+  Staged   2013-06-06 11:03:25 /lhcb/LHCb/2.full.dst GRIDKA-RDST None    ['48515583']  2013-06-06 12:03:25  43200
+  Staged   2013-06-06 11:11:50 /lhcb/LHCb/2.full.dst GRIDKA-RDST None    ['48515072']  2013-06-06 12:11:50  43200
+  Staged   2013-06-07 03:19:26 /lhcb/LHCb/2.full.dst GRIDKA-RDST None    ['48515600']  2013-06-07 04:19:26  43200
 """
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-_RCSID__ = "$Id$"
+__RCSID__ = "$Id$"
 
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 subLogger = None
 
 
-@DIRACScript()
+@Script()
 def main():
   def registerSwitches():
     '''
@@ -165,21 +172,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-
-''' Example:
-dirac-stager-show-requests.py --status=Staged --se=GRIDKA-RDST --limit=10 --showJobs=YES
-Query limited to 10 entries
-
-Status          LastUpdate                     LFN                                                               SE       Reason     Jobs       PinExpiryTime   PinLength
-Staged        2013-06-05 20:10:50 /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00054816_1.full.dst GRIDKA-RDST None    ['48498752']  2013-06-05 22:10:50  86400
-Staged        2013-06-06 15:54:29 /lhcb/LHCb/Collision12/FULL.DST/00020846/0001/00020846_00013202_1.full.dst GRIDKA-RDST None    ['48516851']  2013-06-06 16:54:29  43200
-Staged        2013-06-07 02:35:41 /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032726_1.full.dst GRIDKA-RDST None    ['48520736']  2013-06-07 03:35:41  43200
-Staged        2013-06-06 04:16:50 /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00030567_1.full.dst GRIDKA-RDST None    ['48510852']  2013-06-06 06:16:50  86400
-Staged        2013-06-07 03:44:04 /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032699_1.full.dst GRIDKA-RDST None    ['48520737']  2013-06-07 04:44:04  43200
-Staged        2013-06-05 23:37:46 /lhcb/LHCb/Collision12/FULL.DST/00020846/0003/00020846_00032576_1.full.dst GRIDKA-RDST None    ['48508687']  2013-06-06 01:37:46  86400
-Staged        2013-06-10 08:50:09 /lhcb/LHCb/Collision12/FULL.DST/00020846/0005/00020846_00056424_1.full.dst GRIDKA-RDST None    ['48518896']  2013-06-10 09:50:09  43200
-Staged        2013-06-06 11:03:25 /lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00022161_1.full.dst GRIDKA-RDST None    ['48515583']  2013-06-06 12:03:25  43200
-Staged        2013-06-06 11:11:50 /lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00029215_1.full.dst GRIDKA-RDST None    ['48515072']  2013-06-06 12:11:50  43200
-Staged        2013-06-07 03:19:26 /lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00022323_1.full.dst GRIDKA-RDST None    ['48515600']  2013-06-07 04:19:26  43200
-'''  # NOQA

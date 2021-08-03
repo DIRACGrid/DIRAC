@@ -25,9 +25,8 @@ from __future__ import absolute_import
 from __future__ import division
 
 import DIRAC
-from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 __RCSID__ = "$Id$"
@@ -52,12 +51,11 @@ class Params(object):
     Script.registerSwitch("v:", "valid=", "Required HH:MM for the users", self.setProxyLifeTime)
 
 
-@DIRACScript()
+@Script()
 def main():
   params = Params()
   params.registerCLISwitches()
   Script.parseCommandLine(ignoreErrors=True)
-  args = Script.getPositionalArgs()
   result = gProxyManager.getDBContents()
   if not result['OK']:
     print("Can't retrieve list of users: %s" % result['Message'])
