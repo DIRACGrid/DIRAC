@@ -21,8 +21,8 @@ from typer import colors as c
 
 # Editable configuration
 DEFAULT_HOST_OS = "cc7"
-DEFAULT_MYSQL_VER = "8.0"
-DEFAULT_ES_VER = "7.9.1"
+DEFAULT_MYSQL_VER = "mysql:8.0"
+DEFAULT_ES_VER = "elasticsearch:7.9.1"
 FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
     "DIRACOS_TARBALL_PATH": None,

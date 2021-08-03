@@ -18,10 +18,14 @@ jobs:
         include:
           ###### MySQL versions
           - TEST_NAME: "MySQL 5.7"
-            ARGS: CLIENT_USE_PYTHON3=Yes MYSQL_VER=5.7
+            ARGS: CLIENT_USE_PYTHON3=Yes MYSQL_VER=mysql:5.7
+          - TEST_NAME: "MariaDB 10.6"
+            ARGS: MYSQL_VER=mariadb:10.6.3
           # ###### ES versions
           - TEST_NAME: "Elasticsearch 6.6.0"
-            ARGS: CLIENT_USE_PYTHON3=Yes ES_VER=6.6.0
+            ARGS: CLIENT_USE_PYTHON3=Yes ES_VER=elasticsearch:6.6.0
+          - TEST_NAME: "OpenSearch 1.0.0"
+            ARGS: CLIENT_USE_PYTHON3=Yes ES_VER=opensearchproject/opensearch:1.0.0
           ###### Fewer cfg locks
           - TEST_NAME: "Fewer cfg locks"
             ARGS: CLIENT_USE_PYTHON3=Yes DIRAC_FEWER_CFG_LOCKS=Yes
