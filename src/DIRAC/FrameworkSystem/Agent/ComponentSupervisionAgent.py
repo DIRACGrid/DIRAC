@@ -538,7 +538,7 @@ class ComponentSupervisionAgent(AgentModule):
         setup=self.setup,
     )
     self._tornadoPort = gConfig.getValue(
-        Path.cfgPath(tornadoSystemInstance, "Port"),
+        Path.cfgPath('/System/Tornado/', tornadoSystemInstance, "Port"),
         self._tornadoPort,
     )
     self.log.debug('Using Tornado Port:', self._tornadoPort)
@@ -568,9 +568,9 @@ class ComponentSupervisionAgent(AgentModule):
     system = options['System']
     module = options['Module']
     self.log.info('Checking URLs for %s/%s' % (system, module))
-    urlsConfigPath = PathFinder.getSystemURLSection(
-        serviceName=Path.cfgPath(system, module),
-        setup=self.setup
+    urlsConfigPath = Path.cfgPath(
+        PathFinder.getSystemURLSection(system=system, setup=self.setup),
+        module
     )
     urls = gConfig.getValue(urlsConfigPath, [])
     self.log.debug('Found configured URLs for %s: %s' % (module, urls))

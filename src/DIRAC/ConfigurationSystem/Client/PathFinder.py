@@ -151,7 +151,7 @@ def getSystemURLSection(system, setup=False):
 
       :return: str
   """
-  return "%s/URLs" % getSystemSection(system, setup=setup)
+  return Path.cfgPath(getSystemSection(system, setup=setup), "URLs")
 
 
 def checkComponentURL(componentURL, system=None, component=None, pathMandatory=False):
