@@ -21,8 +21,7 @@ def cfgPath(*args):
   """
   Basic method to make a path out of a tuple of string, any of them can be already a path
   """
-  path = os.path.join(*[str(k) for k in args])
-  return os.path.normpath(path)
+  return os.path.normpath(os.path.join(*(str(k) for k in args)))
 
 
 def cfgInstallPath(*args):
