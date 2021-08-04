@@ -236,11 +236,11 @@ class ComponentSupervisionAgent(AgentModule):
         componentCategory=instanceType,
     )
     if instanceType != 'Agents':
-      return gConfig.getValue(os.path.join(componentPath, option), default)
+      return gConfig.getValue(Path.cfgPath(componentPath, option), default)
     # deal with agent configuration
-    componentLoadModule = gConfig.getValue(os.path.join(componentPath, 'Module'), componentName)
-    fullComponentName = os.path.join(system, componentName)
-    fullComponentLoadName = os.path.join(system, componentLoadModule)
+    componentLoadModule = gConfig.getValue(Path.cfgPath(componentPath, 'Module'), componentName)
+    fullComponentName = Path.cfgPath(system, componentName)
+    fullComponentLoadName = Path.cfgPath(system, componentLoadModule)
     return AgentModule(fullComponentName, fullComponentLoadName).am_getOption(option, default)
 
   def on_terminate(self, componentName, process):
