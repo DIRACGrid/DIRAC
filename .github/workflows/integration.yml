@@ -18,27 +18,24 @@ jobs:
         include:
           ###### MySQL versions
           - TEST_NAME: "MySQL 5.7"
-            ARGS: MYSQL_VER=5.7
+            ARGS: CLIENT_USE_PYTHON3=Yes MYSQL_VER=5.7
           # ###### ES versions
           - TEST_NAME: "Elasticsearch 6.6.0"
-            ARGS: ES_VER=6.6.0
-          ###### Thread pool
+            ARGS: CLIENT_USE_PYTHON3=Yes ES_VER=6.6.0
+          ###### Fewer cfg locks
           - TEST_NAME: "Fewer cfg locks"
-            ARGS: DIRAC_FEWER_CFG_LOCKS=Yes
+            ARGS: CLIENT_USE_PYTHON3=Yes DIRAC_FEWER_CFG_LOCKS=Yes
           ###### HTTPS tests
           - TEST_NAME: "HTTPS"
-            ARGS: TEST_HTTPS=Yes
-          ###### Python 3
-          - TEST_NAME: "Python 3 client"
-            ARGS: CLIENT_USE_PYTHON3=Yes
-          - TEST_NAME: "Python 3 server"
+            ARGS: CLIENT_USE_PYTHON3=Yes TEST_HTTPS=Yes
+          - TEST_NAME: "Py3 client, py3 server + HTTPS"
+            ARGS: CLIENT_USE_PYTHON3=Yes SERVER_USE_PYTHON3=Yes TEST_HTTPS=Yes
+          ###### Python 2
+          - TEST_NAME: "Py2 client, py3 server"
             ARGS: SERVER_USE_PYTHON3=Yes
-          - TEST_NAME: "Python 3 server and client"
-            ARGS: CLIENT_USE_PYTHON3=Yes SERVER_USE_PYTHON3=Yes
-          - TEST_NAME: "Python 3 server+HTTPS"
+          - TEST_NAME: "Py2 client, py2 server"
+          - TEST_NAME: "Py2 client, py3 server+HTTPS"
             ARGS: SERVER_USE_PYTHON3=Yes TEST_HTTPS=Yes
-          - TEST_NAME: "Python 3 server+client+HTTPS"
-            ARGS: SERVER_USE_PYTHON3=Yes CLIENT_USE_PYTHON3=Yes TEST_HTTPS=Yes
 
     steps:
     - uses: actions/checkout@v2
