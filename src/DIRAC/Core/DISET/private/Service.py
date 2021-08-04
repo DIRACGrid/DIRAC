@@ -114,7 +114,7 @@ class Service(object):
     # Initialize Monitoring
     # This is a flag used to check whether "EnableActivityMonitoring" is enabled or not from the config file.
     self.activityMonitoring = Operations().getValue(
-	"EnableActivityMonitoring", False
+        "EnableActivityMonitoring", False
     ) or getServiceOption(self._serviceInfoDict, "EnableActivityMonitoring", False)
     if self.activityMonitoring:
       # The import needs to be here because of the CS must be initialized before importing

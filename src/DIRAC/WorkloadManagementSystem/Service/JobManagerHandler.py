@@ -102,8 +102,8 @@ class JobManagerHandlerMixin(object):
     if not self.msgClient.connected:
       result = self.msgClient.connect(JobManager=True)
       if not result['OK']:
-	self.log.warn("Cannot connect to OptimizationMind!", result['Message'])
-	return
+        self.log.warn("Cannot connect to OptimizationMind!", result['Message'])
+        return
 
     result = self.msgClient.createMessage("OptimizeJobs")
     if not result['OK']:

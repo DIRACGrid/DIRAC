@@ -78,11 +78,11 @@ def test__getJDLParameters(mocker):
 @pytest.mark.parametrize(
     "mockJMInput, expected",
     [
-	({"OK": True}, {"OK": True, "Value": "Problem Rescheduling Job"}),
-	(
-	    {"OK": False, "Message": "Test"},
-	    {"OK": True, "Value": "Problem Rescheduling Job"},
-	),
+        ({"OK": True}, {"OK": True, "Value": "Problem Rescheduling Job"}),
+        (
+            {"OK": False, "Message": "Test"},
+            {"OK": True, "Value": "Problem Rescheduling Job"},
+        ),
     ],
 )
 def test__rescheduleFailedJob(mocker, mockJMInput, expected):
@@ -109,22 +109,22 @@ def test__rescheduleFailedJob(mocker, mockJMInput, expected):
 @pytest.mark.parametrize(
     "mockGCReplyInput, mockPMReplyInput, expected",
     [
-	(True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
-	(
-	    True,
-	    {"OK": False, "Message": "Test"},
-	    {"OK": False, "Message": "Failed to setup proxy: Error retrieving proxy"},
-	),
-	(
-	    False,
-	    {"OK": True, "Value": "Test"},
-	    {"OK": False, "Message": "Invalid Proxy"},
-	),
-	(
-	    False,
-	    {"OK": False, "Message": "Test"},
-	    {"OK": False, "Message": "Invalid Proxy"},
-	),
+        (True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            True,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Failed to setup proxy: Error retrieving proxy"},
+        ),
+        (
+            False,
+            {"OK": True, "Value": "Test"},
+            {"OK": False, "Message": "Invalid Proxy"},
+        ),
+        (
+            False,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Invalid Proxy"},
+        ),
     ],
 )
 def test__setupProxy(mocker, mockGCReplyInput, mockPMReplyInput, expected):
@@ -178,18 +178,18 @@ def test__getCPUWorkLeft(mocker):
 @pytest.mark.parametrize(
     "mockGCReplyInput, mockPMReplyInput, expected",
     [
-	(True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
-	(
-	    True,
-	    {"OK": False, "Message": "Test"},
-	    {"OK": False, "Message": "Error retrieving proxy"},
-	),
-	(False, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
-	(
-	    False,
-	    {"OK": False, "Message": "Test"},
-	    {"OK": False, "Message": "Error retrieving proxy"},
-	),
+        (True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            True,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Error retrieving proxy"},
+        ),
+        (False, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            False,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Error retrieving proxy"},
+        ),
     ],
 )
 def test__requestProxyFromProxyManager(mocker, mockGCReplyInput, mockPMReplyInput, expected):

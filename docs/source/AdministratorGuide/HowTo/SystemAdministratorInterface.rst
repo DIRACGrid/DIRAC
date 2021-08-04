@@ -82,7 +82,7 @@ Show setup command allows administrators to know which components, Services and 
 
     mardirac1.in2p3.fr >show setup
     {'Agents': {'Configuration': ['CE2CSAgent'],
-		'Framework': ['CAUpdateAgent'],
+                'Framework': ['CAUpdateAgent'],
                 'WorkloadManagement': ['JobHistoryAgent',
                                        'InputDataAgent',
                                        'StalledJobAgent',
@@ -100,7 +100,7 @@ Show setup command allows administrators to know which components, Services and 
                                 'Notification',
                                 'UserProfileManager',
                                 'SystemAdministrator',
-				'ProxyManager'],
+                                'ProxyManager'],
                   'RequestManagement': ['RequestManager'],
                   'WorkloadManagement': ['JobMonitoring',
                                          'WMSAdministrator',
