@@ -16,6 +16,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
 import logging
 import datetime
 import os
@@ -103,6 +104,8 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.napoleon',
               'sphinx.ext.graphviz',
               'recommonmark',
+              'sphinx_rtd_theme',
+              'sphinx_panels',
               ]
 
 
@@ -186,16 +189,15 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'nature'
-
-html_style = 'dirac.css'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-# html_theme_options = {
-#  'sidebarbgcolor':'#D5E2F2'
-#}
+html_theme_options = dict(
+    # sidebarbgcolor='#D5E2F2',
+    logo_only=True
+)
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -210,6 +212,7 @@ html_title = "DIRAC Documentation"
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 #html_logo = '_static/DIRAC-logo.png'
+html_logo = '_static/DIRAC-logo3.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
