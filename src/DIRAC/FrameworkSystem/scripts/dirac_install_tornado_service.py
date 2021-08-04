@@ -72,7 +72,6 @@ def main():
 
   system = args[0]
   component = args[1]
-  compOrMod = module or component
 
   result = gComponentInstaller.addDefaultOptionsToCS(gConfig, 'service', system, component,
                                                      extensionsByPriority(),

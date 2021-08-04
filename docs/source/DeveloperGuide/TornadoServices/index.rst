@@ -99,7 +99,7 @@ The interface of the DISET request handler was preserved, in particular:
 How to start server
 *******************
 
-The easy way, use ``DIRAC/Core/Tornado/script/tornado-start-all.py`` it will start all services registered in configuration ! To register a service you just have to add the service in the CS and ``Protocol = https``. It may look like this::
+The easy way is to use command ``tornado-start-all`` which will start all services registered in configuration. To register a service you just have to add the service in the CS and ``Protocol = https``. It may look like this::
 
   DIRAC
   {

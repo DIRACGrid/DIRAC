@@ -28,7 +28,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GE
 SUMMARY = []
 
 
-class JobMonitoringHandler(RequestHandler):
+class JobMonitoringHandlerMixin(object):
 
   @classmethod
   def initializeHandler(cls, svcInfoDict):
@@ -684,3 +684,9 @@ class JobMonitoringHandler(RequestHandler):
     """ Get input data for the specified jobs
     """
     return cls.jobDB.getInputData(jobID)
+
+##############################################################################
+
+
+class JobMonitoringHandler(JobMonitoringHandlerMixin, RequestHandler):
+  pass

@@ -75,8 +75,16 @@ def test__getJDLParameters(mocker):
   assert result['Value']['Tags'] == ['16Processors', 'MultiProcessor']
 
 
-@pytest.mark.parametrize("mockJMInput, expected", [({'OK': True}, {'OK': True, 'Value': 'Job Rescheduled'}), ({
-                         'OK': False, 'Message': "Test"}, {'OK': True, 'Value': 'Problem Rescheduling Job'})])
+@pytest.mark.parametrize(
+    "mockJMInput, expected",
+    [
+        ({"OK": True}, {"OK": True, "Value": "Problem Rescheduling Job"}),
+        (
+            {"OK": False, "Message": "Test"},
+            {"OK": True, "Value": "Problem Rescheduling Job"},
+        ),
+    ],
+)
 def test__rescheduleFailedJob(mocker, mockJMInput, expected):
   """ Testing JobAgent()._rescheduleFailedJob()
   """
@@ -84,14 +92,6 @@ def test__rescheduleFailedJob(mocker, mockJMInput, expected):
   mockJM.return_value = mockJMInput
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-  mocker.patch(
-      "DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient.JobStateUpdateClient.setJobStatusBulk",
-      side_effect=mockJM,
-  )
-  mocker.patch(
-      "DIRAC.WorkloadManagementSystem.Client.JobManagerClient.JobManagerClient.rescheduleJob",
-      side_effect=mockJM,
-  )
 
   jobAgent = JobAgent('Test', 'Test1')
 
@@ -107,16 +107,26 @@ def test__rescheduleFailedJob(mocker, mockJMInput, expected):
 
 
 @pytest.mark.parametrize(
-    "mockGCReplyInput, mockPMReplyInput, expected", [
-        (True, {
-            'OK': True, 'Value': 'Test'}, {
-            'OK': True, 'Value': 'Test'}), (True, {
-                'OK': False, 'Message': 'Test'}, {
-                'OK': False, 'Message': 'Failed to setup proxy: Error retrieving proxy'}), (False, {
-                    'OK': True, 'Value': 'Test'}, {
-                    'OK': False, 'Message': 'Invalid Proxy'}), (False, {
-                        'OK': False, 'Message': 'Test'}, {
-                        'OK': False, 'Message': 'Invalid Proxy'})])
+    "mockGCReplyInput, mockPMReplyInput, expected",
+    [
+        (True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            True,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Failed to setup proxy: Error retrieving proxy"},
+        ),
+        (
+            False,
+            {"OK": True, "Value": "Test"},
+            {"OK": False, "Message": "Invalid Proxy"},
+        ),
+        (
+            False,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Invalid Proxy"},
+        ),
+    ],
+)
 def test__setupProxy(mocker, mockGCReplyInput, mockPMReplyInput, expected):
   """ Testing JobAgent()._setupProxy()
   """
@@ -166,16 +176,22 @@ def test__getCPUWorkLeft(mocker):
 
 
 @pytest.mark.parametrize(
-    "mockGCReplyInput, mockPMReplyInput, expected", [
-        (True, {
-            'OK': True, 'Value': 'Test'}, {
-            'OK': True, 'Value': 'Test'}), (True, {
-                'OK': False, 'Message': 'Test'}, {
-                'OK': False, 'Message': 'Error retrieving proxy'}), (False, {
-                    'OK': True, 'Value': 'Test'}, {
-                    'OK': True, 'Value': 'Test'}), (False, {
-                        'OK': False, 'Message': 'Test'}, {
-                        'OK': False, 'Message': 'Error retrieving proxy'})])
+    "mockGCReplyInput, mockPMReplyInput, expected",
+    [
+        (True, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            True,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Error retrieving proxy"},
+        ),
+        (False, {"OK": True, "Value": "Test"}, {"OK": True, "Value": "Test"}),
+        (
+            False,
+            {"OK": False, "Message": "Test"},
+            {"OK": False, "Message": "Error retrieving proxy"},
+        ),
+    ],
+)
 def test__requestProxyFromProxyManager(mocker, mockGCReplyInput, mockPMReplyInput, expected):
   """ Testing JobAgent()._requestProxyFromProxyManager()
   """
@@ -224,8 +240,10 @@ def test__checkInstallSoftware(mocker):
   assert result['Value'] == 'Job has no software installation requirement'
 
 
-@pytest.mark.parametrize("mockJWInput, expected", [(
-    {'OK': False, 'Message': 'Test'}, {'OK': False, 'Message': 'Test'})])
+@pytest.mark.parametrize(
+    "mockJWInput, expected",
+    [({'OK': False, 'Message': 'Test'}, {'OK': False, 'Message': 'Test'})]
+)
 def test_submitJob(mocker, mockJWInput, expected):
   """ Testing JobAgent()._submitJob()
   """
