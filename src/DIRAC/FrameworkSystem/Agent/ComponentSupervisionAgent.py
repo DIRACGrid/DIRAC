@@ -63,12 +63,13 @@ import psutil
 
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers import Path
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
@@ -228,9 +229,9 @@ class ComponentSupervisionAgent(AgentModule):
 
   def _getComponentOption(self, instanceType, system, componentName, option, default):
     """Get component option from DIRAC CS, using components' base classes methods."""
-    fullComponentName = os.path.join(system, componentName)
     componentPath = PathFinder.getComponentSection(
-        componentName=fullComponentName,
+        system=system,
+        component=componentName,
         setup=self.setup,
         componentCategory=instanceType,
     )
@@ -238,6 +239,7 @@ class ComponentSupervisionAgent(AgentModule):
       return gConfig.getValue(os.path.join(componentPath, option), default)
     # deal with agent configuration
     componentLoadModule = gConfig.getValue(os.path.join(componentPath, 'Module'), componentName)
+    fullComponentName = os.path.join(system, componentName)
     fullComponentLoadName = os.path.join(system, componentLoadModule)
     return AgentModule(fullComponentName, fullComponentLoadName).am_getOption(option, default)
 
@@ -480,8 +482,8 @@ class ComponentSupervisionAgent(AgentModule):
     """Get the configured status of the components."""
     host = socket.getfqdn()
     defaultStatus = {'Down': set(), 'Run': set(), 'All': set()}
-    resRunning = gConfig.getOptionsDict(os.path.join('/Registry/Hosts/', host, 'Running'))
-    resStopped = gConfig.getOptionsDict(os.path.join('/Registry/Hosts/', host, 'Stopped'))
+    resRunning = gConfig.getOptionsDict(Path.cfgPath('/Registry/Hosts/', host, 'Running'))
+    resStopped = gConfig.getOptionsDict(Path.cfgPath('/Registry/Hosts/', host, 'Stopped'))
     if not resRunning['OK']:
       return resRunning
     if not resStopped['OK']:
@@ -531,12 +533,14 @@ class ComponentSupervisionAgent(AgentModule):
     gConfig.forceRefresh(fromMaster=True)
 
     # get port used for https based services
-    tornadoPortConfigPath = PathFinder.getComponentSection(
-        componentName=os.path.join('/Systems/Tornado'),
+    tornadoSystemInstance = PathFinder.getSystemInstance(
+        system="Tornado",
         setup=self.setup,
-        componentCategory='Port'
     )
-    self._tornadoPort = gConfig.getValue(tornadoPortConfigPath, self._tornadoPort)
+    self._tornadoPort = gConfig.getValue(
+        Path.cfgPath(tornadoSystemInstance, "Port"),
+        self._tornadoPort,
+    )
     self.log.debug('Using Tornado Port:', self._tornadoPort)
 
     res = self.getRunningInstances(instanceType='Services', runitStatus='All')
@@ -565,7 +569,7 @@ class ComponentSupervisionAgent(AgentModule):
     module = options['Module']
     self.log.info('Checking URLs for %s/%s' % (system, module))
     urlsConfigPath = PathFinder.getSystemURLSection(
-        serviceName=os.path.join(system, module),
+        serviceName=Path.cfgPath(system, module),
         setup=self.setup
     )
     urls = gConfig.getValue(urlsConfigPath, [])
