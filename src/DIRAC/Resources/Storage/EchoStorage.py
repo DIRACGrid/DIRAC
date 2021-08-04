@@ -153,11 +153,11 @@ class EchoStorage(GFAL2_StorageBase):
 
   def _removeSingleFile(self, path):
     """ Removal on Echo is unbearably slow.
-	A ticket was opened, but the claim is that "it's CEPH, no can do"
-	(https://ggus.eu/index.php?mode=ticket_info&ticket_id=140773)
+        A ticket was opened, but the claim is that "it's CEPH, no can do"
+        (https://ggus.eu/index.php?mode=ticket_info&ticket_id=140773)
 
-	This throttles a bit the removal if we see we start taking too long.
-	It is mostly useful in the context of the REA.
+        This throttles a bit the removal if we see we start taking too long.
+        It is mostly useful in the context of the REA.
     """
 
     startTime = default_timer()

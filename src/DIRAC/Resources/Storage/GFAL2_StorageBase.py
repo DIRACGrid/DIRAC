@@ -359,7 +359,7 @@ class GFAL2_StorageBase(StorageBase):
         return S_OK(sourceSize)
       # no checksum check, compare file sizes for verfication
       else:
-	res = self._getSingleFileSize(dest_url)
+        res = self._getSingleFileSize(dest_url)
         # In case of failure, we set destSize to None
         # so that the cleaning of the file happens
         if not res['OK']:
@@ -373,7 +373,7 @@ class GFAL2_StorageBase(StorageBase):
         else:
           log.debug("Source and destination file size don't match.\
                                                                         Trying to remove destination file")
-	  res = self._removeSingleFile(dest_url)
+          res = self._removeSingleFile(dest_url)
           if not res['OK']:
             log.debug("Failed to remove destination file", res['Message'])
             return res
@@ -1220,8 +1220,8 @@ class GFAL2_StorageBase(StorageBase):
     :param self: self reference
     :param str path: single path on storage (srm://...)
     :param bool internalCall: if we call this method from another internal method we want
-			      to work with the full pfn. Used for _getSingleDirectory and
-			      _removeSingleDirectory
+                              to work with the full pfn. Used for _getSingleDirectory and
+                              _removeSingleDirectory
     :returns: S_ERROR( errStr ) if there is an error
              S_OK( dictionary ): Key: SubDirs and Files
                                  The values of the Files are dictionaries with filename as key and metadata as value
@@ -1505,7 +1505,7 @@ class GFAL2_StorageBase(StorageBase):
         directoryFiles[remoteUrl] = localPath
       # localPath is another folder, start recursion
       else:
-	res = self._putSingleDirectory(localPath, remoteUrl)
+        res = self._putSingleDirectory(localPath, remoteUrl)
         if not res['OK']:
           log.debug('Failed to put directory to storage. Skipping', res['Message'])
           allSuccessful = False
@@ -1610,7 +1610,7 @@ class GFAL2_StorageBase(StorageBase):
       # Recursively remove the sub directories
       log.debug("Trying to recursively remove %s folder." % len(subDirsDict))
       for subDirUrl in subDirsDict:
-	res = self._removeSingleDirectory(subDirUrl, recursive)
+        res = self._removeSingleDirectory(subDirUrl, recursive)
         if not res['OK']:
           log.debug("Recursive removal failed", res)
           removedAllDirs = False

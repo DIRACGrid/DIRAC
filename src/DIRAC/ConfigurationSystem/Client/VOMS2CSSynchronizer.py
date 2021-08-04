@@ -352,12 +352,12 @@ class VOMS2CSSynchronizer(object):
             groupsWithRole.append(group)
       keepGroups = nonVOGroups + groupsWithRole
       if not quarantineVOGroup or quarantineVOGroup not in existingGroups:
-	keepGroups += [defaultVOGroup]
+        keepGroups += [defaultVOGroup]
       if quarantineVOGroup and quarantineVOGroup in existingGroups:
-	keepGroups = [quarantineVOGroup]
+        keepGroups = [quarantineVOGroup]
       for group in existingGroups:
-	if group in nonVOGroups:
-	  continue
+        if group in nonVOGroups:
+          continue
         role = diracVOMSMapping.get(group, '')
         # Among already existing groups for the user keep those without a special VOMS Role
         # because this membership is done by hand in the CS

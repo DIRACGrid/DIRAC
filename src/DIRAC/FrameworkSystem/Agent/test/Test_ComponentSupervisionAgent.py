@@ -598,7 +598,7 @@ class TestComponentSupervisionAgent(unittest.TestCase):
       if 'Protocol' in args[0]:
         return 'https' if 'Serv3' in args[0] else args[1]
       else:
-	assert False, 'Unknown config option requested %s' % args[0]
+        assert False, 'Unknown config option requested %s' % args[0]
     gConfigMock = MagicMock()
     gConfigMock.getValue.side_effect = gVal
     services = {'Services': {'Sys': {'Serv1': {'Setup': True, 'PID': '18128', 'Port': '1001', 'RunitStatus': 'Run',
@@ -616,9 +616,9 @@ class TestComponentSupervisionAgent(unittest.TestCase):
     with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=gConfigMock), \
             patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.socket.gethostname', return_value=host), \
             patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
-		  side_effect=mockComponentSection), \
-	    patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemURLSection',
-		  side_effect=mockURLSection):
+                  side_effect=mockComponentSection), \
+            patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemURLSection',
+                  side_effect=mockURLSection):
       res = self.restartAgent.checkURLs()
     self.assertTrue(res['OK'])
     self.restartAgent.csAPI.modifyValue.assert_has_calls([call('/Systems/Sys/Production/URLs/Serv', ','.join(tempurls)),
@@ -636,8 +636,8 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
     self.restartAgent.csAPI.commit = MagicMock(return_value=S_ERROR('Nope'))
     with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock()), \
-	 patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
-	       side_effect=mockComponentSection):
+         patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
+               side_effect=mockComponentSection):
       res = self.restartAgent.checkURLs()
     self.assertFalse(res['OK'])
     self.assertIn('Failed to commit', res['Message'])
@@ -645,8 +645,8 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
     self.restartAgent.csAPI.commit = MagicMock(return_value=S_OK())
     with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock()), \
-	 patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
-	       side_effect=mockComponentSection):
+         patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
+               side_effect=mockComponentSection):
 
       res = self.restartAgent.checkURLs()
     self.assertTrue(res['OK'])
