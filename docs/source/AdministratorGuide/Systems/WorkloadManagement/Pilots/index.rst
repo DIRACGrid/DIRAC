@@ -237,7 +237,6 @@ A simpler example using the LHCbPilot extension follows::
   rm -rf /tmp/area/*
 
   # URLs where to get scripts, that for Pilot3 are copied over to your WebPortal, e.g. like:
-  DIRAC_INSTALL='https://lhcb-portal-dirac.cern.ch/pilot/dirac-install.py'
   DIRAC_PILOT='https://lhcb-portal-dirac.cern.ch/pilot/dirac-pilot.py'
   DIRAC_PILOT_TOOLS='https://lhcb-portal-dirac.cern.ch/pilot/pilotTools.py'
   DIRAC_PILOT_COMMANDS='https://lhcb-portal-dirac.cern.ch/pilot/pilotCommands.py'
@@ -248,7 +247,6 @@ A simpler example using the LHCbPilot extension follows::
 
   #
   ##get the necessary scripts
-  wget --no-check-certificate -O dirac-install.py $DIRAC_INSTALL
   wget --no-check-certificate -O dirac-pilot.py $DIRAC_PILOT
   wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
   wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
