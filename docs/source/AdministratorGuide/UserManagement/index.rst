@@ -42,7 +42,7 @@ Consider the registration process
 
 User management has been provided by the Registry section of the Configuration System. To manage it you can use:
 
-* :ref:`dirac commands <registry_cmd>` to managing Registry
+* :ref:`dirac commands <admin_registry_cmd>` to managing Registry
 * configuration manager application in the Web portal (need to :ref:`install WebAppDIRAC extension <installwebappdirac>`)
 * modify local cfg file manually (by default it located in /opt/dirac/etc/dirac.cfg)
 * use the :mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent` to fetch VOMS VO users
@@ -87,7 +87,7 @@ Permissions of the group users are determined by "Properties" option. Full descr
   :caption: Registry section
 
 To add a new group you can use special DIRAC command that simplifies this action:
-:ref:`dirac-admin-add-group <admin_dirac-admin-add-group>`.
+:ref:`dirac-admin-add-group <dirac-admin-add-group>`.
 
 Finally, create a user in the **Registry/Users** section:
 
@@ -98,4 +98,4 @@ Finally, create a user in the **Registry/Users** section:
   :caption: Registry section
 
 To add a new user you can use special DIRAC command that simplifies this action:
-:ref:`dirac-admin-add-user <admin_dirac-admin-add-user>`.
+:ref:`dirac-admin-add-user <dirac-admin-add-user>`.

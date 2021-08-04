@@ -14,6 +14,7 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
+import sys
 import shutil
 from getpass import getpass
 from datetime import datetime
@@ -41,7 +42,7 @@ def main():
   if not os.path.isdir(globus):
     gLogger.notice("Creating globus directory")
     os.mkdir(globus)
-  
+
   p12Path = os.path.join(globus, os.path.basename(p12))
   cert = os.path.join(globus, 'usercert.pem')
   key = os.path.join(globus, 'userkey.pem')
@@ -59,10 +60,13 @@ def main():
 
   # new OpenSSL version require OPENSSL_CONF to point to some accessible location',
   gLogger.notice("echo Converting p12 key to pem format")
-  result = shellCall(900, 'export OPENSSL_CONF=/tmp && openssl pkcs12 -nocerts -in "%s" -out "%s"%s' % (p12Path, key, password))
+  result = shellCall(
+      900, 'export OPENSSL_CONF=/tmp && openssl pkcs12 -nocerts -in "%s" -out "%s"%s' % (p12Path, key, password))
   if result['OK']:
     gLogger.notice("Converting p12 certificate to pem format")
-    result = shellCall(900, 'export OPENSSL_CONF=/tmp && openssl pkcs12 -clcerts -nokeys -in "%s" -out "%s"%s' % (p12Path, cert, password))
+    result = shellCall(
+        900,
+        'export OPENSSL_CONF=/tmp && openssl pkcs12 -clcerts -nokeys -in "%s" -out "%s"%s' % (p12Path, cert, password))
   if not result['OK']:
     gLogger.fatal(result["Message"])
     for old in [p12Path, cert, key]:

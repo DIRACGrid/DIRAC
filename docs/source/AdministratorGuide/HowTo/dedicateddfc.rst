@@ -8,7 +8,7 @@ This HowTo explains the steps needed to install an additional instance of the DI
 Database.
 
 For this to work one needs a separate database, which will be assumed to be called NFCDB from now on.
-Using the :ref:`admin_dirac-admin-sysadmin-cli` does not allow one to add NFCDB, so it has to be done manually.
+Using the :ref:`dirac-admin-sysadmin-cli` does not allow one to add NFCDB, so it has to be done manually.
 
 Prepare the CS for the new Database
 ------------------------------------
@@ -55,7 +55,7 @@ Install the DFC Service
 Install the new Dirac FileCatalog service.  The ``Database`` option has to be set to ``DataManagement/NFCDB`` or just
 NFCDB, because ``DataManagement`` is pre-pended.
 
-in the :ref:`admin_dirac-admin-sysadmin-cli`::
+in the :ref:`dirac-admin-sysadmin-cli`::
 
   install service DataManagement NewFileCatalog -p Port=9198 -p Database=NFCDB
 

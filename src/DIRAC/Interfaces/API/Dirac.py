@@ -1824,52 +1824,175 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> dirac.getJobOutputLFNs(1405)
-        {'OK':True,'Value':[<LFN>]}
+    """
+    ret = self._checkJobArgument(jobID, multiple=True)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
-        :param jobID: JobID
-        :type jobID: int or string
-        :returns: S_OK,S_ERROR
-        """
-        try:
-            jobID = int(jobID)
-        except ValueError as x:
-            return self._errorReport(str(x), "Expected integer or string for existing jobID")
+    result = WMSClient(useCertificates=self.useCertificates).killJob(jobID)
+    if result['OK']:
+      if self.jobRepo:
+        for jID in result['Value']:
+          self.jobRepo.removeJob(jID)
+    return result
 
-        result = self.getJobParameters(jobID)
-        if not result["OK"]:
-            return result
-        if not result["Value"].get("UploadedOutputData"):
-            self.log.info("Parameters for job %s do not contain uploaded output data:\n%s" % (jobID, result))
-            return S_ERROR("No output data found for job %s" % jobID)
+  #############################################################################
 
-        outputData = result["Value"]["UploadedOutputData"]
-        outputData = outputData.replace(" ", "").split(",")
-        if not outputData:
-            return S_ERROR("No output data files found")
+  def getJobStatus(self, jobID):
+    """Monitor the status of DIRAC Jobs.
 
-        self.log.verbose("Found the following output data LFNs:\n", "\n".join(outputData))
-        return S_OK(outputData)
+       Example Usage:
 
-    #############################################################################
-    def getJobOutputData(self, jobID, outputFiles="", destinationDir=""):
-        """Retrieve the output data files of a given job locally.
+       >>> print dirac.getJobStatus(79241)
+       {79241: {'Status': 'Done',
+                'MinorStatus': 'Execution Complete',
+                'ApplicationStatus': 'some app status'
+                'Site': 'LCG.CERN.ch'}}
 
-        Optionally restrict the download of output data to a given file name or
-        list of files using the outputFiles option, by default all job outputs
-        will be downloaded.
+       :param jobID: JobID
+       :type jobID: int, str or python:list
+       :returns: S_OK,S_ERROR
+    """
+    ret = self._checkJobArgument(jobID, multiple=True)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
 
-        Example Usage:
+    monitoring = JobMonitoringClient()
+    res = monitoring.getJobsStates(jobID)
+    if not res['OK']:
+      self.log.warn('Could not obtain job status information')
+      return res
+    statusDict = res['Value']
 
-        >>> dirac.getJobOutputData(1405)
-        {'OK':True,'Value':[<LFN>]}
+    res = monitoring.getJobsSites(jobID)
+    if not res['OK']:
+      self.log.warn('Could not obtain job site information')
+      return res
+    siteDict = res['Value']
 
-        :param jobID: JobID
-        :type jobID: int or string
-        :param outputFiles: Optional files to download
-        :type outputFiles: str or python:list
-        :returns: S_OK,S_ERROR
-        """
+    result = {}
+    repoDict = {}
+    for job, vals in statusDict.items():  # can be an iterator
+      result[job] = vals
+      if self.jobRepo:
+        repoDict[job] = {'State': vals['Status']}
+    if self.jobRepo:
+      self.jobRepo.updateJobs(repoDict)
+    for job, vals in siteDict.items():  # can be an iterator
+      result[job].update(vals)
+
+    return S_OK(result)
+
+  #############################################################################
+  def getJobInputData(self, jobID):
+    """Retrieve the input data requirement of any job existing in the workload management
+       system.
+
+       Example Usage:
+
+       >>> dirac.getJobInputData(1405)
+       {'OK': True, 'Value': {1405:
+        ['LFN:/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst']}}
+
+       :param jobID: JobID
+       :type jobID: int, str or python:list
+       :returns: S_OK,S_ERROR
+    """
+    ret = self._checkJobArgument(jobID, multiple=True)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    summary = {}
+    monitoring = JobMonitoringClient()
+    for job in jobID:
+      result = monitoring.getInputData(job)
+      if result['OK']:
+        summary[job] = result['Value']
+      else:
+        self.log.warn('Getting input data for job %s failed with message:\n%s' % (job, result['Message']))
+        summary[job] = []
+
+    return S_OK(summary)
+
+  #############################################################################
+  def getJobOutputLFNs(self, jobID):
+    """ Retrieve the output data LFNs of a given job locally.
+
+       This does not download the output files but simply returns the LFN list
+       that a given job has produced.
+
+       Example Usage:
+
+       >>> dirac.getJobOutputLFNs(1405)
+       {'OK':True,'Value':[<LFN>]}
+
+       :param jobID: JobID
+       :type jobID: int or string
+       :returns: S_OK,S_ERROR
+    """
+    try:
+      jobID = int(jobID)
+    except ValueError as x:
+      return self._errorReport(str(x), 'Expected integer or string for existing jobID')
+
+    result = self.getJobParameters(jobID)
+    if not result['OK']:
+      return result
+    if not result['Value'].get('UploadedOutputData'):
+      self.log.info('Parameters for job %s do not contain uploaded output data:\n%s' % (jobID, result))
+      return S_ERROR('No output data found for job %s' % jobID)
+
+    outputData = result['Value']['UploadedOutputData']
+    outputData = outputData.replace(' ', '').split(',')
+    if not outputData:
+      return S_ERROR('No output data files found')
+
+    self.log.verbose('Found the following output data LFNs:\n', '\n'.join(outputData))
+    return S_OK(outputData)
+
+  #############################################################################
+  def getJobOutputData(self, jobID, outputFiles='', destinationDir=''):
+    """ Retrieve the output data files of a given job locally.
+
+       Optionally restrict the download of output data to a given file name or
+       list of files using the outputFiles option, by default all job outputs
+       will be downloaded.
+
+       Example Usage:
+
+       >>> dirac.getJobOutputData(1405)
+       {'OK':True,'Value':[<LFN>]}
+
+       :param jobID: JobID
+       :type jobID: int or string
+       :param outputFiles: Optional files to download
+       :type outputFiles: str or python:list
+       :returns: S_OK,S_ERROR
+    """
+    try:
+      jobID = int(jobID)
+    except ValueError as x:
+      return self._errorReport(str(x), 'Expected integer or string for existing jobID')
+
+    result = self.getJobParameters(jobID)
+    if not result['OK']:
+      return result
+    if not result['Value'].get('UploadedOutputData'):
+      self.log.info('Parameters for job %s do not contain uploaded output data:\n%s' % (jobID, result))
+      return S_ERROR('No output data found for job %s' % jobID)
+
+    outputData = result['Value']['UploadedOutputData']
+    outputData = outputData.replace(' ', '').split(',')
+    if not outputData:
+      return S_ERROR('No output data files found to download')
+
+    if outputFiles:
+      if isinstance(outputFiles, six.string_types):
+        outputFiles = [os.path.basename(outputFiles)]
+      elif isinstance(outputFiles, list):
         try:
             jobID = int(jobID)
         except ValueError as x:

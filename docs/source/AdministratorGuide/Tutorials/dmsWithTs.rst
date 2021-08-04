@@ -50,8 +50,7 @@ Then we create the list of LFNs we just uploaded::
 
   [diracuser@dirac-tuto ~]$ dirac-dms-find-lfns Path=/tutoVO/data/Trans_01 > trans01.lfns
 
-The easiest way to create a transformation to replicate files is by using the
-:doc:`/AdministratorGuide/CommandReference/dirac-transformation-replication` command::
+The easiest way to create a transformation to replicate files is by using the :ref:`dirac-transformation-replication` command::
 
   [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --Plugin Broadcast --Enable
   Created transformation NNN
@@ -60,8 +59,7 @@ The easiest way to create a transformation to replicate files is by using the
 This created transformation with the unique transformation ID *NNN* (e.g., 1).
 
 By default this transformation uses *Metadata* information to obtain the input files using the
-``InputDataAgent``. Instead we can also just add files manually with the :doc:`dirac-transformation-add-files
-</AdministratorGuide/CommandReference/dirac-transformation-add-files>` command and using the list we created previously,
+``InputDataAgent``. Instead we can also just add files manually with the :ref:`dirac-transformation-add-files` command and using the list we created previously,
 replace NNN by the ID of the transformation that was just created::
 
   [diracuser@dirac-tuto ~]$ dirac-transformation-add-files NNN trans01.lfns

@@ -16,19 +16,8 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript
 
 @DIRACScript()
 def main():
-    Script.setUsageMessage(
-        "\n".join(
-            [
-                "Get VM pilot output",
-                "Usage:",
-                "%s [option]... [cfgfile]" % Script.scriptName,
-                "Arguments:",
-                " cfgfile: DIRAC Cfg with description of the configuration (optional)",
-            ]
-        )
-    )
-    Script.parseCommandLine(ignoreErrors=True)
-    args = Script.getPositionalArgs()
+  Script.parseCommandLine(ignoreErrors=True)
+  args = Script.getPositionalArgs()
 
     from DIRAC.WorkloadManagementSystem.Client.VMClient import VMClient
 

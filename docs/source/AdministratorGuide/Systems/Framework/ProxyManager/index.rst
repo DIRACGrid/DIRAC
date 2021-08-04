@@ -22,4 +22,4 @@ There are also commands and a web portal(:ref:`read how to install it <installwe
 Scripts
 -------
 
-You can be use :ref:`DIRAC commands <proxymanager_cmd>` to interact with this system to manage proxies.
+You can use :ref:`DIRAC commands <admin_proxy_cmd>` to interact with this system to manage proxies.

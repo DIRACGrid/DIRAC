@@ -6,7 +6,7 @@ Depending on what is the status of a job and its input and output files differen
   agent.  Otherwise it might delete some of your data! Do not set ``EnableFlag`` to True before letting the agent run
   through a few times and read the messages it produces.
 
-.. note::  Use the :ref:`admin_dirac-transformation-recover-data` script for checking individual transformations
+.. note::  Use the :ref:`dirac-transformation-recover-data` script for checking individual transformations
 
 The agent takes the following steps
 

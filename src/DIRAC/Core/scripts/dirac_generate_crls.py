@@ -15,12 +15,11 @@ __RCSID__ = "$Id$"
 import sys
 
 from DIRAC import gLogger
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security import Utilities
 
 
-@DIRACScript()
+@Script()
 def main():
   Script.parseCommandLine(ignoreErrors=True)
 
