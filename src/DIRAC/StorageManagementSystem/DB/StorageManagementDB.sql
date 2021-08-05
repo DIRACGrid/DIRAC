@@ -4,7 +4,7 @@
 -- DROP DATABASE IF EXISTS StorageManagementDB;
 -- CREATE DATABASE StorageManagementDB;
 -- use mysql;
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON StorageManagementDB.* TO 'Dirac'@'localhost' IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON StorageManagementDB.* TO 'Dirac'@'%' IDENTIFIED BY 'must_be_set';
 -- FLUSH PRIVILEGES;
 
 use StorageManagementDB;

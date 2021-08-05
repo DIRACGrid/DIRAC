@@ -2190,17 +2190,15 @@ exec dirac-webapp-run -p < /dev/null
 
     perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES," \
             "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
-    for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost'" % (perms, dbName, self.mysqlUser),
-                "GRANT %s ON `%s`.* TO '%s'@'%s'" % (perms, dbName, self.mysqlUser, self.mysqlHost),
-                "GRANT %s ON `%s`.* TO '%s'@'%%'" % (perms, dbName, self.mysqlUser)]:
-      result = self.execMySQL(cmd)
-      if not result['OK']:
-        error = "Error executing '%s'" % cmd
-        gLogger.error(error, result['Message'])
-        if self.exitOnError:
-          DIRAC.exit(-1)
-        return S_ERROR(error)
-      gLogger.debug("%s : OK" % cmd, result['Value'])
+    cmd = "GRANT %s ON `%s`.* TO '%s'@'%%'" % (perms, dbName, self.mysqlUser)
+    result = self.execMySQL(cmd)
+    if not result['OK']:
+      error = "Error executing '%s'" % cmd
+      gLogger.error(error, result['Message'])
+      if self.exitOnError:
+        DIRAC.exit(-1)
+      return S_ERROR(error)
+    gLogger.debug("%s : OK" % cmd, result['Value'])
     result = self.execMySQL('FLUSH PRIVILEGES')
     if not result['OK']:
       gLogger.error('Failed to flush privileges', result['Message'])

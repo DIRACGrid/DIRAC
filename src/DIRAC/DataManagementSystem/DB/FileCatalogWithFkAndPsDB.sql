@@ -1,4 +1,3 @@
--- $HeaderURL $
 -- ------------------------------------------------------------------------------
 DROP DATABASE IF EXISTS FileCatalogDB;
 -- ------------------------------------------------------------------------------
@@ -12,10 +11,6 @@ use mysql;
 GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON FileCatalogDB.* TO Dirac@'%';
 GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'%';
 GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'%';
-
-GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON FileCatalogDB.* TO Dirac@'localhost';
-GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'localhost';
-GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'localhost';
 
 
 FLUSH PRIVILEGES;
