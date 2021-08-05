@@ -23,6 +23,7 @@ from DIRAC import rootPath
 
 from DIRAC.Resources.Computing.SSHComputingElement import SSHComputingElement
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 class SSHBatchComputingElement(SSHComputingElement):
@@ -220,6 +221,6 @@ class SSHBatchComputingElement(SSHComputingElement):
 
     for job in failed:
       if job not in resultDict:
-        resultDict[job] = 'Unknown'
+        resultDict[job] = PilotStatus.UNKNOWN
 
     return S_OK(resultDict)

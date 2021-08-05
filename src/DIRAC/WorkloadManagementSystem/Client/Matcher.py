@@ -19,6 +19,7 @@ from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueMatchFields
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -299,7 +300,7 @@ class Matcher(object):
                                                                      site,
                                                                      benchmark))
 
-      result = self.pilotAgentsDB.setPilotStatus(pilotReference, status='Running', gridSite=site,
+      result = self.pilotAgentsDB.setPilotStatus(pilotReference, status=PilotStatus.RUNNING, gridSite=site,
                                                  destination=gridCE, benchmark=benchmark)
       if not result['OK']:
         self.log.warn("Problem updating pilot information",

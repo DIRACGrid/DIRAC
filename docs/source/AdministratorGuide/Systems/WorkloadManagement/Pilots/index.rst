@@ -131,6 +131,15 @@ The pilot can be configured to run in several ways.
 Please, refer to https://github.com/DIRACGrid/Pilot/blob/master/Pilot/pilotTools.py
 for the full list.
 
+Pilot status
+============
+
+The pilot status of a successful pilot proceeds in the following order:
+
+- Submitted: the pilot goes from DIRAC to a remote site
+- Waiting: the pilot is waiting in a batch system queue of a site
+- Running: the pilot runs a payload on a worker node
+- Done: the pilot finished its execution
 
 Python3 and Pilots
 ==================

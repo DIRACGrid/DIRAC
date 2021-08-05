@@ -19,6 +19,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import Time
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -37,9 +38,6 @@ class PilotStatusAgent(AgentModule):
         - finalize() - the graceful exit of the method, this one is usually used
                    for the agent restart
   """
-
-  queryStateList = ['Ready', 'Submitted', 'Running', 'Waiting', 'Scheduled']
-  finalStateList = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Failed']
 
   def __init__(self, *args, **kwargs):
     """ c'tor
@@ -99,72 +97,6 @@ class PilotStatusAgent(AgentModule):
 
     return S_OK()
 
-  def clearWaitingPilots(self, condDict):
-    """ Clear pilots in the faulty Waiting state
-    """
-
-    last_update = Time.dateTime() - MAX_WAITING_STATE_LENGTH * Time.hour
-    clearDict = {'Status': 'Waiting',
-                 'OwnerDN': condDict['OwnerDN'],
-                 'OwnerGroup': condDict['OwnerGroup'],
-                 'GridType': condDict['GridType'],
-                 'Broker': condDict['Broker']}
-    result = self.pilotDB.selectPilots(clearDict, older=last_update)
-    if not result['OK']:
-      self.log.warn('Failed to get the Pilot Agents for Waiting state')
-      return result
-    if not result['Value']:
-      return S_OK()
-    refList = result['Value']
-
-    for pilotRef in refList:
-      self.log.info('Setting Waiting pilot to Stalled: %s' % pilotRef)
-      result = self.pilotDB.setPilotStatus(pilotRef, 'Stalled', statusReason='Exceeded max waiting time')
-
-    return S_OK()
-
-  def clearParentJob(self, pRef, pDict, connection):
-    """ Clear the parameteric parent job from the PilotAgentsDB
-    """
-
-    childList = pDict['ChildRefs']
-
-    # Check that at least one child is in the database
-    children_ok = False
-    for child in childList:
-      result = self.pilotDB.getPilotInfo(child, conn=connection)
-      if result['OK']:
-        if result['Value']:
-          children_ok = True
-
-    if children_ok:
-      return self.pilotDB.deletePilot(pRef, conn=connection)
-    else:
-      self.log.verbose('Adding children for parent %s' % pRef)
-      result = self.pilotDB.getPilotInfo(pRef)
-      parentInfo = result['Value'][pRef]
-      tqID = parentInfo['TaskQueueID']
-      ownerDN = parentInfo['OwnerDN']
-      ownerGroup = parentInfo['OwnerGroup']
-      broker = parentInfo['Broker']
-      gridType = parentInfo['GridType']
-      result = self.pilotDB.addPilotTQReference(childList, tqID, ownerDN, ownerGroup,
-                                                broker=broker, gridType=gridType)
-      if not result['OK']:
-        return result
-      children_added = True
-      for chRef, chDict in pDict['ChildDicts'].items():
-        result = self.pilotDB.setPilotStatus(chRef, chDict['Status'],
-                                             destination=chDict['DestinationSite'],
-                                             conn=connection)
-        if not result['OK']:
-          children_added = False
-      if children_added:
-        result = self.pilotDB.deletePilot(pRef, conn=connection)
-      else:
-        return S_ERROR('Failed to add children')
-    return S_OK()
-
   def handleOldPilots(self, connection):
     """
       select all pilots that have not been updated in the last N days and declared them
@@ -172,7 +104,7 @@ class PilotStatusAgent(AgentModule):
     """
     pilotsToAccount = {}
     timeLimitToConsider = Time.toString(Time.dateTime() - Time.day * self.pilotStalledDays)
-    result = self.pilotDB.selectPilots({'Status': self.queryStateList},
+    result = self.pilotDB.selectPilots({'Status': PilotStatus.PILOT_TRANSIENT_STATES},
                                        older=timeLimitToConsider,
                                        timeStamp='LastUpdateTime')
     if not result['OK']:
@@ -197,7 +129,7 @@ class PilotStatusAgent(AgentModule):
                        (str(pRef), str(pilotsDict[pRef]['Jobs'])))
         continue
       deletedJobDict = pilotsDict[pRef]
-      deletedJobDict['Status'] = 'Deleted'
+      deletedJobDict['Status'] = PilotStatus.DELETED
       deletedJobDict['StatusDate'] = Time.dateTime()
       pilotsToAccount[pRef] = deletedJobDict
       if len(pilotsToAccount) > 100:
@@ -231,7 +163,7 @@ class PilotStatusAgent(AgentModule):
       dbData = retVal['Value']
       for pref in dbData:
         if pref in pilotsToAccount:
-          if dbData[pref]['Status'] not in self.finalStateList:
+          if dbData[pref]['Status'] not in PilotStatus.PILOT_FINAL_STATES:
             dbData[pref]['Status'] = pilotsToAccount[pref]['Status']
             dbData[pref]['DestinationSite'] = pilotsToAccount[pref]['DestinationSite']
             dbData[pref]['LastUpdateTime'] = pilotsToAccount[pref]['StatusDate']

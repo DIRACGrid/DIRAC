@@ -37,6 +37,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerCli
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 class JobAgent(AgentModule):
@@ -743,7 +744,7 @@ class JobAgent(AgentModule):
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
     result = PilotManagerClient().setPilotStatus(
-        str(self.pilotReference), 'Done', gridCE,
+        str(self.pilotReference), PilotStatus.DONE, gridCE,
         'Report from JobAgent', self.siteName, queue)
     if not result['OK']:
       self.log.warn('Issue setting the pilot status', result['Message'])

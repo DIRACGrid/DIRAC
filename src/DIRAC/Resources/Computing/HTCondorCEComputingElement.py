@@ -74,8 +74,8 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 # BEWARE: this import makes it impossible to instantiate this CE client side
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
-from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import WAITING_PILOT_STATUS
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.Subprocess import Subprocess
 
@@ -362,7 +362,7 @@ Queue %(nJobs)s
 
     # getWaitingPilots
     condDict = {'DestinationSite': self.ceName,
-                'Status': WAITING_PILOT_STATUS}
+                'Status': PilotStatus.PILOT_WAITING_STATES}
     res = PilotAgentsDB().countPilots(condDict)
     if res['OK']:
       result['WaitingJobs'] = int(res['Value'])
@@ -422,7 +422,7 @@ Queue %(nJobs)s
         # make sure the pilot stays dead and gets taken out of the condor_q
         _rmStat, _rmOut = commands.getstatusoutput('condor_rm %s %s ' % (self.remoteScheddOptions, jobID))
         # self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
-        pilotStatus = 'Aborted'
+        pilotStatus = PilotStatus.ABORTED
 
       resultDict[job] = pilotStatus
 
