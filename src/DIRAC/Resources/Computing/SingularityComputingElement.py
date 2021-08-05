@@ -76,6 +76,8 @@ CONTAINER_WRAPPER_NO_INSTALL = """#!/bin/bash
 echo "Starting inner container wrapper scripts (no install) at `date`."
 set -x
 cd /tmp
+export DIRAC=%(dirac_env_var)s
+export DIRACOS=%(diracos_env_var)s
 # In any case we need to find a bashrc, and a pilot.cfg, both created by the pilot
 source bashrc
 # Run next wrapper (to start actual job)
@@ -311,7 +313,11 @@ class SingularityComputingElement(ComputingElement):
           os.path.join(tmpDir, 'bashrc'),
       )
       shutil.copyfile('pilot.cfg', os.path.join(tmpDir, 'pilot.cfg'))
-      wrapSubs = {'next_wrapper': wrapperPath}
+      wrapSubs = {
+          'next_wrapper': wrapperPath,
+          'dirac_env_var': os.environ.get("DIRAC", ""),
+          'diracos_env_var': os.environ.get("DIRACOS", ""),
+      }
       CONTAINER_WRAPPER = CONTAINER_WRAPPER_NO_INSTALL
 
     wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
