@@ -17,12 +17,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import io
-import shutil
-import tempfile
 import json
+import os
+import shutil
 import six
+import sys
+import tempfile
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -79,7 +80,7 @@ cd /tmp
 export DIRAC=%(dirac_env_var)s
 export DIRACOS=%(diracos_env_var)s
 # In any case we need to find a bashrc, and a pilot.cfg, both created by the pilot
-source bashrc
+source %(rc_script)s
 # Run next wrapper (to start actual job)
 bash %(next_wrapper)s
 # Write the payload errorcode to a file for the outer scripts
@@ -106,7 +107,7 @@ class SingularityComputingElement(ComputingElement):
     self.__workdir = CONTAINER_WORKDIR
     self.__innerdir = CONTAINER_INNERDIR
     self.__singularityBin = 'singularity'
-    self.__installDIRACInContainer = self.ceParameters.get('InstallDIRACInContainer', True)
+    self.__installDIRACInContainer = self.ceParameters.get('InstallDIRACInContainer', six.PY2)
     if isinstance(self.__installDIRACInContainer, six.string_types) and \
        self.__installDIRACInContainer.lower() in ('false', 'no'):
       self.__installDIRACInContainer = False
@@ -157,8 +158,11 @@ class SingularityComputingElement(ComputingElement):
   @staticmethod
   def __findInstallBaseDir():
     """Find the path to root of the current DIRAC installation"""
-    candidate = os.path.join(DIRAC.rootPath, "bashrc")
-    return os.path.dirname(os.path.realpath(candidate))
+    if six.PY3:
+      return os.path.realpath(sys.base_prefix)  # pylint: disable=no-member
+    else:
+      candidate = os.path.join(DIRAC.rootPath, "bashrc")
+      return os.path.dirname(os.path.realpath(candidate))
 
   def __getInstallFlags(self, infoDict=None):
     """ Get the flags to pass to dirac-install.py inside the container.
@@ -270,11 +274,6 @@ class SingularityComputingElement(ComputingElement):
     else:
       self.log.warn("No user proxy")
 
-    # dirac-install.py
-    install_loc = os.path.join(tmpDir, "dirac-install.py")
-    shutil.copyfile(DIRAC_INSTALL, install_loc)
-    os.chmod(install_loc, 0o755)
-
     # Job Wrapper (Standard-ish DIRAC wrapper)
     result = createRelocatedJobWrapper(wrapperPath=tmpDir,
                                        rootLocation=self.__innerdir,
@@ -290,6 +289,10 @@ class SingularityComputingElement(ComputingElement):
     wrapperPath = result['Value']
 
     if self.__installDIRACInContainer:
+      if six.PY3:
+        result = S_ERROR("InstallDIRACInContainer is not supported with Python 3")
+        result['ReschedulePayload'] = True
+        return result
       # dirac-install.py
       install_loc = os.path.join(tmpDir, "dirac-install.py")
       shutil.copyfile(DIRAC_INSTALL, install_loc)
@@ -308,16 +311,20 @@ class SingularityComputingElement(ComputingElement):
       CONTAINER_WRAPPER = CONTAINER_WRAPPER_INSTALL
 
     else:  # In case we don't (re)install DIRAC
-      shutil.copyfile(
-          os.path.join(self.__findInstallBaseDir(), 'bashrc'),
-          os.path.join(tmpDir, 'bashrc'),
-      )
-      shutil.copyfile('pilot.cfg', os.path.join(tmpDir, 'pilot.cfg'))
       wrapSubs = {
           'next_wrapper': wrapperPath,
           'dirac_env_var': os.environ.get("DIRAC", ""),
           'diracos_env_var': os.environ.get("DIRACOS", ""),
       }
+      if six.PY2:
+        shutil.copyfile(
+            os.path.join(self.__findInstallBaseDir(), 'bashrc'),
+            os.path.join(tmpDir, 'bashrc'),
+        )
+        wrapSubs["rc_script"] = "bashrc"
+      else:
+        wrapSubs["rc_script"] = os.path.join(self.__findInstallBaseDir(), "diracosrc")
+      shutil.copyfile('pilot.cfg', os.path.join(tmpDir, 'pilot.cfg'))
       CONTAINER_WRAPPER = CONTAINER_WRAPPER_NO_INSTALL
 
     wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
@@ -361,9 +368,8 @@ class SingularityComputingElement(ComputingElement):
     # The wrapper writes the inner job return code to "retcode"
     # in the working directory.
     try:
-      fd = open(os.path.join(tmpDir, "retcode"), "r")
-      retCode = int(fd.read())
-      fd.close()
+      with open(os.path.join(tmpDir, "retcode"), "rt") as fp:
+        retCode = int(fp.read())
     except (IOError, ValueError):
       # Something failed while trying to get the return code
       result = S_ERROR("Failed to get return code from inner wrapper")
