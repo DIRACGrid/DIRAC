@@ -31,14 +31,15 @@ def clientMock(ret):
 
 def mockComponentSection(*_args, **kwargs):
   """Mock the PathFinder.getComponentSection to return individual componentSections."""
-  fullComponentName = kwargs.get('componentName')
-  return "/Systems/Sys/Production/Services/" + fullComponentName.split('/', 1)[1]
+  system = kwargs.get('system')
+  component = kwargs.get('component')
+  return "/Systems/%s/Production/Services/%s" % (system, component)
 
 
 def mockURLSection(*_args, **kwargs):
-  """Mock the PathFinder.getComponentSection to return individual componentSections."""
-  fullComponentName = kwargs['serviceName']
-  return "/Systems/Sys/Production/URLs/" + fullComponentName.split('/', 1)[1]
+  """Mock the PathFinder.getSystemURLSection to return individual componentSections."""
+  system = kwargs.get('system')
+  return "/Systems/%s/Production/URLs/" % system
 
 
 class TestComponentSupervisionAgent(unittest.TestCase):
@@ -615,6 +616,8 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
     with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=gConfigMock), \
             patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.socket.gethostname', return_value=host), \
+            patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemInstance',
+                  return_value="Decertification"), \
             patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
                   side_effect=mockComponentSection), \
             patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemURLSection',
@@ -636,6 +639,8 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
     self.restartAgent.csAPI.commit = MagicMock(return_value=S_ERROR('Nope'))
     with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock()), \
+         patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemInstance',
+               return_value="Decertification"), \
          patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
                side_effect=mockComponentSection):
       res = self.restartAgent.checkURLs()
@@ -645,6 +650,8 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
     self.restartAgent.csAPI.commit = MagicMock(return_value=S_OK())
     with patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig', new=MagicMock()), \
+         patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemInstance',
+               return_value="Decertification"), \
          patch('DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection',
                side_effect=mockComponentSection):
 

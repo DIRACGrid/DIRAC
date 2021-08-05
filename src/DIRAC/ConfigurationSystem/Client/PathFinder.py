@@ -10,6 +10,7 @@ from six.moves.urllib import parse as urlparse
 
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers import Path
 
 
 def getDIRACSetup():
@@ -45,7 +46,7 @@ def getSystemInstance(system, setup=False):
 
       :return: str
   """
-  optionPath = "/DIRAC/Setups/%s/%s" % (setup or getDIRACSetup(), system)
+  optionPath = Path.cfgPath("/DIRAC/Setups", setup or getDIRACSetup(), system)
   instance = gConfigurationData.extractOptionFromCFG(optionPath)
   if not instance:
     raise RuntimeError("Option %s is not defined" % optionPath)
@@ -62,7 +63,11 @@ def getSystemSection(system, instance=False, setup=False):
       :return: str -- system section path
   """
   system, _ = divideFullName(system, '_')  # for backward compatibility
-  return "/Systems/%s/%s" % (system, instance or getSystemInstance(system, setup=setup))
+  return Path.cfgPath(
+      "/Systems",
+      system,
+      instance or getSystemInstance(system, setup=setup),
+  )
 
 
 def getComponentSection(system, component=False, setup=False, componentCategory="Services"):
@@ -85,7 +90,9 @@ def getComponentSection(system, component=False, setup=False, componentCategory=
         getComponentSection('WorkloadManagement', 'SandboxStoreHandler', 'Production')
   """
   system, component = divideFullName(system, component)
-  return "%s/%s/%s" % (getSystemSection(system, setup=setup), componentCategory, component)
+  return Path.cfgPath(
+      getSystemSection(system, setup=setup), componentCategory, component
+  )
 
 
 def getServiceSection(system, serviceName=False, setup=False):
@@ -144,7 +151,7 @@ def getSystemURLSection(system, setup=False):
 
       :return: str
   """
-  return "%s/URLs" % getSystemSection(system, setup=setup)
+  return Path.cfgPath(getSystemSection(system, setup=setup), "URLs")
 
 
 def checkComponentURL(componentURL, system=None, component=None, pathMandatory=False):
