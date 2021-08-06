@@ -2196,7 +2196,7 @@ exec dirac-webapp-run -p < /dev/null
       error = "Error executing '%s'" % cmd
       gLogger.error(error, result['Message'])
       if self.exitOnError:
-	DIRAC.exit(-1)
+        DIRAC.exit(-1)
       return S_ERROR(error)
     gLogger.debug("%s : OK" % cmd, result['Value'])
     result = self.execMySQL('FLUSH PRIVILEGES')
