@@ -62,7 +62,7 @@ def main():
     gLogger.error('Failed to get CE information')
     DIRACExit(-1)
   siteDict = resultQueues['Value']
-  result = getQueuesResolved(siteDict)
+  result = getQueuesResolved(siteDict, {}, checkPlatform=True)
   if not resultQueues['OK']:
     gLogger.error('Failed to get CE information')
     DIRACExit(-1)
@@ -90,15 +90,15 @@ def main():
       if result['OK']:
         ceStatus = result['Value'][ce]['all']
 
-    result = matchQueue(jdl, queueInfo, fullMatch=fullMatch)
+    result = matchQueue(jdl, queueInfo['ParametersDict'], fullMatch=fullMatch)
     if not result['OK']:
       gLogger.error('Failed in getting match data', result['Message'])
       DIRACExit(-1)
     status = "Active" if siteStatus == "Active" and ceStatus == "Active" else "Inactive"
     if result['Value']['Match']:
-      records.append((site, ce, queueInfo['Queue'], status, 'Yes', ''))
+      records.append((site, ce, queueInfo['QueueName'], status, 'Yes', ''))
     else:
-      records.append((site, ce, queueInfo['Queue'], status, 'No', result['Value']['Reason']))
+      records.append((site, ce, queueInfo['QueueName'], status, 'No', result['Value']['Reason']))
 
   gLogger.notice(printTable(fields, records, sortField='Site', columnSeparator='  ', printOut=False))
 

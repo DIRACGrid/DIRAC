@@ -6,6 +6,8 @@ from __future__ import division
 from __future__ import print_function
 
 import six
+import os
+import hashlib
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import fromChar
@@ -13,83 +15,157 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 
 __RCSID__ = '$Id$'
 
 
-def getQueuesResolved(siteDict):
+def getQueuesResolved(siteDict,
+                      queueCECache,
+                      gridEnv=None,
+                      setup=None,
+                      workingDir='',
+                      checkPlatform=False,
+                      instantiateCEs=False):
+    """ Get the list of relevant CEs (what is in siteDict) and their descriptions.
+        The main goal of this method is to return a dictionary of queues
+    """
+    queueDict = {}
+    ceFactory = ComputingElementFactory()
+
+    for site in siteDict:
+      for ce in siteDict[site]:
+        ceDict = siteDict[site][ce]
+        pilotRunDirectory = ceDict.get('PilotRunDirectory', '')
+        # ceMaxRAM = ceDict.get('MaxRAM', None)
+        qDict = ceDict.pop('Queues')
+        for queue in qDict:
+          queueName = '%s_%s' % (ce, queue)
+          queueDict[queueName] = {}
+          queueDict[queueName]['ParametersDict'] = qDict[queue]
+          queueDict[queueName]['ParametersDict']['Queue'] = queue
+          queueDict[queueName]['ParametersDict']['GridCE'] = ce
+          queueDict[queueName]['ParametersDict']['Site'] = site
+          queueDict[queueName]['ParametersDict']['GridEnv'] = gridEnv
+          queueDict[queueName]['ParametersDict']['Setup'] = setup
+
+          # Evaluate the CPU limit of the queue according to the Glue convention
+          computeQueueCPULimit(queueDict[queueName]['ParametersDict'])
+
+          # Tags & RequiredTags defined on the Queue level and on the CE level are concatenated
+          # This also converts them from a string to a list if required.
+          resolveTags(ceDict, queueDict[queueName]['ParametersDict'])
+
+          # Some parameters can be defined on the CE level and are inherited by all Queues
+          setAdditionalParams(ceDict, queueDict[queueName]['ParametersDict'])
+
+          if pilotRunDirectory:
+            queueDict[queueName]['ParametersDict']['JobExecDir'] = pilotRunDirectory
+          qwDir = os.path.join(workingDir, queue)
+          mkDir(qwDir)
+          queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
+          ceQueueDict = dict(ceDict)
+          ceQueueDict.update(queueDict[queueName]['ParametersDict'])
+
+          if instantiateCEs:
+            # Generate the CE object for the queue or pick the already existing one
+            # if the queue definition did not change
+            queueHash = generateQueueHash(ceQueueDict)
+            if queueName in queueCECache and queueCECache[queueName]['Hash'] == queueHash:
+              queueCE = queueCECache[queueName]['CE']
+            else:
+              result = ceFactory.getCE(ceName=ce,
+                                       ceType=ceDict['CEType'],
+                                       ceParametersDict=ceQueueDict)
+              if not result['OK']:
+                return result
+              queueCECache.setdefault(queueName, {})
+              queueCECache[queueName]['Hash'] = queueHash
+              queueCECache[queueName]['CE'] = result['Value']
+              queueCE = queueCECache[queueName]['CE']
+
+            queueDict[queueName]['ParametersDict'].update(queueCE.ceParameters)
+            queueDict[queueName]['CE'] = queueCE
+            result = queueDict[queueName]['CE'].isValid()
+            if not result['OK']:
+              return result
+
+          queueDict[queueName]['CEName'] = ce
+          queueDict[queueName]['CEType'] = ceDict['CEType']
+          queueDict[queueName]['Site'] = site
+          queueDict[queueName]['QueueName'] = queue
+          queueDict[queueName]['QueryCEFlag'] = ceDict.get('QueryCEFlag', "false")
+
+          if checkPlatform:
+            setPlatform(ceDict, queueDict[queueName]['ParametersDict'])
+
+          bundleProxy = queueDict[queueName]['ParametersDict'].get('BundleProxy', ceDict.get('BundleProxy'))
+          if bundleProxy and bundleProxy.lower() in ['true', 'yes', '1']:
+            queueDict[queueName]['BundleProxy'] = True
+
+    return S_OK(queueDict)
+
+
+def computeQueueCPULimit(queueDict):
+  """ Evaluate the CPU limit of the queue according to the Glue convention
   """
-  Get the list of queue descriptions merging site/ce/queue parameters and adding some
-  derived parameters.
+  if "maxCPUTime" in queueDict and "SI00" in queueDict:
+    maxCPUTime = float(queueDict['maxCPUTime'])
+    # For some sites there are crazy values in the CS
+    maxCPUTime = max(maxCPUTime, 0)
+    maxCPUTime = min(maxCPUTime, 86400 * 12.5)
+    si00 = float(queueDict['SI00'])
+    queueCPUTime = 60 / 250 * maxCPUTime * si00
+    queueDict['CPUTime'] = int(queueCPUTime)
 
-  :param dict siteDict: dictionary with configuration data as returned by Resources.getQueues() method
 
-  :return: S_OK/S_ERROR, Value dictionary per queue with configuration data updated, e.g. for SiteDirector
+def resolveTags(ceDict, queueDict):
+  """ Tags & RequiredTags defined on the Queue level and on the CE level are concatenated.
+      This also converts them from a string to a list if required.
   """
+  for tagFieldName in ('Tag', 'RequiredTag'):
+    ceTags = ceDict.get(tagFieldName, [])
+    if isinstance(ceTags, six.string_types):
+      ceTags = fromChar(ceTags)
+    queueTags = queueDict.get(tagFieldName, [])
+    if isinstance(queueTags, six.string_types):
+      queueTags = fromChar(queueTags)
+    queueDict[tagFieldName] = list(set(ceTags) | set(queueTags))
 
-  queueFinalDict = {}
 
-  for site in siteDict:
-    for ce, ceDict in siteDict[site].items():
-      qDict = ceDict.pop('Queues')
-      for queue in qDict:
+def setPlatform(ceDict, queueDict):
+  """ Set platform according to CE parameters if not defined
+  """
+  platform = queueDict.get('Platform', ceDict.get('Platform', ''))
+  if not platform and "OS" in ceDict:
+    architecture = ceDict.get('architecture', 'x86_64')
+    platform = '_'.join([architecture, ceDict['OS']])
 
-        queueName = '%s_%s' % (ce, queue)
-        queueDict = qDict[queue]
-        queueDict['Queue'] = queue
-        queueDict['Site'] = site
-        # Evaluate the CPU limit of the queue according to the Glue convention
-        # To Do: should be a utility
-        if "maxCPUTime" in queueDict and "SI00" in queueDict:
-          maxCPUTime = float(queueDict['maxCPUTime'])
-          # For some sites there are crazy values in the CS
-          maxCPUTime = max(maxCPUTime, 0)
-          maxCPUTime = min(maxCPUTime, 86400 * 12.5)
-          si00 = float(queueDict['SI00'])
-          queueCPUTime = 60 / 250 * maxCPUTime * si00
-          queueDict['CPUTime'] = int(queueCPUTime)
+  if 'Platform' not in queueDict and platform:
+    result = getDIRACPlatform(platform)
+    if result['OK']:
+      queueDict['Platform'] = result['Value'][0]
+    else:
+      queueDict['Platform'] = platform
 
-        # Tags & RequiredTags defined on the Queue level and on the CE level are concatenated
-        # This also converts them from a string to a list if required.
-        for tagFieldName in ('Tag', 'RequiredTag'):
-          ceTags = ceDict.get(tagFieldName, [])
-          if isinstance(ceTags, six.string_types):
-            ceTags = fromChar(ceTags)
-          queueTags = queueDict.get(tagFieldName, [])
-          if isinstance(queueTags, six.string_types):
-            queueTags = fromChar(queueTags)
-          queueDict[tagFieldName] = list(set(ceTags + queueTags))
 
-        # Some parameters can be defined on the CE level and are inherited by all Queues
-        for parameter in ['MaxRAM', 'NumberOfProcessors', 'WholeNode']:
-          queueParameter = queueDict.get(parameter, ceDict.get(parameter))
-          if queueParameter:
-            queueDict[parameter] = queueParameter
+def setAdditionalParams(ceDict, queueDict):
+  """ Some parameters can be defined on the CE level and are inherited by all Queues
+  """
+  for parameter in ['MaxRAM', 'NumberOfProcessors', 'WholeNode']:
+    queueParameter = queueDict.get(parameter, ceDict.get(parameter))
+    if queueParameter:
+      queueDict[parameter] = queueParameter
 
-        # If we have a multi-core queue add MultiProcessor tag
-        if int(queueDict.get('NumberOfProcessors', 1)) > 1:
-          queueDict.setdefault('Tag', []).append('MultiProcessor')
 
-        queueDict['CEName'] = ce
-        queueDict['GridCE'] = ce
-        queueDict['CEType'] = ceDict['CEType']
-        queueDict['GridMiddleware'] = ceDict['CEType']
-        queueDict['QueueName'] = queue
-
-        platform = queueDict.get('Platform', ceDict.get('Platform', ''))
-        if not platform and "OS" in ceDict:
-          architecture = ceDict.get('architecture', 'x86_64')
-          platform = '_'.join([architecture, ceDict['OS']])
-
-        queueDict['Platform'] = platform
-        if platform:
-          result = getDIRACPlatform(platform)
-          if result['OK']:
-            queueDict['Platform'] = result['Value'][0]
-
-        queueFinalDict[queueName] = queueDict
-
-  return S_OK(queueFinalDict)
+def generateQueueHash(queueDict):
+  """ Generate a hash of the queue description
+  """
+  myMD5 = hashlib.md5()
+  myMD5.update(str(queueDict).encode())
+  hexstring = myMD5.hexdigest()
+  return hexstring
 
 
 def matchQueue(jobJDL, queueDict, fullMatch=False):
