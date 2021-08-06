@@ -20,7 +20,7 @@ jobs:
           - TEST_NAME: "MySQL 5.7"
             ARGS: CLIENT_USE_PYTHON3=Yes MYSQL_VER=mysql:5.7
           - TEST_NAME: "MariaDB 10.6"
-            ARGS: MYSQL_VER=mariadb:10.6.3
+            ARGS: CLIENT_USE_PYTHON3=Yes MYSQL_VER=mariadb:10.6.3
           # ###### ES versions
           - TEST_NAME: "Elasticsearch 6.6.0"
             ARGS: CLIENT_USE_PYTHON3=Yes ES_VER=elasticsearch:6.6.0
