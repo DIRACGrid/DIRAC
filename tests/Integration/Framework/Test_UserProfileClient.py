@@ -23,11 +23,14 @@ def _userInfo():
   currentUser = proxyInfo["username"]
   currentDN = proxyInfo["DN"]
   currentGroup = proxyInfo["group"]
+  userVO = Registry.getVOForGroup(currentGroup)
 
-  return currentUser, currentDN, currentGroup
+  return currentUser, currentDN, currentGroup, userVO
 
 
 def test_storeRetrieveDelete():
+  currentUser, currentDN, currentGroup, userVO = _userInfo()
+
   retVal = up.storeVar(key, value, {"ReadAccess": "ALL", "PublishAccess": "ALL"})
   assert retVal["OK"], retVal
   assert retVal["Value"] == 1
@@ -38,7 +41,7 @@ def test_storeRetrieveDelete():
 
   retVal = up.listAvailableVars()
   assert retVal["OK"], retVal
-  assert retVal["Value"] == (("adminusername", "prod", "undefined", key),)
+  assert retVal["Value"] == (("adminusername", currentGroup, userVO or "undefined", key),)
 
   retVal = up.getUserProfiles()
   assert retVal["OK"], retVal
@@ -106,7 +109,7 @@ def test_setVarPermissions(readAccess, publishAccess):
 
 
 def test_retrieveVarFromUser():
-  currentUser, currentDN, currentGroup = _userInfo()
+  currentUser, currentDN, currentGroup, userVO = _userInfo()
 
   retVal = up.storeVar(key, value, {"ReadAccess": "ALL", "PublishAccess": "ALL"})
   assert retVal["OK"], retVal
