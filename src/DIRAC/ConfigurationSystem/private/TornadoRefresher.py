@@ -4,7 +4,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import six
+from six import PY3
 import time
 
 from tornado import gen
@@ -82,24 +82,13 @@ class TornadoRefresher(RefresherBase):
       # RuntimeError: There is no current event loop in thread..
       # The reason seems to be that asyncio.get_event_loop() is called in some thread other than the main thread,
       # asyncio only generates an event loop for the main thread.
-      yield _IOLoop.current().run_in_executor(None, self.__AutoRefresh if six.PY3 else self.__AutoRefreshPy2)
+      yield _IOLoop.current().run_in_executor(None, self.__AutoRefresh if PY3 else gen.coroutine(self.__AutoRefresh))
 
   def __AutoRefresh(self):
     """
       Auto refresh the configuration
       We disable pylint error because this class must be instanciated
       by a mixin to define the methods.
-    """
-    if self._refreshEnabled:  # pylint: disable=no-member
-      if not self._refreshAndPublish():  # pylint: disable=no-member
-        gLogger.error("Can't refresh configuration from any source")
-
-  @gen.coroutine
-  def __AutoRefreshPy2(self):
-    """
-      Auto refresh the configuration
-      We disable pylint error because this class must be instanciated
-      by a mixin to define the methods. for python 2
     """
     if self._refreshEnabled:  # pylint: disable=no-member
       if not self._refreshAndPublish():  # pylint: disable=no-member
