@@ -147,7 +147,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
   def _getMethodArgs(self, args):
     """ Decode args.
 
-        :return: list
+        :return: tuple
     """
 
     # "method" argument of the POST call.
@@ -332,7 +332,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
 
     # Decode args
     args_encoded = self.get_body_argument('args', default=encode([]))
-    return decode(args_encoded)[0]
+    return (decode(args_encoded)[0], {})
 
   # Make post a coroutine.
   # See https://www.tornadoweb.org/en/branch5.1/guide/coroutines.html#coroutines

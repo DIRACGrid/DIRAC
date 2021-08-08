@@ -404,14 +404,16 @@ class BaseRequestHandler(RequestHandler):
   def _getMethodArgs(self, args):
     """ Decode args.
 
-        :return: tuple
+        :return: tuple -- contain args and kwargs
     """
     # Read information about method
-    spec = inspect.getargspec(self.mehtodObj)
+    fArgs, fvArgs, fvKwargs, fDef = inspect.getargspec(self.methodObj)
+    # Remove self argument from method arguments
+    fArgs = [a for a in fArgs if a != "self"]
     # Pass all arguments
-    kwargs = self.request.arguments.copy() if spec.keywords else {}
+    kwargs = self.request.arguments.copy() if fvKwargs else {}
     # Get all defaults from method
-    defaults = {a: spec.defaults[args.index(a)] for a in args[-len(spec.defaults):]} if spec.defaults else {}
+    defaults = {a: fDef[args.index(a)] for a in args[-len(fDef):]} if fDef else {}
     # Calcule kwargs
     for arg in spec.args[len(args):]:
       if not defaults.get(arg):
@@ -531,8 +533,9 @@ class BaseRequestHandler(RequestHandler):
 
         :return: executor, target method with arguments
     """
+    args, kwargs = self._getMethodArgs(args)
     return None, partial(gen.coroutine(self.__executeMethod) if six.PY2 else self.__executeMethod,
-                         self.methodObj, *self._getMethodArgs(args))
+                                       self.methodObj, args, kwargs)
 
   def _finishFuture(self, retVal):
     """ Handler Future result
