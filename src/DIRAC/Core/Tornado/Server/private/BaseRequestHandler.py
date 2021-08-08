@@ -413,13 +413,13 @@ class BaseRequestHandler(RequestHandler):
     # Pass all arguments
     kwargs = self.request.arguments.copy() if fvKwargs else {}
     # Get all defaults from method
-    defaults = {a: fDef[args[-len(default):].index(a)] for a in args[-len(fDef):]} if fDef else {}
+    defaults = {a: fDef[fArgs[-len(default):].index(a)] for a in fArgs[-len(fDef):]} if fDef else {}
     # Calcule kwargs
     for arg in fArgs[len(args):]:
       if arg not in defaults:
         kwargs[arg] = self.get_argument(arg)
-      elif isinstance(defaults[arg], six.string_types):
-        kwargs[arg] = self.get_arguments(arg, defaults[arg])
+      elif isinstance(defaults[arg], list):
+        kwargs[arg] = self.get_arguments(arg) or defaults[arg]
       else:
         kwargs[arg] = self.get_argument(arg, defaults[arg])
 
