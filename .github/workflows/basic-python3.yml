@@ -20,7 +20,15 @@ jobs:
           #   * `test_BaseType_Unicode` and `test_nestedStructure` fail due to
           #     DISET's string and unicode types being poorly defined
           - pytest --runslow -k 'not test_BaseType_Unicode and not test_nestedStructure'
+          - find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --exclude=SC1090,SC1091 --external-source
           - pylint -E src/
+          - |
+            if [[ "${REFERENCE_BRANCH}" != "" ]]; then
+                git remote add upstream https://github.com/DIRACGrid/DIRAC.git
+                git fetch --no-tags upstream "${REFERENCE_BRANCH}"
+                git branch -vv
+                git diff -U0 "upstream/${REFERENCE_BRANCH}" ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff
+            fi
 
     steps:
     - uses: actions/checkout@v2

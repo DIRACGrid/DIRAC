@@ -20,11 +20,13 @@ from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 @Script()
 def main():
 
-  if os.environ.get('DIRAC_USE_TORNADO_IOLOOP', 'false').lower() not in ('yes', 'true'):
+  if os.environ.get("DIRAC_USE_TORNADO_IOLOOP", "false").lower() not in ("yes", "true"):
     raise RuntimeError(
-        "DIRAC_USE_TORNADO_IOLOOP is not defined in the environment." + "\n" +
-        "It is necessary to run with Tornado." + "\n" +
-        "https://dirac.readthedocs.io/en/latest/DeveloperGuide/TornadoServices/index.html"
+        "DIRAC_USE_TORNADO_IOLOOP is not defined in the environment."
+        + "\n"
+        + "It is necessary to run with Tornado."
+        + "\n"
+        + "https://dirac.readthedocs.io/en/latest/DeveloperGuide/TornadoServices/index.html"
     )
 
   from DIRAC import gConfig
@@ -33,6 +35,8 @@ def main():
   from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
   from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
+
+  Script.parseCommandLine()
 
   # We check if there is no configuration server started as master
   # If you want to start a master CS you should use Configuration_Server.cfg and

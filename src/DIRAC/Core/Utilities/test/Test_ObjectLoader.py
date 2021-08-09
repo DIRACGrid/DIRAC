@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 
 
 def _check(result):
@@ -17,4 +18,6 @@ def test_load():
   assert _check(ObjectLoader().loadObject("Core.Utilities.ObjectLoader")) is ObjectLoader
   dataFilter = _check(ObjectLoader().getObjects("WorkloadManagementSystem.Service", ".*Handler"))
   dataClass = _check(ObjectLoader().getObjects("WorkloadManagementSystem.Service", parentClass=RequestHandler))
-  assert sorted(dataFilter) == sorted(dataClass)
+  tornadoDataClass = _check(ObjectLoader().getObjects("WorkloadManagementSystem.Service", parentClass=TornadoService))
+
+  assert sorted(dataFilter) == sorted(set(dataClass).union(set(tornadoDataClass)))

@@ -1,40 +1,44 @@
-[v7r3-pre17]
+[v7r3-pre19]
 
-FIX: (#5028) Replaced all the cases of BaseException use by Exception
 NEW: (#5000) Initial support for Python 3 server installations
-CHANGE: (#4715) removing env variable DIRAC_USE_NEWTHREADPOOL
 NEW: VMDIRAC separate project is merged into the core DIRAC project
+CHANGE: (#5035) use registerArgument to register positional arguments for scripts
+CHANGE: (#4715) removing env variable DIRAC_USE_NEWTHREADPOOL
+FIX: (#5035) use DIRACScript instead of Script
+FIX: (#5028) Replaced all the cases of BaseException use by Exception
 
 *Core
-FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
+NEW: (#5062) provide some docs and add registerArgument method to register arguments in Script
 NEW: (#4997) dirac-configure can now be ran without arguments when using Python 3
 CHANGE: (#4937) removed dirac-agent, dirac-service, dirac-executor scripts (use '_' counterparts instead)
 CHANGE: (#5110) Removed Core.Utilities.Grid.getBdiiCEInfo function use Utilities.Glue2.getGlue2CEInfo.
         Also dropped ldapSite, ldapCluster, ldapCE, ldapCEState, ldapCEVOView, ldapService functions
-NEW: (#5062) provide some docs and add registerArgument method to register arguments in Script
 CHANGE: (#4903) Using former RSS State Machine as general State Machine
-FIX: (#5210) show extremely small values in pie plots
 CHANGE: (#5237) Use generic ObjectLoader.loadObjects() function in the specific Plotting.ObjectLoader class
 CHANGE: (#5244) dirac-configure: no upload attempt upon initial proxy generation
 CHANGE: (#5246) Drop MySQL._to_string() method
+CHANGE: Release constraint on SQLALchemy versions
+FIX: (#5210) show extremely small values in pie plots
+FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
 FIX: (#5269) Use isinstance when checking types in MessageFactory
 FIX: (#5272) encode stub before base64
 
 *Configuration
+NEW: (#5062) add registerCmdArg to register arguments and group argument to group returned arguments
+NEW: (#5286) test new PathFinder methods
+NEW: (#5286) PathFinder - add checkServiceURL that check URL port and path
+NEW: (#5286) PathFinder - add getServiceURLs that return list type result
+NEW: (#5286) PathFinder - add getSystemURLs that return all services URLs for system
 CHANGE: (#5110) Dropped Glue2Only and Glue2URLS options from Bdii2CSAgent, Glue2 is now the only way
 CHANGE: (#5110) dirac-admin-add-resources: drop -g -G options, Glue2 is now the only way
 CHANGE: (#5110) Configuration.Client.Utilities functions getGridCEs, getSiteUpdates no longer take glue2 parameter
 CHANGE: (#5000) Deprecate CSGlobals.getInstalledExtensions, DIRAC.Core.Utilities.Extensions.extensionsByPriority
         should be used instead
 CHANGE: (#5000) Deprecate getCSExtensions, DIRAC.Core.Utilities.Extensions.extensionsByPriority should be used instead
-NEW: (#5062) add registerCmdArg to register arguments and group argument to group returned arguments
-NEW: (#5286) test new PathFinder methods
-NEW: (#5286) PathFinder - add checkServiceURL that check URL port and path
-NEW: (#5286) PathFinder - add getServiceURLs that return list type result
-NEW: (#5286) PathFinder - add getSystemURLs that return all services URLs for system
-FIX: (#5286) PathFinder - getGatewayURLs pass list to randomize when serviceName is empty
 CHANGE: (#5286) PathFinder - getSystemSection do not use serviceTuple, add docs, use system and service instead
          of componentTuple
+FIX: (#5286) PathFinder - getGatewayURLs pass list to randomize when serviceName is empty
+FIX: (#5298) fix getServiceFailoverURL for multi url case
 
 *Interfaces
 CHANGE: (#5110) DiracAdmin: dropped getBDII* functions, which were looking for Glue1 information
@@ -46,25 +50,53 @@ CHANGE: (#5164) Remove HashTag table from Framework/UserProfile
 CHANGE: (#5164) Remove dataTypeRE argument when retrieving values from Framework/UserProfileClient
 
 *WMS
+NEW: (#4903) Added WMS (Jobs) State Machine
+NEW: (#5214) Added a HTTPs JobManager service
+NEW: (#5214) Added a HTTPs JobMonitor service
+NEW: (#5214) Added a HTTPs JobStateUpdate service
+CHANGE: (#5214) Removed need for ThreadScheduler in JobManagerHandler
+CHANGE: (#5289) SiteDirector: do not send dirac-install if it's py3 pilot
 CHANGE: (#4884) JobDB: compress JDLs by default (no need for flag anymore)
 CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent instead)
-NEW: (#4903) Added WMS (Jobs) State Machine
 CHANGE: (#5141) add an Aborted_HOUR column to the pilot efficiency table needed by the WebApp
 CHANGE: (#5178) JobMonitoring does not need to look into TaskQueue
+CHANGE: (#5246) remove pilots before start Test_PilotsClient test
 FIX: (#5246) mock _escapeString in Test_Agent_PilotStatusAgent to pass test
 FIX: (#5246) escape values in PilotAgentsDB
-CHANGE: (#5246) remove pilots before start Test_PilotsClient test
 FIX: (#5246) decode values using decode() method in JobDB
 
 *DMS
 CHANGE: (#5206) prints why dirac-dms-add-files failed
 
+*RMS
+CHANGE: (#5291) ReqDB don't cast datetime to strings
+
 *RSS
 NEW: (#5042) Multi-VO mode of operation support
 
 *tests
-CHANGE: (#5046) don't use mail in the self generated certificates
 NEW: (#5062) add Test_LocalConfiguration
+CHANGE: (#5046) don't use mail in the self generated certificates
+CHANGE: (#5301) added RALPP as a multi-VO test site and added env dump to job.log to ease debugging
+
+[v7r2p19]
+
+*Configuration
+FIX: VOMS2CSSynchronizer: if a user is in QuarantineGroup, remove it from all other VOMS groups
+
+[v7r2p18]
+
+*Framework
+FIX: ComponentSupervisionAgent: consistently use the actual "Setup", and not the "instance" to look up options. Note: you might need to change your config from "Production" to "DIRAC-Production" depending on you config.
+FIX: fix ProxyManagerClient docs
+
+*Resources
+NEW: removal throttle for Echo
+CHANGE: private methods in GFAL2_StorageBase are now protected
+
+*Transformation
+FIX: Python 3 serialisation error when calling JobMonitoringClient.getJobsStatus in WorkflowTasks.getSubmittedFileStatus
+FIX: DataRecoveryAgent: fix exception when there is exactly 1 done or failed job for a transformation
 
 [v7r2p17]
 
