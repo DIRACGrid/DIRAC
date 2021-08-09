@@ -2177,11 +2177,7 @@ exec dirac-webapp-run -p < /dev/null
       if self.exitOnError:
         DIRAC.exit(-1)
       return S_ERROR(error)
-<<<<<<< HEAD
-    gLogger.debug("SHOW STATUS : OK", result['Value'])
-=======
     gLogger.debug("SHOW STATUS : OK")
->>>>>>> 4923a1d1692d6a5d9feda54905f18ab7627626e9
 
     # now creating the Database
     result = self.execMySQL('CREATE DATABASE `%s`' % dbName)
@@ -2190,11 +2186,7 @@ exec dirac-webapp-run -p < /dev/null
       if self.exitOnError:
         DIRAC.exit(-1)
       return result
-<<<<<<< HEAD
-    gLogger.debug("CREATE DATABASES : OK", result['Value'])
-=======
     gLogger.debug("CREATE DATABASES : OK")
->>>>>>> 4923a1d1692d6a5d9feda54905f18ab7627626e9
 
     perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES," \
             "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
@@ -2213,11 +2205,7 @@ exec dirac-webapp-run -p < /dev/null
       if self.exitOnError:
         exit(-1)
       return result
-<<<<<<< HEAD
-    gLogger.debug("FLUSH PRIVILEGES : OK", result['Value'])
-=======
     gLogger.debug("FLUSH PRIVILEGES : OK")
->>>>>>> 4923a1d1692d6a5d9feda54905f18ab7627626e9
 
     # first getting the lines to be executed, and then execute them
     try:

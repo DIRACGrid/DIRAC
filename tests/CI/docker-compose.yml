@@ -19,17 +19,7 @@ services:
     hostname: elasticsearch
     ports:
       - 9200:9200
-    environment:
-      - discovery.type=single-node
-      - cluster.routing.allocation.disk.threshold_enabled=true
-      - cluster.routing.allocation.disk.watermark.flood_stage=200mb
-      - cluster.routing.allocation.disk.watermark.low=500mb
-      - cluster.routing.allocation.disk.watermark.high=300mb
-      - plugins.security.disabled=true
-      # Elasticsearch allocates 1GB of memory by default. As resources are limited
-      # and elasticsearch performance isn't critical in CI, limit this to 256MB
-      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
-      - "OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m" # minimum and maximum Java heap size
+    env_file: elasticsearch.env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 5s
