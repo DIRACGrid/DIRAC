@@ -578,7 +578,7 @@ class RequestDB(object):
                                        .group_by(Request.RequestID, Request.RequestName,
                                                  Request.JobID, Request.OwnerDN, Request.OwnerGroup,
                                                  Request._Status, Request.Error,
-                                                 Request._CreationTime, Request._LastUpdate)
+                                                 Request._CreationTime, Request._LastUpdate, Operation.Type)
             tableName = 'Operation'
           elif key == 'Status':
             key = '_Status'
