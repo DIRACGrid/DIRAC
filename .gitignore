@@ -69,6 +69,7 @@ virtualmachine/.vagrant/
 integration_test_results/
 tests/CI/CLIENTCONFIG
 tests/CI/SERVERCONFIG
+src/etc/
 
 pilot.cfg
 DIRAC_containers
