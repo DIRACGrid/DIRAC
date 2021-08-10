@@ -52,6 +52,8 @@ class StatesAccountingAgent(AgentModule):
     self.backends = self.am_getOption("Backends", "Accounting").replace(' ', '').split(',')
     messageQueue = self.am_getOption("MessageQueue", "dirac.wmshistory")
 
+    self.log.info("Committing to %s backend" % 'and '.join(self.backends))
+
     self.datastores = {}  # For storing the clients to Accounting and Monitoring
 
     if 'Accounting' in self.backends:
