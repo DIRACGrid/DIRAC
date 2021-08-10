@@ -1145,13 +1145,16 @@ class AccountingDB(DB):
     if sqlLinkList:
       cmd += " AND %s" % " AND ".join(sqlLinkList)
     if groupFields:
-      testGroupFields = " %s" % selectFields[0] % tuple(realFieldList)
-      testGroupFieldsList = testGroupFields.split(",")
-      realGroupFields = ()
-      for testGroupFields in testGroupFieldsList:
-        if "sum" not in testGroupFields.lower():
-          realGroupFields += (testGroupFields.strip(),)
-      cmd += " GROUP BY " + ','.join(realGroupFields)
+      if len(groupFields[1]) == 1:
+        testGroupFields = " %s" % selectFields[0] % tuple(realFieldList)
+        testGroupFieldsList = testGroupFields.split(",")
+        realGroupFields = ()
+        for testGroupFields in testGroupFieldsList:
+          if "sum" not in testGroupFields.lower():
+            realGroupFields += (testGroupFields.strip(),)
+        cmd += " GROUP BY " + ','.join(realGroupFields)
+      else:
+        cmd += " GROUP BY %s" % (groupFields[0] % tuple(groupFields[1]))
     if orderFields:
       cmd += " ORDER BY %s" % (orderFields[0] % tuple(orderFields[1]))
     self.log.verbose(cmd)
