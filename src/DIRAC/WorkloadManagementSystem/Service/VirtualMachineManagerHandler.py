@@ -361,6 +361,7 @@ class VirtualMachineManagerHandler(RequestHandler):
         result = self.virtualMachineDB.declareInstanceStopping(instanceID)
         if not result['OK']:
           return result
+    return S_OK()
 
   types_declareInstanceHalting = [six.string_types, float]
 
