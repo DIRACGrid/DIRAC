@@ -179,6 +179,7 @@ def prepare_environment(
     release_var: Optional[str] = None,
 ):
     """Prepare the local environment for installing DIRAC."""
+
     _check_containers_running(is_up=False)
     if editable is None:
         editable = sys.stdout.isatty()
@@ -207,7 +208,7 @@ def prepare_environment(
     client_config = _make_config(modules, client_flags, release_var, editable)
 
     typer.secho("Running docker-compose to create containers", fg=c.GREEN)
-    with _gen_docker_compose(modules, docker_compose_env) as docker_compose_fn:
+    with _gen_docker_compose(modules) as docker_compose_fn:
         subprocess.run(
             ["docker-compose", "-f", docker_compose_fn, "up", "-d"],
             check=True,
@@ -504,7 +505,7 @@ class TestExit(typer.Exit):
 
 
 @contextmanager
-def _gen_docker_compose(modules, docker_compose_env=None):
+def _gen_docker_compose(modules):
     # Load the docker-compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
@@ -533,15 +534,7 @@ def _gen_docker_compose(modules, docker_compose_env=None):
         output_fn = Path(tmpdir) / prefix / "docker-compose.yml"
         output_fn.parent.mkdir()
         output_fn.write_text(yaml.safe_dump(docker_compose, sort_keys=False))
-        for env_file in input_docker_compose_dir.glob("*.env"):
-            shutil.copyfile(env_file, os.path.join(str(Path(tmpdir) / prefix), "elasticsearch.env"))
-            if (
-                docker_compose_env
-                and os.path.basename(env_file)
-                == docker_compose_env["ES_VER"].split('/')[-1] + ".env"
-            ):
-                break
-
+        shutil.copytree(input_docker_compose_dir / "envs", str(Path(tmpdir) / prefix), dirs_exist_ok=True)
         yield output_fn
 
 
@@ -550,6 +543,7 @@ def _check_containers_running(*, is_up=True):
         running_containers = subprocess.run(
             ["docker-compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
             stdout=subprocess.PIPE,
+            env=_make_env({}),
             check=True,
             text=True,
         ).stdout.split("\n")
