@@ -1,4 +1,4 @@
-[v7r3-pre19]
+[v7r3-pre20]
 
 NEW: (#5000) Initial support for Python 3 server installations
 NEW: VMDIRAC separate project is merged into the core DIRAC project
@@ -40,20 +40,33 @@ CHANGE: (#5286) PathFinder - getSystemSection do not use serviceTuple, add docs,
 FIX: (#5286) PathFinder - getGatewayURLs pass list to randomize when serviceName is empty
 FIX: (#5298) fix getServiceFailoverURL for multi url case
 
-*Interfaces
-CHANGE: (#5110) DiracAdmin: dropped getBDII* functions, which were looking for Glue1 information
-CHANGE: (#5110) removed dirac-admin-bdii-info command
+*DMS
+CHANGE: (#5206) prints why dirac-dms-add-files failed
 
 *Framework:
 CHANGE: (#4303) Removed completely the SystemLogging
 CHANGE: (#5164) Remove HashTag table from Framework/UserProfile
 CHANGE: (#5164) Remove dataTypeRE argument when retrieving values from Framework/UserProfileClient
 
+*Interfaces
+CHANGE: (#5110) DiracAdmin: dropped getBDII* functions, which were looking for Glue1 information
+CHANGE: (#5110) removed dirac-admin-bdii-info command
+
+*Resources
+CHANGE: (#5314) Remove GlobusComputingElement
+
+*RMS
+CHANGE: (#5291) ReqDB don't cast datetime to strings
+
+*RSS
+NEW: (#5042) Multi-VO mode of operation support
+
 *WMS
 NEW: (#4903) Added WMS (Jobs) State Machine
 NEW: (#5214) Added a HTTPs JobManager service
 NEW: (#5214) Added a HTTPs JobMonitor service
 NEW: (#5214) Added a HTTPs JobStateUpdate service
+NEW: (#5314) Add a PilotStatus module to clearly define the pilot status in the code
 CHANGE: (#5214) Removed need for ThreadScheduler in JobManagerHandler
 CHANGE: (#5289) SiteDirector: do not send dirac-install if it's py3 pilot
 CHANGE: (#4884) JobDB: compress JDLs by default (no need for flag anymore)
@@ -61,18 +74,10 @@ CHANGE: (#4937) removed StatesMonitoringAgent (use StatesAccountingAgent agent i
 CHANGE: (#5141) add an Aborted_HOUR column to the pilot efficiency table needed by the WebApp
 CHANGE: (#5178) JobMonitoring does not need to look into TaskQueue
 CHANGE: (#5246) remove pilots before start Test_PilotsClient test
+CHANGE: (#5318) Move SiteDirector.getQueues in QueueUtilities module
 FIX: (#5246) mock _escapeString in Test_Agent_PilotStatusAgent to pass test
 FIX: (#5246) escape values in PilotAgentsDB
 FIX: (#5246) decode values using decode() method in JobDB
-
-*DMS
-CHANGE: (#5206) prints why dirac-dms-add-files failed
-
-*RMS
-CHANGE: (#5291) ReqDB don't cast datetime to strings
-
-*RSS
-NEW: (#5042) Multi-VO mode of operation support
 
 *tests
 NEW: (#5062) add Test_LocalConfiguration
