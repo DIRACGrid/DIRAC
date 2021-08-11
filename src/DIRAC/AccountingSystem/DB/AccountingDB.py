@@ -712,7 +712,7 @@ class AccountingDB(DB):
       return S_ERROR("Type %s has not been defined in the db" % typeName)
 
     self.log.info(
-	"Deleting record",
+        "Deleting record",
         "for type %s\n [%s -> %s]" %
         (typeName,
          Time.fromEpoch(startTime),
@@ -740,13 +740,13 @@ class AccountingDB(DB):
           needToRound = True
       if needToRound:
         compVal = ["`%s`.`%s`" % (mainTable, self.dbCatalog[typeName]['typeFields'][i]),
-		   "%f" % value]
+                   "%f" % value]
         compVal = ["CEIL( %s * 1000 )" % v for v in compVal]
         compVal = "ABS( %s ) <= 1 " % " - ".join(compVal)
       else:
         sqlCond.append("`%s`.`%s`=%s" % (mainTable,
                                          self.dbCatalog[typeName]['typeFields'][i],
-					 value))
+                                         value))
     retVal = self._getConnection()
     if not retVal['OK']:
       return retVal
@@ -984,8 +984,8 @@ class AccountingDB(DB):
      - typeName -> typeName
      - startTime & endTime -> int
          epoch objects. Do I need to explain the meaning?
-     - selectFields: tuple containing a string and a list of fields:
-                       ( "SUM(%s), %s/%s", ( "field1name", "field2name", "field3name" ) )
+     - selectFields: list containing a string and a list of fields:
+                       ["SUM(%s), %s/%s", ["field1name", "field2name", "field3name"]]
      - condDict -> conditions for the query
                    key -> name of the field
                    value -> list of possible values
@@ -1131,7 +1131,7 @@ class AccountingDB(DB):
     # Calculate grouping and sorting
     for preGenFields in (groupFields, orderFields):
       if preGenFields:
-	for i, field in enumerate(preGenFields[1]):
+        for i, field in enumerate(preGenFields[1]):
           if field in self.dbCatalog[typeName]['keys']:
             List.appendUnique(sqlLinkList, "`%s`.`%s` = `%s`.`id`" % (tableName,
                                                                       field,
@@ -1367,7 +1367,7 @@ class AccountingDB(DB):
       delCondsSQL = []
       for record in bucketsData[bLimit: bLimit + deleteQueryLimit]:
         condSQL = []
-	for iPos, field in enumerate(keyFields):
+        for iPos, field in enumerate(keyFields):
           condSQL.append("`%s`.`%s` = %s" % (tableName, field, record[iPos]))
         condSQL.append("`%s`.`startTime` = %d" % (tableName, record[-2]))
         condSQL.append("`%s`.`bucketLength` = %d" % (tableName, record[-1]))
