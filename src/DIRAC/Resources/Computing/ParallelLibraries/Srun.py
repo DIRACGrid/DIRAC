@@ -26,9 +26,6 @@ class Srun(ParallelLibrary):
     :param str executableFile: name of the executable file to wrap
     :return str: name of the wrapper that runs the executable via srun
     """
-    # As the executable will be executed by srun, it needs GRP and OTH execution permission
-    if not os.access(executableFile, os.R_OK | os.X_OK):
-      os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
     # Build the script to run the executable in parallel multiple times
     # srun is the command to execute a task multiple time in parallel
