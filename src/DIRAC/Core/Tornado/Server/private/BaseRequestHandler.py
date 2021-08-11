@@ -413,7 +413,7 @@ class BaseRequestHandler(RequestHandler):
     # Pass all arguments
     kwargs = self.request.arguments.copy() if fvKwargs else {}
     # Get all defaults from method
-    defaults = {a: fDef[fArgs[-len(default):].index(a)] for a in fArgs[-len(fDef):]} if fDef else {}
+    defaults = {a: fDef[fArgs[-len(fDef):].index(a)] for a in fArgs[-len(fDef):]} if fDef else {}
     # Calcule kwargs
     for arg in fArgs[len(args):]:
       if arg not in defaults:
