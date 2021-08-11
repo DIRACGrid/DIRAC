@@ -190,7 +190,7 @@ def getSystemURLs(system, setup=False, failover=False):
       :return: dict -- complete urls. e.g. [dips://some-domain:3424/Framework/Service]
   """
   urlDict = {}
-  for service in gConfigurationData.getOptionsFromCFG("%s/URLs" % getSystemSection(system, setup=setup)):
+  for service in gConfigurationData.getOptionsFromCFG("%s/URLs" % getSystemSection(system, setup=setup)) or []:
     urlDict[service] = getServiceURLs(system, service, setup=setup, failover=failover)
   return urlDict
 
