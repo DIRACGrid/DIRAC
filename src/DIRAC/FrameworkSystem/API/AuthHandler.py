@@ -375,18 +375,16 @@ class AuthHandler(TornadoREST):
 
         GET LOCATION/redirect
 
-        Parameters::
+        :param str state: Current IdP session state
+        :param str error: IdP error response
+        :param str error_description: error description
+        :param list chooseScope: to specify new scope(group in our case) (optional)
 
-          &chooseScope=..  to specify new scope(group in our case) (optional)
+        :return: S_OK()/S_ERROR()
     """
-    # # Current IdP session state
-    # state = self.get_argument('state')
-
-    # # Try to catch errors
-    # error = self.get_argument('error', None)
+    # Try to catch errors
     if error:
-      return self.server.handle_error_response(
-          state, OAuth2Error(error=error, description=error_description))  # self.get_argument('error_description', '')))
+      return self.server.handle_error_response(state, OAuth2Error(error=error, description=error_description))
 
     # Check current auth session that was initiated for the selected external identity provider
     session = self.get_secure_cookie('auth_session')
@@ -485,7 +483,6 @@ class AuthHandler(TornadoREST):
             with dom.div('Choose group', style=self.css_align_center):
               for group in validGroups:
                 dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, state, group)),
-                                                                              #  self.get_argument('state'), group)),
                            cls='button')
         return None, self.server.handle_response(payload=Template(self.doc.render()).generate(), newSession=extSession)
 

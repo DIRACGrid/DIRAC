@@ -535,7 +535,7 @@ class BaseRequestHandler(RequestHandler):
     """
     args, kwargs = self._getMethodArgs(args)
     return None, partial(gen.coroutine(self.__executeMethod) if six.PY2 else self.__executeMethod,
-                                       self.methodObj, args, kwargs)
+                         self.methodObj, args, kwargs)
 
   def _finishFuture(self, retVal):
     """ Handler Future result
