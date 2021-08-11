@@ -515,9 +515,9 @@ class SystemAdministratorClientCLI(CLI):
             + " "
             + "Name".center(20)
             + " "
-            + "Module".center(20)
+            + "DIRACModule".center(20)
             + " "
-            + "System".center(16)
+            + "DIRACSystem".center(16)
             + " "
             + "Type".center(12)
             + " "
@@ -558,9 +558,9 @@ class SystemAdministratorClientCLI(CLI):
               + "|"
               + installation["Instance"].center(20)
               + "|"
-              + installation["Component"]["Module"].center(20)
+              + installation["Component"]["DIRACModule"].center(20)
               + "|"
-              + installation["Component"]["System"].center(16)
+              + installation["Component"]["DIRACSystem"].center(16)
               + "|"
               + installation["Component"]["Type"].center(12)
               + "|"
