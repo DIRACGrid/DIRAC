@@ -111,7 +111,7 @@ class OperationHandlerBase(object):
       self.makeProperty(option, value, True)  # pylint: disable=no-member
 
     # # pre setup logger
-    self.log = gLogger.getSubLogger(name, True)
+    self.log = gLogger.getSubLogger(name)
     # # set log level
     logLevel = getattr(self, "LogLevel") if hasattr(self, "LogLevel") else "INFO"
     self.log.setLevel(logLevel)

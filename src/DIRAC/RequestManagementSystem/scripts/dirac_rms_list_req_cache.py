@@ -9,6 +9,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -39,10 +40,13 @@ def main():
       continue
     reqCache = reqCache['Value']
 
-    if fullPrint:
-      DIRAC.gLogger.always("List of requests", reqCache)
+    if not reqCache:
+      DIRAC.gLogger.always("No request in cache")
     else:
-      DIRAC.gLogger.always("Number of requests in the cache", len(reqCache))
+      if fullPrint:
+        DIRAC.gLogger.always("List of requests", reqCache)
+      else:
+        DIRAC.gLogger.always("Number of requests in the cache", len(reqCache))
 
   DIRAC.exit(0)
 

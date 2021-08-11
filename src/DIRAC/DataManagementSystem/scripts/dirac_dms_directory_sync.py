@@ -389,7 +389,7 @@ def main():
     """
     Wrapper for multithreaded uploading of a list of files
     """
-    log = gLogger.getSubLogger("[Thread %s] " % tID)
+    log = gLogger.getLocalSubLogger("[Thread %s] " % tID)
     threadLine = "[Thread %s]" % tID
     for filename in listOfFiles:
       res = uploadLocalFile(dm, dest_dir + "/" + filename, source_dir + "/" + filename, storage)
@@ -466,7 +466,7 @@ def main():
     """
     Wrapper for multithreaded downloading of a list of files
     """
-    log = gLogger.getSubLogger("[Thread %s] " % tID)
+    log = gLogger.getLocalSubLogger("[Thread %s] " % tID)
     threadLine = "[Thread %s]" % tID
     for filename in listOfFiles:
       res = downloadRemoteFile(dm, source_dir + "/" + filename, dest_dir + ("/" + filename).rsplit("/", 1)[0])

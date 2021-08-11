@@ -41,7 +41,7 @@ class FCOnlyStorage(StorageBase):
     :param str storageName: SE name
     """
     StorageBase.__init__(self, storageName, parameters)
-    self.log = gLogger.getSubLogger(__name__, True)
+    self.log = gLogger.getSubLogger(__name__)
 
     self.pluginName = 'FCOnly'
     self.protocol = []

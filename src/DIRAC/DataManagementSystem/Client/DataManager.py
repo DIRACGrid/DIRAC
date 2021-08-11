@@ -96,7 +96,7 @@ class DataManager(object):
                               The catalogs parameter will be ignored.
     :param vo: the VO for which the DataManager is created, get VO from the current proxy if not specified
     """
-    self.log = gLogger.getSubLogger(self.__class__.__name__, True)
+    self.log = gLogger.getSubLogger(self.__class__.__name__)
     self.voName = vo
 
     if catalogs is None:
@@ -748,7 +748,7 @@ class DataManager(object):
         'localCache' if cannot do third party transfer, we do get and put through this local directory
     """
 
-    log = self.log.getSubLogger('__replicate', True)
+    log = self.log.getSubLogger('__replicate')
 
     ###########################################################
     # Check that we have write permissions to this directory.
