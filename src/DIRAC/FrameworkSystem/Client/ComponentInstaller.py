@@ -62,11 +62,11 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import getpass
 import glob
 import importlib
 import inspect
 import io
+import MySQLdb
 import os
 import pkgutil
 import re
@@ -99,7 +99,7 @@ from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRA
     NORMAL_USER, TRUSTED_HOST
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.Core.Utilities.MySQL import MySQL
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
@@ -110,6 +110,7 @@ from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority, findDatabases, findModules, findAgents, findServices,
     findExecutors, findSystems,
 )
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
 __RCSID__ = "$Id$"
 
@@ -2140,6 +2141,10 @@ exec dirac-webapp-run -p < /dev/null
     """
     Install requested DB in MySQL server
     """
+    if six.PY3:
+      dbName = MySQLdb.escape_string(dbName.encode()).decode()
+    else:
+      dbName = MySQLdb.escape_string(dbName)
     if not self.mysqlRootPwd:
       rootPwdPath = cfgInstallPath('Database', 'RootPwd')
       return S_ERROR('Missing %s in %s' % (rootPwdPath, self.cfgFile))
@@ -2281,7 +2286,6 @@ exec dirac-webapp-run -p < /dev/null
     """
     Execute MySQL Command
     """
-    from DIRAC.Core.Utilities.MySQL import MySQL
     if not self.mysqlRootPwd:
       return S_ERROR('MySQL root password is not defined')
     if dbName not in self.db:
