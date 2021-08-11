@@ -22,7 +22,6 @@ import os
 import sys
 import random
 import socket
-import hashlib
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
@@ -36,7 +35,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.Core.Utilities.List import fromChar
-from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
@@ -46,9 +44,9 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import pilotWrapperScript, \
     _writePilotWrapperFile, getPilotFilesCompressedEncodedDict
-from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
@@ -246,9 +244,39 @@ class SiteDirector(AgentModule):
                                             mode='Direct')
     if not result['OK']:
       return result
-    result = self.getQueues(result['Value'])
+    result = getQueuesResolved(siteDict=result['Value'],
+                               queueCECache=self.queueCECache,
+                               gridEnv=self.gridEnv,
+                               setup=gConfig.getValue('/DIRAC/Setup', 'unknown'),
+                               workingDir=self.workingDirectory,
+                               checkPlatform=self.checkPlatform,
+                               instantiateCEs=True)
     if not result['OK']:
       return result
+
+    self.queueDict = result['Value']
+    for queueName, queueDict in self.queueDict.items():
+
+      # Update self.sites
+      if queueDict['Site'] not in self.sites:
+        self.sites.append(queueDict['Site'])
+
+      # Update self.platforms, keeping entries unique and squashing lists
+      platform = queueDict['ParametersDict']['Platform']
+      oldPlatforms = set(self.platforms)
+      if isinstance(platform, list):
+        oldPlatforms.update(set(platform))
+      else:
+        oldPlatforms.add(platform)
+      self.platforms = list(oldPlatforms)
+
+      # Update self.globalParameters
+      if "WholeNode" in queueDict['ParametersDict']:
+        self.globalParameters['WholeNode'] = 'True'
+      for parameter in ['MaxRAM', 'NumberOfProcessors']:
+        if parameter in queueDict['ParametersDict']:
+          self.globalParameters[parameter] = max(self.globalParameters[parameter],
+                                                 int(queueDict['ParametersDict'][parameter]))
 
     if self.updateStatus:
       self.log.always('Pilot status update requested')
@@ -269,156 +297,6 @@ class SiteDirector(AgentModule):
                                                            self.queueDict[queue]['CEName'],
                                                            queue))
     self.firstPass = False
-
-    return S_OK()
-
-  def __generateQueueHash(self, queueDict):
-    """ Generate a hash of the queue description
-    """
-    myMD5 = hashlib.md5()
-    myMD5.update(str(queueDict).encode())
-    hexstring = myMD5.hexdigest()
-    return hexstring
-
-  def getQueues(self, resourceDict):
-    """ Get the list of relevant CEs (what is in resourceDict) and their descriptions.
-
-        The main goal of this method is to create self.queueDict
-    """
-
-    self.log.debug("Getting queues this SD will submit to")
-    self.log.debug("The resources dictionary contains %d entries" % len(resourceDict))
-
-    self.queueDict = {}
-    ceFactory = ComputingElementFactory()
-
-    for site in resourceDict:
-      for ce in resourceDict[site]:
-        ceDict = resourceDict[site][ce]
-        pilotRunDirectory = ceDict.get('PilotRunDirectory', '')
-        # ceMaxRAM = ceDict.get('MaxRAM', None)
-        qDict = ceDict.pop('Queues')
-        for queue in qDict:
-          queueName = '%s_%s' % (ce, queue)
-          self.queueDict[queueName] = {}
-          self.queueDict[queueName]['ParametersDict'] = qDict[queue]
-          self.queueDict[queueName]['ParametersDict']['Queue'] = queue
-          self.queueDict[queueName]['ParametersDict']['Site'] = site
-          self.queueDict[queueName]['ParametersDict']['GridEnv'] = self.gridEnv
-          self.queueDict[queueName]['ParametersDict']['Setup'] = gConfig.getValue('/DIRAC/Setup', 'unknown')
-          # Evaluate the CPU limit of the queue according to the Glue convention
-          # To Do: should be a utility
-          if "maxCPUTime" in self.queueDict[queueName]['ParametersDict'] and \
-             "SI00" in self.queueDict[queueName]['ParametersDict']:
-            maxCPUTime = float(self.queueDict[queueName]['ParametersDict']['maxCPUTime'])
-            # For some sites there are crazy values in the CS
-            maxCPUTime = max(maxCPUTime, 0)
-            maxCPUTime = min(maxCPUTime, 86400 * 12.5)
-            si00 = float(self.queueDict[queueName]['ParametersDict']['SI00'])
-            queueCPUTime = 60. / 250. * maxCPUTime * si00
-            self.queueDict[queueName]['ParametersDict']['CPUTime'] = int(queueCPUTime)
-
-          # Tags & RequiredTags defined on the Queue level and on the CE level are concatenated
-          # This also converts them from a string to a list if required.
-          for tagFieldName in ('Tag', 'RequiredTag'):
-            ceTags = ceDict.get(tagFieldName, [])
-            if isinstance(ceTags, six.string_types):
-              ceTags = fromChar(ceTags)
-            queueTags = self.queueDict[queueName]['ParametersDict'].get(tagFieldName, [])
-            if isinstance(queueTags, six.string_types):
-              queueTags = fromChar(queueTags)
-              self.queueDict[queueName]['ParametersDict'][tagFieldName] = queueTags
-            if ceTags:
-              if queueTags:
-                allTags = list(set(ceTags) | set(queueTags))
-                self.queueDict[queueName]['ParametersDict'][tagFieldName] = allTags
-              else:
-                self.queueDict[queueName]['ParametersDict'][tagFieldName] = ceTags
-
-          # Some parameters can be defined on the CE level and are inherited by all Queues
-          for parameter in ['MaxRAM', 'NumberOfProcessors', 'WholeNode']:
-            queueParameter = self.queueDict[queueName]['ParametersDict'].get(parameter)
-            ceParameter = ceDict.get(parameter)
-            if ceParameter or queueParameter:
-              self.queueDict[queueName]['ParametersDict'][parameter] = ceParameter if not queueParameter \
-                  else queueParameter
-
-          if pilotRunDirectory:
-            self.queueDict[queueName]['ParametersDict']['JobExecDir'] = pilotRunDirectory
-          qwDir = os.path.join(self.workingDirectory, queue)
-          mkDir(qwDir)
-          self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
-          ceQueueDict = dict(ceDict)
-          ceQueueDict.update(self.queueDict[queueName]['ParametersDict'])
-
-          # Generate the CE object for the queue or pick the already existing one
-          # if the queue definition did not change
-          queueHash = self.__generateQueueHash(ceQueueDict)
-          if queueName in self.queueCECache and self.queueCECache[queueName]['Hash'] == queueHash:
-            queueCE = self.queueCECache[queueName]['CE']
-          else:
-            result = ceFactory.getCE(ceName=ce,
-                                     ceType=ceDict['CEType'],
-                                     ceParametersDict=ceQueueDict)
-            if not result['OK']:
-              return result
-            self.queueCECache.setdefault(queueName, {})
-            self.queueCECache[queueName]['Hash'] = queueHash
-            self.queueCECache[queueName]['CE'] = result['Value']
-            queueCE = self.queueCECache[queueName]['CE']
-
-          self.queueDict[queueName]['ParametersDict'].update(queueCE.ceParameters)
-          self.queueDict[queueName]['CE'] = queueCE
-          self.queueDict[queueName]['CEName'] = ce
-          self.queueDict[queueName]['CEType'] = ceDict['CEType']
-          self.queueDict[queueName]['Site'] = site
-          self.queueDict[queueName]['QueueName'] = queue
-          self.queueDict[queueName]['QueryCEFlag'] = ceDict.get('QueryCEFlag', "false")
-
-          if self.checkPlatform:
-            platform = ''
-            if "Platform" in self.queueDict[queueName]['ParametersDict']:
-              platform = self.queueDict[queueName]['ParametersDict']['Platform']
-            elif "Platform" in ceDict:
-              platform = ceDict['Platform']
-            elif "OS" in ceDict:
-              architecture = ceDict.get('architecture', 'x86_64')
-              platform = '_'.join([architecture, ceDict['OS']])
-            if platform:
-              # Update self.platforms, keeping entries unique and squashing lists
-              oldPlatforms = set(self.platforms)
-              if isinstance(platform, list):
-                oldPlatforms.update(set(platform))
-              else:
-                oldPlatforms.add(platform)
-              self.platforms = list(oldPlatforms)
-
-            if "Platform" not in self.queueDict[queueName]['ParametersDict'] and platform:
-              result = self.resourcesModule.getDIRACPlatform(platform)
-              if result['OK']:
-                self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value'][0]
-            self.queueDict[queueName]['Platform'] = platform
-
-          result = self.queueDict[queueName]['CE'].isValid()
-          if not result['OK']:
-            self.log.fatal(result['Message'])
-            return result
-          if 'BundleProxy' in self.queueDict[queueName]['ParametersDict']:
-            if self.queueDict[queueName]['ParametersDict']['BundleProxy'].lower() in ['true', 'yes', '1']:
-              self.queueDict[queueName]['BundleProxy'] = True
-          elif 'BundleProxy' in ceDict:
-            if ceDict['BundleProxy'].lower() in ['true', 'yes', '1']:
-              self.queueDict[queueName]['BundleProxy'] = True
-
-          if site not in self.sites:
-            self.sites.append(site)
-
-          if "WholeNode" in self.queueDict[queueName]['ParametersDict']:
-            self.globalParameters['WholeNode'] = 'True'
-          for parameter in ['MaxRAM', 'NumberOfProcessors']:
-            if parameter in self.queueDict[queueName]['ParametersDict']:
-              self.globalParameters[parameter] = max(self.globalParameters[parameter],
-                                                     int(self.queueDict[queueName]['ParametersDict'][parameter]))
 
     return S_OK()
 
