@@ -666,8 +666,7 @@ class AccountingDB(DB):
     if typeName not in self.dbCatalog:
       return S_ERROR("Type %s has not been defined in the db" % typeName)
     # Discover key indexes
-    for keyPos in range(len(self.dbCatalog[typeName]['keys'])):
-      keyName = self.dbCatalog[typeName]['keys'][keyPos]
+    for keyPos, keyName in enumerate(self.dbCatalog[typeName]['keys']):
       keyValue = valuesList[keyPos]
       retVal = self.__addKeyValue(typeName, keyName, keyValue)
       if not retVal['OK']:
@@ -705,23 +704,23 @@ class AccountingDB(DB):
 
   def deleteRecord(self, typeName, startTime, endTime, valuesList):
     """
-    Add an entry to the type contents
+    Delete an entry
     """
     if self.__readOnly:
       return S_ERROR("ReadOnly mode enabled. No modification allowed")
+    if typeName not in self.dbCatalog:
+      return S_ERROR("Type %s has not been defined in the db" % typeName)
+
     self.log.info(
-        "Deleting record record",
+	"Deleting record",
         "for type %s\n [%s -> %s]" %
         (typeName,
          Time.fromEpoch(startTime),
          Time.fromEpoch(endTime)))
-    if typeName not in self.dbCatalog:
-      return S_ERROR("Type %s has not been defined in the db" % typeName)
     sqlValues = []
     sqlValues.extend(valuesList)
     # Discover key indexes
-    for keyPos in range(len(self.dbCatalog[typeName]['keys'])):
-      keyName = self.dbCatalog[typeName]['keys'][keyPos]
+    for keyPos, keyName in enumerate(self.dbCatalog[typeName]['keys']):
       keyValue = sqlValues[keyPos]
       retVal = self.__addKeyValue(typeName, keyName, keyValue)
       if not retVal['OK']:
@@ -733,7 +732,7 @@ class AccountingDB(DB):
     sqlValues.extend([startTime, endTime])
     numKeyFields = len(self.dbCatalog[typeName]['keys'])
     numValueFields = len(self.dbCatalog[typeName]['values'])
-    for i in range(len(sqlValues)):
+    for i, value in enumerate(sqlValues):
       needToRound = False
       if i >= numKeyFields and i - numKeyFields < numValueFields:
         vIndex = i - numKeyFields
@@ -741,13 +740,13 @@ class AccountingDB(DB):
           needToRound = True
       if needToRound:
         compVal = ["`%s`.`%s`" % (mainTable, self.dbCatalog[typeName]['typeFields'][i]),
-                   "%f" % sqlValues[i]]
+		   "%f" % value]
         compVal = ["CEIL( %s * 1000 )" % v for v in compVal]
         compVal = "ABS( %s ) <= 1 " % " - ".join(compVal)
       else:
         sqlCond.append("`%s`.`%s`=%s" % (mainTable,
                                          self.dbCatalog[typeName]['typeFields'][i],
-                                         sqlValues[i]))
+					 value))
     retVal = self._getConnection()
     if not retVal['OK']:
       return retVal
@@ -827,8 +826,7 @@ class AccountingDB(DB):
     Generate sql condition for buckets, values are indexes to real values
     """
     realCondList = []
-    for keyPos in range(len(self.dbCatalog[typeName]['keys'])):
-      keyField = self.dbCatalog[typeName]['keys'][keyPos]
+    for keyPos, keyField in enumerate(self.dbCatalog[typeName]['keys']):
       keyValue = keyValues[keyPos]
       retVal = self._escapeString(keyValue)
       if not retVal['OK']:
@@ -863,8 +861,7 @@ class AccountingDB(DB):
     tableName = _getTableName("bucket", typeName)
     cmd = "UPDATE `%s` SET " % tableName
     sqlValList = []
-    for pos in range(len(self.dbCatalog[typeName]['values'])):
-      valueField = self.dbCatalog[typeName]['values'][pos]
+    for pos, valueField in enumerate(self.dbCatalog[typeName]['values']):
       value = bucketValues[pos]
       fullFieldName = "`%s`.`%s`" % (tableName, valueField)
       sqlValList.append("%s=GREATEST(0,%s-(%s*%s))" % (fullFieldName, fullFieldName, value, proportion))
@@ -1134,8 +1131,7 @@ class AccountingDB(DB):
     # Calculate grouping and sorting
     for preGenFields in (groupFields, orderFields):
       if preGenFields:
-        for i in range(len(preGenFields[1])):
-          field = preGenFields[1][i]
+	for i, field in enumerate(preGenFields[1]):
           if field in self.dbCatalog[typeName]['keys']:
             List.appendUnique(sqlLinkList, "`%s`.`%s` = `%s`.`id`" % (tableName,
                                                                       field,
@@ -1371,8 +1367,7 @@ class AccountingDB(DB):
       delCondsSQL = []
       for record in bucketsData[bLimit: bLimit + deleteQueryLimit]:
         condSQL = []
-        for iPos in range(len(keyFields)):
-          field = keyFields[iPos]
+	for iPos, field in enumerate(keyFields):
           condSQL.append("`%s`.`%s` = %s" % (tableName, field, record[iPos]))
         condSQL.append("`%s`.`startTime` = %d" % (tableName, record[-2]))
         condSQL.append("`%s`.`bucketLength` = %d" % (tableName, record[-1]))
@@ -1454,9 +1449,9 @@ class AccountingDB(DB):
     countedField = "`%s`.`%s`" % (rawTableName, self.dbCatalog[typeName]['keys'][0])
     lastTime = Time.toEpoch()
     # Iterate for all ranges
-    for iRange in range(len(self.dbBucketsLength[typeName])):
-      bucketTimeSpan = self.dbBucketsLength[typeName][iRange][0]
-      bucketLength = self.dbBucketsLength[typeName][iRange][1]
+    for iRange, iValue in enumerate(self.dbBucketsLength[typeName]):
+      bucketTimeSpan = iValue[0]
+      bucketLength = iValue[1]
       startRangeTime = lastTime - bucketTimeSpan
       endRangeTime = lastTime
       lastTime -= bucketTimeSpan
