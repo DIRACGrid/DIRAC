@@ -251,7 +251,7 @@ class InputDataByProtocol(object):
 
     # Check if the files were actually resolved (i.e. have a TURL)
     # If so, remove them from failed list
-    for lfn, mdataList in trackLFNs.items():  # There is a pop below, can't use iteritems()
+    for lfn, mdataList in list(trackLFNs.items()):  # There is a pop below, can't iterate trackLFNs
       for mdata in list(mdataList):
         if 'turl' not in mdata:
           mdataList.remove(mdata)
