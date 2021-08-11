@@ -15,6 +15,7 @@ certifi
 coverage
 docutils
 diraccfg
+elasticsearch<7.14
 elasticsearch-dsl~=6.3.1
 CMRESHandler>=1.0.0b4
 funcsigs

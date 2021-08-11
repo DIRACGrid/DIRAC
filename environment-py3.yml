@@ -16,6 +16,7 @@ dependencies:
   - certifi
   - cmreshandler >1.0.0b4
   - docutils
+  - elasticsearch <7.14
   - elasticsearch-dsl
   - future
   - gitpython >=2.1.0
