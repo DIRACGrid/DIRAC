@@ -616,7 +616,7 @@ class MySQL(object):
     return S_ERROR upon error
     """
 
-    # self.log.debug('_query: %s' % self._safeCmd(cmd))
+    self.log.debug('_query: %s' % self._safeCmd(cmd))
 
     retDict = self._getConnection()
     if not retDict['OK']:
@@ -658,7 +658,7 @@ class MySQL(object):
         return S_ERROR upon error
     """
 
-    # self.log.debug('_update: %s' % self._safeCmd(cmd))
+    self.log.debug('_update: %s' % self._safeCmd(cmd))
 
     retDict = self._getConnection()
     if not retDict['OK']:
@@ -672,7 +672,6 @@ class MySQL(object):
       if cursor.lastrowid:
         retDict['lastRowId'] = cursor.lastrowid
     except Exception as x:
-      # self.log.debug('_update: %s: %s' % (self._safeCmd(cmd), str(x)))
       retDict = self._except('_update', x, 'Execution failed.', cmd)
 
     try:
@@ -909,36 +908,6 @@ class MySQL(object):
         # self.log.debug('Table %s created' % table)
 
     return S_OK()
-
-  def _getFields(self, tableName, outFields=None,
-                 inFields=None, inValues=None,
-                 limit=False, conn=None,
-                 older=None, newer=None,
-                 timeStamp=None, orderAttribute=None):
-    """
-      Wrapper to the new method for backward compatibility
-    """
-    # self.log.debug('_getFields:', 'deprecation warning, use getFields methods instead of _getFields.')
-    retDict = _checkFields(inFields, inValues)
-    if not retDict['OK']:
-      # self.log.debug('_getFields:', retDict['Message'])
-      return retDict
-
-    condDict = {}
-    if inFields is not None:
-      try:
-        condDict.update([(inFields[k], inValues[k]) for k in range(len(inFields))])
-      except Exception as x:
-        return S_ERROR(DErrno.EMYSQL, x)
-
-    return self.getFields(tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute)
-
-  def _insert(self, tableName, inFields=None, inValues=None, conn=None):
-    """
-      Wrapper to the new method for backward compatibility
-    """
-    # self.log.debug('_insert:', 'deprecation warning, use insertFields methods instead of _insert.')
-    return self.insertFields(tableName, inFields, inValues, conn)
 
   def _to_value(self, param):
     """
