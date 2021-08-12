@@ -194,7 +194,6 @@ class BaseRequestHandler(RequestHandler):
   # Which grant type to use
   USE_AUTHZ_GRANTS = ['SSL', 'JWT']
 
-
   @classmethod
   def _initMonitoring(cls, serviceName, fullUrl):
     """
