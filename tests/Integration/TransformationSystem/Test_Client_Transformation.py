@@ -15,6 +15,7 @@ import sys
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 
@@ -98,7 +99,7 @@ class TransformationClientChain(TestClientTransformationTestCase):
     self.assertTrue(res['OK'])
     self.assertEqual(len(res['Value']), 4)
     for f in res['Value']:
-      self.assertEqual(f['Status'], 'Assigned')
+      self.assertEqual(f['Status'], TransformationFilesStatus.ASSIGNED)
 
     # now adding a new Transformation with new tasks, and introducing a mix of insertion,
     # to test that the trigger works as it should
@@ -192,17 +193,17 @@ class TransformationClientChain(TestClientTransformationTestCase):
     res = self.transClient.getTransformationFiles({'TransformationID': transID, 'LFN': lfns})
     self.assertTrue(res['OK'])
     for f in res['Value']:
-      self.assertEqual(f['Status'], 'Unused')
+      self.assertEqual(f['Status'], TransformationFilesStatus.UNUSED)
       self.assertEqual(f['ErrorCount'], 0)
-    res = self.transClient.setFileStatusForTransformation(transID, 'Assigned', lfns)
+    res = self.transClient.setFileStatusForTransformation(transID, TransformationFilesStatus.ASSIGNED, lfns)
     self.assertTrue(res['OK'])
     res = self.transClient.getTransformationFiles({'TransformationID': transID, 'LFN': lfns})
     for f in res['Value']:
-      self.assertEqual(f['Status'], 'Assigned')
+      self.assertEqual(f['Status'], TransformationFilesStatus.ASSIGNED)
       self.assertEqual(f['ErrorCount'], 0)
     res = self.transClient.getTransformationStats(transID)
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {'Assigned': 4, 'Total': 4})
+    self.assertEqual(res['Value'], {TransformationFilesStatus.ASSIGNED: 4, 'Total': 4})
     # Setting files MaxReset from Assigned should increment ErrorCount
     res = self.transClient.setFileStatusForTransformation(transID, 'MaxReset', lfns)
     res = self.transClient.getTransformationFiles({'TransformationID': transID, 'LFN': lfns})
@@ -211,48 +212,48 @@ class TransformationClientChain(TestClientTransformationTestCase):
       self.assertEqual(f['Status'], 'MaxReset')
       self.assertEqual(f['ErrorCount'], 1)
     # Cycle through Unused -> Assigned This should not increment ErrorCount
-    res = self.transClient.setFileStatusForTransformation(transID, 'Unused', lfns)
+    res = self.transClient.setFileStatusForTransformation(transID, TransformationFilesStatus.UNUSED, lfns)
     self.assertTrue(res['OK'])
-    res = self.transClient.setFileStatusForTransformation(transID, 'Assigned', lfns)
+    res = self.transClient.setFileStatusForTransformation(transID, TransformationFilesStatus.ASSIGNED, lfns)
     self.assertTrue(res['OK'])
     res = self.transClient.getTransformationFiles({'TransformationID': transID, 'LFN': lfns})
     self.assertTrue(res['OK'])
     for f in res['Value']:
-      self.assertEqual(f['Status'], 'Assigned')
+      self.assertEqual(f['Status'], TransformationFilesStatus.ASSIGNED)
       self.assertEqual(f['ErrorCount'], 1)
     # Resetting files Unused from Assigned should increment ErrorCount
-    res = self.transClient.setFileStatusForTransformation(transID, 'Unused', lfns)
+    res = self.transClient.setFileStatusForTransformation(transID, TransformationFilesStatus.UNUSED, lfns)
     self.assertTrue(res['OK'])
     res = self.transClient.getTransformationFiles({'TransformationID': transID, 'LFN': lfns})
     self.assertTrue(res['OK'])
     for f in res['Value']:
-      self.assertEqual(f['Status'], 'Unused')
+      self.assertEqual(f['Status'], TransformationFilesStatus.UNUSED)
       self.assertEqual(f['ErrorCount'], 2)
-    res = self.transClient.setFileStatusForTransformation(transID, 'Assigned', lfns)
+    res = self.transClient.setFileStatusForTransformation(transID, TransformationFilesStatus.ASSIGNED, lfns)
     self.assertTrue(res['OK'])
     # Set files Processed
-    res = self.transClient.setFileStatusForTransformation(transID, 'Processed', lfns)
+    res = self.transClient.setFileStatusForTransformation(transID, TransformationFilesStatus.PROCESSED, lfns)
     self.assertTrue(res['OK'])
     res = self.transClient.getTransformationFiles({'TransformationID': transID, 'LFN': lfns})
     self.assertTrue(res['OK'])
     for f in res['Value']:
-      self.assertEqual(f['Status'], 'Processed')
+      self.assertEqual(f['Status'], TransformationFilesStatus.PROCESSED)
       self.assertEqual(f['ErrorCount'], 2)
     # Setting files Unused should have no effect
-    res = self.transClient.setFileStatusForTransformation(transID, 'Unused', lfns)
+    res = self.transClient.setFileStatusForTransformation(transID, TransformationFilesStatus.UNUSED, lfns)
     self.assertTrue(res['OK'])
     res = self.transClient.getTransformationFiles({'TransformationID': transID, 'LFN': lfns})
     self.assertTrue(res['OK'])
     for f in res['Value']:
-      self.assertEqual(f['Status'], 'Processed')
+      self.assertEqual(f['Status'], TransformationFilesStatus.PROCESSED)
       self.assertEqual(f['ErrorCount'], 2)
     # Forcing files Unused should work
-    res = self.transClient.setFileStatusForTransformation(transID, 'Unused', lfns, force=True)
+    res = self.transClient.setFileStatusForTransformation(transID, TransformationFilesStatus.UNUSED, lfns, force=True)
     self.assertTrue(res['OK'])
     res = self.transClient.getTransformationFiles({'TransformationID': transID, 'LFN': lfns})
     self.assertTrue(res['OK'])
     for f in res['Value']:
-      self.assertEqual(f['Status'], 'Unused')
+      self.assertEqual(f['Status'], TransformationFilesStatus.UNUSED)
       self.assertEqual(f['ErrorCount'], 2)
     # tasks
     res = self.transClient.addTaskForTransformation(transID, lfns)

@@ -11,6 +11,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 
 
 @createClient('Transformation/TransformationManager')
@@ -275,7 +276,10 @@ class TransformationClient(Client):
       log.warn("Transformation was not derived...")
       return S_OK((parentProd, movedFiles))
     # get the lfns in status Unused/MaxReset of the parent production
-    res = self.getTransformationFiles(condDict={'TransformationID': parentProd, 'Status': ['Unused', 'MaxReset']})
+    res = self.getTransformationFiles(
+        condDict={'TransformationID': parentProd,
+                  'Status': [TransformationFilesStatus.UNUSED, TransformationFilesStatus.MAX_RESET]}
+    )
     if not res['OK']:
       log.error(" Error getting Unused files from transformation", "%d: %s" % (parentProd, res['Message']))
       return res
@@ -303,9 +307,9 @@ class TransformationClient(Client):
         status = parentStatus
         moveStatus = parentStatus
         # For MaxReset, set Unused if requested
-        if parentStatus == 'MaxReset':
+        if parentStatus == TransformationFilesStatus.MAX_RESET:
           if resetUnused:
-            status = 'Unused'
+            status = TransformationFilesStatus.UNUSED
             moveStatus = 'Unused from MaxReset'
           else:
             status = 'MaxReset-inherited'
@@ -315,7 +319,7 @@ class TransformationClient(Client):
           movedFiles[moveStatus] = movedFiles.setdefault(moveStatus, 0) + 1
         else:
           badStatusFiles[derivedStatus] = badStatusFiles.setdefault(derivedStatus, 0) + 1
-        if parentStatus == 'Unused':
+        if parentStatus == TransformationFilesStatus.UNUSED:
           # If the file was Unused, set it NotProcessed in parent
           parentStatusFiles.setdefault('NotProcessed', []).append(lfn)
         else:
@@ -349,8 +353,11 @@ class TransformationClient(Client):
           log.info('Successfully moved files', ": %d files from %s to %s" % (len(lfnChunk), oldStatus, status))
 
     # If files were Assigned or Unused at the time of derivation, try and update them as jobs may have run since then
-    res = self.getTransformationFiles(condDict={'TransformationID': prod,
-                                                'Status': ['Assigned-inherited', 'Unused-inherited']})
+    res = self.getTransformationFiles(
+        condDict={'TransformationID': prod,
+                  'Status': [TransformationFilesStatus.ASSIGNED_INHERITED,
+                             TransformationFilesStatus.UNUSED_INHERITED]}
+    )
     if res['OK']:
       assignedFiles = res['Value']
       if assignedFiles:
@@ -358,12 +365,21 @@ class TransformationClient(Client):
         res = self.getTransformationFiles(condDict={'TransformationID': parentProd, 'LFN': lfns})
         if res['OK']:
           parentFiles = res['Value']
-          processedLfns = [lfnDict['LFN'] for lfnDict in parentFiles if lfnDict['Status'] == 'Processed']
+          processedLfns = [
+              lfnDict['LFN']
+              for lfnDict in parentFiles
+              if lfnDict['Status'] == TransformationFilesStatus.PROCESSED]
           if processedLfns:
-            res = self.setFileStatusForTransformation(prod, 'Processed-inherited', processedLfns)
+            res = self.setFileStatusForTransformation(
+                prod,
+                TransformationFilesStatus.PROCESSED_INHERITED,
+                processedLfns
+            )
             if res['OK']:
               log.info('Successfully set files status',
-                       ": %d files to status %s" % (len(processedLfns), 'Processed-inherited'))
+                       ": %d files to status %s" % (len(processedLfns),
+                                                    TransformationFilesStatus.PROCESSED_INHERITED)
+                       )
     if not res['OK']:
       log.error("Error setting status for Assigned derived files", res['Message'])
 
@@ -419,7 +435,10 @@ class TransformationClient(Client):
 
   def _wasFileInError(self, newStatus, currentStatus):
     """ Tells whether the file was Assigned and failed, i.e. was not Processed """
-    return currentStatus.lower() == 'assigned' and newStatus.lower() != 'processed'
+    return (
+        currentStatus == TransformationFilesStatus.ASSIGNED
+        and newStatus != TransformationFilesStatus.PROCESSED
+    )
 
   def _applyTransformationFilesStateMachine(self, tsFilesAsDict, dictOfProposedLFNsStatus, force):
     """ For easier extension, here we apply the state machine of the production files.
@@ -435,24 +454,24 @@ class TransformationClient(Client):
 
     for lfn, newStatus in dictOfProposedLFNsStatus.items():  # can be an iterator
       if lfn in tsFilesAsDict:
-        currentStatus = tsFilesAsDict[lfn][0].lower()
+        currentStatus = tsFilesAsDict[lfn][0]
         # Apply optional corrections
-        if currentStatus == 'processed' and newStatus.lower() != 'processed':
+        if currentStatus == TransformationFilesStatus.PROCESSED and newStatus != TransformationFilesStatus.PROCESSED:
           # Processed files should be in a final status unless forced
           if not force:
-            newStatus = 'Processed'
-        elif currentStatus == 'maxreset':
+            newStatus = TransformationFilesStatus.PROCESSED
+        elif currentStatus == TransformationFilesStatus.MAX_RESET:
           # MaxReset files can go to any status except Unused (unless forced)
-          if newStatus.lower() == 'unused' and not force:
-            newStatus = 'MaxReset'
-        elif newStatus.lower() == 'unused':
+          if newStatus == TransformationFilesStatus.UNUSED and not force:
+            newStatus = TransformationFilesStatus.MAX_RESET
+        elif newStatus == TransformationFilesStatus.UNUSED:
           errorCount = tsFilesAsDict[lfn][1]
           # every 10 retries (by default) the file cannot be reset Unused any longer
           if errorCount and ((errorCount % self.maxResetCounter) == 0) and not force:
-            newStatus = 'MaxReset'
+            newStatus = TransformationFilesStatus.MAX_RESET
 
-        # Only worth changing status if it is different (case insensitive ;-)
-        if newStatus.lower() != currentStatus:
+        # Only worth changing status if it is different
+        if newStatus != currentStatus:
           newStatuses[lfn] = newStatus
 
     return newStatuses

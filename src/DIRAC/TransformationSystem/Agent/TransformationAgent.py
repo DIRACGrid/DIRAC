@@ -19,13 +19,14 @@ import pickle
 import concurrent.futures
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.Core.Utilities.List import breakListIntoChunks, randomize
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 __RCSID__ = "$Id$"
 
@@ -354,8 +355,8 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     # Files that were problematic (either explicit or because SE was banned) may be recovered,
     # and always removing the missing ones
     if not statusList:
-      statusList = ['Unused', 'ProbInFC']
-    statusList += ['MissingInFC'] if transDict['Type'] == 'Removal' else []
+      statusList = [TransformationFilesStatus.UNUSED, TransformationFilesStatus.PROB_IN_FC]
+    statusList += [TransformationFilesStatus.MISSING_IN_FC] if transDict['Type'] == 'Removal' else []
     transClient = clients['TransformationClient']
     res = transClient.getTransformationFiles(condDict={'TransformationID': transID,
                                                        'Status': statusList},
@@ -404,10 +405,12 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
 
     self.unusedTimeStamp[transID] = now
     # If files are not Unused, set them Unused
-    notUnused = [trFile['LFN'] for trFile in transFiles if trFile['Status'] != 'Unused']
-    otherStatuses = sorted(set([trFile['Status'] for trFile in transFiles]) - set(['Unused']))
+    notUnused = [trFile['LFN'] for trFile in transFiles if trFile['Status'] != TransformationFilesStatus.UNUSED]
+    otherStatuses = sorted(set([trFile['Status'] for trFile in transFiles]) - set([TransformationFilesStatus.UNUSED]))
     if notUnused:
-      res = transClient.setFileStatusForTransformation(transID, 'Unused', notUnused, force=True)
+      res = transClient.setFileStatusForTransformation(
+          transID, TransformationFilesStatus.UNUSED, notUnused, force=True
+      )
       if not res['OK']:
         self._logError("Error setting %d files Unused:" % len(notUnused), res['Message'],
                        method=method, transID=transID)
@@ -516,7 +519,9 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
     problematicLfns = [lfn for lfn in lfns if lfn not in replicas['Successful'] and lfn not in replicas['Failed']]
     if problematicLfns:
       self._logInfo("%d files found problematic in the catalog, set ProbInFC" % len(problematicLfns))
-      res = clients['TransformationClient'].setFileStatusForTransformation(transID, 'ProbInFC', problematicLfns)
+      res = clients['TransformationClient'].setFileStatusForTransformation(
+          transID, TransformationFilesStatus.PROB_IN_FC, problematicLfns
+      )
       if not res['OK']:
         self._logError("Failed to update status of problematic files:", res['Message'],
                        method=method, transID=transID)
@@ -544,7 +549,10 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
       if ignoreMissing:
         dataReplicas.update(dict.fromkeys(missingLfns, []))
       else:
-        res = clients['TransformationClient'].setFileStatusForTransformation(transID, 'MissingInFC', missingLfns)
+        res = clients['TransformationClient'].setFileStatusForTransformation(
+            transID,
+            TransformationFilesStatus.MISSING_IN_FC, missingLfns
+        )
         if not res['OK']:
           self._logError("Failed to update status of missing files:", res['Message'],
                          method=method, transID=transID)
