@@ -103,10 +103,9 @@ class PBSResourceUsage(ResourceUsage):
     if None not in consumed.values():
       self.log.debug("TimeLeft counters complete:", str(consumed))
       return S_OK(consumed)
-    else:
-      missed = [key for key, val in consumed.items() if val is None]
-      self.log.info('Could not determine parameter', ','.join(missed))
-      self.log.info('This is the stdout from the batch system call\n%s' % (result['Value']))
+    missed = [key for key, val in consumed.items() if val is None]
+    self.log.info('Could not determine parameter', ','.join(missed))
+    self.log.info('This is the stdout from the batch system call\n%s' % (result['Value']))
 
     if cpuLimit or wallClockLimit:
       # We have got a partial result from PBS, assume that we ran for too short time
@@ -120,9 +119,8 @@ class PBSResourceUsage(ResourceUsage):
         consumed['WallClock'] = int(time.time() - self.startTime)
       self.log.verbose("TimeLeft counters restored:", str(consumed))
       return S_OK(consumed)
-    else:
-      msg = 'Could not determine some parameters'
-      self.log.info(msg, ':\nThis is the stdout from the batch system call\n%s' % (result['Value']))
-      retVal = S_ERROR(msg)
-      retVal['Value'] = consumed
-      return retVal
+    msg = 'Could not determine some parameters'
+    self.log.info(msg, ':\nThis is the stdout from the batch system call\n%s' % (result['Value']))
+    retVal = S_ERROR(msg)
+    retVal['Value'] = consumed
+    return retVal
