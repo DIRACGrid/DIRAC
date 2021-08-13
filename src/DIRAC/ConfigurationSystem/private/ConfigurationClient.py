@@ -5,7 +5,8 @@ from __future__ import division
 from __future__ import print_function
 
 
-import os
+import six
+from os.path import join
 
 import DIRAC
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -18,15 +19,94 @@ __RCSID__ = "$Id$"
 
 
 class ConfigurationClient(object):
-    def __init__(self, fileToLoadList=None):
+    """This class provide access to DIRAC configuration. Everywhere in the code you can find the use of
+    the global :mod:`~DIRAC.ConfigurationSystem.Client.Config.gConfig` object to obtain configuration data.
+    This object is an instance of this class::
+
+      gConfig = ConfigurationClient()
+
+    You can use it or do your own instance::
+
+      # This instance will provide the configuration taking into account additional settings for "myVO" VO
+      gConfigMyVO = ConfigurationClient(vo='myVO')
+
+    Usage::
+
+      # The configuration will be assembled for the default VO/setup
+      gConfig = ConfigurationClient()
+
+      # Get option for default VO/setup
+      gConfig.getValue('/path/to/option')
+
+      # Get option for some VO/setup
+      gConfig.getValue('/path/to/option', vo='someVO', setup='someSetup')
+
+      # OR
+      gConfig['someVO', 'someSetup'].getValue('/path/to/option')
+
+    """
+
+    # Default place of the dirac.cfg
+    diracConfigFilePath = join(DIRAC.rootPath, "etc", "dirac.cfg")
+
+    def __init__(self, vo=None, setup=None, rootPath=None):
         """C'or
 
-        :param list fileToLoadList: files to load
+        :param str vo: name of the VO, which must be taken into account when providing information.
+                       The default will be the default value from the configuration or value derived from proxy.
+                       To access the original configuration unchanged, set False here.
+        :param str setup: name of the setup, which must be taken into account when providing information.
+                          The default will be the default value from the configuration.
+        :param str rootPath: in case of need of access to a configuration on the certain directory
         """
-        self.diracConfigFilePath = os.path.join(DIRAC.rootPath, "etc", "dirac.cfg")
-        if fileToLoadList and isinstance(fileToLoadList, list):
-            for fileName in fileToLoadList:
-                gConfigurationData.loadFile(fileName)
+        self._vo = vo
+        self._setup = setup
+        self._root = rootPath
+        self._instances = {}
+
+    def __getitem__(self, items):
+        """In our case, it provides access to instances sensitive to VO and setup.
+
+        Usage::
+
+          # Create new default instance without VO and setup
+          gConfig = ConfigurationClient()
+
+          # Get configuration for default VO and default setup
+          gConfig.getValue('/Resource/someOption')
+
+          # Create new instance in dteam VO context
+          gConfig['dteam'].getValue('/Resource/someOption')
+
+          # Use existing instance created before
+          gConfig['dteam'].getValue('/Resource/someAnotherOption')
+
+          # Get option for VO and setup
+          gConfig['dteam', 'mySetup'].getValue('/Resource/someOption')
+
+          # Get option for setup
+          gConfig[None, 'mySetup'].getValue('/Resource/someOption')
+
+          # Get the option from the original configuration unchanged relative to VO/setup
+          gConfig[False].getValue('/Resource/someOption')
+
+        """
+        if isinstance(items, six.string_types):
+            items = (items or None,)
+        items += (None,) * (3 - len(items))
+        if items not in self._instances:
+            self._instances[items] = ConfigurationClient(*items)
+        return self._instances[items]
+
+    def _discoverVO(self):
+        """Discover VO"""
+        # Check if it is a client installation and if VO is already not set.
+        isServer = gConfigurationData.extractOptionFromCFG("/DIRAC/Security/UseServerCertificate")
+        if (isServer or "false").lower() not in ("y", "yes", "true") and not self._vo:
+            # Try to detect VO in the proxy
+            from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+
+            self._vo = getVOfromProxyGroup().get("Value") or None
 
     def loadFile(self, fileName):
         """Load file
@@ -119,27 +199,32 @@ class ConfigurationClient(object):
         """
         return gConfigurationData.useServerCertificate()
 
-    def getValue(self, optionPath, defaultValue=None):
+    def getValue(self, optionPath, defaultValue=None, vo=None, setup=None):
         """Get configuration value
 
         :param str optionPath: option path
         :param defaultValue: default value
+        :param str vo: VO name
+        :param str setup: setup name
 
         :return: type(defaultValue)
         """
-        retVal = self.getOption(optionPath, defaultValue)
+        retVal = self.getOption(optionPath, defaultValue, vo=vo, setup=setup)
         return retVal["Value"] if retVal["OK"] else defaultValue
 
-    def getOption(self, optionPath, typeValue=None):
+    def getOption(self, optionPath, typeValue=None, vo=None, setup=None):
         """Get configuration option
 
         :param str optionPath: option path
         :param typeValue: type of value
+        :param str vo: VO name
+        :param str setup: setup name
 
         :return: S_OK()/S_ERROR()
         """
         gRefresher.refreshConfigurationIfNeeded()
-        optionValue = gConfigurationData.extractOptionFromCFG(optionPath)
+        optionPath = self._calculatePath(optionPath)
+        optionValue = gConfigurationData.extractOptionFromCFG(optionPath, vo=vo or self._vo, setup=setup or self._setup)
 
         if optionValue is None:
             return S_ERROR(
@@ -189,71 +274,94 @@ class ConfigurationClient(object):
                     % (str(typeValue), optionValue, repr(e))
                 )
 
-    def getSections(self, sectionPath, listOrdered=True):
+    def getSections(self, sectionPath, listOrdered=True, vo=None, setup=None):
         """Get configuration sections
 
         :param str sectionPath: section path
         :param bool listOrdered: ordered
+        :param str vo: VO name
+        :param str setup: setup name
 
         :return: S_OK(list)/S_ERROR()
         """
         gRefresher.refreshConfigurationIfNeeded()
-        sectionList = gConfigurationData.getSectionsFromCFG(sectionPath, ordered=listOrdered)
+        sectionPath = self._calculatePath(sectionPath)
+        sectionList = gConfigurationData.getSectionsFromCFG(
+            sectionPath, ordered=listOrdered, vo=vo or self._vo, setup=setup or self._setup
+        )
         if isinstance(sectionList, list):
             return S_OK(sectionList)
-        else:
-            return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+        return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
 
-    def getOptions(self, sectionPath, listOrdered=True):
+    def getOptions(self, sectionPath, listOrdered=True, vo=None, setup=None):
         """Get configuration options
 
         :param str sectionPath: section path
         :param bool listOrdered: ordered
+        :param str vo: VO name
+        :param str setup: setup name
 
         :return: S_OK(list)/S_ERROR()
         """
         gRefresher.refreshConfigurationIfNeeded()
-        optionList = gConfigurationData.getOptionsFromCFG(sectionPath, ordered=listOrdered)
+        optionList = gConfigurationData.getOptionsFromCFG(
+            self._calculatePath(sectionPath), ordered=listOrdered, vo=vo or self._vo, setup=setup or self._setup
+        )
         if isinstance(optionList, list):
             return S_OK(optionList)
-        else:
-            return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+        return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
 
-    def getOptionsDict(self, sectionPath):
+    def getOptionsDict(self, sectionPath, vo=None, setup=None):
         """Get configuration options in dictionary
 
         :param str sectionPath: section path
+        :param str vo: VO name
+        :param str setup: setup name
 
         :return: S_OK(dict)/S_ERROR()
         """
         gRefresher.refreshConfigurationIfNeeded()
         optionsDict = {}
-        optionList = gConfigurationData.getOptionsFromCFG(sectionPath)
+        sectionPath = self._calculatePath(sectionPath)
+        optionList = gConfigurationData.getOptionsFromCFG(sectionPath, vo=vo or self._vo, setup=setup or self._setup)
         if isinstance(optionList, list):
             for option in optionList:
-                optionsDict[option] = gConfigurationData.extractOptionFromCFG("%s/%s" % (sectionPath, option))
+                optionsDict[option] = gConfigurationData.extractOptionFromCFG(
+                    "%s/%s" % (sectionPath, option), vo=vo or self._vo, setup=setup or self._setup
+                )
             return S_OK(optionsDict)
-        else:
-            return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+        return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
 
-    def getOptionsDictRecursively(self, sectionPath):
+    def getOptionsDictRecursively(self, sectionPath, vo=None, setup=None):
         """Get configuration options in dictionary recursively
 
         :param str sectionPath: section path
+        :param str vo: VO name
+        :param str setup: setup name
 
         :return: S_OK(dict)/S_ERROR()
         """
-        if not gConfigurationData.mergedCFG.isSection(sectionPath):
-            return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
-        return S_OK(gConfigurationData.mergedCFG.getAsDict(sectionPath))
+        sectionPath = self._calculatePath(sectionPath)
+        result = self.getSections(sectionPath, vo=vo or self._vo, setup=setup or self._setup)
+        if not result["OK"]:
+            return result
+        recDict = {}
+        for section in result["Value"]:
+            result = self.getOptionsDict(section, vo=vo or self._vo, setup=setup or self._setup)
+            if not result["OK"]:
+                return result
+            recDict[section] = result["Value"]
+        return S_OK(recDict)
 
-    def getConfigurationTree(self, root="", *filters):
+    def getConfigurationTree(self, root="", *filters, **kwargs):
         """Create a dictionary with all sections, subsections and options
         starting from given root. Result can be filtered.
 
         :param str root: Starting point in the configuration tree.
         :param filters: Select results that contain given substrings (check full path, i.e. with option name)
         :type filters: str or python:list[str]
+        :param str vo: VO name
+        :param str setup: setup name
 
         :return: S_OK(dict)/S_ERROR() -- dictionary where keys are paths taken from
                  the configuration (e.g. /Systems/Configuration/...).
@@ -261,8 +369,11 @@ class ConfigurationClient(object):
                  or not "None" if path points to an option.
         """
 
+        vo = kwargs.get("vo")
+        setup = kwargs.get("setup")
+
         # check if root is an option (special case)
-        option = self.getOption(root)
+        option = self.getOption(root, vo=vo, setup=setup)
         if option["OK"]:
             result = {root: option["Value"]}
 
@@ -277,7 +388,7 @@ class ConfigurationClient(object):
             root = root.rstrip("/")
 
             # get options of current root
-            options = self.getOptionsDict(root)
+            options = self.getOptionsDict(root, vo=vo, setup=setup)
             if not options["OK"]:
                 return S_ERROR("getOptionsDict() failed with message: %s" % options["Message"])
 
@@ -293,13 +404,13 @@ class ConfigurationClient(object):
                     result[path] = value
 
             # get subsections of the root
-            sections = self.getSections(root)
+            sections = self.getSections(root, vo=vo, setup=setup)
             if not sections["OK"]:
                 return S_ERROR("getSections() failed with message: %s" % sections["Message"])
 
             # recursively go through subsections and get their subsections
             for section in sections["Value"]:
-                subtree = self.getConfigurationTree("%s/%s" % (root, section), *filters)
+                subtree = self.getConfigurationTree("%s/%s" % (root, section), vo=vo, setup=setup, *filters)
                 if not subtree["OK"]:
                     return S_ERROR("getConfigurationTree() failed with message: %s" % sections["Message"])
                 result.update(subtree["Value"])
@@ -312,4 +423,13 @@ class ConfigurationClient(object):
         :param str optionPath: option path
         :param str value: value
         """
-        gConfigurationData.setOptionInCFG(optionPath, value)
+        gConfigurationData.setOptionInCFG(self._calculatePath(optionPath), value)
+
+    def _calculatePath(self, path):
+        """An auxiliary method that helps to calculate the path
+
+        :param str path: section path
+
+        :return: str
+        """
+        return join(self._root, path.lstrip("/")) if self._root else path

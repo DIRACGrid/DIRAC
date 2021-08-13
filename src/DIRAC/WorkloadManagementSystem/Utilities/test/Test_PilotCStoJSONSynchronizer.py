@@ -122,7 +122,8 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
         with open(self.testCfgFileName, "w") as f:
             f.write(cfgContent)
         # we replace the configuration by our own one.
-        gConfig = ConfigurationClient(fileToLoadList=[self.testCfgFileName])
+        gConfig = ConfigurationClient()
+        gConfig.loadFile(self.testCfgFileName)
         self.setup = gConfig.getValue("/DIRAC/Setup", "")
         self.wm = gConfig.getValue("DIRAC/Setups/" + self.setup + "/WorkloadManagement", "")
 

@@ -266,13 +266,10 @@ class TestBase(unittest.TestCase):
 
     }
     Operations{
-      Defaults
-      {
-        DataManagement{
-          AccessProtocols = fakeProto
-          AccessProtocols += root
-          WriteProtocols = srm
-        }
+      DataManagement{
+        AccessProtocols = fakeProto
+        AccessProtocols += root
+        WriteProtocols = srm
       }
     }
     """
@@ -286,10 +283,9 @@ class TestBase(unittest.TestCase):
         gConfigurationData.remoteCFG = CFG()
         gConfigurationData.mergedCFG = CFG()
         gConfigurationData.generateNewVersion()
+        gConfigurationData.loadFile(self.testCfgFileName)
 
-        gConfig = ConfigurationClient(
-            fileToLoadList=[self.testCfgFileName]
-        )  # we replace the configuration by our own one.
+        gConfig = ConfigurationClient()  # we replace the configuration by our own one.
 
         self.seA = StorageElementItem("StorageA")
         self.seA.vo = "lhcb"
@@ -806,10 +802,9 @@ class TestSameSE(unittest.TestCase):
         gConfigurationData.remoteCFG = CFG()
         gConfigurationData.mergedCFG = CFG()
         gConfigurationData.generateNewVersion()
+        gConfigurationData.loadFile(self.testCfgFileName)
 
-        gConfig = ConfigurationClient(
-            fileToLoadList=[self.testCfgFileName]
-        )  # we replace the configuration by our own one.
+        gConfig = ConfigurationClient()  # we replace the configuration by our own one.
 
         self.diskStorageA = StorageElementItem("DiskStorageA")
         self.diskStorageA.vo = "lhcb"

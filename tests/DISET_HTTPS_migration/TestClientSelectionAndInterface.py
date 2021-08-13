@@ -81,8 +81,8 @@ def config(request):
   """
     with open(testCfgFileName, "w") as f:
         f.write(cfgContent)
-    gConfig = ConfigurationClient(fileToLoadList=[testCfgFileName])  # we replace the configuration by our own one.
-
+    gConfig = ConfigurationClient()  # we replace the configuration by our own one.
+    gConfig.loadFile(testCfgFileName)
     # def tearDown():
     # Wait for teardown
     yield config

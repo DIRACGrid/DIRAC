@@ -348,66 +348,60 @@ res = csAPI.createSection("Operations/")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-res = csAPI.createSection("Operations/Defaults")
+res = csAPI.createSection("Operations/ResourceStatus")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-res = csAPI.createSection("Operations/Defaults/ResourceStatus")
+res = csAPI.createSection("Operations/ResourceStatus/Config")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Config")
+csAPI.setOption("Operations/ResourceStatus/Config/Cache", "600")
+csAPI.setOption("Operations/ResourceStatus/Config/State", "Active")
+csAPI.setOption("Operations/ResourceStatus/Config/FromAddress", "fstagni@cern.ch")
+csAPI.setOption("Operations/ResourceStatus/Config/notificationGroups", "ShiftersGroup")
+res = csAPI.createSection("Operations/ResourceStatus/Config/StatusTypes")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Config/Cache", "600")
-csAPI.setOption("Operations/Defaults/ResourceStatus/Config/State", "Active")
-csAPI.setOption("Operations/Defaults/ResourceStatus/Config/FromAddress", "fstagni@cern.ch")
-csAPI.setOption("Operations/Defaults/ResourceStatus/Config/notificationGroups", "ShiftersGroup")
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Config/StatusTypes")
-if not res["OK"]:
-    print(res["Message"])
-    exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Config/StatusTypes/default", "all")
+csAPI.setOption("Operations/ResourceStatus/Config/StatusTypes/default", "all")
 csAPI.setOption(
-    "Operations/Defaults/ResourceStatus/Config/StatusTypes/StorageElement",
-    "ReadAccess,WriteAccess,CheckAccess,RemoveAccess",
+    "Operations/ResourceStatus/Config/StatusTypes/StorageElement", "ReadAccess,WriteAccess,CheckAccess,RemoveAccess"
 )
 
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies")
+res = csAPI.createSection("Operations/ResourceStatus/Policies")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource")
+res = csAPI.createSection("Operations/ResourceStatus/Policies/AlwaysActiveForResource")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/policyType", "AlwaysActive")
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams")
+csAPI.setOption("Operations/ResourceStatus/Policies/AlwaysActiveForResource/policyType", "AlwaysActive")
+res = csAPI.createSection("Operations/ResourceStatus/Policies/AlwaysActiveForResource/matchParams")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource/matchParams/element", "Resource")
+csAPI.setOption("Operations/ResourceStatus/Policies/AlwaysActiveForResource/matchParams/element", "Resource")
 
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2")
+res = csAPI.createSection("Operations/ResourceStatus/Policies/AlwaysBannedForSE1SE2")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/policyType", "AlwaysBanned")
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams")
+csAPI.setOption("Operations/ResourceStatus/Policies/AlwaysBannedForSE1SE2/policyType", "AlwaysBanned")
+res = csAPI.createSection("Operations/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams/name", "SE1,SE2")
+csAPI.setOption("Operations/ResourceStatus/Policies/AlwaysBannedForSE1SE2/matchParams/name", "SE1,SE2")
 
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite")
+res = csAPI.createSection("Operations/ResourceStatus/Policies/AlwaysBannedForSite")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams")
-csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/policyType", "AlwaysBanned")
-csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element", "Site")
+res = csAPI.createSection("Operations/ResourceStatus/Policies/AlwaysBannedForSite/matchParams")
+csAPI.setOption("Operations/ResourceStatus/Policies/AlwaysBannedForSite/policyType", "AlwaysBanned")
+csAPI.setOption("Operations/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element", "Site")
 
 
 # Now setting the catalog list in Operations/Defults/Services/Catalogs/CatalogList
@@ -420,19 +414,19 @@ csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite
 #       }
 #     }
 
-res = csAPI.createSection("Operations/Defaults/Services")
+res = csAPI.createSection("Operations/Services")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-res = csAPI.createSection("Operations/Defaults/Services/Catalogs")
+res = csAPI.createSection("Operations/Services/Catalogs")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-res = csAPI.createSection("Operations/Defaults/Services/Catalogs/CatalogList")
+res = csAPI.createSection("Operations/Services/Catalogs/CatalogList")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-csAPI.setOption("Operations/Defaults/Services/Catalogs/CatalogList", "FileCatalog, TSCatalog, MultiVOFileCatalog")
+csAPI.setOption("Operations/Services/Catalogs/CatalogList", "FileCatalog, TSCatalog, MultiVOFileCatalog")
 
 
 # Adding DataManagement section of Operations
@@ -447,11 +441,11 @@ csAPI.setOption("Operations/Defaults/Services/Catalogs/CatalogList", "FileCatalo
 #   }
 # }
 
-res = csAPI.createSection("Operations/Defaults/DataManagement")
+res = csAPI.createSection("Operations/DataManagement")
 if not res["OK"]:
     print(res["Message"])
     exit(1)
-csAPI.setOption("Operations/Defaults/DataManagement/RegistrationProtocols", "srm,dips,s3")
+csAPI.setOption("Operations/DataManagement/RegistrationProtocols", "srm,dips,s3")
 
 
 # Now setting the Registry section

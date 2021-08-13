@@ -131,6 +131,7 @@ def main():
             if statusFlagDict[statusType]:
                 if seOptions.get(statusType) == "Active":
                     gLogger.notice("%s status of %s is already Active" % (statusType, se))
+                    statusAllowedDict[statusType].append(se)
                     continue
                 if statusType in seOptions:
                     if not seOptions[statusType] in ALLOWED_STATUSES:
@@ -160,7 +161,7 @@ def main():
     totalAllowedSEs = list(set(totalAllowedSEs))
 
     if not totalAllowed:
-        gLogger.info("No storage elements were allowed")
+        gLogger.fatal("No storage elements were allowed")
         DIRAC.exit(-1)
 
     if mute:

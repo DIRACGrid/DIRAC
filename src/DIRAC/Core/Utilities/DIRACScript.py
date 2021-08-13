@@ -182,4 +182,7 @@ class DIRACScript(object):
     @classmethod
     def enableCS(cls):
         """See :func:`~DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration.enableCS`."""
+        from DIRAC import gConfig
+
+        gConfig._discoverVO()
         return cls.localCfg.enableCS()

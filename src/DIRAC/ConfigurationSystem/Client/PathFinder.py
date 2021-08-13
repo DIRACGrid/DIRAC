@@ -232,14 +232,11 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
             # which would be like dips://$MAINSERVERS$:1234/System/Component
             if "$MAINSERVERS$" in url:
                 if not mainServers:
-                    # Operations cannot be imported at the beginning because of a bootstrap problem
-                    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
-                    mainServers = Operations(setup=setup).getValue("MainServers", [])
+                    mainServers = gConfigurationData.extractOptionFromCFG("/Operations/MainServers", setup=setup)
                 if not mainServers:
                     raise Exception("No Main servers defined")
 
-                for srv in mainServers:
+                for srv in List.fromChar(mainServers):
                     _url = checkComponentURL(url.replace("$MAINSERVERS$", srv), system, service, pathMandatory=True)
                     if _url not in urlList:
                         urlList.append(_url)

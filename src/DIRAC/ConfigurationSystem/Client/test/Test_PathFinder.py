@@ -46,11 +46,9 @@ Systems
     }
   }
 }
-Operations{
-  Defaults
-  {
-    MainServers = gw1, gw2
-  }
+Operations
+{
+  MainServers = gw1, gw2
 }
 """
 )
@@ -63,7 +61,6 @@ localCFGData.generateNewVersion()
 @pytest.fixture
 def pathFinder(monkeypatch):
     monkeypatch.setattr(PathFinder, "gConfigurationData", localCFGData)
-    monkeypatch.setattr(Operations, "gConfigurationData", localCFGData)
     return PathFinder
 
 
