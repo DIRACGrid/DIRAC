@@ -18,8 +18,7 @@ import sys
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.DIRACScript import DIRACScript
+from DIRAC.Core.Utilities.DIRACScript import DIRACScript as Script
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
@@ -32,6 +31,7 @@ __RCSID__ = "$Id$"
 class Params(object):
 
   def __init__(self):
+    self.info = False
     self.provider = 'DIRACCLI'
     self.proxy = False
     self.group = None
@@ -39,6 +39,14 @@ class Params(object):
     self.issuer = None
     self.proxyLoc = '/tmp/x509up_u%s' % os.getuid()
     self.tokenLoc = None
+
+  def getInfo(self, _arg):
+    """ To return user info
+
+        :return: S_OK()
+    """
+    self.info = True
+    return S_OK()
 
   def returnProxy(self, _arg):
     """ To return proxy
@@ -90,6 +98,7 @@ class Params(object):
 
   def registerCLISwitches(self):
     """ Register CLI switches """
+    Script.registerSwitch("", "info", "output current user authorization status", self.getInfo)
     Script.registerSwitch("P", "proxy", "request a proxy certificate with DIRAC group extension", self.returnProxy)
     Script.registerSwitch("g:", "group=", "set DIRAC group", self.setGroup)
     Script.registerSwitch("I:", "issuer=", "set issuer", self.setIssuer)
@@ -101,6 +110,26 @@ class Params(object):
 
         :return: S_OK()/S_ERROR()
     """
+    tokenFile = getTokenFileLocation(self.tokenLoc)
+
+    if self.info:
+      # Try to get user information
+      result = Script.enableCS()
+      if not result['OK']:
+        return S_ERROR("Cannot contact CS.")
+      useTokens = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ("y", "yes", "true")
+      if not useTokens and not DIRAC.gConfig.getValue('/DIRAC/Security/UseTokens',
+                                                      'false').lower() in ("y", "yes", "true"):
+        result = getProxyInfo(self.proxyLoc)
+        if not result['OK']:
+          return result['Message']
+        gLogger.notice(formatProxyInfoAsString(result['Value'])) 
+      else:
+        result = readTokenFromFile(tokenFile)
+        if not result['OK']:
+          return result
+        gLogger.notice(result['Value'].getInfoAsString())
+      return S_OK()
     params = {}
     if self.issuer:
       params['issuer'] = self.issuer
@@ -116,8 +145,6 @@ class Params(object):
     if self.lifetime:
       scope.append('lifetime:%s' % (int(self.lifetime) * 3600))
     idpObj.scope = '+'.join(scope) if scope else ''
-
-    tokenFile = getTokenFileLocation(self.tokenLoc)
 
     # Submit Device authorisation flow
     result = idpObj.deviceAuthorization()
@@ -163,7 +190,7 @@ class Params(object):
     # Try to get user information
     result = Script.enableCS()
     if not result['OK']:
-      return S_ERROR("Cannot contact CS to get user list")
+      return S_ERROR("Cannot contact CS.")
     DIRAC.gConfig.forceRefresh()
 
     if self.proxy:
@@ -180,7 +207,7 @@ class Params(object):
     return S_OK()
 
 
-@DIRACScript()
+@Script()
 def main():
   piParams = Params()
   piParams.registerCLISwitches()
