@@ -60,6 +60,8 @@ def main():
   records = []
 
   records.append(('Setup', gConfig.getValue('/DIRAC/Setup', 'Unknown')))
+  records.append(('AuthorizationServer', gConfig.getValue('/DIRAC/Security/Authorization/issuer',
+                                                          '/DIRAC/Security/Authorization/issuer option is absent')))
   records.append(('ConfigurationServer', gConfig.getValue('/DIRAC/Configuration/Servers', [])))
   records.append(('Installation path', DIRAC.rootPath))
 
@@ -88,6 +90,10 @@ def main():
     records.append(('Use Server Certificate', 'Yes'))
   else:
     records.append(('Use Server Certificate', 'No'))
+  useTokens = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ("y", "yes", "true")
+  if not useTokens:
+    useTokens = gConfig.getValue('/DIRAC/Security/UseTokens', 'false').lower() in ("y", "yes", "true")
+  records.append(('Use tokens', 'Yes' if useTokens else 'No'))
   if gConfig.getValue('/DIRAC/Security/SkipCAChecks', False):
     records.append(('Skip CA Checks', 'Yes'))
   else:
