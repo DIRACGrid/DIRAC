@@ -271,6 +271,7 @@ class AuthServer(_AuthorizationServer):
     result = getUsernameForDN(credDict['DN'])
     if not result['OK']:
       comment = '%s ID is not registred in the DIRAC.' % credDict['ID']
+      payload.update(idpObj.getUserProfile().get('Value', {}))
       result = self.__registerNewUser(providerName, payload)
       if result['OK']:
         comment += ' Administrators have been notified about you.'
