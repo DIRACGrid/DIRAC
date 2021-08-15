@@ -120,11 +120,13 @@ class Params(object):
       useTokens = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ("y", "yes", "true")
       if not useTokens and not DIRAC.gConfig.getValue('/DIRAC/Security/UseTokens',
                                                       'false').lower() in ("y", "yes", "true"):
+        gLogger.notice('You use proxy, to use access token set "DIRAC_USE_ACCESS_TOKEN=True" env.\n')
         result = getProxyInfo(self.proxyLoc)
         if not result['OK']:
           return result['Message']
         gLogger.notice(formatProxyInfoAsString(result['Value'])) 
       else:
+        gLogger.notice('You use access token, to use proxy set "DIRAC_USE_ACCESS_TOKEN=False" env.\n')
         result = readTokenFromFile(tokenFile)
         if not result['OK']:
           return result
