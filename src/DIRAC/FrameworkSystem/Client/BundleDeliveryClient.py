@@ -8,6 +8,7 @@ import os
 import getpass
 import tarfile
 from six import BytesIO
+from base64 import b64decode
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient

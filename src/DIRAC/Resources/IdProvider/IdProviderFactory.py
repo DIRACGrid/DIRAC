@@ -74,7 +74,10 @@ class IdProviderFactory(object):
     if not name:
       return S_ERROR('Identity Provider client name must be not None.')
     # Get Authorization Server metadata
-    asMetaDict = collectMetadata(kwargs.get('issuer'), ignoreErrors=True)
+    try:
+      asMetaDict = collectMetadata(kwargs.get('issuer'), ignoreErrors=True)
+    except Exception as e:
+      return S_ERROR(str(e))
     self.log.debug('Search configuration for', name)
     clients = getDIRACClients()
     if name in clients:
