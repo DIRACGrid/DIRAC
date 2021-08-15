@@ -9,8 +9,10 @@ __RCSID__ = "$Id$"
 import six
 import tarfile
 import os
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from base64 import b64encode, b64decode
+
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import File, List
 from DIRAC.Core.Security import Locations, Utilities
@@ -88,7 +90,7 @@ class BundleManager(object):
         self.__bundles[bId] = (None, None)
 
 
-class BundleDeliveryHandler(RequestHandler):
+class TornadoBundleDeliveryHandler(TornadoService):
 
   @classmethod
   def initializeHandler(cls, serviceInfoDict):
@@ -98,6 +100,39 @@ class BundleDeliveryHandler(RequestHandler):
     gLogger.info("Bundles will be updated each %s secs" % updateBundleTime)
     gThreadScheduler.addPeriodicTask(updateBundleTime, cls.bundleManager.updateBundles)
     return S_OK()
+
+
+  types_streamToClient = []
+
+  def export_streamToClient(self, fileId):
+    version = ""
+    if isinstance(fileId, six.string_types):
+      if fileId in ['CAs', 'CRLs']:
+        retVal = Utilities.generateCAFile() if fileId == 'CAs' else Utilities.generateRevokedCertsFile()
+        if not retVal['OK']:
+          return retVal
+        with open(retVal['Value'], 'r') as fd:
+          return S_OK(b64encode(fd.read()).decode())
+      bId = fileId
+
+    elif isinstance(fileId, (list, tuple)):
+      if len(fileId) == 0:
+        return S_ERROR("No bundle specified!")
+      bId = fileId[0]
+      if len(fileId) != 1:
+        version = fileId[1]
+
+    if not self.bundleManager.bundleExists(bId):
+      return S_ERROR("Unknown bundle %s" % bId)
+
+    bundleVersion = self.bundleManager.getBundleVersion(bId)
+    if bundleVersion is None:
+      return S_ERROR("Empty bundle %s" % bId)
+
+    if version == bundleVersion:
+      return S_OK(bundleVersion)
+
+    return S_OK(b64encode(self.bundleManager.getBundleData(bId)).decode())
 
   types_getListOfBundles = []
 

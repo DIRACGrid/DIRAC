@@ -444,6 +444,7 @@ class AuthServer(_AuthorizationServer):
     mail['subject'] = "[DIRAC AS] User %s to be added." % username
     mail['body'] = 'User %s was authenticated by %s.' % (username, provider)
     mail['body'] += "\n\nNew user to be added with the following information:\n%s" % pprint.pformat(payload)
+    mail['body'] += "\n\nPlease, add '%s' to /Register/Users/<username>/DN option.\n" % wrapIDAsDN(username)
     mail['body'] += "\n\n------"
     mail['body'] += "\n This is a notification from the DIRAC authorization service, please do not reply.\n"
     result = S_OK()
