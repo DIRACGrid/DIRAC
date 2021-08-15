@@ -124,7 +124,7 @@ class Params(object):
         result = getProxyInfo(self.proxyLoc)
         if not result['OK']:
           return result['Message']
-        gLogger.notice(formatProxyInfoAsString(result['Value'])) 
+        gLogger.notice(formatProxyInfoAsString(result['Value']))
       else:
         gLogger.notice('You use access token, to use proxy set "DIRAC_USE_ACCESS_TOKEN=False" env.\n')
         result = readTokenFromFile(tokenFile)

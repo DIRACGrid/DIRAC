@@ -101,7 +101,6 @@ class TornadoBundleDeliveryHandler(TornadoService):
     gThreadScheduler.addPeriodicTask(updateBundleTime, cls.bundleManager.updateBundles)
     return S_OK()
 
-
   types_streamToClient = []
 
   def export_streamToClient(self, fileId):
