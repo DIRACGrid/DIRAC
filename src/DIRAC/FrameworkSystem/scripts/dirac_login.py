@@ -154,6 +154,12 @@ class Params(object):
       tokenFile = result['Value']
       gLogger.notice('New token is saved to %s.' % tokenFile)
 
+      if not DIRAC.gConfig.getValue('/DIRAC/Security/Authorization/issuer'):
+        gLogger.notice('To continue use token you need to add /DIRAC/Security/Authorization/issuer option.')
+        if not self.issuer:
+          DIRAC.exit(1)
+        DIRAC.gConfig.setOptionValue('/DIRAC/Security/Authorization/issuer', self.issuer)
+
     # Try to get user information
     result = Script.enableCS()
     if not result['OK']:
