@@ -330,7 +330,7 @@ class OAuth2IdProvider(IdProvider, OAuth2Session):
 
     # Notify user to go to authorization endpoint
     if response.get('verification_uri_complete'):
-      showURL = 'Use next link to continue"\n%s' % response['verification_uri_complete']
+      showURL = 'Use next link to continue\n%s' % response['verification_uri_complete']
     else:
       showURL = 'Use next link to continue, your user code is "%s"\n%s' % (response['user_code'],
                                                                            response['verification_uri'])

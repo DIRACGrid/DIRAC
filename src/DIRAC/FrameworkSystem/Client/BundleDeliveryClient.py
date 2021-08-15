@@ -11,13 +11,24 @@ from six import BytesIO
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
-from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.Security import Locations, Utilities
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 
 
 __RCSID__ = "$Id$"
+
+
+class BundleDeliveryJSONClient(TornadoClient):
+
+  def receiveFile(self, buff, fileId):
+    retVal = self.executeRPC('streamToClient', fileId)
+    if retVal['OK']:
+      retVal['Value'] = b64decode(retVal['Value'].encode())
+      buff.write(retVal['Value'])
+    return retVal
 
 
 @createClient('Framework/BundleDelivery')
@@ -37,7 +48,8 @@ class BundleDeliveryClient(Client):
     if self.transferClient:
       return self.transferClient
     return TransferClient("Framework/BundleDelivery",
-                          skipCACheck=skipCACheck())
+                          skipCACheck=skipCACheck(),
+                          httpsClient=BundleDeliveryJSONClient)
 
   def __getHash(self, bundleID, dirToSyncTo):
     """ Get hash for bundle in directory
@@ -63,7 +75,7 @@ class BundleDeliveryClient(Client):
     """
     try:
       fileName = os.path.join(dirToSyncTo, ".dab.%s" % bundleID)
-      with open(fileName, "wt") as fd:
+      with open(fileName, "wb") as fd:
         fd.write(bdHash)
     except Exception as e:
       self.log.error("Could not save hash after synchronization", "%s: %s" % (fileName, str(e)))
