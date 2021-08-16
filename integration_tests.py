@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -21,8 +22,8 @@ from typer import colors as c
 
 # Editable configuration
 DEFAULT_HOST_OS = "cc7"
-DEFAULT_MYSQL_VER = "8.0"
-DEFAULT_ES_VER = "7.9.1"
+DEFAULT_MYSQL_VER = "mysql:8.0"
+DEFAULT_ES_VER = "elasticsearch:7.9.1"
 FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
     "DIRACOS_TARBALL_PATH": None,
@@ -178,6 +179,7 @@ def prepare_environment(
     release_var: Optional[str] = None,
 ):
     """Prepare the local environment for installing DIRAC."""
+
     _check_containers_running(is_up=False)
     if editable is None:
         editable = sys.stdout.isatty()
@@ -528,9 +530,11 @@ def _gen_docker_compose(modules):
     # Write to a tempory file with the appropriate profile name
     prefix = "ci"
     with tempfile.TemporaryDirectory() as tmpdir:
+        input_docker_compose_dir = Path(__file__).parent / "tests/CI/"
         output_fn = Path(tmpdir) / prefix / "docker-compose.yml"
         output_fn.parent.mkdir()
         output_fn.write_text(yaml.safe_dump(docker_compose, sort_keys=False))
+        shutil.copytree(input_docker_compose_dir / "envs", str(Path(tmpdir) / prefix), dirs_exist_ok=True)
         yield output_fn
 
 
@@ -539,6 +543,7 @@ def _check_containers_running(*, is_up=True):
         running_containers = subprocess.run(
             ["docker-compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
             stdout=subprocess.PIPE,
+            env=_make_env({}),
             check=True,
             text=True,
         ).stdout.split("\n")

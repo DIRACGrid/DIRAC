@@ -62,11 +62,11 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
-import getpass
 import glob
 import importlib
 import inspect
 import io
+import MySQLdb
 import os
 import pkgutil
 import re
@@ -99,7 +99,7 @@ from DIRAC.Core.Security.Properties import ALARMS_MANAGEMENT, SERVICE_ADMINISTRA
     NORMAL_USER, TRUSTED_HOST
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.Core.Utilities.MySQL import MySQL
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
@@ -110,6 +110,7 @@ from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority, findDatabases, findModules, findAgents, findServices,
     findExecutors, findSystems,
 )
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
 __RCSID__ = "$Id$"
 
@@ -2140,6 +2141,10 @@ exec dirac-webapp-run -p < /dev/null
     """
     Install requested DB in MySQL server
     """
+    if six.PY3:
+      dbName = MySQLdb.escape_string(dbName.encode()).decode()
+    else:
+      dbName = MySQLdb.escape_string(dbName)
     if not self.mysqlRootPwd:
       rootPwdPath = cfgInstallPath('Database', 'RootPwd')
       return S_ERROR('Missing %s in %s' % (rootPwdPath, self.cfgFile))
@@ -2177,6 +2182,7 @@ exec dirac-webapp-run -p < /dev/null
       if self.exitOnError:
         DIRAC.exit(-1)
       return S_ERROR(error)
+    gLogger.debug("SHOW STATUS : OK")
 
     # now creating the Database
     result = self.execMySQL('CREATE DATABASE `%s`' % dbName)
@@ -2185,25 +2191,26 @@ exec dirac-webapp-run -p < /dev/null
       if self.exitOnError:
         DIRAC.exit(-1)
       return result
+    gLogger.debug("CREATE DATABASES : OK")
 
     perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES," \
             "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
-    for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost'" % (perms, dbName, self.mysqlUser),
-                "GRANT %s ON `%s`.* TO '%s'@'%s'" % (perms, dbName, self.mysqlUser, self.mysqlHost),
-                "GRANT %s ON `%s`.* TO '%s'@'%%'" % (perms, dbName, self.mysqlUser)]:
-      result = self.execMySQL(cmd)
-      if not result['OK']:
-        error = "Error executing '%s'" % cmd
-        gLogger.error(error, result['Message'])
-        if self.exitOnError:
-          DIRAC.exit(-1)
-        return S_ERROR(error)
+    cmd = "GRANT %s ON `%s`.* TO '%s'@'%%'" % (perms, dbName, self.mysqlUser)
+    result = self.execMySQL(cmd)
+    if not result['OK']:
+      error = "Error executing '%s'" % cmd
+      gLogger.error(error, result['Message'])
+      if self.exitOnError:
+        DIRAC.exit(-1)
+      return S_ERROR(error)
+    gLogger.debug("%s : OK" % cmd, result['Value'])
     result = self.execMySQL('FLUSH PRIVILEGES')
     if not result['OK']:
       gLogger.error('Failed to flush privileges', result['Message'])
       if self.exitOnError:
         exit(-1)
       return result
+    gLogger.debug("FLUSH PRIVILEGES : OK")
 
     # first getting the lines to be executed, and then execute them
     try:
@@ -2279,7 +2286,6 @@ exec dirac-webapp-run -p < /dev/null
     """
     Execute MySQL Command
     """
-    from DIRAC.Core.Utilities.MySQL import MySQL
     if not self.mysqlRootPwd:
       return S_ERROR('MySQL root password is not defined')
     if dbName not in self.db:
