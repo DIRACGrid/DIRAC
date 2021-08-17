@@ -90,10 +90,10 @@ def main():
     records.append(('Use Server Certificate', 'Yes'))
   else:
     records.append(('Use Server Certificate', 'No'))
-  useTokens = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ("y", "yes", "true")
-  if not useTokens:
-    useTokens = gConfig.getValue('/DIRAC/Security/UseTokens', 'false').lower() in ("y", "yes", "true")
-  records.append(('Use tokens', 'Yes' if useTokens else 'No'))
+  if gConfig.getValue('/DIRAC/Security/UseTokens', 'false').lower() in ("y", "yes", "true"):
+    records.append(('Use tokens', 'Yes'))
+  else:
+    records.append(('Use tokens', 'No'))
   if gConfig.getValue('/DIRAC/Security/SkipCAChecks', False):
     records.append(('Skip CA Checks', 'Yes'))
   else:

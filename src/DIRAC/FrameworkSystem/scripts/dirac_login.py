@@ -117,9 +117,10 @@ class Params(object):
       result = Script.enableCS()
       if not result['OK']:
         return S_ERROR("Cannot contact CS.")
-      useTokens = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ("y", "yes", "true")
-      if not useTokens and not DIRAC.gConfig.getValue('/DIRAC/Security/UseTokens',
-                                                      'false').lower() in ("y", "yes", "true"):
+      useTokens = DIRAC.gConfig.getValue('/DIRAC/Security/UseTokens', 'false').lower() in ("y", "yes", "true")
+      if 'DIRAC_USE_ACCESS_TOKEN' in os.environ:
+        useTokens = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ("y", "yes", "true")
+      if useTokens:
         gLogger.notice('You use proxy, to use access token set "DIRAC_USE_ACCESS_TOKEN=True" env.\n')
         result = getProxyInfo(self.proxyLoc)
         if not result['OK']:
