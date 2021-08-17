@@ -37,7 +37,7 @@ from DIRAC.WorkloadManagementSystem.Utilities.Utils import createRelocatedJobWra
 __RCSID__ = "$Id$"
 
 
-DIRAC_INSTALL = os.path.join(os.path.dirname(DIRAC.__file__), 'Core', 'scripts', 'dirac-install.py')
+DIRAC_INSTALL = os.path.join('Core', 'scripts', 'dirac-install.py')
 # Default container to use if it isn't specified in the CE options
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
 CONTAINER_WORKDIR = "DIRAC_containers"

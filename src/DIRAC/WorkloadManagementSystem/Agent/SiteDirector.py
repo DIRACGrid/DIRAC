@@ -25,8 +25,6 @@ import socket
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
-import six
-
 import DIRAC
 from DIRAC import S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
@@ -34,7 +32,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Time import dateTime, second
-from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
