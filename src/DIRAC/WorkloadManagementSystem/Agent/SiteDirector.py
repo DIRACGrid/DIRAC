@@ -52,7 +52,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 # dirac install file
-DIRAC_INSTALL = os.path.join(os.path.dirname(DIRAC.__file__), 'Core', 'scripts', 'dirac-install.py')
+DIRAC_INSTALL = os.path.join('Core', 'scripts', 'dirac-install.py')
 
 MAX_PILOTS_TO_SUBMIT = 100
 

@@ -27,4 +27,4 @@ jobs:
     - name: run dirac-install
       run: |
         eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
-        python src/DIRAC/Core/scripts/dirac-install.py -l DIRAC -r integration -t server --dirac-os -ddd
+	python Core/scripts/dirac-install.py -l DIRAC -r integration -t server --dirac-os -ddd
