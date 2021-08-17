@@ -70,6 +70,7 @@ dependencies:
   - typing >=3.6.6
   # Pin OpenSSL to avoid: https://github.com/DIRACGrid/DIRAC/issues/4489
   - openssl <1.1
+  - selectors2
   - pip:
     - diraccfg
     # This is a fork of tornado with a patch to allow for configurable iostream

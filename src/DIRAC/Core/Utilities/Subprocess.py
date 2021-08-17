@@ -33,12 +33,16 @@ from __future__ import print_function
 from multiprocessing import Process, Manager
 import threading
 import time
-import select
 import os
 import sys
 import subprocess32 as subprocess
 import signal
 import psutil
+
+try:
+  import selectors
+except ImportError:
+  import selectors2 as selectors
 
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported
@@ -238,11 +242,11 @@ class Subprocess(object):
         pass
     if not validList:
       return False
-    if self.timeout and not timeout:
-      timeout = self.timeout
-    if not timeout:
-      return select.select(validList, [], [])[0]
-    return select.select(validList, [], [], timeout)[0]
+    sel = selectors.DefaultSelector()
+    for socket in validList:
+      sel.register(socket, selectors.EVENT_READ)
+    events = sel.select(timeout=timeout or self.timeout or None)
+    return [key.fileobj for key, event in events if event & selectors.EVENT_READ]
 
   def __killPid(self, pid, sig=9):
     """ send signal :sig: to process :pid:
@@ -372,7 +376,12 @@ class Subprocess(object):
     try:
       dataString = ""
       fn = fd.fileno()
-      while fd in select.select([fd], [], [], 1)[0]:
+
+      sel = selectors.DefaultSelector()
+      sel.register(fd, selectors.EVENT_READ)
+      while True:
+        if not sel.select(timeout=1):
+          break
         if isinstance(fn, int):
           nB = os.read(fn, self.bufferLimit)
         else:

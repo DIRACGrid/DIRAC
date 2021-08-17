@@ -18,13 +18,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import select
 import time
 import socket
 import signal
 import os
 import sys
 import multiprocessing
+
+try:
+  import selectors
+except ImportError:
+  import selectors2 as selectors
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
@@ -188,14 +192,14 @@ class ServiceReactor(object):
     while self.__alive:
       self.__acceptIncomingConnection(svcName)
 
-  def __getListeningSocketsList(self, svcName=False):
+  def __getListeningSelector(self, svcName=False):
+    sel = selectors.DefaultSelector()
     if svcName:
-      sockets = [self.__listeningConnections[svcName]['socket']]
+      sel.register(self.__listeningConnections[svcName]['socket'], selectors.EVENT_READ, svcName)
     else:
-      sockets = []
-      for svcName in self.__listeningConnections:
-        sockets.append(self.__listeningConnections[svcName]['socket'])
-    return sockets
+      for svcName, svcInfo in self.__listeningConnections.items():
+        sel.register(svcInfo['socket'], selectors.EVENT_READ, svcName)
+    return sel
 
   def __acceptIncomingConnection(self, svcName=False):
     """
@@ -207,20 +211,20 @@ class ServiceReactor(object):
       :param str svcName=False: Name of a service if you use multiple
                                 services at the same time
     """
-    sockets = self.__getListeningSocketsList(svcName)
+    sel = self.__getListeningSelector(svcName)
     while self.__alive:
       try:
-        inList, _outList, _exList = select.select(sockets, [], [], 10)
-        if len(inList) == 0:
+        events = sel.select(timeout=10)
+        if len(events) == 0:
           return
-        for inSocket in inList:
-          for svcName in self.__listeningConnections:
-            if inSocket == self.__listeningConnections[svcName]['socket']:
-              retVal = self.__listeningConnections[svcName]['transport'].acceptConnection()
-              if not retVal['OK']:
-                gLogger.warn("Error while accepting a connection: ", retVal['Message'])
-                return
-              clientTransport = retVal['Value']
+        for key, event in events:
+          if event & selectors.EVENT_READ:
+            svcName = key.data
+            retVal = self.__listeningConnections[svcName]['transport'].acceptConnection()
+            if not retVal['OK']:
+              gLogger.warn("Error while accepting a connection: ", retVal['Message'])
+              return
+            clientTransport = retVal['Value']
       except socket.error:
         return
       self.__maxFD = max(self.__maxFD, clientTransport.oSocket.fileno())
@@ -243,7 +247,7 @@ class ServiceReactor(object):
           if result['OK']:
             renewed = True
       if renewed:
-        sockets = self.__getListeningSocketsList()
+        sel = self.__getListeningSelector()
 
   def __closeListeningConnections(self):
     for svcName in self.__listeningConnections:
