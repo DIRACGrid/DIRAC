@@ -35,8 +35,7 @@ def registerSwitches():
       ('statusType=', 'StatusType (or comma-separeted list of names), if none applies to all possible statusTypes'),
       ('status=', 'Status to be changed'),
       ('reason=', 'Reason to set the Status'),
-      ('VO=', 'VO to change a status for. Default: "all" '
-              'VO=all sets the status for all VOs not explicitly listed in the RSS'),
+      ('VO=', 'VO to change a status for. When omitted, status will be changed for all VOs'),
   )
 
   for switch in switches:
@@ -67,7 +66,7 @@ def parseSwitches():
 
   switches = dict(Script.getUnprocessedSwitches())
   switches.setdefault('statusType', None)
-  switches.setdefault('VO', 'all')
+  switches.setdefault('VO', None)
 
   for key in ('element', 'name', 'status', 'reason'):
 
