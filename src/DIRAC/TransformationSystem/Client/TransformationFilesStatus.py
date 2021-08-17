@@ -25,7 +25,8 @@ PROB_IN_FC = 'ProbInFC'
 #:
 REMOVED = 'Removed'
 
-#: below ones are for inherited transformations
+# below ones are for inherited transformations
+#:
 UNUSED_INHERITED = 'Unused-inherited'
 #:
 ASSIGNED_INHERITED = 'Assigned-inherited'
