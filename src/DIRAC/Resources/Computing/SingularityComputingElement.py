@@ -321,10 +321,10 @@ class SingularityComputingElement(ComputingElement):
             os.path.join(self.__findInstallBaseDir(), 'bashrc'),
             os.path.join(tmpDir, 'bashrc'),
         )
-        shutil.copyfile('pilot.cfg', os.path.join(tmpDir, 'pilot.cfg'))
         wrapSubs["rc_script"] = "bashrc"
       else:
         wrapSubs["rc_script"] = os.path.join(self.__findInstallBaseDir(), "diracosrc")
+      shutil.copyfile('pilot.cfg', os.path.join(tmpDir, 'pilot.cfg'))
       CONTAINER_WRAPPER = CONTAINER_WRAPPER_NO_INSTALL
 
     wrapLoc = os.path.join(tmpDir, "dirac_container.sh")
