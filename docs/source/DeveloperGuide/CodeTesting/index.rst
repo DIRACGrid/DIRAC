@@ -283,7 +283,7 @@ If you are a developer you should be able to extrapolate from the above those pa
 in case you are testing only one specific service.
 
 
-.. _running_integration_tests
+.. _running_integration_tests:
 
 Running integration tests locally
 ---------------------------------

@@ -301,16 +301,12 @@ Install VMDIRAC WebApp
        
        $ ll /opt/dirac/webRoot/www/defaults/bootstrap
        total 0
-       lrwxrwxrwx 1 dirac dirac 50 Feb 21 08:46 dirac-install.py -> /opt/dirac/pro/DIRAC/Core/scripts/dirac-install.py
-       lrwxrwxrwx 1 dirac dirac 71 Feb 21 08:49 dirac-pilot.py -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
-       lrwxrwxrwx 1 dirac dirac 76 Feb 21 08:50 parse-jobagent-log -> /opt/dirac/pro/VMDIRAC/WorkloadManagementSystem/Bootstrap/parse-jobagent-log
-       lrwxrwxrwx 1 dirac dirac 73 Feb 21 08:51 pilotCommands.py -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py
-       lrwxrwxrwx 1 dirac dirac 70 Feb 21 08:51 pilotTools.py -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py
-       lrwxrwxrwx 1 dirac dirac 66 Feb 21 08:52 power.sh -> /opt/dirac/pro/VMDIRAC/WorkloadManagementSystem/Bootstrap/power.sh
-       lrwxrwxrwx 1 dirac dirac 75 Feb 21 08:52 save-payload-logs -> /opt/dirac/pro/VMDIRAC/WorkloadManagementSystem/Bootstrap/save-payload-logs
-       lrwxrwxrwx 1 dirac dirac 70 Feb 21 11:47 vm-bootstrap -> /opt/dirac/pro/VMDIRAC/WorkloadManagementSystem/Bootstrap/vm-bootstrap
-       lrwxrwxrwx 1 dirac dirac 80 Feb 21 08:52 vm-bootstrap-functions -> /opt/dirac/pro/VMDIRAC/WorkloadManagementSystem/Bootstrap/vm-bootstrap-functions
-       lrwxrwxrwx 1 dirac dirac 74 Feb 21 08:53 vm-monitor-agent -> /opt/dirac/pro/VMDIRAC/WorkloadManagementSystem/Bootstrap/vm-monitor-agent
-       lrwxrwxrwx 1 dirac dirac 66 Feb 21 08:53 vm-pilot -> /opt/dirac/pro/VMDIRAC/WorkloadManagementSystem/Bootstrap/vm-pilot
+       lrwxrwxrwx 1 dirac dirac 76 Feb 21 08:50 parse-jobagent-log -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/Utilities/CloudBootstrap/parse-jobagent-log
+       lrwxrwxrwx 1 dirac dirac 66 Feb 21 08:52 power.sh -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/power.sh
+       lrwxrwxrwx 1 dirac dirac 75 Feb 21 08:52 save-payload-logs -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/save-payload-logs
+       lrwxrwxrwx 1 dirac dirac 70 Feb 21 11:47 vm-bootstrap -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/vm-bootstrap
+       lrwxrwxrwx 1 dirac dirac 80 Feb 21 08:52 vm-bootstrap-functions -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/vm-bootstrap-functions
+       lrwxrwxrwx 1 dirac dirac 74 Feb 21 08:53 vm-monitor-agent -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/vm-monitor-agent
+       lrwxrwxrwx 1 dirac dirac 66 Feb 21 08:53 vm-pilot -> /opt/dirac/pro/DIRAC/WorkloadManagementSystem/CloudBootstrap/vm-pilot
 
   
