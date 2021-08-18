@@ -19,10 +19,12 @@ from DIRAC.Resources.Computing.SingularityComputingElement import SingularityCom
 
 gLogger.setLevel('DEBUG')
 fj = find_all('pilot.json', '../', 'tests/Integration/Resources/Computing')[0]
+fc = find_all('pilot.cfg.test', '../', 'tests/Integration/Resources/Computing')[0]
 
 
 def test_submitJob():
   shutil.copy(fj, os.curdir)
+  shutil.copyfile(fc, os.path.join(os.curdir, 'pilot.cfg'))
   with open('testJob.py', 'w') as execFile:
     execFile.write(jobScript % '1')
   os.chmod('testJob.py', 0o755)

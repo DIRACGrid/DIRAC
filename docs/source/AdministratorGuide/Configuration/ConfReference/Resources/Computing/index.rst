@@ -139,7 +139,7 @@ Singularity CE Parameters
 +-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
 | InstallDIRACInContainer | Flag for re-installing, or not, DIRAC in the container            |  False (default: True)                                                       |
 +-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
-| ContainerExtraOpts      | Extra options for dirac-install within the container.             |  -u 'http://other.host/instdir'                                              |
+| ContainerExtraOpts      | Extra options for dirac-install (py2) within the container.       |  -u 'http://other.host/instdir'                                              |
 +-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+
 | KeepWorkArea            | If set to True container work area won't be deleted at end of job |  True (Default: False)                                                       |
 +-------------------------+-------------------------------------------------------------------+------------------------------------------------------------------------------+

@@ -6,8 +6,8 @@ DIRAC Projects
 
 DIRAC is used by several user communities. Some of them are creating their own modules for DIRAC. 
 These modules require a certain version of DIRAC in order to function properly. Virtual organizations 
-have to be able to create their own releases of their modules and install them seamlessly with 
-*dirac-install*. This is achieved by creating and releasing software projects in the DIRAC framework.
+have to be able to create their own releases of their modules and install them seamlessly.
+This is achieved by creating and releasing software projects in the DIRAC framework.
 
 Preparing DIRAC distribution
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 
