@@ -38,8 +38,6 @@ from DIRAC.WorkloadManagementSystem.Utilities.Utils import createRelocatedJobWra
 
 __RCSID__ = "$Id$"
 
-
-DIRAC_INSTALL = os.path.join('Core', 'scripts', 'dirac-install.py')
 # Default container to use if it isn't specified in the CE options
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
 CONTAINER_WORKDIR = "DIRAC_containers"
@@ -299,13 +297,13 @@ class SingularityComputingElement(ComputingElement):
 
       # Download dirac-install.py
       response = urlopen(
-	  "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py"
+          "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py"
       )
       code = response.getcode()
       if code > 200 or code >= 300:
-	return S_ERROR("Failed to download dirac-install.py with code %s" % code)
+        return S_ERROR("Failed to download dirac-install.py with code %s" % code)
       with open('dirac-install.py', "wb") as fp:
-	fp.write(response.read())
+        fp.write(response.read())
 
       install_loc = os.path.join(tmpDir, "dirac-install.py")
       shutil.copyfile("dirac-install.py", install_loc)
