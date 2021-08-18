@@ -72,10 +72,6 @@ dependencies:
   # Pin OpenSSL to avoid: https://github.com/DIRACGrid/DIRAC/issues/4489
   - openssl <1.1
   - selectors2
-  # OAuth2
-  - authlib
-  - pyjwt
-  - dominate
   - pip:
     - diraccfg
     # OAuth2
