@@ -39,7 +39,7 @@ def registerSwitches():
       ('reason=', 'Reason to set the Status'),
       ('days=', 'Number of days the token is acquired'),
       ('releaseToken', 'Release the token and let the RSS take control'),
-      ('VO=', 'VO to set a token for (obligatory)')
+      ('VO=', 'VO to set a token for. When omitted token will be set for all VOs')
   )
 
   for switch in switches:
@@ -71,13 +71,14 @@ def parseSwitches():
 
   switches = dict(Script.getUnprocessedSwitches())
   switches.setdefault('statusType', None)
+  switches.setdefault('VO', None)
   switches.setdefault('days', 1)
   if 'releaseToken' in switches:
     switches['releaseToken'] = True
   else:
     switches['releaseToken'] = False
 
-  for key in ('element', 'name', 'reason', 'VO'):
+  for key in ('element', 'name', 'reason'):
 
     if key not in switches:
       subLogger.error("%s Switch missing" % key)
