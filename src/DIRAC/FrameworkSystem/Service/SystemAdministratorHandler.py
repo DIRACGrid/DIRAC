@@ -302,6 +302,14 @@ class SystemAdministratorHandler(RequestHandler):
     if rootPath_:
       return S_ERROR("rootPath argument is not supported for Python 3 installations")
     # Validate and normalise the requested version
+    primaryExtension = None
+    if "==" in version:
+      primaryExtension, version = version.split("==")
+    elif six.PY2:
+      return S_ERROR(
+          "The extension must be specified like DIRAC==vX.Y.Z if installing "
+          "a Python 3 version from an exisiting Python 3 installation."
+      )
     try:
       version = Version(version)
     except InvalidVersion:
@@ -310,11 +318,9 @@ class SystemAdministratorHandler(RequestHandler):
     version = "v%s" % version
 
     # Find what to install
-    primaryExtension = None
     otherExtensions = []
     for extension in extensionsByPriority():
-      extensionMetadata = getExtensionMetadata(extension)
-      if primaryExtension is None and extensionMetadata.get("primary_extension", False):
+      if primaryExtension is None and getExtensionMetadata(extension).get("primary_extension", False):
         primaryExtension = extension
       else:
         otherExtensions.append(extension)
@@ -340,8 +346,12 @@ class SystemAdministratorHandler(RequestHandler):
       installer.flush()
       self.log.info("Downloaded DIRACOS installer to", installer.name)
 
+      if six.PY2:
+        newProPrefix = os.path.dirname(os.path.realpath(os.path.join(rootPath, "bashrc")))
+      else:
+        newProPrefix = rootPath
       newProPrefix = os.path.join(
-          rootPath,
+          newProPrefix,
           "versions",
           "%s-%s" % (version, datetime.utcnow().strftime("%s")),
       )
@@ -350,7 +360,7 @@ class SystemAdministratorHandler(RequestHandler):
       r = subprocess.run(  # pylint: disable=no-member
           ["bash", installer.name, "-p", installPrefix],
           stderr=subprocess.PIPE,
-          text=True,
+          universal_newlines=True,
           check=False,
           timeout=300,
       )
@@ -372,7 +382,7 @@ class SystemAdministratorHandler(RequestHandler):
             "%s[server]==%s" % (primaryExtension, version),
         ] + ["%s[server]" % e for e in otherExtensions],
         stderr=subprocess.PIPE,
-        text=True,
+        universal_newlines=True,
         check=False,
         timeout=300,
     )
