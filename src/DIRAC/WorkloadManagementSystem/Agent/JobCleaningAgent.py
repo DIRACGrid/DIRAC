@@ -164,6 +164,12 @@ class JobCleaningAgent(AgentModule):
       self.log.info("No jobs to remove")
       return S_OK()
 
+    self.log.info("Unassigning sandboxes from soon to be deleted jobs", "(%d)" % len(jobList))
+    result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
+    if not result['OK']:
+      self.log.error("Cannot unassign jobs to sandboxes", result['Message'])
+      return result
+
     self.log.info("Attempting to remove deleted jobs", "(%d)" % len(jobList))
 
     # remove from jobList those that have still Operations to do in RMS
@@ -230,10 +236,6 @@ class JobCleaningAgent(AgentModule):
 
     self.log.notice("Attempting to delete jobs", "(%d for %s)" % (len(jobList), condDict))
 
-    result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
-    if not result['OK']:
-      self.log.error("Cannot unassign jobs to sandboxes", result['Message'])
-      return result
 
     result = self.deleteJobOversizedSandbox(jobList)  # This might set a request
     if not result['OK']:
