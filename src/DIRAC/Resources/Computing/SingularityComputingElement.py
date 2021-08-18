@@ -25,6 +25,8 @@ import six
 import sys
 import tempfile
 
+from six.moves.urllib.request import urlopen
+
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -294,8 +296,19 @@ class SingularityComputingElement(ComputingElement):
         result['ReschedulePayload'] = True
         return result
       # dirac-install.py
+
+      # Download dirac-install.py
+      response = urlopen(
+	  "https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py"
+      )
+      code = response.getcode()
+      if code > 200 or code >= 300:
+	return S_ERROR("Failed to download dirac-install.py with code %s" % code)
+      with open('dirac-install.py', "wb") as fp:
+	fp.write(response.read())
+
       install_loc = os.path.join(tmpDir, "dirac-install.py")
-      shutil.copyfile(DIRAC_INSTALL, install_loc)
+      shutil.copyfile("dirac-install.py", install_loc)
       os.chmod(install_loc, 0o755)
 
       infoDict = None
