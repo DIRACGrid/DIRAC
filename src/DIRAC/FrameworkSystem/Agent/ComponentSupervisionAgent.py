@@ -533,14 +533,18 @@ class ComponentSupervisionAgent(AgentModule):
     gConfig.forceRefresh(fromMaster=True)
 
     # get port used for https based services
-    tornadoSystemInstance = PathFinder.getSystemInstance(
-        system="Tornado",
-        setup=self.setup,
-    )
-    self._tornadoPort = gConfig.getValue(
-        Path.cfgPath('/System/Tornado/', tornadoSystemInstance, "Port"),
-        self._tornadoPort,
-    )
+    try:
+      tornadoSystemInstance = PathFinder.getSystemInstance(
+          system="Tornado",
+          setup=self.setup,
+      )
+      self._tornadoPort = gConfig.getValue(
+          Path.cfgPath('/System/Tornado/', tornadoSystemInstance, "Port"),
+          self._tornadoPort,
+      )
+    except RuntimeError:
+      pass
+
     self.log.debug('Using Tornado Port:', self._tornadoPort)
 
     res = self.getRunningInstances(instanceType='Services', runitStatus='All')

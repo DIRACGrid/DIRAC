@@ -44,6 +44,8 @@ __RCSID__ = "$Id$"
 
 DEFAULT_OCCUPANCY_FILE = 'occupancy.json'
 
+sLog = gLogger.getSubLogger(__name__)
+
 
 class StorageElementCache(object):
 
@@ -218,7 +220,7 @@ class StorageElementItem(object):
 
         storage.setStorageElement(self)
 
-    self.log = gLogger.getSubLogger("SE[%s]" % self.name)
+    self.log = sLog.getSubLogger("SE[%s]" % self.name)
 
     if self.valid:
 
@@ -294,8 +296,8 @@ class StorageElementItem(object):
 
   def dump(self):
     """ Dump to the logger a summary of the StorageElement items. """
-    log = self.log.getSubLogger('dump', True)
-    log.verbose("Preparing dump for StorageElement %s." % self.name)
+    log = self.log.getLocalSubLogger('dump')
+    log.debug("Preparing dump for StorageElement %s." % self.name)
     if not self.valid:
       log.debug("Failed to create StorageElement plugins.", self.errorReason)
       return
@@ -310,7 +312,7 @@ class StorageElementItem(object):
       for key in sorted(storageParameters):
         outStr = "%s%s: %s\n" % (outStr, key.ljust(15), storageParameters[key])
       i = i + 1
-    log.verbose(outStr)
+    log.debug(outStr)
 
   #################################################################################################
   #
@@ -323,8 +325,6 @@ class StorageElementItem(object):
 
   def storageElementName(self):
     """ SE name getter """
-    self.log.getSubLogger('storageElementName').verbose(
-        "The Storage Element name is %s." % self.name)
     return self.name
 
   def getChecksumType(self):
@@ -335,7 +335,6 @@ class StorageElementItem(object):
     """ get specific /Resources/StorageElements/<SEName>/ChecksumType option if defined, otherwise
         global /Resources/StorageElements/ChecksumType
     """
-    self.log.getSubLogger('checksumType').verbose("get checksum type for %s." % self.name)
     return self.options["ChecksumType"].upper() if "ChecksumType" in self.options else gConfig.getValue(
         "/Resources/StorageElements/ChecksumType", "ADLER32").upper()
 
@@ -403,7 +402,7 @@ class StorageElementItem(object):
 
         :returns: S_OK with dict (keys: Total, Free, SpaceReservation)
     """
-    log = self.log.getSubLogger('getOccupancy', True)
+    log = self.log.getSubLogger('getOccupancy')
 
     if 'occupancyLFN' not in kwargs:
       occupancyLFN = self.options.get('OccupancyLFN')
@@ -422,7 +421,7 @@ class StorageElementItem(object):
       res = ObjectLoader().loadObject('Resources.Storage.OccupancyPlugins.%s' % occupancyPlugin)
       if not res['OK']:
         return S_ERROR(errno.EPROTONOSUPPORT, 'Failed to load occupancy plugin %s' % occupancyPlugin)
-      log.verbose('Use occupancy plugin %s' % occupancyPlugin)
+      log.debug('Use occupancy plugin %s' % occupancyPlugin)
       try:
         occupancyPlugin = res['Value'](self)
         res = occupancyPlugin.getOccupancy(**kwargs)
@@ -459,7 +458,7 @@ class StorageElementItem(object):
 
       :returns: S_OK with updated occupancyDict
     """
-    log = self.log.getSubLogger('checkOccupancy', True)
+    log = self.log.getSubLogger('checkOccupancy')
 
     # Mandatory parameters
     mandatoryParams = set(['Total', 'Free'])
@@ -502,7 +501,7 @@ class StorageElementItem(object):
     It returns directly the dictionary
     """
 
-    self.log.getSubLogger('getStatus').verbose("determining status of %s." % self.name)
+    self.log.getSubLogger('getStatus').debug("determining status of %s." % self.name)
 
     retDict = {}
     if not self.valid:
@@ -558,8 +557,8 @@ class StorageElementItem(object):
 
     :param str operation: operation name
     """
-    log = self.log.getSubLogger('isValid', True)
-    log.verbose("Determining if the StorageElement %s is valid for VO %s" % (self.name, self.vo))
+    log = self.log.getSubLogger('isValid')
+    log.debug("Determining if the StorageElement %s is valid for VO %s" % (self.name, self.vo))
 
     if not self.valid:
       log.debug("Failed to create StorageElement plugins.", self.errorReason)
@@ -569,7 +568,7 @@ class StorageElementItem(object):
     if 'VO' in self.options and self.vo not in self.options['VO']:
       log.debug("StorageElement is not allowed for VO", self.vo)
       return S_ERROR(errno.EACCES, "StorageElement.isValid: StorageElement is not allowed for VO")
-    log.verbose(
+    log.debug(
         "Determining if the StorageElement %s is valid for operation '%s'" %
         (self.name, operation))
     if (not operation) or (operation in self.okMethods):
@@ -626,7 +625,7 @@ class StorageElementItem(object):
   def getPlugins(self):
     """ Get the list of all the plugins defined for this Storage Element
     """
-    self.log.getSubLogger('getPlugins').verbose("Obtaining all plugins of %s." % self.name)
+    self.log.getSubLogger('getPlugins').debug("Obtaining all plugins of %s." % self.name)
     if not self.valid:
       return S_ERROR(self.errorReason)
     allPlugins = self.localPlugins + self.remotePlugins
@@ -635,7 +634,7 @@ class StorageElementItem(object):
   def getRemotePlugins(self):
     """ Get the list of all the remote access protocols defined for this Storage Element
     """
-    self.log.getSubLogger('getRemotePlugins').verbose(
+    self.log.getSubLogger('getRemotePlugins').debug(
         "Obtaining remote protocols for %s." % self.name)
     if not self.valid:
       return S_ERROR(self.errorReason)
@@ -644,7 +643,7 @@ class StorageElementItem(object):
   def getLocalPlugins(self):
     """ Get the list of all the local access protocols defined for this Storage Element
     """
-    self.log.getSubLogger('getLocalPlugins').verbose(
+    self.log.getSubLogger('getLocalPlugins').debug(
         "Obtaining local protocols for %s." % self.name)
     if not self.valid:
       return S_ERROR(self.errorReason)
@@ -670,8 +669,8 @@ class StorageElementItem(object):
 
     reqStr = "plugin %s" % plugin if plugin else "protocol %s" % protocol
 
-    log.verbose("Obtaining storage parameters for %s for %s." % (self.name,
-                                                                 reqStr))
+    log.debug("Obtaining storage parameters for %s for %s." % (self.name,
+                                                               reqStr))
 
     for storage in self.storages:
       storageParameters = storage.getParameters()
@@ -805,7 +804,7 @@ class StorageElementItem(object):
         res = srcPlugin.constructURLFromLFN(lfn, withWSUrl=True)
         if not res['OK']:
           errMsg = "Error generating source url: %s" % res['Message']
-          gLogger.debug("Error generating source url", errMsg)
+          log.debug("Error generating source url", errMsg)
           failed[lfn] = errMsg
           continue
         srcURL = res['Value']
@@ -814,7 +813,7 @@ class StorageElementItem(object):
         res = destPlugin.constructURLFromLFN(lfn, withWSUrl=True)
         if not res['OK']:
           errMsg = "Error generating destination url: %s" % res['Message']
-          gLogger.debug("Error generating destination url", errMsg)
+          log.debug("Error generating destination url", errMsg)
           failed[lfn] = errMsg
           continue
         destURL = res['Value']
@@ -843,7 +842,7 @@ class StorageElementItem(object):
     if self.useProxy:
       return S_OK([])
 
-    log = self.log.getSubLogger('negociateProtocolWithOtherSE', child=True)
+    log = self.log.getSubLogger('negociateProtocolWithOtherSE')
 
     log.debug(
         "Negotiating protocols between %s and %s (protocols %s)" %
@@ -885,7 +884,7 @@ class StorageElementItem(object):
          This path must coincide with the LFN of the file in order to be compliant with the DIRAC conventions.
     """
     log = self.log.getSubLogger('__getURLPath')
-    log.verbose("Getting path from url in %s." % self.name)
+    log.debug("Getting path from url in %s." % self.name)
     if not self.valid:
       return S_ERROR(self.errorReason)
     res = pfnparse(url)
@@ -952,8 +951,8 @@ class StorageElementItem(object):
 
     """
 
-    self.log.getSubLogger('getURL').verbose("Getting accessUrl %s for lfn in %s." %
-                                            ("(%s)" % protocol if protocol else "", self.name))
+    self.log.getSubLogger('getURL').debug("Getting accessUrl %s for lfn in %s." %
+                                          ("(%s)" % protocol if protocol else "", self.name))
 
     if not protocol:
       # This turlProtocols seems totally useless.
@@ -972,7 +971,7 @@ class StorageElementItem(object):
   def __isLocalSE(self):
     """ Test if the Storage Element is local in the current context
     """
-    self.log.getSubLogger('LocalSE').verbose("Determining whether %s is a local SE." % self.name)
+    self.log.getSubLogger('LocalSE').debug("Determining whether %s is a local SE." % self.name)
 
     import DIRAC
     localSEs = getSEsForSite(DIRAC.siteName())['Value']
@@ -996,7 +995,7 @@ class StorageElementItem(object):
         :returns: dictionary {constructed url : lfn}
     """
     log = self.log.getSubLogger("__generateURLDict")
-    log.verbose("generating url dict for %s lfn in %s." % (len(lfns), self.name))
+    log.debug("generating url dict for %s lfn in %s." % (len(lfns), self.name))
 
     if not replicaDict:
       replicaDict = {}
@@ -1053,7 +1052,7 @@ class StorageElementItem(object):
          list: list of storage plugins
     """
 
-    log = self.log.getSubLogger('__filterPlugins', child=True)
+    log = self.log.getSubLogger('__filterPlugins')
 
     log.debug(
         "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" %
@@ -1169,17 +1168,17 @@ class StorageElementItem(object):
 
     removedArgs = {}
     log = self.log.getSubLogger('__executeMethod')
-    log.verbose("preparing the execution of %s" % (self.methodName))
+    log.debug("preparing the execution of %s" % (self.methodName))
 
     # args should normaly be empty to avoid problem...
     if args:
-      log.verbose("args should be empty!%s" % args)
+      log.debug("args should be empty!%s" % args)
       # because there is normally only one kw argument, I can move it from args to kwargs
       methDefaultArgs = list(StorageElementItem.__defaultsArguments.get(self.methodName, {}))
       if methDefaultArgs:
         kwargs[methDefaultArgs[0]] = args[0]
         args = args[1:]
-      log.verbose(
+      log.debug(
           "put it in kwargs, but dirty and might be dangerous!args %s kwargs %s" %
           (args, kwargs))
 
@@ -1205,7 +1204,7 @@ class StorageElementItem(object):
       return res
     lfnDict = res['Value']
 
-    log.verbose(
+    log.debug(
         "Attempting to perform '%s' operation with %s lfns." %
         (self.methodName, len(lfnDict)))
 
@@ -1244,7 +1243,7 @@ class StorageElementItem(object):
         log.debug("No lfns to be attempted for %s protocol." % pluginName)
         continue
 
-      log.verbose("Generating %s protocol URLs for %s." % (len(lfnDict), pluginName))
+      log.debug("Generating %s protocol URLs for %s." % (len(lfnDict), pluginName))
       replicaDict = kwargs.pop('replicaDict', {})
       if storage.pluginName != "Proxy":
         res = self.__generateURLDict(lfnDict, storage, replicaDict=replicaDict)
@@ -1253,9 +1252,9 @@ class StorageElementItem(object):
       else:
         urlDict = dict([(lfn, lfn) for lfn in lfnDict])
       if not urlDict:
-        log.verbose("__executeMethod No urls generated for protocol %s." % pluginName)
+        log.debug("__executeMethod No urls generated for protocol %s." % pluginName)
       else:
-        log.verbose(
+        log.debug(
             "Attempting to perform '%s' for %s physical files" %
             (self.methodName, len(urlDict)))
         fcn = None

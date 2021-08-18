@@ -590,8 +590,8 @@ class FTS3Job(JSerializable):
         :returns: S_OK([FTSFiles ids of files submitted])
     """
 
-    log = gLogger.getSubLogger("submit/%s/%s_%s" %
-                               (self.operationID, self.sourceSE, self.targetSE), True)
+    log = gLogger.getLocalSubLogger("submit/%s/%s_%s" %
+                                    (self.operationID, self.sourceSE, self.targetSE))
 
     if not context:
       if not ftsServer:

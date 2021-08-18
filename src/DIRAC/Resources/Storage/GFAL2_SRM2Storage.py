@@ -37,7 +37,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
   def __init__(self, storageName, parameters):
     """ """
     super(GFAL2_SRM2Storage, self).__init__(storageName, parameters)
-    self.log = gLogger.getSubLogger("GFAL2_SRM2Storage", True)
+    self.log = gLogger.getSubLogger("GFAL2_SRM2Storage")
     self.log.debug("GFAL2_SRM2Storage.__init__: Initializing object")
     self.pluginName = 'GFAL2_SRM2'
 

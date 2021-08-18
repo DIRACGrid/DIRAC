@@ -84,6 +84,18 @@ NEW: (#5062) add Test_LocalConfiguration
 CHANGE: (#5046) don't use mail in the self generated certificates
 CHANGE: (#5301) added RALPP as a multi-VO test site and added env dump to job.log to ease debugging
 
+[v7r2p20]
+
+*Resources
+NEW: (#5316) Support Python 3 pilots in SingularityCE
+CHANGE: (#5310) changes some log levels in StorageElement
+CHANGE: (#5310) Default to using CERNVM4 in SingularityCE
+FIX: (#5310) Propagate the DIRAC and DIRACOS variables when not re-installing DIRAC in SingularityCE
+FIX: (#5315) Parallel Library Srun: remove chmod of executableFile
+
+*WMS
+FIX: (#5323) fix python3 incompatibility in InputDataByProtocol
+
 [v7r2p19]
 
 *Configuration

@@ -126,18 +126,21 @@ Then we commit the changes (those done to ``release.notes`` and ``__init__.py``)
   $ git fetch release  # this will bring in the updated release/rel-v7r1 branch from the github repository
   $ git rebase --no-ff release/rel-v7r1  # this will rebase the current rel-v7r1 branch to the content of release/rel-v7r1
 
-You can now proceed with tagging, and pushing::
+You can now proceed with pushing, and check the tests::
 
-  $ git tag v7r1p37  # this will create the tag, from the current branch, in the local repository
-  $ git push release v7r1p37  # we push to the *release* remote (so to GitHub-hosted one) the tag just created
   $ git push release rel-v7r1  # we push to the rel-v7r1 branch too.
 
 From the previous command, note that due to the fact that we are pushing a branch named *rel-v7r1*
 to the *release* repository, where it already exists a branch named *rel-v7r1*,
 **the local branch will override the remote one**.
 
-At this point, before performing any further step, you can go to `GitHub Actions <https://github.com/DIRACGrid/DIRAC/actions>`_
-and check the result of the workflows that are running on the pushed tag.
+Now, before performing any further step, you should go to `GitHub Actions (GA) <https://github.com/DIRACGrid/DIRAC/actions>`_
+and check the result of the workflows that are running on the pushed *rel-v7r1* branch.
+
+If everything is fine, you can tag::
+
+  $ git tag -a v7r1p37 -m "v7r1p37"  # this will create an annotated tag, from the current branch, in the local repository
+  $ git push release v7r1p37  # we push to the *release* repository (so to GitHub-hosted one) the tag just created
 
 All the patches must now be also propagated to the *upper* branches.
 In this example we are going through, we are supposing that it exists *rel-v7r2* branch,
@@ -163,9 +166,12 @@ Merge PRs (if any), then save the files above. Then::
   $ git commit -a  # this will commit the changes we made to the release notes in rel-v7r2 local branch
   $ git fetch release  # this will bring in the updated release/rel-v7r2 branch from the github repository
   $ git rebase --no-ff release/rel-v7r2  # this will rebase the current rel-v7r2 branch to the content of release/rel-v7r2
+  $ git push release rel-v7r2  # we push to the *release* remote the tag just created, and the rel-v7r2 branch.
+
+Now, check GA and if everything is fine::
+
   $ git tag v7r2p8  # this will create a tag, from the current branch, in the local repository
   $ git push v7r2p8  # we push to the *release* remote the tag just created
-  $ git push release rel-v7r2  # we push to the *release* remote the tag just created, and the rel-v7r2 branch.
 
 The *master* branch of DIRAC always contains the latest stable release.
 If this corresponds to rel-v7r2, we should make sure that this is updated::
@@ -193,9 +199,12 @@ Merge all the PRs targeting integration that have been approved (if any), then s
   $ git commit -a
   $ git fetch release
   $ git rebase --no-ff release/integration
+  $ git push release integration
+
+Wait for tests on GA to complete and then::
+
   $ git tag v7r3-pre9
   $ git push v7r3-pre9
-  $ git push release integration
 
 
 2. Making basic verifications
