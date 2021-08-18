@@ -22,10 +22,23 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import makeGuid
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
+
 
 
 CE_NAME = 'CREAM'
 MANDATORY_PARAMETERS = ['Queue']
+STATES_MAP = {'DONE-OK': PilotStatus.DONE,
+              'DONE-FAILED': PilotStatus.FAILED,
+              'REGISTERED': PilotStatus.WAITING,
+              'PENDING': PilotStatus.WAITING,
+              'IDLE': PilotStatus.WAITING,
+              'ABORTED': PilotStatus.ABORTED,
+              'CANCELLED': PilotStatus.ABORTED,
+              'RUNNING': PilotStatus.RUNNING,
+              'REALLY-RUNNING': PilotStatus.RUNNING,
+              'N/A': PilotStatus.UNKNOWN}
+
 
 
 class CREAMComputingElement(ComputingElement):
@@ -308,7 +321,7 @@ class CREAMComputingElement(ComputingElement):
     # If CE does not know about a job, set the status to Unknown
     for job in jobIDList:
       if job not in resultDict:
-        resultDict[job] = 'Unknown'
+        resultDict[job] = PilotStatus.UNKNOWN
 
     return S_OK(resultDict)
 
@@ -326,22 +339,7 @@ class CREAMComputingElement(ComputingElement):
       match = re.search(r'Status.*\[(.*)\]', line)
       if match and len(match.groups()) == 1:
         creamStatus = match.group(1)
-        if creamStatus in ['DONE-OK']:
-          resultDict[ref] = 'Done'
-        elif creamStatus in ['DONE-FAILED']:
-          resultDict[ref] = 'Failed'
-        elif creamStatus in ['REGISTERED', 'PENDING', 'IDLE']:
-          resultDict[ref] = 'Scheduled'
-        elif creamStatus in ['ABORTED']:
-          resultDict[ref] = 'Aborted'
-        elif creamStatus in ['CANCELLED']:
-          resultDict[ref] = 'Killed'
-        elif creamStatus in ['RUNNING', 'REALLY-RUNNING']:
-          resultDict[ref] = 'Running'
-        elif creamStatus == 'N/A':
-          resultDict[ref] = 'Unknown'
-        else:
-          resultDict[ref] = creamStatus.capitalize()
+        resultDict[ref] = STATES_MAP.get(creamStatus, PilotStatus.UNKNOWN)
 
     return resultDict
 

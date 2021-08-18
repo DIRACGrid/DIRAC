@@ -40,6 +40,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
@@ -52,11 +53,6 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 # dirac install file
 DIRAC_INSTALL = os.path.join(os.path.dirname(DIRAC.__file__), 'Core', 'scripts', 'dirac-install.py')
-
-# status
-TRANSIENT_PILOT_STATUS = ['Submitted', 'Waiting', 'Running', 'Scheduled', 'Ready', 'Unknown']
-WAITING_PILOT_STATUS = ['Submitted', 'Waiting', 'Scheduled', 'Ready']
-FINAL_PILOT_STATUS = ['Aborted', 'Failed', 'Done']
 
 MAX_PILOTS_TO_SUBMIT = 100
 
@@ -397,7 +393,7 @@ class SiteDirector(AgentModule):
       if self.pilotWaitingFlag:
         tqIDList = list(additionalInfo)
         result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
-                                            'Status': WAITING_PILOT_STATUS},
+                                            'Status': PilotStatus.PILOT_WAITING_STATES},
                                            None)
         if not result['OK']:
           self.log.error('Failed to get Number of Waiting pilots', result['Message'])
@@ -517,7 +513,7 @@ class SiteDirector(AgentModule):
     """
     tqIDList = list(matchingTQs)
     result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
-                                        'Status': WAITING_PILOT_STATUS},
+                                        'Status': PilotStatus.PILOT_WAITING_STATES},
                                        None)
 
     totalWaitingJobs = 0
@@ -798,7 +794,7 @@ class SiteDirector(AgentModule):
         continue
       for pilot in pilotsList:
         result = pilotAgentsDB.setPilotStatus(pilot,
-                                              'Submitted',
+                                              PilotStatus.SUBMITTED,
                                               self.queueDict[queue]['CEName'],
                                               'Successfully submitted by the SiteDirector',
                                               self.queueDict[queue]['Site'],
@@ -822,7 +818,7 @@ class SiteDirector(AgentModule):
     if totalSlots and manyWaitingPilotsFlag:
       result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
                                            'Queue': queueName,
-                                           'Status': WAITING_PILOT_STATUS})
+                                           'Status': PilotStatus.PILOT_WAITING_STATES})
       if result['OK']:
         jobIDList = result['Value']
         if not jobIDList:
@@ -838,7 +834,7 @@ class SiteDirector(AgentModule):
         jobIDList = None
         result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
                                              'Queue': queueName,
-                                             'Status': TRANSIENT_PILOT_STATUS})
+                                             'Status': PilotStatus.PILOT_TRANSIENT_STATES})
 
         if result['OK']:
           jobIDList = result['Value']
@@ -872,9 +868,9 @@ class SiteDirector(AgentModule):
               self.failedQueues[queue] += 1
             else:
               for _pilotRef, pilotDict in result['Value'].items():
-                if pilotDict["Status"] in TRANSIENT_PILOT_STATUS:
+                if pilotDict["Status"] in PilotStatus.PILOT_TRANSIENT_STATES:
                   totalJobs += 1
-                  if pilotDict["Status"] in WAITING_PILOT_STATUS:
+                  if pilotDict["Status"] in PilotStatus.PILOT_WAITING_STATES:
                     waitingJobs += 1
               runningJobs = totalJobs - waitingJobs
               self.log.info("PilotAgentsDB report",
@@ -1077,7 +1073,7 @@ class SiteDirector(AgentModule):
                                            'GridType': ceType,
                                            'GridSite': siteName,
                                            'OutputReady': 'False',
-                                           'Status': FINAL_PILOT_STATUS})
+                                           'Status': PilotStatus.PILOT_FINAL_STATES})
 
       if not result['OK']:
         self.log.error('Failed to select pilots', result['Message'])
@@ -1101,7 +1097,7 @@ class SiteDirector(AgentModule):
                                              'GridType': ceType,
                                              'GridSite': siteName,
                                              'AccountingSent': 'False',
-                                             'Status': FINAL_PILOT_STATUS})
+                                             'Status': PilotStatus.PILOT_FINAL_STATES})
 
         if not result['OK']:
           self.log.error('Failed to select pilots', result['Message'])
@@ -1136,7 +1132,7 @@ class SiteDirector(AgentModule):
                                          'Queue': queueName,
                                          'GridType': ceType,
                                          'GridSite': siteName,
-                                         'Status': TRANSIENT_PILOT_STATUS,
+                                         'Status': PilotStatus.PILOT_TRANSIENT_STATES,
                                          'OwnerDN': self.pilotDN,
                                          'OwnerGroup': self.pilotGroup})
     if not result['OK']:
@@ -1198,19 +1194,19 @@ class SiteDirector(AgentModule):
 
       ceStatus = pilotCEDict.get(pRef, oldStatus)
 
-      if oldStatus == ceStatus and ceStatus != "Unknown":
+      if oldStatus == ceStatus and ceStatus != PilotStatus.UNKNOWN:
         # Normal status did not change, continue
         continue
-      elif ceStatus == oldStatus == "Unknown":
+      elif ceStatus == oldStatus == PilotStatus.UNKNOWN:
         if sinceLastUpdate < 3600 * second:
           # Allow 1 hour of Unknown status assuming temporary problems on the CE
           continue
         else:
-          newStatus = 'Aborted'
-      elif ceStatus == "Unknown" and oldStatus not in FINAL_PILOT_STATUS:
+          newStatus = PilotStatus.ABORTED
+      elif ceStatus == PilotStatus.UNKNOWN and oldStatus not in PilotStatus.PILOT_FINAL_STATES:
         # Possible problems on the CE, let's keep the Unknown status for a while
-        newStatus = 'Unknown'
-      elif ceStatus != 'Unknown':
+        newStatus = PilotStatus.UNKNOWN
+      elif ceStatus != PilotStatus.UNKNOWN:
         # Update the pilot status to the new value
         newStatus = ceStatus
 
@@ -1223,7 +1219,7 @@ class SiteDirector(AgentModule):
         if newStatus == "Aborted":
           abortedPilots += 1
       # Set the flag to retrieve the pilot output now or not
-      if newStatus in FINAL_PILOT_STATUS:
+      if newStatus in PilotStatus.PILOT_FINAL_STATES:
         if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
           getPilotOutput.append(pRef)
 

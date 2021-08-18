@@ -15,11 +15,9 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo,\
     getGridJobOutput, killPilotsInQueues
-
-
-FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
 
 
 class PilotManagerHandler(RequestHandler):
@@ -76,7 +74,7 @@ class PilotManagerHandler(RequestHandler):
     for statusDict, count in result['Value']:
       status = statusDict['Status']
       resultDict[status] = count
-      if status in FINAL_STATES:
+      if status in PilotStatus.PILOT_FINAL_STATES:
         resultDict[status] = 0
         for statusDayDict, ccount in resultDay['Value']:
           if status == statusDayDict['Status']:

@@ -52,15 +52,6 @@ def psa(mocker):
   return psa
 
 
-def test_clearWaitingPilots(psa):
-  """ Testing PilotStatusAgent().clearWaitingPilots()
-  """
-
-  condDict = {'OwnerDN': '', 'OwnerGroup': '', 'GridType': '', 'Broker': ''}
-  result = psa.clearWaitingPilots(condDict)
-  assert result['OK']
-
-
 @pytest.mark.parametrize(
     "mockReplyInput, expected",
     [

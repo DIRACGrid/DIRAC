@@ -35,6 +35,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername, getVOForGroup
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.Core.Utilities.MySQL import _quotedList
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 class PilotAgentsDB(DB):
@@ -433,7 +434,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     if pilotID:
       if updateStatus:
         reason = 'Report from job %d' % int(jobID)
-        result = self.setPilotStatus(pilotRef, status='Running', statusReason=reason,
+        result = self.setPilotStatus(pilotRef, status=PilotStatus.RUNNING, statusReason=reason,
                                      gridSite=site)
         if not result['OK']:
           return result
@@ -536,12 +537,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
   def getPilotSummary(self, startdate='', enddate=''):
     """ Get summary of the pilot jobs status by site
     """
-    st_list = ['Aborted', 'Running', 'Done', 'Submitted', 'Ready', 'Scheduled', 'Waiting']
-
     summary_dict = {}
     summary_dict['Total'] = {}
 
-    for st in st_list:
+    for st in PilotStatus.PILOT_STATES:
       summary_dict['Total'][st] = 0
       req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents " + \
             "WHERE Status='%s' " % st
@@ -721,9 +720,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
   def getPilotSummaryWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
     """
-
-    stateNames = ['Submitted', 'Ready', 'Scheduled', 'Waiting', 'Running', 'Done', 'Aborted', 'Failed']
-    allStateNames = stateNames + ['Done_Empty', 'Aborted_Hour']
+    allStateNames = PilotStatus.PILOT_STATES + ['Done_Empty', 'Aborted_Hour']
     paramNames = ['Site', 'CE'] + allStateNames
 
     last_update = None
@@ -758,7 +755,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       return result
 
     last_update = Time.dateTime() - Time.hour
-    selectDict['Status'] = 'Aborted'
+    selectDict['Status'] = PilotStatus.ABORTED
     resultHour = self.getCounters('PilotAgents',
                                   ['GridSite', 'DestinationSite', 'Status'],
                                   selectDict, newer=last_update, timeStamp='LastUpdateTime')
@@ -766,14 +763,14 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       return resultHour
 
     last_update = Time.dateTime() - Time.day
-    selectDict['Status'] = ['Aborted', 'Done']
+    selectDict['Status'] = [PilotStatus.ABORTED, PilotStatus.DONE]
     resultDay = self.getCounters('PilotAgents',
                                  ['GridSite', 'DestinationSite', 'Status'],
                                  selectDict, newer=last_update, timeStamp='LastUpdateTime')
     if not resultDay['OK']:
       return resultDay
     selectDict['CurrentJobID'] = 0
-    selectDict['Status'] = 'Done'
+    selectDict['Status'] = PilotStatus.DONE
     resultDayEmpty = self.getCounters('PilotAgents',
                                       ['GridSite', 'DestinationSite', 'Status'],
                                       selectDict, newer=last_update, timeStamp='LastUpdateTime')
@@ -809,10 +806,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       state = attDict['Status']
       if site == 'Unknown' and ce != "Unknown" and ce in ceMap:
         site = ceMap[ce]
-      if state == "Done":
-        resultDict[site][ce]["Done"] = count
-      if state == "Aborted":
-        resultDict[site][ce]["Aborted"] = count
+      if state == PilotStatus.DONE:
+        resultDict[site][ce][PilotStatus.DONE] = count
+      if state == PilotStatus.ABORTED:
+        resultDict[site][ce][PilotStatus.ABORTED] = count
 
     for attDict, count in resultDayEmpty['Value']:
       site = attDict['GridSite']
@@ -820,7 +817,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       state = attDict['Status']
       if site == 'Unknown' and ce != "Unknown" and ce in ceMap:
         site = ceMap[ce]
-      if state == "Done":
+      if state == PilotStatus.DONE:
         resultDict[site][ce]["Done_Empty"] = count
 
     for attDict, count in resultHour['Value']:
@@ -829,7 +826,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       state = attDict['Status']
       if site == 'Unknown' and ce != "Unknown" and ce in ceMap:
         site = ceMap[ce]
-      if state == "Aborted":
+      if state == PilotStatus.ABORTED:
         resultDict[site][ce]["Aborted_Hour"] = count
 
     records = []
@@ -846,11 +843,11 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         for state in allStateNames:
           itemList.append(resultDict[site][ce][state])
           sumDict[state] += resultDict[site][ce][state]
-          if state == "Done":
+          if state == PilotStatus.DONE:
             done = resultDict[site][ce][state]
           if state == "Done_Empty":
             empty = resultDict[site][ce][state]
-          if state == "Aborted":
+          if state == PilotStatus.ABORTED:
             aborted = resultDict[site][ce][state]
           if state != "Aborted_Hour" and state != "Done_Empty":
             total += resultDict[site][ce][state]
@@ -898,9 +895,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
             itemList.append(sumDict[state])
           else:
             itemList.append(0)
-        done = sumDict["Done"]
+        done = sumDict[PilotStatus.DONE]
         empty = sumDict["Done_Empty"]
-        aborted = sumDict["Aborted"]
+        aborted = sumDict[PilotStatus.ABORTED]
         total = sumDict["Total"]
 
         # Add pilot submission efficiency evaluation
@@ -980,9 +977,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     else:
       finalDict['Records'] = records
 
-    done = siteSumDict["Done"]
+    done = siteSumDict[PilotStatus.DONE]
     empty = siteSumDict["Done_Empty"]
-    aborted = siteSumDict["Aborted"]
+    aborted = siteSumDict[PilotStatus.ABORTED]
     total = siteSumDict["Total"]
 
     # Add pilot submission efficiency evaluation

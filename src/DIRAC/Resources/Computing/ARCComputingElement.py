@@ -25,6 +25,7 @@ from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -35,7 +36,19 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 CE_NAME = 'ARC'
 MANDATORY_PARAMETERS = ['Queue']  # Mandatory for ARC CEs in GLUE2?
-
+STATES_MAP = {'Accepted': PilotStatus.WAITING,
+              'Preparing': PilotStatus.WAITING,
+              'Submitting': PilotStatus.WAITING,
+              'Queuing': PilotStatus.WAITING,
+              'Undefined': PilotStatus.UNKNOWN,
+              'Running': PilotStatus.RUNNING,
+              'Finishing': PilotStatus.RUNNING,
+              'Deleted': PilotStatus.ABORTED,
+              'Killed': PilotStatus.ABORTED,
+              'Failed': PilotStatus.FAILED,
+              'Hold': PilotStatus.FAILED,
+              'Finished': PilotStatus.DONE,
+              'Other': PilotStatus.DONE}
 
 class ARCComputingElement(ComputingElement):
 
@@ -59,19 +72,7 @@ class ARCComputingElement(ComputingElement):
     self.ceHost = self.ceParameters.get('Host', self.ceName)
     self.gridEnv = self.ceParameters.get('GridEnv', self.gridEnv)
     # Used in getJobStatus
-    self.mapStates = {'Accepted': 'Scheduled',
-                      'Preparing': 'Scheduled',
-                      'Submitting': 'Scheduled',
-                      'Queuing': 'Scheduled',
-                      'Undefined': 'Unknown',
-                      'Running': 'Running',
-                      'Finishing': 'Running',
-                      'Deleted': 'Killed',
-                      'Killed': 'Killed',
-                      'Failed': 'Failed',
-                      'Hold': 'Failed',
-                      'Finished': 'Done',
-                      'Other': 'Done'}
+    self.mapStates = STATES_MAP
     # Do these after all other initialisations, in case something barks
     self.xrslExtraString = self.__getXRSLExtraString()
     self.xrslMPExtraString = self.__getXRSLExtraString(multiprocessor=True)
@@ -433,12 +434,12 @@ class ARCComputingElement(ComputingElement):
           jobsToCancel.append(job)
           self.log.debug("Killing held job %s" % jobID)
       else:
-        resultDict[jobID] = 'Unknown'
+        resultDict[jobID] = PilotStatus.UNKNOWN
       # If done - is it really done? Check the exit code
-      if resultDict[jobID] == "Done":
+      if resultDict[jobID] == PilotStatus.DONE:
         exitCode = int(job.ExitCode)
         if exitCode:
-          resultDict[jobID] = "Failed"
+          resultDict[jobID] = PilotStatus.FAILED
       self.log.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
 
     # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
