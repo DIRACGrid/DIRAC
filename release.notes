@@ -23,6 +23,7 @@ FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
 FIX: (#5269) Use isinstance when checking types in MessageFactory
 FIX: (#5272) encode stub before base64
 FIX: (#5326) fix bug in getSystemURLs: getOptionsFromCFG can return None
+CHANGE: (#5337) removed src/DIRAC/Core/scripts/dirac-install.py
 
 *Configuration
 NEW: (#5062) add registerCmdArg to register arguments and group argument to group returned arguments
@@ -84,10 +85,16 @@ NEW: (#5314) Add a PilotStatus module to clearly define the pilot status in the 
 FIX: (#5325) Fix-up minor errors introduced during VMDIRAC merge
 NEW: (#5325) Tests for VirtualMachine DB & Service
 
+*TS
+NEW: (#5327) Added TransformationFilesStatus module
+
 *tests
 NEW: (#5062) add Test_LocalConfiguration
 CHANGE: (#5046) don't use mail in the self generated certificates
 CHANGE: (#5301) added RALPP as a multi-VO test site and added env dump to job.log to ease debugging
+
+*docs
+CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
 
 [v7r2p21]
 
