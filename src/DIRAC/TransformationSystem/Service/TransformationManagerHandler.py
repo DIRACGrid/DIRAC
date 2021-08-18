@@ -11,29 +11,16 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
+
 
 transTypes = list(six.string_types) + list(six.integer_types)
 
 __RCSID__ = "$Id$"
 
-TASKS_STATE_NAMES = [
-    'TotalCreated',
-    'Created',
-    'Running',
-    'Submitted',
-    'Failed',
-    'Waiting',
-    'Done',
-    'Completed',
-    'Stalled',
-    'Killed',
-    'Staging',
-    'Checking',
-    'Rescheduled',
-    'Scheduled']
-FILES_STATE_NAMES = ['PercentProcessed', 'Processed', 'Unused',
-                     'Assigned', 'Total', 'Problematic',
-                     'ApplicationCrash', 'MaxReset']
+TASKS_STATE_NAMES = ['TotalCreated', 'Created'] + JobStatus.JOB_STATES
+FILES_STATE_NAMES = ['PercentProcessed', 'Total'] + TransformationFilesStatus.TRANSFORMATION_FILES_STATES
 
 
 class TransformationManagerHandler(RequestHandler):
@@ -712,7 +699,7 @@ class TransformationManagerHandler(RequestHandler):
           total = fileDict['Total']
           for stat in givenUpFileStatus:
             total -= fileDict.get(stat, 0)
-          processed = fileDict.get('Processed', 0)
+          processed = fileDict.get(TransformationFilesStatus.PROCESSED, 0)
           fileDict['PercentProcessed'] = "%.1f" % (int(processed * 1000. / total) / 10.) if total else 0.
       problematic = 0
       for stat in problematicStatuses:

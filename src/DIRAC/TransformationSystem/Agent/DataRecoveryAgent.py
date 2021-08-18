@@ -69,6 +69,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
@@ -79,7 +80,7 @@ __RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/DataRecoveryAgent'
 
-ASSIGNEDSTATES = ['Assigned', 'Processed']
+ASSIGNEDSTATES = [TransformationFilesStatus.ASSIGNED, TransformationFilesStatus.PROCESSED]
 
 
 class DataRecoveryAgent(AgentModule):

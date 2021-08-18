@@ -26,13 +26,13 @@ General information:
 Managing Registry:
 
 .. toctree::
-    :maxdepth: 2   
-     
+    :maxdepth: 2
+
     dirac-admin-add-group
     dirac-admin-add-host
     dirac-admin-add-user
     dirac-admin-add-shifter
-    dirac-admin-delete-user        
+    dirac-admin-delete-user
     dirac-admin-list-hosts
     dirac-admin-list-users
     dirac-admin-modify-user
@@ -101,7 +101,6 @@ Managing DIRAC installation:
     dirac-install-db
     dirac-install-web-portal
     dirac-install-tornado-service
-    dirac-install
     dirac-install-extension
     dirac-uninstall-component
     dirac-restart-component

@@ -11,6 +11,7 @@ parseCommandLine()
 from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -475,7 +476,9 @@ that the username provided to the function.
       return
     transName = argss[0]
     lfns = argss[1:]
-    res = self.transClient.setFileStatusForTransformation(transName, 'Unused', lfns)
+    res = self.transClient.setFileStatusForTransformation(
+        transName, TransformationFilesStatus.UNUSED, lfns
+    )
     if not res['OK']:
       print("Failed to reset file status: %s" % res['Message'])
     else:
@@ -497,7 +500,9 @@ that the username provided to the function.
       return
     transName = argss[0]
     lfns = argss[1:]
-    res = self.transClient.setFileStatusForTransformation(transName, 'Unused', lfns, force=True)
+    res = self.transClient.setFileStatusForTransformation(
+        transName, TransformationFilesStatus.UNUSED, lfns, force=True
+    )
     if not res['OK']:
       print("Failed to reset file status: %s" % res['Message'])
     else:

@@ -131,8 +131,7 @@ class SystemAdministratorHandler(RequestHandler):
   types_getOverallStatus = []
 
   def export_getOverallStatus(self):
-    """  Get the complete status information for the components in the
-         given list
+    """  Get the complete status information of all components.
     """
     result = gComponentInstaller.getOverallStatus(extensionsByPriority())
     if not result['OK']:

@@ -12,6 +12,7 @@ import datetime
 import pytest
 from mock import MagicMock
 
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 # sut
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Agent.TransformationAgent import TransformationAgent
@@ -162,7 +163,7 @@ goodFiles = {'OK': True,
                         'LFN': '/00012574_00000239_1.charmcompleteevent.dst',
                         'LastUpdate': datetime.datetime(2012, 3, 16, 23, 43, 26),
                         'RunNumber': 90269,
-                        'Status': 'Unused',
+                        'Status': TransformationFilesStatus.UNUSED,
                         'TargetSE': 'Unknown',
                         'TaskID': '222',
                         'TransformationID': 17042,
@@ -173,7 +174,7 @@ goodFiles = {'OK': True,
                         'LFN': '/00012574_00000119_1.charmcompleteevent.dst',
                         'LastUpdate': datetime.datetime(2012, 3, 16, 23, 54, 59),
                         'RunNumber': 90322,
-                        'Status': 'Unused',
+                        'Status': TransformationFilesStatus.UNUSED,
                         'TargetSE': 'Unknown',
                         'TaskID': '82',
                         'TransformationID': 17042,

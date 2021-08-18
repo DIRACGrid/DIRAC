@@ -11,6 +11,7 @@ from __future__ import division
 from __future__ import print_function
 
 from DIRAC import gLogger
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination
 
 
@@ -54,13 +55,13 @@ class FailoverRequest(ModuleBase):
           self.log.info("Forcing status to 'Unused' due to workflow failure for: %s" % (lfn))
           # Set the force flag in case the file was in a terminal status
           self.fileReport.force = True
-          self.fileReport.setFileStatus(int(self.production_id), lfn, 'Unused')
+          self.fileReport.setFileStatus(int(self.production_id), lfn, TransformationFilesStatus.UNUSED)
     else:
       filesInFileReport = self.fileReport.getFiles()
       for lfn in self.inputDataList:
         if lfn not in filesInFileReport:
           self.log.verbose("No status populated for input data %s, setting to 'Processed'" % lfn)
-          self.fileReport.setFileStatus(int(self.production_id), lfn, 'Processed')
+          self.fileReport.setFileStatus(int(self.production_id), lfn, TransformationFilesStatus.PROCESSED)
 
     result = self.fileReport.commit()
     if not result['OK']:
