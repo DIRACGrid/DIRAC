@@ -142,7 +142,9 @@ def registerValidatingExitHandler():
         LOG.info("Found outputDir as %s", outputDir)
         break
     cmd = [
-        "grep", "--color", "-nH", "-e", ":param",
+        "grep", "--color", "-nH",
+        "-e", " :param",  # :param: is a legit thing that happens,
+        "-e", ":param ",  # so we look for space before or after
         "-e", ":return", "-r", os.path.join(outputDir, "CodeDocumentation")
     ]
     ret = subprocess.run(cmd, check=False)
