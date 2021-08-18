@@ -1,4 +1,4 @@
-[v7r3-pre20]
+[v7r3-pre21]
 
 NEW: (#5000) Initial support for Python 3 server installations
 NEW: VMDIRAC separate project is merged into the core DIRAC project
@@ -22,6 +22,7 @@ FIX: (#5210) show extremely small values in pie plots
 FIX: (#4997) Handle SIGINT correctly when reading certificate passwords
 FIX: (#5269) Use isinstance when checking types in MessageFactory
 FIX: (#5272) encode stub before base64
+FIX: (#5326) fix bug in getSystemURLs: getOptionsFromCFG can return None
 
 *Configuration
 NEW: (#5062) add registerCmdArg to register arguments and group argument to group returned arguments
@@ -60,6 +61,7 @@ CHANGE: (#5291) ReqDB don't cast datetime to strings
 
 *RSS
 NEW: (#5042) Multi-VO mode of operation support
+FIX: (#5335) VO parameter is optional. When omitted commands will act on all VOs.
 
 *WMS
 NEW: (#4903) Added WMS (Jobs) State Machine
@@ -78,6 +80,9 @@ CHANGE: (#5318) Move SiteDirector.getQueues in QueueUtilities module
 FIX: (#5246) mock _escapeString in Test_Agent_PilotStatusAgent to pass test
 FIX: (#5246) escape values in PilotAgentsDB
 FIX: (#5246) decode values using decode() method in JobDB
+NEW: (#5314) Add a PilotStatus module to clearly define the pilot status in the code
+FIX: (#5325) Fix-up minor errors introduced during VMDIRAC merge
+NEW: (#5325) Tests for VirtualMachine DB & Service
 
 *tests
 NEW: (#5062) add Test_LocalConfiguration
