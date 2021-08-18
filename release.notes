@@ -49,6 +49,7 @@ CHANGE: (#5206) prints why dirac-dms-add-files failed
 CHANGE: (#4303) Removed completely the SystemLogging
 CHANGE: (#5164) Remove HashTag table from Framework/UserProfile
 CHANGE: (#5164) Remove dataTypeRE argument when retrieving values from Framework/UserProfileClient
+FIX: (#5340) Fix using the System Administrator to install Python 3 releases of DIRAC from Python 2
 
 *Interfaces
 CHANGE: (#5110) DiracAdmin: dropped getBDII* functions, which were looking for Glue1 information
