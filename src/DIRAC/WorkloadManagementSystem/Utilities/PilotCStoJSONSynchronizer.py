@@ -244,6 +244,29 @@ class PilotCStoJSONSynchronizer:
                     return queueOptionRes
                 queuesDict[queue] = queueOptionRes["Value"]
             pilotDict["Setups"][setup]["Logging"]["Queues"] = queuesDict
+        elif "loggingRESTService" in pilotDict["Setups"][setup]:
+            self.log.debug(
+                "Getting option of ", "/DIRAC/Setups/%s/%s" % (setup, pilotDict["Setups"][setup]["loggingRESTService"])
+            )
+            result = gConfig.getOption(
+                "/DIRAC/Setups/%s/%s" % (setup, pilotDict["Setups"][setup]["loggingRESTService"])
+            )
+            if not result["OK"]:
+                return result
+            optValue = result["Value"]
+            self.log.debug("value: ", optValue)
+            tornadoService = gConfig.getOptionsDict(
+                "/Systems/%s/%s" % (pilotDict["Setups"][setup]["loggingRESTService"], optValue)
+            )
+            if not tornadoService["OK"]:
+                self.log.error(tornadoService["Message"])
+                return tornadoService
+            pilotDict["Setups"][setup]["Logging"] = {"LoggingType": "REST_API"}
+            pilotDict["Setups"][setup]["Logging"]["Port"] = tornadoService["Value"]["Port"]
+            # host ? os.environ.get('HOSTNAME') as a fallback ?
+            pilotDict["Setups"][setup]["Logging"]["Host"] = tornadoService["Value"].get(
+                "Host", os.environ.get("HOSTNAME")
+            )
 
     def syncScripts(self):
         """Clone the pilot scripts from the Pilot repositories (handle also extensions)"""
