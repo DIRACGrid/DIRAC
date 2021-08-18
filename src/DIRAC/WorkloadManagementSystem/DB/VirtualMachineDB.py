@@ -25,12 +25,6 @@
   Instance UniqueID: for KVM it could be the MAC, for Amazon the returned InstanceID(i-5dec3236),
   or Occi returned the VMID
 
-  Life cycle of VMs RunningPods in DB
-    * New:       Inserted by VM Scheduler (RunningPod - Status = New ) if not existing when launching a new instance
-    * InActive:  Declared by VMScheduler Server when out of campaign dates
-    * Active:    Declared by VMScheduler Server when withing of campaign dates
-    * Error:     For compatibility with common private functions
-
 """
 
 from __future__ import print_function
@@ -53,7 +47,6 @@ class VirtualMachineDB(DB):
   # When declaring a new Status, it will be set to Error if not in the list
   validImageStates = ['New', 'Validated', 'Error']
   validInstanceStates = ['New', 'Submitted', 'Running', 'Stopping', 'Halted', 'Stalled', 'Error']
-  validRunningPodStates = ['New', 'InActive', 'Active', 'Error']
 
   # In seconds !
   stallingInterval = 60 * 40
@@ -66,9 +59,6 @@ class VirtualMachineDB(DB):
                                      'Halted': ['New', 'Running', 'Stopping', 'Stalled', 'Halted'],
                                      'Stalled': ['New', 'Submitted', 'Running'],
                                      },
-                        'RunningPod': {'Active': ['New', 'Active', 'InActive'],
-                                       'InActive': ['New', 'Active', 'InActive'],
-                                       }
                         }
 
   tablesDesc = {}
@@ -113,18 +103,6 @@ class VirtualMachineDB(DB):
                               'Indexes': {'InstanceID': ['InstanceID']},
                               }
 
-  tablesDesc['vm_RunningPods'] = {'Fields': {'RunningPodID': 'BIGINT UNSIGNED AUTO_INCREMENT NOT NULL',
-                                             'RunningPod': 'VARCHAR(32) NOT NULL',
-                                             'CampaignStartDate': 'DATETIME',
-                                             'CampaignEndDate': 'DATETIME',
-                                             'Status': 'VARCHAR(32) NOT NULL',
-                                             'LastUpdate': 'DATETIME',
-                                             'ErrorMessage': 'VARCHAR(255) NOT NULL DEFAULT ""'
-                                             },
-                                  'PrimaryKey': 'RunningPodID',
-                                  'Indexes': {'RunningPod': ['RunningPod', 'Status']
-                                              }
-                                  }
 
   #######################
   # VirtualDB constructor
@@ -139,136 +117,6 @@ class VirtualMachineDB(DB):
   #######################
   # Public Functions
   #######################
-
-  def setRunningPodStatus(self, runningPodName):
-    """
-    Set Status of a given runningPod depending in date interval
-    returns:
-    S_OK(Status) if Status is valid and not Error
-    S_ERROR(ErrorMessage) otherwise
-    """
-    tableName, validStates, idName = self.__getTypeTuple('RunningPod')
-
-    runningPodID = self.getFields(tableName, [idName], {'RunningPod': runningPodName})
-    if not runningPodID['OK']:
-      return runningPodID
-    runningPodID = runningPodID['Value'][0][0]
-
-    if not runningPodID:
-      return S_ERROR('Running pod %s not found in DB' % runningPodName)
-
-    # The runningPod exits in DB set status
-
-    runningPodDict = self.getRunningPodDict(runningPodName)
-    if not runningPodDict['OK']:
-      return runningPodDict
-
-    runningPodDict = runningPodDict['Value']
-    startdate = Time.fromString(runningPodDict['CampaignStartDate'])
-    enddate = Time.fromString(runningPodDict['CampaignEndDate'])
-    currentdate = Time.date()
-    if currentdate < startdate:
-      runningPodState = 'InActive'
-    elif currentdate > enddate:
-      runningPodState = 'InActive'
-    else:
-      runningPodState = 'Active'
-
-    return self.__setState('RunningPod', runningPodID, runningPodState)
-
-  def getRunningPodStatus(self, runningPodName):
-    """
-    Check Status of a given runningPod
-    returns:
-    S_OK(Status) if Status is valid and not Error
-    S_ERROR(ErrorMessage) otherwise
-    """
-    tableName, validStates, idName = self.__getTypeTuple('RunningPod')
-
-    runningPodID = self.getFields(tableName, [idName], {'RunningPod': runningPodName})
-    if not runningPodID['OK']:
-      return runningPodID
-    runningPodID = runningPodID['Value'][0][0]
-
-    if not runningPodID:
-      return S_ERROR('Running pod %s not found in DB' % runningPodName)
-
-    # The runningPod exits in DB set status
-
-    return self.__getStatus('RunningPod', runningPodID)
-
-  def getRunningPodDict(self, runningPodName):
-    """
-    Return from CS a Dictionary with RunningPod definition
-    """
-
-    # FIXME: this MUST not be on the DB module !!
-    # FIXME: isn't checking for Image
-
-    runningPodsCSPath = '/Resources/VirtualMachines/RunningPods'
-
-    definedRunningPods = gConfig.getSections(runningPodsCSPath)
-    if not definedRunningPods['OK']:
-      return definedRunningPods
-
-    if runningPodName not in definedRunningPods['Value']:
-      return S_ERROR('RunningPod "%s" not defined' % runningPodName)
-
-    runningPodCSPath = '%s/%s' % (runningPodsCSPath, runningPodName)
-
-    runningPodDict = {}
-
-    cloudEndpoints = gConfig.getValue('%s/CloudEndpoints' % runningPodCSPath, '')
-    if not cloudEndpoints:
-      return S_ERROR('Missing CloudEndpoints for RunnningPod "%s"' % runningPodName)
-
-    for option, value in gConfig.getOptionsDict(runningPodCSPath)['Value'].items():
-      runningPodDict[option] = value
-
-    runningPodRequirementsDict = gConfig.getOptionsDict('%s/Requirements' % runningPodCSPath)
-    if not runningPodRequirementsDict['OK']:
-      return S_ERROR('Missing Requirements for RunningPod "%s"' % runningPodName)
-    if 'CPUTime' in runningPodRequirementsDict['Value']:
-      runningPodRequirementsDict['Value']['CPUTime'] = int(runningPodRequirementsDict['Value']['CPUTime'])
-    if 'OwnerGroup' in runningPodRequirementsDict['Value']:
-      runningPodRequirementsDict['Value']['OwnerGroup'] = runningPodRequirementsDict['Value']['OwnerGroup'].split(', ')
-
-    runningPodDict['Requirements'] = runningPodRequirementsDict['Value']
-
-    return S_OK(runningPodDict)
-
-  def insertRunningPod(self, runningPodName):
-    """
-    Insert a RunningPod record
-    If RunningPod name already exists then update CampaignStartDate, CampaignEndDate
-    to be called by VMScheduler on creation of RunningPod record
-    """
-    tableName, validStates, idName = self.__getTypeTuple('RunningPod')
-
-    runningPodDict = self.getRunningPodDict(runningPodName)
-    if not runningPodDict['OK']:
-      return runningPodDict
-    runningPodDict = runningPodDict['Value']
-
-    runningPodID = self.getFields(tableName, [idName], {'RunningPod': runningPodName})
-    if not runningPodID['OK']:
-      return runningPodID
-    # runningPodID = runningPodID[ 'Value' ][0][0]
-
-    if runningPodID['Value']:
-      runningPodID = runningPodID['Value'][0][0]
-      if runningPodID > 0:
-        # updating CampaignStartDate, CampaignEndDate
-        sqlUpdate = 'UPDATE `%s` SET CampaignStartDate = "%s", CampaignEndDate = "%s" WHERE %s = %s' % \
-            (tableName, runningPodDict['CampaignStartDate'], runningPodDict['CampaignEndDate'], idName, runningPodID)
-        return self._update(sqlUpdate)
-
-    # The runningPod does not exits in DB, has to be inserted
-
-    fields = ['RunningPod', 'CampaignStartDate', 'CampaignEndDate', 'Status']
-    values = [runningPodName, runningPodDict['CampaignStartDate'], runningPodDict['CampaignEndDate'], 'New']
-
-    return self.insertFields(tableName, fields, values)
 
   def checkImageStatus(self, imageName):
     """
@@ -333,7 +181,7 @@ class VirtualMachineDB(DB):
     if pName not in VirtualMachineDB.tablesDesc['vm_Instances']['Fields']:
       return S_ERROR('Invalid Instance parameter %s' % pName)
 
-    sqlQuery = "SELECT %s FROM `%s` WHERE %s = %s" % (pName, tableName, idName, instanceID)
+    sqlQuery = "SELECT `%s` FROM `%s` WHERE %s = %s" % (pName, tableName, idName, instanceID)
     result = self._query(sqlQuery)
 
     if not result['OK']:
@@ -394,26 +242,6 @@ class VirtualMachineDB(DB):
 
     return status
 
-  def setPublicIP(self, instanceID, publicIP):
-    """
-    Update publicIP when used for contextualization previus to declareInstanceRunning
-    """
-    publicIP = publicIP.replace('::ffff:', '')
-    result = self._escapeString(publicIP)
-    if not result['OK']:
-      return result
-    publicIP = result['Value']
-
-    try:
-      instanceID = int(instanceID)
-    except ValueError:
-      return S_ERROR("instanceID has to be an integer value")
-
-    tableName, _validStates, idName = self.__getTypeTuple('Instance')
-    sqlUpdate = 'UPDATE `%s` SET PublicIP = %s WHERE %s = %d' % (tableName, publicIP, idName, instanceID)
-
-    return self._update(sqlUpdate)
-
   def declareInstanceRunning(self, uniqueID, publicIP, privateIP=""):
     """
     Declares an instance Running and sets its associated info (uniqueID, publicIP, privateIP)
@@ -448,9 +276,7 @@ class VirtualMachineDB(DB):
     """
     status = self.__setState('Instance', instanceID, 'Stopping')
     if status['OK']:
-      res = self.__addInstanceHistory(instanceID, 'Stopping')
-      if not res['OK']:
-        self.log.warn('Failed to update instance history for %s: %s' % (instanceID, res['Message']))
+      self.__addInstanceHistory(instanceID, 'Stopping')
     return status
 
   def getInstanceStatus(self, instanceID):
@@ -555,23 +381,6 @@ class VirtualMachineDB(DB):
       return S_OK('stop')
     return S_OK()
 
-  def getPublicIpFromInstance(self, uniqueId):
-    """
-    For a given instance uniqueId it returns the asociated PublicIP in the instance table,
-    thus the ImageName of such instance
-    """
-    tableName, _validStates, _idName = self.__getTypeTuple('Instance')
-
-    publicIP = self.getFields(tableName, ['PublicIP'], {'UniqueID': uniqueId})
-    if not publicIP['OK']:
-      return publicIP
-    publicIP = publicIP['Value']
-
-    if not publicIP:
-      return S_ERROR('Unknown %s = %s' % ('UniqueID', uniqueId))
-
-    return S_OK(publicIP[0][0])
-
   def getEndpointFromInstance(self, uniqueId):
     """
     For a given instance uniqueId it returns the asociated Endpoint in the instance
@@ -588,22 +397,6 @@ class VirtualMachineDB(DB):
       return S_ERROR('Unknown %s = %s' % ('UniqueID', uniqueId))
 
     return S_OK(endpoint[0][0])
-
-  def getImageNameFromInstance(self, uniqueId):
-    """
-    For a given uniqueId it returns the asociated Name in the instance table, thus the ImageName of such instance
-    """
-    tableName, _validStates, _idName = self.__getTypeTuple('Instance')
-
-    imageName = self.getFields(tableName, ['Name'], {'UniqueID': uniqueId})
-    if not imageName['OK']:
-      return imageName
-    imageName = imageName['Value']
-
-    if not imageName:
-      return S_ERROR('Unknown %s = %s' % ('UniqueID', uniqueId))
-
-    return S_OK(imageName[0][0])
 
   def getInstancesByStatus(self, status):
     """
@@ -628,59 +421,6 @@ class VirtualMachineDB(DB):
 
     for imageID, uniqueID in runningInstances:
 
-      if imageID not in imagesDict:
-
-        imageName = self.getFields(tableName, ['Name'], {idName: imageID})
-        if not imageName['OK']:
-          continue
-        imagesDict[imageID] = imageName['Value'][0][0]
-
-      if not imagesDict[imageID] in instancesDict:
-        instancesDict[imagesDict[imageID]] = []
-      instancesDict[imagesDict[imageID]].append(uniqueID)
-
-    return S_OK(instancesDict)
-
-  def getInstancesInfoByStatus(self, status):
-    """
-    Get from Instances fields UniqueID, Endpoint, PublicIP, RunningPod  for instances in the given status
-    """
-    if status not in self.validInstanceStates:
-      return S_ERROR('Status %s is not known' % status)
-
-    tableName, _validStates, _idName = self.__getTypeTuple('Instance')
-
-    runningInstances = self.getFields(tableName, ['UniqueID', 'Endpoint', 'PublicIP', 'RunningPod'],
-                                      {'Status': status})
-    if not runningInstances['OK']:
-      return runningInstances
-    runningInstances = runningInstances['Value']
-
-    return S_OK(runningInstances)
-
-  def getInstancesByStatusAndEndpoint(self, status, endpoint):
-    """
-    Get dictionary of Image Names with InstanceIDs in given status
-    """
-    if status not in self.validInstanceStates:
-      return S_ERROR('Status %s is not known' % status)
-
-    # InstanceTuple
-    tableName, _validStates, _idName = self.__getTypeTuple('Instance')
-
-    runningInstances = self.getFields(tableName, ['VMImageID', 'UniqueID'],
-                                      {'Status': status, 'Endpoint': endpoint})
-    if not runningInstances['OK']:
-      return runningInstances
-    runningInstances = runningInstances['Value']
-
-    instancesDict = {}
-    imagesDict = {}
-
-    # InstanceTuple
-    tableName, _validStates, idName = self.__getTypeTuple('Image')
-
-    for imageID, uniqueID in runningInstances:
       if imageID not in imagesDict:
 
         imageName = self.getFields(tableName, ['Name'], {idName: imageID})
@@ -1077,10 +817,6 @@ class VirtualMachineDB(DB):
       tableName = 'vm_Instances'
       validStates = self.validInstanceStates
       idName = 'InstanceID'
-    elif element == 'RunningPod':
-      tableName = 'vm_RunningPods'
-      validStates = self.validRunningPodStates
-      idName = 'RunningPodID'
 
     return (tableName, validStates, idName)
 
@@ -1102,15 +838,6 @@ class VirtualMachineDB(DB):
 
     fields = ['UniqueID', 'RunningPod', 'Name', 'Endpoint', 'VMImageID', 'Status', 'LastUpdate']
     values = [uniqueID, runningPodName, instanceName, endpoint, imageID, status, Time.toString()]
-
-    # runningPodDict = self.getRunningPodDict( runningPodName )
-    # if not runningPodDict[ 'OK' ]:
-    #  return runningPodDict
-    # runningPodDict = runningPodDict[ 'Value' ]
-
-    # if 'MaxAllowedPrice' in runningPodDict:
-    #  fields.append( 'MaxAllowedPrice' )
-    #  values.append( runningPodDict[ 'MaxAllowedPrice' ] )
 
     instance = self.insertFields(tableName, fields, values)
     if not instance['OK']:
@@ -1380,12 +1107,8 @@ class VirtualMachineDB(DB):
 
     data = {}
     values = ret['Value'][0]
-    fields = fields.keys()
-
-    for i in range(len(fields)):
-      data[fields[i]] = values[i]
-
-    return S_OK(data)
+    fields = list(fields.keys())
+    return S_OK(dict(zip(fields, values)))
 
   def __getStatus(self, element, iD):
     """

@@ -695,7 +695,7 @@ diracUserAndGroup() {
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser "${DEBUG}"; then
+  if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser,VmRpcOperation "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
