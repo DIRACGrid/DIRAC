@@ -24,10 +24,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import time
-import select
 import six
 from six import BytesIO
 from hashlib import md5
+
+try:
+  import selectors
+except ImportError:
+  import selectors2 as selectors
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -145,8 +149,9 @@ class BaseTransport(object):
   def _readReady(self):
     if not self.iReadTimeout:
       return True
-    inList, dummy, dummy = select.select([self.oSocket], [], [], self.iReadTimeout)
-    if self.oSocket in inList:
+    sel = selectors.DefaultSelector()
+    sel.register(self.oSocket, selectors.EVENT_READ)
+    if sel.select(timeout=self.iReadTimeout):
       return True
     return False
 

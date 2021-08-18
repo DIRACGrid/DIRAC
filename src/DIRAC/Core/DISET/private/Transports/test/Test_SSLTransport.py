@@ -4,12 +4,15 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import select
 import socket
 import threading
 
-from pytest import fixture
+try:
+  import selectors
+except ImportError:
+  import selectors2 as selectors
 
+from pytest import fixture
 
 from diraccfg import CFG
 from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption
@@ -105,10 +108,10 @@ class DummyServiceReactor(object):
     """
       This method just gets the incoming connection, and handle it, once.
     """
-    sockets = [self.transport.getSocket()]
-
     try:
-      _inList, _outList, _exList = select.select(sockets, [], [], 2)
+      sel = selectors.DefaultSelector()
+      sel.register(self.transport.getSocket(), selectors.EVENT_READ)
+      assert sel.select(timeout=2)
       result = self.transport.acceptConnection()
       assert result["OK"], result
       clientTransport = result['Value']

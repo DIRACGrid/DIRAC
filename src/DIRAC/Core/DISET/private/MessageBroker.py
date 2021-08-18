@@ -7,10 +7,15 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import threading
-import select
 import time
+import select
 import socket
 import os
+
+try:
+  import selectors
+except ImportError:
+  import selectors2 as selectors
 
 # TODO: Remove ThreadPool later
 useThreadPoolExecutor = False
@@ -135,40 +140,36 @@ class MessageBroker(object):
     while self.__listeningForMessages:
       self.__trInOutLock.acquire()
       try:
-        sIdList = []
+        # TODO: A single DefaultSelector instance can probably be shared by all threads
+        sel = selectors.DefaultSelector()
         for trid in self.__messageTransports:
           mt = self.__messageTransports[trid]
           if not mt['listen']:
             continue
-          sIdList.append((trid, mt['transport'].getSocket()))
-        if not sIdList:
+          sel.register(mt['transport'].getSocket(), selectors.EVENT_READ, trid)
+        if not sel.get_map():
           self.__listeningForMessages = False
           return
       finally:
         self.__trInOutLock.release()
+
       try:
-        try:
-          inList, _outList, _exList = select.select([pos[1] for pos in sIdList], [], [], 1)
-          if len(inList) == 0:
-            continue
-        except socket.error:
-          time.sleep(0.001)
-          continue
-        except select.error:
-          time.sleep(0.001)
-          continue
+        events = sel.select(timeout=1)
+      except (socket.error, select.error):
+        # TODO: When can this happen?
+        time.sleep(0.001)
+        continue
       except Exception as e:
         gLogger.exception("Exception while selecting persistent connections", lException=e)
         continue
-      for sock in inList:
-        for iPos in range(len(sIdList)):
-          if sock == sIdList[iPos][1]:
-            trid = sIdList[iPos][0]
-            if trid in self.__messageTransports:
-              result = self.__receiveMsgDataAndQueue(trid)
-              if not result['OK']:
-                self.removeTransport(trid)
-            break
+
+      for key, event in events:
+        if event & selectors.EVENT_READ:
+          trid = key.data
+          if trid in self.__messageTransports:
+            result = self.__receiveMsgDataAndQueue(trid)
+            if not result['OK']:
+              self.removeTransport(trid)
 
   # Process received data functions
 
