@@ -17,6 +17,8 @@ import copy
 import os
 
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
@@ -27,12 +29,11 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
-from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 
 COMPONENT_NAME = 'TaskManager'
 
@@ -415,9 +416,9 @@ class RequestTasks(TaskBase):
       else:
         for lfn, newStatus in statusDict['Value'].items():
           if newStatus == 'Done':
-            updateDict[lfn] = 'Processed'
+            updateDict[lfn] = TransformationFilesStatus.PROCESSED
           elif newStatus == 'Failed':
-            updateDict[lfn] = 'Problematic'
+            updateDict[lfn] = TransformationFilesStatus.PROBLEMATIC
     return S_OK(updateDict)
 
 ############
@@ -1078,8 +1079,8 @@ class WorkflowTasks(TaskBase):
     updateDict = {}
     for jobName in noTasks:
       for lfn, oldStatus in taskFiles[jobName].items():
-        if oldStatus != 'Unused':
-          updateDict[lfn] = 'Unused'
+        if oldStatus != TransformationFilesStatus.UNUSED:
+          updateDict[lfn] = TransformationFilesStatus.UNUSED
 
     res = self.jobMonitoringClient.getJobsStatus(list(taskNameIDs.values()))
     if not res['OK']:
@@ -1089,9 +1090,9 @@ class WorkflowTasks(TaskBase):
     statusDict = res['Value']
     for jobName, wmsID in taskNameIDs.items():
       jobStatus = statusDict.get(wmsID, {}).get('Status')
-      newFileStatus = {'Done': 'Processed',
-                       'Completed': 'Processed',
-                       'Failed': 'Unused'}.get(jobStatus)
+      newFileStatus = {'Done': TransformationFilesStatus.PROCESSED,
+                       'Completed': TransformationFilesStatus.PROCESSED,
+                       'Failed': TransformationFilesStatus.UNUSED}.get(jobStatus)
       if newFileStatus:
         for lfn, oldStatus in taskFiles[jobName].items():
           if newFileStatus != oldStatus:
