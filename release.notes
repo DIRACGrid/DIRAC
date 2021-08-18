@@ -1,3 +1,16 @@
+[v7r2p21]
+
+*Core
+FIX: (#5334) Use selectors(2) instead of select.select to avoid issues with file descriptors > 1024, fixes #5232
+FIX: (#5336) ElasticSearchDB: use ca certs file if requested
+FIX: (#5328) ElasticSearchDB: work on a copy of the documents in generateDocs()
+
+*WorkloadManagement
+FIX: (#5332) Fix unassigning sandboxes when removing jobs from the transformation system
+
+*Resources
+NEW: (#5329) Added PBSResourceUsage unit test
+
 [v7r2p20]
 
 *Resources
