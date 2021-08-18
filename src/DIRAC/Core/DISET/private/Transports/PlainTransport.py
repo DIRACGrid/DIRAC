@@ -4,9 +4,14 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import socket
-import select
 import time
 import os
+
+try:
+  import selectors
+except ImportError:
+  import selectors2 as selectors
+
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
@@ -24,8 +29,9 @@ class PlainTransport(BaseTransport):
       if e.args[0] != 115:
         return S_ERROR("Can't connect: %s" % str(e))
       #Connect in progress
-      oL = select.select([], [self.oSocket], [], self.extraArgsDict['timeout'])[1]
-      if len(oL) == 0:
+      sel = selectors.DefaultSelector()
+      sel.register(self.oSocket, selectors.EVENT_READ)
+      if not sel.select(timeout=self.extraArgsDict['timeout']):
         self.oSocket.close()
         return S_ERROR("Connection timeout")
       errno = self.oSocket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)

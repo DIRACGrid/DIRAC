@@ -264,7 +264,7 @@ of lines
    :lineno-start: 44
 
    metaQuery = {'TransformationID': 2}
-   myTrans.setInputDataQuery(metaQuery)
+   myTrans.setInputMetaQuery(metaQuery)
 
    ...
 

@@ -14,9 +14,10 @@ import six
 from datetime import datetime
 from datetime import timedelta
 
-import json
 import certifi
+import copy
 import functools
+import json
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q, A
@@ -52,7 +53,7 @@ def generateDocs(data, withTimeStamp=True):
 
   :return: doc
   """
-  for doc in data:
+  for doc in copy.deepcopy(data):
     if "_type" not in doc:
       doc['_type'] = "_doc"
     if withTimeStamp:
@@ -105,7 +106,7 @@ class ElasticSearchDB(object):
     :param str indexPrefix: it is the indexPrefix used to get all indexes
     :param bool useSSL: We can disable using secure connection. By default we use secure connection.
     :param bool useCRT: Use certificates.
-    :param str ca_certs: Server certificate.
+    :param str ca_certs: CA certificates bundle.
     :param str client_key: Client key.
     :param str client_cert: Client certificate.
     """
@@ -131,14 +132,17 @@ class ElasticSearchDB(object):
       sLog.verbose("Connecting to %s, useSSL = %s" % (host, useSSL))
 
     if useSSL:
-      bd = BundleDeliveryClient()
-      retVal = bd.getCAs()
-      casFile = None
-      if not retVal['OK']:
-        sLog.error("CAs file does not exists:", retVal['Message'])
-        casFile = certifi.where()
+      if ca_certs:
+        casFile = ca_certs
       else:
-        casFile = retVal['Value']
+        bd = BundleDeliveryClient()
+        retVal = bd.getCAs()
+        casFile = None
+        if not retVal['OK']:
+          sLog.error("CAs file does not exists:", retVal['Message'])
+          casFile = certifi.where()
+        else:
+          casFile = retVal['Value']
 
       self.client = Elasticsearch(self.__url,
                                   timeout=self.__timeout,

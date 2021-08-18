@@ -153,12 +153,11 @@ class MonitoringReporter(object):
         else:
           if mqProducer is not None:
             res = self.publishRecords(recordsToSend, mqProducer)
+            if not res['OK']:  # in case of MQ problem
+              return res
             # if we managed to publish the records we can delete from the list
-            if res['OK']:
-              recordSent += len(recordsToSend)
-              del documents[:self.__maxRecordsInABundle]
-            else:
-              return res  # in case of MQ problem
+            recordSent += len(recordsToSend)
+            del documents[:self.__maxRecordsInABundle]
           else:
             gLogger.warn("Failed to insert the records:", retVal['Message'])
     except Exception as e:  # pylint: disable=broad-except
