@@ -101,7 +101,6 @@ class TimeLeft(object):
     elif not resources.get('WallClock'):
       resources['WallClock'] = resources['CPU'] / processors
 
-    timeLeft = 0.
     cpu = float(resources['CPU'])
     cpuLimit = float(resources['CPULimit'])
     wallClock = float(resources['WallClock'])
@@ -132,7 +131,7 @@ class TimeLeft(object):
       # In case the returned cpu and cpuLimit are not in real seconds, this is however rubbish
       cpuWorkLeft = (timeLimit - time) * self.cpuPower
 
-    self.log.verbose('Remaining CPU in normalized units is: %.02f' % timeLeft)
+    self.log.verbose('Remaining CPU in normalized units is: %.02f' % cpuWorkLeft)
     return S_OK(cpuWorkLeft)
 
   def __getBatchSystemPlugin(self):
