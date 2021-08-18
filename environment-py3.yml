@@ -71,6 +71,10 @@ dependencies:
   - pygments >=1.5
   - sphinx
   - graphviz
+  # RTD Sphinx theme
+  - sphinx_rtd_theme
+  # Bootstrap and new elements fo Sphinx
+  - sphinx-panels
   # unused
   - funcsigs
   - jinja2
