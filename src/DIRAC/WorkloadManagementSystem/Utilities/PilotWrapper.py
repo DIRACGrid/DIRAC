@@ -46,18 +46,60 @@ import logging
 import time
 import tarfile
 import hashlib
+# for remote logging
+import subprocess
+import json
+import os
+import urllib
+import ssl
+import shlex
+from uuid import uuid1
+
+try:
+    # For Python 3.0 and later
+    from urllib.request import urlopen, HTTPError, URLError
+    from urllib.parse import urlencode
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import urlopen, HTTPError, URLError
+    from urllib import urlencode
+
+try:
+  from cStringIO import StringIO
+except ImportError:
+  from io import StringIO
+
+# formatting with microsecond accuracy, (ISO-8601)
+
+class MicrosecondFormatter(logging.Formatter):
+  def formatTime(self, record, datefmt=None):
+    ct = self.converter(record.created)
+    if datefmt:
+        s = time.strftime(datefmt, ct)
+    else:
+        t = time.strftime("%%Y-%%m-%%dT%%H:%%M:%%S", ct)
+        s = "%%s,%%06dZ" %% (t, (record.created - int(record.created)) * 1e6)
+    return s
 
 # setting up the logging
-formatter = logging.Formatter(fmt='%%(asctime)s UTC %%(levelname)-8s %%(message)s', datefmt='%%Y-%%m-%%d %%H:%%M:%%S')
+# formatter = logging.Formatter(fmt='%%(asctime)s UTC %%(levelname)-8s %%(message)s', datefmt='%%Y-%%m-%%d %%H:%%M:%%S')
+formatter = MicrosecondFormatter('%%(asctime)s %%(levelname)-8s [%%(name)s] %%(message)s')
 logging.Formatter.converter = time.gmtime
 try:
   screen_handler = logging.StreamHandler(stream=sys.stdout)
 except TypeError:  # python2.6
   screen_handler = logging.StreamHandler(strm=sys.stdout)
 screen_handler.setFormatter(formatter)
+
+# add a string buffer handler
+sio = StringIO()
+buffer = logging.StreamHandler(sio)
+buffer.setFormatter(formatter)
+
 logger = logging.getLogger('pilotLogger')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
+logger.addHandler(buffer)
 
 # just logging the environment as first thing
 logger.debug('===========================================================')
@@ -65,6 +107,8 @@ logger.debug('Environment of execution host\\n')
 for key, val in os.environ.items():
   logger.debug(key + '=' + val)
 logger.debug('===========================================================\\n')
+
+logger.debug(sys.version)
 
 # putting ourselves in the right directory
 pilotExecDir = '%(pilotExecDir)s'
@@ -268,12 +312,29 @@ if os.path.exists('checksums.sha512'):
     localPilot += (
         """
 # now finally launching the pilot script (which should be called dirac-pilot.py)
-cmd = "$py dirac-pilot.py %s"
-logger.info('Executing: %%s' %% cmd)
-sys.stdout.flush()
-ret = os.system(cmd)
+# get the setup name an -z, if present to get remote logging in place
+opt = "%s"
+# try to get a pilot stamp from the environment:
+UUID =  os.environ.get('DIRAC_PILOT_STAMP')
+if UUID is None:
+    UUID = str(uuid1())
+opt = opt + " --pilotUUID " + UUID
 
+args = opt.split()
+
+# let's see if we have remote logging enabled (-z), if not run the pilot script with os.system, as before
+
+logger.info("dirac-pilot.py  will be called: with %%s " %% args)
+
+# call dirac-pilot.py and pass log records accumulated so far as a standard input. A decision to use the buffer
+# in a remote logger is made later in dirac-pilot.py script
+
+proc = subprocess.Popen(shlex.split("$py dirac-pilot.py " + opt), bufsize = 1, stdin = subprocess.PIPE,
+                        stdout=sys.stdout, stderr=sys.stderr, universal_newlines = True)
+proc.communicate(buffer.stream.getvalue())
+ret = proc.returncode
 # and cleaning up
+buffer.stream.close()
 shutil.rmtree(pilotWorkingDirectory)
 
 # did it fail?
