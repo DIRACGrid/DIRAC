@@ -660,6 +660,37 @@ class ScriptSuccess(ModulesTestCase):
         self.script._executeCommand()
 
 
+class ScriptUnicode(ModulesTestCase):
+
+  #################################################
+
+  def test_execute(self):
+
+    self.script.jobType = 'merge'
+    self.script.stepInputData = ['foo', 'bar']
+
+    self.script.production_id = self.prod_id
+    self.script.prod_job_id = self.prod_job_id
+    self.script.jobID = self.wms_job_id
+    self.script.workflowStatus = self.workflowStatus
+    self.script.stepStatus = self.stepStatus
+    self.script.workflow_commons = self.wf_commons
+    self.script.step_commons = self.step_commons[0]
+    self.script.step_number = self.step_number
+    self.script.step_id = self.step_id
+    self.script.executable = 'echo'
+    self.script.arguments = r"-e '\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88\xe2\x95\x97'"
+    self.script.applicationLog = 'applicationLog.txt'
+
+    # no errors, no input data
+    for wf_commons in copy.deepcopy(self.wf_commons):
+      for step_commons in self.step_commons:
+        self.script.workflow_commons = wf_commons
+        self.script.step_commons = step_commons
+        self.script._setCommand()
+        self.script._executeCommand()
+
+
 class ScriptFailure(ModulesTestCase):
 
   #################################################
