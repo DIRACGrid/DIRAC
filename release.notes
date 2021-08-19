@@ -1,4 +1,4 @@
-[v7r3-pre21]
+[v7r3-pre22]
 
 NEW: (#5000) Initial support for Python 3 server installations
 NEW: VMDIRAC separate project is merged into the core DIRAC project
@@ -85,6 +85,7 @@ FIX: (#5246) decode values using decode() method in JobDB
 NEW: (#5314) Add a PilotStatus module to clearly define the pilot status in the code
 FIX: (#5325) Fix-up minor errors introduced during VMDIRAC merge
 NEW: (#5325) Tests for VirtualMachine DB & Service
+FIX: (#5342) Allow Platform parameter to be missing from the queue configuration
 
 *TS
 NEW: (#5327) Added TransformationFilesStatus module
@@ -93,6 +94,7 @@ NEW: (#5327) Added TransformationFilesStatus module
 NEW: (#5062) add Test_LocalConfiguration
 CHANGE: (#5046) don't use mail in the self generated certificates
 CHANGE: (#5301) added RALPP as a multi-VO test site and added env dump to job.log to ease debugging
+NEW: (#5321) added integration test for AccountingDB
 
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
