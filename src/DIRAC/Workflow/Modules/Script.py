@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import os
 import sys
+import io
 import re
 import stat
 import shlex
@@ -111,10 +112,10 @@ class Script(ModuleBase):
     if os.path.exists(self.applicationLog):
       self.log.verbose('Removing existing %s' % self.applicationLog)
       os.remove(self.applicationLog)
-    with open('%s/%s' % (os.getcwd(), self.applicationLog), 'w') as fopen:
-      fopen.write("<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % (self.executable, stdout))
+    with io.open('%s/%s' % (os.getcwd(), self.applicationLog), 'wt') as fopen:
+      fopen.write(u"<<<<<<<<<< %s Standard Output >>>>>>>>>>\n\n%s " % (self.executable, stdout))
       if stderr:
-        fopen.write("<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % (self.executable, stderr))
+        fopen.write(u"<<<<<<<<<< %s Standard Error >>>>>>>>>>\n\n%s " % (self.executable, stderr))
     self.log.info("Output written to %s, execution complete." % (self.applicationLog))
 
     if failed:

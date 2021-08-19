@@ -99,6 +99,14 @@ NEW: (#5321) added integration test for AccountingDB
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
 
+[v7r2p22]
+
+*Workflow
+FIX: (#5346) UnicodeEncodeError when application log contains non-ascii characters
+
+*Resources
+FIX: (#5345) Pass --cfg /tmp/pilot.cfg when reusing host DIRAC installation in SingularityComputingElement
+
 [v7r2p21]
 
 *Core

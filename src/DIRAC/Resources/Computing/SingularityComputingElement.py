@@ -282,7 +282,8 @@ class SingularityComputingElement(ComputingElement):
                                        resourceParams=jobDesc.get('resourceParams', {}),
                                        optimizerParams=jobDesc.get('optimizerParams', {}),
                                        log=log,
-                                       logLevel=logLevel)
+                                       logLevel=logLevel,
+                                       extraOptions="" if self.__installDIRACInContainer else "/tmp/pilot.cfg")
     if not result['OK']:
       result['ReschedulePayload'] = True
       return result
