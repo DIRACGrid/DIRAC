@@ -161,6 +161,8 @@ random.shuffle(location)
 # we try from the available locations
 locs = [os.path.join('https://', loc) for loc in location]
 locations = locs + [os.path.join(loc, 'pilot') for loc in locs]
+# adding also, as last the cvmfs location dirac.egi.eu, but this won't contain a valid JSON
+locations+=['file:/cvmfs/dirac.egi.eu/pilot/']
 
 for loc in locations:
   print('Trying %%s' %% loc)
