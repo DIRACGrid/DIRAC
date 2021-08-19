@@ -272,12 +272,12 @@ class AuthServer(_AuthorizationServer):
       comment = 'Your ID is not registred in the DIRAC: %s.' % credDict['ID']
       payload.update(idpObj.getUserProfile().get('Value', {}))
       result = self.__registerNewUser(providerName, payload)
-    
+
       if result['OK']:
         comment += ' Administrators have been notified about you.'
       else:
         comment += ' Please, contact the DIRAC administrators.'
-      
+
       # Notify user about problem
       html = getHTML("unregister")
       # Create HTML page

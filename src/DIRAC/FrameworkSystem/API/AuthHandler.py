@@ -449,7 +449,7 @@ class AuthHandler(TornadoREST):
     if len(validGroups) == 1:
       firstRequest.addScopes(['g:%s' % validGroups[0]])
       return extSession['authed'], firstRequest
-    
+
     # Else give user chanse to choose group in browser
     # Return choose group HTML interface
     html = getHTML('group selection')
