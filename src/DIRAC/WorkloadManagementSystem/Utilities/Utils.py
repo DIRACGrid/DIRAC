@@ -84,7 +84,7 @@ def createRelocatedJobWrapper(wrapperPath, rootLocation,
   """ This method creates a job wrapper for a specific job in wrapperPath,
       but assumes this has been reloated to rootLocation before running it.
   """
-  if isinstance(extraOptions, six.string_types) and extraOptions.endswith('.cfg'):
+  if isinstance(extraOptions, six.string_types) and extraOptions.endswith('.cfg') and "--cfg" not in extraOptions:
     extraOptions = '--cfg %s' % extraOptions
 
   arguments = {'Job': jobParams,
