@@ -51,7 +51,7 @@ class CSJSONClient(TornadoClient):
 
       :param sData: Data to commit, you may call this method with CSAPI and Modificator
     """
-    return self.executeRPC('commitNewData', b64encode(sData))
+    return self.executeRPC('commitNewData', b64encode(sData).decode())
 
 
 class ConfigurationClient(Client):
