@@ -21,7 +21,7 @@ from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
-from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
+from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance, getProviderInfo
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.ConfigurationSystem.Client.Utilities import isDownloadablePersonalProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (getUsernameForDN, getEmailsForGroup, wrapIDAsDN,
@@ -31,7 +31,7 @@ from DIRAC.FrameworkSystem.Client.TokenManagerClient import TokenManagerClient
 from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import TornadoResponse
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients, Client
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import OAuth2Request, createOAuth2Request
-from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectMetadata
+from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectMetadata, getHTML
 from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import (DeviceAuthorizationEndpoint,
@@ -51,7 +51,6 @@ class AuthServer(_AuthorizationServer):
 
         server = AuthServer()
   """
-  css = {}
   LOCATION = None
   REFRESH_TOKEN_EXPIRES_IN = 24 * 3600
 
@@ -270,14 +269,37 @@ class AuthServer(_AuthorizationServer):
     # Is ID registred?
     result = getUsernameForDN(credDict['DN'])
     if not result['OK']:
-      comment = '%s ID is not registred in the DIRAC.' % credDict['ID']
+      comment = 'Your ID is not registred in the DIRAC: %s.' % credDict['ID']
       payload.update(idpObj.getUserProfile().get('Value', {}))
       result = self.__registerNewUser(providerName, payload)
+    
       if result['OK']:
         comment += ' Administrators have been notified about you.'
       else:
         comment += ' Please, contact the DIRAC administrators.'
-      return S_ERROR(comment)
+      
+      # Notify user about problem
+      html = getHTML("unregister")
+      # Create HTML page
+      with html:
+        with dom.div(cls="container"):
+          with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
+            dom.div(dom.img(src=self.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
+            with dom.div(cls="col-md-4"):
+              dom.small(dom.i(cls="fa fa-ticket-alt", style="color:green;"))
+              dom.small('user code verified.', cls="p-3 h6")
+              dom.br()
+              dom.small(dom.i(cls="fa fa-user-check", style="color:green;"))
+              dom.small('Identity Provider selected.', cls="p-3 h6")
+              dom.br()
+              dom.small(dom.i(cls="fa fa-exclamation-circle", style="color:red;"))
+              dom.small('authorization failed.', cls="p-3 h6")
+              dom.br()
+              dom.br()
+              dom.small(dom.i(cls="fa fa-info"))
+              dom.small(comment, cls="p-2")
+
+      return S_ERROR(html.render())
     credDict['username'] = result['Value']
 
     # Update token for user. This token will be stored separately in the database and
@@ -409,25 +431,44 @@ class AuthServer(_AuthorizationServer):
     # If no identity provider is specified, it must be assigned
     if groupProvider:
       request.provider = groupProvider
-    elif len(idPs) == 1:
-      # If only one identity provider is registered, then choose it
+      return request, None
+
+    # If only one identity provider is registered, then choose it
+    if len(idPs) == 1:
       request.provider = idPs[0]
-    else:
-      # Choose IdP interface
-      doc = document('DIRAC authentication')
-      with doc.head:
-        dom.link(rel='stylesheet',
-                 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
-        dom.style(self.css['CSS'])
-      with doc:
-        with dom.div(style=self.css['css_main']):
-          with dom.div('Choose identity provider', style=self.css['css_align_center']):
-            for idP in idPs:
-              # data: Status, Comment, Action
-              dom.button(dom.a(idP, href='%s/authorization/%s?%s' % (self.LOCATION, idP, request.query)),
-                         cls='button')
-      return None, self.handle_response(payload=Template(doc.render()).generate())
-    return request, None
+      return request, None
+
+    # Choose IdP HTML interface
+    html = getHTML("IdP selector", style=".card{transition:.3s;}.card:hover{transform:scale(1.05);}")
+    # Create HTML page
+    with html:
+      with dom.div(cls="container"):
+        with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
+          dom.div(dom.img(src=self.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
+          with dom.div(cls="col-md-4"):
+            dom.small(dom.i(cls="fa fa-ticket-alt", style="color:green;"))
+            dom.small('user code verified.', cls="p-3 h6")
+            dom.br()
+            dom.small(dom.i(cls="fa fa-user-check"))
+            dom.small('Identity Provider selection..', cls="p-3 h6")
+            dom.br()
+            dom.br()
+            dom.small(dom.i(cls="fa fa-info"))
+            dom.small('Dirac itself is not an Identity Provider. You will need to select one to continue.', cls="p-2")
+        with dom.div(cls="row m-5 justify-content-md-center"):
+          for idP in idPs:
+            result = getProviderInfo(idP)
+            if result['OK']:
+              logo = result['Value'].get('logoURL')
+              with dom.div(cls="col-lg-4").add(dom.div(cls="card shadow-lg h-100 border-0")):
+                with dom.div(cls="row m-2 align-items-center h-100"):
+                  with dom.div(cls="col-lg-8"):
+                    dom.h2(idP)
+                    dom.a(href='%s/authorization/%s?%s' % (self.LOCATION, idP, request.query), cls="stretched-link")
+                  if logo:
+                    dom.div(dom.img(src=logo, cls="card-img"), cls="col-lg-4")
+    # Render into HTML
+    return None, html.render()
 
   def __registerNewUser(self, provider, payload):
     """ Register new user

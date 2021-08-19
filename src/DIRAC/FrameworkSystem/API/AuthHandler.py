@@ -13,7 +13,7 @@ from __future__ import print_function
 import json
 import pprint
 
-from dominate import document, tags as dom
+from dominate import tags as dom
 from tornado.template import Template
 from tornado.concurrent import Future
 
@@ -26,6 +26,7 @@ from DIRAC.FrameworkSystem.private.authorization.AuthServer import AuthServer
 from DIRAC.FrameworkSystem.private.authorization.utils.Requests import createOAuth2Request
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint
 from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import RevocationEndpoint
+from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
 
 __RCSID__ = "$Id$"
 
@@ -36,48 +37,6 @@ class AuthHandler(TornadoREST):
   SYSTEM = 'Framework'
   AUTH_PROPS = 'all'
   LOCATION = "/auth"
-  css_align_center = 'display:block;justify-content:center;align-items:center;'
-  css_center_div = 'height:700px;width:100%;position:absolute;top:50%;left:0;margin-top:-350px;'
-  css_big_text = 'font-size:28px;'
-  css_main = ' '.join([css_align_center, css_center_div, css_big_text])
-  CSS = """
-.button {
-  border-radius: 4px;
-  background-color: #ffffff00;
-  border: none;
-  color: black;
-  text-align: center;
-  font-size: 14px;
-  padding: 12px;
-  width: 100%;
-  transition: all 0.5s;
-  cursor: pointer;
-  margin: 5px;
-  display: block; /* Make the links appear below each other */
-}
-.button a {
-  color: black;
-  cursor: pointer;
-  display: inline-block;
-  position: relative;
-  transition: 0.5s;
-  text-decoration: none; /* Remove underline from links */
-}
-.button a:after {
-  content: '\\00bb';
-  position: absolute;
-  opacity: 0;
-  top: 0;
-  right: -20px;
-  transition: 0.5s;
-}
-.button:hover a {
-  padding-right: 25px;
-}
-.button:hover a:after {
-  opacity: 1;
-  right: 0;
-}"""
 
   @classmethod
   def initializeHandler(cls, serviceInfo):
@@ -86,18 +45,11 @@ class AuthHandler(TornadoREST):
         :param dict ServiceInfoDict: infos about services
     """
     cls.server = AuthServer()
-    cls.server.css = dict(CSS=cls.CSS, css_align_center=cls.css_align_center, css_main=cls.css_main)
     cls.server.LOCATION = cls.LOCATION
 
   def initializeRequest(self):
     """ Called at every request """
     self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
-    # Template for a html UI
-    self.doc = document('DIRAC authentication')
-    with self.doc.head:
-      dom.link(rel='stylesheet',
-               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css")
-      dom.style(self.CSS)
 
   def _finishFuture(self, retVal):
     """ Handler Future result
@@ -112,8 +64,11 @@ class AuthHandler(TornadoREST):
       # S_ERROR is interpreted in the OAuth2 error format.
       self.set_status(400)
       self.clear_cookie('auth_session')
-      self.log.error('%s\n' % retVal['Message'], ''.join(retVal['CallStack']))
-      self.finish({'error': 'server_error', 'description': retVal['Message']})
+      if retVal['Message'].startswith("<!DOCTYPE html>"):
+        self.finish(retVal['Message'])
+      else:
+        self.log.error('%s\n' % retVal['Message'], ''.join(retVal['CallStack']))
+        self.finish({'error': 'server_error', 'description': retVal['Message']})
     else:
       super(AuthHandler, self)._finishFuture(retVal)
 
@@ -320,11 +275,23 @@ class AuthHandler(TornadoREST):
         return self.server.handle_response(302, {}, [("Location", authURL)], session)
 
       # If received a request without a user code, then send a form to enter the user code
-      with self.doc:
-        dom.div(dom.form(dom._input(type="text", name="user_code", style=self.css_big_text),
-                         dom.button('Submit', type="submit", style=self.css_big_text),
-                         action=self.currentPath, method="GET"), style=self.css_main)
-      return Template(self.doc.render()).generate()
+      html = getHTML('device flow')
+      with html:
+        with dom.div(cls="container"):
+          with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
+            dom.div(dom.img(src=self.server.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
+            with dom.div(cls="col-md-4"):
+              dom.small(dom.i(cls="fa fa-ticket-alt"))
+              dom.small('user code verification..', cls="p-3 h6")
+              dom.br()
+              dom.br()
+              dom.small(dom.i(cls="fa fa-info"))
+              dom.small('Device flow required user code. You will need to type user code to continue.', cls="p-2")
+        with dom.div(cls='row mt-5 justify-content-md-center').add(dom.div(cls="col-auto")):
+          dom.div(dom.form(dom._input(type="text", name="user_code"),
+                           dom.button('Submit', type="submit", cls="btn btn-submit"),
+                           action=self.currentPath, method="GET"), cls='card')
+      return html.render()
 
   path_authorization = ['([A-z0-9-_]*)']
 
@@ -473,18 +440,40 @@ class AuthHandler(TornadoREST):
       return None, S_ERROR('No groups found for %s and for %s Identity Provider.' % (username, provider))
 
     self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(validGroups))
-    if not firstRequest.groups:
-      if len(validGroups) == 1:
-        firstRequest.addScopes(['g:%s' % validGroups[0]])
-      else:
-        # Choose group interface
-        with self.doc:
-          with dom.div(style=self.css_main):
-            with dom.div('Choose group', style=self.css_align_center):
-              for group in validGroups:
-                dom.button(dom.a(group, href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, state, group)),
-                           cls='button')
-        return None, self.server.handle_response(payload=Template(self.doc.render()).generate(), newSession=extSession)
 
-    # Return grant user
-    return extSession['authed'], firstRequest
+    # If group already defined in first request, just return it
+    if firstRequest.groups:
+      return extSession['authed'], firstRequest
+
+    # If not and we found only one valid group, apply this group
+    if len(validGroups) == 1:
+      firstRequest.addScopes(['g:%s' % validGroups[0]])
+      return extSession['authed'], firstRequest
+    
+    # Else give user chanse to choose group in browser
+    # Return choose group HTML interface
+    html = getHTML('group selection')
+    with html:
+      with dom.div(cls="container"):
+        with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
+          dom.div(dom.img(src=self.server.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
+          with dom.div(cls="col-md-4"):
+            dom.small(dom.i(cls="fa fa-ticket-alt", style="color:green;"))
+            dom.small('user code verified.', cls="p-3 h6")
+            dom.br()
+            dom.small(dom.i(cls="fa fa-user-check", style="color:green;"))
+            dom.small('Identity Provider selected.', cls="p-3 h6")
+            dom.br()
+            dom.small(dom.i(cls="fa fa-users"))
+            dom.small('DIRAC group selection..', cls="p-3 h6")
+            dom.br()
+            dom.br()
+            dom.small(dom.i(cls="fa fa-info"))
+            dom.small('Dirac use groups to describe permissions.', cls="p-2")
+            dom.small('You will need to select one of the groups to continue.', cls="p-2")
+      with dom.div(cls='row mt-5 justify-content-md-center').add(dom.div(cls="col-auto")):
+        for group in validGroups:
+          with dom.div(cls="card shadow-sm border-0 text-center m-5 p-2"):
+            dom.h4(group, cls="p-2")
+            dom.a(href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, state, group), cls="stretched-link")
+    return None, self.server.handle_response(payload=html.render(), newSession=extSession)
