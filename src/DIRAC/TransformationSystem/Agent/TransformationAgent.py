@@ -630,7 +630,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
       if not os.path.exists(fileName):
         self.replicaCache[transID] = {}
       else:
-        with open(fileName, 'r') as cacheFile:
+        with open(fileName, 'rb') as cacheFile:
           self.replicaCache[transID] = pickle.load(cacheFile)
         self._logInfo("Successfully loaded replica cache from file %s (%d files)" %
                       (fileName, self.__filesInCache(transID)),
@@ -660,7 +660,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         # write to a temporary file in order to avoid corrupted files
         cacheFile = self.__cacheFile(t_id)
         tmpFile = cacheFile + '.tmp'
-        with open(tmpFile, 'w') as fd:
+        with open(tmpFile, 'wb') as fd:
           pickle.dump(self.replicaCache.get(t_id, {}), fd)
         # Now rename the file as it shold
         os.rename(tmpFile, cacheFile)
