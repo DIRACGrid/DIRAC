@@ -255,13 +255,15 @@ class SiteDirector(AgentModule):
         self.sites.append(queueDict['Site'])
 
       # Update self.platforms, keeping entries unique and squashing lists
-      platform = queueDict['ParametersDict']['Platform']
-      oldPlatforms = set(self.platforms)
-      if isinstance(platform, list):
-        oldPlatforms.update(set(platform))
-      else:
-        oldPlatforms.add(platform)
-      self.platforms = list(oldPlatforms)
+      self.platforms = []
+      if 'Platform' in queueDict['ParametersDict']:
+        platform = queueDict['ParametersDict']['Platform']
+        oldPlatforms = set(self.platforms)
+        if isinstance(platform, list):
+          oldPlatforms.update(set(platform))
+        else:
+          oldPlatforms.add(platform)
+        self.platforms = list(oldPlatforms)
 
       # Update self.globalParameters
       if "WholeNode" in queueDict['ParametersDict']:
