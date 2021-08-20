@@ -62,7 +62,7 @@ import socket
 import psutil
 
 # from DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers import Path
@@ -102,7 +102,7 @@ class ComponentSupervisionAgent(AgentModule):
     self.controlComponents = False
     self.commitURLs = False
     self.doNotRestartInstancePattern = ['RequestExecutingAgent']
-    self.diracLocation = "/opt/dirac/pro"
+    self.diracLocation = rootPath
 
     self.sysAdminClient = SystemAdministratorClient(socket.getfqdn())
     self.jobMonClient = JobMonitoringClient()
@@ -131,7 +131,6 @@ class ComponentSupervisionAgent(AgentModule):
     self.restartAgents = self.am_getOption('RestartAgents', self.restartAgents)
     self.restartExecutors = self.am_getOption('RestartExecutors', self.restartExecutors)
     self.restartServices = self.am_getOption('RestartServices', self.restartServices)
-    self.diracLocation = os.environ.get('DIRAC', self.diracLocation)
     self.addressTo = self.am_getOption('MailTo', self.addressTo)
     self.addressFrom = self.am_getOption('MailFrom', self.addressFrom)
     self.controlComponents = self.am_getOption('ControlComponents', self.controlComponents)
