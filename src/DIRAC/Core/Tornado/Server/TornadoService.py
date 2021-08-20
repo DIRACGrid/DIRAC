@@ -23,7 +23,7 @@ from tornado.ioloop import IOLoop
 
 import DIRAC
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -438,7 +438,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     try:
       # For compatibility reasons with DISET, the methods are still called ``export_*``
       method = getattr(self, 'export_%s' % self.method)
-    except AttributeError as e:
+    except AttributeError:
       sLog.error("Invalid method", self.method)
       raise HTTPError(status_code=http_client.NOT_IMPLEMENTED)
 

@@ -23,7 +23,7 @@ from six import StringIO
 # from DIRAC
 
 from DIRAC import gLogger, S_ERROR
-from DIRAC.DataManagementSystem.Service.FileCatalogHandler import FileCataloghandlerMixin
+from DIRAC.DataManagementSystem.Service.FileCatalogHandler import FileCatalogHandlerMixin
 
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 
@@ -31,7 +31,7 @@ from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 sLog = gLogger.getSubLogger(__name__)
 
 
-class TornadoFileCatalogHandler(FileCataloghandlerMixin, TornadoService):
+class TornadoFileCatalogHandler(FileCatalogHandlerMixin, TornadoService):
   """
   ..class:: FileCatalogHandler
 

@@ -20,7 +20,7 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 
 
-class FileCataloghandlerMixin(object):
+class FileCatalogHandlerMixin(object):
   """
   A simple Replica and Metadata Catalog service.
   """
@@ -730,7 +730,7 @@ class FileCataloghandlerMixin(object):
     return self.fileCatalogDB.getSEDump(seName)['Value']
 
 
-class FileCatalogHandler(FileCataloghandlerMixin, RequestHandler):
+class FileCatalogHandler(FileCatalogHandlerMixin, RequestHandler):
 
   def transfer_toClient(self, seName, token, fileHelper):
     """ This method used to transfer the SEDump to the client,
