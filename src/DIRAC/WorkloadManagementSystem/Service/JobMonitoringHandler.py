@@ -70,21 +70,6 @@ class JobMonitoringHandlerMixin(object):
     cls.pilotManager = PilotManagerClient()
     return S_OK()
 
-  def initialize(self):
-    """ initialize jobPolicy
-    """
-
-    credDict = self.getRemoteCredentials()
-    ownerDN = credDict['DN']
-    ownerGroup = credDict['group']
-    operations = Operations(group=ownerGroup)
-    self.globalJobsInfo = operations.getValue(
-        '/Services/JobMonitoring/GlobalJobsInfo', True)
-    self.jobPolicy = JobPolicy(ownerDN, ownerGroup, self.globalJobsInfo)
-    self.jobPolicy.jobDB = self.jobDB
-
-    return S_OK()
-
   @classmethod
   def parseSelectors(cls, selectDict=None):
     """ Parse selectors before DB query
@@ -408,11 +393,21 @@ class JobMonitoringHandlerMixin(object):
     """ Get the summary of the job information for a given page in the
         job monitor in a generic format
     """
+
     resultDict = {}
 
     startDate, endDate, selectDict = self.parseSelectors(selectDict)
 
-    result = self.jobPolicy.getControlledUsers(RIGHT_GET_INFO)
+    # initialize jobPolicy
+    credDict = self.getRemoteCredentials()
+    ownerDN = credDict['DN']
+    ownerGroup = credDict['group']
+    operations = Operations(group=ownerGroup)
+    globalJobsInfo = operations.getValue(
+        '/Services/JobMonitoring/GlobalJobsInfo', True)
+    jobPolicy = JobPolicy(ownerDN, ownerGroup, globalJobsInfo)
+    jobPolicy.jobDB = self.jobDB
+    result = jobPolicy.getControlledUsers(RIGHT_GET_INFO)
     if not result['OK']:
       return result
     if result['Value'] != 'ALL':
@@ -454,9 +449,9 @@ class JobMonitoringHandlerMixin(object):
         return result
 
       summaryJobList = result['Value']
-      if not self.globalJobsInfo:
-        validJobs, _invalidJobs, _nonauthJobs, _ownJobs = self.jobPolicy.evaluateJobRights(summaryJobList,
-                                                                                           RIGHT_GET_INFO)
+      if not globalJobsInfo:
+        validJobs, _invalidJobs, _nonauthJobs, _ownJobs = jobPolicy.evaluateJobRights(summaryJobList,
+                                                                                      RIGHT_GET_INFO)
         summaryJobList = validJobs
 
       result = self.getJobsAttributes(summaryJobList, SUMMARY)
