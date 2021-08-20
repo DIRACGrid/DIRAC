@@ -143,7 +143,7 @@ class CloudDirector(AgentModule):
     """ Generate a hash of the queue description
     """
     myMD5 = hashlib.md5()
-    myMD5.update(str(vmTypeDict).encode())
+    myMD5.update(str(sorted(vmTypeDict.items())).encode())
     hexstring = myMD5.hexdigest()
     return hexstring
 
