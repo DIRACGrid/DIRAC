@@ -86,6 +86,9 @@ class JobManagerHandlerMixin(object):
     return S_OK()
 
   def initialize(self):
+    return self.initializeRequest()
+
+  def initializeRequest(self):
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
