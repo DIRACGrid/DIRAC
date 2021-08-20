@@ -109,12 +109,13 @@ then
     orig_component=$(echo "${system_component}" | sed 's/Tornado//g' | awk '{print $2}');
     # Replace the dips url with the https url in the cs, assuming port 8443
     sed -E "s|( +${orig_component} = )dips://([a-z]+)(:[0-9]+)(/.*/)(.*)|\1https://\2:8443\4Tornado\5|g" -i "$cfgProdFile"
-    dirac-restart-component Tornado Tornado -ddd
+    # Restart the CS to take all that into account
+    sleep 1
+    dirac-restart-component Configuration Server "$DEBUG"
+    sleep 5
   done< <(python -m DIRAC.Core.Utilities.Extensions findServices | grep Tornado | grep -v Configuration | sed -e 's/Handler//g' -e 's/System//g')
 
-  # Restart the CS to take all that into account
-  dirac-restart-component Configuration Server "$DEBUG"
-
+  dirac-restart-component Tornado Tornado -ddd
   echo -e "*** $(date -u) **** DONE Installing Tornado services"
 fi
 exit 0
