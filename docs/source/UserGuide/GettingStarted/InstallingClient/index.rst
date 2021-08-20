@@ -21,14 +21,14 @@ Install script (for python2 clients)
 Choose the directory where you want to install the DIRAC software and run the dirac-install and dirac-configure scripts from
 this directory::
 
-   wget -np -O https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py --no-check-certificate
+   wget -np https://raw.githubusercontent.com/DIRACGrid/management/master/dirac-install.py --no-check-certificate
    chmod +x dirac-install.py
-   ./dirac-install.py -r v7r2 -t client
+   ./dirac-install.py -r |version| -t client
    source bashrc
-   dirac-proxy-init --nocs
+   dirac-proxy-init --nocs --no-upload
    dirac-configure -S DIRAC-Certification -C dips://some.whe.re:9135/Configuration/Server --SkipCAChecks
 
-The example above assumes that you need the release version v7r2.
+The example above assumes that you need the release version |version|.
  
 **Using a user proxy**
 

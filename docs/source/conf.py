@@ -106,6 +106,18 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               ]
 
 
+def ultimateReplace(app, docname, source):
+  result = source[0]
+  for key in app.config.ultimate_replacements:
+    result = result.replace(key, app.config.ultimate_replacements[key])
+  source[0] = result
+
+
+ultimate_replacements = {
+    "|version|": version,
+}
+
+
 def setup(app):
   app.add_config_value('recommonmark_config',
                        {'enable_eval_rst': True,
@@ -113,6 +125,9 @@ def setup(app):
                         },
                        True)
   app.add_transform(AutoStructify)
+  # for replacing things in ultimate_replacements
+  app.add_config_value('ultimate_replacements', {}, True)
+  app.connect('source-read', ultimateReplace)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -139,7 +154,7 @@ copyright = u'%s, DIRAC Project' % datetime.datetime.utcnow().year
 # built documents.
 #
 # The short X.Y version.
-version = ''
+# version = ''
 # The full version, including alpha/beta/rc tags.
 release = diracRelease
 
