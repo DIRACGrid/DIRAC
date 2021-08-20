@@ -195,9 +195,19 @@ class Matcher(object):
         resourceDict[name] = resourceDescription[name]
 
     if resourceDescription.get('Tag'):
-      resourceDict['Tag'] = resourceDescription['Tag']
+      tagsList = (
+          resourceDescription['Tag'].split(',')
+          if isinstance(resourceDescription['Tag'], str)
+          else resourceDescription['Tag']
+      )
+      resourceDict['Tag'] = tagsList
       if 'RequiredTag' in resourceDescription:
-        resourceDict['RequiredTag'] = resourceDescription['RequiredTag']
+        requiredTagsList = (
+            resourceDescription['Tag'].split(',')
+            if isinstance(resourceDescription['Tag'], str)
+            else resourceDescription['Tag']
+        )
+        resourceDict['RequiredTag'] = requiredTagsList
 
     if 'JobID' in resourceDescription:
       resourceDict['JobID'] = resourceDescription['JobID']
@@ -224,14 +234,16 @@ class Matcher(object):
 
     # Add 'MultiProcessor' to the list of tags
     if nProcessors and nProcessors > 1:
-      resourceDict.setdefault("Tag", []).append("MultiProcessor")
+      resourceDict.setdefault("Tag", []).extend("MultiProcessor")
 
     # Add 'WholeNode' to the list of tags
     if "WholeNode" in resourceDescription:
-      resourceDict.setdefault("Tag", []).append("WholeNode")
+      resourceDict.setdefault("Tag", []).extend("WholeNode")
 
     if 'Tag' in resourceDict:
       resourceDict['Tag'] = list(set(resourceDict['Tag']))
+    if 'RequiredTag' in resourceDict:
+      resourceDict['RequiredTag'] = list(set(resourceDict['RequiredTag']))
 
     for k in ('DIRACVersion', 'ReleaseVersion', 'ReleaseProject',
               'VirtualOrganization',
