@@ -105,7 +105,7 @@ class JobsStateMachine(StateMachine):
                                       [WAITING, RECEIVED, DELETED],
                                       defState=RESCHEDULED),
                    MATCHED: State(5,
-                                  [RUNNING, KILLED],
+                                  [RUNNING, FAILED, KILLED],
                                   defState=MATCHED),
                    WAITING: State(4,
                                   [MATCHED, RESCHEDULED, DELETED],
