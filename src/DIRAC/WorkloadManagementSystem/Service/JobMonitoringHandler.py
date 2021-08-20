@@ -70,10 +70,9 @@ class JobMonitoringHandlerMixin(object):
 
     return S_OK()
 
-  def initialize(self):
+  def initializeRequest(self):
     """ initialize jobPolicy
     """
-
     credDict = self.getRemoteCredentials()
     ownerDN = credDict['DN']
     ownerGroup = credDict['group']
@@ -689,4 +688,5 @@ class JobMonitoringHandlerMixin(object):
 
 
 class JobMonitoringHandler(JobMonitoringHandlerMixin, RequestHandler):
-  pass
+  def initialize(self):
+    return self.initializeRequest()

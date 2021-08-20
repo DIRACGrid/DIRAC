@@ -85,7 +85,7 @@ class JobManagerHandlerMixin(object):
       cls.log.warn("Cannot connect to OptimizationMind!", result['Message'])
     return S_OK()
 
-  def initialize(self):
+  def initializeRequest(self):
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
@@ -661,4 +661,5 @@ class JobManagerHandlerMixin(object):
 
 
 class JobManagerHandler(JobManagerHandlerMixin, RequestHandler):
-  pass
+  def initialize(self):
+    return self.initializeRequest()
