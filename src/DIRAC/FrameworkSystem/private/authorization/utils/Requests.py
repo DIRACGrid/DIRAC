@@ -8,6 +8,7 @@ from tornado.escape import json_decode
 from authlib.common.encoding import to_unicode
 from authlib.oauth2 import OAuth2Request as _OAuth2Request
 from authlib.oauth2.rfc6749.util import scope_to_list
+from six.moves.urllib.parse import quote
 
 __RCSID__ = "$Id$"
 
@@ -25,12 +26,14 @@ class OAuth2Request(_OAuth2Request):
   def setQueryArguments(self, **kwargs):
     """ Set query arguments """
     for k in kwargs:
+      # Quote value before add it to request query
+      value = '+'.join([quote(str(v)) for v in kwargs[k]]) if isinstance(kwargs[k], list) else quote(str(kwargs[k]))
       # Remove argument from uri
       query = re.sub(r"&{argument}(=[^&]*)?|^{argument}(=[^&]*)?&?".format(argument=k), "", self.query)
       # Add new one
       if query:
         query += '&'
-      query += "%s=%s" % (k, '+'.join(kwargs[k]) if isinstance(kwargs[k], list) else kwargs[k])
+      query += "%s=%s" % (k, value)
     # Re-init class
     self.__init__(self.method, to_unicode(self.path + '?' + query))
 
