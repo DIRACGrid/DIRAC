@@ -196,7 +196,7 @@ class AuthHandler(TornadoREST):
     """
     return self.getRemoteCredentials()
 
-  path_device = ['([A-z0-9-_]*)']
+  path_device = ['([A-z%0-9-_]*)']
 
   def web_device(self, provider=None, user_code=None):
     """ The device authorization endpoint can be used to request device and user codes.
@@ -258,7 +258,6 @@ class AuthHandler(TornadoREST):
       return self.server.create_endpoint_response(DeviceAuthorizationEndpoint.ENDPOINT_NAME, self.request)
 
     elif self.request.method == 'GET':
-      # userCode = self.get_argument('user_code', None)
       if user_code:
         # If received a request with a user code, then prepare a request to authorization endpoint
         self.log.verbose('User code verification.')
@@ -275,25 +274,14 @@ class AuthHandler(TornadoREST):
         return self.server.handle_response(302, {}, [("Location", authURL)], session)
 
       # If received a request without a user code, then send a form to enter the user code
-      html = getHTML('device flow')
-      with html:
-        with dom.div(cls="container"):
-          with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
-            dom.div(dom.img(src=self.server.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
-            with dom.div(cls="col-md-4"):
-              dom.small(dom.i(cls="fa fa-ticket-alt"))
-              dom.small('user code verification..', cls="p-3 h6")
-              dom.br()
-              dom.br()
-              dom.small(dom.i(cls="fa fa-info"))
-              dom.small('Device flow required user code. You will need to type user code to continue.', cls="p-2")
-        with dom.div(cls='row mt-5 justify-content-md-center').add(dom.div(cls="col-auto")):
-          dom.div(dom.form(dom._input(type="text", name="user_code"),
-                           dom.button('Submit', type="submit", cls="btn btn-submit"),
-                           action=self.currentPath, method="GET"), cls='card')
-      return html.render()
+      with dom.div(cls='row mt-5 justify-content-md-center').add(dom.div(cls="col-auto")) as tag:
+        dom.div(dom.form(dom._input(type="text", name="user_code"),
+                         dom.button('Submit', type="submit", cls="btn btn-submit"),
+                         action=self.currentPath, method="GET"), cls='card')
+      return getHTML('user code verification..', body=tag, icon='ticket-alt',
+                     info='Device flow required user code. You will need to type user code to continue.',).render()
 
-  path_authorization = ['([A-z0-9-_]*)']
+  path_authorization = ['([A-z%0-9-_]*)']
 
   def web_authorization(self, provider=None):
     """ Authorization endpoint
@@ -423,7 +411,7 @@ class AuthHandler(TornadoREST):
     # Base DIRAC client auth session
     firstRequest = createOAuth2Request(extSession['firstRequest'])
     # Read requested groups by DIRAC client or user
-    firstRequest.addScopes(chooseScope)  # self.get_arguments('chooseScope'))
+    firstRequest.addScopes(chooseScope)
     # Read already authed user
     username = extSession['authed']['username']
     # Requested arguments in first request
@@ -452,28 +440,14 @@ class AuthHandler(TornadoREST):
 
     # Else give user chanse to choose group in browser
     # Return choose group HTML interface
-    html = getHTML('group selection')
-    with html:
-      with dom.div(cls="container"):
-        with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
-          dom.div(dom.img(src=self.server.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
-          with dom.div(cls="col-md-4"):
-            dom.small(dom.i(cls="fa fa-ticket-alt", style="color:green;"))
-            dom.small('user code verified.', cls="p-3 h6")
-            dom.br()
-            dom.small(dom.i(cls="fa fa-user-check", style="color:green;"))
-            dom.small('Identity Provider selected.', cls="p-3 h6")
-            dom.br()
-            dom.small(dom.i(cls="fa fa-users"))
-            dom.small('DIRAC group selection..', cls="p-3 h6")
-            dom.br()
-            dom.br()
-            dom.small(dom.i(cls="fa fa-info"))
-            dom.small('Dirac use groups to describe permissions.', cls="p-2")
-            dom.small('You will need to select one of the groups to continue.', cls="p-2")
-      with dom.div(cls='row mt-5 justify-content-md-center').add(dom.div(cls="col-auto")):
-        for group in validGroups:
-          with dom.div(cls="card shadow-sm border-0 text-center m-5 p-2"):
-            dom.h4(group, cls="p-2")
-            dom.a(href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, state, group), cls="stretched-link")
+    with dom.div(cls='row mt-5 justify-content-md-center').add(dom.div(cls="col-auto")) as tag:
+      for group in validGroups:
+        with dom.div(cls="card shadow-sm border-0 text-center m-5 p-2"):
+          dom.h4(group, cls="p-2")
+          dom.a(href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, state, group), cls="stretched-link")
+
+    html = getHTML('group selection..', body=tag, icon='users',
+                   info='Dirac use groups to describe permissions.'
+                        'You will need to select one of the groups to continue.')
+
     return None, self.server.handle_response(payload=html.render(), newSession=extSession)

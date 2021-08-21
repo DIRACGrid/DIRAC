@@ -279,27 +279,9 @@ class AuthServer(_AuthorizationServer):
         comment += ' Please, contact the DIRAC administrators.'
 
       # Notify user about problem
-      html = getHTML("unregister")
-      # Create HTML page
-      with html:
-        with dom.div(cls="container"):
-          with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
-            dom.div(dom.img(src=self.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
-            with dom.div(cls="col-md-4"):
-              dom.small(dom.i(cls="fa fa-ticket-alt", style="color:green;"))
-              dom.small('user code verified.', cls="p-3 h6")
-              dom.br()
-              dom.small(dom.i(cls="fa fa-user-check", style="color:green;"))
-              dom.small('Identity Provider selected.', cls="p-3 h6")
-              dom.br()
-              dom.small(dom.i(cls="fa fa-exclamation-circle", style="color:red;"))
-              dom.small('authorization failed.', cls="p-3 h6")
-              dom.br()
-              dom.br()
-              dom.small(dom.i(cls="fa fa-info"))
-              dom.small(comment, cls="p-2")
-
+      html = getHTML("unregistered user!", info=comment, theme='warning')
       return S_ERROR(html.render())
+
     credDict['username'] = result['Value']
 
     # Update token for user. This token will be stored separately in the database and
@@ -439,36 +421,23 @@ class AuthServer(_AuthorizationServer):
       return request, None
 
     # Choose IdP HTML interface
-    html = getHTML("IdP selector", style=".card{transition:.3s;}.card:hover{transform:scale(1.05);}")
-    # Create HTML page
-    with html:
-      with dom.div(cls="container"):
-        with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
-          dom.div(dom.img(src=self.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
-          with dom.div(cls="col-md-4"):
-            dom.small(dom.i(cls="fa fa-ticket-alt", style="color:green;"))
-            dom.small('user code verified.', cls="p-3 h6")
-            dom.br()
-            dom.small(dom.i(cls="fa fa-user-check"))
-            dom.small('Identity Provider selection..', cls="p-3 h6")
-            dom.br()
-            dom.br()
-            dom.small(dom.i(cls="fa fa-info"))
-            dom.small('Dirac itself is not an Identity Provider. You will need to select one to continue.', cls="p-2")
-        with dom.div(cls="row m-5 justify-content-md-center"):
-          for idP in idPs:
-            result = getProviderInfo(idP)
-            if result['OK']:
-              logo = result['Value'].get('logoURL')
-              with dom.div(cls="col-lg-4").add(dom.div(cls="card shadow-lg h-100 border-0")):
-                with dom.div(cls="row m-2 align-items-center h-100"):
-                  with dom.div(cls="col-lg-8"):
-                    dom.h2(idP)
-                    dom.a(href='%s/authorization/%s?%s' % (self.LOCATION, idP, request.query), cls="stretched-link")
-                  if logo:
-                    dom.div(dom.img(src=logo, cls="card-img"), cls="col-lg-4")
+    with dom.div(cls="row m-5 justify-content-md-center") as tag:
+      for idP in idPs:
+        result = getProviderInfo(idP)
+        if result['OK']:
+          logo = result['Value'].get('logoURL')
+          with dom.div(cls="col-md-6 p-2").add(dom.div(cls="card shadow-lg h-100 border-0")):
+            with dom.div(cls="row m-2 justify-content-md-center align-items-center h-100"):
+              with dom.div(cls="col-auto"):
+                dom.h2(idP)
+                dom.a(href='%s/authorization/%s?%s' % (self.LOCATION, idP, request.query), cls="stretched-link")
+              if logo:
+                dom.div(dom.img(src=logo, cls="card-img"), cls="col-auto")
+
     # Render into HTML
-    return None, html.render()
+    return None, getHTML("Identity Provider selection..", body=tag, icon='fingerprint',
+                         info="Dirac itself is not an Identity Provider."
+                              "You will need to select one to continue.").render()
 
   def __registerNewUser(self, provider, payload):
     """ Register new user

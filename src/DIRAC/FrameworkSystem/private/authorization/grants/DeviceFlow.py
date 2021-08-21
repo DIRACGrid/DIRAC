@@ -97,30 +97,8 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
       raise OAuth2Error('Cannot save authorization result', result['Message'])
 
     # Notify user that authorization complite.
-    html = getHTML("authorization complite")
-    # Create HTML page
-    with html:
-      with dom.div(cls="container"):
-        with dom.div(cls="row m-5 justify-content-md-center align-items-center"):
-          dom.div(dom.img(src=self.server.metadata.get('logoURL', ''), cls="card-img p-5"), cls="col-md-4")
-          with dom.div(cls="col-md-4"):
-            dom.small(dom.i(cls="fa fa-ticket-alt", style="color:green;"))
-            dom.small('user code verified.', cls="p-3 h6")
-            dom.br()
-            dom.small(dom.i(cls="fa fa-user-check", style="color:green;"))
-            dom.small('Identity Provider selected.', cls="p-3 h6")
-            dom.br()
-            dom.small(dom.i(cls="fa fa-users", style="color:green;"))
-            dom.small('DIRAC group selected.', cls="p-3 h6")
-            dom.br()
-            dom.small(dom.i(cls="fa fa-user-check", style="color:green;"))
-            dom.small('authorization complite!', cls="p-3 h6")
-            dom.br()
-            dom.br()
-            dom.small(dom.i(cls="fa fa-info"))
-            dom.small('Authorization has been completed, you can now return to the terminal and close this window.',
-                      cls="p-2")
-
+    html = getHTML("authorization complite!", theme='success',
+                   info='Authorization has been completed, you can now return to the terminal and close this window.')
     return 200, html.render()
 
   def query_device_credential(self, device_code):
