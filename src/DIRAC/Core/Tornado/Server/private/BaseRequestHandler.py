@@ -422,7 +422,7 @@ class BaseRequestHandler(RequestHandler):
       else:
         kwargs[arg] = self.get_argument(arg, defaults[arg])
 
-    return (args, kwargs)
+    return ([unquote(a) for a in args], kwargs)
 
   def _getMethodAuthProps(self):
     """ Resolves the hard coded authorization requirements for method.
