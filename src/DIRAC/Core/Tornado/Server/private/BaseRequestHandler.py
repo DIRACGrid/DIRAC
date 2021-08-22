@@ -58,12 +58,14 @@ class TornadoResponse(object):
   """
   __attrs = inspect.getmembers(RequestHandler)
 
-  def __init__(self, data=None):
+  def __init__(self, payload=None, status_code=None):
     """ C'or
 
-        :param data: response body
+        :param payload: response body
+        :param int status_code: response status code
     """
-    self.data = data
+    self.payload = payload
+    self.status_code = status_code
     self.actions = []
     for mName, mObj in self.__attrs:
       if inspect.isroutine(mObj) and not mName.startswith('_') and not mName.startswith('get'):
@@ -84,10 +86,12 @@ class TornadoResponse(object):
 
         :param reqObj: RequestHandler instance
     """
+    if self.status_code:
+      reqObj.set_status(self.status_code)
     for mName, args, kwargs in self.actions:
       getattr(reqObj, mName)(*args, **kwargs)
     if not reqObj._finished:
-      reqObj.finish(self.data)
+      reqObj.finish(self.payload)
 
 
 class BaseRequestHandler(RequestHandler):
