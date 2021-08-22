@@ -604,6 +604,8 @@ class TornadoBaseClient(object):
           return S_ERROR(errno.ENOSYS, "%s is not implemented" % kwargs.get('method'))
         elif status_code in (http_client.FORBIDDEN, http_client.UNAUTHORIZED):
           return S_ERROR(errno.EACCES, "No access to %s" % url)
+        elif status_code == http_client.NOT_FOUND:
+          rawText = "%s is not found" % url
 
         # if it is something else, retry
         raise

@@ -21,9 +21,10 @@ tornado.iostream.SSLIOStream.configure(
     'tornado_m2crypto.m2iostream.M2IOStream')  # pylint: disable=wrong-import-position
 
 from tornado.httpserver import HTTPServer
-from tornado.web import Application, url
+from tornado.web import Application, url, RequestHandler
 from tornado.ioloop import IOLoop
 import tornado.ioloop
+from six.moves import http_client
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK
@@ -32,8 +33,16 @@ from DIRAC.Core.Utilities import MemStat
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
 
 sLog = gLogger.getSubLogger(__name__)
+
+
+class NotFoundHandler(RequestHandler):
+  """ Handle 404 errors """
+  def prepare(self):
+    self.set_status(http_client.NOT_FOUND.value)
+    self.finish(getHTML(http_client.NOT_FOUND))
 
 
 class TornadoServer(object):
@@ -213,7 +222,7 @@ class TornadoServer(object):
       # Merge appllication settings
       settings.update(app['settings'])
       # Start server
-      router = Application(app['routes'], **settings)
+      router = Application(app['routes'], default_handler_class=NotFoundHandler, **settings)
       server = HTTPServer(router, ssl_options=ssl_options, decompress_request=True)
       try:
         server.listen(int(port))
