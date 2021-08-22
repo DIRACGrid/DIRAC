@@ -4,6 +4,9 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import six
+import traceback
+
 from dominate import document, tags as dom
 from authlib.oauth2.rfc8414 import AuthorizationServerMetadata
 
@@ -38,41 +41,66 @@ def collectMetadata(issuer=None, ignoreErrors=False):
   return AuthorizationServerMetadata(metadata)
 
 
-def getHTML(title, info=None, body=None, style=None, state=None, theme=None, icon=None):
+def getHTML(title=None, info=None, body=None, style=None, state=None, theme=None, icon=None):
   """ Provide HTML object
 
       :param str title: short name of the notification, e.g.: server error
       :param str info: some short description if needed, e.g.: Seems it because server down.
       :param body: dominate tag object, main content, e.g.: dom.pre(dom.code(result['Message']))
       :param str style: additional css style if needed, e.g.: '.card{color:red;}'
-      :param str state: response state, if needed, e.g.: 404
+      :param int state: response state, if needed, e.g.: 404
       :param str theme: message color theme, the same that in bootstrap 5.
       :param str icon: awesome icon name
 
       :return: HTML document object
   """
+  if title and not isinstance(title, six.string_types):
+    # Expected HTTPStatus
+    state = title.value
+    info = title.description
+    title = title.phrase
+
   html = document("DIRAC - %s" % title)
 
-  icon = icon or 'flask'
-  theme = theme or 'secondary'
-  if theme == 'warning':
+  if state in [400, 401, 403, 404]:
+    theme = theme or 'warning'
+  elif state in [500]:
+    theme = theme or 'danger'
+  elif state in [200]:
+    theme = theme or 'success'
+
+  if theme in ['warning', 'warn']:
+    theme = 'warning'
     icon = icon or 'exclamation-triangle'
   elif theme == 'info':
     icon = icon or 'info'
   elif theme == 'success':
     icon = icon or 'check'
-  elif theme == 'error':
+  elif theme in ['error', 'danger']:
     theme = 'danger'
     icon = icon or 'times'
+  else:
+    theme = theme or 'secondary'
+    icon = icon or 'flask'
+
+  if body and isinstance(body, six.string_types):
+    body = dom.pre(dom.code(traceback.format_exc() if body == 'traceback' else body), cls="mt-5")
 
   diracLogo = collectMetadata(ignoreErrors=True).get('logoURL', '')
 
   # Create head
   with html.head:
-    # Provide icons
-    dom.link(rel="icon", href="/static/core/img/icons/system/favicon.ico", type="image/x-icon")
+    # Meta tags
+    dom.meta(charset="utf-8")
+    dom.meta(name="viewport", content="width=device-width, initial-scale=1")
+    # Favicon
+    dom.link(rel="shortcut icon", href="/static/core/img/icons/system/favicon.ico", type="image/x-icon")
+    # Provide awesome icons
+    # https://fontawesome.com/v4.7/license/
     dom.script(src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js")
     # Enable bootstrap 5
+    # https://getbootstrap.com/docs/5.0/getting-started/introduction/
+    # https://getbootstrap.com/docs/5.0/about/license/
     dom.link(rel='stylesheet', integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC",
              href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css", crossorigin="anonymous")
     dom.script(src='https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js',
@@ -85,34 +113,36 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
   # Create body
   with html:
     # Background image
-    dom.i(cls='position-absolute bottom-0 start-0 translate-middle-x fa fa-{icon} m-5 text-{theme}',
+    dom.i(cls='position-absolute bottom-0 start-0 translate-middle-x m-5 fa '
+              'fa-%s text-%s' % (icon, theme),
           style="font-size:40vw;z-index:-1;")
 
     # A4 page with align center
     with dom.div(cls="row vh-100 vw-100 justify-content-md-center align-items-center m-0"):
-      with dom.div(cls='container', style="max-width: 600px;").add(dom.div(cls="row align-items-center")):
+      with dom.div(cls='container', style="max-width:600px;") as page:
+        # Main panel
+        with dom.div(cls="row align-items-center"):
+          # Logo
+          dom.div(dom.img(src=diracLogo, cls="card-img px-2"), cls="col-md-6 my-3")
+          # Information card
+          with dom.div(cls="col-md-6 my-3"):
             
-        # Logo
-        dom.div(dom.img(src=diracLogo, cls="card-img px-2"), cls="col-md-6 my-3")
-        # Information card
-        with dom.div(cls="col-md-6 my-3"):
-          
-          # Show response state number
-          if state and state != 200:
-            dom.div(dom.h1(state, cls='text-center badge bg-{theme} text-wrap'), cls="row py-2")
+            # Show response state number
+            if state and state != 200:
+              dom.div(dom.h1(state, cls='text-center badge bg-%s text-wrap' % theme), cls="row py-2")
 
-          # Message title
-          with dom.div(cls="row"):
-            dom.div(dom.i(cls="fa fa-{icon} text-{theme}"), cls="col-auto")
-            dom.div(title, cls='col-auto ps-0 pb-2 fw-bold')
-          
-          # Description
-          if description:
-            dom.small(dom.i(cls="fa fa-info text-info"))
-            dom.small(info, cls="ps-1")
+            # Message title
+            with dom.div(cls="row"):
+              dom.div(dom.i(cls="fa fa-%s text-%s" % (icon, theme)), cls="col-auto")
+              dom.div(title, cls='col-auto ps-0 pb-2 fw-bold')
+            
+            # Description
+            if info:
+              dom.small(dom.i(cls="fa fa-info text-info"))
+              dom.small(info, cls="ps-1")
       
       # Add content
       if body:
-        body
+        page.add(body)
 
-  return html
+  return html.render()

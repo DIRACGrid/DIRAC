@@ -51,30 +51,9 @@ class AuthHandler(TornadoREST):
     """ Called at every request """
     self.currentPath = self.request.protocol + "://" + self.request.host + self.request.path
 
-  def _finishFuture(self, retVal):
-    """ Handler Future result
-
-        :param object retVal: tornado.concurrent.Future
-    """
-    # Wait result only if it's a Future object
-    self.result = retVal.result() if isinstance(retVal, Future) else retVal
-
-    # Is it S_ERROR?
-    if isinstance(self.result, dict) and self.result.get('OK') is False and 'Message' in self.result:
-      # S_ERROR is interpreted in the OAuth2 error format.
-      self.set_status(400)
-      self.clear_cookie('auth_session')
-      if retVal['Message'].startswith("<!DOCTYPE html>"):
-        self.finish(retVal['Message'])
-      else:
-        self.log.error('%s\n' % retVal['Message'], ''.join(retVal['CallStack']))
-        self.finish({'error': 'server_error', 'description': retVal['Message']})
-    else:
-      super(AuthHandler, self)._finishFuture(retVal)
-
   path_index = ['.well-known/(oauth-authorization-server|openid-configuration)']
 
-  def web_index(self, *instance):
+  def web_index(self, well_known, instance=None):
     """ Well known endpoint, specified by
         `RFC8414 <https://tools.ietf.org/html/rfc8414#section-3>`_
 
@@ -259,11 +238,12 @@ class AuthHandler(TornadoREST):
 
     elif self.request.method == 'GET':
       if user_code:
-        # If received a request with a user code, then prepare a request to authorization endpoint
+        # If received a request with a user code, then prepare a request to authorization endpoint.
         self.log.verbose('User code verification.')
         result = self.server.db.getSessionByUserCode(user_code)
-        if not result['OK']:
-          return 'Device code flow authorization session %s expired.' % user_code
+        if not result['OK'] or not result['Value']:
+          return getHTML('session is expired.', theme='warning', body=result.get('Message'),
+                         info='Seems device code flow authorization session %s expired.' % user_code)
         session = result['Value']
         # Get original request from session
         req = createOAuth2Request(dict(method='GET', uri=session['uri']))
@@ -274,12 +254,13 @@ class AuthHandler(TornadoREST):
         return self.server.handle_response(302, {}, [("Location", authURL)], session)
 
       # If received a request without a user code, then send a form to enter the user code
-      with dom.div(cls='row mt-5 justify-content-md-center').add(dom.div(cls="col-auto")) as tag:
-        dom.div(dom.form(dom._input(type="text", name="user_code"),
-                         dom.button('Submit', type="submit", cls="btn btn-submit"),
-                         action=self.currentPath, method="GET"), cls='card')
+      with dom.div(cls='row mt-5 justify-content-md-center') as tag:
+        with dom.div(cls="col-auto"):
+          dom.div(dom.form(dom._input(type="text", name="user_code"),
+                           dom.button('Submit', type="submit", cls="btn btn-submit"),
+                           action=self.currentPath, method="GET"), cls='card')
       return getHTML('user code verification..', body=tag, icon='ticket-alt',
-                     info='Device flow required user code. You will need to type user code to continue.',).render()
+                     info='Device flow required user code. You will need to type user code to continue.')
 
   path_authorization = ['([A-z%0-9-_]*)']
 
@@ -337,18 +318,25 @@ class AuthHandler(TornadoREST):
 
         :return: S_OK()/S_ERROR()
     """
-    # Try to catch errors
-    if error:
-      return self.server.handle_error_response(state, OAuth2Error(error=error, description=error_description))
-
     # Check current auth session that was initiated for the selected external identity provider
     session = self.get_secure_cookie('auth_session')
     if not session:
-      return S_ERROR("%s session is expired." % state)
+      return self.server.handle_response(
+          payload=getHTML("session is expired.", theme="warning", state=400,
+                          info=f"Seems {state} session is expired, please, try again."), delSession=True)
 
     sessionWithExtIdP = json.loads(session)
     if state and not sessionWithExtIdP.get('state') == state:
-      return S_ERROR("%s session is expired." % state)
+      return self.server.handle_response(
+          payload=getHTML("session is expired.", theme="warning", state=400,
+                          info=f"Seems {state} session is expired, please, try again."), delSession=True)
+
+    # Try to catch errors if the authorization on the selected identity provider was unsuccessful
+    if error:
+      provider = sessionWithExtIdP.get('Provider')
+      return self.server.handle_response(
+          payload=getHTML(error, theme="error", body=error_description,
+                          info=f"Seems {state} session is failed on the {provider}'s' side."), delSession=True)
 
     if not sessionWithExtIdP.get('authed'):
       # Parse result of the second authentication flow
@@ -356,7 +344,10 @@ class AuthHandler(TornadoREST):
 
       result = self.server.parseIdPAuthorizationResponse(self.request, sessionWithExtIdP)
       if not result['OK']:
-        return result
+        if result['Message'].startswith("<!DOCTYPE html>"):
+          return self.server.handle_response(payload=result['Message'], delSession=True)
+        return self.server.handle_response(
+            payload=getHTML("server error", state=500, info=result['Message']), delSession=True)
       # Return main session flow
       sessionWithExtIdP['authed'] = result['Value']
 
@@ -366,7 +357,10 @@ class AuthHandler(TornadoREST):
       return response
 
     # RESPONSE to basic DIRAC client request
-    return self.server.create_authorization_response(response, grant_user)
+    resp = self.server.create_authorization_response(response, grant_user)
+    if not resp.payload.startswith("<!DOCTYPE html>"):
+      resp.payload = getHTML('authorization response', state=resp.status_code, body=resp.payload)
+    return resp
 
   def web_token(self):
     """ The token endpoint, the description of the parameters will differ depending on the selected grant_type
@@ -406,7 +400,8 @@ class AuthHandler(TornadoREST):
 
         :param dict extSession: ended authorized external IdP session
 
-        :return: response
+        :return: -- will return (None, response) to provide error or group selector
+                    will return (grant_user, request) to contionue authorization with choosed group
     """
     # Base DIRAC client auth session
     firstRequest = createOAuth2Request(extSession['firstRequest'])
@@ -421,11 +416,15 @@ class AuthHandler(TornadoREST):
     # Researche Group
     result = getGroupsForUser(username)
     if not result['OK']:
-      return None, result
+      return None, self.server.handle_response(
+          getHTML("server error", theme="error", info=result['Message']), delSession=True)
     groups = result['Value']
+
     validGroups = [group for group in groups if (getIdPForGroup(group) == provider) or ('proxy' in firstRequest.scope)]
     if not validGroups:
-      return None, S_ERROR('No groups found for %s and for %s Identity Provider.' % (username, provider))
+      return None, self.server.handle_response(getHTML(
+          "groups not found.", theme="error",
+          info=f'No groups found for {username} and for {provider} Identity Provider.'), delSession=True)
 
     self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(validGroups))
 
@@ -439,15 +438,15 @@ class AuthHandler(TornadoREST):
       return extSession['authed'], firstRequest
 
     # Else give user chanse to choose group in browser
-    # Return choose group HTML interface
-    with dom.div(cls='row mt-5 justify-content-md-center').add(dom.div(cls="col-auto")) as tag:
-      for group in validGroups:
-        with dom.div(cls="card shadow-sm border-0 text-center m-5 p-2"):
-          dom.h4(group, cls="p-2")
+    with dom.div(cls='row mt-5 justify-content-md-center align-items-center') as tag:
+      for group in sorted(validGroups):
+        vo, gr = group.split('_')
+        with dom.div(cls="col-auto p-2").add(dom.div(cls="card shadow-lg border-0 text-center p-2")):
+          dom.h4(vo.upper() + ' ' + gr, cls="p-2")
           dom.a(href='%s?state=%s&chooseScope=g:%s' % (self.currentPath, state, group), cls="stretched-link")
 
     html = getHTML('group selection..', body=tag, icon='users',
-                   info='Dirac use groups to describe permissions.'
+                   info='Dirac use groups to describe permissions. '
                         'You will need to select one of the groups to continue.')
 
-    return None, self.server.handle_response(payload=html.render(), newSession=extSession)
+    return None, self.server.handle_response(payload=html, newSession=extSession)

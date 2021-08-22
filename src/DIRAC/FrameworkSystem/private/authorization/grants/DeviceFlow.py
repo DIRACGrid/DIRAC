@@ -87,19 +87,21 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
     """
     result = self.server.db.getSessionByUserCode(self.request.data['user_code'])
     if not result['OK']:
-      raise OAuth2Error(result['Message'])
+      return 500, getHTML("server error", theme='error', body=result['Message'],
+                          info='Failed to read %s authorization session.' % self.request.data['user_code'])
     data = result['Value']
     data.update(dict(user_id=user['ID'], uri=self.request.uri,
                      username=user['username'], scope=self.request.scope))
     # Save session with user
     result = self.server.db.updateSession(data, data['id'])
     if not result['OK']:
-      raise OAuth2Error('Cannot save authorization result', result['Message'])
+      return 500, getHTML("server error", theme='error', body=result['Message'],
+                          info='Failed to save %s authorization session status.' % self.request.data['user_code'])
 
     # Notify user that authorization complite.
-    html = getHTML("authorization complite!", theme='success',
-                   info='Authorization has been completed, you can now return to the terminal and close this window.')
-    return 200, html.render()
+    return 200, getHTML(
+        "authorization complite!", theme='success',
+        info='Authorization has been completed, now you can close this window and return to the terminal.')
 
   def query_device_credential(self, device_code):
     """ Get device credential from previously savings via ``DeviceAuthorizationEndpoint``.
