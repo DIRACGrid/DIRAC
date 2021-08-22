@@ -323,20 +323,20 @@ class AuthHandler(TornadoREST):
     if not session:
       return self.server.handle_response(
           payload=getHTML("session is expired.", theme="warning", state=400,
-                          info=f"Seems {state} session is expired, please, try again."), delSession=True)
+                          info="Seems %s session is expired, please, try again." % state), delSession=True)
 
     sessionWithExtIdP = json.loads(session)
     if state and not sessionWithExtIdP.get('state') == state:
       return self.server.handle_response(
           payload=getHTML("session is expired.", theme="warning", state=400,
-                          info=f"Seems {state} session is expired, please, try again."), delSession=True)
+                          info="Seems %s session is expired, please, try again." % state), delSession=True)
 
     # Try to catch errors if the authorization on the selected identity provider was unsuccessful
     if error:
       provider = sessionWithExtIdP.get('Provider')
       return self.server.handle_response(
           payload=getHTML(error, theme="error", body=error_description,
-                          info=f"Seems {state} session is failed on the {provider}'s' side."), delSession=True)
+                          info="Seems %s session is failed on the %s's' side." % (state, provider)), delSession=True)
 
     if not sessionWithExtIdP.get('authed'):
       # Parse result of the second authentication flow
@@ -424,7 +424,7 @@ class AuthHandler(TornadoREST):
     if not validGroups:
       return None, self.server.handle_response(getHTML(
           "groups not found.", theme="error",
-          info=f'No groups found for {username} and for {provider} Identity Provider.'), delSession=True)
+          info='No groups found for %s and for %s Identity Provider.' % (username, provider)), delSession=True)
 
     self.log.debug('The state of %s user groups has been checked:' % username, pprint.pformat(validGroups))
 

@@ -365,7 +365,7 @@ class AuthServer(_AuthorizationServer):
       # If return IdP selector
       if isinstance(req, six.string_types):
         return req
-      
+
       self.log.info('Validate consent request for', req.state)
       grant = self.get_authorization_grant(req)
       self.log.debug('Use grant:', grant)

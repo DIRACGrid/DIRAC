@@ -41,27 +41,26 @@ def collectMetadata(issuer=None, ignoreErrors=False):
   return AuthorizationServerMetadata(metadata)
 
 
-def getHTML(title=None, info=None, body=None, style=None, state=None, theme=None, icon=None):
+def getHTML(title, info=None, body=None, style=None, state=None, theme=None, icon=None):
   """ Provide HTML object
 
       :param str title: short name of the notification, e.g.: server error
-      :param str info: some short description if needed, e.g.: Seems it because server down.
-      :param body: dominate tag object, main content, e.g.: dom.pre(dom.code(result['Message']))
+      :param str info: some short description if needed, e.g.: It looks like the server is not responding
+      :param body: it can be string or dominate tag object, main content, e.g.::
+
+                    from dominate import tags as dom
+                    return getHTML('server error', dom.pre(dom.code(result['Message']))
+
       :param str style: additional css style if needed, e.g.: '.card{color:red;}'
-      :param int state: response state, if needed, e.g.: 404
-      :param str theme: message color theme, the same that in bootstrap 5.
-      :param str icon: awesome icon name
+      :param int state: response state code, if needed, e.g.: 404
+      :param str theme: message color theme, the same that in bootstrap 5, e.g.: 'warning'
+      :param str icon: awesome icon name, e.g.: 'users'
 
-      :return: HTML document object
+      :return: str -- HTML document
   """
-  if title and not isinstance(title, six.string_types):
-    # Expected HTTPStatus
-    state = title.value
-    info = title.description
-    title = title.phrase
-
   html = document("DIRAC - %s" % title)
 
+  # select the color to the state code
   if state in [400, 401, 403, 404]:
     theme = theme or 'warning'
   elif state in [500]:
@@ -69,6 +68,7 @@ def getHTML(title=None, info=None, body=None, style=None, state=None, theme=None
   elif state in [200]:
     theme = theme or 'success'
 
+  # select the icon to the theme
   if theme in ['warning', 'warn']:
     theme = 'warning'
     icon = icon or 'exclamation-triangle'
@@ -83,6 +83,7 @@ def getHTML(title=None, info=None, body=None, style=None, state=None, theme=None
     theme = theme or 'secondary'
     icon = icon or 'flask'
 
+  # If body is text wrap it with tags
   if body and isinstance(body, six.string_types):
     body = dom.pre(dom.code(traceback.format_exc() if body == 'traceback' else body), cls="mt-5")
 
@@ -126,7 +127,7 @@ def getHTML(title=None, info=None, body=None, style=None, state=None, theme=None
           dom.div(dom.img(src=diracLogo, cls="card-img px-2"), cls="col-md-6 my-3")
           # Information card
           with dom.div(cls="col-md-6 my-3"):
-            
+
             # Show response state number
             if state and state != 200:
               dom.div(dom.h1(state, cls='text-center badge bg-%s text-wrap' % theme), cls="row py-2")
@@ -135,12 +136,12 @@ def getHTML(title=None, info=None, body=None, style=None, state=None, theme=None
             with dom.div(cls="row"):
               dom.div(dom.i(cls="fa fa-%s text-%s" % (icon, theme)), cls="col-auto")
               dom.div(title, cls='col-auto ps-0 pb-2 fw-bold')
-            
+
             # Description
             if info:
               dom.small(dom.i(cls="fa fa-info text-info"))
               dom.small(info, cls="ps-1")
-      
+
       # Add content
       if body:
         page.add(body)

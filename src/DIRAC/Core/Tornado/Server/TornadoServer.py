@@ -24,7 +24,6 @@ from tornado.httpserver import HTTPServer
 from tornado.web import Application, url, RequestHandler
 from tornado.ioloop import IOLoop
 import tornado.ioloop
-from six.moves import http_client
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK
@@ -33,7 +32,6 @@ from DIRAC.Core.Utilities import MemStat
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -41,8 +39,10 @@ sLog = gLogger.getSubLogger(__name__)
 class NotFoundHandler(RequestHandler):
   """ Handle 404 errors """
   def prepare(self):
-    self.set_status(http_client.NOT_FOUND.value)
-    self.finish(getHTML(http_client.NOT_FOUND))
+    self.set_status(404)
+    if six.PY3:
+      from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import getHTML
+      self.finish(getHTML('Not found.', state=404, info='Nothing matches the given URI.'))
 
 
 class TornadoServer(object):

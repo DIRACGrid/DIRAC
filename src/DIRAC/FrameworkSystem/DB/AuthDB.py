@@ -308,8 +308,6 @@ class AuthDB(SQLAlchemyDB):
     session = self.session()
     try:
       resData = session.query(AuthSession).filter(AuthSession.id == sessionID).first()
-      if not resData:
-        return self.__result(session, S_ERROR("%s session is expired." % sessionID))
     except MultipleResultsFound:
       return self.__result(session, S_ERROR("%s is not unique ID." % sessionID))
     except NoResultFound:
@@ -328,8 +326,6 @@ class AuthDB(SQLAlchemyDB):
     session = self.session()
     try:
       resData = session.query(AuthSession).filter(AuthSession.user_code == userCode).first()
-      if not resData:
-        return self.__result(session, S_ERROR("Session for %s user code is expired." % userCode))
     except MultipleResultsFound:
       return self.__result(session, S_ERROR("%s is not unique ID." % userCode))
     except NoResultFound:
