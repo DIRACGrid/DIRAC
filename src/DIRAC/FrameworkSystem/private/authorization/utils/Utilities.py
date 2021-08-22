@@ -46,11 +46,9 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
 
       :param str title: short name of the notification, e.g.: server error
       :param str info: some short description if needed, e.g.: It looks like the server is not responding
-      :param body: it can be string or dominate tag object, main content, e.g.::
-
-                    from dominate import tags as dom
-                    return getHTML('server error', dom.pre(dom.code(result['Message']))
-
+      :param body: it can be string or dominate tag object, e.g.:
+                   from dominate import tags as dom
+                   return getHTML('server error', body=dom.pre(dom.code(result['Message']))
       :param str style: additional css style if needed, e.g.: '.card{color:red;}'
       :param int state: response state code, if needed, e.g.: 404
       :param str theme: message color theme, the same that in bootstrap 5, e.g.: 'warning'
