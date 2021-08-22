@@ -114,25 +114,28 @@ class Params(object):
 
     if self.info:
       # Try to get user information
-      result = Script.enableCS()
-      if not result['OK']:
-        return S_ERROR("Cannot contact CS.")
+      Script.enableCS()
+
       useTokens = DIRAC.gConfig.getValue('/DIRAC/Security/UseTokens', 'false').lower() in ("y", "yes", "true")
       if 'DIRAC_USE_ACCESS_TOKEN' in os.environ:
         useTokens = os.environ.get('DIRAC_USE_ACCESS_TOKEN', 'false').lower() in ("y", "yes", "true")
       if useTokens:
-        gLogger.notice('You use proxy, to use access token set "DIRAC_USE_ACCESS_TOKEN=True" env.\n')
-        result = getProxyInfo(self.proxyLoc)
-        if not result['OK']:
-          return result['Message']
-        gLogger.notice(formatProxyInfoAsString(result['Value']))
-      else:
-        gLogger.notice('You use access token, to use proxy set "DIRAC_USE_ACCESS_TOKEN=False" env.\n')
+        gLogger.notice('You are currently using access token to access new HTTP DIRAC services.'
+                       ' To use a proxy instead, do the following:\n',
+                       'export DIRAC_USE_ACCESS_TOKEN=False\n')
         result = readTokenFromFile(tokenFile)
-        if not result['OK']:
-          return result
-        gLogger.notice(result['Value'].getInfoAsString())
-      return S_OK()
+        if result['OK']:
+          gLogger.notice(result['Value'].getInfoAsString())
+      else:
+        gLogger.notice('You are currently using proxy to access new HTTP DIRAC services.'
+                       ' To use a access token instead, do the following:\n',
+                       'export DIRAC_USE_ACCESS_TOKEN=True\n')
+        result = getProxyInfo(self.proxyLoc)
+        if result['OK']:
+          gLogger.notice(formatProxyInfoAsString(result['Value']))
+
+      return result
+
     params = {}
     if self.issuer:
       params['issuer'] = self.issuer
