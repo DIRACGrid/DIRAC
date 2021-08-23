@@ -32,7 +32,6 @@ class Params(object):
 
   def __init__(self):
     self.info = False
-    self.provider = 'DIRACCLI'
     self.proxy = False
     self.group = None
     self.lifetime = None
@@ -139,7 +138,7 @@ class Params(object):
     params = {}
     if self.issuer:
       params['issuer'] = self.issuer
-    result = IdProviderFactory().getIdProvider(self.provider, **params)
+    result = IdProviderFactory().getIdProvider('DIRACCLI', **params)
     if not result['OK']:
       return result
     idpObj = result['Value']
