@@ -18,8 +18,12 @@ if __name__ == "__main__":
 
   import sys
   import json
-  from six.moves.urllib.parse import quote as urlquote
-  from six.moves.urllib.parse import unquote as urlunquote
+  try:
+    from six.moves.urllib.parse import quote as urlquote
+    from six.moves.urllib.parse import unquote as urlunquote
+  except ImportError:
+    from urllib import unquote as urlunquote
+    from urllib import quote as urlquote
 
 
   arguments = sys.argv[1]
