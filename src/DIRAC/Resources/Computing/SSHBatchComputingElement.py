@@ -39,12 +39,12 @@ class SSHBatchComputingElement(SSHComputingElement):
 
   def _reset(self):
 
-    batchSystemName = self.ceParameters.get( 'BatchSystem', 'Host' )
+    batchSystemName = self.ceParameters.get('BatchSystem', 'Host')
     if 'BatchSystem' not in self.ceParameters:
       self.ceParameters['BatchSystem'] = batchSystemName
-    result = self.loadBatchSystem( batchSystemName )
+    result = self.loadBatchSystem(batchSystemName)
     if not result['OK']:
-      self.log.error( 'Failed to load the batch system plugin %s', batchSystemName )
+      self.log.error('Failed to load the batch system plugin %s', batchSystemName)
       return result
 
     self.user = self.ceParameters['SSHUser']
