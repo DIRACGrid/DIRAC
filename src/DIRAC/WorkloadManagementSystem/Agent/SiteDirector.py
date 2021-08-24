@@ -361,7 +361,7 @@ class SiteDirector(AgentModule):
                                      ceType=ceDict['CEType'],
                                      ceParametersDict=ceQueueDict)
             if not result['OK']:
-              self.log.error("Failed to create CE object", " %s: %s" % (ce,result["Message"]))
+              self.log.error("Failed to create CE object", " %s: %s" % (ce, result["Message"]))
               continue
             self.queueCECache.setdefault(queueName, {})
             self.queueCECache[queueName]['Hash'] = queueHash
