@@ -210,6 +210,7 @@ exit 0
             self.__cleanJob(stamp, infoDir, workDir, outputDir, errorDir)
       else:
         resultDict['Status'] = status
+        resultDict["Message"] = output + ' : ' + error
         return resultDict
 
     resultDict['Status'] = 0
