@@ -195,7 +195,7 @@ exit 0
       infoFile.close()
       jobInfo = json.loads(jobInfo)
       pid = jobInfo['PID']
-      cmd = 'ps -f -p %s --no-headers | wc -l' % pid
+      cmd = 'bash -c "ps -f -p %s --no-headers | wc -l"' % pid
       sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
       output, error = sp.communicate()
       status = sp.returncode
