@@ -79,7 +79,7 @@ def getQueuesResolved(siteDict,
                                        ceType=ceDict['CEType'],
                                        ceParametersDict=ceQueueDict)
               if not result['OK']:
-                return result
+                continue
               queueCECache.setdefault(queueName, {})
               queueCECache[queueName]['Hash'] = queueHash
               queueCECache[queueName]['CE'] = result['Value']
@@ -192,7 +192,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
   cpuTime = job.getAttributeInt('CPUTime')
   if not cpuTime:
     cpuTime = 84600
-  if cpuTime > queueDict.get('CPUTime', 0.):
+  if cpuTime > int(queueDict.get('CPUTime', 0)):
     noMatchReasons.append('Job CPUTime requirement not satisfied')
     if not fullMatch:
       return S_OK({'Match': False, 'Reason': noMatchReasons[0]})

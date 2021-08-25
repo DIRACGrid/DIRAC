@@ -99,6 +99,17 @@ NEW: (#5321) added integration test for AccountingDB
 *docs
 CHANGE: (#5313) replace the theme by the sphinx_rtd_theme
 
+[v7r2p23]
+
+*WMS
+CHANGE: (#5348) PilotWrapper: added file:/cvmfs/dirac.egi.eu/pilot/ as location
+CHANGE: (#5356) SiteDirector - continue queues initialization if one of them fails
+
+*Resources
+FIX: (#5356) executeBatch - fallback to urllib if six module is not available
+FIX: (#5356) Host.py - return Message in case of non-zero status in getCEStatus
+FIX: (#5356) SSHBatchComputingElement - added forgotten instantiation of the BatchSystem plugin
+
 [v7r2p22]
 
 *Workflow
