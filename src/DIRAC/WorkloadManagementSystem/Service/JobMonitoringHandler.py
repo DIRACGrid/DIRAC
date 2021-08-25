@@ -666,4 +666,6 @@ class JobMonitoringHandlerMixin(object):
 
 
 class JobMonitoringHandler(JobMonitoringHandlerMixin, RequestHandler):
-  pass
+
+  def initialize(self):
+    self.initializeRequest()
