@@ -365,7 +365,7 @@ class SSHComputingElement(ComputingElement):
       self.ceParameters['BatchSystem'] = batchSystemName
     result = self.loadBatchSystem(batchSystemName)
     if not result['OK']:
-      self.log.error('Failed to load the batch system plugin %s', batchSystemName)
+      self.log.error('Failed to load the batch system plugin', batchSystemName)
       return result
 
     self.user = self.ceParameters['SSHUser']

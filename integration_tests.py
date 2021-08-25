@@ -116,7 +116,7 @@ available options.
 
 ## Command completion
 
-Command competion of typer based scripts can be enabled by running:
+Command completion of typer based scripts can be enabled by running:
 
   typer --install-completion
 

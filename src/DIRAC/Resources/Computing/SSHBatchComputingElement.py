@@ -39,6 +39,14 @@ class SSHBatchComputingElement(SSHComputingElement):
 
   def _reset(self):
 
+    batchSystemName = self.ceParameters.get('BatchSystem', 'Host')
+    if 'BatchSystem' not in self.ceParameters:
+      self.ceParameters['BatchSystem'] = batchSystemName
+    result = self.loadBatchSystem(batchSystemName)
+    if not result['OK']:
+      self.log.error('Failed to load the batch system plugin', batchSystemName)
+      return result
+
     self.user = self.ceParameters['SSHUser']
     self.queue = self.ceParameters['Queue']
     self.sshScript = os.path.join(rootPath, "DIRAC", "Resources", "Computing", "remote_scripts", "sshce")
