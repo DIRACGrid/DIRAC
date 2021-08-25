@@ -85,7 +85,10 @@ def getHTML(title, info=None, body=None, style=None, state=None, theme=None, ico
   if body and isinstance(body, six.string_types):
     body = dom.pre(dom.code(traceback.format_exc() if body == 'traceback' else body), cls="mt-5")
 
-  diracLogo = collectMetadata(ignoreErrors=True).get('logoURL', '')
+  try:
+    diracLogo = collectMetadata(ignoreErrors=True).get('logoURL', '')
+  except Exception:
+    diracLogo = ''
 
   # Create head
   with html.head:
