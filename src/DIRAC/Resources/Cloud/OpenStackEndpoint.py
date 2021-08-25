@@ -147,6 +147,8 @@ class OpenStackEndpoint(Endpoint):
         nodeDict['NumberOfProcessors'] = self.parameters["NumberOfProcessors"]
         outputDict[nodeID] = nodeDict
       else:
+        self.log.error('Failed to create OpenStack instance',
+                       '%s %s %s' % (nvm, instanceID, result['Message']))
         break
 
     # We failed submission utterly
@@ -232,7 +234,7 @@ class OpenStackEndpoint(Endpoint):
     if not result['OK']:
       return result
     userDataCrude = str(result['Value'])
-    userData = base64.b64encode(userDataCrude)
+    userData = base64.b64encode(userDataCrude.encode()).decode()
 
     headers = {"X-Auth-Token": self.token}
     requestDict = {"server": {"user_data": userData,
@@ -259,6 +261,7 @@ class OpenStackEndpoint(Endpoint):
                              headers=headers,
                              verify=self.caPath)
     except Exception as exc:
+      self.log.exception("Exception creating VM")
       return S_ERROR('Exception creating VM: %s' % str(exc))
 
     if result.status_code in [200, 201, 202, 203, 204]:
