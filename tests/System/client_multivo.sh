@@ -10,7 +10,7 @@ StdOutput = "job.log";
 StdError = "job.log";
 InputSandbox = "multiVOexe.sh";
 OutputSandbox = "job.log";
-Site = {"LCG.UKI-LT2-IC-HEP.uk", "LCG.UKI-SOUTHGRID-RALPP"};
+Site = {"LCG.UKI-LT2-IC-HEP.uk", "LCG.UKI-SOUTHGRID-RALPP.uk"};
 JobName = "MultiVOTest";
 ]
 EOF
