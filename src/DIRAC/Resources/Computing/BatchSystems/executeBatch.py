@@ -22,8 +22,12 @@ if __name__ == "__main__":
     from six.moves.urllib.parse import quote as urlquote
     from six.moves.urllib.parse import unquote as urlunquote
   except ImportError:
-    from urllib import unquote as urlunquote
-    from urllib import quote as urlquote
+    try:
+      from urllib import unquote as urlunquote
+      from urllib import quote as urlquote
+    except ImportError:
+      from urllib.parse import quote as urlquote
+      from urllib.parse import unquote as urlunquote
 
 
   arguments = sys.argv[1]
