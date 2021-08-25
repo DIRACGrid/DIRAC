@@ -7,6 +7,7 @@ from __future__ import print_function
 import os
 import getpass
 import tarfile
+import six
 from six import BytesIO
 from base64 import b64decode
 
@@ -61,9 +62,9 @@ class BundleDeliveryClient(Client):
         :return: str
     """
     try:
-      with open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "r") as fd:
+      with open(os.path.join(dirToSyncTo, ".dab.%s" % bundleID), "rb") as fd:
         bdHash = fd.read().strip()
-        return bdHash
+        return bdHash.decode() if six.PY3 else bdHash
     except Exception:
       return ""
 
@@ -77,7 +78,7 @@ class BundleDeliveryClient(Client):
     try:
       fileName = os.path.join(dirToSyncTo, ".dab.%s" % bundleID)
       with open(fileName, "wb") as fd:
-        fd.write(bdHash)
+        fd.write(bdHash.encode() if six.PY3 and not isinstance(bdHash, bytes) else bdHash)
     except Exception as e:
       self.log.error("Could not save hash after synchronization", "%s: %s" % (fileName, str(e)))
 
