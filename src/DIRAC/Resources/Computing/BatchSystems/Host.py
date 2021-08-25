@@ -15,7 +15,6 @@ from __future__ import division
 import os
 import glob
 import shutil
-import shlex
 import signal
 try:
   import subprocess32 as subprocess
@@ -195,23 +194,18 @@ exit 0
       infoFile.close()
       jobInfo = json.loads(jobInfo)
       pid = jobInfo['PID']
-      cmd = 'bash -c "ps -f -p %s --no-headers | wc -l"' % pid
-      sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      sp = subprocess.Popen( ["ps", "-f", "-p", str( pid ), "--no-headers"],
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.PIPE )
       output, error = sp.communicate()
-      status = sp.returncode
-      if status == 0:
-        if output.strip() == '1':
-          running += 1
-          usedCores += jobInfo['NCores']
-        else:
-          stamp = jobInfo['JOBID']
-          jobLife = datetime.utcnow() - datetime.strptime(jobInfo['SubmissionTime'], "%Y-%m-%d %H:%M:%S")
-          if jobLife > CLEAN_DELAY:
-            self.__cleanJob(stamp, infoDir, workDir, outputDir, errorDir)
+      if len(output.split('\n')) == 2 and 'wrapper' in output:
+        running += 1
+        usedCores += jobInfo['NCores']
       else:
-        resultDict['Status'] = status
-        resultDict["Message"] = output + ' : ' + error
-        return resultDict
+        stamp = jobInfo['JOBID']
+        jobLife = datetime.utcnow() - datetime.strptime(jobInfo['SubmissionTime'], "%Y-%m-%d %H:%M:%S")
+        if jobLife > CLEAN_DELAY:
+          self.__cleanJob(stamp, infoDir, workDir, outputDir, errorDir)
 
     resultDict['Status'] = 0
     resultDict['Running'] = running
@@ -223,11 +217,12 @@ exit 0
 
     if pid == 0:
       return "Unknown"
-    cmd = 'bash -c "ps -f -p %s | grep %s | wc -l"' % (pid, user)
-    sp = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    sp = subprocess.Popen(["ps", "-f", "-p", str( pid ), "--no-headers"],
+                           stdout = subprocess.PIPE,
+                           stderr = subprocess.PIPE)
     output, error = sp.communicate()
     status = sp.returncode
-    if status == 0 and output.strip() == "1":
+    if status == 0 and len(output.split('\n')) == 2 and user in output:
       return "Running"
     return "Done"
 
