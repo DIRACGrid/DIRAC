@@ -14,10 +14,9 @@ import six
 from datetime import datetime
 from datetime import timedelta
 
-import certifi
-import copy
-import functools
 import json
+import certifi
+import functools
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q, A
@@ -54,7 +53,7 @@ def generateDocs(data, withTimeStamp=True):
 
     :return: doc
     """
-    for doc in copy.deepcopy(data):
+    for doc in data:
         if "_type" not in doc:
             doc["_type"] = "_doc"
         if withTimeStamp:
