@@ -17,6 +17,24 @@ declare -a commands=(
 'dirac-wms-select-jobs --Status=Running'
 )
 
+echo " "
+echo " "
+echo " ########################## Getting a proxy #############################"
+echo " "
+echo " "
+
+echo "dirac-proxy-init -g dirac_prod"
+dirac-proxy-init -g dirac_prod
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
+fi
+echo " "
+echo "======  dirac-proxy-info"
+dirac-proxy-info
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
+fi
+
 for command in "${commands[@]}"
 do
   echo "************************************************"
