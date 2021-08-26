@@ -10,7 +10,7 @@ from DIRAC import gConfig, S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
@@ -354,6 +354,20 @@ class PilotManagerHandler(RequestHandler):
     endDate = selectDict.get('ToDate', None)
     if endDate:
       del selectDict['ToDate']
+
+    # Owner attribute is not part of PilotAgentsDB
+    # It has to be converted into a OwnerDN
+    owners = selectDict.get('Owner')
+    if owners:
+      ownerDNs = []
+      for owner in owners:
+        result = getDNForUsername(owner)
+        if not result['OK']:
+          return result
+        ownerDNs.append(result['Value'])
+
+      selectDict['OwnerDN'] = ownerDNs
+      del selectDict['Owner']
 
     result = pilotDB.getCounters('PilotAgents', [attribute], selectDict,
                                  newer=startDate,
