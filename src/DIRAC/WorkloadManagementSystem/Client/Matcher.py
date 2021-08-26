@@ -194,8 +194,12 @@ class Matcher(object):
       if name in resourceDescription:
         resourceDict[name] = resourceDescription[name]
 
-    if resourceDescription.get('Tag'):
-      resourceDict['Tag'] = resourceDescription['Tag']
+    # 'Tag' could be an emptry string and assigned in multiValueMatchFields loop
+    # 'Tag' can also be a string looking like a list :shrug: ("['MultiProcessor']")
+        if 'Tag' in resourceDescription:
+          tags = resourceDescription['Tag']
+          resourceDict['Tag'] = (tags if isinstance(tags, list) else
+                                 [tag.strip("\"'") for tag in tags.strip('[]').split(',')])
       if 'RequiredTag' in resourceDescription:
         resourceDict['RequiredTag'] = resourceDescription['RequiredTag']
 
