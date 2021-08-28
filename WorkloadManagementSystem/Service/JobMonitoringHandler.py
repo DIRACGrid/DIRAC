@@ -7,6 +7,7 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+import six
 from past.builtins import long
 from datetime import timedelta
 
@@ -44,7 +45,7 @@ class JobMonitoringHandler(RequestHandler):
         '/Services/JobMonitoring/useESForJobParametersFlag', False)
     if useESForJobParametersFlag:
       cls.gElasticJobParametersDB = ElasticJobParametersDB()
-    
+
     cls.pilotManager = PilotManagerClient()
     return S_OK()
 
@@ -87,7 +88,7 @@ class JobMonitoringHandler(RequestHandler):
     endDate = selectDict.get('ToDate', None)
     if endDate:
       del selectDict['ToDate']
-    
+
     # Provide JobID bound to a specific PilotJobReference
     # There is no reason to have both PilotJobReference and JobID in selectDict
     # If that occurs, use the JobID instead of the PilotJobReference
@@ -484,7 +485,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobStats(cls, attribute, selectDict):
     """ Get job statistics distribution per attribute value with a given selection
     """
-    startDate, endDate, selectDict = self.parseSelectors(selectDict)
+    startDate, endDate, selectDict = cls.parseSelectors(selectDict)
     result = cls.gJobDB.getCounters('Jobs', [attribute], selectDict,
                                     newer=startDate,
                                     older=endDate,
