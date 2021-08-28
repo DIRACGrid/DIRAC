@@ -10,8 +10,7 @@ import time
 import json
 import pprint
 import logging
-from dominate import document, tags as dom
-from tornado.template import Template
+from dominate import tags as dom
 
 import authlib
 from authlib.jose import JsonWebKey, jwt
